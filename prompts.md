@@ -16,7 +16,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 ## 1. Descripción general del producto
 
-**Prompt 1:Vamos a redactar el Apartado "1. Descripción general del producto" del README de
+**Prompt 1:** Vamos a redactar el Apartado "1. Descripción general del producto" del README de
 AdOps360, siguiendo la plantilla oficial de AI4Devs-finalproject. Debe cubrir estos
 subapartados: Objetivo, Características y funcionalidades principales, Diseño y
 experiencia de usuario, Instrucciones de instalación.
@@ -75,9 +75,8 @@ falta algo para alguno de los 4 subapartados, pregúntamelo en vez de asumir.
 
 ## 2. Arquitectura del Sistema
 
-### **2.1. Diagrama de arquitectura:**
 
-**Prompt 1:Vamos a redactar el Apartado "2. Arquitectura del sistema" del README de AdOps360,
+**Prompt 1:** Vamos a redactar el Apartado "2. Arquitectura del sistema" del README de AdOps360,
 siguiendo la plantilla oficial de AI4Devs-finalproject. Debe cubrir: diagrama de
 arquitectura, justificación del patrón elegido, descripción de componentes
 principales, estructura de ficheros, infraestructura y despliegue, seguridad, y
@@ -138,51 +137,11 @@ No inventes componentes, servicios ni decisiones de infraestructura que no te ha
 dado. Si necesitas decidir algo no especificado, pregúntamelo antes de asumir.
 
 
-### **2.2. Descripción de componentes principales:**
-
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
-
-### **2.3. Descripción de alto nivel del proyecto y estructura de ficheros**
-
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
-
-### **2.4. Infraestructura y despliegue**
-
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
-
-### **2.5. Seguridad**
-
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
-
-### **2.6. Tests**
-
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
-
 ---
 
 ### 3. Modelo de Datos
 
-**Prompt 1: Vamos a redactar el Apartado "3. Modelo de datos" del README de AdOps360, siguiendo
+**Prompt 1:** Vamos a redactar el Apartado "3. Modelo de datos" del README de AdOps360, siguiendo
 la plantilla oficial de AI4Devs-finalproject. Debe incluir un diagrama Mermaid
 (erDiagram) con las entidades, sus atributos clave, PK/FK, y una descripción de cada
 entidad.
@@ -246,17 +205,13 @@ clara.
 
 ### 4. Especificación de la API
 
-**Prompt 1:**
-
-**Prompt 2:**
-
-**Prompt 3:**
+No aplica, de momento.
 
 ---
 
 ### 5. Historias de Usuario
 
-**Prompt 1:Vamos a generar las historias de usuario del Apartado "5. Historias de usuario" del
+**Prompt 1:** Vamos a generar las historias de usuario del Apartado "5. Historias de usuario" del
 README de AdOps360, usando la skill enrich-us.
 
 Contexto: AdOps360 centraliza la gestión de campañas OOH/digitales de GeoQ para 3
@@ -305,7 +260,7 @@ Añade las 3 historias resultantes a la sección 5 del readme.md.
 
 ### 6. Tickets de Trabajo
 
-**Prompt 1:Vamos a generar el Apartado "6. Tickets de trabajo" del README de AdOps360, a partir
+**Prompt 1:** Vamos a generar el Apartado "6. Tickets de trabajo" del README de AdOps360, a partir
 de las 3 historias de usuario ya definidas en la sección 5 (alta de campaña desde
 oferta/OC, consulta de status diario, cálculo de márgenes).
 
