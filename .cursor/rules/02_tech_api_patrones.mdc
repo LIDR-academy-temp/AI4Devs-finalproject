@@ -1,0 +1,194 @@
+﻿---
+description: Patrones obligatorios para controllers <PROYECTO_API> (Sales y errores SQL embebidos). Convención de equipo en <REPO_SQL>; no forma parte del binario de la API.
+globs: "**/Controllers/**/*.cs"
+alwaysApply: false
+---
+
+# <proyecto>Api — Patrones de controllers (decisiones de equipo)
+
+## Cabecera HTTP — obligatorio en cada acción
+
+Inmediatamente después de `//Generales` (o equivalente), **siempre** esta línea **antes** de `GetHeaderValues`:
+
+```csharp
+Microsoft.Extensions.Primitives.StringValues headerValues = this.Request.Headers[""];
+```
+
+**Prohibido:** declarar `StringValues headerValues;` sin asignar (CS0165), o usar `Request.Headers[""]` sin `this.` (incoherente con el estándar del repo).
+
+## Estructura obligatoria de controllers
+
+- Atributos de clase: `[ApiController]` + `[Route("<Dominio>/[controller]")]` (ej. `"Sales/[controller]"`, `"Balance/[controller]"`)
+- Hereda de `Controller`, no de `ControllerBase`
+- **Máximo GET + POST + DELETE por controller** — una sola acción de cada verbo
+- Operación adicional (bulk, activar, exportar, etc.) → **nuevo controller** con nombre descriptivo (ej. `*MultipleController`, `*ActiveController`, `*ExportController`)
+
+## Boilerplate obligatorio — idéntico en cada método
+
+```csharp
+Microsoft.Extensions.Primitives.StringValues headerValues = this.Request.Headers[""];
+string actionName = this.ControllerContext.RouteData.Values["action"].ToString();
+
+clHTTPHeader cHttpHeader = new clHTTPHeader();
+cHttpHeader.GetHeaderValues(this.Request, headerValues);
+
+clApiRequest cApiRequest = new clApiRequest();
+cApiRequest.databaseName        = Parameters.DBNESGo;
+cApiRequest.databaseEnvironment = cHttpHeader.Environment;
+cApiRequest.apiName             = cHttpHeader.WindowName + "."
+    + this.ControllerContext.RouteData.Values["controller"].ToString() + "/" + actionName;
+cApiRequest.actionVerb          = actionName.ToUpper();
+cApiRequest.userID              = cHttpHeader.UserID;
+cApiRequest.token               = cHttpHeader.Authorization;
+```
+
+## Parámetros
+
+- **GET**: `dynamic jParameters = cHttpHeader.jParameters;` — los filtros vienen del header. **Sin `[FromQuery]`**
+- **POST**: DTO tipado como parámetro — sin `[FromBody]` explícito (lo infiere `[ApiController]`)
+- **DELETE**: ID por ruta en el método: `[Route("{EntidadID}")]`
+
+### Prohibido en el body: tipos de Newtonsoft
+
+`Startup.cs` registra `services.AddControllers()` **sin** `AddNewtonsoftJson()`, así que el model
+binding corre con System.Text.Json. Un parámetro `JObject` / `JToken` / `JArray` **compila pero
+falla en runtime** con HTTP 400 antes de entrar al action:
+
+```
+The JSON value could not be converted to Newtonsoft.Json.Linq.JToken. Path: $.Campo
+```
+
+- **Prohibido:** `public ContentResult Accion([FromBody] JObject body)`
+- **Correcto:** DTO tipado en `Clases/<Dominio>/cl<Entidad>.cs`, incluso para un solo campo
+- `JObject`/`JsonConvert` sí es válido **dentro** del método (parsear strings, serializar la respuesta) — la prohibición aplica solo al parámetro que liga el body
+
+## SQL en el controller
+
+**CRUD simple** (GET lista, POST upsert, DELETE): SQL inline en `cApiRequest.SqlCode`
+
+```csharp
+cApiRequest.SqlCode = $@"
+    SELECT * FROM sls.vsMiEntidad WITH (NOLOCK) WHERE 1=1
+";
+if (jParameters.FiltroID != null)
+    cApiRequest.SqlCode += $" AND EntidadID = {jParameters.FiltroID} ";
+```
+
+**Bulk / reporte / exportación** (`*MultipleController`, `*ReplaceController`, `*ReportController`): **solo `EXEC sp_nombre`** en SqlCode — cero lógica SQL en el controller
+
+```csharp
+cApiRequest.returnJson = 0;
+cApiRequest.SqlCode = $@"
+    EXEC sls.prcMiSP
+         @Param1 = {jModel.Param1},
+         @Param2 = '{jModel.Param2?.Replace("'","''")}',
+         @apiName = '{cApiRequest.apiName}',
+         @userID  = {cApiRequest.userID}
+";
+clApiResponse Result = cApiRequest.executeRequest();
+if (Result.success)
+{
+    var data = JsonConvert.SerializeObject(Result.data);
+    var obj  = JsonConvert.DeserializeObject<dynamic>(data);
+    for (int i = 0; i < obj.Count; i++)
+    {
+        if (obj[i].ErrorID > 0) { Result.success = false; Result.message = obj[i].ErrorMessage; break; }
+    }
+}
+return Content(JsonConvert.SerializeObject(Result), "application/json");
+```
+
+
+## SP que retorna FOR JSON
+
+Cuando el batch/SP devuelve un unico result set con \FOR JSON PATH\ (con o sin \WITHOUT_ARRAY_WRAPPER\), activar en el controller **antes** de \SqlCode\:
+
+\\\csharp
+cApiRequest.jsonstring = 1;
+cApiRequest.returnJson = 1;
+\\\
+
+Sin ambos flags, \executeRequest()\ no parsea el JSON del SP en \data\. Referencias: \SaleTotalController\, TKT-14331, tkt-promotionpaiditem-webcustomer.
+
+## Retorno
+
+Siempre: `Content(JsonConvert.SerializeObject(cApiRequest.executeRequest()), "application/json")`
+Excepción CSV: `"text/csv"` en lugar de `"application/json"`
+
+**Prohibido:** `Ok()`, `BadRequest()`, `JsonResult()`, helpers privados de cualquier tipo
+
+## Referencia Sales: `<CTR_REFERENCIA>`
+
+Para APIs bajo `<PROYECTO_API>/Controllers/Sales/` (incl. subcarpetas por módulo), alinear con **el mismo estilo** que `<CTR_REFERENCIA>`:
+
+- **Namespace**: `<PROYECTO_API>.Controllers` (raíz), no `<PROYECTO_API>.Controllers.Sales.*`, salvo que el proyecto migre todo el dominio a otro esquema.
+- **Comentarios de bloque**: `//Generales` antes de `headerValues` / `actionName`; `//DECLARAMOS REQUEST` antes de `jParameters` o del DTO.
+- **actionName**: `this.ControllerContext.RouteData.Values["action"].ToString()` (no `nameof(Action)` salvo migración explícita).
+- **actionVerb**: `actionName.ToUpper()` (no `ToUpperInvariant()` salvo estándar nuevo).
+- **GET**: `ColumnNames` opcional desde `jParameters` (default `*`), filtros con `IF (jParameters.X != null)` y concatenación al SQL como el resto de Sales; incrementar `totalParameters++` por filtro.
+- **Validación previa a SQL**: preferir `cApiRequest.parametersAdvice += "Campo, "` + retorno vía `executeRequest()` (mensaje genérico de parámetros), en lugar de `ContentResult` HTTP 400 propios, **salvo** requisito funcional explícito en contrario.
+
+## Errores de negocio en SQL embebido: `<CTR_ERROR_SQL>`
+
+Cuando el controller arme **T-SQL en string** y deba validar reglas de negocio **antes** de `INSERT`/`UPDATE`/`DELETE`:
+
+- **No** usar `THROW` para esos casos (el cliente y `executeRequest` siguen el patrón de fila con error).
+- **Sí** usar el patrón **ProfitTypes**:
+  - `IF` validación falla → `SELECT` columnas de contexto (p. ej. ID de negocio) + **`ErrorID` (int)** + **`ErrorMessage` (nvarchar)`** + **`GOTO FinalError;`**
+  - Al final del batch: etiqueta **`FinalError:`** (vacía o solo comentario).
+  - En **éxito**, el último `SELECT` **no** debe incluir `ErrorID` / `ErrorMessage` (solo payload OK, p. ej. surrogate ID).
+- Documentar en **`<remarks>` del método** la tabla de valores **`ErrorID`** y el significado de cada uno, y si el ID devuelto es `NULL` en algún flujo (p. ej. insert fallido antes de crear fila).
+
+## Coexistencia con `<CLASE_REQUEST>`
+
+- Si el proyecto exige post-proceso de **`ErrorID`** en la respuesta (regla global en `04_tech_csharp`), aplicarlo cuando el resultado del batch traiga esas columnas.
+
+## SQL y seguridad
+
+- Strings hacia SQL: preferir **`sp_executesql` con parámetros** o SPs parametrizados. Si el framework obliga `SqlCode +=`, usar `Replace("'","''")` como mitigación mínima — no como patrón correcto.
+- Enteros interpolados solo desde tipos **`int`** ya validados (p. ej. tras `parametersAdvice` o parseo); no confiar en `dynamic` sin validar.
+
+## Documentación XML Swagger (remarks / summary)
+
+Referencia canónica: `<CTR_SWAGGER>.cs`.
+
+1. **`<summary>`**: verbo en MAYÚSCULAS + nombre del recurso (`OBTIENE  …`, `EJECUTA …`, `ELIMINA …`). Sin `<c>` salvo uso existente.
+2. **`<remarks>` GET**: título `Parameters`, bloque JSON indentado con tab, propiedades con tipo entre comillas (`"Nombre":"int"`).
+3. **`<remarks>` POST/DELETE con body**: título `Body (JSON)` o `Body (JSON array)`, mismo estilo JSON.
+4. **Headers comunes** (`Environment`, `UserID`, etc.): no repetir en cada método; `MyHeaderFilter` los documenta. Solo listar `Parameters` en remarks.
+
+### Ejemplo GET
+
+```csharp
+/// <summary>
+/// OBTIENE  TripStatus
+/// </summary>
+/// <remarks>
+/// Parameters
+///
+///
+///	{
+///		"ColumnNames":"string"
+///	}
+///
+/// </remarks>
+```
+
+### Ejemplo POST
+
+```csharp
+/// <summary>
+/// EJECUTA  prcSetTripCustomerConfirm
+/// </summary>
+/// <remarks>
+/// Body (JSON)
+///
+///
+///	{
+///		"CustomerID":"int",
+///		"TripStatusID":"int",
+///		"NoteText":"string"
+///	}
+///
+/// </remarks>
+```

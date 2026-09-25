@@ -1,0 +1,104 @@
+---
+description: Arquitectura, patrones y convenciones ASP.NET MVC 5 / .NET Framework para <PROYECTO_WEB_LEGACY>
+globs: "**/*.cs,**/*.cshtml,!**/obj/**,!**/packages/**"
+alwaysApply: false
+---
+
+# Architecture & ASP.NET MVC 5 Rules — <PROYECTO_WEB_LEGACY>
+
+## Stack
+
+Ver `sdd-toolkit/profiles/web-legacy.md` para el stack completo del proyecto.
+Esta regla documenta los patrones de código — no dupliques la lista de dependencias aquí.
+
+## Arquitectura
+
+Flujo obligatorio: `Controller → <CLASE_HTTP_MVC> → API externa → View`
+Nunca lógica de negocio en `.cshtml`.
+
+Estructura canónica:
+
+```
+<proyecto>/
+├── Controllers/         ← una clase por dominio de negocio
+├── Views/               ← Razor por controller; Shared/ para partials y layout
+├── Models/Clases/       ← clases de dominio y DTOs tipados
+└── Helpers/             ← utilidades del proyecto (<CLASE_TOOLS_MVC>, <CLASE_HTTP_MVC>, …)
+```
+
+> Estructura real del proyecto puede tener subcarpetas adicionales — leer el repo antes de crear archivos.
+
+## Controllers — convenciones
+
+- Herencia: `public class XController : Controller` (namespace `System.Web.Mvc`).
+- Acciones asíncronas: `async Task<ActionResult>` para toda acción con IO externo.
+- Acciones síncronas: solo para redirects simples o vistas sin datos de API.
+- Un controller por dominio — no crear controllers genéricos o catch-all.
+- Namespace: seguir el namespace existente del proyecto (ver `<CTR_REFERENCIA_MVC>`).
+
+## <CLASE_HTTP_MVC> — patrón HTTP client
+
+Ver `sdd-toolkit/profiles/web-legacy.md` sección **Patrón HTTP client** para el snippet
+exacto de este proyecto. Reglas generales:
+
+- Siempre verificar la propiedad de éxito de la respuesta antes de acceder a los datos.
+- Usar la variante asíncrona del método de request en acciones `async`.
+- Serializar el body con `JsonConvert.SerializeObject` (Newtonsoft.Json).
+- Nunca pasar `dynamic` directamente como body sin serializar.
+- URL del endpoint: formato `"Dominio/Endpoint"` — sin barra inicial ni base URL.
+
+## Auth guard
+
+Ver `sdd-toolkit/profiles/web-legacy.md` sección **Auth** para la clave de sesión
+y el redirect exacto del proyecto. Regla general:
+
+- Verificar sesión **al inicio** de toda acción que requiera usuario autenticado.
+- Colocar antes de cualquier otra lógica de la acción.
+- Si el proyecto tiene múltiples niveles de auth (cliente, backoffice, admin), verificar el nivel correcto según el dominio del controller.
+
+## ViewBag — uso restringido
+
+| Usar ViewBag para | No usar ViewBag para |
+|---|---|
+| Strings de traducción/UI | Colecciones grandes de datos de dominio |
+| Metadatos de página (título, SEO) | Objetos que el modelo tipado puede llevar |
+| Flags simples de presentación | |
+
+Para datos de dominio: pasar como `Model` o `ViewData["Key"]` con tipo explícito.
+
+## <CLASE_TOOLS_MVC> — helpers del proyecto
+
+Ver profile para los métodos disponibles. Regla general:
+- Usar los helpers del proyecto para tareas transversales (logging, utilidades de culture, validaciones de identidad).
+- No reimplementar funcionalidad que el helper ya provee.
+
+## Vistas Razor (.cshtml)
+
+- Un archivo por acción: `Views/<Controller>/<Acción>.cshtml`.
+- Partials compartidos: `Views/Shared/_<Nombre>.cshtml`.
+- Sin lógica de negocio en `.cshtml` — solo condicionales de presentación simples.
+- No `@{ }` blocks complejos — extraer a helper o ViewModel si hace falta.
+
+## Routing
+
+- Rutas en `App_Start/RouteConfig.cs` para el patrón por defecto.
+- Atributo `[Route(...)]` en controllers con URLs no estándar.
+- Seguir el patrón de URL del proyecto documentado en el profile — no inventar esquemas nuevos.
+
+## Modelos
+
+- Clases tipadas en `Models/Clases/` — una clase por entidad de dominio.
+- Para payloads dinámicos hacia la API: `ExpandoObject` + `JsonConvert.SerializeObject`.
+- Para formularios con validación: clase tipada con DataAnnotations.
+- Prohibido `dynamic` como tipo de retorno en métodos públicos.
+
+## Errores y logging
+
+- Envolver llamadas a `<CLASE_HTTP_MVC>` en try/catch cuando el error no impide el render.
+- Usar el mecanismo de logging del proyecto (ver profile) — no `Console.WriteLine`.
+- Nunca exponer stack trace en vistas.
+
+## Verificación antes de entregar
+
+Build sin errores de compilación (MSBuild o `dotnet build` según la solución).
+Si el build falla → no entregar. Corregir primero.

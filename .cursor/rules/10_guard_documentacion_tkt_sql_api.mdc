@@ -1,0 +1,32 @@
+---
+description: Donde y como documentar SPs/vistas nuevos y APIs de ticket (<REPO_SQL> + contextos + <PROYECTO_API>)
+globs: "**/*.sql"
+alwaysApply: false
+---
+
+# Documentacion obligatoria por ticket (SQL + API)
+
+Al crear o modificar **stored procedures**, **vistas** o **endpoints <PROYECTO_API>** en un ticket:
+
+## 1. Stored procedures y vistas (<REPO_SQL>)
+
+- **Fuente de formato:** plantilla en [03_tech_sql.mdc](03_tech_sql.mdc) (`Stored Procedures` y `Vistas`).
+- **Vistas `vs*`:** no incluir en el `SELECT` campos de auditoria de cajon (`CreatedBy`, `ModifiedBy`, `CreatedUserID`, `ModifiedUserID`, `CreatedDate`, `ModifiedDate` / equivalentes ES) salvo que el ticket lo exija; ver regla en seccion Vistas de `03_tech_sql.mdc`. En el cuerpo de la vista, **cada tabla** del `FROM`/`JOIN` con `WITH (NOLOCK)`.
+- **Ubicacion:** en el mismo archivo `.sql`, **inmediatamente antes** de cada `CREATE OR ALTER PROCEDURE` o `CREATE VIEW` (tras `DROP VIEW` si aplica).
+- **Bloques obligatorios por SP:** `CREATE` (Author, Create date, Description, Exception), `UPDATES` (una entrada por cambio de ticket; en alta inicial: Author + Update date + Description initial release), `EXECUTE EXAMPLE` (comentado), `PARAMETERS DEFINITION` (`-- <param ...>`), `STRUCTURE` (Schema + Name), `BODY`.
+- **Script contenedor:** si un `.sql` define varios objetos, puede llevar cabecera de archivo (Author, Create date, Description del script y orden de deploy).
+- **Post-edicion:** ejecutar [Normalize-SqlEncoding.ps1](../scripts/Normalize-SqlEncoding.ps1) sobre cada `.sql` tocado (BOM UTF-8, CRLF).
+
+## 2. APIs REST (<PROYECTO_API>)
+
+- **Swagger / XML en codigo:** en cada accion del controller, `/// <summary>` y `/// <remarks>` segun [02_tech_api_patrones.mdc](02_tech_api_patrones.mdc) (verbo en mayusculas: OBTIENE / EJECUTA / ELIMINA; `Parameters` con JSON en GET; `Body (JSON)` o `Body (JSON array)` en POST).
+- **Contexto de proyecto:** en `<RUTA_CONTEXTOS>\TKT-<id>_*.md`, seccion **APIs REST** con tabla: Metodo, ruta relativa (`GoalProgram/...`), controller, objeto SQL destino (`SELECT` vista o `EXEC` SP).
+- **SDD:** mantener coherencia con la tabla de `design.md` del ticket en `.planning/tkt-<id>/` (mismas rutas y verbos).
+- **Entregables:** si el ticket exige archivo `<fecha>_<TKT>_Entregables.md`, listar cada API como `METODO Ruta` y tipo NUEVO/CAMBIO.
+
+## 3. Orden sugerido al cerrar cambios
+
+1. Cabeceras SQL por objeto.
+2. XML en controllers.
+3. Tabla APIs en `TKT-<id>_*.md` (y registro de cambios de contexto).
+4. Normalizar encoding SQL.

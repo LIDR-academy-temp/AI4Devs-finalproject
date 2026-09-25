@@ -1,0 +1,275 @@
+﻿---
+description: Metodología SDD y enrutamiento de agentes especializados <proyecto>
+alwaysApply: true
+---
+
+# <proyecto> Spec-Driven Development
+
+Toda tarea mediana o grande debe pasar por especificación antes de implementar.
+Usa agentes especializados SOLO cuando la tarea realmente lo requiera.
+
+## Prerequisito — Documentos de entrada del requerimiento
+
+Antes de `/definir`, el requerimiento debe tener los documentos de entrada. Sin ellos no se avanza.
+
+| # | Documento | Condición |
+|---|-----------|-----------|
+| 1 | **Contexto del Requerimiento** | Obligatorio siempre |
+| 2 | **Contexto Técnico** | Obligatorio siempre |
+| 3 | **Mockup / Diseño Visual** | Obligatorio si hay UI (frontend / mobile / web-legacy); opcional si no hay interfaz gráfica |
+
+Si falta cualquiera de los obligatorios → STOP. Solicitar faltantes. No asumir. El gate vive en `/definir` (Paso 0).
+
+## Flujo SDD obligatorio
+
+-1. `/iniciar` — (Una sola vez, post-instalación) Escanea el repo y genera grafo + specs iniciales. Corre antes del primer requerimiento.
+0. `/explorar` — (Opcional) Investigar viabilidad, comparar enfoques, analizar código existente.
+1. `/definir` — Gate de documentos de entrada → refinar requerimiento o user story. Lee `specs/` y `_graph.md` del repo contextos. Incluye pasada adversarial obligatoria (`/abogado-del-diablo`) sobre el spec.
+2. `/diseñar` — Crear propuesta técnica en `<RUTA_PLANNING>\`. Incluye pasada adversarial obligatoria (`/abogado-del-diablo`) sobre el design.
+2.5. `/analizar` — (Opcional, recomendado en requerimientos medios/altos o con invariantes) Verificación cruzada spec↔design por un paso independiente del autor, antes de implementar.
+3. `/ejecutar` — Implementar cambios mínimos (con iteración fluida si el diseño necesita ajuste menor).
+4. `/revisar` — Verificar contra criterios de aceptación y auditorías.
+5. `/completar` — Cerrar requerimiento, documentar Delta, merge a `specs/`, actualizar `_graph.md` (en contextos).
+6. `/avance` — Consultar estado de uno o todos los requerimientos activos.
+7. `/escalar` — Handoff formal al humano cuando hay bloqueo.
+8. `/urgente` — Fix urgente de producción con trazabilidad mínima.
+9. `/tutorial` — Tutorial guiado para nuevos usuarios.
+10. `/retrospectiva` — Analiza requerimientos cerrados, genera métricas de tendencias y recomendaciones de mejora.
+
+## Cuándo usar SDD
+
+Usar SDD cuando la tarea implique:
+
+- nueva feature, bug funcional, cambio de API, cambio SQL
+- cambio de arquitectura, integración externa
+- Shopify, puntos, órdenes, customers, price lists
+- procesos batch, permisos, cambios en contratos, impacto productivo
+- cambios multiarchivo o multimódulo
+
+Usar `/explorar` antes de `/definir` cuando:
+
+- el requerimiento es ambiguo o hay múltiples enfoques posibles
+- necesitas investigar código existente para proponer solución
+- el usuario pide análisis, comparación o viabilidad
+
+## Cuándo NO usar SDD completo
+
+- typos, explicación simple, cambio visual menor
+- refactor mínimo, ajuste local sin impacto, documentación pequeña
+
+En esos casos usar `07_guard_planear` + auditoría.
+
+## Artefacto obligatorio — Estructura Graph
+
+### Knowledge graph (cross-requerimiento)
+
+```txt
+<RUTA_CONTEXTOS>\
+├── specs/              ← Source of truth: comportamiento actual del sistema por dominio
+│   └── <dominio>.md       (se actualiza al /completar cada requerimiento)
+├── _graph.md           ← Índice maestro: todos los requerimientos, dominios, conexiones, patrones
+├── .planning/          ← Artefactos SDD por ticket
+│   ├── tkt-<id>/       ← graph individual por requerimiento
+│   └── ...
+└── TKT-*.md            ← Contextos individuales de proyecto
+```
+
+### Graph individual por requerimiento
+
+Cada requerimiento vive en su propia carpeta con artefactos separados y links bidireccionales:
+
+```txt
+<RUTA_PLANNING>\tkt-<id>\
+├── _index.md        ← hub: estado, graph links, metadata, log de estados, dominios, related tickets
+├── spec.md          ← /definir: user story, objetivo, alcance, criterios
+├── design.md        ← /diseñar: estrategia técnica, impacto, orden
+├── impl.md          ← /ejecutar + /revisar: implementación, auditorías, verificación
+├── delta.md         ← /completar: ADDED/MODIFIED/REMOVED del sistema
+└── release.md       ← bitácora de deploy
+```
+
+### Reglas del graph
+
+- `_index.md` es el **hub** — siempre leerlo primero para conocer el estado.
+  Plantilla canónica del `_index.md`: `sdd-toolkit/profiles/context.md` (no redefinirla aquí).
+- Cada artefacto tiene **nav links** al inicio: `[← index](_index.md) | [← prev](prev.md) | [next →](next.md)`
+- Los agentes cargan **solo los artefactos que necesitan**, no todos.
+- Comando `/avance` lee `_index.md` y reporta qué artefactos existen y cuáles faltan.
+
+### Formato de links (OBLIGATORIO — compatibilidad multi-herramienta)
+
+| Herramienta | Qué usa |
+|-------------|--------|
+| Obsidian / Logseq | `[[wikilink]]` → nodo en graph |
+| GitHub / VS Code | `[texto](ruta/relativa.md)` → link clickeable |
+
+**Patrón híbrido obligatorio:**
+- Tags de dominio y tickets: `[[dominio]]`, `[[TKT-XXXXX]]`
+- Navegación a archivos: `[texto](ruta/relativa.md)`
+- Rutas siempre con `/`, NUNCA con `\`
+- Rutas relativas desde el archivo que las contiene
+- Ejemplo combinado: `[[TKT-14550]] | [PROJECT](.planning/tkt-14550/PROJECT.md)` (dir en minúscula `tkt-<id>/`; el wikilink `[[TKT-<id>]]` va en mayúscula)
+
+### Qué artefacto crea cada comando
+
+| Comando | Crea/Actualiza | Lee |
+|---------|----------------|-----|
+| `/iniciar` | `code_graph_front.md` + `specs/<dominio>-front.md` + sección en `_graph.md` | repo frontend (scan) |
+| `/explorar` | (opcional: `_exploraciones/`) | `specs/`, `_graph.md`, código existente |
+| `/definir` | `_index.md` + `spec.md` | Docs de entrada (contexto requerimiento + técnico [+ mockup si UI]), `specs/`, `_graph.md` |
+| `/diseñar` | `design.md` + actualiza `_index.md` | `spec.md`, `specs/` |
+| `/analizar` | (no crea; agrega entrada al Log de `_index.md`) | `spec.md`, `design.md` |
+| `/ejecutar` | `impl.md` + actualiza `_index.md` | `spec.md` + `design.md` |
+| `/revisar` | actualiza `impl.md` + `_index.md` | `spec.md` + `design.md` + `impl.md` |
+| `/completar` | `delta.md` + actualiza `_index.md` + merge a `specs/` + actualiza `_graph.md` + fila en `_sdd_evolution.md` + descripción PR | todos |
+| (deploy manual) | `release.md` ← bitácora de despliegue; creada por el equipo al hacer deploy, no por SDD | `delta.md` |
+| `/avance` | — | todos los `_index.md`, `_graph.md` |
+| `/retrospectiva` | actualiza sección `## Tendencias` de `_sdd_evolution.md` | `_sdd_evolution.md`, `_graph.md`, todos los `_index.md` |
+| `/sincronizar` | reporte de drift (BD, specs, API, graph) | MCP, `specs/`, `sdd.config.yaml`, `sdd-toolkit/tools/` |
+| `/normalizar-sql` | encoding UTF-8 BOM + CRLF en archivos SQL | archivos `.sql` del requerimiento |
+| `/urgente` | `_index.md` + `spec.md` (mínimo) + `impl.md` + `delta.md` | `specs/`, `_graph.md` |
+| `/tutorial` | — | — (solo explica) |
+
+## Mapa de estados ↔ comandos
+
+| Estado | Siguiente comando | Acción |
+|--------|-------------------|--------|
+| (sin spec) | `/explorar` | Investigar antes de comprometerse |
+| (sin spec) | `/definir` | Con documentos de entrada listos (contexto requerimiento + técnico [+ mockup si UI]) |
+| `SPEC PENDIENTE` | `/diseñar` | Generar propuesta técnica |
+| `LISTO PARA EJECUTAR` | `/ejecutar` | Implementar cambios (iteración fluida habilitada) |
+| `EN REVISIÓN` | `/revisar` | Verificar implementación |
+| `LISTO PARA PR` | `/completar` | Documentar Delta, archivar y preparar PR |
+| `REQUIERE CAMBIOS` | `/ejecutar` | Corregir hallazgos |
+| `REQUIERE DECISIÓN` | `/escalar` | Handoff manual al usuario |
+| (producción caída) | `/urgente` | Fix urgente con trazabilidad mínima |
+| `RIESGOSO` | `/escalar` | Revisión manual obligatoria |
+| `ARCHIVADO` | — | Sin acción pendiente |
+
+## Índice de guardrails (.cursor/rules) — gobierno del proyecto de un vistazo
+
+Estas reglas se cargan siempre (`alwaysApply`) o condicional por `globs`.
+Son el equivalente de este proyecto a un `constitution.md`: en vez de un solo
+artefacto, el gobierno está repartido en piezas específicas por área — esta
+tabla es el índice para no tener que abrir todas para saber qué existe.
+
+| # | Regla | Qué gobierna |
+|---|---|---|
+| 00 | `sdd_flujo` | Metodología SDD y enrutamiento de agentes especializados (este archivo) |
+| 01 | `sdd_contexto` | Ubicaciones obligatorias de planeación y gestión de contexto del proyecto |
+| 02 | `tech_api_patrones` | Patrones obligatorios de controllers `<PROYECTO_API>` (convención de equipo) |
+| 03 | `tech_sql` | Estándar T-SQL: tablas, índices, vistas, procedimientos, funciones |
+| 04 | `tech_csharp` | Arquitectura y patrones API en C# |
+| 14 | `tech_react` | Arquitectura y patrones React+TypeScript (Vite, Zustand, TanStack, Zod) |
+| 15 | `tech_flutter` | Arquitectura y patrones Flutter/Dart nice_app |
+| 16 | `tech_aspnet_mvc` | Arquitectura y patrones ASP.NET MVC 5 / .NET Framework (web-legacy) |
+| 17 | `tech_aspnet_core` | Arquitectura y patrones ASP.NET Core 8 / Razor Pages |
+| 05 | `sdd_comunicacion` | Reglas de comunicación, validación y respuesta en español |
+| 06 | `guard_auditoria` | Flujo obligatorio de auditoría (`auditor-sql`/`auditor-codigo`/`auditor-flutter`) antes de cerrar tareas |
+| 07 | `guard_planear` | Planificar antes de editar — validación y confirmación previa |
+| 08 | `guard_alcance` | Anti-sobreingeniería — la escalera de decisión (cita `methodology.md` regla 6) |
+| 09 | `guard_definicion_hecho` | Checklist de Definition of Done + plantillas de prueba por capa |
+| 10 | `guard_documentacion_tkt_sql_api` | Dónde/cómo documentar SPs/vistas/APIs nuevos de un requerimiento |
+| 11 | `guard_seguridad` | Guard de seguridad obligatorio — OWASP, secrets, injection, auth |
+| 12 | `guard_evolucion` | Obliga invocar `meta-sdd` al completar requerimientos, mantiene el graph de aprendizaje |
+| 13 | `guard_fuente_objetos` | Prioridad de fuentes para resolver SPs/vistas (BD/MCP real, nunca memoria) |
+| 18 | `guard_tdd` | Guard TDD — Red phase, paridad CHAR-x, anti-sabotaje, mutation |
+
+## Routing de agentes
+
+### Planeación — `planificador-ticket`
+
+Usar cuando: analizar requerimientos, dividir trabajo en fases, generar planes técnicos. Crea archivos en `<RUTA_PLANNING>/<TKT>/` (estructura extendida: PROJECT.md, REQUIREMENTS.md, ROADMAP.md, STATE.md, phases/).
+No usar para: cambios pequeños, explicaciones simples, fixes rápidos.
+
+### Backend / API — `desarrollador-api`
+
+Usar cuando: controllers C#, endpoints, APIs REST, DTOs, validaciones, swagger, lógica de negocio.
+No usar para: tareas solo SQL o documentación.
+
+### Frontend / React — `desarrollador-react`
+
+Usar cuando: componentes React, hooks, stores Zustand, queries TanStack Query, formularios Zod, vistas, rutas frontend.
+No usar para: tareas solo backend o SQL.
+
+### Tests frontend — `frontend-tester`
+
+Usar cuando: generar tests Vitest de componente o specs Playwright E2E para requerimientos frontend.
+No usar para: tests de API REST o tests SQL.
+
+### Git frontend — `git-frontend`
+
+Usar cuando: crear/verificar rama, commit, push o PR en el repositorio <PROYECTO_FRONT>.
+No usar para: operaciones git en el repo API o SQL.
+
+### Mobile / Flutter — `desarrollador-flutter`
+
+Usar cuando: pantallas, widgets, servicios, modelos Flutter/Dart en <PROYECTO_MOBILE>.
+No usar para: tareas solo backend, SQL o React.
+
+### Tests mobile — `flutter-tester`
+
+Usar cuando: generar tests `flutter test` de modelos, utils o pantallas Flutter.
+No usar para: tests de API REST o tests SQL.
+
+### Auditoría Flutter — `auditor-flutter`
+
+Usar cuando: hay código Dart/Flutter generado o modificado en scope.
+No usar para: auditoría de SQL, C# o JavaScript (usar `auditor-sql` / `auditor-codigo`).
+
+### Git mobile — `git-mobile`
+
+Usar cuando: crear/verificar rama, commit, push o PR en el repositorio <PROYECTO_MOBILE>.
+No usar para: operaciones git en el repo API, SQL o frontend.
+
+### SQL Server — `desarrollador-sql`
+
+Usar cuando: tablas, stored procedures, views, índices, performance SQL, schema changes, archivos `.sql`.
+No usar para: tareas backend sin SQL.
+
+### Tests SQL — `tester-sql`
+
+Usar cuando: generar casos de prueba SQL, scripts de smoke test, validaciones previas a DML, casos happy path/error/null para SPs.
+No usar para: tests de API REST o tests Flutter.
+
+### Tests API — `api-tester`
+
+Usar cuando: generar archivos `.http`, pruebas de endpoints REST (happy path, error, auth) para el backend C#.
+No usar para: tests SQL o tests Flutter.
+
+### Auditoría SQL — `auditor-sql`
+
+Usar cuando: hay SQL, T-SQL, SPs, vistas o scripts SQL en scope del cambio.
+No usar para: auditoría de código C#/JS/Dart (usar `auditor-codigo` o `auditor-flutter`).
+
+### Auditoría de código — `auditor-codigo`
+
+Usar cuando: hay C#, JavaScript o Python en scope del cambio (no Flutter puro).
+No usar para: auditoría SQL (usar `auditor-sql`) ni Flutter (usar `auditor-flutter`).
+
+### Auditoría de seguridad — `auditor-seguridad`
+
+Usar cuando: hay endpoints con input externo, SQL dinámico, manejo de secretos, auth/permisos o cambios en configuración de seguridad.
+No usar para: revisión de lógica de negocio sin impacto de seguridad.
+
+### Git API/backend — `git-api`
+
+Usar cuando: crear/verificar rama, commit, push o PR en el repositorio API backend (`<PROYECTO_API>`).
+**Obligatorio en `/ejecutar`:** si el requerimiento modifica API (controller, endpoint, DTO, SQL inline en C#), crear o verificar rama `tkt-{id}` **antes** de editar código — no omitir por falta de sección `## backend` en `design.md`.
+No usar para: operaciones git en el repo SQL, frontend o mobile.
+
+### Meta-SDD — `meta-sdd`
+
+Usar cuando: al completar un requerimiento, detectar patrones/fricciones repetidas (≥3 requerimientos) y proponer nuevas reglas, agentes o comandos para mejorar el proceso. Solo propone — nunca aplica cambios sin aprobación.
+No usar para: implementación de requerimientos normales.
+
+### Corrección post-revisión — `corrector-revision`
+
+Usar cuando: `auditor-sql`, `auditor-codigo` o `auditor-flutter` devuelvan **REQUIERE CAMBIOS** con hallazgos accionables.
+No usar cuando: veredicto sea **RIESGOSO**, requiera aprobación funcional, migración destructiva o falte contexto.
+
+Después de `corrector-revision`: reauditar. Máximo 3 ciclos. Si persiste, escalar como **PARCIAL** o **REQUIERE DECISIÓN**.
+
+### Auditoría obligatoria
+
+Flujo completo en `06_guard_auditoria.mdc`. Orden: contexto → agente especializado → auditoría → resultado final.
