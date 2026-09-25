@@ -1,0 +1,40 @@
+# --- Material privado / local (no se publica) ---
+NoVer/
+Bot/
+Docs/
+.history/
+
+# --- Secretos y configuración local ---
+.env
+*.env.local
+.env.*.local
+appsettings.Development.json
+appsettings.*.local.json
+.claude/settings.json
+.claude/settings.local.json
+
+# --- .NET ---
+bin/
+obj/
+.vs/
+*.user
+TestResults/
+
+# --- Node / Vite ---
+node_modules/
+dist/
+coverage/
+playwright-report/
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# --- Editor / SO ---
+.idea/
+*.log
+.DS_Store
+Thumbs.db

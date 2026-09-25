@@ -1,0 +1,97 @@
+﻿---
+description: Evita cambios fuera de alcance, refactors innecesarios y sobreingeniería
+alwaysApply: false
+globs: "**/*.{sql,cs,ts,js,py},**/*.dart,!**/*.g.dart"
+---
+
+# Alcance y Simplicidad
+
+Mantén cada tarea dentro del alcance solicitado y resuelve con la solución más simple.
+
+## Regla principal
+
+Antes de modificar código, identifica:
+
+- objetivo exacto del usuario
+- archivos necesarios
+- archivos que NO deben tocarse
+- riesgo de cambiar comportamiento existente
+- **la sección "Invariantes" de spec.md** — reglas existentes que el cambio
+  debe preservar. Son restricciones duras, al mismo nivel que los criterios
+  de aceptación. Releerlas ANTES de tocar el objeto.
+
+No hagas cambios fuera del alcance.
+
+Escalera YAGNI antes de escribir código nuevo (coherente con la escalera de
+decisión de `design.md`): ¿necesita existir? → ¿ya existe? → ¿feature nativa? →
+¿cambio mínimo? → recién entonces, objeto nuevo. El código más barato es el que
+no se escribe.
+
+## Prohibido salvo petición explícita
+
+- refactors grandes
+- cambios de arquitectura
+- renombrado masivo
+- limpieza de código no relacionada
+- cambio de contratos públicos
+- cambio de estructura de carpetas
+- migraciones destructivas
+- optimizaciones no pedidas
+- cambios visuales no solicitados
+- cambios en lógica de negocio no requerida
+- **eliminar, "simplificar" o reinterpretar reglas de negocio existentes** —
+  aunque parezcan innecesarias. Si una regla existente estorba al cambio:
+  ESCALAR (`REQUIERE DECISIÓN` con la regla citada y por qué estorba). El
+  implementador NUNCA decide por sí mismo que una regla "ya no era necesaria".
+- **inventar reglas de negocio nuevas** que no estén en spec.md/design.md
+- crear capas nuevas sin necesidad
+- crear interfaces para una sola implementación
+- crear helpers genéricos para un solo uso
+- crear servicios nuevos cuando ya existe uno adecuado
+- dividir código innecesariamente
+- agregar dependencias nuevas sin justificación
+- optimizar prematuramente
+- generalizar lógica que solo se usa una vez
+
+## Permitido
+
+Puedes mejorar el diseño solo si:
+
+- reduce riesgo real
+- corrige duplicación significativa
+- evita bug evidente
+- sigue patrón existente del proyecto
+- es necesario para cumplir el requerimiento
+
+## Antes de agregar algo nuevo — Escalera de decisión
+
+Verifica la **escalera de decisión** (`sdd-toolkit/core/methodology.md`, regla 6;
+el peldaño lo prescribe `design.md`). Recorrer en orden y detenerse en el primero
+que resuelve:
+
+Peldaños (definición completa en `methodology.md` regla 6 — NO duplicar aquí):
+1 YAGNI · 2 nativo del motor/plataforma · 3 reuso · 4 cambio mínimo ·
+5 código nuevo mínimo → llena la plantilla "Si propones una abstracción nueva" (abajo).
+
+Si `design.md` prescribió un peldaño y el código lo viola (crea donde decía
+reusar), **ESCALAR** (`REQUIERE DECISIÓN`), no decidir por cuenta propia.
+
+## Si detectas mejoras adicionales
+
+No las implementes directo. Repórtalas como:
+
+```md
+### Mejoras opcionales detectadas
+- ...
+```
+
+## Si propones una abstracción nueva
+
+Justifica:
+
+```md
+### Justificación de nueva abstracción
+- Problema:
+- Alternativas revisadas:
+- Por qué es necesaria:
+```

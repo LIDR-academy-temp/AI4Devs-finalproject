@@ -1,0 +1,142 @@
+﻿---
+description: Gestión de contexto del proyecto y ubicaciones obligatorias de planeación
+alwaysApply: true
+---
+
+# Project Context Rules
+
+## Ruta de Contextos
+
+Los archivos de contexto del proyecto se guardan siempre en:
+
+`<RUTA_CONTEXTOS>\`
+
+`<REPO_SQL>` es un workspace de scripts. No inicializar git ni crear `.planning` dentro de `<REPO_SQL>`.
+
+## Inicio de Conversación
+
+Al iniciar cualquier sesión:
+
+1. Determinar el proyecto actual.
+2. Buscar un archivo `.md` de contexto correspondiente al proyecto en la ruta de contextos.
+3. Si existe, usarlo como fuente de verdad para dominio, convenciones, objetos existentes, decisiones técnicas y restricciones.
+4. Si hay múltiples candidatos o no es posible determinar el correcto, preguntar cuál usar. No asumir.
+5. Si no existe, continuar con el estándar y crear el contexto en la primera modificación.
+6. Antes de abrir un archivo completo, consultar `_graph.md` (y `code_graph.py` /
+   `sweep_graph.py`) para ubicar el símbolo o la relación. Leer el archivo entero
+   solo cuando el grafo no basta. Evita releer objetos ya mapeados.
+
+## Después de Cada Modificación
+
+Cada vez que se modifique SQL, lógica SQL, API u objetos relacionados:
+
+- Actualizar el contexto existente, o crear uno nuevo si no existe.
+- Documentar hechos verificados del repositorio. No inventar objetos, lógica ni historia.
+- Registrar fecha, ticket o motivo, decisión técnica y riesgo relevante.
+- Si el ticket incluye **SPs/vistas nuevos o APIs**: aplicar [10_guard_documentacion_tkt_sql_api.mdc](10_guard_documentacion_tkt_sql_api.mdc) (cabeceras SQL + XML controllers + tabla **APIs REST** en `TKT-<id>_*.md`).
+
+## Contenido Mínimo del Contexto
+
+```markdown
+# Contexto del Proyecto
+
+## Propósito / Descripción
+## Convenciones y Estándares del Proyecto
+## Objetos relevantes
+## Decisiones técnicas
+## Riesgos / Consideraciones
+## Registro de cambios de contexto
+- fecha
+- qué cambió
+- por qué
+```
+
+## GSD Planning
+
+Si se requiere planeación por ticket, crearla en el repositorio de contextos, no en `<REPO_SQL>`:
+
+`<RUTA_PLANNING>\tkt-<id>\`
+
+Estructura (solo para tickets complejos multifase):
+
+- `PROJECT.md`
+- `REQUIREMENTS.md`
+- `ROADMAP.md`
+- `STATE.md`
+- `phases/`
+
+Para la mayoría de tickets, la estructura **estándar** generada por `/definir`
+(`_index.md` + `spec.md` en `tkt-<id>/`, luego `design.md`/`impl.md`/`delta.md`) es
+suficiente. La estructura extendida de arriba (`PROJECT/REQUIREMENTS/ROADMAP/STATE/phases`)
+solo aplica al superar el umbral de complejidad (methodology.md).
+
+## .cursor/plans/ (vista rápida Cursor)
+
+La carpeta `.cursor/plans/` es SOLO para el panel Plans de Cursor (acceso rápido en el IDE). **NO** es la fuente de verdad SDD.
+
+- La fuente de verdad siempre está en `<RUTA_PLANNING>\`
+- `.cursor/plans/` puede contener un resumen breve o link al spec real
+- No duplicar el spec completo en ambos lugares
+
+## Entregables por TKT
+
+Archivo:
+
+`<fecha>_<TKT>_Entregables.md`
+
+Contenido mínimo:
+
+- SQL Objects: objeto y tipo.
+- DTOs: archivo y tipo.
+- APIs: ruta real, método (`GET`, `POST`, `DELETE`) y tipo (`NUEVO`, `CAMBIO`).
+
+### Inventario de cambios (control de cambios / cierre)
+
+Para cada TKT (o plan de trabajo) que modifique **SQL y/o APIs <PROYECTO_API>**, además del contexto y Entregables, crear en **<REPO_SQL>** (carpeta del ticket junto a los `.sql`):
+
+`<fecha>_<TKT>_INVENTARIO_CAMBIOS.md`
+
+**Plantilla y reglas:** `<RUTA_CONTEXTOS>\PLANTILLA_INVENTARIO_CAMBIOS_TKT.md`  
+**Ejemplo aplicado:** `Sales/rangoventa/20260506_TKT14522_INVENTARIO_CAMBIOS.md`
+
+Resumen de reglas: objetos en una línea (`sls.Objeto`); omitir secciones sin ítems; DML con **script completo** embebido; sin secciones opcionales de “notas de cabecera” ni SP eliminados salvo que el ticket lo exija; APIs `MÉTODO Ruta`; orden de despliegue al final; enlazar el inventario desde el `.md` de contexto del TKT.
+
+## Fuentes SQL
+
+- Usar `schema.md` como fuente de verdad para objetos SQL (tablas, columnas, SPs, vistas, funciones).
+- **Ubicación**: `<RUTA_CONTEXTOS>\schema.md` (o `schema_<db>.md` si hay múltiples BDs).
+- Usar CSV como apoyo complementario.
+- No depender solo de scripts físicos `.sql`.
+- Algunos SPs pueden existir sin archivo físico en el repo.
+- Validar contra `schema.md`, CSV o base de datos (MCP) antes de usar objetos.
+- Si `schema.md` no existe para el proyecto, marcarlo como pendiente y preguntar al usuario.
+
+## Triggers de actualización de contexto
+
+Actualizar contexto cuando cambie cualquiera de estos:
+
+- arquitectura, endpoints, contratos API, DTOs
+- flujos de negocio, stored procedures, tablas
+- integraciones, webhooks, jobs
+- autenticación/autorización, configuración importante
+- reglas de negocio, procesos batch
+- sincronización Shopify, price lists, puntos/recompensas, órdenes, customers
+
+Regla de mínimo cambio: solo actualizar lo afectado y lo necesario para futuros agentes.
+
+Si el cambio es importante y no existe documentación mínima, crearla con: propósito, flujo, dependencias, riesgos y puntos críticos.
+
+## Checklist Post-Modificación
+
+1. Confirmar si se modificó SQL, lógica o API.
+2. Buscar contexto en `<RUTA_CONTEXTOS>\`.
+3. Actualizar o crear archivo `.md`.
+4. Confirmar al usuario la ruta del contexto actualizado o creado.
+
+Antes de finalizar verificar:
+
+- ¿el contexto quedó desactualizado?
+- ¿hay contratos modificados sin documentar?
+- ¿hay SQL nuevo sin documentación?
+- ¿hay endpoints nuevos sin ejemplo?
+- ¿hay flujos modificados sin explicación?

@@ -1,0 +1,84 @@
+---
+description: Guard de evolución — obliga a invocar meta-sdd al completar tickets y mantener el graph de aprendizaje
+alwaysApply: false
+globs: "**/_index.md"
+---
+
+# Evolution Guard
+
+## Regla principal
+
+Al cerrar un ticket (`/completar`), SIEMPRE ejecutar un análisis de evolución:
+
+1. ¿Este ticket reveló un patrón nuevo?
+2. ¿Hubo fricciones que una rule/agente podría prevenir?
+3. ¿Se repitió algo de tickets anteriores?
+
+Si la respuesta a cualquiera es SÍ → registrar en `_sdd_evolution.md`.
+
+## Cuándo aplicar cambios al SDD
+
+El umbral se evalúa por **cluster de `Tema`** (tag de taxonomía), no por descripción literal.
+Dos observaciones con título diferente pero mismo `Tema` cuentan como 2 para el umbral.
+
+| Evidencia | Acción |
+|-----------|--------|
+| 1 ticket | Registrar como observación en `_sdd_evolution.md` con campo `Tema` |
+| Cluster `Tema` = 2 | Registrar como patrón emergente |
+| Cluster `Tema` ≥ 3 | Proponer formalmente (rule/agente/comando/plantilla) |
+| Aprobación del usuario | Aplicar la propuesta (fase cosecha de `/retrospectiva`) |
+
+## Qué observar por ticket
+
+### En impl.md
+- Ajustes durante implementación → ¿eran prevenibles con mejor design template?
+- Archivos inesperados modificados → ¿alcance mal definido?
+
+### En auditorías
+- Ciclos de corrección > 1 → ¿error prevenible con rule más explícita?
+- Hallazgos recurrentes del mismo tipo → ¿whitelist/blacklist necesaria?
+
+### En pruebas
+- Tests que fallaron por setup incompleto → ¿template de test necesita mejora?
+- Casos edge no previstos → ¿plan de pruebas en design.md necesita más estructura?
+
+### En git-api
+- Rama equivocada detectada → ¿flujo de checkout necesita enforcement?
+- Archivos sensibles en stage → ¿gitignore necesita actualización?
+
+### En seguridad
+- Mismo patrón inseguro repetido → ¿agregar a whitelist/blacklist de auditor-seguridad?
+
+## Archivo de estado
+
+```
+<RUTA_CONTEXTOS>/_sdd_evolution.md
+```
+(variable resuelta desde `sdd.config.yaml → vars.RUTA_CONTEXTOS`; no hardcodear la ruta absoluta)
+
+Este archivo es el "cerebro" del autoaprendizaje. Debe leerse al inicio de cada sesión de `/completar`.
+Para análisis cross-ticket sobre este archivo, usar `/retrospectiva`.
+
+## Formato de evolución
+
+Cada entrada en `_sdd_evolution.md` sigue:
+
+```md
+### <id-secuencial>. <título>
+
+- Tipo: observación / patrón / propuesta / aplicada / rechazada
+- Fecha: yyyy-mm-dd
+- Tickets: TKT-XXXXX, TKT-YYYYY
+- Descripción: <qué se observó>
+- Acción propuesta: <qué hacer> (si aplica)
+- Archivo afectado: <path> (si aplica)
+- Estado: OBSERVACIÓN / PATRÓN / PROPUESTA / APROBADA / APLICADA / RECHAZADA
+- Motivo rechazo: <texto> (si rechazada)
+```
+
+## No hacer
+
+- No inflar el graph con observaciones triviales (typos, formatting)
+- No proponer cambios que contradigan rules existentes sin escalamiento
+- No aplicar cambios sin aprobación explícita del usuario
+- No acumular más de 10 propuestas pendientes — priorizar y limpiar

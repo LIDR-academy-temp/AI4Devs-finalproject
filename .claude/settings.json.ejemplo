@@ -1,0 +1,31 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$ProgressPreference='SilentlyContinue'; $raw=[Console]::In.ReadToEnd(); try { $j=$raw|ConvertFrom-Json } catch { exit 0 }; $p=[string]$j.prompt; if ($p -match '(?i)(\\bSDD\\b|\\bTKT\\b|tkt-|spec\\.md|design\\.md|_index\\.md|delta\\.md|especificaci|\\bticket\\b|dise(ñ|n)a)') { $ctx='Preferencia del usuario: este es trabajo SDD. Aplica la skill austero antes de continuar.'; @{ hookSpecificOutput=@{ hookEventName='UserPromptSubmit'; additionalContext=$ctx } } | ConvertTo-Json -Compress }",
+            "shell": "powershell",
+            "statusMessage": "Verificando contexto SDD..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \".claude\\hooks\\invoke-check-mcp-test.ps1\""
+          },
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \".claude\\hooks\\invoke-check-tests-green.ps1\""
+          }
+        ]
+      }
+    ]
+  }
+}

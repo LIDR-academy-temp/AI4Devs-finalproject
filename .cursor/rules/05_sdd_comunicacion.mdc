@@ -1,0 +1,137 @@
+﻿---
+description: Reglas de comunicación, validación y respuesta en español
+alwaysApply: true
+---
+
+# Communication Rules
+
+## Idioma
+
+- Responder siempre en español.
+
+## Regla General
+
+Responder con el mínimo de tokens sin sacrificar precisión.
+
+| Tipo | Límite |
+| --- | --- |
+| Conversación o dato puntual | 1-3 oraciones |
+| Código SQL generado | Solo código y una línea de contexto si hace falta |
+| Análisis o auditoría técnica | Bullets o tablas, sin párrafos largos |
+| Checklist post-modificación | Solo confirmación obligatoria |
+
+## Siempre
+
+- Ir directo al punto.
+- Usar bullets o tablas cuando ayuden.
+- Incluir solo lo esencial.
+- No usar saludos, cortesías o frases de relleno.
+- No repetir información ya dada.
+- No narrar acciones innecesariamente.
+- Entregar código directamente cuando el usuario pide código.
+- Acción/conclusión primero; el detalle después.
+- Pasos secuenciales numerados; listas de máximo 5 ítems.
+- Sin preámbulos ni tangentes: el primer renglón ya responde.
+
+## Evitar
+
+- "Voy a..."
+- "Ahora procedo..."
+- "Aquí tienes..."
+- "Te explico..."
+- "Espero que ayude..."
+- "En resumen..."
+
+## Excepciones
+
+Expandir solo si:
+
+- El usuario pide explicación detallada.
+- Es una auditoría técnica.
+- Es la primera documentación de una decisión técnica.
+- Omitir detalle causaría ambigüedad.
+
+## Prioridad
+
+Si hay conflicto:
+
+1. Checklist de contexto.
+2. Documentación de decisiones técnicas.
+3. Concisión.
+
+## Validación
+
+- Nunca decir "listo" sin validar.
+- Probar antes de confirmar cuando sea razonable.
+- Si no se pudo probar, decirlo explícitamente.
+
+## Testing
+
+Para cambios relevantes:
+
+- Crear o ajustar pruebas unitarias si aplica.
+- Ejecutarlas antes de confirmar.
+- Solo marcar completo si pasan o si se reporta claramente que no se pudieron ejecutar.
+
+## Frontend Validation
+
+Para cambios frontend React ejecutar:
+
+```powershell
+node_modules\.bin\tsc --noEmit
+node_modules\.bin\vite build --mode development 2>&1 | Select-Object -Last 30
+```
+
+Si falla, corregir antes de responder.
+
+## Mobile Validation
+
+Para cambios Flutter ejecutar:
+
+```bash
+flutter analyze
+flutter test
+```
+
+Si falla, corregir antes de responder.
+
+## Ejemplos
+
+| Mal | Bien |
+| --- | --- |
+| "Voy a crear un SP para ti" | Código SQL directo |
+| "Aquí tienes el código" | Código directo |
+| Párrafo largo para root cause | `Root cause:` + `Fix:` |
+| "Espero que te ayude" | Omitir cierre |
+
+## Formato obligatorio post-modificación
+
+Cuando se modifique código, responder siempre con:
+
+### Cambio realizado
+- resumen breve
+
+El formato detallado de cierre está en `09_guard_definicion_hecho.mdc`.
+
+Resumen mínimo post-modificación:
+
+### Cambio realizado
+- resumen breve
+
+### Estado final
+- APROBADO / PARCIAL / REQUIERE DECISIÓN / RIESGOSO
+
+## Respuestas de auditoría
+
+Cuando actúes como:
+- auditor-codigo
+- auditor-sql
+- corrector-revision
+
+Usa:
+- bullets
+- hallazgos concretos
+- ubicaciones exactas
+- severidades claras
+
+Evita párrafos largos y explicaciones narrativas.

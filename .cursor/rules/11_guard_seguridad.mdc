@@ -1,0 +1,124 @@
+---
+description: Guard de seguridad obligatorio — OWASP, secrets, injection, auth validation
+alwaysApply: false
+globs: "**/*.{sql,cs,json,yml,yaml,xml,config}"
+---
+
+# Security Guard
+
+Validación de seguridad obligatoria antes de producción.
+
+## Cuándo aplica
+
+Siempre que se genere o modifique:
+- Endpoints API (controllers C#)
+- SQL inline en C# (concatenación de strings)
+- Stored procedures que reciben input externo (`OPENJSON`, parámetros NVARCHAR)
+- Archivos de configuración (`appsettings.json`, `.env`, `web.config`)
+- Cualquier código que maneje auth, tokens o credenciales
+
+## Flujo obligatorio
+
+1. Después de `auditor-sql` y `auditor-codigo`.
+2. Invocar `auditor-seguridad`.
+3. Si `BLOQUEAR` → tarea NO puede avanzar a `LISTO PARA PR`.
+   (`BLOQUEAR` ≡ `RIESGOSO` del ciclo SDD: detiene el ticket, NO se invoca
+   `corrector-revision` — escalada manual directa.)
+4. Si `REQUIERE CAMBIOS` → `corrector-revision` corrige → reaudit.
+5. Máximo 2 ciclos. Si persiste → estado `RIESGOSO`.
+
+## Checklist rápido (para el agente principal)
+
+Antes de finalizar cualquier tarea con código, validar mentalmente:
+
+### SQL Injection
+- [ ] ¿Todo input de usuario pasa por DTO tipado?
+- [ ] ¿Se usan SPs parametrizados o `sp_executesql` con parámetros en lugar de concatenación?
+- [ ] Si el framework obliga `SqlCode +=`: ¿strings tienen `.Replace("'", "''")`? (mitigación mínima, no solución)
+- [ ] ¿No hay `EXEC()` dinámico con input sin sanitizar?
+- [ ] ¿LIKE patterns tienen escape de `%` y `_`?
+- [ ] ¿Identificadores dinámicos (tablas/columnas) usan `QUOTENAME` o allowlist interna?
+
+### Auth
+- [ ] ¿Headers `UserID` + `Authorization` se validan en cada endpoint?
+- [ ] ¿UserID viene del header, NUNCA del body?
+
+### Secrets
+- [ ] ¿No hay connection strings, API keys, tokens en código versionado?
+- [ ] ¿`appsettings.json` solo tiene placeholders o valores no-prod?
+- [ ] ¿`.gitignore` excluye archivos sensibles?
+
+### Data Exposure
+- [ ] ¿Responses no incluyen stack traces en prod?
+- [ ] ¿No se exponen campos internos (passwords, hashes, tokens) en las vistas/SELECTs?
+- [ ] ¿ErrorMessage no revela estructura interna de BD?
+
+### Input Validation
+- [ ] ¿Payloads JSON tienen límite de tamaño implícito?
+- [ ] ¿Campos obligatorios se validan antes de INSERT/UPDATE?
+- [ ] ¿IDs numéricos se validan como `> 0`?
+
+## Archivos NUNCA versionables (verificar en git-api)
+
+```
+appsettings.Production.json
+*.pfx
+*.key
+*.pem
+.env
+secrets.json
+```
+
+Si alguno de estos aparece en `git status` → DETENER commit.
+
+## Patrones seguros del proyecto
+
+### C# — Patrones seguros (preferidos)
+
+```csharp
+// ✅ MEJOR: SP parametrizado — el framework no concatena nada
+cApiRequest.StoredProcedure = "sls.prcGetOrders";
+cApiRequest.AddParameter("@CustomerID", jParameters.CustomerID);  // int, no inyectable
+
+// ✅ MEJOR: sp_executesql con parámetros en SQL dinámico
+cApiRequest.SqlCode = "EXEC sp_executesql N'SELECT * FROM sls.Orders WHERE Name = @Name', N'@Name NVARCHAR(150)', @Name = @pName";
+```
+
+### C# — SQL inline (solo cuando el framework no admite parámetros)
+
+```csharp
+// INT directo — OK (no inyectable por tipo)
+cApiRequest.SqlCode += " AND ID = " + jParameters.ID;
+
+// ⚠ String: Replace es mitigación mínima, NO solución ideal
+cApiRequest.SqlCode += " AND Name = '" + jParameters.Name.Replace("'","''") + "'";
+
+// Boolean casteado — OK
+int nIsActive = Convert.ToBoolean(jParameters.IsActive.ToString()) ? 1 : 0;
+cApiRequest.SqlCode += " AND IsActive = " + nIsActive;
+```
+
+### C# — Siempre inseguro
+
+```csharp
+// 🚫 Query string directo — NUNCA
+cApiRequest.SqlCode += " AND Search = '" + Request.Query["q"] + "'";
+
+// 🚫 LIKE sin escape de ' ni de % / _
+cApiRequest.SqlCode += " AND Name LIKE '%" + jParameters.Name + "%'";
+// ⚠ Mitigación mínima (aún vulnerable a % y _ como wildcards):
+cApiRequest.SqlCode += " AND Name LIKE '%" + jParameters.Name.Replace("'","''") + "%'";
+// ✅ Correcto en SQL dinámico:
+// EXEC sp_executesql N'... LIKE @pat', N'@pat NVARCHAR(200)', @pat = '%' + @Name + '%'
+```
+
+### SQL — Siempre inseguro
+
+```sql
+-- 🚫 EXEC dinámico con variable de input
+DECLARE @sql NVARCHAR(MAX) = N'SELECT * FROM ' + @nvTableName;
+EXEC sp_executesql @sql;
+
+-- ✅ Si se necesita dinámico: usar parametrización
+EXEC sp_executesql @sql, N'@id INT', @id = @iPID;
+```

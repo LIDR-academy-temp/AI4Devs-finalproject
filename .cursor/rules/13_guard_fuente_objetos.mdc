@@ -1,0 +1,63 @@
+---
+description: Regla para resolver SPs y vistas desde la fuente correcta
+alwaysApply: true
+---
+
+# Resolución de SPs y Vistas — Fuente de Verdad
+
+## Prioridad de fuentes (en orden)
+
+1. **Archivo `.sql` en la carpeta indicada** — si el usuario especifica una ruta de carpeta y existe el `.sql` ahí, usarlo como fuente de verdad.
+2. **Base de datos vía MCP** — si no hay `.sql` local, buscar el objeto en la BD usando `mcp__<MCP_TEST>__search_objects` o `mcp__<MCP_TEST>__execute_sql` (servidor `<MCP_TEST>`; usar `<MCP_PROD>` para producción).
+3. **Archivos de contexto** — SOLO como último recurso o para entender dominio/negocio (NO para leer la definición del objeto).
+
+## Regla explícita
+
+- **NUNCA asumir** la definición de un SP o vista desde contextos `.md` o memoria.
+- **SIEMPRE** buscar la definición real en BD (MCP) antes de modificar, auditar o generar código que dependa de ella.
+- Los archivos de contexto sirven para entender **qué hace** el objeto, no para conocer su estructura real de columnas/parámetros.
+
+## Flujo de resolución
+
+```
+¿El usuario indicó carpeta de trabajo?
+  └─ SÍ → ¿Existe <NombreSP>.sql en esa carpeta?
+               └─ SÍ → Leer el .sql local
+               └─ NO → Buscar en BD vía MCP
+  └─ NO → Buscar en BD vía MCP
+```
+
+## MCP — Herramientas disponibles
+
+| Herramienta | Uso |
+|-------------|-----|
+| `mcp__<MCP_TEST>__search_objects` | Buscar SP/vista por nombre |
+| `mcp__<MCP_TEST>__execute_sql` | Obtener definición con `sp_helptext` o `OBJECT_DEFINITION` |
+
+### Queries tipo para obtener definición
+
+```sql
+-- SP
+SELECT OBJECT_DEFINITION(OBJECT_ID('schema.prcNombreSP'))
+
+-- Vista
+SELECT OBJECT_DEFINITION(OBJECT_ID('schema.vsNombreVista'))
+
+-- Columnas de tabla/vista
+SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = 'schema' AND TABLE_NAME = 'NombreObjeto'
+ORDER BY ORDINAL_POSITION
+```
+
+## Cuándo aplica
+
+- Al modificar un SP existente
+- Al auditar (`auditor-sql`, `auditor-codigo`)
+- Al generar código C# que llama un SP (verificar firma de parámetros)
+- Al crear una vista que depende de una tabla/vista existente
+- Al escribir pruebas T-SQL sobre un SP
+
+## Excepción permitida
+
+Si se está **creando** un SP o vista nuevo desde cero (no existe en BD), tomar la spec de `design.md` o `spec.md` del ticket. No buscar en BD lo que no existe.
