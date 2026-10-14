@@ -1,0 +1,11 @@
+# Gitleaks configuration (extends the default rules).
+# The only allowed plaintext credential is the throwaway password of the
+# ephemeral SQL Server service used by CI; it never reaches a real environment.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Throwaway CI credentials for the ephemeral SQL Server service"
+paths = ['''\.github/workflows/ci\.yml''']
+regexes = ['''Ci_Passw0rd2026''']
