@@ -14,7 +14,9 @@ export default defineConfig({
     seed: 'tsx prisma/seed.ts',
   },
   datasource: {
-    // Single source of truth: the same DB_* variables the seed uses (see .env.example)
-    url: `sqlserver://${process.env.DB_HOST ?? 'localhost'}:${process.env.DB_PORT ?? '1433'};database=${process.env.DB_NAME ?? 'ReconTool'};user=${process.env.DB_USER ?? 'recon_app'};password={${process.env.RECON_APP_PASSWORD ?? ''}};encrypt=true;trustServerCertificate=true`,
+    // DATABASE_URL wins when set (CI); otherwise build it from the same DB_* variables the seed uses (see .env.example)
+    url:
+      process.env.DATABASE_URL ??
+      `sqlserver://${process.env.DB_HOST ?? 'localhost'}:${process.env.DB_PORT ?? '1433'};database=${process.env.DB_NAME ?? 'ReconTool'};user=${process.env.DB_USER ?? 'recon_app'};password={${process.env.RECON_APP_PASSWORD ?? ''}};encrypt=true;trustServerCertificate=true`,
   },
 })
