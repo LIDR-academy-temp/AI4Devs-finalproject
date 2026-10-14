@@ -21,8 +21,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
-        env:
-          DATABASE_URL: "sqlserver://localhost:1433;database=ci;user=ci;password=ci;trustServerCertificate=true"
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
@@ -36,19 +34,19 @@ jobs:
         image: mcr.microsoft.com/mssql/server:2022-latest
         env:
           ACCEPT_EULA: "Y"
-          MSSQL_SA_PASSWORD: "Ci_Passw0rd!2026"
+          MSSQL_SA_PASSWORD: "Ci_Passw0rd2026"
           MSSQL_PID: Developer
         ports: ["1433:1433"]
         options: >-
-          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Ci_Passw0rd!2026' -C -Q 'SELECT 1' -b -o /dev/null"
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Ci_Passw0rd2026' -C -Q 'SELECT 1' -b -o /dev/null"
           --health-interval 10s --health-timeout 5s --health-retries 12
     env:
-      DATABASE_URL: "sqlserver://localhost:1433;database=ReconTool;user=sa;password=Ci_Passw0rd!2026;encrypt=true;trustServerCertificate=true"
+      DATABASE_URL: "sqlserver://localhost:1433;database=ReconTool;user=sa;password=Ci_Passw0rd2026;encrypt=true;trustServerCertificate=true"
       DB_HOST: localhost
       DB_PORT: "1433"
       DB_NAME: ReconTool
       DB_USER: sa
-      DB_PASSWORD: "Ci_Passw0rd!2026"
+      RECON_APP_PASSWORD: "Ci_Passw0rd2026"
       SEED_PASSWORD: "Ci_Seed!2026"
     steps:
       - uses: actions/checkout@v5
@@ -61,7 +59,7 @@ jobs:
       - name: create database
         run: |
           docker exec ${{ job.services.mssql.id }} /opt/mssql-tools18/bin/sqlcmd \
-            -S localhost -U sa -P 'Ci_Passw0rd!2026' -C \
+            -S localhost -U sa -P 'Ci_Passw0rd2026' -C \
             -Q "IF DB_ID('ReconTool') IS NULL CREATE DATABASE ReconTool"
       - run: pnpm db:generate
       - name: migrate + seed (proof that stage 0 is green)
