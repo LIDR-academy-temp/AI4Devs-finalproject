@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm lint*)",
+      "Bash(pnpm typecheck*)",
+      "Bash(pnpm test*)",
+      "Bash(pnpm --filter * test*)",
+      "Bash(pnpm db:generate*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Read(**)",
+      "Edit(backend/src/**)",
+      "Edit(frontend/src/**)",
+      "Edit(packages/**)",
+      "Edit(e2e/**)",
+      "Edit(openspec/**)",
+      "Edit(docs/**)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Bash(prisma migrate reset*)",
+      "Bash(pnpm db:reset*)",
+      "Bash(git push --force*)",
+      "Bash(rm -rf *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "bash .claude/hooks/guard-db.sh" }]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [{ "type": "command", "command": "bash .claude/hooks/guard-schema.sh" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [{ "type": "command", "command": "bash .claude/hooks/biome-on-save.sh" }]
+      }
+    ]
+  }
+}

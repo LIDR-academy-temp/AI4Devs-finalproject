@@ -1,0 +1,94 @@
+{
+  "sample": "batch-clean",
+  "description": "Batch completo sin incidencias, en un solo archivo con el formato de la plantilla.",
+  "account": "ProviderA-USD",
+  "files": ["Recon_Template_ProviderA-USD_batch-clean.xlsx"],
+  "import": {
+    "files": 1,
+    "sheets": {
+      "transactions": ["APP", "DEC", "CHB", "REF", "RDR", "RR"],
+      "batch_fees": ["Other Fees"],
+      "ignored": ["Duplicate Corrections", "CHB Alerts", "Settings"]
+    }
+  },
+  "rows": {
+    "read": 783,
+    "ignoredEmptyId": 3,
+    "matched": 780,
+    "unmatched": 0,
+    "ambiguous": 0
+  },
+  "byCycle": {
+    "E": 450,
+    "I": 10,
+    "R": 320
+  },
+  "ranges": {
+    "APP": ["2026-09-28", "2026-10-07"],
+    "DEC": ["2026-09-28", "2026-10-07"],
+    "I": ["2026-09-28", "2026-10-11"],
+    "R": ["2026-03-31", "2026-04-09"]
+  },
+  "warnings": {
+    "newChannels": ["RAM-07"],
+    "nonUsdCurrency": 0,
+    "negativeAmounts": 0,
+    "unknownFeeTypes": []
+  },
+  "validations": {
+    "provider_mismatch": 0,
+    "non_recorded_adjustment": 0,
+    "duplicate_in_batch": 0,
+    "status_collision_in_batch": 0,
+    "duplicate_across_batches": 0,
+    "status_collision_across_batches": 0,
+    "missing_previous_to_batch": {
+      "E": 0,
+      "I": 0,
+      "R": 0
+    },
+    "missing_in_range": {
+      "E": 0,
+      "I": 0,
+      "R": 0
+    }
+  },
+  "batchFeesPrefilled": [
+    {
+      "feeType": "Wire Fee",
+      "amount": 25
+    },
+    {
+      "feeType": "Settlement Fee",
+      "amount": 15
+    }
+  ],
+  "proposedBatchNo": 123,
+  "summary": {
+    "qty": {
+      "deposit": 340,
+      "declined": 110,
+      "chargeback": 2,
+      "refund": 6,
+      "rdr": 2,
+      "reservesReleased": 320
+    },
+    "amounts": {
+      "deposit": 39181.07,
+      "chargeback": 193.86,
+      "refund": 843.99,
+      "reserveHeld": 3918.27,
+      "reserveReleased": 4314.55
+    },
+    "fees": {
+      "deposit": 4139.25,
+      "declined": 27.5,
+      "chargeback": 90,
+      "refund": 30,
+      "rdr": 50,
+      "mdrIncludedInDeposit": 3918.11,
+      "total": 4336.75
+    },
+    "amountPayable": 34202.75
+  }
+}

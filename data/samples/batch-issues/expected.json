@@ -1,0 +1,86 @@
+{
+  "sample": "batch-issues",
+  "description": "Batch con una incidencia de cada tipo no bloqueante, un canal nuevo, un ID desconocido, un importe negativo y un tipo de fee fuera de catálogo.",
+  "account": "ProviderB-Main",
+  "files": ["Recon_Template_ProviderB-Main_batch-issues.xlsx"],
+  "import": {
+    "files": 1
+  },
+  "rows": {
+    "read": 772,
+    "ignoredEmptyId": 3,
+    "matched": 768,
+    "unmatched": 1,
+    "ambiguous": 0
+  },
+  "byCycle": {
+    "E": 440,
+    "I": 10,
+    "R": 317
+  },
+  "warnings": {
+    "newChannels": ["RAM-13"],
+    "negativeAmounts": 1,
+    "unknownFeeTypes": ["Fraud Monitoring Fee"]
+  },
+  "validations": {
+    "provider_mismatch": 0,
+    "non_recorded_adjustment": 1,
+    "duplicate_in_batch": 1,
+    "status_collision_in_batch": 1,
+    "duplicate_across_batches": 1,
+    "status_collision_across_batches": 1,
+    "missing_previous_to_batch": {
+      "E": 10,
+      "I": 0,
+      "R": 0
+    },
+    "missing_in_range": {
+      "E": 3,
+      "I": 0,
+      "R": 3
+    }
+  },
+  "defaults": {
+    "duplicate_in_batch": "first occurrence included, second excluded",
+    "duplicate_across_batches": "current excluded",
+    "status_collision_in_batch": "both included",
+    "status_collision_across_batches": "current included",
+    "non_recorded_adjustment": "included"
+  },
+  "affectedIds": {
+    "duplicate_in_batch": ["441706751475644"],
+    "status_collision_in_batch": ["911545593909470"],
+    "missing_previous_to_batch_DEC": [
+      "292185165085382",
+      "769777669120974",
+      "272334406018044",
+      "441792335833448",
+      "508242204037850",
+      "781644342693693",
+      "381282680688092",
+      "719068411427320",
+      "644101363117982",
+      "818633165525879"
+    ],
+    "duplicate_across_batches": ["504712738863260"],
+    "status_collision_across_batches": ["381797111970492"],
+    "non_recorded_adjustment": ["281520820250015"],
+    "missing_in_range_E": ["251891807220713", "539230812967430", "517395598166932"],
+    "missing_in_range_R": ["357030499063804", "961596230548826", "544489255846527"],
+    "unmatched": ["4260465812403708"],
+    "negativeAmount": ["762555978985823"]
+  },
+  "batchFeesPrefilled": [
+    {
+      "feeType": "Wire Fee",
+      "amount": 25
+    },
+    {
+      "feeType": "Fraud Monitoring Fee",
+      "amount": 99
+    }
+  ],
+  "proposedBatchNo": 52,
+  "note": "Los totales del summary dependen de las decisiones de inclusión y de la política release_on_chargeback de la cuenta; no se fijan aquí."
+}

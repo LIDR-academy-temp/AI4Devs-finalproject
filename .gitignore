@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+backend/src/generated/
+data/uploads/
+data/samples/plan.json
+.obsidian/
+*.log
+.DS_Store
+Thumbs.db
+playwright-report/
+test-results/

@@ -1,0 +1,68 @@
+{
+  "sample": "legacy-provider",
+  "description": "Archivo con nombres de hoja y columna antiguos (TRX / Fail / CB / Summary, Merchant Order No#, Order Status) resuelto por el conjunto de reglas \"Provider C legacy\"; gateway UUID; un CHB 2 con importe excluido.",
+  "account": "ProviderC-Alt",
+  "files": ["Legacy_ProviderC-Alt_batch.xlsx"],
+  "ruleSet": "Provider C legacy",
+  "sheets": {
+    "TRX": {
+      "kind": "transactions",
+      "cycle": "E",
+      "statusBy": "column"
+    },
+    "Fail": {
+      "kind": "transactions",
+      "cycle": "E",
+      "status": "Declined"
+    },
+    "CB": {
+      "kind": "transactions",
+      "cycle": "I",
+      "statusBy": "column"
+    },
+    "Summary": {
+      "kind": "ignore"
+    }
+  },
+  "columns": {
+    "Merchant Order No#": "transactionId",
+    "Order Status": "status",
+    "Amount USD": "amount"
+  },
+  "rows": {
+    "read": 81,
+    "matched": 81,
+    "unmatched": 0
+  },
+  "byCycle": {
+    "E": 80,
+    "I": 1,
+    "R": 0
+  },
+  "statusAliases": {
+    "Failed": "Declined",
+    "CHB": "Chargeback",
+    "CHB 2": "Chargeback (excludeAmount)"
+  },
+  "excludeAmountRows": ["df14616d-4b26-4ffb-9984-72717ebff6a6"],
+  "validations": {
+    "provider_mismatch": 0,
+    "non_recorded_adjustment": 0,
+    "duplicate_in_batch": 0,
+    "status_collision_in_batch": 0,
+    "duplicate_across_batches": 0,
+    "status_collision_across_batches": 0,
+    "missing_previous_to_batch": {
+      "E": 0,
+      "I": 0,
+      "R": 0
+    },
+    "missing_in_range": {
+      "E": 0,
+      "I": 0,
+      "R": 0
+    }
+  },
+  "fees": "La cuenta se creó sin fees: todos los fees transaccionales son 0 y el summary lo muestra como advertencia.",
+  "proposedBatchNo": 7
+}
