@@ -30,18 +30,37 @@
     "PreToolUse": [
       {
         "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "bash .claude/hooks/guard-db.sh" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/guard-db.sh"
+          }
+        ]
       },
       {
         "matcher": "Edit|Write",
-        "hooks": [{ "type": "command", "command": "bash .claude/hooks/guard-schema.sh" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/guard-schema.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "hooks": [{ "type": "command", "command": "bash .claude/hooks/biome-on-save.sh" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/biome-on-save.sh"
+          }
+        ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "frontend-design@anthropic-plugin-directory": true,
+    "typescript-lsp@claude-plugins-official": true
   }
 }
