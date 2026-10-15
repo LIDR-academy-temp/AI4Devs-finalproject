@@ -53,8 +53,8 @@ Orden test-first: en cada grupo con lógica, el test se escribe y se ve fallar (
 ## 8. Integración contra SQL Server y CI
 
 - [x] 8.1 Escribir `test/integration/auth.int.test.ts` sobre la base sembrada (con `upsert` de `inactive_test` en `beforeAll` y limpieza de sus filas de `User`, `AuditLog` y `RefreshToken` en `afterAll`) que cubra los cuatro criterios del issue: (1) `analyst` login → `me` con rol y permisos; (2) contraseña mala e `inactive_test` → 401 con el mismo cuerpo; (3) ruta de prueba con `requirePermission` sin token → 401 y con `viewer` → 403; (4) refresh devuelve par nuevo, el anterior ya no sirve, y tras logout el último tampoco; además, filas `auth.login.success`/`failure` en `AuditLog` (una con `userId NULL` para `ghost`) sin la contraseña en `detailJson`; verificar en local con `vitest --project integration`
-- [ ] 8.2 Añadir `JWT_SECRET` a `.env.example` (valor de ejemplo marcado como no secreto) y al job `integration` de `.github/workflows/ci.yml`; quitar `continue-on-error`; verificar con `pnpm lint && pnpm typecheck && pnpm test` en local y CI verde en el PR
-- [ ] 8.3 Prueba manual: `pnpm dev`, `curl` a `/api/v1/health`, login con `admin`, `me` con el token, abrir `/docs`; anotar el resultado en el PR
+- [x] 8.2 Añadir `JWT_SECRET` a `.env.example` (valor de ejemplo marcado como no secreto) y al job `integration` de `.github/workflows/ci.yml`; quitar `continue-on-error`; verificar con `pnpm lint && pnpm typecheck && pnpm test` en local y CI verde en el PR
+- [x] 8.3 Prueba manual: `pnpm dev`, `curl` a `/api/v1/health`, login con `admin`, `me` con el token, abrir `/docs`; anotar el resultado en el PR
 
 ## Workflow follow-up
 
