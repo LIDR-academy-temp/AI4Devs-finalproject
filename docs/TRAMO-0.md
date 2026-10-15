@@ -58,4 +58,4 @@ Primer commit: `chore: bootstrap tramo 0 (prisma schema, seed, samples, infra, t
 
 1. `git add -A && git commit` (el hook de commit exige Conventional Commits).
 2. Abrir los issues del tramo 1–4 (README §6 y roadmap).
-3. Primer change de OpenSpec: `/opsx:proposal auth-login` (tramo 1).
+3. Primer change de OpenSpec: `/opsx:propose auth-login` (tramo 1).

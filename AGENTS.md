@@ -31,7 +31,7 @@ de programar.
 
 ## Cómo trabajamos
 
-1. **Una feature = un change de OpenSpec** (`/opsx:proposal` → revisión humana → `/opsx:apply` → `/opsx:verify` → `/opsx:archive`). Sin proposal aprobado no se escribe código de feature.
+1. **Una feature = un change de OpenSpec** (`/opsx:propose` → revisión humana → `/opsx:apply` → `/opsx:verify` → `/opsx:archive`). Sin proposal aprobado no se escribe código de feature.
 2. **TDD en el dominio**: validaciones, motor de pareo, cálculo de fees y summary se escriben test-first con Vitest, usando `data/samples/*/expected.json` como oráculo. Rompe el test a propósito una vez para comprobar que falla.
 3. **Rama por feature** (`feat/<modulo>-<tema>`), PR hacia `feature/entrega-2-MVP` con la plantilla; CI verde obligatorio.
 4. **Sesión nueva por paso** (explorar → planificar → ejecutar). Antes de tocar el esquema o una migración, para y pide confirmación.

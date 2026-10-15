@@ -4,11 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
-    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/src/server.js",
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest",
+    "test": "vitest run --project unit --passWithNoTests",
+    "test:integration": "vitest run --project integration",
+    "test:watch": "vitest --project unit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
@@ -19,11 +21,18 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@fastify/jwt": "^10.2.4",
+    "@fastify/swagger": "^9.9.2",
+    "@fastify/swagger-ui": "^6.1.2",
     "@prisma/adapter-mssql": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "@recon/shared": "workspace:*",
     "argon2": "^0.44.0",
     "dotenv": "^18.0.7",
     "fastify": "^5.6.0",
+    "fastify-plugin": "^6.0.1",
+    "fastify-type-provider-zod": "^7.0.0",
+    "openapi-types": "^12.1.3",
     "zod": "^4.1.0"
   },
   "devDependencies": {

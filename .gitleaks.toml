@@ -8,4 +8,8 @@ useDefault = true
 [allowlist]
 description = "Throwaway CI credentials for the ephemeral SQL Server service"
 paths = ['''\.github/workflows/ci\.yml''']
-regexes = ['''Ci_Passw0rd2026''']
+regexes = [
+  '''Ci_Passw0rd2026''',
+  # Deliberately too-short JWT_SECRET used by the loadEnv test (backend/src/config/env.test.ts)
+  '''short-secret-31-characters-long''',
+]

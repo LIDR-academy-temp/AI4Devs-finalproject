@@ -48,6 +48,8 @@ jobs:
       DB_USER: sa
       RECON_APP_PASSWORD: "Ci_Passw0rd2026"
       SEED_PASSWORD: "Ci_Seed!2026"
+      # Throwaway signing secret for the ephemeral CI environment (>= 32 characters).
+      JWT_SECRET: "ci-only-throwaway-jwt-secret-not-real-0001"
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -66,8 +68,7 @@ jobs:
         run: |
           pnpm db:migrate
           pnpm db:seed
-      - run: pnpm --filter @recon/backend test -- --project integration
-        continue-on-error: true  # until integration tests exist
+      - run: pnpm --filter @recon/backend test:integration
 
   security:
     name: gitleaks

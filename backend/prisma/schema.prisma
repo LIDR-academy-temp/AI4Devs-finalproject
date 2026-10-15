@@ -742,6 +742,7 @@ model User {
   batchesUndone     SettlementBatch[]    @relation("BatchUndoneBy")
   batchFees         SettlementBatchFee[]
   auditEntries      AuditLog[]
+  refreshTokens     RefreshToken[]
 }
 
 model UserMerchant {
@@ -756,15 +757,30 @@ model UserMerchant {
 
 model AuditLog {
   auditId    BigInt   @id @default(autoincrement())
-  userId     Int
+  /// NULL when the actor is unknown (e.g. login attempt with a nonexistent userName)
+  userId     Int?
   action     String   @db.VarChar(60)
   entityType String   @db.VarChar(40)
   entityId   String   @db.VarChar(64)
   detailJson String?  @db.NVarChar(Max)
   createdAt  DateTime @default(now()) @db.DateTime2
 
-  user User @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+  user User? @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([entityType, entityId])
   @@index([userId, createdAt])
+}
+
+/// Issued refresh tokens, by jti. Only the id is stored, never the token itself.
+model RefreshToken {
+  /// = jti claim of the refresh JWT
+  tokenId   String    @id @db.UniqueIdentifier
+  userId    Int
+  expiresAt DateTime  @db.DateTime2
+  revokedAt DateTime? @db.DateTime2
+  createdAt DateTime  @default(now()) @db.DateTime2
+
+  user User @relation(fields: [userId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([userId, revokedAt])
 }

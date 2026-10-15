@@ -11,7 +11,7 @@ escribir código; no inventes reglas de negocio.
 1. **Localiza la regla.** Lee en `README.md` la sección que gobierna la feature (1.2 reglas de
    negocio, 3.2 entidad, 3.3 validación, 4 endpoint, 5 historia, 6 ticket) y la spec viva en
    `openspec/specs/<modulo>/spec.md`. Resume en 5 líneas qué cambia y qué no.
-2. **Proposal.** Ejecuta `/opsx:proposal <nombre-kebab>`. El proposal debe citar las secciones
+2. **Proposal.** Ejecuta `/opsx:propose <nombre-kebab>`. El proposal debe citar las secciones
    del README que implementa, listar los archivos que tocará y los `expected.json` de
    `data/samples/` que servirán de oráculo. Para y espera la aprobación humana.
 3. **Rama.** `git checkout -b feat/<modulo>-<tema>` desde `feature/entrega-2-MVP`.
