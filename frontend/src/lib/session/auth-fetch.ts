@@ -19,6 +19,8 @@ export function createAuthFetch(session: Session) {
     const sentWith = session.getAccessToken()
     const response = await fetch(withToken(request, sentWith))
     if (response.status !== 401) return response
+    // Signed out (here or in another tab) while the request was in flight: nothing to renew or expire.
+    if (!session.hasSession()) return response
 
     // Another request of this tab may have renewed while this one was in flight: then just repeat.
     const renewed = session.getAccessToken() !== sentWith || (await session.renew())

@@ -1,13 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
 import { createRoute } from '@tanstack/react-router'
 import { screen, waitFor } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { HttpResponse, http } from 'msw'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import { strings as loginStrings } from '@/features/auth/strings'
 import { api, unwrap } from '@/lib/api/client'
 import { session } from '@/lib/session/session'
 import { PASSWORD } from '@/test/msw/fixtures'
 import { db, issueTokens } from '@/test/msw/handlers'
 import { recordRequests } from '@/test/msw/record'
+import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 import { strings } from './layout/strings'
 import { appRoute } from './router'
@@ -59,6 +61,34 @@ describe('session guard', () => {
     await user.click(screen.getByRole('button', { name: loginStrings.submit }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/probe'))
     expect(await screen.findByText('Probe loaded 1')).toBeInTheDocument()
+  })
+
+  it('a manual sign-out with a request in flight ends on Login without the "expired" notice', async () => {
+    let answer: () => void = () => {}
+    const answered = new Promise<void>((resolve) => {
+      answer = resolve
+    })
+    server.use(
+      http.get('*/api/v1/merchants', async () => {
+        await answered
+        return HttpResponse.json({ code: 'unauthorized', message: 'Unauthorized' }, { status: 401 })
+      }),
+    )
+    const expired = vi.fn()
+    onTestFinished(session.onExpire(expired))
+    const { user, router } = renderApp('/probe', { as: 'analyst', extraRoutes })
+    expect(await screen.findByText('Probe loading')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: strings.signOut }))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/login'))
+    answer()
+
+    await waitFor(() => expect(screen.getByRole('button', { name: loginStrings.submit })).toBeInTheDocument())
+    // Let the answered request finish going through authFetch before checking nothing expired.
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(expired).not.toHaveBeenCalled()
+    expect(screen.queryByText(loginStrings.sessionExpired)).not.toBeInTheDocument()
+    expect(router.state.location.search).not.toMatchObject({ reason: 'expired' })
   })
 })
 
