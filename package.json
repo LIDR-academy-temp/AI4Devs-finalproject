@@ -18,6 +18,7 @@
     "lint:fix": "biome check --write .",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
+    "openapi:export": "pnpm --filter @recon/backend openapi:export",
     "samples:plan": "tsx data/samples/plan.ts > data/samples/plan.json",
     "prepare": "husky"
   },
