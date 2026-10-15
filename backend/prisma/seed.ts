@@ -102,6 +102,8 @@ async function wipe() {
     'Transaction',
     'Channel',
     'Provider',
+    // UserMerchant references Merchant: it must go first.
+    'UserMerchant',
     'Merchant',
     'Gateway',
     'FeeType',
@@ -109,7 +111,6 @@ async function wipe() {
     'SettlementStatus',
     'Cycle',
     'RefreshToken',
-    'UserMerchant',
     'User',
     'RolePermission',
     'Role',
