@@ -18,6 +18,16 @@ schema: spec-driven
 #       - Always state what is out of scope
 #     tasks:
 #       - Break tasks into chunks of max 2 hours
+rules:
+  specs:
+    # Tramo 0 specs still have requirements without scenarios (issue #21); they are completed change by change.
+    - >-
+      When a change touches an existing capability, its delta spec must leave every requirement of that
+      capability with at least one "#### Scenario:" (add MODIFIED requirements for the ones that lack it),
+      so that `openspec validate <capability> --type spec` passes after archiving.
+    - >-
+      Derive scenarios from README §3.3 and the acceptance criteria of the §6 tickets, using
+      data/samples/* and their expected.json as the oracle when they apply; do not invent business rules.
 
 # Per-operation guidance (optional)
 # Add advisory guidance for how apply and archive work should be conducted.
