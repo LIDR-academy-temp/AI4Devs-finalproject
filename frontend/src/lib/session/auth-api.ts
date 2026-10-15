@@ -1,12 +1,13 @@
 // Login, identity and logout against /api/v1/auth (openspec/specs/auth).
-import type { LoginRequest } from '@recon/shared'
+import { type LoginRequest, TokenPair } from '@recon/shared'
 import { api, publicApi, unwrap } from '@/lib/api/client'
 import type { Me } from '@/lib/api/types'
 import { type Session, session as tabSession } from './session'
 
-/** Logs in and shares the session with the other tabs. */
+/** Logs in and shares the session with the other tabs. A malformed token pair throws and nothing is stored. */
 export async function login(credentials: LoginRequest, session: Session = tabSession): Promise<void> {
-  session.signIn(await unwrap(publicApi.POST('/api/v1/auth/login', { body: credentials })))
+  // Validated like the refresh answer (TokenPair of @recon/shared), never trusted as typed.
+  session.signIn(TokenPair.parse(await unwrap(publicApi.POST('/api/v1/auth/login', { body: credentials }))))
 }
 
 export function fetchMe(): Promise<Me> {

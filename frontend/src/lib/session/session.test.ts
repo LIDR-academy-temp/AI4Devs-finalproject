@@ -144,6 +144,18 @@ describe('token storage', () => {
 })
 
 describe('login and logout', () => {
+  it('login rejects a malformed token pair and stores nothing from it', async () => {
+    server.use(
+      http.post('*/api/v1/auth/login', () => HttpResponse.json({ accessToken: 42, refreshToken: '', expiresIn: -1 })),
+    )
+
+    await expect(login({ userName: 'analyst', password: PASSWORD })).rejects.toThrow()
+
+    expect(session.getAccessToken()).toBeNull()
+    expect(session.hasSession()).toBe(false)
+    expect(localStorage.length).toBe(0)
+  })
+
   it('login stores the pair returned by the API', async () => {
     await login({ userName: 'analyst', password: PASSWORD })
 
