@@ -4,9 +4,9 @@ Orden test-first: en cada grupo con lógica, el test se escribe y se ve fallar (
 
 ## 1. Dependencias y configuración de tests
 
-- [ ] 1.1 Añadir a `backend` `@fastify/jwt`, `@fastify/swagger`, `@fastify/swagger-ui`, `fastify-plugin`, `fastify-type-provider-zod` (versión con soporte Zod 4) y `@recon/shared` (`workspace:*`); verificar con `pnpm install` y `pnpm typecheck` en verde
-- [ ] 1.2 Crear `backend/vitest.config.ts` con proyectos `unit` (`src/**/*.test.ts`) e `integration` (`test/integration/**/*.int.test.ts`); hacer que `pnpm test` ejecute solo `unit`; verificar con `pnpm --filter @recon/backend test` (pasa sin tests) y `vitest --project integration --passWithNoTests`
-- [ ] 1.3 Activar `suspicious/noConsole: error` en `biome.json` para `backend/src` (excluyendo `src/generated`); verificar que `pnpm lint` falla con un `console.log` temporal y pasa al quitarlo
+- [x] 1.1 Añadir a `backend` `@fastify/jwt`, `@fastify/swagger`, `@fastify/swagger-ui`, `fastify-plugin`, `fastify-type-provider-zod` (versión con soporte Zod 4) y `@recon/shared` (`workspace:*`); verificar con `pnpm install` y `pnpm typecheck` en verde
+- [x] 1.2 Crear `backend/vitest.config.ts` con proyectos `unit` (`src/**/*.test.ts`) e `integration` (`test/integration/**/*.int.test.ts`); hacer que `pnpm test` ejecute solo `unit`; verificar con `pnpm --filter @recon/backend test` (pasa sin tests) y `vitest --project integration --passWithNoTests`
+- [x] 1.3 Activar `suspicious/noConsole: error` en `biome.json` para `backend/src` (excluyendo `src/generated`); verificar que `pnpm lint` falla con un `console.log` temporal y pasa al quitarlo
 
 ## 2. Esquemas compartidos
 

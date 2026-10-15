@@ -32,5 +32,17 @@
       },
       "preset": "recommended"
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["backend/src/**", "!backend/src/generated/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "error"
+          }
+        }
+      }
+    }
+  ]
 }
