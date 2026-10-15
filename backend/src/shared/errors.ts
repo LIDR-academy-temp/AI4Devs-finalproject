@@ -1,4 +1,4 @@
-// Domain errors shared by every module. Plain classes: the error handler maps them to status codes.
+// Domain errors reused across modules. Plain classes: the error handler maps them to status codes.
 
 /**
  * The resource does not exist or is outside the caller's merchant scope (README §4: 404, never 403).
