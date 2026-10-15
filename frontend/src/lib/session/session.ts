@@ -1,12 +1,13 @@
 // Browser session (design D1): access token in this tab's memory only; refresh token in localStorage, shared by
-// every tab. Renewals are serialised across tabs with Web Locks; login and logout are announced on a BroadcastChannel.
+// every tab. Renewals are serialised across tabs with Web Locks; login, logout and expiry are announced on a
+// BroadcastChannel.
 import { apiOrigin } from './api-origin'
 
 const REFRESH_KEY = 'recon.refreshToken'
 const RENEW_LOCK = 'recon.refresh'
 const CHANNEL = 'recon.session'
 
-type SessionMessage = { type: 'login' } | { type: 'logout' }
+type SessionMessage = { type: 'login' } | { type: 'logout' } | { type: 'expire' }
 
 export interface TokenPair {
   accessToken: string
@@ -44,6 +45,10 @@ export function createSession({ storage = localStorage, locks = () => navigator.
       // The other tab already removed the shared refresh token and revoked it on the API.
       accessToken = null
       notify('logout')
+    } else if (event.data.type === 'expire') {
+      // The other tab could not renew and already removed the shared refresh token: this tab's session is over too.
+      accessToken = null
+      notify('expire')
     } else if (event.data.type === 'login') {
       notify('login')
     }
@@ -110,12 +115,14 @@ export function createSession({ storage = localStorage, locks = () => navigator.
       return renewInFlight
     },
 
-    /** The session can no longer be renewed: forget it and tell this tab's app (which sends the user to Login). */
+    /** The session can no longer be renewed: forget it and tell the app of every tab (which sends the user to Login). */
     expire() {
       session.clear()
       notify('expire')
+      announce({ type: 'expire' })
     },
 
+    /** The session expired in this tab or in another one; this tab's access token is already forgotten. */
     onExpire: (listener: () => void) => subscribe('expire', listener),
     /** Another tab signed in. */
     onLogin: (listener: () => void) => subscribe('login', listener),

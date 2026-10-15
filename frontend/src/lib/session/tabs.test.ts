@@ -68,6 +68,21 @@ describe('login and logout across tabs', () => {
     expect(localStorage.length).toBe(0)
   })
 
+  it('a session that expires in one tab expires in the others too', async () => {
+    const a = openTab()
+    const b = openTab()
+    await login({ userName: 'analyst', password: PASSWORD }, a.session)
+    await unwrap(b.api.GET('/api/v1/merchants'))
+    const expiredInB = vi.fn()
+    onTestFinished(b.session.onExpire(expiredInB))
+
+    a.session.expire()
+
+    await waitFor(() => expect(expiredInB).toHaveBeenCalledTimes(1))
+    expect(b.session.getAccessToken()).toBeNull()
+    expect(b.session.hasSession()).toBe(false)
+  })
+
   it('signing in in one tab tells the others', async () => {
     const a = openTab()
     const b = openTab()
