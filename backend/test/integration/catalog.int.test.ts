@@ -130,6 +130,7 @@ describe('merchant scope (issue #2, criterion 1)', () => {
   it.each([
     { title: 'provider', url: () => '/providers/201', unknown: '/providers/999' },
     { title: 'provider channels', url: () => '/providers/201/channels', unknown: '/providers/999/channels' },
+    { title: 'provider accounts', url: () => '/providers/201/accounts', unknown: '/providers/999/accounts' },
     { title: 'merchant providers', url: () => '/merchants/2/providers', unknown: '/merchants/999/providers' },
     { title: 'account', url: () => `/accounts/${accountIds['ProviderC-USD']}`, unknown: `/accounts/${UNKNOWN_UUID}` },
     {

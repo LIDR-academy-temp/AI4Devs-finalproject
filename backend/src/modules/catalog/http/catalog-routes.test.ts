@@ -66,8 +66,13 @@ describe('merchant scope', () => {
   it.each([
     { url: '/providers/201', unknown: '/providers/999' },
     { url: '/providers/201/channels', unknown: '/providers/999/channels' },
+    { url: '/providers/201/accounts', unknown: '/providers/999/accounts' },
     { url: '/merchants/2/providers', unknown: '/merchants/999/providers' },
     { url: `/accounts/${ACCOUNT_IDS['ProviderC-USD']}`, unknown: '/accounts/00000000-0000-4000-8000-00000000ffff' },
+    {
+      url: `/accounts/${ACCOUNT_IDS['ProviderC-USD']}/channels`,
+      unknown: '/accounts/00000000-0000-4000-8000-00000000ffff/channels',
+    },
     { url: '/channels/2001/accounts', unknown: '/channels/9999/accounts' },
   ])('viewer gets 404 not_found for $url, identical to an unknown id', async ({ url, unknown }) => {
     const outside = await get(url, 'viewer')
