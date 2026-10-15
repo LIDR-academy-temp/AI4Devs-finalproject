@@ -28,7 +28,7 @@ async function mainNav() {
   return within(await screen.findByRole('navigation', { name: strings.mainNav }))
 }
 
-function linkNames(nav: ReturnType<typeof within>) {
+function linkNames(nav: { queryAllByRole: (role: string) => HTMLElement[] }) {
   return nav.queryAllByRole('link').map((link) => link.textContent)
 }
 

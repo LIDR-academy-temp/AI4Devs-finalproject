@@ -8,12 +8,14 @@ import {
   type RouterHistory,
   redirect,
 } from '@tanstack/react-router'
+import { AccountsPage } from '@/features/accounts/AccountsPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { ApiError } from '@/lib/api/client'
 import type { Permission } from '@/lib/api/types'
 import { meQuery } from '@/lib/session/me'
 import { session } from '@/lib/session/session'
 import { AppLayout } from './layout/AppLayout'
+import { strings } from './layout/strings'
 import { DashboardPage } from './pages/DashboardPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
@@ -25,6 +27,8 @@ declare module '@tanstack/react-router' {
   interface StaticDataRouteOption {
     /** Permission the role needs to see the route (presentation only: the API enforces it). */
     requires?: Permission
+    /** Position in the screen map after Dashboard, e.g. ['Administration', 'Accounts']. */
+    crumbs?: readonly string[]
   }
 }
 
@@ -67,10 +71,20 @@ export const appRoute = createRoute({
 
 const dashboardRoute = createRoute({ getParentRoute: () => appRoute, path: '/', component: DashboardPage })
 
+const accountsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/accounts',
+  staticData: { crumbs: [strings.groups.administration, strings.screens.accounts] },
+  component: AccountsPage,
+})
+
 const notFoundRoute = createRoute({ getParentRoute: () => appRoute, path: '$', component: NotFoundPage })
 
 function buildRouteTree(extraRoutes: AnyRoute[]) {
-  return rootRoute.addChildren([loginRoute, appRoute.addChildren([dashboardRoute, ...extraRoutes, notFoundRoute])])
+  return rootRoute.addChildren([
+    loginRoute,
+    appRoute.addChildren([dashboardRoute, accountsRoute, ...extraRoutes, notFoundRoute]),
+  ])
 }
 
 export interface CreateAppRouterOptions {
