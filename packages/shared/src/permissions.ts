@@ -10,3 +10,6 @@ export const PermissionCode = z.enum([
   'user.manage',
 ])
 export type PermissionCode = z.infer<typeof PermissionCode>
+
+/** The seven codes, in the order of README §3.2. */
+export const PERMISSION_CODES = PermissionCode.options

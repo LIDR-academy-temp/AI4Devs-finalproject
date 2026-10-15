@@ -1,7 +1,7 @@
 # accounts
 
 ## Purpose
-Cuentas, canales y cuenta principal. README §3.2 "Account", "AccountChannel".
+Jerarquía de solo lectura que llega de los gateways (Gateway → Merchant → Provider → Channel), cuentas, canales asociados y cuenta principal, con el alcance por merchant aplicado a cada consulta. README §1.2 y §3.2 "Catálogo" (Gateway, Merchant, Provider, Channel, Account, AccountChannel), §4.4 filas Catálogo.
 
 ## Requirements
 

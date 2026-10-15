@@ -8,6 +8,7 @@ import {
   InvalidTokenError,
   UnauthorizedError,
 } from '../modules/auth/domain/errors.js'
+import { NotFoundError } from '../shared/errors.js'
 import { errorHandlerPlugin } from './error-handler.js'
 
 let app: FastifyInstance
@@ -34,6 +35,9 @@ beforeAll(async () => {
   })
   app.get('/boom', async () => {
     throw new Error('database password is hunter2')
+  })
+  app.get('/missing', async () => {
+    throw new NotFoundError('Account')
   })
   await app.ready()
 })
@@ -89,6 +93,13 @@ describe('errorHandlerPlugin', () => {
     expect(res.json()).toEqual({ code: 'internal_error', message: 'Internal server error' })
     expect(res.body).not.toContain('hunter2')
     expect(res.body).not.toContain('at ')
+  })
+
+  it('maps NotFoundError to 404 not_found naming the resource type only', async () => {
+    const res = await app.inject({ method: 'GET', url: '/missing' })
+
+    expect(res.statusCode).toBe(404)
+    expect(res.json()).toEqual({ code: 'not_found', message: 'Account not found' })
   })
 
   it('answers unknown routes with 404 not_found in the uniform body', async () => {

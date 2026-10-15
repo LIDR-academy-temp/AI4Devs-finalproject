@@ -3,6 +3,7 @@ import { vi } from 'vitest'
 import { buildApp } from '../../../app.js'
 import { loadEnv } from '../../../config/env.js'
 import type { PrismaClient } from '../../../generated/prisma/client.js'
+import type { CatalogService } from '../../catalog/application/catalog-service.js'
 import {
   FakeClock,
   FakePasswordHasher,
@@ -18,7 +19,13 @@ import { AuthService } from '../application/auth-service.js'
 
 export { PASSWORD }
 
-export async function buildTestApp(options: { logLines?: string[] } = {}) {
+export interface TestAppOptions {
+  logLines?: string[]
+  /** Catalog service over an in-memory repository; without it the catalog routes hit the fake Prisma client. */
+  catalogService?: CatalogService
+}
+
+export async function buildTestApp(options: TestAppOptions = {}) {
   const env = loadEnv({ JWT_SECRET: 'unit-test-secret-not-a-real-one-00001', LOG_LEVEL: 'silent' })
   const clock = new FakeClock()
   const users = new InMemoryUserRepository(seedUsers(), MERCHANTS)
@@ -39,6 +46,7 @@ export async function buildTestApp(options: { logLines?: string[] } = {}) {
     env: logLines ? { ...env, LOG_LEVEL: 'trace' } : env,
     prisma,
     authService,
+    catalogService: options.catalogService,
     logStream: logLines ? { write: (line: string) => void logLines.push(line) } : undefined,
   })
   return { app, clock, users, refreshTokens, audit, authService }

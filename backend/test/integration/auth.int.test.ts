@@ -1,18 +1,11 @@
+import { PERMISSION_CODES } from '@recon/shared'
 import argon2 from 'argon2'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestApp, decodePayload, SEED_PASSWORD, signHs256, TEST_JWT_SECRET } from './helpers.js'
 
 const INACTIVE_USER = 'inactive_test'
 const GENERIC_401 = { code: 'invalid_credentials', message: 'Invalid user name or password' }
-const ALL_PERMISSIONS = [
-  'account.manage',
-  'fee.manage',
-  'fee.view',
-  'payment.process',
-  'reports.view',
-  'settlement.process',
-  'user.manage',
-]
+const ALL_PERMISSIONS = [...PERMISSION_CODES].sort()
 
 let ctx: Awaited<ReturnType<typeof createTestApp>>
 let inactiveUserId: number

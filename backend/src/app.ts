@@ -11,6 +11,8 @@ import type { Env } from './config/env.js'
 import type { PrismaClient } from './generated/prisma/client.js'
 import type { AuthService } from './modules/auth/application/auth-service.js'
 import { authModule } from './modules/auth/auth-module.js'
+import type { CatalogService } from './modules/catalog/application/catalog-service.js'
+import { catalogModule } from './modules/catalog/catalog-module.js'
 import { errorHandlerPlugin } from './plugins/error-handler.js'
 import { prismaPlugin } from './plugins/prisma.js'
 import { healthRoutes } from './routes/health.js'
@@ -23,6 +25,8 @@ export interface BuildAppOptions {
   prisma?: PrismaClient
   /** Injected auth service (tests); otherwise built from Prisma, Argon2 and @fastify/jwt. */
   authService?: AuthService
+  /** Injected catalog service (tests); otherwise built on the Prisma catalog repository. */
+  catalogService?: CatalogService
   /** Log destination (tests capture logs through it); defaults to stdout. */
   logStream?: { write(line: string): void }
 }
@@ -70,6 +74,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     routePrefix: `${API_PREFIX}/auth`,
     service: options.authService,
   })
+  await app.register(catalogModule, { routePrefix: API_PREFIX, service: options.catalogService })
   await app.register(healthRoutes, { prefix: API_PREFIX })
 
   return app

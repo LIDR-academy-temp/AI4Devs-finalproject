@@ -14,6 +14,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PrismaMssql } from '@prisma/adapter-mssql'
+import { ROLES } from '@recon/shared'
 import argon2 from 'argon2'
 import { config as loadEnv } from 'dotenv'
 import { PrismaClient } from '../src/generated/prisma/client.js'
@@ -35,7 +36,6 @@ import {
   money,
   mulberry32,
   PROVIDERS,
-  ROLES,
   SETTLEMENT_STATUSES,
   STATUS,
   STATUS_ALIASES,

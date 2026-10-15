@@ -47,6 +47,40 @@ describe('buildApp', () => {
     await app.close()
   })
 
+  it('publishes the nine catalog routes with bearer security, the catalog tag and unassigned as true/false', async () => {
+    const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
+
+    const res = await app.inject({ method: 'GET', url: '/docs/json' })
+
+    expect(res.statusCode).toBe(200)
+    const doc = res.json()
+    const catalogPaths = [
+      '/api/v1/merchants',
+      '/api/v1/merchants/{merchantId}/providers',
+      '/api/v1/providers/{providerId}',
+      '/api/v1/providers/{providerId}/channels',
+      '/api/v1/providers/{providerId}/accounts',
+      '/api/v1/accounts/{accountId}',
+      '/api/v1/accounts/{accountId}/channels',
+      '/api/v1/channels',
+      '/api/v1/channels/{channelId}/accounts',
+    ]
+    for (const path of catalogPaths) {
+      const operation = doc.paths[path]?.get
+      expect(operation, path).toBeDefined()
+      expect(operation.tags, path).toEqual(['catalog'])
+      expect(operation.security, path).toEqual([{ bearerAuth: [] }])
+      expect(operation.responses, path).toHaveProperty('401')
+    }
+    const unassigned = doc.paths['/api/v1/channels'].get.parameters.find(
+      (p: { name: string }) => p.name === 'unassigned',
+    )
+    expect(unassigned).toMatchObject({ in: 'query', required: false })
+    // The wire format is a string: the document must say which two values are accepted.
+    expect(unassigned.schema).toEqual({ type: 'string', enum: ['true', 'false'] })
+    await app.close()
+  })
+
   it('does not disconnect an injected Prisma client on close', async () => {
     const prisma = fakePrisma(async () => [{ ok: 1 }])
     const app = await buildApp({ env, prisma })
