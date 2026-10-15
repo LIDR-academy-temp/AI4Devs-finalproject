@@ -53,9 +53,9 @@ Exportación del prototipo de 29 pantallas que se revisó y aprobó con la empre
 
 | Tramo / issue | Pantallas |
 |---|---|
-| T1 · #3 (frontend Login y Accounts) | Login, Dashboard (solo el armazón: barra lateral, migas), Merchants & Providers, Accounts, Account Detail (solo lectura) |
+| T1 · #3 (frontend Login y Accounts) | Login, Dashboard (armazón), Accounts |
 | T2 · #6 (pantallas Upload y Column Mapping) | New Reconciliation, Upload Files, Column Mapping, In Progress |
 | T3 · #10 (pantalla Analysis & Validations) | Analysis & Validations, Issue Detail (drawer) |
 | T4 · #13 (pantallas Settlement Review y Summary) | Settlement Review, Settlement Summary |
 
-El resto (pagos, búsquedas, informes, administración de fees, reglas, usuarios, auditoría) es de la Entrega 3 o roadmap.
+El resto es de la Entrega 3 o roadmap: Merchants & Providers y Account Detail (tramo 5, junto con la gestión de cuentas), pagos, búsquedas, informes, administración de fees, reglas, usuarios y auditoría.
