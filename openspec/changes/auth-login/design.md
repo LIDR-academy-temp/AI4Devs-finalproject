@@ -37,7 +37,7 @@ El script `dev` pasa a `tsx watch src/server.ts`. *Alternativa*: mantener `main.
 
 ### D4. JWT con `@fastify/jwt`, verificación propia de tipo
 Se usa `@fastify/jwt` (HS256, `JWT_SECRET`) a través del puerto `TokenSigner`, para que la aplicación no dependa de la librería. Claims:
-- access: `{ sub: userId, typ: "access" }`, `exp` 15 min.
+- access: `{ sub: userId, typ: "access", jti: uuid }`, `exp` 15 min. El `jti` no se guarda ni se comprueba: solo hace único cada token (sin él, dos access emitidos en el mismo segundo serían idénticos y un refresh devolvería el mismo access).
 - refresh: `{ sub: userId, typ: "refresh", jti: uuid }`, `exp` 7 días.
 El verificador rechaza un token cuyo `typ` no sea el esperado; así un refresh no sirve como access ni al revés. Los tokens **no** llevan rol ni permisos: README §2.5 exige resolverlos en cada petición, y así un cambio de rol o una desactivación tienen efecto inmediato.
 *Alternativa*: `jose` directamente; equivalente, pero `@fastify/jwt` ya integra `request.jwtVerify` y el manejo de cabecera.

@@ -53,6 +53,12 @@ describe('JwtTokenSigner', () => {
     expect(refresh.expiresAt.getTime()).toBe(clock.now().getTime() + 7 * 24 * 60 * 60 * 1000)
   })
 
+  it('issues distinct access tokens for the same user within the same second', async () => {
+    const { signer } = await setup()
+
+    expect(await signer.signAccess(7)).not.toBe(await signer.signAccess(7))
+  })
+
   it('round-trips the subject and the jti', async () => {
     const { signer } = await setup()
 

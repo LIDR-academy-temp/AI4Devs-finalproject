@@ -14,8 +14,8 @@ interface Claims {
 }
 
 /**
- * HS256 tokens through @fastify/jwt (design D4). Claims are only `sub`, `typ` and, for refresh
- * tokens, `jti`: role and permissions are resolved from the database on every request.
+ * HS256 tokens through @fastify/jwt (design D4). Claims are only `sub`, `typ` and `jti`: role and
+ * permissions are resolved from the database on every request.
  */
 export class JwtTokenSigner implements TokenSigner {
   constructor(
@@ -24,7 +24,9 @@ export class JwtTokenSigner implements TokenSigner {
   ) {}
 
   async signAccess(userId: number): Promise<string> {
-    return this.sign({ sub: String(userId), typ: 'access' }, ACCESS_TTL_SECONDS)
+    // The jti only makes each access token unique (two issued in the same second would otherwise be equal);
+    // it is not stored or checked.
+    return this.sign({ sub: String(userId), typ: 'access', jti: randomUUID() }, ACCESS_TTL_SECONDS)
   }
 
   async signRefresh(userId: number): Promise<SignedRefreshToken> {
