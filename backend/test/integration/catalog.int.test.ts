@@ -295,3 +295,64 @@ describe('account and provider detail', () => {
     })
   })
 })
+
+// The schema does not force an AccountChannel row to join an account and a channel of the same provider,
+// so both sides of every join carry the scope. These rows cross merchants on purpose and live only here.
+describe('AccountChannel rows that cross merchants (defense in depth)', () => {
+  // [account, channel, isPrimary]. RAM-01 already has a primary (UX_AccountChannel_primary), so the foreign
+  // primary goes on RAM-07, which merchant 1 sees through ProviderA-USD.
+  const CROSS_ROWS = [
+    ['ProviderC-USD', RAM_01, false],
+    ['ProviderA-USD', RAM_U1, false],
+    ['ProviderA-USD', RAM_07, false],
+    ['ProviderC-USD', RAM_07, true],
+  ] as const
+
+  beforeAll(async () => {
+    for (const [account, channelId, isPrimary] of CROSS_ROWS) {
+      const accountId = accountIds[account]!
+      await ctx.prisma.accountChannel.upsert({
+        where: { accountId_channelId: { accountId, channelId } },
+        create: { accountId, channelId, isPrimary, assignedAt: HISTORY_ASSIGNED_AT },
+        update: { isPrimary, assignedAt: HISTORY_ASSIGNED_AT },
+      })
+    }
+  })
+
+  afterAll(async () => {
+    for (const [account, channelId] of CROSS_ROWS) {
+      const accountId = accountIds[account]
+      if (accountId) await ctx.prisma.accountChannel.deleteMany({ where: { accountId, channelId } })
+    }
+  })
+
+  it('viewer does not see a channel of merchant 2 among the channels of ProviderA-USD', async () => {
+    const channels = await json<{ channelId: number }[]>(`/accounts/${accountIds['ProviderA-USD']}/channels`, 'viewer')
+
+    expect(ids(channels, 'channelId')).not.toContain(RAM_U1)
+  })
+
+  it('viewer does not see an account of merchant 2 as the primary account of a visible channel', async () => {
+    const channels = await json<{ channelId: number; primaryAccount: { name: string } | null }[]>(
+      `/accounts/${accountIds['ProviderA-USD']}/channels`,
+      'viewer',
+    )
+
+    const ram07 = channels.find((c) => c.channelId === RAM_07)
+    expect(ram07).toBeDefined()
+    expect(ram07?.primaryAccount).toBeNull()
+    expect(channels.map((c) => c.primaryAccount?.name)).not.toContain('ProviderC-USD')
+  })
+
+  it('viewer does not see an account of merchant 2 among the accounts of RAM-01', async () => {
+    const accounts = await json<{ name: string }[]>(`/channels/${RAM_01}/accounts`, 'viewer')
+
+    expect(accounts.map((a) => a.name)).toEqual(['ProviderA-USD', 'ProviderA-EUR'])
+  })
+
+  it('admin, whose scope covers both merchants, still sees the cross rows', async () => {
+    const accounts = await json<{ name: string }[]>(`/channels/${RAM_01}/accounts`, 'admin')
+
+    expect(accounts.map((a) => a.name)).toContain('ProviderC-USD')
+  })
+})
