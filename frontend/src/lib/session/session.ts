@@ -1,6 +1,7 @@
 // Browser session (design D1): access token in this tab's memory only; refresh token in localStorage, shared by
 // every tab. Renewals are serialised across tabs with Web Locks; login, logout and expiry are announced on a
 // BroadcastChannel.
+import { TokenPair as TokenPairResponse } from '@recon/shared'
 import { apiOrigin } from './api-origin'
 
 const REFRESH_KEY = 'recon.refreshToken'
@@ -68,7 +69,10 @@ export function createSession({ storage = localStorage, locks = () => navigator.
         body: JSON.stringify({ refreshToken }),
       })
       if (!response.ok) return false
-      session.setTokens((await response.json()) as TokenPair)
+      // Validated like any API answer: a malformed pair is a failed renewal, never stored.
+      const pair = TokenPairResponse.safeParse(await response.json().catch(() => undefined))
+      if (!pair.success) return false
+      session.setTokens(pair.data)
       return true
     })
   }
@@ -106,7 +110,8 @@ export function createSession({ storage = localStorage, locks = () => navigator.
 
     /**
      * Renews the token pair. Requests of this tab that fail together share one renewal; tabs take turns through
-     * the lock. Resolves false when there is no refresh token or the API rejects it; network errors propagate.
+     * the lock. Resolves false when there is no refresh token, the API rejects it or the answer is not a valid pair;
+     * network errors propagate.
      */
     renew(): Promise<boolean> {
       renewInFlight ??= renewUnderLock().finally(() => {

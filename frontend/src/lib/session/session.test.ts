@@ -89,6 +89,30 @@ describe('session expiry', () => {
     off()
   })
 
+  it('treats a malformed refresh answer as a failed renewal and stores nothing from it', async () => {
+    server.use(http.post('*/api/v1/auth/refresh', () => HttpResponse.json({ accessToken: 'only-half' })))
+    const stale = staleSession()
+
+    await expect(session.renew()).resolves.toBe(false)
+
+    expect(session.getAccessToken()).toBe(stale.accessToken)
+    expect(session.getRefreshToken()).toBe(stale.refreshToken)
+  })
+
+  it('expires the session without retrying when the refresh answer is malformed', async () => {
+    const rec = recordRequests()
+    const { listener, off } = onExpire()
+    server.use(http.post('*/api/v1/auth/refresh', () => HttpResponse.json({ accessToken: 'only-half' })))
+    staleSession()
+
+    await expect(unwrap(api.GET('/api/v1/merchants'))).rejects.toMatchObject({ status: 401 })
+
+    expect(rec.count(MERCHANTS)).toBe(1)
+    expect(listener).toHaveBeenCalledTimes(1)
+    expect(localStorage.length).toBe(0)
+    off()
+  })
+
   it('does not refresh again when the repeated request also gets 401 (no loop)', async () => {
     const rec = recordRequests()
     const { listener, off } = onExpire()
