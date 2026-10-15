@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>New Reconciliation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:16px;box-sizing:border-box}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.btn.pri{background:#1f4e9c;border-color:#1f4e9c;color:#fff}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.warn{border-color:#b7791f;color:#7a4f0e;background:#fbf1dd}
+.step{display:flex;gap:6px;align-items:center;font-size:13px;color:#6b7280;flex-wrap:wrap}
+.step b{color:#1f2328;background:#e3e8ef;padding:3px 10px;border-radius:999px}
+.step span{padding:3px 10px}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 10px}
+label{font-size:13px;color:#4b5563;display:block;margin-bottom:4px}
+select{font:inherit;padding:8px 10px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;width:100%}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:820px">
+  <nav class="nav" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+    <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+    <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+    <div class="grp">Reconciliation</div>
+    <a href="NewReconciliation.dc.html" class="on">New Reconciliation</a>
+    <a href="InProgress.dc.html">In Progress</a>
+    <div class="grp">Settlements</div>
+    <a href="SettlementList.dc.html">Settlement List</a>
+    <a href="Payments.dc.html">Payments</a>
+    <div class="grp">Search</div>
+    <a href="TransactionSearch.dc.html">Transaction Search</a>
+    <a href="MissingDuplicates.dc.html">Missing &amp; Duplicates</a>
+    <div class="grp">Reports</div>
+    <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+    <a href="ReportsRoadmap.dc.html">Aged Receivables · roadmap</a>
+    <div class="grp">Administration</div>
+    <a href="MerchantsProviders.dc.html">Merchants &amp; Providers</a>
+    <a href="Accounts.dc.html">Accounts</a>
+    <a href="FeesAll.dc.html">Fees</a>
+    <a href="ChannelAssignment.dc.html">Channel Assignment</a>
+    <a href="MatchingRules.dc.html">Matching Rules</a>
+    <a href="UsersRoles.dc.html">Users &amp; Roles</a>
+    <a href="AuditLog.dc.html">Audit Log</a>
+  </nav>
+  <main style="flex:999 1 560px;min-width:0;padding:20px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+    <div class="ctx"><a href="Dashboard.dc.html">Dashboard</a> › Reconciliation › New</div>
+    <h1>New Reconciliation</h1>
+    <div class="step"><b>1 Account</b><span>2 Files</span><span>3 Mapping</span><span>4 Analysis</span><span>5 Review</span><span>6 Summary</span></div>
+    <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:16px;align-items:start">
+      <div class="card" style="display:flex;flex-direction:column;gap:14px">
+        <h2>Choose the account</h2>
+        <div><label for="m">Merchant</label><select id="m"><option>Merchant A</option><option>Merchant B</option></select></div>
+        <div><label for="p">Provider</label><select id="p"><option>Provider A</option><option>Provider C</option></select></div>
+        <div><label for="a">Account</label><select id="a"><option>ProviderA-USD</option><option>ProviderA-EUR</option></select></div>
+        <div style="font-size:12px;color:#6b7280">Only merchants in your scope. Closed accounts are not listed. A provider without accounts shows a link to create one (needs account.manage).</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="card">
+          <h2>ProviderA-USD · context</h2>
+          <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px;font-size:13px">
+            <div class="ctx">Last batch</div><div>118 · processed · 22 Sep</div>
+            <div class="ctx">Last paid batch</div><div>117 · paid 15 Sep</div>
+            <div class="ctx">Next batch number</div><div>119 (editable in Review)</div>
+            <div class="ctx">Channels</div><div>RAM-01, RAM-03, RAM-07 (primary here)</div>
+            <div class="ctx">Reserve policy</div><div>hold_until_term · 10 % · 180 days</div>
+            <div class="ctx">Batch fees preset</div><div>Monthly fee 150.00 · Gateway fee 25.00</div>
+          </div>
+        </div>
+        <div class="card" style="border-color:#b7791f;background:#fffaf0">
+          <span class="badge warn">Open import</span>
+          <div style="font-size:13px;margin-top:6px">This account has an import at step <b>Analysis</b> (started today 10:42 by analyst). Starting a new one keeps that import open.</div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><a href="Analysis.dc.html" class="btn">Resume open import</a></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:auto;padding-top:12px;border-top:1px solid #d0d5dc">
+      <a href="Dashboard.dc.html" class="btn">Cancel</a>
+      <a href="UploadFiles.dc.html" class="btn pri">Start · go to Files</a>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

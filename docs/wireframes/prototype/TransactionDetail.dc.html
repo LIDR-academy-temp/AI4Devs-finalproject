@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Transaction Detail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:14px;box-sizing:border-box}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:#4b5563;border-bottom:1px solid #d0d5dc;padding:8px}
+.tbl td{border-bottom:1px solid #e5e7eb;padding:7px 8px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.ok{border-color:#2f7d4f;color:#1e5c38;background:#e8f3ec}
+.warn{border-color:#b7791f;color:#7a4f0e;background:#fbf1dd}
+.cyc{display:inline-block;width:22px;text-align:center;border-radius:4px;font-weight:700;font-size:12px;background:#e3e8ef}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 10px}
+.kv{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:6px;font-size:13px}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:820px">
+  <nav class="nav" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+    <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+    <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+    <div class="grp">Reconciliation</div>
+    <a href="NewReconciliation.dc.html">New Reconciliation</a>
+    <a href="InProgress.dc.html">In Progress</a>
+    <div class="grp">Settlements</div>
+    <a href="SettlementList.dc.html">Settlement List</a>
+    <a href="Payments.dc.html">Payments</a>
+    <div class="grp">Search</div>
+    <a href="TransactionSearch.dc.html" class="on">Transaction Search</a>
+    <a href="MissingDuplicates.dc.html">Missing &amp; Duplicates</a>
+    <div class="grp">Reports</div>
+    <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+    <a href="ReportsRoadmap.dc.html">Aged Receivables · roadmap</a>
+    <div class="grp">Administration</div>
+    <a href="MerchantsProviders.dc.html">Merchants &amp; Providers</a>
+    <a href="Accounts.dc.html">Accounts</a>
+    <a href="FeesAll.dc.html">Fees</a>
+    <a href="ChannelAssignment.dc.html">Channel Assignment</a>
+    <a href="MatchingRules.dc.html">Matching Rules</a>
+    <a href="UsersRoles.dc.html">Users &amp; Roles</a>
+    <a href="AuditLog.dc.html">Audit Log</a>
+  </nav>
+  <main style="flex:999 1 560px;min-width:0;padding:20px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+    <div class="ctx"><a href="TransactionSearch.dc.html">Transaction Search</a> › 4512301190</div>
+    <h1>Transaction 4512301190 <span class="badge">Chargeback</span></h1>
+    <div class="card">
+      <div class="kv">
+        <div class="ctx">Gateway · source id</div><div>Gateway 1 · 4512301190 (numeric)</div>
+        <div class="ctx">Merchant / Provider / Channel</div><div>Merchant A / Provider A / RAM-01 (primary account ProviderA-USD)</div>
+        <div class="ctx">Created</div><div>2026-07-02 14:11</div>
+        <div class="ctx">Current status · last change</div><div>Chargeback · 2026-08-28 (was Successful)</div>
+        <div class="ctx">Amount · brand</div><div>120.5000 USD · Visa</div>
+        <div class="ctx">Reserve pct applied</div><div>10 % · 180 days · policy at the time: hold_until_term</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:12px;align-items:start">
+      <div class="card">
+        <h2><span class="cyc">E</span> Operation</h2>
+        <div class="kv">
+          <div class="ctx">Batch</div><div><a href="SettlementDetail.dc.html">112</a> · attempt 1</div>
+          <div class="ctx">Status when processed</div><div>Successful</div>
+          <div class="ctx">Settled</div><div><span class="badge ok">paid 2026-07-21</span></div>
+          <div class="ctx">Amount</div><div>120.5000</div>
+          <div class="ctx">Fees</div><div>-3.6150 (MDR 2.9 % + 0.1200 per txn)</div>
+          <div class="ctx">Reserve held</div><div>-12.0500 · expected release 2026-12-29</div>
+        </div>
+      </div>
+      <div class="card">
+        <h2><span class="cyc">I</span> Adjustments</h2>
+        <div class="kv">
+          <div class="ctx">Batch</div><div><a href="SettlementDetail.dc.html">116</a> · attempt 1</div>
+          <div class="ctx">Status when processed</div><div>Chargeback</div>
+          <div class="ctx">Settled</div><div><span class="badge ok">paid 2026-09-01</span></div>
+          <div class="ctx">Amount</div><div>-120.5000</div>
+          <div class="ctx">Fees</div><div>-15.0000 (chargeback fee)</div>
+          <div class="ctx">Event date used</div><div>2026-08-28 (status change)</div>
+        </div>
+        <div style="font-size:12px;color:#6b7280;margin-top:8px">A second appearance (CHB 2) in import #2041 is pending decision · <a href="AnalysisIssue.dc.html">open issue</a></div>
+      </div>
+      <div class="card">
+        <h2><span class="cyc">R</span> Reserve</h2>
+        <div class="kv">
+          <div class="ctx">Held in</div><div>batch 112 · 12.0500</div>
+          <div class="ctx">Policy applied at chargeback</div><div>hold_until_term</div>
+          <div class="ctx">Released</div><div><span class="badge">pending · expected 2026-12-29</span></div>
+          <div class="ctx">Released early</div><div>0.0000</div>
+        </div>
+        <div style="font-size:12px;color:#6b7280;margin-top:8px">With release_on_chargeback the 12.0500 would appear as released early in batch 116.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Appearances in validations</h2>
+      <table class="tbl">
+        <tr><th>When</th><th>Import / batch</th><th>Validation</th><th>Cycle</th><th>Resolution</th></tr>
+        <tr><td>today 10:42</td><td>import #2041 (ProviderA-USD)</td><td>duplicate_across_batches</td><td><span class="cyc">I</span></td><td><span class="badge warn">persistent · current excluded</span></td></tr>
+        <tr><td>2026-08-30</td><td>batch 116</td><td>non_recorded_adjustment</td><td><span class="cyc">I</span></td><td><span class="badge ok">resolved by maria 2026-09-02</span></td></tr>
+      </table>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
