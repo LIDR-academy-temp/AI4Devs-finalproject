@@ -15,12 +15,12 @@ Orden test-first: en cada grupo con lógica, el test se escribe y se ve fallar (
 
 ## 3. Entorno y arranque mínimo del servidor
 
-- [ ] 3.1 Test (rojo) `src/config/env.test.ts`: sin `JWT_SECRET` o con < 32 caracteres `loadEnv` lanza un error que menciona `JWT_SECRET` y no contiene el valor; con valores válidos aplica defaults de `PORT`, `HOST`, `LOG_LEVEL` (spec "Secreto de firma obligatorio")
-- [ ] 3.2 Implementar `src/config/env.ts` (Zod) y `src/infrastructure/db.ts` (`mssqlConfigFromEnv`, mismas `DB_*` y opciones que `seed.ts`); verificar test 3.1 en verde
-- [ ] 3.3 Test (rojo) `src/plugins/error-handler.test.ts` con una app Fastify mínima: errores de validación → `400 validation_error` con `details`; `UnauthorizedError` → `401 unauthorized`; `ForbiddenError` → `403 forbidden`; `InvalidCredentialsError`/`InvalidTokenError` → `401` con su código; error genérico → `500 internal_error` sin stack
-- [ ] 3.4 Implementar `modules/auth/domain/errors.ts` y `plugins/error-handler.ts`; verificar test 3.3 en verde
-- [ ] 3.5 Implementar `plugins/prisma.ts` (decora `app.prisma`, `$disconnect` en `onClose`, acepta cliente inyectado), `routes/health.ts`, `app.ts` (`buildApp`: logger con `redact`, type provider Zod, swagger + `/docs`, prefijo `/api/v1`) y `server.ts`; cambiar script `dev` a `tsx watch src/server.ts`; verificar con test unitario `app.test.ts` que `GET /api/v1/health` con un Prisma falso responde `200 {status:"ok",db:"ok"}` y `503` cuando `$queryRaw` falla, y que `GET /docs/json` devuelve un OpenAPI 3 con la ruta de health
-- [ ] 3.6 Test de integración `test/integration/health.int.test.ts`: `buildApp` real contra SQL Server responde `200` en `/api/v1/health`; verificar en local con `pnpm db:up` y `vitest --project integration`
+- [x] 3.1 Test (rojo) `src/config/env.test.ts`: sin `JWT_SECRET` o con < 32 caracteres `loadEnv` lanza un error que menciona `JWT_SECRET` y no contiene el valor; con valores válidos aplica defaults de `PORT`, `HOST`, `LOG_LEVEL` (spec "Secreto de firma obligatorio")
+- [x] 3.2 Implementar `src/config/env.ts` (Zod) y `src/infrastructure/db.ts` (`mssqlConfigFromEnv`, mismas `DB_*` y opciones que `seed.ts`); verificar test 3.1 en verde
+- [x] 3.3 Test (rojo) `src/plugins/error-handler.test.ts` con una app Fastify mínima: errores de validación → `400 validation_error` con `details`; `UnauthorizedError` → `401 unauthorized`; `ForbiddenError` → `403 forbidden`; `InvalidCredentialsError`/`InvalidTokenError` → `401` con su código; error genérico → `500 internal_error` sin stack
+- [x] 3.4 Implementar `modules/auth/domain/errors.ts` y `plugins/error-handler.ts`; verificar test 3.3 en verde
+- [x] 3.5 Implementar `plugins/prisma.ts` (decora `app.prisma`, `$disconnect` en `onClose`, acepta cliente inyectado), `routes/health.ts`, `app.ts` (`buildApp`: logger con `redact`, type provider Zod, swagger + `/docs`, prefijo `/api/v1`) y `server.ts`; cambiar script `dev` a `tsx watch src/server.ts`; verificar con test unitario `app.test.ts` que `GET /api/v1/health` con un Prisma falso responde `200 {status:"ok",db:"ok"}` y `503` cuando `$queryRaw` falla, y que `GET /docs/json` devuelve un OpenAPI 3 con la ruta de health
+- [x] 3.6 Test de integración `test/integration/health.int.test.ts`: `buildApp` real contra SQL Server responde `200` en `/api/v1/health`; verificar en local con `pnpm db:up` y `vitest --project integration`
 
 ## 4. Esquema de base de datos (requiere confirmación humana)
 
