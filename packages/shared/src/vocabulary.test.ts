@@ -10,7 +10,7 @@ describe('IntId', () => {
     expect(IntId.parse('2147483647')).toBe(2_147_483_647)
   })
 
-  it.each(['2147483648', '99999999999', '0', '-1', '1.5', 'abc'])('rejects %s', (value) => {
+  it.each(['2147483648', '99999999999', '0', '-1', '1.5', 'abc', '1e3', '0x10', ' 12'])('rejects %s', (value) => {
     expect(IntId.safeParse(value).success).toBe(false)
   })
 })
