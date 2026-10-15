@@ -6,7 +6,15 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/src/generated", "!**/dist", "!**/node_modules", "!data/samples/plan.json"]
+    "includes": [
+      "**",
+      "!**/src/generated",
+      "!**/dist",
+      "!**/node_modules",
+      "!data/samples/plan.json",
+      "!frontend/src/lib/api/schema.gen.ts",
+      "!docs/wireframes/prototype"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -35,7 +43,7 @@
   },
   "overrides": [
     {
-      "includes": ["backend/src/**", "!backend/src/generated/**"],
+      "includes": ["backend/src/**", "!backend/src/generated/**", "frontend/src/**"],
       "linter": {
         "rules": {
           "suspicious": {
@@ -44,5 +52,10 @@
         }
       }
     }
-  ]
+  ],
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  }
 }

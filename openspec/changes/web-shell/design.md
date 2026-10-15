@@ -44,7 +44,7 @@ Por qué:
 Alternativas: (a) ambos en memoria — más seguro, pero F5 = login de nuevo; descartada por usabilidad. (b) refresh en `localStorage` — sesión compartida entre pestañas, pero carrera de rotación y persistencia indefinida en disco; descartada. (c) refresh en cookie httpOnly + `SameSite=Strict` — la mejor frente a XSS; se deja como endurecimiento futuro con su propio change de `auth` (anotarlo como ADR cuando se haga).
 
 ### D2 ⚑ CORS en desarrollo
-**Propuesta:** **proxy de Vite**. El cliente llama siempre a rutas relativas (`/api/v1/...`); en desarrollo `vite.config.ts` reenvía `/api` a `http://localhost:3000` (configurable con `API_PROXY_TARGET`, variable sin prefijo `VITE_`, por lo que no llega al bundle). `VITE_API_URL` existe (lo pide el issue) con valor por defecto `/api/v1`, para poder apuntar a otro origen si algún día hace falta.
+**Propuesta:** **proxy de Vite**. El cliente llama siempre a rutas relativas (`/api/v1/...`); en desarrollo `vite.config.ts` reenvía `/api` a `http://localhost:3000` (configurable con `API_PROXY_TARGET`, variable sin prefijo `VITE_`, por lo que no llega al bundle). `VITE_API_URL` existe (lo pide el issue) y es el **origen** del API, vacío por defecto (mismo origen): las rutas del contrato generado ya incluyen `/api/v1` (ajuste hecho en `apply`, grupo 2).
 
 Por qué: en producción Nginx sirve la SPA y hace proxy de `/api` (README §2.4), es decir, **mismo origen**; con el proxy de Vite el desarrollo reproduce esa topología y CORS no existe en ningún entorno. No se añade `@fastify/cors` ni `CORS_ORIGIN`, que serían superficie de configuración (y de error: `origin: true` por descuido) que producción no necesita.
 
@@ -136,7 +136,7 @@ Un `strings.ts` por pantalla y uno del layout (`as const`). Los tests colocan ju
 ### D12 Herramientas y CI
 - `biome.json`: override para `frontend/src/**` con `noConsole: error` y exclusión de `frontend/src/lib/api/schema.gen.ts`. Los componentes de shadcn se formatean con Biome tras generarlos y se versionan como código propio.
 - `.github/workflows/ci.yml`, job `check`: tras `pnpm test`, `pnpm openapi:check` (D6) y `pnpm --filter @recon/frontend build`. Sin job nuevo.
-- `frontend/.env.example` con `VITE_API_URL=/api/v1` y `API_PROXY_TARGET=http://localhost:3000`, comentarios en inglés.
+- `frontend/.env.example` con `VITE_API_URL=` (vacío = mismo origen) y `API_PROXY_TARGET=http://localhost:3000`, comentarios en inglés.
 
 ## Risks / Trade-offs
 
