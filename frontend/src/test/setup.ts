@@ -7,6 +7,8 @@ import { server } from './msw/server'
 
 // Any request without a handler fails the test: the screens may only call the endpoints they are meant to.
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+// jsdom does not implement scrolling; the router's scroll restoration calls it on every navigation.
+window.scrollTo = () => {}
 afterEach(() => {
   cleanup()
   server.resetHandlers()

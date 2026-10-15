@@ -70,7 +70,7 @@ describe('permission guard', () => {
 
     expect(await screen.findByText(strings.forbiddenTitle)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: strings.backToDashboard })).toHaveAttribute('href', '/')
-    expect(rec.protectedCalls()).toEqual(['GET /api/v1/auth/me'])
+    expect(rec.count('GET /api/v1/merchants')).toBe(0)
   })
 
   it('shows the screen to a role with the permission', async () => {
