@@ -67,6 +67,12 @@ describe('JwtTokenSigner', () => {
     expect(await signer.verify(refresh.token, 'refresh')).toEqual({ sub: 7, jti: refresh.jti })
   })
 
+  it('accepts userId 0, a valid identity value in SQL Server', async () => {
+    const { signer } = await setup()
+
+    expect(await signer.verify(await signer.signAccess(0), 'access')).toEqual({ sub: 0 })
+  })
+
   it('rejects an access token where a refresh token is expected, and vice versa', async () => {
     const { signer } = await setup()
 

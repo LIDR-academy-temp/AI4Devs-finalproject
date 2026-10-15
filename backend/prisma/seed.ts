@@ -117,7 +117,9 @@ async function wipe() {
   ]) {
     await prisma.$executeRawUnsafe(`DELETE FROM [dbo].[${t}]`)
   }
-  // reset identities so that runs are comparable
+  // Reset identities so that runs are comparable: the first row always gets 1.
+  // SQL Server quirk: on a table that never held a row, the first insert after RESEED n takes n itself
+  // (not n + 1), so only tables that already used their identity are reseeded to 0.
   for (const t of [
     'Role',
     'User',
@@ -136,7 +138,10 @@ async function wipe() {
     'SettlementTransactionFee',
     'AuditLog',
   ]) {
-    await prisma.$executeRawUnsafe(`DBCC CHECKIDENT ('[dbo].[${t}]', RESEED, 0) WITH NO_INFOMSGS`)
+    await prisma.$executeRawUnsafe(
+      `IF EXISTS (SELECT 1 FROM sys.identity_columns WHERE object_id = OBJECT_ID(N'[dbo].[${t}]') AND last_value IS NOT NULL)
+         DBCC CHECKIDENT ('[dbo].[${t}]', RESEED, 0) WITH NO_INFOMSGS`,
+    )
   }
 }
 

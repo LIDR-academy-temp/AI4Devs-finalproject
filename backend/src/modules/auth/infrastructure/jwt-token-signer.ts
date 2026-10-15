@@ -44,7 +44,8 @@ export class JwtTokenSigner implements TokenSigner {
     })
     if (claims.typ !== typ) throw new Error(`expected a ${typ} token`)
     const sub = Number(claims.sub)
-    if (!Number.isSafeInteger(sub) || sub <= 0) throw new Error('invalid subject')
+    // Any non-negative integer: whether the user exists is decided by the repository, not here.
+    if (!Number.isSafeInteger(sub) || sub < 0) throw new Error('invalid subject')
     if (typ === 'refresh') {
       if (typeof claims.jti !== 'string') throw new Error('refresh token without jti')
       return { sub, jti: claims.jti }
