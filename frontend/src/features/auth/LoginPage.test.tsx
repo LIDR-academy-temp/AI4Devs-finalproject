@@ -1,8 +1,9 @@
 import { screen, waitFor } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
+import { strings as layoutStrings } from '@/app/layout/strings'
 import { INACTIVE_USER, PASSWORD } from '@/test/msw/fixtures'
-import { issueTokens } from '@/test/msw/handlers'
+import { db, issueTokens } from '@/test/msw/handlers'
 import { recordRequests } from '@/test/msw/record'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
@@ -118,5 +119,56 @@ describe('Login', () => {
 
     expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
+  })
+})
+
+describe('Login form', () => {
+  const fields = () => ({
+    userName: screen.getByLabelText(strings.userName),
+    password: screen.getByLabelText(strings.password),
+  })
+
+  it('is empty after signing out, even though the user typed the credentials', async () => {
+    const { user } = renderApp('/login')
+    await signIn(user, 'analyst', PASSWORD)
+    await screen.findByRole('heading', { name: 'Dashboard' })
+
+    await user.click(screen.getByRole('button', { name: layoutStrings.signOut }))
+
+    await screen.findByRole('button', { name: strings.submit })
+    expect(fields().userName).toHaveValue('')
+    expect(fields().password).toHaveValue('')
+  })
+
+  it('is empty after the session expires', async () => {
+    const { user, router } = renderApp('/login')
+    await signIn(user, 'viewer', PASSWORD)
+    await screen.findByRole('heading', { name: 'Dashboard' })
+    db.accessTokens.clear()
+    db.refreshTokens.clear()
+
+    await router.navigate({ to: '/accounts' })
+
+    expect(await screen.findByText(strings.sessionExpired)).toBeInTheDocument()
+    expect(fields().userName).toHaveValue('')
+    expect(fields().password).toHaveValue('')
+  })
+
+  it('keeps the password when the user name is corrected', async () => {
+    const { user } = renderApp('/login')
+    await user.type(await screen.findByLabelText(strings.userName), 'viewr')
+    await user.type(fields().password, 'secret-typed')
+
+    await user.clear(fields().userName)
+    await user.type(fields().userName, 'viewer')
+
+    expect(fields().password).toHaveValue('secret-typed')
+  })
+
+  it('declares the autocomplete hints password managers rely on', async () => {
+    renderApp('/login')
+
+    expect(await screen.findByLabelText(strings.userName)).toHaveAttribute('autocomplete', 'username')
+    expect(fields().password).toHaveAttribute('autocomplete', 'current-password')
   })
 })

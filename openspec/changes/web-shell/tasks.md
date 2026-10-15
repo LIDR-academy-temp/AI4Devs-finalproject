@@ -58,9 +58,9 @@ Por indicación expresa, cada punto de diseño revisado en `apply` (grupos 7 y 8
 
 ## 8. Formulario de Login
 
-- [ ] 8.1 Test (rojo) en `LoginPage.test.tsx`: tras entrar escribiendo credenciales y pulsar Sign out, User name y Password están vacíos; tras la expiración, vacíos; login rechazado vacía Password y conserva User name; corregir User name de `viewr` a `viewer` conserva Password; User name con `autocomplete="username"` y Password con `autocomplete="current-password"`
-- [ ] 8.2 Ajustar `LoginPage` para cumplir 8.1 (formulario nuevo en cada montaje, sin valores retenidos entre sesiones); verificar en verde y romper a propósito el vaciado tras un rechazo para ver fallar su test; restaurar
-- [ ] 8.3 Commit: `fix(frontend): formulario de Login vacío al montarse y compatible con gestores de contraseñas`
+- [x] 8.1 Test en `LoginPage.test.tsx`: tras entrar escribiendo credenciales y pulsar Sign out, User name y Password están vacíos; tras la expiración, vacíos; login rechazado vacía Password y conserva User name; corregir User name de `viewr` a `viewer` conserva Password; User name con `autocomplete="username"` y Password con `autocomplete="current-password"`
+- [x] 8.2 Ajustar `LoginPage` para cumplir 8.1 (formulario nuevo en cada montaje, sin valores retenidos entre sesiones); verificar en verde y romper a propósito el vaciado tras un rechazo para ver fallar su test; restaurar. **Resultado:** los tests de 8.1 pasaron sin cambiar `LoginPage` (el comportamiento ya existía). Se comprobó que fallan rompiendo por separado: retener valores entre montajes (fallan Sign out, expiración y corregir usuario), no vaciar Password tras el rechazo, vaciar Password al cambiar el usuario y quitar los `autocomplete`
+- [x] 8.3 Commit: `test(frontend): formulario de Login vacío al montarse y compatible con gestores de contraseñas` (solo tests: no hubo cambio de código)
 
 ## 9. CI, prueba manual y documentación
 
