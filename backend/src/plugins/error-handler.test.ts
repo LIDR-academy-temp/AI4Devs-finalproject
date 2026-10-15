@@ -8,7 +8,7 @@ import {
   InvalidTokenError,
   UnauthorizedError,
 } from '../modules/auth/domain/errors.js'
-import { NotFoundError } from '../modules/catalog/domain/errors.js'
+import { NotFoundError } from '../shared/errors.js'
 import { errorHandlerPlugin } from './error-handler.js'
 
 let app: FastifyInstance

@@ -1,5 +1,5 @@
 import type { ProviderDetail } from '@recon/shared'
-import { NotFoundError } from '../domain/errors.js'
+import { NotFoundError } from '../../../shared/errors.js'
 import type { Scope } from '../domain/scope.js'
 import type {
   AccountChannelItem,

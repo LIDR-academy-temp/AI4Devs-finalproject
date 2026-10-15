@@ -7,7 +7,7 @@ import {
   InvalidTokenError,
   UnauthorizedError,
 } from '../modules/auth/domain/errors.js'
-import { NotFoundError } from '../modules/catalog/domain/errors.js'
+import { NotFoundError } from '../shared/errors.js'
 
 function toResponse(error: unknown): { status: number; body: ErrorResponse } {
   if (

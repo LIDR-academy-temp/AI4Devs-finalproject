@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { NotFoundError } from '../domain/errors.js'
+import { NotFoundError } from '../../../shared/errors.js'
 import type { Scope } from '../domain/scope.js'
 import { ACCOUNT_IDS, InMemoryCatalogRepository, LAST_BATCH_IDS, LEGACY_RULE_SET_ID } from './__fakes__/in-memory.js'
 import { CatalogService } from './catalog-service.js'
