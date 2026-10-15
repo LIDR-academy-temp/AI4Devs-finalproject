@@ -308,7 +308,8 @@ describe('account and provider detail', () => {
 // so both sides of every join carry the scope. These rows cross merchants on purpose and live only here.
 describe('AccountChannel rows that cross merchants (defense in depth)', () => {
   // [account, channel, isPrimary]. RAM-01 already has a primary (UX_AccountChannel_primary), so the foreign
-  // primary goes on RAM-07, which merchant 1 sees through ProviderA-USD.
+  // primary goes on RAM-07, which merchant 1 sees through ProviderA-USD. Assumes a freshly seeded database (RAM-07
+  // unassigned); revisit when implementing settlement processing (#11).
   const CROSS_ROWS = [
     ['ProviderC-USD', RAM_01, false],
     ['ProviderA-USD', RAM_U1, false],
