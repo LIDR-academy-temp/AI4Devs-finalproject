@@ -88,6 +88,13 @@ describe('request validation', () => {
     expect(res.json().code).toBe('validation_error')
   })
 
+  it('answers 400 validation_error for an id that does not fit an INT column', async () => {
+    const res = await get('/providers/99999999999', 'admin')
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('validation_error')
+  })
+
   it('answers 400 validation_error for unassigned=nope', async () => {
     const res = await get('/channels?unassigned=nope', 'admin')
 
