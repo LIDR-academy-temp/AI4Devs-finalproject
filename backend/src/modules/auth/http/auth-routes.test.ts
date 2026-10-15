@@ -1,5 +1,6 @@
 import { MeResponse, TokenPair } from '@recon/shared'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { FakePasswordHasher } from '../application/__fakes__/in-memory.js'
 import { buildTestApp, PASSWORD } from './test-support.js'
 
 let ctx: Awaited<ReturnType<typeof buildTestApp>>
@@ -156,6 +157,7 @@ describe('logging', () => {
     expect(log).not.toContain('S3cret!')
     expect(log).not.toContain(pair.accessToken)
     expect(log).not.toContain(pair.refreshToken)
+    expect(log).not.toContain(FakePasswordHasher.hash(PASSWORD))
   })
 })
 

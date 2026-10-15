@@ -14,11 +14,13 @@ loadDotenv({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.
 export const TEST_JWT_SECRET = 'integration-test-secret-not-a-real-one-0001'
 export const SEED_PASSWORD = process.env.SEED_PASSWORD ?? 'Recon2026!'
 
+/** Builds the real app against SQL Server; every log line (level trace) is captured in `logLines`. */
 export async function createTestApp() {
-  const env = loadEnv({ ...process.env, JWT_SECRET: TEST_JWT_SECRET, LOG_LEVEL: 'silent' })
+  const env = loadEnv({ ...process.env, JWT_SECRET: TEST_JWT_SECRET, LOG_LEVEL: 'trace' })
   const prisma = new PrismaClient({ adapter: new PrismaMssql(mssqlConfigFromEnv(env)) })
-  const app = await buildApp({ env, prisma })
-  return { app, prisma }
+  const logLines: string[] = []
+  const app = await buildApp({ env, prisma, logStream: { write: (line) => void logLines.push(line) } })
+  return { app, prisma, logLines }
 }
 
 /** Decodes a JWT payload without verifying it. */

@@ -347,3 +347,18 @@ describe('authorization by permission', () => {
     expect(protectedHandler).not.toHaveBeenCalled()
   })
 })
+
+// Runs last: by now every flow above (logins, failures, refresh, logout, protected routes) has logged.
+describe('logger output', () => {
+  it('never contains passwords, Argon2 hashes or tokens', () => {
+    const log = ctx.logLines.join('\n')
+
+    expect(ctx.logLines.length).toBeGreaterThan(0)
+    expect(log).not.toContain(SEED_PASSWORD)
+    expect(log).not.toContain('S3cret!')
+    expect(log).not.toContain('definitely-not-the-password')
+    expect(log).not.toContain('$argon2')
+    // Every JWT issued by the app starts with this encoded header
+    expect(log).not.toMatch(/eyJhbGciOi/)
+  })
+})
