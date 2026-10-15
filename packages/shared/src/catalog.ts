@@ -68,6 +68,7 @@ export const AccountChannelItem = ChannelSummary.extend({
   isPrimary: z.boolean(),
   assignedAt: z.iso.datetime(),
   assignedInBatchId: z.uuid().nullable(),
+  /** null if the channel has no primary account or the caller cannot see it. */
   primaryAccount: AccountRef.nullable(),
 })
 export type AccountChannelItem = z.infer<typeof AccountChannelItem>
