@@ -11,6 +11,7 @@
  * - Clock: now
  */
 import { randomUUID } from 'node:crypto'
+import { type PermissionCode, ROLES, type RoleName } from '@recon/shared'
 import type {
   AuditEntry,
   AuditLogger,
@@ -173,44 +174,31 @@ export const MERCHANTS: MerchantRef[] = [
 
 export const PASSWORD = 'Correct-Horse-1'
 
-function user(overrides: Partial<UserRecord> & Pick<UserRecord, 'userId' | 'userName'>): UserRecord {
+function permissionsOf(role: RoleName): PermissionCode[] {
+  return [...ROLES.find((r) => r.name === role)!.permissions]
+}
+
+function user(
+  overrides: Partial<UserRecord> & Pick<UserRecord, 'userId' | 'userName'> & { role?: RoleName },
+): UserRecord {
+  const role = overrides.role ?? 'viewer'
   return {
     displayName: overrides.userName,
     email: `${overrides.userName}@recon.local`,
     passwordHash: FakePasswordHasher.hash(PASSWORD),
     isActive: true,
-    role: 'viewer',
-    permissions: ['fee.view', 'reports.view'],
+    permissions: permissionsOf(role),
     merchantScope: 'assigned',
     assignedMerchantIds: [],
     ...overrides,
+    role,
   }
 }
 
 export function seedUsers(): UserRecord[] {
   return [
-    user({
-      userId: 1,
-      userName: 'admin',
-      role: 'admin',
-      permissions: [
-        'settlement.process',
-        'payment.process',
-        'account.manage',
-        'fee.manage',
-        'fee.view',
-        'reports.view',
-        'user.manage',
-      ],
-      merchantScope: 'all',
-    }),
-    user({
-      userId: 2,
-      userName: 'analyst',
-      role: 'analyst',
-      permissions: ['settlement.process', 'fee.view', 'reports.view'],
-      assignedMerchantIds: [1, 2],
-    }),
+    user({ userId: 1, userName: 'admin', role: 'admin', merchantScope: 'all' }),
+    user({ userId: 2, userName: 'analyst', role: 'analyst', assignedMerchantIds: [1, 2] }),
     user({ userId: 3, userName: 'viewer', assignedMerchantIds: [1] }),
     user({ userId: 4, userName: 'inactive_user', isActive: false, assignedMerchantIds: [1] }),
     user({ userId: 5, userName: 'unassigned', assignedMerchantIds: [] }),

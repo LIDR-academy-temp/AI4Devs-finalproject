@@ -12,6 +12,7 @@
  * All IDs are made up: 15 digits for the numeric gateway, UUID v4 for the UUID
  * gateway. No value comes from real data.
  */
+import type { RoleName } from '@recon/shared'
 
 export const ANCHOR = new Date(Date.UTC(2026, 9, 12)) // 2026-10-12, the dataset's fixed "today"
 
@@ -186,24 +187,7 @@ export const FEE_TYPES = [
   })),
 ]
 
-export const ROLES = [
-  {
-    name: 'admin',
-    permissions: [
-      'settlement.process',
-      'payment.process',
-      'account.manage',
-      'fee.manage',
-      'fee.view',
-      'reports.view',
-      'user.manage',
-    ],
-  },
-  { name: 'analyst', permissions: ['settlement.process', 'fee.view', 'reports.view'] },
-  { name: 'payments', permissions: ['payment.process', 'fee.view', 'reports.view'] },
-  { name: 'viewer', permissions: ['fee.view', 'reports.view'] },
-] as const
-
+/** Demo users; roles and their permissions come from `ROLES` in @recon/shared. */
 export const USERS = [
   {
     userName: 'admin',
@@ -237,7 +221,14 @@ export const USERS = [
     merchantScope: 'assigned',
     merchants: [1],
   },
-] as const
+] as const satisfies readonly {
+  userName: string
+  email: string
+  displayName: string
+  role: RoleName
+  merchantScope: 'assigned' | 'all'
+  merchants: readonly number[]
+}[]
 
 export const GATEWAYS = [
   { gatewayId: 1, name: 'Gateway Numeric', idFormat: 'numeric' },
