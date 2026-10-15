@@ -14,9 +14,19 @@ import { renderApp } from '@/test/render'
 import { strings } from './layout/strings'
 import { appRoute } from './router'
 
+/** The probe's latest request; it settles once authFetch has finished with the answer (renewal, expiry, …). */
+let probeRequest: Promise<unknown> | undefined
+
 /** A screen that loads merchants, standing in for any data screen. */
 function Probe() {
-  const merchants = useQuery({ queryKey: ['probe'], queryFn: () => unwrap(api.GET('/api/v1/merchants')) })
+  const merchants = useQuery({
+    queryKey: ['probe'],
+    queryFn: () => {
+      const request = unwrap(api.GET('/api/v1/merchants'))
+      probeRequest = request
+      return request
+    },
+  })
   return <p>{merchants.data ? `Probe loaded ${merchants.data.length}` : 'Probe loading'}</p>
 }
 
@@ -81,11 +91,22 @@ describe('session guard', () => {
 
     await user.click(screen.getByRole('button', { name: strings.signOut }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/login'))
+    const inFlight = probeRequest
+    const delivered = new Promise<void>((resolve) => {
+      const onMocked = ({ request }: { request: Request }) => {
+        if (new URL(request.url).pathname !== '/api/v1/merchants') return
+        server.events.removeListener('response:mocked', onMocked)
+        resolve()
+      }
+      server.events.on('response:mocked', onMocked)
+    })
     answer()
 
+    // MSW has delivered the 401, and authFetch has finished handling it (the request settles only after that).
+    await delivered
+    await inFlight?.catch(() => undefined)
+    expect(inFlight).toBeDefined()
     await waitFor(() => expect(screen.getByRole('button', { name: loginStrings.submit })).toBeInTheDocument())
-    // Let the answered request finish going through authFetch before checking nothing expired.
-    await new Promise((resolve) => setTimeout(resolve, 50))
     expect(expired).not.toHaveBeenCalled()
     expect(screen.queryByText(loginStrings.sessionExpired)).not.toBeInTheDocument()
     expect(router.state.location.search).not.toMatchObject({ reason: 'expired' })
