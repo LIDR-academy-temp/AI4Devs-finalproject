@@ -54,7 +54,7 @@ describe('authenticated requests', () => {
     const results = await Promise.all([
       unwrap(api.GET('/api/v1/merchants')),
       unwrap(api.GET('/api/v1/channels', { params: { query: { unassigned: 'true' } } })),
-      unwrap(api.GET('/api/v1/providers/{providerId}', { params: { path: { providerId: 101 } } })),
+      unwrap(api.GET('/api/v1/providers/{providerId}', { params: { path: { providerId: '101' } } })),
     ])
 
     expect(results).toHaveLength(3)

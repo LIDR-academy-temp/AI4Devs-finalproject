@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll } from 'vitest'
+import { session } from '@/lib/session/session'
 import { resetDb } from './msw/handlers'
 import { server } from './msw/server'
 
@@ -10,6 +11,7 @@ afterEach(() => {
   cleanup()
   server.resetHandlers()
   resetDb()
+  session.clear()
   sessionStorage.clear()
 })
 afterAll(() => server.close())
