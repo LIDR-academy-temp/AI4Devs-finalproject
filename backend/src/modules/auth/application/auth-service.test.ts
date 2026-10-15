@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { InvalidCredentialsError, InvalidTokenError } from '../domain/errors.js'
+import { InvalidCredentialsError, InvalidTokenError, UnauthorizedError } from '../domain/errors.js'
 import {
   ACCESS_TTL_SECONDS,
   FakeClock,
@@ -285,5 +285,65 @@ describe('AuthService.me', () => {
     expect(me.merchantScope).toBe('all')
     expect(me.merchants).toEqual(MERCHANTS)
     expect(me.permissions).toHaveLength(7)
+  })
+})
+
+describe('AuthService.authenticate', () => {
+  async function accessTokenOf(userName: string) {
+    return (await service.login({ userName, password: PASSWORD })).accessToken
+  }
+
+  it('resolves the auth context of a valid access token from the repository', async () => {
+    const auth = await service.authenticate(await accessTokenOf('analyst'))
+
+    expect(auth).toMatchObject({ userId: 2, userName: 'analyst', role: 'analyst', merchantScope: 'assigned' })
+    expect([...auth.permissions].sort()).toEqual(['fee.view', 'reports.view', 'settlement.process'])
+    expect(auth.merchantIds).toEqual([1, 2])
+  })
+
+  it('gives every merchant id to a user with scope "all"', async () => {
+    const auth = await service.authenticate(await accessTokenOf('admin'))
+
+    expect(auth.merchantIds).toEqual([1, 2, 3])
+  })
+
+  it('reflects role changes made after the token was issued', async () => {
+    const token = await accessTokenOf('viewer')
+    users.users.find((u) => u.userName === 'viewer')!.permissions = ['settlement.process']
+
+    const auth = await service.authenticate(token)
+
+    expect([...auth.permissions]).toEqual(['settlement.process'])
+  })
+
+  it('rejects an expired access token', async () => {
+    const token = await accessTokenOf('analyst')
+    clock.advanceSeconds(ACCESS_TTL_SECONDS + 1)
+
+    await expect(service.authenticate(token)).rejects.toBeInstanceOf(UnauthorizedError)
+  })
+
+  it('rejects a refresh token used as access token', async () => {
+    const { refreshToken } = await service.login({ userName: 'analyst', password: PASSWORD })
+
+    await expect(service.authenticate(refreshToken)).rejects.toBeInstanceOf(UnauthorizedError)
+  })
+
+  it('rejects a token of a user deactivated after login', async () => {
+    const token = await accessTokenOf('analyst')
+    users.setActive('analyst', false)
+
+    await expect(service.authenticate(token)).rejects.toBeInstanceOf(UnauthorizedError)
+  })
+
+  it('rejects a token of a user that no longer exists', async () => {
+    const token = await accessTokenOf('analyst')
+    users.users = users.users.filter((u) => u.userName !== 'analyst')
+
+    await expect(service.authenticate(token)).rejects.toBeInstanceOf(UnauthorizedError)
+  })
+
+  it('rejects garbage', async () => {
+    await expect(service.authenticate('garbage')).rejects.toBeInstanceOf(UnauthorizedError)
   })
 })

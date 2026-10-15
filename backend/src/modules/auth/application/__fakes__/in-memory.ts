@@ -4,7 +4,7 @@
  * They pin down the port contract the service is written against
  * (../ports.ts):
  * - UserRepository: findByUserName, findById, listMerchants
- * - RefreshTokenStore: save, find, revoke (true only when an active row was revoked)
+ * - RefreshTokenStore: save, find, revoke (true only when an active row was revoked), rotate
  * - AuditLogger: record
  * - PasswordHasher: verify(password, hash | null); null means "compare against the dummy hash"
  * - TokenSigner: signAccess, signRefresh, verify(token, typ, { ignoreExpiration? }) throwing on any invalid token
@@ -81,6 +81,12 @@ export class InMemoryRefreshTokenStore implements RefreshTokenStore {
     const row = this.rows.get(tokenId)
     if (!row || row.revokedAt) return false
     row.revokedAt = at
+    return true
+  }
+
+  async rotate(oldTokenId: string, at: Date, next: { tokenId: string; userId: number; expiresAt: Date }) {
+    if (!(await this.revoke(oldTokenId, at))) return false
+    await this.save(next)
     return true
   }
 

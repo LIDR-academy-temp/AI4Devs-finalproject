@@ -25,17 +25,17 @@ Orden test-first: en cada grupo con lógica, el test se escribe y se ve fallar (
 ## 4. Esquema de base de datos (requiere confirmación humana)
 
 - [x] 4.1 **Parar y pedir confirmación.** Editar `schema.prisma`: modelo `RefreshToken` (D5) y `AuditLog.userId Int?`; generar `prisma/migrations/0003_auth/migration.sql` con `prisma migrate dev --create-only` contra la base local; presentar el SQL para revisión y no aplicarlo sin aprobación
-- [ ] 4.2 Tras la aprobación: aplicar con `pnpm db:migrate`, ajustar `seed.ts` para vaciar `RefreshToken` antes de `User` y regenerar el cliente; verificar que `pnpm db:seed` corre dos veces seguidas sin error y `pnpm typecheck` pasa
+- [x] 4.2 Tras la aprobación: aplicar con `pnpm db:migrate`, ajustar `seed.ts` para vaciar `RefreshToken` antes de `User` y regenerar el cliente; verificar que `pnpm db:seed` corre dos veces seguidas sin error y `pnpm typecheck` pasa
 
 ## 5. Dominio y servicio de aplicación de auth
 
-- [ ] 5.1 Test (rojo) `domain/permissions.test.ts`: `hasPermission` true/false según el set del rol; los permisos sembrados de `viewer` no incluyen `settlement.process` y los de `admin` incluyen los siete
-- [ ] 5.2 Implementar `domain/permissions.ts` (`AuthContext`, `hasPermission`); verificar 5.1 en verde
-- [ ] 5.3 Definir `application/ports.ts` (`UserRepository`, `RefreshTokenStore`, `AuditLogger`, `PasswordHasher`, `TokenSigner`, `Clock`) y dobles en memoria en `application/__fakes__/`; verificar `pnpm typecheck`
-- [ ] 5.4 Test (rojo) `application/auth-service.test.ts` — login: credenciales correctas devuelven par y auditan `auth.login.success`; contraseña mala, usuario inactivo e inexistente lanzan `InvalidCredentialsError` y auditan `auth.login.failure` con `reason` `bad_password`/`inactive`/`unknown_user` y `userId` null en el inexistente; el hasher se invoca también para inexistente e inactivo (D7); la contraseña no aparece en ningún registro de auditoría; un fallo del `AuditLogger` no cambia el resultado
-- [ ] 5.5 Test (rojo) en el mismo archivo — refresh/logout: refresh válido rota (revoca el `jti` usado, guarda el nuevo); reutilizar un refresh rotado, uno revocado, uno caducado (con `Clock` falso), uno de usuario inactivo o un access token lanza `InvalidTokenError`; logout revoca y es idempotente (sin error con token revocado, caducado o basura)
-- [ ] 5.6 Test (rojo) en el mismo archivo — `me`: con scope `assigned` devuelve solo los merchants de `UserMerchant` (vacío si no hay, nunca todos); con scope `all` devuelve todos
-- [ ] 5.7 Implementar `application/auth-service.ts` (login, refresh, logout, me); verificar 5.4–5.6 en verde y romper a propósito la comparación de `typ` para ver fallar el caso "access token usado como refresh"
+- [x] 5.1 Test (rojo) `domain/permissions.test.ts`: `hasPermission` true/false según el set del rol; los permisos sembrados de `viewer` no incluyen `settlement.process` y los de `admin` incluyen los siete
+- [x] 5.2 Implementar `domain/permissions.ts` (`AuthContext`, `hasPermission`); verificar 5.1 en verde
+- [x] 5.3 Definir `application/ports.ts` (`UserRepository`, `RefreshTokenStore`, `AuditLogger`, `PasswordHasher`, `TokenSigner`, `Clock`) y dobles en memoria en `application/__fakes__/`; verificar `pnpm typecheck`
+- [x] 5.4 Test (rojo) `application/auth-service.test.ts` — login: credenciales correctas devuelven par y auditan `auth.login.success`; contraseña mala, usuario inactivo e inexistente lanzan `InvalidCredentialsError` y auditan `auth.login.failure` con `reason` `bad_password`/`inactive`/`unknown_user` y `userId` null en el inexistente; el hasher se invoca también para inexistente e inactivo (D7); la contraseña no aparece en ningún registro de auditoría; un fallo del `AuditLogger` no cambia el resultado
+- [x] 5.5 Test (rojo) en el mismo archivo — refresh/logout: refresh válido rota (revoca el `jti` usado, guarda el nuevo); reutilizar un refresh rotado, uno revocado, uno caducado (con `Clock` falso), uno de usuario inactivo o un access token lanza `InvalidTokenError`; logout revoca y es idempotente (sin error con token revocado, caducado o basura)
+- [x] 5.6 Test (rojo) en el mismo archivo — `me`: con scope `assigned` devuelve solo los merchants de `UserMerchant` (vacío si no hay, nunca todos); con scope `all` devuelve todos
+- [x] 5.7 Implementar `application/auth-service.ts` (login, refresh, logout, me); verificar 5.4–5.6 en verde y romper a propósito la comparación de `typ` para ver fallar el caso "access token usado como refresh"
 
 ## 6. Adaptadores de infraestructura
 
