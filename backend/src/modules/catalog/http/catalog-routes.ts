@@ -6,6 +6,7 @@ import {
   ChannelSummary,
   ChannelsQuery,
   ErrorResponse,
+  IntId,
   MerchantSummary,
   ProviderDetail,
   ProviderSummary,
@@ -19,7 +20,6 @@ export interface CatalogRoutesOptions {
   service: CatalogService
 }
 
-const IntId = z.coerce.number().int().positive()
 const MerchantParams = z.object({ merchantId: IntId })
 const ProviderParams = z.object({ providerId: IntId })
 const AccountParams = z.object({ accountId: z.uuid() })

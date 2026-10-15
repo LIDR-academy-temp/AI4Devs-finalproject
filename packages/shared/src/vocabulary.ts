@@ -43,3 +43,6 @@ export const BLOCKING_VALIDATIONS: readonly ValidationCode[] = ['provider_mismat
 export const Money = z.string().regex(/^-?\d+(\.\d{1,4})?$/, 'decimal string expected')
 export const Percentage = z.string().regex(/^(0(\.\d{1,6})?|1(\.0{1,6})?)$/, 'fraction 0..1 expected')
 export const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+
+/** Integer id in a path segment (catalogs, users, findings): positive and within SQL Server INT. */
+export const IntId = z.coerce.number().int().positive().max(2_147_483_647)
