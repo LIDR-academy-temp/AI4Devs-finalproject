@@ -108,6 +108,7 @@ async function wipe() {
     'TransactionStatus',
     'SettlementStatus',
     'Cycle',
+    'RefreshToken',
     'UserMerchant',
     'User',
     'RolePermission',

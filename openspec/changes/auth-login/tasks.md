@@ -24,7 +24,7 @@ Orden test-first: en cada grupo con lógica, el test se escribe y se ve fallar (
 
 ## 4. Esquema de base de datos (requiere confirmación humana)
 
-- [ ] 4.1 **Parar y pedir confirmación.** Editar `schema.prisma`: modelo `RefreshToken` (D5) y `AuditLog.userId Int?`; generar `prisma/migrations/0003_auth/migration.sql` con `prisma migrate dev --create-only` contra la base local; presentar el SQL para revisión y no aplicarlo sin aprobación
+- [x] 4.1 **Parar y pedir confirmación.** Editar `schema.prisma`: modelo `RefreshToken` (D5) y `AuditLog.userId Int?`; generar `prisma/migrations/0003_auth/migration.sql` con `prisma migrate dev --create-only` contra la base local; presentar el SQL para revisión y no aplicarlo sin aprobación
 - [ ] 4.2 Tras la aprobación: aplicar con `pnpm db:migrate`, ajustar `seed.ts` para vaciar `RefreshToken` antes de `User` y regenerar el cliente; verificar que `pnpm db:seed` corre dos veces seguidas sin error y `pnpm typecheck` pasa
 
 ## 5. Dominio y servicio de aplicación de auth
