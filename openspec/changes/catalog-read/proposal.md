@@ -51,7 +51,7 @@ Nuevos:
 
 ```
 backend/src/modules/catalog/domain/scope.ts                      Scope { merchantIds } y scopeOf(auth)
-backend/src/modules/catalog/domain/errors.ts                     NotFoundError (code not_found)
+backend/src/shared/errors.ts                                     NotFoundError (code not_found)
 backend/src/modules/catalog/application/ports.ts                 CatalogRepository (consultas con alcance)
 backend/src/modules/catalog/application/catalog-service.ts       casos de uso de lectura; 404 cuando la consulta no devuelve
 backend/src/modules/catalog/application/__fakes__/in-memory.ts   InMemoryCatalogRepository con el mundo del seed
