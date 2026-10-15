@@ -139,15 +139,20 @@ export class PrismaCatalogRepository implements CatalogRepository {
 
   async listAccountChannels(scope: Scope, accountId: string): Promise<AccountChannelItem[]> {
     const rows = await this.prisma.accountChannel.findMany({
-      where: { accountId, account: { provider: { merchantId: visibleMerchant(scope) } } },
+      // Both sides carry the scope: the schema does not force account and channel onto the same provider.
+      where: {
+        accountId,
+        account: { provider: { merchantId: visibleMerchant(scope) } },
+        channel: { provider: { merchantId: visibleMerchant(scope) } },
+      },
       select: {
         ...assignmentSelect,
         channel: {
           select: {
             ...channelSelect,
-            // The channel's current primary account, whichever account it belongs to.
+            // The channel's current primary account, whichever account it belongs to, if the caller sees it.
             accountChannels: {
-              where: { isPrimary: true },
+              where: { isPrimary: true, account: { provider: { merchantId: visibleMerchant(scope) } } },
               select: { account: { select: { accountId: true, name: true } } },
             },
           },
@@ -190,7 +195,11 @@ export class PrismaCatalogRepository implements CatalogRepository {
 
   async listChannelAccounts(scope: Scope, channelId: number): Promise<ChannelAccountItem[]> {
     const rows = await this.prisma.accountChannel.findMany({
-      where: { channelId, channel: { provider: { merchantId: visibleMerchant(scope) } } },
+      where: {
+        channelId,
+        channel: { provider: { merchantId: visibleMerchant(scope) } },
+        account: { provider: { merchantId: visibleMerchant(scope) } },
+      },
       select: {
         ...assignmentSelect,
         account: { select: { accountId: true, name: true, providerId: true, isActive: true } },

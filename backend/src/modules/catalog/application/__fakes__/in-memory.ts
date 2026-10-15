@@ -166,6 +166,16 @@ export class InMemoryCatalogRepository implements CatalogRepository {
     return p !== undefined && this.visible(scope, p.merchantId)
   }
 
+  private channelVisible(scope: Scope, channelId: number): boolean {
+    const c = this.fixture.channels.find((x) => x.channelId === channelId)
+    return c !== undefined && this.providerVisible(scope, c.providerId)
+  }
+
+  private accountVisible(scope: Scope, accountId: string): boolean {
+    const a = this.fixture.accounts.find((x) => x.accountId === accountId)
+    return a !== undefined && this.providerVisible(scope, a.providerId)
+  }
+
   private merchantRef(merchantId: number) {
     const m = this.fixture.merchants.find((x) => x.merchantId === merchantId)!
     return { merchantId: m.merchantId, name: m.name }
@@ -229,11 +239,13 @@ export class InMemoryCatalogRepository implements CatalogRepository {
     const a = await this.findAccount(scope, accountId)
     if (!a) return []
     return this.fixture.accountChannels
-      .filter((row) => row.accountId === a.accountId)
+      .filter((row) => row.accountId === a.accountId && this.channelVisible(scope, row.channelId))
       .sort((x, y) => x.assignedAt.localeCompare(y.assignedAt) || x.channelId - y.channelId)
       .map((row) => {
         const c = this.fixture.channels.find((x) => x.channelId === row.channelId)!
-        const primary = this.fixture.accountChannels.find((x) => x.channelId === row.channelId && x.isPrimary)
+        const primary = this.fixture.accountChannels.find(
+          (x) => x.channelId === row.channelId && x.isPrimary && this.accountVisible(scope, x.accountId),
+        )
         return {
           ...structuredClone(c),
           isPrimary: row.isPrimary,
@@ -263,7 +275,7 @@ export class InMemoryCatalogRepository implements CatalogRepository {
   async listChannelAccounts(scope: Scope, channelId: number): Promise<ChannelAccountItem[]> {
     if (!(await this.findChannel(scope, channelId))) return []
     return this.fixture.accountChannels
-      .filter((row) => row.channelId === channelId)
+      .filter((row) => row.channelId === channelId && this.accountVisible(scope, row.accountId))
       .map((row) => ({ row, account: this.fixture.accounts.find((a) => a.accountId === row.accountId)! }))
       .sort((x, y) => x.row.assignedAt.localeCompare(y.row.assignedAt) || x.account.name.localeCompare(y.account.name))
       .map(({ row, account }) => ({
