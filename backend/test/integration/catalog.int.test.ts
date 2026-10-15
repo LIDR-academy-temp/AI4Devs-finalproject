@@ -214,6 +214,31 @@ describe('account and provider detail', () => {
     expect(typeof account.rollingReserveCapAmt).toBe('string')
   })
 
+  it('lists the five seed accounts through their providers, all active and with distinct names', async () => {
+    const perProvider = await Promise.all(
+      [101, 102, 201].map((providerId) =>
+        json<{ name: string; isActive: boolean }[]>(`/providers/${providerId}/accounts`, 'admin'),
+      ),
+    )
+    const accounts = perProvider.flat()
+
+    expect(accounts.map((a) => a.name)).toEqual([
+      'ProviderA-EUR',
+      'ProviderA-USD',
+      'ProviderB-Main',
+      'ProviderC-Alt',
+      'ProviderC-USD',
+    ])
+    expect(new Set(accounts.map((a) => a.name)).size).toBe(5)
+    expect(accounts.every((a) => a.isActive)).toBe(true)
+  })
+
+  it('ProviderA-USD has neither a reserve cap nor a rule set', async () => {
+    const account = await json<Record<string, unknown>>(`/accounts/${accountIds['ProviderA-USD']}`, 'admin')
+
+    expect(account).toMatchObject({ name: 'ProviderA-USD', rollingReserveCapAmt: null, matchingRuleSetId: null })
+  })
+
   it('ProviderC-Alt is linked to the "Provider C legacy" rule set', async () => {
     const legacy = await ctx.prisma.matchingRuleSet.findFirstOrThrow({ where: { name: 'Provider C legacy' } })
 
