@@ -45,4 +45,7 @@ export const Percentage = z.string().regex(/^(0(\.\d{1,6})?|1(\.0{1,6})?)$/, 'fr
 export const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 
 /** Integer id in a path segment (catalogs, users, findings): positive and within SQL Server INT. */
-export const IntId = z.coerce.number().int().positive().max(2_147_483_647)
+export const IntId = z
+  .string()
+  .regex(/^\d{1,10}$/)
+  .pipe(z.coerce.number<string>().int().positive().max(2_147_483_647))
