@@ -45,10 +45,10 @@ Orden test-first: en cada grupo con lógica, el test se escribe y se ve fallar (
 
 ## 7. Capa HTTP: plugin de permisos y rutas
 
-- [ ] 7.1 Test (rojo) `http/auth-plugin.test.ts` con `buildApp` y servicio/repositorio falsos y una ruta de prueba `GET /__test/protected` con `requirePermission('settlement.process')` y un handler espía: sin cabecera → 401 `unauthorized` y espía no llamado; token mal firmado, caducado o refresh → 401; usuario inactivo → 401; `viewer` → 403 `forbidden` y espía no llamado; `analyst` → 200 y espía llamado una vez
-- [ ] 7.2 Implementar `http/auth-plugin.ts` (`authenticate`, `requirePermission(code: PermissionCode)`, tipado de `request.auth`); verificar 7.1 en verde y romper a propósito el orden `authenticate`→`check` para ver fallar el caso 401/403
-- [ ] 7.3 Test (rojo) `http/auth-routes.test.ts` con `inject`: login 200 con forma `TokenPair`; 400 `validation_error` con cuerpo incompleto; los tres 401 de credenciales tienen cuerpos idénticos (`expect(a.body).toBe(b.body)`); refresh 200/401; logout 204 dos veces; `me` 200 con forma `MeResponse` y 401 sin token; el logger capturado no contiene la contraseña ni el token
-- [ ] 7.4 Implementar `http/auth-routes.ts` y registrar el módulo en `app.ts` bajo `/api/v1/auth`; verificar 7.3 en verde y que `/docs/json` lista las cuatro rutas con `bearerAuth` en `/auth/me`
+- [x] 7.1 Test (rojo) `http/auth-plugin.test.ts` con `buildApp` y servicio/repositorio falsos y una ruta de prueba `GET /__test/protected` con `requirePermission('settlement.process')` y un handler espía: sin cabecera → 401 `unauthorized` y espía no llamado; token mal firmado, caducado o refresh → 401; usuario inactivo → 401; `viewer` → 403 `forbidden` y espía no llamado; `analyst` → 200 y espía llamado una vez
+- [x] 7.2 Implementar `http/auth-plugin.ts` (`authenticate`, `requirePermission(code: PermissionCode)`, tipado de `request.auth`); verificar 7.1 en verde y romper a propósito el orden `authenticate`→`check` para ver fallar el caso 401/403
+- [x] 7.3 Test (rojo) `http/auth-routes.test.ts` con `inject`: login 200 con forma `TokenPair`; 400 `validation_error` con cuerpo incompleto; los tres 401 de credenciales tienen cuerpos idénticos (`expect(a.body).toBe(b.body)`); refresh 200/401; logout 204 dos veces; `me` 200 con forma `MeResponse` y 401 sin token; el logger capturado no contiene la contraseña ni el token
+- [x] 7.4 Implementar `http/auth-routes.ts` y registrar el módulo en `app.ts` bajo `/api/v1/auth`; verificar 7.3 en verde y que `/docs/json` lista las cuatro rutas con `bearerAuth` en `/auth/me`
 
 ## 8. Integración contra SQL Server y CI
 
