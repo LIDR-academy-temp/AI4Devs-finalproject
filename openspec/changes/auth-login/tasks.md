@@ -10,8 +10,8 @@ Orden test-first: en cada grupo con lógica, el test se escribe y se ve fallar (
 
 ## 2. Esquemas compartidos
 
-- [ ] 2.1 Test (rojo) en `packages/shared/src/auth.test.ts`: `LoginRequest` rechaza `userName`/`password` vacíos o ausentes; `MeResponse` acepta el `me` de `viewer` y rechaza un `permissions` con un código fuera de `PermissionCode`; `MerchantScope` solo admite `assigned`/`all`
-- [ ] 2.2 Implementar `packages/shared/src/auth.ts` (`LoginRequest`, `TokenPair`, `RefreshRequest`, `MeResponse`, `ErrorResponse`, `MerchantScope`) y re-exportar desde `index.ts`; verificar test 2.1 en verde y `pnpm typecheck`
+- [x] 2.1 Test (rojo) en `packages/shared/src/auth.test.ts`: `LoginRequest` rechaza `userName`/`password` vacíos o ausentes; `MeResponse` acepta el `me` de `viewer` y rechaza un `permissions` con un código fuera de `PermissionCode`; `MerchantScope` solo admite `assigned`/`all`
+- [x] 2.2 Implementar `packages/shared/src/auth.ts` (`LoginRequest`, `TokenPair`, `RefreshRequest`, `MeResponse`, `ErrorResponse`, `MerchantScope`) y re-exportar desde `index.ts`; verificar test 2.1 en verde y `pnpm typecheck`
 
 ## 3. Entorno y arranque mínimo del servidor
 
