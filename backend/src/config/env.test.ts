@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { loadEnv } from '../../../src/config/env.js'
+import { loadEnv } from './env.js'
 
 const VALID_SECRET = 'test-only-secret-with-at-least-32-chars'
 

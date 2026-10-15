@@ -2,7 +2,7 @@
  * In-memory doubles for the auth application ports.
  *
  * They pin down the port contract the service is written against
- * (src/modules/auth/application/ports.ts):
+ * (../ports.ts):
  * - UserRepository: findByUserName, findById, listMerchants
  * - RefreshTokenStore: save, find, revoke (true only when an active row was revoked)
  * - AuditLogger: record
@@ -23,7 +23,7 @@ import type {
   TokenType,
   UserRecord,
   UserRepository,
-} from '../../../src/modules/auth/application/ports.js'
+} from '../ports.js'
 
 export const ACCESS_TTL_SECONDS = 900
 export const REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60

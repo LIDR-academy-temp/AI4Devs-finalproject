@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { AuthService } from '../../../src/modules/auth/application/auth-service.js'
-import { InvalidCredentialsError, InvalidTokenError } from '../../../src/modules/auth/domain/errors.js'
+import { InvalidCredentialsError, InvalidTokenError } from '../domain/errors.js'
 import {
   ACCESS_TTL_SECONDS,
   FakeClock,
@@ -13,7 +12,8 @@ import {
   PASSWORD,
   REFRESH_TTL_SECONDS,
   seedUsers,
-} from './fakes.js'
+} from './__fakes__/in-memory.js'
+import { AuthService } from './auth-service.js'
 
 let clock: FakeClock
 let users: InMemoryUserRepository

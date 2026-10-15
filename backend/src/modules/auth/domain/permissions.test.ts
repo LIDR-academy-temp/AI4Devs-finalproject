@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ROLES } from '../../../prisma/synthetic.js'
-import { type AuthContext, hasPermission } from '../../../src/modules/auth/domain/permissions.js'
+import { ROLES } from '../../../../prisma/synthetic.js'
+import { type AuthContext, hasPermission } from './permissions.js'
 
 const ALL_PERMISSIONS = [
   'settlement.process',
