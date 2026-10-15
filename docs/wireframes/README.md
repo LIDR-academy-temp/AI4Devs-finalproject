@@ -59,3 +59,7 @@ Exportación del prototipo de 29 pantallas que se revisó y aprobó con la empre
 | T4 · #13 (pantallas Settlement Review y Summary) | Settlement Review, Settlement Summary |
 
 El resto es de la Entrega 3 o roadmap: Merchants & Providers y Account Detail (tramo 5, junto con la gestión de cuentas), pagos, búsquedas, informes, administración de fees, reglas, usuarios y auditoría.
+
+## Capturas de la implementación
+
+`impl/`: capturas de las pantallas ya construidas, a 1280 px, con datos del seed. T1 · #3: `impl/Login.jpg` y `impl/Accounts.jpg` (`viewer`, Provider A, con el aviso de RAM-07).

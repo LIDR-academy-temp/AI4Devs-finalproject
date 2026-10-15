@@ -66,9 +66,9 @@ Por indicación expresa, cada punto de diseño revisado en `apply` (grupos 7 y 8
 
 - [ ] 9.1 `.github/workflows/ci.yml`, job `check`: después de `pnpm test`, `pnpm openapi:check` y `pnpm --filter @recon/frontend build`; verificar en el PR que el job `check` queda en verde
 - [x] 9.2 Prueba manual contra la API real con `viewer`, `analyst` y `admin` (Login, menú, Accounts con RAM-07 y RAM-13, F5, Sign out), hecha por la persona el 2026-10-15 antes de los grupos 7 y 8; la expiración la cubren los tests (`guards.test.tsx`, `session.test.ts`)
-- [ ] 9.3 Capturas de Login y Accounts (Provider A) a 1280 px en `docs/wireframes/impl/` (Accounts ya tomada como `viewer`; Login después del grupo 8) y una línea en `docs/wireframes/README.md` que las enlace; actualizar `prompts.md` con el registro de este change
-- [ ] 9.4 Verificar `pnpm lint && pnpm typecheck && pnpm test && pnpm openapi:check && pnpm --filter @recon/frontend build` en verde y `openspec validate web-shell --type change --strict` sin avisos
-- [ ] 9.5 Commit: `ci(frontend): build del frontend y comprobación del contrato OpenAPI` y después `docs(frontend): capturas de Login y Accounts y registro en prompts.md`
+- [x] 9.3 Capturas de Login y Accounts (Provider A) a 1280 px en `docs/wireframes/impl/` (Accounts ya tomada como `viewer`; Login después del grupo 8) y una línea en `docs/wireframes/README.md` que las enlace; actualizar `prompts.md` con el registro de este change
+- [x] 9.4 Verificar `pnpm lint && pnpm typecheck && pnpm test && pnpm openapi:check && pnpm --filter @recon/frontend build` en verde y `openspec validate web-shell --type change --strict` sin avisos
+- [x] 9.5 Commit: `ci(frontend): build del frontend y comprobación del contrato OpenAPI` y después `docs(frontend): capturas de Login y Accounts y registro en prompts.md`
 
 ## Workflow follow-up
 
