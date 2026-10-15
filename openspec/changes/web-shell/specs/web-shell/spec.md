@@ -44,6 +44,31 @@ La pantalla Login SHALL pedir **User name** y **Password**, validarlos en el cli
 - **WHEN** pulsa **Sign in** con los dos campos rellenos
 - **THEN** el botón queda deshabilitado hasta que llega la respuesta, de modo que un segundo clic no envía otra petición
 
+### Requirement: Formulario de Login
+El formulario SHALL montarse siempre vacío, también al llegar tras **Sign out** o tras la expiración de la sesión. Tras un login rechazado SHALL vaciarse Password y conservarse User name; cambiar User name SHALL no vaciar Password. User name SHALL declarar `autocomplete="username"` y Password `autocomplete="current-password"`, para que funcionen los gestores de contraseñas.
+
+#### Scenario: Vacío tras Sign out
+- **GIVEN** `analyst` entró escribiendo sus credenciales
+- **WHEN** pulsa **Sign out**
+- **THEN** Login muestra User name y Password vacíos
+
+#### Scenario: Vacío tras expiración
+- **WHEN** la sesión expira y la aplicación lleva a Login
+- **THEN** User name y Password están vacíos
+
+#### Scenario: Login rechazado
+- **WHEN** `viewer` entra con una contraseña errónea
+- **THEN** Password queda vacío y User name conserva `viewer`
+
+#### Scenario: Corregir el usuario
+- **GIVEN** User name `viewr` y una contraseña escrita
+- **WHEN** corrige User name a `viewer`
+- **THEN** Password conserva lo escrito
+
+#### Scenario: Gestores de contraseñas
+- **WHEN** se muestra Login
+- **THEN** User name tiene `autocomplete="username"` y Password `autocomplete="current-password"`
+
 ### Requirement: Error de credenciales genérico
 Ante un `401` de `POST /auth/login` la pantalla SHALL mostrar siempre el mismo mensaje, `Invalid user name or password`, sin distinguir usuario inexistente, inactivo o contraseña errónea, SHALL vaciar el campo Password y conservar User name. Un fallo de red o un `5xx` SHALL mostrar un mensaje distinto que no culpe a las credenciales.
 
@@ -94,16 +119,38 @@ Si el refresh responde `401`, o la petición repetida vuelve a recibir `401`, la
 - **THEN** igualmente ve Login y la recarga de la página no recupera la sesión
 
 ### Requirement: Almacenamiento de los tokens
-El access token SHALL vivir solo en memoria. El refresh token SHALL guardarse en el almacenamiento de la pestaña (se pierde al cerrarla) y SHALL borrarse al cerrar sesión o al expirar. Ningún token SHALL aparecer en la URL ni en los registros de la consola.
+El access token SHALL vivir solo en la memoria de cada pestaña y no escribirse en ningún almacenamiento. El refresh token SHALL guardarse en el almacenamiento persistente del navegador, compartido por todas las pestañas de la aplicación, y SHALL borrarse al cerrar sesión o al expirar. Ningún token SHALL aparecer en la URL ni en los registros de la consola.
 
 #### Scenario: Pestaña nueva
 - **GIVEN** `analyst` con sesión en una pestaña
 - **WHEN** abre la aplicación en otra pestaña
-- **THEN** la nueva pestaña muestra Login; la primera sigue con su sesión
+- **THEN** la nueva pestaña entra sin pasar por Login y muestra la identidad de `analyst`
 
 #### Scenario: Tras cerrar sesión
 - **WHEN** `analyst` cierra sesión
-- **THEN** ni la memoria de la aplicación ni el almacenamiento de la pestaña conservan access ni refresh token
+- **THEN** ni la memoria de ninguna pestaña ni el almacenamiento del navegador conservan access ni refresh token
+
+### Requirement: Renovación coordinada entre pestañas
+Las pestañas abiertas SHALL compartir una sola sesión. Cuando varias necesiten renovar el par a la vez, SHALL renovar una tras otra, cada una con el refresh token vigente en su turno, de modo que el API nunca reciba un refresh ya revocado y ninguna pestaña pierda la sesión. El access token de una pestaña SHALL no salir de ella.
+
+#### Scenario: Dos pestañas renuevan a la vez
+- **GIVEN** dos pestañas con la misma sesión cuyos access tokens ya no son válidos y cuyo refresh sí lo es
+- **WHEN** ambas lanzan a la vez una petición que recibe `401`
+- **THEN** el API recibe dos `POST /auth/refresh` en serie, cada uno con un refresh token distinto, y nunca uno ya revocado
+- **AND** las dos peticiones se repiten con éxito y ninguna pestaña va a Login
+
+### Requirement: Login y logout propagados entre pestañas
+Un **Sign out** en una pestaña SHALL llevar a Login a todas las pestañas abiertas y descartar en todas su access token y sus datos cacheados. Un login en una pestaña SHALL hacer entrar a las pestañas que estén en Login, cada una en su ruta de vuelta o en Dashboard.
+
+#### Scenario: Logout en una pestaña
+- **GIVEN** `analyst` con sesión en dos pestañas, una en Accounts y otra en Dashboard
+- **WHEN** pulsa **Sign out** en Accounts
+- **THEN** las dos pestañas muestran Login y ninguna conserva datos de la sesión
+
+#### Scenario: Login en una pestaña
+- **GIVEN** dos pestañas en Login, la segunda con `/accounts` como ruta de vuelta
+- **WHEN** `analyst` entra en la primera
+- **THEN** la primera llega a Dashboard y la segunda entra en `/accounts` sin volver a escribir credenciales
 
 ### Requirement: Navegación filtrada por permisos
 La barra lateral SHALL mostrar el mapa de pantallas MVP de README §1.3 en sus grupos (Reconciliation, Settlements, Search, Reports, Administration), y SHALL ocultar cada entrada cuyo permiso requerido no tenga el rol; un grupo sin entradas visibles SHALL ocultarse. Las entradas aún no construidas SHALL mostrarse deshabilitadas, no como enlaces.

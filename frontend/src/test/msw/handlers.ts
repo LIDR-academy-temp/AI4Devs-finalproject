@@ -25,6 +25,8 @@ function freshDb() {
     providers: [...PROVIDERS],
     accounts: [...ACCOUNTS],
     accountChannels: [...ACCOUNT_CHANNELS] as AccountChannelRow[],
+    /** Every refresh token received by POST /auth/refresh, in order, and whether it was still valid. */
+    refreshLog: [] as { refreshToken: string; valid: boolean }[],
     seq: 0,
   }
 }
@@ -86,6 +88,7 @@ export const handlers = [
   http.post(`${API}/auth/refresh`, async ({ request }) => {
     const { refreshToken } = (await request.json()) as { refreshToken: string }
     const user = db.refreshTokens.get(refreshToken)
+    db.refreshLog.push({ refreshToken, valid: user !== undefined })
     if (!user) return error(401, 'invalid_token', 'Invalid or expired token')
     db.refreshTokens.delete(refreshToken)
     return HttpResponse.json(issueTokens(user))

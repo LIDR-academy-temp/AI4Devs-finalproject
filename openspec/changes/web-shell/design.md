@@ -32,16 +32,29 @@
 
 ## Decisions
 
-### D1 ⚑ Dónde viven los tokens
-**Propuesta:** access token **solo en memoria** (variable del módulo de sesión, nunca en React state persistido ni en almacenamiento); refresh token en **`sessionStorage`** de la pestaña.
+### D1 ⚑ Dónde viven los tokens (revisada en `apply`: sesión compartida entre pestañas)
+**Decisión:** access token **solo en memoria de cada pestaña**; refresh token en **`localStorage`**, compartido por todas las pestañas del origen. La renovación se **serializa entre pestañas con Web Locks** (`navigator.locks`) y el login y el logout se **propagan con `BroadcastChannel`**. Sustituye a la versión aprobada antes de `apply` (refresh en `sessionStorage`, una sesión por pestaña), que obligaba a entrar de nuevo en cada pestaña.
 
 Por qué:
-- El contrato de `auth` recibe el refresh **en el cuerpo** y no emite cookies; una cookie httpOnly obligaría a cambiar `auth` (cookie `Set-Cookie`, `@fastify/cookie`, protección CSRF, `SameSite`) y su spec. Eso es un change de backend propio, no un efecto colateral de la primera pantalla.
-- Memoria para el access token: es el que abre todas las rutas; no sobrevive a la pestaña ni queda en disco. Dura 15 min.
-- `sessionStorage` para el refresh: sobrevive a F5 (sin él, cada recarga pide login), muere al cerrar la pestaña (sesión corta, adecuada a un back-office) y es **por pestaña**. Esto último evita una carrera real con la rotación: con `localStorage` compartido, dos pestañas que refrescan a la vez usan el mismo refresh; el API revoca el primero y la segunda pestaña recibe `401` y pierde la sesión.
-- Riesgo asumido: un XSS podría leer el refresh de `sessionStorage`. Mitigación: React escapa por defecto, se prohíbe `dangerouslySetInnerHTML` (regla de Biome `security/noDangerouslySetInnerHtml`, ya en `recommended`), ninguna dependencia que inyecte HTML, y la rotación hace que un refresh robado y usado invalide el legítimo (el usuario lo nota al volver a Login). La CSP la pone Nginx en el despliegue (fuera de este change).
+- El contrato de `auth` recibe el refresh **en el cuerpo** y no emite cookies; una cookie httpOnly obligaría a cambiar `auth` (cookie `Set-Cookie`, `@fastify/cookie`, protección CSRF, `SameSite`) y su spec. Eso sigue siendo un change de backend propio.
+- Memoria para el access token: abre todas las rutas, no queda en disco y dura 15 min. Cada pestaña tiene el suyo.
+- `localStorage` para el refresh: una sola sesión para todo el navegador, como espera quien abre Accounts en otra pestaña.
+- **Carrera de rotación resuelta con un candado.** El API revoca el refresh usado; si dos pestañas lo usaran a la vez, la segunda perdería la sesión. Por eso toda renovación corre dentro de `navigator.locks.request('recon.refresh', …)`:
+  1. La pestaña que obtiene el candado **relee el refresh de `localStorage`** y renueva con el que encuentre: si otra pestaña ya lo rotó, usa el nuevo.
+  2. Llama a `POST /auth/refresh`, guarda el refresh nuevo en `localStorage`, se queda con su access token en memoria y suelta el candado.
+  3. La siguiente pestaña en la cola repite el paso 1 con el refresh que dejó la anterior.
+  Resultado: renovaciones **en serie**, una por pestaña y cada una con el refresh vigente en su turno. El API nunca recibe un refresh ya revocado. Coste asumido: N pestañas que caducan a la vez hacen N llamadas a `/auth/refresh`, a cambio de que **el access token nunca salga de la memoria de su pestaña** (no viaja entre pestañas).
+- `BroadcastChannel('recon.session')` se usa **solo para `login` y `logout`**: `login` (las pestañas que están en Login entran y van a su ruta de vuelta o a Dashboard; cada una obtiene su access token renovando a través del candado) y `logout` (todas descartan su access token y su caché y van a Login). La expiración no se propaga: al borrarse el refresh compartido, las demás pestañas expiran en su siguiente renovación.
+- Todos los navegadores soportados (Chrome, Edge, Firefox y Safari recientes) implementan Web Locks y `BroadcastChannel`; no se añade alternativa para los que no.
 
-Alternativas: (a) ambos en memoria — más seguro, pero F5 = login de nuevo; descartada por usabilidad. (b) refresh en `localStorage` — sesión compartida entre pestañas, pero carrera de rotación y persistencia indefinida en disco; descartada. (c) refresh en cookie httpOnly + `SameSite=Strict` — la mejor frente a XSS; se deja como endurecimiento futuro con su propio change de `auth` (anotarlo como ADR cuando se haga).
+**Riesgos asumidos:**
+- **La sesión sobrevive al cierre del navegador** mientras viva el refresh (**7 días**), porque `localStorage` persiste en disco. En un equipo compartido hay que usar **Sign out**.
+- **Sign out corta la sesión en todas las pestañas** a la vez (logout en el API y mensaje `logout`).
+- Un XSS podría leer el refresh de `localStorage` (igual que podía con `sessionStorage`). Mitigación: React escapa por defecto, se prohíbe `dangerouslySetInnerHTML` (regla de Biome `security/noDangerouslySetInnerHtml`, ya en `recommended`), ninguna dependencia inyecta HTML, y la rotación hace que un refresh robado y usado invalide el legítimo. La CSP la pone Nginx en el despliegue (fuera de este change).
+
+**Implementación y pruebas:** el módulo de sesión pasa a ser una fábrica (`createSession({ storage, locks, channel })`) con una instancia por defecto para la app, de modo que un test crea dos "pestañas" en el mismo proceso que comparten `localStorage`, el gestor de candados y el canal. **jsdom no implementa `navigator.locks`**: `test/setup.ts` instala un doble en memoria (cola FIFO exclusiva por nombre, la semántica de `request(name, callback)` en modo `exclusive`, el único que usa la app). Si el `BroadcastChannel` de Node no entrega mensajes entre instancias del mismo hilo bajo jsdom, `test/setup.ts` instala también un doble en memoria con la misma API. El test de dos pestañas se rompe a propósito (quitando el candado o la relectura del refresh dentro de él) para comprobar que falla.
+
+Alternativas: (a) ambos tokens en memoria: F5 obliga a volver a entrar; descartada. (b) refresh en `sessionStorage` (versión anterior): sin carrera, pero una sesión por pestaña; sustituida por decisión de producto. (c) refresh en cookie httpOnly + `SameSite=Strict`: la mejor frente a XSS; se deja como endurecimiento futuro con su propio change de `auth` (con ADR cuando se haga). (d) eventos `storage` en vez de `BroadcastChannel`: solo notifican cambios de `localStorage`, no distinguen un login de una renovación; descartada. (e) que la pestaña que renueva publique el access token nuevo para que las demás no llamen al API: una sola llamada, pero el access token saldría de la memoria de su pestaña; descartada a favor de las renovaciones en serie.
 
 ### D2 ⚑ CORS en desarrollo
 **Propuesta:** **proxy de Vite**. El cliente llama siempre a rutas relativas (`/api/v1/...`); en desarrollo `vite.config.ts` reenvía `/api` a `http://localhost:3000` (configurable con `API_PROXY_TARGET`, variable sin prefijo `VITE_`, por lo que no llega al bundle). `VITE_API_URL` existe (lo pide el issue) y es el **origen** del API, vacío por defecto (mismo origen): las rutas del contrato generado ya incluyen `/api/v1` (ajuste hecho en `apply`, grupo 2).
@@ -96,10 +109,10 @@ README §2.3 y la Definición de hecho del Ticket 3 piden "cliente generado desd
 Alternativa: funciones escritas a mano sobre `fetch` con tipos `z.infer` de `@recon/shared`; más simple hoy, pero contradice el README y duplica rutas y métodos en el cliente. **Plan de contingencia:** si la exportación o la generación se atasca durante `apply`, se para y se propone esta alternativa como desviación documentada del README; no se aplica sin aprobación.
 
 ### D7 Sesión y renovación: `fetch` envuelto
-- `lib/session/`: estado de sesión (access token en memoria, refresh en `sessionStorage`, usuario de `/auth/me` en la caché de Query) con suscripción para que el router reaccione al cierre.
-- El cliente `openapi-fetch` de las rutas protegidas recibe un `fetch` propio (`authFetch`) que: (1) añade `Authorization`; (2) ante `401` clona la petición, ejecuta un refresh **de un solo vuelo** (una promesa compartida por todas las peticiones que fallen mientras está en curso), guarda el par nuevo y repite **una vez**; (3) si el refresh falla o la repetición vuelve a dar `401`, llama a `session.expire()`, que limpia tokens y `queryClient.clear()` y navega a `/login?redirect=<ruta actual>&reason=expired`.
+- `lib/session/`: estado de sesión (access token en memoria, refresh en `localStorage`, usuario de `/auth/me` en la caché de Query) con suscripción para que el router reaccione a expiración, login y logout de esta u otras pestañas (D1).
+- El cliente `openapi-fetch` de las rutas protegidas recibe un `fetch` propio (`authFetch`) que: (1) añade `Authorization`; (2) ante `401` clona la petición, ejecuta un refresh **de un solo vuelo** (una promesa compartida por todas las peticiones de la pestaña que fallen mientras está en curso, ejecutada dentro del candado entre pestañas de D1), guarda el par nuevo y repite **una vez**; (3) si el refresh falla o la repetición vuelve a dar `401`, llama a `session.expire()`, que limpia tokens y `queryClient.clear()` y navega a `/login?redirect=<ruta actual>&reason=expired`.
 - Login, refresh y logout usan un cliente sin `authFetch` (evita bucles).
-- Arranque: si hay refresh en `sessionStorage`, el `beforeLoad` raíz hace refresh + `/auth/me` una vez antes de pintar; mientras, una pantalla de carga mínima.
+- Arranque: si hay refresh en `localStorage` y la pestaña no tiene access token, la primera petición protegida (`/auth/me`, en el `beforeLoad` del layout) renueva antes, a través del candado.
 - Reintentos de TanStack Query desactivados para `4xx` (el `401` ya lo resuelve `authFetch`; `404` no se reintenta).
 - `redirect` solo admite rutas internas (empieza por `/` y no por `//`) para evitar redirecciones abiertas.
 
@@ -140,8 +153,10 @@ Un `strings.ts` por pantalla y uno del layout (`as const`). Los tests colocan ju
 
 ## Risks / Trade-offs
 
-- [XSS leería el refresh de `sessionStorage`] → Sin HTML crudo, rotación de refresh, sesión por pestaña; cookie httpOnly como endurecimiento futuro (D1).
-- [Una pestaña nueva pide login] → Aceptado para un back-office; es consecuencia directa de evitar la carrera de rotación entre pestañas.
+- [XSS leería el refresh de `localStorage`] → Sin HTML crudo y rotación de refresh; cookie httpOnly como endurecimiento futuro (D1).
+- [La sesión sobrevive al cierre del navegador durante la vida del refresh, 7 días] → Riesgo asumido (D1); Sign out la corta en todas las pestañas.
+- [Dos pestañas renuevan a la vez y la rotación revoca el refresh de una] → Candado de Web Locks con relectura del refresh dentro de él: renovaciones en serie, cada una con el refresh vigente (D1); cubierto por un test de dos pestañas.
+- [N pestañas que caducan a la vez hacen N llamadas a `/auth/refresh`] → Aceptado: son en serie, baratas y raras (cada 15 min como mucho); a cambio, el access token no sale de su pestaña (D1).
 - [Vite y los imports `.js` de `@recon/shared` en TypeScript fuente] → Vite resuelve `.js` a `.ts` en importadores TS; se verifica en la primera tarea con un import real (`LoginRequest`). Si fallara, `resolve.extensionAlias` o un alias al `src/`.
 - [Exportar OpenAPI necesita `db:generate` antes, porque `app.ts` importa el cliente Prisma generado] → CI ya ejecuta `pnpm db:generate` antes; el script lo documenta en su error.
 - [Deriva entre contrato versionado y backend] → Comprobación en CI (D6).

@@ -64,7 +64,7 @@ describe('authenticated requests', () => {
   it('refresh before the first request when only the refresh token survived a reload', async () => {
     const rec = recordRequests()
     const pair = issueTokens('viewer')
-    sessionStorage.setItem('recon.refreshToken', pair.refreshToken)
+    localStorage.setItem('recon.refreshToken', pair.refreshToken)
 
     await unwrap(api.GET('/api/v1/merchants'))
 
@@ -85,7 +85,7 @@ describe('session expiry', () => {
     expect(listener).toHaveBeenCalledTimes(1)
     expect(session.getAccessToken()).toBeNull()
     expect(session.getRefreshToken()).toBeNull()
-    expect(sessionStorage.length).toBe(0)
+    expect(localStorage.length).toBe(0)
     off()
   })
 
@@ -105,11 +105,11 @@ describe('session expiry', () => {
 })
 
 describe('token storage', () => {
-  it('keeps the refresh token in tab storage and the access token only in memory', () => {
+  it('keeps the refresh token in localStorage, shared by the tabs, and the access token only in memory', () => {
     const pair = issueTokens('viewer')
     session.setTokens(pair)
 
-    expect(sessionStorage.getItem('recon.refreshToken')).toBe(pair.refreshToken)
+    expect(localStorage.getItem('recon.refreshToken')).toBe(pair.refreshToken)
     const stored = [
       ...Object.keys(sessionStorage).map((k) => sessionStorage.getItem(k)),
       ...Object.keys(localStorage).map((k) => localStorage.getItem(k)),
@@ -162,6 +162,6 @@ describe('login and logout', () => {
     await expect(logout()).resolves.toBeUndefined()
 
     expect(session.hasSession()).toBe(false)
-    expect(sessionStorage.length).toBe(0)
+    expect(localStorage.length).toBe(0)
   })
 })

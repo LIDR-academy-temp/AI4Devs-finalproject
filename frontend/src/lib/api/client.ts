@@ -1,10 +1,17 @@
 // Typed API clients generated from docs/openapi.yaml (design D6).
 import createClient from 'openapi-fetch'
-import { apiOrigin, authFetch } from '@/lib/session/auth-fetch'
+import { apiOrigin } from '@/lib/session/api-origin'
+import { createAuthFetch } from '@/lib/session/auth-fetch'
+import { type Session, session } from '@/lib/session/session'
 import type { paths } from './schema.gen'
 
-/** Protected routes: Bearer token, transparent refresh and session expiry. */
-export const api = createClient<paths>({ baseUrl: apiOrigin(), fetch: authFetch })
+/** Client of protected routes for a session: Bearer token, transparent renewal and session expiry. */
+export function createApi(owner: Session) {
+  return createClient<paths>({ baseUrl: apiOrigin(), fetch: createAuthFetch(owner) })
+}
+
+/** Protected routes of this tab. */
+export const api = createApi(session)
 
 /**
  * Login, refresh and logout: never go through the refresh logic. `fetch` is looked up on each call, not captured

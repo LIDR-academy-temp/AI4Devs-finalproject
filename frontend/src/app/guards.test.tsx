@@ -30,7 +30,7 @@ const extraRoutes = [probeRoute, restrictedRoute]
 describe('session guard', () => {
   it('recovers the session from the refresh token after a reload without showing Login', async () => {
     const rec = recordRequests()
-    sessionStorage.setItem('recon.refreshToken', issueTokens('analyst').refreshToken)
+    localStorage.setItem('recon.refreshToken', issueTokens('analyst').refreshToken)
 
     const { router } = renderApp('/probe', { extraRoutes })
 
