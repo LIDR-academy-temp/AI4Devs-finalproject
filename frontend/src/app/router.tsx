@@ -8,7 +8,7 @@ import {
   type RouterHistory,
   redirect,
 } from '@tanstack/react-router'
-import { AccountsPage } from '@/features/accounts/AccountsPage'
+import { AccountsPage, validateAccountsSearch } from '@/features/accounts/AccountsPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { ApiError } from '@/lib/api/client'
 import type { Permission } from '@/lib/api/types'
@@ -74,6 +74,7 @@ const dashboardRoute = createRoute({ getParentRoute: () => appRoute, path: '/', 
 const accountsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/accounts',
+  validateSearch: validateAccountsSearch,
   staticData: { crumbs: [strings.groups.administration, strings.screens.accounts] },
   component: AccountsPage,
 })

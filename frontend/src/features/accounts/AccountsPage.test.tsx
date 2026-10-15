@@ -39,7 +39,8 @@ describe('Accounts: merchant → provider', () => {
   it('preselects the only visible merchant and offers its providers; the selection goes to the address', async () => {
     const { router } = renderApp('/accounts', { as: 'viewer' })
 
-    const merchant = await screen.findByLabelText(strings.merchant)
+    await screen.findByRole('option', { name: 'Merchant A' })
+    const merchant = screen.getByLabelText(strings.merchant)
     expect(optionLabels(merchant)).toEqual(['Merchant A'])
     await waitFor(() => expect(merchant).toHaveValue('1'))
     const provider = await screen.findByLabelText(strings.provider)
@@ -50,7 +51,8 @@ describe('Accounts: merchant → provider', () => {
   it('preselects the only provider of the chosen merchant and shows its accounts', async () => {
     const { user, router } = renderApp('/accounts', { as: 'analyst' })
 
-    await user.selectOptions(await screen.findByLabelText(strings.merchant), 'Merchant B')
+    await screen.findByRole('option', { name: 'Merchant B' })
+    await user.selectOptions(screen.getByLabelText(strings.merchant), 'Merchant B')
 
     await waitFor(() => expect(screen.getByLabelText(strings.provider)).toHaveValue('201'))
     expect(await accountNames()).toEqual(['ProviderC-Alt', 'ProviderC-USD'])
