@@ -41,7 +41,7 @@ Orden test-first: en cada grupo con lógica, el test se escribe y se ve fallar (
 
 - [x] 6.1 Test (rojo) `infrastructure/jwt-token-signer.test.ts`: access caduca a 900 s y refresh a 7 días con `jti` UUID; `verify(token, 'refresh')` rechaza un access y viceversa; rechaza firma con otro secreto y token caducado; el payload no contiene rol ni permisos
 - [x] 6.2 Implementar `jwt-token-signer.ts` y `argon2-password-hasher.ts` (incluido el hash ficticio precalculado); verificar 6.1 en verde
-- [x] 6.3 Implementar `prisma-user-repository.ts` (`findByUserName`, `findAuthContext` con rol, permisos y merchants según scope en una consulta), `prisma-refresh-token-store.ts` (`UPDATE … WHERE revokedAt IS NULL` y comprobación de filas afectadas en la rotación) y `prisma-audit-logger.ts`; se verifican en el grupo 8 contra SQL Server
+- [x] 6.3 Implementar `prisma-user-repository.ts` (`findByUserName` y `findById` con rol, permisos y filas de `UserMerchant` en una consulta; `listMerchants` para el alcance `all`), `prisma-refresh-token-store.ts` (`UPDATE … WHERE revokedAt IS NULL` y comprobación de filas afectadas en la rotación) y `prisma-audit-logger.ts`; se verifican en el grupo 8 contra SQL Server
 
 ## 7. Capa HTTP: plugin de permisos y rutas
 

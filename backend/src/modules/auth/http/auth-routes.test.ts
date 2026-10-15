@@ -168,4 +168,12 @@ describe('OpenAPI', () => {
     expect(doc.paths['/api/v1/auth/logout']).toHaveProperty('post')
     expect(doc.paths['/api/v1/auth/me'].get.security).toEqual([{ bearerAuth: [] }])
   })
+
+  it('documents the 204 of logout without a body', async () => {
+    const doc = (await ctx.app.inject({ method: 'GET', url: '/docs/json' })).json()
+
+    const noContent = doc.paths['/api/v1/auth/logout'].post.responses['204']
+    expect(noContent).toBeDefined()
+    expect(noContent).not.toHaveProperty('content')
+  })
 })

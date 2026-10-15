@@ -55,7 +55,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } },
       },
     },
-    transform: jsonSchemaTransform,
+    transform: (input) => {
+      const result = jsonSchemaTransform(input)
+      // A 204 has no body by definition: `type: 'null'` makes @fastify/swagger document it without content.
+      const responses = (result.schema as { response?: Record<string, unknown> }).response
+      if (responses?.['204']) responses['204'] = { type: 'null', description: 'No content' }
+      return result
+    },
   })
   await app.register(swaggerUi, { routePrefix: '/docs' })
 

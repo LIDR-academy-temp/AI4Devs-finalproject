@@ -92,4 +92,4 @@ Pantalla y API de administración de usuarios (`/users`), recuperación de contr
 - **Base de datos**: una migración con tabla nueva y un cambio de nulabilidad (no destructivo). Requiere confirmación antes de aplicarse (CLAUDE.md, paso 4).
 - **Dependencias nuevas (backend)**: `@fastify/jwt`, `@fastify/swagger`, `@fastify/swagger-ui`, `fastify-type-provider-zod`, `fastify-plugin`, `@recon/shared` (workspace).
 - **CI**: el job de integración deja de ser opcional y necesita `JWT_SECRET`.
-- **Resto de módulos**: a partir de aquí protegen sus rutas con `app.requirePermission(...)` y leen `request.user`.
+- **Resto de módulos**: a partir de aquí protegen sus rutas con `app.requirePermission(...)` y leen `request.auth`.

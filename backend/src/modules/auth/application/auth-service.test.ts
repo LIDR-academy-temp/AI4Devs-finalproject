@@ -301,6 +301,16 @@ describe('AuthService.authenticate', () => {
     expect(auth.merchantIds).toEqual([1, 2])
   })
 
+  it('does not list every merchant for a user with scope "assigned"', async () => {
+    const token = await accessTokenOf('viewer')
+    const listMerchants = vi.spyOn(users, 'listMerchants')
+
+    const auth = await service.authenticate(token)
+
+    expect(auth.merchantIds).toEqual([1])
+    expect(listMerchants).not.toHaveBeenCalled()
+  })
+
   it('gives every merchant id to a user with scope "all"', async () => {
     const auth = await service.authenticate(await accessTokenOf('admin'))
 

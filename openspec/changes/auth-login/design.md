@@ -70,11 +70,11 @@ El servicio devuelve un error de dominio `InvalidCredentialsError` con un `reaso
 
 ### D8. Plugin de autorización (`http/auth-plugin.ts`)
 Plugin con `fastify-plugin` que decora:
-- `app.authenticate`: `preHandler` que verifica el access token, carga el usuario con rol, permisos y merchants (`UserRepository.findAuthContext(userId)`) y fija `request.auth: AuthContext = { userId, userName, role, permissions: Set<PermissionCode>, merchantScope, merchantIds }`. Si algo falla lanza `UnauthorizedError` (→ 401).
+- `app.authenticate`: `preHandler` que delega en `AuthService.authenticate`: verifica el access token, carga el usuario con rol, permisos y filas de `UserMerchant` en una consulta (`UserRepository.findById(userId)`) y fija `request.auth: AuthContext = { userId, userName, role, permissions: Set<PermissionCode>, merchantScope, merchantIds }`. Si algo falla lanza `UnauthorizedError` (→ 401).
 - `app.requirePermission(code: PermissionCode)`: devuelve un array de `preHandler` `[authenticate, check]` donde `check` usa la función de dominio pura `hasPermission(auth, code)` y lanza `ForbiddenError` (→ 403).
 Uso: `app.post('/x', { preHandler: app.requirePermission('settlement.process') }, handler)`.
 Se aplica `authenticate` por ruta, no con un hook global, para que las rutas públicas (`login`, `refresh`, `logout`, `health`, `docs`) no necesiten lista de exclusión. `/auth/me` usa `preHandler: app.authenticate`. El tipo del argumento es `PermissionCode` de `@recon/shared`, así un código inexistente no compila.
-Para `merchantScope = "all"`, `merchantIds` se resuelve como todos los `merchantId` de la base; con `assigned`, las filas de `UserMerchant`. Coste: una consulta extra por petición; aceptable para el volumen del MVP (decenas de usuarios).
+Para `merchantScope = "all"`, `merchantIds` se resuelve como todos los `merchantId` de la base (`UserRepository.listMerchants()`, una consulta más); con `assigned`, directamente las filas de `UserMerchant` ya cargadas, sin consulta adicional. Coste: una consulta por petición autenticada, dos para usuarios `all`; aceptable para el volumen del MVP (decenas de usuarios).
 
 ### D9. Errores uniformes
 `plugins/error-handler.ts` traduce: errores de validación del type provider Zod → `400 validation_error` con `details`; `UnauthorizedError` → `401 unauthorized`; `InvalidCredentialsError` → `401 invalid_credentials`; `InvalidTokenError` → `401 invalid_token`; `ForbiddenError` → `403 forbidden`; resto → `500 internal_error` sin stack en el cuerpo. Los errores de dominio son clases simples en `modules/auth/domain/errors.ts`, sin dependencia de Fastify.

@@ -133,14 +133,18 @@ export class AuthService {
     const user = await users.findById(claims.sub)
     if (!user?.isActive) throw new UnauthorizedError()
 
-    const merchants = await this.visibleMerchants(user)
+    // Only scope "all" needs the merchant list; "assigned" already carries its UserMerchant rows.
+    const merchantIds =
+      user.merchantScope === 'all'
+        ? (await users.listMerchants()).map((m) => m.merchantId)
+        : [...user.assignedMerchantIds]
     return {
       userId: user.userId,
       userName: user.userName,
       role: user.role,
       permissions: new Set(user.permissions),
       merchantScope: user.merchantScope,
-      merchantIds: merchants.map((m) => m.merchantId),
+      merchantIds,
     }
   }
 
