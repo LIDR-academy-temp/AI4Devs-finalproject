@@ -11,6 +11,7 @@
       "Bash(git log*)",
       "Read(**)",
       "Edit(backend/src/**)",
+      "Edit(backend/test/**)",
       "Edit(frontend/src/**)",
       "Edit(packages/**)",
       "Edit(e2e/**)",
