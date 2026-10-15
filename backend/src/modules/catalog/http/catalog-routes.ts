@@ -28,7 +28,7 @@ const ChannelParams = z.object({ channelId: IntId })
 // README §4.4 leaves the Permission column empty for the catalog: any authenticated role reads within its scope.
 const catalog = { tags: ['catalog'], security: [{ bearerAuth: [] }] }
 
-/** README §4.4, Catálogo rows. Mounted under /api/v1. */
+/** README §4.4, catalog rows. Mounted under /api/v1. */
 export const catalogRoutes: FastifyPluginAsyncZod<CatalogRoutesOptions> = async (app, { service }) => {
   app.get(
     '/merchants',

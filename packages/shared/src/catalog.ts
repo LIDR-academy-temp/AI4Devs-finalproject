@@ -1,4 +1,4 @@
-// Response and query schemas of the read-only catalog API (README §3.2 "Catálogo", §4.4 Catálogo rows).
+// Response and query schemas of the read-only catalog API (README §3.2, §4.4).
 import { z } from 'zod'
 import { MerchantRef } from './auth.js'
 import { ChargebackReservePolicy, Money, Percentage } from './vocabulary.js'
@@ -43,7 +43,7 @@ export const AccountSummary = z.object({
 })
 export type AccountSummary = z.infer<typeof AccountSummary>
 
-/** README §4.4: "proveedor con sus cuentas y canales (parámetros del canal incluidos)". */
+/** README §4.4: provider with its accounts and channels, channel parameters included. */
 export const ProviderDetail = ProviderSummary.extend({
   merchant: MerchantRef,
   accounts: z.array(AccountSummary),

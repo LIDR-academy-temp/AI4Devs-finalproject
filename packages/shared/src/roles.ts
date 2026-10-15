@@ -1,4 +1,4 @@
-// Roles and their permission codes (README §2.5 "Perfiles y permisos", §3.2 "Acceso y auditoría").
+// Roles and their permission codes (README §2.5, §3.2).
 // The seed creates exactly these rows; the backend tests use them as the oracle.
 import type { PermissionCode } from './permissions.js'
 

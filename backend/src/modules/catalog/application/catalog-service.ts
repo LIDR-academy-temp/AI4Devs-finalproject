@@ -14,7 +14,7 @@ import type {
 } from './ports.js'
 
 /**
- * Read use cases of the catalog (README §4.4, Catálogo rows). The repository applies the scope inside
+ * Read use cases of the catalog (README §4.4, catalog rows). The repository applies the scope inside
  * every query; this layer only turns "nothing came back" into NotFoundError, and for sub-resources checks
  * the parent first so that a child of an invisible parent is never listed (design D5).
  */
