@@ -17,7 +17,7 @@ const TEMPLATE_SHEETS = [
   'Other Fees',
   'Settings',
 ]
-const EXCEL_NATIVE = path.join(SAMPLES, 'excel-native/Recon_Template_excel-native.xlsx')
+const EXCEL_NATIVE = path.join(SAMPLES, 'excel-real-sample.xlsx')
 
 function read(relative: string) {
   const fileName = path.basename(relative)
