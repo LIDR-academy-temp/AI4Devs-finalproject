@@ -42,6 +42,15 @@ de programar.
 - `pnpm db:up` · `pnpm db:migrate` · `pnpm db:seed` (idempotente; recrea todo el mundo sintético)
 - `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test`
 - `pnpm samples:plan && python data/samples/build-samples.py` regenera los archivos de muestra
+- `pnpm test:api` (colección completa) · `pnpm test:api:smoke` (solo `10-smoke`): colección Bruno contra el backend local
+
+## Colección de la API (Bruno)
+
+- La colección vive en `api-collection/` (`00-auth`, `10-smoke`, `20-flows`). Se importó **una vez** desde `docs/openapi.yaml`; **nunca se reimporta** (pisaría tests y scripts): se mantiene a mano.
+- **Todo endpoint nuevo o modificado** añade o actualiza en la colección su petición de caso feliz y al menos una negativa (código de estado y `code` del error), en el mismo PR que el endpoint.
+- Usuario principal `analyst` con auth heredada de la colección (el login es automático). Los negativos de alcance (`404`) y de permiso (`403`) usan `viewer`: variable de petición `as: viewer` y `auth: bearer` con `{{viewerToken}}`. Las peticiones que hacen su propio login declaran `selfAuth: true`.
+- Credenciales en `api-collection/.env` (ignorado; copiar de `.env.example`); `SEED_PASSWORD` debe coincidir con el del `.env` de la raíz. Nunca se lee ni se versiona.
+- Prerrequisitos para ejecutarla: `pnpm db:up`, `pnpm db:seed` y `pnpm dev` levantado.
 
 ## Dónde mirar
 

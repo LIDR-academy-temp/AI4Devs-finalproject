@@ -37,11 +37,11 @@ Issue #29. Rama: `chore/api-collection` (ya creada). PR hacia `feature/entrega-2
 
 ## 5. Scripts, lint y reglas para agentes
 
-- [ ] 5.1 `package.json` raíz: `test:api` y `test:api:smoke` (D6); verificar `pnpm test:api` y `pnpm test:api:smoke` en verde con el backend levantado y código ≠ 0 con el backend parado
-- [ ] 5.2 Ejecutar `pnpm lint`; si Biome reporta algo en `api-collection/`, excluir la carpeta en `biome.json` (D7); verificar `pnpm lint` en verde y que `pnpm test` (Vitest) no recoge nada de `api-collection/`
-- [ ] 5.3 Sección "Colección de la API" idéntica en `CLAUDE.md` y `AGENTS.md` (en español): endpoint nuevo o cambiado ⇒ petición feliz + negativa en la carpeta que toque (negativos de alcance y permiso con `as = viewer`); nunca reimportar desde OpenAPI; prerrequisitos (`db:up`, `db:seed`, `dev`) y `SEED_PASSWORD` igual al de la raíz; comandos `pnpm test:api` y `pnpm test:api:smoke` también en "Comandos"; verificar con `diff` que la sección coincide en ambos
-- [ ] 5.4 `.claude/settings.json`: `Bash(pnpm test:api*)` y `Edit(api-collection/**)` en `allow`, `Read(api-collection/.env)` en `deny` (D8); verificar que el JSON es válido (`pnpm lint`); lo edita la persona si el hook o los permisos lo bloquean
-- [ ] 5.5 Commit: `chore(api): scripts test:api y reglas de la colección para agentes`
+- [x] 5.1 `package.json` raíz: `test:api` y `test:api:smoke` (D6); verificar `pnpm test:api` y `pnpm test:api:smoke` en verde con el backend levantado y código ≠ 0 con el backend parado
+- [x] 5.2 Ejecutar `pnpm lint`; si Biome reporta algo en `api-collection/`, excluir la carpeta en `biome.json` (D7); verificar `pnpm lint` en verde y que `pnpm test` (Vitest) no recoge nada de `api-collection/`
+- [x] 5.3 Sección "Colección de la API" idéntica en `CLAUDE.md` y `AGENTS.md` (en español): endpoint nuevo o cambiado ⇒ petición feliz + negativa en la carpeta que toque (negativos de alcance y permiso con `as = viewer`); nunca reimportar desde OpenAPI; prerrequisitos (`db:up`, `db:seed`, `dev`) y `SEED_PASSWORD` igual al de la raíz; comandos `pnpm test:api` y `pnpm test:api:smoke` también en "Comandos"; verificar con `diff` que la sección coincide en ambos
+- [x] 5.4 `.claude/settings.json`: `Bash(pnpm test:api*)` y `Edit(api-collection/**)` en `allow`, `Read(api-collection/.env)` en `deny` (D8); verificar que el JSON es válido (`pnpm lint`); lo edita la persona si el hook o los permisos lo bloquean
+- [x] 5.5 Commit: `chore(api): scripts test:api y reglas de la colección para agentes`
 
 ## 6. Verificación integral
 

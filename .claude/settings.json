@@ -4,6 +4,7 @@
       "Bash(pnpm lint*)",
       "Bash(pnpm typecheck*)",
       "Bash(pnpm test*)",
+      "Bash(pnpm test:api*)",
       "Bash(pnpm --filter * test*)",
       "Bash(pnpm db:generate*)",
       "Bash(git status*)",
@@ -16,11 +17,13 @@
       "Edit(packages/**)",
       "Edit(e2e/**)",
       "Edit(openspec/**)",
-      "Edit(docs/**)"
+      "Edit(docs/**)",
+      "Edit(api-collection/**)"
     ],
     "deny": [
       "Read(.env)",
       "Read(.env.*)",
+      "Read(api-collection/.env)",
       "Bash(prisma migrate reset*)",
       "Bash(pnpm db:reset*)",
       "Bash(git push --force*)",
