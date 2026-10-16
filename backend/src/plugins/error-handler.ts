@@ -7,7 +7,7 @@ import {
   InvalidTokenError,
   UnauthorizedError,
 } from '../modules/auth/domain/errors.js'
-import { NotFoundError } from '../shared/errors.js'
+import { DomainError } from '../shared/errors.js'
 
 function toResponse(error: unknown): { status: number; body: ErrorResponse } {
   if (
@@ -20,8 +20,16 @@ function toResponse(error: unknown): { status: number; body: ErrorResponse } {
   if (error instanceof ForbiddenError) {
     return { status: 403, body: { code: error.code, message: error.message } }
   }
-  if (error instanceof NotFoundError) {
-    return { status: 404, body: { code: error.code, message: error.message } }
+  // Module errors (NotFoundError, the import module's 400/409/422…) carry their own status, code and details.
+  if (error instanceof DomainError) {
+    return {
+      status: error.status,
+      body: {
+        code: error.code,
+        message: error.message,
+        ...(error.details !== undefined ? { details: error.details } : {}),
+      },
+    }
   }
 
   const fastifyError = error as Partial<FastifyError>
