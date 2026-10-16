@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/guard-db.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-db.sh\""
           }
         ]
       },
@@ -46,7 +46,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/guard-schema.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-schema.sh\""
           }
         ]
       }
@@ -57,7 +57,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/biome-on-save.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/biome-on-save.sh\""
           }
         ]
       }
