@@ -1241,7 +1241,7 @@ Para cada ciclo con rango: candidata con fecha anterior al mínimo → `missing_
 
 La API es REST bajo `/api/v1`, con contrato OpenAPI 3.1 en `docs/openapi.yaml` (publicado por el backend en `/docs`). Convenciones comunes a todos los endpoints:
 
-- **Autenticación y alcance:** `Authorization: Bearer <JWT>` en todas las rutas salvo `POST /auth/login`. Cada petición resuelve los permisos del usuario y su alcance de merchants; un recurso de un merchant no visible responde `404`, no `403`, para no revelar su existencia.
+- **Autenticación y alcance:** `Authorization: Bearer <JWT>` en todas las rutas salvo las anónimas: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout` (llevan el refresh token en el cuerpo) y `GET /health`. Cada petición resuelve los permisos del usuario y su alcance de merchants; un recurso de un merchant no visible responde `404`, no `403`, para no revelar su existencia.
 - **Errores:** cuerpo uniforme `{ code, message, details? }`. `400` datos inválidos · `401` sin sesión · `403` sin permiso · `404` no existe o no visible · `409` conflicto con el estado actual · `422` archivo que no se puede procesar.
 - **Dinero y porcentajes:** viajan como **strings** decimales (`"25.0000"`, `"0.025000"`), nunca como números JSON. Fechas en ISO 8601, UTC.
 - **Identificadores:** UUID para cuentas, imports, archivos, hojas, fees y batches; enteros para catálogos, usuarios, hallazgos y resultados; `bigint` para transacciones, movimientos y apariciones.
@@ -1295,7 +1295,7 @@ Permiso `fee.manage`. Crea un fee vigente para la cuenta. Regla de negocio: no p
         description: Datos inválidos (ni monto fijo ni porcentaje; endDate anterior a startDate cuando ambos están informados)
         content:
           application/json:
-            example: { code: VALIDATION_ERROR, message: "fixedAmount o percentage es obligatorio", details: { field: "fixedAmount" } }
+            example: { code: validation_error, message: "fixedAmount o percentage es obligatorio", details: { field: "fixedAmount" } }
       '409':
         description: Vigencia solapada con otro fee del mismo tipo
         content:

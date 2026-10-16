@@ -1,0 +1,26 @@
+meta {
+  name: Recon Tool API
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+script:pre-request {
+  // Logs in on demand so any folder or single request can run on its own (design D3).
+  // Requests that log in themselves or need no session (logins, flows, anonymous negatives) set `selfAuth: true`.
+  // Requests that must run as the viewer set the request var `as: viewer` and use {{viewerToken}}.
+  if (bru.getRequestVar('selfAuth') === 'true') {
+    return;
+  }
+  if (!bru.getVar('accessToken')) {
+    await bru.runRequest('00-auth/Login');
+  }
+  if (bru.getRequestVar('as') === 'viewer' && !bru.getVar('viewerToken')) {
+    await bru.runRequest('00-auth/Login as viewer');
+  }
+}

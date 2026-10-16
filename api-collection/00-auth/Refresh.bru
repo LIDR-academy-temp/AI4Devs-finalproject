@@ -1,0 +1,158 @@
+meta {
+  name: Refresh
+  type: http
+  seq: 7
+  tags: [
+    auth
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/refresh
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refreshToken": "{{flowRefreshToken}}"
+  }
+}
+
+vars:pre-request {
+  selfAuth: true
+}
+
+script:pre-request {
+  await bru.runRequest('00-auth/Login for flow');
+}
+
+script:post-response {
+  bru.setVar('previousFlowRefreshToken', bru.getVar('flowRefreshToken'));
+  if (res.status === 200) {
+    bru.setVar('flowAccessToken', res.body.accessToken);
+    bru.setVar('flowRefreshToken', res.body.refreshToken);
+  }
+}
+
+tests {
+  test('responds 200 with a new token pair', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.accessToken).to.be.a('string').and.not.empty;
+    expect(res.body.refreshToken).to.not.equal(bru.getVar('previousFlowRefreshToken'));
+  });
+}
+
+example {
+  name: 200 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/auth/refresh
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "refreshToken": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "accessToken": "",
+          "refreshToken": "",
+          "expiresIn": 0
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 400 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/auth/refresh
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "refreshToken": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 400
+      text: Bad Request
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/auth/refresh
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "refreshToken": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}

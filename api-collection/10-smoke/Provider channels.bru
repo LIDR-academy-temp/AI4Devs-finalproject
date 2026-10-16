@@ -1,0 +1,180 @@
+meta {
+  name: Provider channels
+  type: http
+  seq: 10
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/providers/:providerId/channels
+  body: none
+  auth: inherit
+}
+
+params:path {
+  providerId: 101
+}
+
+tests {
+  test('responds the channels of provider 101 with a decimal-string reserve', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.be.an('array').that.is.not.empty;
+    for (const c of res.body) {
+      expect(c.providerId).to.equal(101);
+      expect(c.rollingReservePct).to.be.a('string');
+    }
+  });
+}
+
+example {
+  name: 200 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/providers/:providerId/channels
+    method: GET
+    mode: none
+    params:path: {
+      providerId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        [
+          {
+            "channelId": 0,
+            "gatewayId": 0,
+            "providerId": 0,
+            "name": "",
+            "isActive": false,
+            "settlementTermDays": 0,
+            "rollingReservePct": "",
+            "rollingReserveDays": 0
+          }
+        ]
+      '''
+    }
+  }
+}
+
+example {
+  name: 400 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/providers/:providerId/channels
+    method: GET
+    mode: none
+    params:path: {
+      providerId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 400
+      text: Bad Request
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/providers/:providerId/channels
+    method: GET
+    mode: none
+    params:path: {
+      providerId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 404 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/providers/:providerId/channels
+    method: GET
+    mode: none
+    params:path: {
+      providerId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 404
+      text: Not Found
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}

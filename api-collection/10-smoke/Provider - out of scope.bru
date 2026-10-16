@@ -1,0 +1,33 @@
+meta {
+  name: Provider - out of scope
+  type: http
+  seq: 9
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/providers/:providerId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  providerId: 201
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer gets 404 not_found for provider 201, never 403', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

@@ -17,6 +17,7 @@ de programar.
 - Base de datos: SQL Server 2022, usuario `recon_app` (nunca `sa`). Importes `DECIMAL(19,4)`, porcentajes `DECIMAL(9,6)`; **nunca `MONEY`, `FLOAT` ni `number` de JS para dinero**: en la API el dinero viaja como string decimal y en el dominio se usa `Decimal` de Prisma o `decimal.js`.
 - Linter y formato: Biome (no Prettier ni ESLint). Commits: Conventional Commits.
 - **Idiomas.** Documentación (`README.md`, `prompts.md`, `docs/`, specs de OpenSpec, `CLAUDE.md`, skills, plantilla de PR) y **mensajes de commit en español**. Todo lo que es código o configuración en **inglés**: identificadores, comentarios, docstrings, mensajes que emiten scripts y hooks, comentarios de SQL/YAML/JSON/shell/.env, textos de la interfaz de usuario y datos sembrados. Un comentario en español dentro de un `.ts` es un hallazgo de revisión.
+- **Códigos de error.** Los códigos de error de las respuestas del API van en snake_case minúsculas (`validation_error`, `not_found`, `unauthorized`). Los códigos en mayúsculas de los ejemplos del README (`FEE_OVERLAP`, `DUPLICATE_FILE`, `BATCH_NO_TAKEN`…) están desactualizados: se implementan en minúsculas y el ejemplo del README se corrige en el mismo change.
 
 ## Vocabulario fijo (úsalo tal cual en código, specs y UI)
 
@@ -42,6 +43,15 @@ de programar.
 - `pnpm db:up` · `pnpm db:migrate` · `pnpm db:seed` (idempotente; recrea todo el mundo sintético)
 - `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test`
 - `pnpm samples:plan && python data/samples/build-samples.py` regenera los archivos de muestra
+- `pnpm test:api` (colección completa) · `pnpm test:api:smoke` (solo `10-smoke`): colección Bruno contra el backend local
+
+## Colección de la API (Bruno)
+
+- La colección vive en `api-collection/` (`00-auth`, `10-smoke`, `20-flows`). Se importó **una vez** desde `docs/openapi.yaml`; **nunca se reimporta** (pisaría tests y scripts): se mantiene a mano.
+- **Todo endpoint nuevo o modificado** añade o actualiza en la colección su petición de caso feliz y al menos una negativa (código de estado y `code` del error), en el mismo PR que el endpoint.
+- Usuario principal `analyst` con auth heredada de la colección (el login es automático). Los negativos de alcance (`404`) y de permiso (`403`) usan `viewer`: variable de petición `as: viewer` y `auth: bearer` con `{{viewerToken}}`. Las peticiones que hacen su propio login declaran `selfAuth: true`.
+- Credenciales en `api-collection/.env` (ignorado; copiar de `.env.example`); `SEED_PASSWORD` debe coincidir con el del `.env` de la raíz. Nunca se lee ni se versiona.
+- Prerrequisitos para ejecutarla: `pnpm db:up`, `pnpm db:seed` y `pnpm dev` levantado.
 
 ## Dónde mirar
 

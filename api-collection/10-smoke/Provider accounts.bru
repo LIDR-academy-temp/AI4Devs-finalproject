@@ -1,0 +1,188 @@
+meta {
+  name: Provider accounts
+  type: http
+  seq: 12
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/providers/:providerId/accounts
+  body: none
+  auth: inherit
+}
+
+params:path {
+  providerId: 101
+}
+
+script:post-response {
+  // Single point that resolves the ProviderA-USD accountId for the account requests (design D5).
+  const account = res.status === 200 && Array.isArray(res.body) ? res.body.find((a) => a.name === 'ProviderA-USD') : undefined;
+  if (account) {
+    bru.setVar('providerAUsdAccountId', account.accountId);
+    bru.deleteVar('providerAUsdLookupError');
+  } else {
+    bru.deleteVar('providerAUsdAccountId');
+    bru.setVar('providerAUsdLookupError', `ProviderA-USD not found in GET /providers/101/accounts (status ${res.status})`);
+  }
+}
+
+tests {
+  test('provider 101 includes ProviderA-USD', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.map((a) => a.name)).to.include('ProviderA-USD');
+  });
+}
+
+example {
+  name: 200 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/providers/:providerId/accounts
+    method: GET
+    mode: none
+    params:path: {
+      providerId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        [
+          {
+            "accountId": "",
+            "providerId": 0,
+            "name": "",
+            "chargebackReservePolicy": "hold_until_term",
+            "rollingReserveCapAmt": "",
+            "matchingRuleSetId": 0,
+            "isActive": false,
+            "createdAt": ""
+          }
+        ]
+      '''
+    }
+  }
+}
+
+example {
+  name: 400 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/providers/:providerId/accounts
+    method: GET
+    mode: none
+    params:path: {
+      providerId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 400
+      text: Bad Request
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/providers/:providerId/accounts
+    method: GET
+    mode: none
+    params:path: {
+      providerId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 404 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/providers/:providerId/accounts
+    method: GET
+    mode: none
+    params:path: {
+      providerId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 404
+      text: Not Found
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}

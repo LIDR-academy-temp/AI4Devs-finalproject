@@ -13,4 +13,5 @@ data/samples/plan.json
 Thumbs.db
 playwright-report/
 test-results/
+reports/
 package-lock.json
