@@ -30,10 +30,10 @@ Issue #29. Rama: `chore/api-collection` (ya creada). PR hacia `feature/entrega-2
 
 ## 4. Carpeta 20-flows
 
-- [ ] 4.1 `20-flows/session`: login propio como `SEED_USER` → refresh `200` → refresh rotado `401 invalid_token` → logout `204` → refresh tras logout `401 invalid_token`, con `seq` para fijar el orden y variables `flow*`
-- [ ] 4.2 `20-flows/catalog` con `analyst`: merchants (`Merchant A` y `Merchant B`) → providers de 1 (`Provider A`, `Provider B`) → accounts de 101 (localizar `ProviderA-USD`) → detalle de cuenta `200` → canales de la cuenta `200`, pasando IDs con `bru.setVar`
-- [ ] 4.3 Verificar `cd api-collection && pnpm exec bru run 20-flows --env local` en verde
-- [ ] 4.4 Commit: `test(api): flujos de sesión y de catálogo encadenados`
+- [x] 4.1 `20-flows/session`: login propio como `SEED_USER` → refresh `200` → refresh rotado `401 invalid_token` → logout `204` → refresh tras logout `401 invalid_token`, con `seq` para fijar el orden y variables `flow*`
+- [x] 4.2 `20-flows/catalog` con `analyst`: merchants (`Merchant A` y `Merchant B`) → providers de 1 (`Provider A`, `Provider B`) → accounts de 101 (localizar `ProviderA-USD`) → detalle de cuenta `200` → canales de la cuenta `200`, pasando IDs con `bru.setVar`
+- [x] 4.3 Verificar `cd api-collection && pnpm exec bru run 20-flows --env local` en verde
+- [x] 4.4 Commit: `test(api): flujos de sesión y de catálogo encadenados`
 
 ## 5. Scripts, lint y reglas para agentes
 
