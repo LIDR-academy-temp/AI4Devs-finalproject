@@ -21,12 +21,12 @@ Issue #29. Rama: `chore/api-collection` (ya creada). PR hacia `feature/entrega-2
 
 ## 3. Carpeta 10-smoke
 
-- [ ] 3.1 Health: `auth: none`, `200`, `status = ok`, `db = ok` (sin negativo, ver spec)
-- [ ] 3.2 Merchants y Channels (`?unassigned=true`): feliz con `analyst` (merchants `Merchant A` y `Merchant B`; unassigned devuelve los canales sin cuenta según el requisito "Canales sin cuenta" de `openspec/specs/accounts/spec.md`) y negativo `401` sin token
-- [ ] 3.3 Merchant providers, Provider, Provider channels, Provider accounts: felices con `analyst` (`merchantId = 1`, `providerId = 101`, y `GET /providers/201` → `200`); negativos `404 not_found` fuera de alcance con `as = viewer` (`/providers/201`, `/merchants/2/providers`), `400` (`/providers/abc/channels`) y `404` inexistente con `analyst` (`/providers/999/accounts`)
-- [ ] 3.4 Account, Account channels, Channel accounts: el `accountId` de `ProviderA-USD` se obtiene en pre-request de `GET /providers/101/accounts` (sin UUID literal, D5); negativos `400` (`/accounts/not-a-uuid`), `404` (UUID aleatorio en `/accounts/{id}/channels`) y `404` (`/channels/999999/accounts`); confirmar cada código esperado contra `openspec/specs/accounts/spec.md` antes de fijarlo
-- [ ] 3.5 Verificar `cd api-collection && pnpm exec bru run 10-smoke --env local` en verde **sin** pasar por `00-auth`; verificar con `grep -rn "eyJ" api-collection` que no hay tokens versionados
-- [ ] 3.6 Commit: `test(api): smoke de catálogo y health con caso feliz y negativo`
+- [x] 3.1 Health: `auth: none`, `200`, `status = ok`, `db = ok` (sin negativo, ver spec)
+- [x] 3.2 Merchants y Channels (`?unassigned=true`): feliz con `analyst` (merchants `Merchant A` y `Merchant B`; unassigned devuelve los canales sin cuenta según el requisito "Canales sin cuenta" de `openspec/specs/accounts/spec.md`) y negativo `401` sin token
+- [x] 3.3 Merchant providers, Provider, Provider channels, Provider accounts: felices con `analyst` (`merchantId = 1`, `providerId = 101`, y `GET /providers/201` → `200`); negativos `404 not_found` fuera de alcance con `as = viewer` (`/providers/201`, `/merchants/2/providers`), `400` (`/providers/abc/channels`) y `404` inexistente con `analyst` (`/providers/999/accounts`)
+- [x] 3.4 Account, Account channels, Channel accounts: el `accountId` de `ProviderA-USD` se obtiene en pre-request de `GET /providers/101/accounts` (sin UUID literal, D5); negativos `400` (`/accounts/not-a-uuid`), `404` (UUID aleatorio en `/accounts/{id}/channels`) y `404` (`/channels/999999/accounts`); confirmar cada código esperado contra `openspec/specs/accounts/spec.md` antes de fijarlo
+- [x] 3.5 Verificar `cd api-collection && pnpm exec bru run 10-smoke --env local` en verde **sin** pasar por `00-auth`; verificar con `grep -rn "eyJ" api-collection` que no hay tokens versionados
+- [x] 3.6 Commit: `test(api): smoke de catálogo y health con caso feliz y negativo`
 
 ## 4. Carpeta 20-flows
 

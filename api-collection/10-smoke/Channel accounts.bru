@@ -1,9 +1,9 @@
 meta {
   name: Channel accounts
   type: http
-  seq: 9
+  seq: 18
   tags: [
-    catalog
+    smoke
   ]
 }
 
@@ -14,7 +14,16 @@ get {
 }
 
 params:path {
-  channelId: 
+  channelId: 1001
+}
+
+tests {
+  test('ProviderA-USD is the only primary account of channel 1001', () => {
+    expect(res.status).to.equal(200);
+    const primary = res.body.filter((a) => a.isPrimary);
+    expect(primary).to.have.lengthOf(1);
+    expect(primary[0].name).to.equal('ProviderA-USD');
+  });
 }
 
 example {

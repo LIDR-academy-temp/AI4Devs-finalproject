@@ -1,0 +1,25 @@
+meta {
+  name: Provider accounts - unknown provider
+  type: http
+  seq: 13
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/providers/:providerId/accounts
+  body: none
+  auth: inherit
+}
+
+params:path {
+  providerId: 999
+}
+
+tests {
+  test('responds 404 not_found', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

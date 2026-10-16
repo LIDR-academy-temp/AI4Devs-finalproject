@@ -1,21 +1,27 @@
 meta {
   name: Channels unassigned
   type: http
-  seq: 8
+  seq: 4
   tags: [
-    catalog
+    smoke
   ]
 }
 
 get {
-  url: {{baseUrl}}/api/v1/channels
+  url: {{baseUrl}}/api/v1/channels?unassigned=true
   body: none
   auth: inherit
 }
 
 params:query {
-  ~unassigned: true
-  ~unassigned: false
+  unassigned: true
+}
+
+tests {
+  test('responds the two seed channels without an account', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.map((c) => c.channelId)).to.deep.equal([1007, 1013]);
+  });
 }
 
 example {

@@ -1,9 +1,9 @@
 meta {
   name: Account channels
   type: http
-  seq: 7
+  seq: 16
   tags: [
-    catalog
+    smoke
   ]
 }
 
@@ -14,7 +14,30 @@ get {
 }
 
 params:path {
-  accountId: 
+  accountId: {{providerAUsdAccountId}}
+}
+
+script:pre-request {
+  // Resolve the ProviderA-USD accountId by name; no UUID literals in the collection (design D5).
+  if (!bru.getVar('providerAUsdAccountId')) {
+    const res = await bru.sendRequest({
+      method: 'GET',
+      url: `${bru.getEnvVar('baseUrl')}/api/v1/providers/101/accounts`,
+      headers: { Authorization: `Bearer ${bru.getVar('accessToken')}` },
+    });
+    bru.setVar('providerAUsdAccountId', res.data.find((a) => a.name === 'ProviderA-USD').accountId);
+  }
+}
+
+tests {
+  test('RAM-01 and RAM-02 are primary in ProviderA-USD', () => {
+    expect(res.status).to.equal(200);
+    const primary = res.body.filter((c) => c.isPrimary);
+    expect(primary.map((c) => c.name)).to.include.members(['RAM-01', 'RAM-02']);
+    for (const c of primary) {
+      expect(c.primaryAccount.name).to.equal('ProviderA-USD');
+    }
+  });
 }
 
 example {

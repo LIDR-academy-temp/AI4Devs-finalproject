@@ -1,0 +1,25 @@
+meta {
+  name: Account - malformed id
+  type: http
+  seq: 15
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  accountId: not-a-uuid
+}
+
+tests {
+  test('responds 400 validation_error', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}

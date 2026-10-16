@@ -1,9 +1,9 @@
 meta {
   name: Account
   type: http
-  seq: 6
+  seq: 14
   tags: [
-    catalog
+    smoke
   ]
 }
 
@@ -14,7 +14,28 @@ get {
 }
 
 params:path {
-  accountId: 
+  accountId: {{providerAUsdAccountId}}
+}
+
+script:pre-request {
+  // Resolve the ProviderA-USD accountId by name; no UUID literals in the collection (design D5).
+  if (!bru.getVar('providerAUsdAccountId')) {
+    const res = await bru.sendRequest({
+      method: 'GET',
+      url: `${bru.getEnvVar('baseUrl')}/api/v1/providers/101/accounts`,
+      headers: { Authorization: `Bearer ${bru.getVar('accessToken')}` },
+    });
+    bru.setVar('providerAUsdAccountId', res.data.find((a) => a.name === 'ProviderA-USD').accountId);
+  }
+}
+
+tests {
+  test('responds ProviderA-USD with its provider and merchant', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.name).to.equal('ProviderA-USD');
+    expect(res.body.provider.providerId).to.equal(101);
+    expect(res.body.merchant.merchantId).to.equal(1);
+  });
 }
 
 example {
