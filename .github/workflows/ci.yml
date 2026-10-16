@@ -24,6 +24,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - name: Claude Code guard hooks
+        run: pnpm test:hooks
       - name: OpenAPI contract and generated client are up to date
         run: pnpm openapi:check
       - run: pnpm --filter @recon/frontend build
