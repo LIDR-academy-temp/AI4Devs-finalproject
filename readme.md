@@ -1426,15 +1426,15 @@ Permiso `settlement.process`. Recibe uno o varios `.xlsx` (hasta 20 MB cada uno)
         description: Archivo idéntico ya incluido en el import
         content:
           application/json:
-            example: { code: DUPLICATE_FILE, message: "ProviderA_batch118_part1.xlsx ya está en este import", details: { fileId: "9b02…" } }
+            example: { code: duplicate_file, message: "ProviderA_batch118_part1.xlsx is already in this import", details: { fileId: "9b02…", fileName: "ProviderA_batch118_part1.xlsx" } }
       '422':
         description: Archivo ilegible o sin hojas reconocibles
         content:
           application/json:
-            example: { code: FILE_UNREADABLE, message: "ProviderA_batch118_part2.xlsx no es un .xlsx válido" }
+            example: { code: file_unreadable, message: "ProviderA_batch118_part2.xlsx is not a readable .xlsx: not a zip package", details: { fileName: "ProviderA_batch118_part2.xlsx" } }
 ```
 
-`source` indica de dónde salió cada propuesta (`rule` regla de la cuenta, `default` regla global, `none` sin propuesta); `readiness` dice si ya se puede analizar y, si no, exactamente qué falta (`missing`) o qué conviene revisar (`notes`); `channels` resume la situación de cada canal detectado.
+`source` indica de dónde salió cada propuesta (`account` regla del conjunto enlazado a la cuenta, `global` regla global, `none` sin propuesta); `readiness` dice si ya se puede analizar y, si no, exactamente qué falta (`missing`) o qué conviene revisar (`notes`); `channels` resume la situación de cada canal detectado.
 
 ### 4.3. `POST /imports/{importId}/settlements` — procesar el batch
 
