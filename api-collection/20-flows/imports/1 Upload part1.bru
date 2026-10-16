@@ -1,0 +1,50 @@
+meta {
+  name: 1 Upload part1
+  type: http
+  seq: 1
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/imports
+  body: multipartForm
+  auth: inherit
+}
+
+params:path {
+  accountId: {{providerAUsdAccountId}}
+}
+
+body:multipart-form {
+  files: @file(../data/samples/batch-split/Recon_Template_ProviderA-USD_batch-split_part1.xlsx)
+}
+
+script:pre-request {
+  // The accountId is resolved by name in 10-smoke/Provider accounts; no UUID literals (design D5).
+  if (!bru.getVar('providerAUsdAccountId')) {
+    await bru.runRequest('10-smoke/Provider accounts');
+  }
+  if (!bru.getVar('providerAUsdAccountId')) {
+    throw new Error(bru.getVar('providerAUsdLookupError') || 'ProviderA-USD accountId could not be resolved');
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar('flowImportId', res.body.importId);
+    bru.setVar('flowFileId1', res.body.files[0].fileId);
+  }
+}
+
+tests {
+  test('creates the import in uploaded with part1 and its sheets', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.status).to.equal('uploaded');
+    expect(res.body.files).to.have.length(1);
+    const app = res.body.files[0].sheets.find((s) => s.sheetName === 'APP');
+    expect(app.rowCount).to.equal(340);
+    expect(app.proposed.source).to.equal('global');
+  });
+}
