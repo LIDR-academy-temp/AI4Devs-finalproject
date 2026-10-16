@@ -17,7 +17,7 @@ const TEMPLATE_SHEETS = [
   'Other Fees',
   'Settings',
 ]
-const EXCEL_NATIVE = path.join(SAMPLES, 'excel-real-sample.xlsx')
+const EXCEL_NATIVE = path.join(SAMPLES, 'excel-real/excel-real-sample.xlsx')
 
 function read(relative: string) {
   const fileName = path.basename(relative)
@@ -134,19 +134,23 @@ describe('describeWorkbook on data/samples', () => {
 
   it('a workbook saved by Excel desktop from the template reads like the openpyxl samples', () => {
     expect(existsSync(EXCEL_NATIVE), `${EXCEL_NATIVE} must exist (provided by the team, synthetic data)`).toBe(true)
-    const workbook = describeWorkbook(readFileSync(EXCEL_NATIVE), path.basename(EXCEL_NATIVE))
+    const workbook = describeWorkbook(readFileSync(EXCEL_NATIVE), path.basename(EXCEL_NATIVE), {
+      limits: { previewRows: 100 },
+    })
 
-    const names = workbook.sheets.map((s) => s.name)
-    for (const name of ['APP', 'DEC', 'CHB', 'REF', 'RDR', 'RR', 'Other Fees'])
-      expect(names, 'sheet present').toContain(name)
+    expect(workbook.sheets.map((s) => s.name)).toEqual(TEMPLATE_SHEETS)
     for (const name of ['APP', 'DEC', 'CHB', 'REF', 'RDR', 'RR']) {
-      const sheet = workbook.sheets.find((s) => s.name === name)
-      expect(sheet?.headers.slice(0, 3), name).toEqual(['ID', 'Amount', 'Currency'])
-      expect(sheet?.columnStats[0]?.numericCells, `${name}: IDs pasted as text`).toBe(0)
-      for (const row of sheet?.preview ?? []) {
-        expect(row[0], `${name}: ID is text`).toMatch(/^\d*$|^[0-9a-f-]{36}$/)
-      }
+      expect(workbook.sheets.find((s) => s.name === name)?.headers, name).toEqual(['ID', 'Amount', 'Currency'])
     }
+    // Excel writes shared strings (t="s"), styled empty rows up to row 1914 and =SUM leftovers with a cached 0.
+    const app = workbook.sheets.find((s) => s.name === 'APP')
+    expect(app?.rowCount).toBe(14)
+    expect(app?.preview[0]).toEqual(['403066894472190', '10', 'USD'])
+    expect(workbook.sheets.find((s) => s.name === 'REF')?.rowCount).toBe(1)
+    expect(workbook.sheets.find((s) => s.name === 'RDR')?.preview[0]).toEqual(['', '0', ''])
     expect(workbook.sheets.find((s) => s.name === 'Settings')?.hidden).toBe(true)
+    // The team typed one ID as a number: Excel stored it in scientific notation, which the reader reports as lost precision.
+    expect(app?.preview.at(-1)?.[0]).toBe('1.23456789012345E+16')
+    expect(app?.columnStats[0]).toMatchObject({ numericCells: 1, lossyNumericCells: 1 })
   })
 })

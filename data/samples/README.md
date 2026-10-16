@@ -13,7 +13,7 @@ de la base de datos, así que **los archivos solo tienen sentido sobre una base 
 | `batch-blocked/` | ProviderB-Main · batch 52 | Una transacción de un canal de otro proveedor | `provider_mismatch` = 1, import bloqueado |
 | `legacy-provider/` | ProviderC-Alt · batch 7 | Nombres de hoja y columna antiguos resueltos por el conjunto de reglas "Provider C legacy"; gateway UUID; alias `CHB 2` con importe excluido | 0 hallazgos; un movimiento con `excludeAmount` |
 
-`excel-real-sample.xlsx` (sin carpeta ni `expected.json`) es la plantilla guardada por Excel de
+`excel-real/excel-real-sample.xlsx` (sin `expected.json`) es la plantilla guardada por Excel de
 escritorio con datos sintéticos: usa `sharedStrings.xml`, estilos y filas vacías con formato, que
 openpyxl no genera. Solo sirve para probar el lector de `.xlsx` del backend y **no se regenera**.
 
