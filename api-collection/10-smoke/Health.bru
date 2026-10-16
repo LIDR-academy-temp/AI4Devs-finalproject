@@ -1,0 +1,78 @@
+meta {
+  name: Health
+  type: http
+  seq: 1
+  tags: [
+    system
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/health
+  body: none
+  auth: inherit
+}
+
+example {
+  name: 200 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/health
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "status": "ok",
+          "db": "ok"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 503 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/health
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 503
+      text: Service Unavailable
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "status": "ok",
+          "db": "ok"
+        }
+      '''
+    }
+  }
+}

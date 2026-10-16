@@ -1,0 +1,168 @@
+meta {
+  name: Channel accounts
+  type: http
+  seq: 9
+  tags: [
+    catalog
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/channels/:channelId/accounts
+  body: none
+  auth: inherit
+}
+
+params:path {
+  channelId: 
+}
+
+example {
+  name: 200 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/channels/:channelId/accounts
+    method: GET
+    mode: none
+    params:path: {
+      channelId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        [
+          {
+            "accountId": "",
+            "name": "",
+            "providerId": 0,
+            "isActive": false,
+            "isPrimary": false,
+            "assignedAt": "",
+            "assignedInBatchId": ""
+          }
+        ]
+      '''
+    }
+  }
+}
+
+example {
+  name: 400 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/channels/:channelId/accounts
+    method: GET
+    mode: none
+    params:path: {
+      channelId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 400
+      text: Bad Request
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/channels/:channelId/accounts
+    method: GET
+    mode: none
+    params:path: {
+      channelId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 404 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/channels/:channelId/accounts
+    method: GET
+    mode: none
+    params:path: {
+      channelId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 404
+      text: Not Found
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}
