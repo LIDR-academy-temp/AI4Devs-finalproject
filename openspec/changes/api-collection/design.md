@@ -31,7 +31,7 @@ Ver proposal.md (Why). Estado actual relevante:
 **D2 — Credenciales por `process.env` del `.env` de la colección.** Bruno carga `api-collection/.env` y expone sus claves como `{{process.env.SEED_USER}}`, `{{process.env.SEED_VIEWER_USER}}` y `{{process.env.SEED_PASSWORD}}`. El entorno `environments/local.bru` solo lleva `baseUrl` (no secreto, versionado). `.env.example` trae `SEED_USER=analyst`, `SEED_VIEWER_USER=viewer` y `SEED_PASSWORD=Recon2026!` (valores sintéticos, ya públicos en `seed.ts`), con un comentario en inglés: `SEED_PASSWORD` debe coincidir con el del `.env` de la raíz, porque es la contraseña con la que `pnpm db:seed` crea los usuarios. Los nombres de las claves son los mismos que en la raíz a propósito. *Alternativa*: variables secretas del entorno de Bruno → se guardan cifradas solo en la app de escritorio y `bru run` no las ve sin flags extra.
 
 **D3 — Dos usuarios, login automático en el pre-request de la colección.** El usuario principal es `analyst`: los flujos del tramo 2 exigen `settlement.process` y no tiene sentido cambiar de usuario después. `viewer` solo se usa en los negativos: `404` fuera de alcance hoy, `403` por permiso cuando existan rutas con `requirePermission`. Mecanismo:
-- `collection.bru` declara `auth: bearer` con `{{accessToken}}` y un pre-request que, si la petición no es anónima y no hay `accessToken` en variables de ejecución, lanza `00-auth/Login` (`bru.runRequest`). El post-response de `Login` guarda `accessToken` y `refreshToken` con `bru.setVar` (en memoria, nunca en disco).
+- `collection.bru` declara `auth: bearer` con `{{accessToken}}` y un pre-request que, salvo que la petición declare la variable de petición `selfAuth: true`, lanza `00-auth/Login` (`bru.runRequest`) si no hay `accessToken` en variables de ejecución. `selfAuth: true` la llevan las peticiones que hacen su propio login (los logins, `00-auth/Refresh`, los logout y `20-flows/session`) y las anónimas (`health` y los negativos `401` sin token). El post-response de `Login` guarda `accessToken` y `refreshToken` con `bru.setVar` (en memoria, nunca en disco).
 - Si la petición declara que necesita a viewer (`bru.getRequestVar('as') === 'viewer'`, una variable de petición) y no hay `viewerToken`, el mismo pre-request lanza `00-auth/Login as viewer`, cuyo post-response guarda solo `viewerToken`. Esas peticiones declaran `auth: bearer` con `{{viewerToken}}` y no heredan.
 - Las protegidas usan `auth: inherit`; las anónimas (`login`, `refresh`, `logout`, `health`) y los negativos `401` declaran `auth: none`.
 
@@ -40,14 +40,17 @@ Ver proposal.md (Why). Estado actual relevante:
 **D4 — Los flujos de sesión usan su propio par.** Refresh y logout invalidan el refresh usado; si tocaran el par compartido de `analyst`, las peticiones siguientes fallarían. Las peticiones de `00-auth/refresh`, `00-auth/logout` y `20-flows/session` hacen su propio login como `SEED_USER` y guardan el par en variables con prefijo (`flowAccessToken`, `flowRefreshToken`). El access token compartido sigue siendo válido porque logout solo revoca el refresh (spec `auth`, "Cierre de sesión"). `viewerToken` no se usa en estos flujos.
 
 **D5 — Aserciones mínimas y del contrato.** Cada petición comprueba `res.status` y, en errores, `res.body.code`; en felices, una o dos propiedades estables del seed (`userName = analyst`, `Merchant A` y `Merchant B`, `status = "ok"`). No se validan cuerpos completos ni UUID literales: los IDs de cuenta se obtienen por nombre (`ProviderA-USD`) de `GET /providers/101/accounts`. Negativos elegidos por ruta:
-- `401` sin token en los listados sin parámetro (`/merchants`, `/channels`).
-- `400` con ID mal formado (`/accounts/not-a-uuid`, `/providers/abc`).
-- `404 not_found` para lo inexistente con `analyst` (`/merchants/999/providers`, UUID aleatorio).
+- `401 unauthorized` sin token en las rutas sin parámetro de ruta (`/merchants`, `/channels?unassigned=true`, `/auth/me`).
+- `400 validation_error` con ID mal formado (`/accounts/not-a-uuid`, `/providers/abc/channels`).
+- `404 not_found` para lo inexistente con `analyst` (`/providers/999/accounts`, `/channels/999999/accounts`, `/accounts/{{$randomUUID}}/channels`).
 - `404 not_found` fuera de alcance con `viewerToken` (`/providers/201`, `/merchants/2/providers`); la misma ruta con `analyst` responde `200` en su caso feliz.
+- Sesión: `401 invalid_credentials` con contraseña errónea, `401 invalid_token` al refrescar con un access token o con un refresh ya revocado por logout, y `204` en un logout repetido (idempotente).
 
 **D6 — Scripts multiplataforma.** `bru run` necesita ejecutarse desde la raíz de la colección. En `package.json`:
-- `"test:api": "cd api-collection && bru run --env local"`
+- `"test:api": "cd api-collection && bru run -r --env local"`
 - `"test:api:smoke": "cd api-collection && bru run 10-smoke --env local"`
+
+La colección completa necesita `-r` (recursivo): sin él `bru run` en la raíz no entra en las subcarpetas. `10-smoke` no tiene subcarpetas, así que no lo necesita.
 
 `cd x && y` funciona en el shell que usa pnpm tanto en Windows (cmd) como en POSIX. `bru run` devuelve código distinto de cero si falla una aserción o una petición. Cualquier informe que genere la CLI (`--output`/`--reporter-*`, hoy no se usa; llegará con CI en Entrega 3) va a `reports/`, que se añade a `.gitignore` desde ya.
 
