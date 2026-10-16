@@ -2,9 +2,12 @@
  * In-memory doubles and fixtures of the import module. The rules come straight from the seed
  * (backend/prisma/synthetic.ts) so that tests and database never drift; the workbook descriptions
  * copy what the reader extracts from data/samples (sheet names, headers, row counts, first rows,
- * distinct values) so that the proposal can be tested without Excel.
+ * distinct values) so that the proposal and the service can be tested without Excel or SQL Server.
  */
-import type { Cycle, SheetKind, TargetField } from '@recon/shared'
+import { createHash } from 'node:crypto'
+import type { Readable } from 'node:stream'
+import type { Cycle, ImportStatus, SheetKind, TargetField } from '@recon/shared'
+import { strToU8 } from 'fflate'
 import {
   GLOBAL_COLUMN_RULES,
   GLOBAL_SHEET_RULES,
@@ -12,12 +15,34 @@ import {
   STATUS_ALIASES,
   TRANSACTION_STATUSES,
 } from '../../../../../prisma/synthetic.js'
+import { ACCOUNT_IDS, type AccountName, LEGACY_RULE_SET_ID } from '../../../catalog/application/__fakes__/in-memory.js'
+import type { MatchingRulesRepository } from '../../../matching/application/ports.js'
 import type { ColumnRule, MatchingRules, RuleSet, SheetRule } from '../../../matching/domain/rules.js'
+import { DuplicateFileError, FileUnreadableError } from '../../domain/errors.js'
 import type { ColumnStats, SheetDescription, WorkbookDescription } from '../../domain/workbook.js'
+import type {
+  AccountRef,
+  FileStore,
+  IdGenerator,
+  ImportFileRecord,
+  ImportRecord,
+  ImportRepository,
+  ImportSheetRecord,
+  ImportSummaryRecord,
+  NewImport,
+  NewImportFile,
+  Scope,
+  StagedFile,
+  WorkbookReader,
+} from '../ports.js'
+
+export { ACCOUNT_IDS, LEGACY_RULE_SET_ID }
+
+export function sha256Of(bytes: Uint8Array): string {
+  return createHash('sha256').update(bytes).digest('hex')
+}
 
 // ───────────────────────── Rules from the seed ─────────────────────────
-
-export const LEGACY_RULE_SET_ID = 1
 
 interface SeedSheetRule {
   sheetPattern: string
@@ -90,6 +115,12 @@ export const RULES_FOR_PROVIDER_C: MatchingRules = {
   global: GLOBAL_RULES,
   aliases: ALIASES,
   statuses: STATUSES,
+}
+
+export class InMemoryMatchingRulesRepository implements MatchingRulesRepository {
+  async rulesFor(ruleSetId: number | null): Promise<MatchingRules> {
+    return structuredClone(ruleSetId === LEGACY_RULE_SET_ID ? RULES_FOR_PROVIDER_C : RULES_FOR_PROVIDER_A)
+  }
 }
 
 // ───────────────────────── Workbooks as the reader describes the samples ─────────────────────────
@@ -237,4 +268,284 @@ export const LEGACY_WORKBOOK: WorkbookDescription = {
       [stats(['df14616d-4b26-4ffb-9984-72717ebff6a6']), stats(['CHB 2']), stats(null, 1)],
     ),
   ],
+}
+
+/** A workbook with a sheet no rule matches. */
+export const UNRULED_WORKBOOK: WorkbookDescription = {
+  sheets: [
+    templateSheet('APP', 2, [['252570479111759', '16.22', 'USD']]),
+    sheet('Bonus', ['Reference', 'Importe'], 2, [['x', '1']], [stats(['x']), stats(null, 2)]),
+  ],
+}
+
+// ───────────────────────── Sample files as uploads ─────────────────────────
+
+export interface SampleFile {
+  fileName: string
+  /** Stand-in bytes with the zip magic; the fake reader maps them to the description by hash. */
+  bytes: Uint8Array
+  workbook: WorkbookDescription
+}
+
+function fakeXlsxBytes(tag: string): Uint8Array {
+  return strToU8(`PK\u0003\u0004${tag}`)
+}
+
+export const SAMPLE_FILES = {
+  batchClean: {
+    fileName: 'Recon_Template_ProviderA-USD_batch-clean.xlsx',
+    bytes: fakeXlsxBytes('batch-clean'),
+    workbook: BATCH_CLEAN_WORKBOOK,
+  },
+  part1: {
+    fileName: 'Recon_Template_ProviderA-USD_batch-split_part1.xlsx',
+    bytes: fakeXlsxBytes('batch-split-part1'),
+    workbook: BATCH_SPLIT_PART1,
+  },
+  part2: {
+    fileName: 'Recon_Template_ProviderA-USD_batch-split_part2.xlsx',
+    bytes: fakeXlsxBytes('batch-split-part2'),
+    workbook: BATCH_SPLIT_PART2,
+  },
+  legacy: {
+    fileName: 'Legacy_ProviderC-Alt_batch.xlsx',
+    bytes: fakeXlsxBytes('legacy-provider'),
+    workbook: LEGACY_WORKBOOK,
+  },
+  unruled: { fileName: 'bonus.xlsx', bytes: fakeXlsxBytes('unruled'), workbook: UNRULED_WORKBOOK },
+} satisfies Record<string, SampleFile>
+
+export class FakeWorkbookReader implements WorkbookReader {
+  private readonly byHash = new Map<string, WorkbookDescription>()
+
+  constructor(samples: SampleFile[] = Object.values(SAMPLE_FILES)) {
+    for (const sample of samples) this.register(sample.bytes, sample.workbook)
+  }
+
+  register(bytes: Uint8Array, workbook: WorkbookDescription): void {
+    this.byHash.set(sha256Of(bytes), workbook)
+  }
+
+  describe(bytes: Uint8Array, fileName: string): WorkbookDescription {
+    const workbook = this.byHash.get(sha256Of(bytes))
+    if (!workbook) throw new FileUnreadableError(fileName, 'not a registered fixture')
+    return structuredClone(workbook)
+  }
+}
+
+// ───────────────────────── File store ─────────────────────────
+
+export class InMemoryFileStore implements FileStore {
+  readonly files = new Map<string, Uint8Array>()
+  private sequence = 0
+  private failCommit = false
+
+  failNextCommit(): void {
+    this.failCommit = true
+  }
+
+  async stage(stream: Readable): Promise<StagedFile> {
+    const chunks: Buffer[] = []
+    for await (const chunk of stream) chunks.push(Buffer.from(chunk))
+    return this.stageBytes(Buffer.concat(chunks))
+  }
+
+  async stageBytes(bytes: Uint8Array): Promise<StagedFile> {
+    const tempPath = `tmp/${++this.sequence}.part`
+    this.files.set(tempPath, bytes)
+    return { tempPath, sizeBytes: bytes.length, sha256: sha256Of(bytes) }
+  }
+
+  async commit(tempPath: string, storagePath: string): Promise<void> {
+    if (this.failCommit) {
+      this.failCommit = false
+      throw new Error('simulated disk failure')
+    }
+    const bytes = this.files.get(tempPath)
+    if (!bytes) throw new Error(`missing staged file ${tempPath}`)
+    this.files.delete(tempPath)
+    this.files.set(storagePath, bytes)
+  }
+
+  async discard(tempPath: string): Promise<void> {
+    this.files.delete(tempPath)
+  }
+
+  async remove(storagePath: string): Promise<void> {
+    this.files.delete(storagePath)
+  }
+
+  async read(relativePath: string): Promise<Uint8Array> {
+    const bytes = this.files.get(relativePath)
+    if (!bytes) throw new Error(`missing file ${relativePath}`)
+    return bytes
+  }
+
+  paths(): string[] {
+    return [...this.files.keys()].sort()
+  }
+}
+
+// ───────────────────────── Import repository ─────────────────────────
+
+interface AccountRow extends AccountRef {
+  name: AccountName
+  merchantId: number
+}
+
+export const IMPORT_ACCOUNTS: AccountRow[] = [
+  { accountId: ACCOUNT_IDS['ProviderA-USD'], name: 'ProviderA-USD', merchantId: 1, matchingRuleSetId: null },
+  { accountId: ACCOUNT_IDS['ProviderA-EUR'], name: 'ProviderA-EUR', merchantId: 1, matchingRuleSetId: null },
+  { accountId: ACCOUNT_IDS['ProviderB-Main'], name: 'ProviderB-Main', merchantId: 1, matchingRuleSetId: null },
+  { accountId: ACCOUNT_IDS['ProviderC-USD'], name: 'ProviderC-USD', merchantId: 2, matchingRuleSetId: null },
+  {
+    accountId: ACCOUNT_IDS['ProviderC-Alt'],
+    name: 'ProviderC-Alt',
+    merchantId: 2,
+    matchingRuleSetId: LEGACY_RULE_SET_ID,
+  },
+]
+
+const USER_NAMES = new Map<number, string>([
+  [1, 'admin'],
+  [2, 'analyst'],
+  [3, 'viewer'],
+])
+
+interface StoredFile extends ImportFileRecord {
+  sheets: ImportSheetRecord[]
+}
+
+interface StoredImport extends Omit<ImportSummaryRecord, 'fileCount'> {
+  files: StoredFile[]
+}
+
+export class InMemoryImportRepository implements ImportRepository {
+  private readonly imports = new Map<string, StoredImport>()
+  private failWrite = false
+  private tick = 0
+
+  constructor(private readonly epoch = new Date('2026-10-16T10:00:00.000Z')) {}
+
+  failNextWrite(): void {
+    this.failWrite = true
+  }
+
+  /** Test seam for states the API cannot reach yet (analyzed, processed…). */
+  setStatus(importId: string, status: ImportStatus): void {
+    const stored = this.imports.get(importId)
+    if (!stored) throw new Error(`unknown import ${importId}`)
+    stored.status = status
+  }
+
+  private now(): Date {
+    return new Date(this.epoch.getTime() + 1000 * this.tick++)
+  }
+
+  private consumeFailure(): void {
+    if (this.failWrite) {
+      this.failWrite = false
+      throw new Error('simulated database failure')
+    }
+  }
+
+  private visible(scope: Scope, accountId: string): AccountRow | null {
+    const account = IMPORT_ACCOUNTS.find((a) => a.accountId === accountId)
+    return account && scope.merchantIds.includes(account.merchantId) ? account : null
+  }
+
+  private toRecord(stored: StoredImport): ImportRecord {
+    const files = [...stored.files].sort(
+      (a, b) => a.uploadedAt.getTime() - b.uploadedAt.getTime() || a.fileName.localeCompare(b.fileName),
+    )
+    return structuredClone({
+      ...stored,
+      fileCount: files.length,
+      files: files.map(({ sheets: _, ...file }) => file),
+      sheets: files.flatMap((f) => f.sheets),
+    })
+  }
+
+  async findAccount(scope: Scope, accountId: string): Promise<AccountRef | null> {
+    const account = this.visible(scope, accountId)
+    return account ? { accountId: account.accountId, matchingRuleSetId: account.matchingRuleSetId } : null
+  }
+
+  async findImport(scope: Scope, importId: string): Promise<ImportRecord | null> {
+    const stored = this.imports.get(importId)
+    if (!stored || !this.visible(scope, stored.accountId)) return null
+    return this.toRecord(stored)
+  }
+
+  async listImports(scope: Scope, accountId: string, status?: ImportStatus): Promise<ImportSummaryRecord[]> {
+    if (!this.visible(scope, accountId)) return []
+    return [...this.imports.values()]
+      .filter((i) => i.accountId === accountId && (status === undefined || i.status === status))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .map((i) => {
+        const { files, ...summary } = this.toRecord(i)
+        return { ...summary, fileCount: files.length }
+      })
+  }
+
+  private storedFile(file: NewImportFile): StoredFile {
+    return {
+      fileId: file.fileId,
+      fileName: file.fileName,
+      storagePath: file.storagePath,
+      sizeBytes: file.sizeBytes,
+      sha256: file.sha256,
+      uploadedAt: this.now(),
+      sheets: file.sheets.map((s) => ({ ...s, fileId: file.fileId, mappingConfirmed: false })),
+    }
+  }
+
+  async createImport(data: NewImport): Promise<void> {
+    this.consumeFailure()
+    const account = IMPORT_ACCOUNTS.find((a) => a.accountId === data.accountId)
+    if (!account) throw new Error(`unknown account ${data.accountId}`)
+    const createdAt = this.now()
+    this.imports.set(data.importId, {
+      importId: data.importId,
+      accountId: data.accountId,
+      matchingRuleSetId: account.matchingRuleSetId,
+      status: 'uploaded',
+      createdBy: { userId: data.createdByUserId, userName: USER_NAMES.get(data.createdByUserId) ?? 'unknown' },
+      createdAt,
+      updatedAt: createdAt,
+      analyzedAt: null,
+      rowsTotal: null,
+      rowsMatched: null,
+      rowsUnmatched: null,
+      currentBatchId: null,
+      files: data.files.map((f) => this.storedFile(f)),
+    })
+  }
+
+  async addFiles(importId: string, files: NewImportFile[]): Promise<void> {
+    this.consumeFailure()
+    const stored = this.imports.get(importId)
+    if (!stored) throw new Error(`unknown import ${importId}`)
+    for (const file of files) {
+      // The UNIQUE (importId, sha256) constraint of the schema.
+      const existing = stored.files.find((f) => f.sha256 === file.sha256)
+      if (existing) throw new DuplicateFileError(existing.fileName, existing.fileId)
+    }
+    stored.files.push(...files.map((f) => this.storedFile(f)))
+    stored.updatedAt = this.now()
+  }
+
+  async removeFile(importId: string, fileId: string): Promise<void> {
+    this.consumeFailure()
+    const stored = this.imports.get(importId)
+    if (!stored) throw new Error(`unknown import ${importId}`)
+    stored.files = stored.files.filter((f) => f.fileId !== fileId)
+    stored.updatedAt = this.now()
+  }
+}
+
+/** Deterministic UUIDs (version 4 layout) so that tests can assert on ids. */
+export function sequentialIds(): IdGenerator {
+  let n = 0
+  return () => `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`
 }
