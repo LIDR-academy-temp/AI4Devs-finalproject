@@ -81,6 +81,46 @@ describe('buildApp', () => {
     await app.close()
   })
 
+  it('publishes the five import routes with bearer security, the imports tag and multipart uploads documented', async () => {
+    const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
+
+    const res = await app.inject({ method: 'GET', url: '/docs/json' })
+
+    expect(res.statusCode).toBe(200)
+    const doc = res.json()
+    const operations: [string, 'get' | 'post' | 'delete'][] = [
+      ['/api/v1/accounts/{accountId}/imports', 'post'],
+      ['/api/v1/accounts/{accountId}/imports', 'get'],
+      ['/api/v1/imports/{importId}', 'get'],
+      ['/api/v1/imports/{importId}/files', 'post'],
+      ['/api/v1/imports/{importId}/files/{fileId}', 'delete'],
+    ]
+    for (const [path, method] of operations) {
+      const operation = doc.paths[path]?.[method]
+      expect(operation, `${method} ${path}`).toBeDefined()
+      expect(operation.tags, path).toEqual(['imports'])
+      expect(operation.security, path).toEqual([{ bearerAuth: [] }])
+      expect(operation.responses, path).toHaveProperty('401')
+    }
+    for (const path of ['/api/v1/accounts/{accountId}/imports', '/api/v1/imports/{importId}/files']) {
+      const post = doc.paths[path].post
+      // The body is a multipart stream: documented as `files` parts, not schema-validated.
+      const multipart = post.requestBody?.content?.['multipart/form-data']
+      expect(multipart, path).toBeDefined()
+      expect(multipart.schema.properties.files, path).toMatchObject({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+      })
+      expect(post.responses, path).toHaveProperty('409')
+      expect(post.responses, path).toHaveProperty('422')
+    }
+    const status = doc.paths['/api/v1/accounts/{accountId}/imports'].get.parameters.find(
+      (p: { name: string }) => p.name === 'status',
+    )
+    expect(status).toMatchObject({ in: 'query', required: false })
+    await app.close()
+  })
+
   it('does not disconnect an injected Prisma client on close', async () => {
     const prisma = fakePrisma(async () => [{ ok: 1 }])
     const app = await buildApp({ env, prisma })

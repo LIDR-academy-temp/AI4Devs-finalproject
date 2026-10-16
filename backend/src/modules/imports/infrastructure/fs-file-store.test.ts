@@ -15,7 +15,7 @@ const SHA256 = createHash('sha256').update(BYTES).digest('hex')
 
 beforeEach(async () => {
   root = await mkdtemp(path.join(tmpdir(), 'recon-uploads-'))
-  store = await FsFileStore.create(root)
+  store = new FsFileStore(root)
 })
 
 afterEach(async () => {
@@ -23,7 +23,11 @@ afterEach(async () => {
 })
 
 describe('FsFileStore', () => {
-  it('creates the imports/ and tmp/ directories under the root', async () => {
+  it('creates the imports/ and tmp/ directories under the root on first use, not at construction', async () => {
+    expect(existsSync(path.join(root, 'imports'))).toBe(false)
+
+    await store.stage(Readable.from([BYTES]))
+
     expect((await stat(path.join(root, 'imports'))).isDirectory()).toBe(true)
     expect((await stat(path.join(root, 'tmp'))).isDirectory()).toBe(true)
   })

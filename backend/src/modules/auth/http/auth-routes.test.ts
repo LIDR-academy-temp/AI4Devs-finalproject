@@ -1,7 +1,7 @@
 import { MeResponse, TokenPair } from '@recon/shared'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { buildTestApp, PASSWORD } from '../../../test-support/build-test-app.js'
 import { FakePasswordHasher } from '../application/__fakes__/in-memory.js'
-import { buildTestApp, PASSWORD } from './test-support.js'
 
 let ctx: Awaited<ReturnType<typeof buildTestApp>>
 let logLines: string[]

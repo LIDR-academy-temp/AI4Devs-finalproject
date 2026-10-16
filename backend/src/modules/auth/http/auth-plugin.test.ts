@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { buildTestApp, PASSWORD } from '../../../test-support/build-test-app.js'
 import { ACCESS_TTL_SECONDS } from '../application/__fakes__/in-memory.js'
-import { buildTestApp, PASSWORD } from './test-support.js'
 
 let ctx: Awaited<ReturnType<typeof buildTestApp>>
 const handler = vi.fn(async () => ({ ok: true }))

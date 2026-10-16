@@ -10,7 +10,7 @@ import {
 } from '@recon/shared'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { buildTestApp, PASSWORD } from '../../auth/http/test-support.js'
+import { buildTestApp, PASSWORD } from '../../../test-support/build-test-app.js'
 import { ACCOUNT_IDS, InMemoryCatalogRepository } from '../application/__fakes__/in-memory.js'
 import { CatalogService } from '../application/catalog-service.js'
 
