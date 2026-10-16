@@ -45,8 +45,8 @@ Issue #29. Rama: `chore/api-collection` (ya creada). PR hacia `feature/entrega-2
 
 ## 6. Verificación integral
 
-- [ ] 6.1 Desde el estado limpio de la rama: copiar `.env.example` a `.env`, `pnpm install`, `pnpm test:api` en verde; abrir la colección en la app de escritorio de Bruno con el entorno `local` y comprobar que una petición de `10-smoke` responde sin login manual
-- [ ] 6.2 `openspec validate api-collection --strict` sin errores
+- [x] 6.1 Desde el estado limpio de la rama: copiar `.env.example` a `.env`, `pnpm install`, `pnpm test:api` en verde; abrir la colección en la app de escritorio de Bruno con el entorno `local` y comprobar que una petición de `10-smoke` responde sin login manual
+- [x] 6.2 `openspec validate api-collection --strict` sin errores
 
 ## Workflow follow-up
 
