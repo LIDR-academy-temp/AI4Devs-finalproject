@@ -1,8 +1,10 @@
+# web-shell Specification
+
 ## Purpose
 
 Comportamiento de la aplicación web común a todas las pantallas de Recon Tool: sesión en el navegador (login, renovación y expiración de tokens, logout), guardas de ruta por sesión y por permiso, layout con navegación filtrada por el rol e identidad del usuario. README §1.3, §2.2 y §2.5.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Acceso sin sesión
 Toda ruta de la aplicación salvo Login SHALL exigir una sesión. Sin sesión, la aplicación SHALL llevar a Login conservando la ruta pedida (ruta y parámetros) para volver a ella tras entrar. Una sesión es un refresh token vigente; al recargar la página la aplicación SHALL intentar recuperarla con `POST /auth/refresh` antes de decidir.
@@ -98,13 +100,19 @@ Cuando una petición autenticada recibe `401`, la aplicación SHALL renovar el p
 - **THEN** se hace exactamente un `POST /auth/refresh` y las tres peticiones se repiten con el access token nuevo
 
 ### Requirement: Expiración de la sesión
-Si el refresh responde `401`, o la petición repetida vuelve a recibir `401`, la aplicación SHALL descartar los tokens y los datos cacheados, y llevar a Login con la ruta actual como destino de vuelta y el aviso `Your session has expired. Please sign in again.`
+Si el refresh responde `401`, o la petición repetida vuelve a recibir `401`, la aplicación SHALL descartar los tokens y los datos cacheados, y llevar a Login con la ruta actual como destino de vuelta y el aviso `Your session has expired. Please sign in again.` La expiración SHALL aplicarse a la vez en todas las pestañas abiertas, cada una con su propia ruta de vuelta.
 
 #### Scenario: Refresh caducado o revocado
 - **GIVEN** una sesión cuyo refresh token ya fue revocado
 - **WHEN** una petición autenticada recibe `401`
 - **THEN** el usuario ve Login con el aviso de sesión expirada, sin entrar en un bucle de refrescos
 - **AND** al volver a entrar termina en la pantalla donde estaba
+
+#### Scenario: Expiración en otra pestaña
+- **GIVEN** `analyst` con sesión en dos pestañas, una en Accounts y otra en Dashboard
+- **WHEN** la sesión expira en la pestaña de Accounts
+- **THEN** las dos pestañas muestran Login con el aviso de sesión expirada, sin datos de la sesión
+- **AND** cada una conserva su propia ruta como destino de vuelta (`/accounts` y Dashboard)
 
 ### Requirement: Cierre de sesión
 **Sign out** SHALL llamar a `POST /auth/logout` con el refresh token, descartar tokens y datos cacheados aunque esa llamada falle, y llevar a Login. Tras cerrar sesión, volver atrás en el navegador SHALL no mostrar datos de la sesión anterior.
@@ -117,6 +125,11 @@ Si el refresh responde `401`, o la petición repetida vuelve a recibir `401`, la
 #### Scenario: Logout con el servidor caído
 - **WHEN** pulsa **Sign out** y `POST /auth/logout` falla por red
 - **THEN** igualmente ve Login y la recarga de la página no recupera la sesión
+
+#### Scenario: Sign out con una petición en vuelo
+- **GIVEN** `analyst` en una pantalla cuya petición al API aún no ha respondido
+- **WHEN** pulsa **Sign out** y después esa petición recibe `401`
+- **THEN** ve Login sin el aviso de sesión expirada y la aplicación no intenta renovar la sesión
 
 ### Requirement: Almacenamiento de los tokens
 El access token SHALL vivir solo en la memoria de cada pestaña y no escribirse en ningún almacenamiento. El refresh token SHALL guardarse en el almacenamiento persistente del navegador, compartido por todas las pestañas de la aplicación, y SHALL borrarse al cerrar sesión o al expirar. Ningún token SHALL aparecer en la URL ni en los registros de la consola.

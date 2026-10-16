@@ -33,7 +33,7 @@
 ## Decisions
 
 ### D1 ⚑ Dónde viven los tokens (revisada en `apply`: sesión compartida entre pestañas)
-**Decisión:** access token **solo en memoria de cada pestaña**; refresh token en **`localStorage`**, compartido por todas las pestañas del origen. La renovación se **serializa entre pestañas con Web Locks** (`navigator.locks`) y el login y el logout se **propagan con `BroadcastChannel`**. Sustituye a la versión aprobada antes de `apply` (refresh en `sessionStorage`, una sesión por pestaña), que obligaba a entrar de nuevo en cada pestaña.
+**Decisión:** access token **solo en memoria de cada pestaña**; refresh token en **`localStorage`**, compartido por todas las pestañas del origen. La renovación se **serializa entre pestañas con Web Locks** (`navigator.locks`) y el login, el logout y la expiración se **propagan con `BroadcastChannel`**. Sustituye a la versión aprobada antes de `apply` (refresh en `sessionStorage`, una sesión por pestaña), que obligaba a entrar de nuevo en cada pestaña.
 
 Por qué:
 - El contrato de `auth` recibe el refresh **en el cuerpo** y no emite cookies; una cookie httpOnly obligaría a cambiar `auth` (cookie `Set-Cookie`, `@fastify/cookie`, protección CSRF, `SameSite`) y su spec. Eso sigue siendo un change de backend propio.
@@ -44,7 +44,7 @@ Por qué:
   2. Llama a `POST /auth/refresh`, guarda el refresh nuevo en `localStorage`, se queda con su access token en memoria y suelta el candado.
   3. La siguiente pestaña en la cola repite el paso 1 con el refresh que dejó la anterior.
   Resultado: renovaciones **en serie**, una por pestaña y cada una con el refresh vigente en su turno. El API nunca recibe un refresh ya revocado. Coste asumido: N pestañas que caducan a la vez hacen N llamadas a `/auth/refresh`, a cambio de que **el access token nunca salga de la memoria de su pestaña** (no viaja entre pestañas).
-- `BroadcastChannel('recon.session')` se usa **solo para `login` y `logout`**: `login` (las pestañas que están en Login entran y van a su ruta de vuelta o a Dashboard; cada una obtiene su access token renovando a través del candado) y `logout` (todas descartan su access token y su caché y van a Login). La expiración no se propaga: al borrarse el refresh compartido, las demás pestañas expiran en su siguiente renovación.
+- `BroadcastChannel('recon.session')` se usa **solo para `login`, `logout` y `expire`**: `login` (las pestañas que están en Login entran y van a su ruta de vuelta o a Dashboard; cada una obtiene su access token renovando a través del candado) y `logout` (todas descartan su access token y su caché y van a Login). `expire` (añadido tras la revisión del PR #26, hallazgo 1): la pestaña que no puede renovar borra el refresh compartido y lo anuncia; las demás descartan su access token y su caché y van a Login con el aviso de sesión expirada, cada una con su ruta actual como destino de vuelta, en lugar de esperar a fallar en su siguiente renovación.
 - Todos los navegadores soportados (Chrome, Edge, Firefox y Safari recientes) implementan Web Locks y `BroadcastChannel`; no se añade alternativa para los que no.
 
 **Riesgos asumidos:**
@@ -110,11 +110,12 @@ Alternativa: funciones escritas a mano sobre `fetch` con tipos `z.infer` de `@re
 
 ### D7 Sesión y renovación: `fetch` envuelto
 - `lib/session/`: estado de sesión (access token en memoria, refresh en `localStorage`, usuario de `/auth/me` en la caché de Query) con suscripción para que el router reaccione a expiración, login y logout de esta u otras pestañas (D1).
-- El cliente `openapi-fetch` de las rutas protegidas recibe un `fetch` propio (`authFetch`) que: (1) añade `Authorization`; (2) ante `401` clona la petición, ejecuta un refresh **de un solo vuelo** (una promesa compartida por todas las peticiones de la pestaña que fallen mientras está en curso, ejecutada dentro del candado entre pestañas de D1), guarda el par nuevo y repite **una vez**; (3) si el refresh falla o la repetición vuelve a dar `401`, llama a `session.expire()`, que limpia tokens y `queryClient.clear()` y navega a `/login?redirect=<ruta actual>&reason=expired`.
+- El cliente `openapi-fetch` de las rutas protegidas recibe un `fetch` propio (`authFetch`) que: (1) añade `Authorization`; (2) ante `401` clona la petición, ejecuta un refresh **de un solo vuelo** (una promesa compartida por todas las peticiones de la pestaña que fallen mientras está en curso, ejecutada dentro del candado entre pestañas de D1), guarda el par nuevo y repite **una vez**; (3) si el refresh falla o la repetición vuelve a dar `401`, llama a `session.expire()`, que limpia tokens, lo anuncia a las demás pestañas (D1) y, en cada pestaña, `queryClient.clear()` y navega a `/login?redirect=<ruta actual>&reason=expired`; (4) si al llegar el `401` la sesión ya no existe (Sign out en esta pestaña o en otra mientras la petición estaba en vuelo), devuelve la respuesta sin renovar ni expirar, para que Login no muestre el aviso de sesión expirada (revisión del PR #26, hallazgo 2).
+- Las respuestas de `POST /auth/login` y `POST /auth/refresh` se validan con `TokenPair` de `@recon/shared` antes de guardar nada: un login con un par mal formado falla (Login muestra el error de servidor) y una renovación con un par mal formado cuenta como fallida (revisión del PR #26).
 - Login, refresh y logout usan un cliente sin `authFetch` (evita bucles).
 - Arranque: si hay refresh en `localStorage` y la pestaña no tiene access token, la primera petición protegida (`/auth/me`, en el `beforeLoad` del layout) renueva antes, a través del candado.
 - Reintentos de TanStack Query desactivados para `4xx` (el `401` ya lo resuelve `authFetch`; `404` no se reintenta).
-- `redirect` solo admite rutas internas (empieza por `/` y no por `//`) para evitar redirecciones abiertas.
+- `redirect` solo admite destinos de la propia aplicación, para evitar redirecciones abiertas: se resuelve con `new URL(redirect, location.origin)` como lo haría el navegador (barras invertidas, tabuladores, esquemas) y solo se acepta si conserva el origen; se navega a su ruta, búsqueda y fragmento (revisión del PR #26, hallazgo 3).
 
 ### D8 Datos de la pantalla Accounts
 No hay `GET /accounts` global, así que la pantalla es dirigida por la selección (también es lo que pide el criterio 3):
