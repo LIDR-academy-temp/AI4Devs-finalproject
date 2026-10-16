@@ -12,12 +12,12 @@ Issue #29. Rama: `chore/api-collection` (ya creada). PR hacia `feature/entrega-2
 
 ## 2. Carpeta 00-auth
 
-- [ ] 2.1 Login negativo (`Login - wrong password`): `auth: none`, contraseña fija errónea, tests `401` y `code = invalid_credentials`
-- [ ] 2.2 Me: feliz (`auth: inherit`, `200`, `userName = analyst`, igual a `process.env.SEED_USER`) y negativo (`auth: none`, `401 unauthorized`)
-- [ ] 2.3 Refresh: feliz con su propio login como `SEED_USER` en pre-request (`flowRefreshToken`, D4) → `200` y tokens distintos; negativo pasando el `accessToken` compartido como `refreshToken` → `401 invalid_token`
-- [ ] 2.4 Logout: feliz con su propio par → `204`; repetido con el mismo refresh → `204` (idempotencia)
-- [ ] 2.5 Verificar `cd api-collection && pnpm exec bru run 00-auth --env local` en verde y que una petición protegida ejecutada después sigue en `200` (la sesión compartida no se invalidó); romper a propósito una aserción una vez, ver el rojo y restaurar
-- [ ] 2.6 Commit: `test(api): peticiones de auth con caso feliz y negativo`
+- [x] 2.1 Login negativo (`Login - wrong password`): `auth: none`, contraseña fija errónea, tests `401` y `code = invalid_credentials`
+- [x] 2.2 Me: feliz (`auth: inherit`, `200`, `userName = analyst`, igual a `process.env.SEED_USER`) y negativo (`auth: none`, `401 unauthorized`)
+- [x] 2.3 Refresh: feliz con su propio login como `SEED_USER` en pre-request (`flowRefreshToken`, D4) → `200` y tokens distintos; negativo pasando el `accessToken` compartido como `refreshToken` → `401 invalid_token`
+- [x] 2.4 Logout: feliz con su propio par → `204`; repetido con el mismo refresh → `204` (idempotencia)
+- [x] 2.5 Verificar `cd api-collection && pnpm exec bru run 00-auth --env local` en verde y que una petición protegida ejecutada después sigue en `200` (la sesión compartida no se invalidó); romper a propósito una aserción una vez, ver el rojo y restaurar
+- [x] 2.6 Commit: `test(api): peticiones de auth con caso feliz y negativo`
 
 ## 3. Carpeta 10-smoke
 
