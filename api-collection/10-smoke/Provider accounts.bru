@@ -18,9 +18,14 @@ params:path {
 }
 
 script:post-response {
-  const account = Array.isArray(res.body) && res.body.find((a) => a.name === 'ProviderA-USD');
+  // Single point that resolves the ProviderA-USD accountId for the account requests (design D5).
+  const account = res.status === 200 && Array.isArray(res.body) ? res.body.find((a) => a.name === 'ProviderA-USD') : undefined;
   if (account) {
     bru.setVar('providerAUsdAccountId', account.accountId);
+    bru.deleteVar('providerAUsdLookupError');
+  } else {
+    bru.deleteVar('providerAUsdAccountId');
+    bru.setVar('providerAUsdLookupError', `ProviderA-USD not found in GET /providers/101/accounts (status ${res.status})`);
   }
 }
 
