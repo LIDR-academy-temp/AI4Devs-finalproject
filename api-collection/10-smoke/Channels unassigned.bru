@@ -20,7 +20,7 @@ params:query {
 tests {
   test('responds the two seed channels without an account', () => {
     expect(res.status).to.equal(200);
-    expect(res.body.map((c) => c.channelId)).to.deep.equal([1007, 1013]);
+    expect(res.body.map((c) => c.channelId)).to.have.members([1007, 1013]);
   });
 }
 

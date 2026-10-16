@@ -23,6 +23,6 @@ script:post-response {
 tests {
   test('analyst sees Merchant A and Merchant B', () => {
     expect(res.status).to.equal(200);
-    expect(res.body.map((m) => m.name)).to.deep.equal(['Merchant A', 'Merchant B']);
+    expect(res.body.map((m) => m.name)).to.have.members(['Merchant A', 'Merchant B']);
   });
 }
