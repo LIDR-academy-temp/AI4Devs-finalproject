@@ -8,7 +8,9 @@ export const TransactionStatusCode = z.enum(['Pending', 'Successful', 'Declined'
 export type TransactionStatusCode = z.infer<typeof TransactionStatusCode>
 
 export const SheetKind = z.enum(['transactions', 'batch_fees', 'ignore'])
+export type SheetKind = z.infer<typeof SheetKind>
 export const MatchResult = z.enum(['matched', 'unmatched', 'ambiguous', 'ignored'])
+export type MatchResult = z.infer<typeof MatchResult>
 export const TargetField = z.enum([
   'transactionId',
   'status',
@@ -21,8 +23,11 @@ export const TargetField = z.enum([
   'orderId',
   'reference',
 ])
+export type TargetField = z.infer<typeof TargetField>
 export const ImportStatus = z.enum(['uploaded', 'mapped', 'analyzed', 'validated', 'processed', 'cancelled'])
+export type ImportStatus = z.infer<typeof ImportStatus>
 export const BatchStatus = z.enum(['processed', 'paid', 'undone'])
+export type BatchStatus = z.infer<typeof BatchStatus>
 export const ChargebackReservePolicy = z.enum(['hold_until_term', 'release_on_chargeback'])
 export type ChargebackReservePolicy = z.infer<typeof ChargebackReservePolicy>
 
