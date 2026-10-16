@@ -20,6 +20,10 @@ body:json {
   }
 }
 
+vars:pre-request {
+  selfAuth: true
+}
+
 script:post-response {
   // Second token, only for scope (404) and permission (403) negatives. Never replaces accessToken.
   if (res.status === 200) {

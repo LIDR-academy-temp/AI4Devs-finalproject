@@ -20,6 +20,10 @@ body:json {
   }
 }
 
+vars:pre-request {
+  selfAuth: true
+}
+
 script:post-response {
   // Shared session of the main user; kept in runtime variables, never written to disk.
   if (res.status === 200) {
