@@ -17,7 +17,7 @@ de programar.
 - Base de datos: SQL Server 2022, usuario `recon_app` (nunca `sa`). Importes `DECIMAL(19,4)`, porcentajes `DECIMAL(9,6)`; **nunca `MONEY`, `FLOAT` ni `number` de JS para dinero**: en la API el dinero viaja como string decimal y en el dominio se usa `Decimal` de Prisma o `decimal.js`.
 - Linter y formato: Biome (no Prettier ni ESLint). Commits: Conventional Commits.
 - **Idiomas.** Documentación (`README.md`, `prompts.md`, `docs/`, specs de OpenSpec, `CLAUDE.md`, skills, plantilla de PR) y **mensajes de commit en español**. Todo lo que es código o configuración en **inglés**: identificadores, comentarios, docstrings, mensajes que emiten scripts y hooks, comentarios de SQL/YAML/JSON/shell/.env, textos de la interfaz de usuario y datos sembrados. Un comentario en español dentro de un `.ts` es un hallazgo de revisión.
-- **Error codes.** Error codes in API responses are lowercase snake_case (`validation_error`, `not_found`, `unauthorized`). Uppercase codes in README examples (`FEE_OVERLAP`, `DUPLICATE_FILE`, `BATCH_NO_TAKEN`…) are stale: implement them in lowercase and fix the README example in the same change.
+- **Códigos de error.** Los códigos de error de las respuestas del API van en snake_case minúsculas (`validation_error`, `not_found`, `unauthorized`). Los códigos en mayúsculas de los ejemplos del README (`FEE_OVERLAP`, `DUPLICATE_FILE`, `BATCH_NO_TAKEN`…) están desactualizados: se implementan en minúsculas y el ejemplo del README se corrige en el mismo change.
 
 ## Vocabulario fijo (úsalo tal cual en código, specs y UI)
 
