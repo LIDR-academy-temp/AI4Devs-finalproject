@@ -20,6 +20,7 @@
     "test": "pnpm -r test",
     "test:api": "cd api-collection && bru run -r --env local",
     "test:api:smoke": "cd api-collection && bru run 10-smoke --env local",
+    "test:hooks": "bash scripts/test-hooks.sh",
     "openapi:export": "pnpm --filter @recon/backend openapi:export",
     "openapi:check": "pnpm openapi:export && pnpm --filter @recon/frontend api:generate && git diff --exit-code -- docs/openapi.yaml frontend/src/lib/api/schema.gen.ts",
     "samples:plan": "tsx data/samples/plan.ts > data/samples/plan.json",
