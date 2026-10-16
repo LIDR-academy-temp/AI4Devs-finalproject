@@ -51,6 +51,26 @@ export class DuplicateFileError extends DomainError {
   }
 }
 
+/** The request carried no `files` part (README §4.2: 400). */
+export class NoFilesError extends DomainError {
+  readonly status = 400
+  readonly code = 'validation_error'
+
+  constructor() {
+    super('At least one file is required')
+  }
+}
+
+/** The request body is not multipart/form-data. */
+export class MultipartExpectedError extends DomainError {
+  readonly status = 400
+  readonly code = 'validation_error'
+
+  constructor() {
+    super('multipart/form-data body expected')
+  }
+}
+
 /** Files can only be added or removed while the import is `uploaded` or `mapped`. */
 export class ImportNotEditableError extends DomainError {
   readonly status = 409

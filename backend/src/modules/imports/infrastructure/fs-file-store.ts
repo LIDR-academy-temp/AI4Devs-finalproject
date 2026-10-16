@@ -12,21 +12,28 @@ const IMPORTS_DIR = 'imports'
 const TMP_DIR = 'tmp'
 
 export class FsFileStore implements FileStore {
-  private constructor(private readonly root: string) {}
+  private readonly root: string
+  private ready: Promise<void> | null = null
 
-  /** Resolves the root (relative to the process cwd) and makes sure imports/ and tmp/ exist. */
-  static async create(root: string): Promise<FsFileStore> {
-    const absolute = path.resolve(root)
-    await mkdir(path.join(absolute, IMPORTS_DIR), { recursive: true })
-    await mkdir(path.join(absolute, TMP_DIR), { recursive: true })
-    return new FsFileStore(absolute)
+  /** `root` is resolved against the process cwd; imports/ and tmp/ are created on first use, never at startup. */
+  constructor(root: string) {
+    this.root = path.resolve(root)
   }
 
   get rootPath(): string {
     return this.root
   }
 
+  private ensureDirectories(): Promise<void> {
+    this.ready ??= Promise.all([
+      mkdir(path.join(this.root, IMPORTS_DIR), { recursive: true }),
+      mkdir(path.join(this.root, TMP_DIR), { recursive: true }),
+    ]).then(() => undefined)
+    return this.ready
+  }
+
   async stage(stream: Readable): Promise<StagedFile> {
+    await this.ensureDirectories()
     const tempPath = `${TMP_DIR}/${randomUUID()}.part`
     const hash = createHash('sha256')
     let sizeBytes = 0
