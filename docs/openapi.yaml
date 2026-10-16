@@ -1,0 +1,1348 @@
+openapi: 3.0.3
+info:
+  title: Recon Tool API
+  version: 0.1.0
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas: {}
+paths:
+  /api/v1/auth/login:
+    post:
+      summary: Log in with user name and password
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userName:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 256
+              required:
+                - userName
+                - password
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+                  expiresIn:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                required:
+                  - accessToken
+                  - refreshToken
+                  - expiresIn
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/auth/refresh:
+    post:
+      summary: Rotate the token pair with a refresh token
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  minLength: 1
+              required:
+                - refreshToken
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+                  expiresIn:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                required:
+                  - accessToken
+                  - refreshToken
+                  - expiresIn
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/auth/logout:
+    post:
+      summary: Revoke a refresh token (idempotent)
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  minLength: 1
+              required:
+                - refreshToken
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/auth/me:
+    get:
+      summary: Identity, permissions and visible merchants of the caller
+      tags:
+        - auth
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  userName:
+                    type: string
+                  displayName:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string
+                  permissions:
+                    type: array
+                    items:
+                      type: string
+                      enum:
+                        - settlement.process
+                        - payment.process
+                        - account.manage
+                        - fee.manage
+                        - fee.view
+                        - reports.view
+                        - user.manage
+                  merchantScope:
+                    type: string
+                    enum:
+                      - assigned
+                      - all
+                  merchants:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        merchantId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          type: string
+                      required:
+                        - merchantId
+                        - name
+                      additionalProperties: false
+                required:
+                  - userId
+                  - userName
+                  - displayName
+                  - email
+                  - role
+                  - permissions
+                  - merchantScope
+                  - merchants
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/merchants:
+    get:
+      summary: Merchants visible to the caller
+      tags: &a1
+        - catalog
+      security: &a2
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    merchantId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    name:
+                      type: string
+                    isActive:
+                      type: boolean
+                  required:
+                    - merchantId
+                    - name
+                    - isActive
+                  additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/merchants/{merchantId}/providers:
+    get:
+      summary: Providers of a merchant
+      tags: *a1
+      parameters:
+        - schema:
+            type: string
+            pattern: ^\d{1,10}$
+          in: path
+          name: merchantId
+          required: true
+      security: *a2
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    providerId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    merchantId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    name:
+                      type: string
+                    isActive:
+                      type: boolean
+                  required:
+                    - providerId
+                    - merchantId
+                    - name
+                    - isActive
+                  additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/providers/{providerId}:
+    get:
+      summary: Provider with its merchant, accounts and channels
+      tags: *a1
+      parameters:
+        - schema:
+            type: string
+            pattern: ^\d{1,10}$
+          in: path
+          name: providerId
+          required: true
+      security: *a2
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  providerId:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  merchantId:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  name:
+                    type: string
+                  isActive:
+                    type: boolean
+                  merchant:
+                    type: object
+                    properties:
+                      merchantId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      name:
+                        type: string
+                    required:
+                      - merchantId
+                      - name
+                    additionalProperties: false
+                  accounts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        accountId:
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        providerId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          type: string
+                        chargebackReservePolicy:
+                          type: string
+                          enum:
+                            - hold_until_term
+                            - release_on_chargeback
+                        rollingReserveCapAmt:
+                          nullable: true
+                          type: string
+                          pattern: ^-?\d+(\.\d{1,4})?$
+                        matchingRuleSetId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        isActive:
+                          type: boolean
+                        createdAt:
+                          type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                      required:
+                        - accountId
+                        - providerId
+                        - name
+                        - chargebackReservePolicy
+                        - rollingReserveCapAmt
+                        - matchingRuleSetId
+                        - isActive
+                        - createdAt
+                      additionalProperties: false
+                  channels:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channelId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        gatewayId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        providerId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          type: string
+                        isActive:
+                          type: boolean
+                        settlementTermDays:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        rollingReservePct:
+                          type: string
+                          pattern: ^(0(\.\d{1,6})?|1(\.0{1,6})?)$
+                        rollingReserveDays:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                      required:
+                        - channelId
+                        - gatewayId
+                        - providerId
+                        - name
+                        - isActive
+                        - settlementTermDays
+                        - rollingReservePct
+                        - rollingReserveDays
+                      additionalProperties: false
+                required:
+                  - providerId
+                  - merchantId
+                  - name
+                  - isActive
+                  - merchant
+                  - accounts
+                  - channels
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/providers/{providerId}/channels:
+    get:
+      summary: Channels of a provider, with their settlement parameters
+      tags: *a1
+      parameters:
+        - schema:
+            type: string
+            pattern: ^\d{1,10}$
+          in: path
+          name: providerId
+          required: true
+      security: *a2
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    channelId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    gatewayId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    providerId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    name:
+                      type: string
+                    isActive:
+                      type: boolean
+                    settlementTermDays:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    rollingReservePct:
+                      type: string
+                      pattern: ^(0(\.\d{1,6})?|1(\.0{1,6})?)$
+                    rollingReserveDays:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                  required:
+                    - channelId
+                    - gatewayId
+                    - providerId
+                    - name
+                    - isActive
+                    - settlementTermDays
+                    - rollingReservePct
+                    - rollingReserveDays
+                  additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/providers/{providerId}/accounts:
+    get:
+      summary: Accounts of a provider
+      tags: *a1
+      parameters:
+        - schema:
+            type: string
+            pattern: ^\d{1,10}$
+          in: path
+          name: providerId
+          required: true
+      security: *a2
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    accountId:
+                      type: string
+                      format: uuid
+                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                    providerId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    name:
+                      type: string
+                    chargebackReservePolicy:
+                      type: string
+                      enum:
+                        - hold_until_term
+                        - release_on_chargeback
+                    rollingReserveCapAmt:
+                      nullable: true
+                      type: string
+                      pattern: ^-?\d+(\.\d{1,4})?$
+                    matchingRuleSetId:
+                      nullable: true
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    isActive:
+                      type: boolean
+                    createdAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  required:
+                    - accountId
+                    - providerId
+                    - name
+                    - chargebackReservePolicy
+                    - rollingReserveCapAmt
+                    - matchingRuleSetId
+                    - isActive
+                    - createdAt
+                  additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/accounts/{accountId}:
+    get:
+      summary: Account detail with its provider and merchant
+      tags: *a1
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: accountId
+          required: true
+      security: *a2
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  providerId:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  name:
+                    type: string
+                  chargebackReservePolicy:
+                    type: string
+                    enum:
+                      - hold_until_term
+                      - release_on_chargeback
+                  rollingReserveCapAmt:
+                    nullable: true
+                    type: string
+                    pattern: ^-?\d+(\.\d{1,4})?$
+                  matchingRuleSetId:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  isActive:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  provider:
+                    type: object
+                    properties:
+                      providerId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      merchantId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      name:
+                        type: string
+                      isActive:
+                        type: boolean
+                    required:
+                      - providerId
+                      - merchantId
+                      - name
+                      - isActive
+                    additionalProperties: false
+                  merchant:
+                    type: object
+                    properties:
+                      merchantId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      name:
+                        type: string
+                    required:
+                      - merchantId
+                      - name
+                    additionalProperties: false
+                required:
+                  - accountId
+                  - providerId
+                  - name
+                  - chargebackReservePolicy
+                  - rollingReserveCapAmt
+                  - matchingRuleSetId
+                  - isActive
+                  - createdAt
+                  - provider
+                  - merchant
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/accounts/{accountId}/channels:
+    get:
+      summary: Channels associated to an account (primary and historical) with their
+        current primary account
+      tags: *a1
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: accountId
+          required: true
+      security: *a2
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    channelId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    gatewayId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    providerId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    name:
+                      type: string
+                    isActive:
+                      type: boolean
+                    settlementTermDays:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    rollingReservePct:
+                      type: string
+                      pattern: ^(0(\.\d{1,6})?|1(\.0{1,6})?)$
+                    rollingReserveDays:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    isPrimary:
+                      type: boolean
+                    assignedAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                    assignedInBatchId:
+                      nullable: true
+                      type: string
+                      format: uuid
+                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                    primaryAccount:
+                      nullable: true
+                      type: object
+                      properties:
+                        accountId:
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        name:
+                          type: string
+                      required:
+                        - accountId
+                        - name
+                      additionalProperties: false
+                  required:
+                    - channelId
+                    - gatewayId
+                    - providerId
+                    - name
+                    - isActive
+                    - settlementTermDays
+                    - rollingReservePct
+                    - rollingReserveDays
+                    - isPrimary
+                    - assignedAt
+                    - assignedInBatchId
+                    - primaryAccount
+                  additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/channels:
+    get:
+      summary: Channels in scope; unassigned=true keeps only those with transactions
+        and no account
+      tags: *a1
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - "true"
+              - "false"
+          in: query
+          name: unassigned
+          required: false
+      security: *a2
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    channelId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    gatewayId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    providerId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    name:
+                      type: string
+                    isActive:
+                      type: boolean
+                    settlementTermDays:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    rollingReservePct:
+                      type: string
+                      pattern: ^(0(\.\d{1,6})?|1(\.0{1,6})?)$
+                    rollingReserveDays:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                  required:
+                    - channelId
+                    - gatewayId
+                    - providerId
+                    - name
+                    - isActive
+                    - settlementTermDays
+                    - rollingReservePct
+                    - rollingReserveDays
+                  additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/channels/{channelId}/accounts:
+    get:
+      summary: Accounts associated to a channel and which one is primary
+      tags: *a1
+      parameters:
+        - schema:
+            type: string
+            pattern: ^\d{1,10}$
+          in: path
+          name: channelId
+          required: true
+      security: *a2
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    accountId:
+                      type: string
+                      format: uuid
+                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                    name:
+                      type: string
+                    providerId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    isActive:
+                      type: boolean
+                    isPrimary:
+                      type: boolean
+                    assignedAt:
+                      type: string
+                      format: date-time
+                      pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                    assignedInBatchId:
+                      nullable: true
+                      type: string
+                      format: uuid
+                      pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  required:
+                    - accountId
+                    - name
+                    - providerId
+                    - isActive
+                    - isPrimary
+                    - assignedAt
+                    - assignedInBatchId
+                  additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/health:
+    get:
+      summary: Service and database health
+      tags:
+        - system
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - ok
+                      - degraded
+                  db:
+                    type: string
+                    enum:
+                      - ok
+                      - error
+                required:
+                  - status
+                  - db
+                additionalProperties: false
+        "503":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - ok
+                      - degraded
+                  db:
+                    type: string
+                    enum:
+                      - ok
+                      - error
+                required:
+                  - status
+                  - db
+                additionalProperties: false

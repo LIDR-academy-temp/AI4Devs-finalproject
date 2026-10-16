@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fees and Fee History</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:14px;box-sizing:border-box}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:#4b5563;border-bottom:1px solid #d0d5dc;padding:8px}
+.tbl td{border-bottom:1px solid #e5e7eb;padding:7px 8px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.btn.pri{background:#1f4e9c;border-color:#1f4e9c;color:#fff}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.ok{border-color:#2f7d4f;color:#1e5c38;background:#e8f3ec}
+.bad{border-color:#b42318;color:#8a1a12;background:#fbe9e7}
+.tabs{display:flex;gap:4px;border-bottom:1px solid #d0d5dc;flex-wrap:wrap}
+.tabs a{padding:8px 12px;text-decoration:none;color:#4b5563;font-size:14px;border-bottom:2px solid transparent}
+.tabs a.on{color:#1f2328;font-weight:600;border-bottom-color:#1f4e9c}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 10px}
+label{font-size:13px;color:#4b5563;display:block;margin-bottom:4px}
+input,select{font:inherit;font-size:13px;padding:7px 9px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;width:100%;box-sizing:border-box}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:820px">
+  <nav class="nav" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+    <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+    <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+    <div class="grp">Reconciliation</div>
+    <a href="NewReconciliation.dc.html">New Reconciliation</a>
+    <a href="InProgress.dc.html">In Progress</a>
+    <div class="grp">Settlements</div>
+    <a href="SettlementList.dc.html">Settlement List</a>
+    <a href="Payments.dc.html">Payments</a>
+    <div class="grp">Search</div>
+    <a href="TransactionSearch.dc.html">Transaction Search</a>
+    <a href="MissingDuplicates.dc.html">Missing &amp; Duplicates</a>
+    <div class="grp">Reports</div>
+    <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+    <a href="ReportsRoadmap.dc.html">Aged Receivables · roadmap</a>
+    <div class="grp">Administration</div>
+    <a href="MerchantsProviders.dc.html">Merchants &amp; Providers</a>
+    <a href="Accounts.dc.html" class="on">Accounts</a>
+    <a href="FeesAll.dc.html">Fees</a>
+    <a href="ChannelAssignment.dc.html">Channel Assignment</a>
+    <a href="MatchingRules.dc.html">Matching Rules</a>
+    <a href="UsersRoles.dc.html">Users &amp; Roles</a>
+    <a href="AuditLog.dc.html">Audit Log</a>
+  </nav>
+  <main style="flex:999 1 560px;min-width:0;padding:20px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+    <div class="ctx"><a href="Accounts.dc.html">Accounts</a> › <a href="AccountDetail.dc.html">ProviderA-USD</a> › Fees · <a href="FeesAll.dc.html">see all accounts</a></div>
+    <h1>Fees · ProviderA-USD <span class="badge">account fees</span></h1>
+    <div class="tabs"><a href="AccountDetail.dc.html">General</a><a href="AccountDetail.dc.html">Channels (4)</a><a href="Fees.dc.html" class="on">Fees (6)</a><a href="MatchingRules.dc.html">Matching rules (9)</a><a href="SettlementList.dc.html">Settlements</a><a href="AuditLog.dc.html">Activity</a></div>
+    <div style="display:grid;grid-template-columns:minmax(0, 3fr) minmax(0, 2fr);gap:16px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="card">
+          <h2>Active and scheduled fees</h2>
+          <table class="tbl">
+            <tr><th>Type</th><th>Applies to</th><th>Kind</th><th class="num">Value</th><th>Valid from</th><th>Valid to</th><th></th></tr>
+            <tr><td>MDR</td><td>E · Successful</td><td>%</td><td class="num">2.900 %</td><td>2026-01-01</td><td>open</td><td><a href="Fees.dc.html">Edit</a> · <a href="Fees.dc.html">Close</a></td></tr>
+            <tr><td>PER_TXN</td><td>E · Successful</td><td>fixed</td><td class="num">0.1200</td><td>2026-01-01</td><td>open</td><td><a href="Fees.dc.html">Edit</a> · <a href="Fees.dc.html">Close</a></td></tr>
+            <tr><td>DECLINE_FEE</td><td>E · Declined</td><td>fixed</td><td class="num">0.0500</td><td>always</td><td>open</td><td><a href="Fees.dc.html">Edit</a> · <a href="Fees.dc.html">Close</a></td></tr>
+            <tr><td>CHB_FEE</td><td>I · Chargeback, CHB 2</td><td>fixed</td><td class="num">15.0000</td><td>always</td><td>open</td><td><a href="Fees.dc.html">Edit</a> · <a href="Fees.dc.html">Close</a></td></tr>
+            <tr><td>MONTHLY</td><td>batch · preset</td><td>fixed</td><td class="num">150.0000</td><td>2025-03-02</td><td>open</td><td><a href="Fees.dc.html">Edit</a> · <a href="Fees.dc.html">Close</a></td></tr>
+            <tr><td>GATEWAY</td><td>batch · preset</td><td>fixed</td><td class="num">25.0000</td><td>2025-03-02</td><td>open</td><td><a href="Fees.dc.html">Edit</a> · <a href="Fees.dc.html">Close</a></td></tr>
+            <tr style="color:#6b7280"><td>MDR</td><td>E · Successful</td><td>%</td><td class="num">3.000 %</td><td>2025-03-02</td><td>2025-12-31 <span class="badge">closed</span></td><td></td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h2>Fee history · MDR</h2>
+          <div style="font-size:13px;display:flex;flex-direction:column;gap:4px">
+            <div>2026-09-01 · admin · created MDR 2.900 % valid from 2026-01-01; previous MDR 3.000 % closed on 2025-12-31</div>
+            <div>2025-03-02 · admin · created MDR 3.000 % valid from 2025-03-02</div>
+          </div>
+          <div class="ctx" style="margin-top:8px">A fee is never deleted or edited in place: a change closes the current validity and opens a new one. Validity dates say which movements a fee applies to (by event date), not when it was configured: "always" = no start date, "open" = no end date. Batches keep the configuration they applied.</div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;gap:12px">
+        <h2>Add fee (POST /accounts/{id}/fees)</h2>
+        <div><label for="ft">Fee type</label><select id="ft"><option>MDR</option><option>PER_TXN</option><option>CHB_FEE</option><option>MONTHLY (batch preset)</option><option>ADJ_DUP (batch, free amount)</option></select></div>
+        <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:8px">
+          <div><label for="fk">Kind</label><select id="fk"><option>percentage</option><option>fixed</option></select></div>
+          <div><label for="fv">Value</label><input id="fv" value="2.750"></div>
+          <div><label for="vf">Valid from</label><input id="vf" type="date" value="2026-11-01"><label style="font-size:12px;margin-top:4px"><input type="checkbox" style="width:auto"> always (no start date)</label></div>
+          <div><label for="vt">Valid to</label><input id="vt" type="date"><label style="font-size:12px;margin-top:4px"><input type="checkbox" checked style="width:auto"> no end date</label></div>
+        </div>
+        <div class="card" style="border-color:#b42318;background:#fff5f4;font-size:13px"><span class="badge bad">409</span> Overlaps MDR 2.900 % (2026-01-01 → open). Close it on 2026-10-31 first, or set this one's start after its end.</div>
+        <div style="display:flex;gap:8px;justify-content:flex-end"><a href="Fees.dc.html" class="btn">Cancel</a><a href="Fees.dc.html" class="btn pri">Save fee</a></div>
+        <div class="ctx">Simulate change (roadmap): recomputes the last batch with this fee to show the impact before saving. Permission: fee.manage.</div>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

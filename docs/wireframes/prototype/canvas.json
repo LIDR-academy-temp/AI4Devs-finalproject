@@ -1,0 +1,372 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "AccountDetail.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Account Detail",
+      "w": 1280,
+      "x": 2720,
+      "y": 4800
+    },
+    "AccountNew.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "New Account (dialog)",
+      "w": 1280,
+      "x": 6800,
+      "y": 4800
+    },
+    "Accounts.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Accounts",
+      "w": 1280,
+      "x": 1360,
+      "y": 4800
+    },
+    "Analysis.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Analysis & Validations",
+      "w": 1280,
+      "x": 0,
+      "y": 1200
+    },
+    "AnalysisIssue.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Issue Detail (drawer)",
+      "w": 1280,
+      "x": 1360,
+      "y": 1200
+    },
+    "AuditLog.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Audit Log",
+      "w": 1280,
+      "x": 2720,
+      "y": 6000
+    },
+    "ChannelAssignment.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Channel Assignment",
+      "w": 1280,
+      "x": 0,
+      "y": 6000
+    },
+    "ColumnMapping.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Column Mapping",
+      "w": 1280,
+      "x": 5440,
+      "y": 0
+    },
+    "Dashboard.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Dashboard",
+      "w": 1280,
+      "x": 1360,
+      "y": 0
+    },
+    "Fees.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Fees · Fee History",
+      "w": 1280,
+      "x": 4080,
+      "y": 4800
+    },
+    "FeesAll.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Fees · all accounts",
+      "w": 1280,
+      "x": 8160,
+      "y": 4800
+    },
+    "InProgress.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "In Progress",
+      "w": 1280,
+      "x": 5440,
+      "y": 1200
+    },
+    "InterpretationRules.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Interpretation Rules · roadmap",
+      "w": 1280,
+      "x": 4080,
+      "y": 6000
+    },
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Login",
+      "w": 1280,
+      "x": 0,
+      "y": 0
+    },
+    "MatchingRules.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Matching Rules",
+      "w": 1280,
+      "x": 5440,
+      "y": 4800
+    },
+    "MerchantsProviders.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Merchants & Providers",
+      "w": 1280,
+      "x": 0,
+      "y": 4800
+    },
+    "MissingDuplicates.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Missing & Duplicates",
+      "w": 1280,
+      "x": 2720,
+      "y": 3600
+    },
+    "NewReconciliation.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "New Reconciliation",
+      "w": 1280,
+      "x": 2720,
+      "y": 0
+    },
+    "Payments.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Payments",
+      "w": 1280,
+      "x": 2720,
+      "y": 2400
+    },
+    "ReportsRoadmap.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Reports · roadmap",
+      "w": 1280,
+      "x": 5440,
+      "y": 3600
+    },
+    "SettlementDetail.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Settlement Detail",
+      "w": 1280,
+      "x": 1360,
+      "y": 2400
+    },
+    "SettlementList.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Settlement List",
+      "w": 1280,
+      "x": 0,
+      "y": 2400
+    },
+    "SettlementReview.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Settlement Review",
+      "w": 1280,
+      "x": 2720,
+      "y": 1200
+    },
+    "SettlementSummary.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Settlement Summary",
+      "w": 1280,
+      "x": 4080,
+      "y": 1200
+    },
+    "TransactionDetail.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Transaction Detail",
+      "w": 1280,
+      "x": 1360,
+      "y": 3600
+    },
+    "TransactionSearch.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Transaction Search",
+      "w": 1280,
+      "x": 0,
+      "y": 3600
+    },
+    "UnsettledPerChannel.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Unsettled per Channel",
+      "w": 1280,
+      "x": 4080,
+      "y": 3600
+    },
+    "UploadFiles.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Upload Files",
+      "w": 1280,
+      "x": 4080,
+      "y": 0
+    },
+    "UsersRoles.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "title": "Users & Roles",
+      "w": 1280,
+      "x": 1360,
+      "y": 6000
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-06T12:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "s1": {
+      "fill": "blue",
+      "text": "Baja fidelidad a propósito: grises, sin marca. Lo que importa es qué hay en cada pantalla, qué decisión cierra cada paso y a dónde lleva cada botón. Pulsa Play en cualquier pantalla para navegar; los enlaces de la barra lateral y los botones de avance funcionan.",
+      "w": 360,
+      "x": 6800,
+      "y": 0
+    },
+    "s2": {
+      "fill": "orange",
+      "text": "Convención: botón azul = acción que avanza o confirma; borde rojo = bloqueo; ámbar = advertencia que no bloquea. Las acciones irreversibles (Cancel, Undo, Unpay) piden motivo.",
+      "w": 360,
+      "x": 6800,
+      "y": 1200
+    },
+    "t1": {
+      "kind": "title1",
+      "maxW": 6720,
+      "text": "1 · Acceso y arranque del flujo principal (Login → Dashboard → New Reconciliation → Upload → Mapping)",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "t2": {
+      "kind": "title1",
+      "maxW": 6720,
+      "text": "2 · Flujo principal, continuación (Analysis → Issue → Review → Summary) e In Progress",
+      "w": 240,
+      "x": 0,
+      "y": 900
+    },
+    "t3": {
+      "kind": "title1",
+      "maxW": 4000,
+      "text": "3 · Settlements: historial, ficha del batch, pagos",
+      "w": 240,
+      "x": 0,
+      "y": 2100
+    },
+    "t4": {
+      "kind": "title1",
+      "maxW": 6720,
+      "text": "4 · Search y Reports",
+      "w": 240,
+      "x": 0,
+      "y": 3300
+    },
+    "t5": {
+      "kind": "title1",
+      "maxW": 8000,
+      "text": "5 · Administration (I): catálogo, cuentas, fees (por cuenta y globales), reglas de pareo",
+      "w": 240,
+      "x": 0,
+      "y": 4500
+    },
+    "t6": {
+      "kind": "title1",
+      "maxW": 5360,
+      "text": "6 · Administration (II): canales, usuarios, auditoría y roadmap",
+      "w": 240,
+      "x": 0,
+      "y": 5700
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Dashboard.dc.html",
+    "NewReconciliation.dc.html",
+    "UploadFiles.dc.html",
+    "ColumnMapping.dc.html",
+    "Analysis.dc.html",
+    "AnalysisIssue.dc.html",
+    "SettlementReview.dc.html",
+    "SettlementSummary.dc.html",
+    "InProgress.dc.html",
+    "SettlementList.dc.html",
+    "SettlementDetail.dc.html",
+    "Payments.dc.html",
+    "TransactionSearch.dc.html",
+    "TransactionDetail.dc.html",
+    "MissingDuplicates.dc.html",
+    "UnsettledPerChannel.dc.html",
+    "ReportsRoadmap.dc.html",
+    "MerchantsProviders.dc.html",
+    "Accounts.dc.html",
+    "AccountNew.dc.html",
+    "AccountDetail.dc.html",
+    "FeesAll.dc.html",
+    "Fees.dc.html",
+    "MatchingRules.dc.html",
+    "ChannelAssignment.dc.html",
+    "UsersRoles.dc.html",
+    "AuditLog.dc.html",
+    "InterpretationRules.dc.html"
+  ],
+  "pages": [],
+  "title": "Recon Tool 2.0 — Prototipo navegable"
+}

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Audit Log</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:14px;box-sizing:border-box}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:#4b5563;border-bottom:1px solid #d0d5dc;padding:8px}
+.tbl td{border-bottom:1px solid #e5e7eb;padding:7px 8px}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}
+code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#f3f4f6;padding:1px 4px;border-radius:4px}
+select,input{font:inherit;font-size:13px;padding:6px 8px;border:1px solid #9aa3ad;border-radius:6px;background:#fff}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:820px">
+  <nav class="nav" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+    <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+    <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+    <div class="grp">Reconciliation</div>
+    <a href="NewReconciliation.dc.html">New Reconciliation</a>
+    <a href="InProgress.dc.html">In Progress</a>
+    <div class="grp">Settlements</div>
+    <a href="SettlementList.dc.html">Settlement List</a>
+    <a href="Payments.dc.html">Payments</a>
+    <div class="grp">Search</div>
+    <a href="TransactionSearch.dc.html">Transaction Search</a>
+    <a href="MissingDuplicates.dc.html">Missing &amp; Duplicates</a>
+    <div class="grp">Reports</div>
+    <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+    <a href="ReportsRoadmap.dc.html">Aged Receivables · roadmap</a>
+    <div class="grp">Administration</div>
+    <a href="MerchantsProviders.dc.html">Merchants &amp; Providers</a>
+    <a href="Accounts.dc.html">Accounts</a>
+    <a href="FeesAll.dc.html">Fees</a>
+    <a href="ChannelAssignment.dc.html">Channel Assignment</a>
+    <a href="MatchingRules.dc.html">Matching Rules</a>
+    <a href="UsersRoles.dc.html">Users &amp; Roles</a>
+    <a href="AuditLog.dc.html" class="on">Audit Log</a>
+  </nav>
+  <main style="flex:999 1 560px;min-width:0;padding:20px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+    <div class="ctx"><a href="Dashboard.dc.html">Dashboard</a> › Administration › Audit Log</div>
+    <h1>Audit Log <span class="badge">read-only</span></h1>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select><option>Any user</option></select><select><option>Any action</option><option>settlement.process</option><option>settlement.undo</option><option>payment.pay / unpay</option><option>issue.include / resolve</option><option>fee.create / close</option><option>account.*</option><option>user.*</option><option>auth.login</option></select><select><option>Any entity</option></select><input type="date" value="2026-09-30"><input type="date" value="2026-10-07"><a href="AuditLog.dc.html" class="btn">Export CSV</a></div>
+    <div class="card">
+      <table class="tbl">
+        <tr><th>When</th><th>User</th><th>Action</th><th>Entity</th><th>Detail</th></tr>
+        <tr><td>today 11:05:12</td><td>analyst</td><td><code>settlement.process</code></td><td><a href="SettlementDetail.dc.html">batch 119 · attempt 1</a></td><td>import #2041 · 5,812 rows · 3 excluded · channels RAM-03, RAM-07 attached · 13 persistent warnings approved</td></tr>
+        <tr><td>today 10:58:40</td><td>analyst</td><td><code>issue.include</code></td><td>issue 7781 (duplicate_across_batches)</td><td>occurrence row 14 part1.xlsx → excluded (default kept)</td></tr>
+        <tr><td>today 10:42:03</td><td>system</td><td><code>validation.run</code></td><td>import #2041 · run #2</td><td>8 validations · 48 issues · run #1 superseded</td></tr>
+        <tr><td>today 10:40:51</td><td>analyst</td><td><code>mapping.confirm</code></td><td>import #2041</td><td>6 sheets · 2 overrides vs. account rules</td></tr>
+        <tr><td>today 09:12:00</td><td>analyst</td><td><code>auth.login</code></td><td>—</td><td>ok</td></tr>
+        <tr><td>yesterday 16:30:19</td><td>finance</td><td><code>payment.pay</code></td><td><a href="SettlementDetail.dc.html">batch 42</a></td><td>paid 2026-09-30 · ref BNK-7781</td></tr>
+        <tr><td>2026-09-23 12:02:44</td><td>analyst</td><td><code>settlement.undo</code></td><td>batch 118 · attempt 1</td><td>reason: "wrong file version" · import #2033 back to analyzed</td></tr>
+        <tr><td>2026-09-01 10:00:00</td><td>admin</td><td><code>fee.create</code></td><td>ProviderA-USD · MDR</td><td>2.900 % from 2026-01-01 · previous closed 2025-12-31</td></tr>
+      </table>
+      <div class="ctx" style="margin-top:8px">Showing 8 of 1,204</div>
+    </div>
+    <div style="font-size:12px;color:#6b7280">Every state change and every optional action in validations writes one row here with user, moment, entity and before/after. The same rows feed the "Activity" tabs of Account Detail, Settlement Detail and the issue drawer.</div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
