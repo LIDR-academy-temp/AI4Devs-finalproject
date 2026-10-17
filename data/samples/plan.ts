@@ -350,7 +350,8 @@ const samples: Sample[] = []
     'Other Fees': { columns: ['Type of Fee', 'Amount', 'Currency'], rows: otherFees },
   }
   const countRows = (k: string) => sheets[k]!.rows.filter((r) => r[0] !== '').length
-  const totalRows = Object.values(sheets).reduce((a, sh) => a + sh.rows.length, 0)
+  // rows.read counts the transaction sheets only (as batch-clean does): Other Fees rows are batch fees, not rows to match.
+  const totalRows = ['APP', 'DEC', 'CHB', 'REF', 'RDR', 'RR'].reduce((a, k) => a + sheets[k]!.rows.length, 0)
   samples.push({
     name: 'batch-issues',
     account: plan.account,
