@@ -339,3 +339,118 @@ Añade el resultado a la sección 7 del readme.md.
 **Prompt 2:**
 
 **Prompt 3:**
+
+## Entrega 2 — Código funcional
+
+### Andamiaje (backend, frontend, Docker Compose)
+
+**Prompt 1**
+- **Herramienta:** Claude Code
+- **Prompt:** Vamos a crear el andamiaje (scaffolding) de AdOps360 para la Entrega 2, directamente
+en la rama feature/entrega-2-LFMC. Todavía no hay carpetas backend/ ni frontend/.
+
+Antes de escribir nada, lee docs/base-standards.md, docs/data-model.md, el readme.md
+(secciones 2, 3 y 6, incluida la nota de andamiaje) y el docker-compose.yml y
+.env.example que ya existan, y respeta lo que ya está decidido ahí.
+
+Alcance del andamiaje (solo la base, sin lógica de negocio de ninguna historia):
+
+1. backend/ con FastAPI: estructura de carpetas según base-standards.md, endpoint
+   /health, configuración leída de variables de entorno (pydantic-settings), conexión
+   a PostgreSQL con SQLAlchemy y Alembic configurado (sin migraciones de negocio
+   todavía, solo la infraestructura lista para crearlas). Dockerfile y pytest con un
+   test del /health.
+2. Autenticación: validación de tokens de AWS Cognito en el backend (verificación del
+   JWT contra el JWKS del User Pool) y una dependencia reutilizable que obtenga el
+   usuario autenticado. Deja preparada la comprobación de roles contra la tabla
+   user_roles, sin implementar aún los endpoints de negocio. Todo configurable por
+   variables de entorno (región, user pool id, client id).
+3. frontend/ con Next.js + TypeScript: página de inicio, login contra Cognito y una
+   ruta protegida de ejemplo. Dockerfile y Vitest con un test mínimo.
+4. docker-compose.yml con los 4 servicios (backend, frontend, db, nginx), volumen
+   nombrado para Postgres y env_file: .env. Completa o corrige el que ya exista en
+   vez de duplicarlo.
+5. .env.example con todas las variables necesarias (BD, Cognito, Adform) y SOLO valores
+   de ejemplo. No escribas, pidas ni uses credenciales reales en ningún fichero.
+   Comprueba que .env está en .gitignore.
+6. Actualiza el readme.md (sección 1.4 de instalación) solo si algo de lo que ya
+   documentaste cambia.
+
+Restricciones:
+- No implementes lógica de ninguna historia de usuario (alta de campaña, status diario,
+  márgenes) ni modelos de negocio más allá de lo mínimo para user_roles.
+- No inventes servicios ni librerías fuera del stack ya decidido. Si te falta una
+  decisión (versiones de Python/Node, gestor de paquetes, librería de auth del
+  frontend), pregúntamela antes de asumir.
+- Haz commits pequeños y separados (backend, frontend, compose/env), con mensajes
+  convencionales.
+
+Al terminar, dime cómo verificar que funciona: docker compose up --build, qué URL
+responde y cómo ejecutar los tests de backend y frontend.
+
+Ya he creado el User Pool de Cognito (eu-central-1) con un app client de tipo SPA
+(sin client secret, flujo authorization code con PKCE). El backend solo debe
+validar tokens con el JWKS del pool, usando región, user pool id y client id desde
+variables de entorno. No necesitas ningún secret de Cognito.
+- **Respuesta (resumen):** El andamiaje está hecho en feature/entrega-2-LFMC, en 4 commits que no he subido al remoto. He levantado el stack completo y responde. El login contra tu User Pool real no lo he probado: para no leer ni usar tu .env, todo lo he ejecutado con una copia de .env.example en el scratchpad.
+
+Commit: 7f74828 feat(backend)
+Contenido: FastAPI con capas DDD, /health, configuración con pydantic-settings,
+SQLAlchemy, Alembic sin migraciones, verificación de Cognito,
+get_current_user y require_roles, Dockerfile y 29 tests
+────────────────────────────────────────
+Commit: 5ea19dc feat(frontend)
+Contenido: Next.js 16 con TypeScript estricto, login con oidc-client-ts (code +
+PKCE), /callback, ruta protegida /account, cliente de API tipado, Dockerfile
+y 10 tests
+────────────────────────────────────────
+Commit: 4d0d982 chore(infra)
+Contenido: env_file: .env en db y backend, healthcheck,
+nginx/conf.d/default.conf y .env.example solo con valores de ejemplo
+────────────────────────────────────────
+Commit: 4bb6d04 docs(readme)
+Contenido: §1.4 actualizado
+
+Cómo comprobar que funciona
+
+docker compose up -d --build
+docker compose ps                    # backend y db en "healthy"
+curl http://localhost/api/health     # {"status":"ok"}
+- La app está en http://localhost/ (inicio, botón Sign in y /account protegida).
+- La documentación de la API está en http://localhost/api/docs.
+- docker compose exec backend alembic current conecta con la base de datos; todavía no hay migraciones.
+- Tests del backend: cd backend && uv run pytest. Necesitas uv (brew install uv), porque en tu máquina no está y yo los ejecuté en contenedor.
+- Tests del frontend: cd frontend && npm ci && npm test.
+
+Qué tienes que hacer tú para el login real
+1. Añadir COGNITO_DOMAIN a tu .env. Es el dominio del Hosted UI, sin https://. Sin él no funcionan ni el login ni el logout.
+2. En el app client de Cognito, registrar http://localhost/callback como URL de callback y http://localhost/ como URL de cierre de sesión.
+3. Si cambias alguna variable COGNITO_* o NEXT_PUBLIC_API_URL, reconstruir con --build: se incrustan en el bundle del frontend al construir la imagen.
+
+Decisiones que he tomado y conviene que revises
+- Respuestas de error: token ausente o inválido devuelve 401, usuario no registrado o sin el rol devuelve 403 (no se autoprovisiona), y JWKS inalcanzable devuelve 503 en lugar de 401.
+- Comprobaciones del ID token: firma, exp, iss, aud, token_use=id y email_verified=true. Un email sin verificar no vale como clave de unión con users.
+- El frontend no recibe env_file: si lo recibiera, su contenedor tendría las credenciales de los DSP. Lo he comprobado: dentro hay 0 variables con SECRET o PASSWORD.
+- require_roles() sin roles falla al arrancar: un requisito vacío nunca equivale a un endpoint abierto.
+- Modelos sin migración: existen los modelos de users, roles y user_roles, pero su migración es del Ticket 1. Hasta entonces, cualquier endpoint protegido que añadas devolverá 500 porque las tablas no existen.
+- nginx solo HTTP: el bloque 443 se añade en la instancia cuando haya certificado, porque si apunta a ficheros que no existen nginx no arranca.
+
+Pendientes y avisos
+- docs/data-model.md no existe: según el readme se eliminó a propósito, y he usado el §3 en su lugar.
+- Secciones del readme desactualizadas: las notas de §2.3 ("Estado en la entrega 1") y §2.6 ("no hay tests") ya no son ciertas. No las he tocado porque pediste cambiar solo §1.4.
+- Versiones: npm resolvió las últimas, incluida TypeScript 7. Compila bien con Next 16, pero dímelo si prefieres fijar la 5.x.
+- Aviso en los tests del backend: Starlette avisa de que httpx está deprecado para su TestClient y recomienda httpx2. Lo he mantenido porque el stack decidido dice httpx.
+- Docker Desktop: lo arranqué para las pruebas y sigue abierto.
+
+
+**Prompt 2**
+- **Prompt:** [el de actualización de §2.3 y §2.6 del readme]
+- **Respuesta (resumen):**
+- **Ajuste humano:**
+
+### Change: register-campaign-from-purchase-order
+
+**Prompt 1**
+- **Prompt:** [el de arranque del change]
+- **Respuesta (resumen):**
+- **Ajuste humano:**
