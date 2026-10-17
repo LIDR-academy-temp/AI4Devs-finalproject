@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
@@ -30,6 +30,19 @@ describe('FsFileStore', () => {
 
     expect((await stat(path.join(root, 'imports'))).isDirectory()).toBe(true)
     expect((await stat(path.join(root, 'tmp'))).isDirectory()).toBe(true)
+  })
+
+  it('retries creating the directories on the next use when the first attempt failed', async () => {
+    // A regular file where the root's parent should be: mkdir -p cannot create imports/ and tmp/ under it.
+    const blocker = path.join(root, 'blocker')
+    await writeFile(blocker, 'a file where a directory should be')
+    const blocked = new FsFileStore(path.join(blocker, 'uploads'))
+
+    await expect(blocked.stage(Readable.from([BYTES]))).rejects.toThrow()
+
+    await rm(blocker)
+    await expect(blocked.stage(Readable.from([BYTES]))).resolves.toMatchObject({ sha256: SHA256 })
+    expect((await stat(path.join(blocker, 'uploads', 'tmp'))).isDirectory()).toBe(true)
   })
 
   it('stages a stream under tmp/, hashing and measuring it on the way', async () => {

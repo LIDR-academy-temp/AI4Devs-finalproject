@@ -28,7 +28,14 @@ export class FsFileStore implements FileStore {
     this.ready ??= Promise.all([
       mkdir(path.join(this.root, IMPORTS_DIR), { recursive: true }),
       mkdir(path.join(this.root, TMP_DIR), { recursive: true }),
-    ]).then(() => undefined)
+    ]).then(
+      () => undefined,
+      (error: unknown) => {
+        // A failure is not cached: the next use retries once the cause (permissions, a missing parent) is fixed.
+        this.ready = null
+        throw error
+      },
+    )
     return this.ready
   }
 
