@@ -198,6 +198,18 @@ describe('POST /api/v1/accounts/{accountId}/imports: request validation', () => 
     expect(await imports.listImports({ merchantIds: [1, 2] }, A_USD)).toEqual([])
   })
 
+  it('answers 500 internal_error when the store cannot stage a part, still completing the request', async () => {
+    // The store rejects without reading the stream: the part must still be drained so that the parser finishes.
+    vi.spyOn(files, 'stage').mockRejectedValueOnce(new Error('simulated storage failure'))
+
+    const res = await upload(`/accounts/${A_USD}/imports`, [sample('part1'), sample('part2')])
+
+    expect(res.statusCode).toBe(500)
+    expect(res.json().code).toBe('internal_error')
+    expect(files.paths()).toEqual([])
+    expect(await imports.listImports({ merchantIds: [1, 2] }, A_USD)).toEqual([])
+  }, 5_000)
+
   it('answers 400 too_many_files for eleven parts', async () => {
     const parts = Array.from({ length: 11 }, (_, i) => ({
       name: `part${i}.xlsx`,

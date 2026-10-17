@@ -69,8 +69,9 @@ export async function collectUploads(request: FastifyRequest, store: FileStore):
       file = await store.stage(part.file)
     } catch (error) {
       // Either the parser cut the part short (the body ends early) or the write failed: the parser decides.
+      // The part is drained either way, or a parser still waiting for it would never let the request end.
       storageFailure = error
-      return
+      return drain(part.file)
     }
     // @fastify/multipart truncates a part at `limits.fileSize` instead of throwing (throwFileSizeLimit: false).
     if (part.file.truncated) {
