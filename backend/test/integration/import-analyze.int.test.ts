@@ -149,45 +149,57 @@ const sheetNamed = (detail: ImportDetail, name: string) => {
   return sheet
 }
 
-async function removeTestFixtures(): Promise<void> {
+/** Removes the given imports with their audit entries, rows, column maps, sheets and files. Idempotent. */
+async function removeImports(importIds: string[]): Promise<void> {
+  if (importIds.length === 0) return
   const { prisma } = ctx
-  const noChannels = await prisma.account.findUnique({
-    where: { name: NO_CHANNELS_ACCOUNT_NAME },
-    select: { accountId: true },
-  })
-  const importIds = [...createdImportIds]
-  if (noChannels) {
-    for (const i of await prisma.import.findMany({
-      where: { accountId: noChannels.accountId },
-      select: { importId: true },
-    }))
-      importIds.push(i.importId)
+  await prisma.auditLog.deleteMany({ where: { action: 'import.cancel', entityId: { in: importIds } } })
+  const sheetIds = (
+    await prisma.importSheet.findMany({ where: { file: { importId: { in: importIds } } }, select: { sheetId: true } })
+  ).map((s) => s.sheetId)
+  if (sheetIds.length > 0) {
+    await prisma.auditLog.deleteMany({
+      where: {
+        action: 'import.row.resolve_gateway',
+        OR: sheetIds.map((id) => ({ entityId: { startsWith: `${id}:` } })),
+      },
+    })
   }
-  if (importIds.length > 0) {
-    await prisma.auditLog.deleteMany({ where: { action: 'import.cancel', entityId: { in: importIds } } })
-    const sheetIds = (
-      await prisma.importSheet.findMany({ where: { file: { importId: { in: importIds } } }, select: { sheetId: true } })
-    ).map((s) => s.sheetId)
-    if (sheetIds.length > 0) {
-      await prisma.auditLog.deleteMany({
-        where: {
-          action: 'import.row.resolve_gateway',
-          OR: sheetIds.map((id) => ({ entityId: { startsWith: `${id}:` } })),
-        },
-      })
-    }
-    await prisma.importRow.deleteMany({ where: { sheet: { file: { importId: { in: importIds } } } } })
-    await prisma.importSheetColumnMap.deleteMany({ where: { sheet: { file: { importId: { in: importIds } } } } })
-    await prisma.importSheet.deleteMany({ where: { file: { importId: { in: importIds } } } })
-    await prisma.importFile.deleteMany({ where: { importId: { in: importIds } } })
-    await prisma.import.deleteMany({ where: { importId: { in: importIds } } })
-  }
-  if (noChannels) await prisma.account.delete({ where: { accountId: noChannels.accountId } })
+  await prisma.importRow.deleteMany({ where: { sheet: { file: { importId: { in: importIds } } } } })
+  await prisma.importSheetColumnMap.deleteMany({ where: { sheet: { file: { importId: { in: importIds } } } } })
+  await prisma.importSheet.deleteMany({ where: { file: { importId: { in: importIds } } } })
+  await prisma.importFile.deleteMany({ where: { importId: { in: importIds } } })
+  await prisma.import.deleteMany({ where: { importId: { in: importIds } } })
+  for (const id of importIds) createdImportIds.delete(id)
+}
+
+/** The gateway 9001 fixture (its transaction, association, channel and gateway); its import is removed by its group. */
+async function removeGatewayFixture(): Promise<void> {
+  const { prisma } = ctx
   await prisma.transaction.deleteMany({ where: { gatewayId: GATEWAY_TEST } })
   await prisma.accountChannel.deleteMany({ where: { channelId: CHANNEL_TEST } })
   await prisma.channel.deleteMany({ where: { channelId: CHANNEL_TEST } })
   await prisma.gateway.deleteMany({ where: { gatewayId: GATEWAY_TEST } })
-  createdImportIds.clear()
+}
+
+/** The ZZ-NoChannels account with every import it holds. */
+async function removeNoChannelsAccount(): Promise<void> {
+  const { prisma } = ctx
+  const account = await prisma.account.findUnique({
+    where: { name: NO_CHANNELS_ACCOUNT_NAME },
+    select: { accountId: true },
+  })
+  if (!account) return
+  const imports = await prisma.import.findMany({ where: { accountId: account.accountId }, select: { importId: true } })
+  await removeImports(imports.map((i) => i.importId))
+  await prisma.account.delete({ where: { accountId: account.accountId } })
+}
+
+/** Safety net at file level, for runs interrupted before a group could clean up; every group removes its own fixtures. */
+async function removeTestFixtures(): Promise<void> {
+  await removeImports([...createdImportIds])
+  await removeNoChannelsAccount()
+  await removeGatewayFixture()
 }
 
 beforeAll(async () => {
@@ -366,8 +378,14 @@ describe('the five samples against their expected.json (issue #5, criteria 2, 3 
 })
 
 describe('an ambiguous row and its resolution (issue #5, criterion 6; temporary gateway 9001)', () => {
-  // The fixture leaves with this group: later tests expect the seed's gateways only.
-  afterAll(async () => removeTestFixtures())
+  // A holder rather than a `let`: the formatter's useConst fix does not see the assignment inside the test.
+  const fixtureImport: { importId: string | null } = { importId: null }
+
+  // The fixture lives only inside this group: its import first (it references transaction 9001), then the fixture.
+  afterAll(async () => {
+    await removeImports(fixtureImport.importId === null ? [] : [fixtureImport.importId])
+    await removeGatewayFixture()
+  })
 
   beforeAll(async () => {
     const { prisma } = ctx
@@ -410,6 +428,7 @@ describe('an ambiguous row and its resolution (issue #5, criterion 6; temporary 
 
   it('analyzes batch-clean with one ambiguous row, resolves it with the chosen gateway and records it in AuditLog', async () => {
     const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
+    fixtureImport.importId = detail.importId
     expect(detail.analysis?.rows).toEqual({ total: 783, matched: 779, unmatched: 0, ambiguous: 1, ignored: 3 })
     const ambiguous = await rows(detail.importId, '?match=ambiguous')
     const row = ambiguous.items[0]
@@ -455,7 +474,8 @@ describe('an ambiguous row and its resolution (issue #5, criterion 6; temporary 
 })
 
 describe('an account without channels (decision 1 of the review; temporary account ZZ-NoChannels)', () => {
-  it("matches through the gateways of its provider and reports RAM-01 and RAM-02 as another account's", async () => {
+  // The account lives only inside this group, with the imports it holds.
+  beforeAll(async () => {
     await ctx.prisma.account.create({
       data: {
         accountId: NO_CHANNELS_ACCOUNT_ID,
@@ -465,7 +485,11 @@ describe('an account without channels (decision 1 of the review; temporary accou
         createdByUserId: analystId,
       },
     })
+  })
 
+  afterAll(async () => removeNoChannelsAccount())
+
+  it("matches through the gateways of its provider and reports RAM-01 and RAM-02 as another account's", async () => {
     const { detail } = await analyzed(NO_CHANNELS_ACCOUNT_ID, [samplePart(BATCH_CLEAN)])
 
     expect(detail.analysis?.rows).toMatchObject({ matched: 780, unmatched: 0 })
