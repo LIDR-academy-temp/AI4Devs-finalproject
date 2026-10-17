@@ -1,6 +1,6 @@
 // Readiness of the mapping as it stands (README §4.2 "readiness", HU1 CA5; design D7): what blocks the
 // analysis (`missing`) and what is worth reviewing (`notes`). Pure over the proposal and the sheet facts.
-import type { Readiness, ReadinessItem } from '@recon/shared'
+import type { Readiness, ReadinessField, ReadinessItem } from '@recon/shared'
 import type { ColumnProposalResult, SheetProposalResult } from '../../matching/domain/propose-mapping.js'
 import type { StatusCatalogEntry } from '../../matching/domain/rules.js'
 import type { ColumnStats } from './workbook.js'
@@ -25,19 +25,28 @@ export function assessReadiness(sheets: ReadinessSheet[], statuses: StatusCatalo
   const cycleOf = (statusId: number | null) => statuses.find((s) => s.statusId === statusId)?.cycle ?? null
 
   if (sheets.length === 0) {
-    missing.push({ sheetId: null, sheetName: null, message: 'The import has no files' })
+    missing.push({ sheetId: null, sheetName: null, field: 'transactions', message: 'The import has no files' })
   } else if (!sheets.some((s) => s.proposed.kind === 'transactions')) {
-    missing.push({ sheetId: null, sheetName: null, message: 'No sheet is proposed as transactions' })
+    missing.push({
+      sheetId: null,
+      sheetName: null,
+      field: 'transactions',
+      message: 'No sheet is proposed as transactions',
+    })
   }
 
   for (const sheet of sheets) {
     const item = (message: string): ReadinessItem => ({ sheetId: sheet.sheetId, sheetName: sheet.sheetName, message })
+    const lacking = (field: ReadinessField, message: string): ReadinessItem => ({ ...item(message), field })
     const { proposed, columns } = sheet
     const target = (field: ColumnProposalResult['targetField']) => columns.findIndex((c) => c.targetField === field)
 
     if (proposed.kind === null) {
       missing.push(
-        item(`No rule matches sheet "${sheet.sheetName}": classify it as transactions, batch_fees or ignore`),
+        lacking(
+          'kind',
+          `No rule matches sheet "${sheet.sheetName}": classify it as transactions, batch_fees or ignore`,
+        ),
       )
       continue
     }
@@ -57,10 +66,10 @@ export function assessReadiness(sheets: ReadinessSheet[], statuses: StatusCatalo
     // kind = transactions
     const idIndex = target('transactionId')
     const statusIndex = target('status')
-    if (idIndex === -1) missing.push(item('No column is proposed as transactionId'))
-    if (proposed.cycle === null) missing.push(item('The sheet rule has no cycle'))
+    if (idIndex === -1) missing.push(lacking('transactionId', 'No column is proposed as transactionId'))
+    if (proposed.cycle === null) missing.push(lacking('cycle', 'The sheet rule has no cycle'))
     else if (proposed.cycle !== 'R' && proposed.statusId === null && statusIndex === -1) {
-      missing.push(item('No status: neither a fixed status by sheet rule nor a column proposed as status'))
+      missing.push(lacking('status', 'No status: neither a fixed status by sheet rule nor a column proposed as status'))
     }
     if (sheet.rowCount === 0) notes.push(item('The sheet has no rows'))
     if (proposed.statusName === DECLINED && sheet.rowCount > 0) {

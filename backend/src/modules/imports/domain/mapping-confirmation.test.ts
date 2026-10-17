@@ -191,6 +191,7 @@ describe('effectiveMapping', () => {
 
   it('keeps kind null for a sheet without proposal', () => {
     const none = {
+      sheetName: 'Bonus',
       proposed: { kind: null, cycle: null, statusId: null, statusName: null, source: 'none' as const },
       columns: [],
     }

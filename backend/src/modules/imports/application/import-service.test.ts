@@ -189,7 +189,7 @@ describe('createImport', () => {
     })
     expect(detail.readiness.canAnalyze).toBe(false)
     expect(detail.readiness.missing).toEqual([
-      { sheetId: bonus.sheetId, sheetName: 'Bonus', message: expect.stringContaining('Bonus') },
+      { sheetId: bonus.sheetId, sheetName: 'Bonus', field: 'kind', message: expect.stringContaining('Bonus') },
     ])
   })
 
