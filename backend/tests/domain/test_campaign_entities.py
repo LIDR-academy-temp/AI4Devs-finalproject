@@ -29,20 +29,23 @@ def test_campaign_with_periods():
     assert len(campaign.periods) == 0  # Periods are added separately
 
 
-def test_campaign_period_immutable():
-    """Test that CampaignPeriod is immutable (frozen dataclass)."""
+def test_campaign_period_fields_assignable():
+    """Test that CampaignPeriod fields can be assigned (needed for repository to populate IDs)."""
     period = CampaignPeriod(
         period_year=2026,
         period_month=5,
         period_start=date(2026, 5, 1),
         period_end=date(2026, 5, 31),
         id=None,
-        campaign_id=1,
+        campaign_id=None,
         status="open"
     )
 
-    with pytest.raises(AttributeError):
-        period.period_month = 6
+    # Fields should be assignable so repository can populate IDs after save
+    period.id = 42
+    period.campaign_id = 10
+    assert period.id == 42
+    assert period.campaign_id == 10
 
 
 def test_campaign_period_construction_with_campaign_id():

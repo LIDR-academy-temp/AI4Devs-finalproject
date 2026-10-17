@@ -42,7 +42,11 @@ class CampaignRepositoryImpl(CampaignRepositoryInterface):
 
             campaign_id = campaign_model.id
 
-            # Create period models
+            # Update domain campaign with assigned ID
+            campaign.id = campaign_id
+
+            # Create period models and update domain periods
+            period_models_by_key = {}
             for period in campaign.periods:
                 period_model = CampaignPeriodRecord(
                     campaign_id=campaign_id,
@@ -53,30 +57,31 @@ class CampaignRepositoryImpl(CampaignRepositoryInterface):
                     status=period.status,
                 )
                 self.session.add(period_model)
+                period_models_by_key[(period.period_year, period.period_month)] = period_model
 
             self.session.flush()
 
-            # Get period IDs from DB
-            periods_from_db = self.session.query(CampaignPeriodRecord).filter_by(
-                campaign_id=campaign_id
-            ).all()
-            period_id_map = {
-                (p.period_year, p.period_month): p.id for p in periods_from_db
-            }
+            # Update domain periods with assigned IDs
+            for period in campaign.periods:
+                key = (period.period_year, period.period_month)
+                period_model = period_models_by_key[key]
+                period.id = period_model.id
+                period.campaign_id = campaign_id
 
             # Create line models
+            line_models = []
             for line in campaign.lines:
                 # Find period ID for this line
                 period_key = None
                 for p in campaign.periods:
-                    if p.id is None:  # Match by year/month
-                        period_key = (p.period_year, p.period_month)
-                        break
+                    # Match by year/month
+                    period_key = (p.period_year, p.period_month)
+                    break
 
-                period_id = period_key and period_id_map.get(period_key)
+                period_id = period_key and period_models_by_key[period_key].id
 
                 line_model = CampaignLineRecord(
-                    campaign_period_id=period_id or periods_from_db[0].id,
+                    campaign_period_id=period_id,
                     purchase_order_version_id=line.purchase_order_version_id,
                     dsp_id=line.dsp_id,
                     channel_id=line.channel_id,
@@ -88,6 +93,13 @@ class CampaignRepositoryImpl(CampaignRepositoryInterface):
                     currency=line.currency,
                 )
                 self.session.add(line_model)
+                line_models.append((line, line_model))
+
+            self.session.flush()
+
+            # Update domain lines with assigned IDs
+            for line, line_model in line_models:
+                line.id = line_model.id
 
             self.session.commit()
             return campaign_id

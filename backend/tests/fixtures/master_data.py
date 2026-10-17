@@ -11,6 +11,19 @@ def seed_master_data(session: Session):
     conflicts when multiple tests run in sequence with per-test rollback.
     """
 
+    # Reset sequences to ensure consistent IDs across tests
+    # This is needed because sequences continue incrementing even when transactions rollback
+    session.execute(text("ALTER SEQUENCE roles_id_seq RESTART WITH 1"))
+    session.execute(text("ALTER SEQUENCE holding_groups_id_seq RESTART WITH 1"))
+    session.execute(text("ALTER SEQUENCE agencies_id_seq RESTART WITH 1"))
+    session.execute(text("ALTER SEQUENCE advertisers_id_seq RESTART WITH 1"))
+    session.execute(text("ALTER SEQUENCE dsps_id_seq RESTART WITH 1"))
+    session.execute(text("ALTER SEQUENCE channels_id_seq RESTART WITH 1"))
+    session.execute(text("ALTER SEQUENCE formats_id_seq RESTART WITH 1"))
+    session.execute(text("ALTER SEQUENCE campaign_types_id_seq RESTART WITH 1"))
+    session.execute(text("ALTER SEQUENCE sectors_id_seq RESTART WITH 1"))
+    session.execute(text("ALTER SEQUENCE sales_reps_id_seq RESTART WITH 1"))
+
     # Ensure roles exist first (no FK dependencies)
     session.execute(text("""
         INSERT INTO roles (name) VALUES

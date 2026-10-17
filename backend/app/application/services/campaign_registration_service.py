@@ -162,7 +162,7 @@ class CampaignRegistrationService:
                 campaign.lines.append(line)
 
         # Save campaign with all periods and lines (atomic transaction)
-        campaign_id = await self.campaign_repo.save(campaign)
-        campaign.id = campaign_id
+        # The repository updates campaign, periods, and lines with their assigned IDs
+        await self.campaign_repo.save(campaign)
 
         return campaign

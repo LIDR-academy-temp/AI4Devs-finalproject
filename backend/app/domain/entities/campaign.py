@@ -5,9 +5,9 @@ from typing import Optional
 from app.domain.value_objects.contracted_volume import ContractedVolume
 
 
-@dataclass(frozen=True)
+@dataclass
 class CampaignPeriod:
-    """Immutable campaign period: one calendar month."""
+    """Campaign period: one calendar month."""
 
     period_year: int
     period_month: int
