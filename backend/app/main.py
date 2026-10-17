@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.presentation.errors import register_exception_handlers
-from app.presentation.routers import health, campaigns
+from app.presentation.routers import health, campaigns, masters
 
 
 def create_app() -> FastAPI:
@@ -11,6 +11,7 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
     app.include_router(health.router)
     app.include_router(campaigns.router)
+    app.include_router(masters.router)
     return app
 
 
