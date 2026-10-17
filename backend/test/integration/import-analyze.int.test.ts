@@ -1035,3 +1035,19 @@ describe('a transaction of another merchant on a shared gateway (review of the P
     expect(seen.analysis).toEqual(detail.analysis)
   })
 })
+
+describe('an analyzed import without rows (review of the PR, L1)', () => {
+  it('reports the analysis in zeros, not null: the contract says null only until the import is analyzed', async () => {
+    const bytes = buildXlsx({ sheets: [{ name: 'APP', rows: [['ID', 'Amount', 'Currency']] }] })
+
+    const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [{ name: 'header-only.xlsx', bytes }])
+
+    expect(detail).toMatchObject({ status: 'analyzed', rowsTotal: 0, rowsMatched: 0, rowsUnmatched: 0 })
+    expect(detail.analysis).not.toBeNull()
+    expect(detail.analysis?.rows).toEqual({ total: 0, matched: 0, unmatched: 0, ambiguous: 0, ignored: 0 })
+    expect(detail.analysis?.byCycle).toEqual({ E: 0, I: 0, R: 0 })
+    expect(Object.values(detail.analysis?.warnings ?? { x: 1 }).every((n) => n === 0)).toBe(true)
+    expect(detail.channels).toEqual([])
+    expect(detail.batchFees).toEqual([])
+  })
+})

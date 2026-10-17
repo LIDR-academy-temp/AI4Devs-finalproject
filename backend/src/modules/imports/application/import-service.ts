@@ -1,7 +1,9 @@
 // Use cases of the import module (README §4.2, §4.4 rows Importación; HU1). Upload, files and detail come from
 // import-upload-mapping (design D6: files and database never inconsistent the dangerous way; D8: one way to build the
 // detail). Confirmation, analysis, rows, resolution and cancel come from import-analyze (design D6–D13).
+
 import type {
+  AnalysisSummary,
   BatchFeeProposal,
   ChannelNotice,
   ImportDetail,
@@ -19,6 +21,7 @@ import type {
   SheetMapping,
   WarningCode,
 } from '@recon/shared'
+import { WarningCode as WarningCodeSchema } from '@recon/shared'
 import type { AuditEntry, AuditLogger } from '../../../shared/audit.js'
 import { NotFoundError } from '../../../shared/errors.js'
 import type { MatchingRulesRepository } from '../../matching/application/ports.js'
@@ -542,7 +545,11 @@ export class ImportService {
       loaded.map((l) => readinessSheet(l, rules)),
       rules.statuses,
     )
-    const analysis = ANALYZED_STATUSES.has(record.status) ? await this.deps.rows.summary(importId) : null
+    // Once analyzed (rowsTotal set) there is always a summary: zeros when the analysis produced no rows (L1).
+    const analysis =
+      ANALYZED_STATUSES.has(record.status) && record.rowsTotal !== null
+        ? ((await this.deps.rows.summary(importId)) ?? emptyAnalysis())
+        : null
     const channels = analysis === null ? null : await this.channelsOf(record, scope)
     const batchFees = analysis === null ? null : this.batchFeesOf(loaded, await this.deps.feeTypes.listAll())
     return { ...toSummary(record), files, readiness, analysis, channels, batchFees }
@@ -564,6 +571,15 @@ export class ImportService {
       sheets.push({ headers, rows, columns: l.effective.columns })
     }
     return prefillBatchFees(sheets, feeTypes)
+  }
+}
+
+/** The summary of an analysis that persisted no rows (a transactions sheet with its header only). */
+function emptyAnalysis(): AnalysisSummary {
+  return {
+    rows: { total: 0, matched: 0, unmatched: 0, ambiguous: 0, ignored: 0 },
+    byCycle: { E: 0, I: 0, R: 0 },
+    warnings: Object.fromEntries(WarningCodeSchema.options.map((code) => [code, 0])) as AnalysisSummary['warnings'],
   }
 }
 
