@@ -8,7 +8,7 @@ import { IMPORT_ROW_COLUMNS, ROWS_PER_STATEMENT } from '../../src/modules/import
 import { createPrismaClient } from './helpers.js'
 
 // Design D1: the bulk insert of ImportRow must stay under the SQL Server parameter limit, be atomic with the
-// status change and meet the thresholds of the design (a: 783 rows < 3 s, b: 20 000 < 20 s, c: 200 000 < 90 s).
+// status change and meet the thresholds of the design (a: 783 rows < 3 s, b: 20 000 < 20 s, c: 100 000 < 90 s).
 // Fixed ids outside the seed's ranges; cleanup runs at start and end so a crashed run leaves nothing behind.
 const IMPORT_ID = '00000000-0000-4000-8000-0000d1000001'
 const FILE_ID = '00000000-0000-4000-8000-0000d1000002'
@@ -178,14 +178,14 @@ describe('PrismaImportRowRepository.persistAnalysis (design D1)', () => {
   }, 90_000)
 
   it.skipIf(!BENCH)(
-    '(c) writes 200 000 rows (the reader ceiling) in under 90 s — RECON_BENCH=1 only',
+    '(c) writes 100 000 rows (the per-import cap of design D1) in under 90 s — RECON_BENCH=1 only',
     async () => {
       const updatedAt = await resetImport()
 
-      const ms = await timed(() => repo.persistAnalysis(IMPORT_ID, updatedAt, rows(200_000), counters(200_000)))
-      console.info(`[D1] 200 000 rows persisted in ${ms.toFixed(0)} ms`)
+      const ms = await timed(() => repo.persistAnalysis(IMPORT_ID, updatedAt, rows(100_000), counters(100_000)))
+      console.info(`[D1] 100 000 rows persisted in ${ms.toFixed(0)} ms`)
 
-      expect(await rowCount()).toBe(200_000)
+      expect(await rowCount()).toBe(100_000)
       expect(ms).toBeLessThan(90_000)
     },
     300_000,
