@@ -18,7 +18,7 @@ Subida de uno o varios `.xlsx` de la plantilla para una cuenta, conservación de
 - **THEN** recibe `201` con un solo `importId`, dos archivos (part1 con APP 340 y DEC 110; part2 con CHB 3, REF 7, RDR 3, RR 320 y `Other Fees` 2) y la propuesta calculada para las hojas de ambos
 
 #### Scenario: Sin archivos
-- **WHEN** se envía un `multipart/form-data` sin ninguna parte `files`, o una petición que no es multipart
+- **WHEN** se envía un `multipart/form-data` sin ninguna parte `files`, una petición que no es multipart, o un cuerpo multipart malformado (por ejemplo cortado antes del boundary de cierre)
 - **THEN** recibe `400` con `code = "validation_error"` y no se crea ningún import
 
 #### Scenario: Tipo no permitido
