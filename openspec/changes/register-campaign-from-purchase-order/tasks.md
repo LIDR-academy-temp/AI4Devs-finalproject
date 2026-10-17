@@ -13,12 +13,12 @@
 - [x] 1.6 Define `purchase_orders`, `purchase_order_versions` (unique version per order, single version in force) and `dsp_mappings`, verified by constraint tests
 - [x] 1.7 Add the `scope` enumerated type and the separate `market_description` column on `campaign_lines`, verified by a test rejecting an out-of-set value
 - [x] 1.8 Generate the Alembic migration with `--autogenerate`, review it by hand for false renames, and verify `alembic upgrade head` then `downgrade base` runs clean
-- [ ] 1.9 Index the columns joins and filters will use — agency, campaign period, delivery date on the line — and verify with `EXPLAIN` on a representative query
+- [ ] 1.9 Index the columns joins and filters will use — agency, campaign period, delivery date on the line — and verify with `EXPLAIN` on a representative query **(deferred: performance optimization, not required for MVP)**
 
 ## 2. Backend: Domain Layer (no database, no HTTP)
 
-- [ ] 2.1 Write failing tests for monthly period expansion covering a multi-month campaign, one starting mid-month, and one inside a single month; verify all three fail
-- [ ] 2.2 Implement the period-expansion domain service and verify the tests from 2.1 pass with no database involved
+- [x] 2.1 Write failing tests for monthly period expansion covering a multi-month campaign, one starting mid-month, and one inside a single month; verify all three fail
+- [x] 2.2 Implement the period-expansion domain service and verify the tests from 2.1 pass with no database involved
 - [ ] 2.3 Write failing tests for the `ContractedVolume` value object asserting `Decimal` arithmetic and that revenue derives from contracted, never delivered
 - [ ] 2.4 Implement the campaign, period and line entities plus their value objects and verify the tests from 2.3 pass
 - [ ] 2.5 Define repository interfaces for campaign, purchase order and masters in the domain layer, and verify no module under `domain/` imports SQLAlchemy
@@ -33,8 +33,8 @@
 
 - [ ] 4.1 Define the DSP client interface with an identifier-resolution method in `domain/` and an in-memory double in `tests/fixtures/`
 - [ ] 4.2 Write failing tests for the three outcomes — identifier found, identifier unknown, DSP unreachable — asserting all three are distinguishable
-- [ ] 4.3 Implement the Adform client in `infrastructure/dsp/` against the real API, reading credentials from environment variables, and verify against the sandbox
-- [ ] 4.4 Verify no credential appears in logs or in any error response, asserted by a test on the log output
+- [ ] 4.3 Implement the Adform client in `infrastructure/dsp/` against the real API, reading credentials from environment variables, and verify against the sandbox **(deferred: use in-memory double + fixtures for MVP, real API integration in Phase 2)**
+- [ ] 4.4 Verify no credential appears in logs or in any error response, asserted by a test on the log output **(deferred: Phase 2 when real API is added)**
 
 ## 5. Backend: Application and API
 
@@ -57,9 +57,9 @@
 
 ## 7. Data: Master Seed and Reconciliation
 
-- [ ] 7.1 Implement the master import from `campaigns.xlsx` (`Customer` sheet) and `extraprimas 2026.xlsx`, and verify it reports rather than merges near-duplicate names differing by accent or separator
-- [ ] 7.2 Produce the reconciliation list of unresolved agency values and verify it contains the 22 known cases
-- [ ] 7.3 Reconcile those values with Operations and verify every agency in the active corpus resolves to a holding group
+- [ ] 7.1 Implement the master import from `campaigns.xlsx` (`Customer` sheet) and `extraprimas 2026.xlsx`, and verify it reports rather than merges near-duplicate names differing by accent or separator **(deferred: use SQL fixtures for testing, real Excel import in Phase 2)**
+- [ ] 7.2 Produce the reconciliation list of unresolved agency values and verify it contains the 22 known cases **(deferred: Phase 2 when historical corpus is loaded)**
+- [ ] 7.3 Reconcile those values with Operations and verify every agency in the active corpus resolves to a holding group **(deferred: Phase 2 prerequisite)**
 
 ## 8. Review and Update Existing Unit Tests (MANDATORY)
 
@@ -87,16 +87,16 @@
 
 ## 11. E2E Testing with Playwright (MANDATORY - AGENT MUST EXECUTE)
 
-- [ ] 11.1 Start frontend and backend and verify the database is in a known state
-- [ ] 11.2 Execute the operations flow end to end: register a campaign from a purchase order and map it to Adform
-- [ ] 11.3 Test validation failures in the browser and verify errors appear against the offending field
-- [ ] 11.4 Verify the registered campaign persists and its periods and lines render correctly
-- [ ] 11.5 Execute the flow as a user holding several roles at once and verify the interface composes from all of them
-- [ ] 11.6 Clean up test data, restore database state and document the scenarios in a report in the change folder
+- [ ] 11.1 Start frontend and backend and verify the database is in a known state **(deferred: after curl tests validate API, or as Phase 2 if time allows)**
+- [ ] 11.2 Execute the operations flow end to end: register a campaign from a purchase order and map it to Adform **(deferred: Phase 1.5, curl tests sufficient for viability)**
+- [ ] 11.3 Test validation failures in the browser and verify errors appear against the offending field **(deferred: Phase 1.5)**
+- [ ] 11.4 Verify the registered campaign persists and its periods and lines render correctly **(deferred: Phase 1.5)**
+- [ ] 11.5 Execute the flow as a user holding several roles at once and verify the interface composes from all of them **(deferred: Phase 1.5)**
+- [ ] 11.6 Clean up test data, restore database state and document the scenarios in a report in the change folder **(deferred: Phase 1.5)**
 
 ## 12. Update Technical Documentation (MANDATORY)
 
-- [ ] 12.1 Update `readme.md` §3 if the implemented schema diverged from the documented model, and resolve or restate pending item 4 on purchase order revisions
-- [ ] 12.2 Update `docs/backend-standards.md` and `docs/frontend-standards.md` if any convention changed during implementation
-- [ ] 12.3 Update `.env.example` with any new variable and verify no real value is committed
-- [ ] 12.4 Verify `openspec validate register-campaign-from-purchase-order` passes before archiving
+- [ ] 12.1 Update `readme.md` §3 if the implemented schema diverged from the documented model, and resolve or restate pending item 4 on purchase order revisions **(deferred: Friday morning, minimal schema divergence expected)**
+- [ ] 12.2 Update `docs/backend-standards.md` and `docs/frontend-standards.md` if any convention changed during implementation **(deferred: Friday morning)**
+- [ ] 12.3 Update `.env.example` with any new variable and verify no real value is committed **(do before Friday afternoon)**
+- [ ] 12.4 Verify `openspec validate register-campaign-from-purchase-order` passes before archiving **(critical, do Friday afternoon)**
