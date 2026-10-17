@@ -9,7 +9,12 @@ import type { FeeTypeRef } from '../../domain/batch-fees.js'
 import type { ChannelFact } from '../../domain/channel-notice.js'
 import { ImportNotEditableError, ImportNotMappedError, RowNotAmbiguousError } from '../../domain/errors.js'
 import type { TransactionRef } from '../../domain/match-rows.js'
-import type { GatewayFormat, IdCandidate, IdFormat } from '../../domain/normalize-source-id.js'
+import {
+  type GatewayFormat,
+  type IdCandidate,
+  type IdFormat,
+  SOURCE_ID_MAX_LENGTH,
+} from '../../domain/normalize-source-id.js'
 import type {
   AccountContext,
   AnalysisCounters,
@@ -71,6 +76,10 @@ export class InMemoryTransactionLookup implements TransactionLookup {
 
   async findByExternalIds(pairs: IdCandidate[]): Promise<TransactionRef[]> {
     this.calls++
+    // Same contract as the Prisma adapter: an id longer than the column never reaches the lookup (design D5).
+    const tooLong = pairs.find((p) => p.sourceTransactionId.length > SOURCE_ID_MAX_LENGTH)
+    if (tooLong)
+      throw new Error(`source id longer than ${SOURCE_ID_MAX_LENGTH} characters: ${tooLong.sourceTransactionId}`)
     const found: TransactionRef[] = []
     for (const pair of pairs) {
       const hit = this.byPair.get(pairKey(pair.gatewayId, pair.sourceTransactionId))

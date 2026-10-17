@@ -7,11 +7,18 @@ import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import { toMoney } from '../../../infrastructure/decimal.js'
 import type { TransactionLookup } from '../application/ports.js'
 import type { TransactionRef } from '../domain/match-rows.js'
-import type { IdCandidate } from '../domain/normalize-source-id.js'
+import { type IdCandidate, SOURCE_ID_MAX_LENGTH } from '../domain/normalize-source-id.js'
 import { LOOKUP_PAIRS_PER_QUERY } from './sql-limits.js'
 
-/** Width of Transaction.sourceTransactionId: a longer id cannot be stored, so it cannot match. */
-const SOURCE_ID_MAX_LENGTH = 36
+/**
+ * candidatesFor never emits an id longer than the column (it is `id_format`, design D5). OPENJSON … VARCHAR(36)
+ * would truncate one and could match another transaction, so a longer pair is a programming error, not a no_match.
+ */
+function assertStorable(pairs: IdCandidate[]): void {
+  const tooLong = pairs.find((p) => p.sourceTransactionId.length > SOURCE_ID_MAX_LENGTH)
+  if (tooLong)
+    throw new Error(`source id longer than ${SOURCE_ID_MAX_LENGTH} characters: ${tooLong.sourceTransactionId}`)
+}
 
 /** The raw row as the driver returns it; every column is narrowed explicitly below. */
 interface RawTransactionRow {
@@ -50,10 +57,10 @@ export class PrismaTransactionLookup implements TransactionLookup {
   constructor(private readonly prisma: PrismaClient) {}
 
   async findByExternalIds(pairs: IdCandidate[]): Promise<TransactionRef[]> {
-    const storable = pairs.filter((p) => p.sourceTransactionId.length <= SOURCE_ID_MAX_LENGTH)
+    assertStorable(pairs)
     const found: TransactionRef[] = []
-    for (let offset = 0; offset < storable.length; offset += LOOKUP_PAIRS_PER_QUERY) {
-      const batch = storable.slice(offset, offset + LOOKUP_PAIRS_PER_QUERY)
+    for (let offset = 0; offset < pairs.length; offset += LOOKUP_PAIRS_PER_QUERY) {
+      const batch = pairs.slice(offset, offset + LOOKUP_PAIRS_PER_QUERY)
       const json = JSON.stringify(batch.map((p) => ({ g: p.gatewayId, s: p.sourceTransactionId })))
       const rows = await this.prisma.$queryRaw<RawTransactionRow[]>`
         SELECT t.[transactionId], t.[gatewayId], t.[sourceTransactionId], t.[channelId], t.[providerId], t.[merchantId], t.[statusId],

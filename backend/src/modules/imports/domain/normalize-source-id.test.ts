@@ -99,3 +99,20 @@ describe('candidatesFor', () => {
     })
   })
 })
+
+describe('an id longer than Transaction.sourceTransactionId (review of the PR, L3)', () => {
+  const NUMERIC = [{ gatewayId: 1, idFormat: 'numeric' as const }]
+
+  it('a numeric id of more than 36 digits does not fit the format: id_format, never looked up', () => {
+    const tooLong = '1'.repeat(37)
+
+    expect(normalizeSourceId(tooLong, 'numeric')).toBeNull()
+    expect(candidatesFor(tooLong, false, NUMERIC)).toEqual({ kind: 'unmatched', reason: 'id_format' })
+  })
+
+  it('36 digits fit, and leading zeros do not count: the length is that of the normalized id', () => {
+    expect(normalizeSourceId('9'.repeat(36), 'numeric')).toBe('9'.repeat(36))
+    expect(normalizeSourceId(`0000${'9'.repeat(36)}`, 'numeric')).toBe('9'.repeat(36))
+    expect(candidatesFor('9'.repeat(36), false, NUMERIC)).toMatchObject({ kind: 'candidates' })
+  })
+})

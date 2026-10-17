@@ -25,16 +25,19 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 /** README §1.2: numeric ids have 15 digits today, had 16 for a while; outside 12–17 is worth a warning. */
 const NUMERIC_MIN_DIGITS = 12
 const NUMERIC_MAX_DIGITS = 17
+/** Width of Transaction.sourceTransactionId (VARCHAR(36)): a longer normalized id cannot exist, so it does not fit. */
+export const SOURCE_ID_MAX_LENGTH = 36
 
 /**
- * `numeric`: trimmed, digits only, no leading zeros. `uuid`: trimmed, braces removed, lowercase, 8-4-4-4-12.
- * Returns null when the text does not fit the format.
+ * `numeric`: trimmed, digits only, no leading zeros, at most 36 digits. `uuid`: trimmed, braces removed, lowercase,
+ * 8-4-4-4-12. Returns null when the text does not fit the format (the row is then `id_format`, design D5).
  */
 export function normalizeSourceId(raw: string, idFormat: IdFormat): string | null {
   const text = raw.trim()
   if (idFormat === 'numeric') {
     if (!DIGITS.test(text)) return null
-    return text.replace(/^0+(?=\d)/, '')
+    const normalized = text.replace(/^0+(?=\d)/, '')
+    return normalized.length <= SOURCE_ID_MAX_LENGTH ? normalized : null
   }
   const unwrapped = text.startsWith('{') && text.endsWith('}') ? text.slice(1, -1) : text
   const lower = unwrapped.toLowerCase()
