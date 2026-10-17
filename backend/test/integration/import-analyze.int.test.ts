@@ -26,6 +26,7 @@ const CHANNEL_TEST = 9001
 const NO_CHANNELS_ACCOUNT_ID = 'a0000000-0000-4000-8000-00000000ee01'
 const NO_CHANNELS_ACCOUNT_NAME = 'ZZ-NoChannels'
 const ROW_CAP = 100_000
+const BENCH = process.env.RECON_BENCH === '1'
 
 interface Expected {
   rows: { read: number; matched: number; unmatched: number; ambiguous?: number; ignoredEmptyId?: number }
@@ -691,4 +692,56 @@ describe('two overlapping analyses (spec: import, D1 claim)', () => {
     const after = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
     expect(after.analysis?.rows).toEqual({ total: 783, matched: 780, unmatched: 0, ambiguous: 0, ignored: 3 })
   })
+})
+
+describe('twenty thousand rows end to end (spec: import, Capacidad de análisis)', () => {
+  it('a generated 20 000-row workbook is uploaded, confirmed and analyzed in under 20 s with every row unmatched', async () => {
+    const ids: string[] = []
+    for (let i = 0; i < 20_000; i++) ids.push(String(700_000_000_000_000 + i))
+    const data: CellInput[][] = [
+      ['ID', 'Amount', 'Currency'],
+      ...ids.map((id) => [id, { v: '1' }, 'USD'] as CellInput[]),
+    ]
+    const bytes = buildXlsx({ sheets: [{ name: 'APP', rows: data }] })
+
+    const { detail, ms } = await analyzed(accountIds['ProviderA-USD'] as string, [
+      { name: 'twenty-thousand.xlsx', bytes },
+    ])
+    console.info(`[D1] analyze 20 000 rows end to end: ${ms.toFixed(0)} ms`)
+
+    expect(detail.analysis?.rows).toEqual({ total: 20_000, matched: 0, unmatched: 20_000, ambiguous: 0, ignored: 0 })
+    expect(await ctx.prisma.importRow.count({ where: { sheet: { file: { importId: detail.importId } } } })).toBe(20_000)
+    expect(ms).toBeLessThan(20_000)
+  }, 120_000)
+
+  it.skipIf(!BENCH)(
+    'a generated 100 000-row workbook (the per-import cap) is uploaded, confirmed and analyzed end to end in under 90 s — RECON_BENCH=1 only',
+    async () => {
+      const ids: string[] = []
+      for (let i = 0; i < ROW_CAP; i++) ids.push(String(800_000_000_000_000 + i))
+      const data: CellInput[][] = [
+        ['ID', 'Amount', 'Currency'],
+        ...ids.map((id) => [id, { v: '1' }, 'USD'] as CellInput[]),
+      ]
+      const bytes = buildXlsx({ sheets: [{ name: 'APP', rows: data }] })
+
+      const { detail, ms } = await analyzed(accountIds['ProviderA-USD'] as string, [
+        { name: 'hundred-thousand.xlsx', bytes },
+      ])
+      console.info(`[D1] analyze 100 000 rows end to end: ${ms.toFixed(0)} ms`)
+
+      expect(detail.analysis?.rows).toEqual({
+        total: ROW_CAP,
+        matched: 0,
+        unmatched: ROW_CAP,
+        ambiguous: 0,
+        ignored: 0,
+      })
+      expect(await ctx.prisma.importRow.count({ where: { sheet: { file: { importId: detail.importId } } } })).toBe(
+        ROW_CAP,
+      )
+      expect(ms).toBeLessThan(90_000)
+    },
+    600_000,
+  )
 })
