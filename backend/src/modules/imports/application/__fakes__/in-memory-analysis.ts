@@ -4,7 +4,6 @@
  */
 import type { AnalysisSummary, ImportRowsQuery, MatchResult, WarningCode } from '@recon/shared'
 import { buildWorld, CHANNELS, FEE_TYPES, GATEWAYS, STATUS } from '../../../../../prisma/synthetic.js'
-import { ACCOUNT_IDS, type AccountName } from '../../../catalog/application/__fakes__/in-memory.js'
 import type { FeeTypeRef } from '../../domain/batch-fees.js'
 import type { ChannelFact } from '../../domain/channel-notice.js'
 import { ImportNotEditableError, ImportNotMappedError, RowNotAmbiguousError } from '../../domain/errors.js'
