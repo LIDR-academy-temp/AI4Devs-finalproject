@@ -127,6 +127,12 @@ export function readEntry(
   }
   for (let offset = 0; offset < data.length; offset += PUSH_CHUNK) {
     const stop = Math.min(offset + PUSH_CHUNK, data.length)
-    inflate.push(data.subarray(offset, stop), stop === data.length)
+    try {
+      inflate.push(data.subarray(offset, stop), stop === data.length)
+    } catch (error) {
+      // fflate reports corrupt deflate data with a numeric error code; anything else was thrown by `onChunk`.
+      if (typeof (error as { code?: unknown }).code !== 'number') throw error
+      throw new ZipError(`${entry.name}: ${(error as Error).message}`)
+    }
   }
 }

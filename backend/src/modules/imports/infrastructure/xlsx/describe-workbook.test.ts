@@ -1,9 +1,10 @@
 import { strToU8 } from 'fflate'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { FileTooLargeError, FileUnreadableError } from '../../domain/errors.js'
 import { describeWorkbook } from './describe-workbook.js'
 import { DEFAULT_READ_LIMITS } from './limits.js'
 import { buildXlsx, type CellInput, templateRows } from './test-support.js'
+import { readCentralDirectory } from './zip.js'
 
 const FILE = 'test.xlsx'
 
@@ -296,6 +297,30 @@ describe('describeWorkbook: unreadable packages', () => {
     expect((caught as FileUnreadableError).details).toEqual({ fileName: FILE })
     expect((caught as FileUnreadableError).status).toBe(422)
     expect((caught as FileUnreadableError).code).toBe('file_unreadable')
+  })
+})
+
+describe('describeWorkbook: corrupt compressed data', () => {
+  it('reports a corrupt deflate stream as a zip problem naming the entry, without an unexpected-error log', () => {
+    const bytes = buildXlsx({ sheets: [{ name: 'APP', rows: templateRows(['1', '2']) }] })
+    const sheet = readCentralDirectory(bytes).find((e) => e.name === 'xl/worksheets/sheet1.xml')
+    if (!sheet) throw new Error('sheet entry missing')
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+    const header = sheet.localHeaderOffset
+    const dataStart = header + 30 + view.getUint16(header + 26, true) + view.getUint16(header + 28, true)
+    bytes[dataStart] = 0x07 // BFINAL = 1, BTYPE = 3: an invalid deflate block
+    const log = { warn: vi.fn() }
+
+    let caught: unknown
+    try {
+      describeWorkbook(bytes, FILE, { log })
+    } catch (error) {
+      caught = error
+    }
+
+    expect(caught).toBeInstanceOf(FileUnreadableError)
+    expect((caught as FileUnreadableError).message).toMatch(/xl\/worksheets\/sheet1\.xml/)
+    expect(log.warn).not.toHaveBeenCalled()
   })
 })
 
