@@ -542,8 +542,26 @@ En todo import analizado, `analysis` SHALL traer `rows` (`total`, `matched`, `un
 - **THEN** recibe `409` con `code = "import_not_cancellable"` y `details.status`
 - **AND** `viewer` recibe `403 forbidden` y un import fuera del alcance `404 not_found`
 
+### Requirement: Límite de filas por import
+El análisis SHALL rechazar con `422` y `code = "import_too_large"` (`details = { rows, limit }`) un import cuya suma de `rowCount` de las hojas `transactions` de todos sus archivos supere 100 000 filas. La comprobación SHALL hacerse con los conteos obtenidos en la subida, antes de leer filas y antes de escribir nada, de modo que el import siga en `mapped` sin ninguna `ImportRow`.
+
+#### Scenario: Justo en el límite
+- **GIVEN** un import `mapped` cuyas hojas `transactions` suman exactamente 100 000 filas
+- **WHEN** se analiza
+- **THEN** el análisis se ejecuta y el import pasa a `analyzed` con `rowsTotal = 100000`
+
+#### Scenario: Una fila por encima
+- **GIVEN** un import `mapped` cuyas hojas `transactions` suman 100 001 filas (en uno o varios archivos)
+- **WHEN** se analiza
+- **THEN** recibe `422` con `code = "import_too_large"` y `details = { rows: 100001, limit: 100000 }`, no se lee ninguna fila, el import sigue en `mapped` y no existe ninguna `ImportRow`
+
+#### Scenario: Las hojas ignoradas y de fees no cuentan
+- **GIVEN** un import cuyas hojas `transactions` suman 90 000 filas y cuyas hojas `ignore` y `batch_fees` suman 20 000
+- **WHEN** se analiza
+- **THEN** no se rechaza por tamaño
+
 ### Requirement: Capacidad de análisis
-El análisis SHALL admitir hojas de hasta 200 000 filas (el límite del lector) sin superar el límite de 2 100 parámetros por sentencia de SQL Server, y SHALL completar un import del tamaño de las muestras (783 filas) en menos de 3 segundos sobre la base local.
+El análisis SHALL admitir hasta 100 000 filas de transacciones por import (hojas de hasta 200 000 filas según el límite del lector) sin superar el límite de 2 100 parámetros por sentencia de SQL Server, y SHALL completar un import del tamaño de las muestras (783 filas) en menos de 3 segundos sobre la base local.
 
 #### Scenario: Muestra mayor
 - **WHEN** se analiza `batch-clean` en la base sembrada local
@@ -553,3 +571,8 @@ El análisis SHALL admitir hojas de hasta 200 000 filas (el límite del lector) 
 - **GIVEN** un libro generado con una hoja `APP` de 20 000 filas de IDs de texto inexistentes
 - **WHEN** se confirma y analiza
 - **THEN** responde `200` en menos de 20 s con `analysis.rows.unmatched = 20000` y exactamente 20 000 filas en base
+
+#### Scenario: Cien mil filas
+- **GIVEN** 100 000 filas con la forma de `batch-clean`
+- **WHEN** se persisten en una sola transacción (medición de referencia, fuera de CI)
+- **THEN** la escritura termina en menos de 90 s
