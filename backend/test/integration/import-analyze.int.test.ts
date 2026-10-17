@@ -822,6 +822,10 @@ function serviceWithWindow(beforeWrite: () => Promise<void>): ImportService {
       await beforeWrite()
       return repository.removeFile(...args)
     },
+    cancel: async (...args: Parameters<PrismaImportRepository['cancel']>) => {
+      await beforeWrite()
+      return repository.cancel(...args)
+    },
   })
   return new ImportService({
     imports: windowed,
@@ -893,6 +897,21 @@ describe('writes that read the import before a concurrent request commits (spec:
     expect(after.status).toBe('analyzed')
     expect(after.files).toHaveLength(2)
     expect(await rowCount(detail.importId)).toBe(after.rowsTotal)
+  })
+
+  it('a cancel that read mapped while analyze committed records previousStatus = analyzed, read under the same lock', async () => {
+    const detail = await mapped(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
+    const service = serviceWithWindow(async () => {
+      const res = await call('POST', `/imports/${detail.importId}/analyze`)
+      expect(res.statusCode, res.body).toBe(200)
+    })
+
+    const cancelled = await service.cancel(await allMerchants(), analystId, detail.importId)
+
+    expect(cancelled.status).toBe('cancelled')
+    const audit = await ctx.prisma.auditLog.findMany({ where: { action: 'import.cancel', entityId: detail.importId } })
+    expect(audit).toHaveLength(1)
+    expect(JSON.parse(audit[0]?.detailJson ?? '{}')).toEqual({ previousStatus: 'analyzed' })
   })
 
   it('a cancel that read analyzed still cancels, and a second cancel is refused by the guarded write', async () => {

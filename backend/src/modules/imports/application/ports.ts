@@ -124,8 +124,11 @@ export interface ImportRepository {
   removeFile(importId: string, expectedUpdatedAt: Date, fileId: string): Promise<void>
   /** Stores the confirmed mapping of every sheet (replacing the previous one) and moves the import to `mapped`. */
   confirmMapping(importId: string, expectedUpdatedAt: Date, sheets: ConfirmedSheet[]): Promise<void>
-  /** Moves the import to `cancelled` only from a cancellable status; otherwise ImportNotCancellableError. */
-  cancel(importId: string): Promise<void>
+  /**
+   * Moves the import to `cancelled` only from a cancellable status, otherwise ImportNotCancellableError. Returns the
+   * status it had, read by the same statement that writes (what the audit records, not what the caller read).
+   */
+  cancel(importId: string): Promise<ImportStatus>
 }
 
 /** A persisted row with what the listing needs around it (design D11). */

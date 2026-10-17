@@ -363,13 +363,14 @@ export class ImportService {
   async cancel(scope: Scope, userId: number, importId: string): Promise<ImportDetail> {
     const record = await this.requireImport(scope, importId)
     assertCanCancel(record.status)
-    await this.deps.imports.cancel(importId)
+    // The status the write replaced, not the one read above: an analysis may have committed in between.
+    const previousStatus = await this.deps.imports.cancel(importId)
     await this.audit({
       userId,
       action: 'import.cancel',
       entityType: 'Import',
       entityId: importId,
-      detail: { previousStatus: record.status },
+      detail: { previousStatus },
     })
     return this.detailOf(scope, importId)
   }

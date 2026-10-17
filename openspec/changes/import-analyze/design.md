@@ -124,6 +124,7 @@ La lectura y el cruce ocurren **antes** de la transacción de escritura (no mant
 
 ### D13. Cancelar
 - `ImportService.cancel(scope, userId, importId)`: `requireImport` → `assertCanCancel` (`uploaded|mapped|analyzed|validated`; `processed`/`cancelled` → `409 import_not_cancellable`) → `imports.setStatus(importId, 'cancelled')` → `audit.record({ action: 'import.cancel', entityType: 'Import', entityId: importId, detail: { previousStatus } })` → `detailOf`. No borra archivos, hojas, mapas ni filas (HU1 CA8, HU2 CA8). Sin cuerpo en la petición. Auditar el cancel es la decisión 7 de la revisión: README §3.2 no lo listaba e `Import` no tiene `cancelledBy/At`.
+- **Escritura con guarda y estado anterior** (review de la PR, H1 y segunda ronda): `imports.cancel(importId)` sustituye a `setStatus` y es una sola sentencia `UPDATE [Import] SET status = 'cancelled' … OUTPUT deleted.status WHERE importId = @id AND status IN (cancelables)`: la guarda y la lectura del estado anterior van bajo el mismo bloqueo. Si no actualiza nada → `409 import_not_cancellable` con el estado actual. La auditoría registra como `previousStatus` el estado que devolvió esa sentencia, no el que leyó el servicio (un `analyze` puede confirmar entre ambos). Requiere que `Import` no tenga triggers (un `OUTPUT` sin `INTO` no se admite con triggers habilitados).
 - `removeFile`/`addFiles`/`confirmMapping` quedan bloqueados en `cancelled` por `import_not_editable` (ya cubierto por `EDITABLE_STATUSES`).
 
 ### D14. Contrato HTTP y OpenAPI

@@ -168,17 +168,19 @@ export class PrismaImportRepository implements ImportRepository {
     })
   }
 
-  /** Only from a cancellable status: a cancel that lost the race to another one, or to processing, writes nothing. */
-  async cancel(importId: string): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      const claimed = await tx.import.updateMany({
-        where: { importId, status: { in: [...CANCELLABLE_STATUSES] } },
-        data: { status: 'cancelled', updatedAt: new Date() },
-      })
-      if (claimed.count === 1) return
-      const current = await tx.import.findUnique({ where: { importId }, select: { status: true } })
-      throw new ImportNotCancellableError(current?.status ?? 'unknown')
-    })
+  /**
+   * Only from a cancellable status, in one statement: the UPDATE guards the status and OUTPUT returns the one it
+   * replaced, under the same lock. A cancel that lost the race to another one, or to processing, writes nothing.
+   */
+  async cancel(importId: string): Promise<ImportStatus> {
+    const previous = await this.prisma.$queryRaw<{ status: string }[]>`
+      UPDATE [Import] SET [status] = 'cancelled', [updatedAt] = ${new Date()}
+      OUTPUT deleted.[status] AS status
+      WHERE [importId] = ${importId} AND [status] IN (${Prisma.join([...CANCELLABLE_STATUSES])})`
+    const replaced = previous[0]
+    if (replaced) return ImportStatus.parse(replaced.status)
+    const current = await this.prisma.import.findUnique({ where: { importId }, select: { status: true } })
+    throw new ImportNotCancellableError(current?.status ?? 'unknown')
   }
 
   async listImports(scope: Scope, accountId: string, status?: ImportStatus): Promise<ImportSummaryRecord[]> {

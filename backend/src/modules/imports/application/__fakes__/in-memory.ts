@@ -585,12 +585,14 @@ export class InMemoryImportRepository implements ImportRepository {
     return stored
   }
 
-  async cancel(importId: string): Promise<void> {
+  async cancel(importId: string): Promise<ImportStatus> {
     this.consumeFailure()
     const stored = this.stored(importId)
     if (!CANCELLABLE_STATUSES.has(stored.status)) throw new ImportNotCancellableError(stored.status)
+    const previous = stored.status
     stored.status = 'cancelled'
     stored.updatedAt = this.now()
+    return previous
   }
 
   private consumeFailure(): void {
