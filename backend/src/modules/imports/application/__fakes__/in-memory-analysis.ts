@@ -251,6 +251,7 @@ export class InMemoryImportRowRepository implements ImportRowRepository {
     if (status !== 'analyzed') throw new ImportNotEditableError(status)
     row.transactionId = patch.transactionId
     row.gatewayId = patch.gatewayId
+    if (patch.statusId !== undefined) row.statusId = patch.statusId
     row.matchResult = 'matched'
     row.detailJson = patch.detailJson
     row.transaction = this.transactions.byTransactionId(patch.transactionId)

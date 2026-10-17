@@ -145,6 +145,8 @@ export interface RowPage {
 export interface RowResolutionPatch {
   transactionId: bigint
   gatewayId: number
+  /** Only for an R row: the status of the chosen transaction (README §3.2 ImportRow.statusId), as the analysis sets it. */
+  statusId?: number
   detailJson: string | null
 }
 

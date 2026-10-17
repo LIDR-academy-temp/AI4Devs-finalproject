@@ -563,6 +563,36 @@ describe('ambiguous rows', () => {
     ])
   })
 
+  it('resolving an ambiguous R row takes the status of the chosen transaction, as the analysis does (review of the PR, L2)', async () => {
+    const FIRST_RR_ID = '605317920155402'
+    transactions.add({
+      transactionId: 999_998n,
+      gatewayId: GATEWAY_TEST,
+      gatewayName: 'Gateway Test',
+      sourceTransactionId: FIRST_RR_ID,
+      channelId: 9001,
+      channelName: 'RAM-T1',
+      providerId: 101,
+      merchantId: 1,
+      statusId: 4,
+      statusName: 'Chargeback',
+      amount: '2.2700',
+      transactionDate: new Date('2026-10-01T00:00:00.000Z'),
+    })
+    const detail = await analyzed(A_USD, [SAMPLE_FILES.batchClean])
+    const rr = sheetNamed(detail, 'RR')
+    const before = (await service.listRows(ANALYST, detail.importId, { match: 'ambiguous', page: 1, pageSize: 50 }))
+      .items
+    expect(before.find((r) => r.sheetName === 'RR')).toMatchObject({ rowNo: 2, cycle: 'R', statusId: null })
+
+    const resolved = await service.resolveRow(ANALYST, ANALYST_ID, detail.importId, rr.sheetId, 2, GATEWAY_TEST)
+
+    expect(resolved).toMatchObject({ cycle: 'R', matchResult: 'matched', statusId: 4, statusName: 'Chargeback' })
+    const app = sheetNamed(detail, 'APP')
+    const e = await service.resolveRow(ANALYST, ANALYST_ID, detail.importId, app.sheetId, 2, GATEWAY_TEST)
+    expect(e).toMatchObject({ cycle: 'E', statusId: 2 })
+  })
+
   it('resolveRow picks the gateway, bumps rowsMatched and leaves an audit entry', async () => {
     const detail = await analyzed(A_USD, [SAMPLE_FILES.batchClean])
     const app = sheetNamed(detail, 'APP')

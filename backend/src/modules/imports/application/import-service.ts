@@ -337,6 +337,7 @@ export class ImportService {
     await this.deps.rows.resolve(importId, sheetId, rowNo, {
       transactionId: BigInt(chosen.transactionId),
       gatewayId,
+      ...(row.cycle === 'R' ? { statusId: chosen.statusId } : {}),
       detailJson: JSON.stringify(resolved),
     })
     await this.audit({

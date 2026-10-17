@@ -194,6 +194,7 @@ export class PrismaImportRowRepository implements ImportRowRepository {
         data: {
           transactionId: patch.transactionId,
           gatewayId: patch.gatewayId,
+          ...(patch.statusId === undefined ? {} : { statusId: patch.statusId }),
           matchResult: 'matched',
           detailJson: patch.detailJson,
         },
