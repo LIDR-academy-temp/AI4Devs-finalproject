@@ -82,12 +82,12 @@ Mantenimiento administrativo (alta, consulta, modificación y baja) de los pará
 
 ### **1.4. Instrucciones de instalación:**
 
-> **Borrador.** Estas instrucciones se apoyan en el `docker-compose.yml` y el `.env.example` actuales del repositorio, pero deben revalidarse cuando el stack esté cerrado: las imágenes de `backend/` y `frontend/` aún no existen, y pueden aparecer variables de entorno adicionales a medida que avance el desarrollo.
+> **Estado.** Instrucciones validadas con el andamiaje de la entrega 2: las imágenes de `backend/` y `frontend/` ya existen y el stack arranca con `docker compose up`. Pueden aparecer variables de entorno adicionales a medida que se implementen las historias.
 
 #### Requisitos previos
 
 - Docker y Docker Compose
-- Un User Pool de AWS Cognito ya creado (servicio gestionado, no forma parte del stack de contenedores)
+- Un User Pool de AWS Cognito ya creado (servicio gestionado, no forma parte del stack de contenedores), con un dominio de Hosted UI y un app client de tipo SPA: **sin client secret** y con flujo *authorization code* con PKCE. El app client debe tener como URL de callback `<origen>/callback` y como URL de cierre de sesión `<origen>/` (en local, `http://localhost/callback` y `http://localhost/`)
 - Un bucket de S3 y credenciales de AWS con acceso a él
 - Credenciales de API de Adform, Equativ y Displayce
 
@@ -109,7 +109,7 @@ Edita `.env` con los valores reales. El fichero nunca se versiona y en el servid
 | Bloque | Variables |
 |---|---|
 | PostgreSQL | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` |
-| AWS Cognito | `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_REGION` |
+| AWS Cognito | `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_REGION`, `COGNITO_DOMAIN` (dominio del Hosted UI, sin `https://`) |
 | AWS S3 | `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET_NAME` |
 | APIs de los DSP | `ADFORM_CLIENT_ID`, `ADFORM_CLIENT_SECRET`, `EQUATIV_CLIENT_ID`, `EQUATIV_CLIENT_SECRET`, `DISPLAYCE_CLIENT_ID`, `DISPLAYCE_CLIENT_SECRET` |
 | Frontend | `NEXT_PUBLIC_API_URL` |
@@ -120,7 +120,9 @@ Edita `.env` con los valores reales. El fichero nunca se versiona y en el servid
 docker compose up -d --build
 ```
 
-Arrancan cuatro servicios: `backend` (FastAPI), `frontend` (Next.js), `db` (PostgreSQL, con volumen persistente) y `nginx` (proxy inverso).
+Arrancan cuatro servicios: `backend` (FastAPI), `frontend` (Next.js), `db` (PostgreSQL, con volumen persistente) y `nginx` (proxy inverso). `nginx` enruta `/` al frontend y `/api/` al backend. En local sirve solo HTTP en el puerto 80; el bloque HTTPS se añade en la instancia cuando Certbot ha emitido el certificado.
+
+Las variables `COGNITO_*` y `NEXT_PUBLIC_API_URL` se incrustan en el bundle del frontend **al construir la imagen**: si cambian, hay que volver a ejecutar `--build`.
 
 #### 4. Aplicar las migraciones de base de datos
 
@@ -128,11 +130,26 @@ Arrancan cuatro servicios: `backend` (FastAPI), `frontend` (Next.js), `db` (Post
 docker compose exec backend alembic upgrade head
 ```
 
+Alembic está configurado, pero todavía no hay migraciones: la primera es la del esquema inicial (Ticket 1).
+
 #### 5. Verificar
 
 ```bash
-docker compose ps
+docker compose ps                         # backend y db en estado "healthy"
+curl http://localhost/api/health          # {"status":"ok"}
 docker compose logs -f backend
+```
+
+La aplicación queda en `http://localhost/` y la documentación de la API en `http://localhost/api/docs`.
+
+#### 6. Ejecutar los tests
+
+```bash
+# Backend (requiere uv; descarga Python 3.12 si no está instalado)
+cd backend && uv run pytest
+
+# Frontend (Node 22)
+cd frontend && npm ci && npm test
 ```
 
 ---
