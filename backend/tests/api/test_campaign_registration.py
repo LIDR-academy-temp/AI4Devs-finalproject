@@ -135,3 +135,43 @@ def test_register_campaign_error_no_sql_exposure(authenticated_client):
     assert "select" not in response.text.lower()
     assert "insert" not in response.text.lower()
     assert "from" not in response.text.lower() or "invalid" in response.text.lower()  # "from" might be in validation error
+
+
+def test_list_campaigns_returns_created_campaign(authenticated_client):
+    """Test that a created campaign appears in GET /campaigns list."""
+    # Create a campaign with POST
+    payload = {
+        "name": "CAMP-LIST-TEST-001",
+        "display_name": "Campaign for List Test",
+        "agency_id": 1,
+        "advertiser_id": 1,
+        "campaign_type_id": 1,
+        "sector_id": 1,
+        "sales_rep_id": 1,
+        "start_date": "2026-01-01",
+        "end_date": "2026-03-31",
+        "order_reference": "PO-LIST-TEST-001",
+        "order_received_on": "2025-12-15",
+        "lines": [
+            {
+                "dsp_id": 1,
+                "channel_id": 1,
+                "format_id": 1,
+                "scope": "national",
+                "market_description": "Spain",
+                "contracted_impressions": 1000000,
+                "sale_cpm": "25.50"
+            }
+        ]
+    }
+
+    create_response = authenticated_client.post("/campaigns", json=payload)
+    assert create_response.status_code == 201
+
+    # List campaigns and verify the created campaign appears
+    list_response = authenticated_client.get("/campaigns")
+    assert list_response.status_code == 200
+
+    campaigns = list_response.json()
+    campaign_names = [c.get("name") for c in campaigns]
+    assert "CAMP-LIST-TEST-001" in campaign_names, f"Campaign not found in list: {campaigns}"
