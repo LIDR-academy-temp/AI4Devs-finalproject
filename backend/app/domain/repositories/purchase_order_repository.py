@@ -1,17 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
-from dataclasses import dataclass
 
-
-@dataclass
-class PurchaseOrderVersion:
-    """Domain model for purchase order version."""
-    id: Optional[int]
-    purchase_order_id: int
-    version_number: int
-    issued_on: str  # ISO date
-    revision_reason: Optional[str]
-    is_in_force: bool
+from app.domain.entities.purchase_order import PurchaseOrderVersion
 
 
 class PurchaseOrderRepository(ABC):

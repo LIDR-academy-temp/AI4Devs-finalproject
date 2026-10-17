@@ -1,17 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import replace
 from datetime import date
 from typing import Optional
 
-
-@dataclass
-class PurchaseOrderVersion:
-    """Domain model for purchase order version."""
-    id: Optional[int] = None
-    purchase_order_id: int = 0
-    version_number: int = 0
-    issued_on: date = None
-    revision_reason: Optional[str] = None
-    is_in_force: bool = False
+from app.domain.entities.purchase_order import PurchaseOrderVersion
 
 
 class PurchaseOrderService:
@@ -40,14 +31,15 @@ class PurchaseOrderService:
         Create a new purchase order version.
 
         Raises ValueError if revision (v2+) lacks revision_reason.
-        Sets this version is_in_force, deactivates prior versions.
+        Sets this version is_in_force, deactivates prior versions (via replace).
         """
         # Validate: revisions must have a reason
         if version_number > 1 and revision_reason is None:
             raise ValueError("revision_reason is required for revisions (version > 1)")
 
-        # Create the version
+        # Create the new version as in-force
         version = PurchaseOrderVersion(
+            id=None,
             purchase_order_id=purchase_order_id,
             version_number=version_number,
             issued_on=issued_on,
@@ -55,11 +47,13 @@ class PurchaseOrderService:
             is_in_force=True
         )
 
-        # Deactivate prior version of the same order
+        # Deactivate prior version using replace() (immutable)
         if purchase_order_id in self._in_force:
             prior_number = self._in_force[purchase_order_id]
             if (purchase_order_id, prior_number) in self._versions:
-                self._versions[(purchase_order_id, prior_number)].is_in_force = False
+                prior_version = self._versions[(purchase_order_id, prior_number)]
+                inactive_version = replace(prior_version, is_in_force=False)
+                self._versions[(purchase_order_id, prior_number)] = inactive_version
 
         # Store and set as in-force
         self._versions[(purchase_order_id, version_number)] = version

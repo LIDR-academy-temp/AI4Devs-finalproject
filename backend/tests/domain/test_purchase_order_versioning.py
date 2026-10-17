@@ -31,8 +31,9 @@ def test_revision_creates_new_version():
     assert version2.version_number == 2
     assert version2.is_in_force is True
 
-    # Version 1 should no longer be in force
-    assert version1.is_in_force is False
+    # Version 1 should no longer be in force (fetch from service, not the original object)
+    version1_updated = service.get_version(order_id, 1)
+    assert version1_updated.is_in_force is False
 
 
 def test_exactly_one_version_in_force():
@@ -45,11 +46,11 @@ def test_exactly_one_version_in_force():
 
     v2 = service.create_version(order_id, 2, date(2026, 2, 1), "Price update")
     assert v2.is_in_force is True
-    assert v1.is_in_force is False  # v1 updated in service state
+    assert service.get_version(order_id, 1).is_in_force is False  # fetch updated from service
 
     v3 = service.create_version(order_id, 3, date(2026, 3, 1), "Final revision")
     assert v3.is_in_force is True
-    assert v2.is_in_force is False
+    assert service.get_version(order_id, 2).is_in_force is False  # fetch updated from service
 
 
 def test_prior_version_readable():
