@@ -13,6 +13,10 @@ de la base de datos, así que **los archivos solo tienen sentido sobre una base 
 | `batch-blocked/` | ProviderB-Main · batch 52 | Una transacción de un canal de otro proveedor | `provider_mismatch` = 1, import bloqueado |
 | `legacy-provider/` | ProviderC-Alt · batch 7 | Nombres de hoja y columna antiguos resueltos por el conjunto de reglas "Provider C legacy"; gateway UUID; alias `CHB 2` con importe excluido | 0 hallazgos; un movimiento con `excludeAmount` |
 
+`excel-real/excel-real-sample.xlsx` (sin `expected.json`) es la plantilla guardada por Excel de
+escritorio con datos sintéticos: usa `sharedStrings.xml`, estilos y filas vacías con formato, que
+openpyxl no genera. Solo sirve para probar el lector de `.xlsx` del backend y **no se regenera**.
+
 Cada carpeta lleva un `expected.json` con lo que la aplicación debe producir al importar,
 analizar y validar ese conjunto: filas leídas y cruzadas, rangos por ciclo, advertencias,
 conteo por validación, valores por defecto de inclusión y, cuando aplica, los totales del

@@ -44,6 +44,16 @@ describe('loadEnv', () => {
     expect(loadEnv({ ...BASE_ENV, JWT_SECRET: secret }).JWT_SECRET).toBe(secret)
   })
 
+  it('defaults UPLOAD_DIR to ./data/uploads and accepts an absolute path', () => {
+    expect(loadEnv({ ...BASE_ENV, JWT_SECRET: VALID_SECRET }).UPLOAD_DIR).toBe('./data/uploads')
+    expect(loadEnv({ ...BASE_ENV, JWT_SECRET: VALID_SECRET, UPLOAD_DIR: 'C:\\recon\\uploads' }).UPLOAD_DIR).toBe(
+      'C:\\recon\\uploads',
+    )
+    expect(errorOf(() => loadEnv({ ...BASE_ENV, JWT_SECRET: VALID_SECRET, UPLOAD_DIR: '' })).message).toContain(
+      'UPLOAD_DIR',
+    )
+  })
+
   it('applies the defaults for PORT, HOST and LOG_LEVEL', () => {
     const env = loadEnv({ ...BASE_ENV, JWT_SECRET: VALID_SECRET })
 

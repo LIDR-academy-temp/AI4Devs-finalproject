@@ -25,6 +25,13 @@ export const TokenPair = z.object({
 })
 export type TokenPair = z.infer<typeof TokenPair>
 
+/** Who did something: the pair every audited or owned resource exposes (README §3.2 `createdByUserId`). */
+export const UserRef = z.object({
+  userId: z.number().int(),
+  userName: z.string(),
+})
+export type UserRef = z.infer<typeof UserRef>
+
 export const MerchantRef = z.object({
   merchantId: z.number().int(),
   name: z.string(),

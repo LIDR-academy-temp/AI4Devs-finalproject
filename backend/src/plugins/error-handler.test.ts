@@ -8,8 +8,18 @@ import {
   InvalidTokenError,
   UnauthorizedError,
 } from '../modules/auth/domain/errors.js'
-import { NotFoundError } from '../shared/errors.js'
+import { DomainError, NotFoundError } from '../shared/errors.js'
 import { errorHandlerPlugin } from './error-handler.js'
+
+/** A module error as the import module declares them: status and code on the class, details for the client. */
+class ConflictTestError extends DomainError {
+  readonly status = 409
+  readonly code = 'duplicate_file'
+
+  constructor() {
+    super('part1.xlsx is already in this import', { fileId: '9b02', fileName: 'part1.xlsx' })
+  }
+}
 
 let app: FastifyInstance
 
@@ -38,6 +48,9 @@ beforeAll(async () => {
   })
   app.get('/missing', async () => {
     throw new NotFoundError('Account')
+  })
+  app.get('/conflict', async () => {
+    throw new ConflictTestError()
   })
   await app.ready()
 })
@@ -100,6 +113,18 @@ describe('errorHandlerPlugin', () => {
 
     expect(res.statusCode).toBe(404)
     expect(res.json()).toEqual({ code: 'not_found', message: 'Account not found' })
+    expect(res.json()).not.toHaveProperty('details')
+  })
+
+  it('maps any DomainError to its own status, code and details', async () => {
+    const res = await app.inject({ method: 'GET', url: '/conflict' })
+
+    expect(res.statusCode).toBe(409)
+    expect(res.json()).toEqual({
+      code: 'duplicate_file',
+      message: 'part1.xlsx is already in this import',
+      details: { fileId: '9b02', fileName: 'part1.xlsx' },
+    })
   })
 
   it('answers unknown routes with 404 not_found in the uniform body', async () => {

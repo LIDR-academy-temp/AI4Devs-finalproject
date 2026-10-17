@@ -13,11 +13,29 @@ import type { AuthService } from './modules/auth/application/auth-service.js'
 import { authModule } from './modules/auth/auth-module.js'
 import type { CatalogService } from './modules/catalog/application/catalog-service.js'
 import { catalogModule } from './modules/catalog/catalog-module.js'
+import type { ImportService } from './modules/imports/application/import-service.js'
+import type { FileStore } from './modules/imports/application/ports.js'
+import { importsModule } from './modules/imports/imports-module.js'
 import { errorHandlerPlugin } from './plugins/error-handler.js'
 import { prismaPlugin } from './plugins/prisma.js'
 import { healthRoutes } from './routes/health.js'
 
 export const API_PREFIX = '/api/v1'
+
+/** Documentation-only body of the multipart upload routes (README §4.2): 1 to 10 `.xlsx` parts named `files`. */
+const MULTIPART_FILES_BODY = {
+  type: 'object',
+  required: ['files'],
+  properties: {
+    files: {
+      type: 'array',
+      minItems: 1,
+      maxItems: 10,
+      items: { type: 'string', format: 'binary' },
+      description: 'One or more .xlsx files of at most 20 MiB each',
+    },
+  },
+}
 
 export interface BuildAppOptions {
   env: Env
@@ -27,6 +45,8 @@ export interface BuildAppOptions {
   authService?: AuthService
   /** Injected catalog service (tests); otherwise built on the Prisma catalog repository. */
   catalogService?: CatalogService
+  /** Injected import service and file store (tests); otherwise built on Prisma, the disk store and the xlsx reader. */
+  imports?: { service: ImportService; files: FileStore }
   /** Log destination (tests capture logs through it); defaults to stdout. */
   logStream?: { write(line: string): void }
 }
@@ -61,9 +81,15 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     },
     transform: (input) => {
       const result = jsonSchemaTransform(input)
+      const schema = result.schema as { response?: Record<string, unknown>; consumes?: string[]; body?: unknown }
       // A 204 has no body by definition: `type: 'null'` makes @fastify/swagger document it without content.
-      const responses = (result.schema as { response?: Record<string, unknown> }).response
-      if (responses?.['204']) responses['204'] = { type: 'null', description: 'No content' }
+      if (schema.response?.['204']) schema.response['204'] = { type: 'null', description: 'No content' }
+      // A multipart upload is consumed as a stream, not validated by a body schema: document the `files` parts (README §4.2).
+      const consumes = (input.schema as { consumes?: string[] } | undefined)?.consumes
+      if (consumes?.includes('multipart/form-data') && schema.body === undefined) {
+        schema.consumes = consumes
+        schema.body = MULTIPART_FILES_BODY
+      }
       return result
     },
   })
@@ -75,6 +101,12 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     service: options.authService,
   })
   await app.register(catalogModule, { routePrefix: API_PREFIX, service: options.catalogService })
+  await app.register(importsModule, {
+    routePrefix: API_PREFIX,
+    uploadDir: env.UPLOAD_DIR,
+    service: options.imports?.service,
+    files: options.imports?.files,
+  })
   await app.register(healthRoutes, { prefix: API_PREFIX })
 
   return app

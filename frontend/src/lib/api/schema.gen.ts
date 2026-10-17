@@ -1039,6 +1039,849 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/accounts/{accountId}/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Imports of an account, newest first, optionally filtered by status */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                };
+                header?: never;
+                path: {
+                    accountId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            /** @enum {string} */
+                            status: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                            /** Format: date-time */
+                            analyzedAt: string | null;
+                            rowsTotal: number | null;
+                            rowsMatched: number | null;
+                            rowsUnmatched: number | null;
+                            /** Format: uuid */
+                            currentBatchId: string | null;
+                            fileCount: number;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Upload one or more template files and get the mapping proposal
+         * @description multipart/form-data with 1 to 10 `files` parts, each a `.xlsx` of at most 20 MiB. Rejected as a whole when any part fails: 400 (type, size, count), 409 (same bytes already in the import), 422 (unreadable workbook).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    accountId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /** @description One or more .xlsx files of at most 20 MiB each */
+                        files: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            /** @enum {string} */
+                            status: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                            /** Format: date-time */
+                            analyzedAt: string | null;
+                            rowsTotal: number | null;
+                            rowsMatched: number | null;
+                            rowsUnmatched: number | null;
+                            /** Format: uuid */
+                            currentBatchId: string | null;
+                            fileCount: number;
+                            files: {
+                                /** Format: uuid */
+                                fileId: string;
+                                fileName: string;
+                                sizeBytes: number;
+                                sha256: string;
+                                /** Format: date-time */
+                                uploadedAt: string;
+                                sheets: {
+                                    /** Format: uuid */
+                                    sheetId: string;
+                                    sheetName: string;
+                                    hidden: boolean;
+                                    rowCount: number;
+                                    proposed: {
+                                        /** @enum {string|null} */
+                                        kind: "transactions" | "batch_fees" | "ignore" | null;
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        note?: string;
+                                    };
+                                    columns: {
+                                        sourceColumn: string;
+                                        /** @enum {string|null} */
+                                        targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference" | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        statusValues?: {
+                                            value: string;
+                                            statusId: number | null;
+                                            statusName: string | null;
+                                            excludeAmount: boolean;
+                                        }[];
+                                    }[];
+                                    preview: {
+                                        [key: string]: string;
+                                    }[];
+                                }[];
+                            }[];
+                            readiness: {
+                                canAnalyze: boolean;
+                                missing: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                }[];
+                                notes: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                }[];
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{importId}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add files to an import before it is analyzed
+         * @description multipart/form-data with 1 to 10 `files` parts, each a `.xlsx` of at most 20 MiB. Rejected as a whole when any part fails: 400 (type, size, count), 409 (same bytes already in the import), 422 (unreadable workbook).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /** @description One or more .xlsx files of at most 20 MiB each */
+                        files: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            /** @enum {string} */
+                            status: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                            /** Format: date-time */
+                            analyzedAt: string | null;
+                            rowsTotal: number | null;
+                            rowsMatched: number | null;
+                            rowsUnmatched: number | null;
+                            /** Format: uuid */
+                            currentBatchId: string | null;
+                            fileCount: number;
+                            files: {
+                                /** Format: uuid */
+                                fileId: string;
+                                fileName: string;
+                                sizeBytes: number;
+                                sha256: string;
+                                /** Format: date-time */
+                                uploadedAt: string;
+                                sheets: {
+                                    /** Format: uuid */
+                                    sheetId: string;
+                                    sheetName: string;
+                                    hidden: boolean;
+                                    rowCount: number;
+                                    proposed: {
+                                        /** @enum {string|null} */
+                                        kind: "transactions" | "batch_fees" | "ignore" | null;
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        note?: string;
+                                    };
+                                    columns: {
+                                        sourceColumn: string;
+                                        /** @enum {string|null} */
+                                        targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference" | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        statusValues?: {
+                                            value: string;
+                                            statusId: number | null;
+                                            statusName: string | null;
+                                            excludeAmount: boolean;
+                                        }[];
+                                    }[];
+                                    preview: {
+                                        [key: string]: string;
+                                    }[];
+                                }[];
+                            }[];
+                            readiness: {
+                                canAnalyze: boolean;
+                                missing: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                }[];
+                                notes: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                }[];
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{importId}/files/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a file from an import before it is analyzed */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                    fileId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            /** @enum {string} */
+                            status: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                            /** Format: date-time */
+                            analyzedAt: string | null;
+                            rowsTotal: number | null;
+                            rowsMatched: number | null;
+                            rowsUnmatched: number | null;
+                            /** Format: uuid */
+                            currentBatchId: string | null;
+                            fileCount: number;
+                            files: {
+                                /** Format: uuid */
+                                fileId: string;
+                                fileName: string;
+                                sizeBytes: number;
+                                sha256: string;
+                                /** Format: date-time */
+                                uploadedAt: string;
+                                sheets: {
+                                    /** Format: uuid */
+                                    sheetId: string;
+                                    sheetName: string;
+                                    hidden: boolean;
+                                    rowCount: number;
+                                    proposed: {
+                                        /** @enum {string|null} */
+                                        kind: "transactions" | "batch_fees" | "ignore" | null;
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        note?: string;
+                                    };
+                                    columns: {
+                                        sourceColumn: string;
+                                        /** @enum {string|null} */
+                                        targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference" | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        statusValues?: {
+                                            value: string;
+                                            statusId: number | null;
+                                            statusName: string | null;
+                                            excludeAmount: boolean;
+                                        }[];
+                                    }[];
+                                    preview: {
+                                        [key: string]: string;
+                                    }[];
+                                }[];
+                            }[];
+                            readiness: {
+                                canAnalyze: boolean;
+                                missing: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                }[];
+                                notes: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                }[];
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{importId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Import detail: files, sheets, mapping proposal, preview and readiness */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            /** @enum {string} */
+                            status: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                            /** Format: date-time */
+                            analyzedAt: string | null;
+                            rowsTotal: number | null;
+                            rowsMatched: number | null;
+                            rowsUnmatched: number | null;
+                            /** Format: uuid */
+                            currentBatchId: string | null;
+                            fileCount: number;
+                            files: {
+                                /** Format: uuid */
+                                fileId: string;
+                                fileName: string;
+                                sizeBytes: number;
+                                sha256: string;
+                                /** Format: date-time */
+                                uploadedAt: string;
+                                sheets: {
+                                    /** Format: uuid */
+                                    sheetId: string;
+                                    sheetName: string;
+                                    hidden: boolean;
+                                    rowCount: number;
+                                    proposed: {
+                                        /** @enum {string|null} */
+                                        kind: "transactions" | "batch_fees" | "ignore" | null;
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        note?: string;
+                                    };
+                                    columns: {
+                                        sourceColumn: string;
+                                        /** @enum {string|null} */
+                                        targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference" | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        statusValues?: {
+                                            value: string;
+                                            statusId: number | null;
+                                            statusName: string | null;
+                                            excludeAmount: boolean;
+                                        }[];
+                                    }[];
+                                    preview: {
+                                        [key: string]: string;
+                                    }[];
+                                }[];
+                            }[];
+                            readiness: {
+                                canAnalyze: boolean;
+                                missing: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                }[];
+                                notes: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                }[];
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;

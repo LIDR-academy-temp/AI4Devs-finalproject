@@ -1,0 +1,31 @@
+meta {
+  name: 5 Import detail
+  type: http
+  seq: 5
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{flowImportId}}
+}
+
+tests {
+  test('returns the detail with both files, the proposal and the readiness', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.importId).to.equal(bru.getVar('flowImportId'));
+    expect(res.body.files).to.have.length(2);
+    const app = res.body.files[0].sheets.find((s) => s.sheetName === 'APP');
+    expect(app.rowCount).to.equal(340);
+    expect(app.proposed).to.include({ kind: 'transactions', cycle: 'E', statusId: 2, source: 'global' });
+    expect(app.columns.map((c) => c.targetField)).to.deep.equal(['transactionId', 'amount', 'currency']);
+    expect(res.body.readiness.canAnalyze).to.equal(true);
+  });
+}

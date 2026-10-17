@@ -13,6 +13,8 @@ const EnvSchema = z.object({
   DB_NAME: z.string().min(1).default('ReconTool'),
   DB_USER: z.string().min(1).default('recon_app'),
   RECON_APP_PASSWORD: z.string().default(''),
+  /** Root of the uploaded settlement files; a relative path resolves against the backend process cwd. */
+  UPLOAD_DIR: z.string().min(1).default('./data/uploads'),
 })
 
 export type Env = z.infer<typeof EnvSchema>
