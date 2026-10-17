@@ -1,18 +1,18 @@
 ## 0. Setup: Create Feature Branch (MANDATORY - FIRST STEP)
 
-- [ ] 0.1 Create feature branch `feature/register-campaign-from-purchase-order` from `main` and verify `git status` reports it as current
-- [ ] 0.2 Confirm the change's scaffolding prerequisite is met: `backend/` and `frontend/` exist and start, verified by `docker compose up -d --build` followed by a successful health request
+- [x] 0.1 Create feature branch `feature/register-campaign-from-purchase-order` from `main` and verify `git status` reports it as current
+- [x] 0.2 Confirm the change's scaffolding prerequisite is met: `backend/` and `frontend/` exist and start, verified by `docker compose up -d --build` followed by a successful health request
 
 ## 1. Database: Initial Schema
 
-- [ ] 1.1 Initialise Alembic in `backend/alembic/` and verify `alembic current` runs against the `db` container
-- [ ] 1.2 Write failing tests for the identity model (unique email, composite `user_roles` key) and verify they fail for the right reason
-- [ ] 1.3 Define SQLAlchemy models for `users`, `roles`, `user_roles` and verify the tests from 1.2 pass
-- [ ] 1.4 Define master models: `holding_groups`, `agencies`, `advertisers`, `dsps`, `channels`, `formats`, `campaign_types`, `sectors`, `sales_reps`, with unique names and the mandatory `agencies.holding_group_id`, verified by constraint tests
-- [ ] 1.5 Define the campaign tree: `campaigns`, `campaign_periods`, `campaign_lines`, with `contracted_impressions` and `sale_cpm` on the line and `Numeric` for every monetary column, verified by a test asserting no float column exists
-- [ ] 1.6 Define `purchase_orders`, `purchase_order_versions` (unique version per order, single version in force) and `dsp_mappings`, verified by constraint tests
-- [ ] 1.7 Add the `scope` enumerated type and the separate `market_description` column on `campaign_lines`, verified by a test rejecting an out-of-set value
-- [ ] 1.8 Generate the Alembic migration with `--autogenerate`, review it by hand for false renames, and verify `alembic upgrade head` then `downgrade base` runs clean
+- [x] 1.1 Initialise Alembic in `backend/alembic/` and verify `alembic current` runs against the `db` container
+- [x] 1.2 Write failing tests for the identity model (unique email, composite `user_roles` key) and verify they fail for the right reason
+- [x] 1.3 Define SQLAlchemy models for `users`, `roles`, `user_roles` and verify the tests from 1.2 pass
+- [x] 1.4 Define master models: `holding_groups`, `agencies`, `advertisers`, `dsps`, `channels`, `formats`, `campaign_types`, `sectors`, `sales_reps`, with unique names and the mandatory `agencies.holding_group_id`, verified by constraint tests
+- [x] 1.5 Define the campaign tree: `campaigns`, `campaign_periods`, `campaign_lines`, with `contracted_impressions` and `sale_cpm` on the line and `Numeric` for every monetary column, verified by a test asserting no float column exists
+- [x] 1.6 Define `purchase_orders`, `purchase_order_versions` (unique version per order, single version in force) and `dsp_mappings`, verified by constraint tests
+- [x] 1.7 Add the `scope` enumerated type and the separate `market_description` column on `campaign_lines`, verified by a test rejecting an out-of-set value
+- [x] 1.8 Generate the Alembic migration with `--autogenerate`, review it by hand for false renames, and verify `alembic upgrade head` then `downgrade base` runs clean
 - [ ] 1.9 Index the columns joins and filters will use — agency, campaign period, delivery date on the line — and verify with `EXPLAIN` on a representative query
 
 ## 2. Backend: Domain Layer (no database, no HTTP)
