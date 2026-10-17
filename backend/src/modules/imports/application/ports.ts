@@ -196,7 +196,7 @@ export interface ImportRowRepository {
   channelRowCounts(importId: string): Promise<Map<number, number>>
 }
 
-/** Own transactions, looked up by external identity in batches (design D4). */
+/** Own transactions, looked up by external identity (design D4). Any number of pairs: the adapter batches as its store needs. */
 export interface TransactionLookup {
   findByExternalIds(pairs: IdCandidate[]): Promise<TransactionRef[]>
 }

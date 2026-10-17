@@ -106,9 +106,6 @@ export interface ImportServiceDeps {
   limits: AnalysisLimits
 }
 
-/** Pairs per lookup statement: well under the 2 100 parameters of SQL Server (design D4). */
-const LOOKUP_BATCH = 500
-
 /** Statuses in which the import may hold rows (cancelled only when it was analyzed before). */
 const ANALYZED_STATUSES: ReadonlySet<ImportStatus> = new Set(['analyzed', 'validated', 'processed', 'cancelled'])
 
@@ -509,18 +506,15 @@ export class ImportService {
     return loaded
   }
 
-  /** Looks up the candidate pairs in batches; one entry per exact pair found. */
+  /** Looks up the unique candidate pairs (the adapter batches as its store needs); one entry per exact pair found. */
   private async lookup(pairs: IdCandidate[]): Promise<Map<string, TransactionRef[]>> {
     const unique = new Map<string, IdCandidate>()
     for (const pair of pairs) unique.set(pairKey(pair.gatewayId, pair.sourceTransactionId), pair)
-    const all = [...unique.values()]
     const found = new Map<string, TransactionRef[]>()
-    for (let offset = 0; offset < all.length; offset += LOOKUP_BATCH) {
-      const batch = all.slice(offset, offset + LOOKUP_BATCH)
-      for (const transaction of await this.deps.transactions.findByExternalIds(batch)) {
-        const key = pairKey(transaction.gatewayId, transaction.sourceTransactionId)
-        found.set(key, [...(found.get(key) ?? []), transaction])
-      }
+    if (unique.size === 0) return found
+    for (const transaction of await this.deps.transactions.findByExternalIds([...unique.values()])) {
+      const key = pairKey(transaction.gatewayId, transaction.sourceTransactionId)
+      found.set(key, [...(found.get(key) ?? []), transaction])
     }
     return found
   }
