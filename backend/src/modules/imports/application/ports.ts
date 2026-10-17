@@ -2,7 +2,7 @@
 import type { Readable } from 'node:stream'
 import type { Cycle, ImportStatus, MatchResult, SheetKind } from '@recon/shared'
 import type { Scope } from '../../catalog/domain/scope.js'
-import type { WorkbookDescription } from '../domain/workbook.js'
+import type { SheetRows, WorkbookDescription } from '../domain/workbook.js'
 
 export type { Scope }
 
@@ -167,6 +167,8 @@ export interface FileStore {
 
 export interface WorkbookReader {
   describe(bytes: Uint8Array, fileName: string): WorkbookDescription
+  /** Every data row of one sheet, as text, within the same limits as `describe` (design D3). */
+  readRows(bytes: Uint8Array, fileName: string, sheetName: string): SheetRows
 }
 
 export type IdGenerator = () => string

@@ -1,5 +1,6 @@
 // One worksheet part, streamed: header row, row count, preview, per-column stats. Every cell is text (design D2).
-import type { ColumnStats, SheetDescription } from '../../domain/workbook.js'
+// With `onRow`, every data row is also handed to the caller as it is finished (rows mode, design D3 of import-analyze).
+import type { ColumnStats, SheetDescription, SheetRow } from '../../domain/workbook.js'
 import type { ReadLimits } from './limits.js'
 import { XmlError, type XmlSink, xmlSink } from './xml.js'
 
@@ -14,6 +15,8 @@ interface SheetParserOptions {
   limits: ReadLimits
   /** Called when a limit is exceeded; must throw. */
   tooLarge(limit: string): never
+  /** Receives every data row (never the header, never an empty row); the parser retains nothing of it. */
+  onRow?: (row: SheetRow) => void
 }
 
 interface Cell {
@@ -148,6 +151,7 @@ export function sheetParser(options: SheetParserOptions): SheetParser {
     if (rowCount > limits.maxRowsPerSheet) tooLarge(`more than ${limits.maxRowsPerSheet} rows in sheet ${options.name}`)
     const width = headers?.length ?? 0
     const row: string[] = []
+    const lossyNumeric: number[] = []
     for (let i = 0; i < width; i++) {
       const c = cells.get(i)
       const value = c?.value ?? ''
@@ -155,13 +159,17 @@ export function sheetParser(options: SheetParserOptions): SheetParser {
       const stat = stats[i]
       if (!stat || !c) continue
       if (c.numeric) stat.numericCells++
-      if (c.lossy) stat.lossyNumericCells++
+      if (c.lossy) {
+        stat.lossyNumericCells++
+        lossyNumeric.push(i)
+      }
       if (value !== '' && stat.distinct !== null && !stat.distinct.has(value)) {
         if (stat.distinct.size >= limits.maxDistinctValues) stat.distinct = null
         else stat.distinct.set(value, true)
       }
     }
     if (preview.length < limits.previewRows) preview.push(row)
+    options.onRow?.({ rowNo, cells: row, lossyNumeric })
   }
 
   const sink = xmlSink({

@@ -5,6 +5,8 @@
  * distinct values) so that the proposal and the service can be tested without Excel or SQL Server.
  */
 import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import type { Readable } from 'node:stream'
 import type { Cycle, ImportStatus, SheetKind, TargetField } from '@recon/shared'
 import { strToU8 } from 'fflate'
@@ -19,7 +21,8 @@ import { ACCOUNT_IDS, type AccountName, LEGACY_RULE_SET_ID } from '../../../cata
 import type { MatchingRulesRepository } from '../../../matching/application/ports.js'
 import type { ColumnRule, MatchingRules, RuleSet, SheetRule } from '../../../matching/domain/rules.js'
 import { DuplicateFileError, FileUnreadableError } from '../../domain/errors.js'
-import type { ColumnStats, SheetDescription, WorkbookDescription } from '../../domain/workbook.js'
+import type { ColumnStats, SheetDescription, SheetRow, SheetRows, WorkbookDescription } from '../../domain/workbook.js'
+import { readSheetRows } from '../../infrastructure/xlsx/row-reader.js'
 import type {
   AccountRef,
   FileStore,
@@ -285,51 +288,100 @@ export interface SampleFile {
   /** Stand-in bytes with the zip magic; the fake reader maps them to the description by hash. */
   bytes: Uint8Array
   workbook: WorkbookDescription
+  /** The real sample under data/samples; `readRows` delegates to the real reader over it (design D3). */
+  realFile?: string
+  /** Hand-made rows per sheet for fixtures without a real file. */
+  rows?: Record<string, SheetRow[]>
 }
 
 function fakeXlsxBytes(tag: string): Uint8Array {
   return strToU8(`PK\u0003\u0004${tag}`)
 }
 
+const SAMPLES_DIR = path.resolve(import.meta.dirname, '../../../../../../data/samples')
+
 export const SAMPLE_FILES = {
   batchClean: {
     fileName: 'Recon_Template_ProviderA-USD_batch-clean.xlsx',
     bytes: fakeXlsxBytes('batch-clean'),
     workbook: BATCH_CLEAN_WORKBOOK,
+    realFile: 'batch-clean/Recon_Template_ProviderA-USD_batch-clean.xlsx',
   },
   part1: {
     fileName: 'Recon_Template_ProviderA-USD_batch-split_part1.xlsx',
     bytes: fakeXlsxBytes('batch-split-part1'),
     workbook: BATCH_SPLIT_PART1,
+    realFile: 'batch-split/Recon_Template_ProviderA-USD_batch-split_part1.xlsx',
   },
   part2: {
     fileName: 'Recon_Template_ProviderA-USD_batch-split_part2.xlsx',
     bytes: fakeXlsxBytes('batch-split-part2'),
     workbook: BATCH_SPLIT_PART2,
+    realFile: 'batch-split/Recon_Template_ProviderA-USD_batch-split_part2.xlsx',
   },
   legacy: {
     fileName: 'Legacy_ProviderC-Alt_batch.xlsx',
     bytes: fakeXlsxBytes('legacy-provider'),
     workbook: LEGACY_WORKBOOK,
+    realFile: 'legacy-provider/Legacy_ProviderC-Alt_batch.xlsx',
   },
-  unruled: { fileName: 'bonus.xlsx', bytes: fakeXlsxBytes('unruled'), workbook: UNRULED_WORKBOOK },
+  unruled: {
+    fileName: 'bonus.xlsx',
+    bytes: fakeXlsxBytes('unruled'),
+    workbook: UNRULED_WORKBOOK,
+    rows: {
+      APP: [
+        { rowNo: 2, cells: ['252570479111759', '16.22', 'USD'], lossyNumeric: [] },
+        { rowNo: 3, cells: ['699717315840756', '218.83', 'USD'], lossyNumeric: [] },
+      ],
+      Bonus: [
+        { rowNo: 2, cells: ['x', '1'], lossyNumeric: [] },
+        { rowNo: 3, cells: ['y', '2'], lossyNumeric: [] },
+      ],
+    },
+  },
 } satisfies Record<string, SampleFile>
 
+interface RegisteredWorkbook {
+  workbook: WorkbookDescription
+  realFile?: string
+  rows?: Record<string, SheetRow[]>
+}
+
 export class FakeWorkbookReader implements WorkbookReader {
-  private readonly byHash = new Map<string, WorkbookDescription>()
+  private readonly byHash = new Map<string, RegisteredWorkbook>()
+  private readonly realBytes = new Map<string, Uint8Array>()
 
   constructor(samples: SampleFile[] = Object.values(SAMPLE_FILES)) {
-    for (const sample of samples) this.register(sample.bytes, sample.workbook)
+    for (const sample of samples) this.register(sample.bytes, sample.workbook, sample)
   }
 
-  register(bytes: Uint8Array, workbook: WorkbookDescription): void {
-    this.byHash.set(sha256Of(bytes), workbook)
+  register(bytes: Uint8Array, workbook: WorkbookDescription, source: Pick<SampleFile, 'realFile' | 'rows'> = {}): void {
+    this.byHash.set(sha256Of(bytes), { workbook, realFile: source.realFile, rows: source.rows })
   }
 
   describe(bytes: Uint8Array, fileName: string): WorkbookDescription {
-    const workbook = this.byHash.get(sha256Of(bytes))
-    if (!workbook) throw new FileUnreadableError(fileName, 'not a registered fixture')
-    return structuredClone(workbook)
+    return structuredClone(this.registered(bytes, fileName).workbook)
+  }
+
+  readRows(bytes: Uint8Array, fileName: string, sheetName: string): SheetRows {
+    const registered = this.registered(bytes, fileName)
+    const headers = registered.workbook.sheets.find((s) => s.name === sheetName)?.headers
+    if (headers === undefined) throw new FileUnreadableError(fileName, `missing sheet ${sheetName}`)
+    if (registered.rows) return { headers: [...headers], rows: structuredClone(registered.rows[sheetName] ?? []) }
+    if (registered.realFile === undefined) throw new FileUnreadableError(fileName, 'fixture without rows')
+    let real = this.realBytes.get(registered.realFile)
+    if (!real) {
+      real = readFileSync(path.join(SAMPLES_DIR, registered.realFile))
+      this.realBytes.set(registered.realFile, real)
+    }
+    return readSheetRows(real, fileName, sheetName)
+  }
+
+  private registered(bytes: Uint8Array, fileName: string): RegisteredWorkbook {
+    const registered = this.byHash.get(sha256Of(bytes))
+    if (!registered) throw new FileUnreadableError(fileName, 'not a registered fixture')
+    return registered
   }
 }
 

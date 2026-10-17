@@ -1,6 +1,7 @@
 // Describes a .xlsx package: sheets in workbook order, headers, row counts, preview and column stats,
 // everything as text and within the reading limits (design D1–D3). Only the parts this product needs
-// are inflated: workbook.xml, its rels, sharedStrings.xml and the worksheet parts.
+// are inflated: workbook.xml, its rels, sharedStrings.xml and the worksheet parts. `withPackage` opens the
+// package the same way for the rows reader (design D3 of import-analyze).
 import { DomainError } from '../../../../shared/errors.js'
 import { FileTooLargeError, FileUnreadableError } from '../../domain/errors.js'
 import type { SheetDescription, WorkbookDescription } from '../../domain/workbook.js'
@@ -20,6 +21,23 @@ export interface DescribeOptions {
   log?: DescribeLog
   /** Test seam: called with the running total of inflated bytes after every chunk. */
   onInflated?: (totalBytes: number) => void
+}
+
+/** A worksheet of the package: its name, visibility and the zip entry that holds it. */
+export interface Worksheet {
+  name: string
+  hidden: boolean
+  target: string
+}
+
+/** What the readers get once the package is open and validated: the sheets, the shared strings and a way to stream a part. */
+export interface OpenPackage {
+  worksheets: Worksheet[]
+  sharedStrings: readonly string[]
+  limits: ReadLimits
+  stream(name: string, sink: XmlSink): void
+  tooLarge(limit: string): never
+  unreadable(reason: string): FileUnreadableError
 }
 
 /** What the 422 says when the failure is not one the reader can explain to the client. */
@@ -47,11 +65,16 @@ function resolveTarget(target: string): string {
   return `xl/${target.replace(/^\.\//, '')}`
 }
 
-export function describeWorkbook(
+/**
+ * Opens the package (zip, workbook.xml, rels, shared strings) within the limits and hands it to `body`.
+ * Reader errors (zip, XML, limits) become the client-facing 400/422; anything else is logged and hidden.
+ */
+export function withPackage<T>(
   bytes: Uint8Array,
   fileName: string,
-  options: DescribeOptions = {},
-): WorkbookDescription {
+  options: DescribeOptions,
+  body: (pkg: OpenPackage) => T,
+): T {
   const limits = readLimits(options.limits)
   const unreadable = (reason: string) => new FileUnreadableError(fileName, reason)
   const tooLarge = (limit: string): never => {
@@ -111,9 +134,12 @@ export function describeWorkbook(
       )
     }
 
-    const worksheets = sheetRefs
-      .map((ref) => ({ ref, relationship: relationships.get(ref.relationshipId) }))
-      .filter((s) => s.relationship !== undefined && WORKSHEET_RELATIONSHIP.test(s.relationship.type))
+    const worksheets: Worksheet[] = []
+    for (const ref of sheetRefs) {
+      const relationship = relationships.get(ref.relationshipId)
+      if (relationship === undefined || !WORKSHEET_RELATIONSHIP.test(relationship.type)) continue
+      worksheets.push({ name: ref.name, hidden: ref.hidden, target: resolveTarget(relationship.target) })
+    }
     if (worksheets.length === 0) throw unreadable('no worksheets')
 
     const sst = sharedStringsCollector((count) => {
@@ -121,13 +147,7 @@ export function describeWorkbook(
     })
     if (entries.has(SHARED_STRINGS)) stream(SHARED_STRINGS, sst)
 
-    const sheets: SheetDescription[] = []
-    for (const { ref, relationship } of worksheets) {
-      const parser = sheetParser({ name: ref.name, hidden: ref.hidden, sharedStrings: sst.strings, limits, tooLarge })
-      stream(resolveTarget((relationship as Relationship).target), parser)
-      sheets.push(parser.result())
-    }
-    return { sheets }
+    return body({ worksheets, sharedStrings: sst.strings, limits, stream, tooLarge, unreadable })
   } catch (error) {
     if (error instanceof DomainError) throw error
     // Only the reader's own zip and XML errors describe the file; any other error (a bug, an edge case of the
@@ -136,4 +156,20 @@ export function describeWorkbook(
     options.log?.warn({ err: error, fileName }, 'unexpected error while reading a workbook')
     throw unreadable(UNEXPECTED_REASON)
   }
+}
+
+export function describeWorkbook(
+  bytes: Uint8Array,
+  fileName: string,
+  options: DescribeOptions = {},
+): WorkbookDescription {
+  return withPackage(bytes, fileName, options, ({ worksheets, sharedStrings, limits, stream, tooLarge }) => {
+    const sheets: SheetDescription[] = []
+    for (const sheet of worksheets) {
+      const parser = sheetParser({ name: sheet.name, hidden: sheet.hidden, sharedStrings, limits, tooLarge })
+      stream(sheet.target, parser)
+      sheets.push(parser.result())
+    }
+    return { sheets }
+  })
 }

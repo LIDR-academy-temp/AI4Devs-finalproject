@@ -43,6 +43,10 @@ beforeEach(async () => {
     reader: {
       describe: (bytes, fileName) =>
         bytes.length === REAL_BATCH_CLEAN.length ? real.describe(bytes, fileName) : fake.describe(bytes, fileName),
+      readRows: (bytes, fileName, sheetName) =>
+        bytes.length === REAL_BATCH_CLEAN.length
+          ? real.readRows(bytes, fileName, sheetName)
+          : fake.readRows(bytes, fileName, sheetName),
     },
     rules: new InMemoryMatchingRulesRepository(),
     ids: sequentialIds(),
