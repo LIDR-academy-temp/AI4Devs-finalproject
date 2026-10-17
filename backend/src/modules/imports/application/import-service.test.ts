@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { ImportDetail } from '@recon/shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NotFoundError } from '../../../shared/errors.js'
@@ -53,6 +54,25 @@ async function caught<E>(promise: Promise<unknown>, type: new (...args: never[])
   const error = await promise.catch((e: unknown) => e)
   expect(error).toBeInstanceOf(type)
   return error as E
+}
+
+/** Same fakes as `service`, but the rules fail on their second load: the one that builds the detail, after persisting. */
+function serviceFailingAfterPersist(): ImportService {
+  const rules = new InMemoryMatchingRulesRepository()
+  let calls = 0
+  return new ImportService({
+    imports,
+    files,
+    reader: new FakeWorkbookReader(),
+    ids: randomUUID,
+    log,
+    rules: {
+      rulesFor: async (ruleSetId) => {
+        if (++calls === 2) throw new Error('rules unavailable')
+        return rules.rulesFor(ruleSetId)
+      },
+    },
+  })
 }
 
 const sheetNamed = (detail: ImportDetail, name: string, fileIndex = 0) => {
@@ -269,6 +289,17 @@ describe('createImport', () => {
     expect(files.paths()).toEqual([])
     expect(await imports.listImports(ANALYST, A_USD)).toEqual([])
   })
+
+  it('keeps the persisted import and its file when something fails after the rows are written', async () => {
+    await expect(
+      serviceFailingAfterPersist().createImport(ANALYST, ANALYST_ID, A_USD, [await upload(SAMPLE_FILES.batchClean)]),
+    ).rejects.toThrow('rules unavailable')
+
+    const [stored] = await imports.listImports(ANALYST, A_USD)
+    expect(stored?.fileCount).toBe(1)
+    const record = await imports.findImport(ANALYST, stored?.importId ?? '')
+    expect(files.paths()).toEqual([record?.files[0]?.storagePath])
+  })
 })
 
 describe('addFiles and removeFile', () => {
@@ -347,6 +378,16 @@ describe('addFiles and removeFile', () => {
     const error = await caught(service.removeFile(ANALYST, importId, UNKNOWN_UUID), NotFoundError)
 
     expect(error.message).toBe('File not found')
+  })
+
+  it('keeps the added file when something fails after its rows are written', async () => {
+    await expect(
+      serviceFailingAfterPersist().addFiles(ANALYST, importId, [await upload(SAMPLE_FILES.part2)]),
+    ).rejects.toThrow('rules unavailable')
+
+    const record = await imports.findImport(ANALYST, importId)
+    expect(record?.files).toHaveLength(2)
+    expect(files.paths().sort()).toEqual(record?.files.map((f) => f.storagePath).sort())
   })
 })
 

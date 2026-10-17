@@ -55,30 +55,34 @@ export class ImportService {
   constructor(private readonly deps: ImportServiceDeps) {}
 
   async createImport(scope: Scope, userId: number, accountId: string, uploads: StagedUpload[]): Promise<ImportDetail> {
-    return this.withStaged(uploads, async (committed) => {
+    const importId = await this.withStaged(uploads, async (committed) => {
       const account = await this.requireAccount(scope, accountId)
       this.rejectDuplicates(uploads, [])
       const read = await this.readAll(uploads)
       const rules = await this.deps.rules.rulesFor(account.matchingRuleSetId)
-      const importId = this.deps.ids()
-      const files = this.plan(importId, read, rules)
+      const newImportId = this.deps.ids()
+      const files = this.plan(newImportId, read, rules)
       await this.commitThenPersist(files, committed, () =>
-        this.deps.imports.createImport({ importId, accountId, createdByUserId: userId, files }),
+        this.deps.imports.createImport({ importId: newImportId, accountId, createdByUserId: userId, files }),
       )
-      return this.detailOf(scope, importId)
+      return newImportId
     })
+    // From here on the import exists in the database: a failure surfaces as an error, it never removes
+    // files whose rows are already written (design D6: a row without its file is the dangerous state).
+    return this.detailOf(scope, importId)
   }
 
   async addFiles(scope: Scope, importId: string, uploads: StagedUpload[]): Promise<ImportDetail> {
-    return this.withStaged(uploads, async (committed) => {
+    await this.withStaged(uploads, async (committed) => {
       const record = await this.requireEditable(scope, importId)
       this.rejectDuplicates(uploads, record.files)
       const read = await this.readAll(uploads)
       const rules = await this.deps.rules.rulesFor(record.matchingRuleSetId)
       const files = this.plan(importId, read, rules)
       await this.commitThenPersist(files, committed, () => this.deps.imports.addFiles(importId, files))
-      return this.detailOf(scope, importId)
     })
+    // Same as createImport: the rows are written, so the detail is built outside the cleanup scope.
+    return this.detailOf(scope, importId)
   }
 
   async removeFile(scope: Scope, importId: string, fileId: string): Promise<ImportDetail> {
@@ -191,8 +195,9 @@ export class ImportService {
   }
 
   /**
-   * Runs an operation over staged uploads. On any failure the staged files not yet moved are discarded
-   * and the ones already moved are removed, so a rejected request leaves nothing behind (design D6).
+   * Runs the steps up to and including the database write over staged uploads. On any failure the staged
+   * files not yet moved are discarded and the ones already moved are removed, so a rejected request leaves
+   * nothing behind (design D6). Nothing that runs after the rows are written belongs inside this scope.
    */
   private async withStaged<T>(
     uploads: StagedUpload[],
