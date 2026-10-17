@@ -208,6 +208,25 @@ describe('batch-split in two files (criterion 2)', () => {
   })
 })
 
+describe('the same file in two imports (spec "Varios archivos por import", HU1 CA8)', () => {
+  it('accepts batch-clean again in a new import of the same account: two 201 with distinct importId', async () => {
+    const url = `/accounts/${accountIds['ProviderA-USD']}/imports`
+    const first = await upload(url, [samplePart(BATCH_CLEAN)])
+    const second = await upload(url, [samplePart(BATCH_CLEAN)])
+
+    expect(first.statusCode).toBe(201)
+    expect(second.statusCode).toBe(201)
+    const a = ImportDetail.parse(first.json())
+    const b = ImportDetail.parse(second.json())
+    expect(a.importId).not.toBe(b.importId)
+    expect([a.files[0]?.sha256, b.files[0]?.sha256]).toEqual([BATCH_CLEAN_SHA256, BATCH_CLEAN_SHA256])
+    const stored = await ctx.prisma.importFile.count({
+      where: { sha256: BATCH_CLEAN_SHA256, importId: { in: [a.importId, b.importId] } },
+    })
+    expect(stored).toBe(2)
+  })
+})
+
 describe('legacy-provider on ProviderC-Alt (criterion 3)', () => {
   it('applies the account rule set and recognises CHB 2 in the status column', async () => {
     const res = await upload(`/accounts/${accountIds['ProviderC-Alt']}/imports`, [samplePart(LEGACY)])
