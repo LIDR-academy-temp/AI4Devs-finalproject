@@ -34,10 +34,14 @@ export function attribute(attributes: Record<string, string>, name: string): str
   return undefined
 }
 
-/** A sink that feeds decoded chunks to a saxes parser; saxes throws on malformed XML. */
+/** A sink that feeds decoded chunks to a saxes parser; malformed XML surfaces as XmlError. */
 export function xmlSink(handlers: XmlHandlers): XmlSink {
   const parser = new SaxesParser({ xmlns: false, position: false })
   const decoder = new TextDecoder('utf-8')
+  // With a handler registered saxes reports instead of throwing; throwing here keeps the error typed as ours.
+  parser.on('error', (error) => {
+    throw new XmlError(error.message)
+  })
   if (handlers.open) {
     const open = handlers.open
     parser.on('opentag', (tag: SaxesTagPlain) => open(localName(tag.name), tag.attributes))

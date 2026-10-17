@@ -36,7 +36,7 @@ export const importsModule = fp(
       new ImportService({
         imports: new PrismaImportRepository(app.prisma),
         files,
-        reader: new XlsxWorkbookReader(),
+        reader: new XlsxWorkbookReader({ log: app.log }),
         rules: new PrismaMatchingRulesRepository(app.prisma),
         ids: randomUUID,
         log: app.log,

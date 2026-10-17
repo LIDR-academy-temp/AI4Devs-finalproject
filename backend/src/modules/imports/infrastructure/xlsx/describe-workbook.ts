@@ -7,14 +7,23 @@ import type { SheetDescription, WorkbookDescription } from '../../domain/workboo
 import { type ReadLimits, readLimits } from './limits.js'
 import { sharedStringsCollector } from './shared-strings.js'
 import { sheetParser } from './sheet-parser.js'
-import { attribute, type XmlSink, xmlSink } from './xml.js'
-import { countEntries, isZip, readCentralDirectory, readEntry, type ZipEntry } from './zip.js'
+import { attribute, XmlError, type XmlSink, xmlSink } from './xml.js'
+import { countEntries, isZip, readCentralDirectory, readEntry, type ZipEntry, ZipError } from './zip.js'
+
+export interface DescribeLog {
+  warn(obj: object, msg: string): void
+}
 
 export interface DescribeOptions {
   limits?: Partial<ReadLimits>
+  /** Receives the real error when the reader fails for a reason it did not anticipate (see the catch below). */
+  log?: DescribeLog
   /** Test seam: called with the running total of inflated bytes after every chunk. */
   onInflated?: (totalBytes: number) => void
 }
+
+/** What the 422 says when the failure is not one the reader can explain to the client. */
+const UNEXPECTED_REASON = 'the workbook could not be read'
 
 const CONTENT_TYPES = '[Content_Types].xml'
 const WORKBOOK = 'xl/workbook.xml'
@@ -121,6 +130,10 @@ export function describeWorkbook(
     return { sheets }
   } catch (error) {
     if (error instanceof DomainError) throw error
-    throw unreadable(error instanceof Error ? error.message : String(error))
+    // Only the reader's own zip and XML errors describe the file; any other error (a bug, an edge case of the
+    // runtime) is ours to log, and the client gets a fixed reason rather than its message.
+    if (error instanceof ZipError || error instanceof XmlError) throw unreadable(error.message)
+    options.log?.warn({ err: error, fileName }, 'unexpected error while reading a workbook')
+    throw unreadable(UNEXPECTED_REASON)
   }
 }
