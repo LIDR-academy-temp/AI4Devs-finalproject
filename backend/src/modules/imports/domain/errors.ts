@@ -99,13 +99,21 @@ export class ImportNotMappedError extends DomainError {
   }
 }
 
-/** Files can only be added or removed while the import is `uploaded` or `mapped`. */
+/**
+ * Files and mapping can only change while the import is `uploaded` or `mapped`. Also raised when the import
+ * changed between reading it and writing (spec: import, D2): the client reloads and retries.
+ */
 export class ImportNotEditableError extends DomainError {
   readonly status = 409
   readonly code = 'import_not_editable'
 
-  constructor(status: string) {
-    super(`Import in status ${status} cannot be modified`, { status })
+  constructor(status: string, changed = false) {
+    super(
+      changed
+        ? `Import changed while the request was running; reload and retry (status ${status})`
+        : `Import in status ${status} cannot be modified`,
+      { status },
+    )
   }
 }
 

@@ -314,7 +314,7 @@ describe('analyze: state and preconditions', () => {
     reader.readRows = (bytes, fileName, sheetName) => {
       if (!hooked) {
         hooked = true
-        void imports.confirmMapping(detail.importId, body.sheets)
+        void imports.confirmMapping(detail.importId, imports.stored(detail.importId).updatedAt, body.sheets)
       }
       return original(bytes, fileName, sheetName)
     }

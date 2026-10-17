@@ -114,12 +114,18 @@ export interface ImportRepository {
   /** Newest first. */
   listImports(scope: Scope, accountId: string, status?: ImportStatus): Promise<ImportSummaryRecord[]>
   createImport(data: NewImport): Promise<void>
-  addFiles(importId: string, files: NewImportFile[]): Promise<void>
+  /**
+   * The three edits below are guarded writes (spec: import, D2; same pattern as the claim of D1): they apply only
+   * while the import is `uploaded` or `mapped` and still carries the `updatedAt` the caller read; otherwise nothing
+   * is written and ImportNotEditableError names the current status.
+   */
+  addFiles(importId: string, expectedUpdatedAt: Date, files: NewImportFile[]): Promise<void>
   /** Removes the file with its sheets, their column maps and their rows. */
-  removeFile(importId: string, fileId: string): Promise<void>
+  removeFile(importId: string, expectedUpdatedAt: Date, fileId: string): Promise<void>
   /** Stores the confirmed mapping of every sheet (replacing the previous one) and moves the import to `mapped`. */
-  confirmMapping(importId: string, sheets: ConfirmedSheet[]): Promise<void>
-  setStatus(importId: string, status: ImportStatus): Promise<void>
+  confirmMapping(importId: string, expectedUpdatedAt: Date, sheets: ConfirmedSheet[]): Promise<void>
+  /** Moves the import to `cancelled` only from a cancellable status; otherwise ImportNotCancellableError. */
+  cancel(importId: string): Promise<void>
 }
 
 /** A persisted row with what the listing needs around it (design D11). */

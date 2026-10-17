@@ -20,7 +20,13 @@ import {
 import { ACCOUNT_IDS, LEGACY_RULE_SET_ID } from '../../../catalog/application/__fakes__/in-memory.js'
 import type { MatchingRulesRepository } from '../../../matching/application/ports.js'
 import type { ColumnRule, MatchingRules, RuleSet, SheetRule } from '../../../matching/domain/rules.js'
-import { DuplicateFileError, FileUnreadableError } from '../../domain/errors.js'
+import {
+  DuplicateFileError,
+  FileUnreadableError,
+  ImportNotCancellableError,
+  ImportNotEditableError,
+} from '../../domain/errors.js'
+import { CANCELLABLE_STATUSES, EDITABLE_STATUSES } from '../../domain/import-state.js'
 import type { ColumnStats, SheetDescription, SheetRow, SheetRows, WorkbookDescription } from '../../domain/workbook.js'
 import { describeWorkbook } from '../../infrastructure/xlsx/describe-workbook.js'
 import { readSheetRows } from '../../infrastructure/xlsx/row-reader.js'
@@ -551,7 +557,7 @@ export class InMemoryImportRepository implements ImportRepository {
     this.failWrite = true
   }
 
-  /** Port method, and test seam for states the API cannot reach yet (validated, processed…). */
+  /** Test seam for states the API cannot reach yet (validated, processed…); not a port method. */
   async setStatus(importId: string, status: ImportStatus): Promise<void> {
     this.consumeFailure()
     const stored = this.stored(importId)
@@ -568,6 +574,23 @@ export class InMemoryImportRepository implements ImportRepository {
 
   now(): Date {
     return new Date(this.epoch.getTime() + 1000 * this.tick++)
+  }
+
+  /** The guard of the Prisma adapter (spec: import, D2): editable status and the `updatedAt` the caller read. */
+  private claimEditable(importId: string, expectedUpdatedAt: Date): StoredImport {
+    const stored = this.stored(importId)
+    if (!EDITABLE_STATUSES.has(stored.status) || stored.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
+      throw new ImportNotEditableError(stored.status, EDITABLE_STATUSES.has(stored.status))
+    }
+    return stored
+  }
+
+  async cancel(importId: string): Promise<void> {
+    this.consumeFailure()
+    const stored = this.stored(importId)
+    if (!CANCELLABLE_STATUSES.has(stored.status)) throw new ImportNotCancellableError(stored.status)
+    stored.status = 'cancelled'
+    stored.updatedAt = this.now()
   }
 
   private consumeFailure(): void {
@@ -628,9 +651,9 @@ export class InMemoryImportRepository implements ImportRepository {
     }
   }
 
-  async confirmMapping(importId: string, sheets: ConfirmedSheet[]): Promise<void> {
+  async confirmMapping(importId: string, expectedUpdatedAt: Date, sheets: ConfirmedSheet[]): Promise<void> {
     this.consumeFailure()
-    const stored = this.stored(importId)
+    const stored = this.claimEditable(importId, expectedUpdatedAt)
     for (const confirmed of sheets) {
       const sheet = stored.files.flatMap((f) => f.sheets).find((s) => s.sheetId === confirmed.sheetId)
       if (!sheet) throw new Error(`unknown sheet ${confirmed.sheetId}`)
@@ -666,10 +689,9 @@ export class InMemoryImportRepository implements ImportRepository {
     })
   }
 
-  async addFiles(importId: string, files: NewImportFile[]): Promise<void> {
+  async addFiles(importId: string, expectedUpdatedAt: Date, files: NewImportFile[]): Promise<void> {
     this.consumeFailure()
-    const stored = this.imports.get(importId)
-    if (!stored) throw new Error(`unknown import ${importId}`)
+    const stored = this.claimEditable(importId, expectedUpdatedAt)
     for (const file of files) {
       // The UNIQUE (importId, sha256) constraint of the schema.
       const existing = stored.files.find((f) => f.sha256 === file.sha256)
@@ -679,10 +701,9 @@ export class InMemoryImportRepository implements ImportRepository {
     stored.updatedAt = this.now()
   }
 
-  async removeFile(importId: string, fileId: string): Promise<void> {
+  async removeFile(importId: string, expectedUpdatedAt: Date, fileId: string): Promise<void> {
     this.consumeFailure()
-    const stored = this.imports.get(importId)
-    if (!stored) throw new Error(`unknown import ${importId}`)
+    const stored = this.claimEditable(importId, expectedUpdatedAt)
     stored.files = stored.files.filter((f) => f.fileId !== fileId)
     stored.updatedAt = this.now()
   }

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -6,7 +7,20 @@ import { performance } from 'node:perf_hooks'
 import { fileURLToPath } from 'node:url'
 import { ImportDetail, ImportRowItem, ImportRowsPage, type MappingConfirmation } from '@recon/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { PrismaAuditLogger } from '../../src/infrastructure/prisma-audit-logger.js'
+import type { Scope } from '../../src/modules/catalog/domain/scope.js'
+import { ImportService } from '../../src/modules/imports/application/import-service.js'
+import { ImportNotEditableError } from '../../src/modules/imports/domain/errors.js'
+import { FsFileStore } from '../../src/modules/imports/infrastructure/fs-file-store.js'
+import { PrismaAccountContext } from '../../src/modules/imports/infrastructure/prisma-account-context.js'
+import { PrismaFeeTypeCatalog } from '../../src/modules/imports/infrastructure/prisma-fee-type-catalog.js'
+import { PrismaImportRepository } from '../../src/modules/imports/infrastructure/prisma-import-repository.js'
+import { PrismaImportRowRepository } from '../../src/modules/imports/infrastructure/prisma-import-row-repository.js'
+import { PrismaTransactionLookup } from '../../src/modules/imports/infrastructure/prisma-transaction-lookup.js'
+import { DEFAULT_READ_LIMITS } from '../../src/modules/imports/infrastructure/xlsx/limits.js'
 import { buildXlsx, type CellInput } from '../../src/modules/imports/infrastructure/xlsx/test-support.js'
+import { XlsxWorkbookReader } from '../../src/modules/imports/infrastructure/xlsx-workbook-reader.js'
+import { PrismaMatchingRulesRepository } from '../../src/modules/matching/infrastructure/prisma-matching-rules-repository.js'
 import { createTestApp, SEED_PASSWORD } from './helpers.js'
 
 // Oracle: data/samples/*/expected.json read from disk (README §2.6), over the seeded database. Temporary fixtures
@@ -744,4 +758,115 @@ describe('twenty thousand rows end to end (spec: import, Capacidad de análisis)
     },
     600_000,
   )
+})
+
+// ───────────────────────── review of the PR: guarded writes (H1) ─────────────────────────
+
+/** Every merchant: the analyst's scope is "all". */
+async function allMerchants(): Promise<Scope> {
+  return {
+    merchantIds: (await ctx.prisma.merchant.findMany({ select: { merchantId: true } })).map((m) => m.merchantId),
+  }
+}
+
+/**
+ * The real service over the real adapters, whose import repository runs `beforeWrite` right before each write:
+ * the window between what the service read and what it writes, where a concurrent request can commit.
+ */
+function serviceWithWindow(beforeWrite: () => Promise<void>): ImportService {
+  const repository = new PrismaImportRepository(ctx.prisma)
+  const windowed = Object.assign(Object.create(repository) as PrismaImportRepository, {
+    confirmMapping: async (...args: Parameters<PrismaImportRepository['confirmMapping']>) => {
+      await beforeWrite()
+      return repository.confirmMapping(...args)
+    },
+    removeFile: async (...args: Parameters<PrismaImportRepository['removeFile']>) => {
+      await beforeWrite()
+      return repository.removeFile(...args)
+    },
+  })
+  return new ImportService({
+    imports: windowed,
+    files: new FsFileStore(uploadDir),
+    reader: new XlsxWorkbookReader({ log: ctx.app.log }),
+    rules: new PrismaMatchingRulesRepository(ctx.prisma),
+    ids: randomUUID,
+    log: ctx.app.log,
+    rows: new PrismaImportRowRepository(ctx.prisma),
+    transactions: new PrismaTransactionLookup(ctx.prisma),
+    accounts: new PrismaAccountContext(ctx.prisma),
+    feeTypes: new PrismaFeeTypeCatalog(ctx.prisma),
+    audit: new PrismaAuditLogger(ctx.prisma),
+    limits: { maxRowsPerImport: DEFAULT_READ_LIMITS.maxRowsPerImport },
+  })
+}
+
+async function rowCount(importId: string): Promise<number> {
+  return ctx.prisma.importRow.count({ where: { sheet: { file: { importId } } } })
+}
+
+describe('writes that read the import before a concurrent request commits (spec: import, D2)', () => {
+  it('a PUT mapping that read mapped is refused with 409 once analyze committed; the import stays analyzed with its rows', async () => {
+    const detail = await mapped(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
+    const body = confirmProposal(detail)
+    const service = serviceWithWindow(async () => {
+      const res = await call('POST', `/imports/${detail.importId}/analyze`)
+      expect(res.statusCode, res.body).toBe(200)
+    })
+
+    const error = await service.confirmMapping(await allMerchants(), detail.importId, body).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(ImportNotEditableError)
+    expect((error as ImportNotEditableError).details).toEqual({ status: 'analyzed' })
+    const after = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
+    expect(after).toMatchObject({ status: 'analyzed', rowsTotal: 783 })
+    expect(after.analysis?.rows).toEqual({ total: 783, matched: 780, unmatched: 0, ambiguous: 0, ignored: 3 })
+    expect(await rowCount(detail.importId)).toBe(783)
+  })
+
+  it('a PUT mapping that read mapped is refused with 409 once cancel committed; the import stays cancelled', async () => {
+    const detail = await mapped(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
+    const service = serviceWithWindow(async () => {
+      const res = await call('POST', `/imports/${detail.importId}/cancel`)
+      expect(res.statusCode, res.body).toBe(200)
+    })
+
+    const error = await service
+      .confirmMapping(await allMerchants(), detail.importId, confirmProposal(detail))
+      .catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(ImportNotEditableError)
+    expect((error as ImportNotEditableError).details).toEqual({ status: 'cancelled' })
+    expect((await call('GET', `/imports/${detail.importId}`)).json()).toMatchObject({ status: 'cancelled' })
+  })
+
+  it('a file removal that read mapped is refused with 409 once analyze committed; no row of the analysis is lost', async () => {
+    const detail = await mapped(accountIds['ProviderA-USD'] as string, [samplePart(PART1), samplePart(PART2)])
+    const service = serviceWithWindow(async () => {
+      const res = await call('POST', `/imports/${detail.importId}/analyze`)
+      expect(res.statusCode, res.body).toBe(200)
+    })
+    const fileId = detail.files[1]?.fileId as string
+
+    const error = await service.removeFile(await allMerchants(), detail.importId, fileId).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(ImportNotEditableError)
+    const after = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
+    expect(after.status).toBe('analyzed')
+    expect(after.files).toHaveLength(2)
+    expect(await rowCount(detail.importId)).toBe(after.rowsTotal)
+  })
+
+  it('a cancel that read analyzed still cancels, and a second cancel is refused by the guarded write', async () => {
+    const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
+    const [first, second] = await Promise.all([
+      call('POST', `/imports/${detail.importId}/cancel`),
+      call('POST', `/imports/${detail.importId}/cancel`),
+    ])
+
+    expect([first.statusCode, second.statusCode].sort((a, b) => a - b)).toEqual([200, 409])
+    const rejected = first.statusCode === 409 ? first : second
+    expect(rejected.json()).toMatchObject({ code: 'import_not_cancellable', details: { status: 'cancelled' } })
+    expect(await ctx.prisma.auditLog.count({ where: { action: 'import.cancel', entityId: detail.importId } })).toBe(1)
+  })
 })

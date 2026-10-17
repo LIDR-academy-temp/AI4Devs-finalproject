@@ -6,7 +6,8 @@ import { ImportNotCancellableError, ImportNotEditableError, ImportNotMappedError
 /** Files and mapping can change only before the analysis (README HU1 CA2, CA8). */
 export const EDITABLE_STATUSES: ReadonlySet<ImportStatus> = new Set(['uploaded', 'mapped'])
 
-const CANCELLABLE_STATUSES: ReadonlySet<ImportStatus> = new Set(['uploaded', 'mapped', 'analyzed', 'validated'])
+/** Cancelling keeps everything as evidence; only `processed` and `cancelled` refuse it (spec: import, D13). */
+export const CANCELLABLE_STATUSES: ReadonlySet<ImportStatus> = new Set(['uploaded', 'mapped', 'analyzed', 'validated'])
 
 /** `PUT /imports/{id}/mapping`: `uploaded` or `mapped`. */
 export function assertCanConfirmMapping(status: ImportStatus): void {

@@ -167,7 +167,9 @@ export class ImportService {
       const read = await this.readAll(uploads)
       const rules = await this.deps.rules.rulesFor(record.matchingRuleSetId)
       const files = this.plan(importId, read, rules)
-      await this.commitThenPersist(files, committed, () => this.deps.imports.addFiles(importId, files))
+      await this.commitThenPersist(files, committed, () =>
+        this.deps.imports.addFiles(importId, record.updatedAt, files),
+      )
     })
     // Same as createImport: the rows are written, so the detail is built outside the cleanup scope.
     return this.detailOf(scope, importId)
@@ -178,7 +180,7 @@ export class ImportService {
     const file = record.files.find((f) => f.fileId === fileId)
     if (!file) throw new NotFoundError('File')
     // Database first, then disk: an orphan file is harmless, a row without its file is not (design D6).
-    await this.deps.imports.removeFile(importId, fileId)
+    await this.deps.imports.removeFile(importId, record.updatedAt, fileId)
     try {
       await this.deps.files.remove(file.storagePath)
     } catch (err) {
@@ -214,6 +216,7 @@ export class ImportService {
     const validated = validateMappingConfirmation(input, facts)
     await this.deps.imports.confirmMapping(
       importId,
+      record.updatedAt,
       validated.map((v) => ({
         sheetId: v.sheetId,
         kind: v.kind,
@@ -347,7 +350,7 @@ export class ImportService {
   async cancel(scope: Scope, userId: number, importId: string): Promise<ImportDetail> {
     const record = await this.requireImport(scope, importId)
     assertCanCancel(record.status)
-    await this.deps.imports.setStatus(importId, 'cancelled')
+    await this.deps.imports.cancel(importId)
     await this.audit({
       userId,
       action: 'import.cancel',
