@@ -1,0 +1,33 @@
+meta {
+  name: Rows - out of scope
+  type: http
+  seq: 29
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId/rows
+  body: none
+  auth: bearer
+}
+
+params:path {
+  importId: {{$randomUUID}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer gets 404 not_found for the rows of an import it cannot see (same body as an unknown one)', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

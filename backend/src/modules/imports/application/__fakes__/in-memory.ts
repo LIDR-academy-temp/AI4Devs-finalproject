@@ -17,7 +17,7 @@ import {
   STATUS_ALIASES,
   TRANSACTION_STATUSES,
 } from '../../../../../prisma/synthetic.js'
-import { ACCOUNT_IDS, type AccountName, LEGACY_RULE_SET_ID } from '../../../catalog/application/__fakes__/in-memory.js'
+import { ACCOUNT_IDS, LEGACY_RULE_SET_ID } from '../../../catalog/application/__fakes__/in-memory.js'
 import type { MatchingRulesRepository } from '../../../matching/application/ports.js'
 import type { ColumnRule, MatchingRules, RuleSet, SheetRule } from '../../../matching/domain/rules.js'
 import { DuplicateFileError, FileUnreadableError } from '../../domain/errors.js'

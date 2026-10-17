@@ -1,0 +1,33 @@
+meta {
+  name: Cancel - viewer
+  type: http
+  seq: 31
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/cancel
+  body: none
+  auth: bearer
+}
+
+params:path {
+  importId: {{$randomUUID}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer lacks settlement.process: 403 forbidden', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

@@ -1,0 +1,27 @@
+meta {
+  name: 15 Cancel
+  type: http
+  seq: 15
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/cancel
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{flowImportId}}
+}
+
+tests {
+  test('cancels the import keeping its files, rows and analysis: the flow leaves nothing uploaded behind', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.status).to.equal('cancelled');
+    expect(res.body.files).to.have.length(2);
+    expect(res.body.analysis.rows.total).to.equal(783);
+  });
+}

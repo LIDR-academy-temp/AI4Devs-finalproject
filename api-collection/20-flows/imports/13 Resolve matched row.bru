@@ -1,0 +1,34 @@
+meta {
+  name: 13 Resolve matched row
+  type: http
+  seq: 13
+  tags: [
+    flow
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/imports/:importId/rows/:sheetId/:rowNo
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{flowImportId}}
+  sheetId: {{flowSheetId}}
+  rowNo: 2
+}
+
+body:json {
+  {
+    "gatewayId": 1
+  }
+}
+
+tests {
+  test('a row that is already matched cannot be resolved: 409 row_not_ambiguous', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('row_not_ambiguous');
+    expect(res.body.details.matchResult).to.equal('matched');
+  });
+}
