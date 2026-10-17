@@ -43,7 +43,8 @@ export async function collectUploads(request: FastifyRequest, store: FileStore):
         await drain(part.file)
         continue
       }
-      const fileName = sanitizeFileName(part.filename)
+      // A binary part may come without filename (@fastify/busboy treats application/octet-stream as a file).
+      const fileName = sanitizeFileName(part.filename ?? '')
       try {
         assertXlsxName(fileName)
       } catch (error) {

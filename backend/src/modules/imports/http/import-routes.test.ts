@@ -89,6 +89,37 @@ const sample = (key: keyof typeof SAMPLE_FILES, name?: string): Part => ({
   bytes: SAMPLE_FILES[key].bytes,
 })
 
+const BOUNDARY = 'recon-test-boundary'
+const CRLF = '\r\n'
+
+/** Header block of a multipart part, up to and including the blank line before its content. */
+function partHeader(disposition: string): string {
+  return [
+    `--${BOUNDARY}`,
+    `Content-Disposition: form-data; ${disposition}`,
+    'Content-Type: application/octet-stream',
+    '',
+    '',
+  ].join(CRLF)
+}
+
+/** A multipart body written by hand, for shapes FormData cannot produce (missing filename, truncated body). */
+function rawBody(chunks: (string | Uint8Array)[]): Buffer {
+  return Buffer.concat(chunks.map((c) => (typeof c === 'string' ? Buffer.from(c, 'latin1') : Buffer.from(c))))
+}
+
+async function uploadRaw(url: string, body: Buffer) {
+  return ctx.app.inject({
+    method: 'POST',
+    url: `/api/v1${url}`,
+    headers: {
+      authorization: `Bearer ${await tokenOf('analyst')}`,
+      'content-type': `multipart/form-data; boundary=${BOUNDARY}`,
+    },
+    payload: body,
+  })
+}
+
 describe('POST /api/v1/accounts/{accountId}/imports: authentication and permission', () => {
   it('answers 401 unauthorized without a token', async () => {
     const res = await upload(`/accounts/${A_USD}/imports`, [sample('batchClean')], null)
@@ -134,6 +165,24 @@ describe('POST /api/v1/accounts/{accountId}/imports: request validation', () => 
 
     expect(res.statusCode).toBe(400)
     expect(res.json()).toMatchObject({ code: 'unsupported_file_type', details: { fileName: 'batch.csv' } })
+    expect(files.paths()).toEqual([])
+    expect(await imports.listImports({ merchantIds: [1, 2] }, A_USD)).toEqual([])
+  })
+
+  it('answers 400 unsupported_file_type for a binary part without filename, draining the rest', async () => {
+    const body = rawBody([
+      partHeader('name="files"'),
+      new Uint8Array([0x50, 0x4b, 3, 4, 9]),
+      CRLF,
+      partHeader(`name="files"; filename="${SAMPLE_FILES.batchClean.fileName}"`),
+      SAMPLE_FILES.batchClean.bytes,
+      `${CRLF}--${BOUNDARY}--${CRLF}`,
+    ])
+
+    const res = await uploadRaw(`/accounts/${A_USD}/imports`, body)
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json()).toMatchObject({ code: 'unsupported_file_type', details: { fileName: 'upload' } })
     expect(files.paths()).toEqual([])
     expect(await imports.listImports({ merchantIds: [1, 2] }, A_USD)).toEqual([])
   })
