@@ -366,3 +366,23 @@ describe('describeWorkbook: limits', () => {
     expect(() => describeWorkbook(bytes, FILE, { limits: { maxSharedStrings: 2 } })).toThrow(FileTooLargeError)
   })
 })
+
+describe('describeWorkbook: cell references', () => {
+  const header = '<c r="A1" t="inlineStr"><is><t>ID</t></is></c>'
+
+  it('rejects a reference beyond column XFD as unreadable, quickly, even for an empty styled cell', () => {
+    const bytes = buildXlsx({
+      sheets: [{ name: 'APP', sheetDataXml: `<row r="1">${header}<c r="ZZZZZ1" s="1"/></row>` }],
+    })
+
+    const started = performance.now()
+    expect(() => describeWorkbook(bytes, FILE)).toThrow(FileUnreadableError)
+    expect(performance.now() - started).toBeLessThan(2000)
+  })
+
+  it('applies the column limit to every cell, with or without a value', () => {
+    const bytes = buildXlsx({ sheets: [{ name: 'APP', sheetDataXml: `<row r="1">${header}<c r="IW1" s="1"/></row>` }] })
+
+    expect(() => describeWorkbook(bytes, FILE)).toThrow(FileTooLargeError)
+  })
+})

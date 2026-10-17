@@ -2,6 +2,14 @@
 // `<x:row>` and `<row>` read the same; attributes keep their raw names.
 import { SaxesParser, type SaxesTagPlain } from 'saxes'
 
+/** The XML is malformed, or is not a worksheet the reader can follow (e.g. a cell reference beyond column XFD). */
+export class XmlError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'XmlError'
+  }
+}
+
 export interface XmlHandlers {
   open?(name: string, attributes: Record<string, string>): void
   close?(name: string): void

@@ -1,7 +1,7 @@
 // One worksheet part, streamed: header row, row count, preview, per-column stats. Every cell is text (design D2).
 import type { ColumnStats, SheetDescription } from '../../domain/workbook.js'
 import type { ReadLimits } from './limits.js'
-import { type XmlSink, xmlSink } from './xml.js'
+import { XmlError, type XmlSink, xmlSink } from './xml.js'
 
 export interface SheetParser extends XmlSink {
   result(): SheetDescription
@@ -24,12 +24,16 @@ interface Cell {
   column: number
 }
 
+/** A cell with a value or a formula; empty cells are never kept. */
 interface ReadCell {
   value: string
-  hasContent: boolean
   numeric: boolean
   lossy: boolean
 }
+
+/** Excel's last column is XFD: 16 384 columns, three letters at most. */
+const MAX_COLUMN_INDEX = 16_383
+const MAX_COLUMN_LETTERS = 3
 
 export function columnLetter(index: number): string {
   let n = index + 1
@@ -42,18 +46,23 @@ export function columnLetter(index: number): string {
   return letters
 }
 
-/** Column index (0-based) of a cell reference such as `A2` or `AB10`; null when it has no letters. */
+/**
+ * Column index (0-based) of a cell reference such as `A2` or `AB10`; null when it has no letters.
+ * A reference beyond column XFD cannot come from a real workbook: it is malformed, and it is rejected
+ * before anything is sized by it.
+ */
 export function columnIndex(ref: string): number | null {
   let index = 0
-  let seen = false
+  let letters = 0
   for (const ch of ref) {
     const code = ch.charCodeAt(0)
-    if (code >= 65 && code <= 90) {
-      index = index * 26 + (code - 64)
-      seen = true
-    } else break
+    if (code < 65 || code > 90) break
+    if (++letters > MAX_COLUMN_LETTERS) throw new XmlError(`cell reference ${ref} is beyond column XFD`)
+    index = index * 26 + (code - 64)
   }
-  return seen ? index - 1 : null
+  if (letters === 0) return null
+  if (index - 1 > MAX_COLUMN_INDEX) throw new XmlError(`cell reference ${ref} is beyond column XFD`)
+  return index - 1
 }
 
 /**
@@ -114,11 +123,11 @@ export function sheetParser(options: SheetParserOptions): SheetParser {
   }
 
   function finishCell(c: Cell): void {
+    // Empty cells (styled or not) are not kept, so the row map never grows beyond the cells with content.
+    if (!c.hasValue && !c.hasFormula) return
     const value = cellText(c)
-    const hasContent = c.hasValue || c.hasFormula
-    if (hasContent && c.column >= limits.maxColumns) tooLarge(`more than ${limits.maxColumns} columns`)
     const numeric = c.type === 'n' && c.hasValue
-    cells.set(c.column, { value, hasContent, numeric, lossy: numeric && isLossyNumber(value) })
+    cells.set(c.column, { value, numeric, lossy: numeric && isLossyNumber(value) })
   }
 
   function setHeaders(): void {
@@ -134,14 +143,7 @@ export function sheetParser(options: SheetParserOptions): SheetParser {
       setHeaders()
       return
     }
-    let hasContent = false
-    for (const c of cells.values()) {
-      if (c.hasContent) {
-        hasContent = true
-        break
-      }
-    }
-    if (!hasContent) return
+    if (cells.size === 0) return
     rowCount++
     if (rowCount > limits.maxRowsPerSheet) tooLarge(`more than ${limits.maxRowsPerSheet} rows in sheet ${options.name}`)
     const width = headers?.length ?? 0
@@ -175,6 +177,9 @@ export function sheetParser(options: SheetParserOptions): SheetParser {
         case 'c': {
           const ref = attributes.r !== undefined ? columnIndex(attributes.r) : null
           const column = ref ?? lastColumn + 1
+          // Every cell counts against the column limit, with or without a value: an empty styled cell far to
+          // the right would otherwise size the header row and the per-row map.
+          if (column >= limits.maxColumns) tooLarge(`more than ${limits.maxColumns} columns`)
           lastColumn = column
           cell = { type: attributes.t ?? 'n', text: [], hasValue: false, hasFormula: false, column }
           break
