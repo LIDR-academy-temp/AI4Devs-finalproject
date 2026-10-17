@@ -1,10 +1,11 @@
 // Prisma adapter of ImportRepository (design D12). The scope travels inside every read (catalog design D2);
 // writes are transactional; the UNIQUE (importId, sha256) constraint surfaces as DuplicateFileError.
-import { Cycle, ImportStatus, SheetKind } from '@recon/shared'
+import { Cycle, ImportStatus, SheetKind, TargetField } from '@recon/shared'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import type {
   AccountRef,
+  ConfirmedSheet,
   ImportRecord,
   ImportRepository,
   ImportSummaryRecord,
@@ -42,6 +43,7 @@ const sheetSelect = {
   statusId: true,
   rowCount: true,
   mappingConfirmed: true,
+  columnMaps: { select: { sourceColumn: true, targetField: true } },
 } satisfies Prisma.ImportSheetSelect
 
 const fileSelect = {
@@ -116,9 +118,42 @@ export class PrismaImportRepository implements ImportRepository {
           fileId: file.fileId,
           kind: SheetKind.parse(s.kind),
           cycle: s.cycle === null ? null : Cycle.parse(s.cycle),
+          columnMaps: s.columnMaps.map((c) => ({
+            sourceColumn: c.sourceColumn,
+            targetField: TargetField.parse(c.targetField),
+          })),
         })),
       ),
     }
+  }
+
+  /** The confirmed mapping replaces the previous one sheet by sheet; the import moves to `mapped` in the same transaction. */
+  async confirmMapping(importId: string, sheets: ConfirmedSheet[]): Promise<void> {
+    await this.prisma.$transaction([
+      ...sheets.flatMap((sheet) => [
+        this.prisma.importSheet.update({
+          where: { sheetId: sheet.sheetId },
+          data: { kind: sheet.kind, cycle: sheet.cycle, statusId: sheet.statusId, mappingConfirmed: true },
+        }),
+        this.prisma.importSheetColumnMap.deleteMany({ where: { sheetId: sheet.sheetId } }),
+        ...(sheet.columns.length > 0
+          ? [
+              this.prisma.importSheetColumnMap.createMany({
+                data: sheet.columns.map((c) => ({
+                  sheetId: sheet.sheetId,
+                  sourceColumn: c.sourceColumn,
+                  targetField: c.targetField,
+                })),
+              }),
+            ]
+          : []),
+      ]),
+      this.prisma.import.update({ where: { importId }, data: { status: 'mapped', updatedAt: new Date() } }),
+    ])
+  }
+
+  async setStatus(importId: string, status: ImportStatus): Promise<void> {
+    await this.prisma.import.update({ where: { importId }, data: { status, updatedAt: new Date() } })
   }
 
   async listImports(scope: Scope, accountId: string, status?: ImportStatus): Promise<ImportSummaryRecord[]> {

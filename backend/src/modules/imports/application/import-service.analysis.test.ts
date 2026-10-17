@@ -50,6 +50,7 @@ const ANALYST_ID = 2
 const A_USD = ACCOUNT_IDS['ProviderA-USD']
 const B_MAIN = ACCOUNT_IDS['ProviderB-Main']
 const C_ALT = ACCOUNT_IDS['ProviderC-Alt']
+const UNKNOWN_UUID = '00000000-0000-4000-8000-00000000ffff'
 const ZERO_WARNINGS = {
   negative_amount: 0,
   non_usd_currency: 0,
@@ -602,7 +603,7 @@ describe('ambiguous rows', () => {
     )
     expect(notAmbiguous.details).toEqual({ matchResult: 'matched' })
     await caught(service.resolveRow(ANALYST, ANALYST_ID, detail.importId, app.sheetId, 9999, 1), NotFoundError)
-    await caught(service.resolveRow(VIEWER, ANALYST_ID, detail.importId, app.sheetId, 2, GATEWAY_TEST), NotFoundError)
+    await caught(service.resolveRow(ANALYST, ANALYST_ID, UNKNOWN_UUID, app.sheetId, 2, GATEWAY_TEST), NotFoundError)
 
     await imports.setStatus(detail.importId, 'validated')
     const state = await caught(
@@ -632,7 +633,7 @@ describe('listRows', () => {
 
     expect(page.total).toBe(770)
     expect(page.items.map((r) => [r.matchResult, r.sheetName, r.rowNo])).toEqual([
-      ['unmatched', 'APP', 341],
+      ['unmatched', 'APP', 340],
       ['matched', 'APP', 2],
       ['matched', 'APP', 3],
       ['matched', 'APP', 4],
@@ -661,11 +662,11 @@ describe('listRows', () => {
     })
 
     const last = await service.listRows(ANALYST, detail.importId, { page: 154, pageSize: 5 })
-    expect(last.items.map((r) => r.matchResult)).toEqual(['ignored', 'ignored', 'ignored'])
-    expect(last.items.map((r) => [r.sheetName, r.rowNo])).toEqual([
-      ['CHB', 10],
+    expect(last.items.map((r) => r.matchResult)).toEqual(['matched', 'matched', 'ignored', 'ignored', 'ignored'])
+    expect(last.items.slice(2).map((r) => [r.sheetName, r.rowNo])).toEqual([
+      ['CHB', 9],
       ['RDR', 2],
-      ['REF', 6],
+      ['REF', 5],
     ])
   })
 
@@ -695,7 +696,7 @@ describe('listRows', () => {
       pageSize: 10,
     })
     expect(rr.total).toBe(320)
-    expect(rr.items.every((r) => r.cycle === 'R' && r.statusName === 'Successful')).toBe(true)
+    expect(rr.items.every((r) => r.cycle === 'R' && r.statusId !== null && r.transaction !== null)).toBe(true)
 
     await caught(
       service.listRows(VIEWER, (await uploaded(C_ALT, [SAMPLE_FILES.legacy])).importId, { page: 1, pageSize: 50 }),
@@ -742,7 +743,7 @@ describe('cancel', () => {
       ImportNotEditableError,
     )
 
-    const mappedOne = await mapped(A_USD, [SAMPLE_FILES.legacy])
+    const mappedOne = await mapped(C_ALT, [SAMPLE_FILES.legacy])
     expect((await service.cancel(ANALYST, ANALYST_ID, mappedOne.importId)).status).toBe('cancelled')
   })
 

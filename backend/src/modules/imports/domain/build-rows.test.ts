@@ -322,7 +322,10 @@ describe('toNewImportRow', () => {
       reason: 'lossy_numeric_id',
     })
     expect(lossy).toMatchObject({ matchResult: 'unmatched', ignore: false, transactionIdRaw: '12345678901234567' })
-    expect(JSON.parse(lossy.detailJson ?? 'null')).toEqual({ reason: 'lossy_numeric_id' })
+    expect(JSON.parse(lossy.detailJson ?? 'null')).toEqual({
+      reason: 'lossy_numeric_id',
+      warnings: ['lossy_numeric_id'],
+    })
 
     const candidates = [
       {

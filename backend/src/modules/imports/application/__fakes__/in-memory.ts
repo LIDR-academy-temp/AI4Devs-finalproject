@@ -22,9 +22,11 @@ import type { MatchingRulesRepository } from '../../../matching/application/port
 import type { ColumnRule, MatchingRules, RuleSet, SheetRule } from '../../../matching/domain/rules.js'
 import { DuplicateFileError, FileUnreadableError } from '../../domain/errors.js'
 import type { ColumnStats, SheetDescription, SheetRow, SheetRows, WorkbookDescription } from '../../domain/workbook.js'
+import { describeWorkbook } from '../../infrastructure/xlsx/describe-workbook.js'
 import { readSheetRows } from '../../infrastructure/xlsx/row-reader.js'
 import type {
   AccountRef,
+  ConfirmedSheet,
   FileStore,
   IdGenerator,
   ImportFileRecord,
@@ -287,8 +289,9 @@ export interface SampleFile {
   fileName: string
   /** Stand-in bytes with the zip magic; the fake reader maps them to the description by hash. */
   bytes: Uint8Array
-  workbook: WorkbookDescription
-  /** The real sample under data/samples; `readRows` delegates to the real reader over it (design D3). */
+  /** Hand-made description; when absent the real reader describes `realFile`. */
+  workbook?: WorkbookDescription
+  /** The real sample under data/samples; `readRows` (and `describe` without `workbook`) delegate to the real reader over it. */
   realFile?: string
   /** Hand-made rows per sheet for fixtures without a real file. */
   rows?: Record<string, SheetRow[]>
@@ -325,6 +328,16 @@ export const SAMPLE_FILES = {
     workbook: LEGACY_WORKBOOK,
     realFile: 'legacy-provider/Legacy_ProviderC-Alt_batch.xlsx',
   },
+  batchIssues: {
+    fileName: 'Recon_Template_ProviderB-Main_batch-issues.xlsx',
+    bytes: fakeXlsxBytes('batch-issues'),
+    realFile: 'batch-issues/Recon_Template_ProviderB-Main_batch-issues.xlsx',
+  },
+  batchBlocked: {
+    fileName: 'Recon_Template_ProviderB-Main_batch-blocked.xlsx',
+    bytes: fakeXlsxBytes('batch-blocked'),
+    realFile: 'batch-blocked/Recon_Template_ProviderB-Main_batch-blocked.xlsx',
+  },
   unruled: {
     fileName: 'bonus.xlsx',
     bytes: fakeXlsxBytes('unruled'),
@@ -343,8 +356,10 @@ export const SAMPLE_FILES = {
 } satisfies Record<string, SampleFile>
 
 interface RegisteredWorkbook {
-  workbook: WorkbookDescription
+  workbook?: WorkbookDescription
   realFile?: string
+  /** The bytes are a real workbook (built in the test): the real reader handles them. */
+  real?: boolean
   rows?: Record<string, SheetRow[]>
 }
 
@@ -353,29 +368,43 @@ export class FakeWorkbookReader implements WorkbookReader {
   private readonly realBytes = new Map<string, Uint8Array>()
 
   constructor(samples: SampleFile[] = Object.values(SAMPLE_FILES)) {
-    for (const sample of samples) this.register(sample.bytes, sample.workbook, sample)
+    for (const sample of samples) this.register(sample.bytes, sample)
   }
 
-  register(bytes: Uint8Array, workbook: WorkbookDescription, source: Pick<SampleFile, 'realFile' | 'rows'> = {}): void {
-    this.byHash.set(sha256Of(bytes), { workbook, realFile: source.realFile, rows: source.rows })
+  register(bytes: Uint8Array, source: RegisteredWorkbook): void {
+    this.byHash.set(sha256Of(bytes), source)
+  }
+
+  /** Registers bytes that are a real workbook (e.g. built with xlsx/test-support): both reads go to the real reader. */
+  registerReal(bytes: Uint8Array): void {
+    this.byHash.set(sha256Of(bytes), { real: true })
   }
 
   describe(bytes: Uint8Array, fileName: string): WorkbookDescription {
-    return structuredClone(this.registered(bytes, fileName).workbook)
+    const registered = this.registered(bytes, fileName)
+    if (registered.workbook) return structuredClone(registered.workbook)
+    return describeWorkbook(this.realBytesOf(registered, bytes, fileName), fileName)
   }
 
   readRows(bytes: Uint8Array, fileName: string, sheetName: string): SheetRows {
     const registered = this.registered(bytes, fileName)
-    const headers = registered.workbook.sheets.find((s) => s.name === sheetName)?.headers
-    if (headers === undefined) throw new FileUnreadableError(fileName, `missing sheet ${sheetName}`)
-    if (registered.rows) return { headers: [...headers], rows: structuredClone(registered.rows[sheetName] ?? []) }
+    if (registered.rows) {
+      const headers = registered.workbook?.sheets.find((s) => s.name === sheetName)?.headers
+      if (headers === undefined) throw new FileUnreadableError(fileName, `missing sheet ${sheetName}`)
+      return { headers: [...headers], rows: structuredClone(registered.rows[sheetName] ?? []) }
+    }
+    return readSheetRows(this.realBytesOf(registered, bytes, fileName), fileName, sheetName)
+  }
+
+  private realBytesOf(registered: RegisteredWorkbook, bytes: Uint8Array, fileName: string): Uint8Array {
+    if (registered.real) return bytes
     if (registered.realFile === undefined) throw new FileUnreadableError(fileName, 'fixture without rows')
     let real = this.realBytes.get(registered.realFile)
     if (!real) {
       real = readFileSync(path.join(SAMPLES_DIR, registered.realFile))
       this.realBytes.set(registered.realFile, real)
     }
-    return readSheetRows(real, fileName, sheetName)
+    return real
   }
 
   private registered(bytes: Uint8Array, fileName: string): RegisteredWorkbook {
@@ -441,20 +470,59 @@ export class InMemoryFileStore implements FileStore {
 // ───────────────────────── Import repository ─────────────────────────
 
 interface AccountRow extends AccountRef {
-  name: AccountName
+  name: string
   merchantId: number
+  providerId: number
 }
 
+/** Two accounts the seed does not have: one without channels (its provider has some) and one whose provider has none. */
+export const NO_CHANNELS_ACCOUNT_ID = 'a0000000-0000-4000-8000-00000000ee01'
+export const NO_PROVIDER_CHANNELS_ACCOUNT_ID = 'a0000000-0000-4000-8000-00000000ee02'
+const PROVIDER_WITHOUT_CHANNELS = 999
+
 export const IMPORT_ACCOUNTS: AccountRow[] = [
-  { accountId: ACCOUNT_IDS['ProviderA-USD'], name: 'ProviderA-USD', merchantId: 1, matchingRuleSetId: null },
-  { accountId: ACCOUNT_IDS['ProviderA-EUR'], name: 'ProviderA-EUR', merchantId: 1, matchingRuleSetId: null },
-  { accountId: ACCOUNT_IDS['ProviderB-Main'], name: 'ProviderB-Main', merchantId: 1, matchingRuleSetId: null },
-  { accountId: ACCOUNT_IDS['ProviderC-USD'], name: 'ProviderC-USD', merchantId: 2, matchingRuleSetId: null },
+  {
+    accountId: ACCOUNT_IDS['ProviderA-USD'],
+    name: 'ProviderA-USD',
+    merchantId: 1,
+    providerId: 101,
+    matchingRuleSetId: null,
+  },
+  {
+    accountId: ACCOUNT_IDS['ProviderA-EUR'],
+    name: 'ProviderA-EUR',
+    merchantId: 1,
+    providerId: 101,
+    matchingRuleSetId: null,
+  },
+  {
+    accountId: ACCOUNT_IDS['ProviderB-Main'],
+    name: 'ProviderB-Main',
+    merchantId: 1,
+    providerId: 102,
+    matchingRuleSetId: null,
+  },
+  {
+    accountId: ACCOUNT_IDS['ProviderC-USD'],
+    name: 'ProviderC-USD',
+    merchantId: 2,
+    providerId: 201,
+    matchingRuleSetId: null,
+  },
   {
     accountId: ACCOUNT_IDS['ProviderC-Alt'],
     name: 'ProviderC-Alt',
     merchantId: 2,
+    providerId: 201,
     matchingRuleSetId: LEGACY_RULE_SET_ID,
+  },
+  { accountId: NO_CHANNELS_ACCOUNT_ID, name: 'ZZ-NoChannels', merchantId: 1, providerId: 101, matchingRuleSetId: null },
+  {
+    accountId: NO_PROVIDER_CHANNELS_ACCOUNT_ID,
+    name: 'ZZ-NoProviderChannels',
+    merchantId: 1,
+    providerId: PROVIDER_WITHOUT_CHANNELS,
+    matchingRuleSetId: null,
   },
 ]
 
@@ -468,7 +536,7 @@ interface StoredFile extends ImportFileRecord {
   sheets: ImportSheetRecord[]
 }
 
-interface StoredImport extends Omit<ImportSummaryRecord, 'fileCount'> {
+export interface StoredImport extends Omit<ImportSummaryRecord, 'fileCount'> {
   files: StoredFile[]
 }
 
@@ -483,14 +551,22 @@ export class InMemoryImportRepository implements ImportRepository {
     this.failWrite = true
   }
 
-  /** Test seam for states the API cannot reach yet (analyzed, processed…). */
-  setStatus(importId: string, status: ImportStatus): void {
-    const stored = this.imports.get(importId)
-    if (!stored) throw new Error(`unknown import ${importId}`)
+  /** Port method, and test seam for states the API cannot reach yet (validated, processed…). */
+  async setStatus(importId: string, status: ImportStatus): Promise<void> {
+    this.consumeFailure()
+    const stored = this.stored(importId)
     stored.status = status
+    stored.updatedAt = this.now()
   }
 
-  private now(): Date {
+  /** The stored import, for the row repository double. */
+  stored(importId: string): StoredImport {
+    const stored = this.imports.get(importId)
+    if (!stored) throw new Error(`unknown import ${importId}`)
+    return stored
+  }
+
+  now(): Date {
     return new Date(this.epoch.getTime() + 1000 * this.tick++)
   }
 
@@ -548,8 +624,24 @@ export class InMemoryImportRepository implements ImportRepository {
       sizeBytes: file.sizeBytes,
       sha256: file.sha256,
       uploadedAt: this.now(),
-      sheets: file.sheets.map((s) => ({ ...s, fileId: file.fileId, mappingConfirmed: false })),
+      sheets: file.sheets.map((s) => ({ ...s, fileId: file.fileId, mappingConfirmed: false, columnMaps: [] })),
     }
+  }
+
+  async confirmMapping(importId: string, sheets: ConfirmedSheet[]): Promise<void> {
+    this.consumeFailure()
+    const stored = this.stored(importId)
+    for (const confirmed of sheets) {
+      const sheet = stored.files.flatMap((f) => f.sheets).find((s) => s.sheetId === confirmed.sheetId)
+      if (!sheet) throw new Error(`unknown sheet ${confirmed.sheetId}`)
+      sheet.kind = confirmed.kind
+      sheet.cycle = confirmed.cycle
+      sheet.statusId = confirmed.statusId
+      sheet.columnMaps = structuredClone(confirmed.columns)
+      sheet.mappingConfirmed = true
+    }
+    stored.status = 'mapped'
+    stored.updatedAt = this.now()
   }
 
   async createImport(data: NewImport): Promise<void> {

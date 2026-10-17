@@ -2,13 +2,19 @@ import { randomUUID } from 'node:crypto'
 import multipart from '@fastify/multipart'
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
+import { PrismaAuditLogger } from '../../infrastructure/prisma-audit-logger.js'
 import { PrismaMatchingRulesRepository } from '../matching/infrastructure/prisma-matching-rules-repository.js'
 import { ImportService } from './application/import-service.js'
 import type { FileStore } from './application/ports.js'
 import { MAX_FILE_BYTES, MAX_FILES_PER_REQUEST } from './domain/upload-policy.js'
 import { importRoutes } from './http/import-routes.js'
 import { FsFileStore } from './infrastructure/fs-file-store.js'
+import { PrismaAccountContext } from './infrastructure/prisma-account-context.js'
+import { PrismaFeeTypeCatalog } from './infrastructure/prisma-fee-type-catalog.js'
 import { PrismaImportRepository } from './infrastructure/prisma-import-repository.js'
+import { PrismaImportRowRepository } from './infrastructure/prisma-import-row-repository.js'
+import { PrismaTransactionLookup } from './infrastructure/prisma-transaction-lookup.js'
+import { DEFAULT_READ_LIMITS } from './infrastructure/xlsx/limits.js'
 import { XlsxWorkbookReader } from './infrastructure/xlsx-workbook-reader.js'
 
 export interface ImportsModuleOptions {
@@ -40,6 +46,12 @@ export const importsModule = fp(
         rules: new PrismaMatchingRulesRepository(app.prisma),
         ids: randomUUID,
         log: app.log,
+        rows: new PrismaImportRowRepository(app.prisma),
+        transactions: new PrismaTransactionLookup(app.prisma),
+        accounts: new PrismaAccountContext(app.prisma),
+        feeTypes: new PrismaFeeTypeCatalog(app.prisma),
+        audit: new PrismaAuditLogger(app.prisma),
+        limits: { maxRowsPerImport: DEFAULT_READ_LIMITS.maxRowsPerImport },
       })
     await app.register(importRoutes, { prefix: options.routePrefix, service, files })
   },

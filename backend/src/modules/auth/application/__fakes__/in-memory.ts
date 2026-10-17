@@ -13,8 +13,6 @@
 import { randomUUID } from 'node:crypto'
 import { type PermissionCode, ROLES, type RoleName } from '@recon/shared'
 import type {
-  AuditEntry,
-  AuditLogger,
   Clock,
   MerchantRef,
   PasswordHasher,
@@ -96,15 +94,8 @@ export class InMemoryRefreshTokenStore implements RefreshTokenStore {
   }
 }
 
-export class InMemoryAuditLogger implements AuditLogger {
-  entries: AuditEntry[] = []
-  failWith: Error | null = null
-
-  async record(entry: AuditEntry): Promise<void> {
-    if (this.failWith) throw this.failWith
-    this.entries.push(structuredClone(entry))
-  }
-}
+// The audit double is shared by every module since import-analyze (design D12); kept here as a re-export.
+export { InMemoryAuditLogger } from '../../../../test-support/in-memory-audit-logger.js'
 
 /** Hashes are "hash:<password>"; the dummy hash never matches. */
 export class FakePasswordHasher implements PasswordHasher {

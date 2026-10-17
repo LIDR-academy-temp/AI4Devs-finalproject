@@ -1,7 +1,20 @@
-// Ports of the import application layer (design D11). Adapters live in ../infrastructure; the in-memory doubles in ./__fakes__.
+// Ports of the import application layer (design D11 of import-upload-mapping; D4, D7–D12 of import-analyze).
+// Adapters live in ../infrastructure; the in-memory doubles in ./__fakes__.
 import type { Readable } from 'node:stream'
-import type { Cycle, ImportStatus, MatchResult, SheetKind } from '@recon/shared'
+import type {
+  AnalysisSummary,
+  Cycle,
+  ImportRowsQuery,
+  ImportStatus,
+  MatchResult,
+  SheetKind,
+  SheetMappingColumn,
+} from '@recon/shared'
 import type { Scope } from '../../catalog/domain/scope.js'
+import type { FeeTypeRef } from '../domain/batch-fees.js'
+import type { ChannelFact } from '../domain/channel-notice.js'
+import type { TransactionRef } from '../domain/match-rows.js'
+import type { GatewayFormat, IdCandidate } from '../domain/normalize-source-id.js'
 import type { SheetRows, WorkbookDescription } from '../domain/workbook.js'
 
 export type { Scope }
@@ -30,6 +43,17 @@ export interface ImportSheetRecord {
   statusId: number | null
   rowCount: number
   mappingConfirmed: boolean
+  /** The confirmed columns (ImportSheetColumnMap); empty until the mapping is confirmed. */
+  columnMaps: SheetMappingColumn[]
+}
+
+/** A sheet as the analyst confirmed it (validated against the import). */
+export interface ConfirmedSheet {
+  sheetId: string
+  kind: SheetKind
+  cycle: Cycle | null
+  statusId: number | null
+  columns: SheetMappingColumn[]
 }
 
 export interface ImportSummaryRecord {
@@ -91,8 +115,31 @@ export interface ImportRepository {
   listImports(scope: Scope, accountId: string, status?: ImportStatus): Promise<ImportSummaryRecord[]>
   createImport(data: NewImport): Promise<void>
   addFiles(importId: string, files: NewImportFile[]): Promise<void>
-  /** Removes the file with its sheets and their column maps. */
+  /** Removes the file with its sheets, their column maps and their rows. */
   removeFile(importId: string, fileId: string): Promise<void>
+  /** Stores the confirmed mapping of every sheet (replacing the previous one) and moves the import to `mapped`. */
+  confirmMapping(importId: string, sheets: ConfirmedSheet[]): Promise<void>
+  setStatus(importId: string, status: ImportStatus): Promise<void>
+}
+
+/** A persisted row with what the listing needs around it (design D11). */
+export interface StoredImportRow extends NewImportRow {
+  fileId: string
+  fileName: string
+  sheetName: string
+  /** The matched transaction, when there is one. */
+  transaction: TransactionRef | null
+}
+
+export interface RowPage {
+  items: StoredImportRow[]
+  total: number
+}
+
+export interface RowResolutionPatch {
+  transactionId: bigint
+  gatewayId: number
+  detailJson: string | null
 }
 
 /** One row of a transactions sheet as the analysis persists it: every column of ImportRow (design D5). */
@@ -138,6 +185,31 @@ export interface ImportRowRepository {
     rows: NewImportRow[],
     counters: AnalysisCounters,
   ): Promise<void>
+  /** Unmatched and ambiguous first, then matched and ignored; within a group by file, sheet name and rowNo. */
+  page(importId: string, query: ImportRowsQuery): Promise<RowPage>
+  find(importId: string, sheetId: string, rowNo: number): Promise<StoredImportRow | null>
+  /** Marks an ambiguous row as matched and bumps the import's rowsMatched, atomically. */
+  resolve(importId: string, sheetId: string, rowNo: number, patch: RowResolutionPatch): Promise<void>
+  /** Counts over the persisted rows; null when the import has no rows. */
+  summary(importId: string): Promise<AnalysisSummary | null>
+  /** Matched rows per channel of their transactions. */
+  channelRowCounts(importId: string): Promise<Map<number, number>>
+}
+
+/** Own transactions, looked up by external identity in batches (design D4). */
+export interface TransactionLookup {
+  findByExternalIds(pairs: IdCandidate[]): Promise<TransactionRef[]>
+}
+
+/** What the analysis needs to know of the account beyond the import itself (design D4, D9). */
+export interface AccountContext {
+  /** Gateways of the channels associated to the account; of the provider's channels when it has none (decision 1). */
+  gatewaysOf(accountId: string): Promise<GatewayFormat[]>
+  channelAssignments(accountId: string, channelIds: number[]): Promise<ChannelFact[]>
+}
+
+export interface FeeTypeCatalog {
+  listAll(): Promise<FeeTypeRef[]>
 }
 
 /** A part received and written to the temporary area, hashed and measured on the way (design D5). */

@@ -129,7 +129,10 @@ export function buildRowDraft(row: SheetRow, ctx: RowContext): RowDraft {
  * (README §3.2 ImportRow). `detailJson` carries only what there is to say, or null.
  */
 export function toNewImportRow(draft: RowDraft, resolution: RowResolution, idLength = false): NewImportRow {
-  const warnings = idLength ? [...draft.warnings, 'id_length' as const] : draft.warnings
+  // A cell that lost precision is both the reason the row is unmatched and a warning the summary counts.
+  const warnings: WarningCode[] = [...draft.warnings]
+  if (resolution.reason === 'lossy_numeric_id') warnings.push('lossy_numeric_id')
+  if (idLength) warnings.push('id_length')
   const matched = 'transaction' in resolution ? resolution.transaction : null
   const candidates = 'candidates' in resolution ? resolution.candidates : []
   const detail: Record<string, unknown> = {}
