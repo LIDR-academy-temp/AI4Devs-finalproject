@@ -1417,7 +1417,7 @@ Permiso `settlement.process`. Recibe uno o varios `.xlsx` (hasta 20 MB cada uno)
               channels:
                 - { channelId: 31, name: "RAM-01", assignment: assigned }
                 - { channelId: 38, name: "RAM-07", assignment: unassigned, note: "Se asociará a esta cuenta al procesar" }
-                - { channelId: 12, name: "RAM-03", assignment: assigned_to_other_account, otherAccount: "ProviderA-EUR", note: "Esta cuenta pasará a ser la principal del canal" }
+                - { channelId: 12, name: "RAM-03", assignment: assigned_to_other_account, otherAccount: { accountId: "a0b1…", name: "ProviderA-EUR" }, note: "Esta cuenta pasará a ser la principal del canal" }
       '400':
         description: Sin archivos, tipo no permitido o tamaño excedido
       '404':
