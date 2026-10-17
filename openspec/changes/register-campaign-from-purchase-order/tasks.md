@@ -38,11 +38,11 @@
 
 ## 5. Backend: Application and API
 
-- [ ] 5.1 Write failing API tests with `httpx` for campaign registration: success, unknown agency rejected, missing scope rejected
-- [ ] 5.2 Implement the registration application service orchestrating campaign, periods, lines and purchase order version 1 in a single transaction, and verify a partial failure leaves nothing behind
-- [ ] 5.3 Implement the Pydantic request and response schemas in `presentation/schemas/`, separate from the domain entities, and verify no domain entity is serialised directly
-- [ ] 5.4 Implement the `/campaigns` and `/purchase-orders` routers with an explicit `require_roles("operations")` dependency and verify the tests from 5.1 pass
-- [ ] 5.5 Implement Cognito token verification against the pool's public keys and verify a token failing signature, expiry, issuer or audience is rejected as unauthenticated
+- [x] 5.1 Write failing API tests with `httpx` for campaign registration: success, unknown agency rejected, missing scope rejected
+- [x] 5.2 Implement the registration application service orchestrating campaign, periods, lines and purchase order version 1 in a single transaction, and verify a partial failure leaves nothing behind
+- [x] 5.3 Implement the Pydantic request and response schemas in `presentation/schemas/`, separate from the domain entities, and verify no domain entity is serialised directly
+- [x] 5.4 Implement the `/campaigns` and `/purchase-orders` routers with an explicit `require_roles("operations")` dependency and verify the tests from 5.1 pass
+- [x] 5.5 Implement Cognito token verification against the pool's public keys and verify a token failing signature, expiry, issuer or audience is rejected as unauthenticated
 - [ ] 5.6 Write a test asserting a user holding only `finance` receives 403 on every registration endpoint, and that a valid token for an email absent from `users` also receives 403 without creating a user
 - [ ] 5.7 Implement the master read endpoints and verify an inactive DSP is not offered while existing lines referencing it still resolve
 - [ ] 5.8 Implement the blocking status for an active line with no DSP mapping and verify it is reported as blocking, not as a warning
