@@ -81,19 +81,24 @@ describe('buildApp', () => {
     await app.close()
   })
 
-  it('publishes the five import routes with bearer security, the imports tag and multipart uploads documented', async () => {
+  it('publishes the ten import routes with bearer security, the imports tag and multipart uploads documented', async () => {
     const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
 
     const res = await app.inject({ method: 'GET', url: '/docs/json' })
 
     expect(res.statusCode).toBe(200)
     const doc = res.json()
-    const operations: [string, 'get' | 'post' | 'delete'][] = [
+    const operations: [string, 'get' | 'post' | 'put' | 'patch' | 'delete'][] = [
       ['/api/v1/accounts/{accountId}/imports', 'post'],
       ['/api/v1/accounts/{accountId}/imports', 'get'],
       ['/api/v1/imports/{importId}', 'get'],
       ['/api/v1/imports/{importId}/files', 'post'],
       ['/api/v1/imports/{importId}/files/{fileId}', 'delete'],
+      ['/api/v1/imports/{importId}/mapping', 'put'],
+      ['/api/v1/imports/{importId}/analyze', 'post'],
+      ['/api/v1/imports/{importId}/rows', 'get'],
+      ['/api/v1/imports/{importId}/rows/{sheetId}/{rowNo}', 'patch'],
+      ['/api/v1/imports/{importId}/cancel', 'post'],
     ]
     for (const [path, method] of operations) {
       const operation = doc.paths[path]?.[method]
@@ -118,6 +123,27 @@ describe('buildApp', () => {
       (p: { name: string }) => p.name === 'status',
     )
     expect(status).toMatchObject({ in: 'query', required: false })
+
+    // import-analyze: JSON bodies on the confirmation and the resolution, 422 on analyze, 409 on every write.
+    for (const [path, method] of [
+      ['/api/v1/imports/{importId}/mapping', 'put'],
+      ['/api/v1/imports/{importId}/rows/{sheetId}/{rowNo}', 'patch'],
+    ] as const) {
+      expect(doc.paths[path][method].requestBody?.content?.['application/json']?.schema, path).toBeDefined()
+    }
+    expect(doc.paths['/api/v1/imports/{importId}/analyze'].post.responses).toHaveProperty('422')
+    for (const [path, method] of [
+      ['/api/v1/imports/{importId}/mapping', 'put'],
+      ['/api/v1/imports/{importId}/analyze', 'post'],
+      ['/api/v1/imports/{importId}/rows/{sheetId}/{rowNo}', 'patch'],
+      ['/api/v1/imports/{importId}/cancel', 'post'],
+    ] as const) {
+      expect(doc.paths[path][method].responses, path).toHaveProperty('409')
+    }
+    const pageSize = doc.paths['/api/v1/imports/{importId}/rows'].get.parameters.find(
+      (p: { name: string }) => p.name === 'pageSize',
+    )
+    expect(pageSize).toMatchObject({ in: 'query', required: false })
     await app.close()
   })
 

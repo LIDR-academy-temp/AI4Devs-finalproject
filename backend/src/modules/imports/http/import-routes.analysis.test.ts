@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { ImportDetail, ImportRowItem, ImportRowsPage, type MappingConfirmation } from '@recon/shared'
+import type { InjectOptions } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildTestApp, PASSWORD } from '../../../test-support/build-test-app.js'
 import { InMemoryAuditLogger } from '../../../test-support/in-memory-audit-logger.js'
@@ -101,19 +102,16 @@ async function tokenOf(userName: string): Promise<string> {
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH'
 
-async function request(method: Method, url: string, options: { body?: unknown; user?: string | null } = {}) {
+async function request(method: Method, url: string, options: { body?: object; user?: string | null } = {}) {
   const user = options.user === undefined ? 'analyst' : options.user
   const headers: Record<string, string> = {}
   if (user) headers.authorization = `Bearer ${await tokenOf(user)}`
-  return ctx.app.inject({
-    method,
-    url: `/api/v1${url}`,
-    headers,
-    ...(options.body === undefined ? {} : { payload: options.body }),
-  })
+  const inject: InjectOptions = { method, url: `/api/v1${url}`, headers }
+  if (options.body !== undefined) inject.payload = options.body
+  return ctx.app.inject(inject)
 }
 
-async function uploadBatchClean(accountId = A_USD): Promise<ImportDetail> {
+async function uploadBatchClean(accountId: string = A_USD): Promise<ImportDetail> {
   const form = new FormData()
   form.append('files', new Blob([new Uint8Array(REAL_BATCH_CLEAN)]), SAMPLE_FILES.batchClean.fileName)
   const response = new Response(form)
@@ -197,15 +195,13 @@ describe('PUT /api/v1/imports/{importId}/mapping', () => {
     expect(omitted.json()).toMatchObject({ code: 'validation_error', details: { sheetId: body.sheets[0]?.sheetId } })
   })
 
-  it('answers 404 not_found outside the scope, identical to an unknown import', async () => {
-    const detail = await uploadBatchClean(C_USD)
-    const body = confirmation(detail)
+  it('answers 404 not_found for an unknown import (an import outside the scope reads the same: service tests)', async () => {
+    const detail = await uploadBatchClean()
 
-    const outside = await request('PUT', `/imports/${detail.importId}/mapping`, { body, user: 'viewer' })
-    const unknown = await request('PUT', `/imports/${UNKNOWN_UUID}/mapping`, { body, user: 'viewer' })
+    const unknown = await request('PUT', `/imports/${UNKNOWN_UUID}/mapping`, { body: confirmation(detail) })
 
-    expect(outside.statusCode).toBe(404)
-    expect(outside.body).toBe(unknown.body)
+    expect(unknown.statusCode).toBe(404)
+    expect(unknown.json().code).toBe('not_found')
   })
 
   it('answers 200 with the import in mapped, and 409 import_not_editable once analyzed', async () => {
@@ -373,15 +369,16 @@ describe('PATCH /api/v1/imports/{importId}/rows/{sheetId}/{rowNo}', () => {
 })
 
 describe('POST /api/v1/imports/{importId}/cancel', () => {
-  it('answers 401, 403 for viewer and 404 outside the scope', async () => {
-    const detail = await uploadBatchClean(C_USD)
+  it('answers 401, 403 for viewer (permission before scope) and 404 for an unknown import', async () => {
+    const detail = await uploadBatchClean()
 
     expect((await request('POST', `/imports/${detail.importId}/cancel`, { user: null })).statusCode).toBe(401)
-    const outside = await request('POST', `/imports/${detail.importId}/cancel`, { user: 'viewer' })
-    expect(outside.statusCode).toBe(404)
-    expect(outside.body).toBe((await request('POST', `/imports/${UNKNOWN_UUID}/cancel`, { user: 'viewer' })).body)
-    const own = await uploadBatchClean()
-    expect((await request('POST', `/imports/${own.importId}/cancel`, { user: 'viewer' })).statusCode).toBe(403)
+    const forbidden = await request('POST', `/imports/${detail.importId}/cancel`, { user: 'viewer' })
+    expect(forbidden.statusCode).toBe(403)
+    expect(forbidden.json().code).toBe('forbidden')
+    const unknown = await request('POST', `/imports/${UNKNOWN_UUID}/cancel`)
+    expect(unknown.statusCode).toBe(404)
+    expect(unknown.json().code).toBe('not_found')
   })
 
   it('answers 200 with the import cancelled, then 409 import_not_cancellable', async () => {
