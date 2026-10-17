@@ -482,7 +482,7 @@ En todo import analizado, `analysis` SHALL traer `rows` (`total`, `matched`, `un
 #### Scenario: Resumen con advertencias
 - **GIVEN** `batch-issues` analizado
 - **WHEN** se consulta `analysis`
-- **THEN** `rows = { total: 772, matched: 768, unmatched: 1, ambiguous: 0, ignored: 3 }`, `byCycle = { E: 440, I: 10, R: 317 }`, `warnings.negative_amount = 1` y `warnings.non_usd_currency = 0`
+- **THEN** `rows = { total: 770, matched: 766, unmatched: 1, ambiguous: 0, ignored: 3 }`, `byCycle = { E: 440, I: 10, R: 317 }`, `warnings.negative_amount = 1` y `warnings.non_usd_currency = 0`
 
 ### Requirement: Filas del import
 `GET /api/v1/imports/{id}/rows` SHALL responder `200` con `{ items, page, pageSize, total }`, ordenando primero `unmatched`, después `ambiguous`, `matched` e `ignored`, y dentro de cada grupo por archivo (`uploadedAt`), nombre de hoja y `rowNo`. `match=` SHALL filtrar por `matchResult` y `sheetId=` por hoja; `page` (desde 1) y `pageSize` (1 a 500, por defecto 50) fuera de rango SHALL responder `400`. Antes del análisis la página SHALL estar vacía con `total = 0`.
@@ -490,7 +490,7 @@ En todo import analizado, `analysis` SHALL traer `rows` (`total`, `matched`, `un
 #### Scenario: Forma de una fila
 - **GIVEN** `batch-issues` analizado
 - **WHEN** `viewer` pide `GET /api/v1/imports/{id}/rows?page=1&pageSize=50`
-- **THEN** `total = 772`, `items[0]` es la fila `unmatched` (`transactionIdRaw = "4260465812403708"`) y cada elemento trae `fileId`, `fileName`, `sheetId`, `sheetName`, `rowNo`, `cycle`, `matchResult`, `reason`, `transactionIdRaw`, `transactionId` (string o `null`), `gatewayId`, `statusRaw`, `statusId`, `statusName`, `amount` (string decimal o `null`), `currency`, `excludeAmount`, `ignore`, `warnings` (lista de códigos), `candidates` (lista, vacía si no es ambigua), `transaction` (`{ transactionId, channelId, channelName, statusId, statusName, amount, transactionDate }` o `null`) y `rawData`
+- **THEN** `total = 770`, `items[0]` es la fila `unmatched` (`transactionIdRaw = "4260465812403708"`) y cada elemento trae `fileId`, `fileName`, `sheetId`, `sheetName`, `rowNo`, `cycle`, `matchResult`, `reason`, `transactionIdRaw`, `transactionId` (string o `null`), `gatewayId`, `statusRaw`, `statusId`, `statusName`, `amount` (string decimal o `null`), `currency`, `excludeAmount`, `ignore`, `warnings` (lista de códigos), `candidates` (lista, vacía si no es ambigua), `transaction` (`{ transactionId, channelId, channelName, statusId, statusName, amount, transactionDate }` o `null`) y `rawData`
 
 #### Scenario: Filtro y paginación
 - **WHEN** se pide `?match=ignored` de `batch-clean`

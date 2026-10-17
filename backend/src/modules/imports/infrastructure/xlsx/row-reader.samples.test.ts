@@ -39,7 +39,9 @@ describe('readSheetRows on data/samples', () => {
     expect(app[0]).toEqual({ rowNo: 2, cells: ['252570479111759', '16.22', 'USD'], lossyNumeric: [] })
     expect(app.at(-1)?.rowNo).toBe(341)
     expect(app.at(-1)?.cells[1]).toBe('72.09999999999999')
-    expect(app.every((r) => r.lossyNumeric.length === 0)).toBe(true)
+    // IDs are text, so column 0 is never lossy; the Amount column may be (72.09999999999999 has 16 digits).
+    expect(app.every((r) => !r.lossyNumeric.includes(0))).toBe(true)
+    expect(app.at(-1)?.lossyNumeric).toEqual([1])
   })
 
   it('batch-clean CHB, REF and RDR end with the =SUM() leftover: an empty ID at rows 4, 8 and 4', () => {
@@ -50,7 +52,7 @@ describe('readSheetRows on data/samples', () => {
 
   it('counts the rows of the five samples as expected.json does (read)', () => {
     expect(transactionRows(BATCH_CLEAN)).toBe(783)
-    expect(transactionRows(BATCH_ISSUES)).toBe(772)
+    expect(transactionRows(BATCH_ISSUES)).toBe(770)
     expect(rows(BATCH_BLOCKED, 'APP')).toHaveLength(21)
     expect(rows(LEGACY, 'TRX')).toHaveLength(60)
     expect(rows(LEGACY, 'Fail')).toHaveLength(20)

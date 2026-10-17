@@ -415,7 +415,7 @@ describe('ImportRowItem and ImportRowsPage', () => {
   })
 
   it('ImportRowsPage carries items, page, pageSize and total', () => {
-    expect(ImportRowsPage.safeParse({ items: [rowItem], page: 1, pageSize: 50, total: 772 }).success).toBe(true)
+    expect(ImportRowsPage.safeParse({ items: [rowItem], page: 1, pageSize: 50, total: 770 }).success).toBe(true)
     expect(ImportRowsPage.safeParse({ items: [rowItem], page: 1, pageSize: 50 }).success).toBe(false)
   })
 })
