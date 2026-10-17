@@ -126,9 +126,6 @@ async def register_campaign(
     except ValueError as e:
         # Master data validation error
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        # Generic error
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get(

@@ -1,6 +1,8 @@
 from datetime import date as dateobj
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.domain.exceptions import DuplicateOrderReferenceError
 from app.domain.repositories.purchase_order_repository import (
     PurchaseOrderRepository as PurchaseOrderRepositoryInterface,
     PurchaseOrderVersion,
@@ -18,7 +20,7 @@ class PurchaseOrderRepositoryImpl(PurchaseOrderRepositoryInterface):
         self.session = session
 
     async def create_order(self, order_reference: str, received_on: str) -> int:
-        """Create a new purchase order."""
+        """Create a new purchase order. Raises DuplicateOrderReferenceError if reference exists."""
         import datetime
         received_date = datetime.datetime.fromisoformat(received_on).date()
 
@@ -27,7 +29,13 @@ class PurchaseOrderRepositoryImpl(PurchaseOrderRepositoryInterface):
             received_on=received_date,
         )
         self.session.add(order)
-        self.session.flush()
+        try:
+            self.session.flush()
+        except IntegrityError as e:
+            self.session.rollback()
+            if "order_reference" in str(e).lower():
+                raise DuplicateOrderReferenceError(f"Order reference '{order_reference}' already exists")
+            raise
         return order.id
 
     async def create_version(

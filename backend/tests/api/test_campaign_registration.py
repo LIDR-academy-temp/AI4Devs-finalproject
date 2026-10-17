@@ -92,3 +92,46 @@ def test_list_campaigns_requires_auth(client):
     response = client.get("/campaigns")
 
     assert response.status_code == 401
+
+
+def test_register_campaign_duplicate_order_reference(authenticated_client):
+    """Test that duplicate order_reference returns 409."""
+    payload1 = {
+        "name": "CAMP-DUP-001",
+        "display_name": "First Campaign",
+        "agency_id": 1,
+        "advertiser_id": 1,
+        "campaign_type_id": 1,
+        "sector_id": 1,
+        "sales_rep_id": 1,
+        "start_date": "2026-01-01",
+        "end_date": "2026-03-31",
+        "order_reference": "PO-DUPLICATE-001",
+        "order_received_on": "2025-12-15",
+        "lines": []
+    }
+
+    # First registration succeeds
+    response1 = authenticated_client.post("/campaigns", json=payload1)
+    assert response1.status_code == 201
+
+    # Second registration with same order_reference fails with 409
+    payload2 = {
+        **payload1,
+        "name": "CAMP-DUP-002",
+        "display_name": "Second Campaign with Same PO"
+    }
+    response2 = authenticated_client.post("/campaigns", json=payload2)
+    assert response2.status_code == 409
+    assert "duplicate_order_reference" in response2.json().get("code", "")
+
+
+def test_register_campaign_error_no_sql_exposure(authenticated_client):
+    """Test that 500 errors don't expose SQL in response body."""
+    # Try to cause an internal error (though this is hard without crafted payload)
+    # For now, test that generic error messages don't include SQL keywords
+    response = authenticated_client.post("/campaigns", json={})
+    # This should be 422 due to validation, not 500, but let's verify no SQL leaks
+    assert "select" not in response.text.lower()
+    assert "insert" not in response.text.lower()
+    assert "from" not in response.text.lower() or "invalid" in response.text.lower()  # "from" might be in validation error

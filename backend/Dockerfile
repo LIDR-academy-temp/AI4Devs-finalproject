@@ -18,6 +18,7 @@ RUN uv sync --frozen
 COPY app ./app
 COPY alembic ./alembic
 COPY tests ./tests
+COPY scripts ./scripts
 COPY alembic.ini ./
 
 RUN useradd --system --uid 10001 adops360
