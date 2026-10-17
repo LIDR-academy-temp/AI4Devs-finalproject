@@ -17,7 +17,7 @@ class AgencyRecord(Base):
     __tablename__ = "agencies"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    holding_group_id: Mapped[int] = mapped_column(ForeignKey("holding_groups.id"), nullable=False)
+    holding_group_id: Mapped[int] = mapped_column(ForeignKey("holding_groups.id"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
 

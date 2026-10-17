@@ -19,7 +19,7 @@ class PurchaseOrderVersionRecord(Base):
     __tablename__ = "purchase_order_versions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    purchase_order_id: Mapped[int] = mapped_column(ForeignKey("purchase_orders.id"), nullable=False)
+    purchase_order_id: Mapped[int] = mapped_column(ForeignKey("purchase_orders.id"), nullable=False, index=True)
     version_number: Mapped[int] = mapped_column(nullable=False)
     issued_on: Mapped[date] = mapped_column(Date, nullable=False)
     revision_reason: Mapped[str | None] = mapped_column(String, nullable=True)

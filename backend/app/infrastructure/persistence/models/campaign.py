@@ -15,7 +15,7 @@ class CampaignRecord(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String, nullable=False)
-    agency_id: Mapped[int] = mapped_column(ForeignKey("agencies.id"), nullable=False)
+    agency_id: Mapped[int] = mapped_column(ForeignKey("agencies.id"), nullable=False, index=True)
     advertiser_id: Mapped[int] = mapped_column(ForeignKey("advertisers.id"), nullable=False)
     campaign_type_id: Mapped[int] = mapped_column(ForeignKey("campaign_types.id"), nullable=False)
     sector_id: Mapped[int] = mapped_column(ForeignKey("sectors.id"), nullable=False)
@@ -30,7 +30,7 @@ class CampaignPeriodRecord(Base):
     __tablename__ = "campaign_periods"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    campaign_id: Mapped[int] = mapped_column(ForeignKey("campaigns.id"), nullable=False)
+    campaign_id: Mapped[int] = mapped_column(ForeignKey("campaigns.id"), nullable=False, index=True)
     period_year: Mapped[int] = mapped_column(nullable=False)
     period_month: Mapped[int] = mapped_column(nullable=False)
     period_start: Mapped[date] = mapped_column(Date, nullable=False)
@@ -42,9 +42,9 @@ class CampaignLineRecord(Base):
     __tablename__ = "campaign_lines"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    campaign_period_id: Mapped[int] = mapped_column(ForeignKey("campaign_periods.id"), nullable=False)
+    campaign_period_id: Mapped[int] = mapped_column(ForeignKey("campaign_periods.id"), nullable=False, index=True)
     purchase_order_version_id: Mapped[int | None] = mapped_column(ForeignKey("purchase_order_versions.id"), nullable=True)
-    dsp_id: Mapped[int] = mapped_column(ForeignKey("dsps.id"), nullable=False)
+    dsp_id: Mapped[int] = mapped_column(ForeignKey("dsps.id"), nullable=False, index=True)
     channel_id: Mapped[int] = mapped_column(ForeignKey("channels.id"), nullable=False)
     format_id: Mapped[int] = mapped_column(ForeignKey("formats.id"), nullable=False)
     scope: Mapped[str] = mapped_column(SQLEnum("national", "international", name="scope_enum"), nullable=False)
