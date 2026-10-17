@@ -1,5 +1,5 @@
 // The channel notice of an analyzed import (README §1.2 "Cruce contra transacciones propias", §3.2 AccountChannel,
-// §4.2 `channels`; spec "Aviso de canales"): what processing will do with each channel seen. Design D9.
+// §4.2 `channels`; spec: import, D9): what processing will do with each channel seen.
 import type { AccountRef, ChannelNotice } from '@recon/shared'
 
 /** A channel of the matched transactions and its current association. */

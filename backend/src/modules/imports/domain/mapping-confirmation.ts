@@ -1,5 +1,4 @@
-// The confirmed mapping (README §3.2 ImportSheetColumnMap, HU1 CA4; spec "Confirmación del pareo", "Forma del pareo
-// confirmado"): structural validation of what the analyst sends, and the effective mapping of a sheet (confirmed
+// The confirmed mapping (README §3.2 ImportSheetColumnMap, HU1 CA4; spec: import, D6): structural validation of what the analyst sends, and the effective mapping of a sheet (confirmed
 // when it exists, the proposal otherwise). Design D6.
 import type { Cycle, MappingConfirmation, SheetKind, SheetMappingColumn, SheetMappingInput } from '@recon/shared'
 import type { MappingProposal, SheetMappingProposal } from '../../matching/domain/propose-mapping.js'
@@ -157,7 +156,7 @@ export interface EffectiveMappingInput {
   proposed: SheetMappingProposal
 }
 
-/** The confirmed mapping governs once it exists (matching spec "Pareo confirmado es la fuente de verdad"). */
+/** The confirmed mapping governs once it exists (spec: matching, D6). */
 export function effectiveMapping({ mappingConfirmed, confirmed, proposed }: EffectiveMappingInput): EffectiveMapping {
   if (mappingConfirmed && confirmed !== null) return { ...confirmed, source: 'confirmed' }
   return {

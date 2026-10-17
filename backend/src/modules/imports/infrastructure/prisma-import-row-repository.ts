@@ -80,7 +80,7 @@ function toStored(row: StoredRowRow): StoredImportRow {
   }
 }
 
-/** Order inside a match group: file (upload order), sheet name, row number (spec "Filas del import"). */
+/** Order inside a match group: file (upload order), sheet name, row number (spec: import, D11). */
 const withinGroupOrder: Prisma.ImportRowOrderByWithRelationInput[] = [
   { sheet: { file: { uploadedAt: 'asc' } } },
   { sheet: { sheetName: 'asc' } },

@@ -1,4 +1,4 @@
-// The cross-match of one row (README §1.2 "Identidad"; spec "Resultado del cruce"): one hit is matched, none is
+// The cross-match of one row (README §1.2 "Identidad"; spec: import, D4): one hit is matched, none is
 // unmatched, several (two gateways with the same format) is ambiguous. Pure over what the lookup returned (design D4).
 import type { RowCandidate } from '@recon/shared'
 import type { IdCandidate } from './normalize-source-id.js'

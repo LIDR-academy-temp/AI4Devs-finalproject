@@ -1,5 +1,4 @@
-// Batch fees prefilled from the `Other Fees` sheet (README §1.2, §4.2 `batchFees`; spec "Fees por batch prellenados
-// desde la hoja de fees"): each row resolved against the fee type catalog by title or code. Design D10.
+// Batch fees prefilled from the `Other Fees` sheet (README §1.2, §4.2 `batchFees`; spec: import, D10): each row resolved against the fee type catalog by title or code.
 import type { BatchFeeProposal, SheetMappingColumn, TargetField } from '@recon/shared'
 import { parseMoney } from './money.js'
 import type { SheetRow } from './workbook.js'

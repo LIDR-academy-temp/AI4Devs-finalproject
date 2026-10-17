@@ -41,7 +41,7 @@ export function normalizeSourceId(raw: string, idFormat: IdFormat): string | nul
   return UUID.test(lower) ? lower : null
 }
 
-/** A normalized numeric id outside 12–17 digits is valid to look up but worth a warning (spec "Longitud del ID numérico"). */
+/** A normalized numeric id outside 12–17 digits is valid to look up but worth a warning (spec: import, D4). */
 export function idLengthWarning(normalized: string, idFormat: IdFormat): boolean {
   if (idFormat !== 'numeric') return false
   return normalized.length < NUMERIC_MIN_DIGITS || normalized.length > NUMERIC_MAX_DIGITS

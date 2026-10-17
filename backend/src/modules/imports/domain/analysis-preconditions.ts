@@ -1,5 +1,4 @@
-// What must hold before any row is read (README HU1 CA5; spec "Precondiciones del análisis", "Límite de filas por
-// import"): every sheet confirmed, a transactions sheet, an id column, a way to get the status. Design D6, D1 point 4.
+// What must hold before any row is read (README HU1 CA5; spec: import, D7, D1): every sheet confirmed, a transactions sheet, an id column, a way to get the status. Design D6, D1 point 4.
 import type { Cycle, ReadinessField, SheetKind, SheetMappingColumn } from '@recon/shared'
 import type { StatusCatalogEntry } from '../../matching/domain/rules.js'
 import { ImportTooLargeError, type MissingItem } from './errors.js'

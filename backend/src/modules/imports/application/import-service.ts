@@ -203,7 +203,7 @@ export class ImportService {
     return records.map(toSummary)
   }
 
-  /** README HU1 CA4; spec "Confirmación del pareo": the whole mapping, validated against the import, replaces the previous one. */
+  /** README HU1 CA4; spec: import, D6: the whole mapping, validated against the import, replaces the previous one. */
   async confirmMapping(scope: Scope, importId: string, input: MappingConfirmation): Promise<ImportDetail> {
     const record = await this.requireImport(scope, importId)
     assertCanConfirmMapping(record.status)
@@ -228,7 +228,7 @@ export class ImportService {
     return this.detailOf(scope, importId)
   }
 
-  /** README HU1 CA5–CA7; spec "Análisis del import" (design D7): preconditions, then rows, cross-match and one write. */
+  /** README HU1 CA5–CA7; spec: import, D7: preconditions, then rows, cross-match and one write. */
   async analyze(scope: Scope, importId: string): Promise<ImportDetail> {
     const record = await this.requireImport(scope, importId)
     assertCanAnalyze(record.status)
@@ -309,7 +309,7 @@ export class ImportService {
     }
   }
 
-  /** README HU1 CA6; spec "Resolución de una fila ambigua" (design D12): the analyst picks the gateway; audited. */
+  /** README HU1 CA6; spec: import, D12: the analyst picks the gateway; audited. */
   async resolveRow(
     scope: Scope,
     userId: number,
@@ -346,7 +346,7 @@ export class ImportService {
     return toRowItem(after, rules)
   }
 
-  /** README HU1 CA8, HU2 CA8; spec "Cancelación del import" (design D13): everything is kept as evidence. */
+  /** README HU1 CA8, HU2 CA8; spec: import, D13: everything is kept as evidence. */
   async cancel(scope: Scope, userId: number, importId: string): Promise<ImportDetail> {
     const record = await this.requireImport(scope, importId)
     assertCanCancel(record.status)

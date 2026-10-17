@@ -58,7 +58,7 @@ export const SheetMappingColumn = z.object({
 })
 export type SheetMappingColumn = z.infer<typeof SheetMappingColumn>
 
-/** The confirmed mapping of a sheet as the detail returns it (spec "Confirmación del pareo"). */
+/** The confirmed mapping of a sheet as the detail returns it (spec: import, D6). */
 export const SheetMapping = z.object({
   kind: SheetKind,
   cycle: Cycle.nullable(),
@@ -78,7 +78,7 @@ export const SheetMappingInput = z.object({
 })
 export type SheetMappingInput = z.infer<typeof SheetMappingInput>
 
-/** Body of `PUT /imports/{id}/mapping`: every sheet of the import (spec "Forma del pareo confirmado"). */
+/** Body of `PUT /imports/{id}/mapping`: every sheet of the import (spec: import, D6). */
 export const MappingConfirmation = z.object({
   sheets: z.array(SheetMappingInput).min(1),
 })
@@ -113,7 +113,7 @@ export const ReadinessItem = z.object({
   sheetId: z.uuid().nullable(),
   sheetName: z.string().nullable(),
   message: z.string(),
-  /** On `missing` items: which field is lacking (spec "Precondiciones del análisis"). */
+  /** On `missing` items: which field is lacking (spec: import, D7). */
   field: ReadinessField.optional(),
 })
 export type ReadinessItem = z.infer<typeof ReadinessItem>
@@ -169,7 +169,7 @@ export const AnalysisSummary = z.object({
 })
 export type AnalysisSummary = z.infer<typeof AnalysisSummary>
 
-/** README §4.2 `channels`: a channel of the matched transactions and its assignment (spec "Aviso de canales"). */
+/** README §4.2 `channels`: a channel of the matched transactions and its assignment (spec: import, D9). */
 export const ChannelNotice = z.object({
   channelId: z.number().int(),
   name: z.string(),
@@ -211,7 +211,7 @@ export const ImportsQuery = z.object({
 })
 export type ImportsQuery = z.infer<typeof ImportsQuery>
 
-/** A transaction an ambiguous row could be (spec "Resultado del cruce"). */
+/** A transaction an ambiguous row could be (spec: import, D4). */
 export const RowCandidate = z.object({
   gatewayId: z.number().int(),
   gatewayName: z.string(),
@@ -281,7 +281,7 @@ export const ImportRowsPage = z.object({
 })
 export type ImportRowsPage = z.infer<typeof ImportRowsPage>
 
-/** Body of `PATCH /imports/{id}/rows/{sheetId}/{rowNo}` (spec "Resolución de una fila ambigua"). */
+/** Body of `PATCH /imports/{id}/rows/{sheetId}/{rowNo}` (spec: import, D12). */
 export const ResolveRowBody = z.object({
   gatewayId: z.number().int().positive(),
 })

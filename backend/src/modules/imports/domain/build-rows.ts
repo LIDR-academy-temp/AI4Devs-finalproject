@@ -1,5 +1,5 @@
 // From a row read as text and the confirmed mapping of its sheet to what ImportRow stores (README §3.2 ImportRow;
-// spec "Fila original de referencia", "Estado e importe por fila"; design D5). Pure: the cross-match comes separately.
+// spec: import, D5). Pure: the cross-match comes separately.
 import type { Cycle, RowReason, SheetMappingColumn, TargetField, WarningCode } from '@recon/shared'
 import type { MatchingRules } from '../../matching/domain/rules.js'
 import { resolveStatusAlias } from '../../matching/domain/status-alias.js'

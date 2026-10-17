@@ -1,4 +1,4 @@
-// The import state machine of this change (spec "Máquina de estados del import", design D2): which statuses allow
+// The import state machine of this change (spec: import, D2): which statuses allow
 // each action, and the 409 raised otherwise. Transitions themselves are applied by the repositories.
 import type { ImportStatus } from '@recon/shared'
 import { ImportNotCancellableError, ImportNotEditableError, ImportNotMappedError } from './errors.js'

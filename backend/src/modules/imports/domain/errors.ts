@@ -82,7 +82,7 @@ export class MalformedMultipartError extends DomainError {
 }
 
 /**
- * The analysis needs the import in `mapped` (spec "Máquina de estados del import"). Also raised when the
+ * The analysis needs the import in `mapped` (spec: import, D2). Also raised when the
  * import changed between reading it and claiming it for the analysis (design D1): the client retries.
  */
 export class ImportNotMappedError extends DomainError {
@@ -109,7 +109,7 @@ export class ImportNotEditableError extends DomainError {
   }
 }
 
-/** Cancelling is allowed in every status but `processed` and `cancelled` (spec "Cancelación del import"). */
+/** Cancelling is allowed in every status but `processed` and `cancelled` (spec: import, D13). */
 export class ImportNotCancellableError extends DomainError {
   readonly status = 409
   readonly code = 'import_not_cancellable'
@@ -127,7 +127,7 @@ export interface MissingItem {
   message: string
 }
 
-/** The confirmed mapping cannot be analyzed as it stands (README HU1 CA5; spec "Precondiciones del análisis"). */
+/** The confirmed mapping cannot be analyzed as it stands (README HU1 CA5; spec: import, D7). */
 export class MappingIncompleteError extends DomainError {
   readonly status = 422
   readonly code = 'mapping_incomplete'
@@ -137,7 +137,7 @@ export class MappingIncompleteError extends DomainError {
   }
 }
 
-/** The transaction sheets of the import exceed the rows the analysis accepts (design D1; spec "Límite de filas por import"). */
+/** The transaction sheets of the import exceed the rows the analysis accepts (spec: import, D1). */
 export class ImportTooLargeError extends DomainError {
   readonly status = 422
   readonly code = 'import_too_large'
@@ -147,7 +147,7 @@ export class ImportTooLargeError extends DomainError {
   }
 }
 
-/** Only an ambiguous row can be resolved (spec "Resolución de una fila ambigua"). */
+/** Only an ambiguous row can be resolved (spec: import, D12). */
 export class RowNotAmbiguousError extends DomainError {
   readonly status = 409
   readonly code = 'row_not_ambiguous'
@@ -165,7 +165,7 @@ export interface MappingShapeDetails {
   field?: string
 }
 
-/** The body of the mapping confirmation does not fit the import (spec "Forma del pareo confirmado"). */
+/** The body of the mapping confirmation does not fit the import (spec: import, D6). */
 export class MappingShapeError extends DomainError {
   readonly status = 400
   readonly code = 'validation_error'
