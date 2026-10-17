@@ -71,6 +71,16 @@ export class MultipartExpectedError extends DomainError {
   }
 }
 
+/** The multipart body could not be parsed, e.g. it ends before the closing boundary. */
+export class MalformedMultipartError extends DomainError {
+  readonly status = 400
+  readonly code = 'validation_error'
+
+  constructor() {
+    super('Malformed multipart/form-data body')
+  }
+}
+
 /** Files can only be added or removed while the import is `uploaded` or `mapped`. */
 export class ImportNotEditableError extends DomainError {
   readonly status = 409

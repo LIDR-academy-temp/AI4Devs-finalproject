@@ -187,6 +187,17 @@ describe('POST /api/v1/accounts/{accountId}/imports: request validation', () => 
     expect(await imports.listImports({ merchantIds: [1, 2] }, A_USD)).toEqual([])
   })
 
+  it('answers 400 validation_error for a multipart body without closing boundary, keeping nothing', async () => {
+    const body = rawBody([partHeader('name="files"; filename="part.xlsx"'), new Uint8Array([0x50, 0x4b, 3, 4, 9])])
+
+    const res = await uploadRaw(`/accounts/${A_USD}/imports`, body)
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('validation_error')
+    expect(files.paths()).toEqual([])
+    expect(await imports.listImports({ merchantIds: [1, 2] }, A_USD)).toEqual([])
+  })
+
   it('answers 400 too_many_files for eleven parts', async () => {
     const parts = Array.from({ length: 11 }, (_, i) => ({
       name: `part${i}.xlsx`,
