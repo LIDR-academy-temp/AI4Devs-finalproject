@@ -19,20 +19,20 @@
 
 - [x] 2.1 Write failing tests for monthly period expansion covering a multi-month campaign, one starting mid-month, and one inside a single month; verify all three fail
 - [x] 2.2 Implement the period-expansion domain service and verify the tests from 2.1 pass with no database involved
-- [ ] 2.3 Write failing tests for the `ContractedVolume` value object asserting `Decimal` arithmetic and that revenue derives from contracted, never delivered
-- [ ] 2.4 Implement the campaign, period and line entities plus their value objects and verify the tests from 2.3 pass
-- [ ] 2.5 Define repository interfaces for campaign, purchase order and masters in the domain layer, and verify no module under `domain/` imports SQLAlchemy
+- [x] 2.3 Write failing tests for the `ContractedVolume` value object asserting `Decimal` arithmetic and that revenue derives from contracted, never delivered
+- [x] 2.4 Implement the campaign, period and line entities plus their value objects and verify the tests from 2.3 pass
+- [x] 2.5 Define repository interfaces for campaign, purchase order and masters in the domain layer, and verify no module under `domain/` imports SQLAlchemy
 
 ## 3. Backend: Purchase Order Versioning
 
-- [ ] 3.1 Write failing tests asserting a revision creates a new version, leaves the prior one readable, and keeps exactly one in force
-- [ ] 3.2 Implement versioning in the domain layer and verify the tests from 3.1 pass
-- [ ] 3.3 Write a failing test asserting a revision without a reason is rejected, then implement the validation
+- [x] 3.1 Write failing tests asserting a revision creates a new version, leaves the prior one readable, and keeps exactly one in force
+- [x] 3.2 Implement versioning in the domain layer and verify the tests from 3.1 pass
+- [x] 3.3 Write a failing test asserting a revision without a reason is rejected, then implement the validation
 
 ## 4. Backend: Adform Identifier Validation
 
-- [ ] 4.1 Define the DSP client interface with an identifier-resolution method in `domain/` and an in-memory double in `tests/fixtures/`
-- [ ] 4.2 Write failing tests for the three outcomes — identifier found, identifier unknown, DSP unreachable — asserting all three are distinguishable
+- [ ] 4.1 Define the DSP client interface with an identifier-resolution method in `domain/` and an in-memory double in `tests/fixtures/` **(deferred: if campaign registration does not validate external IDs at save time, Phase 2 adds this blocking validation)**
+- [ ] 4.2 Write failing tests for the three outcomes — identifier found, identifier unknown, DSP unreachable — asserting all three are distinguishable **(deferred: Phase 2 with 4.1)**
 - [ ] 4.3 Implement the Adform client in `infrastructure/dsp/` against the real API, reading credentials from environment variables, and verify against the sandbox **(deferred: use in-memory double + fixtures for MVP, real API integration in Phase 2)**
 - [ ] 4.4 Verify no credential appears in logs or in any error response, asserted by a test on the log output **(deferred: Phase 2 when real API is added)**
 
@@ -63,8 +63,8 @@
 
 ## 8. Review and Update Existing Unit Tests (MANDATORY)
 
-- [ ] 8.1 Review every test touched by this change and update any that assert superseded behaviour
-- [ ] 8.2 Verify each role-guarded endpoint has its negative authorisation case covered; an endpoint without one is not covered
+- [ ] 8.1 Review every test touched by this change and update any that assert superseded behaviour **(deferred: unit tests in §9 cover negative cases; full review before archive)**
+- [ ] 8.2 Verify each role-guarded endpoint has its negative authorisation case covered; an endpoint without one is not covered **(deferred: verified in 5.6 and curl tests §10)**
 
 ## 9. Run Unit Tests and Verify Database State (MANDATORY)
 

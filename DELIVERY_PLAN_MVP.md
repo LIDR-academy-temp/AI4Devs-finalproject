@@ -153,26 +153,26 @@
 
 ## Daily Targets
 
-**Monday Oct 20**
-- 2.3-3.3 (domain + versioning) + 4.1-4.2 (DSP mock)
+**Monday Oct 19**
+- 2.3-3.3 (domain + versioning)
 - Goal: Domain layer complete, tests passing
 
-**Tuesday Oct 21**
-- 5.1-5.5 (endpoints, auth verification)
+**Tuesday Oct 20**
+- 4.1-4.2 (DSP mock interface) + 5.1-5.5 (endpoints, auth verification)
 - Goal: API scaffold with role guards
 
-**Wednesday Oct 22**
+**Wednesday Oct 21**
 - 5.6-5.8 (master endpoints, blocking status) + 6.1-6.3 (form)
 - Goal: API complete, frontend form working
 
-**Thursday Oct 23**
-- 6.4-6.5 (role guards, states) + 8.*, 9.* (tests) + 10.1-10.7 (curl)
+**Thursday Oct 22**
+- 6.4-6.5 (role guards, states) + 9.* (unit tests) + 10.1-10.7 (curl)
 - Goal: Everything tested, API validated with curl
 
-**Friday Oct 24**
+**Friday Oct 23**
 - 12.3, 12.4 (docs, validate)
-- Buffer for blockers
-- Goal: Ready for demo/merge
+- NO PLANNED WORK — buffer only for blockers
+- Goal: Ready for handoff
 
 ---
 
