@@ -38,7 +38,7 @@ export function buildUserManagerSettings(config: CognitoConfig, origin: string):
     post_logout_redirect_uri: `${origin}/`,
     // Authorization code flow; oidc-client-ts adds PKCE. The app client has no secret.
     response_type: "code",
-    scope: "openid email profile",
+    scope: "openid email",
     automaticSilentRenew: true,
   };
 }
