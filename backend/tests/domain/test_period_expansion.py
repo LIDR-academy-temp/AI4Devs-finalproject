@@ -18,7 +18,7 @@ def test_multi_month_campaign():
 
     assert periods[1].period_month == 2
     assert periods[1].period_start == date(2026, 2, 1)
-    assert periods[1].period_end == date(2026, 2, 29)
+    assert periods[1].period_end == date(2026, 2, 28)
 
     assert periods[2].period_month == 3
     assert periods[2].period_start == date(2026, 3, 1)

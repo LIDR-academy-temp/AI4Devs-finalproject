@@ -30,19 +30,40 @@ def test_campaign_with_periods():
 
 
 def test_campaign_period_immutable():
-    """Test that CampaignPeriod is immutable."""
+    """Test that CampaignPeriod is immutable (frozen dataclass)."""
     period = CampaignPeriod(
-        id=None,
-        campaign_id=1,
         period_year=2026,
         period_month=5,
         period_start=date(2026, 5, 1),
         period_end=date(2026, 5, 31),
+        id=None,
+        campaign_id=1,
         status="open"
     )
 
     with pytest.raises(AttributeError):
         period.period_month = 6
+
+
+def test_campaign_period_construction_with_campaign_id():
+    """Test that CampaignPeriod can be constructed with campaign_id and all values."""
+    period = CampaignPeriod(
+        period_year=2026,
+        period_month=6,
+        period_start=date(2026, 6, 1),
+        period_end=date(2026, 6, 30),
+        id=42,
+        campaign_id=10,
+        status="open"
+    )
+
+    assert period.period_year == 2026
+    assert period.period_month == 6
+    assert period.period_start == date(2026, 6, 1)
+    assert period.period_end == date(2026, 6, 30)
+    assert period.id == 42
+    assert period.campaign_id == 10
+    assert period.status == "open"
 
 
 def test_campaign_line_with_contracted_volume():

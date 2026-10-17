@@ -5,23 +5,17 @@ from typing import Optional
 from app.domain.value_objects.contracted_volume import ContractedVolume
 
 
-@dataclass
+@dataclass(frozen=True)
 class CampaignPeriod:
     """Immutable campaign period: one calendar month."""
 
-    id: Optional[int]
-    campaign_id: int
     period_year: int
     period_month: int
     period_start: date
     period_end: date
+    id: Optional[int] = None
+    campaign_id: Optional[int] = None
     status: str = "open"
-
-    def __setattr__(self, name: str, value) -> None:
-        """Prevent mutation after creation."""
-        if hasattr(self, 'id'):
-            raise AttributeError(f"CampaignPeriod is immutable; cannot modify {name}")
-        super().__setattr__(name, value)
 
 
 @dataclass

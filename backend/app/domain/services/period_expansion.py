@@ -1,16 +1,7 @@
-from dataclasses import dataclass
 from datetime import date, timedelta
 import calendar
 
-
-@dataclass(frozen=True)
-class CampaignPeriod:
-    """Immutable representation of a campaign period (one calendar month)."""
-
-    period_year: int
-    period_month: int
-    period_start: date
-    period_end: date
+from app.domain.entities.campaign import CampaignPeriod
 
 
 class PeriodExpansionService:

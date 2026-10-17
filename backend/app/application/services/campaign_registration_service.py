@@ -111,8 +111,6 @@ class CampaignRegistrationService:
         expanded_periods = self.period_service.expand(start_date, end_date)
         campaign.periods = [
             CampaignPeriod(
-                id=None,
-                campaign_id=campaign.id or 0,
                 period_year=p.period_year,
                 period_month=p.period_month,
                 period_start=p.period_start,
