@@ -24,7 +24,7 @@ body:multipart-form {
 script:post-response {
   if (res.status === 200) {
     bru.setVar('flowFileId2', res.body.files[1].fileId);
-    // The proposal over both files; "10 Confirm mapping" turns it into the confirmation body.
+    // The proposal over both files; "12 Confirm mapping" turns it into the confirmation body.
     bru.setVar('flowDetail', res.body);
   }
 }

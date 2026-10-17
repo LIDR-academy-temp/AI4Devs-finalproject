@@ -54,6 +54,7 @@ import {
   assertCanResolveRow,
 } from '../domain/import-state.js'
 import {
+  assertKnownStatuses,
   type EffectiveMapping,
   effectiveMapping,
   type SheetFacts,
@@ -214,6 +215,7 @@ export class ImportService {
       headers: l.description.headers,
     }))
     const validated = validateMappingConfirmation(input, facts)
+    assertKnownStatuses(validated, rules.statuses)
     await this.deps.imports.confirmMapping(
       importId,
       record.updatedAt,

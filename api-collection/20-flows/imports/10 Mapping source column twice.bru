@@ -1,5 +1,5 @@
 meta {
-  name: 10 Confirm mapping
+  name: 10 Mapping source column twice
   type: http
   seq: 10
   tags: [
@@ -40,17 +40,18 @@ script:pre-request {
         .map((column) => ({ sourceColumn: column.sourceColumn, targetField: column.targetField })),
     })),
   );
+  // The ID column mapped twice (to transactionId and to orderId): a body the database would refuse.
+  sheets.find((s) => s.columns.some((c) => c.targetField === 'transactionId')).columns.push({
+    sourceColumn: 'ID',
+    targetField: 'orderId',
+  });
   req.setBody({ sheets });
 }
 
 tests {
-  test('confirms the proposal of both files: the import is mapped and every sheet is confirmed', () => {
-    expect(res.status).to.equal(200);
-    expect(res.body.status).to.equal('mapped');
-    const sheets = res.body.files.flatMap((f) => f.sheets);
-    expect(sheets.every((s) => s.mappingConfirmed === true)).to.equal(true);
-    const app = sheets.find((s) => s.sheetName === 'APP');
-    expect(app.mapping.columns).to.have.length(3);
-    expect(res.body.readiness.canAnalyze).to.equal(true);
+  test('400 validation_error naming the sheet and the source column', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+    expect(res.body.details.sourceColumn).to.equal('ID');
   });
 }

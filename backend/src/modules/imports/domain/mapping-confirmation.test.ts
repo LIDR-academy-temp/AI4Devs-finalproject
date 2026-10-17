@@ -4,6 +4,7 @@ import { proposeMapping } from '../../matching/domain/propose-mapping.js'
 import { BATCH_CLEAN_WORKBOOK, RULES_FOR_PROVIDER_A } from '../application/__fakes__/in-memory.js'
 import { MappingShapeError } from './errors.js'
 import {
+  assertKnownStatuses,
   confirmationFromProposal,
   effectiveMapping,
   type SheetFacts,
@@ -203,5 +204,56 @@ describe('effectiveMapping', () => {
       columns: [],
       source: 'proposed',
     })
+  })
+})
+
+describe('review of the PR: bodies the database would refuse (M2)', () => {
+  const proposal = proposeMapping(BATCH_CLEAN_WORKBOOK, RULES_FOR_PROVIDER_A)
+  const facts = BATCH_CLEAN_WORKBOOK.sheets.map((s, i) => ({
+    sheetId: `sheet-${i}`,
+    sheetName: s.name,
+    headers: s.headers,
+  }))
+
+  it('rejects a source column mapped twice, even to different target fields', () => {
+    const body = confirmationFromProposal(facts, proposal)
+    const app = body.sheets.find((s) => s.sheetId === facts.find((f) => f.sheetName === 'APP')?.sheetId)
+    app?.columns.push({ sourceColumn: 'ID', targetField: 'orderId' })
+
+    const error = (() => {
+      try {
+        validateMappingConfirmation(body, facts)
+      } catch (e) {
+        return e
+      }
+    })()
+
+    expect(error).toBeInstanceOf(MappingShapeError)
+    expect((error as MappingShapeError).details).toMatchObject({ sheetName: 'APP', sourceColumn: 'ID' })
+  })
+
+  it('rejects a status that is not in the catalog, naming the sheet and the statusId', () => {
+    const body = confirmationFromProposal(facts, proposal)
+    const app = body.sheets.find((s) => s.sheetId === facts.find((f) => f.sheetName === 'APP')?.sheetId)
+    if (app) app.statusId = 999
+    const validated = validateMappingConfirmation(body, facts)
+
+    expect(() => assertKnownStatuses(validated, RULES_FOR_PROVIDER_A.statuses)).toThrow(MappingShapeError)
+    try {
+      assertKnownStatuses(validated, RULES_FOR_PROVIDER_A.statuses)
+    } catch (e) {
+      expect((e as MappingShapeError).details).toEqual({
+        sheetId: app?.sheetId,
+        sheetName: 'APP',
+        field: 'statusId',
+        statusId: 999,
+      })
+    }
+    expect(() =>
+      assertKnownStatuses(
+        validateMappingConfirmation(confirmationFromProposal(facts, proposal), facts),
+        RULES_FOR_PROVIDER_A.statuses,
+      ),
+    ).not.toThrow()
   })
 })

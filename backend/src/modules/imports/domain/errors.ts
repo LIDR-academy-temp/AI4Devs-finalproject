@@ -171,6 +171,7 @@ export interface MappingShapeDetails {
   sourceColumn?: string
   targetField?: string
   field?: string
+  statusId?: number
 }
 
 /** The body of the mapping confirmation does not fit the import (spec: import, D6). */

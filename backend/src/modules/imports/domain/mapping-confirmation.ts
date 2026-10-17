@@ -2,6 +2,7 @@
 // when it exists, the proposal otherwise). Design D6.
 import type { Cycle, MappingConfirmation, SheetKind, SheetMappingColumn, SheetMappingInput } from '@recon/shared'
 import type { MappingProposal, SheetMappingProposal } from '../../matching/domain/propose-mapping.js'
+import type { StatusCatalogEntry } from '../../matching/domain/rules.js'
 import { MappingShapeError } from './errors.js'
 
 /** What the import knows of a sheet, for validation: its id, name and header. */
@@ -64,7 +65,16 @@ function validateSheet(sheet: SheetMappingInput, facts: SheetFacts): ValidatedSh
   const at = { sheetId: facts.sheetId, sheetName: facts.sheetName }
   const headers = new Set(facts.headers)
   const targets = new Set<string>()
+  const sources = new Set<string>()
   for (const column of sheet.columns) {
+    // One map per (sheet, source column): the primary key of ImportSheetColumnMap.
+    if (sources.has(column.sourceColumn)) {
+      throw new MappingShapeError(
+        `Column "${column.sourceColumn}" is mapped more than once in sheet "${facts.sheetName}"`,
+        { ...at, sourceColumn: column.sourceColumn },
+      )
+    }
+    sources.add(column.sourceColumn)
     if (!headers.has(column.sourceColumn)) {
       throw new MappingShapeError(
         `Column "${column.sourceColumn}" is not in the header of sheet "${facts.sheetName}"`,
@@ -120,6 +130,24 @@ function validateSheet(sheet: SheetMappingInput, facts: SheetFacts): ValidatedSh
     }
   }
   return { ...facts, kind: sheet.kind, cycle: sheet.cycle, statusId: sheet.statusId, columns: sheet.columns }
+}
+
+/** Every fixed status must exist in the catalog (the foreign key of ImportSheet.statusId): otherwise a 400, not a 500. */
+export function assertKnownStatuses(
+  sheets: ValidatedSheetMapping[],
+  statuses: readonly Pick<StatusCatalogEntry, 'statusId'>[],
+): void {
+  const known = new Set(statuses.map((s) => s.statusId))
+  for (const sheet of sheets) {
+    if (sheet.statusId !== null && !known.has(sheet.statusId)) {
+      throw new MappingShapeError(`Status ${sheet.statusId} does not exist (sheet "${sheet.sheetName}")`, {
+        sheetId: sheet.sheetId,
+        sheetName: sheet.sheetName,
+        field: 'statusId',
+        statusId: sheet.statusId,
+      })
+    }
+  }
 }
 
 /** A confirmation body that accepts a proposal as it stands (tests, Bruno). Throws when a sheet has no proposal. */

@@ -893,3 +893,32 @@ describe('writes that read the import before a concurrent request commits (spec:
     expect(await ctx.prisma.auditLog.count({ where: { action: 'import.cancel', entityId: detail.importId } })).toBe(1)
   })
 })
+
+describe('PUT mapping bodies the database would refuse (review of the PR, M2)', () => {
+  it('400 validation_error, not 500, for a source column mapped twice and for an unknown status; nothing is written', async () => {
+    const detail = await uploaded(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
+    const appId = sheetNamed(detail, 'APP').sheetId
+    const twice = confirmProposal(detail)
+    twice.sheets.find((s) => s.sheetId === appId)?.columns.push({ sourceColumn: 'ID', targetField: 'orderId' })
+    const unknownStatus = confirmProposal(detail)
+    const app = unknownStatus.sheets.find((s) => s.sheetId === appId)
+    if (app) app.statusId = 999
+
+    const repeated = await call('PUT', `/imports/${detail.importId}/mapping`, twice)
+    const status = await call('PUT', `/imports/${detail.importId}/mapping`, unknownStatus)
+
+    expect(repeated.statusCode, repeated.body).toBe(400)
+    expect(repeated.json()).toMatchObject({
+      code: 'validation_error',
+      details: { sheetName: 'APP', sourceColumn: 'ID' },
+    })
+    expect(status.statusCode, status.body).toBe(400)
+    expect(status.json()).toMatchObject({
+      code: 'validation_error',
+      details: { sheetName: 'APP', field: 'statusId', statusId: 999 },
+    })
+    const after = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
+    expect(after.status).toBe('uploaded')
+    expect(after.files[0]?.sheets.every((s) => !s.mappingConfirmed)).toBe(true)
+  })
+})

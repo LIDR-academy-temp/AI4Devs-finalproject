@@ -195,6 +195,31 @@ describe('PUT /api/v1/imports/{importId}/mapping', () => {
     expect(omitted.json()).toMatchObject({ code: 'validation_error', details: { sheetId: body.sheets[0]?.sheetId } })
   })
 
+  it('answers 400 validation_error for a source column mapped twice and for a status that does not exist', async () => {
+    const detail = await uploadBatchClean()
+    const appId = appSheet(detail).sheetId
+    const twice = confirmation(detail)
+    twice.sheets.find((s) => s.sheetId === appId)?.columns.push({ sourceColumn: 'ID', targetField: 'orderId' })
+    const unknownStatus = confirmation(detail)
+    const app = unknownStatus.sheets.find((s) => s.sheetId === appId)
+    if (app) app.statusId = 999
+
+    const repeated = await request('PUT', `/imports/${detail.importId}/mapping`, { body: twice })
+    const status = await request('PUT', `/imports/${detail.importId}/mapping`, { body: unknownStatus })
+
+    expect(repeated.statusCode).toBe(400)
+    expect(repeated.json()).toMatchObject({
+      code: 'validation_error',
+      details: { sheetName: 'APP', sourceColumn: 'ID' },
+    })
+    expect(status.statusCode).toBe(400)
+    expect(status.json()).toMatchObject({
+      code: 'validation_error',
+      details: { sheetName: 'APP', field: 'statusId', statusId: 999 },
+    })
+    expect((await request('GET', `/imports/${detail.importId}`)).json().status).toBe('uploaded')
+  })
+
   it('answers 404 not_found for an unknown import (an import outside the scope reads the same: service tests)', async () => {
     const detail = await uploadBatchClean()
 
