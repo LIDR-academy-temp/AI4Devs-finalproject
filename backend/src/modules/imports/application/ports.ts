@@ -1,6 +1,6 @@
 // Ports of the import application layer (design D11). Adapters live in ../infrastructure; the in-memory doubles in ./__fakes__.
 import type { Readable } from 'node:stream'
-import type { Cycle, ImportStatus, SheetKind } from '@recon/shared'
+import type { Cycle, ImportStatus, MatchResult, SheetKind } from '@recon/shared'
 import type { Scope } from '../../catalog/domain/scope.js'
 import type { WorkbookDescription } from '../domain/workbook.js'
 
@@ -93,6 +93,51 @@ export interface ImportRepository {
   addFiles(importId: string, files: NewImportFile[]): Promise<void>
   /** Removes the file with its sheets and their column maps. */
   removeFile(importId: string, fileId: string): Promise<void>
+}
+
+/** One row of a transactions sheet as the analysis persists it: every column of ImportRow (design D5). */
+export interface NewImportRow {
+  sheetId: string
+  /** Row number in the sheet (header = 1), so the analyst can find it in Excel. */
+  rowNo: number
+  transactionIdRaw: string | null
+  transactionId: bigint | null
+  gatewayId: number | null
+  statusRaw: string | null
+  statusId: number | null
+  cycle: Cycle
+  /** Decimal string with four decimals ("16.2200"), as DECIMAL(19,4) and the API carry it; never a JS number. */
+  amount: string | null
+  currency: string | null
+  txnDate: Date | null
+  feeTypeRaw: string | null
+  /** The whole original row as a JSON object `header → text`, serialized. */
+  rawData: string
+  ignore: boolean
+  matchResult: MatchResult
+  /** Reason, warnings, candidates… serialized as JSON; null when there is nothing to say. */
+  detailJson: string | null
+}
+
+export interface AnalysisCounters {
+  rowsTotal: number
+  rowsMatched: number
+  rowsUnmatched: number
+}
+
+/** Persistence of the analysis rows (design D1). */
+export interface ImportRowRepository {
+  /**
+   * Persists the analysis atomically: claims the import (status `mapped` with the `updatedAt` the caller read,
+   * otherwise ImportNotMappedError), inserts the rows in statements under the SQL Server parameter limit and
+   * closes with status `analyzed`, `analyzedAt` and the counters. When any step fails nothing is written.
+   */
+  persistAnalysis(
+    importId: string,
+    expectedUpdatedAt: Date,
+    rows: NewImportRow[],
+    counters: AnalysisCounters,
+  ): Promise<void>
 }
 
 /** A part received and written to the temporary area, hashed and measured on the way (design D5). */

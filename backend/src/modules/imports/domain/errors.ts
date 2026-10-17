@@ -81,6 +81,24 @@ export class MalformedMultipartError extends DomainError {
   }
 }
 
+/**
+ * The analysis needs the import in `mapped` (spec "Máquina de estados del import"). Also raised when the
+ * import changed between reading it and claiming it for the analysis (design D1): the client retries.
+ */
+export class ImportNotMappedError extends DomainError {
+  readonly status = 409
+  readonly code = 'import_not_mapped'
+
+  constructor(status: string, changed = false) {
+    super(
+      changed
+        ? `Import changed while the analysis was running; retry (status ${status})`
+        : `Import must be in status mapped to analyze (status ${status})`,
+      { status },
+    )
+  }
+}
+
 /** Files can only be added or removed while the import is `uploaded` or `mapped`. */
 export class ImportNotEditableError extends DomainError {
   readonly status = 409
