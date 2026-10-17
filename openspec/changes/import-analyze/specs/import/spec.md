@@ -458,6 +458,14 @@ Tras el análisis, `channels` SHALL listar cada canal de las transacciones asoci
 - **WHEN** se consulta `channels`
 - **THEN** RAM-01 (1001) aparece con `assignment = "assigned_to_other_account"`, `otherAccount.name = "ProviderA-USD"`, `providerId = 101` y `rowCount = 1`
 
+### Requirement: Cuenta principal de otro merchant en el aviso de canales
+Cuando la cuenta principal de un canal de `channels` es de un merchant fuera del alcance de quien consulta, `otherAccount` SHALL ser `{ accountId: null, name: null, outOfScope: true }` y `assignment` SHALL conservarse (README §1.2: un merchant no ve los proveedores de otro). El cruce no cambia.
+
+#### Scenario: Cuenta principal de otro merchant
+- **GIVEN** un canal del gateway compartido cuya cuenta principal es de otro merchant, y un import analizado de `ProviderA-USD` con una fila asociada a una transacción de ese canal
+- **WHEN** consulta el detalle un usuario cuyo alcance no incluye ese merchant
+- **THEN** el canal aparece con `assignment = "assigned_to_other_account"` y `otherAccount = { accountId: null, name: null, outOfScope: true }`; un usuario con ambos merchants en su alcance ve `otherAccount = { accountId, name }`
+
 ### Requirement: Fees por batch prellenados desde la hoja de fees
 En todo import analizado, `batchFees` SHALL derivarse de las filas de las hojas `batch_fees` con el pareo confirmado (`feeType`, `amount`, `currency`): cada fila con tipo o importe produce `{ feeTypeId, code, title, amount, currency, source: "file", warning? }`, con el tipo resuelto por título contra `FeeType` sin distinguir mayúsculas ni espacios. Tipo desconocido → `feeTypeId` y `code` nulos, el texto leído como `title` y `warning`. Antes de analizar, `batchFees` SHALL ser `null`.
 
@@ -502,6 +510,14 @@ En todo import analizado, `analysis` SHALL traer `rows` (`total`, `matched`, `un
 - **WHEN** se piden las filas de un import en `uploaded` o `mapped`
 - **THEN** recibe `200` con `items = []` y `total = 0`
 - **AND** `viewer` sobre un import de `ProviderC-Alt` o sobre un UUID inexistente recibe `404 not_found` con el mismo cuerpo
+
+### Requirement: Transacción de otro merchant en las filas
+Cuando la transacción asociada a una fila es de un merchant fuera del alcance de quien consulta, `GET rows` SHALL devolver `transaction = null` y añadir a `warnings` el aviso `out_of_scope_transaction`; `matchResult` y `transactionId` no cambian. Ese aviso depende de quien lee y SHALL NOT contarse en `analysis.warnings`.
+
+#### Scenario: Transacción de otro merchant
+- **GIVEN** un import analizado con una fila `matched` a una transacción de otro merchant en un gateway compartido
+- **WHEN** un usuario sin ese merchant en su alcance pide `GET /imports/{id}/rows`
+- **THEN** la fila conserva `matchResult = "matched"` y `transactionId`, `transaction` es `null` y `warnings` contiene `out_of_scope_transaction`; ningún dato de la transacción (canal, importe, estado) aparece en la respuesta, y `analysis` es el mismo que ve un usuario con ambos merchants
 
 ### Requirement: Resolución de una fila ambigua
 `PATCH /api/v1/imports/{id}/rows/{sheetId}/{rowNo}` con cuerpo `{ gatewayId }` SHALL exigir `settlement.process` y el import en `analyzed`. Si la fila es `ambiguous` y `gatewayId` es una de sus candidatas, SHALL fijar `transactionId` y `gatewayId`, pasarla a `matched`, incrementar `rowsMatched`, registrar en `AuditLog` (`import.row.resolve_gateway`, `entityType = "ImportRow"`, `entityId = "<sheetId>:<rowNo>"`, detalle con import, gateway y candidatas) y responder `200` con la fila.

@@ -41,6 +41,14 @@ export const WarningCode = z.enum([
 ])
 export type WarningCode = z.infer<typeof WarningCode>
 
+/**
+ * Warnings of a row as `GET rows` returns it: the persisted ones plus `out_of_scope_transaction`, added at read time
+ * when the matched transaction belongs to a merchant outside the caller's scope (spec: import, D11). It depends on
+ * who reads, so `analysis.warnings` does not count it.
+ */
+export const RowWarningCode = z.enum([...WarningCode.options, 'out_of_scope_transaction'])
+export type RowWarningCode = z.infer<typeof RowWarningCode>
+
 /** Why a row is `unmatched` or `ignored` (README §3.2 ImportRow; spec: import, D4, D5). */
 export const RowReason = z.enum(['no_match', 'id_format', 'lossy_numeric_id', 'empty_id', 'no_gateways'])
 export type RowReason = z.infer<typeof RowReason>

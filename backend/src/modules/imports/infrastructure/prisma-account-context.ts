@@ -18,6 +18,15 @@ function distinctGateways(channels: { gatewayId: number; gateway: { idFormat: st
   return [...gateways.values()].sort((a, b) => a.gatewayId - b.gatewayId)
 }
 
+function primaryOf(
+  rows: { isPrimary: boolean; account: { accountId: string; name: string; provider: { merchantId: number } } }[],
+): ChannelFact['primaryAccount'] {
+  const primary = rows.find((r) => r.isPrimary)?.account
+  return primary === undefined
+    ? null
+    : { accountId: primary.accountId, name: primary.name, merchantId: primary.provider.merchantId }
+}
+
 export class PrismaAccountContext implements AccountContext {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -48,7 +57,11 @@ export class PrismaAccountContext implements AccountContext {
         providerId: true,
         accountChannels: {
           where: { OR: [{ isPrimary: true }, { accountId }] },
-          select: { accountId: true, isPrimary: true, account: { select: { accountId: true, name: true } } },
+          select: {
+            accountId: true,
+            isPrimary: true,
+            account: { select: { accountId: true, name: true, provider: { select: { merchantId: true } } } },
+          },
         },
       },
     })
@@ -57,7 +70,7 @@ export class PrismaAccountContext implements AccountContext {
       name: c.name,
       gatewayId: c.gatewayId,
       providerId: c.providerId,
-      primaryAccount: c.accountChannels.find((ac) => ac.isPrimary)?.account ?? null,
+      primaryAccount: primaryOf(c.accountChannels),
       assignedToThisAccount: c.accountChannels.some((ac) => ac.accountId === accountId),
     }))
   }

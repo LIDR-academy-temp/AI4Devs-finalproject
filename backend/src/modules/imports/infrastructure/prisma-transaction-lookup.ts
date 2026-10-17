@@ -20,6 +20,7 @@ interface RawTransactionRow {
   sourceTransactionId: unknown
   channelId: unknown
   providerId: unknown
+  merchantId: unknown
   statusId: unknown
   amount: unknown
   transactionDate: unknown
@@ -37,6 +38,7 @@ function toRef(row: RawTransactionRow): TransactionRef {
     channelId: Number(row.channelId),
     channelName: String(row.channelName),
     providerId: Number(row.providerId),
+    merchantId: Number(row.merchantId),
     statusId: Number(row.statusId),
     statusName: String(row.statusName),
     amount: toMoney(new Prisma.Decimal(String(row.amount))),
@@ -54,7 +56,7 @@ export class PrismaTransactionLookup implements TransactionLookup {
       const batch = storable.slice(offset, offset + LOOKUP_PAIRS_PER_QUERY)
       const json = JSON.stringify(batch.map((p) => ({ g: p.gatewayId, s: p.sourceTransactionId })))
       const rows = await this.prisma.$queryRaw<RawTransactionRow[]>`
-        SELECT t.[transactionId], t.[gatewayId], t.[sourceTransactionId], t.[channelId], t.[providerId], t.[statusId],
+        SELECT t.[transactionId], t.[gatewayId], t.[sourceTransactionId], t.[channelId], t.[providerId], t.[merchantId], t.[statusId],
                t.[amount], t.[transactionDate], g.[name] AS gatewayName, c.[name] AS channelName, s.[name] AS statusName
         FROM OPENJSON(${json}) WITH ([gatewayId] INT '$.g', [sourceTransactionId] VARCHAR(36) '$.s') p
         JOIN [Transaction] t ON t.[gatewayId] = p.[gatewayId] AND t.[sourceTransactionId] = p.[sourceTransactionId]

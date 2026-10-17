@@ -1802,18 +1802,40 @@ paths:
                             - assigned_to_other_account
                         otherAccount:
                           nullable: true
-                          type: object
-                          properties:
-                            accountId:
-                              type: string
-                              format: uuid
-                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                            name:
-                              type: string
-                          required:
-                            - accountId
-                            - name
-                          additionalProperties: false
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
                         note:
                           nullable: true
                           type: string
@@ -2644,18 +2666,40 @@ paths:
                             - assigned_to_other_account
                         otherAccount:
                           nullable: true
-                          type: object
-                          properties:
-                            accountId:
-                              type: string
-                              format: uuid
-                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                            name:
-                              type: string
-                          required:
-                            - accountId
-                            - name
-                          additionalProperties: false
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
                         note:
                           nullable: true
                           type: string
@@ -3309,18 +3353,40 @@ paths:
                             - assigned_to_other_account
                         otherAccount:
                           nullable: true
-                          type: object
-                          properties:
-                            accountId:
-                              type: string
-                              format: uuid
-                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                            name:
-                              type: string
-                          required:
-                            - accountId
-                            - name
-                          additionalProperties: false
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
                         note:
                           nullable: true
                           type: string
@@ -3951,18 +4017,40 @@ paths:
                             - assigned_to_other_account
                         otherAccount:
                           nullable: true
-                          type: object
-                          properties:
-                            accountId:
-                              type: string
-                              format: uuid
-                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                            name:
-                              type: string
-                          required:
-                            - accountId
-                            - name
-                          additionalProperties: false
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
                         note:
                           nullable: true
                           type: string
@@ -4629,18 +4717,40 @@ paths:
                             - assigned_to_other_account
                         otherAccount:
                           nullable: true
-                          type: object
-                          properties:
-                            accountId:
-                              type: string
-                              format: uuid
-                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                            name:
-                              type: string
-                          required:
-                            - accountId
-                            - name
-                          additionalProperties: false
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
                         note:
                           nullable: true
                           type: string
@@ -5275,18 +5385,40 @@ paths:
                             - assigned_to_other_account
                         otherAccount:
                           nullable: true
-                          type: object
-                          properties:
-                            accountId:
-                              type: string
-                              format: uuid
-                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                            name:
-                              type: string
-                          required:
-                            - accountId
-                            - name
-                          additionalProperties: false
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
                         note:
                           nullable: true
                           type: string
@@ -5583,6 +5715,7 @@ paths:
                               - status_unresolved
                               - status_differs_from_sheet
                               - cycle_mismatch
+                              - out_of_scope_transaction
                         candidates:
                           type: array
                           items:
@@ -5889,6 +6022,7 @@ paths:
                         - status_unresolved
                         - status_differs_from_sheet
                         - cycle_mismatch
+                        - out_of_scope_transaction
                   candidates:
                     type: array
                     items:
@@ -6553,18 +6687,40 @@ paths:
                             - assigned_to_other_account
                         otherAccount:
                           nullable: true
-                          type: object
-                          properties:
-                            accountId:
-                              type: string
-                              format: uuid
-                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
-                            name:
-                              type: string
-                          required:
-                            - accountId
-                            - name
-                          additionalProperties: false
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
                         note:
                           nullable: true
                           type: string

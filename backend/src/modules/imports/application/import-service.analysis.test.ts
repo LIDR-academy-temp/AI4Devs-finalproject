@@ -535,6 +535,7 @@ describe('ambiguous rows', () => {
       channelId: 9001,
       channelName: 'RAM-T1',
       providerId: 101,
+      merchantId: 1,
       statusId: 2,
       statusName: 'Successful',
       amount: '16.2200',

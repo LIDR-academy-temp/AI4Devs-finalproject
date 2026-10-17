@@ -39,6 +39,8 @@ const GATEWAY_TEST = 9001
 const CHANNEL_TEST = 9001
 const NO_CHANNELS_ACCOUNT_ID = 'a0000000-0000-4000-8000-00000000ee01'
 const NO_CHANNELS_ACCOUNT_NAME = 'ZZ-NoChannels'
+const OTHER_MERCHANT_CHANNEL = 9002
+const OTHER_MERCHANT_SOURCE_ID = '919191919191919'
 const ROW_CAP = 100_000
 const BENCH = process.env.RECON_BENCH === '1'
 
@@ -210,11 +212,20 @@ async function removeNoChannelsAccount(): Promise<void> {
   await prisma.account.delete({ where: { accountId: account.accountId } })
 }
 
+/** The channel 9002 fixture of another merchant on gateway 1 (its transaction, association and channel). */
+async function removeOtherMerchantFixture(): Promise<void> {
+  const { prisma } = ctx
+  await prisma.transaction.deleteMany({ where: { channelId: OTHER_MERCHANT_CHANNEL } })
+  await prisma.accountChannel.deleteMany({ where: { channelId: OTHER_MERCHANT_CHANNEL } })
+  await prisma.channel.deleteMany({ where: { channelId: OTHER_MERCHANT_CHANNEL } })
+}
+
 /** Safety net at file level, for runs interrupted before a group could clean up; every group removes its own fixtures. */
 async function removeTestFixtures(): Promise<void> {
   await removeImports([...createdImportIds])
   await removeNoChannelsAccount()
   await removeGatewayFixture()
+  await removeOtherMerchantFixture()
 }
 
 beforeAll(async () => {
@@ -920,5 +931,107 @@ describe('PUT mapping bodies the database would refuse (review of the PR, M2)', 
     const after = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
     expect(after.status).toBe('uploaded')
     expect(after.files[0]?.sheets.every((s) => !s.mappingConfirmed)).toBe(true)
+  })
+})
+
+describe('a transaction of another merchant on a shared gateway (review of the PR, M3; temporary channel 9002)', () => {
+  // Gateway 1 is shared: channel 9002 belongs to provider 201 (merchant 2), primary account ProviderC-USD. The import
+  // of ProviderA-USD (merchant 1) cross-matches its one row with the merchant-2 transaction: the cross-match does not
+  // change; what a caller outside merchant 2 reads does.
+  const fixtureImports: string[] = []
+
+  beforeAll(async () => {
+    const { prisma } = ctx
+    await prisma.channel.create({
+      data: {
+        channelId: OTHER_MERCHANT_CHANNEL,
+        gatewayId: 1,
+        providerId: 201,
+        name: 'RAM-X2',
+        settlementTermDays: 7,
+        rollingReservePct: '0.000000',
+        rollingReserveDays: 0,
+      },
+    })
+    await prisma.accountChannel.create({
+      data: {
+        accountId: accountIds['ProviderC-USD'] as string,
+        channelId: OTHER_MERCHANT_CHANNEL,
+        isPrimary: true,
+        assignedAt: new Date(),
+        assignedByUserId: analystId,
+      },
+    })
+    await prisma.transaction.create({
+      data: {
+        sourceTransactionId: OTHER_MERCHANT_SOURCE_ID,
+        gatewayId: 1,
+        merchantId: 2,
+        providerId: 201,
+        channelId: OTHER_MERCHANT_CHANNEL,
+        amount: '42.0000',
+        currency: 'USD',
+        statusId: 2,
+        transactionDate: new Date('2026-10-01T00:00:00.000Z'),
+        appliedReservePct: '0.000000',
+      },
+    })
+  })
+
+  afterAll(async () => {
+    await removeImports(fixtureImports)
+    await removeOtherMerchantFixture()
+  })
+
+  it('the analyst of both merchants sees the other account and the transaction; the viewer of merchant 1 sees neither', async () => {
+    const bytes = buildXlsx({
+      sheets: [
+        {
+          name: 'APP',
+          rows: [
+            ['ID', 'Amount', 'Currency'],
+            [OTHER_MERCHANT_SOURCE_ID, { v: '42' }, 'USD'],
+          ],
+        },
+      ],
+    })
+    const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [{ name: 'other-merchant.xlsx', bytes }])
+    fixtureImports.push(detail.importId)
+    expect(detail.analysis?.rows).toMatchObject({ total: 1, matched: 1 })
+
+    // Analyst, scope merchants 1 and 2: everything as before.
+    expect(detail.channels).toEqual([
+      expect.objectContaining({
+        channelId: OTHER_MERCHANT_CHANNEL,
+        assignment: 'assigned_to_other_account',
+        otherAccount: { accountId: accountIds['ProviderC-USD'], name: 'ProviderC-USD' },
+      }),
+    ])
+    const own = await rows(detail.importId)
+    expect(own.items[0]).toMatchObject({
+      matchResult: 'matched',
+      transaction: { channelName: 'RAM-X2', amount: '42.0000' },
+    })
+    expect(own.items[0]?.warnings).not.toContain('out_of_scope_transaction')
+
+    // Viewer, scope merchant 1 only: same assignment, the other account and the transaction hidden.
+    const viewerDetail = await call('GET', `/imports/${detail.importId}`, undefined, 'viewer')
+    expect(viewerDetail.statusCode).toBe(200)
+    const seen = ImportDetail.parse(viewerDetail.json())
+    expect(seen.channels).toEqual([
+      expect.objectContaining({
+        channelId: OTHER_MERCHANT_CHANNEL,
+        assignment: 'assigned_to_other_account',
+        otherAccount: { accountId: null, name: null, outOfScope: true },
+      }),
+    ])
+    const viewerRows = await call('GET', `/imports/${detail.importId}/rows`, undefined, 'viewer')
+    expect(viewerRows.statusCode).toBe(200)
+    const item = ImportRowsPage.parse(viewerRows.json()).items[0]
+    expect(item).toMatchObject({ matchResult: 'matched', transaction: null })
+    expect(item?.transactionId).not.toBeNull()
+    expect(item?.warnings).toContain('out_of_scope_transaction')
+    expect(JSON.stringify(viewerRows.json())).not.toContain('RAM-X2')
+    expect(seen.analysis).toEqual(detail.analysis)
   })
 })

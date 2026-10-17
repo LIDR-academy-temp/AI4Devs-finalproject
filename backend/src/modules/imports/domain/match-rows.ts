@@ -12,6 +12,8 @@ export interface TransactionRef {
   channelId: number
   channelName: string
   providerId: number
+  /** Whose transaction it is: what a caller outside that merchant may not see (spec: import, D11). */
+  merchantId: number
   statusId: number
   statusName: string
   amount: string

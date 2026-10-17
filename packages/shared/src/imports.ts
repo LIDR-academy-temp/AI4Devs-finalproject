@@ -10,6 +10,7 @@ import {
   Money,
   ReadinessField,
   RowReason,
+  RowWarningCode,
   SheetKind,
   TargetField,
   WarningCode,
@@ -169,6 +170,14 @@ export const AnalysisSummary = z.object({
 })
 export type AnalysisSummary = z.infer<typeof AnalysisSummary>
 
+/** The primary account of a channel when its merchant is outside the caller's scope: only that it exists (spec: import, D9). */
+export const HiddenAccountRef = z.object({
+  accountId: z.null(),
+  name: z.null(),
+  outOfScope: z.literal(true),
+})
+export type HiddenAccountRef = z.infer<typeof HiddenAccountRef>
+
 /** README §4.2 `channels`: a channel of the matched transactions and its assignment (spec: import, D9). */
 export const ChannelNotice = z.object({
   channelId: z.number().int(),
@@ -177,8 +186,8 @@ export const ChannelNotice = z.object({
   providerId: z.number().int(),
   rowCount: nonNegativeInt,
   assignment: ChannelAssignment,
-  /** The current primary account when `assignment = assigned_to_other_account`. */
-  otherAccount: AccountRef.nullable(),
+  /** The current primary account when `assignment = assigned_to_other_account`; hidden when outside the scope. */
+  otherAccount: z.union([AccountRef, HiddenAccountRef]).nullable(),
   note: z.string().nullable(),
 })
 export type ChannelNotice = z.infer<typeof ChannelNotice>
@@ -256,9 +265,10 @@ export const ImportRowItem = z.object({
   currency: z.string().nullable(),
   excludeAmount: z.boolean(),
   ignore: z.boolean(),
-  warnings: z.array(WarningCode),
+  warnings: z.array(RowWarningCode),
   /** Empty unless the row is ambiguous. */
   candidates: z.array(RowCandidate),
+  /** null when unmatched, and when the transaction belongs to a merchant outside the caller's scope. */
   transaction: ImportRowTransaction.nullable(),
   /** The whole original row as `header → text`. */
   rawData: z.record(z.string(), z.string()),

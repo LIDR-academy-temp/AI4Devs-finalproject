@@ -39,6 +39,7 @@ export function worldTransactions(): TransactionRef[] {
       channelId: t.channelId,
       channelName: t.channel,
       providerId: t.providerId,
+      merchantId: t.merchantId,
       statusId: STATUS[t.status],
       statusName: t.status,
       amount: t.amount.toFixed(4),
@@ -109,7 +110,11 @@ export class InMemoryAccountContext implements AccountContext {
   async channelAssignments(accountId: string, channelIds: number[]): Promise<ChannelFact[]> {
     const wanted = new Set(channelIds)
     return CHANNELS.filter((c) => wanted.has(c.channelId)).map((c) => {
-      const primary = c.account === null ? null : { accountId: ACCOUNT_IDS[c.account as AccountName], name: c.account }
+      const account = c.account === null ? undefined : IMPORT_ACCOUNTS.find((a) => a.name === c.account)
+      const primary =
+        account === undefined
+          ? null
+          : { accountId: account.accountId, name: account.name, merchantId: account.merchantId }
       return {
         channelId: c.channelId,
         name: c.name,

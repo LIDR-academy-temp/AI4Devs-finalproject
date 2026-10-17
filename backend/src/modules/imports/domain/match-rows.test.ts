@@ -11,6 +11,7 @@ function transaction(overrides: Partial<TransactionRef>): TransactionRef {
     channelId: 1001,
     channelName: 'RAM-01',
     providerId: 101,
+    merchantId: 1,
     statusId: 2,
     statusName: 'Successful',
     amount: '16.2200',

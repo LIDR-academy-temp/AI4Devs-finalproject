@@ -1286,11 +1286,18 @@ export interface paths {
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
-                                otherAccount: {
+                                otherAccount: ({
                                     /** Format: uuid */
                                     accountId: string;
                                     name: string;
-                                } | null;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
                                 note: string | null;
                             }[] | null;
                             batchFees: {
@@ -1553,11 +1560,18 @@ export interface paths {
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
-                                otherAccount: {
+                                otherAccount: ({
                                     /** Format: uuid */
                                     accountId: string;
                                     name: string;
-                                } | null;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
                                 note: string | null;
                             }[] | null;
                             batchFees: {
@@ -1812,11 +1826,18 @@ export interface paths {
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
-                                otherAccount: {
+                                otherAccount: ({
                                     /** Format: uuid */
                                     accountId: string;
                                     name: string;
-                                } | null;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
                                 note: string | null;
                             }[] | null;
                             batchFees: {
@@ -2053,11 +2074,18 @@ export interface paths {
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
-                                otherAccount: {
+                                otherAccount: ({
                                     /** Format: uuid */
                                     accountId: string;
                                     name: string;
-                                } | null;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
                                 note: string | null;
                             }[] | null;
                             batchFees: {
@@ -2291,11 +2319,18 @@ export interface paths {
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
-                                otherAccount: {
+                                otherAccount: ({
                                     /** Format: uuid */
                                     accountId: string;
                                     name: string;
-                                } | null;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
                                 note: string | null;
                             }[] | null;
                             batchFees: {
@@ -2539,11 +2574,18 @@ export interface paths {
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
-                                otherAccount: {
+                                otherAccount: ({
                                     /** Format: uuid */
                                     accountId: string;
                                     name: string;
-                                } | null;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
                                 note: string | null;
                             }[] | null;
                             batchFees: {
@@ -2687,7 +2729,7 @@ export interface paths {
                                 currency: string | null;
                                 excludeAmount: boolean;
                                 ignore: boolean;
-                                warnings: ("negative_amount" | "non_usd_currency" | "amount_unparsed" | "currency_invalid" | "id_length" | "lossy_numeric_id" | "status_unresolved" | "status_differs_from_sheet" | "cycle_mismatch")[];
+                                warnings: ("negative_amount" | "non_usd_currency" | "amount_unparsed" | "currency_invalid" | "id_length" | "lossy_numeric_id" | "status_unresolved" | "status_differs_from_sheet" | "cycle_mismatch" | "out_of_scope_transaction")[];
                                 candidates: {
                                     gatewayId: number;
                                     gatewayName: string;
@@ -2830,7 +2872,7 @@ export interface paths {
                             currency: string | null;
                             excludeAmount: boolean;
                             ignore: boolean;
-                            warnings: ("negative_amount" | "non_usd_currency" | "amount_unparsed" | "currency_invalid" | "id_length" | "lossy_numeric_id" | "status_unresolved" | "status_differs_from_sheet" | "cycle_mismatch")[];
+                            warnings: ("negative_amount" | "non_usd_currency" | "amount_unparsed" | "currency_invalid" | "id_length" | "lossy_numeric_id" | "status_unresolved" | "status_differs_from_sheet" | "cycle_mismatch" | "out_of_scope_transaction")[];
                             candidates: {
                                 gatewayId: number;
                                 gatewayName: string;
@@ -3077,11 +3119,18 @@ export interface paths {
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
-                                otherAccount: {
+                                otherAccount: ({
                                     /** Format: uuid */
                                     accountId: string;
                                     name: string;
-                                } | null;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
                                 note: string | null;
                             }[] | null;
                             batchFees: {

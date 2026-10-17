@@ -15,6 +15,7 @@ import type {
   MappingConfirmation,
   RowCandidate,
   RowReason,
+  RowWarningCode,
   SheetMapping,
   WarningCode,
 } from '@recon/shared'
@@ -304,7 +305,7 @@ export class ImportService {
     const rules = await this.deps.rules.rulesFor(record.matchingRuleSetId)
     const page = await this.deps.rows.page(importId, query)
     return {
-      items: page.items.map((r) => toRowItem(r, rules)),
+      items: page.items.map((r) => toRowItem(r, rules, scope)),
       page: query.page,
       pageSize: query.pageSize,
       total: page.total,
@@ -345,7 +346,7 @@ export class ImportService {
     const after = await this.deps.rows.find(importId, sheetId, rowNo)
     if (!after) throw new NotFoundError('Row')
     const rules = await this.deps.rules.rulesFor(record.matchingRuleSetId)
-    return toRowItem(after, rules)
+    return toRowItem(after, rules, scope)
   }
 
   /** README HU1 CA8, HU2 CA8; spec: import, D13: everything is kept as evidence. */
@@ -542,16 +543,16 @@ export class ImportService {
       rules.statuses,
     )
     const analysis = ANALYZED_STATUSES.has(record.status) ? await this.deps.rows.summary(importId) : null
-    const channels = analysis === null ? null : await this.channelsOf(record)
+    const channels = analysis === null ? null : await this.channelsOf(record, scope)
     const batchFees = analysis === null ? null : this.batchFeesOf(loaded, await this.deps.feeTypes.listAll())
     return { ...toSummary(record), files, readiness, analysis, channels, batchFees }
   }
 
   /** Spec "Aviso de canales" (design D9). */
-  private async channelsOf(record: ImportRecord): Promise<ChannelNotice[]> {
+  private async channelsOf(record: ImportRecord, scope: Scope): Promise<ChannelNotice[]> {
     const counts = await this.deps.rows.channelRowCounts(record.importId)
     const facts = await this.deps.accounts.channelAssignments(record.accountId, [...counts.keys()])
-    return channelNotices(record.accountId, counts, facts)
+    return channelNotices(record.accountId, counts, facts, scope)
   }
 
   /** Spec "Fees por batch prellenados…" (design D10): the batch_fees sheets with a confirmed mapping, re-read from the file. */
@@ -647,9 +648,18 @@ function readinessSheet(l: LoadedSheet, rules: MatchingRules): ReadinessSheet {
   }
 }
 
-function toRowItem(row: StoredImportRow, rules: Pick<MatchingRules, 'statuses'>): ImportRowItem {
+/**
+ * The row as the caller may see it (spec: import, D11): the transaction of another merchant is not shown, only
+ * that the row is matched (transactionId) and the read-time warning `out_of_scope_transaction`.
+ */
+function toRowItem(row: StoredImportRow, rules: Pick<MatchingRules, 'statuses'>, scope: Scope): ImportRowItem {
   const detail = parseDetail(row.detailJson)
-  const transaction = row.transaction
+  const outOfScope = row.transaction !== null && !scope.merchantIds.includes(row.transaction.merchantId)
+  const transaction = outOfScope ? null : row.transaction
+  const warnings: RowWarningCode[] = [
+    ...(detail.warnings ?? []),
+    ...(outOfScope ? (['out_of_scope_transaction'] as const) : []),
+  ]
   return {
     fileId: row.fileId,
     fileName: row.fileName,
@@ -669,7 +679,7 @@ function toRowItem(row: StoredImportRow, rules: Pick<MatchingRules, 'statuses'>)
     currency: row.currency,
     excludeAmount: detail.excludeAmount === true,
     ignore: row.ignore,
-    warnings: detail.warnings ?? [],
+    warnings,
     candidates: detail.candidates ?? [],
     transaction:
       transaction === null
