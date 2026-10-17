@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.presentation.errors import register_exception_handlers
-from app.presentation.routers import health
+from app.presentation.routers import health, campaigns
 
 
 def create_app() -> FastAPI:
@@ -10,6 +10,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="AdOps360 API", version="0.1.0")
     register_exception_handlers(app)
     app.include_router(health.router)
+    app.include_router(campaigns.router)
     return app
 
 
