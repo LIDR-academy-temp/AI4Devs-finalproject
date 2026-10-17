@@ -128,6 +128,13 @@ async def register_campaign(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+def get_campaign_list_repo(
+    session: Annotated[Session, Depends(get_db_session)]
+) -> CampaignRepositoryImpl:
+    """Instantiate campaign repository for listing."""
+    return CampaignRepositoryImpl(session)
+
+
 @router.get(
     "",
     response_model=list[CampaignListResponse],
@@ -135,6 +142,7 @@ async def register_campaign(
 )
 async def list_campaigns(
     current_user: Annotated[User, Depends(require_roles(RoleName.OPERATIONS, RoleName.BUSINESS))],
+    repo: CampaignRepositoryImpl = Depends(get_campaign_list_repo),
 ):
     """
     List all campaigns (simplified view).
@@ -143,5 +151,17 @@ async def list_campaigns(
 
     Returns: Campaign list (without periods/lines for performance)
     """
-    # TODO: Implement from repository
-    return []
+    campaigns = await repo.list_all()
+    return [
+        CampaignListResponse(
+            id=c.id,
+            name=c.name,
+            display_name=c.display_name,
+            agency_id=c.agency_id,
+            advertiser_id=c.advertiser_id,
+            status=c.status,
+            start_date=c.start_date,
+            end_date=c.end_date,
+        )
+        for c in campaigns
+    ]
