@@ -9,6 +9,8 @@ export interface ChannelFact {
   name: string
   gatewayId: number
   providerId: number
+  /** Merchant of the channel's provider: a caller outside it gets the channel without name nor provider. */
+  merchantId: number
   /** The account with `isPrimary = 1` for the channel and its merchant, or null when the channel has no primary account. */
   primaryAccount: (AccountRef & { merchantId: number }) | null
   /** Whether the account of the import has any AccountChannel row for the channel (primary or historical). */
@@ -33,7 +35,9 @@ export function channelNotices(
   for (const [channelId, rowCount] of rowCounts) {
     const fact = byId.get(channelId)
     if (!fact || rowCount <= 0) continue
-    const base = { channelId, name: fact.name, gatewayId: fact.gatewayId, providerId: fact.providerId, rowCount }
+    const base = scope.merchantIds.includes(fact.merchantId)
+      ? { channelId, name: fact.name, gatewayId: fact.gatewayId, providerId: fact.providerId, rowCount }
+      : { channelId, name: null, gatewayId: fact.gatewayId, providerId: null, rowCount, outOfScope: true as const }
     if (fact.primaryAccount?.accountId === accountId) {
       notices.push({ ...base, assignment: 'assigned', otherAccount: null, note: null })
     } else if (fact.primaryAccount === null && !fact.assignedToThisAccount) {

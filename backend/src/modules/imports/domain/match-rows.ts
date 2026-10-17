@@ -1,6 +1,6 @@
 // The cross-match of one row (README §1.2 "Identidad"; spec: import, D4): one hit is matched, none is
 // unmatched, several (two gateways with the same format) is ambiguous. Pure over what the lookup returned (design D4).
-import type { RowCandidate } from '@recon/shared'
+import type { VisibleRowCandidate } from '@recon/shared'
 import type { IdCandidate } from './normalize-source-id.js'
 
 /** A transaction as the lookup returns it (amount as DECIMAL(19,4) text). */
@@ -26,12 +26,12 @@ export interface MatchOutcome {
   gatewayId: number | null
   reason: 'no_match' | null
   /** The transactions an ambiguous row could be, ordered by gateway; empty otherwise. */
-  candidates: RowCandidate[]
+  candidates: VisibleRowCandidate[]
   /** The matched transaction; null otherwise. */
   transaction: TransactionRef | null
 }
 
-export function toRowCandidate(transaction: TransactionRef): RowCandidate {
+export function toRowCandidate(transaction: TransactionRef): VisibleRowCandidate {
   return {
     gatewayId: transaction.gatewayId,
     gatewayName: transaction.gatewayName,

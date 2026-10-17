@@ -55,6 +55,7 @@ export class PrismaAccountContext implements AccountContext {
         name: true,
         gatewayId: true,
         providerId: true,
+        provider: { select: { merchantId: true } },
         accountChannels: {
           where: { OR: [{ isPrimary: true }, { accountId }] },
           select: {
@@ -70,6 +71,7 @@ export class PrismaAccountContext implements AccountContext {
       name: c.name,
       gatewayId: c.gatewayId,
       providerId: c.providerId,
+      merchantId: c.provider.merchantId,
       primaryAccount: primaryOf(c.accountChannels),
       assignedToThisAccount: c.accountChannels.some((ac) => ac.accountId === accountId),
     }))

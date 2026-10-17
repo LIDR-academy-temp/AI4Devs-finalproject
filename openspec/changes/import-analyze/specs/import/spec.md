@@ -466,6 +466,14 @@ Cuando la cuenta principal de un canal de `channels` es de un merchant fuera del
 - **WHEN** consulta el detalle un usuario cuyo alcance no incluye ese merchant
 - **THEN** el canal aparece con `assignment = "assigned_to_other_account"` y `otherAccount = { accountId: null, name: null, outOfScope: true }`; un usuario con ambos merchants en su alcance ve `otherAccount = { accountId, name }`
 
+### Requirement: Canal de otro merchant en el aviso de canales
+Cuando un canal de `channels` pertenece a un merchant fuera del alcance de quien consulta, la entrada SHALL conservar `channelId`, `gatewayId`, `rowCount` y `assignment`, y SHALL devolver `name = null`, `providerId = null` y `outOfScope = true`. Para quien sí tiene ese merchant en su alcance la entrada no lleva `outOfScope`.
+
+#### Scenario: Canal de otro merchant
+- **GIVEN** un import analizado de `ProviderA-USD` con una fila asociada a una transacción de un canal de otro merchant en un gateway compartido
+- **WHEN** consulta el detalle un usuario cuyo alcance no incluye ese merchant
+- **THEN** el canal aparece con su `channelId`, `rowCount` y `assignment`, `name = null`, `providerId = null` y `outOfScope = true`, y ni su nombre ni su proveedor aparecen en la respuesta
+
 ### Requirement: Fees por batch prellenados desde la hoja de fees
 En todo import analizado, `batchFees` SHALL derivarse de las filas de las hojas `batch_fees` con el pareo confirmado (`feeType`, `amount`, `currency`): cada fila con tipo o importe produce `{ feeTypeId, code, title, amount, currency, source: "file", warning? }`, con el tipo resuelto por título contra `FeeType` sin distinguir mayúsculas ni espacios. Tipo desconocido → `feeTypeId` y `code` nulos, el texto leído como `title` y `warning`. Antes de analizar, `batchFees` SHALL ser `null`.
 
@@ -518,6 +526,14 @@ Cuando la transacción asociada a una fila es de un merchant fuera del alcance d
 - **GIVEN** un import analizado con una fila `matched` a una transacción de otro merchant en un gateway compartido
 - **WHEN** un usuario sin ese merchant en su alcance pide `GET /imports/{id}/rows`
 - **THEN** la fila conserva `matchResult = "matched"` y `transactionId`, `transaction` es `null` y `warnings` contiene `out_of_scope_transaction`; ningún dato de la transacción (canal, importe, estado) aparece en la respuesta, y `analysis` es el mismo que ve un usuario con ambos merchants
+
+### Requirement: Candidata de otro merchant en una fila ambigua
+Una candidata cuya transacción es de un merchant fuera del alcance de quien consulta SHALL conservar `gatewayId`, `gatewayName` y `transactionId`, necesarios para resolver la fila, y SHALL devolver `channelId`, `channelName`, `statusId`, `statusName` y `amount` a `null` con `outOfScope = true`. La misma regla SHALL aplicarse a las candidatas que lista el `400` de un `PATCH` con un gateway que no es candidato.
+
+#### Scenario: Candidata de otro merchant
+- **GIVEN** una fila ambigua con una candidata de otro merchant (gateway compartido) y otra del merchant del usuario (gateway propio de la cuenta)
+- **WHEN** un usuario sin el otro merchant en su alcance pide `GET /imports/{id}/rows?match=ambiguous`
+- **THEN** la candidata de otro merchant lleva solo `gatewayId`, `gatewayName`, `transactionId` y `outOfScope = true`, con el resto a `null`; la propia sale completa; ni el canal ni el importe de la otra aparecen en la respuesta
 
 ### Requirement: Resolución de una fila ambigua
 `PATCH /api/v1/imports/{id}/rows/{sheetId}/{rowNo}` con cuerpo `{ gatewayId }` SHALL exigir `settlement.process` y el import en `analyzed`. Si la fila es `ambiguous` y `gatewayId` es una de sus candidatas, SHALL fijar `transactionId` y `gatewayId`, pasarla a `matched`, incrementar `rowsMatched`, registrar en `AuditLog` (`import.row.resolve_gateway`, `entityType = "ImportRow"`, `entityId = "<sheetId>:<rowNo>"`, detalle con import, gateway y candidatas) y responder `200` con la fila.

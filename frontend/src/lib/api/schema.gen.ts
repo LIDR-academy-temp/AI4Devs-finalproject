@@ -1280,9 +1280,9 @@ export interface paths {
                             } | null;
                             channels: {
                                 channelId: number;
-                                name: string;
+                                name: string | null;
                                 gatewayId: number;
-                                providerId: number;
+                                providerId: number | null;
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
@@ -1299,6 +1299,8 @@ export interface paths {
                                     outOfScope: true;
                                 }) | null;
                                 note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -1554,9 +1556,9 @@ export interface paths {
                             } | null;
                             channels: {
                                 channelId: number;
-                                name: string;
+                                name: string | null;
                                 gatewayId: number;
-                                providerId: number;
+                                providerId: number | null;
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
@@ -1573,6 +1575,8 @@ export interface paths {
                                     outOfScope: true;
                                 }) | null;
                                 note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -1820,9 +1824,9 @@ export interface paths {
                             } | null;
                             channels: {
                                 channelId: number;
-                                name: string;
+                                name: string | null;
                                 gatewayId: number;
-                                providerId: number;
+                                providerId: number | null;
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
@@ -1839,6 +1843,8 @@ export interface paths {
                                     outOfScope: true;
                                 }) | null;
                                 note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -2068,9 +2074,9 @@ export interface paths {
                             } | null;
                             channels: {
                                 channelId: number;
-                                name: string;
+                                name: string | null;
                                 gatewayId: number;
-                                providerId: number;
+                                providerId: number | null;
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
@@ -2087,6 +2093,8 @@ export interface paths {
                                     outOfScope: true;
                                 }) | null;
                                 note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -2313,9 +2321,9 @@ export interface paths {
                             } | null;
                             channels: {
                                 channelId: number;
-                                name: string;
+                                name: string | null;
                                 gatewayId: number;
-                                providerId: number;
+                                providerId: number | null;
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
@@ -2332,6 +2340,8 @@ export interface paths {
                                     outOfScope: true;
                                 }) | null;
                                 note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -2568,9 +2578,9 @@ export interface paths {
                             } | null;
                             channels: {
                                 channelId: number;
-                                name: string;
+                                name: string | null;
                                 gatewayId: number;
-                                providerId: number;
+                                providerId: number | null;
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
@@ -2587,6 +2597,8 @@ export interface paths {
                                     outOfScope: true;
                                 }) | null;
                                 note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -2730,7 +2742,7 @@ export interface paths {
                                 excludeAmount: boolean;
                                 ignore: boolean;
                                 warnings: ("negative_amount" | "non_usd_currency" | "amount_unparsed" | "currency_invalid" | "id_length" | "lossy_numeric_id" | "status_unresolved" | "status_differs_from_sheet" | "cycle_mismatch" | "out_of_scope_transaction")[];
-                                candidates: {
+                                candidates: ({
                                     gatewayId: number;
                                     gatewayName: string;
                                     transactionId: string;
@@ -2739,7 +2751,23 @@ export interface paths {
                                     statusId: number;
                                     statusName: string;
                                     amount: string;
-                                }[];
+                                } | {
+                                    gatewayId: number;
+                                    gatewayName: string;
+                                    transactionId: string;
+                                    /** @enum {string|null} */
+                                    channelId: null;
+                                    /** @enum {string|null} */
+                                    channelName: null;
+                                    /** @enum {string|null} */
+                                    statusId: null;
+                                    /** @enum {string|null} */
+                                    statusName: null;
+                                    /** @enum {string|null} */
+                                    amount: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                })[];
                                 transaction: {
                                     transactionId: string;
                                     channelId: number;
@@ -2873,7 +2901,7 @@ export interface paths {
                             excludeAmount: boolean;
                             ignore: boolean;
                             warnings: ("negative_amount" | "non_usd_currency" | "amount_unparsed" | "currency_invalid" | "id_length" | "lossy_numeric_id" | "status_unresolved" | "status_differs_from_sheet" | "cycle_mismatch" | "out_of_scope_transaction")[];
-                            candidates: {
+                            candidates: ({
                                 gatewayId: number;
                                 gatewayName: string;
                                 transactionId: string;
@@ -2882,7 +2910,23 @@ export interface paths {
                                 statusId: number;
                                 statusName: string;
                                 amount: string;
-                            }[];
+                            } | {
+                                gatewayId: number;
+                                gatewayName: string;
+                                transactionId: string;
+                                /** @enum {string|null} */
+                                channelId: null;
+                                /** @enum {string|null} */
+                                channelName: null;
+                                /** @enum {string|null} */
+                                statusId: null;
+                                /** @enum {string|null} */
+                                statusName: null;
+                                /** @enum {string|null} */
+                                amount: null;
+                                /** @enum {boolean} */
+                                outOfScope: true;
+                            })[];
                             transaction: {
                                 transactionId: string;
                                 channelId: number;
@@ -3113,9 +3157,9 @@ export interface paths {
                             } | null;
                             channels: {
                                 channelId: number;
-                                name: string;
+                                name: string | null;
                                 gatewayId: number;
-                                providerId: number;
+                                providerId: number | null;
                                 rowCount: number;
                                 /** @enum {string} */
                                 assignment: "assigned" | "unassigned" | "assigned_to_other_account";
@@ -3132,6 +3176,8 @@ export interface paths {
                                     outOfScope: true;
                                 }) | null;
                                 note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;

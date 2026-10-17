@@ -210,6 +210,8 @@ export interface ImportRowRepository {
 /** Own transactions, looked up by external identity (design D4). Any number of pairs: the adapter batches as its store needs. */
 export interface TransactionLookup {
   findByExternalIds(pairs: IdCandidate[]): Promise<TransactionRef[]>
+  /** Merchant of each transaction, keyed by transactionId as a string: what a caller may see of a candidate (D11). */
+  merchantsOf(transactionIds: bigint[]): Promise<Map<string, number>>
 }
 
 /** What the analysis needs to know of the account beyond the import itself (design D4, D9). */

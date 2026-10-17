@@ -19,6 +19,7 @@ import type {
   RowReason,
   RowWarningCode,
   SheetMapping,
+  VisibleRowCandidate,
   WarningCode,
 } from '@recon/shared'
 import { WarningCode as WarningCodeSchema } from '@recon/shared'
@@ -138,7 +139,7 @@ interface RowDetail {
   reason?: RowReason
   warnings?: WarningCode[]
   excludeAmount?: boolean
-  candidates?: RowCandidate[]
+  candidates?: VisibleRowCandidate[]
   resolvedBy?: { userId: number; at: string; gatewayId: number }
 }
 
@@ -307,8 +308,9 @@ export class ImportService {
     const record = await this.requireImport(scope, importId)
     const rules = await this.deps.rules.rulesFor(record.matchingRuleSetId)
     const page = await this.deps.rows.page(importId, query)
+    const merchants = await this.candidateMerchants(page.items)
     return {
-      items: page.items.map((r) => toRowItem(r, rules, scope)),
+      items: page.items.map((r) => toRowItem(r, rules, scope, merchants)),
       page: query.page,
       pageSize: query.pageSize,
       total: page.total,
@@ -332,7 +334,11 @@ export class ImportService {
     const detail = parseDetail(row.detailJson)
     const candidates = detail.candidates ?? []
     const chosen = candidates.find((c) => c.gatewayId === gatewayId)
-    if (!chosen) throw new CandidateNotFoundError(gatewayId, candidates)
+    if (!chosen) {
+      // The 400 lists the candidates as GET rows shows them: hidden when of another merchant.
+      const merchants = await this.candidateMerchants([row])
+      throw new CandidateNotFoundError(gatewayId, visibleCandidates(candidates, scope, merchants))
+    }
     const resolved: RowDetail = { ...detail, resolvedBy: { userId, at: new Date().toISOString(), gatewayId } }
     await this.deps.rows.resolve(importId, sheetId, rowNo, {
       transactionId: BigInt(chosen.transactionId),
@@ -350,7 +356,7 @@ export class ImportService {
     const after = await this.deps.rows.find(importId, sheetId, rowNo)
     if (!after) throw new NotFoundError('Row')
     const rules = await this.deps.rules.rulesFor(record.matchingRuleSetId)
-    return toRowItem(after, rules, scope)
+    return toRowItem(after, rules, scope, await this.candidateMerchants([after]))
   }
 
   /** README HU1 CA8, HU2 CA8; spec: import, D13: everything is kept as evidence. */
@@ -386,6 +392,12 @@ export class ImportService {
     const record = await this.requireImport(scope, importId)
     assertCanEditFiles(record.status)
     return record
+  }
+
+  /** Merchant of every candidate of these rows (the stored candidates do not carry it). */
+  private async candidateMerchants(rows: StoredImportRow[]): Promise<Map<string, number>> {
+    const ids = rows.flatMap((r) => (parseDetail(r.detailJson).candidates ?? []).map((c) => BigInt(c.transactionId)))
+    return this.deps.transactions.merchantsOf(ids)
   }
 
   /** A failing audit write is logged and never undoes the action it records (same rule as auth). */
@@ -575,6 +587,33 @@ export class ImportService {
   }
 }
 
+/**
+ * Candidates as the caller may see them (spec: import, D11): one of a merchant outside the scope keeps its gateway,
+ * which resolving the row needs, and loses channel, status and amount. A candidate whose merchant is unknown
+ * (its transaction no longer exists) is hidden too.
+ */
+function visibleCandidates(
+  candidates: VisibleRowCandidate[],
+  scope: Scope,
+  merchants: Map<string, number>,
+): RowCandidate[] {
+  return candidates.map((c) => {
+    const merchantId = merchants.get(c.transactionId)
+    if (merchantId !== undefined && scope.merchantIds.includes(merchantId)) return c
+    return {
+      gatewayId: c.gatewayId,
+      gatewayName: c.gatewayName,
+      transactionId: c.transactionId,
+      channelId: null,
+      channelName: null,
+      statusId: null,
+      statusName: null,
+      amount: null,
+      outOfScope: true,
+    }
+  })
+}
+
 /** The summary of an analysis that persisted no rows (a transactions sheet with its header only). */
 function emptyAnalysis(): AnalysisSummary {
   return {
@@ -669,7 +708,12 @@ function readinessSheet(l: LoadedSheet, rules: MatchingRules): ReadinessSheet {
  * The row as the caller may see it (spec: import, D11): the transaction of another merchant is not shown, only
  * that the row is matched (transactionId) and the read-time warning `out_of_scope_transaction`.
  */
-function toRowItem(row: StoredImportRow, rules: Pick<MatchingRules, 'statuses'>, scope: Scope): ImportRowItem {
+function toRowItem(
+  row: StoredImportRow,
+  rules: Pick<MatchingRules, 'statuses'>,
+  scope: Scope,
+  candidateMerchants: Map<string, number>,
+): ImportRowItem {
   const detail = parseDetail(row.detailJson)
   const outOfScope = row.transaction !== null && !scope.merchantIds.includes(row.transaction.merchantId)
   const transaction = outOfScope ? null : row.transaction
@@ -697,7 +741,7 @@ function toRowItem(row: StoredImportRow, rules: Pick<MatchingRules, 'statuses'>,
     excludeAmount: detail.excludeAmount === true,
     ignore: row.ignore,
     warnings,
-    candidates: detail.candidates ?? [],
+    candidates: visibleCandidates(detail.candidates ?? [], scope, candidateMerchants),
     transaction:
       transaction === null
         ? null

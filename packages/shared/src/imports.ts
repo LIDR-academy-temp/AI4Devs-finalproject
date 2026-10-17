@@ -181,14 +181,17 @@ export type HiddenAccountRef = z.infer<typeof HiddenAccountRef>
 /** README §4.2 `channels`: a channel of the matched transactions and its assignment (spec: import, D9). */
 export const ChannelNotice = z.object({
   channelId: z.number().int(),
-  name: z.string(),
+  /** null, like providerId, when the channel's merchant is outside the caller's scope (then `outOfScope: true`). */
+  name: z.string().nullable(),
   gatewayId: z.number().int(),
-  providerId: z.number().int(),
+  providerId: z.number().int().nullable(),
   rowCount: nonNegativeInt,
   assignment: ChannelAssignment,
   /** The current primary account when `assignment = assigned_to_other_account`; hidden when outside the scope. */
   otherAccount: z.union([AccountRef, HiddenAccountRef]).nullable(),
   note: z.string().nullable(),
+  /** Present only when the channel belongs to a merchant outside the caller's scope. */
+  outOfScope: z.literal(true).optional(),
 })
 export type ChannelNotice = z.infer<typeof ChannelNotice>
 
@@ -221,7 +224,7 @@ export const ImportsQuery = z.object({
 export type ImportsQuery = z.infer<typeof ImportsQuery>
 
 /** A transaction an ambiguous row could be (spec: import, D4). */
-export const RowCandidate = z.object({
+export const VisibleRowCandidate = z.object({
   gatewayId: z.number().int(),
   gatewayName: z.string(),
   transactionId: BigIntId,
@@ -231,6 +234,23 @@ export const RowCandidate = z.object({
   statusName: z.string(),
   amount: Money,
 })
+export type VisibleRowCandidate = z.infer<typeof VisibleRowCandidate>
+
+/** A candidate of a merchant outside the caller's scope: only the gateway, which resolving the row needs. */
+export const HiddenRowCandidate = z.object({
+  gatewayId: z.number().int(),
+  gatewayName: z.string(),
+  transactionId: BigIntId,
+  channelId: z.null(),
+  channelName: z.null(),
+  statusId: z.null(),
+  statusName: z.null(),
+  amount: z.null(),
+  outOfScope: z.literal(true),
+})
+export type HiddenRowCandidate = z.infer<typeof HiddenRowCandidate>
+
+export const RowCandidate = z.union([VisibleRowCandidate, HiddenRowCandidate])
 export type RowCandidate = z.infer<typeof RowCandidate>
 
 /** The transaction a matched row is linked to. */

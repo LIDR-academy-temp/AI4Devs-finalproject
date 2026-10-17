@@ -74,4 +74,13 @@ export class PrismaTransactionLookup implements TransactionLookup {
     }
     return found
   }
+
+  async merchantsOf(transactionIds: bigint[]): Promise<Map<string, number>> {
+    if (transactionIds.length === 0) return new Map()
+    const rows = await this.prisma.transaction.findMany({
+      where: { transactionId: { in: [...new Set(transactionIds)] } },
+      select: { transactionId: true, merchantId: true },
+    })
+    return new Map(rows.map((r) => [String(r.transactionId), r.merchantId]))
+  }
 }

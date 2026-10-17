@@ -3,7 +3,7 @@
  * account context (channels, gateways), the fee type catalog and the rows repository.
  */
 import type { AnalysisSummary, ImportRowsQuery, MatchResult, WarningCode } from '@recon/shared'
-import { buildWorld, CHANNELS, FEE_TYPES, GATEWAYS, STATUS } from '../../../../../prisma/synthetic.js'
+import { buildWorld, CHANNELS, FEE_TYPES, GATEWAYS, PROVIDERS, STATUS } from '../../../../../prisma/synthetic.js'
 import type { FeeTypeRef } from '../../domain/batch-fees.js'
 import type { ChannelFact } from '../../domain/channel-notice.js'
 import { ImportNotEditableError, ImportNotMappedError, RowNotAmbiguousError } from '../../domain/errors.js'
@@ -69,6 +69,15 @@ export class InMemoryTransactionLookup implements TransactionLookup {
     this.byId.set(transaction.transactionId, transaction)
   }
 
+  async merchantsOf(transactionIds: bigint[]): Promise<Map<string, number>> {
+    const merchants = new Map<string, number>()
+    for (const id of transactionIds) {
+      const transaction = this.byId.get(id)
+      if (transaction) merchants.set(String(id), transaction.merchantId)
+    }
+    return merchants
+  }
+
   byTransactionId(transactionId: bigint): TransactionRef | null {
     return this.byId.get(transactionId) ?? null
   }
@@ -128,6 +137,7 @@ export class InMemoryAccountContext implements AccountContext {
         name: c.name,
         gatewayId: c.gatewayId,
         providerId: c.providerId,
+        merchantId: PROVIDERS.find((p) => p.providerId === c.providerId)?.merchantId ?? 0,
         primaryAccount: primary,
         assignedToThisAccount: primary !== null && primary.accountId === accountId,
       }

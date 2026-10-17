@@ -41,6 +41,9 @@ const NO_CHANNELS_ACCOUNT_ID = 'a0000000-0000-4000-8000-00000000ee01'
 const NO_CHANNELS_ACCOUNT_NAME = 'ZZ-NoChannels'
 const OTHER_MERCHANT_CHANNEL = 9002
 const OTHER_MERCHANT_SOURCE_ID = '919191919191919'
+/** An own gateway of ProviderA-USD with a merchant-1 transaction that shares its id with a merchant-2 one on gateway 1. */
+const OWN_GATEWAY = 9003
+const SHARED_AMBIGUOUS_ID = '929292929292929'
 const ROW_CAP = 100_000
 const BENCH = process.env.RECON_BENCH === '1'
 
@@ -215,9 +218,10 @@ async function removeNoChannelsAccount(): Promise<void> {
 /** The channel 9002 fixture of another merchant on gateway 1 (its transaction, association and channel). */
 async function removeOtherMerchantFixture(): Promise<void> {
   const { prisma } = ctx
-  await prisma.transaction.deleteMany({ where: { channelId: OTHER_MERCHANT_CHANNEL } })
-  await prisma.accountChannel.deleteMany({ where: { channelId: OTHER_MERCHANT_CHANNEL } })
-  await prisma.channel.deleteMany({ where: { channelId: OTHER_MERCHANT_CHANNEL } })
+  await prisma.transaction.deleteMany({ where: { channelId: { in: [OTHER_MERCHANT_CHANNEL, OWN_GATEWAY] } } })
+  await prisma.accountChannel.deleteMany({ where: { channelId: { in: [OTHER_MERCHANT_CHANNEL, OWN_GATEWAY] } } })
+  await prisma.channel.deleteMany({ where: { channelId: { in: [OTHER_MERCHANT_CHANNEL, OWN_GATEWAY] } } })
+  await prisma.gateway.deleteMany({ where: { gatewayId: OWN_GATEWAY } })
 }
 
 /** Safety net at file level, for runs interrupted before a group could clean up; every group removes its own fixtures. */
@@ -976,11 +980,119 @@ describe('a transaction of another merchant on a shared gateway (review of the P
         appliedReservePct: '0.000000',
       },
     })
+    // A second, own gateway of ProviderA-USD (channel 9003, provider 101): SHARED_AMBIGUOUS_ID exists on gateway 1
+    // for merchant 2 and on gateway 9003 for merchant 1, so its row is ambiguous with one candidate of each merchant.
+    await prisma.gateway.create({ data: { gatewayId: OWN_GATEWAY, name: 'Gateway Own', idFormat: 'numeric' } })
+    await prisma.channel.create({
+      data: {
+        channelId: OWN_GATEWAY,
+        gatewayId: OWN_GATEWAY,
+        providerId: 101,
+        name: 'RAM-T3',
+        settlementTermDays: 14,
+        rollingReservePct: '0.100000',
+        rollingReserveDays: 180,
+      },
+    })
+    await prisma.accountChannel.create({
+      data: {
+        accountId: accountIds['ProviderA-USD'] as string,
+        channelId: OWN_GATEWAY,
+        isPrimary: true,
+        assignedAt: new Date(),
+        assignedByUserId: analystId,
+      },
+    })
+    for (const [gatewayId, merchantId, providerId, channelId, amount] of [
+      [1, 2, 201, OTHER_MERCHANT_CHANNEL, '77.0000'],
+      [OWN_GATEWAY, 1, 101, OWN_GATEWAY, '11.0000'],
+    ] as const) {
+      await prisma.transaction.create({
+        data: {
+          sourceTransactionId: SHARED_AMBIGUOUS_ID,
+          gatewayId,
+          merchantId,
+          providerId,
+          channelId,
+          amount,
+          currency: 'USD',
+          statusId: 2,
+          transactionDate: new Date('2026-10-01T00:00:00.000Z'),
+          appliedReservePct: '0.000000',
+        },
+      })
+    }
   })
 
   afterAll(async () => {
     await removeImports(fixtureImports)
     await removeOtherMerchantFixture()
+  })
+
+  it('the viewer of merchant 1 gets the channel and the candidate of merchant 2 without their data (M3, residual)', async () => {
+    const bytes = buildXlsx({
+      sheets: [
+        {
+          name: 'APP',
+          rows: [
+            ['ID', 'Amount', 'Currency'],
+            [OTHER_MERCHANT_SOURCE_ID, { v: '42' }, 'USD'],
+            [SHARED_AMBIGUOUS_ID, { v: '11' }, 'USD'],
+          ],
+        },
+      ],
+    })
+    const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [{ name: 'other-merchant-2.xlsx', bytes }])
+    fixtureImports.push(detail.importId)
+    expect(detail.analysis?.rows).toMatchObject({ total: 2, matched: 1, ambiguous: 1 })
+
+    // Analyst (merchants 1 and 2): the channel and both candidates whole.
+    expect(detail.channels).toEqual([
+      expect.objectContaining({ channelId: OTHER_MERCHANT_CHANNEL, name: 'RAM-X2', providerId: 201, rowCount: 1 }),
+    ])
+    expect(detail.channels?.[0]).not.toHaveProperty('outOfScope')
+    const own = (await rows(detail.importId, '?match=ambiguous')).items[0]
+    expect(own?.candidates).toEqual([
+      expect.objectContaining({ gatewayId: 1, channelName: 'RAM-X2', amount: '77.0000', statusName: 'Successful' }),
+      expect.objectContaining({ gatewayId: OWN_GATEWAY, channelName: 'RAM-T3', amount: '11.0000' }),
+    ])
+
+    // Viewer (merchant 1 only): same channelId, rowCount and assignment; no name or provider. The merchant-2
+    // candidate keeps its gateway (needed to resolve) and loses everything else; the merchant-1 one is whole.
+    const seen = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`, undefined, 'viewer')).json())
+    expect(seen.channels).toEqual([
+      {
+        channelId: OTHER_MERCHANT_CHANNEL,
+        name: null,
+        gatewayId: 1,
+        providerId: null,
+        rowCount: 1,
+        assignment: 'assigned_to_other_account',
+        otherAccount: { accountId: null, name: null, outOfScope: true },
+        note: expect.any(String),
+        outOfScope: true,
+      },
+    ])
+    const res = await call('GET', `/imports/${detail.importId}/rows?match=ambiguous`, undefined, 'viewer')
+    expect(res.statusCode).toBe(200)
+    const item = ImportRowsPage.parse(res.json()).items[0]
+    expect(item?.candidates).toEqual([
+      {
+        gatewayId: 1,
+        gatewayName: 'Gateway Numeric',
+        transactionId: expect.any(String),
+        channelId: null,
+        channelName: null,
+        statusId: null,
+        statusName: null,
+        amount: null,
+        outOfScope: true,
+      },
+      expect.objectContaining({ gatewayId: OWN_GATEWAY, channelName: 'RAM-T3', amount: '11.0000' }),
+    ])
+    const body = JSON.stringify(res.json()) + JSON.stringify(seen)
+    expect(body).not.toContain('RAM-X2')
+    expect(body).not.toContain('77.0000')
   })
 
   it('the analyst of both merchants sees the other account and the transaction; the viewer of merchant 1 sees neither', async () => {

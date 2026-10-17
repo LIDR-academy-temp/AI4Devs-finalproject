@@ -1781,12 +1781,14 @@ paths:
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         name:
+                          nullable: true
                           type: string
                         gatewayId:
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         providerId:
+                          nullable: true
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
@@ -1839,6 +1841,10 @@ paths:
                         note:
                           nullable: true
                           type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
                       required:
                         - channelId
                         - name
@@ -2645,12 +2651,14 @@ paths:
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         name:
+                          nullable: true
                           type: string
                         gatewayId:
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         providerId:
+                          nullable: true
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
@@ -2703,6 +2711,10 @@ paths:
                         note:
                           nullable: true
                           type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
                       required:
                         - channelId
                         - name
@@ -3332,12 +3344,14 @@ paths:
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         name:
+                          nullable: true
                           type: string
                         gatewayId:
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         providerId:
+                          nullable: true
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
@@ -3390,6 +3404,10 @@ paths:
                         note:
                           nullable: true
                           type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
                       required:
                         - channelId
                         - name
@@ -3996,12 +4014,14 @@ paths:
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         name:
+                          nullable: true
                           type: string
                         gatewayId:
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         providerId:
+                          nullable: true
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
@@ -4054,6 +4074,10 @@ paths:
                         note:
                           nullable: true
                           type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
                       required:
                         - channelId
                         - name
@@ -4696,12 +4720,14 @@ paths:
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         name:
+                          nullable: true
                           type: string
                         gatewayId:
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         providerId:
+                          nullable: true
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
@@ -4754,6 +4780,10 @@ paths:
                         note:
                           nullable: true
                           type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
                       required:
                         - channelId
                         - name
@@ -5364,12 +5394,14 @@ paths:
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         name:
+                          nullable: true
                           type: string
                         gatewayId:
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         providerId:
+                          nullable: true
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
@@ -5422,6 +5454,10 @@ paths:
                         note:
                           nullable: true
                           type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
                       required:
                         - channelId
                         - name
@@ -5719,42 +5755,94 @@ paths:
                         candidates:
                           type: array
                           items:
-                            type: object
-                            properties:
-                              gatewayId:
-                                type: integer
-                                minimum: -9007199254740991
-                                maximum: 9007199254740991
-                              gatewayName:
-                                type: string
-                              transactionId:
-                                type: string
-                                pattern: ^\d+$
-                              channelId:
-                                type: integer
-                                minimum: -9007199254740991
-                                maximum: 9007199254740991
-                              channelName:
-                                type: string
-                              statusId:
-                                type: integer
-                                minimum: -9007199254740991
-                                maximum: 9007199254740991
-                              statusName:
-                                type: string
-                              amount:
-                                type: string
-                                pattern: ^-?\d+(\.\d{1,4})?$
-                            required:
-                              - gatewayId
-                              - gatewayName
-                              - transactionId
-                              - channelId
-                              - channelName
-                              - statusId
-                              - statusName
-                              - amount
-                            additionalProperties: false
+                            anyOf:
+                              - type: object
+                                properties:
+                                  gatewayId:
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  gatewayName:
+                                    type: string
+                                  transactionId:
+                                    type: string
+                                    pattern: ^\d+$
+                                  channelId:
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  channelName:
+                                    type: string
+                                  statusId:
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  statusName:
+                                    type: string
+                                  amount:
+                                    type: string
+                                    pattern: ^-?\d+(\.\d{1,4})?$
+                                required:
+                                  - gatewayId
+                                  - gatewayName
+                                  - transactionId
+                                  - channelId
+                                  - channelName
+                                  - statusId
+                                  - statusName
+                                  - amount
+                                additionalProperties: false
+                              - type: object
+                                properties:
+                                  gatewayId:
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  gatewayName:
+                                    type: string
+                                  transactionId:
+                                    type: string
+                                    pattern: ^\d+$
+                                  channelId:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - null
+                                  channelName:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - null
+                                  statusId:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - null
+                                  statusName:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - null
+                                  amount:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - null
+                                  outOfScope:
+                                    type: boolean
+                                    enum:
+                                      - true
+                                required:
+                                  - gatewayId
+                                  - gatewayName
+                                  - transactionId
+                                  - channelId
+                                  - channelName
+                                  - statusId
+                                  - statusName
+                                  - amount
+                                  - outOfScope
+                                additionalProperties: false
                         transaction:
                           nullable: true
                           type: object
@@ -6026,42 +6114,94 @@ paths:
                   candidates:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        gatewayId:
-                          type: integer
-                          minimum: -9007199254740991
-                          maximum: 9007199254740991
-                        gatewayName:
-                          type: string
-                        transactionId:
-                          type: string
-                          pattern: ^\d+$
-                        channelId:
-                          type: integer
-                          minimum: -9007199254740991
-                          maximum: 9007199254740991
-                        channelName:
-                          type: string
-                        statusId:
-                          type: integer
-                          minimum: -9007199254740991
-                          maximum: 9007199254740991
-                        statusName:
-                          type: string
-                        amount:
-                          type: string
-                          pattern: ^-?\d+(\.\d{1,4})?$
-                      required:
-                        - gatewayId
-                        - gatewayName
-                        - transactionId
-                        - channelId
-                        - channelName
-                        - statusId
-                        - statusName
-                        - amount
-                      additionalProperties: false
+                      anyOf:
+                        - type: object
+                          properties:
+                            gatewayId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            gatewayName:
+                              type: string
+                            transactionId:
+                              type: string
+                              pattern: ^\d+$
+                            channelId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            channelName:
+                              type: string
+                            statusId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            statusName:
+                              type: string
+                            amount:
+                              type: string
+                              pattern: ^-?\d+(\.\d{1,4})?$
+                          required:
+                            - gatewayId
+                            - gatewayName
+                            - transactionId
+                            - channelId
+                            - channelName
+                            - statusId
+                            - statusName
+                            - amount
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            gatewayId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            gatewayName:
+                              type: string
+                            transactionId:
+                              type: string
+                              pattern: ^\d+$
+                            channelId:
+                              type: string
+                              nullable: true
+                              enum:
+                                - null
+                            channelName:
+                              type: string
+                              nullable: true
+                              enum:
+                                - null
+                            statusId:
+                              type: string
+                              nullable: true
+                              enum:
+                                - null
+                            statusName:
+                              type: string
+                              nullable: true
+                              enum:
+                                - null
+                            amount:
+                              type: string
+                              nullable: true
+                              enum:
+                                - null
+                            outOfScope:
+                              type: boolean
+                              enum:
+                                - true
+                          required:
+                            - gatewayId
+                            - gatewayName
+                            - transactionId
+                            - channelId
+                            - channelName
+                            - statusId
+                            - statusName
+                            - amount
+                            - outOfScope
+                          additionalProperties: false
                   transaction:
                     nullable: true
                     type: object
@@ -6666,12 +6806,14 @@ paths:
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         name:
+                          nullable: true
                           type: string
                         gatewayId:
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
                         providerId:
+                          nullable: true
                           type: integer
                           minimum: -9007199254740991
                           maximum: 9007199254740991
@@ -6724,6 +6866,10 @@ paths:
                         note:
                           nullable: true
                           type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
                       required:
                         - channelId
                         - name
