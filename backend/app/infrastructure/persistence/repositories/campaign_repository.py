@@ -3,10 +3,10 @@ from sqlalchemy.exc import IntegrityError
 
 from app.domain.entities.campaign import Campaign, CampaignPeriod, CampaignLine
 from app.domain.repositories.campaign_repository import CampaignRepository as CampaignRepositoryInterface
-from app.infrastructure.persistence.models import (
-    CampaignModel,
-    CampaignPeriodModel,
-    CampaignLineModel,
+from app.infrastructure.persistence.models.campaign import (
+    CampaignRecord,
+    CampaignPeriodRecord,
+    CampaignLineRecord,
 )
 
 
@@ -24,7 +24,7 @@ class CampaignRepositoryImpl(CampaignRepositoryInterface):
         """
         try:
             # Create campaign model
-            campaign_model = CampaignModel(
+            campaign_model = CampaignRecord(
                 name=campaign.name,
                 display_name=campaign.display_name,
                 agency_id=campaign.agency_id,
@@ -44,7 +44,7 @@ class CampaignRepositoryImpl(CampaignRepositoryInterface):
 
             # Create period models
             for period in campaign.periods:
-                period_model = CampaignPeriodModel(
+                period_model = CampaignPeriodRecord(
                     campaign_id=campaign_id,
                     period_year=period.period_year,
                     period_month=period.period_month,
@@ -57,7 +57,7 @@ class CampaignRepositoryImpl(CampaignRepositoryInterface):
             self.session.flush()
 
             # Get period IDs from DB
-            periods_from_db = self.session.query(CampaignPeriodModel).filter_by(
+            periods_from_db = self.session.query(CampaignPeriodRecord).filter_by(
                 campaign_id=campaign_id
             ).all()
             period_id_map = {
@@ -75,7 +75,7 @@ class CampaignRepositoryImpl(CampaignRepositoryInterface):
 
                 period_id = period_key and period_id_map.get(period_key)
 
-                line_model = CampaignLineModel(
+                line_model = CampaignLineRecord(
                     campaign_period_id=period_id or periods_from_db[0].id,
                     purchase_order_version_id=line.purchase_order_version_id,
                     dsp_id=line.dsp_id,

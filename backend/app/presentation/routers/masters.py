@@ -5,15 +5,15 @@ from sqlalchemy.orm import Session
 from app.domain.models.user import RoleName
 from app.presentation.dependencies.auth import require_roles, get_current_user
 from app.presentation.dependencies.providers import get_db_session
-from app.infrastructure.persistence.models import (
-    AgencyModel,
-    AdvertiserModel,
-    DSPModel,
-    ChannelModel,
-    FormatModel,
-    CampaignTypeModel,
-    SectorModel,
-    SalesRepModel,
+from app.infrastructure.persistence.models.masters import (
+    AgencyRecord,
+    AdvertiserRecord,
+    DSPRecord,
+    ChannelRecord,
+    FormatRecord,
+    CampaignTypeRecord,
+    SectorRecord,
+    SalesRepRecord,
 )
 from pydantic import BaseModel
 
@@ -43,7 +43,7 @@ async def get_agencies(
     current_user = Depends(get_current_user),
 ):
     """Get all agencies for form picker."""
-    agencies = session.query(AgencyModel).order_by(AgencyModel.name).all()
+    agencies = session.query(AgencyRecord).order_by(AgencyRecord.name).all()
     return [{"id": a.id, "name": a.name} for a in agencies]
 
 
@@ -57,7 +57,7 @@ async def get_advertisers(
     current_user = Depends(get_current_user),
 ):
     """Get all advertisers for form picker."""
-    advertisers = session.query(AdvertiserModel).order_by(AdvertiserModel.name).all()
+    advertisers = session.query(AdvertiserRecord).order_by(AdvertiserRecord.name).all()
     return [{"id": a.id, "name": a.name} for a in advertisers]
 
 
@@ -71,7 +71,7 @@ async def get_active_dsps(
     current_user = Depends(get_current_user),
 ):
     """Get only active DSPs. Inactive ones not offered at registration."""
-    dsps = session.query(DSPModel).filter_by(is_active=True).order_by(DSPModel.name).all()
+    dsps = session.query(DSPRecord).filter_by(is_active=True).order_by(DSPRecord.name).all()
     return [{"id": d.id, "name": d.name, "is_active": d.is_active} for d in dsps]
 
 
@@ -85,7 +85,7 @@ async def get_channels(
     current_user = Depends(get_current_user),
 ):
     """Get all channels for form picker."""
-    channels = session.query(ChannelModel).order_by(ChannelModel.name).all()
+    channels = session.query(ChannelRecord).order_by(ChannelRecord.name).all()
     return [{"id": c.id, "name": c.name} for c in channels]
 
 
@@ -99,7 +99,7 @@ async def get_formats(
     current_user = Depends(get_current_user),
 ):
     """Get all formats for form picker."""
-    formats = session.query(FormatModel).order_by(FormatModel.name).all()
+    formats = session.query(FormatRecord).order_by(FormatRecord.name).all()
     return [{"id": f.id, "name": f.name} for f in formats]
 
 
@@ -113,7 +113,7 @@ async def get_campaign_types(
     current_user = Depends(get_current_user),
 ):
     """Get all campaign types for form picker."""
-    types = session.query(CampaignTypeModel).order_by(CampaignTypeModel.name).all()
+    types = session.query(CampaignTypeRecord).order_by(CampaignTypeRecord.name).all()
     return [{"id": t.id, "name": t.name} for t in types]
 
 
@@ -127,7 +127,7 @@ async def get_sectors(
     current_user = Depends(get_current_user),
 ):
     """Get all sectors for form picker."""
-    sectors = session.query(SectorModel).order_by(SectorModel.name).all()
+    sectors = session.query(SectorRecord).order_by(SectorRecord.name).all()
     return [{"id": s.id, "name": s.name} for s in sectors]
 
 
@@ -141,5 +141,5 @@ async def get_sales_reps(
     current_user = Depends(get_current_user),
 ):
     """Get all sales reps for form picker."""
-    reps = session.query(SalesRepModel).order_by(SalesRepModel.name).all()
+    reps = session.query(SalesRepRecord).order_by(SalesRepRecord.name).all()
     return [{"id": r.id, "name": r.name} for r in reps]

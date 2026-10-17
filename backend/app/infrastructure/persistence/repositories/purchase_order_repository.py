@@ -5,9 +5,9 @@ from app.domain.repositories.purchase_order_repository import (
     PurchaseOrderRepository as PurchaseOrderRepositoryInterface,
     PurchaseOrderVersion,
 )
-from app.infrastructure.persistence.models import (
-    PurchaseOrderModel,
-    PurchaseOrderVersionModel,
+from app.infrastructure.persistence.models.purchase_order import (
+    PurchaseOrderRecord,
+    PurchaseOrderVersionRecord,
 )
 
 
@@ -22,7 +22,7 @@ class PurchaseOrderRepositoryImpl(PurchaseOrderRepositoryInterface):
         import datetime
         received_date = datetime.datetime.fromisoformat(received_on).date()
 
-        order = PurchaseOrderModel(
+        order = PurchaseOrderRecord(
             order_reference=order_reference,
             received_on=received_date,
         )
@@ -42,13 +42,13 @@ class PurchaseOrderRepositoryImpl(PurchaseOrderRepositoryInterface):
         issued_date = datetime.datetime.fromisoformat(issued_on).date()
 
         # Deactivate prior versions
-        self.session.query(PurchaseOrderVersionModel).filter_by(
+        self.session.query(PurchaseOrderVersionRecord).filter_by(
             purchase_order_id=purchase_order_id,
             is_in_force=True
         ).update({"is_in_force": False})
 
         # Create new version
-        version = PurchaseOrderVersionModel(
+        version = PurchaseOrderVersionRecord(
             purchase_order_id=purchase_order_id,
             version_number=version_number,
             issued_on=issued_date,
@@ -69,7 +69,7 @@ class PurchaseOrderRepositoryImpl(PurchaseOrderRepositoryInterface):
 
     async def get_version_in_force(self, purchase_order_id: int):
         """Get the version currently in force."""
-        version = self.session.query(PurchaseOrderVersionModel).filter_by(
+        version = self.session.query(PurchaseOrderVersionRecord).filter_by(
             purchase_order_id=purchase_order_id,
             is_in_force=True
         ).first()
