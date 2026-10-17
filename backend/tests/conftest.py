@@ -1,31 +1,41 @@
-import os
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
+"""Shared test configuration."""
 
-from app.infrastructure.persistence.base import Base
+import pytest
+from sqlalchemy.orm import Session
+from alembic.config import Config
+from alembic.command import upgrade
+
+from app.infrastructure.persistence.database import build_engine, build_session_factory
+from app.config import get_settings
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_db():
+    """Ensure test database is migrated before running tests."""
+    settings = get_settings()
+    engine = build_engine(settings.database_url)
+
+    # Run migrations for test database
+    alembic_config = Config("alembic.ini")
+    with engine.begin() as connection:
+        alembic_config.set_main_option("sqlalchemy.url", settings.database_url)
+        upgrade(alembic_config, "head")
+
+    yield
+    # Tests are done; database is left for inspection if needed
 
 
 @pytest.fixture(scope="session")
-def test_db_engine():
-    """Create a test database engine using SQLite."""
-    # Use SQLite in memory for tests, but could use PostgreSQL in CI
-    database_url = os.getenv("TEST_DATABASE_URL", "sqlite:///:memory:")
-    engine = create_engine(database_url, echo=False)
-    Base.metadata.create_all(engine)
-    yield engine
-    Base.metadata.drop_all(engine)
+def test_db_session_factory():
+    """Create database session factory for testing."""
+    settings = get_settings()
+    engine = build_engine(settings.database_url)
+    return build_session_factory(engine)
 
 
 @pytest.fixture
-def test_db_session(test_db_engine):
-    """Create a test database session."""
-    connection = test_db_engine.connect()
-    transaction = connection.begin()
-    session = Session(bind=connection)
-
+def test_db_session(test_db_session_factory):
+    """Provide a clean database session for each test."""
+    session = test_db_session_factory()
     yield session
-
     session.close()
-    transaction.rollback()
-    connection.close()

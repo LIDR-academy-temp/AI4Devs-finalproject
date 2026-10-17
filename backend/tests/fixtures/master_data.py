@@ -7,20 +7,20 @@ from sqlalchemy import text
 def seed_master_data(session: Session):
     """Populate database with test master data and test user."""
 
-    # Create test user with operations role
-    session.execute(text("""
-        INSERT INTO users (email, full_name, is_active) VALUES
-        ('test@example.com', 'Test User', true)
-        ON CONFLICT (email) DO NOTHING
-    """))
-
-    # Ensure roles exist
+    # Ensure roles exist first (no FK dependencies)
     session.execute(text("""
         INSERT INTO roles (name) VALUES
         ('operations'),
         ('business'),
         ('finance')
         ON CONFLICT (name) DO NOTHING
+    """))
+
+    # Create test user with operations role
+    session.execute(text("""
+        INSERT INTO users (email, full_name, is_active) VALUES
+        ('test@example.com', 'Test User', true)
+        ON CONFLICT (email) DO NOTHING
     """))
 
     # Assign operations role to test user
