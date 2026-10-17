@@ -6,7 +6,8 @@ import { NotFoundError } from '../../../shared/errors.js'
 import type { MatchingRulesRepository } from '../../matching/application/ports.js'
 import { type MappingProposal, proposeMapping } from '../../matching/domain/propose-mapping.js'
 import type { MatchingRules } from '../../matching/domain/rules.js'
-import { DuplicateFileError, FileUnreadableError, ImportNotEditableError } from '../domain/errors.js'
+import { DuplicateFileError, FileUnreadableError } from '../domain/errors.js'
+import { assertCanEditFiles } from '../domain/import-state.js'
 import { assessReadiness, type ReadinessSheet } from '../domain/readiness.js'
 import { UNPROPOSED_SHEET_KIND } from '../domain/sheet-kind-marker.js'
 import { isOoxmlMagic } from '../domain/upload-policy.js'
@@ -38,9 +39,6 @@ export interface ImportServiceDeps {
   ids: IdGenerator
   log: ImportServiceLog
 }
-
-/** Files can be added or removed only before the analysis (HU1 CA2). */
-const EDITABLE_STATUSES: ReadonlySet<ImportStatus> = new Set(['uploaded', 'mapped'])
 
 interface ReadUpload {
   upload: StagedUpload
@@ -128,7 +126,7 @@ export class ImportService {
 
   private async requireEditable(scope: Scope, importId: string): Promise<ImportRecord> {
     const record = await this.requireImport(scope, importId)
-    if (!EDITABLE_STATUSES.has(record.status)) throw new ImportNotEditableError(record.status)
+    assertCanEditFiles(record.status)
     return record
   }
 
@@ -258,6 +256,9 @@ export class ImportService {
           proposed: proposed.proposed,
           columns: proposed.columns,
           preview: sheet.preview.map((row) => Object.fromEntries(sheet.headers.map((h, i) => [h, row[i] ?? '']))),
+          mappingConfirmed: persisted.mappingConfirmed,
+          // The confirmed mapping and the analysis blocks arrive with the next groups of this change.
+          mapping: null,
         }
         return detail
       })
@@ -270,7 +271,14 @@ export class ImportService {
         sheets,
       })
     }
-    return { ...toSummary(record), files, readiness: assessReadiness(readiness, rules.statuses) }
+    return {
+      ...toSummary(record),
+      files,
+      readiness: assessReadiness(readiness, rules.statuses),
+      analysis: null,
+      channels: null,
+      batchFees: null,
+    }
   }
 }
 

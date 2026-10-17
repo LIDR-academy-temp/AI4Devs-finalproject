@@ -26,6 +26,32 @@ export const TargetField = z.enum([
 export type TargetField = z.infer<typeof TargetField>
 export const ImportStatus = z.enum(['uploaded', 'mapped', 'analyzed', 'validated', 'processed', 'cancelled'])
 export type ImportStatus = z.infer<typeof ImportStatus>
+
+/** Per-row warnings of the analysis, counted per code in `analysis.warnings` (README §1.2 "Importes…", spec "Resumen del análisis"). */
+export const WarningCode = z.enum([
+  'negative_amount',
+  'non_usd_currency',
+  'amount_unparsed',
+  'currency_invalid',
+  'id_length',
+  'lossy_numeric_id',
+  'status_unresolved',
+  'status_differs_from_sheet',
+  'cycle_mismatch',
+])
+export type WarningCode = z.infer<typeof WarningCode>
+
+/** Why a row is `unmatched` or `ignored` (README §3.2 ImportRow; spec "Resultado del cruce", "Filas sin ID se ignoran"). */
+export const RowReason = z.enum(['no_match', 'id_format', 'lossy_numeric_id', 'empty_id', 'no_gateways'])
+export type RowReason = z.infer<typeof RowReason>
+
+/** Situation of a channel seen in the analysis (README §4.2 `channels`, §3.2 AccountChannel). */
+export const ChannelAssignment = z.enum(['assigned', 'unassigned', 'assigned_to_other_account'])
+export type ChannelAssignment = z.infer<typeof ChannelAssignment>
+
+/** What a readiness `missing` item is about (spec "Readiness de la propuesta", "Precondiciones del análisis"). */
+export const ReadinessField = z.enum(['kind', 'cycle', 'status', 'transactionId', 'transactions', 'confirmation'])
+export type ReadinessField = z.infer<typeof ReadinessField>
 export const BatchStatus = z.enum(['processed', 'paid', 'undone'])
 export type BatchStatus = z.infer<typeof BatchStatus>
 export const ChargebackReservePolicy = z.enum(['hold_until_term', 'release_on_chargeback'])

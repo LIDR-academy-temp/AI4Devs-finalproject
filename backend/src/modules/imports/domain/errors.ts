@@ -108,3 +108,79 @@ export class ImportNotEditableError extends DomainError {
     super(`Import in status ${status} cannot be modified`, { status })
   }
 }
+
+/** Cancelling is allowed in every status but `processed` and `cancelled` (spec "Cancelación del import"). */
+export class ImportNotCancellableError extends DomainError {
+  readonly status = 409
+  readonly code = 'import_not_cancellable'
+
+  constructor(status: string) {
+    super(`Import in status ${status} cannot be cancelled`, { status })
+  }
+}
+
+/** What a readiness item of the 422 names: the sheet and the field that is lacking. */
+export interface MissingItem {
+  sheetId: string | null
+  sheetName: string | null
+  field: string
+  message: string
+}
+
+/** The confirmed mapping cannot be analyzed as it stands (README HU1 CA5; spec "Precondiciones del análisis"). */
+export class MappingIncompleteError extends DomainError {
+  readonly status = 422
+  readonly code = 'mapping_incomplete'
+
+  constructor(missing: MissingItem[]) {
+    super(`The mapping cannot be analyzed: ${missing.map((m) => m.message).join('; ')}`, { missing })
+  }
+}
+
+/** The transaction sheets of the import exceed the rows the analysis accepts (design D1; spec "Límite de filas por import"). */
+export class ImportTooLargeError extends DomainError {
+  readonly status = 422
+  readonly code = 'import_too_large'
+
+  constructor(rows: number, limit: number) {
+    super(`The import has ${rows} transaction rows; the analysis accepts at most ${limit}`, { rows, limit })
+  }
+}
+
+/** Only an ambiguous row can be resolved (spec "Resolución de una fila ambigua"). */
+export class RowNotAmbiguousError extends DomainError {
+  readonly status = 409
+  readonly code = 'row_not_ambiguous'
+
+  constructor(matchResult: string) {
+    super(`Only an ambiguous row can be resolved (row is ${matchResult})`, { matchResult })
+  }
+}
+
+export interface MappingShapeDetails {
+  sheetId: string | null
+  sheetName?: string
+  sourceColumn?: string
+  targetField?: string
+  field?: string
+}
+
+/** The body of the mapping confirmation does not fit the import (spec "Forma del pareo confirmado"). */
+export class MappingShapeError extends DomainError {
+  readonly status = 400
+  readonly code = 'validation_error'
+
+  constructor(message: string, details: MappingShapeDetails) {
+    super(message, details)
+  }
+}
+
+/** The chosen gateway is not one of the row's candidates. */
+export class CandidateNotFoundError extends DomainError {
+  readonly status = 400
+  readonly code = 'validation_error'
+
+  constructor(gatewayId: number, candidates: unknown[]) {
+    super(`Gateway ${gatewayId} is not a candidate of this row`, { gatewayId, candidates })
+  }
+}
