@@ -8,6 +8,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NotFoundError } from '../../../shared/errors.js'
 import { InMemoryAuditLogger } from '../../../test-support/in-memory-audit-logger.js'
 import type { Scope } from '../../catalog/domain/scope.js'
+import type { MatchingRulesRepository } from '../../matching/application/ports.js'
+import type { MatchingRules } from '../../matching/domain/rules.js'
 import {
   CandidateNotFoundError,
   ImportNotCancellableError,
@@ -27,6 +29,7 @@ import {
   InMemoryMatchingRulesRepository,
   NO_CHANNELS_ACCOUNT_ID,
   NO_PROVIDER_CHANNELS_ACCOUNT_ID,
+  RULES_FOR_PROVIDER_A,
   SAMPLE_FILES,
   type SampleFile,
   sequentialIds,
@@ -73,12 +76,15 @@ let audit: InMemoryAuditLogger
 let service: ImportService
 const log = { error: vi.fn(), warn: vi.fn() }
 
-function build(limits = { maxRowsPerImport: 100_000 }): ImportService {
+function build(
+  limits = { maxRowsPerImport: 100_000 },
+  rules: MatchingRulesRepository = new InMemoryMatchingRulesRepository(),
+): ImportService {
   return new ImportService({
     imports,
     files,
     reader,
-    rules: new InMemoryMatchingRulesRepository(),
+    rules,
     ids: sequentialIds(),
     log,
     rows,
@@ -759,5 +765,133 @@ describe('cancel', () => {
 
     const legacy = await uploaded(C_ALT, [SAMPLE_FILES.legacy])
     await caught(service.cancel(VIEWER, ANALYST_ID, legacy.importId), NotFoundError)
+  })
+})
+
+// ───────────────────────── verify follow-ups (W1, W4, W5) ─────────────────────────
+
+describe('confirmMapping: a sheet without proposal (spec: import, D6)', () => {
+  it('confirms Bonus as transactions/I/Refund: readiness stops missing it, the proposal still reads source none, and it analyzes', async () => {
+    const detail = await uploaded(A_USD, [SAMPLE_FILES.unruled])
+    const bonus = sheetNamed(detail, 'Bonus')
+    const app = sheetNamed(detail, 'APP')
+    expect(bonus.proposed).toMatchObject({ kind: null, source: 'none' })
+    expect(detail.readiness.missing.map((m) => [m.sheetName, m.field])).toEqual([['Bonus', 'kind']])
+
+    const body: MappingConfirmation = {
+      sheets: [
+        {
+          sheetId: app.sheetId,
+          kind: 'transactions',
+          cycle: 'E',
+          statusId: 2,
+          columns: [
+            { sourceColumn: 'ID', targetField: 'transactionId' },
+            { sourceColumn: 'Amount', targetField: 'amount' },
+            { sourceColumn: 'Currency', targetField: 'currency' },
+          ],
+        },
+        {
+          sheetId: bonus.sheetId,
+          kind: 'transactions',
+          cycle: 'I',
+          statusId: 5,
+          columns: [{ sourceColumn: 'Reference', targetField: 'transactionId' }],
+        },
+      ],
+    }
+    const confirmed = await service.confirmMapping(ANALYST, detail.importId, body)
+
+    expect(confirmed.status).toBe('mapped')
+    expect(confirmed.readiness).toMatchObject({ canAnalyze: true, missing: [] })
+    expect(sheetNamed(confirmed, 'Bonus')).toMatchObject({
+      mappingConfirmed: true,
+      mapping: {
+        kind: 'transactions',
+        cycle: 'I',
+        statusId: 5,
+        statusName: 'Refund',
+        columns: [{ sourceColumn: 'Reference', targetField: 'transactionId' }],
+      },
+      proposed: { kind: null, source: 'none' },
+    })
+
+    const analyzed = await service.analyze(ANALYST, detail.importId)
+    expect(analyzed.analysis?.rows).toEqual({ total: 4, matched: 2, unmatched: 2, ambiguous: 0, ignored: 0 })
+    const bonusRows = rows.rowsOf(detail.importId).filter((r) => r.sheetName === 'Bonus')
+    expect(bonusRows.map((r) => [r.rowNo, r.cycle, r.statusId, r.transactionIdRaw])).toEqual([
+      [2, 'I', 5, 'x'],
+      [3, 'I', 5, 'y'],
+    ])
+    expect(bonusRows.every((r) => JSON.parse(r.detailJson ?? '{}').reason === 'id_format')).toBe(true)
+  })
+})
+
+/** A rules repository the test can switch at will: the rules in force at the next call. */
+class MutableRulesRepository implements MatchingRulesRepository {
+  current: MatchingRules = RULES_FOR_PROVIDER_A
+
+  async rulesFor(): Promise<MatchingRules> {
+    return structuredClone(this.current)
+  }
+}
+
+/** The global rules of the template with APP proposed as Declined and, optionally, Other Fees proposed as ignore. */
+function rulesChanged(options: { otherFeesIgnored: boolean }): MatchingRules {
+  const changed = structuredClone(RULES_FOR_PROVIDER_A)
+  for (const rule of changed.global.sheetRules) {
+    if (rule.sheetPattern === 'APP') rule.statusId = 3
+    if (options.otherFeesIgnored && rule.sheetPattern === 'Other Fees') {
+      rule.kind = 'ignore'
+      rule.cycle = null
+      rule.statusId = null
+    }
+  }
+  return changed
+}
+
+describe('the confirmed mapping governs once rules change (spec: matching, D6)', () => {
+  let mutableRules: MutableRulesRepository
+
+  beforeEach(() => {
+    mutableRules = new MutableRulesRepository()
+    service = build(undefined, mutableRules)
+  })
+
+  it('a rule that changes after the confirmation does not touch the analysis: rows keep the confirmed status', async () => {
+    const detail = await mapped(A_USD, [SAMPLE_FILES.batchClean])
+    expect(sheetNamed(detail, 'APP')).toMatchObject({ mapping: { statusId: 2 }, proposed: { statusId: 2 } })
+    // The rule changes between the confirmation and the analysis (createImport already calls the repository twice).
+    mutableRules.current = rulesChanged({ otherFeesIgnored: false })
+
+    const analyzed = await service.analyze(ANALYST, detail.importId)
+
+    const app = sheetNamed(analyzed, 'APP')
+    expect(app.proposed).toMatchObject({ statusId: 3, statusName: 'Declined', source: 'global' })
+    expect(app.mapping).toMatchObject({ statusId: 2, statusName: 'Successful' })
+    const appRows = rows.rowsOf(detail.importId).filter((r) => r.sheetName === 'APP')
+    expect(appRows).toHaveLength(340)
+    expect(appRows.every((r) => r.statusId === 2 && r.statusRaw === null)).toBe(true)
+    expect(analyzed.analysis?.rows).toMatchObject({ matched: 780 })
+  })
+
+  it('a rule set that changes after the analysis leaves rows, mapping, analysis, channels and batch fees untouched', async () => {
+    const detail = await analyzed(A_USD, [SAMPLE_FILES.batchClean])
+    const before = await service.listRows(ANALYST, detail.importId, { page: 1, pageSize: 50 })
+    // Simulates the account moving to another rule set (there is no API for it in the MVP): APP → Declined, Other Fees → ignore.
+    mutableRules.current = rulesChanged({ otherFeesIgnored: true })
+
+    const after = await service.getImport(ANALYST, detail.importId)
+
+    expect(sheetNamed(after, 'APP').proposed).toMatchObject({ statusId: 3 })
+    expect(sheetNamed(after, 'Other Fees').proposed).toMatchObject({ kind: 'ignore' })
+    expect(after.analysis).toEqual(detail.analysis)
+    expect(after.channels).toEqual(detail.channels)
+    expect(after.batchFees).toEqual(detail.batchFees)
+    expect(after.batchFees).toHaveLength(2)
+    expect(after.files.flatMap((f) => f.sheets).map((s) => s.mapping)).toEqual(
+      detail.files.flatMap((f) => f.sheets).map((s) => s.mapping),
+    )
+    expect(await service.listRows(ANALYST, detail.importId, { page: 1, pageSize: 50 })).toEqual(before)
   })
 })

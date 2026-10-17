@@ -668,3 +668,27 @@ describe('a template saved by Excel desktop (data/samples/excel-real), confirmed
     expect(first?.transactionIdRaw).toBe('403066894472190')
   })
 })
+
+// ───────────────────────── verify follow-ups (W2, W3) ─────────────────────────
+
+describe('two overlapping analyses (spec: import, D1 claim)', () => {
+  it('one answers 200 and the other 409 import_not_mapped; the database holds exactly rowsTotal rows', async () => {
+    const detail = await mapped(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
+
+    const [first, second] = await Promise.all([
+      call('POST', `/imports/${detail.importId}/analyze`),
+      call('POST', `/imports/${detail.importId}/analyze`),
+    ])
+
+    const statuses = [first.statusCode, second.statusCode].sort((a, b) => a - b)
+    expect(statuses).toEqual([200, 409])
+    const rejected = first.statusCode === 409 ? first : second
+    const accepted = first.statusCode === 200 ? first : second
+    expect(rejected.json()).toMatchObject({ code: 'import_not_mapped', details: { status: 'analyzed' } })
+    const analyzedDetail = ImportDetail.parse(accepted.json())
+    expect(analyzedDetail).toMatchObject({ status: 'analyzed', rowsTotal: 783 })
+    expect(await ctx.prisma.importRow.count({ where: { sheet: { file: { importId: detail.importId } } } })).toBe(783)
+    const after = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
+    expect(after.analysis?.rows).toEqual({ total: 783, matched: 780, unmatched: 0, ambiguous: 0, ignored: 3 })
+  })
+})
