@@ -196,12 +196,18 @@ La respuesta SHALL traer `readiness` con `canAnalyze`, `missing` (lo que impide 
 - **THEN** `readiness.notes` contiene `{ sheetName: "APP", message }` indicando 2 celdas con pérdida de precisión que se rechazarán al analizar, y `readiness.canAnalyze` no cambia por ello
 
 ### Requirement: Límites de lectura del archivo
-Antes de parsear, el lector SHALL rechazar con `400 file_too_large` un `.xlsx` cuyo contenido descomprimido supere 256 MiB en total, una hoja con más de 500 000 filas o más de 256 columnas, o un paquete con más de 10 000 entradas; SHALL detenerse al superar el límite sin descomprimir el resto. Un `.xlsx` sin ninguna hoja SHALL rechazarse con `422 file_unreadable`.
+Antes de parsear, el lector SHALL rechazar con `400 file_too_large` un `.xlsx` cuyo contenido descomprimido supere 64 MiB en total, una hoja con más de 200 000 filas o más de 256 columnas, o un paquete con más de 10 000 entradas; SHALL detenerse al superar el límite sin descomprimir el resto. Un `.xlsx` sin ninguna hoja SHALL rechazarse con `422 file_unreadable`.
 
 #### Scenario: Bomba de descompresión
 - **GIVEN** un `.xlsx` de pocos KB cuya hoja se descomprime a más del límite
 - **WHEN** se sube
 - **THEN** recibe `400` con `code = "file_too_large"` y `details.fileName`, la lectura se interrumpe al superar el límite y no se crea el import
+
+#### Scenario: Justo en el límite
+- **GIVEN** un `.xlsx` cuyo contenido descomprimido suma exactamente 64 MiB y otro que suma un byte más
+- **WHEN** se leen
+- **THEN** el primero se acepta y el segundo responde `400 file_too_large`
+- **AND** una hoja con exactamente 200 000 filas de datos se acepta y una con 200 001 responde `400 file_too_large`
 
 #### Scenario: Muestras dentro de los límites
 - **WHEN** se suben las cinco muestras de `data/samples`

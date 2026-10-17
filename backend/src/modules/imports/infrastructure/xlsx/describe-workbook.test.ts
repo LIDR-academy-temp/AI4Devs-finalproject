@@ -2,6 +2,7 @@ import { strToU8 } from 'fflate'
 import { describe, expect, it } from 'vitest'
 import { FileTooLargeError, FileUnreadableError } from '../../domain/errors.js'
 import { describeWorkbook } from './describe-workbook.js'
+import { DEFAULT_READ_LIMITS } from './limits.js'
 import { buildXlsx, type CellInput, templateRows } from './test-support.js'
 
 const FILE = 'test.xlsx'
@@ -384,5 +385,73 @@ describe('describeWorkbook: cell references', () => {
     const bytes = buildXlsx({ sheets: [{ name: 'APP', sheetDataXml: `<row r="1">${header}<c r="IW1" s="1"/></row>` }] })
 
     expect(() => describeWorkbook(bytes, FILE)).toThrow(FileTooLargeError)
+  })
+})
+
+describe('describeWorkbook: default limits (spec "Límites de lectura del archivo", design D3)', () => {
+  const MIB = 1024 * 1024
+
+  it('fixes 64 MiB inflated, 200 000 rows, 256 columns, 10 000 entries and 2 000 000 shared strings', () => {
+    expect(DEFAULT_READ_LIMITS).toMatchObject({
+      maxInflatedBytes: 64 * MIB,
+      maxRowsPerSheet: 200_000,
+      maxColumns: 256,
+      maxZipEntries: 10_000,
+      maxSharedStrings: 2_000_000,
+    })
+  })
+
+  /**
+   * A package with the bulk of its content in a single shared string (never kept in the preview). Stored
+   * rather than deflated: the reader counts stored bytes the same way, and compressing 64 MiB in the test is
+   * what would make it slow.
+   */
+  function packageWithSharedText(text: string): Uint8Array {
+    return buildXlsx({
+      sharedStrings: [{ xml: `<si><t>${text}</t></si>` }],
+      sheets: [{ name: 'APP', rows: [['ID'], ['1']] }],
+      level: 0,
+    })
+  }
+
+  /** Total inflated bytes of a package, as the reader counts them. */
+  function inflatedTotalOf(bytes: Uint8Array): number {
+    let total = 0
+    describeWorkbook(bytes, FILE, {
+      limits: { maxInflatedBytes: Number.MAX_SAFE_INTEGER },
+      onInflated: (running) => {
+        total = running
+      },
+    })
+    return total
+  }
+
+  it('accepts a package that inflates to exactly 64 MiB and rejects one byte more', () => {
+    const baseline = inflatedTotalOf(packageWithSharedText(''))
+    const exactly = packageWithSharedText('A'.repeat(64 * MIB - baseline))
+    const oneMore = packageWithSharedText('A'.repeat(64 * MIB - baseline + 1))
+
+    let total = 0
+    const onInflated = (running: number) => {
+      total = running
+    }
+    expect(() => describeWorkbook(exactly, FILE, { onInflated })).not.toThrow()
+    expect(total).toBe(64 * MIB)
+    expect(() => describeWorkbook(oneMore, FILE)).toThrow(FileTooLargeError)
+  }, 30_000)
+
+  it('accepts a sheet with exactly 200 000 data rows and rejects 200 001', () => {
+    const sheetWith = (rows: number) =>
+      buildXlsx({
+        sheets: [
+          {
+            name: 'APP',
+            sheetDataXml: `<row><c t="inlineStr"><is><t>ID</t></is></c></row>${'<row><c><v>1</v></c></row>'.repeat(rows)}`,
+          },
+        ],
+      })
+
+    expect(sheetOf(sheetWith(200_000)).rowCount).toBe(200_000)
+    expect(() => describeWorkbook(sheetWith(200_001), FILE)).toThrow(FileTooLargeError)
   })
 })

@@ -19,10 +19,12 @@ export interface ReadLimits {
 
 const MIB = 1024 * 1024
 
+// Real files carry hundreds to a few thousand rows (doc 06: about 350 movements per batch in v1): 64 MiB is
+// ample, and 200 000 rows stays reachable within it for sheets with few columns (~150 bytes of XML per row).
 export const DEFAULT_READ_LIMITS: ReadLimits = {
   maxZipEntries: 10_000,
-  maxInflatedBytes: 256 * MIB,
-  maxRowsPerSheet: 500_000,
+  maxInflatedBytes: 64 * MIB,
+  maxRowsPerSheet: 200_000,
   maxColumns: 256,
   maxSharedStrings: 2_000_000,
   previewRows: 5,
