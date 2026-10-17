@@ -393,12 +393,12 @@ describe('the five samples against their expected.json (issue #5, criteria 2, 3 
 })
 
 describe('an ambiguous row and its resolution (issue #5, criterion 6; temporary gateway 9001)', () => {
-  // A holder rather than a `let`: the formatter's useConst fix does not see the assignment inside the test.
-  const fixtureImport: { importId: string | null } = { importId: null }
+  // The imports of this group: they reference transaction 9001, so they leave before the fixture.
+  const fixtureImports: string[] = []
 
   // The fixture lives only inside this group: its import first (it references transaction 9001), then the fixture.
   afterAll(async () => {
-    await removeImports(fixtureImport.importId === null ? [] : [fixtureImport.importId])
+    await removeImports(fixtureImports)
     await removeGatewayFixture()
   })
 
@@ -443,7 +443,7 @@ describe('an ambiguous row and its resolution (issue #5, criterion 6; temporary 
 
   it('analyzes batch-clean with one ambiguous row, resolves it with the chosen gateway and records it in AuditLog', async () => {
     const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
-    fixtureImport.importId = detail.importId
+    fixtureImports.push(detail.importId)
     expect(detail.analysis?.rows).toEqual({ total: 783, matched: 779, unmatched: 0, ambiguous: 1, ignored: 3 })
     const ambiguous = await rows(detail.importId, '?match=ambiguous')
     const row = ambiguous.items[0]
@@ -485,6 +485,29 @@ describe('an ambiguous row and its resolution (issue #5, criterion 6; temporary 
     expect(again.json().code).toBe('row_not_ambiguous')
     const viewer = await call('PATCH', `/imports/${detail.importId}/rows/${sheetId}/3`, { gatewayId: 1 }, 'viewer')
     expect(viewer.statusCode).toBe(403)
+  })
+
+  it('two PATCH at once on the same ambiguous row: one 200, one 409 row_not_ambiguous, rowsMatched +1, one audit entry', async () => {
+    const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
+    fixtureImports.push(detail.importId)
+    expect(detail.rowsMatched).toBe(779)
+    const sheetId = sheetNamed(detail, 'APP').sheetId
+    const url = `/imports/${detail.importId}/rows/${sheetId}/2`
+
+    const [first, second] = await Promise.all([
+      call('PATCH', url, { gatewayId: GATEWAY_TEST }),
+      call('PATCH', url, { gatewayId: 1 }),
+    ])
+
+    expect([first.statusCode, second.statusCode].sort((a, b) => a - b)).toEqual([200, 409])
+    const rejected = first.statusCode === 409 ? first : second
+    expect(rejected.json()).toMatchObject({ code: 'row_not_ambiguous', details: { matchResult: 'matched' } })
+    const after = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
+    expect(after.rowsMatched).toBe(780)
+    expect(after.analysis?.rows).toMatchObject({ matched: 780, ambiguous: 0 })
+    expect(
+      await ctx.prisma.auditLog.count({ where: { action: 'import.row.resolve_gateway', entityId: `${sheetId}:2` } }),
+    ).toBe(1)
   })
 })
 

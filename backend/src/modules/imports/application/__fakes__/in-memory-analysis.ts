@@ -7,7 +7,7 @@ import { buildWorld, CHANNELS, FEE_TYPES, GATEWAYS, STATUS } from '../../../../.
 import { ACCOUNT_IDS, type AccountName } from '../../../catalog/application/__fakes__/in-memory.js'
 import type { FeeTypeRef } from '../../domain/batch-fees.js'
 import type { ChannelFact } from '../../domain/channel-notice.js'
-import { ImportNotMappedError } from '../../domain/errors.js'
+import { ImportNotEditableError, ImportNotMappedError, RowNotAmbiguousError } from '../../domain/errors.js'
 import type { TransactionRef } from '../../domain/match-rows.js'
 import type { GatewayFormat, IdCandidate, IdFormat } from '../../domain/normalize-source-id.js'
 import type {
@@ -240,6 +240,10 @@ export class InMemoryImportRowRepository implements ImportRowRepository {
     this.consumeFailure()
     const row = (this.rows.get(importId) ?? []).find((r) => r.sheetId === sheetId && r.rowNo === rowNo)
     if (!row) throw new Error(`unknown row ${sheetId}:${rowNo}`)
+    // The guards of the Prisma adapter: still ambiguous, import still analyzed.
+    if (row.matchResult !== 'ambiguous') throw new RowNotAmbiguousError(row.matchResult)
+    const status = this.imports.stored(importId).status
+    if (status !== 'analyzed') throw new ImportNotEditableError(status)
     row.transactionId = patch.transactionId
     row.gatewayId = patch.gatewayId
     row.matchResult = 'matched'

@@ -12,7 +12,7 @@ import type {
   RowResolutionPatch,
   StoredImportRow,
 } from '../application/ports.js'
-import { ImportNotMappedError } from '../domain/errors.js'
+import { ImportNotEditableError, ImportNotMappedError, RowNotAmbiguousError } from '../domain/errors.js'
 import { ANALYSIS_TX_MAX_WAIT_MS, ANALYSIS_TX_TIMEOUT_MS, ROWS_PER_STATEMENT } from './sql-limits.js'
 import { toTransactionRef, transactionRefSelect } from './transaction-ref.js'
 
@@ -183,22 +183,37 @@ export class PrismaImportRowRepository implements ImportRowRepository {
     return row === null ? null : toStored(row)
   }
 
+  /**
+   * Guarded like the edits of the import (spec: import, D12): the row changes only while it is still ambiguous, and
+   * the counter only while the import is still analyzed. Two PATCH at once: the second finds the row matched.
+   */
   async resolve(importId: string, sheetId: string, rowNo: number, patch: RowResolutionPatch): Promise<void> {
-    await this.prisma.$transaction([
-      this.prisma.importRow.update({
-        where: { sheetId_rowNo: { sheetId, rowNo } },
+    await this.prisma.$transaction(async (tx) => {
+      const row = await tx.importRow.updateMany({
+        where: { sheetId, rowNo, matchResult: 'ambiguous', sheet: { file: { importId } } },
         data: {
           transactionId: patch.transactionId,
           gatewayId: patch.gatewayId,
           matchResult: 'matched',
           detailJson: patch.detailJson,
         },
-      }),
-      this.prisma.import.update({
-        where: { importId },
+      })
+      if (row.count !== 1) {
+        const current = await tx.importRow.findUnique({
+          where: { sheetId_rowNo: { sheetId, rowNo } },
+          select: { matchResult: true },
+        })
+        throw new RowNotAmbiguousError(current?.matchResult ?? 'unknown')
+      }
+      const counted = await tx.import.updateMany({
+        where: { importId, status: ANALYZED },
         data: { rowsMatched: { increment: 1 }, updatedAt: new Date() },
-      }),
-    ])
+      })
+      if (counted.count !== 1) {
+        const current = await tx.import.findUnique({ where: { importId }, select: { status: true } })
+        throw new ImportNotEditableError(current?.status ?? 'unknown')
+      }
+    })
   }
 
   async summary(importId: string): Promise<AnalysisSummary | null> {

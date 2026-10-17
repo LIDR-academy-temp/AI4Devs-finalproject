@@ -194,7 +194,10 @@ export interface ImportRowRepository {
   /** Unmatched and ambiguous first, then matched and ignored; within a group by file, sheet name and rowNo. */
   page(importId: string, query: ImportRowsQuery): Promise<RowPage>
   find(importId: string, sheetId: string, rowNo: number): Promise<StoredImportRow | null>
-  /** Marks an ambiguous row as matched and bumps the import's rowsMatched, atomically. */
+  /**
+   * Marks an ambiguous row as matched and bumps the import's rowsMatched, atomically. Guarded: RowNotAmbiguousError
+   * when the row is no longer ambiguous, ImportNotEditableError when the import is no longer analyzed.
+   */
   resolve(importId: string, sheetId: string, rowNo: number, patch: RowResolutionPatch): Promise<void>
   /** Counts over the persisted rows; null when the import has no rows. */
   summary(importId: string): Promise<AnalysisSummary | null>
