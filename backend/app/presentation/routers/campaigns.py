@@ -21,12 +21,18 @@ router = APIRouter(prefix="/campaigns", tags=["campaigns"])
 
 
 # Dependency injection for repositories and services
-def get_campaign_service() -> CampaignRegistrationService:
+from sqlalchemy.orm import Session
+from app.presentation.dependencies.providers import get_db_session
+
+
+def get_campaign_service(
+    session: Annotated[Session, Depends(get_db_session)]
+) -> CampaignRegistrationService:
     """Instantiate campaign registration service with repositories."""
     return CampaignRegistrationService(
-        campaign_repo=CampaignRepositoryImpl(),
-        purchase_order_repo=PurchaseOrderRepositoryImpl(),
-        master_repo=MasterRepositoryImpl(),
+        campaign_repo=CampaignRepositoryImpl(session),
+        purchase_order_repo=PurchaseOrderRepositoryImpl(session),
+        master_repo=MasterRepositoryImpl(session),
     )
 
 
