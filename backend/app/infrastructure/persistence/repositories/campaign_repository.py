@@ -115,3 +115,26 @@ class CampaignRepositoryImpl(CampaignRepositoryInterface):
     async def get_by_name(self, name: str):
         """Not implemented for MVP."""
         raise NotImplementedError()
+
+    async def list_all(self) -> list[Campaign]:
+        """List all campaigns (simplified, without periods and lines)."""
+        campaigns = self.session.query(CampaignRecord).all()
+        return [
+            Campaign(
+                id=c.id,
+                name=c.name,
+                display_name=c.display_name,
+                agency_id=c.agency_id,
+                advertiser_id=c.advertiser_id,
+                campaign_type_id=c.campaign_type_id,
+                sector_id=c.sector_id,
+                sales_rep_id=c.sales_rep_id,
+                purchase_order_id=c.purchase_order_id,
+                start_date=c.start_date,
+                end_date=c.end_date,
+                status=c.status,
+                periods=[],
+                lines=[]
+            )
+            for c in campaigns
+        ]

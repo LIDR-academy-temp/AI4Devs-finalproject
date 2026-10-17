@@ -25,3 +25,8 @@ class CampaignRepository(ABC):
     async def get_by_name(self, name: str) -> Optional[Campaign]:
         """Retrieve campaign by unique name."""
         pass
+
+    @abstractmethod
+    async def list_all(self) -> list[Campaign]:
+        """List all campaigns without periods and lines (simplified view)."""
+        pass
