@@ -25,6 +25,9 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://localhost:5173',
+    // Well below the test timeout, so a step that hangs fails while its finally and the cleanup still have time.
+    actionTimeout: 15_000,
+    navigationTimeout: 15_000,
     // No trace nor video: they would keep what is typed on the login form.
     trace: 'off',
     video: 'off',

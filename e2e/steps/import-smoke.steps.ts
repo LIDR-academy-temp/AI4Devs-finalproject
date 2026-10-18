@@ -46,10 +46,11 @@ Given('the analyst is signed in', async ({ page }) => {
   // The password is set from the page, not with fill(): the title of a fill step carries the text it types, and
   // the password must not reach the console nor the report.
   await setPassword(page, password)
-  // The click has its own timeout, shorter than the test's: once the test runs out of time the finally cannot
-  // empty the field any more.
+  // The finally empties the field when the click fails or times out (actionTimeout, 15 s, well before the test
+  // timeout). It cannot when the page no longer answers or the test itself has run out of time: then the error of
+  // the evaluate is ignored and the field keeps its value.
   try {
-    await page.getByRole('button', { name: 'Sign in' }).click({ timeout: 15_000 })
+    await page.getByRole('button', { name: 'Sign in' }).click()
   } finally {
     await clearPassword(page)
   }
