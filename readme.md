@@ -1763,7 +1763,7 @@ Tres tickets representativos del backlog, uno por capa; no representan todo el t
 
 **Tareas:**
 
-1. Ruta `/accounts/:accountId/reconciliations/new` en `features/imports/`, con selección de cuenta dentro del alcance del usuario.
+1. Rutas en `features/imports/`: `/reconciliations/new?merchantId=&providerId=&accountId=`, donde se elige merchant → proveedor → cuenta activa dentro del alcance del usuario, y `/imports/$importId?step=files|mapping|analysis` para el espacio de trabajo de un import, que abre en el paso de su estado.
 2. **Upload Files:** arrastrar y soltar, selector múltiple, solo `.xlsx` hasta 20 MB; lista de archivos con quitar y añadir mientras el import esté en `uploaded` o `mapped`; el `409` de archivo duplicado se muestra con el nombre coincidente sin perder el estado de la pantalla.
 3. **Column Mapping:** una tarjeta por archivo y una sección por hoja; selector de estado por hoja (APP, DEC, CHB, REF, RR, Summary, Ignore) con origen de la propuesta; selector de campo por columna con la lista cerrada de `targetField` (incluido `gateway`) y "keep as reference data"; vista previa de 10 filas coloreada según el pareo. La columna pareada como Transaction ID se muestra como texto tal cual se leyó, nunca como número.
 4. **Readiness:** barra con "Ready to analyze" o la lista de lo que falta por hoja; **Analyze** deshabilitado hasta `canAnalyze = true`.

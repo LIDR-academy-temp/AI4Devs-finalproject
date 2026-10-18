@@ -5,7 +5,9 @@ import { strings } from './strings'
 
 export interface NavItem {
   label: string
-  to?: '/' | '/accounts'
+  to?: '/' | '/accounts' | '/reconciliations/new'
+  /** Paths under which the entry is also the active one (the screens it leads to). */
+  activeUnder?: string
   requires?: Permission
 }
 
@@ -22,7 +24,12 @@ export const NAV: readonly NavGroup[] = [
   {
     label: strings.groups.reconciliation,
     items: [
-      { label: s.newReconciliation, requires: 'settlement.process' },
+      {
+        label: s.newReconciliation,
+        to: '/reconciliations/new',
+        activeUnder: '/imports/',
+        requires: 'settlement.process',
+      },
       { label: s.inProgress, requires: 'settlement.process' },
     ],
   },

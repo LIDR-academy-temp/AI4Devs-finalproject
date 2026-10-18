@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useLocation } from '@tanstack/react-router'
 import { Badge } from '@/components/ui/badge'
 import { useMe } from '@/lib/session/me'
 import { type NavItem, visibleNav } from './nav-config'
@@ -6,7 +6,10 @@ import { strings } from './strings'
 
 const itemClass = 'flex items-center justify-between rounded-md px-3 py-1.5 text-sm'
 
+const activeClass = 'bg-accent font-semibold'
+
 function Entry({ item }: { item: NavItem }) {
+  const pathname = useLocation({ select: (location) => location.pathname })
   if (!item.to) {
     return (
       <span
@@ -21,12 +24,14 @@ function Entry({ item }: { item: NavItem }) {
       </span>
     )
   }
+  const activeUnder = item.activeUnder !== undefined && pathname.startsWith(item.activeUnder)
   return (
     <Link
       to={item.to}
       activeOptions={{ exact: true, includeSearch: false }}
-      className={`${itemClass} hover:bg-accent`}
-      activeProps={{ className: 'bg-accent font-semibold' }}
+      className={`${itemClass} hover:bg-accent ${activeUnder ? activeClass : ''}`}
+      aria-current={activeUnder ? 'page' : undefined}
+      activeProps={{ className: activeClass }}
     >
       {item.label}
     </Link>
