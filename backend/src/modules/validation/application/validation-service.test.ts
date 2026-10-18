@@ -13,6 +13,8 @@ const ANALYST: Scope = { merchantIds: [1, 2] }
 const VIEWER: Scope = { merchantIds: [1] }
 const ANALYST_ID = 2
 const UNKNOWN_UUID = '00000000-0000-4000-8000-00000000ffff'
+/** The sample inputs number their imports from the same sequence: the foreign import gets an id of its own. */
+const FOREIGN_IMPORT_ID = '00000000-0000-4000-8000-0000000f0002'
 const NOW = new Date('2026-10-18T10:15:30.123Z')
 
 let runs: InMemoryRunRepository
@@ -166,11 +168,10 @@ describe('run (POST validations)', () => {
   })
 
   it('404 for an unknown import and for one outside the scope, with the same message', async () => {
-    const legacy = await sampleInput('legacy-provider')
-    runs.addImport({ importId: legacy.importId, merchantId: 2, status: 'analyzed' })
+    runs.addImport({ importId: FOREIGN_IMPORT_ID, merchantId: 2, status: 'analyzed' })
 
     const unknown = await caught(service.run(ANALYST, ANALYST_ID, UNKNOWN_UUID), NotFoundError)
-    const foreign = await caught(service.run(VIEWER, ANALYST_ID, legacy.importId), NotFoundError)
+    const foreign = await caught(service.run(VIEWER, ANALYST_ID, FOREIGN_IMPORT_ID), NotFoundError)
 
     expect(foreign.message).toBe(unknown.message)
     expect(unknown.message).toBe('Import not found')
@@ -221,9 +222,8 @@ describe('getCurrentRun (GET validations)', () => {
   })
 
   it('404 for an import outside the scope', async () => {
-    const legacy = await sampleInput('legacy-provider')
-    runs.addImport({ importId: legacy.importId, merchantId: 2, status: 'analyzed' })
+    runs.addImport({ importId: FOREIGN_IMPORT_ID, merchantId: 2, status: 'analyzed' })
 
-    await caught(service.getCurrentRun(VIEWER, legacy.importId), NotFoundError)
+    await caught(service.getCurrentRun(VIEWER, FOREIGN_IMPORT_ID), NotFoundError)
   })
 })

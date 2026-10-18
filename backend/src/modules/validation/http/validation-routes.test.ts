@@ -9,21 +9,20 @@ import { sampleInput } from '../test-support/sample-input.js'
 // The validation routes over the service on doubles (validation-runs design D14): status codes, error codes and the
 // shape of every body checked with the shared schemas.
 const UNKNOWN_UUID = '00000000-0000-4000-8000-00000000ffff'
+/** The sample inputs number their imports from the same sequence: the foreign import gets an id of its own. */
+const FOREIGN_IMPORT_ID = '00000000-0000-4000-8000-0000000f0002'
 
 let ctx: Awaited<ReturnType<typeof buildTestApp>>
 let runs: InMemoryRunRepository
 let importId: string
-let foreignImportId: string
 
 beforeEach(async () => {
   const issues = await sampleInput('batch-issues')
-  const legacy = await sampleInput('legacy-provider')
   runs = new InMemoryRunRepository()
   importId = issues.importId
-  foreignImportId = legacy.importId
   runs.addImport({ importId, merchantId: 1, status: 'analyzed' })
   // ProviderC-Alt belongs to merchant 2: outside the viewer's scope.
-  runs.addImport({ importId: foreignImportId, merchantId: 2, status: 'analyzed' })
+  runs.addImport({ importId: FOREIGN_IMPORT_ID, merchantId: 2, status: 'analyzed' })
   const service = new ValidationService({ sources: issues.sources, runs, log: { info: vi.fn() } })
   ctx = await buildTestApp({ validation: { service } })
   await ctx.app.ready()
@@ -112,7 +111,7 @@ describe('GET /imports/:importId/validations', () => {
   it('401 without a token, 404 identical for unknown and foreign, 400 for a malformed id', async () => {
     expect((await request('GET', `/imports/${importId}/validations`, { user: null })).statusCode).toBe(401)
     const unknown = await request('GET', `/imports/${UNKNOWN_UUID}/validations`, { user: 'viewer' })
-    const foreign = await request('GET', `/imports/${foreignImportId}/validations`, { user: 'viewer' })
+    const foreign = await request('GET', `/imports/${FOREIGN_IMPORT_ID}/validations`, { user: 'viewer' })
     expect(unknown.statusCode).toBe(404)
     expect(foreign.json()).toEqual(unknown.json())
     expect((await request('GET', '/imports/abc/validations')).statusCode).toBe(400)
