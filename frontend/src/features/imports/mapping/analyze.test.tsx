@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { dropZone, fileInput, findFileEntry } from '@/test/import-screens'
 import { failNext, holdNext, importRecord, importRequests, sampleFile, seedImport } from '@/test/msw/imports'
 import { renderApp } from '@/test/render'
@@ -182,6 +182,17 @@ describe('Column Mapping: analysis in progress (spec "Pantalla Column Mapping: a
 
     await waitFor(() => expect(router.state.location.search).toMatchObject({ step: 'analysis' }))
     expect(tab(strings.steps.analysis)).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('a 200 invalidates the cached rows of the import (design D3)', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'mapped' })
+    const { user, queryClient } = await openMapping(importId)
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+
+    await user.click(analyzeButton())
+
+    await waitFor(() => expect(tab(strings.steps.analysis)).toHaveAttribute('aria-selected', 'true'))
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['imports', importId, 'rows'] })
   })
 
   it('422 mapping_incomplete stays in Mapping with the missing field and Analyze disabled', async () => {
