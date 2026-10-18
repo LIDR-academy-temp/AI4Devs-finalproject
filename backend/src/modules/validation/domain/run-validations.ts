@@ -2,10 +2,12 @@ import type { Cycle, ValidationCode } from '@recon/shared'
 import { duplicateAcrossBatches, statusCollisionAcrossBatches } from './across-batches.js'
 import { compareCurrent, compareHistory, conflictKey } from './conflict-key.js'
 import { duplicateInBatch, statusCollisionInBatch } from './in-batch.js'
+import { missingInRange, missingPreviousToBatch, pendingInRangeCount } from './missing.js'
 import { nonRecordedAdjustment } from './non-recorded-adjustment.js'
 import { deriveOutcome, overallBlocked } from './outcome.js'
 import { type MatchedRow, partitionRows, type RowPartition } from './partition.js'
 import { providerMismatch } from './provider-mismatch.js'
+import { computeRanges } from './ranges.js'
 import { createStatusCatalog, type StatusCatalog } from './status-catalog.js'
 import type {
   CycleRanges,
@@ -31,6 +33,7 @@ export interface ValidationContext {
   /** transactionIds with an own row of that cycle in this import. */
   present: Record<Cycle, Set<bigint>>
   ranges: CycleRanges
+  undatedAdjustmentCount: number
 }
 
 export interface SlotOutput {
@@ -51,11 +54,9 @@ export const VALIDATION_SLOTS: readonly ValidationSlot[] = [
   { code: 'status_collision_in_batch', run: statusCollisionInBatch },
   { code: 'duplicate_across_batches', run: duplicateAcrossBatches },
   { code: 'status_collision_across_batches', run: statusCollisionAcrossBatches },
-  { code: 'missing_previous_to_batch' },
-  { code: 'missing_in_range' },
+  { code: 'missing_previous_to_batch', run: missingPreviousToBatch },
+  { code: 'missing_in_range', run: missingInRange },
 ]
-
-const NO_RANGES: CycleRanges = { APP: null, DEC: null, I: null, R: null }
 
 const byArrival = (a: MatchedRow, b: MatchedRow) =>
   compareCurrent(a, b) || a.fileId.localeCompare(b.fileId) || a.sheetId.localeCompare(b.sheetId)
@@ -75,7 +76,7 @@ const cycleSets = (): Record<Cycle, Set<bigint>> => ({ E: new Set(), I: new Set(
 
 export function buildContext(input: ValidationInput): ValidationContext {
   const catalog = createStatusCatalog(input.statuses)
-  const partition = partitionRows(input.rows, input.account)
+  const partition = partitionRows(input.rows, input.account.providerId)
   partition.own.sort(byArrival)
   partition.foreign.sort(byArrival)
 
@@ -85,6 +86,7 @@ export function buildContext(input: ValidationInput): ValidationContext {
   for (const m of input.history) processed[m.cycle].add(m.transactionId)
 
   const history = [...input.history].sort(compareHistory)
+  const { ranges, undatedAdjustmentCount } = computeRanges(input.rows, input.account.providerId, input.statuses)
   return {
     input,
     catalog,
@@ -93,7 +95,8 @@ export function buildContext(input: ValidationInput): ValidationContext {
     historyByKey: groupBy(history, (m) => conflictKey(m.transactionId, m.cycle)),
     processed,
     present,
-    ranges: NO_RANGES,
+    ranges,
+    undatedAdjustmentCount,
   }
 }
 
@@ -138,7 +141,7 @@ export function runValidations(
     results,
     blocked: overallBlocked(results),
     ranges: ctx.ranges,
-    pendingInRangeCount: 0,
-    undatedAdjustmentCount: 0,
+    pendingInRangeCount: pendingInRangeCount(ctx),
+    undatedAdjustmentCount: ctx.undatedAdjustmentCount,
   }
 }

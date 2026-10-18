@@ -24,7 +24,8 @@ import {
 } from '../../imports/application/__fakes__/in-memory-analysis.js'
 import { ImportService } from '../../imports/application/import-service.js'
 import { InMemoryValidationSources } from '../application/__fakes__/in-memory.js'
-import type { CycleRanges, ValidationInput, ValidationRow } from '../domain/types.js'
+import { computeRanges } from '../domain/ranges.js'
+import type { ValidationInput } from '../domain/types.js'
 import { STATUSES } from './builders.js'
 
 export type SampleName = 'batch-clean' | 'batch-split' | 'batch-issues' | 'batch-blocked' | 'legacy-provider'
@@ -39,9 +40,6 @@ export const SAMPLES: Record<SampleName, { account: AccountName; files: SampleFi
 
 const ANALYST = { merchantIds: [1, 2] }
 const ANALYST_ID = 2
-
-// Stub until group 6 (ranges.ts): no range, so no candidates are loaded.
-const computeRanges = (_rows: readonly ValidationRow[]): CycleRanges => ({ APP: null, DEC: null, I: null, R: null })
 
 export interface SampleInput {
   importId: string
@@ -104,7 +102,7 @@ async function build(name: SampleName): Promise<SampleInput> {
   const sources = new InMemoryValidationSources({ imports, rows: importRows })
   const rows = await sources.rowsOf(importId)
   const account = await sources.accountOf(importId)
-  const ranges = computeRanges(rows)
+  const { ranges } = computeRanges(rows, account.providerId, STATUSES)
   const candidates = await sources.candidates(account, ranges)
   const reserveCandidates = ranges.R === null ? [] : await sources.heldReserves(account, ranges.R.max)
   const ids = new Set<bigint>()
