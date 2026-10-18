@@ -2,7 +2,13 @@ import type { Cycle, ValidationCode } from '@recon/shared'
 import { duplicateAcrossBatches, statusCollisionAcrossBatches } from './across-batches.js'
 import { compareCurrent, compareHistory, conflictKey } from './conflict-key.js'
 import { duplicateInBatch, statusCollisionInBatch } from './in-batch.js'
-import { missingInRange, missingPreviousToBatch, pendingInRangeCount, undatedCandidateCount } from './missing.js'
+import {
+  computeMissing,
+  missingInRange,
+  missingPreviousToBatch,
+  pendingInRangeCount,
+  undatedCandidateCount,
+} from './missing.js'
 import { nonRecordedAdjustment } from './non-recorded-adjustment.js'
 import { deriveOutcome, overallBlocked } from './outcome.js'
 import { type MatchedRow, partitionRows, type RowPartition } from './partition.js'
@@ -34,6 +40,8 @@ export interface ValidationContext {
   present: Record<Cycle, Set<bigint>>
   ranges: CycleRanges
   undatedAdjustmentCount: number
+  /** Missing findings of both missing validations, computed once here (no module-level cache). */
+  missingIssues: readonly Issue[]
 }
 
 export interface SlotOutput {
@@ -87,7 +95,7 @@ export function buildContext(input: ValidationInput): ValidationContext {
 
   const history = [...input.history].sort(compareHistory)
   const { ranges, undatedAdjustmentCount } = computeRanges(input.rows, input.account, input.statuses)
-  return {
+  const base = {
     input,
     catalog,
     partition,
@@ -98,6 +106,7 @@ export function buildContext(input: ValidationInput): ValidationContext {
     ranges,
     undatedAdjustmentCount,
   }
+  return { ...base, missingIssues: computeMissing(base) }
 }
 
 const RANGE_ORDER: Record<MissingRange, number> = { APP: 0, DEC: 1, I: 2, R: 3 }

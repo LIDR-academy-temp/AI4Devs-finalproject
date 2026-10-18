@@ -1,6 +1,10 @@
 import type { Cycle } from '@recon/shared'
 import { reserveExpiry } from './ranges.js'
 import type { SlotOutput, ValidationContext } from './run-validations.js'
+
+/** What the missing computation reads: the whole context but its own result. */
+type MissingContext = Omit<ValidationContext, 'missingIssues'>
+
 import type { DateRange, Issue, MissingRange, MissingType } from './types.js'
 
 /** A money decimal string equal to zero ("0", "0.0000", ".00"): no number, no dependency (design D2). */
@@ -21,7 +25,7 @@ interface Candidate {
  * primary account is this one; never present in the batch in that cycle, processed in that cycle in a live attempt
  * (re-checked here although the source already leaves them out, D3) or registered as missing.
  */
-function candidatesOf(ctx: ValidationContext): Candidate[] {
+function candidatesOf(ctx: MissingContext): Candidate[] {
   const { input, catalog, ranges } = ctx
   const successful = catalog.idOf('Successful')
   const declined = catalog.idOf('Declined')
@@ -86,11 +90,8 @@ function classify(date: Date, range: DateRange): MissingType | null {
   return null
 }
 
-const cache = new WeakMap<ValidationContext, Issue[]>()
-
-function missingIssues(ctx: ValidationContext): Issue[] {
-  const cached = cache.get(ctx)
-  if (cached) return cached
+/** Every missing finding of the run, once: buildContext keeps them in the context for the two slots (L4). */
+export function computeMissing(ctx: MissingContext): Issue[] {
   const issues: Issue[] = []
   const seen = new Set<string>()
   for (const c of candidatesOf(ctx)) {
@@ -112,18 +113,17 @@ function missingIssues(ctx: ValidationContext): Issue[] {
       occurrences: [],
     })
   }
-  cache.set(ctx, issues)
   return issues
 }
 
 const anyRange = (ctx: ValidationContext) => Object.values(ctx.ranges).some((r) => r !== null)
 
 export function missingPreviousToBatch(ctx: ValidationContext): SlotOutput {
-  return { applicable: anyRange(ctx), issues: missingIssues(ctx).filter((i) => i.missingType === 'previous_to_batch') }
+  return { applicable: anyRange(ctx), issues: ctx.missingIssues.filter((i) => i.missingType === 'previous_to_batch') }
 }
 
 export function missingInRange(ctx: ValidationContext): SlotOutput {
-  return { applicable: anyRange(ctx), issues: missingIssues(ctx).filter((i) => i.missingType === 'in_range') }
+  return { applicable: anyRange(ctx), issues: ctx.missingIssues.filter((i) => i.missingType === 'in_range') }
 }
 
 /** Pending transactions of the account's channels created within the APP or the DEC range, once each (question 10). */
