@@ -213,6 +213,24 @@ describe('Column Mapping: unconfirmed changes survive the Files step (design D5)
     await waitFor(() => expect(analyze()).toBeEnabled())
   })
 
+  it('an edit in a file that stays still counts after removing another one: Analyze stays disabled', async () => {
+    const { importId } = seedImport('batch-split', { status: 'mapped' })
+    const { user } = await openMapping(importId)
+    const analyze = () => screen.getByRole('button', { name: strings.analyze.button })
+
+    await choose(user, cycleOf(sheet('DEC', PART1)), 'I · adjustment')
+    expect(analyze()).toBeDisabled()
+
+    await user.click(screen.getByRole('tab', { name: strings.steps.files }))
+    await user.click((await findFileEntry(PART2)).getByRole('button', { name: strings.files.remove(PART2) }))
+    await waitFor(() => expect(screen.queryByRole('listitem', { name: PART2 })).not.toBeInTheDocument())
+    await user.click(screen.getByRole('tab', { name: strings.steps.mapping }))
+
+    expect(cycleOf(sheet('DEC', PART1))).toHaveTextContent('I · adjustment')
+    expect(analyze()).toBeDisabled()
+    expect(screen.getByText(strings.analyze.confirmFirst)).toBeInTheDocument()
+  })
+
   it('keeps the change of DEC when part2 is added, and part2 takes its own proposal', async () => {
     const { importId } = seedImport('batch-split', { labels: ['batch-split_part1'] })
     const { user } = await openMapping(importId)
