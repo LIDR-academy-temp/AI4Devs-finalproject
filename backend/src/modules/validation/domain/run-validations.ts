@@ -1,6 +1,6 @@
 import type { Cycle, ValidationCode } from '@recon/shared'
 import { duplicateAcrossBatches, statusCollisionAcrossBatches } from './across-batches.js'
-import { compareCurrent, compareHistory, conflictKey } from './conflict-key.js'
+import { compareCurrent, compareHistory, compareText, conflictKey } from './conflict-key.js'
 import { duplicateInBatch, statusCollisionInBatch } from './in-batch.js'
 import {
   computeMissing,
@@ -67,7 +67,7 @@ export const VALIDATION_SLOTS: readonly ValidationSlot[] = [
 ]
 
 const byArrival = (a: MatchedRow, b: MatchedRow) =>
-  compareCurrent(a, b) || a.fileId.localeCompare(b.fileId) || a.sheetId.localeCompare(b.sheetId)
+  compareCurrent(a, b) || compareText(a.fileId, b.fileId) || compareText(a.sheetId, b.sheetId)
 
 function groupBy<T>(items: readonly T[], keyOf: (item: T) => string): Map<string, T[]> {
   const groups = new Map<string, T[]>()

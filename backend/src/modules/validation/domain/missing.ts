@@ -1,11 +1,10 @@
 import type { Cycle } from '@recon/shared'
 import { reserveExpiry } from './ranges.js'
 import type { SlotOutput, ValidationContext } from './run-validations.js'
+import type { DateRange, Issue, MissingRange, MissingType } from './types.js'
 
 /** What the missing computation reads: the whole context but its own result. */
 type MissingContext = Omit<ValidationContext, 'missingIssues'>
-
-import type { DateRange, Issue, MissingRange, MissingType } from './types.js'
 
 /** A money decimal string equal to zero ("0", "0.0000", ".00"): no number, no dependency (design D2). */
 const isZero = (amount: string) => /^0*(\.0*)?$/.test(amount)

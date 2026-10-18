@@ -20,13 +20,16 @@ export function compareCurrent(
   return a.fileOrder - b.fileOrder || a.sheetOrder - b.sheetOrder || a.rowNo - b.rowNo
 }
 
+/** Ties on ids compare by code unit, never by locale, so the order does not depend on the environment. */
+export const compareText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)
+
 /** Historical occurrences by batchNo, attemptNo, rowNo; batchId and then settlementTxnId break the remaining ties. */
 export function compareHistory(a: HistoryMovement, b: HistoryMovement): number {
   return (
     a.batchNo - b.batchNo ||
     a.attemptNo - b.attemptNo ||
     (a.rowNo ?? -1) - (b.rowNo ?? -1) ||
-    (a.batchId < b.batchId ? -1 : a.batchId > b.batchId ? 1 : 0) ||
+    compareText(a.batchId, b.batchId) ||
     (a.settlementTxnId < b.settlementTxnId ? -1 : a.settlementTxnId > b.settlementTxnId ? 1 : 0)
   )
 }
