@@ -119,6 +119,29 @@ describe('Column Mapping: unconfirmed changes survive the Files step (design D5)
     expect(screen.queryByRole('region', { name: PART2 })).not.toBeInTheDocument()
   })
 
+  it('an edited sheet of a removed file no longer counts: Confirm mapping is enabled again', async () => {
+    const { importId } = seedImport('batch-split')
+    const { user } = await openMapping(importId)
+
+    await choose(
+      user,
+      sheet('CHB', PART2).getByRole('combobox', { name: strings.mapping.fieldFor('Currency') }),
+      'Amount',
+    )
+    expect(confirmButton()).toBeDisabled()
+
+    await user.click(screen.getByRole('tab', { name: strings.steps.files }))
+    await user.click((await findFileEntry(PART2)).getByRole('button', { name: strings.files.remove(PART2) }))
+    await waitFor(() => expect(screen.queryByRole('listitem', { name: PART2 })).not.toBeInTheDocument())
+    await user.click(screen.getByRole('tab', { name: strings.steps.mapping }))
+
+    await waitFor(() => expect(confirmButton()).toBeEnabled())
+    await user.click(confirmButton())
+    await waitFor(() => expect(importRequests('mapping')).toHaveLength(1))
+    const sent = (importRequests('mapping')[0]!.body as { sheets: { sheetId: string }[] }).sheets
+    expect(sent.map((s) => s.sheetId)).toEqual(importRecord(importId).files[0]!.sheets.map((s) => s.sheetId))
+  })
+
   it('keeps the change of DEC when part2 is added, and part2 takes its own proposal', async () => {
     const { importId } = seedImport('batch-split', { labels: ['batch-split_part1'] })
     const { user } = await openMapping(importId)
