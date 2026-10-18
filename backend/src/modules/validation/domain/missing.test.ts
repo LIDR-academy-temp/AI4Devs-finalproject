@@ -242,6 +242,45 @@ describe('expired reserves on an account with mixed terms (H1)', () => {
   })
 })
 
+describe('R limits with min < max (M3)', () => {
+  // Two RR rows of 180-day channels: the R range is 2026-09-28T00:00 … 2026-10-05T12:00 by expiry.
+  const CREATED_MIN = at('2026-04-01T00:00:00.000Z')
+  const CREATED_MAX = at('2026-04-08T12:00:00.000Z')
+  const rRows = [
+    row({ transactionId: 1n, cycle: 'R', status: 'Successful', channelId: 1011, date: CREATED_MIN }),
+    row({ transactionId: 2n, cycle: 'R', status: 'Successful', channelId: 1012, date: CREATED_MAX }),
+  ]
+  const withReserves = (...reserves: ReturnType<typeof reserve>[]) =>
+    input({ rows: rRows, reserveCandidates: reserves })
+
+  it('a reserve expiring exactly at the min of the R range is in range', () => {
+    const i = withReserves(reserve({ transactionId: 10n, channelId: 1011, date: CREATED_MIN }))
+
+    expect(inRange(i).issues.map((x) => [x.transactionId, x.relevantDate])).toEqual([
+      [10n, at('2026-09-28T00:00:00.000Z')],
+    ])
+    expect(previous(i).issues).toEqual([])
+  })
+
+  it('a reserve expiring exactly at the max of the R range is in range', () => {
+    const i = withReserves(reserve({ transactionId: 11n, channelId: 1012, date: CREATED_MAX }))
+
+    expect(inRange(i).issues.map((x) => [x.transactionId, x.relevantDate])).toEqual([
+      [11n, at('2026-10-05T12:00:00.000Z')],
+    ])
+  })
+
+  it('one ms before the min is previous, one ms after the max is in neither', () => {
+    const i = withReserves(
+      reserve({ transactionId: 12n, channelId: 1011, date: new Date(CREATED_MIN.getTime() - 1) }),
+      reserve({ transactionId: 13n, channelId: 1012, date: new Date(CREATED_MAX.getTime() + 1) }),
+    )
+
+    expect(previous(i).issues.map((x) => x.transactionId)).toEqual([12n])
+    expect(inRange(i).issues).toEqual([])
+  })
+})
+
 describe('registered missing findings (question 8)', () => {
   const settledImport = validationWorld().batches.find((b) => b.accountId === ACCOUNT_B.accountId)!.importId
   const candidates = [candidate({ transactionId: 10n, date: MIN })]
