@@ -3,20 +3,19 @@
  * immutable `ValidationInput`, and the report has the shape #9 persists as ValidationRun / ValidationResult /
  * ValidationIssue / ConflictOccurrence.
  */
-import type { Cycle, MatchResult, TransactionStatusCode, ValidationCode } from '@recon/shared'
+import type {
+  Cycle,
+  IssueScope,
+  IssueType,
+  MatchResult,
+  MissingRange,
+  MissingType,
+  TransactionStatusCode,
+  ValidationCode,
+  ValidationOutcome,
+} from '@recon/shared'
 
-// Local vocabulary until group 2 moves it to @recon/shared (design D11).
-export type ValidationOutcome = 'passed' | 'warning' | 'blocked' | 'not_applicable' | 'not_implemented'
-export type IssueType =
-  | 'provider_mismatch'
-  | 'non_recorded_adjustment'
-  | 'status_mismatch'
-  | 'duplicate'
-  | 'collision'
-  | 'missing'
-export type IssueScope = 'in_batch' | 'across_batches' | 'previous_to_batch' | 'in_range'
-export type MissingType = 'previous_to_batch' | 'in_range'
-export type MissingRange = 'APP' | 'DEC' | 'I' | 'R'
+export type { IssueScope, IssueType, MissingRange, MissingType, ValidationOutcome }
 
 // ───────────────────────── Input ─────────────────────────
 
