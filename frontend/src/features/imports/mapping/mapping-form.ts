@@ -68,7 +68,9 @@ export function toMappingConfirmation(values: MappingValues, detail: ImportDetai
       .flatMap((f) => f.sheets)
       .map((sheet) => {
         const form = values.sheets[sheet.sheetId] ?? sheetFormOf(sheet)
-        const kind = form.kind ?? 'ignore'
+        // The schema requires a type before the confirmation: a sheet without one is a bug, never an ignored sheet.
+        const kind = form.kind
+        if (kind === null) throw new Error(`Sheet "${sheet.sheetName}" has no type`)
         const transactions = kind === 'transactions'
         return {
           sheetId: sheet.sheetId,
