@@ -1,0 +1,36 @@
+meta {
+  name: 6 Review superseded run
+  type: http
+  seq: 6
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/review
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({ runId: bru.getVar('runId1') });
+}
+
+tests {
+  test('the first run was superseded by "5 Run again": 409 validation_run_superseded with the current one', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('validation_run_superseded');
+    expect(res.body.details.currentRunId).to.equal(bru.getVar('runId2'));
+  });
+}

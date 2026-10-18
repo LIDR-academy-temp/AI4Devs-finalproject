@@ -1,0 +1,37 @@
+meta {
+  name: 5 Review blocked
+  type: http
+  seq: 5
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/review
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{blkImportId}}
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({ runId: bru.getVar('blkRunId') });
+}
+
+tests {
+  test('provider_mismatch has no override: 409 blocking_validation_issue', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('blocking_validation_issue');
+    expect(res.body.details.validationCodes).to.eql(['provider_mismatch']);
+    expect(res.body.details.issueIds).to.have.length(1);
+  });
+}
