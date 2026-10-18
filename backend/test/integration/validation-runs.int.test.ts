@@ -465,3 +465,86 @@ describe('the provider_mismatch of batch-blocked shows nothing of the other merc
       expect(text).not.toContain(leak)
   })
 })
+
+describe('the whole cycle analyze → validations → review (task 9.1)', () => {
+  it('batch-issues: runs, superseded review, list, detail, inclusion, resolution, review, invalidations and cancel', async () => {
+    const { importId } = await flow.analyzedSample('batch-issues')
+    const viewOf = async () =>
+      ValidationRunView.parse((await flow.call('GET', `/imports/${importId}/validations`)).json())
+
+    const first = await runValidations(importId)
+    const expected = expectedOf('batch-issues') as { validations: Record<string, number | Record<string, number>> }
+    const total = (v: number | Record<string, number>) =>
+      typeof v === 'number' ? v : Object.values(v).reduce((a, b) => a + b, 0)
+    expect(Object.fromEntries(first.run!.results.map((r) => [r.validationCode, r.issueCount]))).toEqual(
+      Object.fromEntries(Object.entries(expected.validations).map(([k, v]) => [k, total(v)])),
+    )
+    const second = await runValidations(importId)
+    const stale = await flow.call('POST', `/imports/${importId}/review`, { runId: first.run!.runId })
+    expect(stale.statusCode).toBe(409)
+    expect(stale.json().code).toBe('validation_run_superseded')
+
+    const [dup] = (await issues(importId, 'type=duplicate&scope=in_batch')).items
+    const detail = await issueDetail(dup!.issueId)
+    const excluded = detail.occurrences.find((o) => !o.defaultIncluded)!
+    expect(
+      (await flow.call('PATCH', `/conflict-occurrences/${excluded.occurrenceId}`, { includeInSettlement: true }))
+        .statusCode,
+    ).toBe(200)
+    expect(
+      await ctx.prisma.auditLog.count({
+        where: { action: 'validation.occurrence.set_inclusion', entityId: excluded.occurrenceId },
+      }),
+    ).toBe(1)
+    const nra = (await issues(importId, 'type=non_recorded_adjustment')).items.find(
+      (i) => i.transactionIdRaw === '281520820250015',
+    )!
+    const resolved = await flow.call('PATCH', `/validation-issues/${nra.issueId}`, {
+      resolutionStatus: 'resolved',
+      note: 'Verified in the gateway',
+    })
+    expect(resolved.statusCode).toBe(200)
+
+    const reviewed = await flow.call('POST', `/imports/${importId}/review`, { runId: second.run!.runId })
+    expect(reviewed.statusCode, reviewed.body).toBe(200)
+    expect(reviewed.json().importStatus).toBe('validated')
+    // The decision on the whole asks nothing per finding: the 22 not resolved by hand stay persistent.
+    expect((await issues(importId, 'status=persistent&pageSize=500')).total).toBe(22)
+    expect(await ctx.prisma.auditLog.count({ where: { action: 'import.review', entityId: importId } })).toBe(1)
+
+    const back = await flow.call('PATCH', `/conflict-occurrences/${excluded.occurrenceId}`, {
+      includeInSettlement: false,
+    })
+    expect(back.json().importStatus).toBe('analyzed')
+    expect((await viewOf()).lastInvalidatedReview?.reason).toBe('inclusion_change')
+
+    expect((await flow.call('POST', `/imports/${importId}/review`, { runId: second.run!.runId })).statusCode).toBe(200)
+    const third = await runValidations(importId)
+    expect(third.importStatus).toBe('analyzed')
+    expect(third.lastInvalidatedReview).toMatchObject({ reason: 'rerun', runId: second.run!.runId })
+    expect(third.run!.manualChangeCount).toBe(0)
+
+    const cancelled = await flow.call('POST', `/imports/${importId}/cancel`)
+    expect(cancelled.statusCode).toBe(200)
+    expect((await viewOf()).importStatus).toBe('cancelled')
+  })
+
+  it('batch-blocked: one provider_mismatch of 252570479111759, review refused, cancel keeps the run readable', async () => {
+    const { importId } = await flow.analyzedSample('batch-blocked')
+
+    const view = await runValidations(importId)
+    expect(view.run!.blocked).toBe(true)
+    const mismatch = (await issues(importId, 'type=provider_mismatch')).items
+    expect(mismatch.map((i) => i.transactionIdRaw)).toEqual(['252570479111759'])
+    const refused = await flow.call('POST', `/imports/${importId}/review`, { runId: view.run!.runId })
+    expect(refused.json().code).toBe('blocking_validation_issue')
+    expect((await flow.call('POST', `/imports/${importId}/cancel`)).statusCode).toBe(200)
+
+    const after = ValidationRunView.parse((await flow.call('GET', `/imports/${importId}/validations`)).json())
+    expect(after.importStatus).toBe('cancelled')
+    expect(after.run!.runId).toBe(view.run!.runId)
+    expect((await issues(importId, 'type=provider_mismatch')).total).toBe(1)
+    const audit = await ctx.prisma.auditLog.findFirstOrThrow({ where: { action: 'import.cancel', entityId: importId } })
+    expect(JSON.parse(audit.detailJson ?? '{}').runId).toBe(view.run!.runId)
+  })
+})
