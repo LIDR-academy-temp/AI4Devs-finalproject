@@ -32,6 +32,12 @@ export const ACCOUNT_B: AccountScope = {
   accountId: 'b0000000-0000-4000-8000-000000000001',
   providerId: PROVIDER_B,
   primaryChannelIds: new Set([1011, 1012]),
+  // rollingReserveDays of every channel of Provider B (RAM-13 has 120, unassigned yet).
+  reserveDaysByChannel: new Map([
+    [1011, 180],
+    [1012, 180],
+    [1013, 120],
+  ]),
 }
 
 export const at = (iso: string) => new Date(iso)

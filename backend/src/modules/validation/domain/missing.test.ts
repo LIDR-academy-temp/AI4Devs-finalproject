@@ -210,6 +210,38 @@ describe('missing candidates', () => {
   })
 })
 
+describe('expired reserves on an account with mixed terms (H1)', () => {
+  // RAM-11 holds for 180 days, RAM-13 for 120: both primary channels of the account.
+  const account = { ...ACCOUNT_B, primaryChannelIds: new Set([1011, 1013]) }
+  const rows = [
+    row({ transactionId: 1n, cycle: 'R', status: 'Successful', channelId: 1011, date: at('2026-04-01T00:00:00.000Z') }),
+    row({ transactionId: 2n, cycle: 'R', status: 'Successful', channelId: 1013, date: at('2026-06-01T00:00:00.000Z') }),
+  ]
+  const mixed = input({
+    account,
+    rows,
+    reserveCandidates: [
+      // 180 d, created between the two rows but expiring 2026-10-28: not expired yet, never missing
+      reserve({ transactionId: 20n, channelId: 1011, date: at('2026-05-01T00:00:00.000Z') }),
+      // 180 d, expired 2026-09-27, before the R range (2026-09-28…2026-09-29)
+      reserve({ transactionId: 21n, channelId: 1011, date: at('2026-03-31T00:00:00.000Z') }),
+      // 120 d, expires 2026-09-29, the max of the R range
+      reserve({ transactionId: 22n, channelId: 1013, date: at('2026-06-01T00:00:00.000Z') }),
+    ],
+  })
+
+  it('a 180-day reserve created inside the creation span but not expired yet is no false missing_in_range', () => {
+    expect(inRange(mixed).issues.map((x) => x.transactionId)).toEqual([22n])
+  })
+
+  it('classifies by expiry date and reports it as relevantDate', () => {
+    expect(previous(mixed).issues.map((x) => [x.transactionId, x.relevantDate])).toEqual([
+      [21n, at('2026-09-27T00:00:00.000Z')],
+    ])
+    expect(inRange(mixed).issues[0]?.relevantDate).toEqual(at('2026-09-29T00:00:00.000Z'))
+  })
+})
+
 describe('registered missing findings (question 8)', () => {
   const settledImport = validationWorld().batches.find((b) => b.accountId === ACCOUNT_B.accountId)!.importId
   const candidates = [candidate({ transactionId: 10n, date: MIN })]

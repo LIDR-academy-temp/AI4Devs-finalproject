@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { at, PROVIDER_B, row, STATUSES } from '../test-support/builders.js'
+import { ACCOUNT_B, at, row, STATUSES } from '../test-support/builders.js'
 import { sampleInput } from '../test-support/sample-input.js'
 import { computeRanges } from './ranges.js'
 import type { DateRange } from './types.js'
@@ -11,7 +11,7 @@ const days = (range: DateRange | null) =>
 describe('computeRanges', () => {
   it('batch-clean: the four ranges of expected.ranges, by day', async () => {
     const { input } = await sampleInput('batch-clean')
-    const { ranges } = computeRanges(input.rows, input.account.providerId, input.statuses)
+    const { ranges } = computeRanges(input.rows, input.account, input.statuses)
 
     expect(days(ranges.APP)).toEqual(['2026-09-28', '2026-10-07'])
     expect(days(ranges.DEC)).toEqual(['2026-09-28', '2026-10-07'])
@@ -21,7 +21,7 @@ describe('computeRanges', () => {
 
   it('batch-issues: DEC starts on 2026-09-29 although a DEC row is a Successful of the previous window (question 1)', async () => {
     const { input } = await sampleInput('batch-issues')
-    const { ranges } = computeRanges(input.rows, input.account.providerId, input.statuses)
+    const { ranges } = computeRanges(input.rows, input.account, input.statuses)
 
     expect(days(ranges.DEC)?.[0]).toBe('2026-09-29')
   })
@@ -34,7 +34,7 @@ describe('computeRanges', () => {
         row({ transactionId: 3n, gateway: 'Pending', date: at('2026-08-01T10:00:00.000Z') }),
         row({ transactionId: 4n, status: 'Successful', gateway: 'Declined', date: at('2026-08-02T10:00:00.000Z') }),
       ],
-      PROVIDER_B,
+      ACCOUNT_B,
       STATUSES,
     )
 
@@ -43,13 +43,13 @@ describe('computeRanges', () => {
   })
 
   it('without any Declined in the gateway there is no DEC range', () => {
-    expect(computeRanges([row({ status: 'Successful' })], PROVIDER_B, STATUSES).ranges.DEC).toBeNull()
+    expect(computeRanges([row({ status: 'Successful' })], ACCOUNT_B, STATUSES).ranges.DEC).toBeNull()
   })
 
   it('I uses the date of the status change when the gateway holds the row status', () => {
     const { ranges, undatedAdjustmentCount } = computeRanges(
       [row({ cycle: 'I', status: 'Refund', gateway: 'Refund', changedAt: at('2026-10-03T08:00:00.000Z') })],
-      PROVIDER_B,
+      ACCOUNT_B,
       STATUSES,
     )
 
@@ -70,7 +70,7 @@ describe('computeRanges', () => {
         }),
         row({ transactionId: 3n, cycle: 'I', status: 'Refund', gateway: 'Refund', changedAt: null }),
       ],
-      PROVIDER_B,
+      ACCOUNT_B,
       STATUSES,
     )
 
@@ -78,14 +78,30 @@ describe('computeRanges', () => {
     expect(undatedAdjustmentCount).toBe(3)
   })
 
-  it('R uses the creation date of the transaction', () => {
+  it('R uses the expiry date: creation + rollingReserveDays of the channel of each row (180 and 120 days)', () => {
     const { ranges } = computeRanges(
-      [row({ cycle: 'R', status: 'Successful', date: at('2026-04-01T09:00:00.000Z') })],
-      PROVIDER_B,
+      [
+        row({
+          transactionId: 1n,
+          cycle: 'R',
+          status: 'Successful',
+          channelId: 1011,
+          date: at('2026-04-01T09:00:00.000Z'),
+        }),
+        row({
+          transactionId: 2n,
+          cycle: 'R',
+          status: 'Successful',
+          channelId: 1013,
+          date: at('2026-06-01T09:00:00.000Z'),
+        }),
+      ],
+      ACCOUNT_B,
       STATUSES,
     )
 
-    expect(ranges.R).toEqual({ min: at('2026-04-01T09:00:00.000Z'), max: at('2026-04-01T09:00:00.000Z') })
+    // 2026-04-01 + 180 d = 2026-09-28; 2026-06-01 + 120 d = 2026-09-29
+    expect(ranges.R).toEqual({ min: at('2026-09-28T09:00:00.000Z'), max: at('2026-09-29T09:00:00.000Z') })
   })
 
   it('foreign and unmatched rows do not widen the ranges', () => {
@@ -95,7 +111,7 @@ describe('computeRanges', () => {
         row({ transactionId: 2n, providerId: 101, channelId: 1001, date: at('2026-01-01T00:00:00.000Z') }),
         row({ transactionId: 3n, matchResult: 'unmatched' }),
       ],
-      PROVIDER_B,
+      ACCOUNT_B,
       STATUSES,
     )
 
