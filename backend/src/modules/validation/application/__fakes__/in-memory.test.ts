@@ -113,3 +113,45 @@ describe('InMemoryValidationSources.candidates (M2)', () => {
     expect(candidates.find((c) => c.transactionId === 9_000_001n)).toMatchObject({ lastStatusChangedAt: null })
   })
 })
+
+describe('InMemoryValidationSources.heldReserves (M1)', () => {
+  it('filters by the same expiry as the engine: creation + the current rollingReserveDays of the channel (120 d)', async () => {
+    const sources = new InMemoryValidationSources()
+    const account = { ...accountScopeOf('ProviderB-Main'), primaryChannelIds: new Set([1013]) }
+    const created = new Date('2026-06-01T00:00:00.000Z')
+    const expiry = new Date(created.getTime() + 120 * 86_400_000)
+    sources.addTransaction({
+      transactionId: 9_000_002n,
+      sourceTransactionId: '900000000000002',
+      providerId: account.providerId,
+      channelId: 1013,
+      statusId: STATUS.Successful,
+      transactionDate: created,
+      lastStatusChangedAt: null,
+    })
+    sources.addBatch({
+      batchId: 'held-120',
+      accountId: account.accountId,
+      batchNo: 90,
+      attemptNo: 1,
+      status: 'paid',
+      importId: 'import-held-120',
+      movements: [
+        {
+          transactionId: 9_000_002n,
+          cycle: 'E',
+          statusId: STATUS.Successful,
+          excludeAmount: false,
+          sheetId: null,
+          rowNo: null,
+          reserveHeldAmt: '5.0000',
+          reserveEarlyReleasedAmt: '0.0000',
+        },
+      ],
+    })
+    const ids = async (rMax: Date) => (await sources.heldReserves(account, rMax)).map((r) => r.transactionId)
+
+    expect(await ids(expiry)).toContain(9_000_002n)
+    expect(await ids(new Date(expiry.getTime() - 1))).not.toContain(9_000_002n)
+  })
+})
