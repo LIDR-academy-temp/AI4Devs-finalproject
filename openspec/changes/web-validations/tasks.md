@@ -6,16 +6,16 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 1. Fechas en hora de Nueva York y búsqueda de la ruta (D5, D11)
 
-- [ ] 1.1 Test (rojo) en `lib/format.test.ts`, con `process.env.TZ = 'Asia/Tokyo'` para que no valga la zona del proceso:
+- [x] 1.1 Test (rojo) en `lib/format.test.ts`, con `process.env.TZ = 'Asia/Tokyo'` para que no valga la zona del proceso:
   - negocio: `formatBusinessDateTime('2026-09-28T00:00:00.000Z')` → `2026-09-28 00:00 ET` y `formatBusinessDate` del mismo valor → `2026-09-28 ET`, sin convertir;
   - auditoría: `formatAuditDateTime('2026-10-18T14:20:00.000Z')` → `2026-10-18 10:20 ET` (EDT) y `formatAuditDateTime('2026-11-02T15:00:00.000Z')` → `2026-11-02 10:00 ET` (EST, tras el cambio del 1-nov-2026);
   - `DISPLAY_TIME_ZONE` es `America/New_York`;
   - un `// @ts-expect-error` comprueba que una `AuditInstant` no entra en `formatBusinessDateTime` ni una `BusinessDate` en `formatAuditDateTime`
   
   Los valores se construyen con las ayudas `businessDate()` / `auditInstant()`.
-- [ ] 1.2 Test (rojo) en `features/imports/validate-search.test.ts`: `validateImportSearch` conserva `validation` si es un `ValidationCode`, `ipage` > 1 e `issue` entero positivo; descarta `validation=foo`, `ipage=0`, `issue=abc`; y conserva `step`, `match` y `page` como hasta ahora
-- [ ] 1.3 Implementar en `lib/format.ts` `DISPLAY_TIME_ZONE`, `DISPLAY_ZONE_LABEL`, los tipos marca `BusinessDate` / `AuditInstant` con sus ayudas y los tres formateadores de D11 (`Intl.DateTimeFormat` con `formatToParts` y `hourCycle: 'h23'`; `timeZone: 'UTC'` en los de negocio y `DISPLAY_TIME_ZONE` en el de auditoría), y los tres parámetros de búsqueda; verificar 1.1 y 1.2 en verde, `pnpm typecheck`, `pnpm lint` y `pnpm --filter @recon/frontend build`; romper a propósito `formatAuditDateTime` (sin `timeZone`, zona del proceso) y ver fallar 1.1; romper `formatBusinessDateTime` (convertir a `DISPLAY_TIME_ZONE`) y ver fallar el caso de negocio; restaurar
-- [ ] 1.4 Commit: `test(frontend): fechas de negocio y de auditoría en hora de Nueva York y búsqueda de validaciones` y `feat(frontend): formateadores de fechas en ET y búsqueda de validaciones en la ruta del import`
+- [x] 1.2 Test (rojo) en `features/imports/validate-search.test.ts`: `validateImportSearch` conserva `validation` si es un `ValidationCode`, `ipage` > 1 e `issue` entero positivo; descarta `validation=foo`, `ipage=0`, `issue=abc`; y conserva `step`, `match` y `page` como hasta ahora
+- [x] 1.3 Implementar en `lib/format.ts` `DISPLAY_TIME_ZONE`, `DISPLAY_ZONE_LABEL`, los tipos marca `BusinessDate` / `AuditInstant` con sus ayudas y los tres formateadores de D11 (`Intl.DateTimeFormat` con `formatToParts` y `hourCycle: 'h23'`; `timeZone: 'UTC'` en los de negocio y `DISPLAY_TIME_ZONE` en el de auditoría), y los tres parámetros de búsqueda; verificar 1.1 y 1.2 en verde, `pnpm typecheck`, `pnpm lint` y `pnpm --filter @recon/frontend build`; romper a propósito `formatAuditDateTime` (sin `timeZone`, zona del proceso) y ver fallar 1.1; romper `formatBusinessDateTime` (convertir a `DISPLAY_TIME_ZONE`) y ver fallar el caso de negocio; restaurar
+- [x] 1.4 Commit: `test(frontend): fechas de negocio y de auditoría en hora de Nueva York y búsqueda de validaciones` y `feat(frontend): formateadores de fechas en ET y búsqueda de validaciones en la ruta del import`
 
 ## 2. Contrato aislado y API falso de validaciones (D2, D12)
 
@@ -46,7 +46,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   Registrarlo en `handlers.ts` y reiniciarlo con `resetDb`. Verificar 2.1 en verde y que los tests existentes siguen en verde (`pnpm --filter @recon/frontend test`). Romper a propósito la puesta a cero de `manualChangeCount` al re-ejecutar y ver fallar 2.1; restaurar
 - [ ] 2.3 Comprobar con `rg` que `test/msw/validations.ts` no contiene ninguna regla de negocio: no lee `cycle`, `sourceType` ni `issueType` para decidir `editable`, `includable`, `resolvable` ni `outcome`. Anotarlo en el PR
 - [ ] 2.4 Comprobar con `rg` que ninguna ruta `/validations`, `/validation-issues` ni `/conflict-occurrences` aparece fuera de `contract.ts` y `test/msw/validations.ts`; anotarlo en el PR
-- [ ] 2.5 Commit: `test(frontend): API falso de validaciones con las reglas del contrato de #9` y `feat(frontend): contrato de validaciones aislado y API falso para los tests`
+- [ ] 2.5 Commit: `test(frontend): API falso de validaciones guionizado sobre el contrato de #9` y `feat(frontend): contrato de validaciones aislado y API falso para los tests`
 
 ## 3. Cabecera, tabla de validaciones y ejecución de la corrida (D1, D3, D4, D5)
 
