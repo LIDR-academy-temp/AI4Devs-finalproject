@@ -275,9 +275,9 @@ El repositorio es un **monorepo**: el código de aplicación vive en la raíz, u
 
 ```
 .
-├── backend/                 # Servicio Python 3.12 + FastAPI
-├── frontend/                # Aplicación Node 22 + Next.js
-├── nginx/                   # Configuración del proxy inverso y TLS
+├── backend/                 # Servicio Python 3.12 + FastAPI (DDD en capas: domain, application, presentation, infrastructure)
+├── frontend/                # Aplicación Node 22 + Next.js, TypeScript, organización por funcionalidad (app/, features/, lib/)
+├── nginx/                   # Configuración del proxy inverso (conf.d/) y TLS
 ├── docs/                    # Estándares y documentación de producto
 ├── openspec/                # Especificaciones de cambios (OpenSpec)
 ├── ai-specs/                # Artefactos canónicos de agentes (agents, skills, scripts)
@@ -287,8 +287,6 @@ El repositorio es un **monorepo**: el código de aplicación vive en la raíz, u
 ```
 
 `packages/` y `ai-specs/` quedan fuera del runtime: `ai-specs/` es la fuente canónica de los artefactos de agentes (referenciada por symlinks desde `.claude/` y `.cursor/`) y `packages/` contiene herramientas internas de desarrollo.
-
-> **Estado en la entrega 1:** existen `docs/`, `openspec/`, `ai-specs/`, `packages/`, `docker-compose.yml` y `.env.example`. `backend/`, `frontend/` y `nginx/` son la estructura acordada, todavía sin implementar.
 
 **Dentro de `backend/`** la organización obedece a DDD en capas, con la regla de dependencia en un solo sentido —presentación → aplicación → dominio; infraestructura → dominio; **nada depende de infraestructura**—:
 
@@ -399,15 +397,19 @@ El modelo de autorización completo está en [Base Standards § Authorization Mo
 
 ### **2.6. Tests**
 
-> **En esta entrega 1 no existe código de aplicación, por lo que no hay tests ejecutados ni resultados que reportar.** Lo que sigue es la estrategia planificada, ya decidida y recogida en los estándares del proyecto.
+El desarrollo sigue TDD: toda funcionalidad nueva empieza por un test que falla.
 
-El desarrollo sigue TDD: toda funcionalidad nueva empieza por un test que falla. La estrategia se organiza en tres niveles:
+**Estado actual (Entrega 2):** Las suites de backend y frontend pasan sobre el código implementado: 65 tests de backend y 61 de frontend (16 ficheros), ambos ejecutados dos veces. Ver el informe detallado en [docs/reports/2026-10-18-entrega-2-test-report.md](./docs/reports/2026-10-18-entrega-2-test-report.md).
 
-| Nivel | Herramientas | Alcance |
+| Nivel | Herramientas | Resultados |
 |---|---|---|
-| **Unitario / dominio** | `pytest` (backend), `Vitest` + Testing Library (frontend) | Reglas de negocio puras sin base de datos ni HTTP: cálculo de margen, escalera de tramos de extraprima, resolución de tasas. En frontend, comportamiento de componentes a través de la interfaz que ve el usuario. |
-| **Integración / API** | `pytest` + `httpx` contra la aplicación FastAPI | Endpoints reales: códigos de estado, esquemas de petición y respuesta, y **aplicación de roles**. |
-| **End-to-end** | `Playwright` | Los tres flujos de rol completos, sobre la aplicación desplegada. |
+| **Tests de dominio** | `pytest` (backend) | Reglas de negocio puras sin base de datos: expansión de períodos, versionado de órdenes de compra. |
+| **Tests de API** | `pytest` + `httpx` contra FastAPI + PostgreSQL real | Endpoints reales: códigos de estado, esquemas, autenticación Cognito y **aplicación de roles en los endpoints protegidos por rol**. Base de pruebas (`adops360_test`) recreada al inicio de cada ejecución. |
+| **Tests de infraestructura y migraciones** | `pytest` contra PostgreSQL real | Modelos de identidad y coherencia entre la migración Alembic y los modelos. Incluidos en los 65 tests de backend. |
+| **Tests unitarios frontend** | `Vitest` + Testing Library | 61 tests en 16 ficheros, entorno jsdom. Comportamiento de componentes, layout de autenticación, interacción con sesión. Aprobados 2 veces consecutivas. |
+| **Verificación de tipos** | TypeScript `tsc --noEmit` | ✓ Paso: sin errores de tipo en frontend. |
+| **End-to-end** | `Playwright` | Planeado para Entrega 3: los tres flujos de rol completos sobre la aplicación desplegada. |
+| **Integración frontend-backend** | Tests E2E + backend real | Planeado para Entrega 3: verificación del frontend contra el backend real en Docker. |
 
 Tres criterios concretos que la estrategia impone:
 
@@ -415,11 +417,11 @@ Tres criterios concretos que la estrategia impone:
 - **Los ejemplos resueltos de [Product Description](./docs/product-description.md) se codifican como tests.** Son la especificación del modelo económico y la referencia contra la que se juzga la paridad con las cifras actuales de Qlik Sense: es el criterio que decide si el sistema puede sustituirlo.
 - **Los flujos E2E cubren un rol cada uno**, más un cuarto caso con un usuario que acumula varios roles a la vez —el caso normal en este equipo, y el que una suite de tres flujos nunca ejercitaría.
 
-| Flujo E2E | Cubre |
-|---|---|
-| Operaciones | Registrar una campaña desde la orden de compra, mapearla al DSP y revisar una excepción de ingesta |
-| Negocio | Crear una oferta comercial y seguirla hasta convertirse en campaña |
-| Financiero | Consultar el margen de campaña y los acumulados por periodo |
+| Flujo E2E | Cubre | Estado |
+|---|---|---|
+| Operaciones | Registrar una campaña desde la orden de compra, mapearla al DSP y revisar una excepción de ingesta | Previsto E3 |
+| Negocio | Crear una oferta comercial y seguirla hasta convertirse en campaña | Previsto E3 |
+| Financiero | Consultar el margen de campaña y los acumulados por periodo | Previsto E3 |
 
 El detalle está en [Backend Standards § Testing Standards](./docs/backend-standards.md#testing-standards) y [Frontend Standards § Testing Standards](./docs/frontend-standards.md#testing-standards).
 
