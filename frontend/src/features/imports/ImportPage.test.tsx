@@ -26,6 +26,14 @@ describe('import workspace: resuming by link (spec "Retomar un import por su enl
     expect(tab(step)).toHaveAttribute('aria-selected', 'true')
   })
 
+  it('opens an import mapped on its step with the confirmed mapping (spec "Import pareado")', async () => {
+    await openImport(seedImport('batch-clean', { status: 'mapped' }).importId)
+
+    expect(tab(strings.steps.mapping)).toHaveAttribute('aria-selected', 'true')
+    const app = within(await screen.findByRole('region', { name: 'APP' }))
+    expect(app.getByText('Confirmed: E · Successful')).toBeInTheDocument()
+  })
+
   it('shows merchant, provider, account and status in the header', async () => {
     await openImport(seedImport('batch-clean').importId)
     const header = within(screen.getByRole('region', { name: strings.header.label }))
