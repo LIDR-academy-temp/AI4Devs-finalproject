@@ -1,5 +1,34 @@
 import { describe, expect, it } from 'vitest'
-import { ChannelAssignment, IntId, ReadinessField, RowReason, WarningCode } from './vocabulary.js'
+import {
+  ChannelAssignment,
+  IntId,
+  ReadinessField,
+  RowReason,
+  TRANSACTION_STATUSES,
+  TransactionStatusCode,
+  WarningCode,
+} from './vocabulary.js'
+
+describe('TRANSACTION_STATUSES (design D6)', () => {
+  it('has the six statuses with statusId 1…6 in order', () => {
+    expect(TRANSACTION_STATUSES.map((s) => s.statusId)).toEqual([1, 2, 3, 4, 5, 6])
+  })
+
+  it('uses exactly the codes of TransactionStatusCode', () => {
+    expect(TRANSACTION_STATUSES.map((s) => s.code)).toEqual(TransactionStatusCode.options)
+  })
+
+  it('puts Pending, Successful and Declined in cycle E and Chargeback, Refund and RDR in cycle I', () => {
+    expect(Object.fromEntries(TRANSACTION_STATUSES.map((s) => [s.code, s.cycle]))).toEqual({
+      Pending: 'E',
+      Successful: 'E',
+      Declined: 'E',
+      Chargeback: 'I',
+      Refund: 'I',
+      RDR: 'I',
+    })
+  })
+})
 
 describe('analysis vocabulary (spec "Resumen del análisis", "Resultado del cruce", "Aviso de canales")', () => {
   it('WarningCode lists the nine warning codes of the analysis', () => {
