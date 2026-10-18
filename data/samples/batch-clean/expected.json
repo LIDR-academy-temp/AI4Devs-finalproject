@@ -37,7 +37,10 @@
   },
   "validations": {
     "provider_mismatch": 0,
-    "non_recorded_adjustment": 0,
+    "non_recorded_adjustment": {
+      "non_recorded_adjustment": 0,
+      "status_mismatch": 0
+    },
     "duplicate_in_batch": 0,
     "status_collision_in_batch": 0,
     "duplicate_across_batches": 0,

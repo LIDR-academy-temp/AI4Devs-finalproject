@@ -47,14 +47,17 @@
   "excludeAmountRows": ["df14616d-4b26-4ffb-9984-72717ebff6a6"],
   "validations": {
     "provider_mismatch": 0,
-    "non_recorded_adjustment": 0,
+    "non_recorded_adjustment": {
+      "non_recorded_adjustment": 0,
+      "status_mismatch": 0
+    },
     "duplicate_in_batch": 0,
     "status_collision_in_batch": 0,
     "duplicate_across_batches": 0,
     "status_collision_across_batches": 0,
     "missing_previous_to_batch": {
       "E": 0,
-      "I": 0,
+      "I": 3,
       "R": 0
     },
     "missing_in_range": {
@@ -62,6 +65,13 @@
       "I": 0,
       "R": 0
     }
+  },
+  "affectedIds": {
+    "missing_previous_to_batch_I": [
+      "9f569235-27cd-42d6-9ccb-3956de1cac24",
+      "2e997b14-66e9-47f5-b6d9-0962d493402d",
+      "c312f825-ae60-42b1-8a6e-32ac8093ea9e"
+    ]
   },
   "fees": "La cuenta se creó sin fees: todos los fees transaccionales son 0 y el summary lo muestra como advertencia.",
   "proposedBatchNo": 7

@@ -183,7 +183,7 @@ const samples: Sample[] = []
       warnings: { newChannels, nonUsdCurrency: 0, negativeAmounts: 0, unknownFeeTypes: [] },
       validations: {
         provider_mismatch: 0,
-        non_recorded_adjustment: 0,
+        non_recorded_adjustment: { non_recorded_adjustment: 0, status_mismatch: 0 },
         duplicate_in_batch: 0,
         status_collision_in_batch: 0,
         duplicate_across_batches: 0,
@@ -282,6 +282,9 @@ const samples: Sample[] = []
   decRows.push(tx(colAcross))
   notes.status_collision_across_batches = [colAcross.sourceTransactionId]
 
+  // status_mismatch: both DEC rows above are Successful in the gateway (file Declined vs gateway Successful)
+  notes.status_mismatch = [col.sourceTransactionId, colAcross.sourceTransactionId]
+
   // non_recorded_adjustment: chargeback from a new channel (RAM-13) whose approved txn was never settled
   const newChTxns = [...s.APP].filter((t) => NEW_CHANNEL_FOR[chan(t.channelId).name] === plan.account)
   const nra = newChTxns[0]!
@@ -370,7 +373,10 @@ const samples: Sample[] = []
       warnings: { newChannels, negativeAmounts: 1, unknownFeeTypes: ['Fraud Monitoring Fee'] },
       validations: {
         provider_mismatch: 0,
-        non_recorded_adjustment: 1,
+        non_recorded_adjustment: {
+          non_recorded_adjustment: (notes.non_recorded_adjustment as string[]).length,
+          status_mismatch: (notes.status_mismatch as string[]).length,
+        },
         duplicate_in_batch: 1,
         status_collision_in_batch: 1,
         duplicate_across_batches: 1,
@@ -384,6 +390,7 @@ const samples: Sample[] = []
         status_collision_in_batch: 'both included',
         status_collision_across_batches: 'current included',
         non_recorded_adjustment: 'included',
+        status_mismatch: 'included',
       },
       affectedIds: notes,
       batchFeesPrefilled: otherFees.map(([type, amount]) => ({ feeType: type, amount })),
@@ -435,6 +442,10 @@ const samples: Sample[] = []
   const trx: Row[] = [...s.APP.map((t) => [t.sourceTransactionId, 'Successful', t.amount] as Row)]
   const fail: Row[] = s.DEC.map((t) => [t.sourceTransactionId, 'Failed', t.amount] as Row)
   const cb: Row[] = s.CHB.map((t, i) => [t.sourceTransactionId, i === 0 ? 'CHB 2' : 'CHB', t.amount] as Row)
+  // the CB sheet carries chargebacks only: the window's refunds and RDRs are omitted; those whose status change
+  // precedes the I range (built from the CB rows) are missing_previous_to_batch, later ones are out of range
+  const iMin = Math.min(...s.CHB.map((t) => t.lastStatusChangedAt!.getTime()))
+  const missPrevI = [...s.REF, ...s.RDR].filter((t) => t.lastStatusChangedAt!.getTime() < iMin)
   samples.push({
     name: 'legacy-provider',
     account: plan.account,
@@ -470,14 +481,15 @@ const samples: Sample[] = []
       excludeAmountRows: cb.length ? [cb[0]![0]] : [],
       validations: {
         provider_mismatch: 0,
-        non_recorded_adjustment: 0,
+        non_recorded_adjustment: { non_recorded_adjustment: 0, status_mismatch: 0 },
         duplicate_in_batch: 0,
         status_collision_in_batch: 0,
         duplicate_across_batches: 0,
         status_collision_across_batches: 0,
-        missing_previous_to_batch: { E: 0, I: 0, R: 0 },
+        missing_previous_to_batch: { E: 0, I: missPrevI.length, R: 0 },
         missing_in_range: { E: 0, I: 0, R: 0 },
       },
+      affectedIds: { missing_previous_to_batch_I: missPrevI.map((t) => t.sourceTransactionId) },
       fees: 'La cuenta se creó sin fees: todos los fees transaccionales son 0 y el summary lo muestra como advertencia.',
       proposedBatchNo: plan.batchNo,
     },
