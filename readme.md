@@ -834,7 +834,199 @@ Los escalones 1 a 3 son la novedad: **la extraprima se negocia normalmente con e
 
 ## 4. Especificación de la API
 
-> Si tu backend se comunica a través de API, describe los endpoints principales (máximo 3) en formato OpenAPI. Opcionalmente puedes añadir un ejemplo de petición y de respuesta para mayor claridad
+Los tres endpoints principales de registro y consulta de campañas:
+
+### **4.1. POST /api/campaigns — Registrar campaña**
+
+**Rol requerido:** `operations`
+
+**Descripción:** Registra una nueva campaña desde una orden de compra. Valida todas las referencias a maestros (agencia, anunciante, DSP, etc.), expande automáticamente los períodos mensuales y crea las líneas de campaña.
+
+**Petición:**
+
+```bash
+curl -X POST http://localhost/api/campaigns \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "ACME_may26_adform",
+    "display_name": "ACME Mayo 2026 Adform",
+    "agency_id": 1,
+    "advertiser_id": 2,
+    "campaign_type_id": 1,
+    "sector_id": 3,
+    "sales_rep_id": 1,
+    "start_date": "2026-05-01",
+    "end_date": "2026-05-31",
+    "order_reference": "PO-2026-001",
+    "order_received_on": "2026-04-28",
+    "lines": [
+      {
+        "dsp_id": 1,
+        "channel_id": 1,
+        "format_id": 1,
+        "scope": "national",
+        "market_description": "Nacional (Madrid)",
+        "contracted_impressions": 500000,
+        "sale_cpm": "5.50"
+      }
+    ]
+  }'
+```
+
+**Respuesta exitosa (201 Created):**
+
+```json
+{
+  "id": 42,
+  "name": "ACME_may26_adform",
+  "display_name": "ACME Mayo 2026 Adform",
+  "agency_id": 1,
+  "advertiser_id": 2,
+  "campaign_type_id": 1,
+  "sector_id": 3,
+  "sales_rep_id": 1,
+  "purchase_order_id": 15,
+  "start_date": "2026-05-01",
+  "end_date": "2026-05-31",
+  "status": "active",
+  "periods": [
+    {
+      "id": 127,
+      "campaign_id": 42,
+      "period_year": 2026,
+      "period_month": 5,
+      "period_start": "2026-05-01",
+      "period_end": "2026-05-31",
+      "status": "open"
+    }
+  ],
+  "lines": [
+    {
+      "id": 301,
+      "campaign_period_id": 127,
+      "dsp_id": 1,
+      "channel_id": 1,
+      "format_id": 1,
+      "scope": "national",
+      "market_description": "Nacional (Madrid)",
+      "contracted_impressions": 500000,
+      "sale_cpm": "5.50",
+      "currency": "EUR"
+    }
+  ]
+}
+```
+
+**Errores:**
+
+- **401 Unauthenticated:** Token ausente, inválido, expirado o con signature incorrecta.
+- **403 Forbidden:** Token válido pero usuario sin rol `operations`. Código: `{"code": "missing_role", "message": "User lacks the required role"}`.
+- **409 Conflict:** Orden de compra duplicada. Código: `{"code": "duplicate_order_reference", "message": "A purchase order with this reference already exists"}`.
+- **422 Validation Error:** Campo requerido ausente o malformado. Formato: `{"detail": [{"loc": ["body", "lines"], "msg": "At least one line is required", "type": "value_error"}]}`.
+
+---
+
+### **4.2. GET /api/campaigns — Listar campañas**
+
+**Rol requerido:** `operations` o `business`
+
+**Descripción:** Obtiene la lista de todas las campañas (vista simplificada sin períodos ni líneas por rendimiento).
+
+**Petición:**
+
+```bash
+curl -X GET http://localhost/api/campaigns \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json"
+```
+
+**Respuesta exitosa (200 OK):**
+
+```json
+[
+  {
+    "id": 42,
+    "name": "ACME_may26_adform",
+    "display_name": "ACME Mayo 2026 Adform",
+    "agency_id": 1,
+    "advertiser_id": 2,
+    "status": "active",
+    "start_date": "2026-05-01",
+    "end_date": "2026-05-31"
+  },
+  {
+    "id": 41,
+    "name": "NIKE_apr26_equativ",
+    "display_name": "Nike Abril 2026 Equativ",
+    "agency_id": 3,
+    "advertiser_id": 5,
+    "status": "active",
+    "start_date": "2026-04-01",
+    "end_date": "2026-04-30"
+  }
+]
+```
+
+**Errores:**
+
+- **401 Unauthenticated:** Token ausente o inválido.
+- **403 Forbidden:** Token válido pero usuario sin rol `operations` o `business`. Código: `{"code": "missing_role", "message": "User lacks the required role"}`.
+
+---
+
+### **4.3. GET /api/masters/agencies — Obtener lista de agencias**
+
+**Rol requerido:** Cualquier usuario autenticado
+
+**Descripción:** Obtiene el catálogo de agencias para usar en selectores de formulario. Solo devuelve agencias activas.
+
+**Petición:**
+
+```bash
+curl -X GET http://localhost/api/masters/agencies \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json"
+```
+
+**Respuesta exitosa (200 OK):**
+
+```json
+[
+  {
+    "id": 1,
+    "name": "GroupM"
+  },
+  {
+    "id": 2,
+    "name": "Dentsu"
+  },
+  {
+    "id": 3,
+    "name": "Publicis"
+  },
+  {
+    "id": 4,
+    "name": "Havas"
+  }
+]
+```
+
+**Errores:**
+
+- **401 Unauthenticated:** Token ausente o inválido.
+
+---
+
+### **Nota: Formatos de error**
+
+El API utiliza tres formatos de error según el tipo:
+
+1. **Errores de negocio (40x):** Devuelven `{"code": "<error_code>", "message": "<human_readable_message>"}`. Códigos: `missing_role`, `duplicate_order_reference`, `duplicate_campaign_name`.
+
+2. **Errores de validación (422):** Devuelven `{"detail": [...]}` con array de detalles por campo. Formato: `{"detail": [{"loc": ["body", "field_name"], "msg": "error message", "type": "error_type"}]}`.
+
+3. **Errores de maestros inexistentes (400):** Devuelven `{"detail": "Agency with id 999 not found"}`.
 
 ---
 
