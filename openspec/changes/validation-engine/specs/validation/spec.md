@@ -254,7 +254,7 @@ Las filas del import SHALL compararse por `(transactionId, cycle)` con los movim
 - **THEN** `duplicate_across_batches` y `status_collision_across_batches` son `not_applicable`
 
 ### Requirement: Filas que forman cada rango
-APP SHALL formarse con las filas E asociadas cuya transacción no está `Declined` ni `Pending` en el gateway (fecha de creación); DEC con las filas E cuya transacción está `Declined` (fecha de creación); I con las filas I cuya transacción está en el gateway en el mismo estado que la fila (fecha del último cambio de estado); R con las filas R (fecha de creación de la transacción). Las filas I sin fecha válida se cuentan aparte, de forma informativa.
+APP SHALL formarse con las filas E asociadas cuya transacción no está `Declined` ni `Pending` en el gateway (fecha de creación); DEC con las filas E cuya transacción está `Declined` (fecha de creación); I con las filas I cuya transacción está en el gateway en el mismo estado que la fila (fecha del último cambio de estado); R con las filas R (vencimiento de la reserva: creación + `rollingReserveDays` de su canal). Las filas I sin fecha válida se cuentan aparte, de forma informativa.
 
 #### Scenario: Declinada en el archivo, aprobada en el gateway
 - **GIVEN** `data/samples/batch-issues`, donde una transacción de la ventana anterior, `Successful` en el gateway, viene en DEC
@@ -267,7 +267,7 @@ APP SHALL formarse con las filas E asociadas cuya transacción no está `Decline
 - **THEN** la fila no aporta fecha al rango I y el informe la cuenta en `undatedAdjustmentCount`
 
 ### Requirement: Candidatas a faltante
-Las candidatas SHALL ser transacciones de los canales cuya cuenta principal es la del import: APP `Successful`, DEC `Declined`, I en estado de ciclo I y R movimientos E vigentes con reserva vencida, sin liberación anticipada. Una reserva retenida está vencida cuando su fecha de creación cae dentro del rango R del archivo, lo que equivale a que terminó su plazo de retención. Se excluyen las presentes en el batch o procesadas en ese ciclo en un intento vigente del proveedor y las ya registradas.
+Las candidatas SHALL ser transacciones de los canales cuya cuenta principal es la del import: APP `Successful`, DEC `Declined`, I en estado de ciclo I y R movimientos E vigentes con reserva vencida, sin liberación anticipada. Una reserva vence en su creación + `rollingReserveDays` de su canal, y se compara por esa fecha con el rango R, también de vencimiento. Se excluyen las presentes en el batch o procesadas en ese ciclo en un intento vigente del proveedor y las ya registradas.
 
 #### Scenario: Canal sin asignar presente en el import
 - **GIVEN** `data/samples/batch-issues`, donde también faltan las DEC de RAM-13 (sin cuenta) del 2026-09-28
@@ -275,17 +275,22 @@ Las candidatas SHALL ser transacciones de los canales cuya cuenta principal es l
 - **THEN** solo cuentan las 10 de RAM-11 y RAM-12: `missing_previous_to_batch.E = 10`
 
 #### Scenario: Reserva vencida antes del rango R
-- **GIVEN** un movimiento E vigente con `reserveHeldAmt > 0`, sin liberación anticipada ni movimiento R, cuya transacción se creó antes del mínimo del rango R
+- **GIVEN** un movimiento E vigente con `reserveHeldAmt > 0`, sin liberación anticipada ni movimiento R, cuya reserva venció antes del mínimo del rango R
 - **WHEN** se valida un import que no lo trae en RR
-- **THEN** la reserva ya estaba vencida y es `missing_previous_to_batch` en R
+- **THEN** es `missing_previous_to_batch` en R, con su fecha de vencimiento como `relevantDate`
 
 #### Scenario: Reserva todavía no vencida
-- **GIVEN** la misma reserva con fecha de creación posterior al máximo del rango R
+- **GIVEN** la misma reserva con fecha de vencimiento posterior al máximo del rango R
 - **WHEN** se valida
 - **THEN** no aparece en ninguna de las dos validaciones de faltantes
 
+#### Scenario: Cuenta con plazos de retención mezclados
+- **GIVEN** una cuenta con un canal de 180 días y otro de 120, filas RR de ambos y una reserva de 180 días creada entre esas filas que aún no ha vencido
+- **WHEN** se valida un import que no la trae en RR
+- **THEN** no aparece como faltante: el rango R y la reserva se comparan por fecha de vencimiento
+
 #### Scenario: Reserva liberada anticipadamente
-- **GIVEN** un movimiento E vigente con `reserveHeldAmt > 0` y `reserveEarlyReleasedAmt > 0`, con fecha dentro del rango R
+- **GIVEN** un movimiento E vigente con `reserveHeldAmt > 0` y `reserveEarlyReleasedAmt > 0`, con vencimiento dentro del rango R
 - **WHEN** se valida un import que no lo trae en RR
 - **THEN** no es faltante de R
 
