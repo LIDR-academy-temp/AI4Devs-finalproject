@@ -181,6 +181,18 @@ describe('missing candidates', () => {
     expect(report.undatedCandidateCount).toBe(2)
   })
 
+  it('an undated I candidate the source returns twice is counted once (L3)', () => {
+    const twice = candidate({ transactionId: 10n, status: 'Chargeback', changedAt: null })
+    const report = runValidations(
+      input({
+        rows: [row({ transactionId: 1n, cycle: 'I', status: 'Refund', gateway: 'Refund', changedAt: MIN })],
+        candidates: [twice, { ...twice }],
+      }),
+    )
+
+    expect(report.undatedCandidateCount).toBe(1)
+  })
+
   it('R: held reserves not released; an early-released one is not missing', () => {
     const i = input({
       rows: [row({ transactionId: 1n, cycle: 'R', status: 'Successful', date: MIN })],

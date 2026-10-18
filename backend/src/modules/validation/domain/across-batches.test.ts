@@ -181,6 +181,34 @@ describe('duplicate_across_batches and status_collision_across_batches', () => {
     ])
   })
 
+  it('a collision against the history also lists a settled CHB 2 next to the different status (L5)', () => {
+    const { dup, col } = run(
+      [row({ cycle: 'I', status: 'Chargeback', gateway: 'Chargeback' })],
+      [
+        movement({ cycle: 'I', status: 'Chargeback', excludeAmount: true, batchNo: 50 }),
+        movement({ cycle: 'I', status: 'Refund', batchNo: 51 }),
+      ],
+    )
+
+    expect(dup.issues).toEqual([])
+    expect(col.issueCount).toBe(1)
+    expect(col.issues[0]!.occurrences.map((o) => [o.sourceType, o.statusId, o.excludeAmount])).toEqual([
+      ['current_import', STATUS.Chargeback, false],
+      ['previous_batch', STATUS.Chargeback, true],
+      ['previous_batch', STATUS.Refund, false],
+    ])
+  })
+
+  it('CHB 2 settled and a current Chargeback alone are still nothing', () => {
+    const { dup, col } = run(
+      [row({ cycle: 'I', status: 'Chargeback', gateway: 'Chargeback' })],
+      [movement({ cycle: 'I', status: 'Chargeback', excludeAmount: true })],
+    )
+
+    expect(dup.issues).toEqual([])
+    expect(col.issues).toEqual([])
+  })
+
   it('history of another cycle is not compared', () => {
     const { dup, col } = run([row({ cycle: 'R', status: 'Successful' })], [movement({ cycle: 'E' })])
 

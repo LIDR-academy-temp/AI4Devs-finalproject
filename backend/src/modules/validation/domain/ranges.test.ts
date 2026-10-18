@@ -104,6 +104,12 @@ describe('computeRanges', () => {
     expect(ranges.R).toEqual({ min: at('2026-09-28T09:00:00.000Z'), max: at('2026-09-29T09:00:00.000Z') })
   })
 
+  it('throws when the channel of an R row has no rollingReserveDays in the account (incomplete map, L4)', () => {
+    expect(() =>
+      computeRanges([row({ cycle: 'R', status: 'Successful', channelId: 9999 })], ACCOUNT_B, STATUSES),
+    ).toThrow(/channel 9999/)
+  })
+
   it('foreign and unmatched rows do not widen the ranges', () => {
     const { ranges } = computeRanges(
       [
