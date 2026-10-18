@@ -1,7 +1,7 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { importRequests, seedImport } from '@/test/msw/imports'
+import { importRecord, importRequests, seedImport } from '@/test/msw/imports'
 import { renderApp } from '@/test/render'
 import { strings } from '../strings'
 
@@ -46,16 +46,11 @@ describe('Column Mapping: proposal per sheet (spec "Pantalla Column Mapping: pro
       ['RDR', 'Proposed: I · RDR — global rule'],
       ['RR', 'Proposed: R · reserve, no status — global rule'],
       ['Other Fees', 'Proposed: batch fees — global rule'],
-      ['Duplicate Corrections', 'Proposed: ignore — global rule'],
-      ['CHB Alerts', 'Proposed: ignore — global rule'],
-      ['Settings', 'Proposed: ignore — global rule'],
     ] as const) {
       const section = sheet(name)
       expect(section.getByRole('heading', { name })).toBeInTheDocument()
       expect(section.getByText(label)).toBeInTheDocument()
     }
-    expect(sheet('Settings').getByText('Sheet "Settings" is ignored by rule "Settings"')).toBeInTheDocument()
-
     const app = sheet('APP')
     expect(control(app, strings.mapping.kind)).toHaveTextContent('Transactions')
     expect(control(app, strings.mapping.cycle)).toHaveTextContent('E · transaction')
@@ -86,6 +81,54 @@ describe('Column Mapping: proposal per sheet (spec "Pantalla Column Mapping: pro
 
     expect(sheet('DEC').getByText('Proposed: E · Declined — global rule')).toBeInTheDocument()
     expect(control(sheet('DEC'), strings.mapping.cycle)).toHaveTextContent('I · adjustment')
+  })
+})
+
+describe('Column Mapping: sheets with nothing to map (spec "Pantalla Column Mapping: hojas sin nada que parear")', () => {
+  it('shows the sheets with 0 rows and Settings, ignored by rule, as one line without controls', async () => {
+    await openMapping(seedImport('batch-clean').importId)
+
+    for (const name of ['Duplicate Corrections', 'CHB Alerts']) {
+      const section = sheet(name)
+      expect(section.getByRole('heading', { name })).toBeInTheDocument()
+      expect(section.getByText('0 rows')).toBeInTheDocument()
+      expect(section.queryByText('Proposed: ignore — global rule')).not.toBeInTheDocument()
+      expect(section.queryAllByRole('combobox')).toHaveLength(0)
+      expect(section.queryByRole('table')).not.toBeInTheDocument()
+      expect(section.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
+    }
+
+    const settings = sheet('Settings')
+    expect(settings.getByText('Proposed: ignore — global rule')).toBeInTheDocument()
+    expect(settings.getByText('21 rows')).toBeInTheDocument()
+    expect(settings.getByRole('button', { name: 'Edit' })).toBeInTheDocument()
+    expect(settings.queryAllByRole('combobox')).toHaveLength(0)
+    expect(settings.queryByText('Sheet "Settings" is ignored by rule "Settings"')).not.toBeInTheDocument()
+  })
+
+  it('Edit on Settings shows its controls with Ignore and its note, and its type can change', async () => {
+    const { user } = await openMapping(seedImport('batch-clean').importId)
+
+    await user.click(sheet('Settings').getByRole('button', { name: 'Edit' }))
+
+    const settings = sheet('Settings')
+    expect(control(settings, strings.mapping.kind)).toHaveTextContent('Ignore')
+    expect(settings.getByText('Sheet "Settings" is ignored by rule "Settings"')).toBeInTheDocument()
+    await choose(user, control(settings, strings.mapping.kind), 'Transactions')
+    expect(control(sheet('Settings'), strings.mapping.kind)).toHaveTextContent('Transactions')
+  })
+
+  it('the confirmation still sends every sheet, the compact ones too', async () => {
+    const { importId } = seedImport('batch-clean')
+    const { user } = await openMapping(importId)
+
+    await user.click(screen.getByRole('button', { name: strings.mapping.confirm }))
+
+    await waitFor(() => expect(importRequests('mapping')).toHaveLength(1))
+    const sent = (importRequests('mapping')[0]!.body as { sheets: { sheetId: string }[] }).sheets
+    const all = importRecord(importId).files.flatMap((f) => f.sheets.map((s) => s.sheetId))
+    expect(sent.map((s) => s.sheetId)).toEqual(all)
+    expect(sent).toHaveLength(10)
   })
 })
 

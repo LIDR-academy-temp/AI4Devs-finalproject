@@ -130,6 +130,14 @@ describe('Column Mapping: unconfirmed changes survive the Files step (design D5)
     await user.click(screen.getByRole('tab', { name: strings.steps.mapping }))
 
     expect(cycleOf(sheet('DEC', PART1))).toHaveTextContent('I · adjustment')
-    expect(cycleOf(sheet('DEC', PART2))).toHaveTextContent('E · transaction')
+    // DEC of part2 has no rows and shows as one line: its own proposal is what the confirmation sends.
+    await user.click(confirmButton())
+    await waitFor(() => expect(importRequests('mapping')).toHaveLength(1))
+    const [part1, part2] = importRecord(importId).files
+    const sent = (importRequests('mapping')[0]!.body as { sheets: { sheetId: string; cycle: string | null }[] }).sheets
+    const cycleSent = (file: typeof part1) =>
+      sent.find((s) => s.sheetId === file!.sheets.find((x) => x.template.sheetName === 'DEC')!.sheetId)?.cycle
+    expect(cycleSent(part1)).toBe('I')
+    expect(cycleSent(part2)).toBe('E')
   })
 })
