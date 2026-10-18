@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { fileInput, findFileEntry } from '@/test/import-screens'
-import { holdNext, importRecord, importRequests, proposalBody, sampleFile, seedImport } from '@/test/msw/imports'
+import { holdNext, importRecord, importRequests, sampleFile, seedImport } from '@/test/msw/imports'
 import { renderApp } from '@/test/render'
 import { strings } from '../strings'
 
@@ -39,7 +39,61 @@ describe('Column Mapping: confirmation (spec "Pantalla Column Mapping: confirmac
 
     expect(await header().findByText('mapped')).toBeInTheDocument()
     expect(readiness().getByText(strings.readiness.ready)).toBeInTheDocument()
-    expect(importRequests('mapping').map((r) => r.body)).toEqual([proposalBody(importRecord(importId))])
+    // The literals of the spec, not the fixture the fake API is built from.
+    const sheetName = new Map(
+      importRecord(importId).files[0]!.sheets.map((s) => [s.sheetId, s.template.sheetName] as const),
+    )
+    type SentSheet = {
+      sheetId: string
+      kind: string
+      cycle: string | null
+      statusId: number | null
+      columns: { sourceColumn: string; targetField: string }[]
+    }
+    const sent = (importRequests('mapping')[0]!.body as { sheets: SentSheet[] }).sheets
+    const byName = Object.fromEntries(sent.map((s) => [sheetName.get(s.sheetId), s]))
+    expect(sent).toHaveLength(10)
+    const idAmountCurrency = [
+      { sourceColumn: 'ID', targetField: 'transactionId' },
+      { sourceColumn: 'Amount', targetField: 'amount' },
+      { sourceColumn: 'Currency', targetField: 'currency' },
+    ]
+    for (const [name, cycle, statusId] of [
+      ['APP', 'E', 2],
+      ['DEC', 'E', 3],
+      ['CHB', 'I', 4],
+      ['REF', 'I', 5],
+      ['RDR', 'I', 6],
+      ['RR', 'R', null],
+    ] as const) {
+      expect(byName[name]).toEqual({
+        sheetId: expect.any(String),
+        kind: 'transactions',
+        cycle,
+        statusId,
+        columns: idAmountCurrency,
+      })
+    }
+    expect(byName['Other Fees']).toEqual({
+      sheetId: expect.any(String),
+      kind: 'batch_fees',
+      cycle: null,
+      statusId: null,
+      columns: [
+        { sourceColumn: 'Type of Fee', targetField: 'feeType' },
+        { sourceColumn: 'Amount', targetField: 'amount' },
+        { sourceColumn: 'Currency', targetField: 'currency' },
+      ],
+    })
+    for (const name of ['Duplicate Corrections', 'CHB Alerts', 'Settings']) {
+      expect(byName[name]).toEqual({
+        sheetId: expect.any(String),
+        kind: 'ignore',
+        cycle: null,
+        statusId: null,
+        columns: [],
+      })
+    }
   })
 
   it('a corrected sheet is shown with its confirmed mapping and keeps its preview', async () => {
