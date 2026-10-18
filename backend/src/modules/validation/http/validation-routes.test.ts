@@ -176,3 +176,103 @@ describe('GET /validation-issues/:issueId', () => {
     expect(unknown.json()).toMatchObject({ code: 'not_found', message: 'Validation issue not found' })
   })
 })
+
+/** Runs the validations and answers the in-batch duplicate with its occurrences. */
+async function inBatchDuplicate() {
+  await request('POST', `/imports/${importId}/validations`)
+  const page = ValidationIssuesPage.parse(
+    (await request('GET', `/imports/${importId}/validation-issues?type=duplicate&scope=in_batch`)).json(),
+  )
+  return ValidationIssueDetail.parse((await request('GET', `/validation-issues/${page.items[0]!.issueId}`)).json())
+}
+
+describe('PATCH /conflict-occurrences/:occurrenceId', () => {
+  it('200 with the detail of the finding and the change author', async () => {
+    const dup = await inBatchDuplicate()
+    const excluded = dup.occurrences.find((o) => !o.defaultIncluded)!
+
+    const res = await request('PATCH', `/conflict-occurrences/${excluded.occurrenceId}`, {
+      body: { includeInSettlement: true },
+    })
+
+    expect(res.statusCode).toBe(200)
+    const detail = ValidationIssueDetail.parse(res.json())
+    expect(detail.occurrences.find((o) => o.occurrenceId === excluded.occurrenceId)?.changedBy?.userName).toBe(
+      'analyst',
+    )
+  })
+
+  it('403 for viewer, 400 for a body that is not strict or not boolean, 400 for an id of 20 digits', async () => {
+    const dup = await inBatchDuplicate()
+    const id = dup.occurrences[0]!.occurrenceId
+
+    const forbidden = await request('PATCH', `/conflict-occurrences/${id}`, {
+      body: { includeInSettlement: true },
+      user: 'viewer',
+    })
+    expect(forbidden.statusCode).toBe(403)
+    for (const body of [{ includeInSettlement: 'yes' }, { includeInSettlement: true, note: 'x' }, {}]) {
+      const res = await request('PATCH', `/conflict-occurrences/${id}`, { body })
+      expect(res.statusCode, JSON.stringify(body)).toBe(400)
+      expect(errorCode(res.json())).toBe('validation_error')
+    }
+    const long = await request('PATCH', `/conflict-occurrences/${'9'.repeat(20)}`, {
+      body: { includeInSettlement: true },
+    })
+    expect(long.statusCode).toBe(400)
+  })
+
+  it('404 not_found for an unknown occurrence', async () => {
+    await inBatchDuplicate()
+
+    const res = await request('PATCH', '/conflict-occurrences/999999', { body: { includeInSettlement: true } })
+
+    expect(res.statusCode).toBe(404)
+    expect(res.json()).toMatchObject({ code: 'not_found', message: 'Conflict occurrence not found' })
+  })
+})
+
+describe('PATCH /validation-issues/:issueId', () => {
+  async function nraId() {
+    await request('POST', `/imports/${importId}/validations`)
+    const page = ValidationIssuesPage.parse(
+      (await request('GET', `/imports/${importId}/validation-issues?type=non_recorded_adjustment`)).json(),
+    )
+    return page.items[0]!.issueId
+  }
+
+  it('200 with the finding resolved', async () => {
+    const issueId = await nraId()
+
+    const res = await request('PATCH', `/validation-issues/${issueId}`, {
+      body: { resolutionStatus: 'resolved', note: 'Verified in the gateway' },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(ValidationIssueDetail.parse(res.json())).toMatchObject({
+      resolutionStatus: 'resolved',
+      resolutionNote: 'Verified in the gateway',
+    })
+  })
+
+  it('403 for viewer, 400 for an empty or too long note, 422 for a duplicate', async () => {
+    const issueId = await nraId()
+    const forbidden = await request('PATCH', `/validation-issues/${issueId}`, {
+      body: { resolutionStatus: 'resolved', note: 'x' },
+      user: 'viewer',
+    })
+    expect(forbidden.statusCode).toBe(403)
+    for (const note of ['', 'x'.repeat(501)]) {
+      const res = await request('PATCH', `/validation-issues/${issueId}`, {
+        body: { resolutionStatus: 'resolved', note },
+      })
+      expect(res.statusCode).toBe(400)
+    }
+    const dup = await inBatchDuplicate()
+    const res = await request('PATCH', `/validation-issues/${dup.issueId}`, {
+      body: { resolutionStatus: 'resolved', note: 'x' },
+    })
+    expect(res.statusCode).toBe(422)
+    expect(res.json()).toMatchObject({ code: 'issue_not_resolvable', details: { issueType: 'duplicate' } })
+  })
+})
