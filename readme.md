@@ -1352,16 +1352,19 @@ Este change cubre **1 de 3 historias** de usuario: el alta de campaña desde la 
 | | 7.1–7.3 | Importación de Excel y reconciliación de agencias: fixtures SQL en el MVP, corpus histórico en Fase 2 |
 | | 8.1 | Los tests unitarios del §9 cubren los casos negativos |
 | | 11.5, 11.6 | Fase 1.5 |
-| 📋 Pendiente de documentar | 8.2, 9.1–9.6, 10.1, 10.7, 12.1, 12.2 | Faltan los informes de pruebas y la revisión de §3 y de los estándares |
+| 📋 Pendiente de documentar | 10.1, 10.7, 12.1, 12.2 | Falta el informe de las pruebas con `curl` (10.1, 10.7) y la revisión de §3 y de los estándares (12.1, 12.2) |
 | ✅ Hecho | 12.3, 12.4 | `.env.example` actualizado en la fusión; `openspec validate` pasó (4 specs) después de archivar |
+| | 8.2 | Los endpoints con guarda de rol (`POST` y `GET /campaigns`) tienen su caso negativo (403 `missing_role`) cubierto por tests. Los endpoints de datos maestros solo exigen usuario autenticado y no tienen guarda de rol |
+| | 9.1–9.6 | Informe en [`docs/reports/2026-10-18-entrega-2-test-report.md`](docs/reports/2026-10-18-entrega-2-test-report.md). La ruta difiere de la prevista en la tarea 9.5 porque el change ya está archivado, y el punto 9.2 se cubre con la ejecución de la suite completa |
 
 
 **Pruebas ejecutadas**
 
 - Backend: 65 tests passed (pytest)
-- Frontend: 59 tests en 16 ficheros (Vitest + Testing Library)
+- Frontend: 61 tests en 16 ficheros (Vitest + Testing Library)
 - Ejecuciones: dos pasadas completas con resultado idéntico
 - Modelo de datos: 18 tablas + `alembic_version`
+- Informe completo: [`docs/reports/2026-10-18-entrega-2-test-report.md`](docs/reports/2026-10-18-entrega-2-test-report.md)
 
 **Cómo revisarlo**
 
@@ -1386,6 +1389,8 @@ Este change cubre **1 de 3 historias** de usuario: el alta de campaña desde la 
 - **sale_cpm sin normalizar:** se devuelve como se guardó (ej. "5.5" o "5.50"), sin forzar dos decimales.
 - **Migraciones manuales:** se aplican como paso explícito, no al arrancar (por diseño: son operacionales).
 - **Imagen con dependencias de desarrollo:** el Dockerfile actual incluye `tests/` y `scripts/`; despliegue limpio en Entrega 3.
+- **Sesión caducada en el formulario:** si el token caduca mientras se rellena «Nueva campaña», se muestra la pantalla de sesión caducada y se pierde lo escrito.
+- **Detección de errores en el formulario:** el `catch` de `CreateCampaignForm` identifica los errores del API con `'kind' in err && 'status' in err` en lugar de `instanceof ApiError`. Funciona, pero conviene volver a `instanceof` con un test que use el cliente real.
 
 ---
 
