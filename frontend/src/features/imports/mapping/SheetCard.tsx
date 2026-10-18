@@ -1,7 +1,8 @@
 import { Cycle, SheetKind } from '@recon/shared'
-import { memo, useId } from 'react'
+import { memo, useId, useState } from 'react'
 import { Controller, get, useFormContext, useFormState, useWatch } from 'react-hook-form'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { ImportSheet } from '@/lib/api/types'
 import { strings } from '../strings'
@@ -14,6 +15,8 @@ const FROM_COLUMN = 'column'
 /**
  * One sheet: its name and the proposal in the analyst's words, built from `proposed` so it stays visible while
  * editing (design D5); then the three controls, the columns and the preview with the mapping being edited.
+ * A sheet with nothing to map is one line: with 0 rows, its name and rows; ignored by rule with rows, also the
+ * proposal and Edit to open the controls. Its mapping is still in the form, so the confirmation sends it.
  */
 export const SheetCard = memo(function SheetCard({ sheet, disabled }: { sheet: ImportSheet; disabled: boolean }) {
   const kindId = useId()
@@ -27,6 +30,35 @@ export const SheetCard = memo(function SheetCard({ sheet, disabled }: { sheet: I
   // Subscribed to this sheet only: a change elsewhere does not re-render every card (and its selects).
   const { errors } = useFormState({ control, name: base })
   const error = (field: 'kind' | 'cycle' | 'statusId'): string | undefined => get(errors, `${base}.${field}`)?.message
+  const [editing, setEditing] = useState(false)
+  // A sheet without a type or with an error keeps its controls: the analyst has something to resolve there.
+  const settled = kind !== null && !get(errors, base)
+  const empty = settled && sheet.rowCount === 0
+  const ignoredByRule =
+    settled && kind === 'ignore' && sheet.proposed.kind === 'ignore' && sheet.proposed.source !== 'none' && !editing
+
+  if (empty || ignoredByRule) {
+    return (
+      <section
+        aria-label={sheet.sheetName}
+        className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border bg-background px-3 py-1.5"
+      >
+        <h3 className="text-sm font-semibold">{sheet.sheetName}</h3>
+        {!empty && <span className="text-sm">{proposalLabel(sheet.proposed)}</span>}
+        <span className="text-xs text-muted-foreground">{strings.mapping.rows(sheet.rowCount)}</span>
+        {sheet.hidden && (
+          <Badge variant="outline" className="text-[10px]">
+            {strings.mapping.hidden}
+          </Badge>
+        )}
+        {!empty && (
+          <Button variant="ghost" size="sm" className="ml-auto" aria-expanded={false} onClick={() => setEditing(true)}>
+            {strings.mapping.edit}
+          </Button>
+        )}
+      </section>
+    )
+  }
 
   return (
     <section aria-label={sheet.sheetName} className="flex flex-col gap-3 rounded-md border bg-background p-3">

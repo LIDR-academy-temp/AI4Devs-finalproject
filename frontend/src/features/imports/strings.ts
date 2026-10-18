@@ -88,6 +88,7 @@ export const strings = {
     unresolved: 'unresolved',
     rows: (count: number) => `${count} ${count === 1 ? 'row' : 'rows'}`,
     hidden: 'hidden',
+    edit: 'Edit',
     columnsDisabled: 'Choose a type to map the columns.',
     previewOf: (sheetName: string) => `Preview of ${sheetName}`,
     noPreview: 'No rows to preview.',
