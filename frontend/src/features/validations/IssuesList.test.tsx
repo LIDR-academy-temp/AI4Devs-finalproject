@@ -81,10 +81,13 @@ describe('Analysis & Validations: findings of a validation (spec "lista de halla
     const { issues } = seedValidationRun(importId)
     const duplicate = issues.find((i) => i.validationCode === 'duplicate_in_batch')!
 
-    await openAnalysis(importId, `&validation=duplicate_in_batch&issue=${duplicate.issueId}`)
+    const { user } = await openAnalysis(importId, `&validation=duplicate_in_batch&issue=${duplicate.issueId}`)
 
+    expect(await screen.findByRole('dialog', { name: /441706751475644/ })).toBeInTheDocument()
+    // The drawer is modal: what is behind it is checked once it is closed, as a user would see it.
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(results().getByRole('button', { name: 'Duplicate in batch' })).toHaveAttribute('aria-pressed', 'true')
     expect(await findingRows()).toHaveLength(1)
-    expect(await screen.findByRole('dialog', { name: /441706751475644/ })).toBeInTheDocument()
   })
 })

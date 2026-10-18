@@ -149,6 +149,9 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
 
     await user.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    await waitFor(() => expect(document.activeElement).toHaveTextContent('441706751475644'))
+    await waitFor(() => {
+      expect(document.activeElement).not.toBe(document.body)
+      expect(document.activeElement).toHaveTextContent(/^441706751475644$/)
+    })
   })
 })
