@@ -135,7 +135,8 @@ const ranges = (s: ReturnType<typeof baseSheets>) => {
     APP: r(s.APP, (t) => t.transactionDate),
     DEC: r(s.DEC, (t) => t.transactionDate),
     I: r([...s.CHB, ...s.REF, ...s.RDR], (t) => t.lastStatusChangedAt!),
-    R: r(s.RR, (t) => t.transactionDate),
+    // R by expiry date: creation + rollingReserveDays of the transaction's channel.
+    R: r(s.RR, (t) => day(t.transactionDate, chan(t.channelId).days)),
   }
 }
 
