@@ -520,7 +520,7 @@ En todo import analizado, `analysis` SHALL traer `rows` (`total`, `matched`, `un
 - **AND** `viewer` sobre un import de `ProviderC-Alt` o sobre un UUID inexistente recibe `404 not_found` con el mismo cuerpo
 
 ### Requirement: Transacción de otro merchant en las filas
-Cuando la transacción asociada a una fila es de un merchant fuera del alcance de quien consulta, `GET rows` SHALL devolver `transaction = null` y añadir a `warnings` el aviso `out_of_scope_transaction`; `matchResult` y `transactionId` no cambian. Ese aviso depende de quien lee y SHALL NOT contarse en `analysis.warnings`.
+Cuando la transacción asociada a una fila es de un merchant fuera del alcance de quien consulta, `GET rows` SHALL devolver `transaction = null` y añadir a `warnings` el aviso `out_of_scope_transaction`; `matchResult` y `transactionId` no cambian; en una fila R, cuyo estado es el de la transacción, `statusId` y `statusName` SHALL ser `null`. Ese aviso depende de quien lee y SHALL NOT contarse en `analysis.warnings`.
 
 #### Scenario: Transacción de otro merchant
 - **GIVEN** un import analizado con una fila `matched` a una transacción de otro merchant en un gateway compartido

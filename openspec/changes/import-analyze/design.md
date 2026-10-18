@@ -169,6 +169,7 @@ Sin cambios de esquema. Despliegue = merge del PR; no hay variables de entorno n
 - **Caché de lectura**: cachear en memoria por `(importId, updatedAt)` la descripción del libro y `batchFees`, para no releer el `.xlsx` en cada `GET` de un import analizado (añadida en la revisión).
 - **Volumen**: análisis asíncrono (worker) y la inserción por `OPENJSON` de D1 si aparecen imports reales de decenas de miles de filas (la búsqueda de transacciones ya usa `OPENJSON`, D4); hasta entonces rige el tope de 100 000 filas por import.
 - **Precondiciones y readiness** (L4 del review de la PR): `analysis-preconditions.ts` repite la lógica de `readiness.ts` en lugar de componerla como decía D6, y ya divergen (el estado desconocido solo se comprueba en una). Refactor: que las precondiciones del análisis se construyan sobre `assessReadiness` y añadan solo lo propio (pareo confirmado, tope de filas).
+- **Identificadores que quedan visibles** (segunda revisión de la PR): las filas, candidatas y canales ocultos conservan `transactionId`, `channelId` y `gatewayId` (necesarios para resolver); el futuro endpoint de ficha de transacción (`GET /transactions/{id}`, Entrega 3) debe aplicar el alcance por merchant.
 - `READ_COMMITTED_SNAPSHOT` en `infra/` si aparecen imports de decenas de miles de filas.
 
 ## Open Questions
