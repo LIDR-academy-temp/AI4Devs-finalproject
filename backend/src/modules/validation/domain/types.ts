@@ -158,6 +158,8 @@ export interface Issue {
   relevantDate?: Date
   /** Only non_recorded_adjustment / status_mismatch: the status the gateway holds. */
   gatewayStatusId?: number
+  /** One-row findings (provider_mismatch, non_recorded_adjustment, status_mismatch): where the row is in the file. */
+  source?: { fileId: string; sheetId: string; rowNo: number }
   /** Empty except for duplicate / collision. */
   occurrences: Occurrence[]
 }

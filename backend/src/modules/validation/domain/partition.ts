@@ -12,13 +12,15 @@ export interface RowPartition {
   anyMatched: boolean
 }
 
-/** Splits the rows of the import (design D6). The rows keep the order they arrive in. */
-export function partitionRows(rows: readonly ValidationRow[], _account: AccountScope): RowPartition {
+/** Splits the rows of the import (design D6); unmatched, ambiguous and ignored rows take no part. */
+export function partitionRows(rows: readonly ValidationRow[], account: AccountScope): RowPartition {
   const own: MatchedRow[] = []
+  const foreign: MatchedRow[] = []
   for (const r of rows) {
     if (r.matchResult !== 'matched') continue
     if (r.transaction === null) throw new Error(`matched row ${r.sheetId}:${r.rowNo} without a transaction`)
-    own.push(r as MatchedRow)
+    if (r.transaction.providerId === account.providerId) own.push(r as MatchedRow)
+    else foreign.push(r as MatchedRow)
   }
-  return { own, foreign: [], anyMatched: own.length > 0 }
+  return { own, foreign, anyMatched: own.length + foreign.length > 0 }
 }

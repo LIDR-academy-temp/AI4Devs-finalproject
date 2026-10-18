@@ -1,7 +1,9 @@
 import type { Cycle, ValidationCode } from '@recon/shared'
 import { compareCurrent, compareHistory, conflictKey } from './conflict-key.js'
+import { nonRecordedAdjustment } from './non-recorded-adjustment.js'
 import { deriveOutcome, overallBlocked } from './outcome.js'
 import { type MatchedRow, partitionRows, type RowPartition } from './partition.js'
+import { providerMismatch } from './provider-mismatch.js'
 import { createStatusCatalog, type StatusCatalog } from './status-catalog.js'
 import type {
   CycleRanges,
@@ -41,8 +43,8 @@ export interface ValidationSlot {
 }
 
 export const VALIDATION_SLOTS: readonly ValidationSlot[] = [
-  { code: 'provider_mismatch' },
-  { code: 'non_recorded_adjustment' },
+  { code: 'provider_mismatch', run: providerMismatch },
+  { code: 'non_recorded_adjustment', run: nonRecordedAdjustment },
   { code: 'duplicate_in_batch' },
   { code: 'status_collision_in_batch' },
   { code: 'duplicate_across_batches' },
