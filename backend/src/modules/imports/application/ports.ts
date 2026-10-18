@@ -43,6 +43,8 @@ export interface ImportSheetRecord {
   statusId: number | null
   rowCount: number
   mappingConfirmed: boolean
+  /** Position in its workbook (0 = first); null for imports uploaded before migration 0006. */
+  sheetIndex: number | null
   /** The confirmed columns (ImportSheetColumnMap); empty until the mapping is confirmed. */
   columnMaps: SheetMappingColumn[]
 }
@@ -85,6 +87,8 @@ export interface NewImportSheet {
   cycle: Cycle | null
   statusId: number | null
   rowCount: number
+  /** Position in its workbook (0 = first). */
+  sheetIndex: number
 }
 
 export interface NewImportFile {

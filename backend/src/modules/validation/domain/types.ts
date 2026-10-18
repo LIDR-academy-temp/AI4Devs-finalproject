@@ -144,6 +144,9 @@ export type Occurrence =
       batchNo: number
       attemptNo: number
       accountId: string
+      /** Sheet and row the historical movement came from; null when the movement has no row. */
+      sheetId: string | null
+      rowNo: number | null
       statusId: number
       excludeAmount: boolean
       defaultIncluded: boolean

@@ -46,6 +46,7 @@ const sheetSelect = {
   statusId: true,
   rowCount: true,
   mappingConfirmed: true,
+  sheetIndex: true,
   columnMaps: { select: { sourceColumn: true, targetField: true } },
 } satisfies Prisma.ImportSheetSelect
 
@@ -87,6 +88,7 @@ function fileCreate(file: NewImportFile): Prisma.ImportFileCreateWithoutImportIn
         cycle: s.cycle,
         statusId: s.statusId,
         rowCount: s.rowCount,
+        sheetIndex: s.sheetIndex,
       })),
     },
   }

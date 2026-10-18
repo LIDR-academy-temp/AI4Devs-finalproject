@@ -453,6 +453,7 @@ export class ImportService {
             cycle: proposed?.cycle ?? null,
             statusId: proposed?.statusId ?? null,
             rowCount: sheet.rowCount,
+            sheetIndex: index,
           }
         }),
       }
