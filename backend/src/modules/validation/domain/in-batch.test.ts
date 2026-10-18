@@ -131,6 +131,45 @@ describe('duplicate_in_batch and status_collision_in_batch', () => {
     expect(included(dup.issues[0]!)).toEqual([true, false, false])
   })
 
+  it('a row with an unresolved status against another of the same key: a collision with both included, never a duplicate', () => {
+    const { dup, col } = run([row({ rowNo: 2 }), row({ rowNo: 3, status: null })])
+
+    expect(dup.issues).toEqual([])
+    expect(col.issueCount).toBe(1)
+    expect(col.issues[0]!.occurrences.map((o) => [o.statusId, o.defaultIncluded])).toEqual([
+      [STATUS.Successful, true],
+      [null, true],
+    ])
+  })
+
+  it('two rows with an unresolved status of the same key: also a collision', () => {
+    const { dup, col } = run([row({ rowNo: 2, status: null }), row({ rowNo: 3, status: null })])
+
+    expect(dup.issues).toEqual([])
+    expect(col.issueCount).toBe(1)
+    expect(col.issues[0]!.occurrences.map((o) => [o.statusId, o.defaultIncluded])).toEqual([
+      [null, true],
+      [null, true],
+    ])
+  })
+
+  it('two Successful and an unresolved one: the duplicate of the Successful and a collision with the first and the unresolved', () => {
+    const { dup, col } = run([row({ rowNo: 2 }), row({ rowNo: 3 }), row({ rowNo: 4, status: null })])
+
+    expect(dup.issueCount).toBe(1)
+    expect(col.issues[0]!.occurrences.map((o) => o.sourceType === 'current_import' && [o.rowNo, o.statusId])).toEqual([
+      [2, STATUS.Successful],
+      [4, null],
+    ])
+  })
+
+  it('a lone row with an unresolved status is no finding', () => {
+    const { dup, col } = run([row({ status: null })])
+
+    expect(dup.issues).toEqual([])
+    expect(col.issues).toEqual([])
+  })
+
   it('foreign rows take no part', () => {
     const { dup, col } = run([
       row({ providerId: 101, channelId: 1001 }),

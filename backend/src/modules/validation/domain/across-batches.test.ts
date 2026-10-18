@@ -157,6 +157,16 @@ describe('duplicate_across_batches and status_collision_across_batches', () => {
     ])
   })
 
+  it('a current row with an unresolved status against a settled movement: a collision with the current included', () => {
+    const { dup, col } = run([row({ status: null })], [movement({ status: 'Successful' })])
+
+    expect(dup.issues).toEqual([])
+    expect(col.issues[0]!.occurrences.map((o) => [o.sourceType, o.statusId, o.defaultIncluded])).toEqual([
+      ['current_import', null, true],
+      ['previous_batch', STATUS.Successful, true],
+    ])
+  })
+
   it('history of another cycle is not compared', () => {
     const { dup, col } = run([row({ cycle: 'R', status: 'Successful' })], [movement({ cycle: 'E' })])
 
