@@ -63,9 +63,9 @@ describe("AuthProvider session expiration", () => {
 
     mockGetUser.mockResolvedValue(user);
 
-    let userUnloadedCallback: (() => void) | null = null;
-    mockAddUserUnloaded.mockImplementation((callback) => {
-      userUnloadedCallback = callback;
+    mockAddUserUnloaded.mockImplementation((callback: () => void) => {
+      // Capture for later invocation
+      (mockAddUserUnloaded as any).capturedCallback = callback;
     });
 
     render(
@@ -78,7 +78,8 @@ describe("AuthProvider session expiration", () => {
     await waitFor(() => expect(screen.queryByText("Authenticated: test@example.com")).toBeInTheDocument());
 
     // Simulate userUnloaded event
-    userUnloadedCallback?.();
+    const userUnloadedCallback = (mockAddUserUnloaded as any).capturedCallback as (() => void);
+    userUnloadedCallback();
 
     // Should transition to session_expired (not unauthenticated)
     await waitFor(() => expect(screen.getByText("SessionExpired")).toBeInTheDocument());
@@ -87,9 +88,9 @@ describe("AuthProvider session expiration", () => {
   it("stays unauthenticated when userUnloaded fires from unauthenticated state", async () => {
     mockGetUser.mockResolvedValue(null);
 
-    let userUnloadedCallback: (() => void) | null = null;
-    mockAddUserUnloaded.mockImplementation((callback) => {
-      userUnloadedCallback = callback;
+    mockAddUserUnloaded.mockImplementation((callback: () => void) => {
+      // Capture for later invocation
+      (mockAddUserUnloaded as any).capturedCallback = callback;
     });
 
     render(
@@ -102,7 +103,8 @@ describe("AuthProvider session expiration", () => {
     await waitFor(() => expect(screen.getByText("Unauthenticated")).toBeInTheDocument());
 
     // Simulate userUnloaded event
-    userUnloadedCallback?.();
+    const userUnloadedCallback = (mockAddUserUnloaded as any).capturedCallback as (() => void);
+    userUnloadedCallback();
 
     // Should remain unauthenticated (not transition to session_expired)
     expect(screen.getByText("Unauthenticated")).toBeInTheDocument();
@@ -117,11 +119,11 @@ describe("AuthProvider session expiration", () => {
 
     mockGetUser.mockResolvedValue(user);
 
-    let signOutCallback: (() => Promise<void>) | null = null;
+    const signOutRef: { current?: () => Promise<void> } = {};
 
     function TestComponentWithSignOut() {
       const { session, signOut } = useAuth();
-      signOutCallback = signOut;
+      signOutRef.current = signOut;
       if (session.status === "loading") return <div>Loading</div>;
       if (session.status === "unauthenticated") return <div>Unauthenticated</div>;
       if (session.status === "session_expired") return <div>SessionExpired</div>;
@@ -139,7 +141,9 @@ describe("AuthProvider session expiration", () => {
     await waitFor(() => expect(screen.queryByText("Authenticated: test@example.com")).toBeInTheDocument());
 
     // Call signOut voluntarily
-    await signOutCallback?.();
+    if (signOutRef.current) {
+      await signOutRef.current();
+    }
 
     // Should go to unauthenticated (not session_expired) because it was voluntary
     expect(mockRemoveUser).toHaveBeenCalled();
