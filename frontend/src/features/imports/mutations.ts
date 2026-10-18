@@ -2,7 +2,7 @@
 // invalidating it (a GET re-reads the files on the server). The account's import list is invalidated for In Progress.
 import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api/client'
-import type { ImportDetail } from '@/lib/api/types'
+import type { ImportDetail, MappingConfirmationBody } from '@/lib/api/types'
 import { asDetail, importKey } from './queries'
 
 /** The contract types the multipart body as `{ files }`; it travels as the FormData itself (design D4). */
@@ -51,4 +51,19 @@ export function useRemoveFile(importId: string) {
       asDetail(api.DELETE('/api/v1/imports/{importId}/files/{fileId}', { params: { path: { importId, fileId } } })),
     onSuccess: (detail) => storeDetail(queryClient, detail),
   })
+}
+
+export function useConfirmMapping(importId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body: MappingConfirmationBody) =>
+      asDetail(api.PUT('/api/v1/imports/{importId}/mapping', { params: { path: { importId } }, body })),
+    onSuccess: (detail) => storeDetail(queryClient, detail),
+  })
+}
+
+/** After a 409 of a transition the screen reloads the import as it stands (design D3). */
+export function useReloadImport(importId: string) {
+  const queryClient = useQueryClient()
+  return () => queryClient.invalidateQueries({ queryKey: importKey(importId), exact: true })
 }
