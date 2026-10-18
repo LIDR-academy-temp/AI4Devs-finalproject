@@ -1,11 +1,14 @@
 import type { ImportStatus, ValidationCode } from '@recon/shared'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCanProcess } from '@/features/imports/permissions'
 import type { ImportSearch } from '@/features/imports/validate-search'
 import type { ImportDetail } from '@/lib/api/types'
+import { IssueDrawer } from './IssueDrawer'
+import { IssuesList } from './IssuesList'
 import { useRunValidations } from './mutations'
 import { validationRunQuery } from './queries'
 import { RunButton } from './RunButton'
@@ -27,11 +30,14 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
   const search = useSearch({ from: '/app/imports/$importId' })
   const navigate = useNavigate({ from: '/imports/$importId' })
 
-  const select = (validation: ValidationCode) =>
-    navigate({
-      search: (prev: ImportSearch) => ({ ...prev, step: 'analysis', validation, ipage: undefined, issue: undefined }),
-      replace: true,
-    })
+  const go = (change: Partial<ImportSearch>) =>
+    navigate({ search: (prev: ImportSearch) => ({ ...prev, step: 'analysis', ...change }), replace: true })
+  const select = (validation: ValidationCode) => go({ validation, ipage: undefined, issue: undefined })
+  // Stable, because the drawer closes itself from an effect when its finding is gone.
+  const close = useCallback(
+    () => navigate({ search: (prev: ImportSearch) => ({ ...prev, issue: undefined }), replace: true }),
+    [navigate],
+  )
 
   const view = query.data
   // The region appears with its content; while the first read is on its way there is only a placeholder.
@@ -58,10 +64,20 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
         <>
           <RunHeader run={view.run} />
           <ValidationsTable results={view.run.results} selected={search.validation} onSelect={select} />
+          {search.validation && (
+            <IssuesList
+              importId={detail.importId}
+              validationCode={search.validation}
+              page={search.ipage ?? 1}
+              onPage={(page) => go({ ipage: page > 1 ? page : undefined })}
+              onOpen={(issue) => go({ issue })}
+            />
+          )}
         </>
       ) : (
         <p className="text-sm text-muted-foreground">{strings.noRun}</p>
       )}
+      <IssueDrawer issueId={search.issue} onClose={close} />
     </section>
   )
 }

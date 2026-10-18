@@ -57,13 +57,13 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 4. Lista de hallazgos y detalle de solo lectura (D5, D6)
 
-- [ ] 4.1 Añadir el componente shadcn `sheet` (formateado con Biome y versionado), comprobar que no entra ninguna dependencia fuera de `radix-ui` y verificar `pnpm lint` y `pnpm --filter @recon/frontend build`
-- [ ] 4.2 Test (rojo) `features/validations/IssuesList.test.tsx` con "lista de hallazgos":
+- [x] 4.1 Añadir el componente shadcn `sheet` (formateado con Biome y versionado), comprobar que no entra ninguna dependencia fuera de `radix-ui` y verificar `pnpm lint` y `pnpm --filter @recon/frontend build`
+- [x] 4.2 Test (rojo) `features/validations/IssuesList.test.tsx` con "lista de hallazgos":
   - `Missing previous to batch` → petición `validationCode=missing_previous_to_batch&page=1&pageSize=50` y 10 filas con `DEC`, entre ellas `292185165085382`;
   - `Non-recorded adjustment` → los tres hallazgos con estado reportado y del gateway;
   - cambiar de validación quita `ipage` e `issue`;
   - recargar con `validation` e `issue` en la dirección reabre la lista y el drawer
-- [ ] 4.3 Test (rojo) `features/validations/IssueDrawer.test.tsx` con "detalle de un hallazgo" y las fechas de "fechas en hora de Nueva York" (`changedAt` y `at` del historial en `ET`, convertidos):
+- [x] 4.3 Test (rojo) `features/validations/IssueDrawer.test.tsx` con "detalle de un hallazgo" y las fechas de "fechas en hora de Nueva York" (`changedAt` y `at` del historial en `ET`, convertidos):
   - duplicado de `441706751475644` → dos apariciones `batch-issues.xlsx · APP · row N` con `Successful`, la primera `Included by default` e incluida y la segunda excluida;
   - `504712738863260` → aparición histórica con batch, intento, cuenta y estado del batch;
   - `status = null` → `Unresolved status`;
@@ -72,8 +72,8 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   - `run.isCurrent = false` → aviso de corrida superada;
   - `404` → se cierra y quita `issue`;
   - Enter abre con el foco dentro, y Escape cierra y devuelve el foco a la fila
-- [ ] 4.4 Implementar `features/validations/{IssuesList.tsx,IssueDrawer.tsx,Occurrences.tsx,IssueHistory.tsx}` con TanStack Table en `manualPagination` y el `sheet` de D6; verificar 4.2 y 4.3 en verde; romper a propósito la devolución del foco y ver fallar 4.3; restaurar
-- [ ] 4.5 Commit: `chore(frontend): componente sheet de shadcn`, `test(frontend): lista de hallazgos y detalle con sus apariciones` y `feat(frontend): lista de hallazgos por validación y drawer del hallazgo`
+- [x] 4.4 Implementar `features/validations/{IssuesList.tsx,IssueDrawer.tsx,Occurrences.tsx,IssueHistory.tsx}` con TanStack Table en `manualPagination` y el `sheet` de D6; verificar 4.2 y 4.3 en verde; romper a propósito la devolución del foco y ver fallar 4.3; restaurar
+- [x] 4.5 Commit: `chore(frontend): componente sheet de shadcn`, `test(frontend): lista de hallazgos y detalle con sus apariciones` y `feat(frontend): lista de hallazgos por validación y drawer del hallazgo`
 
 ## 5. Acciones del drawer: inclusión y resolución (D7)
 

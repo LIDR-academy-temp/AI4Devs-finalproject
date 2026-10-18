@@ -1,6 +1,13 @@
 // Texts of the validations block of Analysis & Validations (web-shell "Textos de interfaz en inglés y
 // centralizados"). Those fixed by the spec of web-validations are literal.
-import type { ImportStatus, MissingRange, ValidationCode, ValidationOutcome } from '@recon/shared'
+import type {
+  ImportStatus,
+  IssueScope,
+  IssueType,
+  MissingRange,
+  ValidationCode,
+  ValidationOutcome,
+} from '@recon/shared'
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
 
@@ -75,5 +82,76 @@ export const strings = {
     non_recorded_adjustment: (count: number) => plural(count, 'non-recorded adjustment', 'non-recorded adjustments'),
     status_mismatch: (count: number) => plural(count, 'status mismatch', 'status mismatches'),
     range: (range: MissingRange, count: number) => `${range} ${count}`,
+  },
+
+  issueTypes: {
+    provider_mismatch: 'Provider mismatch',
+    non_recorded_adjustment: 'Non-recorded adjustment',
+    status_mismatch: 'Status mismatch',
+    duplicate: 'Duplicate',
+    collision: 'Collision',
+    missing: 'Missing',
+  } satisfies Record<IssueType, string>,
+
+  scopes: {
+    in_batch: 'in batch',
+    across_batches: 'across batches',
+    previous_to_batch: 'previous to batch',
+    in_range: 'in range',
+  } satisfies Record<IssueScope, string>,
+
+  resolution: { persistent: 'Persistent', resolved: 'Resolved' },
+
+  list: {
+    label: (validation: string) => `Findings of ${validation}`,
+    table: 'Findings',
+    id: 'ID',
+    cycle: 'Cycle',
+    type: 'Type',
+    reported: 'Reported status',
+    gateway: 'Gateway status',
+    range: 'Range',
+    included: 'Included',
+    resolution: 'Resolution',
+    none: '—',
+    empty: 'No findings.',
+    loadError: 'The findings could not be loaded.',
+    pageOf: (page: number, pages: number, total: number) =>
+      `Page ${page} of ${pages} · ${plural(total, 'finding', 'findings')}`,
+    previous: 'Previous',
+    next: 'Next',
+  },
+
+  drawer: {
+    loading: 'Finding',
+    loadError: 'The finding could not be loaded.',
+    title: (validation: string, id: string) => `${validation} · ${id}`,
+    superseded: 'This finding belongs to a superseded run.',
+    type: 'Type',
+    cycle: 'Cycle',
+    reported: 'Reported status',
+    gateway: 'Gateway status',
+    range: 'Range',
+    relevantDate: 'Date',
+    source: 'Row',
+    occurrences: 'Occurrences',
+    noOccurrences: 'No occurrences: the transaction is not in this batch.',
+    location: (fileName: string, sheetName: string, rowNo: number) => `${fileName} · ${sheetName} · row ${rowNo}`,
+    batch: (batchNo: number, attemptNo: number, accountName: string) =>
+      `Batch #${batchNo} · attempt ${attemptNo} · ${accountName}`,
+    noLocation: 'Movement without a row',
+    unresolvedStatus: 'Unresolved status',
+    chb2: 'CHB 2',
+    includedByDefault: 'Included by default',
+    excludedByDefault: 'Excluded by default',
+    included: 'Included',
+    excluded: 'Excluded',
+    changedBy: (userName: string, at: string) => `Changed by ${userName} · ${at}`,
+    resolvedBy: (userName: string, at: string) => `Resolved by ${userName} · ${at}`,
+    history: 'History',
+    noHistory: 'No changes yet.',
+    inclusionEntry: (userName: string, at: string, where: string, from: boolean, to: boolean) =>
+      `${userName} · ${at} · ${where} · ${from ? 'included' : 'excluded'} → ${to ? 'included' : 'excluded'}`,
+    resolveEntry: (userName: string, at: string, note: string) => `${userName} · ${at} · resolved: "${note}"`,
   },
 }
