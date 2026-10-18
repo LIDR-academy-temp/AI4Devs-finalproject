@@ -34,9 +34,9 @@ export interface SettlementHistorySource {
 /**
  * Candidates per range (APP Successful, DEC Declined, I natural-cycle-I statuses, plus Pending for the count), dated
  * up to each range's max (for I, `lastStatusChangedAt <= max OR lastStatusChangedAt IS NULL`: the engine counts the
- * undated ones in undatedCandidateCount, so the source must not drop them), and only those NOT processed in that cycle in a non-undone attempt of the provider; held
- * reserves without a current R movement whose expiry (creation + rollingReserveDays of the channel) is up to `rMax`,
- * the max of the R range, which is also by expiry.
+ * undated ones in undatedCandidateCount, so the source must not drop them), and only those NOT processed in that
+ * cycle in a non-undone attempt of the provider; held reserves without a current R movement whose expiry (creation
+ * + rollingReserveDays of the channel) is up to `rMax`, the max of the R range, which is also by expiry.
  */
 export interface MissingCandidateSource {
   candidates(account: AccountScope, ranges: CycleRanges): Promise<CandidateTransaction[]>
