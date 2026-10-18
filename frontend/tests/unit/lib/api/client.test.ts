@@ -300,14 +300,14 @@ describe("ApiError fieldErrors parsing", () => {
     await expect(failure).rejects.toMatchObject({
       kind: "failed",
       status: 422,
+      message: "Hay campos con errores",
     });
 
+    // Message should never contain [object Object]
     try {
-      await client.post("/campaigns", {});
+      await failure;
     } catch (error) {
       if (error instanceof Error) {
-        // Message should be readable and never contain [object Object]
-        expect(error.message).toBe("Hay campos con errores");
         expect(error.message).not.toContain("[object Object]");
         expect(typeof error.message).toBe("string");
       }
