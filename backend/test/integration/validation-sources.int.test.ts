@@ -184,7 +184,17 @@ async function createFixtures(): Promise<Fixture> {
   const batch = async (accountId: string, batchNo: number, importId: string, status: string) => {
     const batchId = randomUUID()
     await prisma.settlementBatch.create({
-      data: { batchId, accountId, batchNo, importId, status, approvedByUserId: analystId },
+      data: {
+        batchId,
+        accountId,
+        batchNo,
+        importId,
+        status,
+        approvedByUserId: analystId,
+        // CK_SettlementBatch_paidFields / _undoneFields: a paid or undone attempt records who and when.
+        ...(status === 'paid' ? { paidAt: new Date(), paidByUserId: analystId } : {}),
+        ...(status === 'undone' ? { undoneAt: new Date(), undoneByUserId: analystId } : {}),
+      },
     })
     return batchId
   }

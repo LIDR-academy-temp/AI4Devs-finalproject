@@ -8,6 +8,7 @@ import type {
   CycleRanges,
   HeldReserve,
   HistoryMovement,
+  StatusEntry,
   ValidationRow,
 } from '../domain/types.js'
 
@@ -47,3 +48,16 @@ export interface MissingCandidateSource {
 export interface RegisteredMissingSource {
   registered(providerId: number): Promise<Set<string>>
 }
+
+/** TransactionStatus with its natural cycle: the catalog the engine resolves status codes against. */
+export interface StatusCatalogSource {
+  statuses(): Promise<StatusEntry[]>
+}
+
+/** Every read the engine input needs (validation-runs D4 step 2). */
+export type ValidationSources = ValidationRowSource &
+  AccountScopeSource &
+  SettlementHistorySource &
+  MissingCandidateSource &
+  RegisteredMissingSource &
+  StatusCatalogSource
