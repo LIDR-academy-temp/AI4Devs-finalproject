@@ -62,7 +62,7 @@ function ImportWorkspace({ detail, step: chosen }: { detail: ImportDetail; step:
   return (
     <FormProvider {...form}>
       <section className="flex flex-col gap-4">
-        <ImportHeader detail={detail} />
+        <ImportHeader detail={detail} busy={analysis.running} />
         <StepTabs
           detail={detail}
           step={step}

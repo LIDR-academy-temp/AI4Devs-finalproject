@@ -67,3 +67,14 @@ export function useReloadImport(importId: string) {
   const queryClient = useQueryClient()
   return () => queryClient.invalidateQueries({ queryKey: importKey(importId), exact: true })
 }
+
+export function useCancelImport(importId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => asDetail(api.POST('/api/v1/imports/{importId}/cancel', { params: { path: { importId } } })),
+    onSuccess: (detail) => {
+      storeDetail(queryClient, detail)
+      void queryClient.invalidateQueries({ queryKey: [...importKey(importId), 'rows'] })
+    },
+  })
+}

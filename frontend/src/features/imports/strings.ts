@@ -180,6 +180,16 @@ export const strings = {
       loadError: 'Could not load the rows.',
     },
   },
+  cancel: {
+    button: 'Cancel import',
+    title: 'Cancel this import?',
+    body: 'Its files, mapping and analysis are kept for reference, but it can no longer be analyzed or processed. You can start a new import in the same account with the same files.',
+    confirm: 'Yes, cancel the import',
+    keep: 'Keep the import',
+    notCancellable: (status: string) => `This import can no longer be cancelled (${status}).`,
+    failed: 'The import could not be cancelled. Try again.',
+    startNew: 'Start a new import',
+  },
   steps: {
     label: 'Steps',
     files: 'Files',
