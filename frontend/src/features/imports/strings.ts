@@ -51,9 +51,11 @@ export const strings = {
   readiness: {
     label: 'Readiness',
     ready: 'Ready to analyze',
-    notes: 'To review',
+    file: (fileName: string) => `Readiness · ${fileName}`,
+    informational: (count: number) => `${count} informational ${count === 1 ? 'note' : 'notes'}`,
     item: (sheetName: string | null, field: string | undefined, message: string) =>
       `${sheetName ?? 'Import'} · ${field ?? 'note'}: ${message}`,
+    note: (sheetName: string | null, message: string) => `${sheetName ?? 'Import'} · ${message}`,
     unconfirmed: (sheetName: string) => `${sheetName} · confirmation: the mapping of this sheet is not confirmed`,
   },
   mapping: {
