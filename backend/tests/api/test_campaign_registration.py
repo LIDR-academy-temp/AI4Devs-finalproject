@@ -389,3 +389,44 @@ def test_register_campaign_lines_have_valid_period_ids(authenticated_client):
         assert campaign_period_id is not None, f"Line {line['id']} has no campaign_period_id"
         assert campaign_period_id != 0, f"Line {line['id']} has campaign_period_id=0 (should be > 0)"
         assert campaign_period_id in period_ids, f"Line {line['id']} campaign_period_id={campaign_period_id} does not match any period id in {period_ids}"
+
+
+def test_register_campaign_without_operations_role(authenticated_client_no_operations_role):
+    """Test that POST /campaigns without operations role returns 403."""
+    payload = {
+        "name": "CAMP-AUTH-TEST",
+        "display_name": "Authorization Test Campaign",
+        "agency_id": 1,
+        "advertiser_id": 1,
+        "campaign_type_id": 1,
+        "sector_id": 1,
+        "sales_rep_id": 1,
+        "start_date": "2026-01-01",
+        "end_date": "2026-03-31",
+        "order_reference": "PO-AUTH-TEST",
+        "order_received_on": "2025-12-15",
+        "lines": [
+            {
+                "dsp_id": 1,
+                "channel_id": 1,
+                "format_id": 1,
+                "scope": "national",
+                "market_description": "Spain",
+                "contracted_impressions": 1000000,
+                "sale_cpm": "25.50"
+            }
+        ]
+    }
+
+    response = authenticated_client_no_operations_role.post("/campaigns", json=payload)
+    assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.text}"
+    data = response.json()
+    assert data.get("code") == "missing_role", f"Expected code=missing_role, got {data}"
+
+
+def test_list_campaigns_without_operations_or_business_role(authenticated_client_no_operations_role):
+    """Test that GET /campaigns without operations or business role returns 403."""
+    response = authenticated_client_no_operations_role.get("/campaigns")
+    assert response.status_code == 403, f"Expected 403, got {response.status_code}: {response.text}"
+    data = response.json()
+    assert data.get("code") == "missing_role", f"Expected code=missing_role, got {data}"
