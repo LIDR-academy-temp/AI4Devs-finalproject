@@ -118,6 +118,21 @@ describe('Column Mapping: sheets with nothing to map (spec "Pantalla Column Mapp
     expect(control(sheet('Settings'), strings.mapping.kind)).toHaveTextContent('Transactions')
   })
 
+  it('says Show instead of Edit where the sheet cannot be edited', async () => {
+    const { user } = await openMapping(seedImport('batch-clean', { status: 'analyzed' }).importId)
+
+    const settings = sheet('Settings')
+    expect(settings.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
+    await user.click(settings.getByRole('button', { name: 'Show' }))
+    expect(control(sheet('Settings'), strings.mapping.kind)).toBeDisabled()
+  })
+
+  it('says Show to viewer', async () => {
+    await openMapping(seedImport('batch-clean').importId, 'viewer')
+
+    expect(sheet('Settings').getByRole('button', { name: 'Show' })).toBeInTheDocument()
+  })
+
   it('the confirmation still sends every sheet, the compact ones too', async () => {
     const { importId } = seedImport('batch-clean')
     const { user } = await openMapping(importId)
