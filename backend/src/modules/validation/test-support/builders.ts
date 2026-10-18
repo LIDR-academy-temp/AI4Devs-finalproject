@@ -2,6 +2,8 @@
  * Small hand-made builders for what the synthetic world does not have (design D9): Pending transactions, undone
  * attempts, early-released reserves, Chargeback + CHB 2 pairs, foreign-merchant rows, registered missing findings…
  */
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import type { Cycle, MatchResult, ValidationCode } from '@recon/shared'
 import { STATUS, type StatusCode, TRANSACTION_STATUSES } from '../../../../prisma/synthetic.js'
 import type {
@@ -202,3 +204,19 @@ export const allIssues = (report: ValidationReport): Issue[] => report.results.f
 /** JSON with bigint as text, as #9 will serialize the report. */
 export const jsonOf = (value: unknown): string =>
   JSON.stringify(value, (_key, v: unknown) => (typeof v === 'bigint' ? v.toString() : v))
+
+/** Findings of a result counted by cycle, by range or by issue type (design D4). */
+export function countBy(result: ValidationResult, by: 'cycle' | 'range' | 'issueType'): Record<string, number> {
+  const counts: Record<string, number> = {}
+  for (const issue of result.issues) {
+    const key = String(by === 'cycle' ? issue.cycle : by === 'range' ? issue.missingRange : issue.issueType)
+    counts[key] = (counts[key] ?? 0) + 1
+  }
+  return counts
+}
+
+/** The expected.json of a sample, read from disk. */
+export function expectedOf(sample: string): Record<string, unknown> {
+  const file = path.resolve(import.meta.dirname, '../../../../../data/samples', sample, 'expected.json')
+  return JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>
+}
