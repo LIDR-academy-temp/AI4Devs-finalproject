@@ -92,3 +92,24 @@ describe('InMemoryValidationSources.registered (L7)', () => {
     expect(await sources.registered(PROVIDER_A)).toEqual(new Set(['E:1']))
   })
 })
+
+describe('InMemoryValidationSources.candidates (M2)', () => {
+  it('returns an I candidate without lastStatusChangedAt, so the engine can count it in undatedCandidateCount', async () => {
+    const sources = new InMemoryValidationSources()
+    const account = accountScopeOf('ProviderB-Main')
+    sources.addTransaction({
+      transactionId: 9_000_001n,
+      sourceTransactionId: '900000000000001',
+      providerId: account.providerId,
+      channelId: 1011,
+      statusId: STATUS.Chargeback,
+      transactionDate: new Date('2026-09-01T00:00:00.000Z'),
+      lastStatusChangedAt: null,
+    })
+    const at = new Date('2026-10-01T00:00:00.000Z')
+
+    const candidates = await sources.candidates(account, { APP: null, DEC: null, I: { min: at, max: at }, R: null })
+
+    expect(candidates.find((c) => c.transactionId === 9_000_001n)).toMatchObject({ lastStatusChangedAt: null })
+  })
+})
