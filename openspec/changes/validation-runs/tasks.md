@@ -3,7 +3,7 @@
 ## 0. Arranque
 
 - [x] 0.1 Anotar en proposal.md la respuesta de la persona a P1–P7 y ajustar los escenarios y las guardas marcados con su número (revisión del 2026-10-18: P1, P3, P4 y P6 cambian; P2, P5 y P7 se aprueban). Verificación: `openspec validate validation-runs --strict` pasa y ninguna P queda sin respuesta.
-- [ ] 0.2 Confirmar la rama `feat/validation-runs` desde `feature/entrega-2-MVP` actualizada. Verificación: `git log --oneline -1 origin/feature/entrega-2-MVP` es ancestro de `HEAD`.
+- [x] 0.2 Confirmar la rama `feat/validation-runs` desde `feature/entrega-2-MVP` actualizada. Verificación: `git log --oneline -1 origin/feature/entrega-2-MVP` es ancestro de `HEAD`.
 
 ## 1. Esquema: migración 0006_validation_runs (design D6, D10, Migration Plan)
 

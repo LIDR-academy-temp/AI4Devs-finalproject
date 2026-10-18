@@ -387,6 +387,8 @@ model ImportSheet {
   statusId         Int?
   rowCount         Int     @default(0)
   mappingConfirmed Boolean @default(false)
+  /// Position of the sheet in its workbook (0 = first); NULL for imports uploaded before 0006
+  sheetIndex       Int?
 
   file       ImportFile             @relation(fields: [fileId], references: [fileId], onDelete: NoAction, onUpdate: NoAction)
   status     TransactionStatus?     @relation(fields: [statusId], references: [statusId], onDelete: NoAction, onUpdate: NoAction)
@@ -455,6 +457,10 @@ model ValidationRun {
   dateMinR            DateTime? @db.DateTime2
   dateMaxR            DateTime? @db.DateTime2
   pendingInRangeCount Int       @default(0)
+  /// I rows without a status change date (informative)
+  undatedAdjustmentCount Int    @default(0)
+  /// I candidates without a status change date (informative)
+  undatedCandidateCount  Int    @default(0)
   isSuperseded        Boolean   @default(false)
 
   import  Import             @relation(fields: [importId], references: [importId], onDelete: NoAction, onUpdate: NoAction)
@@ -462,6 +468,7 @@ model ValidationRun {
   results ValidationResult[]
 
   @@index([importId, runAt])
+  // filtered unique index (importId) WHERE isSuperseded = 0 → migration
 }
 
 model ValidationResult {
