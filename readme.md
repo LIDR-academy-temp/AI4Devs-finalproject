@@ -757,6 +757,7 @@ erDiagram
         varchar(20) kind
         int rowCount
         bit mappingConfirmed
+        int sheetIndex
     }
     ImportSheetColumnMap {
         uniqueidentifier sheetId PK, FK
@@ -815,6 +816,9 @@ erDiagram
         datetime2 dateMinR
         datetime2 dateMaxR
         int pendingInRangeCount
+        int undatedAdjustmentCount
+        int undatedCandidateCount
+        bit isSuperseded
     }
     ValidationResult {
         int resultId PK
@@ -1088,7 +1092,7 @@ Restricciones: `CHECK (fixedAmount IS NOT NULL OR percentage IS NOT NULL)`; `CHE
 | rowsTotal, rowsMatched, rowsUnmatched | int | NULL | Resumen del cruce |
 | currentBatchId | uniqueidentifier | FK → SettlementBatch, NULL | Intento vigente (no deshecho); los intentos históricos se consultan por `SettlementBatch.importId` |
 
-**ImportFile** — `fileId`, `importId`, `fileName`, `storagePath`, `sizeBytes`, `sha256` (`UNIQUE (importId, sha256)`: el mismo archivo no se sube dos veces al mismo import), `uploadedAt`, `ignore`. **ImportSheet** — `sheetId`, `fileId`, `sheetName`, `cycle` (ciclo asignado a la hoja tras confirmar el pareo), `statusId` (estado fijo de la hoja, NULL en RR o cuando el estado viene por columna), `kind` (`transactions` / `batch_fees` / `ignore`), `rowCount`, `mappingConfirmed`. **ImportSheetColumnMap** — el pareo confirmado para esa hoja: PK (`sheetId`, `sourceColumn`) → `targetField`; es la fuente de verdad del parseo, no la regla.
+**ImportFile** — `fileId`, `importId`, `fileName`, `storagePath`, `sizeBytes`, `sha256` (`UNIQUE (importId, sha256)`: el mismo archivo no se sube dos veces al mismo import), `uploadedAt`, `ignore`. **ImportSheet** — `sheetId`, `fileId`, `sheetName`, `cycle` (ciclo asignado a la hoja tras confirmar el pareo), `statusId` (estado fijo de la hoja, NULL en RR o cuando el estado viene por columna), `kind` (`transactions` / `batch_fees` / `ignore`), `rowCount`, `mappingConfirmed`, `sheetIndex` (posición de la hoja en su libro, 0 = primera, `CHECK (sheetIndex >= 0)`; la fija la subida y la usa la regla de primera aparición de 3.3; NULL en los imports subidos antes de la migración `0006`, que se ordenan por nombre de hoja). **ImportSheetColumnMap** — el pareo confirmado para esa hoja: PK (`sheetId`, `sourceColumn`) → `targetField`; es la fuente de verdad del parseo, no la regla.
 
 **ImportRow** — una fila leída del archivo.
 
@@ -1109,7 +1113,7 @@ Restricciones: `CHECK (fixedAmount IS NOT NULL OR percentage IS NOT NULL)`; `CHE
 
 #### Validaciones e incidencias
 
-**ValidationRun** — una ejecución de las ocho validaciones sobre un import, con los rangos de fechas por ciclo (`dateMin/MaxApp`, `dateMin/MaxDec`, `dateMin/MaxI`, `dateMin/MaxR`) obtenidos de los movimientos asociados del batch según 3.3, y `pendingInRangeCount` (transacciones en `Pending` dentro de los rangos, informativo). Los rangos alimentan las validaciones de faltantes. Una nueva corrida invalida la revisión de la anterior; las corridas se conservan.
+**ValidationRun** — una ejecución de las ocho validaciones sobre un import, con los rangos de fechas por ciclo (`dateMin/MaxApp`, `dateMin/MaxDec`, `dateMin/MaxI`, `dateMin/MaxR`) obtenidos de los movimientos asociados del batch según 3.3, `pendingInRangeCount` (transacciones en `Pending` dentro de los rangos, informativo), `undatedAdjustmentCount` (filas I del import sin fecha de cambio de estado, informativo) y `undatedCandidateCount` (candidatas I sin fecha de cambio de estado, que no se evalúan como faltantes; informativo). Los rangos alimentan las validaciones de faltantes. Una nueva corrida marca la anterior como superada (`isSuperseded = 1`) sin borrarla e invalida su revisión; las corridas se conservan. **Una sola corrida vigente por import**: índice único filtrado `UX_ValidationRun_current_import (importId) WHERE isSuperseded = 0`.
 
 **ValidationResult** — ocho filas por corrida: `validationCode` ∈ {`provider_mismatch`, `non_recorded_adjustment`, `duplicate_in_batch`, `status_collision_in_batch`, `duplicate_across_batches`, `status_collision_across_batches`, `missing_previous_to_batch`, `missing_in_range`}, `outcome` ∈ {`passed`, `warning`, `blocked`, `not_applicable`, `not_implemented`} (derivado de los hallazgos, ver 3.3), `issueCount`; `UNIQUE (runId, validationCode)`. Las dos validaciones de faltantes producen hallazgos por ciclo (APP, DEC, I, R) dentro del mismo resultado, con `not_applicable` cuando ningún ciclo tiene rango.
 
