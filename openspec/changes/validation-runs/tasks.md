@@ -21,9 +21,9 @@
 
 ## 3. Contrato compartido (design D13, "Contrato para #10")
 
-- [ ] 3.1 Tests primero en `packages/shared/src/validation.test.ts`: `ValidationRunView` (con `run: null` y con corrida de ocho resultados; `manualChangeCount`; `lastInvalidatedReview` nulo y con los dos motivos), `ValidationIssuesQuery` (valores por defecto, `pageSize` > 500 y `type=failed` rechazados), `ValidationIssueSummary`, `ValidationIssueDetail`, `OccurrenceView` (`occurrenceId` como string de dígitos, `editable` e `includable`), `IssueHistoryEntry`, `SetInclusionBody` y `ResolveIssueBody` (estrictos; nota vacía tras `trim` y de 501 caracteres rechazadas), `ReviewBody` (`runId` entero positivo, estricto). Los ejemplos de MSW del design se validan contra los esquemas. Verificación: falla.
-- [ ] 3.2 Implementar los esquemas en `packages/shared/src/validation.ts` y exportarlos en `index.ts`. Verificación: `pnpm --filter @recon/shared test` y `pnpm typecheck` en verde.
-- [ ] 3.3 Commit: `test(shared): contrato de corridas, hallazgos, apariciones y revisión` y `feat(shared): esquemas de corridas, hallazgos, apariciones y revisión`
+- [x] 3.1 Tests primero en `packages/shared/src/validation.test.ts`: `ValidationRunView` (con `run: null` y con corrida de ocho resultados; `manualChangeCount`; `lastInvalidatedReview` nulo y con los dos motivos), `ValidationIssuesQuery` (valores por defecto, `pageSize` > 500 y `type=failed` rechazados), `ValidationIssueSummary`, `ValidationIssueDetail`, `OccurrenceView` (`occurrenceId` como string de dígitos, `editable` e `includable`), `IssueHistoryEntry`, `SetInclusionBody` y `ResolveIssueBody` (estrictos; nota vacía tras `trim` y de 501 caracteres rechazadas), `ReviewBody` (`runId` entero positivo, estricto). Los ejemplos de MSW del design se validan contra los esquemas. Verificación: falla.
+- [x] 3.2 Implementar los esquemas en `packages/shared/src/validation.ts` y exportarlos en `index.ts`. Verificación: `pnpm --filter @recon/shared test` y `pnpm typecheck` en verde.
+- [x] 3.3 Commit: `test(shared): contrato de corridas, hallazgos, apariciones y revisión` y `feat(shared): esquemas de corridas, hallazgos, apariciones y revisión`
 
 ## 4. Adaptadores Prisma de los cinco puertos (design D2)
 
