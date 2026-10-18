@@ -8,9 +8,10 @@ type ComparableRow = MatchedRow & { statusId: number }
 /**
  * Per `(transactionId, cycle)` key of the own rows (question 5): rows with the same (status, excludeAmount) form a
  * subgroup; each subgroup with more than one row is a duplicate (first included, the rest excluded). Subgroups that
- * are only `compatible` (Chargeback and CHB 2, question 7) merge into one collision group. A row whose status is
- * unresolved is never a duplicate: it is a collision group of its own, so nothing is resolved silently. Two or more
- * collision groups are a collision with the first row of each, all included, in arrival order.
+ * are only `compatible` (Chargeback and CHB 2, question 7) count as one collision group, so that pair alone is no
+ * finding. A row whose status is unresolved is never a duplicate: it is a collision group of its own, so nothing is
+ * resolved silently. Two or more collision groups are a collision listing the first row of every subgroup (CHB 2
+ * included next to its Chargeback) and every unresolved row, all included, in arrival order.
  */
 function groupsOf(rows: readonly MatchedRow[], ctx: ValidationContext) {
   const subgroups: ComparableRow[][] = []
@@ -25,14 +26,13 @@ function groupsOf(rows: readonly MatchedRow[], ctx: ValidationContext) {
     if (same) same.push(row)
     else subgroups.push([row])
   }
-  const collisionFirsts = new Set<MatchedRow>(unresolved)
   const merged: ComparableRow[] = []
   for (const g of subgroups) {
-    if (merged.some((first) => relation(first, g[0]!, ctx.catalog) === 'compatible')) continue
-    merged.push(g[0]!)
-    collisionFirsts.add(g[0]!)
+    if (!merged.some((first) => relation(first, g[0]!, ctx.catalog) === 'compatible')) merged.push(g[0]!)
   }
-  return { subgroups, collisionFirsts: rows.filter((r) => collisionFirsts.has(r)) }
+  const collisionGroups = merged.length + unresolved.length
+  const firsts = new Set<MatchedRow>([...unresolved, ...subgroups.map((g) => g[0]!)])
+  return { subgroups, collisionFirsts: collisionGroups > 1 ? rows.filter((r) => firsts.has(r)) : [] }
 }
 
 function occurrenceOf(r: MatchedRow, defaultIncluded: boolean): Occurrence {
