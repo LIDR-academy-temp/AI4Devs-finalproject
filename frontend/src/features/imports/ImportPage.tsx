@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ApiError } from '@/lib/api/client'
 import type { ImportDetail } from '@/lib/api/types'
 import { AnalysisStep } from './analysis/AnalysisStep'
+import { useAnalyze } from './analyze'
 import { FilesStep } from './files/FilesStep'
 import { ImportHeader } from './ImportHeader'
 import { MappingStep } from './mapping/MappingStep'
@@ -56,6 +57,7 @@ function ImportWorkspace({ detail, step: chosen }: { detail: ImportDetail; step:
   })
   const step = chosen ?? defaultStep(detail)
   const toStep = (next: Step) => navigate({ search: (prev: ImportSearch) => ({ ...prev, step: next }), replace: true })
+  const analysis = useAnalyze(detail, () => void toStep('analysis'))
 
   return (
     <FormProvider {...form}>
@@ -66,8 +68,8 @@ function ImportWorkspace({ detail, step: chosen }: { detail: ImportDetail; step:
           step={step}
           onStep={toStep}
           panels={{
-            files: <FilesStep detail={detail} />,
-            mapping: <MappingStep detail={detail} />,
+            files: <FilesStep detail={detail} busy={analysis.running} />,
+            mapping: <MappingStep detail={detail} analysis={analysis} />,
             analysis: <AnalysisStep detail={detail} />,
           }}
         />
