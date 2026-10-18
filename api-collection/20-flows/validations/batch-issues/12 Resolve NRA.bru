@@ -1,0 +1,34 @@
+meta {
+  name: 12 Resolve NRA
+  type: http
+  seq: 12
+  tags: [
+    flow
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/validation-issues/:issueId
+  body: json
+  auth: inherit
+}
+
+params:path {
+  issueId: {{nraIssueId}}
+}
+
+body:json {
+  {
+    "resolutionStatus": "resolved",
+    "note": "Verified in the gateway"
+  }
+}
+
+tests {
+  test('resolved by analyst with the note', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.resolutionStatus).to.equal('resolved');
+    expect(res.body.resolvedBy.userName).to.equal('analyst');
+    expect(res.body.resolutionNote).to.equal('Verified in the gateway');
+  });
+}

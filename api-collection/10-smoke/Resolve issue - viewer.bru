@@ -1,0 +1,40 @@
+meta {
+  name: Resolve issue - viewer
+  type: http
+  seq: 38
+  tags: [
+    smoke
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/validation-issues/:issueId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  issueId: 1
+}
+
+body:json {
+  {
+    "resolutionStatus": "resolved",
+    "note": "Verified in the gateway"
+  }
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer lacks settlement.process: 403 forbidden', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}
