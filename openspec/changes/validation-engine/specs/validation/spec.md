@@ -267,12 +267,22 @@ APP SHALL formarse con las filas E asociadas cuya transacción no está `Decline
 - **THEN** la fila no aporta fecha al rango I y el informe la cuenta en `undatedAdjustmentCount`
 
 ### Requirement: Candidatas a faltante
-Las candidatas SHALL ser transacciones de los canales cuya cuenta principal es la del import: APP `Successful`, DEC `Declined`, I en estado de ciclo natural I, R movimientos E vigentes con reserva retenida y sin liberación anticipada. Se excluyen las presentes en el batch en ese ciclo, las procesadas en ese ciclo en un intento vigente de cualquier cuenta del proveedor y las ya registradas.
+Las candidatas SHALL ser transacciones de los canales cuya cuenta principal es la del import: APP `Successful`, DEC `Declined`, I en estado de ciclo I y R movimientos E vigentes con reserva vencida, sin liberación anticipada. Una reserva retenida está vencida cuando su fecha de creación cae dentro del rango R del archivo, lo que equivale a que terminó su plazo de retención. Se excluyen las presentes en el batch o procesadas en ese ciclo en un intento vigente del proveedor y las ya registradas.
 
 #### Scenario: Canal sin asignar presente en el import
 - **GIVEN** `data/samples/batch-issues`, donde también faltan las DEC de RAM-13 (sin cuenta) del 2026-09-28
 - **WHEN** se valida
 - **THEN** solo cuentan las 10 de RAM-11 y RAM-12: `missing_previous_to_batch.E = 10`
+
+#### Scenario: Reserva vencida antes del rango R
+- **GIVEN** un movimiento E vigente con `reserveHeldAmt > 0`, sin liberación anticipada ni movimiento R, cuya transacción se creó antes del mínimo del rango R
+- **WHEN** se valida un import que no lo trae en RR
+- **THEN** la reserva ya estaba vencida y es `missing_previous_to_batch` en R
+
+#### Scenario: Reserva todavía no vencida
+- **GIVEN** la misma reserva con fecha de creación posterior al máximo del rango R
+- **WHEN** se valida
+- **THEN** no aparece en ninguna de las dos validaciones de faltantes
 
 #### Scenario: Reserva liberada anticipadamente
 - **GIVEN** un movimiento E vigente con `reserveHeldAmt > 0` y `reserveEarlyReleasedAmt > 0`, con fecha dentro del rango R
