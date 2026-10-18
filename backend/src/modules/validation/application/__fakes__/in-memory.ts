@@ -66,8 +66,12 @@ export interface RegisteredMissingRow {
   providerId: number
   cycle: Cycle
   transactionId: bigint
-  /** The import whose (non-superseded) run registered it. */
+  /** The import whose run registered it. */
   importId: string
+  /** ValidationIssue.resolutionStatus; persistent when left out. */
+  resolutionStatus?: 'persistent' | 'resolved'
+  /** ValidationRun.isSuperseded of the run that registered it; false when left out. */
+  runSuperseded?: boolean
 }
 
 interface WorldData {
@@ -330,7 +334,13 @@ export class InMemoryValidationSources
     const settledImports = new Set(this.batches.filter((b) => b.status !== 'undone').map((b) => b.importId))
     return new Set(
       this.registeredRows
-        .filter((r) => r.providerId === providerId && settledImports.has(r.importId))
+        .filter(
+          (r) =>
+            r.providerId === providerId &&
+            (r.resolutionStatus ?? 'persistent') === 'persistent' &&
+            r.runSuperseded !== true &&
+            settledImports.has(r.importId),
+        )
         .map((r) => `${r.cycle}:${r.transactionId}`),
     )
   }
