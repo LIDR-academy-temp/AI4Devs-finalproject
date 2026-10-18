@@ -468,7 +468,7 @@ model ValidationResult {
   resultId       Int    @id @default(autoincrement())
   runId          Int
   validationCode String @db.VarChar(40)
-  /// passed | failed | not_applicable | not_implemented
+  /// passed | warning | blocked | not_applicable | not_implemented
   outcome        String @db.VarChar(20)
   issueCount     Int    @default(0)
   detailJson     String? @db.NVarChar(Max)
@@ -482,7 +482,7 @@ model ValidationResult {
 model ValidationIssue {
   issueId           Int       @id @default(autoincrement())
   resultId          Int
-  /// provider_mismatch | non_recorded_adjustment | duplicate | collision | missing
+  /// provider_mismatch | non_recorded_adjustment | status_mismatch | duplicate | collision | missing
   issueType         String    @db.VarChar(30)
   /// in_batch | across_batches | previous_to_batch | in_range
   scope             String?   @db.VarChar(30)
