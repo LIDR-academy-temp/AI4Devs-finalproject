@@ -1,5 +1,6 @@
 // Ports of the auth application layer. Adapters live in ../infrastructure; in-memory doubles in ./__fakes__.
 import type { MerchantRef, MerchantScope, PermissionCode } from '@recon/shared'
+import type { AuditEntry as SharedAuditEntry, AuditLogger as SharedAuditLogger } from '../../../shared/audit.js'
 
 export type { MerchantRef }
 
@@ -51,18 +52,13 @@ export interface RefreshTokenStore {
 
 export type AuditAction = 'auth.login.success' | 'auth.login.failure'
 
-export interface AuditEntry {
-  /** null when the actor is unknown (login with a nonexistent userName). */
-  userId: number | null
+/** The shared audit entry (shared/audit.ts) narrowed to what auth records. */
+export interface AuditEntry extends SharedAuditEntry {
   action: AuditAction
   entityType: 'User'
-  entityId: string
-  detail: Record<string, unknown>
 }
 
-export interface AuditLogger {
-  record(entry: AuditEntry): Promise<void>
-}
+export type AuditLogger = SharedAuditLogger
 
 export interface PasswordHasher {
   /** `hash = null` verifies against a precomputed dummy hash (same cost) and always returns false. */

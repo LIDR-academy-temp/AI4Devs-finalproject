@@ -15,6 +15,12 @@ export interface ReadLimits {
   previewRows: number
   /** Distinct values tracked per column before giving up (high cardinality). */
   maxDistinctValues: number
+  /**
+   * Transaction rows per import, summed over the `transactions` sheets of all its files; checked before the
+   * analysis reads any row. The rows land in one transaction at ~79 ms per 125-row statement (design D1
+   * measurement): 100 000 rows ≈ 63 s, under the 90 s bar, while real batches carry hundreds of rows (doc 06).
+   */
+  maxRowsPerImport: number
 }
 
 const MIB = 1024 * 1024
@@ -29,6 +35,7 @@ export const DEFAULT_READ_LIMITS: ReadLimits = {
   maxSharedStrings: 2_000_000,
   previewRows: 5,
   maxDistinctValues: 50,
+  maxRowsPerImport: 100_000,
 }
 
 export function readLimits(overrides?: Partial<ReadLimits>): ReadLimits {

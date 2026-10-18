@@ -14,13 +14,19 @@ loadDotenv({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.
 export const TEST_JWT_SECRET = 'integration-test-secret-not-a-real-one-0001'
 export const SEED_PASSWORD = process.env.SEED_PASSWORD ?? 'Recon2026!'
 
+/** A Prisma client against the SQL Server of the environment (repository-level integration tests). */
+export function createPrismaClient(envOverrides: Record<string, string> = {}): PrismaClient {
+  const env = loadEnv({ ...process.env, ...envOverrides, JWT_SECRET: TEST_JWT_SECRET })
+  return new PrismaClient({ adapter: new PrismaMssql(mssqlConfigFromEnv(env)) })
+}
+
 /**
  * Builds the real app against SQL Server; every log line (level trace) is captured in `logLines`.
  * `envOverrides` win over the process environment (e.g. a temporary UPLOAD_DIR).
  */
 export async function createTestApp(envOverrides: Record<string, string> = {}) {
   const env = loadEnv({ ...process.env, ...envOverrides, JWT_SECRET: TEST_JWT_SECRET, LOG_LEVEL: 'trace' })
-  const prisma = new PrismaClient({ adapter: new PrismaMssql(mssqlConfigFromEnv(env)) })
+  const prisma = createPrismaClient(envOverrides)
   const logLines: string[] = []
   const app = await buildApp({ env, prisma, logStream: { write: (line) => void logLines.push(line) } })
   return { app, prisma, logLines }

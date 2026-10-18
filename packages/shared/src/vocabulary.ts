@@ -26,6 +26,40 @@ export const TargetField = z.enum([
 export type TargetField = z.infer<typeof TargetField>
 export const ImportStatus = z.enum(['uploaded', 'mapped', 'analyzed', 'validated', 'processed', 'cancelled'])
 export type ImportStatus = z.infer<typeof ImportStatus>
+
+/** Per-row warnings of the analysis, counted per code in `analysis.warnings` (README §1.2 "Importes…", spec: import, D8). */
+export const WarningCode = z.enum([
+  'negative_amount',
+  'non_usd_currency',
+  'amount_unparsed',
+  'currency_invalid',
+  'id_length',
+  'lossy_numeric_id',
+  'status_unresolved',
+  'status_differs_from_sheet',
+  'cycle_mismatch',
+])
+export type WarningCode = z.infer<typeof WarningCode>
+
+/**
+ * Warnings of a row as `GET rows` returns it: the persisted ones plus `out_of_scope_transaction`, added at read time
+ * when the matched transaction belongs to a merchant outside the caller's scope (spec: import, D11). It depends on
+ * who reads, so `analysis.warnings` does not count it.
+ */
+export const RowWarningCode = z.enum([...WarningCode.options, 'out_of_scope_transaction'])
+export type RowWarningCode = z.infer<typeof RowWarningCode>
+
+/** Why a row is `unmatched` or `ignored` (README §3.2 ImportRow; spec: import, D4, D5). */
+export const RowReason = z.enum(['no_match', 'id_format', 'lossy_numeric_id', 'empty_id', 'no_gateways'])
+export type RowReason = z.infer<typeof RowReason>
+
+/** Situation of a channel seen in the analysis (README §4.2 `channels`, §3.2 AccountChannel). */
+export const ChannelAssignment = z.enum(['assigned', 'unassigned', 'assigned_to_other_account'])
+export type ChannelAssignment = z.infer<typeof ChannelAssignment>
+
+/** What a readiness `missing` item is about (spec: import, D7). */
+export const ReadinessField = z.enum(['kind', 'cycle', 'status', 'transactionId', 'transactions', 'confirmation'])
+export type ReadinessField = z.infer<typeof ReadinessField>
 export const BatchStatus = z.enum(['processed', 'paid', 'undone'])
 export type BatchStatus = z.infer<typeof BatchStatus>
 export const ChargebackReservePolicy = z.enum(['hold_until_term', 'release_on_chargeback'])

@@ -4,6 +4,7 @@ import { ImportDetail, ImportSummary } from '@recon/shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { buildTestApp, PASSWORD } from '../../../test-support/build-test-app.js'
+import { InMemoryAuditLogger } from '../../../test-support/in-memory-audit-logger.js'
 import {
   ACCOUNT_IDS,
   FakeWorkbookReader,
@@ -13,6 +14,12 @@ import {
   SAMPLE_FILES,
   sequentialIds,
 } from '../application/__fakes__/in-memory.js'
+import {
+  InMemoryAccountContext,
+  InMemoryFeeTypeCatalog,
+  InMemoryImportRowRepository,
+  InMemoryTransactionLookup,
+} from '../application/__fakes__/in-memory-analysis.js'
 import { ImportService } from '../application/import-service.js'
 import { XlsxWorkbookReader } from '../infrastructure/xlsx-workbook-reader.js'
 
@@ -37,16 +44,27 @@ beforeEach(async () => {
   // The fake reader knows the fixture bytes; the real reader is used for the real batch-clean upload.
   const fake = new FakeWorkbookReader()
   const real = new XlsxWorkbookReader()
+  const transactions = new InMemoryTransactionLookup([])
   const service = new ImportService({
     imports,
     files,
     reader: {
       describe: (bytes, fileName) =>
         bytes.length === REAL_BATCH_CLEAN.length ? real.describe(bytes, fileName) : fake.describe(bytes, fileName),
+      readRows: (bytes, fileName, sheetName) =>
+        bytes.length === REAL_BATCH_CLEAN.length
+          ? real.readRows(bytes, fileName, sheetName)
+          : fake.readRows(bytes, fileName, sheetName),
     },
     rules: new InMemoryMatchingRulesRepository(),
     ids: sequentialIds(),
     log: { error: vi.fn(), warn: vi.fn() },
+    rows: new InMemoryImportRowRepository(imports, transactions),
+    transactions,
+    accounts: new InMemoryAccountContext(),
+    feeTypes: new InMemoryFeeTypeCatalog(),
+    audit: new InMemoryAuditLogger(),
+    limits: { maxRowsPerImport: 100_000 },
   })
   ctx = await buildTestApp({ imports: { service, files } })
   await ctx.app.ready()

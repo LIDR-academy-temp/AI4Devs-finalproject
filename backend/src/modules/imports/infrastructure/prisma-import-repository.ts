@@ -1,19 +1,23 @@
 // Prisma adapter of ImportRepository (design D12). The scope travels inside every read (catalog design D2);
 // writes are transactional; the UNIQUE (importId, sha256) constraint surfaces as DuplicateFileError.
-import { Cycle, ImportStatus, SheetKind } from '@recon/shared'
+import { Cycle, ImportStatus, SheetKind, TargetField } from '@recon/shared'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import type {
   AccountRef,
+  ConfirmedSheet,
   ImportRecord,
   ImportRepository,
   ImportSummaryRecord,
   NewImport,
   NewImportFile,
 } from '../application/ports.js'
-import { DuplicateFileError } from '../domain/errors.js'
+import { DuplicateFileError, ImportNotCancellableError, ImportNotEditableError } from '../domain/errors.js'
+import { CANCELLABLE_STATUSES, EDITABLE_STATUSES } from '../domain/import-state.js'
 
 const UNIQUE_VIOLATION = 'P2002'
+
+type Tx = Prisma.TransactionClient
 
 function visibleAccount(scope: Scope): Prisma.AccountWhereInput {
   return { provider: { merchantId: { in: [...scope.merchantIds] } } }
@@ -42,6 +46,7 @@ const sheetSelect = {
   statusId: true,
   rowCount: true,
   mappingConfirmed: true,
+  columnMaps: { select: { sourceColumn: true, targetField: true } },
 } satisfies Prisma.ImportSheetSelect
 
 const fileSelect = {
@@ -116,9 +121,66 @@ export class PrismaImportRepository implements ImportRepository {
           fileId: file.fileId,
           kind: SheetKind.parse(s.kind),
           cycle: s.cycle === null ? null : Cycle.parse(s.cycle),
+          columnMaps: s.columnMaps.map((c) => ({
+            sourceColumn: c.sourceColumn,
+            targetField: TargetField.parse(c.targetField),
+          })),
         })),
       ),
     }
+  }
+
+  /**
+   * The guard of every edit (spec: import, D2), first statement of its transaction: the UPDATE holds an exclusive
+   * lock on the Import row until commit, so a concurrent analysis, cancel or edit waits and then finds it changed.
+   */
+  private async claimEditable(tx: Tx, importId: string, expectedUpdatedAt: Date, data: Prisma.ImportUpdateInput) {
+    const claimed = await tx.import.updateMany({
+      where: { importId, status: { in: [...EDITABLE_STATUSES] }, updatedAt: expectedUpdatedAt },
+      data: { ...data, updatedAt: new Date() },
+    })
+    if (claimed.count === 1) return
+    const current = await tx.import.findUnique({ where: { importId }, select: { status: true } })
+    const status = current?.status ?? 'unknown'
+    throw new ImportNotEditableError(status, EDITABLE_STATUSES.has(status as ImportStatus))
+  }
+
+  /** The confirmed mapping replaces the previous one sheet by sheet; the import moves to `mapped` in the same transaction. */
+  async confirmMapping(importId: string, expectedUpdatedAt: Date, sheets: ConfirmedSheet[]): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await this.claimEditable(tx, importId, expectedUpdatedAt, { status: 'mapped' })
+      for (const sheet of sheets) {
+        await tx.importSheet.update({
+          where: { sheetId: sheet.sheetId },
+          data: { kind: sheet.kind, cycle: sheet.cycle, statusId: sheet.statusId, mappingConfirmed: true },
+        })
+        await tx.importSheetColumnMap.deleteMany({ where: { sheetId: sheet.sheetId } })
+        if (sheet.columns.length > 0) {
+          await tx.importSheetColumnMap.createMany({
+            data: sheet.columns.map((c) => ({
+              sheetId: sheet.sheetId,
+              sourceColumn: c.sourceColumn,
+              targetField: c.targetField,
+            })),
+          })
+        }
+      }
+    })
+  }
+
+  /**
+   * Only from a cancellable status, in one statement: the UPDATE guards the status and OUTPUT returns the one it
+   * replaced, under the same lock. A cancel that lost the race to another one, or to processing, writes nothing.
+   */
+  async cancel(importId: string): Promise<ImportStatus> {
+    const previous = await this.prisma.$queryRaw<{ status: string }[]>`
+      UPDATE [Import] SET [status] = 'cancelled', [updatedAt] = ${new Date()}
+      OUTPUT deleted.[status] AS status
+      WHERE [importId] = ${importId} AND [status] IN (${Prisma.join([...CANCELLABLE_STATUSES])})`
+    const replaced = previous[0]
+    if (replaced) return ImportStatus.parse(replaced.status)
+    const current = await this.prisma.import.findUnique({ where: { importId }, select: { status: true } })
+    throw new ImportNotCancellableError(current?.status ?? 'unknown')
   }
 
   async listImports(scope: Scope, accountId: string, status?: ImportStatus): Promise<ImportSummaryRecord[]> {
@@ -146,25 +208,25 @@ export class PrismaImportRepository implements ImportRepository {
     }
   }
 
-  async addFiles(importId: string, files: NewImportFile[]): Promise<void> {
+  async addFiles(importId: string, expectedUpdatedAt: Date, files: NewImportFile[]): Promise<void> {
     try {
-      await this.prisma.$transaction([
-        ...files.map((file) => this.prisma.importFile.create({ data: { ...fileCreate(file), importId } })),
-        this.prisma.import.update({ where: { importId }, data: { updatedAt: new Date() } }),
-      ])
+      await this.prisma.$transaction(async (tx) => {
+        await this.claimEditable(tx, importId, expectedUpdatedAt, {})
+        for (const file of files) await tx.importFile.create({ data: { ...fileCreate(file), importId } })
+      })
     } catch (error) {
       throw await this.translate(error, importId, files)
     }
   }
 
-  async removeFile(importId: string, fileId: string): Promise<void> {
-    await this.prisma.$transaction([
-      this.prisma.importRow.deleteMany({ where: { sheet: { fileId } } }),
-      this.prisma.importSheetColumnMap.deleteMany({ where: { sheet: { fileId } } }),
-      this.prisma.importSheet.deleteMany({ where: { fileId } }),
-      this.prisma.importFile.deleteMany({ where: { fileId, importId } }),
-      this.prisma.import.update({ where: { importId }, data: { updatedAt: new Date() } }),
-    ])
+  async removeFile(importId: string, expectedUpdatedAt: Date, fileId: string): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await this.claimEditable(tx, importId, expectedUpdatedAt, {})
+      await tx.importRow.deleteMany({ where: { sheet: { fileId } } })
+      await tx.importSheetColumnMap.deleteMany({ where: { sheet: { fileId } } })
+      await tx.importSheet.deleteMany({ where: { fileId } })
+      await tx.importFile.deleteMany({ where: { fileId, importId } })
+    })
   }
 
   /** A race on the unique (importId, sha256) index is answered like the pre-check: 409 naming the stored file. */

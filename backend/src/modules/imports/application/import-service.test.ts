@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { ImportDetail } from '@recon/shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NotFoundError } from '../../../shared/errors.js'
+import { InMemoryAuditLogger } from '../../../test-support/in-memory-audit-logger.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import { DuplicateFileError, FileUnreadableError, ImportNotEditableError } from '../domain/errors.js'
 import { UNPROPOSED_SHEET_KIND } from '../domain/sheet-kind-marker.js'
@@ -15,6 +16,12 @@ import {
   type SampleFile,
   sequentialIds,
 } from './__fakes__/in-memory.js'
+import {
+  InMemoryAccountContext,
+  InMemoryFeeTypeCatalog,
+  InMemoryImportRowRepository,
+  InMemoryTransactionLookup,
+} from './__fakes__/in-memory-analysis.js'
 import { ImportService } from './import-service.js'
 import type { StagedUpload } from './ports.js'
 
@@ -31,6 +38,19 @@ let files: InMemoryFileStore
 let service: ImportService
 const log = { error: vi.fn(), warn: vi.fn() }
 
+/** The analysis ports (import-analyze); exercised in import-service.analysis.test.ts. */
+function analysisDeps(imports: InMemoryImportRepository) {
+  const transactions = new InMemoryTransactionLookup([])
+  return {
+    rows: new InMemoryImportRowRepository(imports, transactions),
+    transactions,
+    accounts: new InMemoryAccountContext(),
+    feeTypes: new InMemoryFeeTypeCatalog(),
+    audit: new InMemoryAuditLogger(),
+    limits: { maxRowsPerImport: 100_000 },
+  }
+}
+
 beforeEach(() => {
   imports = new InMemoryImportRepository()
   files = new InMemoryFileStore()
@@ -41,6 +61,7 @@ beforeEach(() => {
     rules: new InMemoryMatchingRulesRepository(),
     ids: sequentialIds(),
     log,
+    ...analysisDeps(imports),
   })
   log.error.mockClear()
   log.warn.mockClear()
@@ -72,6 +93,7 @@ function serviceFailingAfterPersist(): ImportService {
         return rules.rulesFor(ruleSetId)
       },
     },
+    ...analysisDeps(imports),
   })
 }
 
@@ -189,7 +211,7 @@ describe('createImport', () => {
     })
     expect(detail.readiness.canAnalyze).toBe(false)
     expect(detail.readiness.missing).toEqual([
-      { sheetId: bonus.sheetId, sheetName: 'Bonus', message: expect.stringContaining('Bonus') },
+      { sheetId: bonus.sheetId, sheetName: 'Bonus', field: 'kind', message: expect.stringContaining('Bonus') },
     ])
   })
 

@@ -83,6 +83,7 @@ afterAll(async () => {
     const { prisma } = ctx
     const importIds = [...createdImportIds]
     if (importIds.length > 0) {
+      await prisma.importRow.deleteMany({ where: { sheet: { file: { importId: { in: importIds } } } } })
       await prisma.importSheetColumnMap.deleteMany({ where: { sheet: { file: { importId: { in: importIds } } } } })
       await prisma.importSheet.deleteMany({ where: { file: { importId: { in: importIds } } } })
       await prisma.importFile.deleteMany({ where: { importId: { in: importIds } } })

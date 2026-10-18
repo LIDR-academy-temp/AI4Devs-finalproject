@@ -128,7 +128,12 @@ describe('assessReadiness: what blocks the analysis', () => {
 
     expect(readiness.canAnalyze).toBe(false)
     expect(readiness.missing).toEqual([
-      { sheetId: SHEET_ID, sheetName: 'APP', message: expect.stringContaining('transactionId') },
+      {
+        sheetId: SHEET_ID,
+        sheetName: 'APP',
+        field: 'transactionId',
+        message: expect.stringContaining('transactionId'),
+      },
     ])
   })
 
@@ -187,12 +192,14 @@ describe('assessReadiness: what blocks the analysis', () => {
     )
     expect(feesOnly.canAnalyze).toBe(false)
     expect(feesOnly.missing).toEqual([
-      { sheetId: null, sheetName: null, message: expect.stringContaining('transactions') },
+      { sheetId: null, sheetName: null, field: 'transactions', message: expect.stringContaining('transactions') },
     ])
 
     const empty = assessReadiness([], STATUSES)
     expect(empty.canAnalyze).toBe(false)
-    expect(empty.missing).toEqual([{ sheetId: null, sheetName: null, message: expect.stringContaining('file') }])
+    expect(empty.missing).toEqual([
+      { sheetId: null, sheetName: null, field: 'transactions', message: expect.stringContaining('file') },
+    ])
   })
 })
 
@@ -275,5 +282,30 @@ describe('assessReadiness: what is worth reviewing', () => {
     const app = transactions('APP', 'E', 2, { rowCount: 0 })
 
     expect(messagesOf(assessReadiness([app], STATUSES).notes)).toContainEqual(expect.stringMatching(/^APP: .*no rows/))
+  })
+})
+
+describe('assessReadiness: the field of each missing item (import-analyze, spec "Readiness de la propuesta")', () => {
+  it('tags every missing item with what is lacking', () => {
+    const noId = transactions('APP', 'E', 2, { columns: TEMPLATE_COLUMNS.slice(1) })
+    const noStatus = transactions('CB', 'I', null, { columns: [column('ID', 'transactionId')] })
+    const unruled: ReadinessSheet = {
+      sheetId: SHEET_ID,
+      sheetName: 'Bonus',
+      hidden: false,
+      rowCount: 2,
+      proposed: { kind: null, cycle: null, statusId: null, statusName: null, source: 'none' },
+      columns: [column('Reference', null)],
+      columnStats: [stat()],
+    }
+
+    const result = assessReadiness([noId, noStatus, unruled], STATUSES)
+
+    expect(result.missing.map((m) => [m.sheetName, m.field])).toEqual([
+      ['APP', 'transactionId'],
+      ['CB', 'status'],
+      ['Bonus', 'kind'],
+    ])
+    expect(assessReadiness([], STATUSES).missing[0]?.field).toBe('transactions')
   })
 })

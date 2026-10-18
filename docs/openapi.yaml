@@ -1549,6 +1549,65 @@ paths:
                                   type: object
                                   additionalProperties:
                                     type: string
+                              mappingConfirmed:
+                                type: boolean
+                              mapping:
+                                nullable: true
+                                type: object
+                                properties:
+                                  kind:
+                                    type: string
+                                    enum:
+                                      - transactions
+                                      - batch_fees
+                                      - ignore
+                                  cycle:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - E
+                                      - I
+                                      - R
+                                  statusId:
+                                    nullable: true
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  statusName:
+                                    nullable: true
+                                    type: string
+                                  columns:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        sourceColumn:
+                                          type: string
+                                          minLength: 1
+                                        targetField:
+                                          type: string
+                                          enum:
+                                            - transactionId
+                                            - status
+                                            - gateway
+                                            - amount
+                                            - currency
+                                            - txnDate
+                                            - feeType
+                                            - providerRef
+                                            - orderId
+                                            - reference
+                                      required:
+                                        - sourceColumn
+                                        - targetField
+                                      additionalProperties: false
+                                required:
+                                  - kind
+                                  - cycle
+                                  - statusId
+                                  - statusName
+                                  - columns
+                                additionalProperties: false
                             required:
                               - sheetId
                               - sheetName
@@ -1557,6 +1616,8 @@ paths:
                               - proposed
                               - columns
                               - preview
+                              - mappingConfirmed
+                              - mapping
                             additionalProperties: false
                       required:
                         - fileId
@@ -1586,6 +1647,15 @@ paths:
                               type: string
                             message:
                               type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
                           required:
                             - sheetId
                             - sheetName
@@ -1606,6 +1676,15 @@ paths:
                               type: string
                             message:
                               type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
                           required:
                             - sheetId
                             - sheetName
@@ -1616,6 +1695,203 @@ paths:
                       - missing
                       - notes
                     additionalProperties: false
+                  analysis:
+                    nullable: true
+                    type: object
+                    properties:
+                      rows:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          matched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          unmatched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ambiguous:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ignored:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - total
+                          - matched
+                          - unmatched
+                          - ambiguous
+                          - ignored
+                        additionalProperties: false
+                      byCycle:
+                        type: object
+                        properties:
+                          E:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          I:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          R:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - E
+                          - I
+                          - R
+                        additionalProperties: false
+                      warnings:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        required:
+                          - negative_amount
+                          - non_usd_currency
+                          - amount_unparsed
+                          - currency_invalid
+                          - id_length
+                          - lossy_numeric_id
+                          - status_unresolved
+                          - status_differs_from_sheet
+                          - cycle_mismatch
+                    required:
+                      - rows
+                      - byCycle
+                      - warnings
+                    additionalProperties: false
+                  channels:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channelId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          nullable: true
+                          type: string
+                        gatewayId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        providerId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        rowCount:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        assignment:
+                          type: string
+                          enum:
+                            - assigned
+                            - unassigned
+                            - assigned_to_other_account
+                        otherAccount:
+                          nullable: true
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
+                        note:
+                          nullable: true
+                          type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                      required:
+                        - channelId
+                        - name
+                        - gatewayId
+                        - providerId
+                        - rowCount
+                        - assignment
+                        - otherAccount
+                        - note
+                      additionalProperties: false
+                  batchFees:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        feeTypeId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        code:
+                          nullable: true
+                          type: string
+                        title:
+                          type: string
+                        amount:
+                          nullable: true
+                          type: string
+                          pattern: ^-?\d+(\.\d{1,4})?$
+                        currency:
+                          nullable: true
+                          type: string
+                        source:
+                          type: string
+                          enum:
+                            - file
+                        warning:
+                          type: string
+                      required:
+                        - feeTypeId
+                        - code
+                        - title
+                        - amount
+                        - currency
+                        - source
+                      additionalProperties: false
                 required:
                   - importId
                   - accountId
@@ -1631,6 +1907,9 @@ paths:
                   - fileCount
                   - files
                   - readiness
+                  - analysis
+                  - channels
+                  - batchFees
                 additionalProperties: false
         "400":
           description: Default Response
@@ -2140,6 +2419,65 @@ paths:
                                   type: object
                                   additionalProperties:
                                     type: string
+                              mappingConfirmed:
+                                type: boolean
+                              mapping:
+                                nullable: true
+                                type: object
+                                properties:
+                                  kind:
+                                    type: string
+                                    enum:
+                                      - transactions
+                                      - batch_fees
+                                      - ignore
+                                  cycle:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - E
+                                      - I
+                                      - R
+                                  statusId:
+                                    nullable: true
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  statusName:
+                                    nullable: true
+                                    type: string
+                                  columns:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        sourceColumn:
+                                          type: string
+                                          minLength: 1
+                                        targetField:
+                                          type: string
+                                          enum:
+                                            - transactionId
+                                            - status
+                                            - gateway
+                                            - amount
+                                            - currency
+                                            - txnDate
+                                            - feeType
+                                            - providerRef
+                                            - orderId
+                                            - reference
+                                      required:
+                                        - sourceColumn
+                                        - targetField
+                                      additionalProperties: false
+                                required:
+                                  - kind
+                                  - cycle
+                                  - statusId
+                                  - statusName
+                                  - columns
+                                additionalProperties: false
                             required:
                               - sheetId
                               - sheetName
@@ -2148,6 +2486,8 @@ paths:
                               - proposed
                               - columns
                               - preview
+                              - mappingConfirmed
+                              - mapping
                             additionalProperties: false
                       required:
                         - fileId
@@ -2177,6 +2517,15 @@ paths:
                               type: string
                             message:
                               type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
                           required:
                             - sheetId
                             - sheetName
@@ -2197,6 +2546,15 @@ paths:
                               type: string
                             message:
                               type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
                           required:
                             - sheetId
                             - sheetName
@@ -2207,6 +2565,203 @@ paths:
                       - missing
                       - notes
                     additionalProperties: false
+                  analysis:
+                    nullable: true
+                    type: object
+                    properties:
+                      rows:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          matched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          unmatched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ambiguous:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ignored:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - total
+                          - matched
+                          - unmatched
+                          - ambiguous
+                          - ignored
+                        additionalProperties: false
+                      byCycle:
+                        type: object
+                        properties:
+                          E:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          I:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          R:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - E
+                          - I
+                          - R
+                        additionalProperties: false
+                      warnings:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        required:
+                          - negative_amount
+                          - non_usd_currency
+                          - amount_unparsed
+                          - currency_invalid
+                          - id_length
+                          - lossy_numeric_id
+                          - status_unresolved
+                          - status_differs_from_sheet
+                          - cycle_mismatch
+                    required:
+                      - rows
+                      - byCycle
+                      - warnings
+                    additionalProperties: false
+                  channels:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channelId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          nullable: true
+                          type: string
+                        gatewayId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        providerId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        rowCount:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        assignment:
+                          type: string
+                          enum:
+                            - assigned
+                            - unassigned
+                            - assigned_to_other_account
+                        otherAccount:
+                          nullable: true
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
+                        note:
+                          nullable: true
+                          type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                      required:
+                        - channelId
+                        - name
+                        - gatewayId
+                        - providerId
+                        - rowCount
+                        - assignment
+                        - otherAccount
+                        - note
+                      additionalProperties: false
+                  batchFees:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        feeTypeId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        code:
+                          nullable: true
+                          type: string
+                        title:
+                          type: string
+                        amount:
+                          nullable: true
+                          type: string
+                          pattern: ^-?\d+(\.\d{1,4})?$
+                        currency:
+                          nullable: true
+                          type: string
+                        source:
+                          type: string
+                          enum:
+                            - file
+                        warning:
+                          type: string
+                      required:
+                        - feeTypeId
+                        - code
+                        - title
+                        - amount
+                        - currency
+                        - source
+                      additionalProperties: false
                 required:
                   - importId
                   - accountId
@@ -2222,6 +2777,9 @@ paths:
                   - fileCount
                   - files
                   - readiness
+                  - analysis
+                  - channels
+                  - batchFees
                 additionalProperties: false
         "400":
           description: Default Response
@@ -2554,6 +3112,65 @@ paths:
                                   type: object
                                   additionalProperties:
                                     type: string
+                              mappingConfirmed:
+                                type: boolean
+                              mapping:
+                                nullable: true
+                                type: object
+                                properties:
+                                  kind:
+                                    type: string
+                                    enum:
+                                      - transactions
+                                      - batch_fees
+                                      - ignore
+                                  cycle:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - E
+                                      - I
+                                      - R
+                                  statusId:
+                                    nullable: true
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  statusName:
+                                    nullable: true
+                                    type: string
+                                  columns:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        sourceColumn:
+                                          type: string
+                                          minLength: 1
+                                        targetField:
+                                          type: string
+                                          enum:
+                                            - transactionId
+                                            - status
+                                            - gateway
+                                            - amount
+                                            - currency
+                                            - txnDate
+                                            - feeType
+                                            - providerRef
+                                            - orderId
+                                            - reference
+                                      required:
+                                        - sourceColumn
+                                        - targetField
+                                      additionalProperties: false
+                                required:
+                                  - kind
+                                  - cycle
+                                  - statusId
+                                  - statusName
+                                  - columns
+                                additionalProperties: false
                             required:
                               - sheetId
                               - sheetName
@@ -2562,6 +3179,8 @@ paths:
                               - proposed
                               - columns
                               - preview
+                              - mappingConfirmed
+                              - mapping
                             additionalProperties: false
                       required:
                         - fileId
@@ -2591,6 +3210,15 @@ paths:
                               type: string
                             message:
                               type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
                           required:
                             - sheetId
                             - sheetName
@@ -2611,6 +3239,15 @@ paths:
                               type: string
                             message:
                               type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
                           required:
                             - sheetId
                             - sheetName
@@ -2621,6 +3258,203 @@ paths:
                       - missing
                       - notes
                     additionalProperties: false
+                  analysis:
+                    nullable: true
+                    type: object
+                    properties:
+                      rows:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          matched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          unmatched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ambiguous:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ignored:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - total
+                          - matched
+                          - unmatched
+                          - ambiguous
+                          - ignored
+                        additionalProperties: false
+                      byCycle:
+                        type: object
+                        properties:
+                          E:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          I:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          R:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - E
+                          - I
+                          - R
+                        additionalProperties: false
+                      warnings:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        required:
+                          - negative_amount
+                          - non_usd_currency
+                          - amount_unparsed
+                          - currency_invalid
+                          - id_length
+                          - lossy_numeric_id
+                          - status_unresolved
+                          - status_differs_from_sheet
+                          - cycle_mismatch
+                    required:
+                      - rows
+                      - byCycle
+                      - warnings
+                    additionalProperties: false
+                  channels:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channelId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          nullable: true
+                          type: string
+                        gatewayId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        providerId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        rowCount:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        assignment:
+                          type: string
+                          enum:
+                            - assigned
+                            - unassigned
+                            - assigned_to_other_account
+                        otherAccount:
+                          nullable: true
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
+                        note:
+                          nullable: true
+                          type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                      required:
+                        - channelId
+                        - name
+                        - gatewayId
+                        - providerId
+                        - rowCount
+                        - assignment
+                        - otherAccount
+                        - note
+                      additionalProperties: false
+                  batchFees:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        feeTypeId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        code:
+                          nullable: true
+                          type: string
+                        title:
+                          type: string
+                        amount:
+                          nullable: true
+                          type: string
+                          pattern: ^-?\d+(\.\d{1,4})?$
+                        currency:
+                          nullable: true
+                          type: string
+                        source:
+                          type: string
+                          enum:
+                            - file
+                        warning:
+                          type: string
+                      required:
+                        - feeTypeId
+                        - code
+                        - title
+                        - amount
+                        - currency
+                        - source
+                      additionalProperties: false
                 required:
                   - importId
                   - accountId
@@ -2636,6 +3470,9 @@ paths:
                   - fileCount
                   - files
                   - readiness
+                  - analysis
+                  - channels
+                  - batchFees
                 additionalProperties: false
         "400":
           description: Default Response
@@ -2945,6 +3782,65 @@ paths:
                                   type: object
                                   additionalProperties:
                                     type: string
+                              mappingConfirmed:
+                                type: boolean
+                              mapping:
+                                nullable: true
+                                type: object
+                                properties:
+                                  kind:
+                                    type: string
+                                    enum:
+                                      - transactions
+                                      - batch_fees
+                                      - ignore
+                                  cycle:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - E
+                                      - I
+                                      - R
+                                  statusId:
+                                    nullable: true
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  statusName:
+                                    nullable: true
+                                    type: string
+                                  columns:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        sourceColumn:
+                                          type: string
+                                          minLength: 1
+                                        targetField:
+                                          type: string
+                                          enum:
+                                            - transactionId
+                                            - status
+                                            - gateway
+                                            - amount
+                                            - currency
+                                            - txnDate
+                                            - feeType
+                                            - providerRef
+                                            - orderId
+                                            - reference
+                                      required:
+                                        - sourceColumn
+                                        - targetField
+                                      additionalProperties: false
+                                required:
+                                  - kind
+                                  - cycle
+                                  - statusId
+                                  - statusName
+                                  - columns
+                                additionalProperties: false
                             required:
                               - sheetId
                               - sheetName
@@ -2953,6 +3849,8 @@ paths:
                               - proposed
                               - columns
                               - preview
+                              - mappingConfirmed
+                              - mapping
                             additionalProperties: false
                       required:
                         - fileId
@@ -2982,6 +3880,15 @@ paths:
                               type: string
                             message:
                               type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
                           required:
                             - sheetId
                             - sheetName
@@ -3002,6 +3909,15 @@ paths:
                               type: string
                             message:
                               type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
                           required:
                             - sheetId
                             - sheetName
@@ -3012,6 +3928,203 @@ paths:
                       - missing
                       - notes
                     additionalProperties: false
+                  analysis:
+                    nullable: true
+                    type: object
+                    properties:
+                      rows:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          matched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          unmatched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ambiguous:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ignored:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - total
+                          - matched
+                          - unmatched
+                          - ambiguous
+                          - ignored
+                        additionalProperties: false
+                      byCycle:
+                        type: object
+                        properties:
+                          E:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          I:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          R:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - E
+                          - I
+                          - R
+                        additionalProperties: false
+                      warnings:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        required:
+                          - negative_amount
+                          - non_usd_currency
+                          - amount_unparsed
+                          - currency_invalid
+                          - id_length
+                          - lossy_numeric_id
+                          - status_unresolved
+                          - status_differs_from_sheet
+                          - cycle_mismatch
+                    required:
+                      - rows
+                      - byCycle
+                      - warnings
+                    additionalProperties: false
+                  channels:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channelId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          nullable: true
+                          type: string
+                        gatewayId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        providerId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        rowCount:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        assignment:
+                          type: string
+                          enum:
+                            - assigned
+                            - unassigned
+                            - assigned_to_other_account
+                        otherAccount:
+                          nullable: true
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
+                        note:
+                          nullable: true
+                          type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                      required:
+                        - channelId
+                        - name
+                        - gatewayId
+                        - providerId
+                        - rowCount
+                        - assignment
+                        - otherAccount
+                        - note
+                      additionalProperties: false
+                  batchFees:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        feeTypeId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        code:
+                          nullable: true
+                          type: string
+                        title:
+                          type: string
+                        amount:
+                          nullable: true
+                          type: string
+                          pattern: ^-?\d+(\.\d{1,4})?$
+                        currency:
+                          nullable: true
+                          type: string
+                        source:
+                          type: string
+                          enum:
+                            - file
+                        warning:
+                          type: string
+                      required:
+                        - feeTypeId
+                        - code
+                        - title
+                        - amount
+                        - currency
+                        - source
+                      additionalProperties: false
                 required:
                   - importId
                   - accountId
@@ -3027,6 +4140,9 @@ paths:
                   - fileCount
                   - files
                   - readiness
+                  - analysis
+                  - channels
+                  - batchFees
                 additionalProperties: false
         "400":
           description: Default Response
@@ -3061,6 +4177,2814 @@ paths:
                   - message
                 additionalProperties: false
         "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/imports/{importId}/mapping:
+    put:
+      summary: Confirm the mapping of every sheet of the import; the import moves to
+        mapped
+      tags: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sheets:
+                  minItems: 1
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      sheetId:
+                        type: string
+                        format: uuid
+                        pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                      kind:
+                        type: string
+                        enum:
+                          - transactions
+                          - batch_fees
+                          - ignore
+                      cycle:
+                        nullable: true
+                        type: string
+                        enum:
+                          - E
+                          - I
+                          - R
+                      statusId:
+                        nullable: true
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      columns:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sourceColumn:
+                              type: string
+                              minLength: 1
+                            targetField:
+                              type: string
+                              enum:
+                                - transactionId
+                                - status
+                                - gateway
+                                - amount
+                                - currency
+                                - txnDate
+                                - feeType
+                                - providerRef
+                                - orderId
+                                - reference
+                          required:
+                            - sourceColumn
+                            - targetField
+                    required:
+                      - sheetId
+                      - kind
+                      - cycle
+                      - statusId
+                      - columns
+              required:
+                - sheets
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: importId
+          required: true
+      security: *a4
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  importId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  accountId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  status:
+                    type: string
+                    enum:
+                      - uploaded
+                      - mapped
+                      - analyzed
+                      - validated
+                      - processed
+                      - cancelled
+                  createdBy:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  analyzedAt:
+                    nullable: true
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  rowsTotal:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  rowsMatched:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  rowsUnmatched:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  currentBatchId:
+                    nullable: true
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  fileCount:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fileId:
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        fileName:
+                          type: string
+                        sizeBytes:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        sha256:
+                          type: string
+                          pattern: ^[0-9a-f]{64}$
+                        uploadedAt:
+                          type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        sheets:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              sheetId:
+                                type: string
+                                format: uuid
+                                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                              sheetName:
+                                type: string
+                              hidden:
+                                type: boolean
+                              rowCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              proposed:
+                                type: object
+                                properties:
+                                  kind:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - transactions
+                                      - batch_fees
+                                      - ignore
+                                  cycle:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - E
+                                      - I
+                                      - R
+                                  statusId:
+                                    nullable: true
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  statusName:
+                                    nullable: true
+                                    type: string
+                                  source:
+                                    type: string
+                                    enum:
+                                      - account
+                                      - global
+                                      - none
+                                  note:
+                                    type: string
+                                required:
+                                  - kind
+                                  - cycle
+                                  - statusId
+                                  - statusName
+                                  - source
+                                additionalProperties: false
+                              columns:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    sourceColumn:
+                                      type: string
+                                    targetField:
+                                      nullable: true
+                                      type: string
+                                      enum:
+                                        - transactionId
+                                        - status
+                                        - gateway
+                                        - amount
+                                        - currency
+                                        - txnDate
+                                        - feeType
+                                        - providerRef
+                                        - orderId
+                                        - reference
+                                    source:
+                                      type: string
+                                      enum:
+                                        - account
+                                        - global
+                                        - none
+                                    statusValues:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          value:
+                                            type: string
+                                          statusId:
+                                            nullable: true
+                                            type: integer
+                                            minimum: -9007199254740991
+                                            maximum: 9007199254740991
+                                          statusName:
+                                            nullable: true
+                                            type: string
+                                          excludeAmount:
+                                            type: boolean
+                                        required:
+                                          - value
+                                          - statusId
+                                          - statusName
+                                          - excludeAmount
+                                        additionalProperties: false
+                                  required:
+                                    - sourceColumn
+                                    - targetField
+                                    - source
+                                  additionalProperties: false
+                              preview:
+                                type: array
+                                items:
+                                  type: object
+                                  additionalProperties:
+                                    type: string
+                              mappingConfirmed:
+                                type: boolean
+                              mapping:
+                                nullable: true
+                                type: object
+                                properties:
+                                  kind:
+                                    type: string
+                                    enum:
+                                      - transactions
+                                      - batch_fees
+                                      - ignore
+                                  cycle:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - E
+                                      - I
+                                      - R
+                                  statusId:
+                                    nullable: true
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  statusName:
+                                    nullable: true
+                                    type: string
+                                  columns:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        sourceColumn:
+                                          type: string
+                                          minLength: 1
+                                        targetField:
+                                          type: string
+                                          enum:
+                                            - transactionId
+                                            - status
+                                            - gateway
+                                            - amount
+                                            - currency
+                                            - txnDate
+                                            - feeType
+                                            - providerRef
+                                            - orderId
+                                            - reference
+                                      required:
+                                        - sourceColumn
+                                        - targetField
+                                      additionalProperties: false
+                                required:
+                                  - kind
+                                  - cycle
+                                  - statusId
+                                  - statusName
+                                  - columns
+                                additionalProperties: false
+                            required:
+                              - sheetId
+                              - sheetName
+                              - hidden
+                              - rowCount
+                              - proposed
+                              - columns
+                              - preview
+                              - mappingConfirmed
+                              - mapping
+                            additionalProperties: false
+                      required:
+                        - fileId
+                        - fileName
+                        - sizeBytes
+                        - sha256
+                        - uploadedAt
+                        - sheets
+                      additionalProperties: false
+                  readiness:
+                    type: object
+                    properties:
+                      canAnalyze:
+                        type: boolean
+                      missing:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sheetId:
+                              nullable: true
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            sheetName:
+                              nullable: true
+                              type: string
+                            message:
+                              type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
+                          required:
+                            - sheetId
+                            - sheetName
+                            - message
+                          additionalProperties: false
+                      notes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sheetId:
+                              nullable: true
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            sheetName:
+                              nullable: true
+                              type: string
+                            message:
+                              type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
+                          required:
+                            - sheetId
+                            - sheetName
+                            - message
+                          additionalProperties: false
+                    required:
+                      - canAnalyze
+                      - missing
+                      - notes
+                    additionalProperties: false
+                  analysis:
+                    nullable: true
+                    type: object
+                    properties:
+                      rows:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          matched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          unmatched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ambiguous:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ignored:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - total
+                          - matched
+                          - unmatched
+                          - ambiguous
+                          - ignored
+                        additionalProperties: false
+                      byCycle:
+                        type: object
+                        properties:
+                          E:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          I:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          R:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - E
+                          - I
+                          - R
+                        additionalProperties: false
+                      warnings:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        required:
+                          - negative_amount
+                          - non_usd_currency
+                          - amount_unparsed
+                          - currency_invalid
+                          - id_length
+                          - lossy_numeric_id
+                          - status_unresolved
+                          - status_differs_from_sheet
+                          - cycle_mismatch
+                    required:
+                      - rows
+                      - byCycle
+                      - warnings
+                    additionalProperties: false
+                  channels:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channelId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          nullable: true
+                          type: string
+                        gatewayId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        providerId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        rowCount:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        assignment:
+                          type: string
+                          enum:
+                            - assigned
+                            - unassigned
+                            - assigned_to_other_account
+                        otherAccount:
+                          nullable: true
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
+                        note:
+                          nullable: true
+                          type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                      required:
+                        - channelId
+                        - name
+                        - gatewayId
+                        - providerId
+                        - rowCount
+                        - assignment
+                        - otherAccount
+                        - note
+                      additionalProperties: false
+                  batchFees:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        feeTypeId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        code:
+                          nullable: true
+                          type: string
+                        title:
+                          type: string
+                        amount:
+                          nullable: true
+                          type: string
+                          pattern: ^-?\d+(\.\d{1,4})?$
+                        currency:
+                          nullable: true
+                          type: string
+                        source:
+                          type: string
+                          enum:
+                            - file
+                        warning:
+                          type: string
+                      required:
+                        - feeTypeId
+                        - code
+                        - title
+                        - amount
+                        - currency
+                        - source
+                      additionalProperties: false
+                required:
+                  - importId
+                  - accountId
+                  - status
+                  - createdBy
+                  - createdAt
+                  - updatedAt
+                  - analyzedAt
+                  - rowsTotal
+                  - rowsMatched
+                  - rowsUnmatched
+                  - currentBatchId
+                  - fileCount
+                  - files
+                  - readiness
+                  - analysis
+                  - channels
+                  - batchFees
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/imports/{importId}/analyze:
+    post:
+      summary: Parse the rows with the confirmed mapping and cross-match them by
+        external identity
+      tags: *a3
+      description: The import must be mapped (409 import_not_mapped otherwise). An
+        incomplete mapping answers 422 mapping_incomplete; more than the allowed
+        transaction rows per import answers 422 import_too_large.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: importId
+          required: true
+      security: *a4
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  importId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  accountId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  status:
+                    type: string
+                    enum:
+                      - uploaded
+                      - mapped
+                      - analyzed
+                      - validated
+                      - processed
+                      - cancelled
+                  createdBy:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  analyzedAt:
+                    nullable: true
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  rowsTotal:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  rowsMatched:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  rowsUnmatched:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  currentBatchId:
+                    nullable: true
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  fileCount:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fileId:
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        fileName:
+                          type: string
+                        sizeBytes:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        sha256:
+                          type: string
+                          pattern: ^[0-9a-f]{64}$
+                        uploadedAt:
+                          type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        sheets:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              sheetId:
+                                type: string
+                                format: uuid
+                                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                              sheetName:
+                                type: string
+                              hidden:
+                                type: boolean
+                              rowCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              proposed:
+                                type: object
+                                properties:
+                                  kind:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - transactions
+                                      - batch_fees
+                                      - ignore
+                                  cycle:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - E
+                                      - I
+                                      - R
+                                  statusId:
+                                    nullable: true
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  statusName:
+                                    nullable: true
+                                    type: string
+                                  source:
+                                    type: string
+                                    enum:
+                                      - account
+                                      - global
+                                      - none
+                                  note:
+                                    type: string
+                                required:
+                                  - kind
+                                  - cycle
+                                  - statusId
+                                  - statusName
+                                  - source
+                                additionalProperties: false
+                              columns:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    sourceColumn:
+                                      type: string
+                                    targetField:
+                                      nullable: true
+                                      type: string
+                                      enum:
+                                        - transactionId
+                                        - status
+                                        - gateway
+                                        - amount
+                                        - currency
+                                        - txnDate
+                                        - feeType
+                                        - providerRef
+                                        - orderId
+                                        - reference
+                                    source:
+                                      type: string
+                                      enum:
+                                        - account
+                                        - global
+                                        - none
+                                    statusValues:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          value:
+                                            type: string
+                                          statusId:
+                                            nullable: true
+                                            type: integer
+                                            minimum: -9007199254740991
+                                            maximum: 9007199254740991
+                                          statusName:
+                                            nullable: true
+                                            type: string
+                                          excludeAmount:
+                                            type: boolean
+                                        required:
+                                          - value
+                                          - statusId
+                                          - statusName
+                                          - excludeAmount
+                                        additionalProperties: false
+                                  required:
+                                    - sourceColumn
+                                    - targetField
+                                    - source
+                                  additionalProperties: false
+                              preview:
+                                type: array
+                                items:
+                                  type: object
+                                  additionalProperties:
+                                    type: string
+                              mappingConfirmed:
+                                type: boolean
+                              mapping:
+                                nullable: true
+                                type: object
+                                properties:
+                                  kind:
+                                    type: string
+                                    enum:
+                                      - transactions
+                                      - batch_fees
+                                      - ignore
+                                  cycle:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - E
+                                      - I
+                                      - R
+                                  statusId:
+                                    nullable: true
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  statusName:
+                                    nullable: true
+                                    type: string
+                                  columns:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        sourceColumn:
+                                          type: string
+                                          minLength: 1
+                                        targetField:
+                                          type: string
+                                          enum:
+                                            - transactionId
+                                            - status
+                                            - gateway
+                                            - amount
+                                            - currency
+                                            - txnDate
+                                            - feeType
+                                            - providerRef
+                                            - orderId
+                                            - reference
+                                      required:
+                                        - sourceColumn
+                                        - targetField
+                                      additionalProperties: false
+                                required:
+                                  - kind
+                                  - cycle
+                                  - statusId
+                                  - statusName
+                                  - columns
+                                additionalProperties: false
+                            required:
+                              - sheetId
+                              - sheetName
+                              - hidden
+                              - rowCount
+                              - proposed
+                              - columns
+                              - preview
+                              - mappingConfirmed
+                              - mapping
+                            additionalProperties: false
+                      required:
+                        - fileId
+                        - fileName
+                        - sizeBytes
+                        - sha256
+                        - uploadedAt
+                        - sheets
+                      additionalProperties: false
+                  readiness:
+                    type: object
+                    properties:
+                      canAnalyze:
+                        type: boolean
+                      missing:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sheetId:
+                              nullable: true
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            sheetName:
+                              nullable: true
+                              type: string
+                            message:
+                              type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
+                          required:
+                            - sheetId
+                            - sheetName
+                            - message
+                          additionalProperties: false
+                      notes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sheetId:
+                              nullable: true
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            sheetName:
+                              nullable: true
+                              type: string
+                            message:
+                              type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
+                          required:
+                            - sheetId
+                            - sheetName
+                            - message
+                          additionalProperties: false
+                    required:
+                      - canAnalyze
+                      - missing
+                      - notes
+                    additionalProperties: false
+                  analysis:
+                    nullable: true
+                    type: object
+                    properties:
+                      rows:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          matched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          unmatched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ambiguous:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ignored:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - total
+                          - matched
+                          - unmatched
+                          - ambiguous
+                          - ignored
+                        additionalProperties: false
+                      byCycle:
+                        type: object
+                        properties:
+                          E:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          I:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          R:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - E
+                          - I
+                          - R
+                        additionalProperties: false
+                      warnings:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        required:
+                          - negative_amount
+                          - non_usd_currency
+                          - amount_unparsed
+                          - currency_invalid
+                          - id_length
+                          - lossy_numeric_id
+                          - status_unresolved
+                          - status_differs_from_sheet
+                          - cycle_mismatch
+                    required:
+                      - rows
+                      - byCycle
+                      - warnings
+                    additionalProperties: false
+                  channels:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channelId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          nullable: true
+                          type: string
+                        gatewayId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        providerId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        rowCount:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        assignment:
+                          type: string
+                          enum:
+                            - assigned
+                            - unassigned
+                            - assigned_to_other_account
+                        otherAccount:
+                          nullable: true
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
+                        note:
+                          nullable: true
+                          type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                      required:
+                        - channelId
+                        - name
+                        - gatewayId
+                        - providerId
+                        - rowCount
+                        - assignment
+                        - otherAccount
+                        - note
+                      additionalProperties: false
+                  batchFees:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        feeTypeId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        code:
+                          nullable: true
+                          type: string
+                        title:
+                          type: string
+                        amount:
+                          nullable: true
+                          type: string
+                          pattern: ^-?\d+(\.\d{1,4})?$
+                        currency:
+                          nullable: true
+                          type: string
+                        source:
+                          type: string
+                          enum:
+                            - file
+                        warning:
+                          type: string
+                      required:
+                        - feeTypeId
+                        - code
+                        - title
+                        - amount
+                        - currency
+                        - source
+                      additionalProperties: false
+                required:
+                  - importId
+                  - accountId
+                  - status
+                  - createdBy
+                  - createdAt
+                  - updatedAt
+                  - analyzedAt
+                  - rowsTotal
+                  - rowsMatched
+                  - rowsUnmatched
+                  - currentBatchId
+                  - fileCount
+                  - files
+                  - readiness
+                  - analysis
+                  - channels
+                  - batchFees
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "422":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/imports/{importId}/rows:
+    get:
+      summary: Rows of an analyzed import, unmatched and ambiguous first (empty before
+        the analysis)
+      tags: *a3
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - matched
+              - unmatched
+              - ambiguous
+              - ignored
+          in: query
+          name: match
+          required: false
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: query
+          name: sheetId
+          required: false
+        - schema:
+            default: 1
+            type: integer
+            minimum: 1
+            maximum: 9007199254740991
+          in: query
+          name: page
+          required: false
+        - schema:
+            default: 50
+            type: integer
+            minimum: 1
+            maximum: 500
+          in: query
+          name: pageSize
+          required: false
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: importId
+          required: true
+      security: *a4
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fileId:
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        fileName:
+                          type: string
+                        sheetId:
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        sheetName:
+                          type: string
+                        rowNo:
+                          type: integer
+                          minimum: 0
+                          exclusiveMinimum: true
+                          maximum: 9007199254740991
+                        cycle:
+                          type: string
+                          enum:
+                            - E
+                            - I
+                            - R
+                        matchResult:
+                          type: string
+                          enum:
+                            - matched
+                            - unmatched
+                            - ambiguous
+                            - ignored
+                        reason:
+                          nullable: true
+                          type: string
+                          enum:
+                            - no_match
+                            - id_format
+                            - lossy_numeric_id
+                            - empty_id
+                            - no_gateways
+                        transactionIdRaw:
+                          nullable: true
+                          type: string
+                        transactionId:
+                          nullable: true
+                          type: string
+                          pattern: ^\d+$
+                        gatewayId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        statusRaw:
+                          nullable: true
+                          type: string
+                        statusId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        statusName:
+                          nullable: true
+                          type: string
+                        amount:
+                          nullable: true
+                          type: string
+                          pattern: ^-?\d+(\.\d{1,4})?$
+                        currency:
+                          nullable: true
+                          type: string
+                        excludeAmount:
+                          type: boolean
+                        ignore:
+                          type: boolean
+                        warnings:
+                          type: array
+                          items:
+                            type: string
+                            enum:
+                              - negative_amount
+                              - non_usd_currency
+                              - amount_unparsed
+                              - currency_invalid
+                              - id_length
+                              - lossy_numeric_id
+                              - status_unresolved
+                              - status_differs_from_sheet
+                              - cycle_mismatch
+                              - out_of_scope_transaction
+                        candidates:
+                          type: array
+                          items:
+                            anyOf:
+                              - type: object
+                                properties:
+                                  gatewayId:
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  gatewayName:
+                                    type: string
+                                  transactionId:
+                                    type: string
+                                    pattern: ^\d+$
+                                  channelId:
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  channelName:
+                                    type: string
+                                  statusId:
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  statusName:
+                                    type: string
+                                  amount:
+                                    type: string
+                                    pattern: ^-?\d+(\.\d{1,4})?$
+                                required:
+                                  - gatewayId
+                                  - gatewayName
+                                  - transactionId
+                                  - channelId
+                                  - channelName
+                                  - statusId
+                                  - statusName
+                                  - amount
+                                additionalProperties: false
+                              - type: object
+                                properties:
+                                  gatewayId:
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  gatewayName:
+                                    type: string
+                                  transactionId:
+                                    type: string
+                                    pattern: ^\d+$
+                                  channelId:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - null
+                                  channelName:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - null
+                                  statusId:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - null
+                                  statusName:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - null
+                                  amount:
+                                    type: string
+                                    nullable: true
+                                    enum:
+                                      - null
+                                  outOfScope:
+                                    type: boolean
+                                    enum:
+                                      - true
+                                required:
+                                  - gatewayId
+                                  - gatewayName
+                                  - transactionId
+                                  - channelId
+                                  - channelName
+                                  - statusId
+                                  - statusName
+                                  - amount
+                                  - outOfScope
+                                additionalProperties: false
+                        transaction:
+                          nullable: true
+                          type: object
+                          properties:
+                            transactionId:
+                              type: string
+                              pattern: ^\d+$
+                            channelId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            channelName:
+                              type: string
+                            statusId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            statusName:
+                              type: string
+                            amount:
+                              type: string
+                              pattern: ^-?\d+(\.\d{1,4})?$
+                            transactionDate:
+                              type: string
+                              format: date-time
+                              pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                          required:
+                            - transactionId
+                            - channelId
+                            - channelName
+                            - statusId
+                            - statusName
+                            - amount
+                            - transactionDate
+                          additionalProperties: false
+                        rawData:
+                          type: object
+                          additionalProperties:
+                            type: string
+                      required:
+                        - fileId
+                        - fileName
+                        - sheetId
+                        - sheetName
+                        - rowNo
+                        - cycle
+                        - matchResult
+                        - reason
+                        - transactionIdRaw
+                        - transactionId
+                        - gatewayId
+                        - statusRaw
+                        - statusId
+                        - statusName
+                        - amount
+                        - currency
+                        - excludeAmount
+                        - ignore
+                        - warnings
+                        - candidates
+                        - transaction
+                        - rawData
+                      additionalProperties: false
+                  page:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  pageSize:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  total:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                required:
+                  - items
+                  - page
+                  - pageSize
+                  - total
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/imports/{importId}/rows/{sheetId}/{rowNo}:
+    patch:
+      summary: Resolve an ambiguous row by choosing the gateway among its candidates
+        (audited)
+      tags: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gatewayId:
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                  maximum: 9007199254740991
+              required:
+                - gatewayId
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: importId
+          required: true
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: sheetId
+          required: true
+        - schema:
+            type: string
+            pattern: ^\d{1,10}$
+          in: path
+          name: rowNo
+          required: true
+      security: *a4
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fileId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  fileName:
+                    type: string
+                  sheetId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  sheetName:
+                    type: string
+                  rowNo:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  cycle:
+                    type: string
+                    enum:
+                      - E
+                      - I
+                      - R
+                  matchResult:
+                    type: string
+                    enum:
+                      - matched
+                      - unmatched
+                      - ambiguous
+                      - ignored
+                  reason:
+                    nullable: true
+                    type: string
+                    enum:
+                      - no_match
+                      - id_format
+                      - lossy_numeric_id
+                      - empty_id
+                      - no_gateways
+                  transactionIdRaw:
+                    nullable: true
+                    type: string
+                  transactionId:
+                    nullable: true
+                    type: string
+                    pattern: ^\d+$
+                  gatewayId:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  statusRaw:
+                    nullable: true
+                    type: string
+                  statusId:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  statusName:
+                    nullable: true
+                    type: string
+                  amount:
+                    nullable: true
+                    type: string
+                    pattern: ^-?\d+(\.\d{1,4})?$
+                  currency:
+                    nullable: true
+                    type: string
+                  excludeAmount:
+                    type: boolean
+                  ignore:
+                    type: boolean
+                  warnings:
+                    type: array
+                    items:
+                      type: string
+                      enum:
+                        - negative_amount
+                        - non_usd_currency
+                        - amount_unparsed
+                        - currency_invalid
+                        - id_length
+                        - lossy_numeric_id
+                        - status_unresolved
+                        - status_differs_from_sheet
+                        - cycle_mismatch
+                        - out_of_scope_transaction
+                  candidates:
+                    type: array
+                    items:
+                      anyOf:
+                        - type: object
+                          properties:
+                            gatewayId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            gatewayName:
+                              type: string
+                            transactionId:
+                              type: string
+                              pattern: ^\d+$
+                            channelId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            channelName:
+                              type: string
+                            statusId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            statusName:
+                              type: string
+                            amount:
+                              type: string
+                              pattern: ^-?\d+(\.\d{1,4})?$
+                          required:
+                            - gatewayId
+                            - gatewayName
+                            - transactionId
+                            - channelId
+                            - channelName
+                            - statusId
+                            - statusName
+                            - amount
+                          additionalProperties: false
+                        - type: object
+                          properties:
+                            gatewayId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            gatewayName:
+                              type: string
+                            transactionId:
+                              type: string
+                              pattern: ^\d+$
+                            channelId:
+                              type: string
+                              nullable: true
+                              enum:
+                                - null
+                            channelName:
+                              type: string
+                              nullable: true
+                              enum:
+                                - null
+                            statusId:
+                              type: string
+                              nullable: true
+                              enum:
+                                - null
+                            statusName:
+                              type: string
+                              nullable: true
+                              enum:
+                                - null
+                            amount:
+                              type: string
+                              nullable: true
+                              enum:
+                                - null
+                            outOfScope:
+                              type: boolean
+                              enum:
+                                - true
+                          required:
+                            - gatewayId
+                            - gatewayName
+                            - transactionId
+                            - channelId
+                            - channelName
+                            - statusId
+                            - statusName
+                            - amount
+                            - outOfScope
+                          additionalProperties: false
+                  transaction:
+                    nullable: true
+                    type: object
+                    properties:
+                      transactionId:
+                        type: string
+                        pattern: ^\d+$
+                      channelId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      channelName:
+                        type: string
+                      statusId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      statusName:
+                        type: string
+                      amount:
+                        type: string
+                        pattern: ^-?\d+(\.\d{1,4})?$
+                      transactionDate:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                    required:
+                      - transactionId
+                      - channelId
+                      - channelName
+                      - statusId
+                      - statusName
+                      - amount
+                      - transactionDate
+                    additionalProperties: false
+                  rawData:
+                    type: object
+                    additionalProperties:
+                      type: string
+                required:
+                  - fileId
+                  - fileName
+                  - sheetId
+                  - sheetName
+                  - rowNo
+                  - cycle
+                  - matchResult
+                  - reason
+                  - transactionIdRaw
+                  - transactionId
+                  - gatewayId
+                  - statusRaw
+                  - statusId
+                  - statusName
+                  - amount
+                  - currency
+                  - excludeAmount
+                  - ignore
+                  - warnings
+                  - candidates
+                  - transaction
+                  - rawData
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/imports/{importId}/cancel:
+    post:
+      summary: Cancel an import that is not processed, keeping its files, rows and
+        findings
+      tags: *a3
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: importId
+          required: true
+      security: *a4
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  importId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  accountId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  status:
+                    type: string
+                    enum:
+                      - uploaded
+                      - mapped
+                      - analyzed
+                      - validated
+                      - processed
+                      - cancelled
+                  createdBy:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  analyzedAt:
+                    nullable: true
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  rowsTotal:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  rowsMatched:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  rowsUnmatched:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  currentBatchId:
+                    nullable: true
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  fileCount:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fileId:
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        fileName:
+                          type: string
+                        sizeBytes:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        sha256:
+                          type: string
+                          pattern: ^[0-9a-f]{64}$
+                        uploadedAt:
+                          type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        sheets:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              sheetId:
+                                type: string
+                                format: uuid
+                                pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                              sheetName:
+                                type: string
+                              hidden:
+                                type: boolean
+                              rowCount:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              proposed:
+                                type: object
+                                properties:
+                                  kind:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - transactions
+                                      - batch_fees
+                                      - ignore
+                                  cycle:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - E
+                                      - I
+                                      - R
+                                  statusId:
+                                    nullable: true
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  statusName:
+                                    nullable: true
+                                    type: string
+                                  source:
+                                    type: string
+                                    enum:
+                                      - account
+                                      - global
+                                      - none
+                                  note:
+                                    type: string
+                                required:
+                                  - kind
+                                  - cycle
+                                  - statusId
+                                  - statusName
+                                  - source
+                                additionalProperties: false
+                              columns:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    sourceColumn:
+                                      type: string
+                                    targetField:
+                                      nullable: true
+                                      type: string
+                                      enum:
+                                        - transactionId
+                                        - status
+                                        - gateway
+                                        - amount
+                                        - currency
+                                        - txnDate
+                                        - feeType
+                                        - providerRef
+                                        - orderId
+                                        - reference
+                                    source:
+                                      type: string
+                                      enum:
+                                        - account
+                                        - global
+                                        - none
+                                    statusValues:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          value:
+                                            type: string
+                                          statusId:
+                                            nullable: true
+                                            type: integer
+                                            minimum: -9007199254740991
+                                            maximum: 9007199254740991
+                                          statusName:
+                                            nullable: true
+                                            type: string
+                                          excludeAmount:
+                                            type: boolean
+                                        required:
+                                          - value
+                                          - statusId
+                                          - statusName
+                                          - excludeAmount
+                                        additionalProperties: false
+                                  required:
+                                    - sourceColumn
+                                    - targetField
+                                    - source
+                                  additionalProperties: false
+                              preview:
+                                type: array
+                                items:
+                                  type: object
+                                  additionalProperties:
+                                    type: string
+                              mappingConfirmed:
+                                type: boolean
+                              mapping:
+                                nullable: true
+                                type: object
+                                properties:
+                                  kind:
+                                    type: string
+                                    enum:
+                                      - transactions
+                                      - batch_fees
+                                      - ignore
+                                  cycle:
+                                    nullable: true
+                                    type: string
+                                    enum:
+                                      - E
+                                      - I
+                                      - R
+                                  statusId:
+                                    nullable: true
+                                    type: integer
+                                    minimum: -9007199254740991
+                                    maximum: 9007199254740991
+                                  statusName:
+                                    nullable: true
+                                    type: string
+                                  columns:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        sourceColumn:
+                                          type: string
+                                          minLength: 1
+                                        targetField:
+                                          type: string
+                                          enum:
+                                            - transactionId
+                                            - status
+                                            - gateway
+                                            - amount
+                                            - currency
+                                            - txnDate
+                                            - feeType
+                                            - providerRef
+                                            - orderId
+                                            - reference
+                                      required:
+                                        - sourceColumn
+                                        - targetField
+                                      additionalProperties: false
+                                required:
+                                  - kind
+                                  - cycle
+                                  - statusId
+                                  - statusName
+                                  - columns
+                                additionalProperties: false
+                            required:
+                              - sheetId
+                              - sheetName
+                              - hidden
+                              - rowCount
+                              - proposed
+                              - columns
+                              - preview
+                              - mappingConfirmed
+                              - mapping
+                            additionalProperties: false
+                      required:
+                        - fileId
+                        - fileName
+                        - sizeBytes
+                        - sha256
+                        - uploadedAt
+                        - sheets
+                      additionalProperties: false
+                  readiness:
+                    type: object
+                    properties:
+                      canAnalyze:
+                        type: boolean
+                      missing:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sheetId:
+                              nullable: true
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            sheetName:
+                              nullable: true
+                              type: string
+                            message:
+                              type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
+                          required:
+                            - sheetId
+                            - sheetName
+                            - message
+                          additionalProperties: false
+                      notes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sheetId:
+                              nullable: true
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            sheetName:
+                              nullable: true
+                              type: string
+                            message:
+                              type: string
+                            field:
+                              type: string
+                              enum:
+                                - kind
+                                - cycle
+                                - status
+                                - transactionId
+                                - transactions
+                                - confirmation
+                          required:
+                            - sheetId
+                            - sheetName
+                            - message
+                          additionalProperties: false
+                    required:
+                      - canAnalyze
+                      - missing
+                      - notes
+                    additionalProperties: false
+                  analysis:
+                    nullable: true
+                    type: object
+                    properties:
+                      rows:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          matched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          unmatched:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ambiguous:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          ignored:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - total
+                          - matched
+                          - unmatched
+                          - ambiguous
+                          - ignored
+                        additionalProperties: false
+                      byCycle:
+                        type: object
+                        properties:
+                          E:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          I:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          R:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - E
+                          - I
+                          - R
+                        additionalProperties: false
+                      warnings:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        required:
+                          - negative_amount
+                          - non_usd_currency
+                          - amount_unparsed
+                          - currency_invalid
+                          - id_length
+                          - lossy_numeric_id
+                          - status_unresolved
+                          - status_differs_from_sheet
+                          - cycle_mismatch
+                    required:
+                      - rows
+                      - byCycle
+                      - warnings
+                    additionalProperties: false
+                  channels:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channelId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          nullable: true
+                          type: string
+                        gatewayId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        providerId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        rowCount:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        assignment:
+                          type: string
+                          enum:
+                            - assigned
+                            - unassigned
+                            - assigned_to_other_account
+                        otherAccount:
+                          nullable: true
+                          anyOf:
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  format: uuid
+                                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                                name:
+                                  type: string
+                              required:
+                                - accountId
+                                - name
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                accountId:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                name:
+                                  type: string
+                                  nullable: true
+                                  enum:
+                                    - null
+                                outOfScope:
+                                  type: boolean
+                                  enum:
+                                    - true
+                              required:
+                                - accountId
+                                - name
+                                - outOfScope
+                              additionalProperties: false
+                        note:
+                          nullable: true
+                          type: string
+                        outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                      required:
+                        - channelId
+                        - name
+                        - gatewayId
+                        - providerId
+                        - rowCount
+                        - assignment
+                        - otherAccount
+                        - note
+                      additionalProperties: false
+                  batchFees:
+                    nullable: true
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        feeTypeId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        code:
+                          nullable: true
+                          type: string
+                        title:
+                          type: string
+                        amount:
+                          nullable: true
+                          type: string
+                          pattern: ^-?\d+(\.\d{1,4})?$
+                        currency:
+                          nullable: true
+                          type: string
+                        source:
+                          type: string
+                          enum:
+                            - file
+                        warning:
+                          type: string
+                      required:
+                        - feeTypeId
+                        - code
+                        - title
+                        - amount
+                        - currency
+                        - source
+                      additionalProperties: false
+                required:
+                  - importId
+                  - accountId
+                  - status
+                  - createdBy
+                  - createdAt
+                  - updatedAt
+                  - analyzedAt
+                  - rowsTotal
+                  - rowsMatched
+                  - rowsUnmatched
+                  - currentBatchId
+                  - fileCount
+                  - files
+                  - readiness
+                  - analysis
+                  - channels
+                  - batchFees
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "409":
           description: Default Response
           content:
             application/json:

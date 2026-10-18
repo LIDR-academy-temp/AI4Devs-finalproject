@@ -1,0 +1,41 @@
+meta {
+  name: Mapping - viewer
+  type: http
+  seq: 27
+  tags: [
+    smoke
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/imports/:importId/mapping
+  body: json
+  auth: bearer
+}
+
+params:path {
+  importId: {{$randomUUID}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+body:json {
+  {
+    "sheets": [
+      { "sheetId": "00000000-0000-4000-8000-000000000001", "kind": "ignore", "cycle": null, "statusId": null, "columns": [] }
+    ]
+  }
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer lacks settlement.process: 403 forbidden before the import is looked up', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

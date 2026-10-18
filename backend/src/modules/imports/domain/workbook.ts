@@ -28,3 +28,17 @@ export interface SheetDescription {
 export interface WorkbookDescription {
   sheets: SheetDescription[]
 }
+
+/** One data row as the analysis reads it (design D3): cells aligned to the headers, every one as text. */
+export interface SheetRow {
+  /** Row number in the sheet (header = 1), so the analyst can find it in Excel. */
+  rowNo: number
+  cells: string[]
+  /** Column indexes of numeric cells whose precision was already lost in the file (exponent or more than 15 digits). */
+  lossyNumeric: number[]
+}
+
+export interface SheetRows {
+  headers: string[]
+  rows: SheetRow[]
+}

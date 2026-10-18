@@ -1,0 +1,26 @@
+meta {
+  name: 18 Cancel again
+  type: http
+  seq: 18
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/cancel
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{flowImportId}}
+}
+
+tests {
+  test('a cancelled import cannot be cancelled again: 409 import_not_cancellable', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('import_not_cancellable');
+    expect(res.body.details.status).to.equal('cancelled');
+  });
+}

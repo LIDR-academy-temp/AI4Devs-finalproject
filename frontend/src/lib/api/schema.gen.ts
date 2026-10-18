@@ -1226,6 +1226,20 @@ export interface paths {
                                     preview: {
                                         [key: string]: string;
                                     }[];
+                                    mappingConfirmed: boolean;
+                                    mapping: {
+                                        /** @enum {string} */
+                                        kind: "transactions" | "batch_fees" | "ignore";
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        columns: {
+                                            sourceColumn: string;
+                                            /** @enum {string} */
+                                            targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                                        }[];
+                                    } | null;
                                 }[];
                             }[];
                             readiness: {
@@ -1235,14 +1249,69 @@ export interface paths {
                                     sheetId: string | null;
                                     sheetName: string | null;
                                     message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
                                 }[];
                                 notes: {
                                     /** Format: uuid */
                                     sheetId: string | null;
                                     sheetName: string | null;
                                     message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
                                 }[];
                             };
+                            analysis: {
+                                rows: {
+                                    total: number;
+                                    matched: number;
+                                    unmatched: number;
+                                    ambiguous: number;
+                                    ignored: number;
+                                };
+                                byCycle: {
+                                    E: number;
+                                    I: number;
+                                    R: number;
+                                };
+                                warnings: {
+                                    [key: string]: number;
+                                };
+                            } | null;
+                            channels: {
+                                channelId: number;
+                                name: string | null;
+                                gatewayId: number;
+                                providerId: number | null;
+                                rowCount: number;
+                                /** @enum {string} */
+                                assignment: "assigned" | "unassigned" | "assigned_to_other_account";
+                                otherAccount: ({
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    name: string;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
+                                note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
+                            }[] | null;
+                            batchFees: {
+                                feeTypeId: number | null;
+                                code: string | null;
+                                title: string;
+                                amount: string | null;
+                                currency: string | null;
+                                /** @enum {string} */
+                                source: "file";
+                                warning?: string;
+                            }[] | null;
                         };
                     };
                 };
@@ -1433,6 +1502,20 @@ export interface paths {
                                     preview: {
                                         [key: string]: string;
                                     }[];
+                                    mappingConfirmed: boolean;
+                                    mapping: {
+                                        /** @enum {string} */
+                                        kind: "transactions" | "batch_fees" | "ignore";
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        columns: {
+                                            sourceColumn: string;
+                                            /** @enum {string} */
+                                            targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                                        }[];
+                                    } | null;
                                 }[];
                             }[];
                             readiness: {
@@ -1442,14 +1525,69 @@ export interface paths {
                                     sheetId: string | null;
                                     sheetName: string | null;
                                     message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
                                 }[];
                                 notes: {
                                     /** Format: uuid */
                                     sheetId: string | null;
                                     sheetName: string | null;
                                     message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
                                 }[];
                             };
+                            analysis: {
+                                rows: {
+                                    total: number;
+                                    matched: number;
+                                    unmatched: number;
+                                    ambiguous: number;
+                                    ignored: number;
+                                };
+                                byCycle: {
+                                    E: number;
+                                    I: number;
+                                    R: number;
+                                };
+                                warnings: {
+                                    [key: string]: number;
+                                };
+                            } | null;
+                            channels: {
+                                channelId: number;
+                                name: string | null;
+                                gatewayId: number;
+                                providerId: number | null;
+                                rowCount: number;
+                                /** @enum {string} */
+                                assignment: "assigned" | "unassigned" | "assigned_to_other_account";
+                                otherAccount: ({
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    name: string;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
+                                note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
+                            }[] | null;
+                            batchFees: {
+                                feeTypeId: number | null;
+                                code: string | null;
+                                title: string;
+                                amount: string | null;
+                                currency: string | null;
+                                /** @enum {string} */
+                                source: "file";
+                                warning?: string;
+                            }[] | null;
                         };
                     };
                 };
@@ -1632,6 +1770,20 @@ export interface paths {
                                     preview: {
                                         [key: string]: string;
                                     }[];
+                                    mappingConfirmed: boolean;
+                                    mapping: {
+                                        /** @enum {string} */
+                                        kind: "transactions" | "batch_fees" | "ignore";
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        columns: {
+                                            sourceColumn: string;
+                                            /** @enum {string} */
+                                            targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                                        }[];
+                                    } | null;
                                 }[];
                             }[];
                             readiness: {
@@ -1641,14 +1793,69 @@ export interface paths {
                                     sheetId: string | null;
                                     sheetName: string | null;
                                     message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
                                 }[];
                                 notes: {
                                     /** Format: uuid */
                                     sheetId: string | null;
                                     sheetName: string | null;
                                     message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
                                 }[];
                             };
+                            analysis: {
+                                rows: {
+                                    total: number;
+                                    matched: number;
+                                    unmatched: number;
+                                    ambiguous: number;
+                                    ignored: number;
+                                };
+                                byCycle: {
+                                    E: number;
+                                    I: number;
+                                    R: number;
+                                };
+                                warnings: {
+                                    [key: string]: number;
+                                };
+                            } | null;
+                            channels: {
+                                channelId: number;
+                                name: string | null;
+                                gatewayId: number;
+                                providerId: number | null;
+                                rowCount: number;
+                                /** @enum {string} */
+                                assignment: "assigned" | "unassigned" | "assigned_to_other_account";
+                                otherAccount: ({
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    name: string;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
+                                note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
+                            }[] | null;
+                            batchFees: {
+                                feeTypeId: number | null;
+                                code: string | null;
+                                title: string;
+                                amount: string | null;
+                                currency: string | null;
+                                /** @enum {string} */
+                                source: "file";
+                                warning?: string;
+                            }[] | null;
                         };
                     };
                 };
@@ -1813,6 +2020,20 @@ export interface paths {
                                     preview: {
                                         [key: string]: string;
                                     }[];
+                                    mappingConfirmed: boolean;
+                                    mapping: {
+                                        /** @enum {string} */
+                                        kind: "transactions" | "batch_fees" | "ignore";
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        columns: {
+                                            sourceColumn: string;
+                                            /** @enum {string} */
+                                            targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                                        }[];
+                                    } | null;
                                 }[];
                             }[];
                             readiness: {
@@ -1822,14 +2043,69 @@ export interface paths {
                                     sheetId: string | null;
                                     sheetName: string | null;
                                     message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
                                 }[];
                                 notes: {
                                     /** Format: uuid */
                                     sheetId: string | null;
                                     sheetName: string | null;
                                     message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
                                 }[];
                             };
+                            analysis: {
+                                rows: {
+                                    total: number;
+                                    matched: number;
+                                    unmatched: number;
+                                    ambiguous: number;
+                                    ignored: number;
+                                };
+                                byCycle: {
+                                    E: number;
+                                    I: number;
+                                    R: number;
+                                };
+                                warnings: {
+                                    [key: string]: number;
+                                };
+                            } | null;
+                            channels: {
+                                channelId: number;
+                                name: string | null;
+                                gatewayId: number;
+                                providerId: number | null;
+                                rowCount: number;
+                                /** @enum {string} */
+                                assignment: "assigned" | "unassigned" | "assigned_to_other_account";
+                                otherAccount: ({
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    name: string;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
+                                note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
+                            }[] | null;
+                            batchFees: {
+                                feeTypeId: number | null;
+                                code: string | null;
+                                title: string;
+                                amount: string | null;
+                                currency: string | null;
+                                /** @enum {string} */
+                                source: "file";
+                                warning?: string;
+                            }[] | null;
                         };
                     };
                 };
@@ -1876,6 +2152,1100 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{importId}/mapping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Confirm the mapping of every sheet of the import; the import moves to mapped */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        sheets: {
+                            /** Format: uuid */
+                            sheetId: string;
+                            /** @enum {string} */
+                            kind: "transactions" | "batch_fees" | "ignore";
+                            /** @enum {string|null} */
+                            cycle: "E" | "I" | "R" | null;
+                            statusId: number | null;
+                            columns: {
+                                sourceColumn: string;
+                                /** @enum {string} */
+                                targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                            }[];
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            /** @enum {string} */
+                            status: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                            /** Format: date-time */
+                            analyzedAt: string | null;
+                            rowsTotal: number | null;
+                            rowsMatched: number | null;
+                            rowsUnmatched: number | null;
+                            /** Format: uuid */
+                            currentBatchId: string | null;
+                            fileCount: number;
+                            files: {
+                                /** Format: uuid */
+                                fileId: string;
+                                fileName: string;
+                                sizeBytes: number;
+                                sha256: string;
+                                /** Format: date-time */
+                                uploadedAt: string;
+                                sheets: {
+                                    /** Format: uuid */
+                                    sheetId: string;
+                                    sheetName: string;
+                                    hidden: boolean;
+                                    rowCount: number;
+                                    proposed: {
+                                        /** @enum {string|null} */
+                                        kind: "transactions" | "batch_fees" | "ignore" | null;
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        note?: string;
+                                    };
+                                    columns: {
+                                        sourceColumn: string;
+                                        /** @enum {string|null} */
+                                        targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference" | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        statusValues?: {
+                                            value: string;
+                                            statusId: number | null;
+                                            statusName: string | null;
+                                            excludeAmount: boolean;
+                                        }[];
+                                    }[];
+                                    preview: {
+                                        [key: string]: string;
+                                    }[];
+                                    mappingConfirmed: boolean;
+                                    mapping: {
+                                        /** @enum {string} */
+                                        kind: "transactions" | "batch_fees" | "ignore";
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        columns: {
+                                            sourceColumn: string;
+                                            /** @enum {string} */
+                                            targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                                        }[];
+                                    } | null;
+                                }[];
+                            }[];
+                            readiness: {
+                                canAnalyze: boolean;
+                                missing: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
+                                }[];
+                                notes: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
+                                }[];
+                            };
+                            analysis: {
+                                rows: {
+                                    total: number;
+                                    matched: number;
+                                    unmatched: number;
+                                    ambiguous: number;
+                                    ignored: number;
+                                };
+                                byCycle: {
+                                    E: number;
+                                    I: number;
+                                    R: number;
+                                };
+                                warnings: {
+                                    [key: string]: number;
+                                };
+                            } | null;
+                            channels: {
+                                channelId: number;
+                                name: string | null;
+                                gatewayId: number;
+                                providerId: number | null;
+                                rowCount: number;
+                                /** @enum {string} */
+                                assignment: "assigned" | "unassigned" | "assigned_to_other_account";
+                                otherAccount: ({
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    name: string;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
+                                note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
+                            }[] | null;
+                            batchFees: {
+                                feeTypeId: number | null;
+                                code: string | null;
+                                title: string;
+                                amount: string | null;
+                                currency: string | null;
+                                /** @enum {string} */
+                                source: "file";
+                                warning?: string;
+                            }[] | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{importId}/analyze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parse the rows with the confirmed mapping and cross-match them by external identity
+         * @description The import must be mapped (409 import_not_mapped otherwise). An incomplete mapping answers 422 mapping_incomplete; more than the allowed transaction rows per import answers 422 import_too_large.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            /** @enum {string} */
+                            status: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                            /** Format: date-time */
+                            analyzedAt: string | null;
+                            rowsTotal: number | null;
+                            rowsMatched: number | null;
+                            rowsUnmatched: number | null;
+                            /** Format: uuid */
+                            currentBatchId: string | null;
+                            fileCount: number;
+                            files: {
+                                /** Format: uuid */
+                                fileId: string;
+                                fileName: string;
+                                sizeBytes: number;
+                                sha256: string;
+                                /** Format: date-time */
+                                uploadedAt: string;
+                                sheets: {
+                                    /** Format: uuid */
+                                    sheetId: string;
+                                    sheetName: string;
+                                    hidden: boolean;
+                                    rowCount: number;
+                                    proposed: {
+                                        /** @enum {string|null} */
+                                        kind: "transactions" | "batch_fees" | "ignore" | null;
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        note?: string;
+                                    };
+                                    columns: {
+                                        sourceColumn: string;
+                                        /** @enum {string|null} */
+                                        targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference" | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        statusValues?: {
+                                            value: string;
+                                            statusId: number | null;
+                                            statusName: string | null;
+                                            excludeAmount: boolean;
+                                        }[];
+                                    }[];
+                                    preview: {
+                                        [key: string]: string;
+                                    }[];
+                                    mappingConfirmed: boolean;
+                                    mapping: {
+                                        /** @enum {string} */
+                                        kind: "transactions" | "batch_fees" | "ignore";
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        columns: {
+                                            sourceColumn: string;
+                                            /** @enum {string} */
+                                            targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                                        }[];
+                                    } | null;
+                                }[];
+                            }[];
+                            readiness: {
+                                canAnalyze: boolean;
+                                missing: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
+                                }[];
+                                notes: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
+                                }[];
+                            };
+                            analysis: {
+                                rows: {
+                                    total: number;
+                                    matched: number;
+                                    unmatched: number;
+                                    ambiguous: number;
+                                    ignored: number;
+                                };
+                                byCycle: {
+                                    E: number;
+                                    I: number;
+                                    R: number;
+                                };
+                                warnings: {
+                                    [key: string]: number;
+                                };
+                            } | null;
+                            channels: {
+                                channelId: number;
+                                name: string | null;
+                                gatewayId: number;
+                                providerId: number | null;
+                                rowCount: number;
+                                /** @enum {string} */
+                                assignment: "assigned" | "unassigned" | "assigned_to_other_account";
+                                otherAccount: ({
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    name: string;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
+                                note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
+                            }[] | null;
+                            batchFees: {
+                                feeTypeId: number | null;
+                                code: string | null;
+                                title: string;
+                                amount: string | null;
+                                currency: string | null;
+                                /** @enum {string} */
+                                source: "file";
+                                warning?: string;
+                            }[] | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{importId}/rows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rows of an analyzed import, unmatched and ambiguous first (empty before the analysis) */
+        get: {
+            parameters: {
+                query?: {
+                    match?: "matched" | "unmatched" | "ambiguous" | "ignored";
+                    sheetId?: string;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: {
+                                /** Format: uuid */
+                                fileId: string;
+                                fileName: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                sheetName: string;
+                                rowNo: number;
+                                /** @enum {string} */
+                                cycle: "E" | "I" | "R";
+                                /** @enum {string} */
+                                matchResult: "matched" | "unmatched" | "ambiguous" | "ignored";
+                                /** @enum {string|null} */
+                                reason: "no_match" | "id_format" | "lossy_numeric_id" | "empty_id" | "no_gateways" | null;
+                                transactionIdRaw: string | null;
+                                transactionId: string | null;
+                                gatewayId: number | null;
+                                statusRaw: string | null;
+                                statusId: number | null;
+                                statusName: string | null;
+                                amount: string | null;
+                                currency: string | null;
+                                excludeAmount: boolean;
+                                ignore: boolean;
+                                warnings: ("negative_amount" | "non_usd_currency" | "amount_unparsed" | "currency_invalid" | "id_length" | "lossy_numeric_id" | "status_unresolved" | "status_differs_from_sheet" | "cycle_mismatch" | "out_of_scope_transaction")[];
+                                candidates: ({
+                                    gatewayId: number;
+                                    gatewayName: string;
+                                    transactionId: string;
+                                    channelId: number;
+                                    channelName: string;
+                                    statusId: number;
+                                    statusName: string;
+                                    amount: string;
+                                } | {
+                                    gatewayId: number;
+                                    gatewayName: string;
+                                    transactionId: string;
+                                    /** @enum {string|null} */
+                                    channelId: null;
+                                    /** @enum {string|null} */
+                                    channelName: null;
+                                    /** @enum {string|null} */
+                                    statusId: null;
+                                    /** @enum {string|null} */
+                                    statusName: null;
+                                    /** @enum {string|null} */
+                                    amount: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                })[];
+                                transaction: {
+                                    transactionId: string;
+                                    channelId: number;
+                                    channelName: string;
+                                    statusId: number;
+                                    statusName: string;
+                                    amount: string;
+                                    /** Format: date-time */
+                                    transactionDate: string;
+                                } | null;
+                                rawData: {
+                                    [key: string]: string;
+                                };
+                            }[];
+                            page: number;
+                            pageSize: number;
+                            total: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{importId}/rows/{sheetId}/{rowNo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Resolve an ambiguous row by choosing the gateway among its candidates (audited) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                    sheetId: string;
+                    rowNo: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        gatewayId: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            fileId: string;
+                            fileName: string;
+                            /** Format: uuid */
+                            sheetId: string;
+                            sheetName: string;
+                            rowNo: number;
+                            /** @enum {string} */
+                            cycle: "E" | "I" | "R";
+                            /** @enum {string} */
+                            matchResult: "matched" | "unmatched" | "ambiguous" | "ignored";
+                            /** @enum {string|null} */
+                            reason: "no_match" | "id_format" | "lossy_numeric_id" | "empty_id" | "no_gateways" | null;
+                            transactionIdRaw: string | null;
+                            transactionId: string | null;
+                            gatewayId: number | null;
+                            statusRaw: string | null;
+                            statusId: number | null;
+                            statusName: string | null;
+                            amount: string | null;
+                            currency: string | null;
+                            excludeAmount: boolean;
+                            ignore: boolean;
+                            warnings: ("negative_amount" | "non_usd_currency" | "amount_unparsed" | "currency_invalid" | "id_length" | "lossy_numeric_id" | "status_unresolved" | "status_differs_from_sheet" | "cycle_mismatch" | "out_of_scope_transaction")[];
+                            candidates: ({
+                                gatewayId: number;
+                                gatewayName: string;
+                                transactionId: string;
+                                channelId: number;
+                                channelName: string;
+                                statusId: number;
+                                statusName: string;
+                                amount: string;
+                            } | {
+                                gatewayId: number;
+                                gatewayName: string;
+                                transactionId: string;
+                                /** @enum {string|null} */
+                                channelId: null;
+                                /** @enum {string|null} */
+                                channelName: null;
+                                /** @enum {string|null} */
+                                statusId: null;
+                                /** @enum {string|null} */
+                                statusName: null;
+                                /** @enum {string|null} */
+                                amount: null;
+                                /** @enum {boolean} */
+                                outOfScope: true;
+                            })[];
+                            transaction: {
+                                transactionId: string;
+                                channelId: number;
+                                channelName: string;
+                                statusId: number;
+                                statusName: string;
+                                amount: string;
+                                /** Format: date-time */
+                                transactionDate: string;
+                            } | null;
+                            rawData: {
+                                [key: string]: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/imports/{importId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel an import that is not processed, keeping its files, rows and findings */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            /** @enum {string} */
+                            status: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                            /** Format: date-time */
+                            analyzedAt: string | null;
+                            rowsTotal: number | null;
+                            rowsMatched: number | null;
+                            rowsUnmatched: number | null;
+                            /** Format: uuid */
+                            currentBatchId: string | null;
+                            fileCount: number;
+                            files: {
+                                /** Format: uuid */
+                                fileId: string;
+                                fileName: string;
+                                sizeBytes: number;
+                                sha256: string;
+                                /** Format: date-time */
+                                uploadedAt: string;
+                                sheets: {
+                                    /** Format: uuid */
+                                    sheetId: string;
+                                    sheetName: string;
+                                    hidden: boolean;
+                                    rowCount: number;
+                                    proposed: {
+                                        /** @enum {string|null} */
+                                        kind: "transactions" | "batch_fees" | "ignore" | null;
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        note?: string;
+                                    };
+                                    columns: {
+                                        sourceColumn: string;
+                                        /** @enum {string|null} */
+                                        targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference" | null;
+                                        /** @enum {string} */
+                                        source: "account" | "global" | "none";
+                                        statusValues?: {
+                                            value: string;
+                                            statusId: number | null;
+                                            statusName: string | null;
+                                            excludeAmount: boolean;
+                                        }[];
+                                    }[];
+                                    preview: {
+                                        [key: string]: string;
+                                    }[];
+                                    mappingConfirmed: boolean;
+                                    mapping: {
+                                        /** @enum {string} */
+                                        kind: "transactions" | "batch_fees" | "ignore";
+                                        /** @enum {string|null} */
+                                        cycle: "E" | "I" | "R" | null;
+                                        statusId: number | null;
+                                        statusName: string | null;
+                                        columns: {
+                                            sourceColumn: string;
+                                            /** @enum {string} */
+                                            targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                                        }[];
+                                    } | null;
+                                }[];
+                            }[];
+                            readiness: {
+                                canAnalyze: boolean;
+                                missing: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
+                                }[];
+                                notes: {
+                                    /** Format: uuid */
+                                    sheetId: string | null;
+                                    sheetName: string | null;
+                                    message: string;
+                                    /** @enum {string} */
+                                    field?: "kind" | "cycle" | "status" | "transactionId" | "transactions" | "confirmation";
+                                }[];
+                            };
+                            analysis: {
+                                rows: {
+                                    total: number;
+                                    matched: number;
+                                    unmatched: number;
+                                    ambiguous: number;
+                                    ignored: number;
+                                };
+                                byCycle: {
+                                    E: number;
+                                    I: number;
+                                    R: number;
+                                };
+                                warnings: {
+                                    [key: string]: number;
+                                };
+                            } | null;
+                            channels: {
+                                channelId: number;
+                                name: string | null;
+                                gatewayId: number;
+                                providerId: number | null;
+                                rowCount: number;
+                                /** @enum {string} */
+                                assignment: "assigned" | "unassigned" | "assigned_to_other_account";
+                                otherAccount: ({
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    name: string;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
+                                note: string | null;
+                                /** @enum {boolean} */
+                                outOfScope?: true;
+                            }[] | null;
+                            batchFees: {
+                                feeTypeId: number | null;
+                                code: string | null;
+                                title: string;
+                                amount: string | null;
+                                currency: string | null;
+                                /** @enum {string} */
+                                source: "file";
+                                warning?: string;
+                            }[] | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;

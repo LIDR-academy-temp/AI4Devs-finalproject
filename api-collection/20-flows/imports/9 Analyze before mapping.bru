@@ -1,0 +1,26 @@
+meta {
+  name: 9 Analyze before mapping
+  type: http
+  seq: 9
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/analyze
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{flowImportId}}
+}
+
+tests {
+  test('an import that is still uploaded cannot be analyzed: 409 import_not_mapped', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('import_not_mapped');
+    expect(res.body.details.status).to.equal('uploaded');
+  });
+}

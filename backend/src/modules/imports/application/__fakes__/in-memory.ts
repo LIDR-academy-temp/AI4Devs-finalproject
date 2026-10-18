@@ -5,6 +5,8 @@
  * distinct values) so that the proposal and the service can be tested without Excel or SQL Server.
  */
 import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import type { Readable } from 'node:stream'
 import type { Cycle, ImportStatus, SheetKind, TargetField } from '@recon/shared'
 import { strToU8 } from 'fflate'
@@ -15,13 +17,22 @@ import {
   STATUS_ALIASES,
   TRANSACTION_STATUSES,
 } from '../../../../../prisma/synthetic.js'
-import { ACCOUNT_IDS, type AccountName, LEGACY_RULE_SET_ID } from '../../../catalog/application/__fakes__/in-memory.js'
+import { ACCOUNT_IDS, LEGACY_RULE_SET_ID } from '../../../catalog/application/__fakes__/in-memory.js'
 import type { MatchingRulesRepository } from '../../../matching/application/ports.js'
 import type { ColumnRule, MatchingRules, RuleSet, SheetRule } from '../../../matching/domain/rules.js'
-import { DuplicateFileError, FileUnreadableError } from '../../domain/errors.js'
-import type { ColumnStats, SheetDescription, WorkbookDescription } from '../../domain/workbook.js'
+import {
+  DuplicateFileError,
+  FileUnreadableError,
+  ImportNotCancellableError,
+  ImportNotEditableError,
+} from '../../domain/errors.js'
+import { CANCELLABLE_STATUSES, EDITABLE_STATUSES } from '../../domain/import-state.js'
+import type { ColumnStats, SheetDescription, SheetRow, SheetRows, WorkbookDescription } from '../../domain/workbook.js'
+import { describeWorkbook } from '../../infrastructure/xlsx/describe-workbook.js'
+import { readSheetRows } from '../../infrastructure/xlsx/row-reader.js'
 import type {
   AccountRef,
+  ConfirmedSheet,
   FileStore,
   IdGenerator,
   ImportFileRecord,
@@ -284,52 +295,128 @@ export interface SampleFile {
   fileName: string
   /** Stand-in bytes with the zip magic; the fake reader maps them to the description by hash. */
   bytes: Uint8Array
-  workbook: WorkbookDescription
+  /** Hand-made description; when absent the real reader describes `realFile`. */
+  workbook?: WorkbookDescription
+  /** The real sample under data/samples; `readRows` (and `describe` without `workbook`) delegate to the real reader over it. */
+  realFile?: string
+  /** Hand-made rows per sheet for fixtures without a real file. */
+  rows?: Record<string, SheetRow[]>
 }
 
 function fakeXlsxBytes(tag: string): Uint8Array {
   return strToU8(`PK\u0003\u0004${tag}`)
 }
 
+const SAMPLES_DIR = path.resolve(import.meta.dirname, '../../../../../../data/samples')
+
 export const SAMPLE_FILES = {
   batchClean: {
     fileName: 'Recon_Template_ProviderA-USD_batch-clean.xlsx',
     bytes: fakeXlsxBytes('batch-clean'),
     workbook: BATCH_CLEAN_WORKBOOK,
+    realFile: 'batch-clean/Recon_Template_ProviderA-USD_batch-clean.xlsx',
   },
   part1: {
     fileName: 'Recon_Template_ProviderA-USD_batch-split_part1.xlsx',
     bytes: fakeXlsxBytes('batch-split-part1'),
     workbook: BATCH_SPLIT_PART1,
+    realFile: 'batch-split/Recon_Template_ProviderA-USD_batch-split_part1.xlsx',
   },
   part2: {
     fileName: 'Recon_Template_ProviderA-USD_batch-split_part2.xlsx',
     bytes: fakeXlsxBytes('batch-split-part2'),
     workbook: BATCH_SPLIT_PART2,
+    realFile: 'batch-split/Recon_Template_ProviderA-USD_batch-split_part2.xlsx',
   },
   legacy: {
     fileName: 'Legacy_ProviderC-Alt_batch.xlsx',
     bytes: fakeXlsxBytes('legacy-provider'),
     workbook: LEGACY_WORKBOOK,
+    realFile: 'legacy-provider/Legacy_ProviderC-Alt_batch.xlsx',
   },
-  unruled: { fileName: 'bonus.xlsx', bytes: fakeXlsxBytes('unruled'), workbook: UNRULED_WORKBOOK },
+  batchIssues: {
+    fileName: 'Recon_Template_ProviderB-Main_batch-issues.xlsx',
+    bytes: fakeXlsxBytes('batch-issues'),
+    realFile: 'batch-issues/Recon_Template_ProviderB-Main_batch-issues.xlsx',
+  },
+  batchBlocked: {
+    fileName: 'Recon_Template_ProviderB-Main_batch-blocked.xlsx',
+    bytes: fakeXlsxBytes('batch-blocked'),
+    realFile: 'batch-blocked/Recon_Template_ProviderB-Main_batch-blocked.xlsx',
+  },
+  unruled: {
+    fileName: 'bonus.xlsx',
+    bytes: fakeXlsxBytes('unruled'),
+    workbook: UNRULED_WORKBOOK,
+    rows: {
+      APP: [
+        { rowNo: 2, cells: ['252570479111759', '16.22', 'USD'], lossyNumeric: [] },
+        { rowNo: 3, cells: ['699717315840756', '218.83', 'USD'], lossyNumeric: [] },
+      ],
+      Bonus: [
+        { rowNo: 2, cells: ['x', '1'], lossyNumeric: [] },
+        { rowNo: 3, cells: ['y', '2'], lossyNumeric: [] },
+      ],
+    },
+  },
 } satisfies Record<string, SampleFile>
 
+interface RegisteredWorkbook {
+  workbook?: WorkbookDescription
+  realFile?: string
+  /** The bytes are a real workbook (built in the test): the real reader handles them. */
+  real?: boolean
+  rows?: Record<string, SheetRow[]>
+}
+
 export class FakeWorkbookReader implements WorkbookReader {
-  private readonly byHash = new Map<string, WorkbookDescription>()
+  private readonly byHash = new Map<string, RegisteredWorkbook>()
+  private readonly realBytes = new Map<string, Uint8Array>()
 
   constructor(samples: SampleFile[] = Object.values(SAMPLE_FILES)) {
-    for (const sample of samples) this.register(sample.bytes, sample.workbook)
+    for (const sample of samples) this.register(sample.bytes, sample)
   }
 
-  register(bytes: Uint8Array, workbook: WorkbookDescription): void {
-    this.byHash.set(sha256Of(bytes), workbook)
+  register(bytes: Uint8Array, source: RegisteredWorkbook): void {
+    this.byHash.set(sha256Of(bytes), source)
+  }
+
+  /** Registers bytes that are a real workbook (e.g. built with xlsx/test-support): both reads go to the real reader. */
+  registerReal(bytes: Uint8Array): void {
+    this.byHash.set(sha256Of(bytes), { real: true })
   }
 
   describe(bytes: Uint8Array, fileName: string): WorkbookDescription {
-    const workbook = this.byHash.get(sha256Of(bytes))
-    if (!workbook) throw new FileUnreadableError(fileName, 'not a registered fixture')
-    return structuredClone(workbook)
+    const registered = this.registered(bytes, fileName)
+    if (registered.workbook) return structuredClone(registered.workbook)
+    return describeWorkbook(this.realBytesOf(registered, bytes, fileName), fileName)
+  }
+
+  readRows(bytes: Uint8Array, fileName: string, sheetName: string): SheetRows {
+    const registered = this.registered(bytes, fileName)
+    if (registered.rows) {
+      const headers = registered.workbook?.sheets.find((s) => s.name === sheetName)?.headers
+      if (headers === undefined) throw new FileUnreadableError(fileName, `missing sheet ${sheetName}`)
+      return { headers: [...headers], rows: structuredClone(registered.rows[sheetName] ?? []) }
+    }
+    return readSheetRows(this.realBytesOf(registered, bytes, fileName), fileName, sheetName)
+  }
+
+  private realBytesOf(registered: RegisteredWorkbook, bytes: Uint8Array, fileName: string): Uint8Array {
+    if (registered.real) return bytes
+    if (registered.realFile === undefined) throw new FileUnreadableError(fileName, 'fixture without rows')
+    let real = this.realBytes.get(registered.realFile)
+    if (!real) {
+      real = readFileSync(path.join(SAMPLES_DIR, registered.realFile))
+      this.realBytes.set(registered.realFile, real)
+    }
+    return real
+  }
+
+  private registered(bytes: Uint8Array, fileName: string): RegisteredWorkbook {
+    const registered = this.byHash.get(sha256Of(bytes))
+    if (!registered) throw new FileUnreadableError(fileName, 'not a registered fixture')
+    return registered
   }
 }
 
@@ -389,20 +476,59 @@ export class InMemoryFileStore implements FileStore {
 // ───────────────────────── Import repository ─────────────────────────
 
 interface AccountRow extends AccountRef {
-  name: AccountName
+  name: string
   merchantId: number
+  providerId: number
 }
 
+/** Two accounts the seed does not have: one without channels (its provider has some) and one whose provider has none. */
+export const NO_CHANNELS_ACCOUNT_ID = 'a0000000-0000-4000-8000-00000000ee01'
+export const NO_PROVIDER_CHANNELS_ACCOUNT_ID = 'a0000000-0000-4000-8000-00000000ee02'
+const PROVIDER_WITHOUT_CHANNELS = 999
+
 export const IMPORT_ACCOUNTS: AccountRow[] = [
-  { accountId: ACCOUNT_IDS['ProviderA-USD'], name: 'ProviderA-USD', merchantId: 1, matchingRuleSetId: null },
-  { accountId: ACCOUNT_IDS['ProviderA-EUR'], name: 'ProviderA-EUR', merchantId: 1, matchingRuleSetId: null },
-  { accountId: ACCOUNT_IDS['ProviderB-Main'], name: 'ProviderB-Main', merchantId: 1, matchingRuleSetId: null },
-  { accountId: ACCOUNT_IDS['ProviderC-USD'], name: 'ProviderC-USD', merchantId: 2, matchingRuleSetId: null },
+  {
+    accountId: ACCOUNT_IDS['ProviderA-USD'],
+    name: 'ProviderA-USD',
+    merchantId: 1,
+    providerId: 101,
+    matchingRuleSetId: null,
+  },
+  {
+    accountId: ACCOUNT_IDS['ProviderA-EUR'],
+    name: 'ProviderA-EUR',
+    merchantId: 1,
+    providerId: 101,
+    matchingRuleSetId: null,
+  },
+  {
+    accountId: ACCOUNT_IDS['ProviderB-Main'],
+    name: 'ProviderB-Main',
+    merchantId: 1,
+    providerId: 102,
+    matchingRuleSetId: null,
+  },
+  {
+    accountId: ACCOUNT_IDS['ProviderC-USD'],
+    name: 'ProviderC-USD',
+    merchantId: 2,
+    providerId: 201,
+    matchingRuleSetId: null,
+  },
   {
     accountId: ACCOUNT_IDS['ProviderC-Alt'],
     name: 'ProviderC-Alt',
     merchantId: 2,
+    providerId: 201,
     matchingRuleSetId: LEGACY_RULE_SET_ID,
+  },
+  { accountId: NO_CHANNELS_ACCOUNT_ID, name: 'ZZ-NoChannels', merchantId: 1, providerId: 101, matchingRuleSetId: null },
+  {
+    accountId: NO_PROVIDER_CHANNELS_ACCOUNT_ID,
+    name: 'ZZ-NoProviderChannels',
+    merchantId: 1,
+    providerId: PROVIDER_WITHOUT_CHANNELS,
+    matchingRuleSetId: null,
   },
 ]
 
@@ -416,7 +542,7 @@ interface StoredFile extends ImportFileRecord {
   sheets: ImportSheetRecord[]
 }
 
-interface StoredImport extends Omit<ImportSummaryRecord, 'fileCount'> {
+export interface StoredImport extends Omit<ImportSummaryRecord, 'fileCount'> {
   files: StoredFile[]
 }
 
@@ -431,15 +557,42 @@ export class InMemoryImportRepository implements ImportRepository {
     this.failWrite = true
   }
 
-  /** Test seam for states the API cannot reach yet (analyzed, processed…). */
-  setStatus(importId: string, status: ImportStatus): void {
-    const stored = this.imports.get(importId)
-    if (!stored) throw new Error(`unknown import ${importId}`)
+  /** Test seam for states the API cannot reach yet (validated, processed…); not a port method. */
+  async setStatus(importId: string, status: ImportStatus): Promise<void> {
+    this.consumeFailure()
+    const stored = this.stored(importId)
     stored.status = status
+    stored.updatedAt = this.now()
   }
 
-  private now(): Date {
+  /** The stored import, for the row repository double. */
+  stored(importId: string): StoredImport {
+    const stored = this.imports.get(importId)
+    if (!stored) throw new Error(`unknown import ${importId}`)
+    return stored
+  }
+
+  now(): Date {
     return new Date(this.epoch.getTime() + 1000 * this.tick++)
+  }
+
+  /** The guard of the Prisma adapter (spec: import, D2): editable status and the `updatedAt` the caller read. */
+  private claimEditable(importId: string, expectedUpdatedAt: Date): StoredImport {
+    const stored = this.stored(importId)
+    if (!EDITABLE_STATUSES.has(stored.status) || stored.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
+      throw new ImportNotEditableError(stored.status, EDITABLE_STATUSES.has(stored.status))
+    }
+    return stored
+  }
+
+  async cancel(importId: string): Promise<ImportStatus> {
+    this.consumeFailure()
+    const stored = this.stored(importId)
+    if (!CANCELLABLE_STATUSES.has(stored.status)) throw new ImportNotCancellableError(stored.status)
+    const previous = stored.status
+    stored.status = 'cancelled'
+    stored.updatedAt = this.now()
+    return previous
   }
 
   private consumeFailure(): void {
@@ -496,8 +649,24 @@ export class InMemoryImportRepository implements ImportRepository {
       sizeBytes: file.sizeBytes,
       sha256: file.sha256,
       uploadedAt: this.now(),
-      sheets: file.sheets.map((s) => ({ ...s, fileId: file.fileId, mappingConfirmed: false })),
+      sheets: file.sheets.map((s) => ({ ...s, fileId: file.fileId, mappingConfirmed: false, columnMaps: [] })),
     }
+  }
+
+  async confirmMapping(importId: string, expectedUpdatedAt: Date, sheets: ConfirmedSheet[]): Promise<void> {
+    this.consumeFailure()
+    const stored = this.claimEditable(importId, expectedUpdatedAt)
+    for (const confirmed of sheets) {
+      const sheet = stored.files.flatMap((f) => f.sheets).find((s) => s.sheetId === confirmed.sheetId)
+      if (!sheet) throw new Error(`unknown sheet ${confirmed.sheetId}`)
+      sheet.kind = confirmed.kind
+      sheet.cycle = confirmed.cycle
+      sheet.statusId = confirmed.statusId
+      sheet.columnMaps = structuredClone(confirmed.columns)
+      sheet.mappingConfirmed = true
+    }
+    stored.status = 'mapped'
+    stored.updatedAt = this.now()
   }
 
   async createImport(data: NewImport): Promise<void> {
@@ -522,10 +691,9 @@ export class InMemoryImportRepository implements ImportRepository {
     })
   }
 
-  async addFiles(importId: string, files: NewImportFile[]): Promise<void> {
+  async addFiles(importId: string, expectedUpdatedAt: Date, files: NewImportFile[]): Promise<void> {
     this.consumeFailure()
-    const stored = this.imports.get(importId)
-    if (!stored) throw new Error(`unknown import ${importId}`)
+    const stored = this.claimEditable(importId, expectedUpdatedAt)
     for (const file of files) {
       // The UNIQUE (importId, sha256) constraint of the schema.
       const existing = stored.files.find((f) => f.sha256 === file.sha256)
@@ -535,10 +703,9 @@ export class InMemoryImportRepository implements ImportRepository {
     stored.updatedAt = this.now()
   }
 
-  async removeFile(importId: string, fileId: string): Promise<void> {
+  async removeFile(importId: string, expectedUpdatedAt: Date, fileId: string): Promise<void> {
     this.consumeFailure()
-    const stored = this.imports.get(importId)
-    if (!stored) throw new Error(`unknown import ${importId}`)
+    const stored = this.claimEditable(importId, expectedUpdatedAt)
     stored.files = stored.files.filter((f) => f.fileId !== fileId)
     stored.updatedAt = this.now()
   }
