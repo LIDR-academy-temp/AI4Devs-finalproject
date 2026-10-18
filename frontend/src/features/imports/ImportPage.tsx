@@ -68,7 +68,6 @@ function ImportWorkspace({ detail, step: chosen }: { detail: ImportDetail; step:
     const gone = Object.keys(form.getValues('sheets') ?? {}).filter((id) => !ids.has(id))
     if (gone.length === 0) return
     form.unregister(gone.map((id) => `sheets.${id}` as const))
-    void form.trigger()
   }, [detail, form])
   const step = chosen ?? defaultStep(detail)
   const toStep = (next: Step) => navigate({ search: (prev: ImportSearch) => ({ ...prev, step: next }), replace: true })
