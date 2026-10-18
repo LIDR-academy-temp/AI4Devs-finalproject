@@ -1,9 +1,11 @@
+"use client";
+
 import type { ReactNode } from "react";
 
 import { useAuth } from "@/lib/auth/AuthContext";
 import { SessionExpiredPage } from "@/lib/components/SessionExpiredPage";
 
-export function AuthenticatedLayout({ children }: { children: ReactNode }) {
+export default function AuthenticatedLayout({ children }: { children: ReactNode }) {
   const { session } = useAuth();
 
   if (session.status === "loading") {

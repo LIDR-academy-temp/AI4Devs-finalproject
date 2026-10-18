@@ -17,7 +17,7 @@ interface Campaign {
   end_date: string;
 }
 
-export function CampaignsPage() {
+export default function CampaignsPage() {
   const { session } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
   const [error, setError] = useState<string | null>(null);

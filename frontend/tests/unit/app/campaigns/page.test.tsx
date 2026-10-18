@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { User } from "oidc-client-ts";
 
-import { CampaignsPage } from "@/app/(authenticated)/campaigns/page";
+import CampaignsPage from "@/app/(authenticated)/campaigns/page";
 import { AuthContext, type AuthContextValue } from "@/lib/auth/AuthContext";
 
 // Mock createApiClient

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
 import { AuthContext, type AuthContextValue } from "@/lib/auth/AuthContext";
-import { AuthenticatedLayout } from "@/app/(authenticated)/layout";
+import AuthenticatedLayout from "@/app/(authenticated)/layout";
 
 describe("AuthenticatedLayout", () => {
   it("renders children when user is authenticated", () => {
