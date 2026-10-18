@@ -1,9 +1,10 @@
+import type { TransactionStatusCode } from '@recon/shared'
 import { describe, expect, it } from 'vitest'
 import type { StatusCode } from '../../../../prisma/synthetic.js'
-import { input, resultOf, row, STATUS } from '../test-support/builders.js'
+import { input, resultOf, row, STATUS, STATUSES } from '../test-support/builders.js'
 import { sampleInput } from '../test-support/sample-input.js'
 import { runValidations } from './run-validations.js'
-import type { ValidationRow } from './types.js'
+import type { StatusEntry, ValidationRow } from './types.js'
 
 // Spec "non_recorded_adjustment", "Ajuste no registrado en ciclo I" and "status_mismatch en ciclo E" (business
 // decision 2; questions 4 and 12). Both issue types are non-blocking and leave the row included (nothing excludes it).
@@ -108,6 +109,16 @@ describe('non_recorded_adjustment', () => {
       expect(nra([row({ status: 'Successful', gateway })]).issues).toEqual([])
     },
   )
+
+  it('a DEC row whose gateway holds a status the rule does not list (a new catalog status) is no status_mismatch (L1)', () => {
+    const onHold: StatusEntry = { statusId: 7, code: 'OnHold' as TransactionStatusCode, cycle: 'E' }
+    const declined = row({ status: 'Declined' })
+    const rows = [{ ...declined, transaction: { ...declined.transaction!, statusId: 7 } }]
+
+    const result = resultOf(runValidations(input({ rows, statuses: [...STATUSES, onHold] })), 'non_recorded_adjustment')
+
+    expect(result).toMatchObject({ outcome: 'passed', issueCount: 0 })
+  })
 
   it('without any matched row: not_applicable (question 4)', () => {
     expect(nra([row({ matchResult: 'unmatched', cycle: 'I', status: 'Chargeback' })]).outcome).toBe('not_applicable')

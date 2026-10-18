@@ -36,6 +36,16 @@ describe('compareHistory', () => {
   })
 })
 
+describe('compareHistory ties (L3)', () => {
+  it('breaks a tie of the same batch, attempt and rowNo NULL by the stable settlementTxnId', () => {
+    const later = movement({ batchNo: 50, settlementTxnId: 902n })
+    const earlier = movement({ batchNo: 50, settlementTxnId: 901n })
+
+    expect([later, earlier].sort(compareHistory)).toEqual([earlier, later])
+    expect([earlier, later].sort(compareHistory)).toEqual([earlier, later])
+  })
+})
+
 describe('relation', () => {
   const chb = { statusId: STATUS.Chargeback, excludeAmount: false }
   const chb2 = { statusId: STATUS.Chargeback, excludeAmount: true }

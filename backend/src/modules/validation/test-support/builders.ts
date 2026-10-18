@@ -108,7 +108,10 @@ export interface MovementSpec {
   attemptNo?: number
   batchStatus?: 'processed' | 'paid'
   rowNo?: number | null
+  settlementTxnId?: bigint
 }
+
+let settlementTxnSequence = 1n
 
 export function movement(spec: MovementSpec = {}): HistoryMovement {
   const batchNo = spec.batchNo ?? 51
@@ -124,6 +127,7 @@ export function movement(spec: MovementSpec = {}): HistoryMovement {
     excludeAmount: spec.excludeAmount ?? false,
     sheetId: null,
     rowNo: spec.rowNo === undefined ? null : spec.rowNo,
+    settlementTxnId: spec.settlementTxnId ?? settlementTxnSequence++,
   }
 }
 

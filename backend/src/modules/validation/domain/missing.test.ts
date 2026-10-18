@@ -164,6 +164,23 @@ describe('missing candidates', () => {
     expect(inRange(i).issues.map((x) => x.transactionId)).toEqual([11n])
   })
 
+  it('I candidates without lastStatusChangedAt are no finding but are counted in undatedCandidateCount (L2)', () => {
+    const report = runValidations(
+      input({
+        rows: [row({ transactionId: 1n, cycle: 'I', status: 'Refund', gateway: 'Refund', changedAt: MIN })],
+        candidates: [
+          candidate({ transactionId: 10n, status: 'Chargeback', changedAt: null }),
+          candidate({ transactionId: 11n, status: 'Refund', changedAt: null }),
+          candidate({ transactionId: 12n, status: 'Refund', changedAt: null, channelId: 1013 }),
+        ],
+      }),
+    )
+
+    expect(resultOf(report, 'missing_previous_to_batch').issues).toEqual([])
+    expect(resultOf(report, 'missing_in_range').issues).toEqual([])
+    expect(report.undatedCandidateCount).toBe(2)
+  })
+
   it('R: held reserves not released; an early-released one is not missing', () => {
     const i = input({
       rows: [row({ transactionId: 1n, cycle: 'R', status: 'Successful', date: MIN })],
