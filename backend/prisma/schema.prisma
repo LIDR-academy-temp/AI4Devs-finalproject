@@ -525,7 +525,8 @@ model ConflictOccurrence {
   fileId              String?   @db.UniqueIdentifier
   sheetId             String?   @db.UniqueIdentifier
   rowNo               Int?
-  statusId            Int
+  /// NULL: the row's status could not be resolved (it still collides)
+  statusId            Int?
   includeInSettlement Boolean
   defaultIncluded     Boolean
   changedByUserId     Int?
@@ -534,7 +535,7 @@ model ConflictOccurrence {
   issue     ValidationIssue   @relation(fields: [issueId], references: [issueId], onDelete: NoAction, onUpdate: NoAction)
   batch     SettlementBatch?  @relation(fields: [batchId], references: [batchId], onDelete: NoAction, onUpdate: NoAction)
   file      ImportFile?       @relation(fields: [fileId], references: [fileId], onDelete: NoAction, onUpdate: NoAction)
-  status    TransactionStatus @relation(fields: [statusId], references: [statusId], onDelete: NoAction, onUpdate: NoAction)
+  status    TransactionStatus? @relation(fields: [statusId], references: [statusId], onDelete: NoAction, onUpdate: NoAction)
   changedBy User?             @relation(fields: [changedByUserId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([issueId])

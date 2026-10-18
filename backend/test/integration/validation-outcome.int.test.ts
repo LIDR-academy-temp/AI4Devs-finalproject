@@ -4,7 +4,8 @@ import { createPrismaClient } from './helpers.js'
 
 // Migration 0004_validation_outcome (design D12): CK_ValidationResult_outcome takes the new vocabulary (warning,
 // blocked; no failed) and CK_ValidationIssue_issueType takes status_mismatch, which CK_ValidationIssue_blocking keeps
-// non-blocking. One minimal run over a seeded import; everything created is removed in afterAll.
+// non-blocking. Migration 0005_conflict_occurrence_unresolved_status: an occurrence may have no statusId (the row's
+// status could not be resolved). One minimal run over a seeded import; everything created is removed in afterAll.
 let prisma: PrismaClient
 let runId: number | null = null
 
@@ -20,6 +21,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (runId !== null) {
+    await prisma.conflictOccurrence.deleteMany({ where: { issue: { result: { runId } } } })
     await prisma.validationIssue.deleteMany({ where: { result: { runId } } })
     await prisma.validationResult.deleteMany({ where: { runId } })
     await prisma.validationRun.delete({ where: { runId } })
@@ -57,5 +59,31 @@ describe('CK_ValidationIssue_issueType with status_mismatch', () => {
 
   it('rejects a blocking status_mismatch (CK_ValidationIssue_blocking)', async () => {
     await expect(issue(true)).rejects.toThrow(/CK_ValidationIssue_blocking/)
+  })
+})
+
+describe('ConflictOccurrence.statusId nullable (0005)', () => {
+  it('accepts an occurrence without status next to one with status', async () => {
+    const owner = await prisma.validationResult.findFirstOrThrow({
+      where: { runId: runId!, validationCode: 'duplicate_in_batch' },
+    })
+    const issue = await prisma.validationIssue.create({
+      data: { resultId: owner.resultId, issueType: 'collision', scope: 'in_batch', blocking: false, cycle: 'E' },
+    })
+    const occurrence = (statusId: number | null) => ({
+      issueId: issue.issueId,
+      sourceType: 'current_import',
+      statusId,
+      includeInSettlement: true,
+      defaultIncluded: true,
+    })
+
+    await prisma.conflictOccurrence.createMany({ data: [occurrence(2), occurrence(null)] })
+
+    const stored = await prisma.conflictOccurrence.findMany({
+      where: { issueId: issue.issueId },
+      orderBy: { occurrenceId: 'asc' },
+    })
+    expect(stored.map((o) => o.statusId)).toEqual([2, null])
   })
 })
