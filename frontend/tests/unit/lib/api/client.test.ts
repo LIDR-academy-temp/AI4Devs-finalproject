@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { User } from "oidc-client-ts";
 
 import { ApiError, createApiClient } from "@/lib/api/client";
 
@@ -10,26 +11,67 @@ function stubFetch(status: number, body: unknown = {}) {
   return fetchMock;
 }
 
+// Mock getUserManager and userManager.removeUser
+const mockRemoveUser = vi.fn();
+const mockGetUser = vi.fn();
+
+vi.mock("@/lib/auth/user-manager", () => ({
+  getUserManager: () => ({
+    getUser: mockGetUser,
+    removeUser: mockRemoveUser,
+  }),
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
 describe("createApiClient", () => {
-  it("attaches the ID token as a bearer token and returns the parsed body", async () => {
+  it("obtains token from getUserManager().getUser() and sends id_token as Bearer", async () => {
+    const user = {
+      id_token: "test-id-token",
+      expired: false,
+    } as unknown as User;
+    mockGetUser.mockResolvedValue(user);
+
     const fetchMock = stubFetch(200, { status: "ok" });
-    const client = createApiClient({ baseUrl: "http://localhost/api", getIdToken: () => "id-token" });
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
 
     const body = await client.get<{ status: string }>("/health");
 
     expect(body).toEqual({ status: "ok" });
+    expect(mockGetUser).toHaveBeenCalled();
     const [url, init] = fetchMock.mock.calls[0] ?? [];
     expect(url).toBe("http://localhost/api/health");
-    expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer id-token");
+    expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer test-id-token");
   });
 
   it("sends no Authorization header when there is no session", async () => {
+    mockGetUser.mockResolvedValue(null);
+
     const fetchMock = stubFetch(200);
-    const client = createApiClient({ baseUrl: "http://localhost/api", getIdToken: () => null });
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
+
+    await client.get("/health");
+
+    expect(mockGetUser).toHaveBeenCalled();
+    const [, init] = fetchMock.mock.calls[0] ?? [];
+    expect(new Headers(init?.headers).has("Authorization")).toBe(false);
+  });
+
+  it("does not use expired token", async () => {
+    const expiredUser = {
+      id_token: "expired-token",
+      expired: true,
+    } as unknown as User;
+    mockGetUser.mockResolvedValue(expiredUser);
+
+    const fetchMock = stubFetch(200);
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
 
     await client.get("/health");
 
@@ -42,12 +84,68 @@ describe("createApiClient", () => {
     [403, "forbidden"],
     [500, "failed"],
   ] as const)("reports HTTP %i as a %s error", async (status, kind) => {
+    const user = { id_token: "token", expired: false } as unknown as User;
+    mockGetUser.mockResolvedValue(user);
+
     stubFetch(status, { code: "x", message: "y" });
-    const client = createApiClient({ baseUrl: "http://localhost/api", getIdToken: () => "id-token" });
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
 
     const failure = client.get("/anything");
 
     await expect(failure).rejects.toBeInstanceOf(ApiError);
     await expect(failure).rejects.toMatchObject({ kind, status });
+  });
+
+  it("calls removeUser on 401 response", async () => {
+    const user = { id_token: "token", expired: false } as unknown as User;
+    mockGetUser.mockResolvedValue(user);
+
+    stubFetch(401, { code: "unauthorized" });
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
+
+    try {
+      await client.get("/campaigns");
+    } catch (e) {
+      // Expected to throw
+    }
+
+    expect(mockRemoveUser).toHaveBeenCalled();
+  });
+
+  it("supports POST requests with body and token", async () => {
+    const user = { id_token: "test-token", expired: false } as unknown as User;
+    mockGetUser.mockResolvedValue(user);
+
+    const fetchMock = stubFetch(201, { id: 1, name: "test" });
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
+
+    const body = await client.post<{ id: number; name: string }>("/campaigns", {
+      name: "New Campaign",
+      agency_id: 1,
+    });
+
+    expect(body).toEqual({ id: 1, name: "test" });
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(url).toBe("http://localhost/api/campaigns");
+    expect(init?.method).toBe("POST");
+    expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer test-token");
+    expect(init?.body).toBe(JSON.stringify({ name: "New Campaign", agency_id: 1 }));
+  });
+
+  it("includes error code and message in ApiError for error responses", async () => {
+    const user = { id_token: "token", expired: false } as unknown as User;
+    mockGetUser.mockResolvedValue(user);
+
+    stubFetch(409, { code: "duplicate_order_reference", message: "Order reference already exists" });
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
+
+    const failure = client.post("/campaigns", {});
+
+    await expect(failure).rejects.toMatchObject({
+      kind: "failed",
+      status: 409,
+      code: "duplicate_order_reference",
+      message: "Order reference already exists",
+    });
   });
 });
