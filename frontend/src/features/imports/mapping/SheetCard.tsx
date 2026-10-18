@@ -1,6 +1,6 @@
 import { Cycle, SheetKind } from '@recon/shared'
-import { useId } from 'react'
-import { Controller, useFormContext, useWatch } from 'react-hook-form'
+import { memo, useId } from 'react'
+import { Controller, get, useFormContext, useFormState, useWatch } from 'react-hook-form'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { ImportSheet } from '@/lib/api/types'
@@ -15,16 +15,18 @@ const FROM_COLUMN = 'column'
  * One sheet: its name and the proposal in the analyst's words, built from `proposed` so it stays visible while
  * editing (design D5); then the three controls, the columns and the preview with the mapping being edited.
  */
-export function SheetCard({ sheet, disabled }: { sheet: ImportSheet; disabled: boolean }) {
+export const SheetCard = memo(function SheetCard({ sheet, disabled }: { sheet: ImportSheet; disabled: boolean }) {
   const kindId = useId()
   const cycleId = useId()
   const statusId = useId()
-  const { control, getValues, setValue, getFieldState, formState } = useFormContext<MappingValues>()
+  const { control, getValues, setValue } = useFormContext<MappingValues>()
   const base = `sheets.${sheet.sheetId}` as const
   const kind = useWatch({ control, name: `${base}.kind` })
   const cycle = useWatch({ control, name: `${base}.cycle` })
   const transactions = kind === 'transactions'
-  const error = (field: 'kind' | 'cycle' | 'statusId') => getFieldState(`${base}.${field}`, formState).error?.message
+  // Subscribed to this sheet only: a change elsewhere does not re-render every card (and its selects).
+  const { errors } = useFormState({ control, name: base })
+  const error = (field: 'kind' | 'cycle' | 'statusId'): string | undefined => get(errors, `${base}.${field}`)?.message
 
   return (
     <section aria-label={sheet.sheetName} className="flex flex-col gap-3 rounded-md border bg-background p-3">
@@ -149,4 +151,4 @@ export function SheetCard({ sheet, disabled }: { sheet: ImportSheet; disabled: b
       <Preview sheet={sheet} />
     </section>
   )
-}
+})

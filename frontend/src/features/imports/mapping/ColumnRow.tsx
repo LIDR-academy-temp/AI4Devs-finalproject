@@ -1,6 +1,6 @@
 import type { TargetField } from '@recon/shared'
 import { useId } from 'react'
-import { Controller, useFormContext, useWatch } from 'react-hook-form'
+import { Controller, get, useFormContext, useFormState, useWatch } from 'react-hook-form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { ImportSheet } from '@/lib/api/types'
 import { strings } from '../strings'
@@ -12,11 +12,12 @@ const KEEP = 'keep'
 /** One column of a sheet: the field it maps to, where the proposal came from and, for status, how values resolve. */
 export function ColumnRow({ sheet, index, disabled }: { sheet: ImportSheet; index: number; disabled: boolean }) {
   const id = useId()
-  const { control, getFieldState, formState, trigger } = useFormContext<MappingValues>()
+  const { control, trigger } = useFormContext<MappingValues>()
   const kind = useWatch({ control, name: `sheets.${sheet.sheetId}.kind` })
   const proposal = sheet.columns[index]!
   const name = `sheets.${sheet.sheetId}.columns.${index}.targetField` as const
-  const error = getFieldState(name, formState).error?.message
+  const { errors } = useFormState({ control, name })
+  const error: string | undefined = get(errors, name)?.message
   const offered = fieldsFor(kind)
   const columnsOff = disabled || kind === null || kind === 'ignore'
 
