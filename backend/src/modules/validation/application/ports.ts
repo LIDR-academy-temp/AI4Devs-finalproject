@@ -2,7 +2,17 @@
  * Read ports of the validation engine (design D3). #9 implements them with Prisma and feeds `runValidations` in two
  * steps: `computeRanges(rows)` says which candidates to load, then the full input is built and validated.
  */
-import type { ImportStatus, InvalidationReason, UserRef, ValidationCode, ValidationOutcome } from '@recon/shared'
+import type {
+  ImportStatus,
+  InvalidationReason,
+  IssueHistoryEntry,
+  OccurrenceView,
+  UserRef,
+  ValidationCode,
+  ValidationIssueSummary,
+  ValidationIssuesQuery,
+  ValidationOutcome,
+} from '@recon/shared'
 import type { Scope } from '../../catalog/domain/scope.js'
 import type {
   AccountScope,
@@ -131,6 +141,27 @@ export interface ValidationRunRepository {
   ): Promise<{ runId: number; previousStatus: ImportStatus }>
   currentRun(importId: string): Promise<StoredRun | null>
   reviewEvents(importId: string): Promise<ReviewEvent[]>
+  /** Findings of the current run, filtered and paged in the fixed order of issue-order.ts (D8); empty without a run. */
+  listIssues(
+    importId: string,
+    query: ValidationIssuesQuery,
+  ): Promise<{ items: ValidationIssueSummary[]; total: number }>
+  /** A finding of any run of an import inside the scope, with its occurrences and history; null otherwise. */
+  findIssue(scope: Scope, issueId: number): Promise<StoredIssueDetail | null>
+}
+
+/** An occurrence as stored; the service adds what the caller may do with it. */
+export type StoredOccurrence = Omit<OccurrenceView, 'editable' | 'includable'>
+
+export interface StoredIssueDetail {
+  summary: ValidationIssueSummary
+  importId: string
+  importStatus: ImportStatus
+  isCurrent: boolean
+  /** current_import first (first-occurrence order), then previous_batch (history order). */
+  occurrences: StoredOccurrence[]
+  /** Oldest first. */
+  history: IssueHistoryEntry[]
 }
 
 /**

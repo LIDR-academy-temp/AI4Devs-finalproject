@@ -3,6 +3,9 @@ import {
   type ImportStatus,
   isApproved,
   ValidationCode,
+  type ValidationIssueDetail,
+  type ValidationIssuesPage,
+  type ValidationIssuesQuery,
   type ValidationResultView,
   type ValidationRunView,
 } from '@recon/shared'
@@ -12,7 +15,15 @@ import { runValidations } from '../domain/run-validations.js'
 import type { CycleRanges } from '../domain/types.js'
 import { ImportNotAnalyzedError } from './errors.js'
 import { loadValidationInput } from './load-validation-input.js'
-import type { ImportRef, ReviewEvent, StoredRun, ValidationRunRepository, ValidationSources } from './ports.js'
+import type {
+  ImportRef,
+  ReviewEvent,
+  StoredIssueDetail,
+  StoredRun,
+  ValidationRunRepository,
+  ValidationSources,
+} from './ports.js'
+import { reserveRuleBlocks } from './reserve-rule.js'
 
 export interface ValidationServiceDeps {
   sources: ValidationSources
@@ -63,6 +74,23 @@ export class ValidationService {
     return this.viewOf(await this.requireImport(scope, importId))
   }
 
+  /** `GET /imports/{id}/validation-issues`: the current run's findings, filtered and paged (D8). */
+  async listIssues(scope: Scope, importId: string, query: ValidationIssuesQuery): Promise<ValidationIssuesPage> {
+    await this.requireImport(scope, importId)
+    const { items, total } = await this.deps.runs.listIssues(importId, query)
+    return { items, page: query.page, pageSize: query.pageSize, total }
+  }
+
+  /**
+   * `GET /validation-issues/{id}`: the finding with its occurrences and history, and what the caller may do with it
+   * (`canProcess`: the caller holds settlement.process) so the screen does not repeat the rules (D9).
+   */
+  async getIssue(scope: Scope, canProcess: boolean, issueId: number): Promise<ValidationIssueDetail> {
+    const stored = await this.deps.runs.findIssue(scope, issueId)
+    if (!stored) throw new NotFoundError('Validation issue')
+    return detailOf(stored, canProcess)
+  }
+
   private async requireImport(scope: Scope, importId: string): Promise<ImportRef> {
     const ref = await this.deps.runs.findImport(scope, importId)
     if (!ref) throw new NotFoundError('Import')
@@ -80,6 +108,34 @@ export class ValidationService {
       run: run === null ? null : runSummary(run, events),
       lastInvalidatedReview: lastInvalidation(events),
     }
+  }
+}
+
+/** Only these findings are resolved by hand (P5). */
+const RESOLVABLE_TYPES: ReadonlySet<string> = new Set(['non_recorded_adjustment', 'status_mismatch'])
+/** Inclusions change in analyzed and in validated, which goes back to analyzed (P4). */
+const INCLUSION_EDITABLE: ReadonlySet<ImportStatus> = new Set(['analyzed', 'validated'])
+
+function detailOf(stored: StoredIssueDetail, canProcess: boolean): ValidationIssueDetail {
+  const { summary } = stored
+  const occurrences = stored.occurrences.map((o) => {
+    const editable =
+      canProcess && stored.isCurrent && o.sourceType === 'current_import' && INCLUSION_EDITABLE.has(stored.importStatus)
+    const includable = editable && reserveRuleBlocks(summary.cycle, stored.occurrences, o) === null
+    return { ...o, editable, includable }
+  })
+  return {
+    ...summary,
+    importId: stored.importId,
+    importStatus: stored.importStatus,
+    run: { runId: summary.runId, isCurrent: stored.isCurrent },
+    resolvable:
+      canProcess &&
+      stored.isCurrent &&
+      RESOLVABLE_TYPES.has(summary.issueType) &&
+      summary.resolutionStatus === 'persistent',
+    occurrences,
+    history: stored.history,
   }
 }
 

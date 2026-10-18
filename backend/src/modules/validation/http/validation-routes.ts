@@ -1,6 +1,14 @@
-import { ErrorResponse, ValidationRunView } from '@recon/shared'
+import {
+  ErrorResponse,
+  IntId,
+  ValidationIssueDetail,
+  ValidationIssuesPage,
+  ValidationIssuesQuery,
+  ValidationRunView,
+} from '@recon/shared'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { hasPermission } from '../../auth/domain/permissions.js'
 import { scopeOf } from '../../catalog/domain/scope.js'
 import type { ValidationService } from '../application/validation-service.js'
 
@@ -9,6 +17,7 @@ export interface ValidationRoutesOptions {
 }
 
 const ImportParams = z.object({ importId: z.uuid() })
+const IssueParams = z.object({ issueId: IntId })
 
 const validations = { tags: ['validations'], security: [{ bearerAuth: [] }] }
 const readErrors = { 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse }
@@ -48,5 +57,39 @@ export const validationRoutes: FastifyPluginAsyncZod<ValidationRoutesOptions> = 
       },
     },
     async (request) => service.getCurrentRun(scopeOf(request.auth), request.params.importId),
+  )
+
+  app.get(
+    '/imports/:importId/validation-issues',
+    {
+      preHandler: app.authenticate,
+      schema: {
+        ...validations,
+        summary: 'Findings of the current run, filtered and paged in a fixed order (empty without a run)',
+        params: ImportParams,
+        querystring: ValidationIssuesQuery,
+        response: { 200: ValidationIssuesPage, ...readErrors },
+      },
+    },
+    async (request) => service.listIssues(scopeOf(request.auth), request.params.importId, request.query),
+  )
+
+  app.get(
+    '/validation-issues/:issueId',
+    {
+      preHandler: app.authenticate,
+      schema: {
+        ...validations,
+        summary: 'A finding with every occurrence, its resolution and the history of changes',
+        params: IssueParams,
+        response: { 200: ValidationIssueDetail, ...readErrors },
+      },
+    },
+    async (request) =>
+      service.getIssue(
+        scopeOf(request.auth),
+        hasPermission(request.auth, 'settlement.process'),
+        request.params.issueId,
+      ),
   )
 }

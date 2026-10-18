@@ -7757,6 +7757,891 @@ paths:
                   - code
                   - message
                 additionalProperties: false
+  /api/v1/imports/{importId}/validation-issues:
+    get:
+      summary: Findings of the current run, filtered and paged in a fixed order (empty
+        without a run)
+      tags: *a5
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - provider_mismatch
+              - non_recorded_adjustment
+              - status_mismatch
+              - duplicate
+              - collision
+              - missing
+          in: query
+          name: type
+          required: false
+        - schema:
+            type: string
+            enum:
+              - in_batch
+              - across_batches
+              - previous_to_batch
+              - in_range
+          in: query
+          name: scope
+          required: false
+        - schema:
+            type: string
+            enum:
+              - persistent
+              - resolved
+          in: query
+          name: status
+          required: false
+        - schema:
+            type: string
+            enum:
+              - provider_mismatch
+              - non_recorded_adjustment
+              - duplicate_in_batch
+              - status_collision_in_batch
+              - duplicate_across_batches
+              - status_collision_across_batches
+              - missing_previous_to_batch
+              - missing_in_range
+          in: query
+          name: validationCode
+          required: false
+        - schema:
+            type: string
+            enum:
+              - E
+              - I
+              - R
+          in: query
+          name: cycle
+          required: false
+        - schema:
+            default: 1
+            type: integer
+            minimum: 1
+            maximum: 9007199254740991
+          in: query
+          name: page
+          required: false
+        - schema:
+            default: 50
+            type: integer
+            minimum: 1
+            maximum: 500
+          in: query
+          name: pageSize
+          required: false
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: importId
+          required: true
+      security: *a6
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        issueId:
+                          type: integer
+                          minimum: 0
+                          exclusiveMinimum: true
+                          maximum: 9007199254740991
+                        runId:
+                          type: integer
+                          minimum: 0
+                          exclusiveMinimum: true
+                          maximum: 9007199254740991
+                        validationCode:
+                          type: string
+                          enum:
+                            - provider_mismatch
+                            - non_recorded_adjustment
+                            - duplicate_in_batch
+                            - status_collision_in_batch
+                            - duplicate_across_batches
+                            - status_collision_across_batches
+                            - missing_previous_to_batch
+                            - missing_in_range
+                        issueType:
+                          type: string
+                          enum:
+                            - provider_mismatch
+                            - non_recorded_adjustment
+                            - status_mismatch
+                            - duplicate
+                            - collision
+                            - missing
+                        scope:
+                          nullable: true
+                          type: string
+                          enum:
+                            - in_batch
+                            - across_batches
+                            - previous_to_batch
+                            - in_range
+                        blocking:
+                          type: boolean
+                        transactionIdRaw:
+                          nullable: true
+                          type: string
+                        transactionId:
+                          nullable: true
+                          type: string
+                          pattern: ^\d+$
+                        cycle:
+                          nullable: true
+                          type: string
+                          enum:
+                            - E
+                            - I
+                            - R
+                        missingType:
+                          nullable: true
+                          type: string
+                          enum:
+                            - previous_to_batch
+                            - in_range
+                        missingRange:
+                          nullable: true
+                          type: string
+                          enum:
+                            - APP
+                            - DEC
+                            - I
+                            - R
+                        relevantDate:
+                          nullable: true
+                          type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        status:
+                          nullable: true
+                          type: object
+                          properties:
+                            statusId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            code:
+                              type: string
+                              enum:
+                                - Pending
+                                - Successful
+                                - Declined
+                                - Chargeback
+                                - Refund
+                                - RDR
+                            name:
+                              type: string
+                          required:
+                            - statusId
+                            - code
+                            - name
+                          additionalProperties: false
+                        gatewayStatus:
+                          nullable: true
+                          type: object
+                          properties:
+                            statusId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            code:
+                              type: string
+                              enum:
+                                - Pending
+                                - Successful
+                                - Declined
+                                - Chargeback
+                                - Refund
+                                - RDR
+                            name:
+                              type: string
+                          required:
+                            - statusId
+                            - code
+                            - name
+                          additionalProperties: false
+                        source:
+                          nullable: true
+                          type: object
+                          properties:
+                            fileId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            fileName:
+                              type: string
+                            sheetId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            sheetName:
+                              type: string
+                            rowNo:
+                              type: integer
+                              minimum: 0
+                              exclusiveMinimum: true
+                              maximum: 9007199254740991
+                          required:
+                            - fileId
+                            - fileName
+                            - sheetId
+                            - sheetName
+                            - rowNo
+                          additionalProperties: false
+                        resolutionStatus:
+                          type: string
+                          enum:
+                            - persistent
+                            - resolved
+                        resolvedAt:
+                          nullable: true
+                          type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        resolvedBy:
+                          nullable: true
+                          type: object
+                          properties:
+                            userId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            userName:
+                              type: string
+                          required:
+                            - userId
+                            - userName
+                          additionalProperties: false
+                        resolutionNote:
+                          nullable: true
+                          type: string
+                        occurrenceCount:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        includedByDefaultCount:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                        includedCount:
+                          type: integer
+                          minimum: 0
+                          maximum: 9007199254740991
+                      required:
+                        - issueId
+                        - runId
+                        - validationCode
+                        - issueType
+                        - scope
+                        - blocking
+                        - transactionIdRaw
+                        - transactionId
+                        - cycle
+                        - missingType
+                        - missingRange
+                        - relevantDate
+                        - status
+                        - gatewayStatus
+                        - source
+                        - resolutionStatus
+                        - resolvedAt
+                        - resolvedBy
+                        - resolutionNote
+                        - occurrenceCount
+                        - includedByDefaultCount
+                        - includedCount
+                      additionalProperties: false
+                  page:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  pageSize:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  total:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                required:
+                  - items
+                  - page
+                  - pageSize
+                  - total
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/validation-issues/{issueId}:
+    get:
+      summary: A finding with every occurrence, its resolution and the history of
+        changes
+      tags: *a5
+      parameters:
+        - schema:
+            type: string
+            pattern: ^\d{1,10}$
+          in: path
+          name: issueId
+          required: true
+      security: *a6
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  issueId:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  runId:
+                    type: integer
+                    minimum: 0
+                    exclusiveMinimum: true
+                    maximum: 9007199254740991
+                  validationCode:
+                    type: string
+                    enum:
+                      - provider_mismatch
+                      - non_recorded_adjustment
+                      - duplicate_in_batch
+                      - status_collision_in_batch
+                      - duplicate_across_batches
+                      - status_collision_across_batches
+                      - missing_previous_to_batch
+                      - missing_in_range
+                  issueType:
+                    type: string
+                    enum:
+                      - provider_mismatch
+                      - non_recorded_adjustment
+                      - status_mismatch
+                      - duplicate
+                      - collision
+                      - missing
+                  scope:
+                    nullable: true
+                    type: string
+                    enum:
+                      - in_batch
+                      - across_batches
+                      - previous_to_batch
+                      - in_range
+                  blocking:
+                    type: boolean
+                  transactionIdRaw:
+                    nullable: true
+                    type: string
+                  transactionId:
+                    nullable: true
+                    type: string
+                    pattern: ^\d+$
+                  cycle:
+                    nullable: true
+                    type: string
+                    enum:
+                      - E
+                      - I
+                      - R
+                  missingType:
+                    nullable: true
+                    type: string
+                    enum:
+                      - previous_to_batch
+                      - in_range
+                  missingRange:
+                    nullable: true
+                    type: string
+                    enum:
+                      - APP
+                      - DEC
+                      - I
+                      - R
+                  relevantDate:
+                    nullable: true
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  status:
+                    nullable: true
+                    type: object
+                    properties:
+                      statusId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      code:
+                        type: string
+                        enum:
+                          - Pending
+                          - Successful
+                          - Declined
+                          - Chargeback
+                          - Refund
+                          - RDR
+                      name:
+                        type: string
+                    required:
+                      - statusId
+                      - code
+                      - name
+                    additionalProperties: false
+                  gatewayStatus:
+                    nullable: true
+                    type: object
+                    properties:
+                      statusId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      code:
+                        type: string
+                        enum:
+                          - Pending
+                          - Successful
+                          - Declined
+                          - Chargeback
+                          - Refund
+                          - RDR
+                      name:
+                        type: string
+                    required:
+                      - statusId
+                      - code
+                      - name
+                    additionalProperties: false
+                  source:
+                    nullable: true
+                    type: object
+                    properties:
+                      fileId:
+                        type: string
+                        format: uuid
+                        pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                      fileName:
+                        type: string
+                      sheetId:
+                        type: string
+                        format: uuid
+                        pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                      sheetName:
+                        type: string
+                      rowNo:
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 9007199254740991
+                    required:
+                      - fileId
+                      - fileName
+                      - sheetId
+                      - sheetName
+                      - rowNo
+                    additionalProperties: false
+                  resolutionStatus:
+                    type: string
+                    enum:
+                      - persistent
+                      - resolved
+                  resolvedAt:
+                    nullable: true
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  resolvedBy:
+                    nullable: true
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  resolutionNote:
+                    nullable: true
+                    type: string
+                  occurrenceCount:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  includedByDefaultCount:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  includedCount:
+                    type: integer
+                    minimum: 0
+                    maximum: 9007199254740991
+                  importId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  importStatus:
+                    type: string
+                    enum:
+                      - uploaded
+                      - mapped
+                      - analyzed
+                      - validated
+                      - processed
+                      - cancelled
+                  run:
+                    type: object
+                    properties:
+                      runId:
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 9007199254740991
+                      isCurrent:
+                        type: boolean
+                    required:
+                      - runId
+                      - isCurrent
+                    additionalProperties: false
+                  resolvable:
+                    type: boolean
+                  occurrences:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        occurrenceId:
+                          type: string
+                          pattern: ^\d+$
+                        sourceType:
+                          type: string
+                          enum:
+                            - current_import
+                            - previous_batch
+                        location:
+                          nullable: true
+                          type: object
+                          properties:
+                            fileId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            fileName:
+                              type: string
+                            sheetId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            sheetName:
+                              type: string
+                            rowNo:
+                              type: integer
+                              minimum: 0
+                              exclusiveMinimum: true
+                              maximum: 9007199254740991
+                          required:
+                            - fileId
+                            - fileName
+                            - sheetId
+                            - sheetName
+                            - rowNo
+                          additionalProperties: false
+                        batch:
+                          nullable: true
+                          type: object
+                          properties:
+                            batchId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            batchNo:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            attemptNo:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            status:
+                              type: string
+                              enum:
+                                - processed
+                                - paid
+                                - undone
+                            accountId:
+                              type: string
+                              format: uuid
+                              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                            accountName:
+                              type: string
+                          required:
+                            - batchId
+                            - batchNo
+                            - attemptNo
+                            - status
+                            - accountId
+                            - accountName
+                          additionalProperties: false
+                        status:
+                          nullable: true
+                          type: object
+                          properties:
+                            statusId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            code:
+                              type: string
+                              enum:
+                                - Pending
+                                - Successful
+                                - Declined
+                                - Chargeback
+                                - Refund
+                                - RDR
+                            name:
+                              type: string
+                          required:
+                            - statusId
+                            - code
+                            - name
+                          additionalProperties: false
+                        excludeAmount:
+                          type: boolean
+                        defaultIncluded:
+                          type: boolean
+                        includeInSettlement:
+                          type: boolean
+                        changedBy:
+                          nullable: true
+                          type: object
+                          properties:
+                            userId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            userName:
+                              type: string
+                          required:
+                            - userId
+                            - userName
+                          additionalProperties: false
+                        changedAt:
+                          nullable: true
+                          type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        editable:
+                          type: boolean
+                        includable:
+                          type: boolean
+                      required:
+                        - occurrenceId
+                        - sourceType
+                        - location
+                        - batch
+                        - status
+                        - excludeAmount
+                        - defaultIncluded
+                        - includeInSettlement
+                        - changedBy
+                        - changedAt
+                        - editable
+                        - includable
+                      additionalProperties: false
+                  history:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        at:
+                          type: string
+                          format: date-time
+                          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        user:
+                          type: object
+                          properties:
+                            userId:
+                              type: integer
+                              minimum: -9007199254740991
+                              maximum: 9007199254740991
+                            userName:
+                              type: string
+                          required:
+                            - userId
+                            - userName
+                          additionalProperties: false
+                        action:
+                          type: string
+                          enum:
+                            - set_inclusion
+                            - resolve
+                        occurrenceId:
+                          nullable: true
+                          type: string
+                          pattern: ^\d+$
+                        from:
+                          nullable: true
+                          type: boolean
+                        to:
+                          nullable: true
+                          type: boolean
+                        note:
+                          nullable: true
+                          type: string
+                      required:
+                        - at
+                        - user
+                        - action
+                        - occurrenceId
+                        - from
+                        - to
+                        - note
+                      additionalProperties: false
+                required:
+                  - issueId
+                  - runId
+                  - validationCode
+                  - issueType
+                  - scope
+                  - blocking
+                  - transactionIdRaw
+                  - transactionId
+                  - cycle
+                  - missingType
+                  - missingRange
+                  - relevantDate
+                  - status
+                  - gatewayStatus
+                  - source
+                  - resolutionStatus
+                  - resolvedAt
+                  - resolvedBy
+                  - resolutionNote
+                  - occurrenceCount
+                  - includedByDefaultCount
+                  - includedCount
+                  - importId
+                  - importStatus
+                  - run
+                  - resolvable
+                  - occurrences
+                  - history
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
   /api/v1/health:
     get:
       summary: Service and database health

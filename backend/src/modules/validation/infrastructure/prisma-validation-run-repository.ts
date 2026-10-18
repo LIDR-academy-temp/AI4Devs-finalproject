@@ -1,13 +1,42 @@
 // Prisma adapter of ValidationRunRepository (validation-runs design D4–D8, D16). Every write starts with a guarded
 // UPDATE of the Import row, which holds its exclusive lock until commit: the writes of the flow serialize, and one
 // computed on a version that changed meanwhile persists nothing (ImportChangedError).
-import { type ImportStatus, InvalidationReason, ValidationCode, ValidationOutcome } from '@recon/shared'
+import {
+  Cycle,
+  type ImportStatus,
+  InvalidationReason,
+  type IssueHistoryEntry,
+  IssueScope,
+  IssueType,
+  MissingRange,
+  MissingType,
+  type RowLocation,
+  type StatusRef,
+  TransactionStatusCode,
+  ValidationCode,
+  type ValidationIssueSummary,
+  type ValidationIssuesQuery,
+  ValidationOutcome,
+} from '@recon/shared'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import { MAX_SQL_PARAMETERS } from '../../imports/infrastructure/sql-limits.js'
 import { ImportChangedError, ImportNotAnalyzedError } from '../application/errors.js'
-import type { ImportRef, ReviewEvent, StoredRun, ValidationRunRepository } from '../application/ports.js'
-import { breakdownOf, breakdownView, issueDetailOf, type StoredBreakdown } from '../application/run-record.js'
+import type {
+  ImportRef,
+  ReviewEvent,
+  StoredIssueDetail,
+  StoredOccurrence,
+  StoredRun,
+  ValidationRunRepository,
+} from '../application/ports.js'
+import {
+  breakdownOf,
+  breakdownView,
+  type IssueDetailJson,
+  issueDetailOf,
+  type StoredBreakdown,
+} from '../application/run-record.js'
 import type { Issue, ValidationReport } from '../domain/types.js'
 
 type Tx = Prisma.TransactionClient
@@ -22,6 +51,8 @@ const RUN_TX_MAX_WAIT_MS = 10_000
 
 const REVIEW = 'import.review'
 const INVALIDATE = 'import.review.invalidate'
+const SET_INCLUSION = 'validation.occurrence.set_inclusion'
+const RESOLVE = 'validation.issue.resolve'
 
 function visibleAccount(scope: Scope): Prisma.AccountWhereInput {
   return { provider: { merchantId: { in: [...scope.merchantIds] } } }
@@ -30,7 +61,19 @@ function visibleAccount(scope: Scope): Prisma.AccountWhereInput {
 const json = (value: unknown) => (value === null ? null : JSON.stringify(value))
 
 export class PrismaValidationRunRepository implements ValidationRunRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  private readonly issues: PrismaIssueReader
+
+  constructor(private readonly prisma: PrismaClient) {
+    this.issues = new PrismaIssueReader(prisma)
+  }
+
+  listIssues(importId: string, query: ValidationIssuesQuery) {
+    return this.issues.listIssues(importId, query)
+  }
+
+  findIssue(scope: Scope, issueId: number) {
+    return this.issues.findIssue(scope, issueId)
+  }
 
   async findImport(scope: Scope, importId: string): Promise<ImportRef | null> {
     const row = await this.prisma.import.findFirst({
@@ -305,6 +348,344 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
       ]
     })
   }
+}
+
+/** Reads of findings (D8), split out to keep the write side of the repository readable. */
+export class PrismaIssueReader {
+  private statuses: Map<number, StatusRef> | null = null
+
+  constructor(private readonly prisma: PrismaClient) {}
+
+  /** The current run's findings in the order of issue-order.ts, written as SQL: CASE for the enums, BIN2 for the id. */
+  async listIssues(importId: string, query: ValidationIssuesQuery) {
+    const filters = [
+      Prisma.sql`v.[importId] = ${importId} AND v.[isSuperseded] = 0`,
+      ...(query.type ? [Prisma.sql`i.[issueType] = ${query.type}`] : []),
+      ...(query.scope ? [Prisma.sql`i.[scope] = ${query.scope}`] : []),
+      ...(query.status ? [Prisma.sql`i.[resolutionStatus] = ${query.status}`] : []),
+      ...(query.validationCode ? [Prisma.sql`r.[validationCode] = ${query.validationCode}`] : []),
+      ...(query.cycle ? [Prisma.sql`i.[cycle] = ${query.cycle}`] : []),
+    ]
+    const from = Prisma.sql`
+      FROM [ValidationIssue] i
+      JOIN [ValidationResult] r ON r.[resultId] = i.[resultId]
+      JOIN [ValidationRun] v ON v.[runId] = r.[runId]
+      WHERE ${Prisma.join(filters, ' AND ')}`
+    const validationOrder = Prisma.join(
+      ValidationCode.options.map((code, index) => Prisma.sql`WHEN ${code} THEN ${index}`),
+      ' ',
+    )
+    const [counted] = await this.prisma.$queryRaw<{ total: number | bigint }[]>`SELECT COUNT(*) AS total ${from}`
+    const page = await this.prisma.$queryRaw<{ issueId: number }[]>`
+      SELECT i.[issueId] ${from}
+      ORDER BY
+        CASE r.[validationCode] ${validationOrder} END,
+        CASE i.[cycle] WHEN 'E' THEN 0 WHEN 'I' THEN 1 WHEN 'R' THEN 2 ELSE 3 END,
+        CASE JSON_VALUE(i.[detailJson], '$.missingRange') WHEN 'APP' THEN 0 WHEN 'DEC' THEN 1 WHEN 'I' THEN 2
+          WHEN 'R' THEN 3 ELSE 4 END,
+        i.[relevantDate],
+        i.[transactionIdRaw] COLLATE Latin1_General_BIN2,
+        i.[issueId]
+      OFFSET ${(query.page - 1) * query.pageSize} ROWS FETCH NEXT ${query.pageSize} ROWS ONLY`
+    const ids = page.map((p) => Number(p.issueId))
+    const summaries = new Map((await this.summariesOf(ids)).map((s) => [s.issueId, s]))
+    return { items: ids.map((id) => summaries.get(id) as ValidationIssueSummary), total: Number(counted?.total ?? 0) }
+  }
+
+  async findIssue(scope: Scope, issueId: number): Promise<StoredIssueDetail | null> {
+    const issue = await this.prisma.validationIssue.findFirst({
+      where: { issueId, result: { run: { import: { account: visibleAccount(scope) } } } },
+      select: {
+        transactionId: true,
+        cycle: true,
+        result: {
+          select: { run: { select: { isSuperseded: true, import: { select: { importId: true, status: true } } } } },
+        },
+        occurrences: {
+          select: {
+            occurrenceId: true,
+            sourceType: true,
+            batchId: true,
+            sheetId: true,
+            rowNo: true,
+            statusId: true,
+            includeInSettlement: true,
+            defaultIncluded: true,
+            changedAt: true,
+            changedBy: { select: { userId: true, userName: true } },
+            batch: {
+              select: {
+                batchId: true,
+                batchNo: true,
+                attemptNo: true,
+                status: true,
+                accountId: true,
+                account: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+    })
+    if (!issue) return null
+    const [summary] = await this.summariesOf([issueId])
+    const statuses = await this.statusMap()
+    const sheetIds = issue.occurrences.flatMap((o) => (o.sheetId ? [o.sheetId] : []))
+    const sheets = await this.sheetsOf(sheetIds)
+    // excludeAmount (CHB 2) has no column: the current row's detailJson, the settled movement's flag (D8).
+    const current = issue.occurrences.filter((o) => o.sourceType === 'current_import' && o.sheetId && o.rowNo)
+    const rows =
+      current.length === 0
+        ? []
+        : await this.prisma.importRow.findMany({
+            where: { OR: current.map((o) => ({ sheetId: o.sheetId as string, rowNo: o.rowNo as number })) },
+            select: { sheetId: true, rowNo: true, detailJson: true },
+          })
+    const rowExcluded = new Map(
+      rows.map((r) => [`${r.sheetId}:${r.rowNo}`, JSON.parse(r.detailJson ?? '{}').excludeAmount === true]),
+    )
+    const batchIds = issue.occurrences.flatMap((o) => (o.batchId ? [o.batchId] : []))
+    const settled =
+      batchIds.length === 0 || issue.transactionId === null || issue.cycle === null
+        ? []
+        : await this.prisma.settlementTransaction.findMany({
+            where: { batchId: { in: batchIds }, transactionId: issue.transactionId, cycle: issue.cycle },
+            select: { batchId: true, excludeAmount: true },
+          })
+    const settledExcluded = new Map(settled.map((s) => [s.batchId, s.excludeAmount]))
+
+    const occurrences = issue.occurrences
+      .map((o) => {
+        const sheet = o.sheetId ? sheets.get(o.sheetId) : undefined
+        const location: RowLocation | null =
+          sheet && o.sheetId && o.rowNo
+            ? {
+                fileId: sheet.fileId,
+                fileName: sheet.fileName,
+                sheetId: o.sheetId,
+                sheetName: sheet.sheetName,
+                rowNo: o.rowNo,
+              }
+            : null
+        const view: StoredOccurrence = {
+          occurrenceId: String(o.occurrenceId),
+          sourceType: o.sourceType === 'previous_batch' ? 'previous_batch' : 'current_import',
+          location,
+          batch: o.batch
+            ? {
+                batchId: o.batch.batchId,
+                batchNo: o.batch.batchNo,
+                attemptNo: o.batch.attemptNo,
+                status: o.batch.status as 'processed' | 'paid' | 'undone',
+                accountId: o.batch.accountId,
+                accountName: o.batch.account.name,
+              }
+            : null,
+          status: o.statusId === null ? null : (statuses.get(o.statusId) ?? null),
+          excludeAmount:
+            o.sourceType === 'current_import'
+              ? (rowExcluded.get(`${o.sheetId}:${o.rowNo}`) ?? false)
+              : (settledExcluded.get(o.batchId ?? '') ?? false),
+          defaultIncluded: o.defaultIncluded,
+          includeInSettlement: o.includeInSettlement,
+          changedBy: o.changedBy,
+          changedAt: o.changedAt?.toISOString() ?? null,
+        }
+        return { view, raw: o, sheet }
+      })
+      .sort((a, b) => {
+        const source = Number(a.view.sourceType === 'previous_batch') - Number(b.view.sourceType === 'previous_batch')
+        if (source !== 0) return source
+        if (a.view.sourceType === 'current_import') {
+          // First-occurrence order: file upload order, sheet position in its workbook, row number.
+          return (
+            (a.sheet?.fileOrder ?? 0) - (b.sheet?.fileOrder ?? 0) ||
+            (a.sheet?.sheetOrder ?? 0) - (b.sheet?.sheetOrder ?? 0) ||
+            (a.raw.rowNo ?? 0) - (b.raw.rowNo ?? 0)
+          )
+        }
+        // History order of the engine: batch, attempt, row, then the stored id.
+        return (
+          (a.raw.batch?.batchNo ?? 0) - (b.raw.batch?.batchNo ?? 0) ||
+          (a.raw.batch?.attemptNo ?? 0) - (b.raw.batch?.attemptNo ?? 0) ||
+          (a.raw.rowNo ?? -1) - (b.raw.rowNo ?? -1) ||
+          Number(a.raw.occurrenceId - b.raw.occurrenceId)
+        )
+      })
+      .map((o) => o.view)
+
+    return {
+      summary: summary as ValidationIssueSummary,
+      importId: issue.result.run.import.importId,
+      importStatus: issue.result.run.import.status as ImportStatus,
+      isCurrent: !issue.result.run.isSuperseded,
+      occurrences,
+      history: await this.historyOf(
+        issueId,
+        occurrences.map((o) => o.occurrenceId),
+      ),
+    }
+  }
+
+  /** Each finding as the list and the detail answer it, in no particular order. */
+  private async summariesOf(issueIds: number[]): Promise<ValidationIssueSummary[]> {
+    if (issueIds.length === 0) return []
+    const issues = await this.prisma.validationIssue.findMany({
+      where: { issueId: { in: issueIds } },
+      select: {
+        issueId: true,
+        issueType: true,
+        scope: true,
+        blocking: true,
+        transactionIdRaw: true,
+        transactionId: true,
+        cycle: true,
+        statusId: true,
+        missingType: true,
+        relevantDate: true,
+        detailJson: true,
+        resolutionStatus: true,
+        resolvedAt: true,
+        resolutionNote: true,
+        resolvedBy: { select: { userId: true, userName: true } },
+        result: { select: { runId: true, validationCode: true } },
+      },
+    })
+    const counts = await this.prisma.$queryRaw<
+      { issueId: number; total: number; byDefault: number; included: number }[]
+    >`
+      SELECT o.[issueId], COUNT(*) AS total,
+             SUM(CASE WHEN o.[defaultIncluded] = 1 THEN 1 ELSE 0 END) AS byDefault,
+             SUM(CASE WHEN o.[includeInSettlement] = 1 THEN 1 ELSE 0 END) AS included
+      FROM [ConflictOccurrence] o
+      WHERE o.[issueId] IN (${Prisma.join(issueIds)})
+      GROUP BY o.[issueId]`
+    const countOf = new Map(counts.map((c) => [Number(c.issueId), c]))
+    const details = issues.map((i) => (i.detailJson === null ? {} : (JSON.parse(i.detailJson) as IssueDetailJson)))
+    const sheets = await this.sheetsOf(details.flatMap((d) => (d.source ? [d.source.sheetId] : [])))
+    const statuses = await this.statusMap()
+    return issues.map((i, index) => {
+      const detail = details[index] as IssueDetailJson
+      const sheet = detail.source ? sheets.get(detail.source.sheetId) : undefined
+      const count = countOf.get(i.issueId)
+      return {
+        issueId: i.issueId,
+        runId: i.result.runId,
+        validationCode: ValidationCode.parse(i.result.validationCode),
+        issueType: IssueType.parse(i.issueType),
+        scope: i.scope === null ? null : IssueScope.parse(i.scope),
+        blocking: i.blocking,
+        transactionIdRaw: i.transactionIdRaw,
+        transactionId: i.transactionId === null ? null : String(i.transactionId),
+        cycle: i.cycle === null ? null : Cycle.parse(i.cycle),
+        missingType: i.missingType === null ? null : MissingType.parse(i.missingType),
+        missingRange: detail.missingRange === undefined ? null : MissingRange.parse(detail.missingRange),
+        relevantDate: i.relevantDate?.toISOString() ?? null,
+        status: i.statusId === null ? null : (statuses.get(i.statusId) ?? null),
+        gatewayStatus: detail.gatewayStatusId === undefined ? null : (statuses.get(detail.gatewayStatusId) ?? null),
+        source:
+          detail.source && sheet
+            ? {
+                fileId: sheet.fileId,
+                fileName: sheet.fileName,
+                sheetId: detail.source.sheetId,
+                sheetName: sheet.sheetName,
+                rowNo: detail.source.rowNo,
+              }
+            : null,
+        resolutionStatus: i.resolutionStatus === 'resolved' ? 'resolved' : 'persistent',
+        resolvedAt: i.resolvedAt?.toISOString() ?? null,
+        resolvedBy: i.resolvedBy,
+        resolutionNote: i.resolutionNote,
+        occurrenceCount: Number(count?.total ?? 0),
+        includedByDefaultCount: Number(count?.byDefault ?? 0),
+        includedCount: Number(count?.included ?? 0),
+      }
+    })
+  }
+
+  /** Name, file and position of each sheet; fileOrder/sheetOrder as the engine orders the rows. */
+  private async sheetsOf(sheetIds: string[]) {
+    const unique = [...new Set(sheetIds)]
+    if (unique.length === 0) return new Map<string, SheetInfo>()
+    const rows = await this.prisma.importSheet.findMany({
+      where: { sheetId: { in: unique } },
+      select: {
+        sheetId: true,
+        sheetName: true,
+        sheetIndex: true,
+        file: { select: { fileId: true, fileName: true, uploadedAt: true } },
+      },
+    })
+    return new Map(
+      rows.map((s): [string, SheetInfo] => [
+        s.sheetId,
+        {
+          fileId: s.file.fileId,
+          fileName: s.file.fileName,
+          sheetName: s.sheetName,
+          fileOrder: s.file.uploadedAt.getTime(),
+          sheetOrder: s.sheetIndex ?? Number.MAX_SAFE_INTEGER,
+        },
+      ]),
+    )
+  }
+
+  private async statusMap(): Promise<Map<number, StatusRef>> {
+    if (this.statuses === null) {
+      const rows = await this.prisma.transactionStatus.findMany({ select: { statusId: true, code: true, name: true } })
+      this.statuses = new Map(
+        rows.map((s) => [
+          s.statusId,
+          { statusId: s.statusId, code: TransactionStatusCode.parse(s.code), name: s.name },
+        ]),
+      )
+    }
+    return this.statuses
+  }
+
+  /** Inclusion changes of the occurrences and the resolution of the finding, from AuditLog, oldest first (D8). */
+  private async historyOf(issueId: number, occurrenceIds: string[]): Promise<IssueHistoryEntry[]> {
+    const entries = await this.prisma.auditLog.findMany({
+      where: {
+        OR: [
+          ...(occurrenceIds.length === 0
+            ? []
+            : [{ action: SET_INCLUSION, entityType: 'ConflictOccurrence', entityId: { in: occurrenceIds } }]),
+          { action: RESOLVE, entityType: 'ValidationIssue', entityId: String(issueId) },
+        ],
+      },
+      orderBy: [{ createdAt: 'asc' }, { auditId: 'asc' }],
+      select: {
+        action: true,
+        entityId: true,
+        createdAt: true,
+        detailJson: true,
+        user: { select: { userId: true, userName: true } },
+      },
+    })
+    return entries.map((e) => {
+      const detail = JSON.parse(e.detailJson ?? '{}') as Record<string, unknown>
+      const inclusion = e.action === SET_INCLUSION
+      return {
+        at: e.createdAt.toISOString(),
+        user: e.user ?? { userId: 0, userName: 'unknown' },
+        action: inclusion ? 'set_inclusion' : 'resolve',
+        occurrenceId: inclusion ? e.entityId : null,
+        from: inclusion ? Boolean(detail.from) : null,
+        to: inclusion ? Boolean(detail.to) : null,
+        note: inclusion ? null : String(detail.note ?? ''),
+      }
+    })
+  }
+}
+
+interface SheetInfo {
+  fileId: string
+  fileName: string
+  sheetName: string
+  fileOrder: number
+  sheetOrder: number
 }
 
 function issueRow(resultId: number, issue: Issue): Prisma.ValidationIssueCreateManyInput {

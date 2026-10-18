@@ -3,14 +3,47 @@
  * every write, runs with their findings and occurrences, and the AuditLog entries of the flow. Test seams change the
  * state directly (status, version, a review, an inclusion) or run a hook right before a write.
  */
-import type { Cycle, ImportStatus, IssueScope, IssueType, UserRef } from '@recon/shared'
+import type {
+  Cycle,
+  ImportStatus,
+  IssueHistoryEntry,
+  IssueScope,
+  IssueType,
+  MissingRange,
+  MissingType,
+  RowLocation,
+  StatusRef,
+  UserRef,
+  ValidationCode,
+  ValidationIssueSummary,
+  ValidationIssuesQuery,
+} from '@recon/shared'
+import { TRANSACTION_STATUSES } from '../../../../../prisma/synthetic.js'
+import { ACCOUNT_IDS } from '../../../catalog/application/__fakes__/in-memory.js'
 import type { Scope } from '../../../catalog/domain/scope.js'
 import type { CycleRanges, Occurrence, ValidationReport } from '../../domain/types.js'
 import { ImportChangedError, ImportNotAnalyzedError } from '../errors.js'
-import type { ImportRef, ReviewEvent, StoredResult, StoredRun, ValidationRunRepository } from '../ports.js'
+import { compareIssueOrder } from '../issue-order.js'
+import type {
+  ImportRef,
+  ReviewEvent,
+  StoredIssueDetail,
+  StoredOccurrence,
+  StoredResult,
+  StoredRun,
+  ValidationRunRepository,
+} from '../ports.js'
 import { breakdownOf, breakdownView, type IssueDetailJson, issueDetailOf } from '../run-record.js'
+import { validationWorld } from './in-memory.js'
 
 const USER_NAMES: Record<number, string> = { 1: 'admin', 2: 'analyst', 3: 'viewer' }
+const SET_INCLUSION = 'validation.occurrence.set_inclusion'
+const RESOLVE = 'validation.issue.resolve'
+
+/** What the double knows of the files and sheets of an import (InMemoryImportRepository.stored). */
+export interface DescribedImport {
+  files: { fileId: string; fileName: string; sheets: { sheetId: string; sheetName: string }[] }[]
+}
 
 export interface FakeImport {
   importId: string
@@ -84,10 +117,53 @@ export class InMemoryRunRepository implements ValidationRunRepository {
   /** Returns the results of a run in reverse order (the service must not rely on the repository's order). */
   shuffleResults = false
 
+  private readonly sheets = new Map<string, { fileId: string; fileName: string; sheetName: string; order: number }>()
+
   // ── test seams ──
 
   addImport(data: { importId: string; merchantId: number; status: ImportStatus }): void {
     this.imports.set(data.importId, { ...data, updatedAt: this.tick() })
+  }
+
+  /** File and sheet names for the locations of the findings. */
+  describeImport(described: DescribedImport): void {
+    described.files.forEach((file, fileIndex) => {
+      file.sheets.forEach((sheet, sheetIndex) => {
+        this.sheets.set(sheet.sheetId, {
+          fileId: file.fileId,
+          fileName: file.fileName,
+          sheetName: sheet.sheetName,
+          order: fileIndex * 1_000 + sheetIndex,
+        })
+      })
+    })
+  }
+
+  setMerchant(importId: string, merchantId: number): void {
+    this.requireImport(importId).merchantId = merchantId
+  }
+
+  /** Reassigns the issue ids in reverse: an order that relied on them would change. */
+  reverseIssueIds(): void {
+    const all = this.runs.flatMap((r) => r.issues)
+    const ids = all.map((i) => i.issueId).reverse()
+    all.forEach((issue, index) => {
+      issue.issueId = ids[index] as number
+      for (const o of issue.occurrences) o.issueId = issue.issueId
+    })
+  }
+
+  /** An AuditLog entry of an inclusion change, as setInclusion writes it. */
+  recordInclusionChange(occurrenceId: string, userId: number, to: boolean, at: Date): void {
+    const issue = this.issueOfOccurrence(occurrenceId)
+    this.audit.push({
+      userId,
+      action: SET_INCLUSION,
+      entityType: 'ConflictOccurrence',
+      entityId: occurrenceId,
+      detail: { issueId: issue.issueId, runId: issue.runId, from: !to, to },
+      at,
+    })
   }
 
   setStatus(importId: string, status: ImportStatus): void {
@@ -266,7 +342,140 @@ export class InMemoryRunRepository implements ValidationRunRepository {
     })
   }
 
+  async listIssues(importId: string, query: ValidationIssuesQuery) {
+    const run = this.runs.find((r) => r.importId === importId && !r.isSuperseded)
+    if (!run) return { items: [], total: 0 }
+    const matching = run.issues
+      .filter(
+        (i) =>
+          (query.type === undefined || i.issueType === query.type) &&
+          (query.scope === undefined || i.scope === query.scope) &&
+          (query.status === undefined || i.resolutionStatus === query.status) &&
+          (query.validationCode === undefined || i.validationCode === query.validationCode) &&
+          (query.cycle === undefined || i.cycle === query.cycle),
+      )
+      .map((i) => this.summaryOf(i))
+      .sort(compareIssueOrder)
+    const offset = (query.page - 1) * query.pageSize
+    return { items: matching.slice(offset, offset + query.pageSize), total: matching.length }
+  }
+
+  async findIssue(scope: Scope, issueId: number): Promise<StoredIssueDetail | null> {
+    const run = this.runs.find((r) => r.issues.some((i) => i.issueId === issueId))
+    if (!run) return null
+    const imported = this.requireImport(run.importId)
+    if (!scope.merchantIds.includes(imported.merchantId)) return null
+    const issue = run.issues.find((i) => i.issueId === issueId) as FakeIssue
+    const occurrenceIds = new Set(issue.occurrences.map((o) => o.occurrenceId))
+    const current = issue.occurrences
+      .filter((o) => o.sourceType === 'current_import')
+      .sort((a, b) => this.rowOrder(a) - this.rowOrder(b))
+    const previous = issue.occurrences.filter((o) => o.sourceType === 'previous_batch')
+    return {
+      summary: this.summaryOf(issue),
+      importId: run.importId,
+      importStatus: imported.status,
+      isCurrent: !run.isSuperseded,
+      occurrences: [...current, ...previous].map((o) => this.occurrenceOf(o)),
+      history: this.audit
+        .filter(
+          (e) =>
+            (e.action === SET_INCLUSION && e.entityType === 'ConflictOccurrence' && occurrenceIds.has(e.entityId)) ||
+            (e.action === RESOLVE && e.entityType === 'ValidationIssue' && e.entityId === String(issueId)),
+        )
+        .sort((a, b) => a.at.getTime() - b.at.getTime())
+        .map(
+          (e): IssueHistoryEntry => ({
+            at: e.at.toISOString(),
+            user: this.userRef(e.userId),
+            action: e.action === SET_INCLUSION ? 'set_inclusion' : 'resolve',
+            occurrenceId: e.action === SET_INCLUSION ? e.entityId : null,
+            from: e.action === SET_INCLUSION ? (e.detail.from as boolean) : null,
+            to: e.action === SET_INCLUSION ? (e.detail.to as boolean) : null,
+            note: e.action === RESOLVE ? (e.detail.note as string) : null,
+          }),
+        ),
+    }
+  }
+
   // ── helpers ──
+
+  private summaryOf(issue: FakeIssue): ValidationIssueSummary {
+    const occurrences = issue.occurrences
+    const source = issue.detail?.source
+    return {
+      issueId: issue.issueId,
+      runId: issue.runId,
+      validationCode: issue.validationCode as ValidationCode,
+      issueType: issue.issueType,
+      scope: issue.scope,
+      blocking: issue.blocking,
+      transactionIdRaw: issue.transactionIdRaw,
+      transactionId: issue.transactionId === null ? null : String(issue.transactionId),
+      cycle: issue.cycle,
+      missingType: issue.missingType as MissingType | null,
+      missingRange: (issue.detail?.missingRange as MissingRange | undefined) ?? null,
+      relevantDate: issue.relevantDate?.toISOString() ?? null,
+      status: statusRef(issue.statusId),
+      gatewayStatus: statusRef(issue.detail?.gatewayStatusId ?? null),
+      source: source ? this.locationOf(source.sheetId, source.rowNo) : null,
+      resolutionStatus: issue.resolutionStatus,
+      resolvedAt: issue.resolvedAt?.toISOString() ?? null,
+      resolvedBy: issue.resolvedBy === null ? null : this.userRef(issue.resolvedBy),
+      resolutionNote: issue.resolutionNote,
+      occurrenceCount: occurrences.length,
+      includedByDefaultCount: occurrences.filter((o) => o.defaultIncluded).length,
+      includedCount: occurrences.filter((o) => o.includeInSettlement).length,
+    }
+  }
+
+  private occurrenceOf(o: FakeOccurrence): StoredOccurrence {
+    const common = {
+      occurrenceId: o.occurrenceId,
+      sourceType: o.sourceType,
+      status: statusRef(o.statusId),
+      excludeAmount: o.excludeAmount,
+      defaultIncluded: o.defaultIncluded,
+      includeInSettlement: o.includeInSettlement,
+      changedBy: o.changedBy === null ? null : this.userRef(o.changedBy),
+      changedAt: o.changedAt?.toISOString() ?? null,
+    }
+    if (o.sourceType === 'current_import')
+      return { ...common, location: this.locationOf(o.sheetId, o.rowNo), batch: null }
+    const settled = validationWorld().batches.find((b) => b.batchId === o.batchId)
+    const accountName = Object.entries(ACCOUNT_IDS).find(([, id]) => id === o.accountId)?.[0] ?? 'unknown'
+    return {
+      ...common,
+      location: o.sheetId === null || o.rowNo === null ? null : this.locationOf(o.sheetId, o.rowNo),
+      batch: {
+        batchId: fakeUuid(o.batchId),
+        batchNo: o.batchNo,
+        attemptNo: o.attemptNo,
+        status: settled?.status ?? 'paid',
+        accountId: o.accountId,
+        accountName,
+      },
+    }
+  }
+
+  private locationOf(sheetId: string, rowNo: number): RowLocation | null {
+    const sheet = this.sheets.get(sheetId)
+    if (!sheet) return null
+    return { fileId: sheet.fileId, fileName: sheet.fileName, sheetId, sheetName: sheet.sheetName, rowNo }
+  }
+
+  private rowOrder(o: FakeOccurrence): number {
+    if (o.sourceType !== 'current_import') return 0
+    return (this.sheets.get(o.sheetId)?.order ?? 0) * 1_000_000 + o.rowNo
+  }
+
+  private issueOfOccurrence(occurrenceId: string): FakeIssue {
+    const issue = this.runs
+      .flatMap((r) => r.issues)
+      .find((i) => i.occurrences.some((o) => o.occurrenceId === occurrenceId))
+    if (!issue) throw new Error(`unknown occurrence ${occurrenceId}`)
+    return issue
+  }
 
   userRef(userId: number): UserRef {
     return { userId, userName: USER_NAMES[userId] ?? `user-${userId}` }
@@ -289,4 +498,21 @@ export class InMemoryRunRepository implements ValidationRunRepository {
     this.clock += 1_000
     return new Date(this.clock)
   }
+}
+
+function statusRef(statusId: number | null): StatusRef | null {
+  const status = TRANSACTION_STATUSES.find((s) => s.statusId === statusId)
+  return status ? { statusId: status.statusId, code: status.code, name: status.name } : null
+}
+
+/** The world's batch ids are readable keys; the API answers uuids: a stable uuid-shaped digest of the key. */
+function fakeUuid(key: string): string {
+  if (/^[0-9a-f-]{36}$/.test(key)) return key
+  let hash = ''
+  for (let seed = 0; hash.length < 32; seed++) {
+    let h = 2166136261 ^ seed
+    for (const char of key) h = Math.imul(h ^ char.charCodeAt(0), 16777619)
+    hash += (h >>> 0).toString(16).padStart(8, '0')
+  }
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`
 }
