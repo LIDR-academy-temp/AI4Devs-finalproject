@@ -47,6 +47,10 @@ export function useAnalyze(detail: ImportDetail, onAnalyzed: () => void) {
       } else if (failure instanceof ApiError && failure.code === 'import_too_large') {
         const { rows = 0, limit = 0 } = (failure.details ?? {}) as { rows?: number; limit?: number }
         setError(strings.analyze.tooLarge(rows, limit))
+      } else if (failure instanceof ApiError && failure.status === 403) {
+        setError(strings.analyze.forbidden)
+      } else if (failure instanceof ApiError && failure.status === 404) {
+        setError(strings.analyze.notAvailable)
       } else if (failure instanceof ApiError && failure.status < 500 && failure.status !== 409) {
         setError(strings.analyze.didNotFinish)
       } else {

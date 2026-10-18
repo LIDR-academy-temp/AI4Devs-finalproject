@@ -112,6 +112,8 @@ export const strings = {
     confirmFirst: 'Confirm the mapping before analyzing.',
     resolveMissing: 'Resolve the missing fields first.',
     didNotFinish: 'The analysis did not finish. Try again.',
+    forbidden: 'You do not have permission to analyze this import.',
+    notAvailable: 'This import is not available.',
     tooLarge: (rows: number, limit: number) =>
       `The import has ${rows.toLocaleString('en-US')} transaction rows; the limit is ${limit.toLocaleString('en-US')}.`,
   },
