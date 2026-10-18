@@ -84,7 +84,7 @@ El producto se construye como MVP alrededor del flujo principal de reconciliaci�
 - **Rondas.** Dato derivado al procesar, no una entrada: ronda 1 si E e I se procesan en el mismo batch; ronda 2 si la E ya estaba en un batch anterior vigente y el batch incorpora el movimiento I. La ronda clasifica el escenario; no crea un procesamiento distinto ni participa en la detección de duplicados. CHB 2 no significa "ronda 2".
 - **Rangos de fechas por ciclo y faltantes.** APP, DEC, I y R conservan rangos independientes, obtenidos de los movimientos del batch que sí se asociaron: APP con las `Successful` y su fecha de creación; DEC con las `Declined`, solo si el archivo las trae; I con la fecha del evento (cambio de estado); R con la fecha de creación de las reservas incluidas, normalmente con antigüedad cercana o superior al plazo de liberación (típicamente 180 días). I no se combina con E aunque compartan settlement term. Son candidatas a faltante las transacciones del proveedor en los canales de la cuenta, no procesadas en ese ciclo en un batch vigente, con fecha ≤ máximo del rango: anterior al mínimo → `missing_previous_to_batch`; dentro del rango, inclusive → `missing_in_range`. Nada posterior al máximo se considera. Las declinadas faltantes solo se evalúan cuando el proveedor reporta declinadas, con el rango DEC. Las transacciones en `Pending` en el gateway no pertenecen a ningún rango hasta que su estado se corrija: se excluyen de faltantes y la corrida las cuenta aparte, de forma informativa. Un faltante se registra una sola vez por proveedor, ciclo y transacción, y se resuelve al incluirse en un batch `processed`.
 - **Alcance del histórico.** Para duplicados, colisiones y faltantes, los batches anteriores son los intentos no deshechos de **todas las cuentas del proveedor**, no solo de la cuenta del batch.
-- **Resultado de una validación.** `passed`, `failed`, `not_applicable` (el ciclo no tiene movimientos en el batch o no hay histórico sobre el que correr; se muestra como n/a y no cuenta como aprobada) o `not_implemented`.
+- **Resultado de una validación.** Se deriva de sus hallazgos: `passed` (corrió sin hallazgos), `warning` (hay hallazgos y ninguno bloquea; no impide continuar), `blocked` (al menos un hallazgo bloqueante; hoy solo `provider_mismatch`), `not_applicable` (no hay movimientos o histórico sobre los que correr; se muestra como n/a) o `not_implemented`. Cuentan como aprobadas `passed` y `warning`; `not_applicable` y `not_implemented` nunca. La corrida está bloqueada si alguna validación es `blocked`.
 - **Deshacer.** Solo batches procesados pendientes de pago. Se conserva el intento anterior con autor y motivo, el import vuelve a `analyzed` para validar de nuevo, y se permite un nuevo intento con el mismo número oficial. Se recalculan las incidencias cuya resolución dependía del intento anulado; no se revierte la asignación del canal.
 
 #### En el alcance del MVP
@@ -99,7 +99,7 @@ El producto se construye como MVP alrededor del flujo principal de reconciliaci�
 
 **Cruce contra transacciones propias.** Cada fila se enlaza por la identidad externa `(gateway, sourceTransactionId)` contra la tabla de transacciones propias, buscando en los gateways de los canales asociados a la cuenta, o en los de los canales de su proveedor si la cuenta aún no tiene ninguno (o en el gateway indicado por la columna pareada como `gateway`, si existe); se muestran primero las filas no asociadas y las ambiguas, estas últimas con sus candidatas enfrentadas. Del enlace se derivan el canal y el estado actual; el ciclo (`cycle` E, I o R) lo fija la hoja o la columna pareada, no el estado. Si el import trae transacciones de un canal sin asociar o asociado a otra cuenta, el sistema lo avisa antes de validar: al procesar, ese canal quedará asociado a esta cuenta como principal. Como el gateway está por encima del merchant, el cruce puede encontrar transacciones de otros merchants; se enlazan igual, pero sus datos (canal, cuenta, importe, estado) se ocultan a quien no tiene ese merchant en su alcance.
 
-**Ocho validaciones con detalle por caso.** Transacciones de otro proveedor o merchant (`provider_mismatch`, la única bloqueante); ajustes sobre transacciones que el gateway todavía refleja como aprobadas (`non_recorded_adjustment`); duplicados y colisiones de estado dentro del batch; duplicados y colisiones contra batches anteriores; transacciones faltantes anteriores al batch (`missing_previous_to_batch`); transacciones faltantes dentro del rango del archivo (`missing_in_range`). Las validaciones respetan la identidad externa y el ciclo E/I/R, y aplican las reglas confirmadas (Approved + Declined, Refund + Chargeback, CHB 2, rondas). Cada validación devuelve su resultado (`passed`, `failed`, `not_applicable`, `not_implemented`) y el número de hallazgos; cada hallazgo abre a un detalle con todas sus apariciones (en el import actual o en batches anteriores de cualquier cuenta del proveedor). Las reglas exactas están en 3.3.
+**Ocho validaciones con detalle por caso.** Transacciones de otro proveedor o merchant (`provider_mismatch`, la única bloqueante); estados del archivo que no cuadran con el gateway (`non_recorded_adjustment`: un ajuste I sobre una transacción que el gateway aún tiene en un estado de ciclo E, y `status_mismatch`, una fila E declinada en el archivo y aprobada o ajustada en el gateway, o al revés); duplicados y colisiones de estado dentro del batch; duplicados y colisiones contra batches anteriores; transacciones faltantes anteriores al batch (`missing_previous_to_batch`); transacciones faltantes dentro del rango del archivo (`missing_in_range`). Las validaciones respetan la identidad externa y el ciclo E/I/R, y aplican las reglas confirmadas (Approved + Declined, Refund + Chargeback, CHB 2, rondas). Cada validación devuelve su resultado (`passed`, `warning`, `blocked`, `not_applicable`, `not_implemented`) y el número de hallazgos; cada hallazgo abre a un detalle con todas sus apariciones (en el import actual o en batches anteriores de cualquier cuenta del proveedor). Las reglas exactas están en 3.3.
 
 **Revisión humana de resultados.** El analista revisa los resultados parciales: transacciones y cantidades por ciclo, advertencias con acceso al detalle, diferencias frente al archivo. Toma una sola decisión sobre el conjunto: continuar a la revisión del batch, o cancelar el import y procesarlo de nuevo con los archivos corregidos. De forma **opcional** puede actuar sobre un hallazgo concreto: cambiar qué aparición de un duplicado o colisión se incluye en el settlement, o marcar como resuelto un `non_recorded_adjustment` tras verificarlo en el gateway. Ninguna de esas acciones es obligatoria para continuar; todas quedan auditadas. Las incidencias se conservan como persistentes o resueltas.
 
@@ -1103,7 +1103,7 @@ Restricciones: `CHECK (fixedAmount IS NOT NULL OR percentage IS NOT NULL)`; `CHE
 
 **ValidationRun** — una ejecución de las ocho validaciones sobre un import, con los rangos de fechas por ciclo (`dateMin/MaxApp`, `dateMin/MaxDec`, `dateMin/MaxI`, `dateMin/MaxR`) obtenidos de los movimientos asociados del batch según 3.3, y `pendingInRangeCount` (transacciones en `Pending` dentro de los rangos, informativo). Los rangos alimentan las validaciones de faltantes. Una nueva corrida invalida la revisión de la anterior; las corridas se conservan.
 
-**ValidationResult** — ocho filas por corrida: `validationCode` ∈ {`provider_mismatch`, `non_recorded_adjustment`, `duplicate_in_batch`, `status_collision_in_batch`, `duplicate_across_batches`, `status_collision_across_batches`, `missing_previous_to_batch`, `missing_in_range`}, `outcome` ∈ {`passed`, `failed`, `not_applicable`, `not_implemented`}, `issueCount`; `UNIQUE (runId, validationCode)`. Las dos validaciones de faltantes producen hallazgos por ciclo (APP, DEC, I, R) dentro del mismo resultado, con `not_applicable` cuando ningún ciclo tiene rango.
+**ValidationResult** — ocho filas por corrida: `validationCode` ∈ {`provider_mismatch`, `non_recorded_adjustment`, `duplicate_in_batch`, `status_collision_in_batch`, `duplicate_across_batches`, `status_collision_across_batches`, `missing_previous_to_batch`, `missing_in_range`}, `outcome` ∈ {`passed`, `warning`, `blocked`, `not_applicable`, `not_implemented`} (derivado de los hallazgos, ver 3.3), `issueCount`; `UNIQUE (runId, validationCode)`. Las dos validaciones de faltantes producen hallazgos por ciclo (APP, DEC, I, R) dentro del mismo resultado, con `not_applicable` cuando ningún ciclo tiene rango.
 
 **ValidationIssue** — un hallazgo lógico producido por una validación. Para duplicados y colisiones no guarda dos apariciones en columnas fijas: las apariciones viven en `ConflictOccurrence`, lo que permite representar 2, 3 o N filas sin cambiar el esquema.
 
@@ -1111,7 +1111,7 @@ Restricciones: `CHECK (fixedAmount IS NOT NULL OR percentage IS NOT NULL)`; `CHE
 |---|---|---|
 | issueId | int PK | |
 | resultId | FK → ValidationResult | Validación que lo produjo |
-| issueType | varchar(30) | `provider_mismatch`, `non_recorded_adjustment`, `duplicate`, `collision`, `missing` |
+| issueType | varchar(30) | `provider_mismatch`, `non_recorded_adjustment`, `status_mismatch`, `duplicate`, `collision`, `missing`. `status_mismatch` lo produce la validación `non_recorded_adjustment` (ver 3.3) |
 | scope | varchar(30) | `in_batch`, `across_batches`, `previous_to_batch`, `in_range` o NULL según el tipo |
 | blocking | bit | `provider_mismatch = 1`; todas las demás = 0 |
 | transactionIdRaw, transactionId, cycle | | Movimiento afectado |
@@ -1214,7 +1214,14 @@ La revisión contra los procedimientos reales del Recon Tool actual (`recon_vali
 
 **Rondas.** Derivadas al procesar: ronda 1 si E e I van en el mismo batch, ronda 2 si la E está en un batch anterior vigente. No participan en la detección. CHB 2 no equivale a ronda 2.
 
-**`non_recorded_adjustment`.** El archivo reporta un movimiento de ciclo I y el gateway todavía tiene la transacción en un estado de ciclo E. Advertencia; el movimiento se incluye por defecto y se resuelve a mano cuando se verifica el gateway.
+**`non_recorded_adjustment`.** El estado que reporta el archivo no cuadra con el del gateway. La validación produce dos tipos de hallazgo sobre filas del proveedor de la cuenta:
+
+| `issueType` | Ciclo | Cuándo |
+|---|---|---|
+| `non_recorded_adjustment` | I | Fila de ciclo I cuya transacción está en el gateway en un estado de ciclo natural E (`Pending`, `Successful`, `Declined`) |
+| `status_mismatch` | E | Fila E que el archivo reporta `Declined` y el gateway tiene `Successful`, `Chargeback`, `Refund` o `RDR`; o fila E que el archivo reporta `Successful` y el gateway tiene `Declined` |
+
+Una fila E con el gateway en `Pending` no se compara (ya cuenta en `pendingInRangeCount`). Una fila APP cuya transacción pasó después a `Chargeback`, `Refund` o `RDR` no es hallazgo: fue `Successful` al liquidarse (ronda 1 normal); tampoco una fila E con el gateway en estado de ciclo I. Ambos tipos son advertencias no bloqueantes, con la fila incluida por defecto, llevan el estado reportado y el del gateway, y se resuelven a mano tras verificar el gateway. El `issueCount` de la validación suma los dos tipos. `status_mismatch` convive con las colisiones: la colisión dice que el archivo trae dos estados del mismo movimiento; `status_mismatch`, cuál de ellos contradice al gateway. Sin ninguna fila asociada, de cualquier ciclo, el resultado es `not_applicable`.
 
 **`provider_mismatch`.** La transacción asociada pertenece a otro proveedor que el de la cuenta del import. Es el único hallazgo bloqueante: no hay override; se cancela y se procesa bajo el proveedor correcto.
 
@@ -1231,7 +1238,17 @@ Para cada ciclo con rango: candidata con fecha anterior al mínimo → `missing_
 
 **Alcance del histórico.** Batches anteriores = intentos con `status <> 'undone'` de todas las cuentas del proveedor.
 
-**Resultados y persistencia.** Cada validación devuelve `passed`, `failed`, `not_applicable` o `not_implemented`; `not_applicable` cuando el ciclo no tiene movimientos en el batch o no hay histórico sobre el que correr, y se muestra como n/a sin contar como aprobada. Los resultados y hallazgos se conservan por corrida (el sistema actual los borraba y reinsertaba por batch; sus tablas `SettlementTransactionMissing/Duplicate/Collision`, que ningún procedimiento usaba, no se migran). Lo que en el sistema actual hacía `SettlementTransactionLog` (fuente de "ya procesado" y de batches anteriores) lo hace `SettlementTransaction` filtrado por intento vigente.
+**Resultados y persistencia.** El resultado de cada validación se deriva de sus hallazgos:
+
+| `outcome` | Significado | ¿Aprobada? |
+|---|---|---|
+| `passed` | Corrió y no produjo hallazgos | Sí |
+| `warning` | Hay hallazgos y ninguno es bloqueante | Sí; se muestra como advertencia |
+| `blocked` | Al menos un hallazgo con `blocking = 1` (hoy solo `provider_mismatch`) | No |
+| `not_applicable` | Sin movimientos o sin histórico sobre el que correr; se muestra como n/a | No |
+| `not_implemented` | La validación no está implementada | Nunca |
+
+La corrida está bloqueada (`blocked`) si alguna validación lo está; entonces no se puede continuar y la única salida es cancelar el import. Los resultados y hallazgos se conservan por corrida (el sistema actual los borraba y reinsertaba por batch; sus tablas `SettlementTransactionMissing/Duplicate/Collision`, que ningún procedimiento usaba, no se migran). Lo que en el sistema actual hacía `SettlementTransactionLog` (fuente de "ya procesado" y de batches anteriores) lo hace `SettlementTransaction` filtrado por intento vigente.
 
 **Pendiente, fuera de esta cross-validation:** catálogo de estados y formato de ID del nuevo gateway, cuando entre al proceso.
 
@@ -1704,7 +1721,7 @@ Tres tickets representativos del backlog, uno por capa; no representan todo el t
 2. Comparar por identidad externa `(gatewayId, sourceTransactionId)` resuelta a `transactionId`, y por `cycle`, con la regla de 3.3: mismo estado → duplicado, estado distinto → colisión, con la excepción legacy `Chargeback` / `CHB 2` (`excludeAmount`) codificada en `statusRules.ts`; ningún par bloquea.
 3. Considerar como anteriores los batches `processed` y `paid` de **todas las cuentas del proveedor**; excluir `undone`. Respetar el alcance por merchant del usuario.
 4. Producir `ValidationIssue` con N `ConflictOccurrence` y la inclusión por defecto de cada aparición según las reglas de 3.2.
-5. Caso de uso `RunValidations`: persiste corrida, ocho resultados con `outcome` (`passed` / `failed` / `not_applicable` / `not_implemented`; las no implementadas nunca como aprobadas) y hallazgos en una transacción; una corrida nueva invalida la anterior sin borrarla.
+5. Caso de uso `RunValidations`: persiste corrida, ocho resultados con `outcome` (`passed` / `warning` / `blocked` / `not_applicable` / `not_implemented`, derivado de los hallazgos; `not_applicable` y las no implementadas nunca como aprobadas) y hallazgos en una transacción; una corrida nueva invalida la anterior sin borrarla.
 6. Rutas `POST /imports/{id}/validations`, `GET /imports/{id}/validations`, `GET /imports/{id}/validation-issues`, `GET /validation-issues/{id}` con esquemas Zod, permiso y alcance; OpenAPI actualizado.
 7. Tests unitarios primero (Red → Green → Refactor) y de integración contra `data/samples/provider-a-batch-118-collisions.xlsx` con su `expected.json`.
 
