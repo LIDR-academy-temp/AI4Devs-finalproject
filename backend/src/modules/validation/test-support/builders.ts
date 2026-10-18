@@ -2,15 +2,18 @@
  * Small hand-made builders for what the synthetic world does not have (design D9): Pending transactions, undone
  * attempts, early-released reserves, Chargeback + CHB 2 pairs, foreign-merchant rows, registered missing findings…
  */
-import type { Cycle, MatchResult } from '@recon/shared'
+import type { Cycle, MatchResult, ValidationCode } from '@recon/shared'
 import { STATUS, type StatusCode, TRANSACTION_STATUSES } from '../../../../prisma/synthetic.js'
 import type {
   AccountScope,
   CandidateTransaction,
   HeldReserve,
   HistoryMovement,
+  Issue,
   StatusEntry,
   ValidationInput,
+  ValidationReport,
+  ValidationResult,
   ValidationRow,
 } from '../domain/types.js'
 
@@ -185,3 +188,17 @@ export function shuffled<T>(xs: readonly T[], seed = 7): T[] {
   }
   return out
 }
+
+/** The result of one validation in a report. */
+export function resultOf(report: ValidationReport, code: ValidationCode): ValidationResult {
+  const found = report.results.find((r) => r.code === code)
+  if (!found) throw new Error(`no result for ${code}`)
+  return found
+}
+
+/** Every finding of a report, whatever validation produced it. */
+export const allIssues = (report: ValidationReport): Issue[] => report.results.flatMap((r) => r.issues)
+
+/** JSON with bigint as text, as #9 will serialize the report. */
+export const jsonOf = (value: unknown): string =>
+  JSON.stringify(value, (_key, v: unknown) => (typeof v === 'bigint' ? v.toString() : v))
