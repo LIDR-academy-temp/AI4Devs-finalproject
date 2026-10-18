@@ -61,7 +61,7 @@ Issue #6 (recorte del 18-oct) y smoke E2E de #7. Rama: `feat/web-import`, creada
 
 - [x] 8.1 Test (rojo) `features/imports/cancel.test.tsx` y `read-only.test.tsx` con la spec: cancelar `batch-clean` analizado con confirmación → `cancelled`, contadores y filas conservados, sin acciones de edición, y **Start a new import** lleva a `/reconciliations/new` con `ProviderA-USD` elegida; cerrar el diálogo (botón y Escape) no llama a `POST cancel`; `409 import_not_cancellable` → `This import can no longer be cancelled (<estado>).` y recarga; `viewer` en `/imports/<id>` analizado ve contadores, aviso y filas sin **Cancel import**, sin zona de subida ni **Remove**, con Mapping deshabilitado y sin **Confirm mapping** ni **Analyze**; `analyst` en Files de un import analizado ve `Files cannot change after the analysis. Cancel the import and start a new one.`; **Cancel import** no aparece en `processed` ni `cancelled`
 - [x] 8.2 Implementar `CancelImportDialog.tsx`, la mutación de cancelar y las reglas `editable`/`cancellable` de D10 en los tres pasos; verificar 8.1 en verde; romper a propósito `editable` (ignorar el permiso) y ver fallar el caso de `viewer`; restaurar
-- [ ] 8.3 Revisión de accesibilidad con teclado de los tres pasos (zona de subida, selectores, diálogo, paginación) y de la anchura a 1280 px y 1024 px sin desplazamiento horizontal de la página, en `pnpm dev`; anotar el resultado en el PR
+- [x] 8.3 Revisión de accesibilidad con teclado de los tres pasos (zona de subida, selectores, diálogo, paginación) y de la anchura a 1280 px y 1024 px sin desplazamiento horizontal de la página, en `pnpm dev`; anotar el resultado en el PR
 - [x] 8.4 Commit: `test(frontend): cancelar el import y solo lectura por estado y permiso` y `feat(frontend): cancelar el import con confirmación y solo lectura sin permiso`
 
 ## 9. Smoke E2E local con Playwright y playwright-bdd (D11)
@@ -73,7 +73,7 @@ Issue #6 (recorte del 18-oct) y smoke E2E de #7. Rama: `feat/web-import`, creada
 
 ## 10. Verificación integrada y documentación de cierre
 
-- [ ] 10.1 Prueba manual contra la API real (la persona levanta `! pnpm db:up`, `! pnpm db:seed`, `! pnpm dev`) con `analyst` y `viewer`: `batch-split` (dos archivos, duplicado, quitar y añadir), `legacy-provider` en `ProviderC-Alt`, `batch-issues` (fila unmatched primero) y `batch-blocked` (RAM-01 de otra cuenta); anotar en el PR cualquier diferencia entre el API falso y el real y corregir el falso si la hay
+- [x] 10.1 Prueba manual contra la API real (la persona levanta `! pnpm db:up`, `! pnpm db:seed`, `! pnpm dev`) con `analyst` y `viewer`: `batch-split` (dos archivos, duplicado, quitar y añadir), `legacy-provider` en `ProviderC-Alt`, `batch-issues` (fila unmatched primero) y `batch-blocked` (RAM-01 de otra cuenta); anotar en el PR cualquier diferencia entre el API falso y el real y corregir el falso si la hay
 - [ ] 10.2 Capturas a 1280 px con datos del seed en `docs/wireframes/impl/` (Upload Files con dos archivos, Column Mapping de `batch-clean`, Analysis de `batch-clean` con RAM-07) y su línea en `docs/wireframes/README.md`; registro del change en `prompts.md`
 - [ ] 10.3 Listar en la descripción del PR los huecos del API del proposal (catálogo de estados, motivo al cancelar, límite de archivos por import) y el job E2E de la Entrega 3, para que la persona abra los issues; no crear issues desde la sesión
 - [ ] 10.4 Verificar `pnpm lint && pnpm typecheck && pnpm test && pnpm openapi:check && pnpm --filter @recon/frontend build` en verde, `pnpm --filter @recon/backend test:integration` y `pnpm test:e2e` en verde contra la base sembrada, y `openspec validate web-import --type change --strict` sin avisos
@@ -81,10 +81,10 @@ Issue #6 (recorte del 18-oct) y smoke E2E de #7. Rama: `feat/web-import`, creada
 
 ## 11. Ajustes tras la prueba manual
 
-- [ ] 11.1 Files: **Continue to mapping** con permiso y al menos un archivo, que lleva a `step=mapping`; test y commit propios
-- [ ] 11.2 Mapping: línea compacta para las hojas con 0 filas (`0 rows`) y para las ignoradas por regla con filas (propuesta, filas y **Edit**); el `PUT mapping` sigue enviando todas las hojas; test y commit propios
-- [ ] 11.3 Readiness agrupada por archivo, con lo accionable primero y las notas informativas plegadas bajo `N informational notes`; test y commit propios
-- [ ] 11.4 Tabla del análisis: hoja primero y siempre visible, archivo truncado con su nombre completo como tooltip; test y commit propios
+- [x] 11.1 Files: **Continue to mapping** con permiso y al menos un archivo, que lleva a `step=mapping`; test y commit propios
+- [x] 11.2 Mapping: línea compacta para las hojas con 0 filas (`0 rows`) y para las ignoradas por regla con filas (propuesta, filas y **Edit**); el `PUT mapping` sigue enviando todas las hojas; test y commit propios
+- [x] 11.3 Readiness agrupada por archivo, con lo accionable primero y las notas informativas plegadas bajo `N informational notes`; test y commit propios
+- [x] 11.4 Tabla del análisis: hoja primero y siempre visible, archivo truncado con su nombre completo como tooltip; test y commit propios
 
 ## Workflow follow-up
 
