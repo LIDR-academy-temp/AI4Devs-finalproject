@@ -1327,9 +1327,65 @@ Ficheros nuevos, por área:
 
 **Pull Request 2**
 
-> **Pendiente — se documentará en la Entrega 2, al incluir código funcional.**
->
-> Recogerá la primera implementación, previsiblemente sobre el change `register-campaign-from-purchase-order`: esquema inicial con su migración Alembic, capa de dominio del alta de campaña y los primeros endpoints. No se documenta ahora porque ese código todavía no existe.
+**Título:** feat(entrega-2): registrar campaña desde orden de compra — esquema, capa de dominio, API
+
+**Descripción**
+
+Primera implementación del change `register-campaign-from-purchase-order`: esquema de 18 tablas, capa de dominio con expansión de períodos y versionado de órdenes de compra, endpoints de registro y consulta de campañas con autenticación y autorización por rol.
+
+**Alcance y diseño**
+
+Este change cubre **1 de 3 historias** de usuario: el alta de campaña desde la orden de compra. Es el flujo vertical que establece los patrones arquitectónicos (layering, testing, API) que luego se replican en el status diario y el cálculo de márgenes. La entrega diaria va primero y el margen después, porque el margen se calcula sobre los datos de entrega. **El change se archivó con 38 tareas sin marcar**, aplazadas a propósito o pendientes de documentación.
+
+**Estado de tareas**
+
+| Estado | Tareas | Motivo |
+|---|---|---|
+| ✅ Hecho y marcado en `tasks.md` (26) | 0.1–0.2, 1.1–1.8, 2.1–2.5, 3.1–3.3, 5.1–5.8 | Implementadas y con tests. Nota: la 5.4 incluye un router `/purchase-orders` que no existe; solo está el de `/campaigns` |
+| ✅ Hecho y verificado, sin marcar | 6.1–6.4, 10.2, 10.3, 11.1, 11.3, 11.4 | Verificadas con tests de frontend, `curl` (10.3) y a mano en el navegador (10.2 a través de los desplegables del formulario); sin informe escrito |
+| 🟡 Parcial | 10.5 | Probados 3 de 4 casos (agencia inexistente, referencia duplicada, `lines` vacío); falta el identificador externo desconocido, que depende del cliente DSP |
+| | 10.6 | 401 y 403 por rol comprobados; el token de un email no registrado solo está cubierto por el test 5.6 |
+| | 11.2 | Flujo operativo comprobado salvo el mapeo a Adform, que no está implementado |
+| ❔ Sin verificar | 6.5, 10.4 | 6.5: no se ha comprobado que los estados de carga y vacío sean distintos y estén cubiertos por test. 10.4: la API no expone la revisión de una orden de compra |
+| ⏸️ Aplazado a propósito | 1.9 | Optimización de rendimiento, no requerida para el MVP |
+| | 4.1–4.4 | Cliente DSP real: se usa un doble en memoria y la API real llega en Fase 2 |
+| | 7.1–7.3 | Importación de Excel y reconciliación de agencias: fixtures SQL en el MVP, corpus histórico en Fase 2 |
+| | 8.1 | Los tests unitarios del §9 cubren los casos negativos |
+| | 11.5, 11.6 | Fase 1.5 |
+| 📋 Pendiente de documentar | 8.2, 9.1–9.6, 10.1, 10.7, 12.1, 12.2 | Faltan los informes de pruebas y la revisión de §3 y de los estándares |
+| ✅ Hecho | 12.3, 12.4 | `.env.example` actualizado en la fusión; `openspec validate` pasó (4 specs) después de archivar |
+
+
+**Pruebas ejecutadas**
+
+- Backend: 65 tests passed (pytest)
+- Frontend: 59 tests en 16 ficheros (Vitest + Testing Library)
+- Ejecuciones: dos pasadas completas con resultado idéntico
+- Modelo de datos: 18 tablas + `alembic_version`
+
+**Cómo revisarlo**
+
+1. **Stack:** Seguir §1.4 (arriba hasta `docker compose up -d`, luego `docker compose exec backend alembic upgrade head`, `docker compose exec backend python -m scripts.seed_dev_data`, `docker compose restart nginx`).
+2. **Flujo manual:** Login en `http://localhost/`, registrar una campaña, listarlas.
+3. **Tests:**
+   ```bash
+   docker compose exec backend python -m pytest -q
+   cd frontend && npm test
+   ```
+4. **Endpoints con curl (con token válido):** Ver ejemplos en §4.1.
+5. **Esquema BD:**
+   ```bash
+   docker compose exec db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "\dt"'
+   ```
+   Verificar 18 tablas + `alembic_version`.
+
+**Limitaciones conocidas**
+
+- **Maestro inexistente en POST /campaigns:** devuelve `{"detail": "..."}` (no `{"code": "...", "message": "..."}`).
+- **campaigns.name único en BD:** registrar dos campañas con el mismo nombre rechaza la segunda con 409 `duplicate_campaign_name`, sin validación previa.
+- **sale_cpm sin normalizar:** se devuelve como se guardó (ej. "5.5" o "5.50"), sin forzar dos decimales.
+- **Migraciones manuales:** se aplican como paso explícito, no al arrancar (por diseño: son operacionales).
+- **Imagen con dependencias de desarrollo:** el Dockerfile actual incluye `tests/` y `scripts/`; despliegue limpio en Entrega 3.
 
 ---
 
@@ -1338,4 +1394,3 @@ Ficheros nuevos, por área:
 > **Pendiente — se documentará en la Entrega Final, al incluir código funcional.**
 >
 > Recogerá la ingesta de entrega y el cálculo de márgenes, sobre los changes `daily-campaign-delivery-status` y `campaign-margin-and-rebate-accrual`. No se documenta ahora por la misma razón.
-
