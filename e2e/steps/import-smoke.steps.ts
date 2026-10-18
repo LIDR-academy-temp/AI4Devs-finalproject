@@ -70,6 +70,7 @@ When(
 When('they upload {string}', async ({ page, created }, path: string) => {
   const creation = page.waitForResponse(
     (response) => response.request().method() === 'POST' && /\/api\/v1\/accounts\/[^/]+\/imports$/.test(response.url()),
+    { timeout: 15_000 },
   )
   const chooser = page.waitForEvent('filechooser')
   await page.getByRole('button', { name: 'Drop .xlsx files here or choose files' }).click()
