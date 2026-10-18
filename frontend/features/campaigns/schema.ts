@@ -4,7 +4,14 @@ export const campaignLineSchema = z.object({
   dsp_id: z.number().int(),
   channel_id: z.number().int(),
   format_id: z.number().int(),
-  scope: z.enum(["national", "international"]),
+  scope: z.string().superRefine((val, ctx) => {
+    if (!["national", "international"].includes(val)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Selecciona el ámbito",
+      });
+    }
+  }),
   market_description: z.string().min(1, "Descripción del mercado es obligatoria"),
   contracted_impressions: z.number().int().gt(0, "Impresiones contratadas debe ser mayor que 0"),
   sale_cpm: z.string().regex(/^\d+(\.\d{1,2})?$/, "CPM (venta) debe ser un número decimal válido"),

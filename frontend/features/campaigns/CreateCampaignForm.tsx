@@ -245,18 +245,10 @@ export function CreateCampaignForm({ onAuthError }: CreateCampaignFormProps = {}
       const validation = createCampaignSchema.safeParse(campaignData);
       if (!validation.success) {
         const fieldErrorsMap: Record<string, string> = {};
-        const scopeErrorMessages: Record<string, string> = {};
 
         for (const issue of validation.error.issues) {
           const fieldPath = issue.path.join(".");
-
-          // Translate enum invalid messages for scope
-          let message = issue.message;
-          if (fieldPath.includes("scope") && message.includes("Invalid enum value")) {
-            message = "Selecciona el ámbito";
-          }
-
-          fieldErrorsMap[fieldPath] = message;
+          fieldErrorsMap[fieldPath] = issue.message;
         }
 
         setFieldErrors(fieldErrorsMap);
