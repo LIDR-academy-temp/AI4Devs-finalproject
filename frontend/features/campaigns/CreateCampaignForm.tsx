@@ -40,7 +40,11 @@ interface FormData {
   lines: CampaignLine[];
 }
 
-export function CreateCampaignForm() {
+interface CreateCampaignFormProps {
+  onAuthError?: (kind: "unauthenticated" | "forbidden") => void;
+}
+
+export function CreateCampaignForm({ onAuthError }: CreateCampaignFormProps = {}) {
   const router = useRouter();
   const [masterData, setMasterData] = useState<{
     agencies: MasterItem[];
@@ -254,14 +258,22 @@ export function CreateCampaignForm() {
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.kind === "unauthenticated") {
-          // Session expired - will be handled by SessionExpiredPage wrapper
+          // Session expired - notify parent component
+          onAuthError?.("unauthenticated");
           setSubmitError("Sesión caducada. Por favor, inicia sesión nuevamente.");
         } else if (err.kind === "forbidden") {
-          // Access denied - will be handled by AccessDeniedPage wrapper
+          // Access denied - notify parent component
+          onAuthError?.("forbidden");
           setSubmitError("No tienes permiso para registrar campañas.");
+        } else if (err.status === 409 && err.code === "duplicate_order_reference") {
+          // Duplicate order reference - set error in the field
+          setFieldErrors({
+            order_reference: "Esta referencia de orden ya existe",
+          });
+          setSubmitError("Por favor corrige los errores antes de enviar.");
         } else {
           setSubmitError(err.message);
-          // Set field-specific errors
+          // Set field-specific errors from validation
           if (Object.keys(err.fieldErrors).length > 0) {
             setFieldErrors(err.fieldErrors);
           }
