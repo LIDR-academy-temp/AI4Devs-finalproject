@@ -25,6 +25,8 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string | undefined,
     message: string,
+    /** `details` of the error body as the API sent it (e.g. `duplicate_file` names the file already included). */
+    readonly details?: unknown,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -41,6 +43,6 @@ interface FetchResult<T> {
 export async function unwrap<T>(call: Promise<FetchResult<T>>): Promise<T> {
   const { data, error, response } = await call
   if (response.ok) return data as T
-  const body = (error ?? {}) as { code?: string; message?: string }
-  throw new ApiError(response.status, body.code, body.message ?? `HTTP ${response.status}`)
+  const body = (error ?? {}) as { code?: string; message?: string; details?: unknown }
+  throw new ApiError(response.status, body.code, body.message ?? `HTTP ${response.status}`, body.details)
 }
