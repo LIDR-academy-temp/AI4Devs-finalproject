@@ -185,6 +185,14 @@ export class PrismaImportRepository implements ImportRepository {
     throw new ImportNotCancellableError(current?.status ?? 'unknown')
   }
 
+  async currentRunId(importId: string): Promise<number | null> {
+    const run = await this.prisma.validationRun.findFirst({
+      where: { importId, isSuperseded: false },
+      select: { runId: true },
+    })
+    return run?.runId ?? null
+  }
+
   async listImports(scope: Scope, accountId: string, status?: ImportStatus): Promise<ImportSummaryRecord[]> {
     const rows = await this.prisma.import.findMany({
       where: { accountId, account: visibleAccount(scope), ...(status ? { status } : {}) },

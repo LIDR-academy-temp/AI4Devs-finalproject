@@ -565,6 +565,24 @@ export class InMemoryImportRepository implements ImportRepository {
     stored.updatedAt = this.now()
   }
 
+  private readonly currentRuns = new Map<string, number>()
+
+  /** Test seam: the current validation run of an import (validation-runs), which the import doubles do not create. */
+  setCurrentRun(importId: string, runId: number): void {
+    this.currentRuns.set(importId, runId)
+  }
+
+  async currentRunId(importId: string): Promise<number | null> {
+    return this.currentRuns.get(importId) ?? null
+  }
+
+  /** What resolving a row does to the current run (validation-runs P7): superseded, no replacement. */
+  supersedeCurrentRun(importId: string): number | null {
+    const runId = this.currentRuns.get(importId) ?? null
+    this.currentRuns.delete(importId)
+    return runId
+  }
+
   /** The stored import, for the row repository double. */
   stored(importId: string): StoredImport {
     const stored = this.imports.get(importId)

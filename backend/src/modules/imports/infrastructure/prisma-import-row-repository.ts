@@ -187,8 +187,13 @@ export class PrismaImportRowRepository implements ImportRowRepository {
    * Guarded like the edits of the import (spec: import, D12): the row changes only while it is still ambiguous, and
    * the counter only while the import is still analyzed. Two PATCH at once: the second finds the row matched.
    */
-  async resolve(importId: string, sheetId: string, rowNo: number, patch: RowResolutionPatch): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
+  async resolve(
+    importId: string,
+    sheetId: string,
+    rowNo: number,
+    patch: RowResolutionPatch,
+  ): Promise<{ supersededRunId: number | null }> {
+    return this.prisma.$transaction(async (tx) => {
       const row = await tx.importRow.updateMany({
         where: { sheetId, rowNo, matchResult: 'ambiguous', sheet: { file: { importId } } },
         data: {
@@ -214,6 +219,13 @@ export class PrismaImportRowRepository implements ImportRowRepository {
         const current = await tx.import.findUnique({ where: { importId }, select: { status: true } })
         throw new ImportNotEditableError(current?.status ?? 'unknown')
       }
+      // Dependency on the validation module (validation-runs P7, D12): the run was computed without this row's
+      // transaction, so it stops being current, atomically with the row. One statement over its table.
+      const superseded = await tx.$queryRaw<{ runId: number }[]>`
+        UPDATE [ValidationRun] SET [isSuperseded] = 1
+        OUTPUT inserted.[runId] AS runId
+        WHERE [importId] = ${importId} AND [isSuperseded] = 0`
+      return { supersededRunId: superseded[0] === undefined ? null : Number(superseded[0].runId) }
     })
   }
 

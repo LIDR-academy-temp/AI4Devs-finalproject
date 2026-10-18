@@ -117,6 +117,16 @@ export class ImportNotEditableError extends DomainError {
   }
 }
 
+/** Validating needs `analyzed` or `validated`; reviewing needs `analyzed` (validation-runs, P1). */
+export class ImportNotAnalyzedError extends DomainError {
+  readonly status = 409
+  readonly code = 'import_not_analyzed'
+
+  constructor(status: string) {
+    super(`The import is ${status}: it must be analyzed`, { status })
+  }
+}
+
 /** Cancelling is allowed in every status but `processed` and `cancelled` (spec: import, D13). */
 export class ImportNotCancellableError extends DomainError {
   readonly status = 409
