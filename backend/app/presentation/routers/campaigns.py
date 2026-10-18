@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Annotated
 
 from app.domain.models.user import RoleName, User
+from app.domain.exceptions import DuplicateCampaignNameError, DuplicateOrderReferenceError
 from app.presentation.dependencies.auth import require_roles, get_current_user
 from app.presentation.schemas.campaign import (
     CampaignCreateRequest,
@@ -123,6 +124,24 @@ async def register_campaign(
             ],
         )
 
+    except DuplicateCampaignNameError:
+        # Campaign name already exists
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "duplicate_campaign_name",
+                "message": f"Campaign with name '{request.name}' already exists"
+            }
+        )
+    except DuplicateOrderReferenceError:
+        # Order reference already exists
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "duplicate_order_reference",
+                "message": f"Purchase order with reference '{request.order_reference}' already exists"
+            }
+        )
     except ValueError as e:
         # Master data validation error
         raise HTTPException(status_code=400, detail=str(e))

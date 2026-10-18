@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.domain.entities.campaign import Campaign, CampaignPeriod, CampaignLine
 from app.domain.repositories.campaign_repository import CampaignRepository as CampaignRepositoryInterface
+from app.domain.exceptions import DuplicateCampaignNameError
 from app.infrastructure.persistence.models.campaign import (
     CampaignRecord,
     CampaignPeriodRecord,
@@ -106,6 +107,10 @@ class CampaignRepositoryImpl(CampaignRepositoryInterface):
 
         except IntegrityError as e:
             self.session.rollback()
+            # Check for duplicate campaign name
+            if "campaigns_name_key" in str(e.orig):
+                raise DuplicateCampaignNameError(f"Campaign with name '{campaign.name}' already exists")
+            # Re-raise other integrity violations (e.g., foreign key constraints)
             raise
 
     async def get_by_id(self, campaign_id: int):

@@ -153,7 +153,8 @@ def test_register_campaign_duplicate_order_reference(authenticated_client):
     }
     response2 = authenticated_client.post("/campaigns", json=payload2)
     assert response2.status_code == 409
-    assert "duplicate_order_reference" in response2.json().get("code", "")
+    detail = response2.json().get("detail", {})
+    assert detail.get("code") == "duplicate_order_reference", f"Expected duplicate_order_reference code, got {response2.json()}"
 
 
 def test_register_campaign_error_no_sql_exposure(authenticated_client):
@@ -252,3 +253,96 @@ def test_register_campaign_missing_lines_returns_422(authenticated_client):
     assert response.status_code == 422
     errors = response.json()["detail"]
     assert any(e.get("loc") == ["body", "lines"] for e in errors), f"Expected lines validation error, got {errors}"
+
+
+def test_register_campaign_duplicate_name(authenticated_client):
+    """Test that duplicate campaign name returns 409 with code duplicate_campaign_name."""
+    payload1 = {
+        "name": "CAMP-NAME-DUP-001",
+        "display_name": "First Campaign",
+        "agency_id": 1,
+        "advertiser_id": 1,
+        "campaign_type_id": 1,
+        "sector_id": 1,
+        "sales_rep_id": 1,
+        "start_date": "2026-01-01",
+        "end_date": "2026-03-31",
+        "order_reference": "PO-NAME-DUP-001",
+        "order_received_on": "2025-12-15",
+        "lines": [
+            {
+                "dsp_id": 1,
+                "channel_id": 1,
+                "format_id": 1,
+                "scope": "national",
+                "market_description": "Spain",
+                "contracted_impressions": 1000000,
+                "sale_cpm": "25.50"
+            }
+        ]
+    }
+
+    # First registration succeeds
+    response1 = authenticated_client.post("/campaigns", json=payload1)
+    assert response1.status_code == 201, f"First campaign creation failed: {response1.text}"
+
+    # Second registration with same name but different order_reference fails with 409
+    payload2 = {
+        **payload1,
+        "order_reference": "PO-NAME-DUP-002",  # Different order_reference
+        "display_name": "Second Campaign with Same Name"
+    }
+    response2 = authenticated_client.post("/campaigns", json=payload2)
+    assert response2.status_code == 409, f"Expected 409, got {response2.status_code}: {response2.text}"
+    detail = response2.json().get("detail", {})
+    assert detail.get("code") == "duplicate_campaign_name", f"Expected duplicate_campaign_name code, got {response2.json()}"
+
+
+def test_register_campaign_duplicate_name_no_purchase_order_created(authenticated_client, test_db_session):
+    """Test that failed duplicate name registration doesn't create purchase_order row."""
+    from app.infrastructure.persistence.models import PurchaseOrderRecord
+
+    payload1 = {
+        "name": "CAMP-NAME-SAFE-001",
+        "display_name": "First Campaign",
+        "agency_id": 1,
+        "advertiser_id": 1,
+        "campaign_type_id": 1,
+        "sector_id": 1,
+        "sales_rep_id": 1,
+        "start_date": "2026-01-01",
+        "end_date": "2026-03-31",
+        "order_reference": "PO-NAME-SAFE-001",
+        "order_received_on": "2025-12-15",
+        "lines": [
+            {
+                "dsp_id": 1,
+                "channel_id": 1,
+                "format_id": 1,
+                "scope": "national",
+                "market_description": "Spain",
+                "contracted_impressions": 1000000,
+                "sale_cpm": "25.50"
+            }
+        ]
+    }
+
+    # First registration succeeds
+    response1 = authenticated_client.post("/campaigns", json=payload1)
+    assert response1.status_code == 201
+
+    # Count purchase orders before duplicate attempt
+    po_before = test_db_session.query(PurchaseOrderRecord).count()
+
+    # Second registration with same name but different order_reference fails
+    payload2 = {
+        **payload1,
+        "order_reference": "PO-NAME-SAFE-002",
+        "display_name": "Second Campaign"
+    }
+    response2 = authenticated_client.post("/campaigns", json=payload2)
+    assert response2.status_code == 409
+
+    # Verify no new purchase_order was created
+    po_after = test_db_session.query(PurchaseOrderRecord).count()
+    assert po_before == po_after, f"Purchase order created despite 409 error. Before: {po_before}, After: {po_after}"
