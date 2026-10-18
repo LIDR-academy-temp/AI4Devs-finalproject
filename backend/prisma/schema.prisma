@@ -468,7 +468,7 @@ model ValidationResult {
   resultId       Int    @id @default(autoincrement())
   runId          Int
   validationCode String @db.VarChar(40)
-  /// passed | failed | not_applicable | not_implemented
+  /// passed | warning | blocked | not_applicable | not_implemented
   outcome        String @db.VarChar(20)
   issueCount     Int    @default(0)
   detailJson     String? @db.NVarChar(Max)
@@ -482,7 +482,7 @@ model ValidationResult {
 model ValidationIssue {
   issueId           Int       @id @default(autoincrement())
   resultId          Int
-  /// provider_mismatch | non_recorded_adjustment | duplicate | collision | missing
+  /// provider_mismatch | non_recorded_adjustment | status_mismatch | duplicate | collision | missing
   issueType         String    @db.VarChar(30)
   /// in_batch | across_batches | previous_to_batch | in_range
   scope             String?   @db.VarChar(30)
@@ -525,7 +525,8 @@ model ConflictOccurrence {
   fileId              String?   @db.UniqueIdentifier
   sheetId             String?   @db.UniqueIdentifier
   rowNo               Int?
-  statusId            Int
+  /// NULL: the row's status could not be resolved (it still collides)
+  statusId            Int?
   includeInSettlement Boolean
   defaultIncluded     Boolean
   changedByUserId     Int?
@@ -534,7 +535,7 @@ model ConflictOccurrence {
   issue     ValidationIssue   @relation(fields: [issueId], references: [issueId], onDelete: NoAction, onUpdate: NoAction)
   batch     SettlementBatch?  @relation(fields: [batchId], references: [batchId], onDelete: NoAction, onUpdate: NoAction)
   file      ImportFile?       @relation(fields: [fileId], references: [fileId], onDelete: NoAction, onUpdate: NoAction)
-  status    TransactionStatus @relation(fields: [statusId], references: [statusId], onDelete: NoAction, onUpdate: NoAction)
+  status    TransactionStatus? @relation(fields: [statusId], references: [statusId], onDelete: NoAction, onUpdate: NoAction)
   changedBy User?             @relation(fields: [changedByUserId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([issueId])

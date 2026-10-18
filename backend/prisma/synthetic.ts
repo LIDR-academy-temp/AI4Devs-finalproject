@@ -705,6 +705,94 @@ export function buildWorld(seed = 20261012): World {
   return { txns, txnByKey, batches, sampleBatch }
 }
 
+/** One SettlementTransaction of a batch plan, keyed by the world's transaction key (not the database id). */
+export interface SettlementMovement {
+  key: string
+  cycle: 'E' | 'I' | 'R'
+  statusId: number
+  /** Status used for the batch totals (for R, the current one). */
+  status: StatusCode
+  amount: number
+  feeAmount: number
+  eventDate: Date
+  pct: number
+  days: number
+  held: number
+  released: number
+  expectedAt: Date | null
+  brand: string
+}
+
+/**
+ * The movements the seed inserts for a batch plan: E with the status when settling (Successful or Declined; the
+ * later adjustment is settled in I) and the held reserve, I with the current status at the date of the change,
+ * R with the released reserve at the settlement date.
+ */
+export function settlementMovementsOf(world: World, plan: BatchPlan): SettlementMovement[] {
+  const movements: SettlementMovement[] = []
+  const chan = (channelId: number) => CHANNELS.find((c) => c.channelId === channelId)!
+  for (const k of plan.eKeys) {
+    const t = world.txnByKey.get(k)!
+    const c = chan(t.channelId)
+    const st: StatusCode = t.status === 'Declined' ? 'Declined' : 'Successful'
+    const held = st === 'Successful' ? money(t.amount * t.appliedReservePct) : 0
+    movements.push({
+      key: k,
+      cycle: 'E',
+      statusId: STATUS[st],
+      status: st,
+      amount: st === 'Successful' ? t.amount : 0,
+      feeAmount: feeFor(plan.account, st, t.amount, 'E'),
+      eventDate: t.transactionDate,
+      pct: t.appliedReservePct,
+      days: c.days,
+      held,
+      released: 0,
+      expectedAt: held ? new Date(t.transactionDate.getTime() + c.days * 86_400_000) : null,
+      brand: t.cardBrand,
+    })
+  }
+  for (const k of plan.iKeys) {
+    const t = world.txnByKey.get(k)!
+    const c = chan(t.channelId)
+    movements.push({
+      key: k,
+      cycle: 'I',
+      statusId: STATUS[t.status],
+      status: t.status,
+      amount: t.status === 'RDR' ? 0 : t.amount,
+      feeAmount: feeFor(plan.account, t.status, t.amount, 'I'),
+      eventDate: t.lastStatusChangedAt!,
+      pct: t.appliedReservePct,
+      days: c.days,
+      held: 0,
+      released: 0,
+      expectedAt: null,
+      brand: t.cardBrand,
+    })
+  }
+  for (const k of plan.rKeys) {
+    const t = world.txnByKey.get(k)!
+    const c = chan(t.channelId)
+    movements.push({
+      key: k,
+      cycle: 'R',
+      statusId: STATUS[t.status === 'Declined' ? 'Successful' : t.status],
+      status: t.status,
+      amount: 0,
+      feeAmount: 0,
+      eventDate: plan.settlementDate,
+      pct: t.appliedReservePct,
+      days: c.days,
+      held: 0,
+      released: money(t.amount * t.appliedReservePct),
+      expectedAt: null,
+      brand: t.cardBrand,
+    })
+  }
+  return movements
+}
+
 /** Transactional fee applied to a movement (same rule the MVP engine will use). */
 export function feeFor(account: string, status: StatusCode, amount: number, cycle: 'E' | 'I' | 'R') {
   const fees = ACCOUNT_FEES[account] ?? []
