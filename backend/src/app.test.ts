@@ -147,6 +147,27 @@ describe('buildApp', () => {
     await app.close()
   })
 
+  it('publishes the validation routes with bearer security and the validations tag (validation-runs)', async () => {
+    const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
+
+    const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json()
+
+    const operations: [string, 'get' | 'post' | 'patch'][] = [
+      ['/api/v1/imports/{importId}/validations', 'post'],
+      ['/api/v1/imports/{importId}/validations', 'get'],
+    ]
+    for (const [path, method] of operations) {
+      const operation = doc.paths[path]?.[method]
+      expect(operation, `${method} ${path}`).toBeDefined()
+      expect(operation.tags, path).toEqual(['validations'])
+      expect(operation.security, path).toEqual([{ bearerAuth: [] }])
+      expect(operation.responses, path).toHaveProperty('401')
+      expect(operation.responses, path).toHaveProperty('404')
+    }
+    expect(doc.paths['/api/v1/imports/{importId}/validations'].post.responses).toHaveProperty('409')
+    await app.close()
+  })
+
   it('does not disconnect an injected Prisma client on close', async () => {
     const prisma = fakePrisma(async () => [{ ok: 1 }])
     const app = await buildApp({ env, prisma })

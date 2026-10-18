@@ -3252,6 +3252,341 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/imports/{importId}/validations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The current run of the import (null without one) and its last invalidated review */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** @enum {string} */
+                            importStatus: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            run: {
+                                runId: number;
+                                /** Format: date-time */
+                                runAt: string;
+                                runBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                blocked: boolean;
+                                ranges: {
+                                    APP: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    DEC: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    I: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    R: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                };
+                                pendingInRangeCount: number;
+                                undatedAdjustmentCount: number;
+                                undatedCandidateCount: number;
+                                results: {
+                                    /** @enum {string} */
+                                    validationCode: "provider_mismatch" | "non_recorded_adjustment" | "duplicate_in_batch" | "status_collision_in_batch" | "duplicate_across_batches" | "status_collision_across_batches" | "missing_previous_to_batch" | "missing_in_range";
+                                    /** @enum {string} */
+                                    outcome: "passed" | "warning" | "blocked" | "not_applicable" | "not_implemented";
+                                    issueCount: number;
+                                    blocking: boolean;
+                                    approved: boolean;
+                                    breakdown: {
+                                        [key: string]: number;
+                                    } | null;
+                                }[];
+                                manualChangeCount: number;
+                                review: {
+                                    reviewedBy: {
+                                        userId: number;
+                                        userName: string;
+                                    };
+                                    /** Format: date-time */
+                                    reviewedAt: string;
+                                } | null;
+                            } | null;
+                            lastInvalidatedReview: {
+                                runId: number;
+                                reviewedBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                reviewedAt: string;
+                                invalidatedBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                invalidatedAt: string;
+                                /** @enum {string} */
+                                reason: "rerun" | "inclusion_change";
+                                newRunId: number | null;
+                                occurrenceId: string | null;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Run the eight validations; the previous current run is superseded
+         * @description Accepted in analyzed or validated (a validated import goes back to analyzed and its review is invalidated). 409 import_not_analyzed in any other status; 409 import_changed when another write confirmed meanwhile.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** @enum {string} */
+                            importStatus: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            run: {
+                                runId: number;
+                                /** Format: date-time */
+                                runAt: string;
+                                runBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                blocked: boolean;
+                                ranges: {
+                                    APP: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    DEC: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    I: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    R: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                };
+                                pendingInRangeCount: number;
+                                undatedAdjustmentCount: number;
+                                undatedCandidateCount: number;
+                                results: {
+                                    /** @enum {string} */
+                                    validationCode: "provider_mismatch" | "non_recorded_adjustment" | "duplicate_in_batch" | "status_collision_in_batch" | "duplicate_across_batches" | "status_collision_across_batches" | "missing_previous_to_batch" | "missing_in_range";
+                                    /** @enum {string} */
+                                    outcome: "passed" | "warning" | "blocked" | "not_applicable" | "not_implemented";
+                                    issueCount: number;
+                                    blocking: boolean;
+                                    approved: boolean;
+                                    breakdown: {
+                                        [key: string]: number;
+                                    } | null;
+                                }[];
+                                manualChangeCount: number;
+                                review: {
+                                    reviewedBy: {
+                                        userId: number;
+                                        userName: string;
+                                    };
+                                    /** Format: date-time */
+                                    reviewedAt: string;
+                                } | null;
+                            } | null;
+                            lastInvalidatedReview: {
+                                runId: number;
+                                reviewedBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                reviewedAt: string;
+                                invalidatedBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                invalidatedAt: string;
+                                /** @enum {string} */
+                                reason: "rerun" | "inclusion_change";
+                                newRunId: number | null;
+                                occurrenceId: string | null;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;

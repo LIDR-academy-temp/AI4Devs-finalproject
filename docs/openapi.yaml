@@ -7000,6 +7000,763 @@ paths:
                   - code
                   - message
                 additionalProperties: false
+  /api/v1/imports/{importId}/validations:
+    post:
+      summary: Run the eight validations; the previous current run is superseded
+      tags: &a5
+        - validations
+      description: Accepted in analyzed or validated (a validated import goes back to
+        analyzed and its review is invalidated). 409 import_not_analyzed in any
+        other status; 409 import_changed when another write confirmed meanwhile.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: importId
+          required: true
+      security: &a6
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  importId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  importStatus:
+                    type: string
+                    enum:
+                      - uploaded
+                      - mapped
+                      - analyzed
+                      - validated
+                      - processed
+                      - cancelled
+                  run:
+                    nullable: true
+                    type: object
+                    properties:
+                      runId:
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 9007199254740991
+                      runAt:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                      runBy:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            minimum: -9007199254740991
+                            maximum: 9007199254740991
+                          userName:
+                            type: string
+                        required:
+                          - userId
+                          - userName
+                        additionalProperties: false
+                      blocked:
+                        type: boolean
+                      ranges:
+                        type: object
+                        properties:
+                          APP:
+                            nullable: true
+                            type: object
+                            properties:
+                              min:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                              max:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                            required:
+                              - min
+                              - max
+                            additionalProperties: false
+                          DEC:
+                            nullable: true
+                            type: object
+                            properties:
+                              min:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                              max:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                            required:
+                              - min
+                              - max
+                            additionalProperties: false
+                          I:
+                            nullable: true
+                            type: object
+                            properties:
+                              min:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                              max:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                            required:
+                              - min
+                              - max
+                            additionalProperties: false
+                          R:
+                            nullable: true
+                            type: object
+                            properties:
+                              min:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                              max:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                            required:
+                              - min
+                              - max
+                            additionalProperties: false
+                        required:
+                          - APP
+                          - DEC
+                          - I
+                          - R
+                        additionalProperties: false
+                      pendingInRangeCount:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      undatedAdjustmentCount:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      undatedCandidateCount:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      results:
+                        minItems: 8
+                        maxItems: 8
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            validationCode:
+                              type: string
+                              enum:
+                                - provider_mismatch
+                                - non_recorded_adjustment
+                                - duplicate_in_batch
+                                - status_collision_in_batch
+                                - duplicate_across_batches
+                                - status_collision_across_batches
+                                - missing_previous_to_batch
+                                - missing_in_range
+                            outcome:
+                              type: string
+                              enum:
+                                - passed
+                                - warning
+                                - blocked
+                                - not_applicable
+                                - not_implemented
+                            issueCount:
+                              type: integer
+                              minimum: 0
+                              maximum: 9007199254740991
+                            blocking:
+                              type: boolean
+                            approved:
+                              type: boolean
+                            breakdown:
+                              nullable: true
+                              type: object
+                              additionalProperties:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                          required:
+                            - validationCode
+                            - outcome
+                            - issueCount
+                            - blocking
+                            - approved
+                            - breakdown
+                          additionalProperties: false
+                      manualChangeCount:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      review:
+                        nullable: true
+                        type: object
+                        properties:
+                          reviewedBy:
+                            type: object
+                            properties:
+                              userId:
+                                type: integer
+                                minimum: -9007199254740991
+                                maximum: 9007199254740991
+                              userName:
+                                type: string
+                            required:
+                              - userId
+                              - userName
+                            additionalProperties: false
+                          reviewedAt:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - reviewedBy
+                          - reviewedAt
+                        additionalProperties: false
+                    required:
+                      - runId
+                      - runAt
+                      - runBy
+                      - blocked
+                      - ranges
+                      - pendingInRangeCount
+                      - undatedAdjustmentCount
+                      - undatedCandidateCount
+                      - results
+                      - manualChangeCount
+                      - review
+                    additionalProperties: false
+                  lastInvalidatedReview:
+                    nullable: true
+                    type: object
+                    properties:
+                      runId:
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 9007199254740991
+                      reviewedBy:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            minimum: -9007199254740991
+                            maximum: 9007199254740991
+                          userName:
+                            type: string
+                        required:
+                          - userId
+                          - userName
+                        additionalProperties: false
+                      reviewedAt:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                      invalidatedBy:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            minimum: -9007199254740991
+                            maximum: 9007199254740991
+                          userName:
+                            type: string
+                        required:
+                          - userId
+                          - userName
+                        additionalProperties: false
+                      invalidatedAt:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                      reason:
+                        type: string
+                        enum:
+                          - rerun
+                          - inclusion_change
+                      newRunId:
+                        nullable: true
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 9007199254740991
+                      occurrenceId:
+                        nullable: true
+                        type: string
+                        pattern: ^\d+$
+                    required:
+                      - runId
+                      - reviewedBy
+                      - reviewedAt
+                      - invalidatedBy
+                      - invalidatedAt
+                      - reason
+                      - newRunId
+                      - occurrenceId
+                    additionalProperties: false
+                required:
+                  - importId
+                  - importStatus
+                  - run
+                  - lastInvalidatedReview
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+    get:
+      summary: The current run of the import (null without one) and its last
+        invalidated review
+      tags: *a5
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: importId
+          required: true
+      security: *a6
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  importId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  importStatus:
+                    type: string
+                    enum:
+                      - uploaded
+                      - mapped
+                      - analyzed
+                      - validated
+                      - processed
+                      - cancelled
+                  run:
+                    nullable: true
+                    type: object
+                    properties:
+                      runId:
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 9007199254740991
+                      runAt:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                      runBy:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            minimum: -9007199254740991
+                            maximum: 9007199254740991
+                          userName:
+                            type: string
+                        required:
+                          - userId
+                          - userName
+                        additionalProperties: false
+                      blocked:
+                        type: boolean
+                      ranges:
+                        type: object
+                        properties:
+                          APP:
+                            nullable: true
+                            type: object
+                            properties:
+                              min:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                              max:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                            required:
+                              - min
+                              - max
+                            additionalProperties: false
+                          DEC:
+                            nullable: true
+                            type: object
+                            properties:
+                              min:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                              max:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                            required:
+                              - min
+                              - max
+                            additionalProperties: false
+                          I:
+                            nullable: true
+                            type: object
+                            properties:
+                              min:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                              max:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                            required:
+                              - min
+                              - max
+                            additionalProperties: false
+                          R:
+                            nullable: true
+                            type: object
+                            properties:
+                              min:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                              max:
+                                type: string
+                                format: date-time
+                                pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                            required:
+                              - min
+                              - max
+                            additionalProperties: false
+                        required:
+                          - APP
+                          - DEC
+                          - I
+                          - R
+                        additionalProperties: false
+                      pendingInRangeCount:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      undatedAdjustmentCount:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      undatedCandidateCount:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      results:
+                        minItems: 8
+                        maxItems: 8
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            validationCode:
+                              type: string
+                              enum:
+                                - provider_mismatch
+                                - non_recorded_adjustment
+                                - duplicate_in_batch
+                                - status_collision_in_batch
+                                - duplicate_across_batches
+                                - status_collision_across_batches
+                                - missing_previous_to_batch
+                                - missing_in_range
+                            outcome:
+                              type: string
+                              enum:
+                                - passed
+                                - warning
+                                - blocked
+                                - not_applicable
+                                - not_implemented
+                            issueCount:
+                              type: integer
+                              minimum: 0
+                              maximum: 9007199254740991
+                            blocking:
+                              type: boolean
+                            approved:
+                              type: boolean
+                            breakdown:
+                              nullable: true
+                              type: object
+                              additionalProperties:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                          required:
+                            - validationCode
+                            - outcome
+                            - issueCount
+                            - blocking
+                            - approved
+                            - breakdown
+                          additionalProperties: false
+                      manualChangeCount:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      review:
+                        nullable: true
+                        type: object
+                        properties:
+                          reviewedBy:
+                            type: object
+                            properties:
+                              userId:
+                                type: integer
+                                minimum: -9007199254740991
+                                maximum: 9007199254740991
+                              userName:
+                                type: string
+                            required:
+                              - userId
+                              - userName
+                            additionalProperties: false
+                          reviewedAt:
+                            type: string
+                            format: date-time
+                            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                        required:
+                          - reviewedBy
+                          - reviewedAt
+                        additionalProperties: false
+                    required:
+                      - runId
+                      - runAt
+                      - runBy
+                      - blocked
+                      - ranges
+                      - pendingInRangeCount
+                      - undatedAdjustmentCount
+                      - undatedCandidateCount
+                      - results
+                      - manualChangeCount
+                      - review
+                    additionalProperties: false
+                  lastInvalidatedReview:
+                    nullable: true
+                    type: object
+                    properties:
+                      runId:
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 9007199254740991
+                      reviewedBy:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            minimum: -9007199254740991
+                            maximum: 9007199254740991
+                          userName:
+                            type: string
+                        required:
+                          - userId
+                          - userName
+                        additionalProperties: false
+                      reviewedAt:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                      invalidatedBy:
+                        type: object
+                        properties:
+                          userId:
+                            type: integer
+                            minimum: -9007199254740991
+                            maximum: 9007199254740991
+                          userName:
+                            type: string
+                        required:
+                          - userId
+                          - userName
+                        additionalProperties: false
+                      invalidatedAt:
+                        type: string
+                        format: date-time
+                        pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                      reason:
+                        type: string
+                        enum:
+                          - rerun
+                          - inclusion_change
+                      newRunId:
+                        nullable: true
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 9007199254740991
+                      occurrenceId:
+                        nullable: true
+                        type: string
+                        pattern: ^\d+$
+                    required:
+                      - runId
+                      - reviewedBy
+                      - reviewedAt
+                      - invalidatedBy
+                      - invalidatedAt
+                      - reason
+                      - newRunId
+                      - occurrenceId
+                    additionalProperties: false
+                required:
+                  - importId
+                  - importStatus
+                  - run
+                  - lastInvalidatedReview
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
   /api/v1/health:
     get:
       summary: Service and database health

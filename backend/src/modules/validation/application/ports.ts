@@ -2,6 +2,8 @@
  * Read ports of the validation engine (design D3). #9 implements them with Prisma and feeds `runValidations` in two
  * steps: `computeRanges(rows)` says which candidates to load, then the full input is built and validated.
  */
+import type { ImportStatus, InvalidationReason, UserRef, ValidationCode, ValidationOutcome } from '@recon/shared'
+import type { Scope } from '../../catalog/domain/scope.js'
 import type {
   AccountScope,
   CandidateTransaction,
@@ -9,6 +11,7 @@ import type {
   HeldReserve,
   HistoryMovement,
   StatusEntry,
+  ValidationReport,
   ValidationRow,
 } from '../domain/types.js'
 
@@ -61,3 +64,83 @@ export type ValidationSources = ValidationRowSource &
   MissingCandidateSource &
   RegisteredMissingSource &
   StatusCatalogSource
+
+// ───────────────────────── Runs (validation-runs design D4–D8, D16) ─────────────────────────
+
+/** The import as the validation flow needs it; `updatedAt` is the optimistic version of every write. */
+export interface ImportRef {
+  importId: string
+  status: ImportStatus
+  updatedAt: Date
+}
+
+export interface StoredResult {
+  validationCode: ValidationCode
+  outcome: ValidationOutcome
+  issueCount: number
+  /** missing_*: by range; non_recorded_adjustment: by issue type; otherwise null. */
+  breakdown: Record<string, number> | null
+}
+
+export interface StoredRun {
+  runId: number
+  runAt: Date
+  runBy: UserRef
+  ranges: CycleRanges
+  pendingInRangeCount: number
+  undatedAdjustmentCount: number
+  undatedCandidateCount: number
+  /** In any order: the service sorts them by ValidationCode. */
+  results: StoredResult[]
+  /** Occurrences whose inclusion differs from the default plus findings resolved by hand (D16). */
+  manualChangeCount: number
+}
+
+/** The review history of an import, from AuditLog, oldest first. */
+export type ReviewEvent =
+  | { kind: 'review'; runId: number; by: UserRef; at: Date }
+  | {
+      kind: 'invalidate'
+      runId: number
+      by: UserRef
+      at: Date
+      reviewedBy: UserRef
+      reviewedAt: Date
+      reason: InvalidationReason
+      newRunId: number | null
+      occurrenceId: string | null
+    }
+
+/**
+ * Persistence of runs. Every write starts with a guarded UPDATE of the Import row (exclusive lock until commit) and
+ * persists only if the import still has the version the caller read; otherwise ImportChangedError (D4).
+ */
+export interface ValidationRunRepository {
+  /** null for an unknown import or one outside the scope (same answer). */
+  findImport(scope: Scope, importId: string): Promise<ImportRef | null>
+  /**
+   * In one transaction: guard (analyzed or validated, same updatedAt; leaves it analyzed), invalidation of the review
+   * when it was validated, previous current run superseded, run with its results, findings and occurrences.
+   */
+  saveRun(
+    importId: string,
+    expectedUpdatedAt: Date,
+    userId: number,
+    report: ValidationReport,
+    now: Date,
+  ): Promise<{ runId: number; previousStatus: ImportStatus }>
+  currentRun(importId: string): Promise<StoredRun | null>
+  reviewEvents(importId: string): Promise<ReviewEvent[]>
+}
+
+/**
+ * #11 calls it inside the transaction that processes or undoes a batch (README §3.2 Faltantes, HU2 CA9). Only the
+ * findings of current runs count (isSuperseded = 0), as in RegisteredMissingSource. Declared here, implemented by #11
+ * (design D11), which also fixes the type of the transactional client.
+ */
+export interface MissingResolution {
+  /** Persistent missing findings of the provider whose (transactionId, cycle) is in the batch → resolved with it. */
+  resolveForBatch(tx: unknown, batchId: string, at: Date): Promise<number>
+  /** Findings resolved by this batch → persistent again, resolvedInBatchId/resolvedAt cleared. */
+  reopenForBatch(tx: unknown, batchId: string): Promise<number>
+}
