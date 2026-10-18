@@ -241,8 +241,31 @@ export function CreateCampaignForm({ onAuthError }: CreateCampaignFormProps = {}
         })),
       };
 
-      // Validate with schema
-      createCampaignSchema.parse(campaignData);
+      // Validate with schema using safeParse
+      const validation = createCampaignSchema.safeParse(campaignData);
+      if (!validation.success) {
+        const fieldErrorsMap: Record<string, string> = {};
+        const scopeErrorMessages: Record<string, string> = {};
+
+        for (const issue of validation.error.issues) {
+          const fieldPath = issue.path.join(".");
+
+          // Translate enum invalid messages for scope
+          let message = issue.message;
+          if (fieldPath.includes("scope") && message.includes("Invalid enum value")) {
+            message = "Selecciona el ámbito";
+          }
+
+          fieldErrorsMap[fieldPath] = message;
+        }
+
+        setFieldErrors(fieldErrorsMap);
+        if (Object.keys(fieldErrorsMap).length > 0) {
+          setSubmitError("Por favor corrige los errores antes de enviar.");
+          setSubmitting(false);
+          return;
+        }
+      }
 
       // Submit to API
       const baseUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -279,12 +302,8 @@ export function CreateCampaignForm({ onAuthError }: CreateCampaignFormProps = {}
           }
         }
       } else if (err instanceof Error) {
-        if (err.message.includes("union")) {
-          // Zod validation error for enum
-          setSubmitError("Hay campos con errores. Verifica los datos ingresados.");
-        } else {
-          setSubmitError(err.message);
-        }
+        // Never show raw validation error messages
+        setSubmitError("Error al registrar la campaña. Intenta de nuevo más tarde.");
       } else {
         setSubmitError("Error al registrar la campaña. Intenta de nuevo más tarde.");
       }
