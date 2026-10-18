@@ -1,11 +1,20 @@
 // Steps of the import smoke. Selectors are roles and accessible texts, the same as frontend/src/features/imports/strings.ts.
 import { fileURLToPath } from 'node:url'
-import { expect } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 import { createBdd } from 'playwright-bdd'
 
 const { Given, When, Then } = createBdd()
 
 const repositoryFile = (path: string) => fileURLToPath(new URL(`../../${path}`, import.meta.url))
+
+/** Sets the value of the password field from the page, so no step title nor log carries it. */
+async function setPassword(page: Page, value: string) {
+  await page.getByLabel('Password').evaluate((input, text) => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+    setter?.call(input, text)
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  }, value)
+}
 
 Given('the analyst is signed in', async ({ page }) => {
   const password = process.env.SEED_PASSWORD
@@ -14,12 +23,11 @@ Given('the analyst is signed in', async ({ page }) => {
   await page.getByLabel('User name').fill('analyst')
   // The password is set from the page, not with fill(): the title of a fill step carries the text it types, and
   // the password must not reach the console nor the report.
-  await page.getByLabel('Password').evaluate((input, value) => {
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
-    setter?.call(input, value)
-    input.dispatchEvent(new Event('input', { bubbles: true }))
-  }, password)
+  await setPassword(page, password)
   await page.getByRole('button', { name: 'Sign in' }).click()
+  // Emptied as soon as the form is sent, before any assertion: if signing in fails, the snapshot of the page that
+  // the report attaches must not hold the password.
+  if (await page.getByLabel('Password').isVisible()) await setPassword(page, '')
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
 })
 
