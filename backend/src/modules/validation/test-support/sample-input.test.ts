@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ACCOUNT_IDS } from '../../catalog/application/__fakes__/in-memory.js'
 import type { ValidationRow } from '../domain/types.js'
+import { STATUS } from './builders.js'
 import { sampleInput } from './sample-input.js'
 
 // The input of each sample is the analysis of #5 over the real .xlsx (design D9): same counts as expected.json.
@@ -46,8 +47,8 @@ describe('sampleInput', () => {
     const { input } = await sampleInput('legacy-provider')
 
     expect(matched(input.rows)).toHaveLength(81)
-    expect(input.rows.filter((r) => r.excludeAmount).map((r) => r.transactionIdRaw)).toEqual([
-      'df14616d-4b26-4ffb-9984-72717ebff6a6',
+    expect(input.rows.filter((r) => r.excludeAmount).map((r) => [r.transactionIdRaw, r.cycle, r.statusId])).toEqual([
+      ['df14616d-4b26-4ffb-9984-72717ebff6a6', 'I', STATUS.Chargeback],
     ])
   })
 })

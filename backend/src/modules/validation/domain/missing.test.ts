@@ -179,6 +179,16 @@ describe('missing candidates', () => {
     expect(previous(i).issues.map((x) => x.transactionId)).toEqual([13n])
   })
 
+  it('R: a reserve created after the max of the R range is not expired yet and is in neither validation', () => {
+    const i = input({
+      rows: [row({ transactionId: 1n, cycle: 'R', status: 'Successful', date: MIN })],
+      reserveCandidates: [reserve({ transactionId: 14n, date: new Date(MIN.getTime() + 1) })],
+    })
+
+    expect(previous(i).issues).toEqual([])
+    expect(inRange(i).issues).toEqual([])
+  })
+
   it('without any range: both not_applicable', () => {
     const i = input({ rows: [row({ matchResult: 'unmatched' })], candidates: [candidate()] })
 
@@ -228,6 +238,13 @@ describe('registered missing findings (question 8)', () => {
 
   it('registered only by an import without a batch: still missing (also a repeated run of the same import)', async () => {
     const i = withCandidates({ candidates, registeredMissing: await registeredBy('unprocessed-import') })
+
+    expect(inRange(i).issues.map((x) => x.transactionId)).toEqual([10n])
+  })
+
+  it('a repeated run of the same unprocessed import: what its previous run registered comes out again', async () => {
+    const importId = 'import-being-revalidated'
+    const i = withCandidates({ candidates, registeredMissing: await registeredBy(importId) })
 
     expect(inRange(i).issues.map((x) => x.transactionId)).toEqual([10n])
   })

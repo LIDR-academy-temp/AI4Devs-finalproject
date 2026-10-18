@@ -1,6 +1,7 @@
 import { ValidationCode } from '@recon/shared'
 import { describe, expect, it } from 'vitest'
 import { input, movement, row, shuffled } from '../test-support/builders.js'
+import { sampleInput } from '../test-support/sample-input.js'
 import { runValidations, VALIDATION_SLOTS, type ValidationSlot } from './run-validations.js'
 
 // Spec "Ocho validaciones en orden fijo", "Orden y forma del informe", "No implementada no aprueba" and
@@ -84,6 +85,16 @@ describe('runValidations', () => {
     const first = runValidations(base)
     const second = runValidations({ ...base, rows: shuffled(rows, 3), history: shuffled(history, 5) })
 
+    expect(second).toEqual(first)
+  })
+
+  it('gives the same report for batch-issues with its rows and history shuffled (determinism at real volume)', async () => {
+    const { input: sample } = await sampleInput('batch-issues')
+
+    const first = runValidations(sample)
+    const second = runValidations({ ...sample, rows: shuffled(sample.rows, 11), history: shuffled(sample.history, 13) })
+
+    expect(first.results.reduce((n, r) => n + r.issueCount, 0)).toBeGreaterThan(0)
     expect(second).toEqual(first)
   })
 })
