@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { dropZone, fileInput, findFileEntry } from '@/test/import-screens'
@@ -103,6 +103,23 @@ describe('Column Mapping: analysis in progress (spec "Pantalla Column Mapping: a
     expect(file.getByRole('button', { name: /^Remove / })).toBeDisabled()
 
     hold.release()
+    await waitFor(() => expect(tab(strings.steps.analysis)).toHaveAttribute('aria-selected', 'true'))
+    expect(importRequests('analyze')).toHaveLength(1)
+  })
+
+  it('two clicks in the same tick, before React re-renders, still send a single POST analyze', async () => {
+    const hold = holdNext('analyze')
+    await openMapping(seedImport('batch-clean', { status: 'mapped' }).importId)
+    const button = analyzeButton()
+
+    // Inside one act the button cannot be disabled between the clicks: only the synchronous guard stops the second.
+    act(() => {
+      fireEvent.click(button)
+      fireEvent.click(button)
+    })
+    await hold.arrived
+    hold.release()
+
     await waitFor(() => expect(tab(strings.steps.analysis)).toHaveAttribute('aria-selected', 'true'))
     expect(importRequests('analyze')).toHaveLength(1)
   })

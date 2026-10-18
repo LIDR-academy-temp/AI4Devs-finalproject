@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { fileInput, findFileEntry } from '@/test/import-screens'
@@ -63,6 +63,23 @@ describe('Column Mapping: confirmation (spec "Pantalla Column Mapping: confirmac
 
     expect(confirmButton()).toBeDisabled()
     hold.release()
+    expect(await header().findByText('mapped')).toBeInTheDocument()
+    expect(importRequests('mapping')).toHaveLength(1)
+  })
+
+  it('two clicks in the same tick, before React re-renders, still send a single PUT', async () => {
+    const hold = holdNext('mapping')
+    await openMapping(seedImport('batch-clean').importId)
+    const button = confirmButton()
+
+    // Inside one act the button cannot be disabled between the clicks: only the synchronous guard stops the second.
+    act(() => {
+      fireEvent.click(button)
+      fireEvent.click(button)
+    })
+    await hold.arrived
+    hold.release()
+
     expect(await header().findByText('mapped')).toBeInTheDocument()
     expect(importRequests('mapping')).toHaveLength(1)
   })
