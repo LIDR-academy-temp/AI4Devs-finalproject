@@ -1048,6 +1048,40 @@ describe('a transaction of another merchant on a shared gateway (review of the P
     await removeOtherMerchantFixture()
   })
 
+  it('an R row matched to a transaction of merchant 2 shows the viewer no status: it is the transaction status (second review, LOW 1)', async () => {
+    const bytes = buildXlsx({
+      sheets: [
+        {
+          name: 'RR',
+          rows: [
+            ['ID', 'Amount', 'Currency'],
+            [OTHER_MERCHANT_SOURCE_ID, { v: '4.2' }, 'USD'],
+          ],
+        },
+      ],
+    })
+    const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [
+      { name: 'other-merchant-rr.xlsx', bytes },
+    ])
+    fixtureImports.push(detail.importId)
+    expect(detail.analysis?.rows).toMatchObject({ total: 1, matched: 1 })
+
+    const own = (await rows(detail.importId)).items[0]
+    expect(own).toMatchObject({ cycle: 'R', matchResult: 'matched', statusId: 2, statusName: 'Successful' })
+
+    const res = await call('GET', `/imports/${detail.importId}/rows`, undefined, 'viewer')
+    expect(res.statusCode).toBe(200)
+    const item = ImportRowsPage.parse(res.json()).items[0]
+    expect(item).toMatchObject({
+      cycle: 'R',
+      matchResult: 'matched',
+      transaction: null,
+      statusId: null,
+      statusName: null,
+    })
+    expect(item?.warnings).toContain('out_of_scope_transaction')
+  })
+
   it('the viewer of merchant 1 gets the channel and the candidate of merchant 2 without their data (M3, residual)', async () => {
     const bytes = buildXlsx({
       sheets: [

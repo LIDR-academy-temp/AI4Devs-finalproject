@@ -718,6 +718,7 @@ function toRowItem(
   const detail = parseDetail(row.detailJson)
   const outOfScope = row.transaction !== null && !scope.merchantIds.includes(row.transaction.merchantId)
   const transaction = outOfScope ? null : row.transaction
+  const hiddenStatus = outOfScope && row.cycle === 'R'
   const warnings: RowWarningCode[] = [
     ...(detail.warnings ?? []),
     ...(outOfScope ? (['out_of_scope_transaction'] as const) : []),
@@ -735,8 +736,9 @@ function toRowItem(
     transactionId: row.transactionId === null ? null : String(row.transactionId),
     gatewayId: row.gatewayId,
     statusRaw: row.statusRaw,
-    statusId: row.statusId,
-    statusName: statusName(row.statusId, rules),
+    // In an R row the status is the transaction's (README §3.2): hidden with the rest of it when out of scope.
+    statusId: hiddenStatus ? null : row.statusId,
+    statusName: hiddenStatus ? null : statusName(row.statusId, rules),
     amount: row.amount,
     currency: row.currency,
     excludeAmount: detail.excludeAmount === true,
