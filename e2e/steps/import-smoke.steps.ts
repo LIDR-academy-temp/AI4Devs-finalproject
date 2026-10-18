@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { expect, type Page } from '@playwright/test'
 import { createBdd } from 'playwright-bdd'
 
-const { Given, When, Then } = createBdd()
+const { Given, When, Then, After } = createBdd()
 
 const repositoryFile = (path: string) => fileURLToPath(new URL(`../../${path}`, import.meta.url))
 
@@ -80,4 +80,19 @@ When('they cancel the import', async ({ page }) => {
 
 Then('the import is {string}', async ({ page }, status: string) => {
   await expect(page.getByRole('region', { name: 'Import' }).getByText(status, { exact: true })).toBeVisible()
+})
+
+// Cleanup of a scenario that fails half way: the import it created is cancelled, so none stays open in the local
+// database. A passing scenario cancels it in its last steps.
+After(async ({ page, $testInfo }) => {
+  if ($testInfo.status === $testInfo.expectedStatus) return
+  const importId = /\/imports\/([0-9a-f-]{36})/.exec(page.url())?.[1]
+  if (!importId) return
+  await page.goto(`/imports/${importId}`)
+  await page.getByRole('region', { name: 'Import' }).getByText('Status').waitFor()
+  const cancel = page.getByRole('button', { name: 'Cancel import' })
+  if (!(await cancel.isVisible())) return
+  await cancel.click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Yes, cancel the import' }).click()
+  await expect(page.getByRole('region', { name: 'Import' }).getByText('cancelled', { exact: true })).toBeVisible()
 })
