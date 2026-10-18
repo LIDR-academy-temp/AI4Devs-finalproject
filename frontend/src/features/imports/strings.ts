@@ -36,6 +36,7 @@ export const strings = {
     empty: 'No files yet. Add the .xlsx files of the batch.',
     afterAnalysis: 'Files cannot change after the analysis. Cancel the import and start a new one.',
     readOnly: 'Files cannot change in this import.',
+    continue: 'Continue to mapping',
   },
   rejections: {
     unsupported_file_type: 'Only .xlsx files are accepted.',

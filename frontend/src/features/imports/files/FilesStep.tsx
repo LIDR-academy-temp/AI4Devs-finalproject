@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api/client'
 import type { ImportDetail } from '@/lib/api/types'
 import { useRemoveFile } from '../mutations'
@@ -12,7 +13,15 @@ import { useQueueSnapshot, useUploadQueue } from './UploadQueueProvider'
 import { rejectionText } from './upload-queue'
 
 /** Files of the import: add and remove while it is uploaded or mapped (spec "Pantalla Upload Files"). */
-export function FilesStep({ detail, busy = false }: { detail: ImportDetail; busy?: boolean }) {
+export function FilesStep({
+  detail,
+  busy = false,
+  onContinue,
+}: {
+  detail: ImportDetail
+  busy?: boolean
+  onContinue: () => void
+}) {
   const queryClient = useQueryClient()
   const queue = useUploadQueue()
   useQueueSnapshot(queue)
@@ -68,6 +77,11 @@ export function FilesStep({ detail, busy = false }: { detail: ImportDetail; busy
             {detail.analysis !== null ? strings.files.afterAnalysis : strings.files.readOnly}
           </p>
         )
+      )}
+      {editable && detail.files.length > 0 && (
+        <div>
+          <Button onClick={onContinue}>{strings.files.continue}</Button>
+        </div>
       )}
     </div>
   )

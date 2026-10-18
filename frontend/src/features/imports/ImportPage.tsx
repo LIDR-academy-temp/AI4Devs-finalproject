@@ -68,7 +68,7 @@ function ImportWorkspace({ detail, step: chosen }: { detail: ImportDetail; step:
           step={step}
           onStep={toStep}
           panels={{
-            files: <FilesStep detail={detail} busy={analysis.running} />,
+            files: <FilesStep detail={detail} busy={analysis.running} onContinue={() => void toStep('mapping')} />,
             mapping: <MappingStep detail={detail} analysis={analysis} />,
             analysis: <AnalysisStep detail={detail} />,
           }}
