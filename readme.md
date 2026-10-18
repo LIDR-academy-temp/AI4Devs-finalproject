@@ -114,23 +114,61 @@ Edita `.env` con los valores reales. El fichero nunca se versiona y en el servid
 | APIs de los DSP | `ADFORM_CLIENT_ID`, `ADFORM_CLIENT_SECRET`, `EQUATIV_CLIENT_ID`, `EQUATIV_CLIENT_SECRET`, `DISPLAYCE_CLIENT_ID`, `DISPLAYCE_CLIENT_SECRET` |
 | Frontend | `NEXT_PUBLIC_API_URL` |
 
-#### 3. Levantar los servicios
+#### 3. Levantar los servicios y aplicar migraciones
+
+Ejecuta estos pasos **en orden exacto**:
+
+**Paso 1:** Levantar los contenedores
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 Arrancan cuatro servicios: `backend` (FastAPI), `frontend` (Next.js), `db` (PostgreSQL, con volumen persistente) y `nginx` (proxy inverso). `nginx` enruta `/` al frontend y `/api/` al backend. En local sirve solo HTTP en el puerto 80; el bloque HTTPS se añade en la instancia cuando Certbot ha emitido el certificado.
 
-Las variables `COGNITO_*` y `NEXT_PUBLIC_API_URL` se incrustan en el bundle del frontend **al construir la imagen**: si cambian, hay que volver a ejecutar `--build`.
-
-#### 4. Aplicar las migraciones de base de datos
+**Paso 2:** Aplicar las migraciones de base de datos
 
 ```bash
 docker compose exec backend alembic upgrade head
 ```
 
-Alembic está configurado, pero todavía no hay migraciones: la primera es la del esquema inicial (Ticket 1).
+Las migraciones **deben ejecutarse antes del seed de datos**: sin ellas, el seed fallará con `relation "roles" does not exist` porque intenta insertar un usuario sin que las tablas base existan.
+
+**Paso 3:** Cargar datos de desarrollo
+
+```bash
+docker compose exec backend python -m scripts.seed_dev_data
+```
+
+Crea el usuario de desarrollo cuyo email coincide con `SEED_USER_EMAIL` y le asigna el rol `operations`. Este usuario debe existir en Cognito con el mismo email.
+
+**Paso 4:** Reiniciar nginx
+
+```bash
+docker compose restart nginx
+```
+
+**Importante: variables de entorno incrustadas en el build**
+
+Las variables `NEXT_PUBLIC_*` y `COGNITO_DOMAIN` se incrustan en el bundle del frontend **al construir la imagen**. Si cambias alguna de estas variables en `.env`, debes reconstruir:
+
+```bash
+docker compose build
+```
+
+Luego vuelve a ejecutar `docker compose up -d` para reiniciar con el nuevo bundle.
+
+#### 4. Requisitos en .env
+
+Estos campos son obligatorios en `.env` (ver `.env.example` para la lista completa; no incluyas valores reales en el repositorio):
+
+| Variable | Propósito |
+|---|---|
+| `POSTGRES_PASSWORD` | Contraseña de PostgreSQL |
+| `COGNITO_DOMAIN` | Dominio del Hosted UI de Cognito (sin `https://`) |
+| `SEED_USER_EMAIL` | Email del usuario de desarrollo que el seed crea y al que asigna el rol `operations`. **Debe coincidir con un usuario existente en Cognito.** |
+
+Nunca incluyas valores reales en el repositorio. `.env.example` documenta la forma; `.env` en la instancia lleva permisos restringidos (`chmod 600`).
 
 #### 5. Verificar
 
