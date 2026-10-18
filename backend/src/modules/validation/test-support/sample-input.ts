@@ -45,6 +45,8 @@ export interface SampleInput {
   importId: string
   input: ValidationInput
   sources: InMemoryValidationSources
+  /** The import side of the analysis: files and sheets with their names. */
+  imports: InMemoryImportRepository
 }
 
 /** Upload → confirm the proposal → analyze, exactly as the API does it. */
@@ -119,7 +121,7 @@ async function build(name: SampleName): Promise<SampleInput> {
     registeredMissing: await sources.registered(account.providerId),
     statuses: STATUSES,
   }
-  return { importId, input, sources }
+  return { importId, input, sources, imports }
 }
 
 const cache = new Map<SampleName, Promise<SampleInput>>()

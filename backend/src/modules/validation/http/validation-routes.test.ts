@@ -1,4 +1,4 @@
-import { ErrorResponse, ValidationRunView } from '@recon/shared'
+import { ErrorResponse, ValidationIssueDetail, ValidationIssuesPage, ValidationRunView } from '@recon/shared'
 import type { InjectOptions } from 'fastify'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildTestApp, PASSWORD } from '../../../test-support/build-test-app.js'
@@ -23,6 +23,7 @@ beforeEach(async () => {
   runs.addImport({ importId, merchantId: 1, status: 'analyzed' })
   // ProviderC-Alt belongs to merchant 2: outside the viewer's scope.
   runs.addImport({ importId: FOREIGN_IMPORT_ID, merchantId: 2, status: 'analyzed' })
+  runs.describeImport(issues.imports.stored(importId))
   const service = new ValidationService({ sources: issues.sources, runs, log: { info: vi.fn() } })
   ctx = await buildTestApp({ validation: { service } })
   await ctx.app.ready()
@@ -115,5 +116,63 @@ describe('GET /imports/:importId/validations', () => {
     expect(unknown.statusCode).toBe(404)
     expect(foreign.json()).toEqual(unknown.json())
     expect((await request('GET', '/imports/abc/validations')).statusCode).toBe(400)
+  })
+})
+
+describe('GET /imports/:importId/validation-issues', () => {
+  it('200 with the filtered page (viewer)', async () => {
+    await request('POST', `/imports/${importId}/validations`)
+
+    const res = await request('GET', `/imports/${importId}/validation-issues?type=duplicate&scope=in_batch`, {
+      user: 'viewer',
+    })
+
+    expect(res.statusCode).toBe(200)
+    const page = ValidationIssuesPage.parse(res.json())
+    expect(page.total).toBe(1)
+    expect(page.items[0]?.occurrenceCount).toBe(2)
+  })
+
+  it('400 validation_error for type=failed and pageSize=501', async () => {
+    for (const q of ['type=failed', 'pageSize=501']) {
+      const res = await request('GET', `/imports/${importId}/validation-issues?${q}`)
+      expect(res.statusCode, q).toBe(400)
+      expect(errorCode(res.json())).toBe('validation_error')
+    }
+  })
+
+  it('404 identical for unknown and foreign imports, 401 without a token', async () => {
+    const unknown = await request('GET', `/imports/${UNKNOWN_UUID}/validation-issues`, { user: 'viewer' })
+    const foreign = await request('GET', `/imports/${FOREIGN_IMPORT_ID}/validation-issues`, { user: 'viewer' })
+
+    expect(unknown.statusCode).toBe(404)
+    expect(foreign.json()).toEqual(unknown.json())
+    expect((await request('GET', `/imports/${importId}/validation-issues`, { user: null })).statusCode).toBe(401)
+  })
+})
+
+describe('GET /validation-issues/:issueId', () => {
+  it('200 with the detail of a finding', async () => {
+    await request('POST', `/imports/${importId}/validations`)
+    const page = ValidationIssuesPage.parse(
+      (await request('GET', `/imports/${importId}/validation-issues?type=collision&scope=in_batch`)).json(),
+    )
+
+    const res = await request('GET', `/validation-issues/${page.items[0]!.issueId}`, { user: 'viewer' })
+
+    expect(res.statusCode).toBe(200)
+    const detail = ValidationIssueDetail.parse(res.json())
+    expect(detail.occurrences).toHaveLength(2)
+    expect(detail.occurrences.every((o) => !o.editable)).toBe(true)
+  })
+
+  it('400 for issueId=abc, 404 not_found for an unknown one', async () => {
+    const malformed = await request('GET', '/validation-issues/abc')
+    const unknown = await request('GET', '/validation-issues/999999')
+
+    expect(malformed.statusCode).toBe(400)
+    expect(errorCode(malformed.json())).toBe('validation_error')
+    expect(unknown.statusCode).toBe(404)
+    expect(unknown.json()).toMatchObject({ code: 'not_found', message: 'Validation issue not found' })
   })
 })

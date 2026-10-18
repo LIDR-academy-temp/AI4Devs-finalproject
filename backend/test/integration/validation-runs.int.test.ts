@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { ValidationRunView } from '@recon/shared'
+import { ValidationIssueDetail, ValidationIssuesPage, ValidationRunView } from '@recon/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { ValidationRunRepository } from '../../src/modules/validation/application/ports.js'
 import { ValidationService } from '../../src/modules/validation/application/validation-service.js'
@@ -340,5 +340,128 @@ describe('re-running a validated import (P1, D16)', () => {
     expect(await ctx.prisma.auditLog.count({ where: { action: 'import.review.invalidate', entityId: importId } })).toBe(
       0,
     )
+  })
+})
+
+async function issues(importId: string, query: string) {
+  const res = await flow.call('GET', `/imports/${importId}/validation-issues?${query}`, undefined, 'viewer')
+  expect(res.statusCode, res.body).toBe(200)
+  return ValidationIssuesPage.parse(res.json())
+}
+
+async function issueDetail(issueId: number) {
+  const res = await flow.call('GET', `/validation-issues/${issueId}`, undefined, 'viewer')
+  expect(res.statusCode, res.body).toBe(200)
+  return ValidationIssueDetail.parse(res.json())
+}
+
+describe('findings of batch-issues (D8)', () => {
+  let importId: string
+
+  beforeAll(async () => {
+    importId = (await flow.analyzedSample('batch-issues')).importId
+    await runValidations(importId)
+  })
+
+  it('?type=duplicate&scope=in_batch: one finding with 2 occurrences, 1 included by default', async () => {
+    const page = await issues(importId, 'type=duplicate&scope=in_batch')
+
+    expect(page.total).toBe(1)
+    expect(page.items[0]).toMatchObject({
+      transactionIdRaw: '441706751475644',
+      occurrenceCount: 2,
+      includedByDefaultCount: 1,
+      includedCount: 1,
+    })
+  })
+
+  it('?type=missing&status=persistent: the 16 missing findings in the fixed order, with the ids of expected.json', async () => {
+    const expected = expectedOf('batch-issues') as { affectedIds: Record<string, string[]> }
+
+    const page = await issues(importId, 'type=missing&status=persistent&pageSize=50')
+
+    expect(page.total).toBe(16)
+    expect(page.items.map((i) => i.missingRange)).toEqual([
+      ...Array(10).fill('DEC'),
+      ...Array(3).fill('APP'),
+      ...Array(3).fill('R'),
+    ])
+    const idsOf = (range: string) =>
+      page.items.filter((i) => i.missingRange === range).map((i) => i.transactionIdRaw as string)
+    expect(idsOf('DEC').sort()).toEqual([...(expected.affectedIds.missing_previous_to_batch_DEC ?? [])].sort())
+    expect(idsOf('APP').sort()).toEqual([...(expected.affectedIds.missing_in_range_E ?? [])].sort())
+    expect(idsOf('R').sort()).toEqual([...(expected.affectedIds.missing_in_range_R ?? [])].sort())
+    for (const range of ['DEC', 'APP', 'R']) {
+      const dates = page.items.filter((i) => i.missingRange === range).map((i) => i.relevantDate as string)
+      expect(dates).toEqual([...dates].sort())
+    }
+  })
+
+  it('the in-batch collision of 911545593909470: sheets APP and DEC, Successful and Declined, both included', async () => {
+    const [collision] = (await issues(importId, 'type=collision&scope=in_batch')).items
+
+    const detail = await issueDetail(collision!.issueId)
+
+    expect(detail.transactionIdRaw).toBe('911545593909470')
+    expect(detail.run.isCurrent).toBe(true)
+    expect(
+      detail.occurrences.map((o) => [o.sourceType, o.location?.sheetName, o.location?.fileName, o.status?.code]),
+    ).toEqual([
+      ['current_import', 'APP', 'Recon_Template_ProviderB-Main_batch-issues.xlsx', 'Successful'],
+      ['current_import', 'DEC', 'Recon_Template_ProviderB-Main_batch-issues.xlsx', 'Declined'],
+    ])
+    expect(detail.occurrences.every((o) => o.defaultIncluded && o.includeInSettlement && o.changedBy === null)).toBe(
+      true,
+    )
+    expect(detail.history).toEqual([])
+  })
+
+  it('the historical occurrence of 504712738863260 brings its batch, attempt, current status and account', async () => {
+    const [duplicate] = (await issues(importId, 'type=duplicate&scope=across_batches')).items
+
+    const detail = await issueDetail(duplicate!.issueId)
+
+    expect(detail.transactionIdRaw).toBe('504712738863260')
+    const historical = detail.occurrences.find((o) => o.sourceType === 'previous_batch')!
+    expect(historical.batch).toMatchObject({ batchNo: 51, attemptNo: 1, accountName: 'ProviderB-Main' })
+    expect(['processed', 'paid']).toContain(historical.batch?.status)
+    expect(historical.status?.code).toBe('Successful')
+    expect(historical.editable).toBe(false)
+    expect(detail.occurrences[0]).toMatchObject({ sourceType: 'current_import', defaultIncluded: false })
+  })
+
+  it('the non_recorded_adjustment of 281520820250015 brings the gateway status and its source row', async () => {
+    const page = await issues(importId, 'type=non_recorded_adjustment')
+
+    const nra = page.items.find((i) => i.transactionIdRaw === '281520820250015')!
+
+    expect(nra.gatewayStatus?.code).toBe('Successful')
+    expect(nra.source).toMatchObject({
+      fileName: 'Recon_Template_ProviderB-Main_batch-issues.xlsx',
+      rowNo: expect.any(Number),
+    })
+  })
+})
+
+describe('the provider_mismatch of batch-blocked shows nothing of the other merchant', () => {
+  it('only what the row brings: transactionId, raw id, cycle, reported status and source row', async () => {
+    const { importId } = await flow.analyzedSample('batch-blocked')
+    await runValidations(importId)
+    const [mismatch] = (await issues(importId, 'type=provider_mismatch')).items
+
+    const res = await flow.call('GET', `/validation-issues/${mismatch!.issueId}`, undefined, 'viewer')
+
+    const body = res.json()
+    expect(body).toMatchObject({
+      transactionIdRaw: '252570479111759',
+      cycle: 'E',
+      blocking: true,
+      gatewayStatus: null,
+      source: { rowNo: expect.any(Number) },
+    })
+    expect(body.transactionId).toMatch(/^\d+$/)
+    const text = JSON.stringify(body)
+    for (const leak of ['channel', 'providerId', 'amount', 'transactionDate', 'merchant'])
+      expect(text).not.toContain(leak)
   })
 })
