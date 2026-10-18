@@ -1,6 +1,6 @@
 # Work tickets
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.4 (draft) · **Date:** October 17, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.5 · **Date:** October 18, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 
@@ -37,33 +37,51 @@ User stories and tickets are tracked as issues in the project's repository, [ojo
 | Work ticket | An issue titled with its ID and title, labeled `task`, and added as a sub-issue of its main story. Its description lists any other stories it implements. Tickets with no story have no parent. |
 | Epic | Not tracked in GitHub. Epics are defined in [PRD §14.1](01-PRD.md#141-epics). |
 | Delivery | A GitHub milestone for each course delivery (D1, D2, and D3) and for milestone 2 (M2), due on the dates in [PRD §8](01-PRD.md#8-release-plan-and-launch-criteria). Each ticket is assigned to its delivery. |
-| Board | A GitHub Project linked to the repository, holding the tickets, in the board layout with its default columns: Todo, In Progress, and Done. |
+| Board | A GitHub Project, [ComproParaTi](https://github.com/users/ojordan0/projects/1), linked to the repository and holding the tickets, in the board layout with its default columns: Todo, In Progress, and Done. |
 | Pull request | One per ticket ([section 1](#1-how-tickets-work)). Its description includes `Closes #<issue>`, so merging it closes the ticket. |
 
 Issue descriptions contain the goal, the related stories, and the acceptance criteria IDs, and link back to this document. The scope and the rules stay here and in the PRD. The labels, milestones, issues, sub-issue links, and project are created from these documents by [`scripts/setup-github-issues.py`](../scripts/setup-github-issues.py), which can be run again without creating duplicates.
 
+**Story issues.** Each story's text, requirements, and acceptance criteria are in [PRD §14.2](01-PRD.md#142-user-stories). Each ticket's issue is in the [ticket overview](#3-ticket-overview).
+
+| Story | Issue | Story | Issue |
+| --- | --- | --- | --- |
+| US-01 | [#1](https://github.com/ojordan0/AI4Devs-finalproject/issues/1) | US-14 | [#14](https://github.com/ojordan0/AI4Devs-finalproject/issues/14) |
+| US-02 | [#2](https://github.com/ojordan0/AI4Devs-finalproject/issues/2) | US-15 | [#15](https://github.com/ojordan0/AI4Devs-finalproject/issues/15) |
+| US-03 | [#3](https://github.com/ojordan0/AI4Devs-finalproject/issues/3) | US-16 | [#16](https://github.com/ojordan0/AI4Devs-finalproject/issues/16) |
+| US-04 | [#4](https://github.com/ojordan0/AI4Devs-finalproject/issues/4) | US-17 | [#17](https://github.com/ojordan0/AI4Devs-finalproject/issues/17) |
+| US-05 | [#5](https://github.com/ojordan0/AI4Devs-finalproject/issues/5) | US-18 | [#18](https://github.com/ojordan0/AI4Devs-finalproject/issues/18) |
+| US-06 | [#6](https://github.com/ojordan0/AI4Devs-finalproject/issues/6) | US-19 | [#19](https://github.com/ojordan0/AI4Devs-finalproject/issues/19) |
+| US-07 | [#7](https://github.com/ojordan0/AI4Devs-finalproject/issues/7) | US-20 | [#20](https://github.com/ojordan0/AI4Devs-finalproject/issues/20) |
+| US-08 | [#8](https://github.com/ojordan0/AI4Devs-finalproject/issues/8) | US-21 | [#21](https://github.com/ojordan0/AI4Devs-finalproject/issues/21) |
+| US-09 | [#9](https://github.com/ojordan0/AI4Devs-finalproject/issues/9) | US-22 | [#22](https://github.com/ojordan0/AI4Devs-finalproject/issues/22) |
+| US-10 | [#10](https://github.com/ojordan0/AI4Devs-finalproject/issues/10) | US-23 | [#23](https://github.com/ojordan0/AI4Devs-finalproject/issues/23) |
+| US-11 | [#11](https://github.com/ojordan0/AI4Devs-finalproject/issues/11) | US-24 | [#24](https://github.com/ojordan0/AI4Devs-finalproject/issues/24) |
+| US-12 | [#12](https://github.com/ojordan0/AI4Devs-finalproject/issues/12) | US-25 | [#25](https://github.com/ojordan0/AI4Devs-finalproject/issues/25) |
+| US-13 | [#13](https://github.com/ojordan0/AI4Devs-finalproject/issues/13) | US-26 | [#26](https://github.com/ojordan0/AI4Devs-finalproject/issues/26) |
+
 ## 3. Ticket overview
 
-| ID | Title | Epic | Stories | Type | Increment | Delivery | Size | Depends on |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| T-01 | Repository, project scaffold, and CI | E-08 | None | DevOps | 1 | D2 | M | None |
-| T-02 | Database schema, migrations, and seed data | E-08 | None | Database | 1 | D2 | L | T-01 |
-| T-03 | API foundation and baseline security | E-08 | US-26 | Backend | 1 | D2 | M | T-02 |
-| T-04 | Sign-in, onboarding, and basic profile | E-01 | US-01, US-02 | Full stack | 1 | D2 | L | T-03 |
-| T-05 | App shell, navigation, and translations | E-08 | US-25, US-07 | Frontend | 1 | D2 | M | T-01 |
-| T-06 | Production deployment | E-08 | None | DevOps | 1 | D2 | M | T-04 |
-| T-07 | Groups, memberships, and access | E-02 | US-07, US-01, US-04 | Backend | 2 | D2 | M | T-03 |
-| T-08 | Buyer invitations | E-02 | US-04 | Full stack | 2 | D2 | L | T-07, T-05 |
-| T-09 | Lists and items API | E-04 | US-10, US-07, US-11, US-12, US-13 | Backend | 3 | D2 | M | T-07 |
-| T-10 | Lists screen, item form, and item page | E-04 | US-10, US-07 | Frontend | 3 | D2 | L | T-09, T-05 |
-| T-11 | Status changes: reserve, release, purchase | E-05 | US-15, US-14, US-16 | Backend | 4 | D2 | M | T-09 |
-| T-12 | To buy, My purchases, and buyer actions | E-05 | US-14, US-15 | Frontend | 4 | D2 | M | T-11, T-10 |
-| T-13 | People and their details | E-03 | US-09 | Full stack | 3 | D3 | M | T-10 |
-| T-14 | Couldn't buy it and the item timeline | E-05 | US-16, US-13 | Full stack | 4 | D3 | M | T-12 |
-| T-15 | Delivery addresses | E-06 | US-18 | Full stack | 5 | D3 | M | T-07, T-05 |
-| T-16 | Marking items as shipped | E-06 | US-19, US-21 | Full stack | 5 | D3 | L | T-12, T-15 |
-| T-17 | End-to-end test of the core cycle and test suite completion | E-08 | None | QA | All | D3 | M | T-16 |
-| T-18 | Deployment evidence and final documentation | E-08 | None | Documentation | All | D3 | S | T-17 |
+| ID | Issue | Title | Epic | Stories | Type | Increment | Delivery | Size | Depends on |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| T-01 | [#27](https://github.com/ojordan0/AI4Devs-finalproject/issues/27) | Repository, project scaffold, and CI | E-08 | None | DevOps | 1 | D2 | M | None |
+| T-02 | [#28](https://github.com/ojordan0/AI4Devs-finalproject/issues/28) | Database schema, migrations, and seed data | E-08 | None | Database | 1 | D2 | L | T-01 |
+| T-03 | [#29](https://github.com/ojordan0/AI4Devs-finalproject/issues/29) | API foundation and baseline security | E-08 | US-26 | Backend | 1 | D2 | M | T-02 |
+| T-04 | [#30](https://github.com/ojordan0/AI4Devs-finalproject/issues/30) | Sign-in, onboarding, and basic profile | E-01 | US-01, US-02 | Full stack | 1 | D2 | L | T-03 |
+| T-05 | [#31](https://github.com/ojordan0/AI4Devs-finalproject/issues/31) | App shell, navigation, and translations | E-08 | US-25, US-07 | Frontend | 1 | D2 | M | T-01 |
+| T-06 | [#32](https://github.com/ojordan0/AI4Devs-finalproject/issues/32) | Production deployment | E-08 | None | DevOps | 1 | D2 | M | T-04 |
+| T-07 | [#33](https://github.com/ojordan0/AI4Devs-finalproject/issues/33) | Groups, memberships, and access | E-02 | US-07, US-01, US-04 | Backend | 2 | D2 | M | T-03 |
+| T-08 | [#34](https://github.com/ojordan0/AI4Devs-finalproject/issues/34) | Buyer invitations | E-02 | US-04 | Full stack | 2 | D2 | L | T-07, T-05 |
+| T-09 | [#35](https://github.com/ojordan0/AI4Devs-finalproject/issues/35) | Lists and items API | E-04 | US-10, US-07, US-11, US-12, US-13 | Backend | 3 | D2 | M | T-07 |
+| T-10 | [#36](https://github.com/ojordan0/AI4Devs-finalproject/issues/36) | Lists screen, item form, and item page | E-04 | US-10, US-07 | Frontend | 3 | D2 | L | T-09, T-05 |
+| T-11 | [#37](https://github.com/ojordan0/AI4Devs-finalproject/issues/37) | Status changes: reserve, release, purchase | E-05 | US-15, US-14, US-16 | Backend | 4 | D2 | M | T-09 |
+| T-12 | [#38](https://github.com/ojordan0/AI4Devs-finalproject/issues/38) | To buy, My purchases, and buyer actions | E-05 | US-14, US-15 | Frontend | 4 | D2 | M | T-11, T-10 |
+| T-13 | [#39](https://github.com/ojordan0/AI4Devs-finalproject/issues/39) | People and their details | E-03 | US-09 | Full stack | 3 | D3 | M | T-10 |
+| T-14 | [#40](https://github.com/ojordan0/AI4Devs-finalproject/issues/40) | Couldn't buy it and the item timeline | E-05 | US-16, US-13 | Full stack | 4 | D3 | M | T-12 |
+| T-15 | [#41](https://github.com/ojordan0/AI4Devs-finalproject/issues/41) | Delivery addresses | E-06 | US-18 | Full stack | 5 | D3 | M | T-07, T-05 |
+| T-16 | [#42](https://github.com/ojordan0/AI4Devs-finalproject/issues/42) | Marking items as shipped | E-06 | US-19, US-21 | Full stack | 5 | D3 | L | T-12, T-15 |
+| T-17 | [#43](https://github.com/ojordan0/AI4Devs-finalproject/issues/43) | End-to-end test of the core cycle and test suite completion | E-08 | None | QA | All | D3 | M | T-16 |
+| T-18 | [#44](https://github.com/ojordan0/AI4Devs-finalproject/issues/44) | Deployment evidence and final documentation | E-08 | None | Documentation | All | D3 | S | T-17 |
 
 ## 4. Tickets
 

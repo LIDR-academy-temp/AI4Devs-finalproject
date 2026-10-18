@@ -1,6 +1,6 @@
 # Product Requirements Document: Assisted Shopping Platform (MVP)
 
-**Version:** 1.4 (draft) · **Date:** October 17, 2026  
+**Version:** 1.5 · **Date:** October 18, 2026  
 **Project Manager and Product owner:** Odalys Jordan Enriquez  
 **Product Name:** ComproParaTi ("I buy for you", [section 16](#16-product-decisions))
 

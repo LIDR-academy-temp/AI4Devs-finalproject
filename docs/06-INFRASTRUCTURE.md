@@ -1,6 +1,6 @@
 # Infrastructure and deployment
 
-**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.4 (draft) · **Date:** October 17, 2026
+**Assisted Shopping Platform: ComproParaTi** · **Version:** 1.5 · **Date:** October 18, 2026
 
 Part of the project documentation ([readme](../readme.md)). IDs (`BR`, `FR`, `E`, `US`, `AC`) are defined in the [PRD](01-PRD.md).
 

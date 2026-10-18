@@ -183,11 +183,11 @@ The three endpoints of the core cycle are also defined in OpenAPI 3.1, with requ
 
 ## 5. User stories
 
-**User story 1 (US-10):** As a member, I want to add an item by typing only its name, so that requesting something takes seconds.
+**User story 1 (US-10, [#10](https://github.com/ojordan0/AI4Devs-finalproject/issues/10)):** As a member, I want to add an item by typing only its name, so that requesting something takes seconds.
 
-**User story 2 (US-15):** As a buyer, I want to reserve an item, so that nobody else buys it too.
+**User story 2 (US-15, [#15](https://github.com/ojordan0/AI4Devs-finalproject/issues/15)):** As a buyer, I want to reserve an item, so that nobody else buys it too.
 
-**User story 3 (US-19):** As a buyer, I want to record one shipment for several items, with the address ready to copy, so that shipping a box takes one step.
+**User story 3 (US-19, [#19](https://github.com/ojordan0/AI4Devs-finalproject/issues/19)):** As a buyer, I want to record one shipment for several items, with the address ready to copy, so that shipping a box takes one step.
 
 The 26 stories are grouped into 8 epics, which also show what each milestone delivers. Each story is linked to its requirements and acceptance criteria, and is tracked as an issue in GitHub.
 
@@ -197,13 +197,13 @@ The 26 stories are grouped into 8 epics, which also show what each milestone del
 
 ## 6. Work tickets
 
-Milestone 1 is split into 18 tickets, each with its epic, user stories, type, increment, course delivery, size, dependencies, scope, and the acceptance criteria it must pass. Stories and tickets are tracked in GitHub Issues, with a board in a GitHub Project linked to the repository. Three representative tickets:
+Milestone 1 is split into 18 tickets, each with its epic, user stories, type, increment, course delivery, size, dependencies, scope, and the acceptance criteria it must pass. Stories and tickets are tracked in [GitHub Issues](https://github.com/ojordan0/AI4Devs-finalproject/issues), with a [board](https://github.com/users/ojordan0/projects/1) in a GitHub Project linked to the repository. Three representative tickets:
 
-**Ticket 1 (database), T-02 Database schema, migrations, and seed data:** the complete data model in Postgres with Drizzle, including every constraint and index, the first migration, and a seed script that covers every status and permission case. Done when `npm run setup` builds the database from scratch with seed data and the constraint tests pass in CI.
+**Ticket 1 (database), T-02 Database schema, migrations, and seed data ([#28](https://github.com/ojordan0/AI4Devs-finalproject/issues/28)):** the complete data model in Postgres with Drizzle, including every constraint and index, the first migration, and a seed script that covers every status and permission case. Done when `npm run setup` builds the database from scratch with seed data and the constraint tests pass in CI.
 
-**Ticket 2 (backend), T-11 Status changes: reserve, release, purchase:** reservation as a single conditional update so the first of two buyers wins, release, and purchase with an optional note, each recorded in the item's history, plus the To buy and My purchases endpoints. Verified by AC-58 to AC-62.
+**Ticket 2 (backend), T-11 Status changes: reserve, release, purchase ([#37](https://github.com/ojordan0/AI4Devs-finalproject/issues/37)):** reservation as a single conditional update so the first of two buyers wins, release, and purchase with an optional note, each recorded in the item's history, plus the To buy and My purchases endpoints. Verified by AC-58 to AC-62.
 
-**Ticket 3 (frontend), T-10 Lists screen, item form, and item page:** quick add, the list switcher and filters, the item form validated as the user types, and the member's item page with the actions for each status.
+**Ticket 3 (frontend), T-10 Lists screen, item form, and item page ([#36](https://github.com/ojordan0/AI4Devs-finalproject/issues/36)):** quick add, the list switcher and filters, the item form validated as the user types, and the member's item page with the actions for each status.
 
 **Full documentation:** [Work tickets](docs/08-WORK-TICKETS.md), including [tracking in GitHub](docs/08-WORK-TICKETS.md#2-tracking-in-github)
 

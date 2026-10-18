@@ -100,20 +100,21 @@ def parse_docs(root):
             "epic": story_epic[sid], "milestones": milestones,
         }
 
-    overview = {r[0]: r for r in table_rows(tickets_md, r"T-\d+")}
+    header = table_rows(tickets_md, "ID")[0]
+    overview = {r[0]: dict(zip(header, r)) for r in table_rows(tickets_md, r"T-\d+")}
     tickets = {}
     for m in re.finditer(r"^### (T-\d+) (.+?)\n(.*?)(?=^### T-|\Z)", tickets_md, re.M | re.S):
         tid, title, body = m.group(1), m.group(2).strip(), m.group(3)
-        row = overview[tid]  # ID, Title, Epic, Stories, Type, Increment, Delivery, Size, Depends on
+        row = overview[tid]
         goal = re.search(r"\*\*Goal:\*\*\s*(.+)", body)
         acs = re.search(r"\*\*Acceptance criteria:\*\*\s*(.+)", body)
         done = re.search(r"\*\*Done when:\*\*\s*(.+)", body)
-        story_ids = [] if row[3] == "None" else [s.strip() for s in row[3].split(",")]
-        deps = [] if row[8] == "None" else [d.strip() for d in row[8].split(",")]
+        story_ids = [] if row["Stories"] == "None" else [s.strip() for s in row["Stories"].split(",")]
+        deps = [] if row["Depends on"] == "None" else [d.strip() for d in row["Depends on"].split(",")]
         tickets[tid] = {
             "title": f"{tid} {title}", "heading": f"{tid} {title}",
-            "epic": row[2], "stories": story_ids, "type": row[4],
-            "increment": row[5], "delivery": row[6], "size": row[7], "depends": deps,
+            "epic": row["Epic"], "stories": story_ids, "type": row["Type"],
+            "increment": row["Increment"], "delivery": row["Delivery"], "size": row["Size"], "depends": deps,
             "goal": absolute_links(goal.group(1).strip()) if goal else "",
             "acceptance": acs.group(1).strip() if acs else "",
             "done_when": absolute_links(done.group(1).strip()) if done else "",
