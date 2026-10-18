@@ -19,6 +19,9 @@ export default defineConfig(({ mode }) => {
       setupFiles: ['./src/test/setup.ts'],
       include: ['src/**/*.test.{ts,tsx}'],
       css: false,
+      // The import screens mount one Radix Select per sheet control and column (a two-file batch has over a
+      // hundred); under jsdom a test that walks Files and Mapping takes several seconds.
+      testTimeout: 15_000,
     },
   }
 })

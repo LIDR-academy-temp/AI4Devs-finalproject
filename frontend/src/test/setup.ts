@@ -34,6 +34,11 @@ const NativeFormData = (
 ).constructor as typeof FormData
 Object.assign(globalThis, { FormData: NativeFormData, File: NodeFile, Blob: NodeBlob })
 
+// Radix Select asks for pointer capture and scrolls the chosen option into view; jsdom implements neither.
+Element.prototype.hasPointerCapture ??= () => false
+Element.prototype.releasePointerCapture ??= () => {}
+Element.prototype.scrollIntoView ??= () => {}
+
 // jsdom does not implement scrolling; the router's scroll restoration calls it on every navigation.
 window.scrollTo = () => {}
 
