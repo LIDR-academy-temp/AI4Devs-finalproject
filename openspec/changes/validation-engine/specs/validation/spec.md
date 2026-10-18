@@ -32,7 +32,7 @@ Una corrida SHALL producir exactamente ocho resultados con `validationCode` en e
 - **THEN** ningún hallazgo tiene `blocking = 1` y el resultado global es `blocked = false`
 
 ### Requirement: Clave de duplicado y colisión
-Duplicados y colisiones SHALL evaluarse por `(transactionId, cycle)`: mismo estado → duplicado; estados distintos del mismo ciclo → colisión. Las apariciones SHALL guardarse en `ConflictOccurrence` (N por hallazgo). Valores por defecto de inclusión: duplicate in_batch → primera incluida; duplicate across_batches → actual excluida; collision in_batch → todas incluidas; collision across_batches → actual incluida. El analista puede cambiar la inclusión y queda auditado.
+Duplicados y colisiones SHALL evaluarse por `(transactionId, cycle)`: mismo estado → duplicado; estados distintos del mismo ciclo → colisión. En el ciclo R el estado no cuenta: dos apariciones R de la misma transacción SHALL ser siempre duplicado. Las apariciones SHALL guardarse en `ConflictOccurrence` (N por hallazgo). Valores por defecto de inclusión: duplicate in_batch → primera incluida; duplicate across_batches → actual excluida; collision in_batch → todas incluidas; collision across_batches → actual incluida. El analista puede cambiar la inclusión y queda auditado.
 
 #### Scenario: Duplicado en el batch con sus dos apariciones
 - **GIVEN** `data/samples/batch-issues`, donde la transacción `441706751475644` aparece dos veces en la hoja APP
@@ -43,6 +43,11 @@ Duplicados y colisiones SHALL evaluarse por `(transactionId, cycle)`: mismo esta
 - **GIVEN** una transacción con una fila en APP (ciclo E) y otra en RR (ciclo R) del mismo import
 - **WHEN** se valida
 - **THEN** no se produce ningún duplicado ni colisión
+
+#### Scenario: Dos filas RR de la misma transacción
+- **GIVEN** un import con dos filas RR de la misma transacción, una con estado `Successful` y otra con `Chargeback`
+- **WHEN** se valida
+- **THEN** hay un `duplicate` / `in_batch` (la primera incluida, la segunda excluida) y ninguna colisión
 
 #### Scenario: Colisión en el batch
 - **GIVEN** `data/samples/batch-issues`, donde `911545593909470` aparece en APP y en DEC
@@ -242,6 +247,11 @@ Las filas del import SHALL compararse por `(transactionId, cycle)` con los movim
 - **GIVEN** `data/samples/batch-issues`, donde `381797111970492` se liquidó `Successful` en el batch anterior y ahora viene en DEC
 - **WHEN** se valida
 - **THEN** hay una `collision` / `across_batches` con la aparición actual incluida
+
+#### Scenario: Reserva ya liberada que vuelve en RR
+- **GIVEN** un movimiento R de un batch vigente anterior con estado `Successful` y, en el import, una fila RR de la misma transacción cuyo estado actual es `Chargeback`
+- **WHEN** se valida
+- **THEN** hay un `duplicate` / `across_batches` con la fila actual excluida por defecto, y ninguna `collision` (la reserva no se libera dos veces)
 
 #### Scenario: Batch deshecho
 - **GIVEN** una transacción cuyo único movimiento E anterior pertenece a un intento `undone`

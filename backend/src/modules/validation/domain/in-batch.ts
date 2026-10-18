@@ -1,4 +1,4 @@
-import { relation } from './conflict-key.js'
+import { relation, statusCounts } from './conflict-key.js'
 import type { MatchedRow } from './partition.js'
 import type { SlotOutput, ValidationContext } from './run-validations.js'
 import type { Issue, Occurrence } from './types.js'
@@ -13,7 +13,15 @@ type ComparableRow = MatchedRow & { statusId: number }
  * resolved silently. Two or more collision groups are a collision listing the first row of every subgroup (CHB 2
  * included next to its Chargeback) and every unresolved row, all included, in arrival order.
  */
-function groupsOf(rows: readonly MatchedRow[], ctx: ValidationContext) {
+function groupsOf(
+  rows: readonly MatchedRow[],
+  ctx: ValidationContext,
+): {
+  subgroups: MatchedRow[][]
+  collisionFirsts: MatchedRow[]
+} {
+  // R: no status, every row of the key is the same movement.
+  if (!statusCounts(rows[0]!.cycle)) return { subgroups: [[...rows]], collisionFirsts: [] }
   const subgroups: ComparableRow[][] = []
   const unresolved: MatchedRow[] = []
   for (const r of rows) {

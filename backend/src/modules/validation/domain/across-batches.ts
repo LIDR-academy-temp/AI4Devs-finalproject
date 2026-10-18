@@ -1,4 +1,4 @@
-import { relation } from './conflict-key.js'
+import { relation, statusCounts } from './conflict-key.js'
 import type { MatchedRow } from './partition.js'
 import type { SlotOutput, ValidationContext } from './run-validations.js'
 import type { HistoryMovement, Issue, Occurrence } from './types.js'
@@ -7,7 +7,8 @@ import type { HistoryMovement, Issue, Occurrence } from './types.js'
  * Per `(transactionId, cycle)` key with history (question 6): the current rows with some historical movement of the
  * same (status, excludeAmount) are a duplicate (current excluded, historical as evidence); those with some movement
  * of a different status are a collision (current included). Chargeback against CHB 2 is compatible: nothing
- * (question 7). A current row whose status is unresolved differs from every historical movement: a collision.
+ * (question 7). A current row whose status is unresolved differs from every historical movement: a collision. In R the
+ * status does not count: every current R row of a key with R history is a duplicate.
  * Independent of the in-batch detection.
  */
 function acrossBatches(ctx: ValidationContext, wanted: 'same' | 'different'): SlotOutput {
@@ -20,9 +21,11 @@ function acrossBatches(ctx: ValidationContext, wanted: 'same' | 'different'): Sl
     for (const r of rows) {
       const statusId = r.statusId
       const hits = history.filter((m) =>
-        statusId === null
-          ? wanted === 'different'
-          : relation({ statusId, excludeAmount: r.excludeAmount }, m, ctx.catalog) === wanted,
+        !statusCounts(r.cycle)
+          ? wanted === 'same'
+          : statusId === null
+            ? wanted === 'different'
+            : relation({ statusId, excludeAmount: r.excludeAmount }, m, ctx.catalog) === wanted,
       )
       if (hits.length === 0) continue
       current.push(r)

@@ -5,6 +5,13 @@ import type { HistoryMovement, ValidationRow } from './types.js'
 /** Duplicate / collision key (README §3.3): the same movement is the same transaction in the same cycle. */
 export const conflictKey = (transactionId: bigint, cycle: Cycle): string => `${transactionId}:${cycle}`
 
+/**
+ * Whether the status takes part in comparing two occurrences of a key. Not in R: the rolling reserve has no status
+ * (an R row carries the current status of the transaction, a settled R movement the one it had when released), so two
+ * R occurrences of the same transaction are always the same movement, a duplicate.
+ */
+export const statusCounts = (cycle: Cycle): boolean => cycle !== 'R'
+
 /** "First occurrence" (question 13): file uploaded first, earlier sheet in the workbook, lower rowNo. */
 export function compareCurrent(
   a: Pick<ValidationRow, 'fileOrder' | 'sheetOrder' | 'rowNo'>,
