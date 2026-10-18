@@ -35,6 +35,10 @@ function kindForStatus(status: number): ApiErrorKind {
 
 /** The only place that calls fetch and attaches the token. Components never call fetch. */
 export function createApiClient({ baseUrl }: { baseUrl: string }): ApiClient {
+  if (!baseUrl || !baseUrl.trim()) {
+    throw new Error("baseUrl must not be empty");
+  }
+
   async function request<TResponse>(path: string, init: RequestInit): Promise<TResponse> {
     const headers = new Headers(init.headers);
     headers.set("Accept", "application/json");

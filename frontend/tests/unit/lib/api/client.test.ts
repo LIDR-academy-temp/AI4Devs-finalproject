@@ -148,4 +148,12 @@ describe("createApiClient", () => {
       message: "Order reference already exists",
     });
   });
+
+  it("throws an error if baseUrl is empty", () => {
+    expect(() => createApiClient({ baseUrl: "" })).toThrow("baseUrl must not be empty");
+  });
+
+  it("throws an error if baseUrl is whitespace only", () => {
+    expect(() => createApiClient({ baseUrl: "   " })).toThrow("baseUrl must not be empty");
+  });
 });
