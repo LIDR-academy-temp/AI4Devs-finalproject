@@ -279,4 +279,38 @@ describe("ApiError fieldErrors parsing", () => {
       fieldErrors: {},
     });
   });
+
+  it("uses generic message for 422 validation errors, not [object Object]", async () => {
+    const user = { id_token: "token", expired: false } as unknown as User;
+    mockGetUser.mockResolvedValue(user);
+
+    stubFetch(422, {
+      detail: [
+        {
+          type: "too_short",
+          loc: ["body", "lines"],
+          msg: "List should have at least 1 item",
+        },
+      ],
+    });
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
+
+    const failure = client.post("/campaigns", {});
+
+    await expect(failure).rejects.toMatchObject({
+      kind: "failed",
+      status: 422,
+    });
+
+    try {
+      await client.post("/campaigns", {});
+    } catch (error) {
+      if (error instanceof Error) {
+        // Message should be readable and never contain [object Object]
+        expect(error.message).toBe("Hay campos con errores");
+        expect(error.message).not.toContain("[object Object]");
+        expect(typeof error.message).toBe("string");
+      }
+    }
+  });
 });

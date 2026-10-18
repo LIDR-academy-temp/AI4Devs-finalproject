@@ -124,13 +124,21 @@ export function createApiClient({ baseUrl }: { baseUrl: string }): ApiClient {
       }
 
       const kind = kindForStatus(response.status);
-      const error = new ApiError(
-        kind,
-        response.status,
-        errorResponse.message || errorResponse.detail || `Request to ${path} failed`,
-        errorResponse.code,
-        errorResponse,
-      );
+
+      // Build message: always string, never [object Object]
+      let message: string;
+      if (errorResponse.message) {
+        message = errorResponse.message;
+      } else if (typeof errorResponse.detail === "string") {
+        message = errorResponse.detail;
+      } else if (Array.isArray(errorResponse.detail)) {
+        // Validation errors: use generic message, details are in fieldErrors
+        message = "Hay campos con errores";
+      } else {
+        message = `Request to ${path} failed`;
+      }
+
+      const error = new ApiError(kind, response.status, message, errorResponse.code, errorResponse);
 
       // On 401, remove the user session
       if (response.status === 401) {
