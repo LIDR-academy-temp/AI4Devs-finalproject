@@ -276,3 +276,29 @@ describe('PATCH /validation-issues/:issueId', () => {
     expect(res.json()).toMatchObject({ code: 'issue_not_resolvable', details: { issueType: 'duplicate' } })
   })
 })
+
+describe('POST /imports/:importId/review', () => {
+  it('200 validated with the review of the current run', async () => {
+    const run = ValidationRunView.parse((await request('POST', `/imports/${importId}/validations`)).json())
+
+    const res = await request('POST', `/imports/${importId}/review`, { body: { runId: run.run!.runId } })
+
+    expect(res.statusCode).toBe(200)
+    const view = ValidationRunView.parse(res.json())
+    expect(view.importStatus).toBe('validated')
+    expect(view.run?.review?.reviewedBy.userName).toBe('analyst')
+  })
+
+  it('400 validation_error without runId or with extra fields, 403 for viewer, 409 without a run', async () => {
+    for (const body of [{}, { runId: 1, decision: 'cancel' }, { runId: 'one' }]) {
+      const res = await request('POST', `/imports/${importId}/review`, { body })
+      expect(res.statusCode, JSON.stringify(body)).toBe(400)
+      expect(errorCode(res.json())).toBe('validation_error')
+    }
+    const forbidden = await request('POST', `/imports/${importId}/review`, { body: { runId: 1 }, user: 'viewer' })
+    expect(forbidden.statusCode).toBe(403)
+    const required = await request('POST', `/imports/${importId}/review`, { body: { runId: 1 } })
+    expect(required.statusCode).toBe(409)
+    expect(errorCode(required.json())).toBe('validation_run_required')
+  })
+})
