@@ -114,7 +114,7 @@ async function build(name: SampleName): Promise<SampleInput> {
   const input: ValidationInput = {
     account,
     rows,
-    history: await sources.movements(account.providerId, [...ids]),
+    history: await sources.movements(account.providerId, [...ids], importId),
     hasPreviousBatches: await sources.hasPreviousBatches(account.providerId, importId),
     candidates,
     reserveCandidates,

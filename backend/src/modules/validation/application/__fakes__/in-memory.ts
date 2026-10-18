@@ -226,11 +226,16 @@ export class InMemoryValidationSources
     )
   }
 
-  async movements(providerId: number, transactionIds: readonly bigint[]): Promise<HistoryMovement[]> {
+  async movements(
+    providerId: number,
+    transactionIds: readonly bigint[],
+    excludeImportId: string,
+  ): Promise<HistoryMovement[]> {
     const wanted = new Set(transactionIds)
     const out: HistoryMovement[] = []
     for (const b of this.batches) {
-      if (this.providerOf(b.accountId) !== providerId) continue
+      if (b.status === 'undone' || b.importId === excludeImportId || this.providerOf(b.accountId) !== providerId)
+        continue
       for (const m of b.movements) {
         if (!wanted.has(m.transactionId)) continue
         out.push({
@@ -238,7 +243,7 @@ export class InMemoryValidationSources
           accountId: b.accountId,
           batchNo: b.batchNo,
           attemptNo: b.attemptNo,
-          batchStatus: b.status === 'paid' ? 'paid' : 'processed',
+          batchStatus: b.status,
           transactionId: m.transactionId,
           cycle: m.cycle,
           statusId: m.statusId,

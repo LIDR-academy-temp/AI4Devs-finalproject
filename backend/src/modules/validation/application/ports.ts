@@ -21,10 +21,10 @@ export interface AccountScopeSource {
   accountOf(importId: string): Promise<AccountScope>
 }
 
-/** SettlementTransaction of attempts with status <> 'undone', of every account of the provider. */
+/** SettlementTransaction of attempts with status <> 'undone', of every account of the provider, not of this import. */
 export interface SettlementHistorySource {
   hasPreviousBatches(providerId: number, excludeImportId: string): Promise<boolean>
-  movements(providerId: number, transactionIds: readonly bigint[]): Promise<HistoryMovement[]>
+  movements(providerId: number, transactionIds: readonly bigint[], excludeImportId: string): Promise<HistoryMovement[]>
 }
 
 /**
