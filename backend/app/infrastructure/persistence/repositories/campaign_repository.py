@@ -98,9 +98,10 @@ class CampaignRepositoryImpl(CampaignRepositoryInterface):
 
             self.session.flush()
 
-            # Update domain lines with assigned IDs
+            # Update domain lines with assigned IDs and period references
             for line, line_model in line_models:
                 line.id = line_model.id
+                line.campaign_period_id = line_model.campaign_period_id
 
             self.session.commit()
             return campaign_id

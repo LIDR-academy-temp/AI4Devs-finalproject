@@ -348,3 +348,44 @@ def test_register_campaign_duplicate_name_no_purchase_order_created(authenticate
     # Verify no new purchase_order was created
     po_after = test_db_session.query(PurchaseOrderRecord).count()
     assert po_before == po_after, f"Purchase order created despite 409 error. Before: {po_before}, After: {po_after}"
+
+
+def test_register_campaign_lines_have_valid_period_ids(authenticated_client):
+    """Test that each line's campaign_period_id matches a period in the response."""
+    payload = {
+        "name": "CAMP-PERIOD-ID-TEST",
+        "display_name": "Campaign Period ID Test",
+        "agency_id": 1,
+        "advertiser_id": 1,
+        "campaign_type_id": 1,
+        "sector_id": 1,
+        "sales_rep_id": 1,
+        "start_date": "2026-01-01",
+        "end_date": "2026-03-31",
+        "order_reference": "PO-PERIOD-ID-TEST",
+        "order_received_on": "2025-12-15",
+        "lines": [
+            {
+                "dsp_id": 1,
+                "channel_id": 1,
+                "format_id": 1,
+                "scope": "national",
+                "market_description": "Spain",
+                "contracted_impressions": 1000000,
+                "sale_cpm": "25.50"
+            }
+        ]
+    }
+
+    response = authenticated_client.post("/campaigns", json=payload)
+    assert response.status_code == 201, f"Expected 201, got {response.status_code}: {response.text}"
+
+    data = response.json()
+    period_ids = {p["id"] for p in data["periods"]}
+
+    # Verify each line has a campaign_period_id that exists in the periods list
+    for line in data["lines"]:
+        campaign_period_id = line.get("campaign_period_id")
+        assert campaign_period_id is not None, f"Line {line['id']} has no campaign_period_id"
+        assert campaign_period_id != 0, f"Line {line['id']} has campaign_period_id=0 (should be > 0)"
+        assert campaign_period_id in period_ids, f"Line {line['id']} campaign_period_id={campaign_period_id} does not match any period id in {period_ids}"
