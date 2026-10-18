@@ -97,6 +97,22 @@ describe('duplicate_in_batch and status_collision_in_batch', () => {
     expect(col.issueCount).toBe(1)
   })
 
+  it('CHB + CHB 2 + Refund of the same movement: one collision listing all three occurrences (M2)', () => {
+    const { dup, col } = run([
+      row({ cycle: 'I', status: 'Chargeback', gateway: 'Refund', rowNo: 2 }),
+      row({ cycle: 'I', status: 'Chargeback', gateway: 'Refund', excludeAmount: true, rowNo: 3 }),
+      row({ cycle: 'I', status: 'Refund', gateway: 'Refund', rowNo: 4 }),
+    ])
+
+    expect(dup.issues).toEqual([])
+    expect(col.issueCount).toBe(1)
+    expect(col.issues[0]!.occurrences.map((o) => [o.statusId, o.excludeAmount, o.defaultIncluded])).toEqual([
+      [STATUS.Chargeback, false, true],
+      [STATUS.Chargeback, true, true],
+      [STATUS.Refund, false, true],
+    ])
+  })
+
   it('APP, APP, DEC: one duplicate (second Successful excluded) and one collision (first Successful and the Declined)', () => {
     const { dup, col } = run([
       row({ sheetId: 'APP', sheetOrder: 0, rowNo: 2 }),
