@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 from app.domain.exceptions import (
     DomainError,
+    DuplicateCampaignNameError,
     DuplicateOrderReferenceError,
     IdentityProviderUnavailableError,
     InactiveUserError,
@@ -40,6 +41,9 @@ _ERROR_MAPPINGS: dict[type[DomainError], _ErrorMapping] = {
     UnregisteredUserError: _ErrorMapping(403, "user_not_registered", "User is not registered"),
     InactiveUserError: _ErrorMapping(403, "user_inactive", "User is inactive"),
     MissingRoleError: _ErrorMapping(403, "missing_role", "User lacks the required role"),
+    DuplicateCampaignNameError: _ErrorMapping(
+        409, "duplicate_campaign_name", "A campaign with this name already exists"
+    ),
     DuplicateOrderReferenceError: _ErrorMapping(
         409, "duplicate_order_reference", "A purchase order with this reference already exists"
     ),

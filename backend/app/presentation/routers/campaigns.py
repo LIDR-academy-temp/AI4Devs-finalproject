@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Annotated
 
 from app.domain.models.user import RoleName, User
-from app.domain.exceptions import DuplicateCampaignNameError, DuplicateOrderReferenceError
 from app.presentation.dependencies.auth import require_roles, get_current_user
 from app.presentation.schemas.campaign import (
     CampaignCreateRequest,
@@ -80,71 +79,51 @@ async def register_campaign(
             order_received_on=request.order_received_on,
             lines_data=[line.model_dump() for line in request.lines],
         )
-
-        # Convert campaign entity to response schema
-        return CampaignResponse(
-            id=campaign.id,
-            name=campaign.name,
-            display_name=campaign.display_name,
-            agency_id=campaign.agency_id,
-            advertiser_id=campaign.advertiser_id,
-            campaign_type_id=campaign.campaign_type_id,
-            sector_id=campaign.sector_id,
-            sales_rep_id=campaign.sales_rep_id,
-            purchase_order_id=campaign.purchase_order_id,
-            start_date=campaign.start_date,
-            end_date=campaign.end_date,
-            status=campaign.status,
-            periods=[
-                {
-                    "id": p.id,
-                    "campaign_id": p.campaign_id,
-                    "period_year": p.period_year,
-                    "period_month": p.period_month,
-                    "period_start": p.period_start,
-                    "period_end": p.period_end,
-                    "status": p.status,
-                }
-                for p in campaign.periods
-            ],
-            lines=[
-                {
-                    "id": l.id,
-                    "campaign_period_id": l.campaign_period_id,
-                    "dsp_id": l.dsp_id,
-                    "channel_id": l.channel_id,
-                    "format_id": l.format_id,
-                    "scope": l.scope,
-                    "market_description": l.market_description,
-                    "contracted_impressions": l.volume.contracted_impressions,
-                    "sale_cpm": l.volume.sale_cpm,
-                    "currency": l.currency,
-                }
-                for l in campaign.lines
-            ],
-        )
-
-    except DuplicateCampaignNameError:
-        # Campaign name already exists
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "code": "duplicate_campaign_name",
-                "message": f"Campaign with name '{request.name}' already exists"
-            }
-        )
-    except DuplicateOrderReferenceError:
-        # Order reference already exists
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "code": "duplicate_order_reference",
-                "message": f"Purchase order with reference '{request.order_reference}' already exists"
-            }
-        )
     except ValueError as e:
-        # Master data validation error
         raise HTTPException(status_code=400, detail=str(e))
+
+    # Convert campaign entity to response schema
+    return CampaignResponse(
+        id=campaign.id,
+        name=campaign.name,
+        display_name=campaign.display_name,
+        agency_id=campaign.agency_id,
+        advertiser_id=campaign.advertiser_id,
+        campaign_type_id=campaign.campaign_type_id,
+        sector_id=campaign.sector_id,
+        sales_rep_id=campaign.sales_rep_id,
+        purchase_order_id=campaign.purchase_order_id,
+        start_date=campaign.start_date,
+        end_date=campaign.end_date,
+        status=campaign.status,
+        periods=[
+            {
+                "id": p.id,
+                "campaign_id": p.campaign_id,
+                "period_year": p.period_year,
+                "period_month": p.period_month,
+                "period_start": p.period_start,
+                "period_end": p.period_end,
+                "status": p.status,
+            }
+            for p in campaign.periods
+        ],
+        lines=[
+            {
+                "id": l.id,
+                "campaign_period_id": l.campaign_period_id,
+                "dsp_id": l.dsp_id,
+                "channel_id": l.channel_id,
+                "format_id": l.format_id,
+                "scope": l.scope,
+                "market_description": l.market_description,
+                "contracted_impressions": l.volume.contracted_impressions,
+                "sale_cpm": l.volume.sale_cpm,
+                "currency": l.currency,
+            }
+            for l in campaign.lines
+        ],
+    )
 
 
 def get_campaign_list_repo(

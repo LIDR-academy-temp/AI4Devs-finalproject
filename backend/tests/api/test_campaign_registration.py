@@ -153,8 +153,9 @@ def test_register_campaign_duplicate_order_reference(authenticated_client):
     }
     response2 = authenticated_client.post("/campaigns", json=payload2)
     assert response2.status_code == 409
-    detail = response2.json().get("detail", {})
-    assert detail.get("code") == "duplicate_order_reference", f"Expected duplicate_order_reference code, got {response2.json()}"
+    data = response2.json()
+    assert data.get("code") == "duplicate_order_reference", f"Expected code field at root level, got {data}"
+    assert "message" in data, f"Expected message field in response, got {data}"
 
 
 def test_register_campaign_error_no_sql_exposure(authenticated_client):
@@ -294,8 +295,9 @@ def test_register_campaign_duplicate_name(authenticated_client):
     }
     response2 = authenticated_client.post("/campaigns", json=payload2)
     assert response2.status_code == 409, f"Expected 409, got {response2.status_code}: {response2.text}"
-    detail = response2.json().get("detail", {})
-    assert detail.get("code") == "duplicate_campaign_name", f"Expected duplicate_campaign_name code, got {response2.json()}"
+    data = response2.json()
+    assert data.get("code") == "duplicate_campaign_name", f"Expected code field at root level, got {data}"
+    assert "message" in data, f"Expected message field in response, got {data}"
 
 
 def test_register_campaign_duplicate_name_no_purchase_order_created(authenticated_client, test_db_session):
