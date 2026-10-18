@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest'
+import { Blob as NodeBlob, File as NodeFile } from 'node:buffer'
 import { cleanup } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll } from 'vitest'
 import { session } from '@/lib/session/session'
@@ -25,6 +26,13 @@ class InMemoryLockManager {
 }
 
 Object.defineProperty(navigator, 'locks', { value: new InMemoryLockManager(), configurable: true })
+
+// jsdom's FormData, File and Blob cannot be streamed by Node's fetch (a multipart body never ends). The uploads
+// use Node's own classes, the ones the fetch of the tests understands.
+const NativeFormData = (
+  await new Response('a=1', { headers: { 'content-type': 'application/x-www-form-urlencoded' } }).formData()
+).constructor as typeof FormData
+Object.assign(globalThis, { FormData: NativeFormData, File: NodeFile, Blob: NodeBlob })
 
 // jsdom does not implement scrolling; the router's scroll restoration calls it on every navigation.
 window.scrollTo = () => {}
