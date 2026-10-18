@@ -177,16 +177,21 @@ La barra lateral SHALL mostrar el mapa de pantallas MVP de README §1.3 en sus g
 #### Scenario: analyst
 - **GIVEN** el usuario `analyst` (`settlement.process`, `fee.view`, `reports.view`)
 - **WHEN** entra
-- **THEN** ve New Reconciliation e In Progress (deshabilitadas mientras no existan) y no ve Payments ni Users & Roles
+- **THEN** ve New Reconciliation como enlace a `/reconciliations/new`, In Progress deshabilitada mientras no exista, y no ve Payments ni Users & Roles
 
 #### Scenario: admin
 - **GIVEN** el usuario `admin` (los siete permisos)
 - **WHEN** entra
-- **THEN** ve todas las entradas MVP de §1.3; solo Dashboard y Accounts son enlaces en este tramo
+- **THEN** ve todas las entradas MVP de §1.3; solo Dashboard, New Reconciliation y Accounts son enlaces en este tramo
 
 #### Scenario: Entrada deshabilitada
 - **WHEN** un usuario pulsa una entrada aún no construida
 - **THEN** no cambia de ruta y la entrada se anuncia como no disponible a los lectores de pantalla
+
+#### Scenario: Entrada activa en el espacio de un import
+- **GIVEN** `analyst` en `/imports/<importId>`
+- **WHEN** mira la barra lateral
+- **THEN** New Reconciliation aparece como la entrada activa
 
 ### Requirement: Guarda de ruta por permiso
 Una ruta que requiera un permiso SHALL mostrar, dentro del layout, la página `You don't have access to this page` a un usuario cuyo rol no lo tenga, sin llamar a los endpoints de esa pantalla. La guarda SHALL ser solo de presentación: el API sigue respondiendo `403` por su cuenta.
