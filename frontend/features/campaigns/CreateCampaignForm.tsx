@@ -280,6 +280,12 @@ export function CreateCampaignForm({ onAuthError }: CreateCampaignFormProps = {}
           // Access denied - notify parent component
           onAuthError?.("forbidden");
           setSubmitError("No tienes permiso para registrar campañas.");
+        } else if (err.status === 409 && err.code === "duplicate_campaign_name") {
+          // Duplicate campaign name - set error in the field
+          setFieldErrors({
+            name: "Esta campaña ya existe",
+          });
+          setSubmitError("Por favor corrige los errores antes de enviar.");
         } else if (err.status === 409 && err.code === "duplicate_order_reference") {
           // Duplicate order reference - set error in the field
           setFieldErrors({
