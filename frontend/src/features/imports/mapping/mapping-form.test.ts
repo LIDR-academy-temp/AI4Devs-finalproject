@@ -74,6 +74,15 @@ describe('initial values', () => {
 })
 
 describe('toMappingConfirmation', () => {
+  it('refuses a sheet without a type instead of sending it as ignore', () => {
+    const detail = seedImport('bonus')
+    const values = valuesFromDetail(detail)
+    const bonus = sheetOf(detail, 'Bonus').sheetId
+    expect(values.sheets[bonus]!.kind).toBeNull()
+
+    expect(() => toMappingConfirmation(values, detail)).toThrow(/Bonus/)
+  })
+
   it('turns the proposal of batch-clean into the body of every sheet', () => {
     const detail = seedImport('batch-clean')
     const body = toMappingConfirmation(valuesFromDetail(detail), detail)
