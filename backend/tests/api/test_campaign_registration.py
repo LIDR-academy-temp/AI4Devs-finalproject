@@ -56,7 +56,17 @@ def test_register_campaign_no_token(client):
         "end_date": "2026-03-31",
         "order_reference": "PO-SYNC-002",
         "order_received_on": "2025-12-15",
-        "lines": []
+        "lines": [
+            {
+                "dsp_id": 1,
+                "channel_id": 1,
+                "format_id": 1,
+                "scope": "national",
+                "market_description": "Spain",
+                "contracted_impressions": 1000000,
+                "sale_cpm": "25.50"
+            }
+        ]
     }
 
     response = client.post("/campaigns", json=payload)
@@ -78,7 +88,17 @@ def test_register_campaign_invalid_agency(authenticated_client):
         "end_date": "2026-03-31",
         "order_reference": "PO-SYNC-003",
         "order_received_on": "2025-12-15",
-        "lines": []
+        "lines": [
+            {
+                "dsp_id": 1,
+                "channel_id": 1,
+                "format_id": 1,
+                "scope": "national",
+                "market_description": "Spain",
+                "contracted_impressions": 1000000,
+                "sale_cpm": "25.50"
+            }
+        ]
     }
 
     response = authenticated_client.post("/campaigns", json=payload)
@@ -108,7 +128,17 @@ def test_register_campaign_duplicate_order_reference(authenticated_client):
         "end_date": "2026-03-31",
         "order_reference": "PO-DUPLICATE-001",
         "order_received_on": "2025-12-15",
-        "lines": []
+        "lines": [
+            {
+                "dsp_id": 1,
+                "channel_id": 1,
+                "format_id": 1,
+                "scope": "national",
+                "market_description": "Spain",
+                "contracted_impressions": 1000000,
+                "sale_cpm": "25.50"
+            }
+        ]
     }
 
     # First registration succeeds
@@ -175,3 +205,50 @@ def test_list_campaigns_returns_created_campaign(authenticated_client):
     campaigns = list_response.json()
     campaign_names = [c.get("name") for c in campaigns]
     assert "CAMP-LIST-TEST-001" in campaign_names, f"Campaign not found in list: {campaigns}"
+
+
+def test_register_campaign_empty_lines_returns_422(authenticated_client):
+    """Test that campaign with empty lines list returns 422 validation error."""
+    payload = {
+        "name": "CAMP-EMPTY-LINES",
+        "display_name": "Campaign with Empty Lines",
+        "agency_id": 1,
+        "advertiser_id": 1,
+        "campaign_type_id": 1,
+        "sector_id": 1,
+        "sales_rep_id": 1,
+        "start_date": "2026-01-01",
+        "end_date": "2026-03-31",
+        "order_reference": "PO-EMPTY-LINES",
+        "order_received_on": "2025-12-15",
+        "lines": []
+    }
+
+    response = authenticated_client.post("/campaigns", json=payload)
+
+    assert response.status_code == 422
+    errors = response.json()["detail"]
+    assert any(e.get("loc") == ["body", "lines"] for e in errors), f"Expected lines validation error, got {errors}"
+
+
+def test_register_campaign_missing_lines_returns_422(authenticated_client):
+    """Test that campaign without lines field returns 422 validation error."""
+    payload = {
+        "name": "CAMP-NO-LINES",
+        "display_name": "Campaign without Lines Field",
+        "agency_id": 1,
+        "advertiser_id": 1,
+        "campaign_type_id": 1,
+        "sector_id": 1,
+        "sales_rep_id": 1,
+        "start_date": "2026-01-01",
+        "end_date": "2026-03-31",
+        "order_reference": "PO-NO-LINES",
+        "order_received_on": "2025-12-15"
+    }
+
+    response = authenticated_client.post("/campaigns", json=payload)
+
+    assert response.status_code == 422
+    errors = response.json()["detail"]
+    assert any(e.get("loc") == ["body", "lines"] for e in errors), f"Expected lines validation error, got {errors}"

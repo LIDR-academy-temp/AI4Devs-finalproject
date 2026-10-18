@@ -30,7 +30,7 @@ class CampaignCreateRequest(BaseModel):
     end_date: date
     order_reference: str = Field(..., min_length=1, max_length=255)
     order_received_on: date
-    lines: list[CampaignLineCreateRequest] = Field(default_factory=list)
+    lines: list[CampaignLineCreateRequest] = Field(..., min_length=1)
 
 
 class CampaignLineResponse(BaseModel):
