@@ -1,8 +1,10 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
+import { HttpResponse, http } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
 import { dropZone, fileInput, findFileEntry } from '@/test/import-screens'
 import { failNext, holdNext, importRecord, importRequests, sampleFile, seedImport } from '@/test/msw/imports'
+import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 import { strings } from '../strings'
 
@@ -226,6 +228,24 @@ describe('Column Mapping: analysis in progress (spec "Pantalla Column Mapping: a
 
     expect(await screen.findByText('The analysis did not finish. Try again.')).toBeInTheDocument()
     expect(analyzeButton()).toBeEnabled()
+  })
+
+  it.each([
+    [403, 'forbidden', 'You do not have permission to analyze this import.'],
+    [404, 'not_found', 'This import is not available.'],
+  ] as const)('a %i says why without inviting to try again', async (status, code, message) => {
+    server.use(
+      http.post('*/api/v1/imports/:importId/analyze', () => HttpResponse.json({ code, message: code }, { status }), {
+        once: true,
+      }),
+    )
+    const { user } = await openMapping(seedImport('batch-clean', { status: 'mapped' }).importId)
+
+    await user.click(analyzeButton())
+
+    expect(await screen.findByText(message)).toBeInTheDocument()
+    expect(screen.queryByText(strings.analyze.didNotFinish)).not.toBeInTheDocument()
+    expect(screen.queryByText(/try again/i)).not.toBeInTheDocument()
   })
 
   it('422 import_too_large says how many rows there are and the limit', async () => {
