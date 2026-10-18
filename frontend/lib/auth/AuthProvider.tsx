@@ -24,7 +24,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const userManager = getUserManager();
     const handleUserLoaded = (user: User) => setSession(toSession(user));
-    const handleUserUnloaded = () => setSession({ status: "unauthenticated" });
+
+    // When a session is lost involuntarily (not from explicit signOut), mark it as expired
+    const handleUserUnloaded = () => {
+      setSession((prev) => {
+        // If user was authenticated, transition to session_expired (involuntary loss)
+        if (prev.status === "authenticated") {
+          return { status: "session_expired" };
+        }
+        // If already unauthenticated, stay that way
+        return { status: "unauthenticated" };
+      });
+    };
 
     userManager.events.addUserLoaded(handleUserLoaded);
     userManager.events.addUserUnloaded(handleUserUnloaded);
@@ -44,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    // Explicit signOut: go directly to unauthenticated, not session_expired
+    setSession({ status: "unauthenticated" });
     await getUserManager().removeUser();
     window.location.assign(getLogoutUrl());
   }, []);

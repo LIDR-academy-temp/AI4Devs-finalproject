@@ -5,6 +5,7 @@ import { createContext, useContext } from "react";
 export type AuthSession =
   | { status: "loading" }
   | { status: "unauthenticated" }
+  | { status: "session_expired" }
   | { status: "authenticated"; email: string; idToken: string };
 
 export interface AuthContextValue {
