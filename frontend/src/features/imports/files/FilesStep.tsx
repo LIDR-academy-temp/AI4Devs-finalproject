@@ -1,11 +1,9 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api/client'
 import type { ImportDetail } from '@/lib/api/types'
-import { useRemoveFile } from '../mutations'
+import { useReloadImport, useRemoveFile } from '../mutations'
 import { useImportAccess } from '../permissions'
-import { importKey } from '../queries'
 import { strings } from '../strings'
 import { DropZone } from './DropZone'
 import { FileList } from './FileList'
@@ -22,12 +20,12 @@ export function FilesStep({
   busy?: boolean
   onContinue: () => void
 }) {
-  const queryClient = useQueryClient()
   const queue = useUploadQueue()
   useQueueSnapshot(queue)
   const batch = queue.forImport(detail.importId)
   const { canProcess, editable } = useImportAccess(detail.status)
   const remove = useRemoveFile(detail.importId)
+  const reload = useReloadImport(detail.importId)
   const uploading = batch?.entries.some((e) => e.state !== 'rejected') ?? false
 
   const removeError =
@@ -47,9 +45,7 @@ export function FilesStep({
             ? (file) =>
                 remove.mutate(file.fileId, {
                   onError: (error) => {
-                    if (error instanceof ApiError && error.status === 409) {
-                      void queryClient.invalidateQueries({ queryKey: importKey(detail.importId), exact: true })
-                    }
+                    if (error instanceof ApiError && error.status === 409) void reload()
                   },
                 })
             : undefined
