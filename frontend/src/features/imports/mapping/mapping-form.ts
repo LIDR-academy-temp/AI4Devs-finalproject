@@ -51,6 +51,16 @@ export function valuesFromDetail(detail: ImportDetail): MappingValues {
   }
 }
 
+/** The ids of the sheets the import has now. */
+export function sheetIdsOf(detail: ImportDetail): Set<string> {
+  return new Set(detail.files.flatMap((f) => f.sheets.map((s) => s.sheetId)))
+}
+
+/** The form values of the given sheets only: a sheet of a removed file is not part of the mapping any more. */
+export function onlySheets(values: MappingValues, ids: Set<string>): MappingValues {
+  return { sheets: Object.fromEntries(Object.entries(values.sheets).filter(([id]) => ids.has(id))) }
+}
+
 /** The body of `PUT mapping`: every sheet of the import, only the columns with a field, none in ignored sheets. */
 export function toMappingConfirmation(values: MappingValues, detail: ImportDetail): MappingConfirmationBody {
   return {

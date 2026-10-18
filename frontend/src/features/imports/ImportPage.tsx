@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { useMemo } from 'react'
-import { FormProvider, useForm } from 'react-hook-form'
+import { useEffect, useMemo, useRef } from 'react'
+import { FormProvider, type Resolver, useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApiError } from '@/lib/api/client'
@@ -12,7 +12,7 @@ import { useAnalyze } from './analyze'
 import { FilesStep } from './files/FilesStep'
 import { ImportHeader } from './ImportHeader'
 import { MappingStep } from './mapping/MappingStep'
-import { type MappingValues, mappingSchema, valuesFromDetail } from './mapping/mapping-form'
+import { type MappingValues, mappingSchema, onlySheets, sheetIdsOf, valuesFromDetail } from './mapping/mapping-form'
 import { importQuery } from './queries'
 import { defaultStep, StepTabs } from './StepTabs'
 import { strings } from './strings'
@@ -49,12 +49,27 @@ export function ImportPage() {
 function ImportWorkspace({ detail, step: chosen }: { detail: ImportDetail; step: Step | undefined }) {
   const navigate = useNavigate({ from: '/imports/$importId' })
   const values = useMemo(() => valuesFromDetail(detail), [detail])
+  // keepDirtyValues keeps what the user edited even in sheets whose file was removed: the resolver validates only
+  // the sheets the detail has now, and the effect below drops the others from the form.
+  const sheetIds = useRef(sheetIdsOf(detail))
+  sheetIds.current = sheetIdsOf(detail)
+  const resolver = useMemo<Resolver<MappingValues>>(() => {
+    const validate = zodResolver(mappingSchema)
+    return (current, context, options) => validate(onlySheets(current, sheetIds.current), context, options)
+  }, [])
   const form = useForm<MappingValues>({
     values,
     resetOptions: { keepDirtyValues: true },
-    resolver: zodResolver(mappingSchema),
+    resolver,
     mode: 'onChange',
   })
+  useEffect(() => {
+    const ids = sheetIdsOf(detail)
+    const gone = Object.keys(form.getValues('sheets') ?? {}).filter((id) => !ids.has(id))
+    if (gone.length === 0) return
+    form.unregister(gone.map((id) => `sheets.${id}` as const))
+    void form.trigger()
+  }, [detail, form])
   const step = chosen ?? defaultStep(detail)
   const toStep = (next: Step) => navigate({ search: (prev: ImportSearch) => ({ ...prev, step: next }), replace: true })
   const analysis = useAnalyze(detail, () => void toStep('analysis'))
