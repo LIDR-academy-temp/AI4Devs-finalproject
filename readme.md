@@ -1580,7 +1580,7 @@ Permiso `settlement.process`. Requiere un import en `validated` sin hallazgos bl
               notValidated:
                 value: { code: IMPORT_NOT_VALIDATED, message: "El import está en estado analyzed" }
               blockingIssue:
-                value: { code: BLOCKING_VALIDATION_ISSUE, message: "provider_mismatch: el import debe cancelarse y procesarse con el proveedor correcto", details: { issueIds: [4411] } }
+                value: { code: blocking_validation_issue, message: "provider_mismatch: cancel the import and process it under the correct provider", details: { runId: 7, validationCodes: [provider_mismatch], issueIds: [4411] } }
               batchNoTaken:
                 value: { code: BATCH_NO_TAKEN, message: "El batch 118 ya tiene un intento vigente para esta cuenta" }
               channelsNotConfirmed:
@@ -1622,13 +1622,13 @@ Lista consolidada de lo que el MVP necesita; los tres documentados arriba están
 | Importación | `GET /imports/{id}/rows?match=unmatched&page=` | — | Filas leídas, con las no asociadas primero |
 | Importación | `POST /imports/{id}/files` · `DELETE /imports/{id}/files/{fileId}` | `settlement.process` | Añadir o quitar archivos antes de analizar |
 | Importación | `POST /imports/{id}/cancel` | `settlement.process` | Cancelar un import no procesado (conserva archivos, filas y hallazgos como historial) |
-| Validaciones | `POST /imports/{id}/validations` | `settlement.process` | Ejecutar las ocho validaciones (nueva corrida; invalida la anterior) |
-| Validaciones | `GET /imports/{id}/validations` | — | Última corrida: resultado, conteo y bloqueo por validación, rangos por ciclo |
-| Validaciones | `GET /imports/{id}/validation-issues?type=&scope=&status=` | — | Hallazgos de la última corrida con su resolución e inclusión por defecto |
-| Validaciones | `GET /validation-issues/{id}` | — | Hallazgo con todas sus apariciones (import actual y batches anteriores) |
-| Validaciones | `PATCH /validation-issues/{id}` | `settlement.process` | Acción opcional: marcar resuelto un `non_recorded_adjustment` verificado, con nota |
-| Validaciones | `PATCH /conflict-occurrences/{id}` | `settlement.process` | Acción opcional: cambiar `includeInSettlement` de una aparición, auditado |
-| Validaciones | `POST /imports/{id}/review` | `settlement.process` | Registrar la decisión de conjunto "continuar": el import pasa a `validated` si no hay hallazgos bloqueantes |
+| Validaciones | `POST /imports/{id}/validations` | `settlement.process` | Ejecutar las ocho validaciones en `analyzed` o `validated`: nueva corrida vigente, la anterior queda superada (no se borra); en `validated` el import vuelve a `analyzed` y la revisión queda invalidada. `409 import_not_analyzed` / `import_changed` |
+| Validaciones | `GET /imports/{id}/validations` | — | Corrida vigente (`run: null` si no hay): resultado, conteo, bloqueo y desglose por validación, rangos por ciclo, contadores informativos, `manualChangeCount`, revisión vigente; y `lastInvalidatedReview` |
+| Validaciones | `GET /imports/{id}/validation-issues?type=&scope=&status=&validationCode=&cycle=&page=&pageSize=` | — | Hallazgos de la corrida vigente en orden fijo, paginados (`pageSize` ≤ 500, 50 por defecto), con su resolución e inclusiones por defecto y actuales |
+| Validaciones | `GET /validation-issues/{id}` | — | Hallazgo con todas sus apariciones (import actual y batches anteriores), resolución, historial de cambios y si la corrida es la vigente |
+| Validaciones | `PATCH /validation-issues/{id}` | `settlement.process` | Acción opcional: `{ resolutionStatus: "resolved", note }` resuelve a mano un `non_recorded_adjustment` o un `status_mismatch` de la corrida vigente, con nota, en cualquier estado del import. `409 issue_already_resolved` / `validation_run_superseded`, `422 issue_not_resolvable` |
+| Validaciones | `PATCH /conflict-occurrences/{id}` | `settlement.process` | Acción opcional: `{ includeInSettlement }` en una aparición `current_import` de la corrida vigente, en `analyzed` o `validated` (vuelve a `analyzed`), auditado; regla de R de 3.3. `409 import_not_editable` / `validation_run_superseded` / `occurrence_not_editable` / `occurrence_not_includable` |
+| Validaciones | `POST /imports/{id}/review` | `settlement.process` | Decisión de conjunto "continuar" con cuerpo `{ runId }`: el import pasa a `validated` si es la corrida vigente y no hay bloqueantes, auditado. `409 import_not_analyzed` / `validation_run_required` / `validation_run_superseded` / `blocking_validation_issue` |
 | Settlement | **`POST /imports/{id}/settlements`** ✅ | `settlement.process` | Procesar (4.3) |
 | Settlement | `GET /settlements/{id}` | — | Intento de batch con summary y estado de pago |
 | Settlement | `GET /settlements/{id}/transactions?type=E\|I\|R&page=` | — | Movimientos del intento con sus fees aplicados y reserva |
