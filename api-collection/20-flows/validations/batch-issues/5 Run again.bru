@@ -1,0 +1,31 @@
+meta {
+  name: 5 Run again
+  type: http
+  seq: 5
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/validations
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar('runId2', res.body.run.runId);
+  }
+}
+
+tests {
+  test('a second run supersedes the first one', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.run.runId).to.not.equal(bru.getVar('runId1'));
+  });
+}

@@ -1,0 +1,27 @@
+meta {
+  name: 3 Analyze
+  type: http
+  seq: 3
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/analyze
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+tests {
+  test('analyzes batch-issues: 770 rows, 766 matched', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.status).to.equal('analyzed');
+    expect(res.body.analysis.rows.total).to.equal(770);
+    expect(res.body.analysis.rows.matched).to.equal(766);
+  });
+}
