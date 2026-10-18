@@ -158,7 +158,7 @@ describe('fake validations API', () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     seedValidationRun(importId, undefined, {
       patches: {
-        [occurrenceKey(issueKey('duplicate_across_batches', '504712738863260'), 0)]: {
+        [occurrenceKey(issueKey('duplicate_across_batches', '504712738863260'), 1)]: {
           error: { status: 409, code: 'occurrence_not_editable', details: { sourceType: 'previous_batch' } },
         },
         [issueKey('non_recorded_adjustment', '281520820250015')]: {
