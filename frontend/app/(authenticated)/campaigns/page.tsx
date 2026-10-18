@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { createApiClient } from "@/lib/api/client";
+import { createApiClient, type ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { getUserManager } from "@/lib/auth/user-manager";
+import { SessionExpiredPage } from "@/lib/components/SessionExpiredPage";
+import { AccessDeniedPage } from "@/lib/components/AccessDeniedPage";
 
 interface Campaign {
   id: number;
@@ -18,11 +20,14 @@ interface Campaign {
   end_date: string;
 }
 
+type PageState = "list" | "session-expired" | "access-denied";
+
 export default function CampaignsPage() {
   const { session } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pageState, setPageState] = useState<PageState>("list");
 
   const handleSignOut = async () => {
     await getUserManager().removeUser();
@@ -44,8 +49,15 @@ export default function CampaignsPage() {
         const data = await client.get<Campaign[]>("/campaigns");
         setCampaigns(data);
       } catch (err) {
-        setError("Error al cargar las campañas. Intenta de nuevo más tarde.");
-        setCampaigns([]);
+        const apiError = err as ApiError;
+        if (apiError.kind === "unauthenticated") {
+          setPageState("session-expired");
+        } else if (apiError.kind === "forbidden") {
+          setPageState("access-denied");
+        } else {
+          setError("Error al cargar las campañas. Intenta de nuevo más tarde.");
+          setCampaigns([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -58,6 +70,14 @@ export default function CampaignsPage() {
 
   if (loading) {
     return <div role="status">Cargando campañas…</div>;
+  }
+
+  if (pageState === "session-expired") {
+    return <SessionExpiredPage />;
+  }
+
+  if (pageState === "access-denied") {
+    return <AccessDeniedPage message="No tienes permiso para ver las campañas." />;
   }
 
   return (

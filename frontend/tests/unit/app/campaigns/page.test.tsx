@@ -139,4 +139,36 @@ describe("CampaignsPage", () => {
       expect(screen.getByText(/error al cargar las campañas/i)).toBeInTheDocument();
     });
   });
+
+  it("displays AccessDeniedPage when receiving 403 forbidden response", async () => {
+    // Create a mock ApiError with the properties that would come from a 403 response
+    const forbiddenError = new Error("User lacks the required role");
+    Object.assign(forbiddenError, {
+      kind: "forbidden",
+      status: 403,
+      code: "missing_role",
+      fieldErrors: {},
+    });
+    mockGet.mockRejectedValue(forbiddenError);
+
+    const authValue: AuthContextValue = {
+      session: { status: "authenticated", email: "user@example.com", idToken: "token" },
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+    };
+
+    render(
+      <AuthContext.Provider value={authValue}>
+        <CampaignsPage />
+      </AuthContext.Provider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/acceso denegado/i)).toBeInTheDocument();
+    });
+
+    // Verify it's NOT showing a generic error message or empty table
+    expect(screen.queryByText(/error al cargar las campañas/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/todavía no hay campañas/i)).not.toBeInTheDocument();
+  });
 });

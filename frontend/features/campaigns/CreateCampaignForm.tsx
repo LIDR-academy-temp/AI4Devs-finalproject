@@ -271,32 +271,34 @@ export function CreateCampaignForm({ onAuthError }: CreateCampaignFormProps = {}
       // On success, redirect to campaigns list
       router.push("/campaigns?success=true");
     } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.kind === "unauthenticated") {
+      // Check if it's an API error by checking for the kind property
+      if (err && typeof err === 'object' && 'kind' in err && 'status' in err) {
+        const apiError = err as ApiError;
+        if (apiError.kind === "unauthenticated") {
           // Session expired - notify parent component
           onAuthError?.("unauthenticated");
           setSubmitError("Sesión caducada. Por favor, inicia sesión nuevamente.");
-        } else if (err.kind === "forbidden") {
+        } else if (apiError.kind === "forbidden") {
           // Access denied - notify parent component
           onAuthError?.("forbidden");
           setSubmitError("No tienes permiso para registrar campañas.");
-        } else if (err.status === 409 && err.code === "duplicate_campaign_name") {
+        } else if (apiError.status === 409 && apiError.code === "duplicate_campaign_name") {
           // Duplicate campaign name - set error in the field
           setFieldErrors({
             name: "Esta campaña ya existe",
           });
           setSubmitError("Por favor corrige los errores antes de enviar.");
-        } else if (err.status === 409 && err.code === "duplicate_order_reference") {
+        } else if (apiError.status === 409 && apiError.code === "duplicate_order_reference") {
           // Duplicate order reference - set error in the field
           setFieldErrors({
             order_reference: "Esta referencia de orden ya existe",
           });
           setSubmitError("Por favor corrige los errores antes de enviar.");
         } else {
-          setSubmitError(err.message);
+          setSubmitError(apiError.message);
           // Set field-specific errors from validation
-          if (Object.keys(err.fieldErrors).length > 0) {
-            setFieldErrors(err.fieldErrors);
+          if (Object.keys(apiError.fieldErrors).length > 0) {
+            setFieldErrors(apiError.fieldErrors);
           }
         }
       } else if (err instanceof Error) {
@@ -305,8 +307,6 @@ export function CreateCampaignForm({ onAuthError }: CreateCampaignFormProps = {}
       } else {
         setSubmitError("Error al registrar la campaña. Intenta de nuevo más tarde.");
       }
-    } finally {
-      setSubmitting(false);
     }
   };
 
