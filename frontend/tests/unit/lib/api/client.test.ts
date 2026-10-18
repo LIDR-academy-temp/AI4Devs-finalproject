@@ -157,3 +157,126 @@ describe("createApiClient", () => {
     expect(() => createApiClient({ baseUrl: "   " })).toThrow("baseUrl must not be empty");
   });
 });
+
+describe("ApiError fieldErrors parsing", () => {
+  const mockRemoveUser = vi.fn();
+  const mockGetUser = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("parses single validation error into fieldErrors", async () => {
+    const user = { id_token: "token", expired: false } as unknown as User;
+    mockGetUser.mockResolvedValue(user);
+
+    stubFetch(422, {
+      detail: [
+        {
+          type: "string_too_short",
+          loc: ["body", "name"],
+          msg: "String should have at least 1 character",
+          input: "",
+        },
+      ],
+    });
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
+
+    const failure = client.post("/campaigns", {});
+
+    await expect(failure).rejects.toMatchObject({
+      kind: "failed",
+      status: 422,
+      fieldErrors: { name: "Campo obligatorio" },
+    });
+  });
+
+  it("parses multiple validation errors into fieldErrors", async () => {
+    const user = { id_token: "token", expired: false } as unknown as User;
+    mockGetUser.mockResolvedValue(user);
+
+    stubFetch(422, {
+      detail: [
+        { type: "missing", loc: ["body", "name"], msg: "Field required" },
+        { type: "missing", loc: ["body", "agency_id"], msg: "Field required" },
+      ],
+    });
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
+
+    const failure = client.post("/campaigns", {});
+
+    await expect(failure).rejects.toMatchObject({
+      kind: "failed",
+      fieldErrors: { name: "Campo obligatorio", agency_id: "Campo obligatorio" },
+    });
+  });
+
+  it("parses nested validation error with array index", async () => {
+    const user = { id_token: "token", expired: false } as unknown as User;
+    mockGetUser.mockResolvedValue(user);
+
+    stubFetch(422, {
+      detail: [
+        {
+          type: "too_short",
+          loc: ["body", "lines", 0, "dsp_id"],
+          msg: "List should have at least 1 item",
+        },
+      ],
+    });
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
+
+    const failure = client.post("/campaigns", {});
+
+    await expect(failure).rejects.toMatchObject({
+      kind: "failed",
+      fieldErrors: { "lines.0.dsp_id": "Debe contener al menos 1 elemento" },
+    });
+  });
+
+  it("handles unknown error type with fallback to msg", async () => {
+    const user = { id_token: "token", expired: false } as unknown as User;
+    mockGetUser.mockResolvedValue(user);
+
+    stubFetch(422, {
+      detail: [
+        {
+          type: "unknown_type",
+          loc: ["body", "field"],
+          msg: "Some custom error message",
+        },
+      ],
+    });
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
+
+    const failure = client.post("/campaigns", {});
+
+    await expect(failure).rejects.toMatchObject({
+      kind: "failed",
+      fieldErrors: { field: "Some custom error message" },
+    });
+  });
+
+  it("preserves code and message for business errors (non-validation)", async () => {
+    const user = { id_token: "token", expired: false } as unknown as User;
+    mockGetUser.mockResolvedValue(user);
+
+    stubFetch(409, {
+      code: "duplicate_order_reference",
+      message: "Order reference already exists",
+    });
+    const client = createApiClient({ baseUrl: "http://localhost/api" });
+
+    const failure = client.post("/campaigns", {});
+
+    await expect(failure).rejects.toMatchObject({
+      kind: "failed",
+      code: "duplicate_order_reference",
+      fieldErrors: {},
+    });
+  });
+});
