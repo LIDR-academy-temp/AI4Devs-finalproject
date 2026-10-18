@@ -1,9 +1,16 @@
 // Steps of the import smoke. Selectors are roles and accessible texts, the same as frontend/src/features/imports/strings.ts.
 import { fileURLToPath } from 'node:url'
 import { expect, type Page } from '@playwright/test'
-import { createBdd } from 'playwright-bdd'
+import { test as base, createBdd } from 'playwright-bdd'
 
-const { Given, When, Then, After } = createBdd()
+// The import the scenario created, taken from the answer of the POST that creates it, for the cleanup of a failure.
+// Exported so that bddgen finds the test the steps are bound to.
+export const test = base.extend<{ created: { importId?: string } }>({
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures take their dependencies as a destructured object
+  created: async ({}, use) => use({}),
+})
+
+const { Given, When, Then, After } = createBdd(test)
 
 const repositoryFile = (path: string) => fileURLToPath(new URL(`../../${path}`, import.meta.url))
 
@@ -59,10 +66,15 @@ When(
   },
 )
 
-When('they upload {string}', async ({ page }, path: string) => {
+When('they upload {string}', async ({ page, created }, path: string) => {
+  const creation = page.waitForResponse(
+    (response) => response.request().method() === 'POST' && /\/api\/v1\/accounts\/[^/]+\/imports$/.test(response.url()),
+  )
   const chooser = page.waitForEvent('filechooser')
   await page.getByRole('button', { name: 'Drop .xlsx files here or choose files' }).click()
   await (await chooser).setFiles(repositoryFile(path))
+  const response = await creation
+  if (response.ok()) created.importId = ((await response.json()) as { importId: string }).importId
   await expect(page).toHaveURL(/\/imports\/[0-9a-f-]{36}/)
   const fileName = path.split('/').at(-1)!
   await expect(page.getByRole('listitem', { name: fileName })).toBeVisible()
@@ -101,16 +113,26 @@ Then('the import is {string}', async ({ page }, status: string) => {
 })
 
 // Cleanup of a scenario that fails half way: the import it created is cancelled, so none stays open in the local
-// database. A passing scenario cancels it in its last steps.
-After(async ({ page, $testInfo }) => {
-  if ($testInfo.status === $testInfo.expectedStatus) return
-  const importId = /\/imports\/([0-9a-f-]{36})/.exec(page.url())?.[1]
-  if (!importId) return
-  await page.goto(`/imports/${importId}`)
-  await page.getByRole('region', { name: 'Import' }).getByText('Status').waitFor()
-  const cancel = page.getByRole('button', { name: 'Cancel import' })
-  if (!(await cancel.isVisible())) return
-  await cancel.click()
-  await page.getByRole('alertdialog').getByRole('button', { name: 'Yes, cancel the import' }).click()
-  await expect(page.getByRole('region', { name: 'Import' }).getByText('cancelled', { exact: true })).toBeVisible()
+// database. A passing scenario cancels it in its last steps. It runs in a new tab, so the page of the failure stays as
+// it was for the report, and a cleanup that fails is noted on the test, not reported as a second error.
+After(async ({ page, created, $testInfo }) => {
+  if ($testInfo.status === $testInfo.expectedStatus || !created.importId) return
+  const tab = await page.context().newPage()
+  try {
+    await tab.goto(`/imports/${created.importId}`, { timeout: 10_000 })
+    const header = tab.getByRole('region', { name: 'Import' })
+    await header.getByText('Status').waitFor({ timeout: 10_000 })
+    const cancel = tab.getByRole('button', { name: 'Cancel import' })
+    if (!(await cancel.isVisible())) return
+    await cancel.click({ timeout: 5_000 })
+    await tab.getByRole('alertdialog').getByRole('button', { name: 'Yes, cancel the import' }).click({ timeout: 5_000 })
+    await header.getByText('cancelled', { exact: true }).waitFor({ timeout: 10_000 })
+  } catch (error) {
+    $testInfo.annotations.push({
+      type: 'cleanup',
+      description: `Import ${created.importId} could not be cancelled: ${(error as Error).message.split('\n')[0]}`,
+    })
+  } finally {
+    await tab.close()
+  }
 })
