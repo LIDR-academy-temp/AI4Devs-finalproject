@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ApiError, api } from '@/lib/api/client'
 import type { ImportDetail } from '@/lib/api/types'
 import { storeDetail } from './mutations'
-import { asDetail, importQuery } from './queries'
+import { asDetail, importKey, importQuery } from './queries'
 import { strings } from './strings'
 
 type Missing = ImportDetail['readiness']['missing']
@@ -23,6 +23,12 @@ export function useAnalyze(detail: ImportDetail, onAnalyzed: () => void) {
     if (missing && missing.for !== detail) setMissing(null)
   }, [detail, missing])
 
+  /** The import is analyzed: any rows cached before belong to another state (design D3). */
+  function finished() {
+    void queryClient.invalidateQueries({ queryKey: [...importKey(detail.importId), 'rows'] })
+    onAnalyzed()
+  }
+
   async function analyze() {
     if (guard.current) return
     guard.current = true
@@ -33,7 +39,7 @@ export function useAnalyze(detail: ImportDetail, onAnalyzed: () => void) {
         api.POST('/api/v1/imports/{importId}/analyze', { params: { path: { importId: detail.importId } } }),
       )
       storeDetail(queryClient, analyzed)
-      onAnalyzed()
+      finished()
     } catch (failure) {
       if (failure instanceof ApiError && failure.code === 'mapping_incomplete') {
         const items = (failure.details as { missing?: Missing } | undefined)?.missing ?? []
@@ -56,7 +62,7 @@ export function useAnalyze(detail: ImportDetail, onAnalyzed: () => void) {
   async function readBack() {
     try {
       const fresh = await queryClient.fetchQuery({ ...importQuery(detail.importId), staleTime: 0 })
-      if (fresh.analysis !== null) onAnalyzed()
+      if (fresh.analysis !== null) finished()
       else setError(strings.analyze.didNotFinish)
     } catch {
       setError(strings.analyze.didNotFinish)
