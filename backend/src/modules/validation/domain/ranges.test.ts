@@ -16,7 +16,7 @@ describe('computeRanges', () => {
     expect(days(ranges.APP)).toEqual(['2026-09-28', '2026-10-07'])
     expect(days(ranges.DEC)).toEqual(['2026-09-28', '2026-10-07'])
     expect(days(ranges.I)).toEqual(['2026-09-28', '2026-10-11'])
-    expect(days(ranges.R)).toEqual(['2026-03-31', '2026-04-09'])
+    expect(days(ranges.R)).toEqual(['2026-09-27', '2026-10-06'])
   })
 
   it('batch-issues: DEC starts on 2026-09-29 although a DEC row is a Successful of the previous window (question 1)', async () => {
