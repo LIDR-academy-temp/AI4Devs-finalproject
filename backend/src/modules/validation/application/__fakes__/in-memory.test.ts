@@ -66,3 +66,29 @@ describe('InMemoryValidationSources.movements', () => {
     expect(batches).not.toContain('mine')
   })
 })
+
+describe('InMemoryValidationSources.registered (L7)', () => {
+  // Same contract as the port: persistent findings of non-superseded runs of imports with a processed or paid batch.
+  const settledImport = validationWorld().batches.find((b) => b.accountId === ACCOUNT_IDS['ProviderA-USD'])!.importId
+
+  it('keeps a persistent finding of a live run and drops a resolved one and one of a superseded run', async () => {
+    const sources = new InMemoryValidationSources()
+    sources.registerMissing({ providerId: PROVIDER_A, cycle: 'E', transactionId: 1n, importId: settledImport })
+    sources.registerMissing({
+      providerId: PROVIDER_A,
+      cycle: 'E',
+      transactionId: 2n,
+      importId: settledImport,
+      resolutionStatus: 'resolved',
+    })
+    sources.registerMissing({
+      providerId: PROVIDER_A,
+      cycle: 'E',
+      transactionId: 3n,
+      importId: settledImport,
+      runSuperseded: true,
+    })
+
+    expect(await sources.registered(PROVIDER_A)).toEqual(new Set(['E:1']))
+  })
+})
