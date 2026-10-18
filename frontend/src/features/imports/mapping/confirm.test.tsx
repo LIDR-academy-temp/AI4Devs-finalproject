@@ -225,6 +225,8 @@ describe('Column Mapping: unconfirmed changes survive the Files step (design D5)
     await user.click((await findFileEntry(PART2)).getByRole('button', { name: strings.files.remove(PART2) }))
     await waitFor(() => expect(screen.queryByRole('listitem', { name: PART2 })).not.toBeInTheDocument())
     await user.click(screen.getByRole('tab', { name: strings.steps.mapping }))
+    // The form takes the new detail in an effect: the negative assertion must come after Mapping shows one file.
+    await waitFor(() => expect(screen.getAllByRole('region', { name: /^Recon_Template_.*\.xlsx$/ })).toHaveLength(1))
 
     expect(cycleOf(sheet('DEC', PART1))).toHaveTextContent('I · adjustment')
     expect(analyze()).toBeDisabled()
