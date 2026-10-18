@@ -16,6 +16,21 @@ async function setPassword(page: Page, value: string) {
   }, value)
 }
 
+/**
+ * Empties the password field without waiting for it: after the click the form may be gone, and if signing in fails
+ * the snapshot of the page that the report attaches must not hold the password.
+ */
+async function clearPassword(page: Page) {
+  await page
+    .evaluate(() => {
+      const input = document.querySelector<HTMLInputElement>('input[type="password"]')
+      if (!input) return
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, '')
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    .catch(() => {})
+}
+
 Given('the analyst is signed in', async ({ page }) => {
   const password = process.env.SEED_PASSWORD
   if (!password) throw new Error('SEED_PASSWORD is not set: copy .env.example to .env at the repository root.')
@@ -24,10 +39,13 @@ Given('the analyst is signed in', async ({ page }) => {
   // The password is set from the page, not with fill(): the title of a fill step carries the text it types, and
   // the password must not reach the console nor the report.
   await setPassword(page, password)
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  // Emptied as soon as the form is sent, before any assertion: if signing in fails, the snapshot of the page that
-  // the report attaches must not hold the password.
-  if (await page.getByLabel('Password').isVisible()) await setPassword(page, '')
+  // The click has its own timeout, shorter than the test's: once the test runs out of time the finally cannot
+  // empty the field any more.
+  try {
+    await page.getByRole('button', { name: 'Sign in' }).click({ timeout: 15_000 })
+  } finally {
+    await clearPassword(page)
+  }
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
 })
 
