@@ -142,6 +142,22 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
     expect(within(first).queryByRole('combobox')).not.toBeInTheDocument()
   })
 
+  it('shows the sheet of each row first and its file truncated with the whole name as tooltip', async () => {
+    const { importId } = seedImport('batch-split', { status: 'analyzed' })
+    await openRows(`/imports/${importId}?step=analysis`)
+
+    const sheets = new Set(importRecord(importId).files.flatMap((f) => f.sheets.map((x) => x.template.sheetName)))
+    for (const row of bodyRows()) {
+      const where = cell(row, 'Sheet · file')
+      const [sheet, file] = Array.from(where.querySelectorAll('span'))
+      expect(sheets.has(sheet!.textContent ?? '')).toBe(true)
+      expect(sheet).not.toHaveClass('truncate')
+      expect(file!.textContent).toMatch(/^Recon_Template_ProviderA-USD_batch-split_part[12]\.xlsx$/)
+      expect(file).toHaveAttribute('title', file!.textContent)
+      expect(file).toHaveClass('truncate')
+    }
+  })
+
   it('shows a 17-digit ID and a UUID whole', async () => {
     const { importId } = seedImport('batch-clean', { status: 'analyzed' })
     const unmatched = { matchResult: 'unmatched', reason: 'no_match', transactionId: null, transaction: null } as const
