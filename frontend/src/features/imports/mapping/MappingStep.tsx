@@ -8,7 +8,7 @@ import type { Analysis } from '../analyze'
 import { useConfirmMapping, useReloadImport } from '../mutations'
 import { useImportAccess } from '../permissions'
 import { strings } from '../strings'
-import { hasDirtySheet, type MappingValues, sheetIdsOf, toMappingConfirmation, valuesFromDetail } from './mapping-form'
+import { type MappingValues, toMappingConfirmation, valuesFromDetail } from './mapping-form'
 import { ReadinessBar, unconfirmedSheets } from './ReadinessBar'
 import { SheetCard } from './SheetCard'
 
@@ -38,14 +38,7 @@ export function MappingStep({ detail, analysis }: { detail: ImportDetail; analys
     }
   })
 
-  // Only the sheets the import has now: an edit in a removed file is no unconfirmed change, one in a file that stays
-  // still is.
-  const dirty = hasDirtySheet(
-    form.formState.dirtyFields.sheets,
-    sheetIdsOf(detail),
-    form.getValues(),
-    form.formState.defaultValues?.sheets as MappingValues['sheets'] | undefined,
-  )
+  const dirty = form.formState.isDirty
   const missing = analysis.missing ?? detail.readiness.missing
   const confirmFirst = detail.status !== 'mapped' || dirty || unconfirmedSheets(detail).length > 0
   const canAnalyze = !confirmFirst && missing.length === 0 && !analysis.running && !confirm.isPending

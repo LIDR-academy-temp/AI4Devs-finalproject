@@ -61,28 +61,6 @@ export function onlySheets(values: MappingValues, ids: Set<string>): MappingValu
   return { sheets: Object.fromEntries(Object.entries(values.sheets).filter(([id]) => ids.has(id))) }
 }
 
-/**
- * Whether the user changed any of the given sheets: the fields `dirtyFields` flags whose value still differs from the
- * default. A flag alone is not enough, because a `values` update with `keepDirtyValues` keeps the flags as they were
- * even when the new defaults already hold what the user chose.
- */
-export function hasDirtySheet(
-  dirtySheets: Record<string, unknown> | undefined,
-  ids: Set<string>,
-  values: MappingValues,
-  defaults: MappingValues['sheets'] | undefined,
-): boolean {
-  const changed = (flag: unknown, value: unknown, base: unknown): boolean => {
-    if (flag === true) return value !== base
-    if (typeof flag !== 'object' || flag === null) return false
-    const at = (node: unknown, key: string) => (node as Record<string, unknown> | undefined)?.[key]
-    return Object.entries(flag).some(([key, inner]) => changed(inner, at(value, key), at(base, key)))
-  }
-  return Object.entries(dirtySheets ?? {}).some(
-    ([id, flag]) => ids.has(id) && changed(flag, values.sheets[id], defaults?.[id]),
-  )
-}
-
 /** The body of `PUT mapping`: every sheet of the import, only the columns with a field, none in ignored sheets. */
 export function toMappingConfirmation(values: MappingValues, detail: ImportDetail): MappingConfirmationBody {
   return {
