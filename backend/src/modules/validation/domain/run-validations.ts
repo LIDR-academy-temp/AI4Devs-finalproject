@@ -1,5 +1,6 @@
 import type { Cycle, ValidationCode } from '@recon/shared'
 import { compareCurrent, compareHistory, conflictKey } from './conflict-key.js'
+import { duplicateInBatch, statusCollisionInBatch } from './in-batch.js'
 import { nonRecordedAdjustment } from './non-recorded-adjustment.js'
 import { deriveOutcome, overallBlocked } from './outcome.js'
 import { type MatchedRow, partitionRows, type RowPartition } from './partition.js'
@@ -45,8 +46,8 @@ export interface ValidationSlot {
 export const VALIDATION_SLOTS: readonly ValidationSlot[] = [
   { code: 'provider_mismatch', run: providerMismatch },
   { code: 'non_recorded_adjustment', run: nonRecordedAdjustment },
-  { code: 'duplicate_in_batch' },
-  { code: 'status_collision_in_batch' },
+  { code: 'duplicate_in_batch', run: duplicateInBatch },
+  { code: 'status_collision_in_batch', run: statusCollisionInBatch },
   { code: 'duplicate_across_batches' },
   { code: 'status_collision_across_batches' },
   { code: 'missing_previous_to_batch' },
