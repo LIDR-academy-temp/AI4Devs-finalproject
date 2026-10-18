@@ -145,13 +145,13 @@ export function pendingInRangeCount(ctx: ValidationContext): number {
  */
 export function undatedCandidateCount(ctx: ValidationContext): number {
   if (ctx.ranges.I === null) return 0
-  let count = 0
+  const counted = new Set<bigint>()
   for (const c of ctx.input.candidates) {
     if (c.lastStatusChangedAt !== null || !ctx.input.account.primaryChannelIds.has(c.channelId)) continue
     if (ctx.catalog.naturalCycle(c.statusId) !== 'I') continue
     if (ctx.present.I.has(c.transactionId) || ctx.processed.I.has(c.transactionId)) continue
     if (ctx.input.registeredMissing.has(`I:${c.transactionId}`)) continue
-    count++
+    counted.add(c.transactionId)
   }
-  return count
+  return counted.size
 }

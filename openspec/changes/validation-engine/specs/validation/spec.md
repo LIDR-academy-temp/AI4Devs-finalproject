@@ -199,6 +199,11 @@ Approved + Declined en E y Refund + Chargeback en I SHALL ser colisión con adve
 - **WHEN** se valida
 - **THEN** hay una sola `collision` / `in_batch` con las tres apariciones incluidas, y ningún `duplicate`
 
+#### Scenario: Colisión contra el histórico con un CHB 2 liquidado
+- **GIVEN** un `Chargeback` en el import y, en batches vigentes anteriores, un `CHB 2` y un `Refund` de la misma transacción
+- **WHEN** se valida
+- **THEN** hay una `collision` / `across_batches` que lista la aparición actual (incluida), el `CHB 2` y el `Refund` históricos, igual que la colisión en el batch
+
 #### Scenario: CHB 2 contra un Chargeback ya liquidado
 - **GIVEN** un `CHB 2` en el import y un `Chargeback` sin `excludeAmount` de la misma transacción en un batch vigente anterior
 - **WHEN** se valida

@@ -8,7 +8,8 @@ import type { HistoryMovement, Issue, Occurrence } from './types.js'
  * same (status, excludeAmount) are a duplicate (current excluded, historical as evidence); those with some movement
  * of a different status are a collision (current included). Chargeback against CHB 2 is compatible: nothing
  * (question 7). A current row whose status is unresolved differs from every historical movement: a collision. In R the
- * status does not count: every current R row of a key with R history is a duplicate.
+ * status does not count: every current R row of a key with R history is a duplicate. A collision lists, as evidence,
+ * the different movements and also the compatible ones (CHB 2), like the in-batch collision.
  * Independent of the in-batch detection.
  */
 function acrossBatches(ctx: ValidationContext, wanted: 'same' | 'different'): SlotOutput {
@@ -30,6 +31,12 @@ function acrossBatches(ctx: ValidationContext, wanted: 'same' | 'different'): Sl
       if (hits.length === 0) continue
       current.push(r)
       for (const m of hits) previous.add(m)
+      // A collision also lists the settled movements compatible with the row (CHB 2 next to its Chargeback), as the
+      // in-batch collision does: nothing of the movement is left out of the finding.
+      if (wanted === 'different' && statusId !== null && statusCounts(r.cycle)) {
+        const row = { statusId, excludeAmount: r.excludeAmount }
+        for (const m of history) if (relation(row, m, ctx.catalog) === 'compatible') previous.add(m)
+      }
     }
     if (current.length === 0) continue
     const first = current[0]!

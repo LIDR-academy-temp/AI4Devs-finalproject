@@ -18,7 +18,8 @@ export interface ValidationRowSource {
 
 /**
  * The account of the import with the channels it is primary for (AccountChannel.isPrimary = 1) and the
- * Channel.rollingReserveDays of every channel of its provider (the expiry of a reserve).
+ * Channel.rollingReserveDays of every channel of its provider, inactive ones included (the expiry of a reserve: a
+ * channel missing from the map is a programming error in the engine).
  */
 export interface AccountScopeSource {
   accountOf(importId: string): Promise<AccountScope>
