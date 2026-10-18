@@ -79,6 +79,13 @@ Issue #6 (recorte del 18-oct) y smoke E2E de #7. Rama: `feat/web-import`, creada
 - [ ] 10.4 Verificar `pnpm lint && pnpm typecheck && pnpm test && pnpm openapi:check && pnpm --filter @recon/frontend build` en verde, `pnpm --filter @recon/backend test:integration` y `pnpm test:e2e` en verde contra la base sembrada, y `openspec validate web-import --type change --strict` sin avisos
 - [ ] 10.5 Commit: `docs(import): capturas de las pantallas de importación y registro en prompts.md`
 
+## 11. Ajustes tras la prueba manual
+
+- [ ] 11.1 Files: **Continue to mapping** con permiso y al menos un archivo, que lleva a `step=mapping`; test y commit propios
+- [ ] 11.2 Mapping: línea compacta para las hojas con 0 filas (`0 rows`) y para las ignoradas por regla con filas (propuesta, filas y **Edit**); el `PUT mapping` sigue enviando todas las hojas; test y commit propios
+- [ ] 11.3 Readiness agrupada por archivo, con lo accionable primero y las notas informativas plegadas bajo `N informational notes`; test y commit propios
+- [ ] 11.4 Tabla del análisis: hoja primero y siempre visible, archivo truncado con su nombre completo como tooltip; test y commit propios
+
 ## Workflow follow-up
 
 - `/opsx:verify` para contrastar implementación y artifacts.

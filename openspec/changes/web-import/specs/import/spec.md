@@ -47,6 +47,11 @@ El usuario SHALL poder arrastrar y soltar, o elegir con el teclado, uno o varios
 - **WHEN** suelta diez `.xlsx` distintos y válidos, la aplicación pasa a `/imports/<importId>` tras el primero y, antes de que terminen, `analyst` abre Dashboard y vuelve al import
 - **THEN** el API recibe las diez subidas, una sola de ellas crea el import, y el paso Files muestra los diez archivos
 
+#### Scenario: Continuar al pareo
+- **GIVEN** un import en `uploaded` con al menos un archivo
+- **WHEN** `analyst` pulsa **Continue to mapping** en el paso Files
+- **THEN** la pantalla pasa al paso Mapping (`step=mapping`); el botón no aparece sin archivos ni para `viewer`
+
 #### Scenario: Primer archivo ilegible
 - **GIVEN** `analyst` con `ProviderA-USD` elegida
 - **WHEN** suelta `broken.xlsx` (el API responde `422 file_unreadable`) seguido de `Recon_Template_ProviderA-USD_batch-clean.xlsx`
@@ -93,7 +98,7 @@ El paso Mapping SHALL mostrar una tarjeta por archivo y, por hoja, destacados su
 
 #### Scenario: Propuesta de la plantilla estándar
 - **WHEN** `analyst` abre el paso Mapping del import de `batch-clean` recién subido
-- **THEN** `APP` muestra `Proposed: E · Successful — global rule`, `DEC` `Proposed: E · Declined — global rule`, `CHB` `Proposed: I · Chargeback — global rule`, `REF` `Proposed: I · Refund — global rule`, `RDR` `Proposed: I · RDR — global rule`, `RR` `Proposed: R · reserve, no status — global rule`, `Other Fees` `Proposed: batch fees — global rule` y las otras tres hojas `Proposed: ignore — global rule` con su nota
+- **THEN** `APP` muestra `Proposed: E · Successful — global rule`, `DEC` `Proposed: E · Declined — global rule`, `CHB` `Proposed: I · Chargeback — global rule`, `REF` `Proposed: I · Refund — global rule`, `RDR` `Proposed: I · RDR — global rule`, `RR` `Proposed: R · reserve, no status — global rule` y `Other Fees` `Proposed: batch fees — global rule`
 - **AND** los controles de `APP` muestran `Transactions`, `E` y `Successful`
 
 #### Scenario: Propuesta del conjunto legacy
@@ -108,6 +113,17 @@ El paso Mapping SHALL mostrar una tarjeta por archivo y, por hoja, destacados su
 - **GIVEN** un libro con una hoja `Bonus` sin regla
 - **WHEN** abre el paso Mapping
 - **THEN** `Bonus` muestra `No proposal` y el tipo sin elegir
+
+### Requirement: Pantalla Column Mapping: hojas sin nada que parear
+Una hoja con 0 filas y tipo propuesto SHALL mostrarse como una línea compacta con su nombre y `0 rows`, sin controles ni vista previa. Una hoja con filas ignorada por regla SHALL mostrarse como una línea compacta con su nombre, la propuesta y sus filas, con **Edit** para desplegar sus controles y su nota.
+
+#### Scenario: Hojas compactas de la plantilla estándar
+- **WHEN** `analyst` abre el paso Mapping del import de `batch-clean` recién subido
+- **THEN** `Duplicate Corrections` y `CHB Alerts` (0 filas) son una línea con `0 rows` sin controles, y `Settings` (21 filas) una línea con `Proposed: ignore — global rule`, `21 rows` y **Edit**, sin controles
+
+#### Scenario: Editar una hoja ignorada por regla
+- **WHEN** `analyst` pulsa **Edit** en `Settings`
+- **THEN** ve los controles de `Settings` con `Ignore` y su nota `Sheet "Settings" is ignored by rule "Settings"`, y puede cambiar el tipo
 
 ### Requirement: Pantalla Column Mapping: propuesta por columna
 Por cada columna de una hoja `Transactions` o `Batch fees`, el paso Mapping SHALL mostrar el campo del pareo efectivo y el origen de la propuesta, o `Keep as reference` cuando no se parea. Una columna pareada como `status` SHALL mostrar cómo se resuelve cada valor distinto de la hoja (`statusValues`). La lista de campos SHALL excluir `gateway`.
@@ -152,7 +168,7 @@ Con permiso y el import en `uploaded` o `mapped`, el usuario SHALL poder cambiar
 - **THEN** sus columnas quedan deshabilitadas y `Bonus` puede confirmarse
 
 ### Requirement: Pantalla Column Mapping: confirmación
-**Confirm mapping** SHALL enviar el pareo de todas las hojas del import, con las columnas no pareadas fuera y sin columnas en las hojas `Ignore`. Con `200` el import SHALL mostrarse en `mapped`, la pantalla SHALL tomar el pareo confirmado como estado sin cambios y SHALL mostrar la readiness de la respuesta. Un `400` o `409` SHALL mostrarse en contexto sin perder lo editado.
+**Confirm mapping** SHALL enviar el pareo de todas las hojas del import, también las que se muestran compactas, con las columnas no pareadas fuera y sin columnas en las hojas `Ignore`. Con `200` el import SHALL mostrarse en `mapped`, la pantalla SHALL tomar el pareo confirmado como estado sin cambios y SHALL mostrar la readiness de la respuesta. Un `400` o `409` SHALL mostrarse en contexto sin perder lo editado.
 
 #### Scenario: Confirmar la propuesta de la plantilla
 - **GIVEN** el import de `batch-clean` en `uploaded`
@@ -195,6 +211,14 @@ La barra de readiness SHALL mostrar `Ready to analyze` o cada elemento de `readi
 - **GIVEN** un import en `mapped` con `part1` confirmado
 - **WHEN** `analyst` añade `part2`
 - **THEN** la barra nombra cada hoja de `part2` con `confirmation` y **Analyze** está deshabilitado, aunque el detalle del API responda `readiness.canAnalyze = true` (solo el `422` de analyze trae esas hojas; la pantalla las deriva de `mappingConfirmed`)
+
+### Requirement: Pantalla Column Mapping: readiness por archivo
+La barra de readiness SHALL agrupar sus elementos por archivo bajo su nombre, con lo del import sin hoja antes, y dentro de cada archivo lo accionable primero. Las notas puramente informativas (hoja sin filas, hoja oculta, hoja ignorada por regla) SHALL plegarse dentro de su archivo bajo `N informational notes`.
+
+#### Scenario: Notas por archivo
+- **GIVEN** el import de `batch-split` recién subido
+- **WHEN** abre el paso Mapping
+- **THEN** la barra muestra un grupo por archivo con su nombre; en `part1`, `DEC · Fixed status Declined with rows: the DEC range will open at validation` a la vista y `8 informational notes` plegadas; en `part2`, solo `6 informational notes` plegadas
 
 ### Requirement: Pantalla Column Mapping: análisis en curso
 **Analyze** SHALL lanzar `POST analyze` una sola vez: durante la espera, que puede durar decenas de segundos, SHALL mostrarse `Analyzing… this can take up to a minute.` con los controles del import deshabilitados. Con `200` SHALL llevar al paso Analysis. Ante `422 mapping_incomplete` SHALL mostrar los faltantes; ante `409` o un fallo de red, SHALL releer el import antes de decidir.
@@ -261,7 +285,7 @@ El paso Analysis SHALL listar cada código de `analysis.warnings` con conteo may
 - **THEN** ve `No warnings`
 
 ### Requirement: Resultado del análisis: tabla de filas
-El paso Analysis SHALL mostrar las filas de `GET rows` paginadas en el servidor (50 por página), en el orden del API, con archivo, hoja, fila, ID leído como texto, ciclo, resultado y motivo, estado, importe, canal y advertencias. SHALL permitir filtrar por resultado. Una fila ambigua SHALL mostrar sus candidatas sin acción.
+El paso Analysis SHALL mostrar las filas de `GET rows` paginadas en el servidor (50 por página), en el orden del API, con hoja y archivo (la hoja primero y siempre visible; el archivo truncado, con su nombre completo como tooltip), fila, ID leído como texto, ciclo, resultado y motivo, estado, importe, canal y advertencias. SHALL permitir filtrar por resultado. Una fila ambigua SHALL mostrar sus candidatas sin acción.
 
 #### Scenario: No asociadas primero
 - **GIVEN** el import de `batch-issues` analizado
@@ -280,6 +304,11 @@ El paso Analysis SHALL mostrar las filas de `GET rows` paginadas en el servidor 
 #### Scenario: Fila ambigua
 - **WHEN** una fila es `ambiguous` con candidatas en dos gateways
 - **THEN** muestra `Ambiguous` y el nombre de gateway de cada candidata, sin control para elegir
+
+#### Scenario: Hoja y archivo de cada fila
+- **GIVEN** el import de `batch-split` analizado
+- **WHEN** abre el paso Analysis
+- **THEN** cada fila muestra primero el nombre de su hoja y después el de su archivo, truncado, con el nombre completo como tooltip
 
 ### Requirement: Cancelación del import desde la pantalla
 Con permiso y el import en `uploaded`, `mapped`, `analyzed` o `validated`, el espacio del import SHALL ofrecer **Cancel import**, que pide confirmación antes de llamar a `POST cancel`. Cancelado, el import SHALL mostrarse en solo lectura con su estado y un enlace para empezar un import nuevo en la misma cuenta.
