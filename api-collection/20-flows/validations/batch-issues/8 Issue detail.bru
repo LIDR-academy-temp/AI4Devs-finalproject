@@ -1,0 +1,39 @@
+meta {
+  name: 8 Issue detail
+  type: http
+  seq: 8
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/validation-issues/:issueId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  issueId: {{dupIssueId}}
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const excluded = res.body.occurrences.find((o) => o.defaultIncluded === false);
+    if (excluded) {
+      bru.setVar('excludedOccurrenceId', excluded.occurrenceId);
+    }
+  }
+}
+
+tests {
+  test('the duplicate with both occurrences, the second excluded by default and editable for analyst', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.run.isCurrent).to.equal(true);
+    expect(res.body.occurrences).to.have.length(2);
+    const excluded = res.body.occurrences.find((o) => o.defaultIncluded === false);
+    expect(excluded.includeInSettlement).to.equal(false);
+    expect(excluded.editable).to.equal(true);
+    expect(res.body.history).to.eql([]);
+  });
+}
