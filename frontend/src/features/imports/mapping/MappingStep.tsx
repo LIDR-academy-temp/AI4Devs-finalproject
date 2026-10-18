@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -20,15 +20,19 @@ export function MappingStep({ detail, analysis }: { detail: ImportDetail; analys
   const reload = useReloadImport(detail.importId)
   // isPending only changes on the next render: two clicks in the same tick would both pass it.
   const sending = useRef(false)
+  // A failure outside the API (the body could not be built) leaves no error in the mutation.
+  const [failed, setFailed] = useState(false)
 
   const submit = form.handleSubmit(async (values) => {
     if (sending.current) return
     sending.current = true
+    setFailed(false)
     try {
       const confirmed = await confirm.mutateAsync(toMappingConfirmation(values, detail))
       form.reset(valuesFromDetail(confirmed))
     } catch (error) {
-      if (error instanceof ApiError && error.status === 409) void reload()
+      if (!(error instanceof ApiError)) setFailed(true)
+      else if (error.status === 409) void reload()
     } finally {
       sending.current = false
     }
@@ -58,7 +62,7 @@ export function MappingStep({ detail, analysis }: { detail: ImportDetail; analys
       ? strings.rejections.notEditable(String((confirm.error.details as { status?: string } | undefined)?.status ?? ''))
       : confirm.error instanceof ApiError && confirm.error.status === 400
         ? confirm.error.message
-        : confirm.error
+        : confirm.error || failed
           ? strings.mapping.confirmFailed
           : null
 
