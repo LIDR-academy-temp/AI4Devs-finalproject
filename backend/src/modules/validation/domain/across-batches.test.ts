@@ -167,6 +167,20 @@ describe('duplicate_across_batches and status_collision_across_batches', () => {
     ])
   })
 
+  it('R has no status: a settled R movement (Successful) and a current RR row (Chargeback) are a duplicate, the row excluded (H1)', () => {
+    const { dup, col } = run(
+      [row({ cycle: 'R', status: 'Chargeback', gateway: 'Chargeback' })],
+      [movement({ cycle: 'R', status: 'Successful' })],
+    )
+
+    expect(col.issues).toEqual([])
+    expect(dup.issueCount).toBe(1)
+    expect(dup.issues[0]!.occurrences.map((o) => [o.sourceType, o.statusId, o.defaultIncluded])).toEqual([
+      ['current_import', STATUS.Chargeback, false],
+      ['previous_batch', STATUS.Successful, true],
+    ])
+  })
+
   it('history of another cycle is not compared', () => {
     const { dup, col } = run([row({ cycle: 'R', status: 'Successful' })], [movement({ cycle: 'E' })])
 

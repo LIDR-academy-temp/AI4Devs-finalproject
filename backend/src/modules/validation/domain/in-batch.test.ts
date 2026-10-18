@@ -186,6 +186,17 @@ describe('duplicate_in_batch and status_collision_in_batch', () => {
     expect(col.issues).toEqual([])
   })
 
+  it('R has no status: two RR rows of the same transaction with different statuses are a duplicate, not a collision (H1)', () => {
+    const { dup, col } = run([
+      row({ cycle: 'R', status: 'Successful', rowNo: 2 }),
+      row({ cycle: 'R', status: 'Chargeback', gateway: 'Chargeback', rowNo: 3 }),
+    ])
+
+    expect(col.issues).toEqual([])
+    expect(dup.issueCount).toBe(1)
+    expect(dup.issues[0]!.occurrences.map((o) => o.defaultIncluded)).toEqual([true, false])
+  })
+
   it('foreign rows take no part', () => {
     const { dup, col } = run([
       row({ providerId: 101, channelId: 1001 }),
