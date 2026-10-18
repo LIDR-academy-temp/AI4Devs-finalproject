@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 import { Blob as NodeBlob, File as NodeFile } from 'node:buffer'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll } from 'vitest'
 import { session } from '@/lib/session/session'
 import { resetDb } from './msw/handlers'
@@ -41,6 +41,10 @@ Element.prototype.scrollIntoView ??= () => {}
 
 // jsdom does not implement scrolling; the router's scroll restoration calls it on every navigation.
 window.scrollTo = () => {}
+
+// The first render of a screen in a file (the Analysis step reads the import, its rows and its validation run) can
+// take over a second when the whole suite runs in parallel under jsdom; findBy and waitFor wait up to 5 s.
+configure({ asyncUtilTimeout: 5000 })
 
 // Any request without a handler fails the test: the screens may only call the endpoints they are meant to.
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { importRecord, importRequests, seedImport } from '@/test/msw/imports'
 import { holdNextValidation, respondNext, seedValidationRun, validationRequests } from '@/test/msw/validations'
@@ -26,6 +26,24 @@ describe('Analysis & Validations: no double run and reload on conflict (spec "co
     expect(button).toBeDisabled()
     expect(section().getByText('Running the validations…')).toBeInTheDocument()
     hold.release()
+    expect(await section().findByRole('button', { name: 'Run again' })).toBeEnabled()
+    expect(validationRequests('run')).toHaveLength(1)
+  })
+
+  it('two clicks in the same tick, before React re-renders, still send a single POST', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const hold = holdNextValidation('run')
+    await openAnalysis(importId)
+    const button = section().getByRole('button', { name: 'Run validations' })
+
+    // Inside one act the button cannot be disabled between the clicks: only the synchronous guard stops the second.
+    act(() => {
+      fireEvent.click(button)
+      fireEvent.click(button)
+    })
+    await hold.arrived
+    hold.release()
+
     expect(await section().findByRole('button', { name: 'Run again' })).toBeEnabled()
     expect(validationRequests('run')).toHaveLength(1)
   })
