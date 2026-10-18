@@ -176,7 +176,7 @@ El tipo de `tx` lo fija #11 (cliente transaccional de Prisma). El comentario dej
 
 ## Contrato para #10
 
-Base `/api/v1`. Todas las rutas exigen `Authorization: Bearer <access>`. Formato de error uniforme: `{ code: string, message: string, details?: unknown }`. Fechas en ISO 8601 UTC con milisegundos (`2026-10-18T10:15:30.123Z`). Los ids `BIGINT` y el dinero viajan como string. Errores comunes a todas las rutas: `401 unauthorized` (sin token o caducado); `400 validation_error` (parámetros, query o cuerpo inválidos; `details` con los problemas de Zod); `404 not_found` (import, hallazgo o aparición inexistente **o** fuera del alcance, con el mismo cuerpo: `{ code: "not_found", message: "Import not found" | "Validation issue not found" | "Conflict occurrence not found" }`).
+Base `/api/v1`. Todas las rutas exigen `Authorization: Bearer <access>`. Formato de error uniforme: `{ code: string, message: string, details?: unknown }`. Fechas en ISO 8601 con milisegundos y `Z` (`2026-10-18T10:15:30.123Z`). Las de negocio (`ranges`, `relevantDate`) son hora de pared de America/New_York y la `Z` es solo transporte; las de auditoría (`runAt`, `reviewedAt`, `invalidatedAt`, `resolvedAt`, `changedAt`, `history[].at`) son instantes UTC (README §3.2 "Fechas y zona horaria", deuda en el issue #48). Los ids `BIGINT` y el dinero viajan como string. Errores comunes a todas las rutas: `401 unauthorized` (sin token o caducado); `400 validation_error` (parámetros, query o cuerpo inválidos; `details` con los problemas de Zod); `404 not_found` (import, hallazgo o aparición inexistente **o** fuera del alcance, con el mismo cuerpo: `{ code: "not_found", message: "Import not found" | "Validation issue not found" | "Conflict occurrence not found" }`).
 
 ### Tipos compartidos
 
