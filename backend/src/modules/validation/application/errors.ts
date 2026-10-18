@@ -1,15 +1,8 @@
 // Errors of the validation module (validation-runs design D9): each knows its status, code and details.
 import { DomainError } from '../../../shared/errors.js'
 
-/** Validating needs `analyzed` or `validated`; reviewing needs `analyzed`. */
-export class ImportNotAnalyzedError extends DomainError {
-  readonly status = 409
-  readonly code = 'import_not_analyzed'
-
-  constructor(status: string) {
-    super(`The import is ${status}: it must be analyzed`, { status })
-  }
-}
+// A guard of the import state machine (import-state.ts): it lives with the other import errors.
+export { ImportNotAnalyzedError } from '../../imports/domain/errors.js'
 
 /** Another writer confirmed on the import between the read and the write of this request. */
 export class ImportChangedError extends DomainError {

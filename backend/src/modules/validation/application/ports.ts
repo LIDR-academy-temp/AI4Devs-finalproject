@@ -158,6 +158,11 @@ export interface ValidationRunRepository {
   setInclusion(occurrenceId: string, includeInSettlement: boolean, userId: number, now: Date): Promise<void>
   /** One conditioned UPDATE (persistent, resolvable type, current run) plus its AuditLog row, in one transaction. */
   resolveIssue(issueId: number, note: string, userId: number, now: Date): Promise<void>
+  /**
+   * In one transaction (D7): guard on Import (analyzed), current run read under the lock (none → required; another →
+   * superseded), no blocked result, `validated` and the AuditLog `import.review` with the counts.
+   */
+  review(importId: string, runId: number, userId: number, now: Date): Promise<void>
 }
 
 /** An occurrence as stored; the service adds what the caller may do with it. */

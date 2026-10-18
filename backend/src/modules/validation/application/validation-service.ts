@@ -1,6 +1,5 @@
 import { performance } from 'node:perf_hooks'
 import {
-  type ImportStatus,
   isApproved,
   ValidationCode,
   type ValidationIssueDetail,
@@ -11,9 +10,9 @@ import {
 } from '@recon/shared'
 import { NotFoundError } from '../../../shared/errors.js'
 import type { Scope } from '../../catalog/domain/scope.js'
+import { assertCanReview, assertCanValidate, VALIDATABLE_STATUSES } from '../../imports/domain/import-state.js'
 import { runValidations } from '../domain/run-validations.js'
 import type { CycleRanges } from '../domain/types.js'
-import { ImportNotAnalyzedError } from './errors.js'
 import { loadValidationInput } from './load-validation-input.js'
 import type {
   ImportRef,
@@ -32,9 +31,6 @@ export interface ValidationServiceDeps {
   now?: () => Date
 }
 
-/** Validating is accepted in `analyzed` and in `validated`, which goes back to `analyzed` (P1). */
-const VALIDATABLE: ReadonlySet<ImportStatus> = new Set(['analyzed', 'validated'])
-
 const iso = (date: Date) => date.toISOString()
 
 /** Runs, findings, the analyst's actions and the review of an import (README HU2, §4.4; validation-runs design). */
@@ -48,7 +44,7 @@ export class ValidationService {
   /** `POST /imports/{id}/validations` (D4): load and engine outside the transaction, guarded write. */
   async run(scope: Scope, userId: number, importId: string): Promise<ValidationRunView> {
     const ref = await this.requireImport(scope, importId)
-    if (!VALIDATABLE.has(ref.status)) throw new ImportNotAnalyzedError(ref.status)
+    assertCanValidate(ref.status)
     const started = performance.now()
     const { input } = await loadValidationInput(this.deps.sources, importId)
     const loaded = performance.now()
@@ -66,6 +62,17 @@ export class ValidationService {
       },
       'validation run stored',
     )
+    return this.viewOf(await this.requireImport(scope, importId))
+  }
+
+  /**
+   * `POST /imports/{id}/review` (D7): the decision on the run the analyst saw. The repository re-reads the current run
+   * inside its guarded transaction, so a run confirmed meanwhile makes it answer validation_run_superseded.
+   */
+  async review(scope: Scope, userId: number, importId: string, runId: number): Promise<ValidationRunView> {
+    const ref = await this.requireImport(scope, importId)
+    assertCanReview(ref.status)
+    await this.deps.runs.review(importId, runId, userId, this.now())
     return this.viewOf(await this.requireImport(scope, importId))
   }
 
@@ -134,14 +141,15 @@ export class ValidationService {
 
 /** Only these findings are resolved by hand (P5). */
 const RESOLVABLE_TYPES: ReadonlySet<string> = new Set(['non_recorded_adjustment', 'status_mismatch'])
-/** Inclusions change in analyzed and in validated, which goes back to analyzed (P4). */
-const INCLUSION_EDITABLE: ReadonlySet<ImportStatus> = new Set(['analyzed', 'validated'])
 
 function detailOf(stored: StoredIssueDetail, canProcess: boolean): ValidationIssueDetail {
   const { summary } = stored
   const occurrences = stored.occurrences.map((o) => {
     const editable =
-      canProcess && stored.isCurrent && o.sourceType === 'current_import' && INCLUSION_EDITABLE.has(stored.importStatus)
+      canProcess &&
+      stored.isCurrent &&
+      o.sourceType === 'current_import' &&
+      VALIDATABLE_STATUSES.has(stored.importStatus)
     const includable = editable && reserveRuleBlocks(summary.cycle, stored.occurrences, o) === null
     return { ...o, editable, includable }
   })

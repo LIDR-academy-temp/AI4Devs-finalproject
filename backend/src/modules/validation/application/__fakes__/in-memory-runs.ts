@@ -24,12 +24,14 @@ import type { Scope } from '../../../catalog/domain/scope.js'
 import { ImportNotEditableError } from '../../../imports/domain/errors.js'
 import type { CycleRanges, Occurrence, ValidationReport } from '../../domain/types.js'
 import {
+  BlockingValidationIssueError,
   ImportChangedError,
   ImportNotAnalyzedError,
   IssueAlreadyResolvedError,
   IssueNotResolvableError,
   OccurrenceNotEditableError,
   OccurrenceNotIncludableError,
+  ValidationRunRequiredError,
   ValidationRunSupersededError,
 } from '../errors.js'
 import { compareIssueOrder } from '../issue-order.js'
@@ -489,6 +491,38 @@ export class InMemoryRunRepository implements ValidationRunRepository {
       entityType: 'ValidationIssue',
       entityId: String(issueId),
       detail: { issueId, runId: run.runId, importId: run.importId, note },
+      at: now,
+    })
+  }
+
+  async review(importId: string, runId: number, userId: number, now: Date): Promise<void> {
+    this.beforeSave?.()
+    const imported = this.requireImport(importId)
+    if (imported.status !== 'analyzed') throw new ImportNotAnalyzedError(imported.status)
+    const current = this.currentRunOf(importId)
+    if (!current) throw new ValidationRunRequiredError()
+    if (current.runId !== runId) throw new ValidationRunSupersededError(runId, current.runId)
+    const blocked = current.results.filter((r) => r.outcome === 'blocked')
+    if (blocked.length > 0)
+      throw new BlockingValidationIssueError(
+        runId,
+        blocked.map((r) => r.validationCode),
+        current.issues.filter((i) => i.blocking).map((i) => i.issueId),
+      )
+    imported.status = 'validated'
+    imported.updatedAt = now
+    this.audit.push({
+      userId,
+      action: 'import.review',
+      entityType: 'Import',
+      entityId: importId,
+      detail: {
+        runId,
+        issueCounts: Object.fromEntries(current.results.map((r) => [r.validationCode, r.issueCount])),
+        changedOccurrences: current.issues
+          .flatMap((i) => i.occurrences)
+          .filter((o) => o.includeInSettlement !== o.defaultIncluded).length,
+      },
       at: now,
     })
   }

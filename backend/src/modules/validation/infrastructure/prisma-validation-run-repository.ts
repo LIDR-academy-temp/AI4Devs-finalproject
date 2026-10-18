@@ -23,12 +23,14 @@ import type { Scope } from '../../catalog/domain/scope.js'
 import { ImportNotEditableError } from '../../imports/domain/errors.js'
 import { MAX_SQL_PARAMETERS } from '../../imports/infrastructure/sql-limits.js'
 import {
+  BlockingValidationIssueError,
   ImportChangedError,
   ImportNotAnalyzedError,
   IssueAlreadyResolvedError,
   IssueNotResolvableError,
   OccurrenceNotEditableError,
   OccurrenceNotIncludableError,
+  ValidationRunRequiredError,
   ValidationRunSupersededError,
 } from '../application/errors.js'
 import type {
@@ -189,6 +191,70 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
     }
     const current = await tx.import.findUnique({ where: { importId }, select: { status: true } })
     throw new ImportNotEditableError(current?.status ?? 'unknown')
+  }
+
+  async review(importId: string, runId: number, userId: number, now: Date): Promise<void> {
+    await this.prisma.$transaction(
+      async (tx) => {
+        // The guard takes the Import lock first: the current run read below cannot change before the commit.
+        const claimed = await tx.import.updateMany({
+          where: { importId, status: 'analyzed' },
+          data: { updatedAt: now },
+        })
+        if (claimed.count !== 1) {
+          const current = await tx.import.findUnique({ where: { importId }, select: { status: true } })
+          throw new ImportNotAnalyzedError(current?.status ?? 'unknown')
+        }
+        const current = await tx.validationRun.findFirst({
+          where: { importId, isSuperseded: false },
+          select: {
+            runId: true,
+            results: { select: { validationCode: true, outcome: true, issueCount: true } },
+          },
+        })
+        if (!current) throw new ValidationRunRequiredError()
+        if (current.runId !== runId) throw new ValidationRunSupersededError(runId, current.runId)
+        const blocked = current.results.filter((r) => r.outcome === 'blocked')
+        if (blocked.length > 0) {
+          const issues = await tx.validationIssue.findMany({
+            where: { blocking: true, result: { runId } },
+            select: { issueId: true },
+            orderBy: { issueId: 'asc' },
+          })
+          throw new BlockingValidationIssueError(
+            runId,
+            ValidationCode.options.filter((code) => blocked.some((r) => r.validationCode === code)),
+            issues.map((i) => i.issueId),
+          )
+        }
+        const [changed] = await tx.$queryRaw<{ n: number | bigint }[]>`
+          SELECT COUNT(*) AS n FROM [ConflictOccurrence] o
+          JOIN [ValidationIssue] i ON i.[issueId] = o.[issueId]
+          JOIN [ValidationResult] r ON r.[resultId] = i.[resultId]
+          WHERE r.[runId] = ${runId} AND o.[includeInSettlement] <> o.[defaultIncluded]`
+        await tx.import.update({ where: { importId }, data: { status: 'validated' } })
+        await tx.auditLog.create({
+          data: {
+            userId,
+            action: REVIEW,
+            entityType: 'Import',
+            entityId: importId,
+            createdAt: now,
+            detailJson: JSON.stringify({
+              runId,
+              issueCounts: Object.fromEntries(
+                ValidationCode.options.map((code) => [
+                  code,
+                  current.results.find((r) => r.validationCode === code)?.issueCount ?? 0,
+                ]),
+              ),
+              changedOccurrences: Number(changed?.n ?? 0),
+            }),
+          },
+        })
+      },
+      { timeout: RUN_TX_TIMEOUT_MS, maxWait: RUN_TX_MAX_WAIT_MS },
+    )
   }
 
   async resolveIssue(issueId: number, note: string, userId: number, now: Date): Promise<void> {
