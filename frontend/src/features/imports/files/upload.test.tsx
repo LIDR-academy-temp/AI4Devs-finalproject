@@ -239,3 +239,30 @@ describe('Upload Files: removing files (spec "Pantalla Upload Files: quitar arch
     expect(await screen.findByRole('button', { name: strings.analyze.button })).toBeDisabled()
   })
 })
+
+describe('Upload Files: continuing (spec "Continuar al pareo")', () => {
+  const continueButton = () => screen.queryByRole('button', { name: 'Continue to mapping' })
+
+  it('Continue to mapping takes an import with files to the Mapping step', async () => {
+    const { importId } = seedImport('batch-clean')
+    const { user, router } = renderApp(`/imports/${importId}?step=files`, { as: 'analyst' })
+    await findFileEntry(CLEAN)
+
+    await user.click(continueButton()!)
+
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ step: 'mapping' }))
+    expect(screen.getByRole('tab', { name: strings.steps.mapping })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('is not offered without files nor to viewer', async () => {
+    const empty = seedImport('batch-clean', { labels: [] }).importId
+    const { unmount } = renderApp(`/imports/${empty}?step=files`, { as: 'analyst' })
+    await screen.findByText(strings.files.empty)
+    expect(continueButton()).not.toBeInTheDocument()
+    unmount()
+
+    renderApp(`/imports/${seedImport('batch-clean').importId}?step=files`, { as: 'viewer' })
+    await findFileEntry(CLEAN)
+    expect(continueButton()).not.toBeInTheDocument()
+  })
+})
