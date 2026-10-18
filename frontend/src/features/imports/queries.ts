@@ -1,8 +1,8 @@
 // Server state of the import workspace (design D3). Every GET of an import re-reads its files on the server, so the
 // detail is not refetched on focus and the mutations write their response into the cache instead of invalidating.
-import { queryOptions } from '@tanstack/react-query'
+import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 import { api, unwrap } from '@/lib/api/client'
-import type { ImportDetail } from '@/lib/api/types'
+import type { ImportDetail, ImportRowsPage, ImportRowsQuery } from '@/lib/api/types'
 
 /**
  * The detail typed from the contract. openapi-fetch's `Readable<>` (openapi-typescript-helpers 0.1.0) drops the
@@ -19,4 +19,19 @@ export const importQuery = (importId: string) =>
     queryFn: () => asDetail(api.GET('/api/v1/imports/{importId}', { params: { path: { importId } } })),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+  })
+
+export const ROWS_PAGE_SIZE = 50
+
+/** A page of the rows of an analyzed import; paging keeps the previous page on screen while the next loads. */
+export const importRowsQuery = (importId: string, { match, page = 1 }: Pick<ImportRowsQuery, 'match' | 'page'>) =>
+  queryOptions({
+    queryKey: [...importKey(importId), 'rows', { match, page }] as const,
+    queryFn: () =>
+      unwrap(
+        api.GET('/api/v1/imports/{importId}/rows', {
+          params: { path: { importId }, query: { ...(match ? { match } : {}), page, pageSize: ROWS_PAGE_SIZE } },
+        }),
+      ) as Promise<ImportRowsPage>,
+    placeholderData: keepPreviousData,
   })
