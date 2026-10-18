@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { strings as loginStrings } from '@/features/auth/strings'
 import { session } from '@/lib/session/session'
+import { seedImport } from '@/test/msw/imports'
 import { recordRequests } from '@/test/msw/record'
 import { renderApp } from '@/test/render'
 import { strings } from './strings'
@@ -52,25 +53,33 @@ describe('navigation filtered by permissions', () => {
     expect(nav.getByText('Settlement List')).toBeInTheDocument()
   })
 
-  it('analyst sees New Reconciliation and In Progress, disabled, and not Payments nor Users & Roles', async () => {
+  it('analyst sees New Reconciliation as a link and In Progress disabled, and not Payments nor Users & Roles', async () => {
     renderApp('/', { as: 'analyst' })
     const nav = await mainNav()
 
-    for (const planned of ['New Reconciliation', 'In Progress']) {
-      const entry = nav.getByText(planned).closest('[aria-disabled]')
-      expect(entry).toHaveAttribute('aria-disabled', 'true')
-      expect(nav.queryByRole('link', { name: planned })).not.toBeInTheDocument()
-    }
+    expect(nav.getByRole('link', { name: 'New Reconciliation' })).toHaveAttribute('href', '/reconciliations/new')
+    const inProgress = nav.getByText('In Progress').closest('[aria-disabled]')
+    expect(inProgress).toHaveAttribute('aria-disabled', 'true')
+    expect(nav.queryByRole('link', { name: 'In Progress' })).not.toBeInTheDocument()
     expect(nav.queryByText('Payments')).not.toBeInTheDocument()
     expect(nav.queryByText('Users & Roles')).not.toBeInTheDocument()
   })
 
-  it('admin sees every MVP entry; only Dashboard and Accounts are links in this release', async () => {
+  it('admin sees every MVP entry; only Dashboard, New Reconciliation and Accounts are links in this release', async () => {
     renderApp('/', { as: 'admin' })
     const nav = await mainNav()
 
     for (const entry of MVP_ENTRIES) expect(nav.getByText(entry)).toBeInTheDocument()
-    expect(linkNames(nav)).toEqual(['Dashboard', 'Accounts'])
+    expect(linkNames(nav)).toEqual(['Dashboard', 'New Reconciliation', 'Accounts'])
+  })
+
+  it('marks New Reconciliation as the active entry inside an import', async () => {
+    const { importId } = seedImport('batch-clean')
+    renderApp(`/imports/${importId}`, { as: 'analyst' })
+    const nav = await mainNav()
+
+    expect(nav.getByRole('link', { name: 'New Reconciliation' })).toHaveAttribute('aria-current', 'page')
+    expect(nav.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
   })
 
   it('clicking an entry that is not built yet does not change the route', async () => {
