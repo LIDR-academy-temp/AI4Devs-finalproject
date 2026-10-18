@@ -169,8 +169,8 @@ La garantía es estructural: (1) `ValidationRow.transaction` no trae merchant, c
 ### D11. Vocabulario compartido
 `packages/shared/src/validation.ts`: `ValidationOutcome = z.enum(['passed','warning','blocked','not_applicable','not_implemented'])`, `IssueType` (`provider_mismatch`, `non_recorded_adjustment`, `status_mismatch`, `duplicate`, `collision`, `missing`), `IssueScope`, `OccurrenceSource`, `MissingType`, `MissingRange`, y `isApproved(outcome)` (`passed | warning`; documentado: `not_applicable` y `not_implemented` nunca). `ValidationCode` y `BLOCKING_VALIDATIONS` se siguen importando de `vocabulary.ts` sin modificarlo. `index.ts` gana `export * from './validation.js'`. #9 construirá los esquemas de respuesta encima.
 
-### D12. Migración `0004_validation_outcome`
-`pnpm --filter @recon/backend exec prisma migrate dev --create-only --name validation_outcome` genera la carpeta (vacía: los `CHECK` no están en `schema.prisma`); se escribe:
+### D12. Migraciones `0004_validation_outcome` y `0005_conflict_occurrence_unresolved_status`
+El plan era generar la carpeta con `prisma migrate dev --create-only --name validation_outcome` (saldría vacía: los `CHECK` no están en `schema.prisma`), pero `recon_app` no puede crear la shadow database que necesita (`P3014`, correcto por mínimo privilegio); por decisión de la persona la carpeta se crea a mano con el mismo contenido. Se escribe:
 ```sql
 -- Validation outcome vocabulary: failed is replaced by warning and blocked (validation-engine).
 ALTER TABLE [dbo].[ValidationResult] DROP CONSTRAINT [CK_ValidationResult_outcome];
@@ -206,9 +206,9 @@ y los comentarios `/// passed | warning | blocked | not_applicable | not_impleme
 
 ## Migration Plan
 
-1. El agente genera `0004_validation_outcome` con `--create-only` y escribe el SQL (D12).
-2. La persona la aplica en local con `! pnpm db:migrate` y corre el test de integración de D12.
-3. Despliegue = merge del PR (CI aplica migraciones sobre su base). Rollback: migración inversa que restaura los dos `CHECK` (`outcome` con `failed`, `issueType` sin `status_mismatch`; no hay filas de `ValidationResult` ni `ValidationIssue` aún); el código del motor no se usa en ninguna ruta hasta #9.
+1. El agente escribe a mano `0004_validation_outcome` y `0005_conflict_occurrence_unresolved_status` (D12): `--create-only` no puede ejecutarse porque `recon_app` no tiene permiso para crear la shadow database.
+2. La persona revisa el SQL, aplica cada una en local con `! pnpm db:migrate` y se corre el test de integración `validation-outcome` (cubre las dos).
+3. Despliegue = merge del PR (CI aplica migraciones sobre su base). Rollback, en orden inverso: `0005` se deshace devolviendo `ConflictOccurrence.statusId` a `INT NOT NULL` (eliminando y recreando la FK; falla de forma visible si ya hay apariciones con `statusId` NULL, que habría que decidir antes); `0004` con una migración que restaura los dos `CHECK` (`outcome` con `failed`, `issueType` sin `status_mismatch`; no hay filas de `ValidationResult` ni `ValidationIssue` aún). El código del motor no se usa en ninguna ruta hasta #9.
 
 ## Open Questions
 
