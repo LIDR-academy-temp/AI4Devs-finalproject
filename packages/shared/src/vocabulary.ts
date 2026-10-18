@@ -7,6 +7,26 @@ export type Cycle = z.infer<typeof Cycle>
 export const TransactionStatusCode = z.enum(['Pending', 'Successful', 'Declined', 'Chargeback', 'Refund', 'RDR'])
 export type TransactionStatusCode = z.infer<typeof TransactionStatusCode>
 
+export interface TransactionStatus {
+  readonly statusId: number
+  readonly code: TransactionStatusCode
+  readonly name: string
+  readonly cycle: Cycle
+}
+
+/**
+ * The TransactionStatus catalog as the seed writes it (web-import, design D6). There is no endpoint for it yet;
+ * an integration test of the backend keeps it equal to the seeded table.
+ */
+export const TRANSACTION_STATUSES = [
+  { statusId: 1, code: 'Pending', name: 'Pending', cycle: 'E' },
+  { statusId: 2, code: 'Successful', name: 'Successful', cycle: 'E' },
+  { statusId: 3, code: 'Declined', name: 'Declined', cycle: 'E' },
+  { statusId: 4, code: 'Chargeback', name: 'Chargeback', cycle: 'I' },
+  { statusId: 5, code: 'Refund', name: 'Refund', cycle: 'I' },
+  { statusId: 6, code: 'RDR', name: 'RDR', cycle: 'I' },
+] as const satisfies readonly TransactionStatus[]
+
 export const SheetKind = z.enum(['transactions', 'batch_fees', 'ignore'])
 export type SheetKind = z.infer<typeof SheetKind>
 export const MatchResult = z.enum(['matched', 'unmatched', 'ambiguous', 'ignored'])

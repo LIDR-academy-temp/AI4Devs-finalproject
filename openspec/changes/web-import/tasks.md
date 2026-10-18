@@ -4,10 +4,10 @@ Issue #6 (recorte del 18-oct) y smoke E2E de #7. Rama: `feat/web-import`, creada
 
 ## 1. Catálogo de estados compartido (D6)
 
-- [ ] 1.1 Test (rojo) en `packages/shared/src/vocabulary.test.ts`: `TRANSACTION_STATUSES` tiene seis entradas con `statusId` 1…6 en orden, sus `code` son exactamente las opciones de `TransactionStatusCode`, y `cycle` es `E` para Pending, Successful y Declined e `I` para Chargeback, Refund y RDR
-- [ ] 1.2 Test (rojo) `backend/test/integration/transaction-statuses.int.test.ts`: lee `TransactionStatus` de la base sembrada (`statusId`, `code`, `name`, `cycle`, ordenado por `statusId`) y exige igualdad exacta con `TRANSACTION_STATUSES` de `@recon/shared`; la persona levanta la base con `! pnpm db:up` y `! pnpm db:seed`; verificar que falla por la constante inexistente con `pnpm --filter @recon/backend test:integration`
-- [ ] 1.3 Implementar `TRANSACTION_STATUSES` en `packages/shared/src/vocabulary.ts` (`code` como `TransactionStatusCode`, `cycle` como `Cycle`, `as const`) y exportarla desde `index.ts`; verificar 1.1 y 1.2 en verde y `pnpm typecheck`; romper a propósito la constante (intercambiar los `statusId` de Chargeback y Refund) y ver fallar 1.2 nombrando la diferencia; restaurar
-- [ ] 1.4 Commit: `test(shared): catálogo de estados contrastado con la base sembrada` y `feat(shared): constante TRANSACTION_STATUSES junto a TransactionStatusCode`
+- [x] 1.1 Test (rojo) en `packages/shared/src/vocabulary.test.ts`: `TRANSACTION_STATUSES` tiene seis entradas con `statusId` 1…6 en orden, sus `code` son exactamente las opciones de `TransactionStatusCode`, y `cycle` es `E` para Pending, Successful y Declined e `I` para Chargeback, Refund y RDR
+- [x] 1.2 Test (rojo) `backend/test/integration/transaction-statuses.int.test.ts`: lee `TransactionStatus` de la base sembrada (`statusId`, `code`, `name`, `cycle`, ordenado por `statusId`) y exige igualdad exacta con `TRANSACTION_STATUSES` de `@recon/shared`; la persona levanta la base con `! pnpm db:up` y `! pnpm db:seed`; verificar que falla por la constante inexistente con `pnpm --filter @recon/backend test:integration`
+- [x] 1.3 Implementar `TRANSACTION_STATUSES` en `packages/shared/src/vocabulary.ts` (`code` como `TransactionStatusCode`, `cycle` como `Cycle`, `as const`) y exportarla desde `index.ts`; verificar 1.1 y 1.2 en verde y `pnpm typecheck`; romper a propósito la constante (intercambiar los `statusId` de Chargeback y Refund) y ver fallar 1.2 nombrando la diferencia; restaurar
+- [x] 1.4 Commit: `test(shared): catálogo de estados contrastado con la base sembrada` y `feat(shared): constante TRANSACTION_STATUSES junto a TransactionStatusCode`
 
 ## 2. Dependencias, error del API con detalles y API falso de importación (D3, D12)
 
