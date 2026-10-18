@@ -454,3 +454,65 @@ Pendientes y avisos
 - **Prompt:** [el de arranque del change]
 - **Respuesta (resumen):**
 - **Ajuste humano:**
+
+**Prompt 2 — Aislamiento de la base de datos en los tests**
+- **Herramienta:** Claude Code
+- **Prompt:** Los tests del backend fallan en la segunda ejecución con `users_email_key` duplicado. Objetivo único: que la suite sea repetible. Deriva una BD `<db>_test`, recréala al inicio de sesión, aplica `alembic upgrade head` sobre ella y aísla cada test con transacción y rollback. Entrega `pytest` dos veces seguidas con la salida real pegada.
+- **Respuesta (resumen):** Una primera versión del `conftest.py` siguió usando la BD de desarrollo. Una segunda reescritura derivó la BD de test, pero `alembic/env.py` leía `os.environ["DATABASE_URL"]` e ignoraba el override.
+- **Ajuste humano:** La causa raíz no estaba en el `conftest.py` sino en `alembic/env.py`, y la detecté al comprobar contra qué base se ejecutaban realmente los tests. Fijé el patrón de verificación que usé desde entonces: reconstruir la imagen antes de cada prueba (el código se copia a la imagen), ejecutar `pytest` dos veces seguidas y no dar por buena ninguna afirmación de "tests passing" sin ver la salida cruda. La suite quedó en 60 tests estables.
+
+**Prompt 3 — Stub de `GET /campaigns`, fuga de SQL y campañas sin líneas**
+- **Herramienta:** Claude Code
+- **Prompt:** Completa el endpoint `GET /campaigns` (hoy devuelve `[]`), evita que un `order_reference` duplicado devuelva un 500 con SQL crudo y exige al menos una línea en el alta. Test primero en los tres casos.
+- **Respuesta (resumen):** `list_all()` en el repositorio y endpoint real; `DuplicateOrderReferenceError` mapeado a 409 con `{"code","message"}`; `min_length=1` en `lines`.
+- **Ajuste humano:** Informes anteriores daban `GET /campaigns` por completo, pero al revisar el código era un stub con un TODO. El 500 filtraba SQL al cliente, lo que es una fuga de seguridad, no solo un error feo. Verifiqué los tres casos con `curl` real (422 `too_short` con `loc: ["body","lines"]`, 409 y 200), no con el informe.
+
+**Prompt 4 — Frontend por bloques: cliente HTTP, errores, listado y formulario**
+- **Herramienta:** Claude Code
+- **Prompt:** Bloque a bloque (cliente HTTP con `id_token`, tipado de los dos formatos de error del backend, pantallas de sesión caducada y acceso denegado, listado, formulario con Zod). En cada bloque: test primero y entrega de `typecheck`, `vitest` dos veces y `docker compose build frontend`.
+- **Respuesta (resumen):** Cuatro bloques con 9, 49 y más tests; commits `c2128b9` y `171ab91` para el formulario.
+- **Ajuste humano:** (1) `next build` no compilaba aunque Vitest estaba en verde, porque Vitest no comprueba tipos; añadí el script `typecheck` y la regla de que un bloque solo está completo si pasan `typecheck`, `vitest` ×2 y `docker compose build`. (2) El commit `e0bc754` ("redirect authenticated users to campaigns list") eliminó el botón de login de la home y dejó solo un texto sin acción. Los tests pasaban; lo vi al abrir el navegador. (3) Sustituí `npm install` por `npm ci` para evitar cambios espurios en `package-lock.json`.
+
+**Prompt 5 — Configuración de Cognito (scope y app client)**
+- **Herramienta:** Claude Code
+- **Prompt:** Hacer funcionar el login real contra el User Pool: app client SPA, callbacks y scopes.
+- **Respuesta (resumen):** El código pedía el scope `openid email profile` y el flujo fallaba con `invalid_scope`.
+- **Ajuste humano:** Contrasté la configuración real de AWS con el código, algo que Claude Code no podía ver: el app client solo permitía `openid`, `email` y `phone`. Ajusté `cognito-config.ts` a `openid email`, que además es lo que necesita el backend (lee el claim `email`). Sustituí el app client creado con secret por uno SPA sin secret. Un secreto de Adform se pegó por error en un chat; lo rotaré en origen y no figura en ningún fichero del repositorio.
+
+**Prompt 6 — Mensajes de validación del formulario (Zod 4)**
+- **Herramienta:** Claude Code
+- **Prompt:** Al enviar el formulario vacío se ve el JSON en bruto de los issues de Zod 4. Test primero (ningún texto debe empezar por `[ {` ni contener `origin`), corregir la causa raíz, mapear `issue.path` a campos (incluidas rutas `lines.0.sale_cpm`) y dar a `scope` un mensaje en español. Entregar `typecheck`, `vitest` ×2 y `docker compose build frontend`.
+- **Respuesta (resumen):** Commit `9be3c1b` (mapeo por campo). El segundo commit `0106edc` traducía el error de `scope` buscando el texto "Invalid enum value", y el informe hablaba de `superRefine`.
+- **Ajuste humano:** Los 52 tests pasaban y la pantalla seguía mal, así que la verificación real fue el navegador. Contrasté el informe con mi error real: "Invalid enum value" es de Zod 3 y el proyecto usa Zod 4 (`^4.6.7`), donde el mensaje es "Invalid option: expected one of...". Lo localicé con `grep` (`message.includes("Invalid enum value")`) y exigí que el mensaje saliera del propio esquema y no de un texto en inglés de la librería. Confirmé en el navegador que `scope` muestra "Selecciona el ámbito".
+
+**Prompt 7 — 500 por nombre de campaña duplicado**
+- **Herramienta:** Claude Code
+- **Prompt:** `POST /campaigns` con un `name` ya existente devuelve 500 (`IntegrityError ... campaigns_name_key`). Test primero: 409 `duplicate_campaign_name`, sin filas nuevas en `purchase_orders` tras el fallo, y 409 `duplicate_order_reference` con `Orden`. Implementar `DuplicateCampaignNameError`. Trabajar solo en backend. Entregar `pytest` ×2 y `git show --stat`.
+- **Respuesta (resumen):** El primer intento (commit `7661eed`) solo añadió un test de frontend para un caso que ya funcionaba. El segundo (`b6958dc`) añadió el 409 en el repositorio y el router; el tercero (`744c50c`) movió el mapeo a manejadores globales en `errors.py`.
+- **Ajuste humano:** (1) Encontré el fallo al probar con datos distintos a los del `curl`; el traceback del log mostró una restricción `UNIQUE` en `campaigns.name` que el código no conocía, y revisé el resto de `UniqueConstraint` de la migración. (2) El primer informe no correspondía a lo pedido: no traía `pytest` ni tocaba el backend. Lo detecté con `git show --stat` y lo corregí mandando un solo objetivo por prompt. (3) El 409 salía envuelto en `{"detail": {...}}` en vez de `{"code","message"}`; lo comprobé con el cuerpo real en la pestaña Red de las herramientas de desarrollo, y los tests pasaron a afirmar `data.get("code")` en la raíz. (4) Comprobé en la base de datos que no quedaban órdenes de compra huérfanas tras el rollback.
+
+**Prompt 8 — `campaign_period_id: 0` en la respuesta del alta**
+- **Herramienta:** Claude Code
+- **Prompt:** `POST /campaigns` devuelve cada línea con `"campaign_period_id": 0` aunque en base de datos el valor es correcto. Test primero: el `campaign_period_id` de cada línea debe coincidir con el id de un periodo de la misma respuesta.
+- **Respuesta (resumen):** Commit `8c8031f`: se asigna el id al objeto de dominio tras el `flush`. 63 tests passing ×2.
+- **Ajuste humano:** Lo descubrí leyendo el cuerpo real del 201 en el navegador, un campo que ningún test afirmaba. Consulté `campaign_lines` en la base para confirmar que el dato guardado era correcto y que el fallo estaba solo en la respuesta.
+
+**Prompt 9 — Autorización: 403 en backend y pantalla de acceso denegado**
+- **Herramienta:** Claude Code
+- **Prompt:** Tests de `POST` y `GET /campaigns` con un usuario sin rol `operations` (403 con `{"code":"missing_role",...}`); después, que el frontend muestre `AccessDeniedPage` ante ese 403 tanto en el listado como en el formulario, probado con el cliente HTTP real y `fetch` simulado.
+- **Respuesta (resumen):** Commit `11cbda6` (tests de backend, nacen en verde porque `require_roles` ya existía); commit `0a84924` y `9d8db32` (frontend).
+- **Ajuste humano:** El backend respondía bien (403 `missing_role`) pero el navegador seguía mostrando "Error al cargar las campañas". Quité el rol con `delete from user_roles` para reproducirlo y restauré con el seed. Cuestioné que Claude Code cambiara `instanceof ApiError` por `'kind' in err` "para funcionar con mocks": es modificar código de producción para satisfacer al test, y pedí tests con el cliente real. Comprobé que la imagen se había reconstruido (capas `COPY . .` y `npm run build` sin `CACHED`) antes de dar el fallo por corregido.
+
+**Prompt 10 — Fusión, limpieza y archivado en OpenSpec**
+- **Herramienta:** Claude Code
+- **Prompt:** Fusionar `feature/register-campaign-from-purchase-order` en `feature/entrega-2-LFMC`, verificar el resultado fusionado y ejecutar `/sync-specs` y `/archive` sin tocar `backend/` ni `frontend/`, entregando `openspec list`, `git status` y `git log --stat`.
+- **Respuesta (resumen):** Fusión sin conflictos (commit `351bbcf`); `models.py` obsoleto eliminado (`f683776`); change archivado como `2026-10-18-register-campaign-from-purchase-order` y cuatro specs sincronizadas.
+- **Ajuste humano:** (1) La fusión trajo un `models.py` junto al paquete `models/` con las mismas 18 clases (sufijo `Model` en lugar de `Record`); lo comparé con `diff` antes de borrarlo y repetí la suite (65 passed ×2). (2) Claude Code archivó el change con 38 de 64 tareas sin marcar y no lo mencionó, aunque pedí listarlas; comprobé que `openspec validate` (tarea 12.4, marcada como crítica antes de archivar) se ejecutó después y no antes. Clasifiqué las tareas en hechas sin marcar, aplazadas a propósito y pendientes de documentar, y lo recojo en el README en lugar de marcarlas a mano en un registro histórico. (3) Validé que no había requisitos duplicados con los otros dos changes.
+
+**Prompt 11 — README: arranque, API y estado**
+- **Herramienta:** Claude Code
+- **Prompt:** Actualizar §2.3/§2.6 con el orden `up` → `alembic upgrade head` → seed → `restart nginx` y los requisitos de `.env`; después §4 con 3 endpoints sacados de `openapi.json`.
+- **Respuesta (resumen):** Primer diff de instalación sin el paso de migraciones y con `SEED_USER_EMAIL` descrito como "para los tests"; §4 con códigos de error `forbidden` y `not_found`, un 409 con mensaje inventado y un 422 con `type: value_error`.
+- **Ajuste humano:** El orden de arranque lo documenté porque me falló a mí (`relation "roles" does not exist` en una base nueva); el seed solo inserta datos y no crea tablas. Corregí el propósito de `SEED_USER_EMAIL` (lo lee `seed_dev_data.py`). En §4 contrasté los campos con `openapi.json` mediante un script y los errores con respuestas reales: el 403 es `missing_role` (no `forbidden`), el 409 usa los mensajes reales y el 422 es `too_short` con el `msg` de Pydantic v2. Claude Code había redactado esos datos de memoria sin contrastarlos con el backend.
+
+**Patrón común de la sesión.** Los informes de Claude Code llegaron varias veces incompletos o recortados: daban por cerrado algo que no habían hecho (GET stub, fix del 409, archivado con tareas abiertas) o citaban un solo test con `PASSED` en lugar de la suite. Lo detecté exigiendo la salida cruda de `pytest` dos veces, `git show --stat`, `typecheck` y `docker compose build`, y comprobando siempre en el navegador, donde aparecieron los fallos que los tests no veían (botón de login, JSON de Zod, 403 mal pintado, `campaign_period_id: 0`).
