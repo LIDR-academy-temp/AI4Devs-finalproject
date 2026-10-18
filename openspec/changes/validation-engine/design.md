@@ -149,6 +149,7 @@ La garantía es estructural: (1) `ValidationRow.transaction` no trae merchant, c
 - Si la primera medición local o la final no cumplen 2 s: se para y se decide (perfilar índices, evitar `bigint → string` en claves, etc.). La carga desde SQL Server es de #9 y tendrá su propia medición.
 - **Medición** (local, Windows 11, Node 22, `vitest run --project unit bench`):
   - Grupo 1 (orquestador, índices de D5 y ocho ranuras vacías): 29–51 ms en cinco ejecuciones. Con los índices rotos a propósito (historia buscada con `filter` por fila en lugar del `Map`): 1 990 ms.
+  - Final (tarea 7.2, las ocho validaciones reales): 84–97 ms en cinco ejecuciones aisladas; hasta ~210 ms cuando corre en paralelo con el resto de la suite.
 
 ### D9. Entrada de las muestras sin base (`test-support/sample-input.ts`)
 - **Filas**: se reutiliza el camino real de #5: `ImportService` con los fakes de `imports` (`FakeWorkbookReader` sobre los `.xlsx` de `data/samples`, `InMemoryTransactionLookup` sobre `worldTransactions()`, repositorios en memoria), `createImport → addFiles → confirmMapping(propuesta) → analyze`; las filas guardadas se proyectan a `ValidationRow` con `fileOrder`/`sheetOrder` del repositorio en memoria y `transaction` desde `worldTransactions()` (mismos `transactionId` = índice + 1).
