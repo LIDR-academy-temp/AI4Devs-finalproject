@@ -294,8 +294,8 @@ export class InMemoryValidationSources
           !processed.E.has(t.transactionId)) ||
         (ADJUSTMENT_STATUSES.has(t.statusId) &&
           ranges.I !== null &&
-          t.lastStatusChangedAt !== null &&
-          t.lastStatusChangedAt <= ranges.I.max &&
+          // lastStatusChangedAt <= max OR IS NULL: the engine counts the undated ones (undatedCandidateCount)
+          (t.lastStatusChangedAt === null || t.lastStatusChangedAt <= ranges.I.max) &&
           !processed.I.has(t.transactionId)) ||
         (t.statusId === PENDING && pendingMax !== null && date <= pendingMax)
       if (wanted) out.push(candidateOf(t))
