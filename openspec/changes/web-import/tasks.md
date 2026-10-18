@@ -74,10 +74,10 @@ Issue #6 (recorte del 18-oct) y smoke E2E de #7. Rama: `feat/web-import`, creada
 ## 10. Verificación integrada y documentación de cierre
 
 - [x] 10.1 Prueba manual contra la API real (la persona levanta `! pnpm db:up`, `! pnpm db:seed`, `! pnpm dev`) con `analyst` y `viewer`: `batch-split` (dos archivos, duplicado, quitar y añadir), `legacy-provider` en `ProviderC-Alt`, `batch-issues` (fila unmatched primero) y `batch-blocked` (RAM-01 de otra cuenta); anotar en el PR cualquier diferencia entre el API falso y el real y corregir el falso si la hay
-- [ ] 10.2 Capturas a 1280 px con datos del seed en `docs/wireframes/impl/` (Upload Files con dos archivos, Column Mapping de `batch-clean`, Analysis de `batch-clean` con RAM-07) y su línea en `docs/wireframes/README.md`; registro del change en `prompts.md`
+- [x] 10.2 Capturas a 1280 px con datos del seed en `docs/wireframes/impl/` (Upload Files con dos archivos, Column Mapping de `batch-clean`, Analysis de `batch-clean` con RAM-07) y su línea en `docs/wireframes/README.md`; registro del change en `prompts.md`
 - [ ] 10.3 Listar en la descripción del PR los huecos del API del proposal (catálogo de estados, motivo al cancelar, límite de archivos por import) y el job E2E de la Entrega 3, para que la persona abra los issues; no crear issues desde la sesión
 - [ ] 10.4 Verificar `pnpm lint && pnpm typecheck && pnpm test && pnpm openapi:check && pnpm --filter @recon/frontend build` en verde, `pnpm --filter @recon/backend test:integration` y `pnpm test:e2e` en verde contra la base sembrada, y `openspec validate web-import --type change --strict` sin avisos
-- [ ] 10.5 Commit: `docs(import): capturas de las pantallas de importación y registro en prompts.md`
+- [x] 10.5 Commit: `docs(import): capturas de las pantallas de importación y registro en prompts.md`
 
 ## 11. Ajustes tras la prueba manual
 
