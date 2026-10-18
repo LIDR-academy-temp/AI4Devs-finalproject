@@ -344,6 +344,22 @@ Cada hallazgo `missing` SHALL llevar ciclo, rango (APP, DEC, I o R), `missingTyp
 - **WHEN** se valida
 - **THEN** `missing_previous_to_batch` y `missing_in_range` son `not_applicable`
 
+### Requirement: Plazo de retención de una reserva
+El vencimiento de una reserva SHALL calcularse con el plazo vigente de su canal (`Channel.rollingReserveDays`), no con el aplicado al liquidar (`SettlementTransaction.reserveDaysUsed`, `expectedReserveReleaseAt`); en la práctica el plazo es uniforme por proveedor. La fuente de reservas retenidas SHALL filtrar con el mismo cálculo que el motor.
+
+#### Scenario: Fuente y motor con el mismo vencimiento
+- **GIVEN** una reserva retenida de un canal de 120 días cuyo vencimiento (creación + 120 días) cae dentro del rango R
+- **WHEN** la fuente carga las reservas retenidas con `rMax` del rango R y se valida
+- **THEN** la fuente la devuelve y el motor la clasifica `missing_in_range`, con el mismo vencimiento en los dos
+
+### Requirement: Candidatas I sin fecha
+Una candidata I sin `lastStatusChangedAt` SHALL no producir hallazgo y SHALL contarse, una vez por transacción, en `undatedCandidateCount`, de forma informativa. La fuente de candidatas SHALL devolverlas (`lastStatusChangedAt <= máximo` o NULL).
+
+#### Scenario: Ajuste sin fecha de cambio
+- **GIVEN** una transacción `Chargeback` de un canal de la cuenta sin `lastStatusChangedAt`, con rango I en el import
+- **WHEN** se valida
+- **THEN** no aparece en ninguna validación de faltantes y `undatedCandidateCount = 1`
+
 ### Requirement: Pending aparte
 Las transacciones `Pending` SHALL excluirse de los faltantes y contarse en `pendingInRangeCount`: las de los canales de la cuenta con fecha de creación dentro del rango APP o del DEC, una vez cada una.
 
