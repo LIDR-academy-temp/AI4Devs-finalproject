@@ -13,6 +13,7 @@ data/samples/plan.json
 .DS_Store
 Thumbs.db
 playwright-report/
+.features-gen/
 test-results/
 reports/
 package-lock.json

@@ -1,14 +1,19 @@
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { safeRedirect } from '@/features/auth/redirect'
+import { createUploadQueue, UploadQueueProvider } from '@/features/imports/files/UploadQueueProvider'
 import { session } from '@/lib/session/session'
 import type { AppRouter } from './router'
 
 export function App({ router, queryClient }: { router: AppRouter; queryClient: QueryClient }) {
+  // Above the router so that no navigation stops the uploads (design D4).
+  const [uploads] = useState(() => createUploadQueue(router, queryClient))
+
   useEffect(() => {
     const toLogin = (search: { redirect?: string; reason?: 'expired' }) => {
       queryClient.clear()
+      uploads.clear()
       void router.navigate({ to: '/login', search, replace: true })
     }
     const unsubscribe = [
@@ -30,11 +35,13 @@ export function App({ router, queryClient }: { router: AppRouter; queryClient: Q
     return () => {
       for (const off of unsubscribe) off()
     }
-  }, [router, queryClient])
+  }, [router, queryClient, uploads])
 
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <UploadQueueProvider queue={uploads}>
+        <RouterProvider router={router} />
+      </UploadQueueProvider>
     </QueryClientProvider>
   )
 }

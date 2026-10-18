@@ -15,6 +15,7 @@ import {
   USERS,
   type UserName,
 } from './fixtures'
+import { createImportHandlers, resetImports } from './imports'
 
 const API = '*/api/v1'
 
@@ -36,6 +37,7 @@ export let db = freshDb()
 
 export function resetDb() {
   db = freshDb()
+  resetImports()
 }
 
 /** Issues a token pair for a user, as a successful login would. */
@@ -139,6 +141,21 @@ export const handlers = [
   ),
 
   http.get(
+    `${API}/accounts/:accountId`,
+    protectedRoute(({ user, params }) => {
+      const acc = db.accounts.find((a) => a.accountId === params.accountId)
+      const provider = acc && visibleProvider(user, acc.providerId)
+      if (!acc || !provider) return notFound('Account')
+      const merchant = MERCHANTS.find((m) => m.merchantId === provider.merchantId)!
+      return HttpResponse.json({
+        ...acc,
+        provider,
+        merchant: { merchantId: merchant.merchantId, name: merchant.name },
+      })
+    }),
+  ),
+
+  http.get(
     `${API}/accounts/:accountId/channels`,
     protectedRoute(({ user, params }) => {
       const acc = db.accounts.find((a) => a.accountId === params.accountId)
@@ -164,4 +181,6 @@ export const handlers = [
       )
     }),
   ),
+
+  ...createImportHandlers(caller),
 ]

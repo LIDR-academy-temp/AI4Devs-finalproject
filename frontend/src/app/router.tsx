@@ -10,6 +10,10 @@ import {
 } from '@tanstack/react-router'
 import { AccountsPage, validateAccountsSearch } from '@/features/accounts/AccountsPage'
 import { LoginPage } from '@/features/auth/LoginPage'
+import { ImportPage } from '@/features/imports/ImportPage'
+import { NewReconciliationPage } from '@/features/imports/NewReconciliationPage'
+import { strings as importStrings } from '@/features/imports/strings'
+import { validateImportSearch, validateNewReconciliationSearch } from '@/features/imports/validate-search'
 import { ApiError } from '@/lib/api/client'
 import type { Permission } from '@/lib/api/types'
 import { meQuery } from '@/lib/session/me'
@@ -79,12 +83,39 @@ const accountsRoute = createRoute({
   component: AccountsPage,
 })
 
+const newReconciliationRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/reconciliations/new',
+  validateSearch: validateNewReconciliationSearch,
+  staticData: {
+    requires: 'settlement.process',
+    crumbs: [strings.groups.reconciliation, strings.screens.newReconciliation],
+  },
+  component: NewReconciliationPage,
+})
+
+// No permission required: the API decides the scope and viewer may read an import (design D2, D10).
+const importRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/imports/$importId',
+  validateSearch: validateImportSearch,
+  staticData: { crumbs: [strings.groups.reconciliation, importStrings.importTitle] },
+  component: ImportPage,
+})
+
 const notFoundRoute = createRoute({ getParentRoute: () => appRoute, path: '$', component: NotFoundPage })
 
 function buildRouteTree(extraRoutes: AnyRoute[]) {
   return rootRoute.addChildren([
     loginRoute,
-    appRoute.addChildren([dashboardRoute, accountsRoute, ...extraRoutes, notFoundRoute]),
+    appRoute.addChildren([
+      dashboardRoute,
+      accountsRoute,
+      newReconciliationRoute,
+      importRoute,
+      ...extraRoutes,
+      notFoundRoute,
+    ]),
   ])
 }
 

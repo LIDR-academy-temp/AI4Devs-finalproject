@@ -440,6 +440,14 @@ La estrategia sigue el principio del máster: el test es la especificación dete
 
 **End-to-end (Playwright).** El flujo principal completo en el navegador: login → cuenta → importar `data/samples/provider-a-batch-118-part1.xlsx` y `-part2.xlsx` → confirmar pareo → revisar validaciones → procesar → descargar el summary → marcar pagado. Escenarios en Gherkin para el flujo feliz, para "cancelar y reprocesar" y para `provider_mismatch`.
 
+**Smoke E2E en local (Entrega 2).** El primer escenario de esa suite vive en `e2e/` (Playwright + playwright-bdd, `features/import-smoke.feature`): login como `analyst` → New Reconciliation en `ProviderA-USD` → subir `batch-clean` → confirmar la propuesta → analizar → ver `Rows read 783`, `Matched 780` y `RAM-07 is not assigned yet` → cancelar el import como limpieza. Como la colección Bruno, corre contra la base y la aplicación locales:
+
+1. `pnpm db:up`, `pnpm db:seed` y `pnpm dev` (en otra terminal), con `SEED_PASSWORD` en el `.env` de la raíz.
+2. La primera vez, el navegador de Playwright: `pnpm --filter @recon/e2e exec playwright install chromium`.
+3. `pnpm test:e2e`. Si la aplicación o el API no responden, falla antes del primer paso indicando esos comandos. El informe queda en `e2e/playwright-report/` (no versionado), sin traza ni vídeo para no guardar lo que se escribe en el login.
+
+Todavía no corre en CI: el job llega con la suite completa en la Entrega 3.
+
 **En pipeline (Entrega 3).** Unitarios e integración en cada push, con objetivo de cobertura del 80 % en el dominio; E2E en la rama de entrega. Como métrica complementaria, mutation testing sobre el módulo de validaciones, que es donde un test que "pasa" sin detectar nada haría más daño.
 
 ---
@@ -1763,12 +1771,12 @@ Tres tickets representativos del backlog, uno por capa; no representan todo el t
 
 **Tareas:**
 
-1. Ruta `/accounts/:accountId/reconciliations/new` en `features/imports/`, con selección de cuenta dentro del alcance del usuario.
+1. Rutas en `features/imports/`: `/reconciliations/new?merchantId=&providerId=&accountId=`, donde se elige merchant → proveedor → cuenta activa dentro del alcance del usuario, y `/imports/$importId?step=files|mapping|analysis` para el espacio de trabajo de un import, que abre en el paso de su estado.
 2. **Upload Files:** arrastrar y soltar, selector múltiple, solo `.xlsx` hasta 20 MB; lista de archivos con quitar y añadir mientras el import esté en `uploaded` o `mapped`; el `409` de archivo duplicado se muestra con el nombre coincidente sin perder el estado de la pantalla.
-3. **Column Mapping:** una tarjeta por archivo y una sección por hoja; selector de estado por hoja (APP, DEC, CHB, REF, RR, Summary, Ignore) con origen de la propuesta; selector de campo por columna con la lista cerrada de `targetField` (incluido `gateway`) y "keep as reference data"; vista previa de 10 filas coloreada según el pareo. La columna pareada como Transaction ID se muestra como texto tal cual se leyó, nunca como número.
+3. **Column Mapping:** una tarjeta por archivo y una sección por hoja con su nombre y la propuesta en lenguaje del analista (p. ej. `CHB` · `Proposed: I · Chargeback — global rule`); por hoja, tres controles que reflejan el contrato: tipo (`transactions` / `batch_fees` / `ignore`), ciclo y estado fijo, con el origen de la propuesta; selector de campo por columna con la lista cerrada de `targetField` salvo `gateway` (el API aún lo rechaza) y "Keep as reference"; vista previa de las 5 filas que devuelve el API, con la cabecera según el pareo en edición. La columna pareada como Transaction ID se muestra como texto tal cual se leyó, nunca como número.
 4. **Readiness:** barra con "Ready to analyze" o la lista de lo que falta por hoja; **Analyze** deshabilitado hasta `canAnalyze = true`.
-5. Acciones **Save mapping** (`PUT /imports/{id}/mapping`) y **Analyze** (`POST /imports/{id}/analyze`) con estados de carga, errores `400/409/422` en contexto y navegación a Analysis & Validations con los contadores.
-6. React Hook Form con los esquemas Zod compartidos; shadcn/ui; TanStack Table para la vista previa; TanStack Query con invalidación tras cada acción.
+5. Acciones separadas **Confirm mapping** (`PUT /imports/{id}/mapping`) y **Analyze** (`POST /imports/{id}/analyze`) con estados de carga, errores `400/409/422` en contexto y navegación a Analysis & Validations con los contadores.
+6. React Hook Form con los esquemas Zod compartidos; shadcn/ui; TanStack Table para la tabla de filas del análisis; TanStack Query con la respuesta de cada acción escrita en la caché.
 7. Tests con Vitest y Testing Library: propuesta renderizada desde una respuesta del contrato; cambiar un selector actualiza la vista previa; `canAnalyze = false` deshabilita Analyze y muestra los faltantes; `409` y `422` se muestran junto al archivo. Accesibilidad: teclado, etiquetas, contraste AA, axe sin violaciones críticas.
 
 **Criterios de aceptación:**

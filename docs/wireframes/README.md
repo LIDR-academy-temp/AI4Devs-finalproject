@@ -62,4 +62,4 @@ El resto es de la Entrega 3 o roadmap: Merchants & Providers y Account Detail (t
 
 ## Capturas de la implementación
 
-`impl/`: capturas de las pantallas ya construidas, a 1280 px, con datos del seed. T1 · #3: `impl/Login.jpg` y `impl/Accounts.jpg` (`viewer`, Provider A, con el aviso de RAM-07).
+`impl/`: capturas de las pantallas ya construidas, a 1280 px, con datos del seed. T1 · #3: `impl/Login.jpg` y `impl/Accounts.jpg` (`viewer`, Provider A, con el aviso de RAM-07). T3 · #6 y #7: `impl/UploadFiles.jpg` (`batch-split` con sus dos archivos), `impl/ColumnMapping.jpg` (`batch-clean` recién subido, con las hojas compactas y la readiness por archivo) y `impl/Analysis.jpg` (`batch-clean` analizado, con el aviso de RAM-07); `analyst`, ProviderA-USD.

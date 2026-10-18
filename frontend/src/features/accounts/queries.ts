@@ -34,3 +34,10 @@ export const accountChannelsQuery = (accountId: string) =>
     queryKey: ['accounts', accountId, 'channels'],
     queryFn: () => unwrap(api.GET('/api/v1/accounts/{accountId}/channels', { params: { path: { accountId } } })),
   })
+
+/** Account with its provider and merchant (header of an import, account given by link). */
+export const accountQuery = (accountId: string) =>
+  queryOptions({
+    queryKey: ['accounts', accountId],
+    queryFn: () => unwrap(api.GET('/api/v1/accounts/{accountId}', { params: { path: { accountId } } })),
+  })
