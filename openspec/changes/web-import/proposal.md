@@ -42,6 +42,7 @@ Quedan anotados aquí; los issues de seguimiento los abre la persona, no este ch
 - **Sin catálogo de estados.** No hay `GET` de `TransactionStatus`; el selector de estado fijo usa la constante `TRANSACTION_STATUSES` de `@recon/shared` con los seis estados sembrados (1 Pending … 6 RDR), y un test de integración del backend la compara con la tabla `TransactionStatus` de la base sembrada. Seguimiento: `GET /transaction-statuses`.
 - **Cancelar sin motivo.** La convención del prototipo pide motivo en las acciones irreversibles, pero `POST /imports/{id}/cancel` no acepta cuerpo; la pantalla pide solo confirmación. Seguimiento: añadir `reason` al cancel y a su `AuditLog`.
 - **Límite de 10 archivos por petición, no por import.** El API no limita el total de archivos de un import; la pantalla aplica el límite a cada selección (D4).
+- **Hojas sin confirmar fuera del readiness.** El detalle de un import `mapped` con hojas sin confirmar (por ejemplo, tras añadir un archivo) responde `readiness.canAnalyze = true`; solo `POST analyze` las nombra con `field = "confirmation"`. La pantalla las deriva de `mappingConfirmed` (design D7). Seguimiento: que `readiness` del detalle las incluya.
 - **Análisis síncrono sin progreso.** `POST analyze` responde al terminar; la pantalla muestra un estado indeterminado y, si la conexión se corta, relee el import antes de dar error (D8).
 
 ## Capabilities

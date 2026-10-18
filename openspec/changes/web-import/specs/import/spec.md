@@ -82,7 +82,7 @@ Mientras el import esté en `uploaded` o `mapped`, cada archivo SHALL tener **Re
 #### Scenario: Quitar la segunda parte
 - **GIVEN** el import con `part1` y `part2` de `batch-split`
 - **WHEN** `analyst` pulsa **Remove** en `part2`
-- **THEN** la lista muestra solo `part1`, el paso Mapping ya no muestra `CHB`, `REF`, `RDR`, `RR` ni `Other Fees`, y la readiness es la que devolvió el API
+- **THEN** la lista muestra solo `part1`, el paso Mapping ya no muestra la tarjeta de `part2` (con `CHB` 3, `REF` 7, `RDR` 3, `RR` 320 y `Other Fees` 2) y solo quedan las hojas de `part1`, y la readiness es la que devolvió el API
 
 #### Scenario: Quitar el último archivo
 - **WHEN** `analyst` quita el único archivo del import
@@ -173,7 +173,7 @@ Con permiso y el import en `uploaded` o `mapped`, el usuario SHALL poder cambiar
 - **THEN** el botón queda deshabilitado hasta la respuesta y un segundo clic no envía otro `PUT`
 
 ### Requirement: Pantalla Column Mapping: readiness y Analyze
-La barra de readiness SHALL mostrar `Ready to analyze` o cada elemento de `readiness.missing` como `<hoja> · <campo>: <mensaje>`, y las `notes`. **Analyze** SHALL habilitarse solo con el import en `mapped`, `readiness.canAnalyze = true` y sin cambios sin confirmar; deshabilitado, SHALL indicar el motivo.
+La barra de readiness SHALL mostrar `Ready to analyze` o cada elemento de `readiness.missing` como `<hoja> · <campo>: <mensaje>`, las `notes` y, en `mapped`, cada hoja con `mappingConfirmed = false` como `<hoja> · confirmation`. **Analyze** SHALL habilitarse solo en `mapped`, con `readiness.canAnalyze = true`, todas las hojas confirmadas y sin cambios sin confirmar; deshabilitado, SHALL indicar el motivo.
 
 #### Scenario: Hoja sin ID
 - **GIVEN** un import en `mapped` cuya hoja `APP` se confirmó sin `Transaction ID`
@@ -194,7 +194,7 @@ La barra de readiness SHALL mostrar `Ready to analyze` o cada elemento de `readi
 #### Scenario: Archivo añadido tras confirmar
 - **GIVEN** un import en `mapped` con `part1` confirmado
 - **WHEN** `analyst` añade `part2`
-- **THEN** la barra nombra cada hoja de `part2` con `confirmation` y **Analyze** está deshabilitado
+- **THEN** la barra nombra cada hoja de `part2` con `confirmation` y **Analyze** está deshabilitado, aunque el detalle del API responda `readiness.canAnalyze = true` (solo el `422` de analyze trae esas hojas; la pantalla las deriva de `mappingConfirmed`)
 
 ### Requirement: Pantalla Column Mapping: análisis en curso
 **Analyze** SHALL lanzar `POST analyze` una sola vez: durante la espera, que puede durar decenas de segundos, SHALL mostrarse `Analyzing… this can take up to a minute.` con los controles del import deshabilitados. Con `200` SHALL llevar al paso Analysis. Ante `422 mapping_incomplete` SHALL mostrar los faltantes; ante `409` o un fallo de red, SHALL releer el import antes de decidir.

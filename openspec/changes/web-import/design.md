@@ -82,7 +82,8 @@ La elección merchant → proveedor reutiliza `merchantsQuery`, `providersQuery`
 
 ### D7 Readiness y Analyze
 - `ReadinessBar` pinta `readiness` del detalle (servidor): `Ready to analyze` o la lista `missing` como `<sheetName ?? 'Import'> · <field>: <message>`, y las `notes` en gris. No hay readiness calculada en el cliente: el usuario confirma y el API responde con la nueva (criterio 3 del Ticket 3: "al corregir y guardar, se habilita").
-- **Analyze** habilitado solo si `status === 'mapped' && readiness.canAnalyze && !isDirty`; si no, una línea bajo el botón con el primer motivo: sin confirmar o con cambios → `Confirm the mapping before analyzing.`; con `missing` → `Resolve the missing fields first.`. Sin permiso, el botón no se pinta.
+- **Hojas sin confirmar (decisión del apply, 2026-10-17).** El `readiness` del detalle real no trae elementos `confirmation`: solo el `422 mapping_incomplete` de analyze los nombra. Con el import en `mapped`, la barra añade `<hoja> · confirmation` por cada hoja con `mappingConfirmed = false` (un dato del servidor, no una readiness propia), y Analyze exige además que no haya ninguna. Hueco del API anotado en el proposal.
+- **Analyze** habilitado solo si `status === 'mapped' && readiness.canAnalyze && todas las hojas confirmadas && !isDirty`; si no, una línea bajo el botón con el primer motivo: sin confirmar o con cambios → `Confirm the mapping before analyzing.`; con `missing` → `Resolve the missing fields first.`. Sin permiso, el botón no se pinta.
 
 ### D8 Análisis largo
 - `useAnalyze` (mutación) con guarda síncrona (`useRef`) además de `isPending`, para que dos clics en el mismo tick no lancen dos `POST`. Durante la espera: botón con indicador, región `aria-live` con `Analyzing… this can take up to a minute.`, y deshabilitados Confirm, Remove, la zona de subida y Cancel import. Sin límite de tiempo en el cliente.
