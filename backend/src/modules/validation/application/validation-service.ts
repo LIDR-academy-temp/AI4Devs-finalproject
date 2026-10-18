@@ -91,6 +91,27 @@ export class ValidationService {
     return detailOf(stored, canProcess)
   }
 
+  /** `PATCH /conflict-occurrences/{id}` (D9, P2–P4): answers the detail of the finding after the change. */
+  async setInclusion(
+    scope: Scope,
+    userId: number,
+    occurrenceId: string,
+    includeInSettlement: boolean,
+  ): Promise<ValidationIssueDetail> {
+    const found = await this.deps.runs.findOccurrence(scope, occurrenceId)
+    if (!found) throw new NotFoundError('Conflict occurrence')
+    await this.deps.runs.setInclusion(occurrenceId, includeInSettlement, userId, this.now())
+    return this.getIssue(scope, true, found.issueId)
+  }
+
+  /** `PATCH /validation-issues/{id}` (D9, P5): resolves by hand a non_recorded_adjustment or a status_mismatch. */
+  async resolveIssue(scope: Scope, userId: number, issueId: number, note: string): Promise<ValidationIssueDetail> {
+    const found = await this.deps.runs.findIssue(scope, issueId)
+    if (!found) throw new NotFoundError('Validation issue')
+    await this.deps.runs.resolveIssue(issueId, note, userId, this.now())
+    return this.getIssue(scope, true, issueId)
+  }
+
   private async requireImport(scope: Scope, importId: string): Promise<ImportRef> {
     const ref = await this.deps.runs.findImport(scope, importId)
     if (!ref) throw new NotFoundError('Import')

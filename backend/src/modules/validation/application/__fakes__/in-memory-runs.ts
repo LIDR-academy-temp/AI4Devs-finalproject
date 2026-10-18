@@ -21,8 +21,17 @@ import type {
 import { TRANSACTION_STATUSES } from '../../../../../prisma/synthetic.js'
 import { ACCOUNT_IDS } from '../../../catalog/application/__fakes__/in-memory.js'
 import type { Scope } from '../../../catalog/domain/scope.js'
+import { ImportNotEditableError } from '../../../imports/domain/errors.js'
 import type { CycleRanges, Occurrence, ValidationReport } from '../../domain/types.js'
-import { ImportChangedError, ImportNotAnalyzedError } from '../errors.js'
+import {
+  ImportChangedError,
+  ImportNotAnalyzedError,
+  IssueAlreadyResolvedError,
+  IssueNotResolvableError,
+  OccurrenceNotEditableError,
+  OccurrenceNotIncludableError,
+  ValidationRunSupersededError,
+} from '../errors.js'
 import { compareIssueOrder } from '../issue-order.js'
 import type {
   ImportRef,
@@ -33,6 +42,7 @@ import type {
   StoredRun,
   ValidationRunRepository,
 } from '../ports.js'
+import { reserveRuleBlocks } from '../reserve-rule.js'
 import { breakdownOf, breakdownView, type IssueDetailJson, issueDetailOf } from '../run-record.js'
 import { validationWorld } from './in-memory.js'
 
@@ -398,7 +408,100 @@ export class InMemoryRunRepository implements ValidationRunRepository {
     }
   }
 
+  async findOccurrence(scope: Scope, occurrenceId: string) {
+    const issue = this.runs
+      .flatMap((r) => r.issues)
+      .find((i) => i.occurrences.some((o) => o.occurrenceId === occurrenceId))
+    if (!issue) return null
+    const run = this.runOf(issue)
+    if (!scope.merchantIds.includes(this.requireImport(run.importId).merchantId)) return null
+    return { occurrenceId, issueId: issue.issueId }
+  }
+
+  async setInclusion(occurrenceId: string, includeInSettlement: boolean, userId: number, now: Date): Promise<void> {
+    this.beforeSave?.()
+    const issue = this.issueOfOccurrence(occurrenceId)
+    const run = this.runOf(issue)
+    const imported = this.requireImport(run.importId)
+    if (imported.status !== 'analyzed' && imported.status !== 'validated')
+      throw new ImportNotEditableError(imported.status)
+    if (run.isSuperseded)
+      throw new ValidationRunSupersededError(run.runId, this.currentRunOf(run.importId)?.runId ?? null)
+    const target = issue.occurrences.find((o) => o.occurrenceId === occurrenceId) as FakeOccurrence
+    if (target.sourceType !== 'current_import') throw new OccurrenceNotEditableError(target.sourceType)
+    if (target.includeInSettlement === includeInSettlement) return
+    const blocked = reserveRuleBlocks(issue.cycle, issue.occurrences, target)
+    if (includeInSettlement && blocked) throw new OccurrenceNotIncludableError(blocked)
+    const previousStatus = imported.status
+    Object.assign(target, { includeInSettlement, changedBy: userId, changedAt: now })
+    imported.updatedAt = now
+    this.audit.push({
+      userId,
+      action: SET_INCLUSION,
+      entityType: 'ConflictOccurrence',
+      entityId: occurrenceId,
+      detail: {
+        issueId: issue.issueId,
+        runId: run.runId,
+        importId: run.importId,
+        from: !includeInSettlement,
+        to: includeInSettlement,
+      },
+      at: now,
+    })
+    if (previousStatus === 'validated') {
+      imported.status = 'analyzed'
+      const review = this.lastReviewOf(run.importId, run.runId)
+      this.audit.push({
+        userId,
+        action: 'import.review.invalidate',
+        entityType: 'Import',
+        entityId: run.importId,
+        detail: {
+          runId: run.runId,
+          reviewedByUserId: review?.userId ?? null,
+          reviewedAt: review?.at.toISOString() ?? null,
+          reason: 'inclusion_change',
+          occurrenceId,
+        },
+        at: now,
+      })
+    }
+  }
+
+  async resolveIssue(issueId: number, note: string, userId: number, now: Date): Promise<void> {
+    const issue = this.runs.flatMap((r) => r.issues).find((i) => i.issueId === issueId)
+    if (!issue) throw new Error(`unknown issue ${issueId}`)
+    const run = this.runOf(issue)
+    if (issue.issueType !== 'non_recorded_adjustment' && issue.issueType !== 'status_mismatch')
+      throw new IssueNotResolvableError(issue.issueType)
+    if (issue.resolutionStatus === 'resolved')
+      throw new IssueAlreadyResolvedError(
+        issue.resolvedAt?.toISOString() ?? null,
+        issue.resolvedBy === null ? null : this.userRef(issue.resolvedBy),
+      )
+    if (run.isSuperseded)
+      throw new ValidationRunSupersededError(run.runId, this.currentRunOf(run.importId)?.runId ?? null)
+    Object.assign(issue, { resolutionStatus: 'resolved', resolvedBy: userId, resolvedAt: now, resolutionNote: note })
+    this.audit.push({
+      userId,
+      action: RESOLVE,
+      entityType: 'ValidationIssue',
+      entityId: String(issueId),
+      detail: { issueId, runId: run.runId, importId: run.importId, note },
+      at: now,
+    })
+  }
+
   // ── helpers ──
+
+  private runOf(issue: FakeIssue): FakeRun {
+    return this.runs.find((r) => r.runId === issue.runId) as FakeRun
+  }
+
+  private currentRunOf(importId: string): FakeRun | undefined {
+    return this.runs.find((r) => r.importId === importId && !r.isSuperseded)
+  }
 
   private summaryOf(issue: FakeIssue): ValidationIssueSummary {
     const occurrences = issue.occurrences

@@ -148,6 +148,16 @@ export interface ValidationRunRepository {
   ): Promise<{ items: ValidationIssueSummary[]; total: number }>
   /** A finding of any run of an import inside the scope, with its occurrences and history; null otherwise. */
   findIssue(scope: Scope, issueId: number): Promise<StoredIssueDetail | null>
+  /** The finding an occurrence belongs to, when its import is inside the scope. */
+  findOccurrence(scope: Scope, occurrenceId: string): Promise<{ occurrenceId: string; issueId: number } | null>
+  /**
+   * In one transaction (D9): guard on Import (analyzed or validated, advances updatedAt), current run, current_import,
+   * same value → nothing written, rule of cycle R, the change with its author, AuditLog, and back to analyzed with the
+   * review invalidated when it was validated. Any refusal rolls the whole transaction back.
+   */
+  setInclusion(occurrenceId: string, includeInSettlement: boolean, userId: number, now: Date): Promise<void>
+  /** One conditioned UPDATE (persistent, resolvable type, current run) plus its AuditLog row, in one transaction. */
+  resolveIssue(issueId: number, note: string, userId: number, now: Date): Promise<void>
 }
 
 /** An occurrence as stored; the service adds what the caller may do with it. */

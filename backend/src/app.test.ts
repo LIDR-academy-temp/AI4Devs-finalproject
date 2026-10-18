@@ -157,6 +157,8 @@ describe('buildApp', () => {
       ['/api/v1/imports/{importId}/validations', 'get'],
       ['/api/v1/imports/{importId}/validation-issues', 'get'],
       ['/api/v1/validation-issues/{issueId}', 'get'],
+      ['/api/v1/validation-issues/{issueId}', 'patch'],
+      ['/api/v1/conflict-occurrences/{occurrenceId}', 'patch'],
     ]
     for (const [path, method] of operations) {
       const operation = doc.paths[path]?.[method]

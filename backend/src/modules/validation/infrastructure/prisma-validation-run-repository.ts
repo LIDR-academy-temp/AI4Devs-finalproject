@@ -20,8 +20,17 @@ import {
 } from '@recon/shared'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import type { Scope } from '../../catalog/domain/scope.js'
+import { ImportNotEditableError } from '../../imports/domain/errors.js'
 import { MAX_SQL_PARAMETERS } from '../../imports/infrastructure/sql-limits.js'
-import { ImportChangedError, ImportNotAnalyzedError } from '../application/errors.js'
+import {
+  ImportChangedError,
+  ImportNotAnalyzedError,
+  IssueAlreadyResolvedError,
+  IssueNotResolvableError,
+  OccurrenceNotEditableError,
+  OccurrenceNotIncludableError,
+  ValidationRunSupersededError,
+} from '../application/errors.js'
 import type {
   ImportRef,
   ReviewEvent,
@@ -30,6 +39,7 @@ import type {
   StoredRun,
   ValidationRunRepository,
 } from '../application/ports.js'
+import { reserveRuleBlocks } from '../application/reserve-rule.js'
 import {
   breakdownOf,
   breakdownView,
@@ -53,6 +63,10 @@ const REVIEW = 'import.review'
 const INVALIDATE = 'import.review.invalidate'
 const SET_INCLUSION = 'validation.occurrence.set_inclusion'
 const RESOLVE = 'validation.issue.resolve'
+/** Only these findings are resolved by hand (P5). */
+const RESOLVABLE_TYPES = ['non_recorded_adjustment', 'status_mismatch']
+/** Thrown inside a transaction to roll it back when the inclusion already has the requested value. */
+const NO_CHANGE = Symbol('no change')
 
 function visibleAccount(scope: Scope): Prisma.AccountWhereInput {
   return { provider: { merchantId: { in: [...scope.merchantIds] } } }
@@ -73,6 +87,153 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
 
   findIssue(scope: Scope, issueId: number) {
     return this.issues.findIssue(scope, issueId)
+  }
+
+  async findOccurrence(scope: Scope, occurrenceId: string) {
+    const found = await this.prisma.conflictOccurrence.findFirst({
+      where: {
+        occurrenceId: BigInt(occurrenceId),
+        issue: { result: { run: { import: { account: visibleAccount(scope) } } } },
+      },
+      select: { issueId: true },
+    })
+    return found === null ? null : { occurrenceId, issueId: found.issueId }
+  }
+
+  async setInclusion(occurrenceId: string, includeInSettlement: boolean, userId: number, now: Date): Promise<void> {
+    const id = BigInt(occurrenceId)
+    try {
+      await this.prisma.$transaction(
+        async (tx) => {
+          const located = await tx.conflictOccurrence.findUniqueOrThrow({
+            where: { occurrenceId: id },
+            select: { issueId: true, issue: { select: { cycle: true, result: { select: { runId: true } } } } },
+          })
+          const run = await tx.validationRun.findUniqueOrThrow({
+            where: { runId: located.issue.result.runId },
+            select: { runId: true, importId: true },
+          })
+          // From here on the Import row is locked: everything read below is what the change is decided on (D9).
+          const previousStatus = await this.claimForInclusion(tx, run.importId, now)
+          const { isSuperseded } = await tx.validationRun.findUniqueOrThrow({
+            where: { runId: run.runId },
+            select: { isSuperseded: true },
+          })
+          if (isSuperseded) {
+            const current = await tx.validationRun.findFirst({
+              where: { importId: run.importId, isSuperseded: false },
+              select: { runId: true },
+            })
+            throw new ValidationRunSupersededError(run.runId, current?.runId ?? null)
+          }
+          const siblings = (
+            await tx.conflictOccurrence.findMany({
+              where: { issueId: located.issueId },
+              select: { occurrenceId: true, sourceType: true, includeInSettlement: true },
+            })
+          ).map((o) => ({
+            occurrenceId: String(o.occurrenceId),
+            sourceType: o.sourceType === 'previous_batch' ? ('previous_batch' as const) : ('current_import' as const),
+            includeInSettlement: o.includeInSettlement,
+          }))
+          const target = siblings.find((o) => o.occurrenceId === occurrenceId) as (typeof siblings)[number]
+          if (target.sourceType !== 'current_import') throw new OccurrenceNotEditableError(target.sourceType)
+          if (target.includeInSettlement === includeInSettlement) throw NO_CHANGE
+          const blocked = reserveRuleBlocks(located.issue.cycle, siblings, target)
+          if (includeInSettlement && blocked) throw new OccurrenceNotIncludableError(blocked)
+          await tx.conflictOccurrence.update({
+            where: { occurrenceId: id },
+            data: { includeInSettlement, changedByUserId: userId, changedAt: now },
+          })
+          await tx.auditLog.create({
+            data: {
+              userId,
+              action: SET_INCLUSION,
+              entityType: 'ConflictOccurrence',
+              entityId: occurrenceId,
+              createdAt: now,
+              detailJson: JSON.stringify({
+                issueId: located.issueId,
+                runId: run.runId,
+                importId: run.importId,
+                from: target.includeInSettlement,
+                to: includeInSettlement,
+              }),
+            },
+          })
+          if (previousStatus === 'validated') {
+            await tx.import.update({ where: { importId: run.importId }, data: { status: 'analyzed' } })
+            await this.recordInvalidation(tx, run.importId, run.runId, userId, now, {
+              reason: 'inclusion_change',
+              occurrenceId,
+            })
+          }
+        },
+        { timeout: RUN_TX_TIMEOUT_MS, maxWait: RUN_TX_MAX_WAIT_MS },
+      )
+    } catch (error) {
+      // The same value writes nothing: the transaction (and the guard's updatedAt) is rolled back on purpose.
+      if (error === NO_CHANGE) return
+      throw error
+    }
+  }
+
+  /**
+   * The guard of an inclusion change: analyzed or validated, without a version (the decision is taken under the lock).
+   * It only advances updatedAt, so runs computed meanwhile get import_changed; the status changes once accepted.
+   */
+  private async claimForInclusion(tx: Tx, importId: string, now: Date): Promise<ImportStatus> {
+    for (const status of ['validated', 'analyzed'] as const) {
+      const claimed = await tx.import.updateMany({ where: { importId, status }, data: { updatedAt: now } })
+      if (claimed.count === 1) return status
+    }
+    const current = await tx.import.findUnique({ where: { importId }, select: { status: true } })
+    throw new ImportNotEditableError(current?.status ?? 'unknown')
+  }
+
+  async resolveIssue(issueId: number, note: string, userId: number, now: Date): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const resolved = await tx.validationIssue.updateMany({
+        where: {
+          issueId,
+          resolutionStatus: 'persistent',
+          issueType: { in: [...RESOLVABLE_TYPES] },
+          result: { run: { isSuperseded: false } },
+        },
+        data: { resolutionStatus: 'resolved', resolvedByUserId: userId, resolvedAt: now, resolutionNote: note },
+      })
+      const issue = await tx.validationIssue.findUniqueOrThrow({
+        where: { issueId },
+        select: {
+          issueType: true,
+          resolutionStatus: true,
+          resolvedAt: true,
+          resolvedBy: { select: { userId: true, userName: true } },
+          result: { select: { run: { select: { runId: true, importId: true, isSuperseded: true } } } },
+        },
+      })
+      const { run } = issue.result
+      if (resolved.count === 0) {
+        if (!RESOLVABLE_TYPES.includes(issue.issueType)) throw new IssueNotResolvableError(issue.issueType)
+        if (issue.resolutionStatus === 'resolved')
+          throw new IssueAlreadyResolvedError(issue.resolvedAt?.toISOString() ?? null, issue.resolvedBy)
+        const current = await tx.validationRun.findFirst({
+          where: { importId: run.importId, isSuperseded: false },
+          select: { runId: true },
+        })
+        throw new ValidationRunSupersededError(run.runId, current?.runId ?? null)
+      }
+      await tx.auditLog.create({
+        data: {
+          userId,
+          action: RESOLVE,
+          entityType: 'ValidationIssue',
+          entityId: String(issueId),
+          createdAt: now,
+          detailJson: JSON.stringify({ issueId, runId: run.runId, importId: run.importId, note }),
+        },
+      })
+    })
   }
 
   async findImport(scope: Scope, importId: string): Promise<ImportRef | null> {
