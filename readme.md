@@ -440,6 +440,14 @@ La estrategia sigue el principio del máster: el test es la especificación dete
 
 **End-to-end (Playwright).** El flujo principal completo en el navegador: login → cuenta → importar `data/samples/provider-a-batch-118-part1.xlsx` y `-part2.xlsx` → confirmar pareo → revisar validaciones → procesar → descargar el summary → marcar pagado. Escenarios en Gherkin para el flujo feliz, para "cancelar y reprocesar" y para `provider_mismatch`.
 
+**Smoke E2E en local (Entrega 2).** El primer escenario de esa suite vive en `e2e/` (Playwright + playwright-bdd, `features/import-smoke.feature`): login como `analyst` → New Reconciliation en `ProviderA-USD` → subir `batch-clean` → confirmar la propuesta → analizar → ver `Rows read 783`, `Matched 780` y `RAM-07 is not assigned yet` → cancelar el import como limpieza. Como la colección Bruno, corre contra la base y la aplicación locales:
+
+1. `pnpm db:up`, `pnpm db:seed` y `pnpm dev` (en otra terminal), con `SEED_PASSWORD` en el `.env` de la raíz.
+2. La primera vez, el navegador de Playwright: `pnpm --filter @recon/e2e exec playwright install chromium`.
+3. `pnpm test:e2e`. Si la aplicación o el API no responden, falla antes del primer paso indicando esos comandos. El informe queda en `e2e/playwright-report/` (no versionado), sin traza ni vídeo para no guardar lo que se escribe en el login.
+
+Todavía no corre en CI: el job llega con la suite completa en la Entrega 3.
+
 **En pipeline (Entrega 3).** Unitarios e integración en cada push, con objetivo de cobertura del 80 % en el dominio; E2E en la rama de entrega. Como métrica complementaria, mutation testing sobre el módulo de validaciones, que es donde un test que "pasa" sin detectar nada haría más daño.
 
 ---
