@@ -227,6 +227,22 @@ describe('Upload Files: removing files (spec "Pantalla Upload Files: quitar arch
     expect(readiness.getByText(strings.readiness.ready)).toBeInTheDocument()
   })
 
+  it('a 409 on Remove says the import can no longer be edited and reloads it as it stands', async () => {
+    const { importId } = seedImport('batch-clean')
+    const { user } = renderApp(`/imports/${importId}?step=files`, { as: 'analyst' })
+    const entry = await findFileEntry(CLEAN)
+    importRecord(importId).status = 'analyzed'
+    const before = importRequests('detail').length
+
+    await user.click(entry.getByRole('button', { name: strings.files.remove(CLEAN) }))
+
+    expect(await screen.findByText('This import can no longer be edited (analyzed).')).toBeInTheDocument()
+    await waitFor(() => expect(importRequests('detail').length).toBeGreaterThan(before))
+    expect(
+      await within(screen.getByRole('region', { name: strings.header.label })).findByText('analyzed'),
+    ).toBeInTheDocument()
+  })
+
   it('removing the only file leaves an empty import with the drop zone and Analyze disabled', async () => {
     const { importId } = seedImport('batch-clean')
     const { user } = renderApp(`/imports/${importId}?step=files`, { as: 'analyst' })
