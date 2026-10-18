@@ -86,7 +86,7 @@ export function buildContext(input: ValidationInput): ValidationContext {
   for (const m of input.history) processed[m.cycle].add(m.transactionId)
 
   const history = [...input.history].sort(compareHistory)
-  const { ranges, undatedAdjustmentCount } = computeRanges(input.rows, input.account.providerId, input.statuses)
+  const { ranges, undatedAdjustmentCount } = computeRanges(input.rows, input.account, input.statuses)
   return {
     input,
     catalog,

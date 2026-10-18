@@ -1,4 +1,5 @@
 import type { Cycle } from '@recon/shared'
+import { reserveExpiry } from './ranges.js'
 import type { SlotOutput, ValidationContext } from './run-validations.js'
 import type { DateRange, Issue, MissingRange, MissingType } from './types.js'
 
@@ -66,7 +67,7 @@ function candidatesOf(ctx: ValidationContext): Candidate[] {
         transactionId: r.transactionId,
         transactionIdRaw: r.sourceTransactionId,
         statusId: r.statusId,
-        date: r.transactionDate,
+        date: reserveExpiry(input.account, r.channelId, r.transactionDate),
       })
     }
   }

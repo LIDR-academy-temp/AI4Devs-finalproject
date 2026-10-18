@@ -31,6 +31,8 @@ export interface AccountScope {
   providerId: number
   /** Channels whose primary account is this one (AccountChannel.isPrimary). */
   primaryChannelIds: ReadonlySet<number>
+  /** Channel.rollingReserveDays of every channel of the provider: a reserve expires at creation + these days. */
+  reserveDaysByChannel: ReadonlyMap<number, number>
 }
 
 /** What the engine knows of the matched transaction: no merchant, channel name nor amount (design D7). */

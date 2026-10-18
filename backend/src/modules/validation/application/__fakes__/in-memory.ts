@@ -10,6 +10,7 @@ import { buildWorld, CHANNELS, STATUS, settlementMovementsOf } from '../../../..
 import { ACCOUNT_IDS, type AccountName } from '../../../catalog/application/__fakes__/in-memory.js'
 import { IMPORT_ACCOUNTS, type InMemoryImportRepository } from '../../../imports/application/__fakes__/in-memory.js'
 import type { InMemoryImportRowRepository } from '../../../imports/application/__fakes__/in-memory-analysis.js'
+import { reserveExpiry } from '../../domain/ranges.js'
 import type {
   AccountScope,
   CandidateTransaction,
@@ -124,6 +125,9 @@ export function accountScopeOf(name: AccountName): AccountScope {
     accountId: account.accountId,
     providerId: account.providerId,
     primaryChannelIds: new Set(CHANNELS.filter((c) => c.account === name).map((c) => c.channelId)),
+    reserveDaysByChannel: new Map(
+      CHANNELS.filter((c) => c.providerId === account.providerId).map((c) => [c.channelId, c.days] as const),
+    ),
   }
 }
 
@@ -293,7 +297,8 @@ export class InMemoryValidationSources
       for (const m of b.movements) {
         if (m.cycle !== 'E' || isZero(m.reserveHeldAmt) || processed.R.has(m.transactionId)) continue
         const t = this.transactions.get(m.transactionId)
-        if (!t || !account.primaryChannelIds.has(t.channelId) || t.transactionDate > rMax) continue
+        if (!t || !account.primaryChannelIds.has(t.channelId)) continue
+        if (reserveExpiry(account, t.channelId, t.transactionDate) > rMax) continue
         out.push({
           transactionId: t.transactionId,
           sourceTransactionId: t.sourceTransactionId,

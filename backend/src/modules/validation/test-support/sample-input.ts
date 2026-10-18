@@ -102,7 +102,7 @@ async function build(name: SampleName): Promise<SampleInput> {
   const sources = new InMemoryValidationSources({ imports, rows: importRows })
   const rows = await sources.rowsOf(importId)
   const account = await sources.accountOf(importId)
-  const { ranges } = computeRanges(rows, account.providerId, STATUSES)
+  const { ranges } = computeRanges(rows, account, STATUSES)
   const candidates = await sources.candidates(account, ranges)
   const reserveCandidates = ranges.R === null ? [] : await sources.heldReserves(account, ranges.R.max)
   const ids = new Set<bigint>()

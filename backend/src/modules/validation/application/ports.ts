@@ -16,7 +16,10 @@ export interface ValidationRowSource {
   rowsOf(importId: string): Promise<ValidationRow[]>
 }
 
-/** The account of the import with the channels it is primary for (AccountChannel.isPrimary = 1). */
+/**
+ * The account of the import with the channels it is primary for (AccountChannel.isPrimary = 1) and the
+ * Channel.rollingReserveDays of every channel of its provider (the expiry of a reserve).
+ */
 export interface AccountScopeSource {
   accountOf(importId: string): Promise<AccountScope>
 }
@@ -30,7 +33,8 @@ export interface SettlementHistorySource {
 /**
  * Candidates per range (APP Successful, DEC Declined, I natural-cycle-I statuses, plus Pending for the count), dated
  * up to each range's max, and only those NOT processed in that cycle in a non-undone attempt of the provider; held
- * reserves without a current R movement.
+ * reserves without a current R movement whose expiry (creation + rollingReserveDays of the channel) is up to `rMax`,
+ * the max of the R range, which is also by expiry.
  */
 export interface MissingCandidateSource {
   candidates(account: AccountScope, ranges: CycleRanges): Promise<CandidateTransaction[]>
