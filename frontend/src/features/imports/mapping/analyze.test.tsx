@@ -86,6 +86,57 @@ describe('Column Mapping: readiness and Analyze (spec "Pantalla Column Mapping: 
   })
 })
 
+describe('Column Mapping: readiness per file (spec "Pantalla Column Mapping: readiness por archivo")', () => {
+  const PART2 = 'Recon_Template_ProviderA-USD_batch-split_part2.xlsx'
+  const group = (fileName: string) => within(readiness().getByRole('region', { name: `Readiness · ${fileName}` }))
+  const folded = (text: string) => readiness().getByText(text).closest('details')
+
+  it('groups the notes by file with the actionable ones first and the informational ones folded', async () => {
+    await openMapping(seedImport('batch-split').importId)
+
+    const part1 = group(PART1)
+    expect(part1.getByRole('heading', { name: PART1 })).toBeInTheDocument()
+    const declined = part1.getByText('DEC · Fixed status Declined with rows: the DEC range will open at validation')
+    expect(declined.closest('details')).toBeNull()
+    const summary1 = part1.getByText('8 informational notes')
+    expect(summary1.closest('details')).not.toHaveAttribute('open')
+    expect(declined.compareDocumentPosition(summary1) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    for (const note of [
+      'CHB · The sheet has no rows',
+      'Settings · The sheet is hidden in the workbook',
+      'Settings · Sheet "Settings" is ignored by rule "Settings"',
+    ]) {
+      expect(part1.getByText(note).closest('details')).toBe(summary1.closest('details'))
+    }
+
+    const part2 = group(PART2)
+    expect(part2.getByText('6 informational notes')).toBeInTheDocument()
+    expect(part2.getAllByRole('listitem').every((item) => item.closest('details') !== null)).toBe(true)
+  })
+
+  it('puts the sheets to confirm of a file in its group, outside the folded notes', async () => {
+    const { importId } = seedImport('batch-split', { status: 'mapped', labels: ['batch-split_part1'] })
+    const { user } = await openMapping(importId)
+
+    await user.click(tab(strings.steps.files))
+    await user.upload(fileInput(), sampleFile('batch-split_part2'))
+    await findFileEntry(PART2)
+    await user.click(tab(strings.steps.mapping))
+
+    const confirmations = group(PART2).getAllByText(/ · confirmation: /)
+    expect(confirmations).toHaveLength(10)
+    expect(confirmations.every((item) => item.closest('details') === null)).toBe(true)
+    expect(group(PART1).queryAllByText(/ · confirmation: /)).toHaveLength(0)
+  })
+
+  it('shows what concerns the whole import before the groups of the files', async () => {
+    await openMapping(seedImport('batch-clean', { labels: [] }).importId)
+
+    expect(readiness().getByText('Import · transactions: The import has no files')).toBeInTheDocument()
+    expect(folded('Import · transactions: The import has no files')).toBeNull()
+  })
+})
+
 describe('Column Mapping: analysis in progress (spec "Pantalla Column Mapping: análisis en curso")', () => {
   it('a double click sends a single POST analyze and the controls wait for it', async () => {
     const hold = holdNext('analyze')
