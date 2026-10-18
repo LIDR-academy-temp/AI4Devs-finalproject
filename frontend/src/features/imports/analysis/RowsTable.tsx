@@ -36,10 +36,14 @@ const columns = helper.columns([
   helper.display({
     id: 'file',
     header: s.columns.file,
+    // The sheet always shows; the file, long and shared by many rows, is cut with its whole name as tooltip.
     cell: ({ row }) => (
-      <span className="block max-w-56 truncate" title={`${row.original.fileName} · ${row.original.sheetName}`}>
-        {row.original.fileName} · {row.original.sheetName}
-      </span>
+      <div className="flex max-w-56 flex-col">
+        <span className="whitespace-nowrap font-medium">{row.original.sheetName}</span>
+        <span className="truncate text-muted-foreground" title={row.original.fileName}>
+          {row.original.fileName}
+        </span>
+      </div>
     ),
   }),
   helper.accessor('rowNo', { header: s.columns.row }),

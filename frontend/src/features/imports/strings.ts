@@ -154,7 +154,7 @@ export const strings = {
       filterLabel: 'Show',
       filters: { all: 'All', unmatched: 'Unmatched', ambiguous: 'Ambiguous', matched: 'Matched', ignored: 'Ignored' },
       columns: {
-        file: 'File · sheet',
+        file: 'Sheet · file',
         row: 'Row',
         id: 'ID',
         cycle: 'Cycle',
