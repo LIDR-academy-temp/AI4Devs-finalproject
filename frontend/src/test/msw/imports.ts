@@ -73,6 +73,8 @@ export interface ImportRequest {
   /** Multipart parts named `files`: file name and size. */
   parts: { name: string; size: number }[]
   body: unknown
+  /** Status of the answer; null while held, or for a network failure. */
+  status: number | null
 }
 
 interface Hold {
@@ -477,12 +479,11 @@ interface Upload {
 }
 
 /** Reads the `files` parts and applies the upload rules of the API, in its order; a Response means rejected. */
-async function readUploads(request: Request, log: ImportRequest): Promise<Upload[] | Response> {
+async function readUploads(request: Request): Promise<Upload[] | Response> {
   const contentType = request.headers.get('content-type')
   if (!contentType?.startsWith('multipart/form-data'))
     return error(400, 'validation_error', 'Expected multipart/form-data')
-  const parts = (await request.formData()).getAll('files').filter((p): p is File => typeof p !== 'string')
-  log.parts = parts.map((p) => ({ name: p.name, size: p.size }))
+  const parts = await fileParts(request)
   if (parts.length === 0) return error(400, 'validation_error', 'No files')
   if (parts.length > MAX_FILES) return error(400, 'too_many_files', `At most ${MAX_FILES} files per request`)
   const uploads: Upload[] = []
@@ -507,6 +508,10 @@ async function readUploads(request: Request, log: ImportRequest): Promise<Upload
   return uploads
 }
 
+async function fileParts(request: Request): Promise<File[]> {
+  return (await request.formData()).getAll('files').filter((p): p is File => typeof p !== 'string')
+}
+
 interface RouteArgs {
   request: Request
   params: PathParams
@@ -528,19 +533,27 @@ function route(
       contentType: request.headers.get('content-type'),
       parts: [],
       body: undefined,
+      status: null,
     }
     state.requests.push(log)
+    if (log.contentType?.startsWith('multipart/form-data')) {
+      log.parts = (await fileParts(request.clone())).map((p) => ({ name: p.name, size: p.size }))
+    }
     const hold = state.holds.get(name)?.shift()
     if (hold) {
       hold.arrive()
       await hold.released
     }
     const user = caller(request)
-    if (!user) return error(401, 'unauthorized', 'Unauthorized')
+    if (!user) {
+      log.status = 401
+      return error(401, 'unauthorized', 'Unauthorized')
+    }
     const failure = state.failures.get(name)?.shift()
     if (failure && !failure.applied) return HttpResponse.error()
     const response = await resolve({ request, params, user })
     if (failure) return HttpResponse.error()
+    log.status = response.status
     return response
   }
 }
@@ -619,7 +632,7 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
           if (!canProcess(user)) return forbidden()
           const accountId = String(params.accountId)
           if (!accountOf(accountId) || !canSee(user, accountId)) return notFound('Account')
-          const uploads = await readUploads(request, state.requests.at(-1)!)
+          const uploads = await readUploads(request)
           if (uploads instanceof Response) return uploads
           const created = now()
           const record: FakeImport = {
@@ -651,7 +664,7 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
           if (!canProcess(user)) return record ? forbidden() : notFound('Import')
           if (!record) return notFound('Import')
           if (!EDITABLE.includes(record.status)) return notEditable(record)
-          const uploads = await readUploads(request, state.requests.at(-1)!)
+          const uploads = await readUploads(request)
           if (uploads instanceof Response) return uploads
           for (const upload of uploads) {
             const original = record.files.find((f) => f.sha256 === upload.sha256)
