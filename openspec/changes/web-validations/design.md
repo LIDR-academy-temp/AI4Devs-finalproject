@@ -142,7 +142,7 @@
     - `lastInvalidatedReview`, al re-ejecutar o cambiar una inclusión sobre `validated`;
     - el historial: cada `PATCH` aplicado añade su entrada con el usuario que llama y su `AuditInstant`.
   - **Fixtures base**, con los ids de `affectedIds` y los `defaults` de `expected.json`:
-    - `batch-issues`: ocho resultados y 24 hallazgos, con una aparición `previous_batch` en los dos *across*;
+    - `batch-issues`: ocho resultados y 23 hallazgos (los conteos de `expected.json`), con una aparición `previous_batch` en los dos *across*;
     - `batch-blocked`: `provider_mismatch` con `252570479111759` y el resto `passed`, que es un supuesto (proposal hueco 5).
   - **Variantes por escenario** sobre una fixture base. Por ejemplo, la de la reserva R declara un hallazgo R con dos apariciones, una incluida y otra que **llega con `editable: true, includable: false`**, y guioniza el `409 occurrence_not_includable { reason: 'reserve_already_included' }` para su `PATCH`.
   - Alcance y permiso, igual que el falso de imports: `viewer` → `403` en escrituras; fuera de alcance → `404`.

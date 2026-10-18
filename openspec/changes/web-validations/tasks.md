@@ -19,7 +19,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 2. Contrato aislado y API falso de validaciones (D2, D12)
 
-- [ ] 2.1 Test (rojo) `test/msw/validations.test.ts` sobre el falso, sin pantallas, **solo de lo que el falso modela** (D12):
+- [x] 2.1 Test (rojo) `test/msw/validations.test.ts` sobre el falso, sin pantallas, **solo de lo que el falso modela** (D12):
   - con un import `analyzed` de `batch-issues` como `analyst`, `GET validations` → `run: null`; `POST validations` → `201` con la fixture base (ocho resultados y conteos tal como están fijados en ella) y la lista de `missing_previous_to_batch` → `total = 10`;
   - una segunda corrida supera a la primera (`runId` nuevo) y `manualChangeCount` vuelve a `0`;
   - **guion de los `PATCH`**:
@@ -30,7 +30,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   - `review` con el `runId` de una corrida superada → `409 validation_run_superseded`; en la fixture de `batch-blocked` (con `run.blocked` fijado) → `409 blocking_validation_issue` con `issueIds`;
   - `viewer` → `403` en las cuatro escrituras y `404` sobre un import de `ProviderC-Alt`;
   - `holdNextValidation` y `failNextValidation` retienen o fallan una petición a voluntad
-- [ ] 2.2 Implementar `features/validations/contract.ts`:
+- [x] 2.2 Implementar `features/validations/contract.ts`:
   - tipos copiados de "Contrato para #10", con cada fecha como `BusinessDate` o `AuditInstant` según D11 y un comentario por campo;
   - enums de `@recon/shared`;
   - las siete llamadas con `createAuthFetch(session)` y `apiOrigin()`, lanzando `ApiError` y marcando las fechas al recibir;
@@ -44,9 +44,9 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   - registro de peticiones.
   
   Registrarlo en `handlers.ts` y reiniciarlo con `resetDb`. Verificar 2.1 en verde y que los tests existentes siguen en verde (`pnpm --filter @recon/frontend test`). Romper a propósito la puesta a cero de `manualChangeCount` al re-ejecutar y ver fallar 2.1; restaurar
-- [ ] 2.3 Comprobar con `rg` que `test/msw/validations.ts` no contiene ninguna regla de negocio: no lee `cycle`, `sourceType` ni `issueType` para decidir `editable`, `includable`, `resolvable` ni `outcome`. Anotarlo en el PR
-- [ ] 2.4 Comprobar con `rg` que ninguna ruta `/validations`, `/validation-issues` ni `/conflict-occurrences` aparece fuera de `contract.ts` y `test/msw/validations.ts`; anotarlo en el PR
-- [ ] 2.5 Commit: `test(frontend): API falso de validaciones guionizado sobre el contrato de #9` y `feat(frontend): contrato de validaciones aislado y API falso para los tests`
+- [x] 2.3 Comprobar con `rg` que `test/msw/validations.ts` no contiene ninguna regla de negocio: no lee `cycle`, `sourceType` ni `issueType` para decidir `editable`, `includable`, `resolvable` ni `outcome`. Anotarlo en el PR
+- [x] 2.4 Comprobar con `rg` que ninguna ruta `/validations`, `/validation-issues` ni `/conflict-occurrences` aparece fuera de `contract.ts` y `test/msw/validations.ts`; anotarlo en el PR
+- [x] 2.5 Commit: `test(frontend): API falso de validaciones guionizado sobre el contrato de #9` y `feat(frontend): contrato de validaciones aislado y API falso para los tests`
 
 ## 3. Cabecera, tabla de validaciones y ejecución de la corrida (D1, D3, D4, D5)
 
