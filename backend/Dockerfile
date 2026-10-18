@@ -13,10 +13,12 @@ WORKDIR /app
 
 # Dependencies are installed at build time, from the lockfile, never at container start.
 COPY pyproject.toml uv.lock .python-version ./
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen
 
 COPY app ./app
 COPY alembic ./alembic
+COPY tests ./tests
+COPY scripts ./scripts
 COPY alembic.ini ./
 
 RUN useradd --system --uid 10001 adops360

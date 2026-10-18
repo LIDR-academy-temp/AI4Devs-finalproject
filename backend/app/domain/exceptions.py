@@ -20,3 +20,11 @@ class InactiveUserError(DomainError):
 
 class MissingRoleError(DomainError):
     """The user holds none of the roles an operation accepts."""
+
+
+class DuplicateOrderReferenceError(DomainError):
+    """A purchase order with this reference already exists."""
+
+
+class DuplicateCampaignNameError(DomainError):
+    """A campaign with this name already exists."""
