@@ -68,6 +68,7 @@ export function MappingStep({ detail, analysis }: { detail: ImportDetail; analys
             <SheetCard
               key={sheet.sheetId}
               sheet={sheet}
+              editable={editable}
               disabled={!editable || confirm.isPending || analysis.running}
             />
           ))}

@@ -16,9 +16,17 @@ const FROM_COLUMN = 'column'
  * One sheet: its name and the proposal in the analyst's words, built from `proposed` so it stays visible while
  * editing (design D5); then the three controls, the columns and the preview with the mapping being edited.
  * A sheet with nothing to map is one line: with 0 rows, its name and rows; ignored by rule with rows, also the
- * proposal and Edit to open the controls. Its mapping is still in the form, so the confirmation sends it.
+ * proposal and Edit to open the controls (Show where the import cannot be edited). Its mapping is still in the form, so the confirmation sends it.
  */
-export const SheetCard = memo(function SheetCard({ sheet, disabled }: { sheet: ImportSheet; disabled: boolean }) {
+export const SheetCard = memo(function SheetCard({
+  sheet,
+  editable,
+  disabled,
+}: {
+  sheet: ImportSheet
+  editable: boolean
+  disabled: boolean
+}) {
   const kindId = useId()
   const cycleId = useId()
   const statusId = useId()
@@ -53,7 +61,7 @@ export const SheetCard = memo(function SheetCard({ sheet, disabled }: { sheet: I
         )}
         {!empty && (
           <Button variant="ghost" size="sm" className="ml-auto" aria-expanded={false} onClick={() => setEditing(true)}>
-            {strings.mapping.edit}
+            {editable ? strings.mapping.edit : strings.mapping.show}
           </Button>
         )}
       </section>
