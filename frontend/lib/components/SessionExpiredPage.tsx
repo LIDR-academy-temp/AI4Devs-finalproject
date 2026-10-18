@@ -4,15 +4,15 @@ export function SessionExpiredPage() {
   const { signIn } = useAuth();
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="w-full max-w-md px-6 py-12 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Sesión caducada</h1>
-        <p className="text-gray-600 mb-8">
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", backgroundColor: "#f9fafb" }}>
+      <div style={{ width: "100%", maxWidth: "28rem", padding: "3rem 1.5rem", textAlign: "center" }}>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "1rem" }}>Sesión caducada</h1>
+        <p style={{ color: "#4b5563", marginBottom: "2rem" }}>
           Tu sesión ha expirado. Por favor, inicia sesión nuevamente para continuar.
         </p>
         <button
           onClick={() => signIn("/")}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+          style={{ width: "100%", padding: "0.5rem 1rem", backgroundColor: "#2563eb", color: "white", fontWeight: "600", borderRadius: "0.375rem" }}
         >
           Iniciar sesión
         </button>

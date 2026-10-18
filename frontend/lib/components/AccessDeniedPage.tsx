@@ -8,13 +8,13 @@ export function AccessDeniedPage({ message }: AccessDeniedPageProps) {
     message || "No tienes permiso para acceder a esta sección. Contacta al administrador si crees que es un error.";
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="w-full max-w-md px-6 py-12 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Acceso denegado</h1>
-        <p className="text-gray-600 mb-8">{displayMessage}</p>
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", backgroundColor: "#f9fafb" }}>
+      <div style={{ width: "100%", maxWidth: "28rem", padding: "3rem 1.5rem", textAlign: "center" }}>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "1rem" }}>Acceso denegado</h1>
+        <p style={{ color: "#4b5563", marginBottom: "2rem" }}>{displayMessage}</p>
         <a
           href="/"
-          className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition-colors"
+          style={{ display: "inline-block", padding: "0.5rem 1.5rem", backgroundColor: "#2563eb", color: "white", fontWeight: "600", borderRadius: "0.375rem", textDecoration: "none" }}
         >
           Volver al inicio
         </a>

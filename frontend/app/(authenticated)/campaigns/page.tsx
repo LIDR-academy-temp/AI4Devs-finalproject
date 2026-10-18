@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { createApiClient } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { getUserManager } from "@/lib/auth/user-manager";
 
 interface Campaign {
   id: number;
@@ -22,6 +23,11 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const handleSignOut = async () => {
+    await getUserManager().removeUser();
+    // The session will update through the AuthProvider's userUnloaded listener
+  };
 
   useEffect(() => {
     async function loadCampaigns() {
@@ -55,59 +61,58 @@ export default function CampaignsPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Campañas</h1>
-        <Link
-          href="/campaigns/new"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
-        >
-          Nueva campaña
-        </Link>
+    <div style={{ padding: "2rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+        <h1 style={{ fontSize: "1.875rem", fontWeight: "bold" }}>Campañas</h1>
+        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+          <Link href="/campaigns/new">Nueva campaña</Link>
+          <button type="button" onClick={() => void handleSignOut()}>
+            Cerrar sesión
+          </button>
+        </div>
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div style={{ backgroundColor: "#fee2e2", padding: "1rem", marginBottom: "1rem" }}>
           {error}
         </div>
       )}
 
       {campaigns && campaigns.length === 0 && !error && (
-        <div className="text-center py-12 bg-gray-50 rounded">
-          <p className="text-gray-600">Todavía no hay campañas registradas.</p>
-          <p className="text-gray-500 text-sm mt-2">Crea la primera campaña haciendo clic en "Nueva campaña".</p>
+        <div style={{ textAlign: "center", padding: "3rem", backgroundColor: "#f3f4f6" }}>
+          <p>Todavía no hay campañas registradas.</p>
+          <p style={{ fontSize: "0.875rem", marginTop: "0.5rem" }}>
+            Crea la primera campaña haciendo clic en "Nueva campaña".
+          </p>
         </div>
       )}
 
       {campaigns && campaigns.length > 0 && (
-        <table className="w-full border-collapse">
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr className="bg-gray-100 border-b-2 border-gray-300">
-              <th className="text-left px-4 py-2 font-semibold">ID</th>
-              <th className="text-left px-4 py-2 font-semibold">Nombre</th>
-              <th className="text-left px-4 py-2 font-semibold">Nombre mostrado</th>
-              <th className="text-left px-4 py-2 font-semibold">Agencia</th>
-              <th className="text-left px-4 py-2 font-semibold">Anunciante</th>
-              <th className="text-left px-4 py-2 font-semibold">Estado</th>
-              <th className="text-left px-4 py-2 font-semibold">Inicio</th>
-              <th className="text-left px-4 py-2 font-semibold">Fin</th>
+            <tr style={{ backgroundColor: "#f3f4f6", borderBottom: "2px solid #d1d5db" }}>
+              <th style={{ textAlign: "left", padding: "0.5rem 1rem", fontWeight: "600" }}>ID</th>
+              <th style={{ textAlign: "left", padding: "0.5rem 1rem", fontWeight: "600" }}>Nombre</th>
+              <th style={{ textAlign: "left", padding: "0.5rem 1rem", fontWeight: "600" }}>Nombre mostrado</th>
+              <th style={{ textAlign: "left", padding: "0.5rem 1rem", fontWeight: "600" }}>Agencia</th>
+              <th style={{ textAlign: "left", padding: "0.5rem 1rem", fontWeight: "600" }}>Anunciante</th>
+              <th style={{ textAlign: "left", padding: "0.5rem 1rem", fontWeight: "600" }}>Estado</th>
+              <th style={{ textAlign: "left", padding: "0.5rem 1rem", fontWeight: "600" }}>Inicio</th>
+              <th style={{ textAlign: "left", padding: "0.5rem 1rem", fontWeight: "600" }}>Fin</th>
+              <th style={{ textAlign: "left", padding: "0.5rem 1rem", fontWeight: "600" }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {campaigns.map((campaign) => (
-              <tr key={campaign.id} className="border-b border-gray-200 hover:bg-gray-50">
-                <td className="px-4 py-2">{campaign.id}</td>
-                <td className="px-4 py-2">{campaign.name}</td>
-                <td className="px-4 py-2">{campaign.display_name}</td>
-                <td className="px-4 py-2">{campaign.agency_id}</td>
-                <td className="px-4 py-2">{campaign.advertiser_id}</td>
-                <td className="px-4 py-2">
-                  <span className="px-2 py-1 rounded text-white text-sm font-medium bg-green-600">
-                    {campaign.status}
-                  </span>
-                </td>
-                <td className="px-4 py-2">{campaign.start_date}</td>
-                <td className="px-4 py-2">{campaign.end_date}</td>
+              <tr key={campaign.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                <td style={{ padding: "0.5rem 1rem" }}>{campaign.id}</td>
+                <td style={{ padding: "0.5rem 1rem" }}>{campaign.name}</td>
+                <td style={{ padding: "0.5rem 1rem" }}>{campaign.display_name}</td>
+                <td style={{ padding: "0.5rem 1rem" }}>{campaign.agency_id}</td>
+                <td style={{ padding: "0.5rem 1rem" }}>{campaign.advertiser_id}</td>
+                <td style={{ padding: "0.5rem 1rem" }}>{campaign.status}</td>
+                <td style={{ padding: "0.5rem 1rem" }}>{campaign.start_date}</td>
+                <td style={{ padding: "0.5rem 1rem" }}>{campaign.end_date}</td>
               </tr>
             ))}
           </tbody>
