@@ -79,6 +79,8 @@ export interface HistoryMovement {
   excludeAmount: boolean
   sheetId: string | null
   rowNo: number | null
+  /** SettlementTransaction id: the stable last tie-break of the history order. */
+  settlementTxnId: bigint
 }
 
 export interface CandidateTransaction {
@@ -181,4 +183,6 @@ export interface ValidationReport {
   ranges: CycleRanges
   pendingInRangeCount: number
   undatedAdjustmentCount: number
+  /** I candidates with no status change date: they cannot be classified, so they are counted (informative). */
+  undatedCandidateCount: number
 }

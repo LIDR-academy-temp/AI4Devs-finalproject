@@ -7,7 +7,7 @@ export interface StatusCatalog {
   idOf(code: TransactionStatusCode): number
 }
 
-const REQUIRED: readonly TransactionStatusCode[] = ['Pending', 'Successful', 'Declined', 'Chargeback']
+const REQUIRED: readonly TransactionStatusCode[] = ['Pending', 'Successful', 'Declined', 'Chargeback', 'Refund', 'RDR']
 
 /** Lookup over the catalog the engine receives (design D2): an id outside it is a programming error. */
 export function createStatusCatalog(statuses: readonly StatusEntry[]): StatusCatalog {

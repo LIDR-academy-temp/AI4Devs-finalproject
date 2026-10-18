@@ -2,7 +2,7 @@ import type { Cycle, ValidationCode } from '@recon/shared'
 import { duplicateAcrossBatches, statusCollisionAcrossBatches } from './across-batches.js'
 import { compareCurrent, compareHistory, conflictKey } from './conflict-key.js'
 import { duplicateInBatch, statusCollisionInBatch } from './in-batch.js'
-import { missingInRange, missingPreviousToBatch, pendingInRangeCount } from './missing.js'
+import { missingInRange, missingPreviousToBatch, pendingInRangeCount, undatedCandidateCount } from './missing.js'
 import { nonRecordedAdjustment } from './non-recorded-adjustment.js'
 import { deriveOutcome, overallBlocked } from './outcome.js'
 import { type MatchedRow, partitionRows, type RowPartition } from './partition.js'
@@ -143,5 +143,6 @@ export function runValidations(
     ranges: ctx.ranges,
     pendingInRangeCount: pendingInRangeCount(ctx),
     undatedAdjustmentCount: ctx.undatedAdjustmentCount,
+    undatedCandidateCount: undatedCandidateCount(ctx),
   }
 }

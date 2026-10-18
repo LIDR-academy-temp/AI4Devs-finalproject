@@ -26,7 +26,11 @@ function mismatchOf(r: MatchedRow, catalog: StatusCatalog): IssueType | null {
   if (r.cycle !== 'E' || r.statusId === null || gateway === catalog.idOf('Pending')) return null
   const successful = catalog.idOf('Successful')
   const declined = catalog.idOf('Declined')
-  if (r.statusId === declined && gateway !== declined) return 'status_mismatch'
+  // An explicit list: a status the catalog gains later never becomes a mismatch by default.
+  const contradictsDeclined = new Set(
+    (['Successful', 'Chargeback', 'Refund', 'RDR'] as const).map((code) => catalog.idOf(code)),
+  )
+  if (r.statusId === declined && contradictsDeclined.has(gateway)) return 'status_mismatch'
   if (r.statusId === successful && gateway === declined) return 'status_mismatch'
   return null
 }

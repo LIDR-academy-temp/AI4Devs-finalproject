@@ -44,6 +44,8 @@ export interface StoredMovement {
   excludeAmount: boolean
   sheetId: string | null
   rowNo: number | null
+  /** SettlementTransaction id; assigned by the double when a test leaves it out. */
+  settlementTxnId?: bigint
   /** Decimal strings, as DECIMAL(19,4) arrives from the database. */
   reserveHeldAmt: string
   reserveEarlyReleasedAmt: string
@@ -74,6 +76,7 @@ interface WorldData {
 }
 
 let worldCache: WorldData | null = null
+let settlementTxnSequence = 0
 
 /** Transactions and paid batches of the seed, built once. */
 export function validationWorld(): WorldData {
@@ -106,6 +109,7 @@ export function validationWorld(): WorldData {
           excludeAmount: false,
           sheetId: null,
           rowNo: null,
+          settlementTxnId: BigInt(++settlementTxnSequence),
           reserveHeldAmt: m.held.toFixed(4),
           reserveEarlyReleasedAmt: '0.0000',
         })),
@@ -147,6 +151,8 @@ export class InMemoryValidationSources
   private readonly transactions = new Map<bigint, WorldTransaction>()
   private readonly batches: StoredBatch[]
   private readonly registeredRows: RegisteredMissingRow[] = []
+  /** Ids for movements added by tests, above the world's. */
+  private extraIds = 10_000_000
 
   constructor(private readonly importSide: ImportSide | null = null) {
     const world = validationWorld()
@@ -161,7 +167,10 @@ export class InMemoryValidationSources
 
   /** Test seam: an attempt the world does not have (undone, a second attempt…). */
   addBatch(batch: StoredBatch): void {
-    this.batches.push(batch)
+    this.batches.push({
+      ...batch,
+      movements: batch.movements.map((m) => ({ ...m, settlementTxnId: m.settlementTxnId ?? BigInt(++this.extraIds) })),
+    })
   }
 
   /** Test seam: a persistent missing finding registered by an import's run. */
@@ -254,6 +263,7 @@ export class InMemoryValidationSources
           excludeAmount: m.excludeAmount,
           sheetId: m.sheetId,
           rowNo: m.rowNo,
+          settlementTxnId: m.settlementTxnId!,
         })
       }
     }

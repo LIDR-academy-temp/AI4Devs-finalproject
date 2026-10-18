@@ -138,3 +138,20 @@ export function pendingInRangeCount(ctx: ValidationContext): number {
   }
   return counted.size
 }
+
+/**
+ * I candidates without a status change date (L2): they cannot be classified against the I range, so instead of
+ * dropping them silently the run counts them (informative), with the same exclusions as any candidate.
+ */
+export function undatedCandidateCount(ctx: ValidationContext): number {
+  if (ctx.ranges.I === null) return 0
+  let count = 0
+  for (const c of ctx.input.candidates) {
+    if (c.lastStatusChangedAt !== null || !ctx.input.account.primaryChannelIds.has(c.channelId)) continue
+    if (ctx.catalog.naturalCycle(c.statusId) !== 'I') continue
+    if (ctx.present.I.has(c.transactionId) || ctx.processed.I.has(c.transactionId)) continue
+    if (ctx.input.registeredMissing.has(`I:${c.transactionId}`)) continue
+    count++
+  }
+  return count
+}

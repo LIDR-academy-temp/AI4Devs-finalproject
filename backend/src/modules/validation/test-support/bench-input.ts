@@ -86,6 +86,7 @@ export function benchInput(seed = 20261017): BenchInput {
         excludeAmount: false,
         sheetId: null,
         rowNo: history.length,
+        settlementTxnId: BigInt(history.length + 1),
       })
     if (t.statusId === STATUS.Pending) continue
     // A tenth of a batch's worth of transactions went to the undone attempt: not in the history.
