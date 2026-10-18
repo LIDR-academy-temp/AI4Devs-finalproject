@@ -26,7 +26,6 @@ import {
   CHANNELS,
   CYCLES,
   FEE_TYPES,
-  feeFor,
   GATEWAYS,
   GLOBAL_COLUMN_RULES,
   GLOBAL_ROW_IGNORES,
@@ -37,9 +36,11 @@ import {
   mulberry32,
   PROVIDERS,
   SETTLEMENT_STATUSES,
+  type SettlementMovement,
   STATUS,
   STATUS_ALIASES,
   type StatusCode,
+  settlementMovementsOf,
   TRANSACTION_STATUSES,
   USERS,
   uid,
@@ -355,83 +356,8 @@ async function insertBatch(
     },
   })
 
-  type Row = {
-    transactionId: bigint
-    cycle: 'E' | 'I' | 'R'
-    statusId: number
-    amount: number
-    feeAmount: number
-    eventDate: Date
-    pct: number
-    days: number
-    held: number
-    released: number
-    expectedAt: Date | null
-    brand: string
-    status: StatusCode
-  }
-  const rows: Row[] = []
-  const chan = (channelId: number) => CHANNELS.find((c) => c.channelId === channelId)!
-  for (const k of plan.eKeys) {
-    const t = world.txnByKey.get(k)!
-    const c = chan(t.channelId)
-    // status when settling in E: Successful or Declined (the later adjustment is settled in I)
-    const st: StatusCode = t.status === 'Declined' ? 'Declined' : 'Successful'
-    const held = st === 'Successful' ? money(t.amount * t.appliedReservePct) : 0
-    rows.push({
-      transactionId: idOf(k),
-      cycle: 'E',
-      statusId: STATUS[st],
-      amount: st === 'Successful' ? t.amount : 0,
-      feeAmount: feeFor(plan.account, st, t.amount, 'E'),
-      eventDate: t.transactionDate,
-      pct: t.appliedReservePct,
-      days: c.days,
-      held,
-      released: 0,
-      expectedAt: held ? new Date(t.transactionDate.getTime() + c.days * 86_400_000) : null,
-      brand: t.cardBrand,
-      status: st,
-    })
-  }
-  for (const k of plan.iKeys) {
-    const t = world.txnByKey.get(k)!
-    const c = chan(t.channelId)
-    rows.push({
-      transactionId: idOf(k),
-      cycle: 'I',
-      statusId: STATUS[t.status],
-      amount: t.status === 'RDR' ? 0 : t.amount,
-      feeAmount: feeFor(plan.account, t.status, t.amount, 'I'),
-      eventDate: t.lastStatusChangedAt!,
-      pct: t.appliedReservePct,
-      days: c.days,
-      held: 0,
-      released: 0,
-      expectedAt: null,
-      brand: t.cardBrand,
-      status: t.status,
-    })
-  }
-  for (const k of plan.rKeys) {
-    const t = world.txnByKey.get(k)!
-    const c = chan(t.channelId)
-    rows.push({
-      transactionId: idOf(k),
-      cycle: 'R',
-      statusId: STATUS[t.status === 'Declined' ? 'Successful' : t.status],
-      amount: 0,
-      feeAmount: 0,
-      eventDate: plan.settlementDate,
-      pct: t.appliedReservePct,
-      days: c.days,
-      held: 0,
-      released: money(t.amount * t.appliedReservePct),
-      expectedAt: null,
-      brand: t.cardBrand,
-      status: t.status,
-    })
-  }
+  type Row = SettlementMovement & { transactionId: bigint }
+  const rows: Row[] = settlementMovementsOf(world, plan).map((m) => ({ ...m, transactionId: idOf(m.key) }))
 
   const sum = (xs: Row[], f: (r: Row) => number) => money(xs.reduce((a, r) => a + f(r), 0))
   const E = rows.filter((r) => r.cycle === 'E')
