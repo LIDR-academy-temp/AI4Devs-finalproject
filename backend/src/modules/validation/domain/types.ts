@@ -129,7 +129,8 @@ export type Occurrence =
       fileId: string
       sheetId: string
       rowNo: number
-      statusId: number
+      /** null: the row's status could not be resolved (it still collides, never silently dropped). */
+      statusId: number | null
       excludeAmount: boolean
       defaultIncluded: boolean
     }

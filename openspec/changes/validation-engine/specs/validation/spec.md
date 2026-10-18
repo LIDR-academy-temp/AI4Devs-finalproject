@@ -207,6 +207,24 @@ Dentro de una clave `(transactionId, cycle)` del batch, cada estado repetido SHA
 - **WHEN** se valida
 - **THEN** hay un `duplicate` / `in_batch` (dos apariciones `Successful`, la segunda excluida) y una `collision` / `in_batch` (la primera `Successful` y la `Declined`, ambas incluidas)
 
+### Requirement: Estado no resuelto en duplicados y colisiones
+Una aparición cuyo estado no se pudo resolver (`status_unresolved`) SHALL compararse como un estado distinto de cualquier otro, incluido otro no resuelto: frente a otra aparición de la misma `(transactionId, cycle)`, del batch o de un batch anterior vigente, SHALL producir una colisión no bloqueante con todas las apariciones actuales incluidas, y nunca un duplicado. Ninguna aparición se excluye en silencio.
+
+#### Scenario: Estado no resuelto frente a una aprobación del batch
+- **GIVEN** una transacción con una fila APP `Successful` y otra fila E de la misma transacción cuyo estado no se resolvió
+- **WHEN** se valida
+- **THEN** hay una `collision` / `in_batch` con las dos apariciones incluidas, la segunda sin estado, y ningún `duplicate`
+
+#### Scenario: Dos apariciones sin estado
+- **GIVEN** dos filas E de la misma transacción con el estado sin resolver
+- **WHEN** se valida
+- **THEN** hay una `collision` / `in_batch` con las dos apariciones incluidas
+
+#### Scenario: Estado no resuelto frente al histórico
+- **GIVEN** una fila E sin estado resuelto de una transacción liquidada en E en un batch vigente anterior
+- **WHEN** se valida
+- **THEN** hay una `collision` / `across_batches` con la aparición actual incluida y ningún `duplicate_across_batches`
+
 ### Requirement: Comparación con batches anteriores
 Las filas del import SHALL compararse por `(transactionId, cycle)` con los movimientos de los intentos no deshechos (`processed` o `paid`) de todas las cuentas del proveedor: mismo estado → `duplicate_across_batches` (actual excluida, histórica como evidencia); estado distinto → `status_collision_across_batches` (actual incluida). Sin intentos anteriores del proveedor, ambas son `not_applicable`.
 

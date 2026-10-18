@@ -3,34 +3,39 @@ import type { MatchedRow } from './partition.js'
 import type { SlotOutput, ValidationContext } from './run-validations.js'
 import type { Issue, Occurrence } from './types.js'
 
-/** A row with a reported status: the only ones that can be compared. */
 type ComparableRow = MatchedRow & { statusId: number }
 
 /**
  * Per `(transactionId, cycle)` key of the own rows (question 5): rows with the same (status, excludeAmount) form a
  * subgroup; each subgroup with more than one row is a duplicate (first included, the rest excluded). Subgroups that
- * are only `compatible` (Chargeback and CHB 2, question 7) merge; two or more left is a collision with the first row
- * of each, all included. Rows without a reported status cannot be compared and take no part.
+ * are only `compatible` (Chargeback and CHB 2, question 7) merge into one collision group. A row whose status is
+ * unresolved is never a duplicate: it is a collision group of its own, so nothing is resolved silently. Two or more
+ * collision groups are a collision with the first row of each, all included, in arrival order.
  */
 function groupsOf(rows: readonly MatchedRow[], ctx: ValidationContext) {
   const subgroups: ComparableRow[][] = []
+  const unresolved: MatchedRow[] = []
   for (const r of rows) {
-    if (r.statusId === null) continue
+    if (r.statusId === null) {
+      unresolved.push(r)
+      continue
+    }
     const row = r as ComparableRow
     const same = subgroups.find((g) => relation(g[0]!, row, ctx.catalog) === 'same')
     if (same) same.push(row)
     else subgroups.push([row])
   }
-  const collisionGroups: ComparableRow[][] = []
+  const collisionFirsts = new Set<MatchedRow>(unresolved)
+  const merged: ComparableRow[] = []
   for (const g of subgroups) {
-    const compatible = collisionGroups.find((c) => relation(c[0]!, g[0]!, ctx.catalog) === 'compatible')
-    if (compatible) compatible.push(g[0]!)
-    else collisionGroups.push([g[0]!])
+    if (merged.some((first) => relation(first, g[0]!, ctx.catalog) === 'compatible')) continue
+    merged.push(g[0]!)
+    collisionFirsts.add(g[0]!)
   }
-  return { subgroups, collisionGroups }
+  return { subgroups, collisionFirsts: rows.filter((r) => collisionFirsts.has(r)) }
 }
 
-function occurrenceOf(r: ComparableRow, defaultIncluded: boolean): Occurrence {
+function occurrenceOf(r: MatchedRow, defaultIncluded: boolean): Occurrence {
   return {
     sourceType: 'current_import',
     fileId: r.fileId,
@@ -42,7 +47,7 @@ function occurrenceOf(r: ComparableRow, defaultIncluded: boolean): Occurrence {
   }
 }
 
-function issueOf(issueType: 'duplicate' | 'collision', first: ComparableRow, occurrences: Occurrence[]): Issue {
+function issueOf(issueType: 'duplicate' | 'collision', first: MatchedRow, occurrences: Occurrence[]): Issue {
   return {
     issueType,
     scope: 'in_batch',
@@ -77,7 +82,7 @@ export function statusCollisionInBatch(ctx: ValidationContext): SlotOutput {
   const issues: Issue[] = []
   for (const rows of ctx.ownByKey.values()) {
     if (rows.length < 2) continue
-    const firsts = groupsOf(rows, ctx).collisionGroups.map((c) => c[0]!)
+    const firsts = groupsOf(rows, ctx).collisionFirsts
     if (firsts.length > 1)
       issues.push(
         issueOf(

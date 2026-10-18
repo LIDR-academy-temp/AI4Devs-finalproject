@@ -3,27 +3,29 @@ import type { MatchedRow } from './partition.js'
 import type { SlotOutput, ValidationContext } from './run-validations.js'
 import type { HistoryMovement, Issue, Occurrence } from './types.js'
 
-type ComparableRow = MatchedRow & { statusId: number }
-
 /**
  * Per `(transactionId, cycle)` key with history (question 6): the current rows with some historical movement of the
  * same (status, excludeAmount) are a duplicate (current excluded, historical as evidence); those with some movement
  * of a different status are a collision (current included). Chargeback against CHB 2 is compatible: nothing
- * (question 7). Independent of the in-batch detection.
+ * (question 7). A current row whose status is unresolved differs from every historical movement: a collision.
+ * Independent of the in-batch detection.
  */
 function acrossBatches(ctx: ValidationContext, wanted: 'same' | 'different'): SlotOutput {
   const issues: Issue[] = []
   for (const [key, rows] of ctx.ownByKey) {
     const history = ctx.historyByKey.get(key)
     if (!history) continue
-    const current: ComparableRow[] = []
+    const current: MatchedRow[] = []
     const previous = new Set<HistoryMovement>()
     for (const r of rows) {
-      if (r.statusId === null) continue
-      const row = r as ComparableRow
-      const hits = history.filter((m) => relation(row, m, ctx.catalog) === wanted)
+      const statusId = r.statusId
+      const hits = history.filter((m) =>
+        statusId === null
+          ? wanted === 'different'
+          : relation({ statusId, excludeAmount: r.excludeAmount }, m, ctx.catalog) === wanted,
+      )
       if (hits.length === 0) continue
-      current.push(row)
+      current.push(r)
       for (const m of hits) previous.add(m)
     }
     if (current.length === 0) continue
@@ -45,7 +47,7 @@ function acrossBatches(ctx: ValidationContext, wanted: 'same' | 'different'): Sl
   return { applicable: ctx.input.hasPreviousBatches, issues }
 }
 
-function currentOccurrence(r: ComparableRow, defaultIncluded: boolean): Occurrence {
+function currentOccurrence(r: MatchedRow, defaultIncluded: boolean): Occurrence {
   return {
     sourceType: 'current_import',
     fileId: r.fileId,
