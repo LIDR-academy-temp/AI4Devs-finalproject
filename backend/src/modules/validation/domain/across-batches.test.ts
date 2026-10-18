@@ -245,4 +245,30 @@ describe('duplicate_across_batches and status_collision_across_batches', () => {
       STATUS.Declined,
     ])
   })
+
+  it('a previous_batch occurrence carries the sheet and row of its historical movement, null/null without a row (validation-runs D3)', () => {
+    const { dup, col } = run(
+      [row({ transactionId: 1n }), row({ transactionId: 2n, rowNo: 3 })],
+      [
+        { ...movement({ transactionId: 1n, batchNo: 50, rowNo: 17 }), sheetId: 'old-app-sheet' },
+        { ...movement({ transactionId: 1n, batchNo: 51, rowNo: 42 }), sheetId: 'other-app-sheet' },
+        movement({ transactionId: 2n, status: 'Declined' }),
+      ],
+    )
+
+    expect(
+      dup.issues[0]!.occurrences.filter((o) => o.sourceType === 'previous_batch').map((o) => [
+        o.batchNo,
+        o.sheetId,
+        o.rowNo,
+      ]),
+    ).toEqual([
+      [50, 'old-app-sheet', 17],
+      [51, 'other-app-sheet', 42],
+    ])
+    expect(col.issues[0]!.occurrences.find((o) => o.sourceType === 'previous_batch')).toMatchObject({
+      sheetId: null,
+      rowNo: null,
+    })
+  })
 })
