@@ -74,6 +74,7 @@ Migración `0007_settlement_process` (a mano, `BEGIN TRY / BEGIN TRAN … COMMIT
 2. `CHECK CK_SettlementTransaction_sourceRow ((sheetId IS NULL AND rowNo IS NULL) OR (sheetId IS NOT NULL AND rowNo IS NOT NULL))`.
 3. Índice único filtrado `UX_SettlementTransaction_batch_row (batchId, sheetId, rowNo) WHERE sheetId IS NOT NULL`. Todo movimiento que escribe este change sale de una `ImportRow` (`sheetId`, `rowNo` no nulos). Los históricos del seed no tienen fila y no entran en el índice.
 4. `ALTER COLUMN eventDate DATETIME2 NULL` (D4).
+5. Migración `0008_settlement_fee_event_date` (decidida durante el apply del grupo 11): `SettlementTransactionFee.eventDate` también admite `NULL`. Un ajuste sin fecha que recibe el fee `NULL…NULL` de su tipo (P6b) guarda en su fila de desglose la misma fecha nula que su movimiento. *Descartado*: no aplicar nunca fee a un ajuste sin fecha (contradice P6b) o guardar la fecha de referencia del batch (no es la del evento).
 
 `schema.prisma`: se quita `@@unique([transactionId, cycle, batchId])` y queda un comentario con el índice filtrado (como `AccountChannel`); `eventDate DateTime?`. Se regenera el cliente. La migración no la genera Prisma: CLAUDE.md prohíbe `migrate dev` y `db push`.
 
