@@ -204,6 +204,9 @@ describe('review and run overlapping (D4)', () => {
     expect(after.run!.runId).toBe(second.run!.runId)
   })
 
+  // Only watches the final invariant (never validated with another current run); it accepts either outcome, also a
+  // serial one. The two orders are protected by the deterministic variants above: "the review confirms while a run is
+  // computed…" and "a run confirms while the review waits…".
   it('both at once over HTTP: never validated with a run other than the reviewed one', async () => {
     const { importId } = await flow.analyzedSample('batch-issues')
     const first = await run(importId)

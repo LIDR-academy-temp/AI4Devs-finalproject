@@ -251,6 +251,9 @@ describe('one current run per import under concurrency', () => {
     expect(await currentRuns(importId)).toHaveLength(1)
   })
 
+  // Only watches the final invariant (one current run); without a real overlap it also accepts 201/201. The guard is
+  // protected by the deterministic variant above: "two runs computed on the same version: one is stored, the other
+  // gets 409 import_changed".
   it('two POST validations at once leave exactly one current run', async () => {
     const { importId } = await flow.analyzedSample('batch-blocked')
 
