@@ -691,6 +691,10 @@ export interface SeedRunOptions {
   runBy?: UserName
   /** Seeds the review of the run, by this user; the import should be seeded as validated. */
   reviewedBy?: UserName
+  /** When the review was made (an ISO instant); by default, the next tick of the fake's clock. */
+  reviewedAt?: string
+  /** When the run was made (an ISO instant); by default, the next tick of the fake's clock. */
+  runAt?: string
 }
 
 /**
@@ -703,7 +707,10 @@ export function seedValidationRun(importId: string, fixture?: RunFixture, option
   chosen.patches = { ...chosen.patches, ...options.patches }
   state.fixtures.set(importId, chosen)
   const run = createRun(record, chosen, options.runBy ?? 'analyst', options.manualChangeCount)
-  if (options.reviewedBy) run.review = { reviewedBy: userRef(options.reviewedBy), reviewedAt: auditInstant(now()) }
+  if (options.runAt) run.runAt = options.runAt
+  if (options.reviewedBy) {
+    run.review = { reviewedBy: userRef(options.reviewedBy), reviewedAt: auditInstant(options.reviewedAt ?? now()) }
+  }
   return { runId: run.runId, issues: run.issues.map((i) => detailOf(run, i)) }
 }
 

@@ -44,7 +44,8 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
 
   it('warnings only (criterion 3 of the issue, HU2 CA6): reviews the run shown and offers Settlement Review', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
-    const { runId } = seedValidationRun(importId)
+    // Run by admin at 07:15 in New York; reviewed by analyst at 10:00, the fake's audit clock.
+    const { runId } = seedValidationRun(importId, undefined, { runBy: 'admin', runAt: '2026-10-18T11:15:00.000Z' })
     const { user } = await openAnalysis(importId)
 
     await user.click(continueButton())
@@ -55,7 +56,7 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
       url: `/api/v1/imports/${importId}/review`,
       body: { runId },
     })
-    // The fake's audit clock: the run at 14:00:01 UTC, the review at 14:00:02 UTC, 10:00 in New York.
+    expect(screen.getByText(`Run #${runId} · 2026-10-18 07:15 ET · admin`)).toBeInTheDocument()
     expect(decision().getByText('Reviewed by analyst · 2026-10-18 10:00 ET')).toBeInTheDocument()
     const next = decision().getByRole('button', { name: 'Settlement Review' })
     expect(next).toBeDisabled()
