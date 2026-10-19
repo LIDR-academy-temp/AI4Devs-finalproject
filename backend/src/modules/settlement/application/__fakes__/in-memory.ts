@@ -2,10 +2,18 @@
  * In-memory doubles of the settlement read ports (../ports.ts) over an engine input already built from the synthetic
  * world (test-support/sample-input.ts): the source answers from it the way the Prisma adapter answers from the base.
  */
-import type { ImportStatus } from '@recon/shared'
+import type { ImportStatus, SettlementView } from '@recon/shared'
 import type { Scope } from '../../../catalog/domain/scope.js'
 import type { SettlementInput } from '../../domain/types.js'
-import type { CurrentRun, ImportContext, PrefilledBatchFees, SettlementSource } from '../ports.js'
+import type {
+  CurrentRun,
+  ImportContext,
+  PrefilledBatchFees,
+  ProcessCommand,
+  SettlementReader,
+  SettlementRepository,
+  SettlementSource,
+} from '../ports.js'
 
 export interface InMemorySourceOptions {
   status?: ImportStatus
@@ -26,6 +34,13 @@ export class InMemorySettlementSource implements SettlementSource {
     if (importId !== this.input.importId) return null
     if (scope !== null && !scope.merchantIds.includes(this.options.merchantId ?? 1)) return null
     return { importId, status: this.options.status ?? 'validated', account: this.input.account }
+  }
+
+  async account(scope: Scope, accountId: string) {
+    this.calls.push('account')
+    if (accountId !== this.input.account.accountId || !scope.merchantIds.includes(this.options.merchantId ?? 1))
+      return null
+    return this.input.account
   }
 
   async currentRun(importId: string): Promise<CurrentRun | null> {
@@ -67,6 +82,27 @@ export class InMemorySettlementSource implements SettlementSource {
   async attempts() {
     this.calls.push('attempts')
     return [...this.input.attempts]
+  }
+}
+
+/** Records the commands; the transactional rules are the Prisma repository's (integration tests). */
+export class InMemorySettlementRepository implements SettlementRepository {
+  readonly commands: ProcessCommand[] = []
+
+  constructor(private readonly batchId = '5c3f9e21-8a4b-4f0e-b1d2-6e7f8a9b0c1d') {}
+
+  async process(command: ProcessCommand): Promise<{ batchId: string }> {
+    this.commands.push(command)
+    return { batchId: this.batchId }
+  }
+}
+
+/** Answers a fixed view for the batch it knows. */
+export class InMemorySettlementReader implements SettlementReader {
+  constructor(private readonly views: ReadonlyMap<string, SettlementView> = new Map()) {}
+
+  async view(batchId: string): Promise<SettlementView | null> {
+    return this.views.get(batchId) ?? null
   }
 }
 

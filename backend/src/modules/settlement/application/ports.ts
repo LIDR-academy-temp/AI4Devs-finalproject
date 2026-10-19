@@ -1,7 +1,7 @@
 // Ports of the settlement module (settlement-process design D1, D2, D5): what the calculation reads, and how processing
 // writes it. The Prisma adapters take either the client or the transactional client, so the same reads serve the
 // preview (outside a transaction) and processing (inside it, after the guard).
-import type { ImportStatus, ValidationCode } from '@recon/shared'
+import type { ImportStatus, SettlementRequest, SettlementView, ValidationCode } from '@recon/shared'
 import type { Scope } from '../../catalog/domain/scope.js'
 import type {
   AccountAttempt,
@@ -33,6 +33,8 @@ export interface SettlementSource {
    * reads it without one: processing, inside its transaction, after the service checked the scope.
    */
   importContext(scope: Scope | null, importId: string): Promise<ImportContext | null>
+  /** The account when it is inside the scope; null otherwise. */
+  account(scope: Scope, accountId: string): Promise<SettlementAccount | null>
   /** The current (not superseded) validation run of the import. */
   currentRun(importId: string): Promise<CurrentRun | null>
   /** Every ImportRow of the import with its sheet, file order and matched transaction. */
@@ -52,4 +54,23 @@ export interface SettlementSource {
 /** feeTypeIds of the batch fees pre-filled from the Other Fees sheet, as GET /imports/{id} proposes them. */
 export interface PrefilledBatchFees {
   feeTypeIdsOf(scope: Scope, importId: string): Promise<Set<number>>
+}
+
+export interface ProcessCommand {
+  importId: string
+  userId: number
+  request: SettlementRequest
+  prefilledFeeTypeIds: ReadonlySet<number>
+  /** Audit instant (processedAt, assignedAt, resolvedAt). */
+  now: Date
+}
+
+/** Processing in one transaction (design D5–D7); answers the id of the attempt it wrote. */
+export interface SettlementRepository {
+  process(command: ProcessCommand): Promise<{ batchId: string }>
+}
+
+/** The view of an attempt read back from what was written (design D19). */
+export interface SettlementReader {
+  view(batchId: string): Promise<SettlementView | null>
 }
