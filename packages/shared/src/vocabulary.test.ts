@@ -86,9 +86,12 @@ describe('Money (DECIMAL(19,4): at most 15 integer digits)', () => {
 })
 
 describe('IsoDate (a calendar date)', () => {
-  it.each(['2026-10-24', '2026-01-31', '2026-12-31', '2028-02-29', '2000-02-29'])('accepts %s', (value) => {
-    expect(IsoDate.safeParse(value).success).toBe(true)
-  })
+  it.each(['2026-10-24', '2026-01-31', '2026-12-31', '2028-02-29', '2000-02-29', '0001-01-01'])(
+    'accepts %s',
+    (value) => {
+      expect(IsoDate.safeParse(value).success).toBe(true)
+    },
+  )
 
   it.each([
     '2026-13-01',
@@ -99,6 +102,7 @@ describe('IsoDate (a calendar date)', () => {
     '2026-04-31',
     '2026-10-00',
     '2026-10-32',
+    '0000-01-01',
     '24/10/2026',
   ])('rejects %s', (value) => {
     expect(IsoDate.safeParse(value).success).toBe(false)
