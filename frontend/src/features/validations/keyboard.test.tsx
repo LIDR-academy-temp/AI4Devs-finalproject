@@ -35,14 +35,14 @@ describe('Analysis & Validations: keyboard (design D14)', () => {
     await user.keyboard('{Enter}')
     const drawer = await screen.findByRole('dialog')
 
-    await tabTo(user, named(/row 233$/))
+    await tabTo(user, named(/row 338$/))
     await user.keyboard(' ')
     const question = await screen.findByRole('alertdialog')
     await tabTo(user, named('Change the inclusion'))
     await user.keyboard('{Enter}')
     await waitFor(() => expect(validationRequests('inclusion')).toHaveLength(1))
     await waitFor(() => expect(question).not.toBeInTheDocument())
-    await waitFor(() => expect(within(drawer).getByRole('switch', { name: /row 233$/ })).toBeChecked())
+    await waitFor(() => expect(within(drawer).getByRole('switch', { name: /row 338$/ })).toBeChecked())
 
     await user.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())

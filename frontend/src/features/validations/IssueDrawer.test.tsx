@@ -48,11 +48,11 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
     expect(screen.getByRole('dialog', { name: 'Duplicate in batch · 441706751475644' })).toBeInTheDocument()
     const [first, second] = occurrences()
     expect(occurrences()).toHaveLength(2)
-    expect(first).toHaveTextContent(`${FILE} · APP · row 14`)
+    expect(first).toHaveTextContent(`${FILE} · APP · row 12`)
     expect(first).toHaveTextContent('Successful')
     expect(first).toHaveTextContent('Included by default')
     expect(included(first!)).toBe(true)
-    expect(second).toHaveTextContent(`${FILE} · APP · row 233`)
+    expect(second).toHaveTextContent(`${FILE} · APP · row 338`)
     expect(second).toHaveTextContent('Excluded by default')
     expect(included(second!)).toBe(false)
   })
@@ -96,7 +96,7 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
     expect(occurrences()[1]).toHaveTextContent('Changed by analyst · 2026-10-18 10:00 ET')
     const history = within(drawer().getByRole('region', { name: 'History' })).getAllByRole('listitem')
     expect(history.map((h) => h.textContent)).toEqual([
-      `analyst · 2026-10-18 10:00 ET · ${FILE} · APP · row 233 · excluded → included`,
+      `analyst · 2026-10-18 10:00 ET · ${FILE} · APP · row 338 · excluded → included`,
     ])
   })
 

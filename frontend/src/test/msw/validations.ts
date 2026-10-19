@@ -252,7 +252,8 @@ export function batchIssuesFixture(): RunFixture {
         gatewayStatus: status('Successful'),
         source: { sheetName: 'CHB', rowNo: 3 },
         resolvable: true,
-        occurrences: [current('CHB', 3, 'Chargeback', true)],
+        // A one-row finding carries its row in `source` and no occurrences, as the real API of #9 answers it.
+        occurrences: [],
       }),
       finding({
         validationCode: 'non_recorded_adjustment',
@@ -264,7 +265,7 @@ export function batchIssuesFixture(): RunFixture {
         gatewayStatus: status('Successful'),
         source: { sheetName: 'DEC', rowNo: 7 },
         resolvable: true,
-        occurrences: [current('DEC', 7, 'Declined', true)],
+        occurrences: [],
       }),
       finding({
         validationCode: 'non_recorded_adjustment',
@@ -272,11 +273,12 @@ export function batchIssuesFixture(): RunFixture {
         transactionIdRaw: '381797111970492',
         transactionId: '381797111970492',
         cycle: 'E',
-        status: status('Successful'),
-        gatewayStatus: status('Declined'),
-        source: { sheetName: 'APP', rowNo: 61 },
+        // The real run: the file reports it Declined and the gateway has it Successful.
+        status: status('Declined'),
+        gatewayStatus: status('Successful'),
+        source: { sheetName: 'DEC', rowNo: 9 },
         resolvable: true,
-        occurrences: [current('APP', 61, 'Successful', true)],
+        occurrences: [],
       }),
       finding({
         validationCode: 'duplicate_in_batch',
@@ -286,7 +288,8 @@ export function batchIssuesFixture(): RunFixture {
         transactionId: '441706751475644',
         cycle: 'E',
         status: status('Successful'),
-        occurrences: [current('APP', 14, 'Successful', true), current('APP', 233, 'Successful', false)],
+        // Rows of the sample file, as the real run locates them.
+        occurrences: [current('APP', 12, 'Successful', true), current('APP', 338, 'Successful', false)],
       }),
       finding({
         validationCode: 'status_collision_in_batch',
@@ -325,9 +328,23 @@ export function batchIssuesFixture(): RunFixture {
   }
 }
 
+/** Missing in range of batch-blocked, as the real run of #9 lists them (expected.json does not fix them). */
+const BLOCKED_MISSING_APP = [
+  '681733288658054',
+  '437131642280874',
+  '608590069700970',
+  '467338065380748',
+  '119634989767054',
+  '911545593909470',
+  '154743288120730',
+  '253245504724402',
+  '628469974874366',
+  '709096109031044',
+]
+
 /**
- * The run of batch-blocked: one provider_mismatch. Its expected.json fixes only that count; the other seven
- * results are an assumption (proposal, gap 5) to check against the real run when rebasing on #9.
+ * The run of batch-blocked: one provider_mismatch. Its expected.json fixes only that count; the other seven results
+ * are those of the real run of #9 against the seed (proposal, gap 5): ten missing in range of APP, the rest passed.
  */
 export function batchBlockedFixture(): RunFixture {
   return {
@@ -339,7 +356,7 @@ export function batchBlockedFixture(): RunFixture {
       result('duplicate_across_batches', 'passed', 0),
       result('status_collision_across_batches', 'passed', 0),
       result('missing_previous_to_batch', 'passed', 0, { APP: 0, DEC: 0, I: 0, R: 0 }),
-      result('missing_in_range', 'passed', 0, { APP: 0, DEC: 0, I: 0, R: 0 }),
+      result('missing_in_range', 'warning', 10, { APP: 10, DEC: 0, I: 0, R: 0 }),
     ],
     blocked: true,
     ranges: { APP: range('2026-09-28T00:00:00.000Z', '2026-10-07T23:59:59.000Z'), DEC: null, I: null, R: null },
@@ -356,8 +373,11 @@ export function batchBlockedFixture(): RunFixture {
         cycle: 'E',
         status: status('Successful'),
         source: { sheetName: 'APP', rowNo: 5 },
-        occurrences: [current('APP', 5, 'Successful', true, { editable: false, includable: false })],
+        occurrences: [],
       }),
+      ...BLOCKED_MISSING_APP.map((id, i) =>
+        missing('missing_in_range', 'APP', id, `2026-09-28T${String(1 + i).padStart(2, '0')}:00:00.000Z`),
+      ),
     ],
   }
 }

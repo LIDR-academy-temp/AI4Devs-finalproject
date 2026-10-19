@@ -43,11 +43,11 @@ describe('Analysis & Validations: invalidated review (spec "aviso de revisión i
     const { user } = await openAnalysis(importId, `&validation=duplicate_in_batch&issue=${duplicate.issueId}`)
     const drawer = within(await screen.findByRole('dialog'))
 
-    await user.click(drawer.getByRole('switch', { name: /row 233$/ }))
+    await user.click(drawer.getByRole('switch', { name: /row 338$/ }))
     await user.click(
       within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Change the inclusion' }),
     )
-    await waitFor(() => expect(drawer.getByRole('switch', { name: /row 233$/ })).toBeChecked())
+    await waitFor(() => expect(drawer.getByRole('switch', { name: /row 338$/ })).toBeChecked())
     await user.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 

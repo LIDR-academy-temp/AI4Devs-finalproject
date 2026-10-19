@@ -15,7 +15,7 @@ import { OPENING } from '@/test/validation-screens'
 process.env.TZ = 'Asia/Tokyo'
 
 const FILE = 'Recon_Template_ProviderB-Main_batch-issues.xlsx'
-const SECOND = `${FILE} · APP · row 233`
+const SECOND = `${FILE} · APP · row 338`
 
 async function openFinding(importId: string, issueId: number, validation = 'duplicate_in_batch') {
   const view = renderApp(`/imports/${importId}?step=analysis&validation=${validation}&issue=${issueId}`, {
