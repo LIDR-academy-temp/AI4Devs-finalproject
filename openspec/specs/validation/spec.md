@@ -52,6 +52,14 @@ Duplicados y colisiones SHALL evaluarse por `(transactionId, cycle)`: mismo esta
 - **WHEN** se valida
 - **THEN** hay un hallazgo `collision` / `in_batch` en ciclo E con dos apariciones (`Successful` y `Declined`), ambas incluidas por defecto
 
+### Requirement: Aparición histórica de un movimiento concreto
+Una aparición histórica SHALL corresponder a un movimiento concreto, también cuando su batch tiene varios de la misma clave.
+
+#### Scenario: Dos movimientos históricos de la misma clave en un batch
+- **GIVEN** un batch vigente con dos movimientos I `Chargeback` de la misma transacción, el segundo con `excludeAmount` (`CHB 2`), y un import nuevo que trae un `Refund` de esa transacción
+- **WHEN** se valida y se abre el detalle de la colisión
+- **THEN** cada aparición histórica muestra su propia hoja, fila y `excludeAmount`
+
 ### Requirement: Ciclo R sin estado
 En el ciclo R el estado no cuenta, porque la reserva no tiene estado: dos apariciones R de la misma transacción SHALL ser siempre duplicado, nunca colisión, en el batch y contra el histórico.
 
@@ -69,7 +77,7 @@ Los rangos APP, DEC, I y R SHALL derivarse de las filas asociadas del batch. `mi
 
 #### Scenario: Rangos de un batch completo
 - **WHEN** se valida `data/samples/batch-clean`
-- **THEN** los rangos son APP 2026-09-28…2026-10-07, DEC 2026-09-28…2026-10-07, I 2026-09-28…2026-10-11 y R 2026-03-31…2026-04-09 (`expected.ranges`)
+- **THEN** los rangos son APP 2026-09-28…2026-10-07, DEC 2026-09-28…2026-10-07, I 2026-09-28…2026-10-11 y R 2026-09-27…2026-10-06 (`expected.ranges`; R por fecha de vencimiento de la reserva, creación + `rollingReserveDays`)
 
 #### Scenario: Sin declinadas en el archivo
 - **GIVEN** un import sin filas `Declined`
@@ -98,6 +106,29 @@ Un faltante SHALL registrarse una sola vez por proveedor, ciclo y transacción y
 - **GIVEN** una corrida anterior del mismo import, sin procesar, que encontró faltantes
 - **WHEN** se valida de nuevo el import
 - **THEN** los mismos faltantes vuelven a aparecer en la corrida nueva
+
+#### Scenario: Resuelto por un batch processed de otra cuenta
+- **GIVEN** un faltante persistente de la transacción X en ciclo E, en la corrida vigente de un import de ProviderA-USD
+- **WHEN** se procesa un batch de ProviderA-EUR (mismo proveedor) que incluye a X en E
+- **THEN** el hallazgo pasa a `resolved` con `resolvedInBatchId` de ese batch y `resolvedAt`, sin `resolvedByUserId` (no es una resolución a mano)
+
+### Requirement: Resolución y reapertura en la transacción del batch
+La resolución y la reapertura SHALL ocurrir dentro de la transacción que procesa o deshace el batch y afectar solo a hallazgos de corridas vigentes.
+
+#### Scenario: Hallazgo de una corrida superada
+- **GIVEN** el mismo faltante en una corrida ya superada y no en la vigente
+- **WHEN** se procesa el batch que incluye a X en E
+- **THEN** el hallazgo de la corrida superada sigue `persistent`
+
+#### Scenario: Reapertura al deshacer
+- **GIVEN** un faltante resuelto por el batch B
+- **WHEN** se deshace B (la reapertura se ejecuta dentro de esa transacción)
+- **THEN** el hallazgo vuelve a `persistent` con `resolvedInBatchId` y `resolvedAt` vacíos; los hallazgos resueltos por otros batches o a mano no cambian
+
+#### Scenario: Fallo del procesamiento
+- **GIVEN** un proceso que resolvería un faltante y falla después
+- **WHEN** termina
+- **THEN** el faltante sigue `persistent`
 
 ### Requirement: Resultado derivado de los hallazgos
 El `outcome` de cada validación SHALL derivarse de sus hallazgos: `passed` sin hallazgos; `warning` con hallazgos y ninguno bloqueante; `blocked` con al menos un hallazgo `blocking`; `not_applicable` cuando no hay movimientos o histórico sobre los que correr; `not_implemented` si la validación no existe. `not_applicable` y `not_implemented` nunca cuentan como aprobadas. El resultado global SHALL ser `blocked` si alguna validación lo es.
