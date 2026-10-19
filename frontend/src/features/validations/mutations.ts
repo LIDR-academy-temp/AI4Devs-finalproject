@@ -129,7 +129,12 @@ export function useIssueActions(issue: ValidationIssueDetail) {
     }
   }
 
+  // The same synchronous guard as the run and the review: two clicks in the same tick send one PATCH.
+  const guard = useRef(false)
+
   async function act(call: () => Promise<ValidationIssueDetail>): Promise<boolean> {
+    if (guard.current) return false
+    guard.current = true
     setPending(true)
     setMessage(null)
     try {
@@ -139,6 +144,7 @@ export function useIssueActions(issue: ValidationIssueDetail) {
       explain(failure)
       return false
     } finally {
+      guard.current = false
       setPending(false)
     }
   }

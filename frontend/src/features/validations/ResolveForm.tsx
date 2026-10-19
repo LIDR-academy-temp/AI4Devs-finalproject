@@ -17,7 +17,7 @@ export function ResolveForm({ actions }: { actions: IssueActions }) {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(schema), defaultValues: { note: '' } })
 
   const onSubmit = handleSubmit(async ({ note }) => {
@@ -41,7 +41,7 @@ export function ResolveForm({ actions }: { actions: IssueActions }) {
         </p>
       )}
       <div>
-        <Button type="submit" size="sm" disabled={actions.pending}>
+        <Button type="submit" size="sm" disabled={actions.pending || isSubmitting}>
           {s.submit}
         </Button>
       </div>
