@@ -27,7 +27,7 @@ export const settlementModule = fp(
           missing: new PrismaMissingResolution(),
           log: app.log,
         }),
-        reader: new PrismaSettlementReader(app.prisma),
+        reader: new PrismaSettlementReader(app.prisma, { log: app.log }),
       })
     await app.register(settlementRoutes, { prefix: options.routePrefix, service })
   },

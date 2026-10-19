@@ -4947,7 +4947,7 @@ export interface paths {
                                 resolved: number;
                                 blocking: number;
                                 resolvedMissing: number;
-                            };
+                            } | null;
                             exports: {
                                 summary: string;
                                 transactions: string;

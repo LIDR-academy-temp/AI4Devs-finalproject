@@ -231,13 +231,16 @@ export const SettlementView = SettlementFigures.extend({
   processedAt: z.iso.datetime(),
   settlementDate: IsoDate.nullable(),
   channelsAssigned: z.array(ChannelAssigned),
-  validationSummary: z.object({
-    runId: positiveInt,
-    persistent: nonNegativeInt,
-    resolved: nonNegativeInt,
-    blocking: nonNegativeInt,
-    resolvedMissing: nonNegativeInt,
-  }),
+  /** null when the attempt has no settlement.process audit (e.g. seeded history). */
+  validationSummary: z
+    .object({
+      runId: positiveInt,
+      persistent: nonNegativeInt,
+      resolved: nonNegativeInt,
+      blocking: nonNegativeInt,
+      resolvedMissing: nonNegativeInt,
+    })
+    .nullable(),
   /** Served by #12. */
   exports: z.object({ summary: z.string(), transactions: z.string(), reserves: z.string() }),
 })

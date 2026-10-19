@@ -10990,6 +10990,7 @@ paths:
                         - previousAccount
                       additionalProperties: false
                   validationSummary:
+                    nullable: true
                     type: object
                     properties:
                       runId:

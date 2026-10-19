@@ -7,6 +7,7 @@ import {
   type SettlementWarning,
   type Skipped,
 } from '@recon/shared'
+import type { FastifyBaseLogger } from 'fastify'
 import type { PrismaClient } from '../../../generated/prisma/client.js'
 import { toMoney, toPercentage } from '../../../infrastructure/decimal.js'
 import { payableBreakdown } from '../domain/payable-breakdown.js'
@@ -26,8 +27,19 @@ interface ProcessAudit {
   resolvedMissing: number
 }
 
+/** What a batch without a settlement.process audit (e.g. seeded history) reports: nothing skipped, nothing warned. */
+const NO_SKIPPED: Skipped = { ignored: 0, unmatched: 0, ambiguous: 0, excluded: 0, unresolvedStatus: 0, pending: 0 }
+
+export interface SettlementReaderOptions {
+  /** Warned when the stored amountPayable disagrees with the recomputed breakdown. */
+  log?: Pick<FastifyBaseLogger, 'warn'>
+}
+
 export class PrismaSettlementReader {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly options: SettlementReaderOptions = {},
+  ) {}
 
   async view(batchId: string): Promise<SettlementView | null> {
     const batch = await this.prisma.settlementBatch.findUnique({
@@ -51,7 +63,8 @@ export class PrismaSettlementReader {
       where: { entityType: 'SettlementBatch', entityId: batchId, action: 'settlement.process' },
       select: { detailJson: true },
     })
-    const detail = JSON.parse(audit?.detailJson ?? '{}') as ProcessAudit
+    const detailJson = audit?.detailJson ?? null
+    const detail = detailJson === null ? null : (JSON.parse(detailJson) as ProcessAudit)
     const byCycle = await this.prisma.settlementTransaction.groupBy({
       by: ['cycle'],
       where: { batchId },
@@ -67,11 +80,15 @@ export class PrismaSettlementReader {
       JOIN [Transaction] t ON t.[transactionId] = st.[transactionId]
       JOIN [Channel] c ON c.[channelId] = t.[channelId]
       WHERE st.[batchId] = ${batchId}`
-    const issues = await this.prisma.validationIssue.groupBy({
-      by: ['resolutionStatus', 'blocking'],
-      where: { result: { runId: detail.runId } },
-      _count: { _all: true },
-    })
+    // Only with a run to filter on: an undefined runId would drop the filter and group every finding of the base.
+    const issues =
+      detail === null
+        ? []
+        : await this.prisma.validationIssue.groupBy({
+            by: ['resolutionStatus', 'blocking'],
+            where: { result: { runId: detail.runId } },
+            _count: { _all: true },
+          })
     const issuesWhere = (match: (i: (typeof issues)[number]) => boolean) =>
       issues.filter(match).reduce((total, i) => total + i._count._all, 0)
 
@@ -99,6 +116,13 @@ export class PrismaSettlementReader {
       reserveReleased: toMoney(batch.reserveReleasedAmt),
       reserveEarlyReleased: reserveEarlyReleasedAmt,
     })
+    const amountPayable = toMoney(batch.amountPayable)
+    if (breakdown.amountPayable !== amountPayable) {
+      this.options.log?.warn(
+        { batchId, amountPayable, breakdownAmountPayable: breakdown.amountPayable },
+        'stored amountPayable differs from the sum of its breakdown',
+      )
+    }
     const status = BatchStatus.parse(batch.status)
     const exportOf = (type: string) => `${API}/settlements/${batchId}/export?type=${type}`
     return {
@@ -142,18 +166,21 @@ export class PrismaSettlementReader {
       reserveHeldAmt: toMoney(batch.reserveHeldAmt),
       reserveReleasedAmt: toMoney(batch.reserveReleasedAmt),
       reserveEarlyReleasedAmt,
-      amountPayable: toMoney(batch.amountPayable),
+      amountPayable,
       payableBreakdown: breakdown.lines,
-      skipped: detail.skipped,
-      warnings: detail.warnings,
-      channelsAssigned: detail.channelsAssigned,
-      validationSummary: {
-        runId: detail.runId,
-        persistent: issuesWhere((i) => i.resolutionStatus === 'persistent'),
-        resolved: issuesWhere((i) => i.resolutionStatus === 'resolved'),
-        blocking: issuesWhere((i) => i.blocking),
-        resolvedMissing: detail.resolvedMissing,
-      },
+      skipped: detail?.skipped ?? NO_SKIPPED,
+      warnings: detail?.warnings ?? [],
+      channelsAssigned: detail?.channelsAssigned ?? [],
+      validationSummary:
+        detail === null
+          ? null
+          : {
+              runId: detail.runId,
+              persistent: issuesWhere((i) => i.resolutionStatus === 'persistent'),
+              resolved: issuesWhere((i) => i.resolutionStatus === 'resolved'),
+              blocking: issuesWhere((i) => i.blocking),
+              resolvedMissing: detail.resolvedMissing,
+            },
       exports: { summary: exportOf('summary'), transactions: exportOf('transactions'), reserves: exportOf('reserves') },
     }
   }
