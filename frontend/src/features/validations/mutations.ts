@@ -102,8 +102,14 @@ export function useIssueActions(issue: ValidationIssueDetail) {
     if (!(failure instanceof ApiError)) return setMessage(e.failed)
     switch (failure.code) {
       case 'occurrence_not_includable': {
-        const { reason } = failure.details as ErrorDetails['occurrence_not_includable']
-        setMessage(e[reason])
+        const reason = (failure.details as ErrorDetails['occurrence_not_includable'] | undefined)?.reason
+        setMessage(
+          reason === 'reserve_already_included'
+            ? e.reserve_already_included
+            : reason === 'reserve_already_released'
+              ? e.reserve_already_released
+              : e.notIncludable,
+        )
         return rereadIssue()
       }
       case 'validation_run_superseded':
@@ -118,8 +124,12 @@ export function useIssueActions(issue: ValidationIssueDetail) {
         setMessage(e.occurrenceNotEditable)
         return rereadIssue()
       case 'issue_already_resolved': {
-        const { resolvedBy, resolvedAt } = failure.details as ErrorDetails['issue_already_resolved']
-        setMessage(e.alreadyResolved(resolvedBy.userName, formatAuditDateTime(resolvedAt)))
+        const details = failure.details as ErrorDetails['issue_already_resolved'] | undefined
+        setMessage(
+          details?.resolvedBy && details.resolvedAt
+            ? e.alreadyResolved(details.resolvedBy.userName, formatAuditDateTime(details.resolvedAt))
+            : e.alreadyResolvedUnknown,
+        )
         return rereadIssue()
       }
       case 'issue_not_resolvable':

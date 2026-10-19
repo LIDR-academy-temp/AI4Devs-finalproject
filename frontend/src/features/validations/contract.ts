@@ -56,17 +56,21 @@ export type ResolveIssueBody = JsonRequest<paths[IssuePath]['patch']['requestBod
 export type InclusionBody = JsonRequest<paths[OccurrencePath]['patch']['requestBody']>
 export type ReviewBody = JsonRequest<paths[ReviewPath]['post']['requestBody']>
 
-/** `details` of the errors the screen reads; the generated error body types them as unknown. */
+/**
+ * `details` of the errors the screen reads; the generated error body types them as unknown, so the fields the screen
+ * cannot be sure of are nullable, and the screen has a text for when they are missing.
+ */
 export interface ErrorDetails {
   import_not_analyzed: { status: ImportStatus }
   import_changed: { status: ImportStatus }
   import_not_editable: { status: ImportStatus }
-  validation_run_superseded: { runId: number; currentRunId: number }
+  validation_run_superseded: { runId: number; currentRunId: number | null }
   validation_run_required: Record<string, never>
   blocking_validation_issue: { runId: number; validationCodes: ValidationCode[]; issueIds: number[] }
   occurrence_not_editable: { sourceType: OccurrenceSource }
-  occurrence_not_includable: { reason: 'reserve_already_included' | 'reserve_already_released' }
-  issue_already_resolved: { resolvedAt: AuditInstant; resolvedBy: UserRef }
+  /** A reason this screen does not know yet gets a generic text. */
+  occurrence_not_includable: { reason: 'reserve_already_included' | 'reserve_already_released' | (string & {}) }
+  issue_already_resolved: { resolvedAt: AuditInstant | null; resolvedBy: UserRef | null }
   issue_not_resolvable: { issueType: IssueType }
 }
 

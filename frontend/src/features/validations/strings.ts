@@ -215,6 +215,8 @@ export const strings = {
     importNotEditable: (status: ImportStatus) => `This import can no longer change (${status}).`,
     occurrenceNotEditable: 'This occurrence cannot change.',
     alreadyResolved: (userName: string, at: string) => `This finding was already resolved by ${userName} on ${at}.`,
+    alreadyResolvedUnknown: 'This finding was already resolved.',
+    notIncludable: 'This occurrence cannot be included.',
     notResolvable: 'Only non-recorded adjustments and status mismatches are resolved by hand.',
     forbidden: 'You cannot change this finding.',
     failed: 'The change could not be saved. Try again.',
