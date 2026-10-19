@@ -134,6 +134,14 @@ Abrir un hallazgo SHALL mostrar en un panel lateral todas sus apariciones: las d
 - **WHEN** una aparición llega con `status = null`
 - **THEN** se muestra `Unresolved status` y la aparición no se oculta
 
+#### Scenario: Hallazgo de una sola fila
+- **WHEN** abre un hallazgo `Non-recorded adjustment`, `Status mismatch` o `Provider mismatch`, que el API devuelve con su fila en `source` y sin apariciones
+- **THEN** ve la fila en `Row` (archivo, hoja y fila) y no la sección de apariciones ni ningún aviso de que la transacción no está en el batch
+
+#### Scenario: Faltante sin apariciones
+- **WHEN** abre un hallazgo `Missing previous to batch` o `Missing in range`
+- **THEN** ve `No occurrences: the transaction is not in this batch.`
+
 #### Scenario: Teclado
 - **WHEN** el usuario abre un hallazgo con Enter desde la lista y pulsa Escape
 - **THEN** el panel se abre con el foco dentro y, al cerrarse, el foco vuelve al hallazgo de la lista
@@ -208,7 +216,7 @@ Con `lastInvalidatedReview` no nulo y sin revisión vigente posterior (`run.revi
 - **THEN** el aviso desaparece
 
 ### Requirement: Pantalla Analysis & Validations: continuar o cancelar
-La pantalla SHALL ofrecer una sola decisión de conjunto: **Continue to settlement review**, que llama a `POST review` con el `runId` de la corrida mostrada, y **Cancel and reprocess**, con confirmación. Continue SHALL estar deshabilitado sin corrida vigente o con la corrida bloqueada, con el motivo visible y asociado al botón.
+La pantalla SHALL ofrecer una sola decisión de conjunto: **Continue to settlement review**, que llama a `POST review` con el `runId` de la corrida mostrada, y **Cancel and reprocess**, con confirmación. Continue SHALL estar deshabilitado sin corrida vigente o con la corrida bloqueada, con el motivo visible y asociado al botón. En `cancelled` y `processed` SHALL mostrar un texto de solo lectura por estado.
 
 #### Scenario: provider_mismatch (criterio 1 del issue, HU2 CA5)
 - **GIVEN** la corrida vigente de `batch-blocked`
@@ -228,6 +236,16 @@ La pantalla SHALL ofrecer una sola decisión de conjunto: **Continue to settleme
 - **WHEN** `POST review` responde `409 validation_run_superseded`
 - **THEN** ve `A newer validation run exists. Review it before continuing.`, se relee la corrida y Continue usa el `runId` nuevo solo cuando se vuelva a pulsar
 
+#### Scenario: Import cancelado
+- **GIVEN** el import de `batch-issues` `cancelled` con su corrida
+- **WHEN** abre el paso Analysis
+- **THEN** la sección de la decisión muestra `This import is cancelled. Its run and findings are kept for reference.` y ningún botón
+
+#### Scenario: Import procesado
+- **GIVEN** el import de `batch-issues` `processed` con su corrida
+- **WHEN** abre el paso Analysis
+- **THEN** la sección de la decisión muestra `This import is processed. Its run and findings are kept for reference.`, ningún botón y nada que diga `cancelled`
+
 #### Scenario: Cancelar y reprocesar (HU2 CA8)
 - **WHEN** `analyst` pulsa **Cancel and reprocess** y confirma
 - **THEN** se llama a `POST cancel`, el import muestra `cancelled` y la corrida, la tabla y los hallazgos siguen visibles en solo lectura
@@ -246,7 +264,7 @@ Sin `settlement.process`, la pantalla SHALL mostrar corrida, validaciones, halla
 #### Scenario: viewer
 - **GIVEN** la corrida vigente de `batch-issues`
 - **WHEN** `viewer` abre el paso Analysis y el hallazgo `Duplicate in batch`
-- **THEN** ve las ocho validaciones, la lista y las dos apariciones con `Included` / `Excluded` como texto, sin ningún botón de acción
+- **THEN** ve las ocho validaciones, la lista y las dos apariciones con `Included` / `Excluded` como texto, sin ningún botón de acción, y no aparece la sección de la decisión vacía
 
 #### Scenario: Import cancelado con un ajuste aún resoluble
 - **GIVEN** el import de `batch-issues` `cancelled` y el hallazgo `Non-recorded adjustment` con `resolvable = true` y apariciones con `editable = false`
