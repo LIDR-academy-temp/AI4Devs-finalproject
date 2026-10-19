@@ -21,7 +21,7 @@
 - Lecturas de intentos y exports (#12), salvo el constructor de la vista del intento, que #12 reutiliza (D19).
 - Tope de reserva (P10, alerta en #61) y variantes condicional y por marca de los fees: se advierten, no se calculan.
 - Política de reserva ante chargeback (liberación anticipada, P12 y el cambio de `heldReserves`): #62, Entrega 3 (D12).
-- `status_mismatch` con el gateway en `Pending` (P16): no se toca el motor de validaciones.
+- `status_mismatch` con el gateway en `Pending` (P16, #63): no se toca el motor de validaciones.
 
 ## Decisions
 
@@ -89,7 +89,7 @@ Migración `0007_settlement_process` (a mano, `BEGIN TRY / BEGIN TRAN … COMMIT
   2. Si no, `Transaction.lastStatusChangedAt`, solo si no es nulo **y** el estado actual de la transacción en el gateway es el estado de la fila. Es el mismo criterio que forma el rango I (README §3.3, "Filas que forman cada rango"): la fuente solo conserva la última fecha de cambio, y si no corresponde al evento reconciliado no se usa (README §3.2, "Transaction").
   3. Si no, `eventDate = NULL` y advertencia `undated_adjustment { transactionId, sheetId, rowNo, feeSkipped }`.
   - La fecha del proveedor se guarda tal cual, sin conversión de zona (riesgo en Risks).
-- Fee de un ajuste sin fecha (P6b, provisional): se aplica el fee de su tipo solo si es el único de la cuenta para ese tipo y su vigencia es `NULL…NULL`. Si no, ninguno, con `feeSkipped = true`.
+- Fee de un ajuste sin fecha (P6b, aprobada): se aplica el fee de su tipo solo si es el único de la cuenta para ese tipo y su vigencia es `NULL…NULL`. Si no, ninguno, con `feeSkipped = true`.
 - *Alternativa descartada*: rellenar con la fecha del batch, `settlementDate` o la hora actual. Es justo lo que HU3 CA3 prohíbe ("no se inventa la fecha").
 - *Alternativa descartada*: preferir `lastStatusChangedAt` a la fecha del proveedor. Es la última fecha de cambio del gateway, no necesariamente la del evento que el proveedor liquida en esta fila (p. ej. un Refund posterior a un Chargeback).
 - *Alternativa descartada*: rechazar el procesado (`409`) con ajustes sin fecha. Sería una segunda causa de bloqueo, y el README solo admite `provider_mismatch`.
@@ -438,7 +438,7 @@ Lo que este change deja escrito y #12 lee para `GET /settlements/{id}`, `/transa
 - [Zona horaria de las fechas del proveedor desconocida] → `ImportRow.txnDate` se usa como `eventDate` de un ajuste tal como viene, tratada como fecha de negocio (hora de Nueva York) sin conversión. Si el proveedor informa en otra zona, un evento cerca de medianoche puede caer en el día de al lado y elegir el fee de la vigencia vecina. Se documenta en README §3.2 y queda para cuando se conozca el formato de cada proveedor.
 - [El bloqueo de `Import` dura carga y cálculo] → umbral de 3 s en el test y fases en el log. Si crece, se pasa a calcular fuera con versión optimista (D6, alternativa).
 - [Dos imports distintos con la misma transacción procesándose a la vez] → la ronda se calcula sin ver al otro (D6). Riesgo aceptado como en `validation`. La doble liberación anticipada que esto permitiría es de #62, que debe resolverla (`UPDLOCK` sobre los movimientos E de las transacciones con chargeback).
-- [Una fila con el gateway en `Pending` se procesa sin que la validación la marque] → P16; la fila cuenta como movimiento normal y el analista no recibe aviso hasta que se decida el change de `validation`.
+- [Una fila con el gateway en `Pending` se procesa sin que la validación la marque] → P16, #63 (Entrega 3): la fila cuenta como movimiento normal y el analista no recibe aviso hasta entonces.
 - [La colección Bruno deja datos procesados sin deshacer] → insumo 3, seed antes de cada ejecución hasta que exista el deshacer (tramo 6).
 - [Cambiar la clave de `SettlementTransaction` toca una lectura de `validation`] → escenario y test de integración propios (D3).
 

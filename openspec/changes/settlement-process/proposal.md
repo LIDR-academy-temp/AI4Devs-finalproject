@@ -42,10 +42,10 @@ Un import llega hoy hasta `validated` (#9, `validation-runs`) y ahí se detiene:
 - **P15.** `mdrAmt` es la suma de los fees MDR por movimiento y puede diferir del oráculo (`mdrIncludedInDeposit`, sobre el total): los nuestros son más precisos.
 - **Recorte.** La política de reserva ante chargeback (antes grupo 12, D12) pasa a la Entrega 3 en #62, con P12 y el cambio de `heldReserves`. El contrato no cambia: `reserveEarlyReleasedAmt` existe y vale 0, y la advertencia `chargeback_reserve_policy_not_applied` sale si la cuenta es `release_on_chargeback`.
 
-## Preguntas abiertas
+## Preguntas cerradas al empezar el apply (2026-10-19)
 
-- **P6b. Fee de un ajuste sin fecha.** Opción provisional: se aplica el fee de su tipo solo si es el único de la cuenta y su vigencia es `NULL…NULL` (vale para cualquier fecha); si no, no lleva fee y la advertencia lleva `feeSkipped = true`.
-- **P16. `status_mismatch` con el gateway en `Pending`.** El motor no lo genera: `backend/src/modules/validation/domain/non-recorded-adjustment.ts:26` devuelve `null` cuando el gateway está en `Pending`, y README §3.3 lo dice así ("Una fila E con el gateway en Pending no se compara"). La decisión del gate pide que la validación lo marque. **No se arregla en este change**: queda pendiente decidir si se abre un change de `validation` (motor, README §3.3 y oráculos de faltantes y `pendingInRangeCount`).
+- **P6b. Fee de un ajuste sin fecha: aprobada la opción provisional.** Se aplica el fee de su tipo solo si es el único de la cuenta y su vigencia es `NULL…NULL` (vale para cualquier fecha); si no, no lleva fee y la advertencia lleva `feeSkipped = true`.
+- **P16. `status_mismatch` con el gateway en `Pending`: no se arregla en este change.** El motor no lo genera (`backend/src/modules/validation/domain/non-recorded-adjustment.ts:26` devuelve `null` cuando el gateway está en `Pending`, como dice README §3.3). Queda en #63 (Entrega 3): motor, README §3.3, spec `validation` y revisión de oráculos.
 
 ## Capabilities
 
@@ -75,7 +75,7 @@ Ninguna. El procesamiento amplía `settlement`, cuyo propósito ya es "procesar 
 - Pagar, retirar el pago y deshacer (tramo 6). `reopenForBatch` queda implementado y probado, sin ruta que lo llame.
 - `GET /settlements/{id}`, `/transactions`, `/export`, `GET /imports/{id}/settlements`, `GET /accounts/{id}/settlements` y los CSV: #12, que lee lo que este change escribe ("Contrato para #12"). La respuesta `201` ya trae las URL de export, que responden `404` hasta #12.
 - Pantallas Settlement Review y Summary: #13 ("Contrato para #13").
-- Administración de fees (tramo 5), mantenimiento de tipos (#60), alerta de tope de reserva (#61), `status_mismatch` con el gateway en `Pending` (P16).
+- Administración de fees (tramo 5), mantenimiento de tipos (#60), alerta de tope de reserva (#61), `status_mismatch` con el gateway en `Pending` (P16, #63).
 - Heredar acciones manuales entre corridas (#53) y cerrar la inclusión manual de E duplicados entre batches (#49).
 
 ## Insumos que necesito de la persona
@@ -83,4 +83,3 @@ Ninguna. El procesamiento amplía `settlement`, cuyo propósito ya es "procesar 
 1. **Revisar el diff de los `expected.json`** tras el grupo 0, antes de seguir con el grupo 1.
 2. **Migración `0007_settlement_process`**: revisar el SQL y aplicarlo con `! pnpm db:migrate`; después `! pnpm db:seed`.
 3. **Colección Bruno**: el flujo `20-flows/settlements` deja `batch-clean` procesado y `RAM-07` asociado (aún no hay deshacer). Confirmar que `pnpm db:seed` va antes de cada `pnpm test:api`, como ya dicen los prerrequisitos. `api-collection/.env` presente y `pnpm dev` levantado.
-4. **P6b y P16**: respuesta o aceptación de la opción provisional (P6b) y decisión sobre el change de `validation` (P16).
