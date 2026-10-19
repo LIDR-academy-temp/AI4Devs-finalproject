@@ -94,10 +94,10 @@ export interface RunRepositoryOptions {
   /** Called after each bulk statement with its kind and row count (tests observe the chunking). */
   onBulkStatement?: (kind: 'issues' | 'merge' | 'occurrences', rows: number) => void
   /**
-   * Awaited inside the transaction right after the guard on Import, holding its lock (tests pause a write there to
-   * make an overlap deterministic: what the other request reads before its own guard is what this one left).
+   * Awaited inside the transaction right before the guard on Import, without holding its lock: tests pause a write
+   * there so another request commits in between. Anything the write decided before its guard would then be stale.
    */
-  afterClaim?: (operation: 'saveRun' | 'setInclusion' | 'review') => Promise<void>
+  beforeClaim?: (operation: 'saveRun' | 'setInclusion' | 'review') => Promise<void>
 }
 
 export class PrismaValidationRunRepository implements ValidationRunRepository {
@@ -142,9 +142,9 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
             where: { runId: located.issue.result.runId },
             select: { runId: true, importId: true },
           })
+          await this.options.beforeClaim?.('setInclusion')
           // From here on the Import row is locked: everything read below is what the change is decided on (D9).
           const previousStatus = await this.claimForInclusion(tx, run.importId, now)
-          await this.options.afterClaim?.('setInclusion')
           const { isSuperseded } = await tx.validationRun.findUniqueOrThrow({
             where: { runId: run.runId },
             select: { isSuperseded: true },
@@ -224,6 +224,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
   async review(importId: string, runId: number, userId: number, now: Date): Promise<void> {
     await this.prisma.$transaction(
       async (tx) => {
+        await this.options.beforeClaim?.('review')
         // The guard takes the Import lock first: the current run read below cannot change before the commit.
         const claimed = await tx.import.updateMany({
           where: { importId, status: 'analyzed' },
@@ -233,7 +234,6 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
           const current = await tx.import.findUnique({ where: { importId }, select: { status: true } })
           throw new ImportNotAnalyzedError(current?.status ?? 'unknown')
         }
-        await this.options.afterClaim?.('review')
         const current = await tx.validationRun.findFirst({
           where: { importId, isSuperseded: false },
           select: {
@@ -358,9 +358,9 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
             phases[phase] += Math.round(at - mark)
             mark = at
           }
+          await this.options.beforeClaim?.('saveRun')
           const previousStatus = await this.claimForRun(tx, importId, expectedUpdatedAt, now)
           lap('claimMs')
-          await this.options.afterClaim?.('saveRun')
           const previous = await tx.validationRun.findFirst({
             where: { importId, isSuperseded: false },
             select: { runId: true },
