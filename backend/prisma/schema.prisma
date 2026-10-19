@@ -664,7 +664,8 @@ model SettlementTransaction {
   amount                   Decimal   @db.Decimal(19, 4)
   excludeAmount            Boolean   @default(false)
   feeAmount                Decimal   @default(0) @db.Decimal(19, 4)
-  eventDate                DateTime  @db.DateTime2
+  /// NULL: an adjustment the source cannot date (never an invented date)
+  eventDate                DateTime? @db.DateTime2
   appliedReservePct        Decimal   @db.Decimal(9, 6)
   reserveDaysUsed          Int
   expectedReserveReleaseAt DateTime? @db.DateTime2
@@ -682,9 +683,10 @@ model SettlementTransaction {
   sheet            ImportSheet?               @relation(fields: [sheetId], references: [sheetId], onDelete: NoAction, onUpdate: NoAction)
   appliedFees      SettlementTransactionFee[]
 
-  @@unique([transactionId, cycle, batchId])
   @@index([batchId, cycle])
   @@index([transactionId, cycle])
+  // one movement per source row: filtered unique index (batchId, sheetId, rowNo) WHERE sheetId IS NOT NULL and
+  // CHECK sheetId/rowNo together → migration 0007
 }
 
 model SettlementTransactionFee {
