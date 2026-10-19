@@ -163,6 +163,8 @@ Una fila `matched` del import se procesa si **ninguna** de sus apariciones `curr
 - `feeId` nulo: el tipo tiene `allowsFreeAmount`, o el elemento es `source = "file"` y su `feeTypeId` coincide con uno de los prellenados del import (P7, aprobada; el mantenimiento de tipos es #60) (`free_amount_not_allowed`).
 - Un preestablecido solo con porcentaje (P9) no se calcula: `GET /accounts/{id}/fees` lo devuelve con `fixedAmount = null` y el analista escribe el importe; el servidor nunca propone uno.
 - `amount`: decimal con hasta 4 decimales, distinto de 0, con signo (los ajustes pueden ser negativos, README §4.3). `description` ≤ 200.
+- Importe libre de un fee añadido a mano (`feeId = null`, `source = "manual"`): `description` obligatoria, 1–200 caracteres tras `trim` (`description_required`). Es lo único que explica un importe que no sale de ningún preestablecido ni del archivo (README HU3 CA2, "importe libre con su categoría y descripción").
+- El orden de `batchFees` del request se conserva: se guardan con `batchFeeId` creciente en ese orden y la vista previa y la respuesta los devuelven igual.
 - Se guardan con `enteredByUserId` = quien procesa y el `source` del request. `otherFeeAmt` = suma.
 - *Alternativa descartada 1*: exigir siempre un preestablecido o `allowsFreeAmount`. Rechazaría los dos prellenados de `batch-clean` (`Wire Fee` y `Settlement Fee` no admiten importe libre y ProviderA-USD no los tiene configurados), justo los que README §1.2 dice que "aparecen prellenados".
 - *Alternativa descartada 2*: añadir la `CHECK` cruzada como trigger. Es una regla con excepción (P7) que depende del request, no solo de la fila.
@@ -242,7 +244,7 @@ type BatchFeeInput = {
   feeTypeId: number
   feeId: string | null          // preset fee of the account (uuid), or null for a free amount
   amount: Money                 // up to 4 decimals, not zero
-  description?: string          // ≤ 200
+  description?: string          // ≤ 200; required (1–200 after trim) when feeId is null and source is 'manual'
   source: 'file' | 'manual'     // 'file' = pre-filled from Other Fees (kept as sent by GET /imports/{id})
 }
 
@@ -285,7 +287,7 @@ type SettlementFigures = {
   reservesReleasedQty: number
   mdrAmt: Money; mdrRate: Rate | null
   transactionalFeeAmt: Money
-  batchFees: BatchFeeView[]
+  batchFees: BatchFeeView[]                  // in the order of the request (preview and response alike)
   otherFeeAmt: Money
   reserveHeldAmt: Money; reserveReleasedAmt: Money; reserveEarlyReleasedAmt: Money
   amountPayable: Money
@@ -321,7 +323,7 @@ type FeeTypeView = { feeTypeId: number; code: string; title: string; isTransacti
                      appliesToStatusId: number | null; allowsFreeAmount: boolean }
 ```
 
-En una vista previa, `batchFees[].batchFeeId` y `enteredBy` son `null`, y `channelsAssigned` no existe. `channelsAssigned` y `channelsToAssign` vacíos cuando no hay nada que asociar. `validationSummary` cuenta los hallazgos de la corrida procesada después de resolver los faltantes. Los nombres de canal y de cuenta van siempre visibles: todos los canales del batch son del proveedor de la cuenta (una fila de otro proveedor bloquea la corrida), así que no hay datos de otro merchant que ocultar.
+`batchFees` conserva el orden del request, en la vista previa y en la respuesta (y en `GET /settlements/{id}` de #12, por `batchFeeId`). En una vista previa, `batchFees[].batchFeeId` y `enteredBy` son `null`, y `channelsAssigned` no existe. `channelsAssigned` y `channelsToAssign` vacíos cuando no hay nada que asociar. `validationSummary` cuenta los hallazgos de la corrida procesada después de resolver los faltantes. Los nombres de canal y de cuenta van siempre visibles: todos los canales del batch son del proveedor de la cuenta (una fila de otro proveedor bloquea la corrida), así que no hay datos de otro merchant que ocultar.
 
 ### Rutas
 
@@ -333,7 +335,7 @@ En una vista previa, `batchFees[].batchFeeId` y `enteredBy` son `null`, y `chann
 | `POST /imports/{importId}/settlements/preview` | `settlement.process` | `importId: uuid` | `SettlementRequest` (estricto) | `200 SettlementPreview` | `403 forbidden`; `409 import_not_validated { status }`; `409 validation_run_required {}`; `409 validation_run_superseded { runId, currentRunId }`; `409 blocking_validation_issue { runId, validationCodes, issueIds }`; `400 batch_fee_invalid { index, reason }` |
 | `POST /imports/{importId}/settlements` | `settlement.process` | `importId: uuid` | `SettlementRequest` (estricto) | `201 SettlementView` (`status: 'processed'`, `settledStatus: 'pending_payment'`) | los de la vista previa + `409 batch_no_taken { batchNo, attemptNo, importId }`; `409 channel_assignment_not_confirmed { channels: ChannelToAssign[] }` |
 
-`reason` de `batch_fee_invalid` ∈ `unknown_fee_type` | `transactional_fee_type` | `fee_not_in_account` | `fee_type_mismatch` | `fee_not_in_force` | `free_amount_not_allowed`.
+`reason` de `batch_fee_invalid` ∈ `unknown_fee_type` | `transactional_fee_type` | `fee_not_in_account` | `fee_type_mismatch` | `fee_not_in_force` | `free_amount_not_allowed` | `description_required`.
 
 Mensajes: `import_not_validated` → `"The import must be validated before processing (status: <status>)"`; `batch_no_taken` → `"Batch <batchNo> already has an active attempt for this account"`; `channel_assignment_not_confirmed` → `"The import includes channels not assigned to this account; confirm the assignment"`; `batch_fee_invalid` → `"Batch fee <index> is not valid: <reason>"`; los de `validation` sin cambios (`"A newer validation run exists; review it before continuing"`, `"Run the validations before reviewing"`, `"provider_mismatch: cancel the import and process it under the correct provider"`).
 

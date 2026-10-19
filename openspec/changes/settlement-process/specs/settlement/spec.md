@@ -91,6 +91,15 @@ Las filas de `Other Fees` SHALL aparecer en Settlement Review como `SettlementBa
 - WHEN el analista lo agrega como fee por batch
 - THEN el sistema no calcula su importe: se procesa con el importe que escribe el analista y su `feeId`
 
+#### Scenario: Importe libre sin descripción
+- WHEN se procesa o se pide la vista previa con un fee `source = "manual"`, `feeId = null`, un tipo con `allowsFreeAmount` y `description` ausente o vacía tras quitar espacios
+- THEN la API responde `400 batch_fee_invalid` con `details = { index, reason: "description_required" }` y no se crea nada
+
+#### Scenario: Orden de los fees por batch
+- GIVEN un request con tres fees por batch en un orden dado
+- WHEN se pide la vista previa y después se procesa
+- THEN las dos respuestas devuelven `batchFees` en el orden del request
+
 #### Scenario: Importe libre en un tipo que no lo admite
 - WHEN se procesa con un fee `source = "manual"`, `feeId = null` y un tipo sin `allowsFreeAmount`
 - THEN la API responde `400 batch_fee_invalid` con `details = { index, reason: "free_amount_not_allowed" }` y no se crea nada
