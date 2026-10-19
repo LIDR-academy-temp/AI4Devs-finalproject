@@ -77,21 +77,23 @@
       "reservesReleased": 320
     },
     "amounts": {
-      "deposit": 39181.07,
-      "chargeback": 193.86,
-      "refund": 843.99,
-      "reserveHeld": 3918.27,
-      "reserveReleased": 4314.55
+      "deposit": "39181.0700",
+      "chargeback": "193.8600",
+      "refund": "843.9900",
+      "rdr": "391.5500",
+      "reserveHeld": "3918.1070",
+      "reserveReleased": "4314.4040"
     },
     "fees": {
-      "deposit": 4139.25,
-      "declined": 27.5,
-      "chargeback": 90,
-      "refund": 30,
-      "rdr": 50,
-      "mdrIncludedInDeposit": 3918.11,
-      "total": 4336.75
+      "deposit": "4139.1070",
+      "declined": "27.5000",
+      "chargeback": "90.0000",
+      "refund": "30.0000",
+      "rdr": "50.0000",
+      "mdrIncludedInDeposit": "3918.1070",
+      "total": "4336.6070"
     },
-    "amountPayable": 34202.75
+    "otherFeeAmt": "40.0000",
+    "amountPayable": "33771.3600"
   }
 }

@@ -13,9 +13,13 @@ import type { AuthService } from './modules/auth/application/auth-service.js'
 import { authModule } from './modules/auth/auth-module.js'
 import type { CatalogService } from './modules/catalog/application/catalog-service.js'
 import { catalogModule } from './modules/catalog/catalog-module.js'
+import type { FeeReadService } from './modules/fees/application/fee-read-service.js'
+import { feesModule } from './modules/fees/fees-module.js'
 import type { ImportService } from './modules/imports/application/import-service.js'
 import type { FileStore } from './modules/imports/application/ports.js'
 import { importsModule } from './modules/imports/imports-module.js'
+import type { SettlementService } from './modules/settlement/application/settlement-service.js'
+import { settlementModule } from './modules/settlement/settlement-module.js'
 import type { ValidationService } from './modules/validation/application/validation-service.js'
 import { validationModule } from './modules/validation/validation-module.js'
 import { errorHandlerPlugin } from './plugins/error-handler.js'
@@ -51,6 +55,10 @@ export interface BuildAppOptions {
   imports?: { service: ImportService; files: FileStore }
   /** Injected validation service (tests); otherwise built on the Prisma sources and run repository. */
   validation?: { service: ValidationService }
+  /** Injected fee read service (tests); otherwise built on the Prisma fee repository. */
+  fees?: { service: FeeReadService }
+  /** Injected settlement service (tests); otherwise built on Prisma and the import service. */
+  settlement?: { service: SettlementService }
   /** Log destination (tests capture logs through it); defaults to stdout. */
   logStream?: { write(line: string): void }
 }
@@ -112,6 +120,8 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     files: options.imports?.files,
   })
   await app.register(validationModule, { routePrefix: API_PREFIX, service: options.validation?.service })
+  await app.register(feesModule, { routePrefix: API_PREFIX, service: options.fees?.service })
+  await app.register(settlementModule, { routePrefix: API_PREFIX, service: options.settlement?.service })
   await app.register(healthRoutes, { prefix: API_PREFIX })
 
   return app

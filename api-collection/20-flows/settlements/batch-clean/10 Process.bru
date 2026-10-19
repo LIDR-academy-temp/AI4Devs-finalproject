@@ -1,0 +1,57 @@
+meta {
+  name: 10 Process
+  type: http
+  seq: 10
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{setImportId}}
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({
+    runId: bru.getVar('setRunId'),
+    confirmChannelAssignment: true,
+    batchFees: bru.getVar('setBatchFees'),
+  });
+}
+
+tests {
+  const units = (text) => BigInt(text.replace('.', ''));
+  test('201 processed, pending payment, RAM-07 now primary, fees by batch with the user', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.status).to.equal('processed');
+    expect(res.body.settledStatus).to.equal('pending_payment');
+    expect(res.body.batchNo).to.equal(bru.getVar('setBatchNo'));
+    expect(res.body.movements).to.eql({ E: 450, I: 10, R: 320 });
+    expect(res.body.channelsAssigned.map((c) => [c.name, c.assignment])).to.eql([['RAM-07', 'new_primary']]);
+    expect(res.body.batchFees.map((f) => [f.code, f.enteredBy.userName])).to.eql([
+      ['Wire Fee', 'analyst'],
+      ['Settlement Fee', 'analyst'],
+    ]);
+    const sum = res.body.payableBreakdown.reduce((s, l) => (l.sign === '+' ? s + units(l.amount) : s - units(l.amount)), BigInt(0));
+    expect(sum === units(res.body.amountPayable)).to.equal(true);
+  });
+  // Oracle: data/samples/batch-clean/expected.json, summary.fees.total and summary.amountPayable.
+  test('transactional fees and amount payable match the oracle', () => {
+    expect(res.body.transactionalFeeAmt).to.equal('4336.6070');
+    expect(res.body.amountPayable).to.equal('33771.3600');
+    const line = res.body.payableBreakdown.find((l) => l.code === 'transactional_fees');
+    expect([line.sign, line.amount]).to.eql(['-', '4336.6070']);
+  });
+}

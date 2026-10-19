@@ -4577,6 +4577,823 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/accounts/{accountId}/fees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fees of an account, optionally by kind and in force at a business date
+         * @description transactional=false lists the batch presets; asOf is a business date (YYYY-MM-DD).
+         */
+        get: {
+            parameters: {
+                query?: {
+                    transactional?: "true" | "false";
+                    asOf?: string;
+                };
+                header?: never;
+                path: {
+                    accountId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            feeId: string;
+                            feeTypeId: number;
+                            code: string;
+                            title: string;
+                            isTransactional: boolean;
+                            fixedAmount: string | null;
+                            percentage: string | null;
+                            startDate: string | null;
+                            endDate: string | null;
+                            description: string | null;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fee-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fee type catalog (transactional, free amount) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            feeTypeId: number;
+                            code: string;
+                            title: string;
+                            isTransactional: boolean;
+                            appliesToStatusId: number | null;
+                            allowsFreeAmount: boolean;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{importId}/settlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process the validated import as a batch attempt (processed, pending payment)
+         * @description runId is the reviewed validation run. 409 import_not_validated, validation_run_required, validation_run_superseded, blocking_validation_issue, batch_no_taken, channel_assignment_not_confirmed, settlement_busy (chosen three times as a deadlock victim; retry); 400 batch_fee_invalid. No movement is Settled until the batch is paid.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        runId: number;
+                        batchNo?: number;
+                        settlementDate?: string;
+                        note?: string;
+                        confirmChannelAssignment?: boolean;
+                        batchFees?: {
+                            feeTypeId: number;
+                            /** Format: uuid */
+                            feeId: string | null;
+                            amount: string;
+                            description?: string;
+                            /** @enum {string} */
+                            source: "file" | "manual";
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            dateRanges: {
+                                APP: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                DEC: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                I: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                R: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                            };
+                            channels: string[];
+                            movements: {
+                                E: number;
+                                I: number;
+                                R: number;
+                            };
+                            totals: {
+                                /** @enum {string} */
+                                category: "deposit" | "declined" | "chargeback" | "refund" | "rdr";
+                                qty: number;
+                                amount: string;
+                                feeAmount: string;
+                                feeRate: string | null;
+                            }[];
+                            brandTotals: {
+                                cardBrand: string;
+                                qty: number;
+                                amount: string;
+                            }[];
+                            reservesReleasedQty: number;
+                            mdrAmt: string;
+                            mdrRate: string | null;
+                            transactionalFeeAmt: string;
+                            batchFees: {
+                                batchFeeId: number | null;
+                                feeTypeId: number;
+                                code: string;
+                                title: string;
+                                /** Format: uuid */
+                                feeId: string | null;
+                                amount: string;
+                                description: string | null;
+                                /** @enum {string} */
+                                source: "file" | "manual";
+                                enteredBy: {
+                                    userId: number;
+                                    userName: string;
+                                } | null;
+                            }[];
+                            otherFeeAmt: string;
+                            reserveHeldAmt: string;
+                            reserveReleasedAmt: string;
+                            reserveEarlyReleasedAmt: string;
+                            amountPayable: string;
+                            payableBreakdown: {
+                                /** @enum {string} */
+                                code: "deposit" | "chargeback" | "refund" | "rdr" | "transactional_fees" | "batch_fees" | "reserve_held" | "reserve_released" | "reserve_early_released";
+                                label: string;
+                                /** @enum {string} */
+                                sign: "+" | "-";
+                                amount: string;
+                            }[];
+                            skipped: {
+                                ignored: number;
+                                unmatched: number;
+                                ambiguous: number;
+                                excluded: number;
+                                unresolvedStatus: number;
+                                pending: number;
+                            };
+                            warnings: ({
+                                /** @enum {string} */
+                                code: "undated_adjustment";
+                                transactionId: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                rowNo: number;
+                                feeSkipped: boolean;
+                            } | {
+                                /** @enum {string} */
+                                code: "reserve_already_released";
+                                transactionId: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                rowNo: number;
+                            } | {
+                                /** @enum {string} */
+                                code: "no_transactional_fees";
+                            } | {
+                                /** @enum {string} */
+                                code: "reserve_cap_not_applied";
+                            } | {
+                                /** @enum {string} */
+                                code: "transactional_fees_not_computed";
+                            } | {
+                                /** @enum {string} */
+                                code: "chargeback_reserve_policy_not_applied";
+                            } | {
+                                /** @enum {string} */
+                                code: "fee_variant_not_applied";
+                                /** Format: uuid */
+                                feeId: string;
+                            })[];
+                            /** Format: uuid */
+                            batchId: string;
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            accountName: string;
+                            batchNo: number;
+                            attemptNo: number;
+                            /** @enum {string} */
+                            status: "processed" | "paid" | "undone";
+                            /** @enum {string} */
+                            settledStatus: "pending_payment" | "settled" | "undone";
+                            approvedBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            processedAt: string;
+                            settlementDate: string | null;
+                            channelsAssigned: {
+                                channelId: number;
+                                name: string;
+                                /** @enum {string} */
+                                assignment: "new_primary" | "primary_moved_from";
+                                previousAccount: ({
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    name: string;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
+                            }[];
+                            validationSummary: {
+                                runId: number;
+                                persistent: number;
+                                resolved: number;
+                                blocking: number;
+                                resolvedMissing: number;
+                            } | null;
+                            exports: {
+                                summary: string;
+                                transactions: string;
+                                reserves: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{importId}/settlements/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What processing would do, without writing anything
+         * @description Same body as processing; answers 200 with a SettlementPreview. 409 import_not_validated, validation_run_required, validation_run_superseded, blocking_validation_issue; 400 batch_fee_invalid. batch_no_taken and channel_assignment_not_confirmed are not errors here: a number with an active attempt is batchNoAvailable: false, and channels to assign are requiresChannelConfirmation: true with channelsToAssign.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        runId: number;
+                        batchNo?: number;
+                        settlementDate?: string;
+                        note?: string;
+                        confirmChannelAssignment?: boolean;
+                        batchFees?: {
+                            feeTypeId: number;
+                            /** Format: uuid */
+                            feeId: string | null;
+                            amount: string;
+                            description?: string;
+                            /** @enum {string} */
+                            source: "file" | "manual";
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            dateRanges: {
+                                APP: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                DEC: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                I: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                                R: {
+                                    /** Format: date-time */
+                                    min: string;
+                                    /** Format: date-time */
+                                    max: string;
+                                } | null;
+                            };
+                            channels: string[];
+                            movements: {
+                                E: number;
+                                I: number;
+                                R: number;
+                            };
+                            totals: {
+                                /** @enum {string} */
+                                category: "deposit" | "declined" | "chargeback" | "refund" | "rdr";
+                                qty: number;
+                                amount: string;
+                                feeAmount: string;
+                                feeRate: string | null;
+                            }[];
+                            brandTotals: {
+                                cardBrand: string;
+                                qty: number;
+                                amount: string;
+                            }[];
+                            reservesReleasedQty: number;
+                            mdrAmt: string;
+                            mdrRate: string | null;
+                            transactionalFeeAmt: string;
+                            batchFees: {
+                                batchFeeId: number | null;
+                                feeTypeId: number;
+                                code: string;
+                                title: string;
+                                /** Format: uuid */
+                                feeId: string | null;
+                                amount: string;
+                                description: string | null;
+                                /** @enum {string} */
+                                source: "file" | "manual";
+                                enteredBy: {
+                                    userId: number;
+                                    userName: string;
+                                } | null;
+                            }[];
+                            otherFeeAmt: string;
+                            reserveHeldAmt: string;
+                            reserveReleasedAmt: string;
+                            reserveEarlyReleasedAmt: string;
+                            amountPayable: string;
+                            payableBreakdown: {
+                                /** @enum {string} */
+                                code: "deposit" | "chargeback" | "refund" | "rdr" | "transactional_fees" | "batch_fees" | "reserve_held" | "reserve_released" | "reserve_early_released";
+                                label: string;
+                                /** @enum {string} */
+                                sign: "+" | "-";
+                                amount: string;
+                            }[];
+                            skipped: {
+                                ignored: number;
+                                unmatched: number;
+                                ambiguous: number;
+                                excluded: number;
+                                unresolvedStatus: number;
+                                pending: number;
+                            };
+                            warnings: ({
+                                /** @enum {string} */
+                                code: "undated_adjustment";
+                                transactionId: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                rowNo: number;
+                                feeSkipped: boolean;
+                            } | {
+                                /** @enum {string} */
+                                code: "reserve_already_released";
+                                transactionId: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                rowNo: number;
+                            } | {
+                                /** @enum {string} */
+                                code: "no_transactional_fees";
+                            } | {
+                                /** @enum {string} */
+                                code: "reserve_cap_not_applied";
+                            } | {
+                                /** @enum {string} */
+                                code: "transactional_fees_not_computed";
+                            } | {
+                                /** @enum {string} */
+                                code: "chargeback_reserve_policy_not_applied";
+                            } | {
+                                /** @enum {string} */
+                                code: "fee_variant_not_applied";
+                                /** Format: uuid */
+                                feeId: string;
+                            })[];
+                            /** Format: uuid */
+                            importId: string;
+                            /** Format: uuid */
+                            accountId: string;
+                            runId: number;
+                            batchNo: number;
+                            attemptNo: number;
+                            batchNoAvailable: boolean;
+                            requiresChannelConfirmation: boolean;
+                            channelsToAssign: {
+                                channelId: number;
+                                name: string;
+                                /** @enum {string} */
+                                assignment: "unassigned" | "assigned_to_other_account";
+                                otherAccount: ({
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    name: string;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{accountId}/batch-number/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Proposed batch number of the account (the same one again to reprocess an undone attempt) */
+        get: {
+            parameters: {
+                query?: {
+                    importId?: string;
+                };
+                header?: never;
+                path: {
+                    accountId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            accountId: string;
+                            batchNo: number;
+                            attemptNo: number;
+                            /** @enum {string} */
+                            reason: "next" | "reprocess";
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;

@@ -1,0 +1,39 @@
+meta {
+  name: Preview - viewer
+  type: http
+  seq: 44
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements/preview
+  body: json
+  auth: bearer
+}
+
+params:path {
+  importId: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "runId": 1
+  }
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer lacks settlement.process: 403 forbidden on the preview too', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

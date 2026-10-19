@@ -116,7 +116,7 @@ export function validationWorld(): WorldData {
           sheetId: null,
           rowNo: null,
           settlementTxnId: BigInt(++settlementTxnSequence),
-          reserveHeldAmt: m.held.toFixed(4),
+          reserveHeldAmt: m.held,
           reserveEarlyReleasedAmt: '0.0000',
         })),
       }),

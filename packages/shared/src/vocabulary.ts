@@ -98,10 +98,30 @@ export const ValidationCode = z.enum([
 export type ValidationCode = z.infer<typeof ValidationCode>
 export const BLOCKING_VALIDATIONS: readonly ValidationCode[] = ['provider_mismatch']
 
-/** Money in the API: decimal string with up to 4 decimals, never number. */
-export const Money = z.string().regex(/^-?\d+(\.\d{1,4})?$/, 'decimal string expected')
+/**
+ * Money in the API: decimal string with up to 4 decimals, never number. At most 15 integer digits: what
+ * DECIMAL(19,4) holds, so a larger amount is a 400 and not a failed write.
+ */
+export const Money = z.string().regex(/^-?\d{1,15}(\.\d{1,4})?$/, 'decimal string expected')
 export const Percentage = z.string().regex(/^(0(\.\d{1,6})?|1(\.0{1,6})?)$/, 'fraction 0..1 expected')
-export const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+const isLeapYear = (year: number) => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
+
+/**
+ * A calendar date (YYYY-MM-DD) from the year 1, where datetime2 starts; checked arithmetically: Date parsing would roll
+ * 2026-02-30 over to March.
+ */
+function isCalendarDate(value: string): boolean {
+  const [year = 0, month = 0, day = 0] = value.split('-').map(Number)
+  const last = month === 2 && isLeapYear(year) ? 29 : (DAYS_IN_MONTH[month - 1] ?? 0)
+  return year >= 1 && day >= 1 && day <= last
+}
+
+export const IsoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine(isCalendarDate, 'calendar date expected')
 
 /** Integer id in a path segment (catalogs, users, findings): positive and within SQL Server INT. */
 export const IntId = z

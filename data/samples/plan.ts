@@ -11,15 +11,18 @@
 import {
   ACCOUNT_FEES,
   ANCHOR,
+  amount4,
   type BatchPlan,
   buildWorld,
   CHANNELS,
+  Decimal,
   day,
   feeFor,
   iso,
   money,
   mulberry32,
   NEW_CHANNEL_FOR,
+  reserveOf,
   type Txn,
 } from '../../backend/prisma/synthetic.js'
 
@@ -85,10 +88,19 @@ function templateSheets(s: ReturnType<typeof baseSheets>, otherFees: Row[]): Rec
   }
 }
 
-/** Expected Settlement Summary totals for a hold_until_term account with no issues. */
-function totals(account: string, s: ReturnType<typeof baseSheets>) {
-  const sum = (xs: number[]) => money(xs.reduce((a, b) => a + b, 0))
-  const deposit = sum(s.APP.map((t) => t.amount))
+/**
+ * Expected Settlement Summary totals for a hold_until_term account with no issues, as DECIMAL(19,4) text (gate of
+ * settlement-process): 4 decimals with Decimal, RDR deducted like chargebacks and refunds, the pre-filled batch fees
+ * deducted from the amount payable, and the chargebacks in `excluded` (CHB 2) counted in qty and fees, not in amount.
+ */
+function totals(
+  account: string,
+  s: ReturnType<typeof baseSheets>,
+  batchFees: Row[],
+  excluded: ReadonlySet<string> = new Set(),
+) {
+  const sum = (xs: Decimal.Value[]) => xs.reduce<Decimal>((a, b) => a.plus(b), new Decimal(0))
+  const amountOf = (xs: Txn[]) => sum(xs.map((t) => t.amount))
   const mdrPct = (ACCOUNT_FEES[account] ?? []).find((f) => f.feeTypeId === 1)?.pct ?? 0
   const fee = (xs: Txn[], st: Txn['status'], cyc: 'E' | 'I') => sum(xs.map((t) => feeFor(account, st, t.amount, cyc)))
   const fees = {
@@ -98,10 +110,23 @@ function totals(account: string, s: ReturnType<typeof baseSheets>) {
     refund: fee(s.REF, 'Refund', 'I'),
     rdr: fee(s.RDR, 'RDR', 'I'),
   }
-  const held = sum(s.APP.map((t) => money(t.amount * t.appliedReservePct)))
-  const released = sum(s.RR.map((t) => money(t.amount * t.appliedReservePct)))
-  const adjustments = sum([...s.CHB, ...s.REF].map((t) => t.amount))
+  const deposit = amountOf(s.APP)
+  const chargeback = amountOf(s.CHB.filter((t) => !excluded.has(t.key)))
+  const refund = amountOf(s.REF)
+  const rdr = amountOf(s.RDR)
+  const held = sum(s.APP.map(reserveOf))
+  const released = sum(s.RR.map(reserveOf))
   const totalFees = sum(Object.values(fees))
+  const otherFeeAmt = sum(batchFees.map((r) => r[1] as number))
+  const amountPayable = deposit
+    .minus(chargeback)
+    .minus(refund)
+    .minus(rdr)
+    .minus(totalFees)
+    .minus(otherFeeAmt)
+    .minus(held)
+    .plus(released)
+  const text = (d: Decimal) => d.toFixed(4)
   return {
     qty: {
       deposit: s.APP.length,
@@ -112,14 +137,25 @@ function totals(account: string, s: ReturnType<typeof baseSheets>) {
       reservesReleased: s.RR.length,
     },
     amounts: {
-      deposit,
-      chargeback: sum(s.CHB.map((t) => t.amount)),
-      refund: sum(s.REF.map((t) => t.amount)),
-      reserveHeld: held,
-      reserveReleased: released,
+      deposit: text(deposit),
+      chargeback: text(chargeback),
+      refund: text(refund),
+      rdr: text(rdr),
+      reserveHeld: text(held),
+      reserveReleased: text(released),
     },
-    fees: { ...fees, mdrIncludedInDeposit: money(deposit * mdrPct), total: totalFees },
-    amountPayable: money(deposit - totalFees - held + released - adjustments),
+    fees: {
+      deposit: text(fees.deposit),
+      declined: text(fees.declined),
+      chargeback: text(fees.chargeback),
+      refund: text(fees.refund),
+      rdr: text(fees.rdr),
+      // Over the deposit total, as v1 reports it; the engine's mdrAmt is the sum per movement and may differ (P15).
+      mdrIncludedInDeposit: text(amount4(deposit.times(mdrPct))),
+      total: text(totalFees),
+    },
+    otherFeeAmt: text(otherFeeAmt),
+    amountPayable: text(amountPayable),
   }
 }
 
@@ -194,7 +230,7 @@ const samples: Sample[] = []
       },
       batchFeesPrefilled: otherFees.map(([type, amount]) => ({ feeType: type, amount })),
       proposedBatchNo: plan.batchNo,
-      summary: totals(plan.account, s),
+      summary: totals(plan.account, s, otherFees),
     },
   })
 
@@ -491,8 +527,15 @@ const samples: Sample[] = []
         missing_in_range: { E: 0, I: 0, R: 0 },
       },
       affectedIds: { missing_previous_to_batch_I: missPrevI.map((t) => t.sourceTransactionId) },
-      fees: 'La cuenta se creó sin fees: todos los fees transaccionales son 0 y el summary lo muestra como advertencia.',
+      fees: 'La cuenta solo tiene un fee transaccional, el de Chargeback: los movimientos E no llevan fees y el CHB 2 lleva el de Chargeback.',
       proposedBatchNo: plan.batchNo,
+      // Only the sheets the file carries: TRX (APP), Fail (DEC) and CB; the first CB row is the CHB 2.
+      summary: totals(
+        plan.account,
+        { APP: s.APP, DEC: s.DEC, CHB: s.CHB, REF: [], RDR: [], RR: [] },
+        [],
+        new Set(s.CHB.length ? [s.CHB[0]!.key] : []),
+      ),
     },
   })
 }

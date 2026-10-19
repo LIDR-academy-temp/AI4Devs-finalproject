@@ -1,0 +1,36 @@
+meta {
+  name: 6 Next batch number
+  type: http
+  seq: 6
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/batch-number/next?importId={{setImportId}}
+  body: none
+  auth: inherit
+}
+
+params:query {
+  importId: {{setImportId}}
+}
+
+params:path {
+  accountId: {{providerAUsdAccountId}}
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar('setBatchNo', res.body.batchNo);
+  }
+}
+
+tests {
+  test('proposes batch 123 (expected.proposedBatchNo on a fresh seed)', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.batchNo).to.equal(123);
+    expect(res.body.reason).to.equal('next');
+  });
+}

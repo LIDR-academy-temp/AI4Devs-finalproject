@@ -5,6 +5,7 @@ import {
   ImportNotCancellableError,
   ImportNotEditableError,
   ImportNotMappedError,
+  ImportNotValidatedError,
 } from './errors.js'
 import {
   assertCanAnalyze,
@@ -12,6 +13,7 @@ import {
   assertCanChangeInclusion,
   assertCanConfirmMapping,
   assertCanEditFiles,
+  assertCanProcess,
   assertCanResolveRow,
   assertCanReview,
   assertCanValidate,
@@ -59,6 +61,8 @@ const TABLE: Row[] = [
     allowed: ['analyzed', 'validated'],
     error: ImportNotEditableError,
   },
+  // settlement-process: processing (and its preview) only from validated, which goes to processed.
+  { action: 'process', guard: assertCanProcess, allowed: ['validated'], error: ImportNotValidatedError },
   {
     action: 'cancel',
     guard: assertCanCancel,
@@ -90,6 +94,12 @@ describe('import state machine', () => {
   it('import_not_analyzed says which statuses the action admits (review L5)', () => {
     expect(() => assertCanValidate('mapped')).toThrow(/mapped.*analyzed or validated/)
     expect(() => assertCanReview('validated')).toThrow(/validated.*needs analyzed$/)
+  })
+
+  it('import_not_validated names the status in English (settlement-process)', () => {
+    expect(() => assertCanProcess('analyzed')).toThrow(
+      'The import must be validated before processing (status: analyzed)',
+    )
   })
 
   it('exposes the editable statuses for the file routes', () => {

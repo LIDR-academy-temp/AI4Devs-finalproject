@@ -17,8 +17,10 @@ import {
 } from '../modules/auth/application/__fakes__/in-memory.js'
 import { AuthService } from '../modules/auth/application/auth-service.js'
 import type { CatalogService } from '../modules/catalog/application/catalog-service.js'
+import type { FeeReadService } from '../modules/fees/application/fee-read-service.js'
 import type { ImportService } from '../modules/imports/application/import-service.js'
 import type { FileStore } from '../modules/imports/application/ports.js'
+import type { SettlementService } from '../modules/settlement/application/settlement-service.js'
 import type { ValidationService } from '../modules/validation/application/validation-service.js'
 
 export { PASSWORD }
@@ -31,6 +33,10 @@ export interface TestAppOptions {
   imports?: { service: ImportService; files: FileStore }
   /** Validation service over in-memory doubles; without it the validation routes hit the fake Prisma client. */
   validation?: { service: ValidationService }
+  /** Fee read service over an in-memory repository; without it the fee routes hit the fake Prisma client. */
+  fees?: { service: FeeReadService }
+  /** Settlement service over in-memory doubles; without it the settlement routes hit the fake Prisma client. */
+  settlement?: { service: SettlementService }
 }
 
 export async function buildTestApp(options: TestAppOptions = {}) {
@@ -57,6 +63,8 @@ export async function buildTestApp(options: TestAppOptions = {}) {
     catalogService: options.catalogService,
     imports: options.imports,
     validation: options.validation,
+    fees: options.fees,
+    settlement: options.settlement,
     logStream: logLines ? { write: (line: string) => void logLines.push(line) } : undefined,
   })
   return { app, clock, users, refreshTokens, audit, authService }

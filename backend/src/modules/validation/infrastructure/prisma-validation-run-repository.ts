@@ -774,9 +774,13 @@ export class PrismaIssueReader {
         ? []
         : await this.prisma.settlementTransaction.findMany({
             where: { batchId: { in: batchIds }, transactionId: issue.transactionId, cycle: issue.cycle },
-            select: { batchId: true, excludeAmount: true },
+            select: { batchId: true, sheetId: true, rowNo: true, excludeAmount: true },
           })
-    const settledExcluded = new Map(settled.map((s) => [s.batchId, s.excludeAmount]))
+    // A batch may hold several movements of the key (settlement-process D3): the movement is the one of the
+    // occurrence's row; a movement without a row (seeded history) is unique per batch and key.
+    const settledKey = (batchId: string | null, sheetId: string | null, rowNo: number | null) =>
+      `${batchId ?? ''}:${sheetId ?? ''}:${rowNo ?? ''}`
+    const settledExcluded = new Map(settled.map((s) => [settledKey(s.batchId, s.sheetId, s.rowNo), s.excludeAmount]))
 
     const occurrences = issue.occurrences
       .map((o) => {
@@ -809,7 +813,7 @@ export class PrismaIssueReader {
           excludeAmount:
             o.sourceType === 'current_import'
               ? (rowExcluded.get(`${o.sheetId}:${o.rowNo}`) ?? false)
-              : (settledExcluded.get(o.batchId ?? '') ?? false),
+              : (settledExcluded.get(settledKey(o.batchId, o.sheetId, o.rowNo)) ?? false),
           defaultIncluded: o.defaultIncluded,
           includeInSettlement: o.includeInSettlement,
           changedBy: o.changedBy,

@@ -451,3 +451,75 @@ Se corrigieron con test primero y se comprobaron en las capturas a 1280 y 1024 p
 - #55, el motivo de `includable = false`.
 
 Pidió que el falso no recalculara reglas de negocio. Decidió cada test que estaba mal, en lugar de dejar que se ajustara para pasar: comprobar el fondo de un modal después de cerrarlo, alargar solo las esperas de apertura y buscar la reserva también por su validación. Hizo él mismo el login como `viewer`, porque el asistente no inicia sesión. Corrigió dos veces el texto de un import procesado: no podía decir que el batch estaba *settled*, porque solo lo está cuando está `paid`, ni que ya no cambiaba nada, porque un ajuste se sigue resolviendo a mano (P5 de #9).
+
+**Prompt 10:**
+
+*Contexto.* `settlement-process` (issue #11) cierra la HU3 mínima en el backend. Procesar un import `validated` crea un intento de batch, pendiente de pago, con:
+- número propuesto e intento;
+- un movimiento por fila y ciclo (E/I/R);
+- fees transaccionales vigentes a la fecha del evento, con su desglose;
+- fees por batch prellenados desde `Other Fees`;
+- totales por categoría y desglose del amount payable;
+- asociación de canales auditada;
+- resolución de los faltantes que trae el batch.
+
+Todo va en una transacción. Añade cinco rutas y las migraciones `0007` y `0008`. Su design publica los contratos que leen #13 (pantallas) y #12 (summary y CSV).
+
+*Prompt.* Proponer el change a partir del issue y de las decisiones que dejó pendientes `validation-runs`. Cinco decisiones obligadas:
+- la clave única de `SettlementTransaction`;
+- procesar solo desde `validated` con la revisión de la corrida vigente;
+- el gancho `MissingResolution`;
+- qué hacer con las filas sin estado resuelto;
+- los códigos de error en minúsculas.
+
+Las reglas de negocio no se inventan: lo que el README no dice queda como pregunta abierta con una opción provisional. Más restricciones:
+- El dinero, siempre `Decimal` o texto.
+- Las vigencias se comparan con fechas de negocio.
+- Ningún movimiento queda Settled al procesar.
+- La concurrencia se prueba con compuertas, nunca con `Promise.all` solo.
+- El recorte deja el núcleo de la HU3 y pone al final, como recortables, los fees transaccionales y la reserva ante chargeback.
+- Cada decisión del design lleva su alternativa descartada.
+
+Después, aplicar grupo a grupo con test primero y una rotura a propósito por grupo. Las migraciones las revisa y aplica la persona, la base no se reinicia (la comparte #13) y hay un punto de control antes del grupo de fees.
+
+*Resultado.* **La clave única.** La `UNIQUE (transactionId, cycle, batchId)` chocaba con Refund + Chargeback de la misma transacción y con Chargeback + CHB 2. La `0007` la cambia por una clave por fila (`batchId, sheetId, rowNo`) y deja `eventDate` nullable para el ajuste que no se puede fechar.
+
+**Oráculos y seed.** Regenerar los oráculos a 4 decimales (grupo 0) cambió cifras de `batch-clean`, `batch-split` y `legacy-provider` y los literales de un test de caracterización. Se presentó el diff por muestra antes de seguir.
+
+**La migración `0008`.** Al activar los fees, la integración destapó que el fee de un ajuste sin fecha no se podía guardar: `SettlementTransactionFee.eventDate` era `NOT NULL`.
+
+**Fees y Bruno.** Los fees, la reserva y el `amountPayable` cuadran con los oráculos. En Bruno salieron dos tropiezos:
+- El parser de sus scripts no admite el literal `0n`.
+- El servidor que respondía era el del otro checkout.
+
+**El verify.** Sin críticos. Encontró un error de código: la última barrera del número podía nombrar el intento de otra cuenta. También siete escenarios sin test y desfases en el design y el README. En el triaje, un `deleteMany` de limpieza se ejecutó con un id indefinido, que en Prisma vacía la tabla. Lo frenó una FK y no se borró nada. Desde entonces, `fixtureId` y `fixtureIds` hacen fallar cualquier limpieza con un filtro indefinido.
+
+**El primer review-diff.** Dos HIGH:
+- Ningún test ejercitaba el `UPDLOCK, HOLDLOCK` del número.
+- La última barrera se probaba con errores inventados, y el código se había aflojado para aceptarlos. Ahora exige P2002 y los tests provocan violaciones reales con `$extends` dentro de la misma transacción.
+
+De los MEDIUM, el principal: la asociación de canales decidía sobre un estado leído sin bloqueo. Ahora se relee bloqueado después del número. Los demás pedían límites de entrada que evitan 500 y un lector que admita los batches del seed. Los LOW, filtrar por alcance la cuenta de otro merchant.
+
+**La segunda vuelta.** El test del bloqueo del número no lo aislaba:
+- El segundo proceso esperaba igualmente en la relectura de canales, también con un canal distinto.
+- "Sigue pendiente" no distinguía a un proceso bloqueado de uno lento.
+
+El repositorio avisa ahora justo antes de cada bloqueo (`number`, `channelLock`). Con esas señales, quitar el hint solo del número hace caer el test.
+
+**La tercera vuelta.** Confirmó que los interbloqueos ocurren. El procesado se reintenta ante el 1205, identificado por la forma real del error del adaptador (`P2010` o `P2034` con causa `TransactionWriteConflict`), y responde `409 settlement_busy` si se agotan los intentos. La solución de fondo queda en #67: no se ha visto el recurso de la espera porque el usuario de la aplicación no tiene `VIEW SERVER STATE`.
+
+*Ajuste humano.* En el gate del design, la persona decidió:
+- **RDR:** resta con su importe, como un Chargeback o un Refund.
+- **Redondeo:** todo a 4 decimales, y solo el producto importe × porcentaje redondea mitad hacia arriba.
+- **Desglose:** el amount payable lleva nueve líneas con signo.
+- **Fecha de un ajuste (P6):** la del proveedor; si no viene, el último cambio de estado cuando coincide con el de la fila; si tampoco, sin fecha y con advertencia.
+- **Fee de un ajuste sin fecha (P6b):** opción provisional, solo el único fee de su tipo sin vigencia.
+- **Pending:** una fila Pending en el gateway se procesa con su propio estado. El `status_mismatch` que eso debería dar quedó en #63.
+
+Además:
+- Revisó a mano el diff de los oráculos del grupo 0 antes de dejar seguir.
+- Recortó el grupo de la reserva ante chargeback a #62.
+- Eligió la `0008` frente a inventar una fecha.
+- Aplicó las dos migraciones, sembró y ejecutó Bruno.
+- Llevó a #56 los timeouts de `pnpm -r test` en paralelo.
+- En cada review pidió reproducir el hallazgo antes de corregirlo; así se vio que el primer arreglo del test del número no lo aislaba.
