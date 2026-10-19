@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { RAM_01, row, SHEET, txn } from '../test-support/builders.js'
-import { buildMovements } from './movements.js'
+import { buildMovements, type MovementContext } from './movements.js'
 
 // Spec settlement "Importe, estado y fecha de cada movimiento", "Reserva retenida y liberada", "Ronda del movimiento I"
 // (design D4, D12): status of the row in E and I, gateway amount, event date by cycle, reserve at 4 decimals.
 const RAM_120 = { ...RAM_01, channelId: 1002, name: 'RAM-02', rollingReserveDays: 120 }
-const ctx = {
+const ctx: MovementContext = {
   channels: new Map([
     [RAM_01.channelId, RAM_01],
     [RAM_120.channelId, RAM_120],
   ]),
   previousE: new Set<bigint>(),
-  policy: 'hold_until_term' as const,
+  policy: 'hold_until_term',
 }
 const one = (r: Parameters<typeof buildMovements>[0][number], context = ctx) =>
   buildMovements([r], context).movements[0]!
