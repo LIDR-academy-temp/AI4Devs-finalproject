@@ -2,7 +2,7 @@
 
 ## Context
 
-- #11 (`settlement-process`, rama apilada debajo) escribe el intento y deja `PrismaSettlementReader.view(batchId): Promise<SettlementView | null>` (`infrastructure/prisma-settlement-reader.ts`). Lee con `Prisma.Decimal` y `toMoney`/`toPercentage` (`infrastructure/decimal.ts`), deriva `payableBreakdown` de las columnas del batch y reconstruye `skipped`, `warnings`, `channelsAssigned` y `validationSummary` de la auditoría `settlement.process`. Sin esa fila (todo el seed), devuelve `skipped` en 0, listas vacías y `validationSummary = null` (lo admite el esquema). `exports` ya trae `/api/v1/settlements/<id>/export?type=…`. **No recibe alcance.**
+- #11 (`settlement-process`, fusionado y archivado en `2026-10-19-settlement-process`) escribe el intento y deja `PrismaSettlementReader.view(batchId, scope?): Promise<SettlementView | null>` (`infrastructure/prisma-settlement-reader.ts`). Lee con `Prisma.Decimal` y `toMoney`/`toPercentage` (`infrastructure/decimal.ts`), deriva `payableBreakdown` de las columnas del batch y reconstruye `skipped`, `warnings`, `channelsAssigned` y `validationSummary` de la auditoría `settlement.process`. Sin esa fila (todo el seed), devuelve `skipped` en 0, listas vacías y `validationSummary = null` (lo admite el esquema). `exports` ya trae `/api/v1/settlements/<id>/export?type=…`. **El alcance no filtra el batch**: con `scope`, `view` solo sustituye `channelsAssigned[].previousAccount` de un merchant fuera del alcance por `HiddenAccountRef` (`{ accountId: null, name: null, outOfScope: true }`, `shownAccount` de `domain/channels.ts`); sin `scope` la muestra. El "Contrato para #12" pide que #12 le pase el `scope` de la petición.
 - Puerto `SettlementReader` en `application/ports.ts`. Rutas de #11 en `http/settlement-routes.ts`, cableadas en `settlement-module.ts`.
 - Alcance: `scopeOf(auth)` → `{ merchantIds }`. Los repositorios filtran por `provider.merchantId IN (…)` y el servicio lanza `NotFoundError(entity)` → `404 not_found` "`<Entity> not found`". `requirePermission(code)` = `[authenticate, check]` → `403 forbidden` antes del handler.
 - Permisos del seed (`shared/roles.ts`): `reports.view` lo tienen `admin`, `analyst`, `payments` y `viewer`. `viewer` solo ve el merchant 1. Ninguna ruta usa hoy `reports.view`.
@@ -50,13 +50,15 @@ packages/shared/src/settlement-reads.ts
 - *Alternativa descartada*: un módulo `reports`. Los exports son del intento ("los exports se identifican por intento") y la spec `settlement` ya los tiene.
 
 ### D2. La vista, sin recalcular
-`GET /settlements/{id}` = comprobación de alcance (D3) + `PrismaSettlementReader.view(batchId)`. El summary CSV también parte de la vista: totales, `payableBreakdown`, fees por batch y reservas salen de ella. Así #13, el CSV y la respuesta `201` muestran lo mismo.
+`GET /settlements/{id}` = comprobación de alcance (D3) + `PrismaSettlementReader.view(batchId, scope)`. El summary CSV también parte de la vista: totales, `payableBreakdown`, fees por batch y reservas salen de ella. Así #13, el CSV y la respuesta `201` muestran lo mismo.
 - *Alternativa descartada*: que el summary CSV lea las columnas por su cuenta. Sería una segunda lectura de las mismas cifras que podría divergir de la pantalla.
 
 ### D3. Alcance sin tocar el lector
-`SettlementQueries.batchHeader(scope, batchId)` → `{ batchId, accountId, accountName, batchNo, attemptNo, status } | null`, con una consulta `SettlementBatch ⋈ Account ⋈ Provider` filtrada por `merchantId IN scope`. `null` → `NotFoundError('Settlement')`. Si no, la ruta llama a `reader.view(batchId)`. La cabecera también da el nombre del archivo y el `batchNo` del RR sin cargar la vista. En `GET /imports/{id}/settlements`, el alcance es el del import (`NotFoundError('Import')`), como `GET /imports/{id}`.
+`SettlementQueries.batchHeader(scope, batchId)` → `{ batchId, accountId, accountName, batchNo, attemptNo, status } | null`, con una consulta `SettlementBatch ⋈ Account ⋈ Provider` filtrada por `merchantId IN scope`. `null` → `NotFoundError('Settlement')`. Si no, el servicio llama a `reader.view(batchId, scope)` con el alcance de la petición, tanto en `GET /settlements/{id}` como al generar el summary. La cabecera también da el nombre del archivo y el `batchNo` del RR sin cargar la vista. En `GET /imports/{id}/settlements`, el alcance es el del import (`NotFoundError('Import')`), como `GET /imports/{id}`.
+- Dos comprobaciones distintas con el mismo `scope`: `batchHeader` decide si el batch se puede ver (`404` idéntico) y `view` decide qué cuentas anteriores de los canales asignados se ocultan (`HiddenAccountRef`), como la respuesta `201` de procesar y el aviso de canales del análisis. Un batch de merchant 1 puede tener un canal cuya primaria anterior era de merchant 2: `viewer` ve el batch con esa cuenta oculta.
 - Hay dos lecturas sin transacción. Entre ellas, el batch solo puede cambiar de `status` por el pago o el deshacer (tramo 6), y la vista lee el suyo. No hay ventana que filtre datos fuera del alcance, porque la cuenta de un batch no cambia.
-- *Alternativa descartada*: añadir `scope` a `view`. Cambia el puerto de #11 (fuera de alcance) y obligaría a su ruta de procesar a pasar un alcance que ya comprobó.
+- *Alternativa descartada*: confiar en `view(batchId, scope)` para el `404`. No filtra el batch (devuelve la vista aunque su merchant esté fuera del alcance), y cambiarlo tocaría el lector de #11.
+- *Alternativa descartada*: llamar a `view(batchId)` sin `scope`. Expondría el nombre y el id de cuentas de otros merchants en `channelsAssigned`, que #11 oculta desde el review de #66.
 
 ### D4. Movimientos paginados
 `movementsPage(batchId, cycle, page, pageSize)`:
@@ -116,7 +118,7 @@ No se registra `@fastify/cors`. La SPA llama a `/api` en su mismo origen (D2 de 
 - *Alternativa descartada*: registrar CORS con `exposedHeaders: ['Content-Disposition']` "por si acaso". Reabre una decisión archivada (`web-shell` D2 la descartó) y abre orígenes que nadie usa. Si el despliegue cambia, ese change añade el plugin con la cabecera expuesta.
 
 ### D10. Auditoría de la descarga
-`export(batchId, type, userId)`: cabecera (D3) → filas (D6) o vista (D7) → CSV en memoria → `audit.record({ action: 'settlement.export', entityType: 'SettlementBatch', entityId: batchId, detail: { type, fileName, rows } })` → respuesta. `rows` = filas de datos (sin cabecera; en el summary, el número de bloques no cuenta y se guarda `rows: null`).
+`export(scope, batchId, type, userId)`: cabecera (D3) → filas (D6) o vista con `view(batchId, scope)` (D7) → CSV en memoria → `audit.record({ action: 'settlement.export', entityType: 'SettlementBatch', entityId: batchId, detail: { type, fileName, rows } })` → respuesta. `rows` = filas de datos (sin cabecera; en el summary, el número de bloques no cuenta y se guarda `rows: null`).
 - Si la auditoría falla, la petición responde `500` y no se envía el archivo: "una entrada de auditoría por descarga" (criterio 4) no se cumple si se envía sin ella. Si falla la generación, no queda auditoría.
 - La fila queda escrita aunque el cliente corte la conexión después: registra que el servidor entregó el archivo, no que el usuario lo guardó.
 - *Alternativa descartada*: auditar como `auth-service` (capturar el fallo y registrarlo en el log). Una descarga sin rastro rompe el criterio.
@@ -138,9 +140,9 @@ Errores `readErrors` de #11 (`400`/`401`/`404`) y, en el export, `403` y `500`. 
 
 ### D13. Tests
 - **Dominio, TDD con rotura deliberada**: `csv.test.ts` (comillas, comillas internas, CRLF, sin BOM, celda vacía, importe de 19 dígitos intacto); `file-name.test.ts` (seed, espacios, barras, acentos, vacío, guiones en los extremos); `transactions-csv.test.ts` y `reserves-csv.test.ts` sobre movimientos de `buildWorld()` + `plan.ts` para `batch-clean` (350 filas TXN con el reparto de `expected.summary.qty`; 320 RR con `Batch 123`) y `legacy-provider` (`CHB 2` → `CHB`, 61 filas), y con builders para Refund + Chargeback, Chargeback + `CHB 2`, E duplicado y R con 0; `summary-csv.test.ts` sobre `exampleView()` de #11 y sobre una vista con `validationSummary = null`; `audit-time.test.ts` (EDT y EST). Roturas previstas: quitar `excludeAmount` del mapa hace fallar "CHB 2 en el TXN"; deduplicar por ID en vez de por `(ID, Status)` hace fallar "Refund y Chargeback"; convertir a ET la fecha de negocio hace fallar "Fechas del summary".
-- **Servicio** sobre dobles en memoria: orden alcance → vista, `404` idéntico, auditoría después de generar, `500` sin archivo si `audit.record` falla (`InMemoryAuditLogger` con fallo inyectado).
+- **Servicio** sobre dobles en memoria: orden alcance → vista, el lector recibe el `scope` de la petición (en la vista y en el summary), `404` idéntico, auditoría después de generar, `500` sin archivo si `audit.record` falla (`InMemoryAuditLogger` con fallo inyectado).
 - **Rutas** (`build-test-app`): `401`, `403` con un usuario sin `reports.view` antes de mirar el alcance, `400` (`type`, `pageSize`, UUID), cabeceras del export (`Content-Type`, `Content-Disposition`, `Cache-Control`), `safeParse` de las respuestas JSON y `/docs/json` con las cuatro rutas.
-- **Integración** (`settlement-reads.int.test.ts`, base local libre tras el merge de #11): `batch-clean` procesado con `ImportFlow` → vista igual a la `201`; movimientos I (10, desglose que suma `feeAmount`); siete páginas E sin repetir; intentos del import; TXN/RR/summary contra `expected.json`; `legacy-provider` (`CHB 2`); batch sembrado `paid` (vista, `settled = true`, summary con `Not available`); `viewer` y batch de ProviderC-Alt → `404` idéntico; tres descargas → estado sin cambios y tres filas `settlement.export`. Limpieza con `removeSettlementsFrom`/`restoreAccountChannels` y borrado de las filas `settlement.export` creadas.
+- **Integración** (`settlement-reads.int.test.ts`, base local libre tras el merge de #11): `batch-clean` procesado con `ImportFlow` → vista igual a la `201`; movimientos I (10, desglose que suma `feeAmount`); siete páginas E sin repetir; intentos del import; TXN/RR/summary contra `expected.json`; `legacy-provider` (`CHB 2`); batch sembrado `paid` (vista, `settled = true`, summary con `Not available`); `viewer` y batch de ProviderC-Alt → `404` idéntico; `batch-clean` procesado con un canal cuya primaria era una cuenta de merchant 2 (fixture como `import-analyze.int.test.ts`) → `previousAccount` visible para `analyst` y `HiddenAccountRef` para `viewer`; tres descargas → estado sin cambios y tres filas `settlement.export`. Limpieza con `removeSettlementsFrom`/`restoreAccountChannels` y borrado de las filas `settlement.export` creadas.
 
 ### D14. Contrato, OpenAPI, Bruno y README
 - `packages/shared/src/settlement-reads.ts` con tests de forma (dinero y `BIGINT` como string).
@@ -159,7 +161,8 @@ type Money = string; type Rate = string
 type UserRef = { userId: number; userName: string }
 type ExportType = 'summary' | 'transactions' | 'reserves'
 
-// GET /settlements/{id} → SettlementView (as in #11's contract, unchanged)
+// GET /settlements/{id} → SettlementView (as in #11's contract, unchanged); like the 201, channelsAssigned[].previousAccount
+// is HiddenAccountRef ({ accountId: null, name: null, outOfScope: true }) when its merchant is outside the caller's scope
 
 type AppliedFee = {
   appliedFeeId: string            // BIGINT as string

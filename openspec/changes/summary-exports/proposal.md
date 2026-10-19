@@ -1,6 +1,6 @@
 # Proposal — summary-exports
 
-Issue: #12 · T4 · HU3 CA6 · Settlement Summary y CSV del Back-Office. Rama `feat/summary-exports`, apilada sobre `feat/settlement-process` (#11, en revisión). Lee lo que #11 escribe según su "Contrato para #12" (`openspec/changes/settlement-process/design.md`) y devuelve `SettlementView` tal como la construye `PrismaSettlementReader.view` de #11. El apply espera al merge de #11 (tasks, grupo 1).
+Issue: #12 · T4 · HU3 CA6 · Settlement Summary y CSV del Back-Office. Rama `feat/summary-exports`, rebasada sobre `feature/entrega-2-MVP` con #11 (`settlement-process`) ya fusionado y archivado. Lee lo que #11 escribe según su "Contrato para #12" (`openspec/changes/archive/2026-10-19-settlement-process/design.md`) y devuelve `SettlementView` tal como la construye `PrismaSettlementReader.view(batchId, scope)` de #11.
 
 ## Why
 
@@ -24,7 +24,7 @@ Tras procesar, el analista solo tiene la respuesta `201`: no puede volver a abri
 3. **Nombre del archivo (D8):** el nombre de la cuenta pasa por una lista blanca `[A-Za-z0-9-]`. Cualquier otro carácter se convierte en `_`, los `_` repetidos se colapsan y se recortan en los extremos, y si queda vacío se usa `account`. Así sale siempre un `filename="…"` ASCII, sin `filename*`. Los nombres del seed (`ProviderA-USD`…) no cambian. #13 usa el mismo patrón como respaldo.
 4. **CORS (D9):** no se registra `@fastify/cors`. La API se sirve en el mismo origen que la SPA (proxy de Vite y Nginx, D2 de `web-shell`), así que `Content-Disposition` llega a `fetch` sin `Access-Control-Expose-Headers`. Si algún día el API va en otro origen, ese change añade `exposedHeaders: ['Content-Disposition']`. Esto se aparta de la letra del encargo ("expuesto en CORS"): el comentario del issue lo condiciona a "si el API va en otro origen".
 5. **Auditoría de la descarga (D10):** `settlement.export` (`entityType = 'SettlementBatch'`, `entityId = batchId`, `detail = { type, fileName, rows }`). Se escribe después de generar el CSV y antes de enviarlo. Si falla, la respuesta es `500` y no se envía el archivo: el criterio 4 del issue exige una entrada por descarga.
-6. **Alcance (D3):** `PrismaSettlementReader.view` no recibe alcance. Este change no lo modifica: antes de llamar al lector, una consulta propia comprueba que el batch es de un merchant del alcance, con el mismo `404 not_found` ("Settlement not found") para un batch inexistente y para uno fuera del alcance. En el export, el permiso se comprueba antes que el alcance (`403` antes que `404`), como en `catalog-read` y `validation-runs`.
+6. **Alcance (D3):** `PrismaSettlementReader.view(batchId, scope)` recibe el alcance, pero solo lo usa para ocultar `channelsAssigned[].previousAccount` fuera de él (`HiddenAccountRef`); no filtra el batch. Este change no lo modifica: antes de llamar al lector, una consulta propia (`batchHeader(scope, batchId)`) comprueba que el batch es de un merchant del alcance, con el mismo `404 not_found` ("Settlement not found") para un batch inexistente y para uno fuera del alcance. Después, la vista y el summary llaman a `view(batchId, scope)` con el alcance de la petición, como pide el "Contrato para #12". En el export, el permiso se comprueba antes que el alcance (`403` antes que `404`), como en `catalog-read` y `validation-runs`.
 
 ## Decisiones del gate (2026-10-19)
 
@@ -36,7 +36,7 @@ Tras procesar, el analista solo tiene la respuesta `201`: no puede volver a abri
 
 ## Lo que falta o conviene saber de #11 (no se cambia aquí)
 
-- `SettlementReader.view(batchId)` no tiene alcance. Lo resuelve una consulta propia de #12 (decisión 6), sin cambiar el puerto.
+- `SettlementReader.view(batchId, scope?)` usa el alcance solo para ocultar la cuenta anterior de los canales asignados; no da `null` para un batch fuera del alcance. El `404` lo resuelve una consulta propia de #12 (decisión 6), sin cambiar el puerto.
 - En los batches sin auditoría `settlement.process` (todo el seed), `skipped` vale 0 en todos los motivos y no se distingue de "desconocido". El summary lo escribe como `Not available` cuando `validationSummary` es `null`, en lugar de ceros. Guardarlo en el batch es #65.
 - Todos los batches sembrados están `paid` y ninguno `processed` ni `undone`. Los tests de "Settled solo si `paid`" comparan uno sembrado con uno procesado por el test.
 - Lo único que este change toca del código de #11 es el cableado: registrar las rutas nuevas en `settlement-module.ts` y comprobarlas en `app.test.ts`. Los servicios, el lector y los esquemas de #11 no cambian.
