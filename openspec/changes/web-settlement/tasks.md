@@ -107,11 +107,11 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 8. Solo lectura, teclado y anchura (D13, D17)
 
-- [ ] 8.1 Test (rojo) `features/settlements/read-only.test.tsx` con "solo lectura": `viewer` abre el Summary de un intento de su alcance y lo ve entero, con las descargas que su permiso admite y sin pagar, deshacer ni **New reconciliation**, y sin peticiones de escritura; `viewer` no ve el enlace a Settlement Review en Analysis (ya en 3.2, aquí solo se referencia)
-- [ ] 8.2 Test (rojo) `features/settlements/keyboard.test.tsx` con "teclado y motivos": con solo Tab, Enter, Espacio y Escape se edita el número, se añade un preestablecido y un importe libre, se quita un fee, se marca la casilla y se pulsa Process; el foco va al nuevo importe al añadir y vuelve al botón de añadir al quitar; todo botón deshabilitado tiene un motivo visible asociado
-- [ ] 8.3 Ajustar lo que 8.1 y 8.2 descubran (permisos de D13, `aria-describedby`, foco) y verificar 8.1 y 8.2 en verde; romper a propósito la devolución del foco al quitar una fila y ver fallar 8.2; restaurar. La revisión de anchura a 1280 px y 1024 px necesita datos reales y queda en 9.6
-- [ ] 8.4 Verificar `pnpm lint && pnpm typecheck && pnpm test && pnpm --filter @recon/frontend build` en verde y `openspec validate web-settlement --type change --strict` sin avisos
-- [ ] 8.5 Commit: `test(frontend): solo lectura y teclado en Settlement Review y Summary` y `fix(frontend): permisos y accesibilidad de las pantallas de settlement`
+- [x] 8.1 Test (rojo) `features/settlements/read-only.test.tsx` con "solo lectura": `viewer` abre el Summary de un intento de su alcance y lo ve entero, con las descargas que su permiso admite y sin pagar, deshacer ni **New reconciliation**, y sin peticiones de escritura; `viewer` no ve el enlace a Settlement Review en Analysis (ya en 3.2, aquí solo se referencia)
+- [x] 8.2 Test (rojo) `features/settlements/keyboard.test.tsx` con "teclado y motivos": con solo Tab, Enter, Espacio y Escape se edita el número, se añade un preestablecido y un importe libre, se quita un fee, se marca la casilla y se pulsa Process; el foco va al nuevo importe al añadir y vuelve al botón de añadir al quitar; todo botón deshabilitado tiene un motivo visible asociado
+- [x] 8.3 Ajustar lo que 8.1 y 8.2 descubran (permisos de D13, `aria-describedby`, foco) y verificar 8.1 y 8.2 en verde; romper a propósito la devolución del foco al quitar una fila y ver fallar 8.2; restaurar. La revisión de anchura a 1280 px y 1024 px necesita datos reales y queda en 9.6
+- [x] 8.4 Verificar `pnpm lint && pnpm typecheck && pnpm test && pnpm --filter @recon/frontend build` en verde y `openspec validate web-settlement --type change --strict` sin avisos
+- [x] 8.5 Commit: `test(frontend): solo lectura y teclado en Settlement Review y Summary` y `fix(frontend): permisos y accesibilidad de las pantallas de settlement`
 
 ## 9. Rebase sobre #11 (y #12) y prueba contra el API real — espera al merge de #11 (D16)
 

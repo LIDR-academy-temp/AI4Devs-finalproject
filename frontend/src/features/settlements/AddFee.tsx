@@ -36,14 +36,23 @@ export function AddPresetFee({
 }) {
   const reasonId = useId()
   const fees = useQuery(accountFeesQuery(accountId, asOf))
-  const reason = asOf === null ? s.presetNeedsDate : fees.data?.length === 0 ? s.noPresets : null
+  const reason =
+    asOf === null
+      ? s.presetNeedsDate
+      : fees.isError
+        ? s.presetsFailed
+        : !fees.data
+          ? s.loadingPresets
+          : fees.data.length === 0
+            ? s.noPresets
+            : null
   return (
     <div className="flex flex-col gap-1">
       <select
         aria-label={s.addPreset}
         className={selectClass}
         value=""
-        disabled={reason !== null || !fees.data}
+        disabled={reason !== null}
         aria-describedby={reason ? reasonId : undefined}
         onChange={(event) => {
           const fee = fees.data?.find((f) => f.feeId === event.target.value)
@@ -78,26 +87,36 @@ export function AddFreeFee({
   onAdd: (type: FeeTypeView) => void
   selectRef?: Ref<HTMLSelectElement>
 }) {
+  const reasonId = useId()
   const types = useQuery(feeTypesQuery())
   const free = freeAmountTypes(types.data)
+  const reason = types.isError ? s.typesFailed : !types.data ? s.loadingTypes : null
   return (
-    <select
-      ref={selectRef}
-      aria-label={s.addFree}
-      className={selectClass}
-      value=""
-      disabled={!types.data}
-      onChange={(event) => {
-        const type = free.find((t) => String(t.feeTypeId) === event.target.value)
-        if (type) onAdd(type)
-      }}
-    >
-      <option value="">{s.chooseFree}</option>
-      {free.map((type) => (
-        <option key={type.feeTypeId} value={type.feeTypeId}>
-          {type.title}
-        </option>
-      ))}
-    </select>
+    <div className="flex flex-col gap-1">
+      <select
+        ref={selectRef}
+        aria-label={s.addFree}
+        className={selectClass}
+        value=""
+        disabled={reason !== null}
+        aria-describedby={reason ? reasonId : undefined}
+        onChange={(event) => {
+          const type = free.find((t) => String(t.feeTypeId) === event.target.value)
+          if (type) onAdd(type)
+        }}
+      >
+        <option value="">{s.chooseFree}</option>
+        {free.map((type) => (
+          <option key={type.feeTypeId} value={type.feeTypeId}>
+            {type.title}
+          </option>
+        ))}
+      </select>
+      {reason && (
+        <p id={reasonId} className="text-sm text-muted-foreground">
+          {reason}
+        </p>
+      )}
+    </div>
   )
 }
