@@ -115,6 +115,17 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
     await waitFor(() => expect(continueButton()).toBeEnabled())
   })
 
+  it('a cancelled import: the decision says so in read only, without an empty section', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'cancelled' })
+    seedValidationRun(importId)
+    await openAnalysis(importId)
+
+    expect(
+      decision().getByText('This import is cancelled. Its run and findings are kept for reference.'),
+    ).toBeInTheDocument()
+    expect(decision().queryAllByRole('button')).toHaveLength(0)
+  })
+
   it('Cancel and reprocess (HU2 CA8): after confirming, the run, its table and findings stay in read only', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     seedValidationRun(importId)

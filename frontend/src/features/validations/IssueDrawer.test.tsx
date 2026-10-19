@@ -117,6 +117,25 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
     ])
   })
 
+  it('a one-row finding shows its row and does not say that the transaction is not in the batch', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const { issues } = seedValidationRun(importId)
+    const nra = issues.find((i) => i.issueType === 'non_recorded_adjustment')!
+    await openFinding(importId, nra.issueId)
+
+    expect(drawer().getByText(`${FILE} · CHB · row 3`)).toBeInTheDocument()
+    expect(drawer().queryByText('No occurrences: the transaction is not in this batch.')).not.toBeInTheDocument()
+  })
+
+  it('a missing finding says that the transaction is not in the batch', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const { issues } = seedValidationRun(importId)
+    const missing = issues.find((i) => i.validationCode === 'missing_previous_to_batch')!
+    await openFinding(importId, missing.issueId)
+
+    expect(drawer().getByText('No occurrences: the transaction is not in this batch.')).toBeInTheDocument()
+  })
+
   it('a finding of a superseded run says so', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const old = seedValidationRun(importId).issues.find((i) => i.validationCode === 'duplicate_in_batch')!
