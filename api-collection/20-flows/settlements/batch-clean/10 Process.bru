@@ -47,4 +47,11 @@ tests {
     const sum = res.body.payableBreakdown.reduce((s, l) => (l.sign === '+' ? s + units(l.amount) : s - units(l.amount)), 0n);
     expect(sum === units(res.body.amountPayable)).to.equal(true);
   });
+  // Oracle: data/samples/batch-clean/expected.json, summary.fees.total and summary.amountPayable.
+  test('transactional fees and amount payable match the oracle', () => {
+    expect(res.body.transactionalFeeAmt).to.equal('4336.6070');
+    expect(res.body.amountPayable).to.equal('33771.3600');
+    const line = res.body.payableBreakdown.find((l) => l.code === 'transactional_fees');
+    expect([line.sign, line.amount]).to.eql(['-', '4336.6070']);
+  });
 }
