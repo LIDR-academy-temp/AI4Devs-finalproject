@@ -110,7 +110,7 @@
 - `viewer` entra por enlace directo (la ruta no tiene `requires`) y ve todo sin botones de acción.
 
 ### D11. Fechas en hora de Nueva York (`ET`), con dos formateadores según el tipo de fecha
-- **Tipos marca** en `contract.ts`: `type BusinessDate = string & { readonly __kind: 'business' }` y `type AuditInstant = string & { readonly __kind: 'audit' }`.
+- **Tipos marca** en `lib/format.ts`, junto a los formateadores que los exigen, y reexportados por `contract.ts`: `type BusinessDate = string & { readonly __kind: 'business' }` y `type AuditInstant = string & { readonly __kind: 'audit' }`. Tras el rebase, `contract.ts` los aplica sobre los tipos generados por nombre de campo, a cualquier profundidad.
   - `BusinessDate`: `ranges.*.min/max`, `relevantDate` y, si llegan, `transactionDate`, `txnDate`, `eventDate` y las fechas de batch.
   - `AuditInstant`: `runAt`, `reviewedAt`, `invalidatedAt`, `changedAt`, `resolvedAt`, `at` del historial y `details.resolvedAt` de `issue_already_resolved`.
   
@@ -141,9 +141,13 @@
     - `manualChangeCount`, que cuenta los `PATCH` guionizados aplicados en la corrida vigente y vuelve a 0 al re-ejecutar;
     - `lastInvalidatedReview`, al re-ejecutar o cambiar una inclusión sobre `validated`;
     - el historial: cada `PATCH` aplicado añade su entrada con el usuario que llama y su `AuditInstant`.
+    
+    Como consecuencia directa del contrato, no como regla propia, al resolver un hallazgo deja `resolvable` en `false` (ya no es `persistent`), y los hallazgos de una corrida superada se leen con todos los controles apagados, porque #9 exige la corrida vigente para `editable`, `includable` y `resolvable`.
   - **Fixtures base**, con los ids de `affectedIds` y los `defaults` de `expected.json`:
     - `batch-issues`: ocho resultados y 23 hallazgos (los conteos de `expected.json`), con una aparición `previous_batch` en los dos *across*;
-    - `batch-blocked`: `provider_mismatch` con `252570479111759` y el resto `passed`, que es un supuesto (proposal hueco 5).
+    - `batch-blocked`: datos de la corrida real de #9 contra el seed (proposal hueco 5, resuelto en el rebase): `provider_mismatch` con `252570479111759`, diez faltantes APP en `missing_in_range` y el resto `passed`.
+    
+    Los hallazgos de una sola fila (`provider_mismatch`, `non_recorded_adjustment`, `status_mismatch`) van sin apariciones, con su fila en `source`, como los devuelve el API real.
   - **Variantes por escenario** sobre una fixture base. Por ejemplo, la de la reserva R declara un hallazgo R con dos apariciones, una incluida y otra que **llega con `editable: true, includable: false`**, y guioniza el `409 occurrence_not_includable { reason: 'reserve_already_included' }` para su `PATCH`.
   - Alcance y permiso, igual que el falso de imports: `viewer` → `403` en escrituras; fuera de alcance → `404`.
   - Tiene su propio test (`validations.test.ts`), como `imports.test.ts`, que cubre solo lo que modela: transiciones, superación, contador, invalidación, historial, guion de los `PATCH` y alcance.
@@ -162,9 +166,10 @@
 7. **Capturas con Playwright**: `e2e/screenshots/web-validations.ts`, lanzado con un script raíz propio (`pnpm screenshots:web-validations`). No es un `.feature` ni está bajo el `defineBddConfig` del smoke, así que `pnpm test:e2e` no lo recoge, y CI no lo ejecuta.
    - Mismas protecciones que el smoke de `web-import`: usuario `analyst` del seed con `SEED_PASSWORD` cargada con `process.loadEnvFile` del `.env` raíz, que nunca se lee ni se imprime; campo de contraseña vaciado tras el login; `trace: 'off'` y `video: 'off'`; ninguna captura antes de que la pantalla del import esté cargada, y nunca de la pantalla de login.
    - Crea sus imports de `batch-issues` y `batch-blocked` por la pantalla y los cancela al terminar.
-   - Guarda cuatro PNG a 1280 px en `docs/wireframes/web-validations/`:
+   - Guarda cinco PNG en `docs/wireframes/web-validations/`, cuatro a 1280 px y uno a 1024 px, y escribe en consola si la página se desplaza en horizontal a cada anchura:
      - `batch-issues-validations.png`: tabla de validaciones;
      - `batch-issues-duplicate-drawer.png`: drawer del duplicado con historial, tras incluir la segunda aparición;
+     - `batch-issues-duplicate-drawer-1024.png`: el mismo drawer a 1024 px, para la anchura del panel y su título;
      - `batch-issues-invalidated-review.png`: aviso de revisión invalidada, tras continuar y re-ejecutar;
      - `batch-blocked-continue-disabled.png`: Continue deshabilitado con el motivo.
    - **Antes de ejecutarlo se avisa a la persona**, que quiere mirar la ejecución, y se lanza en modo con cabeza (`headless: false`).
@@ -174,12 +179,13 @@
 - `features/validations/strings.ts` con todos los textos de la pantalla. Los de la spec van literales y los mensajes de error, por `code`.
 - Teclado: filas de la tabla y de la lista como `button`; Enter y Espacio las abren; el drawer atrapa el foco y lo devuelve; los interruptores (Radix `switch`) responden a Espacio; los diálogos (Radix `alert-dialog`) se cierran con Escape sin actuar.
 - Los botones deshabilitados llevan su motivo en texto visible enlazado con `aria-describedby`, no solo en un `title`.
-- A 1280 px y 1024 px la página no se desplaza en horizontal: la lista se desplaza dentro de su tarjeta y el drawer ocupa `min(42rem, 100vw)`.
+- A 1280 px y 1024 px la página no se desplaza en horizontal: la lista se desplaza dentro de su tarjeta y el drawer ocupa `min(42rem, 100vw)`, con las clases de anchura escritas con los mismos variantes que las del sheet de shadcn para sustituirlas.
+- **Esperas de los tests**: la espera global de `findBy` es la de Testing Library (1 s). Solo la primera espera tras `renderApp` en los tests de validaciones usa `OPENING` (5 s, `test/validation-screens.ts`). Medido en el rebase: el primer render del paso Analysis en un fichero en frío tarda ~750 ms hasta la tabla de validaciones aislado (~370 ms en caliente) y más de 1 s con la suite en paralelo, porque encadena me → import → corrida → hallazgo. La cascada propia del drawer, que pedía el hallazgo después de la corrida, se corrigió para pedirlo a la vez. *Descartado*: 5 s globales, que también alargaban las aserciones de toda la suite.
 
 ## Risks / Trade-offs
 
 - [El contrato de #9 cambia antes del merge] → Solo se tocan `contract.ts` y el falso (D2). El último grupo lo detecta con `typecheck`, porque los tipos generados sustituyen a los copiados.
-- [El falso de MSW se aleja del backend real] → Se tipa con el contrato, se contrasta en el rebase con los esquemas compartidos y se prueba a mano contra el API real (D13). Los resultados no oraculados de `batch-blocked` van marcados como supuesto.
+- [El falso de MSW se aleja del backend real] → Se tipa con el contrato, se contrasta en el rebase con los esquemas compartidos y se prueba a mano contra el API real (D13). Los resultados de `batch-blocked` que el oráculo no fija se copiaron de la corrida real.
 - [Un segundo `authFetch` en `contract.ts`, además del de `api`] → Comparten la misma `session`, que coordina la renovación (`web-shell` D7). Desaparece en el rebase.
 - [Invalidar la corrida tras cada `PATCH` añade un `GET validations`] → Es una lectura de la base sin releer archivos (decenas de ms) y mantiene `manualChangeCount` correcto para el aviso de D4.
 - [El texto genérico de `includable = false` no dice cuál de los dos motivos aplica] → Hueco 3 del proposal. El `409` da el específico si el usuario lo intenta. Inferirlo en el cliente duplicaría la regla de R.
