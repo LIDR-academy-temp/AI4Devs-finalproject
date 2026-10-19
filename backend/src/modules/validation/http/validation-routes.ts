@@ -131,7 +131,7 @@ export const validationRoutes: FastifyPluginAsyncZod<ValidationRoutesOptions> = 
           'In cycle R at most one occurrence is included, and none when the reserve was released in a previous batch.',
         params: OccurrenceParams,
         body: SetInclusionBody,
-        response: { 200: ValidationIssueDetail, ...actionErrors },
+        response: { 200: ValidationIssueDetail, ...writeErrors },
       },
     },
     async (request) =>

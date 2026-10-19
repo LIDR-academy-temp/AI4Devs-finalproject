@@ -10185,22 +10185,6 @@ paths:
                   - code
                   - message
                 additionalProperties: false
-        "422":
-          description: Default Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: string
-                  message:
-                    type: string
-                  details: {}
-                required:
-                  - code
-                  - message
-                additionalProperties: false
   /api/v1/health:
     get:
       summary: Service and database health
