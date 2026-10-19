@@ -1,0 +1,31 @@
+meta {
+  name: Process - missing runId
+  type: http
+  seq: 43
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "confirmChannelAssignment": true
+  }
+}
+
+tests {
+  test('processing names the run the analyst reviewed: without runId, 400 validation_error', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}

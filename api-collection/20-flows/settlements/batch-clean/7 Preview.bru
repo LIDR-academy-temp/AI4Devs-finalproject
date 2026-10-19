@@ -1,0 +1,42 @@
+meta {
+  name: 7 Preview
+  type: http
+  seq: 7
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements/preview
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{setImportId}}
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({ runId: bru.getVar('setRunId'), batchFees: bru.getVar('setBatchFees') });
+}
+
+tests {
+  // Money in units of 0.0001 as BigInt: never a JS number.
+  const units = (text) => BigInt(text.replace('.', ''));
+  test('previews batch 123 with otherFeeAmt 40.0000 and RAM-07 to assign, its breakdown adding up', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.batchNo).to.equal(bru.getVar('setBatchNo'));
+    expect(res.body.batchNoAvailable).to.equal(true);
+    expect(res.body.otherFeeAmt).to.equal('40.0000');
+    expect(res.body.channelsToAssign.map((c) => c.name)).to.eql(['RAM-07']);
+    const sum = res.body.payableBreakdown.reduce((s, l) => (l.sign === '+' ? s + units(l.amount) : s - units(l.amount)), 0n);
+    expect(sum === units(res.body.amountPayable)).to.equal(true);
+  });
+}
