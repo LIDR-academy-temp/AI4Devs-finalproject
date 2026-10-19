@@ -2,6 +2,7 @@
 // models between requests: transitions, superseded runs, manualChangeCount, invalidated reviews, history, the
 // scripted PATCH answers and the scope. Flags and results are fixed by the fixtures, never computed.
 import {
+  ErrorResponse,
   ValidationIssueDetail as SharedIssueDetail,
   ValidationIssuesPage as SharedIssuesPage,
   ValidationRunView as SharedRunView,
@@ -368,5 +369,114 @@ describe('fake validations API against the shared schemas of #9 (design D13)', (
     })
     expect(beyond.status).toBe(400)
     expect(beyond.body.code).toBe('validation_error')
+  })
+
+  it('every answer of a whole flow and every error body it returns', async () => {
+    const conforms = (schema: { safeParse: (v: unknown) => { error?: { issues: unknown[] } } }, body: unknown) =>
+      expect(schema.safeParse(body).error?.issues ?? []).toEqual([])
+    /** An error body as #9 sends it: lowercase snake_case code, message and optional details. */
+    const isError = (body: unknown, code: string) => {
+      conforms(ErrorResponse, body)
+      expect((body as { code: string }).code).toBe(code)
+      expect(code).toMatch(/^[a-z]+(_[a-z]+)*$/)
+    }
+
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const first = await run(importId)
+    expect(first.status).toBe(201)
+    conforms(SharedRunView, first.body)
+    const firstRun = (first.body as ValidationRunView).run!
+
+    const duplicate = await findingOf(importId, 'duplicate_in_batch', '441706751475644')
+    const included = await call('analyst', 'PATCH', `/conflict-occurrences/${duplicate.occurrences[1]!.occurrenceId}`, {
+      includeInSettlement: true,
+    })
+    expect(included.status).toBe(200)
+    conforms(SharedIssueDetail, included.body)
+
+    const nra = await findingOf(importId, 'non_recorded_adjustment', '281520820250015')
+    const resolved = await call('analyst', 'PATCH', `/validation-issues/${nra.issueId}`, {
+      resolutionStatus: 'resolved',
+      note: 'Checked in the gateway',
+    })
+    expect(resolved.status).toBe(200)
+    conforms(SharedIssueDetail, resolved.body)
+
+    const reviewed = await call('analyst', 'POST', `/imports/${importId}/review`, { runId: firstRun.runId })
+    expect(reviewed.status).toBe(200)
+    conforms(SharedRunView, reviewed.body)
+
+    const again = await run(importId)
+    expect(again.status).toBe(201)
+    conforms(SharedRunView, again.body)
+    expect((again.body as ValidationRunView).lastInvalidatedReview).not.toBeNull()
+
+    const old = await call('analyst', 'GET', `/validation-issues/${duplicate.issueId}`)
+    conforms(SharedIssueDetail, old.body)
+    expect((old.body as ValidationIssueDetail).run.isCurrent).toBe(false)
+
+    // The error bodies the fake answers in that state.
+    isError(
+      (await call('analyst', 'POST', `/imports/${importId}/review`, { runId: firstRun.runId })).body,
+      'validation_run_superseded',
+    )
+    isError(
+      (
+        await call('analyst', 'PATCH', `/conflict-occurrences/${duplicate.occurrences[1]!.occurrenceId}`, {
+          includeInSettlement: false,
+        })
+      ).body,
+      'validation_run_superseded',
+    )
+    isError(
+      (await call('analyst', 'PATCH', `/validation-issues/${nra.issueId}`, { resolutionStatus: 'resolved', note: 'x' }))
+        .body,
+      'validation_run_superseded',
+    )
+    const mapped = seedImport('batch-issues', { status: 'mapped' })
+    isError((await run(mapped.importId)).body, 'import_not_analyzed')
+    isError(
+      (await call('analyst', 'POST', `/imports/${mapped.importId}/review`, { runId: 1 })).body,
+      'import_not_analyzed',
+    )
+    const unrun = seedImport('batch-issues', { status: 'analyzed' })
+    isError(
+      (await call('analyst', 'POST', `/imports/${unrun.importId}/review`, { runId: 1 })).body,
+      'validation_run_required',
+    )
+    const cancelled = seedImport('batch-issues', { status: 'analyzed' })
+    const cancelledRun = seedValidationRun(cancelled.importId)
+    importRecord(cancelled.importId).status = 'cancelled'
+    const occurrence = cancelledRun.issues.find((i) => i.occurrences.length > 0)!.occurrences[0]!
+    isError(
+      (
+        await call('analyst', 'PATCH', `/conflict-occurrences/${occurrence.occurrenceId}`, {
+          includeInSettlement: false,
+        })
+      ).body,
+      'import_not_editable',
+    )
+    const blocked = seedImport('batch-blocked', { status: 'analyzed' })
+    const blockedRun = seedValidationRun(blocked.importId)
+    isError(
+      (await call('analyst', 'POST', `/imports/${blocked.importId}/review`, { runId: blockedRun.runId })).body,
+      'blocking_validation_issue',
+    )
+    // Scripted errors keep the shape too, a 422 among them.
+    const scripted = seedImport('batch-issues', { status: 'analyzed' })
+    const scriptedRun = seedValidationRun(scripted.importId, undefined, {
+      patches: {
+        [issueKey('non_recorded_adjustment', '281520820250015')]: {
+          error: { status: 422, code: 'issue_not_resolvable', details: { issueType: 'non_recorded_adjustment' } },
+        },
+      },
+    })
+    const scriptedNra = scriptedRun.issues.find((i) => i.issueType === 'non_recorded_adjustment')!
+    const notResolvable = await call('analyst', 'PATCH', `/validation-issues/${scriptedNra.issueId}`, {
+      resolutionStatus: 'resolved',
+      note: 'x',
+    })
+    expect(notResolvable.status).toBe(422)
+    isError(notResolvable.body, 'issue_not_resolvable')
   })
 })
