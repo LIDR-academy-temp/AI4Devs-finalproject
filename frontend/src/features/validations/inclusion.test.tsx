@@ -65,7 +65,9 @@ describe('Analysis & Validations: changing the inclusion (spec "cambiar la inclu
   it('a reserve that cannot be included: its switch is disabled with the reason, linked to it', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const { issues } = seedValidationRun(importId, reserveVariant())
-    const reserve = issues.find((i) => i.transactionIdRaw === '357030499063804' && i.cycle === 'R')!
+    const reserve = issues.find(
+      (i) => i.validationCode === 'duplicate_in_batch' && i.transactionIdRaw === '357030499063804',
+    )!
     await openFinding(importId, reserve.issueId)
 
     const blocked = switchOf(`${FILE} · RR · row 11`)
