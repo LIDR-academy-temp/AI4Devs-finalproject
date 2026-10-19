@@ -135,7 +135,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   Verificar con `pnpm test:e2e --list` que el smoke no lo recoge y que ningún workflow de `.github/` lo llama
 - [x] 8.8 **Avisar a la persona antes de ejecutarlo**, porque quiere mirar la ejecución. Con su visto bueno, ejecutar `pnpm screenshots:web-validations` y comprobar que deja en `docs/wireframes/web-validations/` cinco PNG, cuatro a 1280 px y uno a 1024 px: `batch-issues-validations.png`, `batch-issues-duplicate-drawer.png` (con historial), `batch-issues-duplicate-drawer-1024.png`, `batch-issues-invalidated-review.png` y `batch-blocked-continue-disabled.png`, y que la consola diga que no hay desplazamiento horizontal a 1280 ni a 1024 px. Revisar cada PNG antes de versionarlo: ningún dato de credenciales y ninguna pantalla de login
 - [x] 8.9 Línea de las capturas en `docs/wireframes/README.md` y registro del change en `prompts.md`
-- [ ] 8.10 Listar en la descripción del PR:
+- [x] 8.10 Listar en la descripción del PR:
   - los huecos del contrato del proposal (Settlement Review hasta #13, motivo de `includable`, indicadores `canRun`/`canReview`, oráculo de `batch-blocked`), para que la persona abra los issues;
   - las referencias a #47 (motivo al cancelar) y #48 (fechas de negocio sin `Z`);
   - el pendiente de roadmap de la zona horaria del gateway UUID.
