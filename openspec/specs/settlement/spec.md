@@ -31,7 +31,7 @@ Procesar SHALL crear un `SettlementBatch` con `batchNo` propuesto (último + 1, 
 ### Requirement: Deshacer un intento
 Deshacer SHALL marcar el intento `undone`, devolver el import a `analyzed` y conservar todo; el siguiente intento incrementa `attemptNo`.
 
-Nota: deshacer y pagar (y sus rutas) son del tramo 6; este change no los implementa. Los escenarios "Deshacer y reprocesar con el mismo número" y "Un batch pagado no se deshace" se conservan como requisito vigente de esa entrega; aquí el intento `undone` se prepara en los tests.
+Nota: deshacer y pagar (y sus rutas) llegan en el tramo 6. Los escenarios "Deshacer y reprocesar con el mismo número" y "Un batch pagado no se deshace" se conservan como requisito vigente de esa entrega; hasta entonces, el intento `undone` se prepara en los tests.
 
 #### Scenario: Deshacer y reprocesar con el mismo número
 - GIVEN el intento 1 del batch 118 en `processed`
