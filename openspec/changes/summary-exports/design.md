@@ -50,7 +50,7 @@ packages/shared/src/settlement-reads.ts
 - *Alternativa descartada*: un módulo `reports`. Los exports son del intento ("los exports se identifican por intento") y la spec `settlement` ya los tiene.
 
 ### D2. La vista, sin recalcular
-`GET /settlements/{id}` = comprobación de alcance (D3) + `PrismaSettlementReader.view(batchId, scope)`. El summary CSV también parte de la vista: totales, `payableBreakdown`, fees por batch y reservas salen de ella. Así #13, el CSV y la respuesta `201` muestran lo mismo.
+`GET /settlements/{id}` = comprobación de alcance (D3) + `PrismaSettlementReader.view(batchId, scope)`. El summary CSV también parte de la vista: totales, `payableBreakdown`, fees por batch y reservas salen de ella. Así #13, el CSV y la respuesta `201` muestran lo mismo. Lo único que el summary añade a la vista es una traducción acotada: las advertencias de la vista (`undated_adjustment`, `reserve_already_released`) llevan el `transactionId` interno, y el analista necesita el ID de origen. `SettlementQueries.sourceIds(transactionIds)` traduce a `sourceTransactionId` solo los `transactionId` de las advertencias del intento (`Transaction WHERE transactionId IN (…)`, troceado en bloques de ≤ 500) y el summary escribe ese ID. Sin advertencias con transacción no hay consulta.
 - *Alternativa descartada*: que el summary CSV lea las columnas por su cuenta. Sería una segunda lectura de las mismas cifras que podría divergir de la pantalla.
 
 ### D3. Alcance sin tocar el lector
@@ -92,7 +92,7 @@ packages/shared/src/settlement-reads.ts
 
 | Bloque | Cabecera | Filas |
 |---|---|---|
-| Settlement | `Field,Value` | `Account`, `Batch`, `Attempt`, `Status`, `Payment`, `Processed by`, `Processed at` (`… ET`), `Settlement date`, `Channels` (unidos con `; `), `APP range`, `DEC range`, `I range`, `R range` (`<min> - <max>` en hora de Nueva York sin convertir, o vacío) |
+| Settlement | `Field,Value` | `Account`, `Batch`, `Attempt`, `Status`, `Payment`, `Processed by`, `Processed at` (`… ET`), `Settlement date`, `Channels` (unidos con `; `), `APP range (ET)`, `DEC range (ET)`, `I range (ET)`, `R range (ET)` (`<min> - <max>` en hora de Nueva York sin convertir, o vacío; sufijo `(ET)` como en la pantalla) |
 | Totals | `Category,Qty,Amount,Fees,Fee rate` | las cinco categorías en su orden, con las etiquetas de la UI (`Deposits`, `Declined`, `Chargebacks`, `Refunds`, `RDR`) |
 | Card brands | `Card brand,Qty,Amount` | `brandTotals` |
 | Batch fees | `Fee type,Description,Source,Amount,Entered by` | en orden de `batchFeeId`; importe con signo |
@@ -100,7 +100,7 @@ packages/shared/src/settlement-reads.ts
 | Amount payable | `Line,Sign,Amount` | las nueve líneas de `payableBreakdown` (`label`, `+`/`-`, magnitud) y la fila `Amount payable,,<amountPayable>` |
 | Issues | `Item,Count` | `Persistent`, `Resolved`, `Blocking`, `Resolved missing`; con `validationSummary = null`, una única fila `Not available,` |
 | Not processed | `Reason,Count` | los seis motivos de `skipped`; sin auditoría `settlement.process`, `Not available,` |
-| Warnings | `Code,Transaction ID,Detail` | una fila por advertencia, con el ID tal cual (D5) |
+| Warnings | `Code,Transaction ID,Detail` | una fila por advertencia; `Transaction ID` es el ID de origen tal cual (D5), traducido con `sourceIds` (D2), y vacío en las advertencias sin transacción; `Detail` = `Row <rowNo>` (más `; fee skipped`) o `Fee <feeId>` |
 
 - `Payment` = `Pending payment` | `Settled` | `Undone` desde `settledStatus`, nunca desde `settlementStatusId`.
 - `audit-time.ts`: `Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', hourCycle: 'h23', … })` → `YYYY-MM-DD HH:mm:ss ET`, el mismo criterio que `formatAuditDateTime` de la pantalla (con otro formato, porque es un archivo). Test con una fecha en horario de verano y otra en horario estándar.
@@ -118,7 +118,7 @@ No se registra `@fastify/cors`. La SPA llama a `/api` en su mismo origen (D2 de 
 - *Alternativa descartada*: registrar CORS con `exposedHeaders: ['Content-Disposition']` "por si acaso". Reabre una decisión archivada (`web-shell` D2 la descartó) y abre orígenes que nadie usa. Si el despliegue cambia, ese change añade el plugin con la cabecera expuesta.
 
 ### D10. Auditoría de la descarga
-`export(scope, batchId, type, userId)`: cabecera (D3) → filas (D6) o vista con `view(batchId, scope)` (D7) → CSV en memoria → `audit.record({ action: 'settlement.export', entityType: 'SettlementBatch', entityId: batchId, detail: { type, fileName, rows } })` → respuesta. `rows` = filas de datos (sin cabecera; en el summary, el número de bloques no cuenta y se guarda `rows: null`).
+`export(scope, batchId, type, userId)`: cabecera (D3) → filas (D6) o vista con `view(batchId, scope)` más `sourceIds` de sus advertencias (D2, D7) → CSV en memoria → `audit.record({ action: 'settlement.export', entityType: 'SettlementBatch', entityId: batchId, detail: { type, fileName, rows } })` → respuesta. `rows` = filas de datos (sin cabecera; en el summary, el número de bloques no cuenta y se guarda `rows: null`).
 - Si la auditoría falla, la petición responde `500` y no se envía el archivo: "una entrada de auditoría por descarga" (criterio 4) no se cumple si se envía sin ella. Si falla la generación, no queda auditoría.
 - La fila queda escrita aunque el cliente corte la conexión después: registra que el servidor entregó el archivo, no que el usuario lo guardó.
 - *Alternativa descartada*: auditar como `auth-service` (capturar el fallo y registrarlo en el log). Una descarga sin rastro rompe el criterio.
