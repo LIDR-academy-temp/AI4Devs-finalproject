@@ -235,6 +235,11 @@ describe('SettlementView and SettlementPreview', () => {
     expect(SettlementView.safeParse({ ...view, status: 'paid', settledStatus: 'settled' }).success).toBe(true)
     expect(SettlementView.safeParse({ ...view, status: 'pending' }).success).toBe(false)
   })
+
+  it('accept a null validation summary for an attempt without a process audit', () => {
+    expect(SettlementView.safeParse({ ...view, validationSummary: null }).success).toBe(true)
+    expect(SettlementView.safeParse({ ...view, validationSummary: undefined }).success).toBe(false)
+  })
 })
 
 describe('Skipped and SettlementWarning', () => {
