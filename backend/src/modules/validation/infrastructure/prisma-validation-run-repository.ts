@@ -76,6 +76,9 @@ function visibleAccount(scope: Scope): Prisma.AccountWhereInput {
 
 const json = (value: unknown) => (value === null ? null : JSON.stringify(value))
 
+/** Binary order of text, the same in every environment (no collation involved), as rowsOf orders the files. */
+const compareBinary = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
+
 /** A unique violation of the filtered index that keeps one current run per import (0006), by its name. */
 function isCurrentRunViolation(error: unknown): boolean {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== UNIQUE_VIOLATION) return false
@@ -921,6 +924,15 @@ export class PrismaIssueReader {
         file: { select: { fileId: true, fileName: true, uploadedAt: true } },
       },
     })
+    // The rank of each file by (uploadedAt, fileName, fileId), as rowsOf orders them for the engine: two files of one
+    // upload share uploadedAt, and only the name decides which occurrence comes first.
+    const files = [...new Map(rows.map((s) => [s.file.fileId, s.file])).values()].sort(
+      (a, b) =>
+        a.uploadedAt.getTime() - b.uploadedAt.getTime() ||
+        compareBinary(a.fileName, b.fileName) ||
+        compareBinary(a.fileId, b.fileId),
+    )
+    const fileRank = new Map(files.map((f, index) => [f.fileId, index]))
     return new Map(
       rows.map((s): [string, SheetInfo] => [
         s.sheetId,
@@ -928,7 +940,7 @@ export class PrismaIssueReader {
           fileId: s.file.fileId,
           fileName: s.file.fileName,
           sheetName: s.sheetName,
-          fileOrder: s.file.uploadedAt.getTime(),
+          fileOrder: fileRank.get(s.file.fileId) as number,
           sheetOrder: s.sheetIndex ?? Number.MAX_SAFE_INTEGER,
         },
       ]),
