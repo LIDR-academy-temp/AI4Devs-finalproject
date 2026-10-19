@@ -1,0 +1,36 @@
+meta {
+  name: 15 Review
+  type: http
+  seq: 15
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/review
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({ runId: bru.getVar('runId2') });
+}
+
+tests {
+  test('continue with warnings: the import is validated and the review names analyst', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.importStatus).to.equal('validated');
+    expect(res.body.run.review.reviewedBy.userName).to.equal('analyst');
+  });
+}

@@ -1,0 +1,31 @@
+meta {
+  name: 18 Run after review
+  type: http
+  seq: 19
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/validations
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+tests {
+  test('re-validating a validated import: a new run, back in analyzed, the review invalidated by rerun, no manual changes', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.importStatus).to.equal('analyzed');
+    expect(res.body.run.runId).to.not.equal(bru.getVar('runId2'));
+    expect(res.body.run.review).to.equal(null);
+    expect(res.body.run.manualChangeCount).to.equal(0);
+    expect(res.body.lastInvalidatedReview.reason).to.equal('rerun');
+    expect(res.body.lastInvalidatedReview.runId).to.equal(bru.getVar('runId2'));
+    expect(res.body.lastInvalidatedReview.newRunId).to.equal(res.body.run.runId);
+  });
+}

@@ -117,6 +117,17 @@ export class ImportNotEditableError extends DomainError {
   }
 }
 
+/** Validating needs `analyzed` or `validated`; reviewing needs `analyzed` (validation-runs, P1). */
+export class ImportNotAnalyzedError extends DomainError {
+  readonly status = 409
+  readonly code = 'import_not_analyzed'
+
+  /** `admitted`: the statuses the refused action accepts, named in the message. */
+  constructor(status: string, admitted: readonly string[] = ['analyzed']) {
+    super(`The import is ${status}; this action needs ${admitted.join(' or ')}`, { status })
+  }
+}
+
 /** Cancelling is allowed in every status but `processed` and `cancelled` (spec: import, D13). */
 export class ImportNotCancellableError extends DomainError {
   readonly status = 409

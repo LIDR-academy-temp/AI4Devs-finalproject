@@ -1,0 +1,45 @@
+meta {
+  name: 1 Upload
+  type: http
+  seq: 1
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/imports
+  body: multipartForm
+  auth: inherit
+}
+
+params:path {
+  accountId: {{providerBMainAccountId}}
+}
+
+body:multipart-form {
+  files: @file(../data/samples/batch-blocked/Recon_Template_ProviderB-Main_batch-blocked.xlsx)
+}
+
+script:pre-request {
+  if (!bru.getVar('providerBMainAccountId')) {
+    await bru.runRequest('20-flows/validations/batch-issues/0 Provider B accounts');
+  }
+  if (!bru.getVar('providerBMainAccountId')) {
+    throw new Error('ProviderB-Main accountId could not be resolved');
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar('blkImportId', res.body.importId);
+    bru.setVar('blkDetail', res.body);
+  }
+}
+
+tests {
+  test('creates the batch-blocked import in uploaded', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.status).to.equal('uploaded');
+  });
+}

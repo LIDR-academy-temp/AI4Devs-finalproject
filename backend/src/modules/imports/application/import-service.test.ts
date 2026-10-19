@@ -198,6 +198,17 @@ describe('createImport', () => {
     expect(record?.sheets.map((s) => s.sheetId)).toEqual(detail.files[0]?.sheets.map((s) => s.sheetId))
   })
 
+  it('stores the position of every sheet in its workbook, 0..n-1 in workbook order (validation-runs D10)', async () => {
+    const detail = await service.createImport(ANALYST, ANALYST_ID, A_USD, [await upload(SAMPLE_FILES.batchClean)])
+
+    const record = await imports.findImport(ANALYST, detail.importId)
+    expect(record?.sheets.map((s) => [s.sheetName, s.sheetIndex])).toEqual(
+      ['APP', 'DEC', 'CHB', 'REF', 'RDR', 'RR', 'Duplicate Corrections', 'CHB Alerts', 'Other Fees', 'Settings'].map(
+        (name, index) => [name, index],
+      ),
+    )
+  })
+
   it('persists a sheet without proposal with the ignore marker and reports it as kind null', async () => {
     const detail = await service.createImport(ANALYST, ANALYST_ID, A_USD, [await upload(SAMPLE_FILES.unruled)])
 
@@ -342,6 +353,16 @@ describe('addFiles and removeFile', () => {
     expect(sheetNamed(detail, 'RR', 1).rowCount).toBe(320)
     expect(files.paths()).toHaveLength(2)
     expect(detail.readiness.canAnalyze).toBe(true)
+  })
+
+  it('stores the sheet position of the second file in its own workbook order, 0..n-1 (validation-runs D10)', async () => {
+    const detail = await service.addFiles(ANALYST, importId, [await upload(SAMPLE_FILES.part2)])
+
+    const record = await imports.findImport(ANALYST, importId)
+    for (const file of detail.files) {
+      const stored = file.sheets.map((s) => record?.sheets.find((r) => r.sheetId === s.sheetId)?.sheetIndex)
+      expect(stored).toEqual(file.sheets.map((_, index) => index))
+    }
   })
 
   it('rejects a file already in the import by hash, naming it, and leaves the import unchanged', async () => {

@@ -19,6 +19,7 @@ import { AuthService } from '../modules/auth/application/auth-service.js'
 import type { CatalogService } from '../modules/catalog/application/catalog-service.js'
 import type { ImportService } from '../modules/imports/application/import-service.js'
 import type { FileStore } from '../modules/imports/application/ports.js'
+import type { ValidationService } from '../modules/validation/application/validation-service.js'
 
 export { PASSWORD }
 
@@ -28,6 +29,8 @@ export interface TestAppOptions {
   catalogService?: CatalogService
   /** Import service and the file store it shares with the routes; without them the import routes hit the fake Prisma client. */
   imports?: { service: ImportService; files: FileStore }
+  /** Validation service over in-memory doubles; without it the validation routes hit the fake Prisma client. */
+  validation?: { service: ValidationService }
 }
 
 export async function buildTestApp(options: TestAppOptions = {}) {
@@ -53,6 +56,7 @@ export async function buildTestApp(options: TestAppOptions = {}) {
     authService,
     catalogService: options.catalogService,
     imports: options.imports,
+    validation: options.validation,
     logStream: logLines ? { write: (line: string) => void logLines.push(line) } : undefined,
   })
   return { app, clock, users, refreshTokens, audit, authService }

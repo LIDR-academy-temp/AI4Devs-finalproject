@@ -16,6 +16,8 @@ import { catalogModule } from './modules/catalog/catalog-module.js'
 import type { ImportService } from './modules/imports/application/import-service.js'
 import type { FileStore } from './modules/imports/application/ports.js'
 import { importsModule } from './modules/imports/imports-module.js'
+import type { ValidationService } from './modules/validation/application/validation-service.js'
+import { validationModule } from './modules/validation/validation-module.js'
 import { errorHandlerPlugin } from './plugins/error-handler.js'
 import { prismaPlugin } from './plugins/prisma.js'
 import { healthRoutes } from './routes/health.js'
@@ -47,6 +49,8 @@ export interface BuildAppOptions {
   catalogService?: CatalogService
   /** Injected import service and file store (tests); otherwise built on Prisma, the disk store and the xlsx reader. */
   imports?: { service: ImportService; files: FileStore }
+  /** Injected validation service (tests); otherwise built on the Prisma sources and run repository. */
+  validation?: { service: ValidationService }
   /** Log destination (tests capture logs through it); defaults to stdout. */
   logStream?: { write(line: string): void }
 }
@@ -107,6 +111,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     service: options.imports?.service,
     files: options.imports?.files,
   })
+  await app.register(validationModule, { routePrefix: API_PREFIX, service: options.validation?.service })
   await app.register(healthRoutes, { prefix: API_PREFIX })
 
   return app

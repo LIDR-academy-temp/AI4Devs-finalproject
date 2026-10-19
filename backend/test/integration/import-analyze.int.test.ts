@@ -668,7 +668,7 @@ describe('cancel (HU1 CA8, HU2 CA8) and scope', () => {
     expect((await rows(detail.importId, '?pageSize=1')).total).toBe(783)
     const audit = await ctx.prisma.auditLog.findMany({ where: { action: 'import.cancel', entityId: detail.importId } })
     expect(audit).toHaveLength(1)
-    expect(JSON.parse(audit[0]?.detailJson ?? '{}')).toEqual({ previousStatus: 'analyzed' })
+    expect(JSON.parse(audit[0]?.detailJson ?? '{}')).toEqual({ previousStatus: 'analyzed', runId: null })
 
     const again = await call('POST', `/imports/${detail.importId}/cancel`)
     expect(again.statusCode).toBe(409)
@@ -911,7 +911,7 @@ describe('writes that read the import before a concurrent request commits (spec:
     expect(cancelled.status).toBe('cancelled')
     const audit = await ctx.prisma.auditLog.findMany({ where: { action: 'import.cancel', entityId: detail.importId } })
     expect(audit).toHaveLength(1)
-    expect(JSON.parse(audit[0]?.detailJson ?? '{}')).toEqual({ previousStatus: 'analyzed' })
+    expect(JSON.parse(audit[0]?.detailJson ?? '{}')).toEqual({ previousStatus: 'analyzed', runId: null })
   })
 
   it('a cancel that read analyzed still cancels, and a second cancel is refused by the guarded write', async () => {

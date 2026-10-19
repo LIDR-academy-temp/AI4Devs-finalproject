@@ -19,7 +19,7 @@ const START = Date.UTC(2025, 10, 1)
 const END = Date.UTC(2026, 9, 7)
 const CHANNELS = [1011, 1012]
 
-interface BenchTxn {
+export interface BenchTxn {
   transactionId: bigint
   channelId: number
   statusId: number
@@ -30,6 +30,8 @@ interface BenchTxn {
 export interface BenchInput {
   input: ValidationInput
   undoneBatchMovements: number
+  /** Every transaction of the bench (settled first, then unsettled), with its dates. */
+  transactions: readonly BenchTxn[]
 }
 
 export function benchInput(seed = 20261017): BenchInput {
@@ -182,5 +184,172 @@ export function benchInput(seed = 20261017): BenchInput {
       statuses: STATUSES,
     },
     undoneBatchMovements: undone,
+    transactions: txns,
+  }
+}
+
+/**
+ * Reference volume of a real batch (validation-runs design D14): the provider's history is large (50 000 movements,
+ * settled up to the window), but the batch covers a window of a few days, as the doc 06 profile has (10-day E window,
+ * the same as the synthetic world). 2 000 rows and a bad case of missing findings: about a third of the window's
+ * transactions are not in the file, a handful were never settled before it, and some due reserves are left out.
+ * `benchInput` keeps the engine's volume, whose ranges span months: it is the extreme case.
+ */
+export const REFERENCE = { rows: 2_000, movements: 50_000, windowDays: 10, maxMissing: 2_000 } as const
+
+export function referenceBenchInput(seed = 20261018): BenchInput {
+  const rng = mulberry32(seed)
+  const pick = <T>(xs: readonly T[]): T => xs[Math.floor(rng() * xs.length)]!
+  const windowStart = END - REFERENCE.windowDays * DAY
+  const reserveDays = 180
+  const txns: BenchTxn[] = []
+  let id = 0
+  const make = (date: number, adjustedChangeAt: (d: number) => number): BenchTxn => {
+    const r = rng()
+    const declined = r < 0.3
+    const pending = !declined && r < 0.305
+    const adjusted = !declined && !pending && rng() < 0.025
+    const t: BenchTxn = {
+      transactionId: BigInt(++id),
+      channelId: pick(CHANNELS),
+      statusId: declined
+        ? STATUS.Declined
+        : pending
+          ? STATUS.Pending
+          : adjusted
+            ? pick([STATUS.Chargeback, STATUS.Refund, STATUS.RDR])
+            : STATUS.Successful,
+      transactionDate: new Date(date),
+      lastStatusChangedAt: adjusted ? new Date(adjustedChangeAt(date)) : null,
+    }
+    txns.push(t)
+    return t
+  }
+
+  // Settled history, dated from START to the day before the window, until 50 000 movements.
+  const history: HistoryMovement[] = []
+  const settled: BenchTxn[] = []
+  // ~1.35 movements per settled transaction (E, plus R for the older half, plus a few I): slightly fewer than 50 000 /
+  // 1.35, so the dates reach the day before the window; the last ones share that day.
+  const estimatedSettled = 36_000
+  const settledSpan = windowStart - DAY - START
+  let n = 0
+  while (history.length < REFERENCE.movements) {
+    const date = START + Math.min(settledSpan, Math.floor((settledSpan * n++) / estimatedSettled + rng() * DAY))
+    const t = make(date, (d) => Math.min(windowStart - 1, d + (5 + Math.floor(rng() * 35)) * DAY))
+    if (t.statusId === STATUS.Pending) continue
+    const batchNo = 100 + Math.floor(history.length / 500)
+    const push = (cycle: 'E' | 'I' | 'R', statusId: number) =>
+      history.push({
+        batchId: `ref-batch-${batchNo}`,
+        accountId: ACCOUNT_B.accountId,
+        batchNo,
+        attemptNo: 1,
+        batchStatus: 'paid',
+        transactionId: t.transactionId,
+        cycle,
+        statusId,
+        excludeAmount: false,
+        sheetId: null,
+        rowNo: history.length,
+        settlementTxnId: BigInt(history.length + 1),
+      })
+    const settledAs = t.statusId === STATUS.Declined ? STATUS.Declined : STATUS.Successful
+    push('E', settledAs)
+    settled.push(t)
+    if (t.lastStatusChangedAt !== null && history.length < REFERENCE.movements) push('I', t.statusId)
+    // Every reserve due before the batch's last days was released in an earlier batch, as in a provider up to date.
+    if (
+      settledAs === STATUS.Successful &&
+      t.transactionDate.getTime() + reserveDays * DAY < END - 4 * DAY &&
+      history.length < REFERENCE.movements
+    )
+      push('R', t.statusId)
+  }
+
+  // Never settled before the window (missing previous to the batch), then the window's own transactions.
+  const before = Array.from({ length: 150 }, () => make(windowStart - Math.floor((1 + rng() * 29) * DAY), (d) => d))
+  const inWindow = Array.from({ length: 2_400 }, () =>
+    make(windowStart + Math.floor(rng() * (END - windowStart)), (d) => Math.min(END, d + Math.floor(rng() * 3 * DAY))),
+  )
+  const unsettled = [...before, ...inWindow]
+  const candidates: CandidateTransaction[] = unsettled.map((t) => ({
+    transactionId: t.transactionId,
+    sourceTransactionId: String(100_000_000_000_000n + t.transactionId),
+    channelId: t.channelId,
+    statusId: t.statusId,
+    transactionDate: t.transactionDate,
+    lastStatusChangedAt: t.lastStatusChangedAt,
+  }))
+  const released = new Set(history.filter((m) => m.cycle === 'R').map((m) => m.transactionId))
+  const reserveCandidates: HeldReserve[] = settled
+    .filter((t) => t.statusId !== STATUS.Declined && !released.has(t.transactionId))
+    .map((t) => ({
+      transactionId: t.transactionId,
+      sourceTransactionId: String(100_000_000_000_000n + t.transactionId),
+      channelId: t.channelId,
+      statusId: t.statusId,
+      transactionDate: t.transactionDate,
+      batchId: 'ref-batch-100',
+      reserveHeldAmt: '10.0000',
+      reserveEarlyReleasedAmt: '0.0000',
+    }))
+
+  const rows: ValidationRow[] = []
+  const sheetOf = { APP: 0, DEC: 1, CHB: 2, RR: 5 } as const
+  let rowNo = 1
+  const add = (t: BenchTxn, sheet: keyof typeof sheetOf, statusId: number | null) =>
+    rows.push({
+      fileId: 'ref-file',
+      fileOrder: 0,
+      sheetId: `bench-${sheet}`,
+      sheetOrder: sheetOf[sheet],
+      rowNo: ++rowNo,
+      transactionIdRaw: String(100_000_000_000_000n + t.transactionId),
+      cycle: sheet === 'CHB' ? 'I' : sheet === 'RR' ? 'R' : 'E',
+      statusId,
+      excludeAmount: false,
+      matchResult: 'matched',
+      transaction: {
+        transactionId: t.transactionId,
+        providerId: PROVIDER_B,
+        channelId: t.channelId,
+        statusId: t.statusId,
+        transactionDate: t.transactionDate,
+        lastStatusChangedAt: t.lastStatusChangedAt,
+      },
+    })
+  const windowE = inWindow.filter((t) => t.statusId === STATUS.Successful || t.statusId === STATUS.Declined)
+  const reportedE = (t: BenchTxn) => add(t, t.statusId === STATUS.Declined ? 'DEC' : 'APP', t.statusId)
+  for (const t of windowE.slice(0, 1_500)) reportedE(t)
+  for (const t of windowE.slice(0, 30)) reportedE(t) // duplicates in the batch
+  for (const t of settled.filter((s) => s.statusId === STATUS.Successful).slice(-60)) add(t, 'APP', STATUS.Successful)
+  for (const t of inWindow.filter((s) => s.lastStatusChangedAt !== null)) add(t, 'CHB', STATUS.Chargeback)
+  // Reserves due in the last days of the window, 85 % of them in the file.
+  const due = reserveCandidates
+    .filter((r) => {
+      const expiry = r.transactionDate.getTime() + reserveDays * DAY
+      return expiry >= END - 4 * DAY && expiry <= END
+    })
+    .filter(() => rng() < 0.85)
+  for (const r of due.slice(0, REFERENCE.rows - rows.length)) {
+    const t = txns[Number(r.transactionId) - 1]!
+    add(t, 'RR', t.statusId)
+  }
+  for (const t of windowE.slice(1_500)) if (rows.length < REFERENCE.rows) reportedE(t)
+
+  return {
+    input: {
+      account: ACCOUNT_B,
+      rows,
+      history,
+      hasPreviousBatches: true,
+      candidates,
+      reserveCandidates,
+      registeredMissing: new Set(),
+      statuses: STATUSES,
+    },
+    undoneBatchMovements: 0,
+    transactions: txns,
   }
 }

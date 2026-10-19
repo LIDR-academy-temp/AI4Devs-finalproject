@@ -340,7 +340,7 @@ export class ImportService {
       throw new CandidateNotFoundError(gatewayId, visibleCandidates(candidates, scope, merchants))
     }
     const resolved: RowDetail = { ...detail, resolvedBy: { userId, at: new Date().toISOString(), gatewayId } }
-    await this.deps.rows.resolve(importId, sheetId, rowNo, {
+    const { supersededRunId } = await this.deps.rows.resolve(importId, sheetId, rowNo, {
       transactionId: BigInt(chosen.transactionId),
       gatewayId,
       ...(row.cycle === 'R' ? { statusId: chosen.statusId } : {}),
@@ -351,7 +351,7 @@ export class ImportService {
       action: 'import.row.resolve_gateway',
       entityType: 'ImportRow',
       entityId: `${sheetId}:${rowNo}`,
-      detail: { importId, gatewayId, transactionId: chosen.transactionId, candidates },
+      detail: { importId, gatewayId, transactionId: chosen.transactionId, candidates, supersededRunId },
     })
     const after = await this.deps.rows.find(importId, sheetId, rowNo)
     if (!after) throw new NotFoundError('Row')
@@ -365,12 +365,14 @@ export class ImportService {
     assertCanCancel(record.status)
     // The status the write replaced, not the one read above: an analysis may have committed in between.
     const previousStatus = await this.deps.imports.cancel(importId)
+    // The current run is not superseded: it stays as the evidence of the cancelled import (validation-runs D12).
+    const runId = await this.deps.imports.currentRunId(importId)
     await this.audit({
       userId,
       action: 'import.cancel',
       entityType: 'Import',
       entityId: importId,
-      detail: { previousStatus },
+      detail: { previousStatus, runId },
     })
     return this.detailOf(scope, importId)
   }
@@ -453,6 +455,7 @@ export class ImportService {
             cycle: proposed?.cycle ?? null,
             statusId: proposed?.statusId ?? null,
             rowCount: sheet.rowCount,
+            sheetIndex: index,
           }
         }),
       }

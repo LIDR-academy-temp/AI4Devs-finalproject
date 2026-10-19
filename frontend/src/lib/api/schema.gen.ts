@@ -3252,6 +3252,1331 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/imports/{importId}/validations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The current run of the import (null without one) and its last invalidated review */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** @enum {string} */
+                            importStatus: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            run: {
+                                runId: number;
+                                /** Format: date-time */
+                                runAt: string;
+                                runBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                blocked: boolean;
+                                ranges: {
+                                    APP: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    DEC: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    I: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    R: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                };
+                                pendingInRangeCount: number;
+                                undatedAdjustmentCount: number;
+                                undatedCandidateCount: number;
+                                results: {
+                                    /** @enum {string} */
+                                    validationCode: "provider_mismatch" | "non_recorded_adjustment" | "duplicate_in_batch" | "status_collision_in_batch" | "duplicate_across_batches" | "status_collision_across_batches" | "missing_previous_to_batch" | "missing_in_range";
+                                    /** @enum {string} */
+                                    outcome: "passed" | "warning" | "blocked" | "not_applicable" | "not_implemented";
+                                    issueCount: number;
+                                    blocking: boolean;
+                                    approved: boolean;
+                                    breakdown: {
+                                        [key: string]: number;
+                                    } | null;
+                                }[];
+                                manualChangeCount: number;
+                                review: {
+                                    reviewedBy: {
+                                        userId: number;
+                                        userName: string;
+                                    };
+                                    /** Format: date-time */
+                                    reviewedAt: string;
+                                } | null;
+                            } | null;
+                            lastInvalidatedReview: {
+                                runId: number;
+                                reviewedBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                reviewedAt: string;
+                                invalidatedBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                invalidatedAt: string;
+                                /** @enum {string} */
+                                reason: "rerun" | "inclusion_change";
+                                newRunId: number | null;
+                                occurrenceId: string | null;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Run the eight validations; the previous current run is superseded
+         * @description Accepted in analyzed or validated (a validated import goes back to analyzed and its review is invalidated). 409 import_not_analyzed in any other status; 409 import_changed when another write confirmed meanwhile.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** @enum {string} */
+                            importStatus: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            run: {
+                                runId: number;
+                                /** Format: date-time */
+                                runAt: string;
+                                runBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                blocked: boolean;
+                                ranges: {
+                                    APP: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    DEC: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    I: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    R: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                };
+                                pendingInRangeCount: number;
+                                undatedAdjustmentCount: number;
+                                undatedCandidateCount: number;
+                                results: {
+                                    /** @enum {string} */
+                                    validationCode: "provider_mismatch" | "non_recorded_adjustment" | "duplicate_in_batch" | "status_collision_in_batch" | "duplicate_across_batches" | "status_collision_across_batches" | "missing_previous_to_batch" | "missing_in_range";
+                                    /** @enum {string} */
+                                    outcome: "passed" | "warning" | "blocked" | "not_applicable" | "not_implemented";
+                                    issueCount: number;
+                                    blocking: boolean;
+                                    approved: boolean;
+                                    breakdown: {
+                                        [key: string]: number;
+                                    } | null;
+                                }[];
+                                manualChangeCount: number;
+                                review: {
+                                    reviewedBy: {
+                                        userId: number;
+                                        userName: string;
+                                    };
+                                    /** Format: date-time */
+                                    reviewedAt: string;
+                                } | null;
+                            } | null;
+                            lastInvalidatedReview: {
+                                runId: number;
+                                reviewedBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                reviewedAt: string;
+                                invalidatedBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                invalidatedAt: string;
+                                /** @enum {string} */
+                                reason: "rerun" | "inclusion_change";
+                                newRunId: number | null;
+                                occurrenceId: string | null;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{importId}/validation-issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Findings of the current run, filtered and paged in a fixed order (empty without a run) */
+        get: {
+            parameters: {
+                query?: {
+                    type?: "provider_mismatch" | "non_recorded_adjustment" | "status_mismatch" | "duplicate" | "collision" | "missing";
+                    scope?: "in_batch" | "across_batches" | "previous_to_batch" | "in_range";
+                    status?: "persistent" | "resolved";
+                    validationCode?: "provider_mismatch" | "non_recorded_adjustment" | "duplicate_in_batch" | "status_collision_in_batch" | "duplicate_across_batches" | "status_collision_across_batches" | "missing_previous_to_batch" | "missing_in_range";
+                    cycle?: "E" | "I" | "R";
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: {
+                                issueId: number;
+                                runId: number;
+                                /** @enum {string} */
+                                validationCode: "provider_mismatch" | "non_recorded_adjustment" | "duplicate_in_batch" | "status_collision_in_batch" | "duplicate_across_batches" | "status_collision_across_batches" | "missing_previous_to_batch" | "missing_in_range";
+                                /** @enum {string} */
+                                issueType: "provider_mismatch" | "non_recorded_adjustment" | "status_mismatch" | "duplicate" | "collision" | "missing";
+                                /** @enum {string|null} */
+                                scope: "in_batch" | "across_batches" | "previous_to_batch" | "in_range" | null;
+                                blocking: boolean;
+                                transactionIdRaw: string | null;
+                                transactionId: string | null;
+                                /** @enum {string|null} */
+                                cycle: "E" | "I" | "R" | null;
+                                /** @enum {string|null} */
+                                missingType: "previous_to_batch" | "in_range" | null;
+                                /** @enum {string|null} */
+                                missingRange: "APP" | "DEC" | "I" | "R" | null;
+                                /** Format: date-time */
+                                relevantDate: string | null;
+                                status: {
+                                    statusId: number;
+                                    /** @enum {string} */
+                                    code: "Pending" | "Successful" | "Declined" | "Chargeback" | "Refund" | "RDR";
+                                    name: string;
+                                } | null;
+                                gatewayStatus: {
+                                    statusId: number;
+                                    /** @enum {string} */
+                                    code: "Pending" | "Successful" | "Declined" | "Chargeback" | "Refund" | "RDR";
+                                    name: string;
+                                } | null;
+                                source: {
+                                    /** Format: uuid */
+                                    fileId: string;
+                                    fileName: string;
+                                    /** Format: uuid */
+                                    sheetId: string;
+                                    sheetName: string;
+                                    rowNo: number;
+                                } | null;
+                                /** @enum {string} */
+                                resolutionStatus: "persistent" | "resolved";
+                                /** Format: date-time */
+                                resolvedAt: string | null;
+                                resolvedBy: {
+                                    userId: number;
+                                    userName: string;
+                                } | null;
+                                resolutionNote: string | null;
+                                occurrenceCount: number;
+                                includedByDefaultCount: number;
+                                includedCount: number;
+                            }[];
+                            page: number;
+                            pageSize: number;
+                            total: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/validation-issues/{issueId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A finding with every occurrence, its resolution and the history of changes */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    issueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            issueId: number;
+                            runId: number;
+                            /** @enum {string} */
+                            validationCode: "provider_mismatch" | "non_recorded_adjustment" | "duplicate_in_batch" | "status_collision_in_batch" | "duplicate_across_batches" | "status_collision_across_batches" | "missing_previous_to_batch" | "missing_in_range";
+                            /** @enum {string} */
+                            issueType: "provider_mismatch" | "non_recorded_adjustment" | "status_mismatch" | "duplicate" | "collision" | "missing";
+                            /** @enum {string|null} */
+                            scope: "in_batch" | "across_batches" | "previous_to_batch" | "in_range" | null;
+                            blocking: boolean;
+                            transactionIdRaw: string | null;
+                            transactionId: string | null;
+                            /** @enum {string|null} */
+                            cycle: "E" | "I" | "R" | null;
+                            /** @enum {string|null} */
+                            missingType: "previous_to_batch" | "in_range" | null;
+                            /** @enum {string|null} */
+                            missingRange: "APP" | "DEC" | "I" | "R" | null;
+                            /** Format: date-time */
+                            relevantDate: string | null;
+                            status: {
+                                statusId: number;
+                                /** @enum {string} */
+                                code: "Pending" | "Successful" | "Declined" | "Chargeback" | "Refund" | "RDR";
+                                name: string;
+                            } | null;
+                            gatewayStatus: {
+                                statusId: number;
+                                /** @enum {string} */
+                                code: "Pending" | "Successful" | "Declined" | "Chargeback" | "Refund" | "RDR";
+                                name: string;
+                            } | null;
+                            source: {
+                                /** Format: uuid */
+                                fileId: string;
+                                fileName: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                sheetName: string;
+                                rowNo: number;
+                            } | null;
+                            /** @enum {string} */
+                            resolutionStatus: "persistent" | "resolved";
+                            /** Format: date-time */
+                            resolvedAt: string | null;
+                            resolvedBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            resolutionNote: string | null;
+                            occurrenceCount: number;
+                            includedByDefaultCount: number;
+                            includedCount: number;
+                            /** Format: uuid */
+                            importId: string;
+                            /** @enum {string} */
+                            importStatus: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            run: {
+                                runId: number;
+                                isCurrent: boolean;
+                            };
+                            resolvable: boolean;
+                            occurrences: {
+                                occurrenceId: string;
+                                /** @enum {string} */
+                                sourceType: "current_import" | "previous_batch";
+                                location: {
+                                    /** Format: uuid */
+                                    fileId: string;
+                                    fileName: string;
+                                    /** Format: uuid */
+                                    sheetId: string;
+                                    sheetName: string;
+                                    rowNo: number;
+                                } | null;
+                                batch: {
+                                    /** Format: uuid */
+                                    batchId: string;
+                                    batchNo: number;
+                                    attemptNo: number;
+                                    /** @enum {string} */
+                                    status: "processed" | "paid" | "undone";
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    accountName: string;
+                                } | null;
+                                status: {
+                                    statusId: number;
+                                    /** @enum {string} */
+                                    code: "Pending" | "Successful" | "Declined" | "Chargeback" | "Refund" | "RDR";
+                                    name: string;
+                                } | null;
+                                excludeAmount: boolean;
+                                defaultIncluded: boolean;
+                                includeInSettlement: boolean;
+                                changedBy: {
+                                    userId: number;
+                                    userName: string;
+                                } | null;
+                                /** Format: date-time */
+                                changedAt: string | null;
+                                editable: boolean;
+                                includable: boolean;
+                            }[];
+                            history: {
+                                /** Format: date-time */
+                                at: string;
+                                user: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** @enum {string} */
+                                action: "set_inclusion" | "resolve";
+                                occurrenceId: string | null;
+                                from: boolean | null;
+                                to: boolean | null;
+                                note: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Resolve by hand a non_recorded_adjustment or a status_mismatch of the current run */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    issueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        resolutionStatus: "resolved";
+                        note: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            issueId: number;
+                            runId: number;
+                            /** @enum {string} */
+                            validationCode: "provider_mismatch" | "non_recorded_adjustment" | "duplicate_in_batch" | "status_collision_in_batch" | "duplicate_across_batches" | "status_collision_across_batches" | "missing_previous_to_batch" | "missing_in_range";
+                            /** @enum {string} */
+                            issueType: "provider_mismatch" | "non_recorded_adjustment" | "status_mismatch" | "duplicate" | "collision" | "missing";
+                            /** @enum {string|null} */
+                            scope: "in_batch" | "across_batches" | "previous_to_batch" | "in_range" | null;
+                            blocking: boolean;
+                            transactionIdRaw: string | null;
+                            transactionId: string | null;
+                            /** @enum {string|null} */
+                            cycle: "E" | "I" | "R" | null;
+                            /** @enum {string|null} */
+                            missingType: "previous_to_batch" | "in_range" | null;
+                            /** @enum {string|null} */
+                            missingRange: "APP" | "DEC" | "I" | "R" | null;
+                            /** Format: date-time */
+                            relevantDate: string | null;
+                            status: {
+                                statusId: number;
+                                /** @enum {string} */
+                                code: "Pending" | "Successful" | "Declined" | "Chargeback" | "Refund" | "RDR";
+                                name: string;
+                            } | null;
+                            gatewayStatus: {
+                                statusId: number;
+                                /** @enum {string} */
+                                code: "Pending" | "Successful" | "Declined" | "Chargeback" | "Refund" | "RDR";
+                                name: string;
+                            } | null;
+                            source: {
+                                /** Format: uuid */
+                                fileId: string;
+                                fileName: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                sheetName: string;
+                                rowNo: number;
+                            } | null;
+                            /** @enum {string} */
+                            resolutionStatus: "persistent" | "resolved";
+                            /** Format: date-time */
+                            resolvedAt: string | null;
+                            resolvedBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            resolutionNote: string | null;
+                            occurrenceCount: number;
+                            includedByDefaultCount: number;
+                            includedCount: number;
+                            /** Format: uuid */
+                            importId: string;
+                            /** @enum {string} */
+                            importStatus: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            run: {
+                                runId: number;
+                                isCurrent: boolean;
+                            };
+                            resolvable: boolean;
+                            occurrences: {
+                                occurrenceId: string;
+                                /** @enum {string} */
+                                sourceType: "current_import" | "previous_batch";
+                                location: {
+                                    /** Format: uuid */
+                                    fileId: string;
+                                    fileName: string;
+                                    /** Format: uuid */
+                                    sheetId: string;
+                                    sheetName: string;
+                                    rowNo: number;
+                                } | null;
+                                batch: {
+                                    /** Format: uuid */
+                                    batchId: string;
+                                    batchNo: number;
+                                    attemptNo: number;
+                                    /** @enum {string} */
+                                    status: "processed" | "paid" | "undone";
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    accountName: string;
+                                } | null;
+                                status: {
+                                    statusId: number;
+                                    /** @enum {string} */
+                                    code: "Pending" | "Successful" | "Declined" | "Chargeback" | "Refund" | "RDR";
+                                    name: string;
+                                } | null;
+                                excludeAmount: boolean;
+                                defaultIncluded: boolean;
+                                includeInSettlement: boolean;
+                                changedBy: {
+                                    userId: number;
+                                    userName: string;
+                                } | null;
+                                /** Format: date-time */
+                                changedAt: string | null;
+                                editable: boolean;
+                                includable: boolean;
+                            }[];
+                            history: {
+                                /** Format: date-time */
+                                at: string;
+                                user: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** @enum {string} */
+                                action: "set_inclusion" | "resolve";
+                                occurrenceId: string | null;
+                                from: boolean | null;
+                                to: boolean | null;
+                                note: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/imports/{importId}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Continue with the current run: the import moves to validated (no decision per finding)
+         * @description Only in analyzed and on the current run (runId). 409 validation_run_required without a run, validation_run_superseded for another runId, blocking_validation_issue when provider_mismatch blocks it (no override: cancel the import).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        runId: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            importId: string;
+                            /** @enum {string} */
+                            importStatus: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            run: {
+                                runId: number;
+                                /** Format: date-time */
+                                runAt: string;
+                                runBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                blocked: boolean;
+                                ranges: {
+                                    APP: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    DEC: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    I: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                    R: {
+                                        /** Format: date-time */
+                                        min: string;
+                                        /** Format: date-time */
+                                        max: string;
+                                    } | null;
+                                };
+                                pendingInRangeCount: number;
+                                undatedAdjustmentCount: number;
+                                undatedCandidateCount: number;
+                                results: {
+                                    /** @enum {string} */
+                                    validationCode: "provider_mismatch" | "non_recorded_adjustment" | "duplicate_in_batch" | "status_collision_in_batch" | "duplicate_across_batches" | "status_collision_across_batches" | "missing_previous_to_batch" | "missing_in_range";
+                                    /** @enum {string} */
+                                    outcome: "passed" | "warning" | "blocked" | "not_applicable" | "not_implemented";
+                                    issueCount: number;
+                                    blocking: boolean;
+                                    approved: boolean;
+                                    breakdown: {
+                                        [key: string]: number;
+                                    } | null;
+                                }[];
+                                manualChangeCount: number;
+                                review: {
+                                    reviewedBy: {
+                                        userId: number;
+                                        userName: string;
+                                    };
+                                    /** Format: date-time */
+                                    reviewedAt: string;
+                                } | null;
+                            } | null;
+                            lastInvalidatedReview: {
+                                runId: number;
+                                reviewedBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                reviewedAt: string;
+                                invalidatedBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                invalidatedAt: string;
+                                /** @enum {string} */
+                                reason: "rerun" | "inclusion_change";
+                                newRunId: number | null;
+                                occurrenceId: string | null;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conflict-occurrences/{occurrenceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Include or exclude an occurrence of the current import in the settlement
+         * @description Accepted in analyzed or validated (a validated import goes back to analyzed and its review is invalidated). In cycle R at most one occurrence is included, and none when the reserve was released in a previous batch.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    occurrenceId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        includeInSettlement: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            issueId: number;
+                            runId: number;
+                            /** @enum {string} */
+                            validationCode: "provider_mismatch" | "non_recorded_adjustment" | "duplicate_in_batch" | "status_collision_in_batch" | "duplicate_across_batches" | "status_collision_across_batches" | "missing_previous_to_batch" | "missing_in_range";
+                            /** @enum {string} */
+                            issueType: "provider_mismatch" | "non_recorded_adjustment" | "status_mismatch" | "duplicate" | "collision" | "missing";
+                            /** @enum {string|null} */
+                            scope: "in_batch" | "across_batches" | "previous_to_batch" | "in_range" | null;
+                            blocking: boolean;
+                            transactionIdRaw: string | null;
+                            transactionId: string | null;
+                            /** @enum {string|null} */
+                            cycle: "E" | "I" | "R" | null;
+                            /** @enum {string|null} */
+                            missingType: "previous_to_batch" | "in_range" | null;
+                            /** @enum {string|null} */
+                            missingRange: "APP" | "DEC" | "I" | "R" | null;
+                            /** Format: date-time */
+                            relevantDate: string | null;
+                            status: {
+                                statusId: number;
+                                /** @enum {string} */
+                                code: "Pending" | "Successful" | "Declined" | "Chargeback" | "Refund" | "RDR";
+                                name: string;
+                            } | null;
+                            gatewayStatus: {
+                                statusId: number;
+                                /** @enum {string} */
+                                code: "Pending" | "Successful" | "Declined" | "Chargeback" | "Refund" | "RDR";
+                                name: string;
+                            } | null;
+                            source: {
+                                /** Format: uuid */
+                                fileId: string;
+                                fileName: string;
+                                /** Format: uuid */
+                                sheetId: string;
+                                sheetName: string;
+                                rowNo: number;
+                            } | null;
+                            /** @enum {string} */
+                            resolutionStatus: "persistent" | "resolved";
+                            /** Format: date-time */
+                            resolvedAt: string | null;
+                            resolvedBy: {
+                                userId: number;
+                                userName: string;
+                            } | null;
+                            resolutionNote: string | null;
+                            occurrenceCount: number;
+                            includedByDefaultCount: number;
+                            includedCount: number;
+                            /** Format: uuid */
+                            importId: string;
+                            /** @enum {string} */
+                            importStatus: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                            run: {
+                                runId: number;
+                                isCurrent: boolean;
+                            };
+                            resolvable: boolean;
+                            occurrences: {
+                                occurrenceId: string;
+                                /** @enum {string} */
+                                sourceType: "current_import" | "previous_batch";
+                                location: {
+                                    /** Format: uuid */
+                                    fileId: string;
+                                    fileName: string;
+                                    /** Format: uuid */
+                                    sheetId: string;
+                                    sheetName: string;
+                                    rowNo: number;
+                                } | null;
+                                batch: {
+                                    /** Format: uuid */
+                                    batchId: string;
+                                    batchNo: number;
+                                    attemptNo: number;
+                                    /** @enum {string} */
+                                    status: "processed" | "paid" | "undone";
+                                    /** Format: uuid */
+                                    accountId: string;
+                                    accountName: string;
+                                } | null;
+                                status: {
+                                    statusId: number;
+                                    /** @enum {string} */
+                                    code: "Pending" | "Successful" | "Declined" | "Chargeback" | "Refund" | "RDR";
+                                    name: string;
+                                } | null;
+                                excludeAmount: boolean;
+                                defaultIncluded: boolean;
+                                includeInSettlement: boolean;
+                                changedBy: {
+                                    userId: number;
+                                    userName: string;
+                                } | null;
+                                /** Format: date-time */
+                                changedAt: string | null;
+                                editable: boolean;
+                                includable: boolean;
+                            }[];
+                            history: {
+                                /** Format: date-time */
+                                at: string;
+                                user: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** @enum {string} */
+                                action: "set_inclusion" | "resolve";
+                                occurrenceId: string | null;
+                                from: boolean | null;
+                                to: boolean | null;
+                                note: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;

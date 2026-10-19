@@ -43,6 +43,8 @@ export interface ImportSheetRecord {
   statusId: number | null
   rowCount: number
   mappingConfirmed: boolean
+  /** Position in its workbook (0 = first); null for imports uploaded before migration 0006. */
+  sheetIndex: number | null
   /** The confirmed columns (ImportSheetColumnMap); empty until the mapping is confirmed. */
   columnMaps: SheetMappingColumn[]
 }
@@ -85,6 +87,8 @@ export interface NewImportSheet {
   cycle: Cycle | null
   statusId: number | null
   rowCount: number
+  /** Position in its workbook (0 = first). */
+  sheetIndex: number
 }
 
 export interface NewImportFile {
@@ -129,6 +133,8 @@ export interface ImportRepository {
    * status it had, read by the same statement that writes (what the audit records, not what the caller read).
    */
   cancel(importId: string): Promise<ImportStatus>
+  /** The current (not superseded) validation run of the import, or null: what cancel records (validation-runs D12). */
+  currentRunId(importId: string): Promise<number | null>
 }
 
 /** A persisted row with what the listing needs around it (design D11). */
@@ -201,9 +207,15 @@ export interface ImportRowRepository {
   find(importId: string, sheetId: string, rowNo: number): Promise<StoredImportRow | null>
   /**
    * Marks an ambiguous row as matched and bumps the import's rowsMatched, atomically. Guarded: RowNotAmbiguousError
-   * when the row is no longer ambiguous, ImportNotEditableError when the import is no longer analyzed.
+   * when the row is no longer ambiguous, ImportNotEditableError when the import is no longer analyzed. In the same
+   * transaction it supersedes the current validation run, if any, without a replacement (validation-runs P7, D12).
    */
-  resolve(importId: string, sheetId: string, rowNo: number, patch: RowResolutionPatch): Promise<void>
+  resolve(
+    importId: string,
+    sheetId: string,
+    rowNo: number,
+    patch: RowResolutionPatch,
+  ): Promise<{ supersededRunId: number | null }>
   /** Counts over the persisted rows; null when the import has no rows. */
   summary(importId: string): Promise<AnalysisSummary | null>
   /** Matched rows per channel of their transactions. */

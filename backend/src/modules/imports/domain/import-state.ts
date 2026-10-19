@@ -1,7 +1,12 @@
 // The import state machine of this change (spec: import, D2): which statuses allow
 // each action, and the 409 raised otherwise. Transitions themselves are applied by the repositories.
 import type { ImportStatus } from '@recon/shared'
-import { ImportNotCancellableError, ImportNotEditableError, ImportNotMappedError } from './errors.js'
+import {
+  ImportNotAnalyzedError,
+  ImportNotCancellableError,
+  ImportNotEditableError,
+  ImportNotMappedError,
+} from './errors.js'
 
 /** Files and mapping can change only before the analysis (README HU1 CA2, CA8). */
 export const EDITABLE_STATUSES: ReadonlySet<ImportStatus> = new Set(['uploaded', 'mapped'])
@@ -24,9 +29,27 @@ export function assertCanAnalyze(status: ImportStatus): void {
   if (status !== 'mapped') throw new ImportNotMappedError(status)
 }
 
-/** `PATCH /imports/{id}/rows/{sheetId}/{rowNo}`: `analyzed` only (what `validated` means is for the validations change). */
+/** `PATCH /imports/{id}/rows/{sheetId}/{rowNo}`: `analyzed` only; it supersedes the current run (validation-runs P7). */
 export function assertCanResolveRow(status: ImportStatus): void {
   if (status !== 'analyzed') throw new ImportNotEditableError(status)
+}
+
+/** Validating and changing an inclusion: `analyzed`, or `validated`, which goes back to `analyzed` (P1, P4). */
+export const VALIDATABLE_STATUSES: ReadonlySet<ImportStatus> = new Set(['analyzed', 'validated'])
+
+/** `POST /imports/{id}/validations`: `analyzed` or `validated`. */
+export function assertCanValidate(status: ImportStatus): void {
+  if (!VALIDATABLE_STATUSES.has(status)) throw new ImportNotAnalyzedError(status, [...VALIDATABLE_STATUSES])
+}
+
+/** `POST /imports/{id}/review`: `analyzed` only (the decision on the whole moves it to `validated`). */
+export function assertCanReview(status: ImportStatus): void {
+  if (status !== 'analyzed') throw new ImportNotAnalyzedError(status)
+}
+
+/** `PATCH /conflict-occurrences/{id}`: `analyzed` or `validated`. */
+export function assertCanChangeInclusion(status: ImportStatus): void {
+  if (!VALIDATABLE_STATUSES.has(status)) throw new ImportNotEditableError(status)
 }
 
 /** `POST /imports/{id}/cancel`: anything but `processed` and `cancelled`. */

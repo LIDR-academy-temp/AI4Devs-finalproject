@@ -1,0 +1,45 @@
+meta {
+  name: 4 Run validations
+  type: http
+  seq: 4
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/validations
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar('runId1', res.body.run.runId);
+  }
+}
+
+tests {
+  test('runs the eight validations: not blocked, counts of expected.json', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.importStatus).to.equal('analyzed');
+    expect(res.body.run.blocked).to.equal(false);
+    const counts = Object.fromEntries(res.body.run.results.map((r) => [r.validationCode, r.issueCount]));
+    expect(counts).to.eql({
+      provider_mismatch: 0,
+      non_recorded_adjustment: 3,
+      duplicate_in_batch: 1,
+      status_collision_in_batch: 1,
+      duplicate_across_batches: 1,
+      status_collision_across_batches: 1,
+      missing_previous_to_batch: 10,
+      missing_in_range: 6,
+    });
+    expect(res.body.run.manualChangeCount).to.equal(0);
+    expect(res.body.run.review).to.equal(null);
+  });
+}

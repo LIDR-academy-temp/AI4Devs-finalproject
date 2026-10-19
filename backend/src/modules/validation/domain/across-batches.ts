@@ -77,6 +77,8 @@ function previousOccurrence(m: HistoryMovement): Occurrence {
     batchNo: m.batchNo,
     attemptNo: m.attemptNo,
     accountId: m.accountId,
+    sheetId: m.sheetId,
+    rowNo: m.rowNo,
     statusId: m.statusId,
     excludeAmount: m.excludeAmount,
     defaultIncluded: true,

@@ -1,0 +1,33 @@
+meta {
+  name: 14 Resolve duplicate
+  type: http
+  seq: 14
+  tags: [
+    flow
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/validation-issues/:issueId
+  body: json
+  auth: inherit
+}
+
+params:path {
+  issueId: {{dupIssueId}}
+}
+
+body:json {
+  {
+    "resolutionStatus": "resolved",
+    "note": "Not resolvable"
+  }
+}
+
+tests {
+  test('a duplicate is not resolved by hand: 422 issue_not_resolvable', () => {
+    expect(res.status).to.equal(422);
+    expect(res.body.code).to.equal('issue_not_resolvable');
+    expect(res.body.details.issueType).to.equal('duplicate');
+  });
+}

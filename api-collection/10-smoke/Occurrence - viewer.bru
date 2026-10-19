@@ -1,0 +1,39 @@
+meta {
+  name: Occurrence - viewer
+  type: http
+  seq: 37
+  tags: [
+    smoke
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/conflict-occurrences/:occurrenceId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  occurrenceId: 1
+}
+
+body:json {
+  {
+    "includeInSettlement": true
+  }
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer lacks settlement.process: 403 forbidden', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

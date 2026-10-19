@@ -1,12 +1,20 @@
 import { ImportStatus } from '@recon/shared'
 import { describe, expect, it } from 'vitest'
-import { ImportNotCancellableError, ImportNotEditableError, ImportNotMappedError } from './errors.js'
+import {
+  ImportNotAnalyzedError,
+  ImportNotCancellableError,
+  ImportNotEditableError,
+  ImportNotMappedError,
+} from './errors.js'
 import {
   assertCanAnalyze,
   assertCanCancel,
+  assertCanChangeInclusion,
   assertCanConfirmMapping,
   assertCanEditFiles,
   assertCanResolveRow,
+  assertCanReview,
+  assertCanValidate,
   EDITABLE_STATUSES,
 } from './import-state.js'
 
@@ -37,6 +45,20 @@ const TABLE: Row[] = [
   },
   { action: 'analyze', guard: assertCanAnalyze, allowed: ['mapped'], error: ImportNotMappedError },
   { action: 'resolve row', guard: assertCanResolveRow, allowed: ['analyzed'], error: ImportNotEditableError },
+  // validation-runs (P1, P4): validating and changing an inclusion also from validated, which goes back to analyzed.
+  {
+    action: 'run validations',
+    guard: assertCanValidate,
+    allowed: ['analyzed', 'validated'],
+    error: ImportNotAnalyzedError,
+  },
+  { action: 'review', guard: assertCanReview, allowed: ['analyzed'], error: ImportNotAnalyzedError },
+  {
+    action: 'change an inclusion',
+    guard: assertCanChangeInclusion,
+    allowed: ['analyzed', 'validated'],
+    error: ImportNotEditableError,
+  },
   {
     action: 'cancel',
     guard: assertCanCancel,
@@ -63,6 +85,11 @@ describe('import state machine', () => {
         }
       }
     })
+  })
+
+  it('import_not_analyzed says which statuses the action admits (review L5)', () => {
+    expect(() => assertCanValidate('mapped')).toThrow(/mapped.*analyzed or validated/)
+    expect(() => assertCanReview('validated')).toThrow(/validated.*needs analyzed$/)
   })
 
   it('exposes the editable statuses for the file routes', () => {

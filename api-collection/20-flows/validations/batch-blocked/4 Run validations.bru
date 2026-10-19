@@ -1,0 +1,34 @@
+meta {
+  name: 4 Run validations
+  type: http
+  seq: 4
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/validations
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{blkImportId}}
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar('blkRunId', res.body.run.runId);
+  }
+}
+
+tests {
+  test('the run is blocked by one provider_mismatch', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.run.blocked).to.equal(true);
+    const mismatch = res.body.run.results.find((r) => r.validationCode === 'provider_mismatch');
+    expect(mismatch.outcome).to.equal('blocked');
+    expect(mismatch.issueCount).to.equal(1);
+  });
+}

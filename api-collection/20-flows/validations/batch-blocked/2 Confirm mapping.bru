@@ -1,0 +1,51 @@
+meta {
+  name: 2 Confirm mapping
+  type: http
+  seq: 2
+  tags: [
+    flow
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/imports/:importId/mapping
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{blkImportId}}
+}
+
+body:json {
+  {
+    "sheets": []
+  }
+}
+
+script:pre-request {
+  // Accepts the proposal as "1 Upload" returned it: every sheet, proposed columns only.
+  const detail = bru.getVar('blkDetail');
+  if (!detail) {
+    throw new Error('blkDetail is missing: run "1 Upload" first');
+  }
+  const sheets = detail.files.flatMap((file) =>
+    file.sheets.map((sheet) => ({
+      sheetId: sheet.sheetId,
+      kind: sheet.proposed.kind,
+      cycle: sheet.proposed.cycle,
+      statusId: sheet.proposed.statusId,
+      columns: sheet.columns
+        .filter((column) => column.targetField !== null)
+        .map((column) => ({ sourceColumn: column.sourceColumn, targetField: column.targetField })),
+    })),
+  );
+  req.setBody({ sheets });
+}
+
+tests {
+  test('confirms the proposal: the import is mapped', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.status).to.equal('mapped');
+  });
+}

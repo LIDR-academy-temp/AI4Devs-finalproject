@@ -625,6 +625,26 @@ describe('ambiguous rows', () => {
     ])
   })
 
+  it('resolving a row supersedes the current run without a replacement and audits supersededRunId (validation-runs P7)', async () => {
+    const detail = await analyzed(A_USD, [SAMPLE_FILES.batchClean])
+    imports.setCurrentRun(detail.importId, 41)
+    const app = sheetNamed(detail, 'APP')
+
+    await service.resolveRow(ANALYST, ANALYST_ID, detail.importId, app.sheetId, 2, GATEWAY_TEST)
+
+    expect(audit.entries.at(-1)?.detail).toMatchObject({ supersededRunId: 41 })
+    expect(await imports.currentRunId(detail.importId)).toBeNull()
+  })
+
+  it('resolving a row without a current run audits supersededRunId null', async () => {
+    const detail = await analyzed(A_USD, [SAMPLE_FILES.batchClean])
+    const app = sheetNamed(detail, 'APP')
+
+    await service.resolveRow(ANALYST, ANALYST_ID, detail.importId, app.sheetId, 2, GATEWAY_TEST)
+
+    expect(audit.entries.at(-1)?.detail).toMatchObject({ supersededRunId: null })
+  })
+
   it('a gateway that is not a candidate, a row that is not ambiguous, a wrong state and an unknown row', async () => {
     const detail = await analyzed(A_USD, [SAMPLE_FILES.batchClean])
     const app = sheetNamed(detail, 'APP')
@@ -764,9 +784,22 @@ describe('cancel', () => {
         action: 'import.cancel',
         entityType: 'Import',
         entityId: detail.importId,
-        detail: { previousStatus: 'analyzed' },
+        detail: { previousStatus: 'analyzed', runId: null },
       },
     ])
+  })
+
+  it('records the current run in the audit and keeps it current: the run is the evidence (validation-runs D12)', async () => {
+    const detail = await analyzed(A_USD, [SAMPLE_FILES.batchClean])
+    imports.setCurrentRun(detail.importId, 7)
+
+    await service.cancel(ANALYST, ANALYST_ID, detail.importId)
+
+    expect(audit.entries.at(-1)).toMatchObject({
+      action: 'import.cancel',
+      detail: { previousStatus: 'analyzed', runId: 7 },
+    })
+    expect(await imports.currentRunId(detail.importId)).toBe(7)
   })
 
   it('cancels from uploaded and from mapped too; then the files cannot be touched', async () => {

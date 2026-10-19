@@ -46,6 +46,7 @@ const sheetSelect = {
   statusId: true,
   rowCount: true,
   mappingConfirmed: true,
+  sheetIndex: true,
   columnMaps: { select: { sourceColumn: true, targetField: true } },
 } satisfies Prisma.ImportSheetSelect
 
@@ -87,6 +88,7 @@ function fileCreate(file: NewImportFile): Prisma.ImportFileCreateWithoutImportIn
         cycle: s.cycle,
         statusId: s.statusId,
         rowCount: s.rowCount,
+        sheetIndex: s.sheetIndex,
       })),
     },
   }
@@ -173,14 +175,24 @@ export class PrismaImportRepository implements ImportRepository {
    * replaced, under the same lock. A cancel that lost the race to another one, or to processing, writes nothing.
    */
   async cancel(importId: string): Promise<ImportStatus> {
+    // updatedAt is the optimistic version of the import: written as datetime2(7) explicitly, never left to how the
+    // parameter is typed (see the run guard in prisma-validation-run-repository.ts).
     const previous = await this.prisma.$queryRaw<{ status: string }[]>`
-      UPDATE [Import] SET [status] = 'cancelled', [updatedAt] = ${new Date()}
+      UPDATE [Import] SET [status] = 'cancelled', [updatedAt] = CAST(${new Date().toISOString()} AS datetime2(7))
       OUTPUT deleted.[status] AS status
       WHERE [importId] = ${importId} AND [status] IN (${Prisma.join([...CANCELLABLE_STATUSES])})`
     const replaced = previous[0]
     if (replaced) return ImportStatus.parse(replaced.status)
     const current = await this.prisma.import.findUnique({ where: { importId }, select: { status: true } })
     throw new ImportNotCancellableError(current?.status ?? 'unknown')
+  }
+
+  async currentRunId(importId: string): Promise<number | null> {
+    const run = await this.prisma.validationRun.findFirst({
+      where: { importId, isSuperseded: false },
+      select: { runId: true },
+    })
+    return run?.runId ?? null
   }
 
   async listImports(scope: Scope, accountId: string, status?: ImportStatus): Promise<ImportSummaryRecord[]> {

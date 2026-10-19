@@ -259,7 +259,12 @@ export class InMemoryImportRowRepository implements ImportRowRepository {
     return row ? structuredClone(row) : null
   }
 
-  async resolve(importId: string, sheetId: string, rowNo: number, patch: RowResolutionPatch): Promise<void> {
+  async resolve(
+    importId: string,
+    sheetId: string,
+    rowNo: number,
+    patch: RowResolutionPatch,
+  ): Promise<{ supersededRunId: number | null }> {
     this.consumeFailure()
     const row = (this.rows.get(importId) ?? []).find((r) => r.sheetId === sheetId && r.rowNo === rowNo)
     if (!row) throw new Error(`unknown row ${sheetId}:${rowNo}`)
@@ -276,6 +281,7 @@ export class InMemoryImportRowRepository implements ImportRowRepository {
     const stored = this.imports.stored(importId)
     stored.rowsMatched = (stored.rowsMatched ?? 0) + 1
     stored.updatedAt = this.imports.now()
+    return { supersededRunId: this.imports.supersedeCurrentRun(importId) }
   }
 
   async summary(importId: string): Promise<AnalysisSummary | null> {

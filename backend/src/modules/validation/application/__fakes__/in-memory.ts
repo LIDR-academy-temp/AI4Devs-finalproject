@@ -20,11 +20,13 @@ import type {
   RowTransaction,
   ValidationRow,
 } from '../../domain/types.js'
+import { STATUSES } from '../../test-support/builders.js'
 import type {
   AccountScopeSource,
   MissingCandidateSource,
   RegisteredMissingSource,
   SettlementHistorySource,
+  StatusCatalogSource,
   ValidationRowSource,
 } from '../ports.js'
 
@@ -150,7 +152,8 @@ export class InMemoryValidationSources
     AccountScopeSource,
     SettlementHistorySource,
     MissingCandidateSource,
-    RegisteredMissingSource
+    RegisteredMissingSource,
+    StatusCatalogSource
 {
   private readonly transactions = new Map<bigint, WorldTransaction>()
   private readonly batches: StoredBatch[]
@@ -343,6 +346,12 @@ export class InMemoryValidationSources
         )
         .map((r) => `${r.cycle}:${r.transactionId}`),
     )
+  }
+
+  // ── StatusCatalogSource ──
+
+  async statuses() {
+    return STATUSES
   }
 
   // ── helpers ──
