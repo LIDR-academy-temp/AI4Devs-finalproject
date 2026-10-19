@@ -404,6 +404,9 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
    * analyzed and answers the status it replaced. Two guarded statements instead of one with OUTPUT: each is atomic and
    * matches only the read version, so no other writer can slip between them.
    */
+  // Rule for every writer of Import.updatedAt: it stores datetime2 precision (a Prisma model write, or a raw one with
+  // CAST(... AS datetime2(7))). The comparison below matches the value read back to the millisecond; a value rounded to
+  // datetime (1/300 s) would never match and every run would answer import_changed.
   private async claimForRun(tx: Tx, importId: string, expectedUpdatedAt: Date, now: Date): Promise<ImportStatus> {
     for (const status of ['validated', 'analyzed'] as const) {
       const claimed = await tx.import.updateMany({

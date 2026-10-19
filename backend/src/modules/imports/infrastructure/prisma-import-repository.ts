@@ -175,8 +175,10 @@ export class PrismaImportRepository implements ImportRepository {
    * replaced, under the same lock. A cancel that lost the race to another one, or to processing, writes nothing.
    */
   async cancel(importId: string): Promise<ImportStatus> {
+    // updatedAt is the optimistic version of the import: written as datetime2(7) explicitly, never left to how the
+    // parameter is typed (see the run guard in prisma-validation-run-repository.ts).
     const previous = await this.prisma.$queryRaw<{ status: string }[]>`
-      UPDATE [Import] SET [status] = 'cancelled', [updatedAt] = ${new Date()}
+      UPDATE [Import] SET [status] = 'cancelled', [updatedAt] = CAST(${new Date().toISOString()} AS datetime2(7))
       OUTPUT deleted.[status] AS status
       WHERE [importId] = ${importId} AND [status] IN (${Prisma.join([...CANCELLABLE_STATUSES])})`
     const replaced = previous[0]
