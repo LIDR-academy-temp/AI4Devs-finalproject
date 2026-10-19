@@ -117,7 +117,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 - [x] 8.1 Rebase de `feat/web-validations` sobre `feature/entrega-2-MVP`; si `frontend/src/lib/api/schema.gen.ts` no trae las siete rutas, regenerarlo con `pnpm --filter @recon/frontend api:generate` y verificar `pnpm openapi:check` en verde
 - [x] 8.2 Test (rojo) en `test/msw/validations.test.ts`: cada fixture del falso pasa `safeParse` con los esquemas de respuesta que #9 publique en `@recon/shared` (`ValidationRunView`, `ValidationIssueDetail` y la página de la lista); si #9 no los publica, anotarlo en el PR y apoyarse solo en `typecheck`
 - [x] 8.3 Sustituir en `features/validations/contract.ts` los tipos copiados por alias de `ApiResponse<…>` (ampliando `lib/api/types.ts` a `patch` y a respuestas `201`) y las llamadas por `api.GET/POST/PATCH`, sin cambiar los nombres exportados; tipar el falso con los tipos generados; verificar `pnpm typecheck`, `pnpm lint` y `pnpm test` en verde **sin tocar ningún test de componente**, y 8.2 en verde
-- [ ] 8.4 La persona prepara la base con `! pnpm db:up`, `! pnpm db:migrate` (migración `0006`) y `! pnpm db:seed`, y levanta `! pnpm dev`, con la base ya libre de las pruebas de #9
+- [x] 8.4 La persona prepara la base con `! pnpm db:up`, `! pnpm db:migrate` (migración `0006`) y `! pnpm db:seed`, y levanta `! pnpm dev`, con la base ya libre de las pruebas de #9
 - [ ] 8.5 Prueba manual contra el API real con `analyst` y `viewer`, a 1280 px y 1024 px:
   - `batch-issues`: corrida, duplicado `441706751475644`, incluir la segunda aparición, resolver el NRA, Continue, re-ejecutar con el diálogo y ver el aviso de revisión invalidada;
   - `batch-blocked`: Continue deshabilitado y Cancel and reprocess.
