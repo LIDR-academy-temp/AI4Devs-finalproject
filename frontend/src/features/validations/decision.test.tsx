@@ -126,6 +126,20 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
     expect(decision().queryAllByRole('button')).toHaveLength(0)
   })
 
+  it('a processed import: the decision says it is processed, not cancelled', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'processed' })
+    seedValidationRun(importId)
+    await openAnalysis(importId)
+
+    expect(
+      decision().getByText(
+        'This import is processed: no change of the validations applies any more. Its run and findings are kept for reference.',
+      ),
+    ).toBeInTheDocument()
+    expect(decision().queryByText(/cancelled/)).not.toBeInTheDocument()
+    expect(decision().queryAllByRole('button')).toHaveLength(0)
+  })
+
   it('Cancel and reprocess (HU2 CA8): after confirming, the run, its table and findings stay in read only', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     seedValidationRun(importId)
