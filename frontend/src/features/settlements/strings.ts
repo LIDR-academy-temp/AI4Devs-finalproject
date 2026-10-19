@@ -59,6 +59,7 @@ export const strings = {
     intro: 'Processing assigns these channels to this account as their primary account:',
     unassigned: (name: string) => `${name} · not assigned yet`,
     otherAccount: (name: string, account: string) => `${name} · primary account: ${account}`,
+    otherMerchant: (name: string) => `${name} · primary account: an account of another merchant`,
     confirm: 'Assign these channels to this account as primary',
   },
 
@@ -101,6 +102,7 @@ export const strings = {
       `The import is no longer validated (status: ${status}). Review its validations again.`,
     forbidden: 'You cannot process this import.',
     processFailed: 'The batch could not be processed. Try again.',
+    busy: 'Another settlement is being processed for this provider. Try again.',
     toAnalysis: 'Go to the Analysis step',
   },
 
@@ -179,10 +181,13 @@ export const strings = {
     channelNew: (name: string) => `${name} · assigned to this account as primary`,
     channelMoved: (name: string, from: string | null) =>
       from ? `${name} · primary account moved here from ${from}` : `${name} · primary account moved here`,
+    channelMovedFromOtherMerchant: (name: string) =>
+      `${name} · primary account moved here from an account of another merchant`,
     noChannels: 'No channel changed its primary account.',
     issues: 'Issues',
     issueCounts: (v: { persistent: number; resolved: number; blocking: number; resolvedMissing: number }) =>
       `${v.persistent} persistent · ${v.resolved} resolved · ${v.blocking} blocking · ${v.resolvedMissing} missing resolved by this batch`,
+    noValidationSummary: 'The validation summary of this attempt is not available.',
     viewValidations: 'View the validations',
     exports: 'Exports',
     exportNames: { summary: 'Merchant summary', transactions: 'Transactions (CSV)', reserves: 'Reserves (CSV)' },

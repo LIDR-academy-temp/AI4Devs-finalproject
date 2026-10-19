@@ -1,13 +1,14 @@
 // In-memory stand-in for the settlement API of #11 and #12 (web-settlement design D15). It does NOT compute figures
 // nor decide business rules: totals, the payable and its breakdown, skipped, warnings and the channels to assign are
 // fixed by the fixture of each scenario, whatever fees the request sends. A preview only copies two fields of the
-// body: `batchNo` and `batchFees` (field by field, with the title of the fee type). The fake models what changes
+// body: `batchNo` and `batchFees` (field by field, with the title of the fee type and each amount written with four
+// decimals, as the API returns it). Bodies are checked with the SettlementRequest schema of @recon/shared. The fake models what changes
 // between requests: the batch numbers with an active attempt per account, the import validated → processed with its
 // currentBatchId, the attempts it creates (read back by GET /settlements/{id}) and the scripted answers. The
 // rejections follow from that state, not from business rules: import_not_validated from the status of the import,
 // validation_run_superseded from the current run, batch_no_taken from the active numbers, and
 // channel_assignment_not_confirmed when the fixture requires a confirmation the body does not carry.
-import { TRANSACTION_STATUSES } from '@recon/shared'
+import { SettlementRequest as SettlementRequestSchema, TRANSACTION_STATUSES } from '@recon/shared'
 import { HttpResponse, http, type PathParams } from 'msw'
 import type {
   AccountFee,
@@ -20,6 +21,7 @@ import type {
   SettlementPreview,
   SettlementRequest,
   SettlementView,
+  ValidationSummary,
 } from '@/features/settlements/contract'
 import { auditInstant, businessDate } from '@/lib/format'
 import { ACCOUNT_IDS, ACCOUNTS, PROVIDERS, USERS, type UserName } from './fixtures'
@@ -124,7 +126,7 @@ export interface PreviewFixture extends Omit<SettlementFigures, 'batchFees'> {
   requiresChannelConfirmation: boolean
   channelsToAssign: ChannelToAssign[]
   /** What the attempt reports once processed (without its runId, filled in from the body). */
-  validationSummary: Omit<SettlementView['validationSummary'], 'runId'>
+  validationSummary: Omit<ValidationSummary, 'runId'> | null
 }
 
 const range = (min: string, max: string) => ({ min: businessDate(min), max: businessDate(max) })
@@ -350,6 +352,12 @@ function proposedNumber(accountId: string): NextBatchNumber {
 const activeAttempt = (accountId: string, batchNo: number) =>
   state.active.find((a) => a.accountId === accountId && a.batchNo === batchNo)
 
+/** An amount of the body as the API returns a DECIMAL(19,4): the same digits with four decimals, as text only. */
+function money4(amount: string): string {
+  const [whole, decimals = ''] = amount.split('.')
+  return `${whole}.${decimals.padEnd(4, '0')}`
+}
+
 /** The batch fees of the body as the API shows them: a copy field by field, with the title of the fee type. */
 function feeViews(fees: BatchFeeInput[] | undefined, enteredBy: UserName | null): BatchFeeView[] {
   return (fees ?? []).map((fee) => {
@@ -361,7 +369,7 @@ function feeViews(fees: BatchFeeInput[] | undefined, enteredBy: UserName | null)
       code: type?.code ?? String(fee.feeTypeId),
       title: type?.title ?? String(fee.feeTypeId),
       feeId: fee.feeId,
-      amount: fee.amount,
+      amount: money4(fee.amount),
       description: fee.description ?? null,
       source: fee.source,
       enteredBy: enteredBy ? userRef(enteredBy) : null,
@@ -409,7 +417,7 @@ function createAttempt(
       assignment: c.assignment === 'unassigned' ? 'new_primary' : 'primary_moved_from',
       previousAccount: c.otherAccount,
     })),
-    validationSummary: { runId: body.runId, ...fixture.validationSummary },
+    validationSummary: fixture.validationSummary && { runId: body.runId, ...fixture.validationSummary },
     exports: {
       summary: `/api/v1/settlements/${batchId}/export?type=summary`,
       transactions: `/api/v1/settlements/${batchId}/export?type=transactions`,
@@ -567,31 +575,12 @@ function route(
   }
 }
 
-const isPositiveInt = (value: unknown) => typeof value === 'number' && Number.isInteger(value) && value > 0
-
-/** Shape of the strict body of preview and process: a 400 validation_error, like Zod in the API. */
+/** Shape of the strict body of preview and process, with the schema of the API: a 400 validation_error. */
 function shapeError(body: unknown): Response | null {
-  const invalid = (message: string) => error(400, 'validation_error', message)
-  if (typeof body !== 'object' || body === null) return invalid('Expected a JSON body')
-  const b = body as Record<string, unknown>
-  if (!isPositiveInt(b.runId)) return invalid('runId is required')
-  if (b.batchNo !== undefined && !isPositiveInt(b.batchNo)) return invalid('batchNo must be a positive integer')
-  if (b.settlementDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(String(b.settlementDate))) {
-    return invalid('settlementDate must be YYYY-MM-DD')
-  }
-  if (b.confirmChannelAssignment !== undefined && typeof b.confirmChannelAssignment !== 'boolean') {
-    return invalid('confirmChannelAssignment must be a boolean')
-  }
-  if (b.batchFees !== undefined) {
-    if (!Array.isArray(b.batchFees)) return invalid('batchFees must be an array')
-    for (const fee of b.batchFees as Record<string, unknown>[]) {
-      if (!isPositiveInt(fee.feeTypeId)) return invalid('feeTypeId must be a positive integer')
-      if (fee.feeId !== null && typeof fee.feeId !== 'string') return invalid('feeId must be a string or null')
-      if (typeof fee.amount !== 'string') return invalid('amount must be a decimal string')
-      if (fee.source !== 'file' && fee.source !== 'manual') return invalid('source must be file or manual')
-    }
-  }
-  return null
+  const parsed = SettlementRequestSchema.safeParse(body)
+  if (parsed.success) return null
+  const issue = parsed.error.issues[0]!
+  return error(400, 'validation_error', `${issue.path.join('.') || 'body'}: ${issue.message}`)
 }
 
 /** The checks preview and process share, in the order of the API: permission, scope, body, status and run. */

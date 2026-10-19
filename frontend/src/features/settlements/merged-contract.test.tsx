@@ -17,7 +17,7 @@ import { OPENING } from '@/test/validation-screens'
 const HIDDEN = { accountId: null, name: null, outOfScope: true as const }
 
 /** An attempt of batch-clean stored as processed by analyst, with some fields of its view replaced, and its Summary. */
-async function openSummary(overrides: Parameters<typeof seedSettlement>[1]['overrides']) {
+async function openSummary(overrides: NonNullable<Parameters<typeof seedSettlement>[1]>['overrides']) {
   const { importId } = validatedImport()
   const view = seedSettlement(importId, { batchNo: 123, overrides })
   renderApp(`/settlements/${view.batchId}`, { as: 'analyst' })

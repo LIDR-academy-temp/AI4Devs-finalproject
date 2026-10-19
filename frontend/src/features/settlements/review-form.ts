@@ -37,6 +37,7 @@ export interface ReviewFormValues {
 
 export const formMessages = {
   batchNo: 'Enter a positive whole number.',
+  batchNoMax: 'Enter a number up to 2147483647.',
   settlementDate: 'Choose the settlement date.',
   invalidDate: 'Enter a valid date.',
   amount: 'Enter an amount with up to 4 decimals, other than zero.',
@@ -45,7 +46,9 @@ export const formMessages = {
   unknownType: 'Unknown fee type in the file: choose a free-amount type or remove the fee.',
 }
 
-const BATCH_NO = /^[1-9]\d{0,8}$/
+const BATCH_NO = /^[1-9]\d*$/
+/** The batch number is an INT column: the API answers 400 past it. */
+const MAX_BATCH_NO = 2_147_483_647
 const AMOUNT = /^-?\d{1,15}(\.\d{1,4})?$/
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
@@ -87,7 +90,11 @@ const feeRowSchema = z
   })
 
 export const reviewFormSchema = z.object({
-  batchNo: z.string().regex(BATCH_NO, formMessages.batchNo),
+  batchNo: z
+    .string()
+    .regex(BATCH_NO, formMessages.batchNo)
+    // Only for a whole number: anything else already has the message above.
+    .refine((value) => !BATCH_NO.test(value) || Number(value) <= MAX_BATCH_NO, formMessages.batchNoMax),
   settlementDate: z
     .string()
     .min(1, formMessages.settlementDate)

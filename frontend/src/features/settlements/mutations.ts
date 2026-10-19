@@ -21,6 +21,11 @@ const STALE_PREVIEW = new Set([
   'blocking_validation_issue',
 ])
 
+export interface ProcessError {
+  text: string
+  retry: boolean
+}
+
 export interface ProcessHandlers {
   /** The channel assignment is required by the preview and confirmed by the analyst. */
   confirmChannels?: boolean
@@ -36,7 +41,8 @@ export function useProcessSettlement(importId: string) {
   const guard = useRef(false)
   /** The number the API said is taken when processing; the field shows it until the number changes. */
   const [takenBatchNo, setTakenBatchNo] = useState<number | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  /** What the screen says about the last failed Process, and whether it offers to send the same body again. */
+  const [error, setError] = useState<ProcessError | null>(null)
 
   const mutation = useMutation({
     mutationFn: (request: SettlementRequest) => processSettlement(importId, request),
@@ -69,10 +75,13 @@ export function useProcessSettlement(importId: string) {
         const details = e.details as ErrorDetails['channel_assignment_not_confirmed'] | undefined
         onChannels?.(details?.channels ?? [])
       } else if (e instanceof ApiError && e.code === 'import_not_validated') {
-        setError(previewErrorOf(e).text)
+        setError({ text: previewErrorOf(e).text, retry: false })
         void queryClient.invalidateQueries({ queryKey: importKey(importId), exact: true })
+      } else if (e instanceof ApiError && e.code === 'settlement_busy') {
+        // Another processing of the provider held the rows: nothing was written, the same body can go again.
+        setError({ text: strings.errors.busy, retry: true })
       } else {
-        setError(e instanceof ApiError ? previewErrorOf(e).text : strings.errors.processFailed)
+        setError({ text: e instanceof ApiError ? previewErrorOf(e).text : strings.errors.processFailed, retry: false })
       }
       if (e instanceof ApiError && e.code && STALE_PREVIEW.has(e.code)) {
         // The preview of this body is no longer what the API would answer: ask again.

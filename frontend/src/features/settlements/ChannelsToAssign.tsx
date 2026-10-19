@@ -8,6 +8,13 @@ import { strings } from './strings'
 
 const s = strings.channels
 
+/** A channel and its current primary account; an account of another merchant is named only as such. */
+function describe(channel: ChannelToAssign): string {
+  const other = channel.otherAccount
+  if (channel.assignment === 'unassigned' || !other) return s.unassigned(channel.name)
+  return other.name === null ? s.otherMerchant(channel.name) : s.otherAccount(channel.name, other.name)
+}
+
 /**
  * The channels processing will assign to this account as primary, from the preview (or from a 409 until the next
  * preview), and the box that confirms it (design D9). The API decides which channels need it.
@@ -20,11 +27,7 @@ export function ChannelsToAssign({ channels }: { channels: ChannelToAssign[] }) 
       <p>{s.intro}</p>
       <ul className="flex flex-col gap-1">
         {channels.map((channel) => (
-          <li key={channel.channelId}>
-            {channel.assignment === 'unassigned' || !channel.otherAccount
-              ? s.unassigned(channel.name)
-              : s.otherAccount(channel.name, channel.otherAccount.name)}
-          </li>
+          <li key={channel.channelId}>{describe(channel)}</li>
         ))}
       </ul>
       <div className="flex items-center gap-2">

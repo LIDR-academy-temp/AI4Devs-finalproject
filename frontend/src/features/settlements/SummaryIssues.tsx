@@ -24,14 +24,16 @@ export function SummaryIssues({ view }: { view: SettlementView }) {
                 <li key={c.channelId}>
                   {c.assignment === 'new_primary'
                     ? s.channelNew(c.name)
-                    : s.channelMoved(c.name, c.previousAccount?.name ?? null)}
+                    : c.previousAccount && c.previousAccount.name === null
+                      ? s.channelMovedFromOtherMerchant(c.name)
+                      : s.channelMoved(c.name, c.previousAccount?.name ?? null)}
                 </li>
               ))}
             </ul>
           )}
         </section>
         <div className="flex flex-wrap items-center gap-2">
-          <p>{s.issueCounts(view.validationSummary)}</p>
+          <p>{view.validationSummary ? s.issueCounts(view.validationSummary) : s.noValidationSummary}</p>
           <Link
             to="/imports/$importId"
             params={{ importId: view.importId }}

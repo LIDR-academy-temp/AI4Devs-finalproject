@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { Button } from '@/components/ui/button'
+import type { ProcessError } from './mutations'
 import { strings } from './strings'
 
 /**
@@ -16,7 +17,7 @@ export function ProcessBar({
   batchNo: string | number
   reasons: string[]
   processing: boolean
-  error: string | null
+  error: ProcessError | null
   onProcess: () => void
 }) {
   const reasonsId = useId()
@@ -32,7 +33,16 @@ export function ProcessBar({
           <p key={reason}>{reason}</p>
         ))}
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-destructive">{error.text}</p>
+          {error.retry && (
+            <Button variant="outline" size="sm" onClick={onProcess} disabled={processing}>
+              {strings.retry}
+            </Button>
+          )}
+        </div>
+      )}
     </section>
   )
 }
