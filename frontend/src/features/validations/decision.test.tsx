@@ -132,9 +132,7 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
     await openAnalysis(importId)
 
     expect(
-      decision().getByText(
-        'This import is processed: no change of the validations applies any more. Its run and findings are kept for reference.',
-      ),
+      decision().getByText('This import is processed. Its run and findings are kept for reference.'),
     ).toBeInTheDocument()
     expect(decision().queryByText(/cancelled/)).not.toBeInTheDocument()
     expect(decision().queryAllByRole('button')).toHaveLength(0)
