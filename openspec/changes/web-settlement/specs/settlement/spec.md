@@ -192,7 +192,7 @@ Mientras el formulario tenga cambios sin vista previa, o una vista previa esté 
 - **THEN** la pantalla sigue pintando B
 
 ### Requirement: Pantalla Settlement Review: canales a asociar
-Si la vista previa trae `requiresChannelConfirmation = true`, la pantalla SHALL listar `channelsToAssign` (sin cuenta, o el nombre de la otra cuenta) y SHALL pedir la casilla **Assign these channels to this account as primary**. Sin marcarla, **Process** SHALL estar deshabilitado con su motivo. Marcada, el cuerpo SHALL llevar `confirmChannelAssignment: true`.
+Si la vista previa trae `requiresChannelConfirmation = true`, la pantalla SHALL listar `channelsToAssign` (sin cuenta, el nombre de la otra cuenta o, si esa cuenta es de un comercio fuera del alcance, solo que es de otro comercio) y SHALL pedir la casilla **Assign these channels to this account as primary**. Sin marcarla, **Process** SHALL estar deshabilitado con su motivo. Marcada, el cuerpo SHALL llevar `confirmChannelAssignment: true`.
 
 #### Scenario: RAM-07 sin cuenta (HU3 CA5)
 - **GIVEN** la vista previa de `batch-clean` con `RAM-07` `unassigned` en `channelsToAssign`
@@ -206,6 +206,10 @@ Si la vista previa trae `requiresChannelConfirmation = true`, la pantalla SHALL 
 #### Scenario: Sin canales que asociar
 - **GIVEN** la vista previa con `requiresChannelConfirmation = false`
 - **THEN** no hay casilla ni aviso, y el cuerpo no lleva `confirmChannelAssignment`
+
+#### Scenario: Cuenta principal de otro comercio
+- **GIVEN** la vista previa con `RAM-08` `assigned_to_other_account` y `otherAccount = { accountId: null, name: null, outOfScope: true }`
+- **THEN** ve `RAM-08 · primary account: an account of another merchant`
 
 ### Requirement: Pantalla Settlement Review: procesar
 **Process batch N** SHALL enviar a `POST /imports/{id}/settlements` exactamente el cuerpo de la vista previa a la vista más la confirmación de canales, una sola vez aunque se pulse dos veces, y SHALL estar deshabilitado con cada motivo visible y asociado al botón. Con `201` SHALL llevar al Settlement Summary del intento devuelto y pintar esa respuesta sin otra petición.
@@ -230,6 +234,11 @@ Si la vista previa trae `requiresChannelConfirmation = true`, la pantalla SHALL 
 #### Scenario: Fallo de red
 - **WHEN** **Process** falla sin respuesta del API
 - **THEN** ve `The batch could not be processed. Try again.`, sigue en Settlement Review con lo escrito y **Process** vuelve a estar disponible
+
+#### Scenario: Procesamiento ocupado
+- **WHEN** **Process** responde `409 settlement_busy`
+- **THEN** ve `Another settlement is being processed for this provider. Try again.` con **Retry**, sigue en Settlement Review con lo escrito y la vista previa no se vuelve a pedir
+- **AND** **Retry** envía otra vez el mismo cuerpo, y con el `201` pasa al Settlement Summary
 
 ### Requirement: Pantalla Settlement Summary: estado y cabecera del intento
 Settlement Summary SHALL mostrar el intento (cuenta, batch, intento), su estado (`Processed · pending payment`, `Paid` o `Undone`), quién lo procesó y cuándo, la fecha de liquidación y los rangos de fechas, y SHALL decir que un intento `processed` no tiene movimientos Settled.
@@ -259,6 +268,14 @@ La pantalla SHALL mostrar los fees transaccionales (`transactionalFeeAmt`, `mdrA
 #### Scenario: Canal asociado
 - **GIVEN** la vista con `RAM-07` en `channelsAssigned` como `new_primary`
 - **THEN** ve `RAM-07 · assigned to this account as primary`
+
+#### Scenario: Cuenta anterior de otro comercio
+- **GIVEN** la vista con `RAM-03` como `primary_moved_from` y `previousAccount = { accountId: null, name: null, outOfScope: true }`
+- **THEN** ve `RAM-03 · primary account moved here from an account of another merchant`
+
+#### Scenario: Intento sin resumen de incidencias
+- **GIVEN** la vista con `validationSummary = null` (un intento sin auditoría de `settlement.process`, como el historial sembrado)
+- **THEN** ve `The validation summary of this attempt is not available.` y el enlace al paso Analysis, sin contadores
 
 #### Scenario: Incidencias
 - **GIVEN** `validationSummary = { persistent: 13, resolved: 2, blocking: 0, resolvedMissing: 4 }`
