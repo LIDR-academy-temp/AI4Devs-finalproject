@@ -56,6 +56,7 @@ import type { Issue, ValidationReport } from '../domain/types.js'
 type Tx = Prisma.TransactionClient
 
 const UNIQUE_VIOLATION = 'P2002'
+const CURRENT_RUN_INDEX = 'UX_ValidationRun_current_import'
 /** A run of the reference volume writes in well under a second (D14 bench); the default 5 s leaves no margin. */
 const RUN_TX_TIMEOUT_MS = 60_000
 const RUN_TX_MAX_WAIT_MS = 10_000
@@ -74,6 +75,12 @@ function visibleAccount(scope: Scope): Prisma.AccountWhereInput {
 }
 
 const json = (value: unknown) => (value === null ? null : JSON.stringify(value))
+
+/** A unique violation of the filtered index that keeps one current run per import (0006), by its name. */
+function isCurrentRunViolation(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== UNIQUE_VIOLATION) return false
+  return `${error.message} ${JSON.stringify(error.meta ?? {})}`.includes(CURRENT_RUN_INDEX)
+}
 
 /** Rows per bulk statement (findings, MERGE, occurrences): ~2,5 MB of JSON per statement at most. */
 const ROWS_PER_BULK_STATEMENT = 10_000
@@ -382,9 +389,9 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
         { timeout: RUN_TX_TIMEOUT_MS, maxWait: RUN_TX_MAX_WAIT_MS },
       )
     } catch (error) {
-      // UX_ValidationRun_current_import is the last barrier: if it fires, another run won the race.
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === UNIQUE_VIOLATION)
-        throw new ImportChangedError('analyzed')
+      // UX_ValidationRun_current_import is the last barrier: if it fires, another run won the race. Any other unique
+      // violation is a programming error and is rethrown as is.
+      if (isCurrentRunViolation(error)) throw new ImportChangedError('analyzed')
       throw error
     }
   }
