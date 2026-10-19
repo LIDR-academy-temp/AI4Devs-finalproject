@@ -1,7 +1,29 @@
 // Server state of the settlement screens (web-settlement design D3).
 import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 import { importKey } from '@/features/imports/queries'
-import { getNextBatchNumber, getSettlement, previewSettlement, type SettlementRequest } from './contract'
+import {
+  getAccountFees,
+  getFeeTypes,
+  getNextBatchNumber,
+  getSettlement,
+  previewSettlement,
+  type SettlementRequest,
+} from './contract'
+
+/** Catalogs that do not change while the screen is open (design D3). */
+const CATALOG_STALE_MS = 5 * 60_000
+
+/** The non-transactional fees of the account in force on the settlement date; asked only once there is one. */
+export const accountFeesQuery = (accountId: string, asOf: string | null) =>
+  queryOptions({
+    queryKey: ['accounts', accountId, 'fees', { transactional: false, asOf }] as const,
+    queryFn: () => getAccountFees(accountId, { transactional: false, asOf: asOf! }),
+    enabled: asOf !== null,
+    staleTime: CATALOG_STALE_MS,
+  })
+
+export const feeTypesQuery = () =>
+  queryOptions({ queryKey: ['fee-types'] as const, queryFn: getFeeTypes, staleTime: CATALOG_STALE_MS })
 
 export const settlementKey = (batchId: string) => ['settlements', batchId] as const
 

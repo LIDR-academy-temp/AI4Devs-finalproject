@@ -18,12 +18,17 @@ export function useProcessSettlement(importId: string) {
     mutationFn: (request: SettlementRequest) => processSettlement(importId, request),
   })
 
-  async function process(request: SettlementRequest) {
+  /** `onFeeInvalid` takes a 400 batch_fee_invalid to its row; it says whether it did. */
+  async function process(
+    request: SettlementRequest,
+    { onFeeInvalid }: { onFeeInvalid?: (e: unknown) => boolean } = {},
+  ) {
     setError(null)
     setTakenBatchNo(null)
     try {
       return await mutation.mutateAsync(request)
     } catch (e) {
+      if (onFeeInvalid?.(e)) return null
       if (e instanceof ApiError && e.code === 'batch_no_taken') {
         const details = e.details as ErrorDetails['batch_no_taken'] | undefined
         setTakenBatchNo(details?.batchNo ?? request.batchNo ?? null)

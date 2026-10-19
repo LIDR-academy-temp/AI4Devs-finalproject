@@ -16,6 +16,40 @@ export const strings = {
     settlementDateHelp: 'The business date of the batch; preset fees are those in force on it.',
   },
 
+  fees: {
+    title: 'Batch fees',
+    none: 'No batch fees.',
+    origins: { file: 'From file', preset: 'Preset', free: 'Free amount' },
+    amount: (title: string) => `Amount — ${title}`,
+    description: (title: string) => `Description — ${title}`,
+    type: (title: string) => `Fee type — ${title}`,
+    remove: (title: string) => `Remove ${title}`,
+    addPreset: 'Add preset fee',
+    addFree: 'Add free-amount fee',
+    choosePreset: 'Choose a preset fee…',
+    chooseFree: 'Choose a type…',
+    chooseType: 'Choose a free-amount type…',
+    presetNeedsDate: 'Choose the settlement date first.',
+    noPresets: 'The account has no preset fees in force on this date.',
+    percentageOnly: (rate: string) => `Percentage-only fee (rate ${rate}): enter the amount.`,
+    fixed: (amount: string) => `${amount} USD`,
+    rate: (rate: string) => `rate ${rate}`,
+    always: 'Always',
+    noEnd: 'no end',
+    currency: (currency: string) => `Currency in the file: ${currency}. Enter the amount in USD.`,
+    /** The reasons of a 400 batch_fee_invalid, by code; an unknown one gets a generic text. */
+    invalid: (reason: string): string =>
+      ({
+        unknown_fee_type: 'This fee type is not in the catalog.',
+        transactional_fee_type: 'This fee type is applied per movement, not per batch.',
+        fee_not_in_account: 'This preset fee is not of this account.',
+        fee_type_mismatch: 'This preset fee is not of this type.',
+        fee_not_in_force: 'This preset fee is not in force on the settlement date.',
+        free_amount_not_allowed: 'This fee type does not accept a free amount.',
+        description_required: 'Write a description for a free-amount fee.',
+      })[reason] ?? `This fee is not valid (${reason}).`,
+  },
+
   preSummary: {
     label: 'Pre-summary',
     title: 'Pre-summary · what will be processed',
@@ -64,6 +98,7 @@ export const strings = {
     reasons: {
       chooseDate: 'Choose the settlement date.',
       fixFields: 'Fix the highlighted fields.',
+      unknownTypes: 'Choose a type for the fees of unknown type, or remove them.',
       waiting: 'Waiting for the pre-summary.',
       batchTaken: 'Choose a batch number that is not in use.',
       previewFailed: 'The pre-summary is not available.',

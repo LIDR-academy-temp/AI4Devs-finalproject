@@ -47,6 +47,9 @@ export function previewErrorOf(error: unknown): { text: string; toAnalysis: bool
       }
       case 'forbidden':
         return { text: e.forbidden, toAnalysis: false, retry: false }
+      // Shown in the row of the fee (design D6): the panel only asks to fix it.
+      case 'batch_fee_invalid':
+        return { text: strings.preSummary.fixFields, toAnalysis: false, retry: false }
     }
   }
   return { text: strings.preSummary.loadError, toAnalysis: false, retry: true }

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -7,8 +7,10 @@ import { importKey } from '@/features/imports/queries'
 import { validationRunQuery } from '@/features/validations/queries'
 import { ApiError } from '@/lib/api/client'
 import type { ImportDetail } from '@/lib/api/types'
+import { BatchFees } from './BatchFees'
 import { BatchSection } from './BatchSection'
-import type { NextBatchNumber } from './contract'
+import type { ErrorDetails, NextBatchNumber } from './contract'
+import type { RowApiError } from './FeeRow'
 import { useProcessSettlement } from './mutations'
 import { PreSummary } from './PreSummary'
 import { ProcessBar } from './ProcessBar'
@@ -23,6 +25,8 @@ function fileRows(detail: ImportDetail): FeeRow[] {
     key: `file-${index}`,
     origin: 'file',
     feeTypeId: fee.feeTypeId,
+    // Not in the catalog: the analyst chooses a free-amount type or removes it (hole 2 of the proposal, #60).
+    ...(fee.feeTypeId === null ? { chooseType: true } : {}),
     feeId: null,
     title: fee.title,
     amount: fee.amount ?? '',
@@ -31,6 +35,15 @@ function fileRows(detail: ImportDetail): FeeRow[] {
     currency: fee.currency,
   }))
 }
+
+/** A 400 batch_fee_invalid of a row, kept while the row stays as it was sent (design D6). */
+interface FeeError {
+  key: string
+  snapshot: string
+  reason: string
+}
+
+const UNKNOWN_TYPE_PATH = /^fees\.\d+\.feeTypeId$/
 
 /** The messages of the schema by path ("batchNo", "fees.0.amount"…), for the values as they are now. */
 function issuesOf(values: ReviewFormValues): Record<string, string> {
@@ -58,13 +71,39 @@ function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: numb
   const { preview, lastRequest, isCurrent, error, retry } = usePreview(detail.importId, currentRequest)
   const processor = useProcessSettlement(detail.importId)
   const queryClient = useQueryClient()
+  const rows = values.fees ?? []
+  const rowsRef = useRef(rows)
+  rowsRef.current = rows
 
-  // The import is no longer validated (another tab re-ran or cancelled): read it again, and the page shows its status.
+  // A 400 batch_fee_invalid points at a fee by its index in the body, which is the order of the rows as they are
+  // now (an error is shown only for the body of the current values).
+  const [feeError, setFeeError] = useState<FeeError | null>(null)
+  const recordFeeError = useCallback((e: unknown) => {
+    if (!(e instanceof ApiError) || e.code !== 'batch_fee_invalid') return false
+    const details = e.details as ErrorDetails['batch_fee_invalid'] | undefined
+    const row = details ? rowsRef.current[details.index] : undefined
+    if (row && details) setFeeError({ key: row.key, snapshot: JSON.stringify(row), reason: details.reason })
+    return true
+  }, [])
+
   useEffect(() => {
+    recordFeeError(error)
+    // The import is no longer validated (another tab re-ran or cancelled): read it again, the page shows its status.
     if (error instanceof ApiError && error.code === 'import_not_validated') {
       void queryClient.invalidateQueries({ queryKey: importKey(detail.importId), exact: true })
     }
-  }, [error, queryClient, detail.importId])
+  }, [error, queryClient, detail.importId, recordFeeError])
+
+  const activeFeeError =
+    feeError && rows.some((r) => r.key === feeError.key && JSON.stringify(r) === feeError.snapshot) ? feeError : null
+  const apiErrors: Record<string, RowApiError> = activeFeeError
+    ? {
+        [activeFeeError.key]: {
+          field: activeFeeError.reason === 'description_required' ? 'description' : 'amount',
+          message: strings.fees.invalid(activeFeeError.reason),
+        },
+      }
+    : {}
 
   const batchNo = values.batchNo
   const taken =
@@ -76,13 +115,19 @@ function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: numb
   const batchNoError = issues.batchNo ?? (taken !== null ? strings.batch.taken(taken) : null)
   const dateError = issues.settlementDate ?? null
 
+  const asOf = values.settlementDate && !issues.settlementDate ? values.settlementDate : null
+
   const r = strings.process.reasons
   const reasons: string[] = []
   if (!values.settlementDate) reasons.push(r.chooseDate)
-  else if (!valid) reasons.push(r.fixFields)
-  else if (error) reasons.push(r.previewFailed)
-  else if (!isCurrent) reasons.push(r.waiting)
-  else if (preview && !preview.batchNoAvailable) reasons.push(r.batchTaken)
+  if (rows.some((row) => row.feeTypeId === null)) reasons.push(r.unknownTypes)
+  const otherIssues = Object.keys(issues).some((path) => path !== 'settlementDate' && !UNKNOWN_TYPE_PATH.test(path))
+  if (otherIssues || (values.settlementDate && issues.settlementDate) || activeFeeError) reasons.push(r.fixFields)
+  if (reasons.length === 0) {
+    if (error) reasons.push(r.previewFailed)
+    else if (!isCurrent) reasons.push(r.waiting)
+    else if (preview && !preview.batchNoAvailable) reasons.push(r.batchTaken)
+  }
 
   const hint = valid ? null : !values.settlementDate ? strings.preSummary.chooseDate : strings.preSummary.fixFields
 
@@ -96,6 +141,7 @@ function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: numb
             batchNoError={batchNoError}
             dateError={dateError}
           />
+          <BatchFees accountId={detail.accountId} asOf={asOf} rows={rows} issues={issues} apiErrors={apiErrors} />
         </fieldset>
         <PreSummary
           importId={detail.importId}
@@ -111,7 +157,7 @@ function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: numb
         reasons={reasons}
         processing={processor.processing}
         error={processor.error}
-        onProcess={() => lastRequest && void processor.process(lastRequest)}
+        onProcess={() => lastRequest && void processor.process(lastRequest, { onFeeInvalid: recordFeeError })}
       />
     </FormProvider>
   )

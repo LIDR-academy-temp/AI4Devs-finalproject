@@ -13,6 +13,8 @@ export interface FeeRow {
   origin: FeeOrigin
   /** Null only in a file row whose type is not in the catalog, until the analyst chooses one. */
   feeTypeId: number | null
+  /** A file row whose type was not in the catalog: the analyst chooses a free-amount type for it (design D5). */
+  chooseType?: boolean
   feeId: string | null
   /** Title of the fee type (or the text of the file for an unknown type). */
   title: string
@@ -64,6 +66,7 @@ const feeRowSchema = z
     key: z.string(),
     origin: z.enum(['file', 'preset', 'free']),
     feeTypeId: z.number().int().nullable(),
+    chooseType: z.boolean().optional(),
     feeId: z.string().nullable(),
     title: z.string(),
     amount: z.string(),

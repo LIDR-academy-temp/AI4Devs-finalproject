@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { importRecord } from '@/test/msw/imports'
+import { recordRequests } from '@/test/msw/record'
 import { scriptPreview, settlementRequests } from '@/test/msw/settlements'
 import {
   AFTER_DEBOUNCE,
@@ -133,11 +134,14 @@ describe('Settlement Review: fees pre-filled from Other Fees (spec "fees prellen
 describe('Settlement Review: add a preset fee (spec "añadir un fee preestablecido")', () => {
   it('without a date it is disabled with its reason and the fees are not asked for', async () => {
     const { importId } = validatedImport()
+    // Only the requests started by this test: one left in flight by the previous test may reach the fake after reset.
+    const requests = recordRequests()
     await openReview(importId)
 
     expect(addPreset()).toBeDisabled()
     expect(addPreset()).toHaveAccessibleDescription('Choose the settlement date first.')
-    expect(settlementRequests('fees')).toHaveLength(0)
+    await wait(AFTER_DEBOUNCE)
+    expect(requests.calls.filter((c) => /\/accounts\/[^/]+\/fees$/.test(c))).toEqual([])
   })
 
   it('the presets in force on the date, asked again when the date changes', async () => {
@@ -200,6 +204,8 @@ describe('Settlement Review: add a free-amount fee (spec "añadir un fee de impo
     const { importId } = validatedImport()
     await openReview(importId)
 
+    // The list fills in when GET /fee-types answers.
+    await waitFor(() => expect(addFree()).toBeEnabled())
     const options = within(addFree())
       .getAllByRole('option')
       .map((o) => o.textContent)

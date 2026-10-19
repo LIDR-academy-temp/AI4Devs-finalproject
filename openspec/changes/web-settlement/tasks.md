@@ -64,7 +64,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 5. Fees por batch (D5)
 
-- [ ] 5.1 Test (rojo) `features/settlements/batch-fees.test.tsx` con "fees prellenados desde Other Fees", "añadir un fee preestablecido", "añadir un fee de importe libre", "importes de los fees" y "fee rechazado por el API":
+- [x] 5.1 Test (rojo) `features/settlements/batch-fees.test.tsx` con "fees prellenados desde Other Fees", "añadir un fee preestablecido", "añadir un fee de importe libre", "importes de los fees" y "fee rechazado por el API":
   - `Wire Fee` y `Settlement Fee` `From file`; ajustar `Wire Fee` a `30.0000` → la vista previa lo envía así con `source = file`; quitar `Settlement Fee` → solo uno;
   - tipo desconocido (`Bank charge`) → fila marcada, selector solo con tipos de importe libre, Process deshabilitado con `Choose a type for the fees of unknown type, or remove them.` y sin vista previa; tras elegir `Special Adjustment`, enviada con ese `feeTypeId` y `source = file`; tras quitarla, el motivo se va y la vista previa sale sin ella; `amount = null` → importe obligatorio;
   - variante de ProviderB-Main: `Monthly Fee` con `250.0000` editable a `240.0000`, enviado con `feeId` y `source = manual`;
@@ -73,8 +73,8 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   - importe libre: solo tipos con `allowsFreeAmount` (`Special Adjustment` sí, `Wire Fee` no); `-42.5000` con descripción → enviado con `feeId = null`; sin descripción → error sin vista previa;
   - importes no válidos → error en la fila sin vista previa; `123456789012345.1234` enviado tal cual;
   - `400 batch_fee_invalid` guionizado (`free_amount_not_allowed`, `fee_not_in_force`, y `description_required` en la descripción de su fila) → texto en la fila de `index` y motivo de Process, que se borra al cambiar la fila
-- [ ] 5.2 Implementar `features/settlements/{BatchFees.tsx,FeeRow.tsx,AddPresetFee.tsx,AddFreeFee.tsx}` con `useFieldArray` y los errores de D6 por `setError`; verificar 5.1 en verde; romper a propósito el filtro de `allowsFreeAmount` y ver fallar "Tipos ofrecidos"; romper el preestablecido solo con porcentaje rellenando `percentage` como importe y ver fallar su caso; restaurar
-- [ ] 5.3 Commit: `test(frontend): fees por batch prellenados, preestablecidos y de importe libre` y `feat(frontend): formulario de fees por batch de Settlement Review`
+- [x] 5.2 Implementar `features/settlements/{BatchFees.tsx,FeeRow.tsx,AddPresetFee.tsx,AddFreeFee.tsx}` con `useFieldArray` y los errores de D6 por `setError`; verificar 5.1 en verde; romper a propósito el filtro de `allowsFreeAmount` y ver fallar "Tipos ofrecidos"; romper el preestablecido solo con porcentaje rellenando `percentage` como importe y ver fallar su caso; restaurar
+- [x] 5.3 Commit: `test(frontend): fees por batch prellenados, preestablecidos y de importe libre` y `feat(frontend): formulario de fees por batch de Settlement Review`
 
 ## 6. Canales a asociar y Process (D9, D10)
 
