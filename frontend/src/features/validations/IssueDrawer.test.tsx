@@ -1,9 +1,10 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { auditInstant } from '@/lib/format'
 import type { UserName } from '@/test/msw/fixtures'
 import { issueTokens } from '@/test/msw/handlers'
 import { seedImport } from '@/test/msw/imports'
-import { batchIssuesFixture, seedValidationRun } from '@/test/msw/validations'
+import { batchIssuesFixture, issueKey, occurrenceKey, seedValidationRun } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
 import { OPENING } from '@/test/validation-screens'
 
@@ -98,6 +99,26 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
     expect(history.map((h) => h.textContent)).toEqual([
       `analyst · 2026-10-18 10:00 ET · ${FILE} · APP · row 338 · excluded → included`,
     ])
+  })
+
+  it('an audit instant in daylight saving time (spec "Auditoría en horario de verano") is shown in ET', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const at = auditInstant('2026-10-18T14:20:00.000Z')
+    const key = occurrenceKey(issueKey('duplicate_in_batch', '441706751475644'), 1)
+    const { issues } = seedValidationRun(importId, undefined, {
+      patches: {
+        [key]: {
+          next: (d) => ({ ...d, occurrences: d.occurrences.map((o, i) => (i === 1 ? { ...o, changedAt: at } : o)) }),
+        },
+      },
+    })
+    const duplicate = issues.find((i) => i.validationCode === 'duplicate_in_batch')!
+    await patch('analyst', `/conflict-occurrences/${duplicate.occurrences[1]!.occurrenceId}`, {
+      includeInSettlement: true,
+    })
+    await openFinding(importId, duplicate.issueId)
+
+    expect(occurrences()[1]).toHaveTextContent('Changed by analyst · 2026-10-18 10:20 ET')
   })
 
   it('shows a resolution by hand with its user, date and note', async () => {
