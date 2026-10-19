@@ -38,7 +38,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   
   Implementar `test/msw/validations.ts`:
   - almacén por import;
-  - fixtures base de `batch-issues` (desde `affectedIds` y `defaults` de `expected.json`) y de `batch-blocked` (con el supuesto del proposal hueco 5), con `editable`, `includable`, `resolvable`, `blocking` y resultados **fijados, no calculados**;
+  - fixtures base de `batch-issues` (desde `affectedIds` y `defaults` de `expected.json`) y de `batch-blocked` (al principio con el supuesto del proposal hueco 5; en el rebase, con los datos de la corrida real), con `editable`, `includable`, `resolvable`, `blocking` y resultados **fijados, no calculados**;
   - `seedValidationRun(importId, fixture, { patches })` para guionizar las respuestas de los `PATCH` por escenario;
   - transiciones escritas en `importRecord(id).status`;
   - registro de peticiones.
@@ -127,12 +127,13 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 - [x] 8.7 Escribir el script de capturas `e2e/screenshots/web-validations.ts` (D13 paso 7) y su comando raíz `pnpm screenshots:web-validations`:
   - fuera de los `.feature` y del `defineBddConfig` del smoke;
   - `analyst` del seed con `SEED_PASSWORD` cargada con `process.loadEnvFile`, sin leer ni imprimir el `.env`;
-  - campo de contraseña vaciado tras el login, `trace: 'off'`, `video: 'off'` y `headless: false`;
+  - campo de contraseña vaciado tras el login, sin trace ni vídeo (el script usa la librería de Playwright, que no los graba si no se activan) y `headless: false`;
   - ninguna captura antes de cargar el import ni de la pantalla de login;
-  - imports de `batch-issues` y `batch-blocked` creados por la pantalla y cancelados al terminar.
+  - imports de `batch-issues` y `batch-blocked` creados por la pantalla y cancelados al terminar;
+  - el drawer del duplicado también a 1024 px y, a 1280 y 1024 px, la comprobación en consola del desplazamiento horizontal.
   
   Verificar con `pnpm test:e2e --list` que el smoke no lo recoge y que ningún workflow de `.github/` lo llama
-- [x] 8.8 **Avisar a la persona antes de ejecutarlo**, porque quiere mirar la ejecución. Con su visto bueno, ejecutar `pnpm screenshots:web-validations` y comprobar que deja en `docs/wireframes/web-validations/` cuatro PNG a 1280 px: `batch-issues-validations.png`, `batch-issues-duplicate-drawer.png` (con historial), `batch-issues-invalidated-review.png` y `batch-blocked-continue-disabled.png`. Revisar cada PNG antes de versionarlo: ningún dato de credenciales y ninguna pantalla de login
+- [x] 8.8 **Avisar a la persona antes de ejecutarlo**, porque quiere mirar la ejecución. Con su visto bueno, ejecutar `pnpm screenshots:web-validations` y comprobar que deja en `docs/wireframes/web-validations/` cinco PNG, cuatro a 1280 px y uno a 1024 px: `batch-issues-validations.png`, `batch-issues-duplicate-drawer.png` (con historial), `batch-issues-duplicate-drawer-1024.png`, `batch-issues-invalidated-review.png` y `batch-blocked-continue-disabled.png`, y que la consola diga que no hay desplazamiento horizontal a 1280 ni a 1024 px. Revisar cada PNG antes de versionarlo: ningún dato de credenciales y ninguna pantalla de login
 - [x] 8.9 Línea de las capturas en `docs/wireframes/README.md` y registro del change en `prompts.md`
 - [ ] 8.10 Listar en la descripción del PR:
   - los huecos del contrato del proposal (Settlement Review hasta #13, motivo de `includable`, indicadores `canRun`/`canReview`, oráculo de `batch-blocked`), para que la persona abra los issues;
