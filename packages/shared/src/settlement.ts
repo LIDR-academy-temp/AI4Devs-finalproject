@@ -34,18 +34,26 @@ export const BatchFeeInput = z.strictObject({
 })
 export type BatchFeeInput = z.infer<typeof BatchFeeInput>
 
+/** INT columns: a larger number is a 400, not a failed query. */
+const intColumn = positiveInt.max(2_147_483_647)
+/**
+ * A batch carries a handful of fees (the Other Fees sheet plus a few manual ones); 100 is far above any real batch
+ * and bounds the catalog checks and inserts one request can ask for.
+ */
+const MAX_BATCH_FEES = 100
+
 /** Body of POST /imports/{id}/settlements and of its preview. */
 export const SettlementRequest = z.strictObject({
   /** The validation run the analyst reviewed. */
-  runId: positiveInt,
+  runId: intColumn,
   /** Omitted: the proposed number of the account. */
-  batchNo: positiveInt.optional(),
+  batchNo: intColumn.optional(),
   /** Business date (YYYY-MM-DD). */
   settlementDate: IsoDate.optional(),
   /** Audit only. */
   note: z.string().max(500).optional(),
   confirmChannelAssignment: z.boolean().optional(),
-  batchFees: z.array(BatchFeeInput).optional(),
+  batchFees: z.array(BatchFeeInput).max(MAX_BATCH_FEES).optional(),
 })
 export type SettlementRequest = z.infer<typeof SettlementRequest>
 
