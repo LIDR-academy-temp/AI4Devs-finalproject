@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ImportDetail, type MappingConfirmation } from '@recon/shared'
 import { expect } from 'vitest'
+import { Prisma } from '../../src/generated/prisma/client.js'
 import type { createTestApp } from './helpers.js'
 import { SEED_PASSWORD } from './helpers.js'
 
@@ -151,28 +152,18 @@ export class ImportFlow {
 /** The cleanup of `ImportFlow.removeImports`, usable without a flow (fixtures created straight in the database). */
 export async function removeImportsFrom(prisma: Ctx['prisma'], importIds: string[]): Promise<void> {
   if (importIds.length === 0) return
-  const runs = await prisma.validationRun.findMany({ where: { importId: { in: importIds } }, select: { runId: true } })
-  const runIds = runs.map((r) => r.runId)
-  if (runIds.length > 0) {
-    const issues = await prisma.validationIssue.findMany({
-      where: { result: { runId: { in: runIds } } },
-      select: { issueId: true, occurrences: { select: { occurrenceId: true } } },
-    })
-    const issueIds = issues.map((i) => String(i.issueId))
-    const occurrenceIds = issues.flatMap((i) => i.occurrences.map((o) => String(o.occurrenceId)))
-    await prisma.auditLog.deleteMany({
-      where: {
-        OR: [
-          { entityType: 'ValidationIssue', entityId: { in: issueIds } },
-          { entityType: 'ConflictOccurrence', entityId: { in: occurrenceIds } },
-        ],
-      },
-    })
-    await prisma.conflictOccurrence.deleteMany({ where: { issue: { result: { runId: { in: runIds } } } } })
-    await prisma.validationIssue.deleteMany({ where: { result: { runId: { in: runIds } } } })
-    await prisma.validationResult.deleteMany({ where: { runId: { in: runIds } } })
-    await prisma.validationRun.deleteMany({ where: { runId: { in: runIds } } })
-  }
+  // Subqueries, not id lists: a large run has tens of thousands of findings, over the 2 100-parameter limit.
+  const runs = Prisma.sql`SELECT [runId] FROM [ValidationRun] WHERE [importId] IN (${Prisma.join(importIds)})`
+  const issues = Prisma.sql`SELECT i.[issueId] FROM [ValidationIssue] i
+    JOIN [ValidationResult] r ON r.[resultId] = i.[resultId] WHERE r.[runId] IN (${runs})`
+  await prisma.$executeRaw`DELETE FROM [AuditLog] WHERE [entityType] = 'ConflictOccurrence' AND [entityId] IN (
+    SELECT CONVERT(VARCHAR(64), o.[occurrenceId]) FROM [ConflictOccurrence] o WHERE o.[issueId] IN (${issues}))`
+  await prisma.$executeRaw`DELETE FROM [AuditLog] WHERE [entityType] = 'ValidationIssue' AND [entityId] IN (
+    SELECT CONVERT(VARCHAR(64), x.[issueId]) FROM (${issues}) x)`
+  await prisma.$executeRaw`DELETE FROM [ConflictOccurrence] WHERE [issueId] IN (${issues})`
+  await prisma.$executeRaw`DELETE FROM [ValidationIssue] WHERE [issueId] IN (${issues})`
+  await prisma.$executeRaw`DELETE FROM [ValidationResult] WHERE [runId] IN (${runs})`
+  await prisma.$executeRaw`DELETE FROM [ValidationRun] WHERE [runId] IN (${runs})`
   await prisma.auditLog.deleteMany({ where: { entityType: 'Import', entityId: { in: importIds } } })
   const sheetIds = (
     await prisma.importSheet.findMany({ where: { file: { importId: { in: importIds } } }, select: { sheetId: true } })
