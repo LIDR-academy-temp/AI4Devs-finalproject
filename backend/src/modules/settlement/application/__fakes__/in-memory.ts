@@ -48,7 +48,7 @@ export class InMemorySettlementSource implements SettlementSource {
     return this.input.channels.filter((c) => channelIds.includes(c.channelId))
   }
 
-  async previousE(_providerId: number, transactionIds: readonly bigint[]) {
+  async previousE(_providerId: number, transactionIds: readonly bigint[], _excludeImportId: string) {
     this.calls.push('previousE')
     return new Set(transactionIds.filter((id) => this.input.previousE.has(id)))
   }

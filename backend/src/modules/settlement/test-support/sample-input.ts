@@ -70,7 +70,8 @@ export async function settlementSampleInput(
       statusCode: statusCode(r.statusId),
       excludeAmount: r.excludeAmount,
       matchResult: r.matchResult,
-      ignore: false,
+      // The analysis marks the rows it ignores (no ID) with ignore = 1 as well as matchResult = ignored.
+      ignore: r.matchResult === 'ignored',
       txnDate: null,
       transaction:
         t === null || r.transaction === null

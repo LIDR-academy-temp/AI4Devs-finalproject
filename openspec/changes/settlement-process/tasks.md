@@ -52,8 +52,8 @@ Rama `feat/settlement-process`, PR hacia `feature/entrega-2-MVP`. El grupo 0 va 
 
 ## 6. Carga de la entrada
 
-- [ ] 6.1 Tests primero: dobles en memoria (`settlement/application/__fakes__/in-memory.ts`, sobre `buildWorld()`), y `load-settlement-input` sobre ellos, que da la misma entrada que el test 5.5. Integración `settlement-source.int.test.ts`: con `batch-clean` analizado, validado y revisado, la entrada leída de la base es igual a la de memoria (filas con `txnDate`, inclusiones de la corrida vigente, canales con asociación, movimientos vigentes del proveedor, fees, intentos de la cuenta); `IN` troceado a 2 000. Verificación: fallan sin el adaptador.
-- [ ] 6.2 Implementar `ports.ts`, `load-settlement-input.ts`, `prisma-settlement-source.ts` (consultas con `$queryRaw`, fechas con `CAST(… AS datetime2(7))`, dinero como texto) y ampliar `test/integration/import-flow.ts` con `validateAndReview`. Verificación: 6.1 en verde.
+- [x] 6.1 Tests primero: dobles en memoria (`settlement/application/__fakes__/in-memory.ts`, sobre `buildWorld()`), y `load-settlement-input` sobre ellos, que da la misma entrada que el test 5.5. Integración `settlement-source.int.test.ts`: con `batch-clean` analizado, validado y revisado, la entrada leída de la base es igual a la de memoria (filas con `txnDate`, inclusiones de la corrida vigente, canales con asociación, movimientos vigentes del proveedor, fees, intentos de la cuenta); `IN` troceado a 2 000. Verificación: fallan sin el adaptador.
+- [x] 6.2 Implementar `ports.ts`, `load-settlement-input.ts`, `prisma-settlement-source.ts` (consultas con `$queryRaw`, fechas con `CAST(… AS datetime2(7))`, dinero como texto) y ampliar `test/integration/import-flow.ts` con `validateAndReview`. Verificación: 6.1 en verde.
 - Commit: `test(settlement): carga de la entrada del procesado desde la base`
 - Commit: `feat(settlement): adaptador Prisma de la entrada del procesado`
 
