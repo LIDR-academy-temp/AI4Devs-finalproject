@@ -18,7 +18,7 @@ export function IssueHistory({
     if (entry.action === 'resolve') return s.resolveEntry(entry.user.userName, at, entry.note ?? '')
     const occurrence = occurrences.find((o) => o.occurrenceId === entry.occurrenceId)
     const where = occurrence ? whereOf(occurrence) : `#${entry.occurrenceId}`
-    return s.inclusionEntry(entry.user.userName, at, where, entry.from ?? false, entry.to ?? false)
+    return s.inclusionEntry(entry.user.userName, at, where, entry.from, entry.to)
   }
 
   return (
@@ -28,8 +28,9 @@ export function IssueHistory({
         <p className="text-sm text-muted-foreground">{s.noHistory}</p>
       ) : (
         <ol className="flex flex-col gap-1 text-sm">
-          {history.map((entry) => (
-            <li key={`${entry.at}:${entry.action}:${entry.occurrenceId ?? ''}`}>{text(entry)}</li>
+          {history.map((entry, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: the history is append-only and never reordered; two entries of the same change can share the same instant
+            <li key={`${index}:${entry.at}:${entry.action}`}>{text(entry)}</li>
           ))}
         </ol>
       )}

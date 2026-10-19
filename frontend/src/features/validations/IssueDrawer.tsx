@@ -149,7 +149,11 @@ export function IssueDrawer({
         className="overflow-y-auto data-[side=right]:w-[min(42rem,100vw)] data-[side=right]:sm:max-w-2xl"
         onCloseAutoFocus={(event) => {
           event.preventDefault()
-          document.querySelector<HTMLElement>(`[data-issue-button="${lastOpened.current}"]`)?.focus()
+          // Back to the finding in the list; opened from a link without its list, to the heading of the validations.
+          const target =
+            document.querySelector<HTMLElement>(`[data-issue-button="${lastOpened.current}"]`) ??
+            document.querySelector<HTMLElement>('[data-validations-heading]')
+          target?.focus()
         }}
       >
         <SheetHeader>

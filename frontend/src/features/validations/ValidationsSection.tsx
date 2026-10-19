@@ -76,7 +76,9 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
   return (
     <section aria-label={strings.title} className="flex flex-col gap-3 rounded-md border bg-background p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-medium">{strings.title}</h3>
+        <h3 className="font-medium" tabIndex={-1} data-validations-heading>
+          {strings.title}
+        </h3>
         {view && canProcess && RUNNABLE.includes(view.importStatus) && (
           <RunButton view={view} runner={runner} busy={busy} busyId={busyId} />
         )}

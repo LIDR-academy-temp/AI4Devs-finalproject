@@ -150,8 +150,11 @@ export const strings = {
     resolvedBy: (userName: string, at: string) => `Resolved by ${userName} · ${at}`,
     history: 'History',
     noHistory: 'No changes yet.',
-    inclusionEntry: (userName: string, at: string, where: string, from: boolean, to: boolean) =>
-      `${userName} · ${at} · ${where} · ${from ? 'included' : 'excluded'} → ${to ? 'included' : 'excluded'}`,
+    /** Without `from` or `to` the entry still says that the inclusion changed. */
+    inclusionEntry: (userName: string, at: string, where: string, from: boolean | null, to: boolean | null) =>
+      from === null || to === null
+        ? `${userName} · ${at} · ${where} · inclusion changed`
+        : `${userName} · ${at} · ${where} · ${from ? 'included' : 'excluded'} → ${to ? 'included' : 'excluded'}`,
     resolveEntry: (userName: string, at: string, note: string) => `${userName} · ${at} · resolved: "${note}"`,
   },
 
