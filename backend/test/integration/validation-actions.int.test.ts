@@ -353,6 +353,9 @@ describe('the rule of cycle R (P3)', () => {
     expect(res.json()).toMatchObject({ details: { reason: 'reserve_already_released' } })
   })
 
+  // Only watches the final invariant (one included occurrence); whether both requests really overlap depends on timing.
+  // The rule inside the transaction is protected by the deterministic variant below: "an inclusion paused right
+  // before its guard while another one of the same reserve commits…".
   it('two simultaneous inclusions of different occurrences of the same reserve leave exactly one included', async () => {
     const id = await unreleasedReserveId()
     const { importId } = await rrImport([id, id, id])
@@ -365,6 +368,51 @@ describe('the rule of cycle R (P3)', () => {
 
     expect(results.map((r) => r.statusCode).sort()).toEqual([200, 409])
     expect((await detail(dup!.issueId)).occurrences.filter((o) => o.includeInSettlement)).toHaveLength(1)
+  })
+
+  it('an inclusion paused right before its guard while another one of the same reserve commits gets 409 reserve_already_included', async () => {
+    const id = await unreleasedReserveId()
+    const { importId } = await rrImport([id, id])
+    await run(importId)
+    const [dup] = (await issues(importId, 'type=duplicate&scope=in_batch&cycle=R')).items
+    const [first, second] = (await detail(dup!.issueId)).occurrences
+    // Neither occurrence is included: both inclusions are allowed on their own.
+    expect((await include(first!.occurrenceId, false)).statusCode).toBe(200)
+    let release: () => void = () => {}
+    const released = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let arrive: () => void = () => {}
+    const arrived = new Promise<void>((resolve) => {
+      arrive = resolve
+    })
+    // The first inclusion pauses inside its transaction right before the guard (beforeClaim), holding no lock. A rule
+    // decided before the guard would already have seen nothing included; the correct one reads after the guard.
+    const paused = new ValidationService({
+      sources: new PrismaValidationSources(ctx.prisma),
+      runs: new PrismaValidationRunRepository(ctx.prisma, {
+        beforeClaim: async (operation) => {
+          if (operation !== 'setInclusion') return
+          arrive()
+          await released
+        },
+      }),
+      log: { info: () => {} },
+    })
+    const pending = paused
+      .setInclusion(ANALYST_SCOPE, flow.userIds.analyst, first!.occurrenceId, true)
+      .catch((e: unknown) => e)
+    await arrived
+
+    expect((await include(second!.occurrenceId, true)).statusCode).toBe(200)
+    release()
+
+    expect(await pending).toMatchObject({
+      code: 'occurrence_not_includable',
+      details: { reason: 'reserve_already_included' },
+    })
+    const included = (await detail(dup!.issueId)).occurrences.filter((o) => o.includeInSettlement)
+    expect(included.map((o) => o.occurrenceId)).toEqual([second!.occurrenceId])
   })
 
   it('a 409 of the rule on a validated import leaves the import validated and its review valid', async () => {
