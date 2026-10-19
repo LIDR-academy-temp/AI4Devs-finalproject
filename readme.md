@@ -997,7 +997,7 @@ erDiagram
 
 Convenciones: todas las tablas llevan `createdAt datetime2 NOT NULL DEFAULT SYSUTCDATETIME()` y, las que se editan, `updatedAt`; se omiten por brevedad. Los importes son `DECIMAL(19,4)`; los porcentajes, `DECIMAL(9,6)` como fracción (0.025000 = 2,5 %); las fechas, `datetime2` o `date`. Los `uniqueidentifier` se generan en la aplicación. Se listan las entidades del flujo principal con detalle completo y las de apoyo de forma resumida.
 
-**Fechas y zona horaria.** Hay dos clases de fecha y no se mezclan. Las **fechas de negocio** (`Transaction.transactionDate` y `lastStatusChangedAt`, los rangos `dateMin/Max*` de `ValidationRun` y `SettlementBatch`, `ValidationIssue.relevantDate`, `ImportRow.txnDate`, `SettlementTransaction.eventDate` y las demás fechas de batch, como `settlementDate`) son hora de pared de America/New_York, tal como las entrega el gateway principal (comprobado contra el gateway real), y se guardan sin zona. Las **fechas de auditoría** (`createdAt`, `updatedAt`, `runAt`, `changedAt`, `resolvedAt` y la fecha de revisión que queda en `AuditLog`) son instantes UTC reales. El API serializa todas en ISO 8601 con `Z`, pero en las fechas de negocio esa `Z` es solo transporte: no indica que la hora esté en UTC. Cambiar esa serialización es la deuda registrada en el issue #48.
+**Fechas y zona horaria.** Hay dos clases de fecha y no se mezclan. Las **fechas de negocio** (`Transaction.transactionDate` y `lastStatusChangedAt`, los rangos `dateMin/Max*` de `ValidationRun` y `SettlementBatch`, `ValidationIssue.relevantDate`, `ImportRow.txnDate`, `SettlementTransaction.eventDate` y `expectedReserveReleaseAt`, `SettlementTransactionFee.eventDate` y las demás fechas de batch, como `settlementDate`) son hora de pared de America/New_York, tal como las entrega el gateway principal (comprobado contra el gateway real), y se guardan sin zona. Las **fechas de auditoría** (`createdAt`, `updatedAt`, `runAt`, `changedAt`, `resolvedAt` y la fecha de revisión que queda en `AuditLog`) son instantes UTC reales. El API serializa todas en ISO 8601 con `Z`, pero en las fechas de negocio esa `Z` es solo transporte: no indica que la hora esté en UTC. Cambiar esa serialización es la deuda registrada en el issue #48. Excepción: las columnas que son solo día (`date`: `SettlementBatch.settlementDate`, `Fee.startDate` y `endDate`, y el parámetro `asOf`) viajan como `YYYY-MM-DD`, sin hora ni `Z`.
 
 #### Catálogo
 
@@ -1028,7 +1028,7 @@ Relaciones: 1:N con AccountChannel, Fee, Import, SettlementBatch; N:1 opcional c
 | assignedInBatchId | uniqueidentifier | FK → SettlementBatch, NULL | Batch cuyo procesamiento creó la asociación |
 | assignedByUserId | int | FK → User | Quién aprobó ese batch |
 
-Reglas: la asociación se crea al procesar el primer batch de la cuenta que incluye transacciones del canal (con aviso previo en el análisis). La **principal es la última cuenta que procesó un settlement con ese canal**: al procesar, `isPrimary` pasa a la cuenta del batch y se retira de la anterior. Los pendientes del canal (faltantes, no reconciliados, reconciliados pendientes de pago) se reportan solo en la cuenta principal. Los movimientos ya procesados permanecen en su batch y cuenta. Deshacer un batch no revierte la cuenta principal.
+Reglas: la asociación se crea al procesar el primer batch de la cuenta que incluye transacciones del canal (con aviso previo en el análisis). La **principal es la última cuenta que procesó un settlement con ese canal**: al procesar, `isPrimary` pasa a la cuenta del batch y se retira de la anterior, y cada canal asociado deja una entrada `account_channel.assign` en `AuditLog` (batch, `new_primary` o `primary_moved_from`, cuenta anterior). Los pendientes del canal (faltantes, no reconciliados, reconciliados pendientes de pago) se reportan solo en la cuenta principal. Los movimientos ya procesados permanecen en su batch y cuenta. Deshacer un batch no revierte la cuenta principal.
 
 #### Fees
 
@@ -1049,9 +1049,9 @@ Reglas: la asociación se crea al procesar el primer batch de la cuenta que incl
 | description | varchar(100) | NULL | |
 | createdByUserId | int | FK → User | |
 
-Restricciones: `CHECK (fixedAmount IS NOT NULL OR percentage IS NOT NULL)`; `CHECK (startDate IS NULL OR endDate IS NULL OR endDate >= startDate)`; **no solapamiento**: para una misma (`accountId`, `feeTypeId`) no pueden existir dos filas cuyas vigencias se intersequen, evaluando los NULL como centinelas: dos fees A y B se solapan si `COALESCE(A.startDate,'0001-01-01') <= COALESCE(B.endDate,'9999-12-31') AND COALESCE(B.startDate,'0001-01-01') <= COALESCE(A.endDate,'9999-12-31')` (dos fees `NULL…NULL` del mismo tipo se solapan). SQL Server no lo expresa como constraint declarativa; se implementa en el caso de uso (transacción con bloqueo por cuenta) y se respalda con un trigger `AFTER INSERT, UPDATE` que rechaza la operación. Sustituye al `UNIQUE (feeTypeId, accountId)` del sistema actual. Selección del fee vigente para un movimiento con fecha de evento `d`: `(startDate IS NULL OR startDate <= d) AND (endDate IS NULL OR endDate >= d)`. Los NULL se guardan como tales (no como fechas centinela) para no contaminar informes y exports. Los fees no se eliminan: para retirar uno se le pone `endDate`; cambiar un fee cierra el vigente con `endDate = nuevo startDate − 1 día` y abre el nuevo, y el primero de la cadena puede tener `startDate NULL`.
+Restricciones: `CHECK (fixedAmount IS NOT NULL OR percentage IS NOT NULL)`; `CHECK (startDate IS NULL OR endDate IS NULL OR endDate >= startDate)`; **no solapamiento**: para una misma (`accountId`, `feeTypeId`) no pueden existir dos filas cuyas vigencias se intersequen, evaluando los NULL como centinelas: dos fees A y B se solapan si `COALESCE(A.startDate,'0001-01-01') <= COALESCE(B.endDate,'9999-12-31') AND COALESCE(B.startDate,'0001-01-01') <= COALESCE(A.endDate,'9999-12-31')` (dos fees `NULL…NULL` del mismo tipo se solapan). SQL Server no lo expresa como constraint declarativa; se implementa en el caso de uso (transacción con bloqueo por cuenta) y se respalda con un trigger `AFTER INSERT, UPDATE` que rechaza la operación. Sustituye al `UNIQUE (feeTypeId, accountId)` del sistema actual. Selección del fee vigente para un movimiento con fecha de evento `d`: `(startDate IS NULL OR startDate <= d) AND (endDate IS NULL OR endDate >= d)`. Los NULL se guardan como tales (no como fechas centinela) para no contaminar informes y exports. Los fees no se eliminan: para retirar uno se le pone `endDate`; cambiar un fee cierra el vigente con `endDate = nuevo startDate − 1 día` y abre el nuevo, y el primero de la cadena puede tener `startDate NULL`. Un ajuste sin fecha de evento (`eventDate NULL`, advertencia `undated_adjustment`) no tiene día con que elegir: recibe el fee de su tipo solo si el único fee de ese tipo en la cuenta es `NULL…NULL`; si no, se queda sin fee de ese tipo y la advertencia lleva `feeSkipped: true` (decisión P6b del gate de `settlement-process`). Si la cuenta no tiene ningún fee del tipo, `feeSkipped` es `false`: no hay fee que saltar.
 
-**FeeHistory** — una fila por cambio: `feeId`, `changedByUserId`, `changedAt`, `action` (`created` / `updated` / `closed`), `beforeJson` y `afterJson` con la fila completa antes y después, `reason`. Permite auditar un summary contra el fee vigente a la fecha del evento. **FeeType** — catálogo conservado (`feeTypeId`, `code`, `title`, `isTransactional`, `appliesToStatusId`) más `allowsFreeAmount` para las categorías de importe libre. El catálogo no transaccional se siembra con los 21 valores de la lista `Non-Transactional Fees` de la plantilla (Annual Fee, Bram Fine, Chargeback Assessment Fee, Chargeback Order Deduction, Chargeback over 1 %/2 %/3 %, Chargeback Reversed, Cross Border Fee, Customer Service Fee, Monthly Fee, Rebate 2 %/3 %, Release of Frozen Funds, Remittance Charges, Service Fee, Settlement Fee, Setup Fee, Special Adjustment, Special Deduction, Wire Fee).
+**FeeHistory** — una fila por cambio: `feeId`, `changedByUserId`, `changedAt`, `action` (`created` / `updated` / `closed`), `beforeJson` y `afterJson` con la fila completa antes y después, `reason`. Permite auditar un summary contra el fee vigente a la fecha del evento. **FeeType** — catálogo conservado (`feeTypeId`, `code`, `title`, `isTransactional`, `appliesToStatusId`) más `allowsFreeAmount` para las categorías de importe libre e `isActive`; `GET /fee-types` devuelve solo los tipos activos. El catálogo no transaccional se siembra con los 21 valores de la lista `Non-Transactional Fees` de la plantilla (Annual Fee, Bram Fine, Chargeback Assessment Fee, Chargeback Order Deduction, Chargeback over 1 %/2 %/3 %, Chargeback Reversed, Cross Border Fee, Customer Service Fee, Monthly Fee, Rebate 2 %/3 %, Release of Frozen Funds, Remittance Charges, Service Fee, Settlement Fee, Setup Fee, Special Adjustment, Special Deduction, Wire Fee).
 
 #### Reglas de pareo
 
@@ -1154,7 +1154,7 @@ Restricciones: `CHECK (fixedAmount IS NOT NULL OR percentage IS NOT NULL)`; `CHE
 
 Reglas de inclusión por defecto: `duplicate + in_batch`, primera aparición incluida y posteriores excluidas; `duplicate + across_batches`, aparición actual excluida (la histórica se conserva como evidencia); `collision + in_batch`, todas las apariciones actuales incluidas; `collision + across_batches`, aparición actual incluida. El analista puede modificar `includeInSettlement`, incluso para incluir un duplicado detectado; es una decisión de negocio opcional y queda auditada. El hallazgo sigue existiendo aunque cambie la inclusión: detección y contabilización son conceptos distintos.
 
-Casos particulares. **Faltantes** usan `ValidationIssue` sin apariciones: una transacción interna que debió reconciliarse según el rango de su ciclo (`missingType` y `relevantDate` conservan la clasificación); se registra una sola vez por proveedor, ciclo y transacción, permanece `persistent` hasta que se incluye en un batch `processed` posterior de cualquier cuenta del proveedor, momento en que pasa a `resolved` con `resolvedInBatchId` (no hace falta esperar al pago), y vuelve a `persistent` si ese batch se deshace. **`provider_mismatch`** es el único hallazgo bloqueante: el import se creó bajo un proveedor o cuenta incorrectos; no hay override, el analista cancela y procesa con el proveedor correcto; el hallazgo conserva la evidencia. **`non_recorded_adjustment`**: el proveedor reporta un movimiento I que el gateway todavía refleja como APP; el movimiento viene incluido por defecto y el analista puede excluirlo; `resolutionStatus` es independiente de la inclusión y pasa a `resolved` cuando alguien verifica o corrige el estado en el gateway, con auditoría. Un **`status_mismatch`** (fila E cuyo estado reportado contradice el del gateway) se resuelve a mano igual, con nota y auditoría; los demás tipos no se resuelven a mano (`422 issue_not_resolvable`).
+Casos particulares. **Faltantes** usan `ValidationIssue` sin apariciones: una transacción interna que debió reconciliarse según el rango de su ciclo (`missingType` y `relevantDate` conservan la clasificación); se registra una sola vez por proveedor, ciclo y transacción, permanece `persistent` hasta que se incluye en un batch `processed` posterior de cualquier cuenta del proveedor, momento en que pasa a `resolved` con `resolvedInBatchId` (no hace falta esperar al pago), y vuelve a `persistent` si ese batch se deshace. Al procesar solo se resuelven hallazgos de corridas vigentes (`isSuperseded = 0`); al deshacer no se reabren los resueltos a mano (`resolvedByUserId` no nulo). **`provider_mismatch`** es el único hallazgo bloqueante: el import se creó bajo un proveedor o cuenta incorrectos; no hay override, el analista cancela y procesa con el proveedor correcto; el hallazgo conserva la evidencia. **`non_recorded_adjustment`**: el proveedor reporta un movimiento I que el gateway todavía refleja como APP; el movimiento viene incluido por defecto y el analista puede excluirlo; `resolutionStatus` es independiente de la inclusión y pasa a `resolved` cuando alguien verifica o corrige el estado en el gateway, con auditoría. Un **`status_mismatch`** (fila E cuyo estado reportado contradice el del gateway) se resuelve a mano igual, con nota y auditoría; los demás tipos no se resuelven a mano (`422 issue_not_resolvable`).
 
 #### Settlement
 
@@ -1164,7 +1164,7 @@ Casos particulares. **Faltantes** usan `ValidationIssue` sin apariciones: una tr
 |---|---|---|---|
 | batchId | uniqueidentifier | PK | |
 | accountId | uniqueidentifier | FK, NOT NULL | |
-| batchNo | int | NOT NULL; `UNIQUE (accountId, batchNo, attemptNo)` | Número oficial del proveedor; propuesto por el sistema, editable |
+| batchNo | int | NOT NULL, CHECK > 0; `UNIQUE (accountId, batchNo, attemptNo)` | Número oficial del proveedor; propuesto por el sistema, editable |
 | attemptNo | int | NOT NULL, CHECK > 0 | Versión de procesamiento del número oficial |
 | importId | uniqueidentifier | FK → Import, NOT NULL | Un import puede tener varios intentos históricos |
 | status | varchar(20) | NOT NULL, CHECK | `processed` → `paid`; `undone` solo desde `processed`; retirar la marca de pago devuelve a `processed` con auditoría |
@@ -1173,15 +1173,16 @@ Casos particulares. **Faltantes** usan `ValidationIssue` sin apariciones: una tr
 | paidAt, paidByUserId | | NULL | Marcar pagado / retirar la marca |
 | undoneAt, undoneByUserId, undoReason | | NULL | Deshacer conserva la fila; el import vuelve a `analyzed` |
 | dateMin/MaxApp, dateMin/MaxDec, dateMin/MaxI, dateMin/MaxR | datetime2 | NULL | Rangos de fechas por ciclo |
-| mdrAmt, mdrRate | decimal | | |
+| mdrAmt | decimal(19,4) | NOT NULL DEFAULT 0 | Suma de los fees de tipo `MDR` de los movimientos (parte del fee de los depósitos) |
+| mdrRate | decimal(9,6) | NULL | Porcentaje MDR si todos los movimientos usaron el mismo; NULL si no hay o varía |
 | otherFeeAmt | decimal(19,4) | NOT NULL DEFAULT 0 | Suma de `SettlementBatchFee` |
 | reserveHeldAmt, reserveReleasedAmt | decimal(19,4) | NOT NULL DEFAULT 0 | |
-| amountPayable | decimal(19,4) | NOT NULL | Resultado del summary |
+| amountPayable | decimal(19,4) | NOT NULL DEFAULT 0 | Resultado del summary |
 | channels | varchar(100) | NULL | Canales incluidos |
 
 Reglas de intentos: índices únicos filtrados por `status <> 'undone'` garantizan un solo intento vigente por (`accountId`, `batchNo`) y por `importId`. Tras deshacer, el siguiente intento incrementa `attemptNo` conservando el número oficial. La confirmación y el cambio de intento vigente son atómicos. Se recalculan las incidencias afectadas; no se revierte la cuenta principal; los exports históricos se identifican por intento.
 
-**SettlementBatchFee** — fees no transaccionales aplicados al batch: `batchFeeId`, `batchId`, `feeTypeId` (FK), `feeId` (FK → Fee, NULL si es de importe libre), `amount`, `description`, `source` (`file` si llega prellenado de la hoja `Other Fees`, `manual` si lo añade el analista), `enteredByUserId`. La suma alimenta `SettlementBatch.otherFeeAmt` y se guardan en el orden en que el analista los confirma. Regla, validada en el caso de uso (cruza tablas, no es una `CHECK`): si `feeId IS NULL`, el tipo debe tener `allowsFreeAmount = 1`, **salvo** que sea un fee prellenado de `Other Fees` (`source = file`) de un tipo que el archivo trae (decisión del gate de `settlement-process`; el mantenimiento de tipos es el issue #60). Un importe libre añadido a mano exige descripción. Un preestablecido solo con porcentaje no se calcula: el analista escribe su importe.
+**SettlementBatchFee** — fees no transaccionales aplicados al batch: `batchFeeId`, `batchId`, `feeTypeId` (FK), `feeId` (FK → Fee, NULL si es de importe libre), `amount`, `description`, `source` (`file` si llega prellenado de la hoja `Other Fees`, `manual` si lo añade el analista), `enteredByUserId`. La suma alimenta `SettlementBatch.otherFeeAmt` y se guardan en el orden en que el analista los confirma. Regla, validada en el caso de uso (cruza tablas, no es una `CHECK`): si `feeId IS NULL`, el tipo debe tener `allowsFreeAmount = 1`, **salvo** que sea un fee prellenado de `Other Fees` (`source = file`) de un tipo que el archivo trae (decisión del gate de `settlement-process`; el mantenimiento de tipos es el issue #60). Un importe libre añadido a mano exige descripción. Un preestablecido solo con porcentaje no se calcula: el analista escribe su importe. Los motivos de rechazo (`400 batch_fee_invalid`) y el día de referencia de la vigencia están en 4.3.
 
 **SettlementBatchTotal** — PK (`batchId`, `category`) con `category` ∈ {`deposit`, `declined`, `chargeback`, `refund`, `rdr`}: `qty`, `amount`, `feeAmount`, `feeRate`. **SettlementBatchBrandTotal** — PK (`batchId`, `cardBrand`): `qty`, `amount`.
 
@@ -1194,7 +1195,7 @@ Reglas de intentos: índices únicos filtrados por `status <> 'undone'` garantiz
 | transactionId | bigint | FK → Transaction, NOT NULL | |
 | cycle | char(1) | FK → Cycle, NOT NULL | Ciclo E / I / R |
 | statusId | int | FK → TransactionStatus, NOT NULL | Estado de la transacción al procesarse (en R, el estado vigente de la `Successful` original) |
-| settlementStatusId | int | FK → SettlementStatus, NOT NULL | |
+| settlementStatusId | int | FK → SettlementStatus, NOT NULL | El procesamiento siempre escribe `0` (`Unsettled`); Settled se deriva del intento pagado |
 | roundNo | int | NULL | Ronda 1 / 2 (clasificación del escenario E–I) |
 | sheetId, rowNo | | NULL | De qué fila del archivo salió |
 | amount | decimal(19,4) | NOT NULL | Importe USD procesado en este ciclo, siempre positivo: el de la transacción en una aprobada y en un ajuste I (también un `RDR`, que descuenta como un Chargeback o un Refund); 0 en una declinada y en R |
@@ -1210,13 +1211,13 @@ Reglas de intentos: índices únicos filtrados por `status <> 'undone'` garantiz
 
 Restricción: un movimiento por **fila de origen** del batch, índice único filtrado `UX_SettlementTransaction_batch_row (batchId, sheetId, rowNo) WHERE sheetId IS NOT NULL`, y `CHECK` de que hoja y fila van juntas (migración `0007`). Un batch admite así varios movimientos de la misma transacción y ciclo: Refund + Chargeback, Chargeback + `CHB 2` o un duplicado incluido a mano; los movimientos históricos sin fila no entran en el índice. Settled de un movimiento en un ciclo exige una fila aquí cuyo intento de batch tenga `status = 'paid'`; reemplaza a los tres flags del sistema actual y admite el chargeback por diferencia. Importes, fees y reservas se calculan a 4 decimales; lo que da más (importe × porcentaje) se redondea mitad hacia arriba en el cuarto.
 
-**SettlementTransactionFee** — detalle 1:N de fees por movimiento: `appliedFeeId BIGINT IDENTITY PK`, `settlementTxnId FK`, `feeId FK`, `feeTypeId FK`, `eventDate`, `amountUsd DECIMAL(19,4)` y `configurationSnapshot NVARCHAR(MAX)` con la configuración aplicada. El total se conserva en `SettlementTransaction.feeAmount`; las ediciones posteriores del catálogo no recalculan históricos.
+**SettlementTransactionFee** — detalle 1:N de fees por movimiento: `appliedFeeId BIGINT IDENTITY PK`, `settlementTxnId FK`, `feeId FK`, `feeTypeId FK`, `eventDate` (copia la del movimiento; NULL cuando el movimiento no tiene fecha, el caso de un ajuste sin fecha con fee `NULL…NULL`, migración `0008`), `amountUsd DECIMAL(19,4)` y `configurationSnapshot NVARCHAR(MAX)` con la configuración aplicada. El total se conserva en `SettlementTransaction.feeAmount`; las ediciones posteriores del catálogo no recalculan históricos.
 
 **SettlementStatus** — catálogo conservado; el estado efectivo Settled exige un intento de batch pagado.
 
 #### Acceso y auditoría
 
-**User** (`userId`, `userName` UNIQUE, `email` UNIQUE, `passwordHash` Argon2, `roleId`, `merchantScope` ∈ {`assigned`, `all`} por defecto `assigned`, `isActive`), **Role** (`roleId`, `name`), **RolePermission** (PK `roleId`, `permissionCode` ∈ {`settlement.process`, `payment.process`, `account.manage`, `fee.manage`, `fee.view`, `reports.view`, `user.manage`}), **UserMerchant** (PK `userId`, `merchantId`). **AuditLog** — acciones que no quedan ya en otra tabla con autor y fecha: aprobación de batch con hallazgos (`import.review`) y su invalidación al re-ejecutar o cambiar una inclusión (`import.review.invalidate`), pago y retiro de pago, deshacer, cambios de inclusión y resoluciones, creación y edición de cuenta.
+**User** (`userId`, `userName` UNIQUE, `email` UNIQUE, `passwordHash` Argon2, `roleId`, `merchantScope` ∈ {`assigned`, `all`} por defecto `assigned`, `isActive`), **Role** (`roleId`, `name`), **RolePermission** (PK `roleId`, `permissionCode` ∈ {`settlement.process`, `payment.process`, `account.manage`, `fee.manage`, `fee.view`, `reports.view`, `user.manage`}), **UserMerchant** (PK `userId`, `merchantId`). **AuditLog** — acciones que no quedan ya en otra tabla con autor y fecha: aprobación de batch con hallazgos (`import.review`) y su invalidación al re-ejecutar o cambiar una inclusión (`import.review.invalidate`), pago y retiro de pago, deshacer, cambios de inclusión y resoluciones, creación y edición de cuenta. El procesamiento escribe `settlement.process` (detalle: `importId`, `runId`, `batchNo`, `attemptNo`, movimientos por ciclo, `skipped`, `warnings`, número de fees por batch, `resolvedMissing`, `channelsAssigned` y `note`) y una entrada `account_channel.assign` por canal asociado. Hoy la vista del intento reconstruye `skipped`, `warnings` y `channelsAssigned` a partir de ese detalle: es una excepción a "acciones que no quedan ya en otra tabla", y llevarlos al batch es el issue #65.
 
 ### 3.3. Reglas de validación cerradas (cross-validation funcional)
 
@@ -1259,7 +1260,7 @@ Para cada ciclo con rango: candidata con fecha anterior al mínimo → `missing_
 - **`not_applicable`.** `provider_mismatch`, `non_recorded_adjustment`, `duplicate_in_batch` y `status_collision_in_batch` solo cuando el import no tiene ninguna fila asociada, de ningún ciclo; las dos *across* cuando el proveedor no tiene ningún intento no deshecho; las dos de faltantes cuando ningún ciclo tiene rango.
 - **Grupos de N apariciones en el batch.** Por clave `(transactionId, cycle)`, cada estado repetido produce un `duplicate` (primera aparición incluida, demás excluidas) y la presencia de estados distintos produce una `collision` con la primera aparición de cada estado, todas incluidas, para que ninguna aparición se cuente dos veces. En el ciclo R el estado no cuenta (la reserva no tiene estado): todas las apariciones R de una clave son el mismo movimiento, un `duplicate`, nunca una `collision`.
 - **Contra batches anteriores.** Por clave, un `duplicate_across_batches` si alguna aparición histórica tiene el mismo estado que una actual (las actuales con ese estado, excluidas; las históricas, como evidencia) y un `status_collision_across_batches` si alguna tiene estado distinto (la actual, incluida). En el ciclo R el estado no cuenta: cualquier aparición R histórica hace duplicadas las actuales. La colisión lista también, como evidencia, los movimientos históricos compatibles con la actual (el `CHB 2` junto a su `Chargeback`). Las detecciones *in batch* y *across* son independientes; cómo se combinan las inclusiones de una fila presente en varios hallazgos lo decide el procesamiento (viñeta siguiente).
-- **Inclusiones al procesar** (change `settlement-process`). Una fila asociada se procesa si **ninguna** de sus apariciones `current_import` de la corrida vigente la excluye: una fila en varios hallazgos se excluye si cualquiera de ellos la excluye, así que ningún movimiento se cuenta dos veces por defecto; una inclusión manual cuenta si la fila no está excluida en otro hallazgo. No se procesan, y se cuentan aparte por motivo (`skipped`), las filas ignoradas, sin asociar o ambiguas, las excluidas, las E o I con estado no resuelto y las cuyo propio estado es `Pending`. Una fila con otro estado cuya transacción está en `Pending` en el gateway **sí** se procesa, con el estado de la fila, como un desajuste APP/DEC que se corrige del lado del merchant; que la validación lo avise como `status_mismatch` es el issue #63.
+- **Inclusiones al procesar** (change `settlement-process`). Una fila asociada se procesa si **ninguna** de sus apariciones `current_import` de la corrida vigente la excluye: una fila en varios hallazgos se excluye si cualquiera de ellos la excluye, así que ningún movimiento se cuenta dos veces por defecto; una inclusión manual cuenta si la fila no está excluida en otro hallazgo. No se procesan, y se cuentan aparte por motivo (`skipped`), las filas ignoradas, sin asociar o ambiguas, las excluidas, las E o I con estado no resuelto y las cuyo propio estado es `Pending`. Una fila con otro estado cuya transacción está en `Pending` en el gateway **sí** se procesa, con el estado de la fila, como un desajuste APP/DEC que se corrige del lado del merchant; que la validación lo avise como `status_mismatch` es el issue #63. Una fila E cuyo propio estado es de ajuste (`Chargeback`, `Refund` o `RDR`) se procesa como depósito sin reserva: cualquier estado E distinto de `Declined` suma a `deposit`, solo una `Successful` retiene reserva, y lleva los fees transaccionales de su estado.
 - **Inclusión manual de una aparición** (`PATCH /conflict-occurrences/{id}`, change `validation-runs`). Solo se cambian las apariciones `current_import` de la corrida vigente, con el import en `analyzed` o `validated` (en `validated` el import vuelve a `analyzed` y la revisión queda invalidada y auditada); una aparición `previous_batch` es evidencia de un batch ya procesado y no se edita. **Ciclo R:** la reserva no tiene estado y no se libera dos veces, así que un hallazgo tiene como máximo una aparición incluida y ninguna aparición del import actual se incluye si el hallazgo tiene una `previous_batch` (esa reserva ya se liberó en un batch anterior); incluir otra responde `409 occurrence_not_includable` y excluir siempre se admite (regla "Ciclo R sin estado" del change `validation-engine`). **Ciclos E e I:** incluir a mano un duplicado, en el batch o entre batches, está permitido y queda auditado con usuario y fecha. En los duplicados E entre batches, esa inclusión manual existe solo para procesar batches históricos: la regla de fondo es que un E no se paga dos veces, y cerrarla cuando ya no se procesen batches históricos es el issue #49.
 - **Corridas, revisión y acciones del analista** (decisiones P1–P7 de la revisión del change `validation-runs`, 2026-10-18).
   - **P1. Validar de nuevo un import `validated`.** Se admite: la corrida nueva supera a la anterior, el import vuelve a `analyzed` y la revisión queda invalidada y auditada (`import.review.invalidate`, motivo `rerun`). `import_not_analyzed` queda para `uploaded`, `mapped`, `processed` y `cancelled`.
@@ -1301,7 +1302,7 @@ La API es REST bajo `/api/v1`, con contrato OpenAPI 3.1 en `docs/openapi.yaml` (
 
 - **Autenticación y alcance:** `Authorization: Bearer <JWT>` en todas las rutas salvo las anónimas: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout` (llevan el refresh token en el cuerpo) y `GET /health`. Cada petición resuelve los permisos del usuario y su alcance de merchants; un recurso de un merchant no visible responde `404`, no `403`, para no revelar su existencia.
 - **Errores:** cuerpo uniforme `{ code, message, details? }`. `400` datos inválidos · `401` sin sesión · `403` sin permiso · `404` no existe o no visible · `409` conflicto con el estado actual · `422` archivo que no se puede procesar.
-- **Dinero y porcentajes:** viajan como **strings** decimales (`"25.0000"`, `"0.025000"`), nunca como números JSON. Fechas en ISO 8601, UTC.
+- **Dinero y porcentajes:** viajan como **strings** decimales (`"25.0000"`, `"0.025000"`), nunca como números JSON. Fechas en ISO 8601 con `Z` (en las de negocio la `Z` es solo transporte, ver 3.2); las columnas de solo día (`settlementDate`, `Fee.startDate`/`endDate`, `asOf`) como `YYYY-MM-DD`.
 - **Identificadores:** UUID para cuentas, imports, archivos, hojas, fees y batches; enteros para catálogos, usuarios, hallazgos y resultados; `bigint` para transacciones, movimientos y apariciones.
 
 Se documentan los tres endpoints principales, uno por cada capacidad que define el producto: administrar fees con reglas de negocio, importar con propuesta de pareo, y procesar. El inventario completo de endpoints previstos está al final de la sección.
@@ -1498,7 +1499,7 @@ Permiso `settlement.process`. Recibe uno o varios `.xlsx` (hasta 20 MB cada uno)
 
 ### 4.3. `POST /imports/{importId}/settlements` — procesar el batch
 
-Permiso `settlement.process`. Requiere un import en `validated` cuya revisión sea de la corrida vigente (`runId` en el cuerpo) y sin hallazgos bloqueantes. Las advertencias persistentes no requieren acciones individuales. En **una** transacción crea un intento de batch en estado `processed` (pendiente de pago), incluye cada fila según la inclusión vigente de sus apariciones (§3.3, "Inclusiones al procesar"), aplica fees por fecha de evento, suma los fees por batch, calcula totales USD a 4 decimales y el amount payable con su desglose, asocia los canales a la cuenta y resuelve los faltantes que el batch incluye. Los importes de los totales viajan en positivo: el signo lo aplica quien los presenta, y `payableBreakdown` dice el de cada línea. Ningún movimiento queda Settled: eso solo pasa con `POST /settlements/{id}/pay`. Un reprocesamiento tras deshacer conserva el número oficial e incrementa el intento. `POST /imports/{importId}/settlements/preview` acepta el mismo cuerpo y devuelve lo mismo sin escribir nada.
+Permiso `settlement.process`. Requiere un import en `validated` cuya revisión sea de la corrida vigente (`runId` en el cuerpo) y sin hallazgos bloqueantes. Las advertencias persistentes no requieren acciones individuales. En **una** transacción crea un intento de batch en estado `processed` (pendiente de pago), incluye cada fila según la inclusión vigente de sus apariciones (§3.3, "Inclusiones al procesar"), aplica fees por fecha de evento, suma los fees por batch, calcula totales USD a 4 decimales y el amount payable con su desglose, asocia los canales a la cuenta y resuelve los faltantes que el batch incluye. Los importes de los totales viajan en positivo: el signo lo aplica quien los presenta, y `payableBreakdown` dice el de cada línea. Ningún movimiento queda Settled: eso solo pasa con `POST /settlements/{id}/pay`. Un reprocesamiento tras deshacer conserva el número oficial e incrementa el intento. `POST /imports/{importId}/settlements/preview` acepta el mismo cuerpo, hace el mismo cálculo sin escribir ni auditar nada y responde `200` con un `SettlementPreview`: las mismas cifras (rangos, canales, movimientos, totales, MDR, fees, reservas, `amountPayable`, `payableBreakdown`, `skipped`, `warnings`), con `batchFees` sin `batchFeeId` ni `enteredBy` (`null`), y sin lo que solo existe al escribir (`batchId`, `accountName`, `status`, `settledStatus`, `approvedBy`, `processedAt`, `settlementDate`, `channelsAssigned`, `validationSummary`, `exports`). Añade `runId`, `batchNoAvailable`, `requiresChannelConfirmation` y `channelsToAssign`: no responde `batch_no_taken` ni `channel_assignment_not_confirmed`, los informa con esos campos. Sí responde `409 import_not_validated` / `validation_run_required` / `validation_run_superseded` / `blocking_validation_issue` y `400 batch_fee_invalid`.
 
 ```yaml
 /imports/{importId}/settlements:
@@ -1540,7 +1541,7 @@ Permiso `settlement.process`. Requiere un import en `validated` cuya revisión s
             confirmChannelAssignment: true
             batchFees:
               - { feeTypeId: 121, feeId: null, amount: "25.0000", description: "Wire Fee", source: file }
-              - { feeTypeId: 119, feeId: null, amount: "-42.5000", description: "Adjustment: duplicate in batch 115", source: manual }
+              - { feeTypeId: 117, feeId: null, amount: "15.0000", description: "Settlement Fee", source: file }
     responses:
       '201':
         description: Intento de batch procesado, pendiente de pago
@@ -1566,38 +1567,37 @@ Permiso `settlement.process`. Requiere un import en `validated` cuya revisión s
               channels: ["RAM-01", "RAM-02", "RAM-07"]
               movements: { E: 450, I: 10, R: 320 }
               totals:
-                - { category: deposit,    qty: 340, amount: "39181.0700", feeAmount: "0.0000", feeRate: null }
-                - { category: declined,   qty: 110, amount: "0.0000",     feeAmount: "0.0000", feeRate: null }
-                - { category: chargeback, qty: 2,   amount: "193.8600",   feeAmount: "0.0000", feeRate: null }
-                - { category: refund,     qty: 6,   amount: "843.9900",   feeAmount: "0.0000", feeRate: null }
-                - { category: rdr,        qty: 2,   amount: "391.5500",   feeAmount: "0.0000", feeRate: null }
+                - { category: deposit,    qty: 340, amount: "39181.0700", feeAmount: "4139.1070", feeRate: "0.100000" }
+                - { category: declined,   qty: 110, amount: "0.0000",     feeAmount: "27.5000",   feeRate: null }
+                - { category: chargeback, qty: 2,   amount: "193.8600",   feeAmount: "90.0000",   feeRate: null }
+                - { category: refund,     qty: 6,   amount: "843.9900",   feeAmount: "30.0000",   feeRate: null }
+                - { category: rdr,        qty: 2,   amount: "391.5500",   feeAmount: "50.0000",   feeRate: null }
               brandTotals:
                 - { cardBrand: VISA, qty: 204, amount: "23508.6400" }
               reservesReleasedQty: 320
-              mdrAmt: "0.0000"
-              mdrRate: null
-              transactionalFeeAmt: "0.0000"
+              mdrAmt: "3918.1070"
+              mdrRate: "0.100000"
+              transactionalFeeAmt: "4336.6070"
               batchFees:
                 - { batchFeeId: 41, feeTypeId: 121, code: "Wire Fee", title: "Wire Fee", feeId: null, amount: "25.0000", description: "Wire Fee", source: file, enteredBy: { userId: 2, userName: "analyst" } }
-                - { batchFeeId: 42, feeTypeId: 119, code: "Special Adjustment", title: "Special Adjustment", feeId: null, amount: "-42.5000", description: "Adjustment: duplicate in batch 115", source: manual, enteredBy: { userId: 2, userName: "analyst" } }
-              otherFeeAmt: "-17.5000"
+                - { batchFeeId: 42, feeTypeId: 117, code: "Settlement Fee", title: "Settlement Fee", feeId: null, amount: "15.0000", description: "Settlement Fee", source: file, enteredBy: { userId: 2, userName: "analyst" } }
+              otherFeeAmt: "40.0000"
               reserveHeldAmt: "3918.1070"
               reserveReleasedAmt: "4314.4040"
               reserveEarlyReleasedAmt: "0.0000"
-              amountPayable: "38165.4670"
+              amountPayable: "33771.3600"
               payableBreakdown:
                 - { code: deposit,                label: "Deposits",                       sign: "+", amount: "39181.0700" }
                 - { code: chargeback,             label: "Chargebacks",                    sign: "-", amount: "193.8600" }
                 - { code: refund,                 label: "Refunds",                        sign: "-", amount: "843.9900" }
                 - { code: rdr,                    label: "RDR",                            sign: "-", amount: "391.5500" }
-                - { code: transactional_fees,     label: "Transaction fees",               sign: "-", amount: "0.0000" }
-                - { code: batch_fees,             label: "Batch fees",                     sign: "-", amount: "-17.5000" }
+                - { code: transactional_fees,     label: "Transaction fees",               sign: "-", amount: "4336.6070" }
+                - { code: batch_fees,             label: "Batch fees",                     sign: "-", amount: "40.0000" }
                 - { code: reserve_held,           label: "Reserve held",                   sign: "-", amount: "3918.1070" }
                 - { code: reserve_released,       label: "Reserve released",               sign: "+", amount: "4314.4040" }
                 - { code: reserve_early_released, label: "Reserve released on chargeback", sign: "+", amount: "0.0000" }
               skipped: { ignored: 3, unmatched: 0, ambiguous: 0, excluded: 0, unresolvedStatus: 0, pending: 0 }
-              warnings:
-                - { code: transactional_fees_not_computed }
+              warnings: []
               channelsAssigned:
                 - { channelId: 1007, name: "RAM-07", assignment: new_primary, previousAccount: null }
               validationSummary: { runId: 12, persistent: 0, resolved: 0, blocking: 0, resolvedMissing: 0 }
@@ -1613,12 +1613,14 @@ Permiso `settlement.process`. Requiere un import en `validated` cuya revisión s
               batchFeeInvalid:
                 value: { code: batch_fee_invalid, message: "Batch fee 1 is not valid: free_amount_not_allowed", details: { index: 1, reason: free_amount_not_allowed } }
       '409':
-        description: El import no está validado, la corrida no es la revisada, hay hallazgos bloqueantes, ya existe un intento vigente para ese número, o faltan confirmaciones
+        description: El import no está validado, no hay corrida vigente, la corrida no es la revisada, hay hallazgos bloqueantes, ya existe un intento vigente para ese número, o faltan confirmaciones
         content:
           application/json:
             examples:
               notValidated:
                 value: { code: import_not_validated, message: "The import must be validated before processing (status: analyzed)", details: { status: analyzed } }
+              runRequired:
+                value: { code: validation_run_required, message: "Run the validations before reviewing", details: {} }
               runSuperseded:
                 value: { code: validation_run_superseded, message: "A newer validation run exists; review it before continuing", details: { runId: 11, currentRunId: 12 } }
               blockingIssue:
@@ -1629,7 +1631,21 @@ Permiso `settlement.process`. Requiere un import en `validated` cuya revisión s
                 value: { code: channel_assignment_not_confirmed, message: "The import includes channels not assigned to this account; confirm the assignment", details: { channels: [{ channelId: 1007, name: "RAM-07", assignment: unassigned, otherAccount: null }] } }
 ```
 
-El ejemplo es de `batch-clean` con los fees transaccionales aún sin calcular (advertencia `transactional_fees_not_computed`). La suma con signo de `payableBreakdown` es `amountPayable`.
+El ejemplo es de `batch-clean` (cifras de `data/samples/batch-clean/expected.json`), con los fees transaccionales calculados, como siempre en el API, y los dos fees de `Other Fees` prellenados. `mdrAmt` es la parte MDR incluida en el fee de los depósitos. La suma con signo de `payableBreakdown` es `amountPayable`.
+
+**`400 batch_fee_invalid`.** Los fees por batch se validan en el orden del cuerpo y la validación se detiene en el primero no válido: `details.index` es su posición (desde 0) y `details.reason`, uno de:
+
+| `reason` | Cuándo |
+|---|---|
+| `unknown_fee_type` | `feeTypeId` no existe |
+| `transactional_fee_type` | El tipo es transaccional: lo aplica el motor por movimiento, no va por batch |
+| `fee_not_in_account` | `feeId` no es un fee de la cuenta |
+| `fee_type_mismatch` | El fee preestablecido es de otro tipo que `feeTypeId` |
+| `fee_not_in_force` | El fee preestablecido no está vigente el día de referencia del batch |
+| `free_amount_not_allowed` | Importe libre (`feeId: null`) de un tipo sin `allowsFreeAmount`, salvo un prellenado de `Other Fees` (`source: file`) de un tipo que el archivo trae |
+| `description_required` | Importe libre añadido a mano (`source: manual`) sin descripción |
+
+El día de referencia es `settlementDate` si viene en el cuerpo; si no, el mayor de los máximos de los rangos de la corrida (como día de negocio); si no hay ninguno de los dos, no se comprueba la vigencia.
 
 ### 4.4. Inventario de endpoints previstos
 
@@ -1674,8 +1690,8 @@ Lista consolidada de lo que el MVP necesita; los tres documentados arriba están
 | Validaciones | `PATCH /validation-issues/{id}` | `settlement.process` | Acción opcional: `{ resolutionStatus: "resolved", note }` resuelve a mano un `non_recorded_adjustment` o un `status_mismatch` de la corrida vigente, con nota, en cualquier estado del import. `409 issue_already_resolved` / `validation_run_superseded`, `422 issue_not_resolvable` |
 | Validaciones | `PATCH /conflict-occurrences/{id}` | `settlement.process` | Acción opcional: `{ includeInSettlement }` en una aparición `current_import` de la corrida vigente, en `analyzed` o `validated` (vuelve a `analyzed`), auditado; regla de R de 3.3. `409 import_not_editable` / `validation_run_superseded` / `occurrence_not_editable` / `occurrence_not_includable` |
 | Validaciones | `POST /imports/{id}/review` | `settlement.process` | Decisión de conjunto "continuar" con cuerpo `{ runId }`: el import pasa a `validated` si es la corrida vigente y no hay bloqueantes, auditado. `409 import_not_analyzed` / `validation_run_required` / `validation_run_superseded` / `blocking_validation_issue` |
-| Settlement | **`POST /imports/{id}/settlements`** ✅ | `settlement.process` | Procesar (4.3). `409 import_not_validated` / `validation_run_superseded` / `blocking_validation_issue` / `batch_no_taken` / `channel_assignment_not_confirmed`, `400 batch_fee_invalid` |
-| Settlement | `POST /imports/{id}/settlements/preview` | `settlement.process` | El mismo cálculo y cuerpo que procesar, sin escribir ni auditar: resumen previo de Settlement Review con `batchNoAvailable` y los canales a asociar |
+| Settlement | **`POST /imports/{id}/settlements`** ✅ | `settlement.process` | Procesar (4.3). `409 import_not_validated` / `validation_run_required` / `validation_run_superseded` / `blocking_validation_issue` / `batch_no_taken` / `channel_assignment_not_confirmed`, `400 batch_fee_invalid` |
+| Settlement | `POST /imports/{id}/settlements/preview` | `settlement.process` | El mismo cálculo y cuerpo que procesar, sin escribir ni auditar; responde `200` con `SettlementPreview`: resumen previo de Settlement Review con `batchNoAvailable` y los canales a asociar (`requiresChannelConfirmation`, `channelsToAssign`) en lugar de `409 batch_no_taken` / `channel_assignment_not_confirmed`. `409 import_not_validated` / `validation_run_required` / `validation_run_superseded` / `blocking_validation_issue`, `400 batch_fee_invalid` |
 | Settlement | `GET /settlements/{id}` | — | Intento de batch con summary y estado de pago |
 | Settlement | `GET /settlements/{id}/transactions?type=E\|I\|R&page=` | — | Movimientos del intento con sus fees aplicados y reserva |
 | Settlement | `GET /settlements/{id}/export?type=summary\|transactions\|reserves` | `reports.view` | Descargas identificadas por intento; no cambian el estado |
@@ -1768,7 +1784,7 @@ Tres tickets representativos del backlog, uno por capa; no representan todo el t
 
 1. Crear `SettlementBatch` (con `attemptNo`, estado, rangos por ciclo, totales), `SettlementBatchTotal`, `SettlementBatchBrandTotal`, `SettlementBatchFee`, `SettlementTransaction` (con reserva y política aplicada) y `SettlementTransactionFee`, con PK/FK y migración revisada a mano.
 2. Relacionarlas con cuentas, transacciones (`transactionId BIGINT`) e imports (`Import.currentBatchId`).
-3. Importes USD como `DECIMAL(19,4)`, porcentajes `DECIMAL(9,6)`, fecha de evento y parámetros usados para fees y reservas; `CHECK` de estados y de `SettlementBatchFee`.
+3. Importes USD como `DECIMAL(19,4)`, porcentajes `DECIMAL(9,6)`, fecha de evento y parámetros usados para fees y reservas; `CHECK` de estados y de `SettlementBatchFee.source IN ('file','manual')`; la regla de importe libre cruza tablas y se valida en el caso de uso (3.2), no con una `CHECK`.
 4. Índices únicos filtrados por `status <> 'undone'`: un solo intento vigente por (`accountId`, `batchNo`) y por `importId`; `UNIQUE (accountId, batchNo, attemptNo)`; un movimiento por fila de origen `(batchId, sheetId, rowNo)` (en el MVP sustituye a `UNIQUE (transactionId, cycle, batchId)`, migración `0007`).
 5. Vista o consulta de Settled por ciclo: existe fila en `SettlementTransaction` cuyo batch tiene `status = 'paid'`.
 6. Pruebas de integración sobre SQL Server efímero con datos sintéticos que verifiquen migración, relaciones y restricciones.
