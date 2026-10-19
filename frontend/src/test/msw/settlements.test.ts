@@ -2,15 +2,19 @@
 // models between requests: active batch numbers, the import validated → processed, the current run, the stored
 // attempts, the channel confirmation, the scripted answers and the scope. Figures come from the fixtures, never
 // from the fees the request sends.
-import { describe, expect, it } from 'vitest'
-import type {
+import {
   AccountFee,
+  BatchNoTakenDetails,
+  ChannelAssignmentNotConfirmedDetails,
   FeeTypeView,
+  ImportNotValidatedDetails,
   NextBatchNumber,
   SettlementPreview,
   SettlementRequest,
   SettlementView,
-} from '@/features/settlements/contract'
+} from '@recon/shared'
+import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
 import { strings } from '@/features/settlements/strings'
 import { ACCOUNT_IDS, type UserName } from './fixtures'
 import { issueTokens } from './handlers'
@@ -301,5 +305,101 @@ describe('fake settlement API: test controls', () => {
     failNextSettlement('process')
     await expect(process(importId, { runId, settlementDate: '2026-10-24' })).rejects.toThrow()
     expect(importRecord(importId).status).toBe('validated')
+  })
+})
+
+/** No issue of the schema of @recon/shared: the answer has the shape the API of #11 sends. */
+function expectShape(schema: z.ZodType, value: unknown) {
+  const result = schema.safeParse(value)
+  expect(result.success ? [] : result.error.issues).toEqual([])
+}
+
+describe('fake settlement API: the shapes of @recon/shared (web-settlement task 9.2)', () => {
+  it('the proposed number, the fees of every account and the fee types', async () => {
+    const { importId } = validatedClean()
+    expectShape(
+      NextBatchNumber,
+      (await call('analyst', 'GET', `/accounts/${USD}/batch-number/next?importId=${importId}`)).body,
+    )
+    for (const accountId of Object.values(ACCOUNT_IDS)) {
+      const fees = await call('admin', 'GET', `/accounts/${accountId}/fees?transactional=false&asOf=2026-10-24`)
+      expectShape(z.array(AccountFee), fees.body)
+    }
+    expectShape(z.array(FeeTypeView), (await call('analyst', 'GET', '/fee-types')).body)
+  })
+
+  it('the previews of both fixtures, with the body the screen sends', async () => {
+    const { importId, runId } = validatedClean()
+    const body = { runId, batchNo: 123, settlementDate: '2026-10-24', batchFees: FILE_FEES }
+    expectShape(SettlementRequest, body)
+    expectShape(SettlementPreview, (await preview(importId, body)).body)
+
+    const { importId: b } = seedImport('batch-issues', { status: 'validated' })
+    const { runId: bRun } = seedValidationRun(b, undefined, { reviewedBy: 'analyst' })
+    expectShape(SettlementPreview, (await preview(b, { runId: bRun, settlementDate: '2026-10-24' })).body)
+  })
+
+  it('an amount written without its four decimals comes back as the API returns it', async () => {
+    const { importId, runId } = validatedClean()
+    const answer = await preview(importId, {
+      runId,
+      settlementDate: '2026-10-24',
+      batchFees: [
+        { feeTypeId: 121, feeId: null, amount: '30', source: 'file' },
+        { feeTypeId: 119, feeId: null, amount: '-1.5', description: 'Fix', source: 'manual' },
+      ],
+    })
+    expectShape(SettlementPreview, answer.body)
+    expect((answer.body as SettlementPreview).batchFees.map((f) => f.amount)).toEqual(['30.0000', '-1.5000'])
+  })
+
+  it('the 201 of process and the attempt read back', async () => {
+    const { importId, runId } = validatedClean()
+    const body = {
+      runId,
+      batchNo: 123,
+      settlementDate: '2026-10-24',
+      confirmChannelAssignment: true,
+      batchFees: FILE_FEES,
+    }
+    expectShape(SettlementRequest, body)
+    const created = await process(importId, body)
+    expectShape(SettlementView, created.body)
+    expectShape(SettlementView, (await call('viewer', 'GET', `/settlements/${created.body.batchId}`)).body)
+  })
+
+  it('the details of the errors the screens read', async () => {
+    const { importId, runId } = validatedClean()
+    seedActiveBatch(USD, 123)
+    const taken = await process(importId, {
+      runId,
+      batchNo: 123,
+      settlementDate: '2026-10-24',
+      confirmChannelAssignment: true,
+    })
+    expectShape(BatchNoTakenDetails, taken.body.details)
+    const channels = await process(importId, { runId, batchNo: 124, settlementDate: '2026-10-24' })
+    expectShape(ChannelAssignmentNotConfirmedDetails, channels.body.details)
+
+    const { importId: analyzed } = seedImport('batch-clean', { status: 'analyzed' })
+    const { runId: aRun } = seedValidationRun(analyzed)
+    expectShape(
+      ImportNotValidatedDetails,
+      (await preview(analyzed, { runId: aRun, settlementDate: '2026-10-24' })).body.details,
+    )
+  })
+
+  it('rejects a body the strict schema of the API rejects: an unknown field or a batch number past INT', async () => {
+    const { importId, runId } = validatedClean()
+    const extra = await call('analyst', 'POST', `/imports/${importId}/settlements/preview`, {
+      runId,
+      settlementDate: '2026-10-24',
+      unexpected: true,
+    })
+    expect([extra.status, extra.body.code]).toEqual([400, 'validation_error'])
+    const huge = await preview(importId, { runId, batchNo: 2_147_483_648, settlementDate: '2026-10-24' })
+    expect([huge.status, huge.body.code]).toEqual([400, 'validation_error'])
+    const notADay = await preview(importId, { runId, settlementDate: '2026-02-30' })
+    expect([notADay.status, notADay.body.code]).toEqual([400, 'validation_error'])
   })
 })

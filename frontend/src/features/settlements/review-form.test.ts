@@ -39,6 +39,16 @@ describe('Settlement Review form: batch number', () => {
   })
 })
 
+describe('Settlement Review form: batch number within the INT of the API (web-settlement task 9.13)', () => {
+  it.each(['1000000000', '2147483647'])('accepts %j', (batchNo) => {
+    expect(errorsOf(values({ batchNo }))).toEqual({})
+  })
+
+  it.each(['2147483648', '99999999999'])('rejects %j', (batchNo) => {
+    expect(errorsOf(values({ batchNo }))).toEqual({ batchNo: 'Enter a number up to 2147483647.' })
+  })
+})
+
 describe('Settlement Review form: settlement date', () => {
   it('accepts a business date', () => {
     expect(errorsOf(values({ settlementDate: '2026-10-24' }))).toEqual({})
