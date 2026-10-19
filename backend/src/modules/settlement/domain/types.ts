@@ -172,6 +172,8 @@ export interface MovementPlan {
   /** E and I: the status of the row; R: the current status of the transaction. */
   statusCode: TransactionStatusCode
   amount: string
+  /** The transaction amount from the gateway: the base of percentage fees, also for a Declined (amount 0). Not stored. */
+  gatewayAmount: string
   excludeAmount: boolean
   /** null: an adjustment the source cannot date. */
   eventDate: Date | null

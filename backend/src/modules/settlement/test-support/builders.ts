@@ -182,6 +182,7 @@ export function movement(rowNo: number, overrides: Partial<MovementPlan> = {}): 
     cycle: 'E',
     statusCode: 'Successful',
     amount: '100.0000',
+    gatewayAmount: '100.0000',
     excludeAmount: false,
     eventDate: new Date('2026-09-30T10:00:00.000Z'),
     roundNo: null,

@@ -118,7 +118,8 @@ describe('batch-clean end to end', () => {
         run: (await source.currentRun(importId))!,
         prefilledFeeTypeIds: new Set([121, 117]),
         request,
-        options: { transactionalFees: false },
+        // Processing computes the transactional fees (group 11): the preview of the comparison does too.
+        options: { transactionalFees: true },
       }),
     )
     const started = Date.now()
@@ -169,6 +170,23 @@ describe('batch-clean end to end', () => {
       ['Settlement Fee', '15.0000', 'file', 'analyst'],
     ])
     expect(processed.otherFeeAmt).toBe('40.0000')
+  })
+
+  it('applies the transactional fees of the oracle and writes their detail, each movement adding up', async () => {
+    const fees = expectedOf('batch-clean').summary as { fees: Record<string, string>; amountPayable: string }
+    const { mdrIncludedInDeposit: _, total, ...byCategory } = fees.fees
+    expect(Object.fromEntries(processed.totals.map((t) => [t.category, t.feeAmount]))).toEqual(byCategory)
+    expect(processed.transactionalFeeAmt).toBe(total)
+    expect(processed.amountPayable).toBe(fees.amountPayable)
+    const mismatched = await ctx.prisma.$queryRaw<{ n: number }[]>`
+      SELECT COUNT(*) AS n FROM [SettlementTransaction] st
+      WHERE st.[batchId] = ${batchId}
+        AND st.[feeAmount] <> (SELECT COALESCE(SUM(f.[amountUsd]), 0) FROM [SettlementTransactionFee] f
+                               WHERE f.[settlementTxnId] = st.[settlementTxnId])`
+    expect(Number(mismatched[0]!.n)).toBe(0)
+    expect(await ctx.prisma.settlementTransactionFee.count({ where: { settlementTxn: { batchId } } })).toBeGreaterThan(
+      0,
+    )
   })
 
   it('reads back the same figures the engine computed, with a breakdown that adds up', () => {

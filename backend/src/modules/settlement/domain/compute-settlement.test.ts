@@ -107,6 +107,44 @@ describe('legacy-provider against its expected.json', async () => {
   })
 })
 
+describe('with the transactional fees (group 11) against the oracles', async () => {
+  interface Fees {
+    fees: Record<string, string>
+    amountPayable: string
+  }
+  const withFees = (name: 'batch-clean' | 'legacy-provider') =>
+    settlementSampleInput(name).then((i) => computeSettlement({ ...i, options: { transactionalFees: true } }))
+  const clean = await withFees('batch-clean')
+  const legacy = await withFees('legacy-provider')
+  const feesOf = (plan: ReturnType<typeof computeSettlement>) =>
+    Object.fromEntries(plan.summary.totals.map((t) => [t.category, t.feeAmount]))
+
+  it('batch-clean: fees by category, their total and the amount payable of expected.summary', () => {
+    const expected = expectedOf('batch-clean').summary as unknown as Fees
+    const { mdrIncludedInDeposit: _, total, ...byCategory } = expected.fees
+
+    expect(feesOf(clean)).toEqual(byCategory)
+    expect(clean.summary.transactionalFeeAmt).toBe(total)
+    expect(clean.summary.amountPayable).toBe(expected.amountPayable)
+    expect(clean.warnings).toEqual([])
+  })
+
+  it('every movement fee is the sum of its detail rows', () => {
+    for (const m of clean.movements) {
+      const detail = m.fees.reduce((s, f) => s + BigInt(f.amount.replace('.', '')), 0n)
+      expect(BigInt(m.feeAmount.replace('.', '')) === detail, `${m.sheetId}:${m.rowNo}`).toBe(true)
+    }
+  })
+
+  it('legacy-provider: the CHB 2 gets the Chargeback fee of ProviderC-Alt, as expected.summary says', () => {
+    const expected = expectedOf('legacy-provider').summary as unknown as Fees
+
+    expect(feesOf(legacy).chargeback).toBe(expected.fees.chargeback)
+    expect(legacy.summary.transactionalFeeAmt).toBe(expected.fees.total)
+    expect(legacy.summary.amountPayable).toBe(expected.amountPayable)
+  })
+})
+
 describe('computeSettlement', () => {
   it('uses the batchNo of the request and tells whether it is available', () => {
     const attempts = [{ batchNo: 118, attemptNo: 1, status: 'processed' as const, importId: 'other' }]
