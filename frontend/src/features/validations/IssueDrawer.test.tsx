@@ -121,6 +121,36 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
     expect(occurrences()[1]).toHaveTextContent('Changed by analyst · 2026-10-18 10:20 ET')
   })
 
+  it('a change of inclusion in the history without from or to still reads as a change', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const key = occurrenceKey(issueKey('duplicate_in_batch', '441706751475644'), 1)
+    const { issues } = seedValidationRun(importId, undefined, {
+      patches: { [key]: { next: (d) => ({ ...d, history: d.history.map((h) => ({ ...h, from: null, to: null })) }) } },
+    })
+    const duplicate = issues.find((i) => i.validationCode === 'duplicate_in_batch')!
+    await patch('analyst', `/conflict-occurrences/${duplicate.occurrences[1]!.occurrenceId}`, {
+      includeInSettlement: true,
+    })
+    await openFinding(importId, duplicate.issueId)
+
+    const history = within(drawer().getByRole('region', { name: 'History' })).getAllByRole('listitem')
+    expect(history.map((h) => h.textContent)).toEqual([
+      `analyst · 2026-10-18 10:00 ET · ${FILE} · APP · row 338 · inclusion changed`,
+    ])
+  })
+
+  it('opened from the address without its list, Escape gives the focus to the heading of the validations', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const { issues } = seedValidationRun(importId)
+    const duplicate = issues.find((i) => i.validationCode === 'duplicate_in_batch')!
+    const { user } = await openFinding(importId, duplicate.issueId)
+
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Validations' })))
+  })
+
   it('shows a resolution by hand with its user, date and note', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const { issues } = seedValidationRun(importId)
