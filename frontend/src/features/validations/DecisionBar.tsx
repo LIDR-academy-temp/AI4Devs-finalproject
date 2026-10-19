@@ -62,7 +62,7 @@ export function DecisionBar({
   if (view.importStatus === 'cancelled' || view.importStatus === 'processed') {
     return (
       <section aria-label={s.label} className="border-t pt-3 text-sm text-muted-foreground">
-        <p>{s.closed(view.importStatus)}</p>
+        <p>{s.closed[view.importStatus]}</p>
       </section>
     )
   }

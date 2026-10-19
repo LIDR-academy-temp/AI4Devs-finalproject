@@ -184,8 +184,11 @@ export const strings = {
     reviewedBy: (userName: string, at: string) => `Reviewed by ${userName} · ${at}`,
     settlementReview: 'Settlement Review',
     notAvailable: 'Settlement Review is not available yet.',
-    closed: (status: 'cancelled' | 'processed') =>
-      `This import is ${status}. Its run and findings are kept for reference.`,
+    /** One text per status that leaves nothing to decide; the API does not say who cancelled or processed. */
+    closed: {
+      cancelled: 'This import is cancelled. Its run and findings are kept for reference.',
+      processed: 'This import is processed. Its run and findings are kept for reference.',
+    },
     errors: {
       superseded: 'A newer validation run exists. Review it before continuing.',
       blocking: 'The validations found a blocking finding. The results were reloaded.',
