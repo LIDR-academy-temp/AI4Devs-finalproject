@@ -41,13 +41,13 @@ El paso Analysis del import (`web-import`) termina en el resultado del cruce: co
 
 ## Huecos del contrato detectados (no se cambia el backend)
 
-Los issues de seguimiento de los huecos 3–5 los abre la persona, no este change. Los del motivo al cancelar (#47) y de la serialización de fechas (#48) ya se abrieron en la revisión.
+Seguimiento: el motivo al cancelar va en #47 y la serialización de las fechas de negocio en #48, ambos abiertos en la revisión; el hueco 3 va en #55; el 4 no lleva issue, porque es la decisión D10; y el 5 quedó resuelto contra el API real.
 
 1. **Cancelar sin motivo.** El issue pide "Cancel import con confirmación y motivo", pero `POST /imports/{id}/cancel` no acepta cuerpo, y #9 no lo cambia. **Decidido en la revisión**: el 23 de octubre se cancela sin motivo, solo con confirmación, como en `web-import`. El motivo (`{ reason }` en el cancel, su `AuditLog` y el textarea en `CancelImportDialog`) va en #47, en la Entrega 3.
 2. **Settlement Review no existe todavía** (#13). Tras `validated`, el acceso se pinta como entrada deshabilitada con `Settlement Review is not available yet.`, siguiendo la convención del menú para pantallas sin construir. La ruta se fija en una sola constante que #13 rellena (design D9).
-3. **`includable = false` no dice por qué.** El motivo (`reserve_already_included` / `reserve_already_released`) solo llega en el `409`. Para no duplicar la regla de R, la pantalla muestra un texto genérico junto a la aparición y el específico si el `409` ocurre.
-4. **Sin indicadores `canRun` / `canReview`** en `ValidationRunView`. Run y Continue se ofrecen por permiso y estado del import (`analyzed`, o también `validated` para Run), como el resto del espacio del import (`web-import` D10). Es presentación y el API decide. Si se quisiera evitar también esa derivación, haría falta un cambio en #9.
-5. **`batch-blocked` sin oráculo completo.** Su `expected.json` solo fija `provider_mismatch: 1`. El falso de MSW da a las otras siete validaciones un resultado razonable, marcado como supuesto, y el grupo de rebase lo contrasta con la corrida real.
+3. **`includable = false` no dice por qué.** El motivo (`reserve_already_included` / `reserve_already_released`) solo llega en el `409`. Para no duplicar la regla de R, la pantalla muestra un texto genérico junto a la aparición y el específico si el `409` ocurre. El campo `includableReason` en el contrato y su texto en el drawer van en #55 (Entrega 3).
+4. **Sin indicadores `canRun` / `canReview`** en `ValidationRunView`. Run y Continue se ofrecen por permiso y estado del import (`analyzed`, o también `validated` para Run), como el resto del espacio del import (`web-import` D10). Es presentación y el API decide. Sin issue: es la decisión D10 del design, documentada allí.
+5. **`batch-blocked` sin oráculo completo.** Su `expected.json` solo fija `provider_mismatch: 1`. Resuelto contra el API real en el rebase: además del `provider_mismatch`, `missing_in_range` trae diez faltantes APP y el resto pasa. La fixture del falso lleva esos datos.
 
 ## Capabilities
 
@@ -78,6 +78,5 @@ Ninguna.
 
 Revisión del 2026-10-18: D1–D10, D13 y D14 aprobadas; D11 (fechas) y D12 (API falso guionizado) ajustadas; motivo al cancelar decidido (#47). Quedan:
 
-1. **Aviso del merge de #9**, para arrancar el último grupo de tareas (rebase, cliente regenerado).
-2. **Para la prueba contra el API real y las capturas** (último grupo): base local libre de las pruebas de #9, migración `0006` aplicada y seed (`! pnpm db:migrate`, `! pnpm db:seed`) y `pnpm dev` levantado.
-3. **Mirar la ejecución del script de capturas**: aviso antes de lanzarlo.
+1. **Para la prueba contra el API real y las capturas** (último grupo): base local libre de las pruebas de #9, migración `0006` aplicada y seed (`! pnpm db:migrate`, `! pnpm db:seed`) y `pnpm dev` levantado.
+2. **Mirar la ejecución del script de capturas**: aviso antes de lanzarlo.
