@@ -78,7 +78,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 6. Canales a asociar y Process (D9, D10)
 
-- [ ] 6.1 Añadir el componente shadcn `checkbox` (formateado con Biome y versionado), comprobar que no entra ninguna dependencia fuera de `radix-ui` y verificar `pnpm lint` y `pnpm --filter @recon/frontend build`
+- [x] 6.1 Añadir el componente shadcn `checkbox` (formateado con Biome y versionado), comprobar que no entra ninguna dependencia fuera de `radix-ui` y verificar `pnpm lint` y `pnpm --filter @recon/frontend build`
 - [ ] 6.2 Test (rojo) `features/settlements/process.test.tsx` con "canales a asociar" y "procesar":
   - `RAM-07 · not assigned yet`, casilla sin marcar y Process deshabilitado con `Confirm the channel assignment.`; marcada → habilitado;
   - la casilla se desmarca si cambia la lista de canales entre dos vistas previas;
