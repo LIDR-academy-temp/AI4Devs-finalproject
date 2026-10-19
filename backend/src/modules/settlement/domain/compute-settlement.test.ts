@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { Prisma } from '../../../generated/prisma/client.js'
 import { expectedOf } from '../../validation/test-support/builders.js'
-import { input, row, txn } from '../test-support/builders.js'
+import { fee, input, row, txn } from '../test-support/builders.js'
 import { settlementSampleInput } from '../test-support/sample-input.js'
 import { computeSettlement } from './compute-settlement.js'
 
@@ -142,6 +143,44 @@ describe('with the transactional fees (group 11) against the oracles', async () 
     expect(feesOf(legacy).chargeback).toBe(expected.fees.chargeback)
     expect(legacy.summary.transactionalFeeAmt).toBe(expected.fees.total)
     expect(legacy.summary.amountPayable).toBe(expected.amountPayable)
+  })
+
+  it('batch-clean with batchFees: [] pays the 40.0000 of the batch fees back (spec "Totales y amount payable")', async () => {
+    const expected = expectedOf('batch-clean').summary as unknown as Fees
+    const sample = await settlementSampleInput('batch-clean')
+    const none = computeSettlement({
+      ...sample,
+      request: { ...sample.request, batchFees: [] },
+      options: { transactionalFees: true },
+    })
+
+    expect(none.summary.otherFeeAmt).toBe('0.0000')
+    expect(none.summary.amountPayable).toBe(new Prisma.Decimal(expected.amountPayable).plus('40.0000').toFixed(4))
+  })
+})
+
+describe('an undated adjustment with the transactional fees (P6b)', () => {
+  const chargeback = txn({ transactionId: 5n, statusCode: 'Chargeback' })
+  const undated = (fees: ReturnType<typeof fee>[]) =>
+    computeSettlement(
+      input({
+        fees,
+        rows: [row(2, { cycle: 'I', statusCode: 'Chargeback' }, chargeback)],
+        options: { transactionalFees: true },
+      }),
+    )
+
+  it('carries feeSkipped: true in its warning when the fees of its type are dated', () => {
+    const plan = undated([fee({ feeTypeId: 4, fixedAmount: '40.0000', endDate: '2026-10-31' })])
+
+    expect(plan.warnings).toContainEqual(expect.objectContaining({ code: 'undated_adjustment', feeSkipped: true }))
+  })
+
+  it('carries feeSkipped: false when it got the only NULL…NULL fee of its type', () => {
+    const plan = undated([fee({ feeTypeId: 4, fixedAmount: '40.0000' })])
+
+    expect(plan.warnings).toContainEqual(expect.objectContaining({ code: 'undated_adjustment', feeSkipped: false }))
+    expect(plan.movements[0]!.feeAmount).toBe('40.0000')
   })
 })
 

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -373,6 +374,212 @@ describe('channels', () => {
       [flow.accountIds['ProviderA-EUR'], false],
     ])
     await restoreAccountChannels(ctx.prisma, channels)
+  })
+})
+
+/** An adjusted transaction whose E was settled and whose I never was: the history leaves none without any movement. */
+async function adjustmentIdOf(where: Prisma.Sql): Promise<string> {
+  const [found] = await ctx.prisma.$queryRaw<{ sourceTransactionId: string }[]>`
+    SELECT TOP 1 t.[sourceTransactionId] FROM [Transaction] t WHERE ${where}
+      AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st
+                      WHERE st.[transactionId] = t.[transactionId] AND st.[cycle] = 'I')
+    ORDER BY t.[transactionId] DESC`
+  return found!.sourceTransactionId
+}
+
+const transactionOf = (providerId: number, sourceTransactionId: string) =>
+  ctx.prisma.transaction.findFirstOrThrow({ where: { providerId, sourceTransactionId } })
+
+const movementsOf = (batchId: string, transactionId: bigint) =>
+  ctx.prisma.settlementTransaction.findMany({
+    where: { batchId, transactionId },
+    orderBy: { settlementTxnId: 'asc' },
+    include: { appliedFees: { orderBy: { appliedFeeId: 'asc' } } },
+  })
+
+describe('two movements of one transaction in a batch (UX_SettlementTransaction_batch_row)', () => {
+  it('a Refund and a Chargeback of the same transaction: two I movements, each with its amount, fee and date', async () => {
+    // Gateway status Refund: the REF row is dated by lastStatusChangedAt, the CHB row cannot be dated (design P6).
+    const id = await adjustmentIdOf(
+      Prisma.sql`t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 5 AND t.[lastStatusChangedAt] IS NOT NULL`,
+    )
+    const t = await transactionOf(101, id)
+    const bytes = buildXlsx({
+      sheets: ['REF', 'CHB'].map((name) => ({
+        name,
+        rows: [
+          ['ID', 'Amount', 'Currency'],
+          [id, { v: '10' }, 'USD'],
+        ],
+      })),
+    })
+    const detail = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [{ name: 'ref-chb.xlsx', bytes }])
+    const runId = await flow.validateAndReview(detail.importId)
+
+    const { batchId } = await process(detail.importId, { runId })
+
+    const movements = await movementsOf(batchId, t.transactionId)
+    expect(
+      movements.map((m) => [m.cycle, m.statusId, m.amount.toFixed(4), m.feeAmount.toFixed(4), m.eventDate]),
+    ).toEqual([
+      ['I', 5, t.amount.toFixed(4), '5.0000', t.lastStatusChangedAt],
+      ['I', 4, t.amount.toFixed(4), '45.0000', null],
+    ])
+    expect(movements.map((m) => m.appliedFees.map((f) => [f.feeTypeId, f.eventDate]))).toEqual([
+      [[5, t.lastStatusChangedAt]],
+      [[4, null]],
+    ])
+    // Its run flags the neighbours of X as missing in range: the next suites need them without findings.
+    await flow.removeImports([detail.importId])
+  })
+
+  it('a Chargeback and a CHB 2 of the same transaction: two I movements, the CHB 2 out of chargebackAmt', async () => {
+    const id = await adjustmentIdOf(Prisma.sql`t.[providerId] = 201 AND t.[channelId] = 2002 AND t.[statusId] = 4`)
+    const t = await transactionOf(201, id)
+    const bytes = buildXlsx({
+      sheets: [
+        {
+          name: 'CB', // the legacy sheet of adjustments: cycle I, the status from Order Status
+          rows: [
+            ['Merchant Order No#', 'Order Status', 'Amount USD'],
+            [id, 'Chargeback', { v: '10' }],
+            [id, 'CHB 2', { v: '10' }],
+          ],
+        },
+      ],
+    })
+    const detail = await flow.analyzed(flow.accountIds['ProviderC-Alt']!, [{ name: 'legacy-chb2.xlsx', bytes }])
+    const runId = await flow.validateAndReview(detail.importId)
+
+    const { batchId } = await process(detail.importId, { runId })
+
+    const movements = await movementsOf(batchId, t.transactionId)
+    expect(movements.map((m) => [m.cycle, m.statusId, m.excludeAmount])).toEqual([
+      ['I', 4, false],
+      ['I', 4, true],
+    ])
+    const chargeback = (await view(batchId)).totals.find((c) => c.category === 'chargeback')!
+    expect(chargeback).toMatchObject({ qty: 2, amount: t.amount.toFixed(4) })
+    await flow.removeImports([detail.importId])
+  })
+})
+
+describe('missing findings resolved by processing', () => {
+  // A processed import of ProviderA-USD whose current run keeps X missing in I (fixture straight in the base).
+  const fixtureImportId = randomUUID()
+  let issueId: number
+
+  afterAll(async () => {
+    const runs = await ctx.prisma.validationRun.findMany({ where: { importId: fixtureImportId } })
+    const runIds = runs.map((r) => r.runId)
+    await ctx.prisma.validationIssue.deleteMany({ where: { result: { runId: { in: runIds } } } })
+    await ctx.prisma.validationResult.deleteMany({ where: { runId: { in: runIds } } })
+    await ctx.prisma.validationRun.deleteMany({ where: { runId: { in: runIds } } })
+    await ctx.prisma.import.deleteMany({ where: { importId: fixtureImportId } })
+  })
+
+  it('a persistent missing of another import passes to resolved, and validationSummary.resolvedMissing = 1', async () => {
+    // X without findings of its own in I: the runs of the other suites flag their neighbours as missing in range.
+    const id = await adjustmentIdOf(
+      Prisma.sql`t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 5 AND t.[lastStatusChangedAt] IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM [ValidationIssue] vi
+                        WHERE vi.[transactionId] = t.[transactionId] AND vi.[cycle] = 'I')`,
+    )
+    const t = await transactionOf(101, id)
+    await ctx.prisma.import.create({
+      data: {
+        importId: fixtureImportId,
+        accountId: flow.accountIds['ProviderA-USD']!,
+        createdByUserId: flow.userIds.analyst,
+        status: 'processed',
+      },
+    })
+    const run = await ctx.prisma.validationRun.create({
+      data: { importId: fixtureImportId, runByUserId: flow.userIds.analyst },
+    })
+    const result = await ctx.prisma.validationResult.create({
+      data: { runId: run.runId, validationCode: 'missing_previous_to_batch', outcome: 'warning' },
+    })
+    ;({ issueId } = await ctx.prisma.validationIssue.create({
+      data: {
+        resultId: result.resultId,
+        issueType: 'missing',
+        scope: 'previous_to_batch',
+        missingType: 'previous_to_batch',
+        transactionId: t.transactionId,
+        cycle: 'I',
+        resolutionStatus: 'persistent',
+      },
+    }))
+    const detail = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [
+      { name: 'ref-missing.xlsx', bytes: xlsx('REF', [id]) },
+    ])
+    const runId = await flow.validateAndReview(detail.importId)
+
+    const { batchId } = await process(detail.importId, { runId })
+
+    expect((await view(batchId)).validationSummary.resolvedMissing).toBe(1)
+    expect(
+      await ctx.prisma.validationIssue.findUniqueOrThrow({
+        where: { issueId },
+        select: { resolutionStatus: true, resolvedInBatchId: true, resolvedByUserId: true },
+      }),
+    ).toEqual({ resolutionStatus: 'resolved', resolvedInBatchId: batchId, resolvedByUserId: null })
+  })
+})
+
+describe('the fees of a processed attempt', () => {
+  it('editing the fee after processing changes neither the view nor the detail of the attempt', async () => {
+    const id = await sourceIdOf(Prisma.sql`t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 2`)
+    const detail = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [
+      { name: 'fee-edit.xlsx', bytes: xlsx('APP', [id]) },
+    ])
+    const runId = await flow.validateAndReview(detail.importId)
+    const { batchId } = await process(detail.importId, { runId })
+    const before = await view(batchId)
+    const detailRows = () =>
+      ctx.prisma.settlementTransactionFee.findMany({
+        where: { settlementTxn: { batchId } },
+        orderBy: { appliedFeeId: 'asc' },
+        select: { feeId: true, amountUsd: true, configurationSnapshot: true },
+      })
+    const rowsBefore = await detailRows()
+    const mdr = await ctx.prisma.fee.findFirstOrThrow({
+      where: { accountId: flow.accountIds['ProviderA-USD'], feeTypeId: 1 },
+    })
+
+    try {
+      await ctx.prisma.fee.update({ where: { feeId: mdr.feeId }, data: { percentage: '0.200000' } })
+
+      expect(await view(batchId)).toEqual(before)
+      expect(await detailRows()).toEqual(rowsBefore)
+    } finally {
+      await ctx.prisma.fee.update({ where: { feeId: mdr.feeId }, data: { percentage: mdr.percentage } })
+    }
+  })
+})
+
+describe('a run blocked under the transaction', () => {
+  it('a current run that turned blocked after the review answers 409 blocking_validation_issue, nothing written', async () => {
+    const id = await sourceIdOf(Prisma.sql`t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 2`)
+    const detail = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [
+      { name: 'blocked.xlsx', bytes: xlsx('APP', [id]) },
+    ])
+    const runId = await flow.validateAndReview(detail.importId)
+    // Injected: the review never lets a blocked run through, so the check inside the transaction is defensive.
+    await ctx.prisma.validationResult.updateMany({
+      where: { runId, validationCode: 'provider_mismatch' },
+      data: { outcome: 'blocked' },
+    })
+
+    await expect(process(detail.importId, { runId })).rejects.toMatchObject({
+      code: 'blocking_validation_issue',
+      details: { runId, validationCodes: ['provider_mismatch'] },
+    })
+    expect(await ctx.prisma.settlementBatch.count({ where: { importId: detail.importId } })).toBe(0)
+    expect((await ctx.prisma.import.findUniqueOrThrow({ where: { importId: detail.importId } })).status).toBe(
+      'validated',
+    )
   })
 })
 
