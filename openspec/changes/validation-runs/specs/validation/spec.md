@@ -330,18 +330,22 @@ La carga de reservas retenidas desde la base SHALL usar el plazo vigente del can
 - **THEN** la fuente no la devuelve y no es faltante
 
 ### Requirement: Rendimiento de extremo a extremo
-Validar y guardar una corrida del volumen de referencia (un import de 2 000 filas, un historial de 50 000 movimientos anteriores del proveedor y rangos de pocos días, calibrados con el perfil del doc 06), con la carga desde SQL Server incluida, SHALL tardar menos de 4 segundos, y el test SHALL afirmarlo. El objetivo local de 2 segundos no se alcanza en la Entrega 2 (2 603 ms medidos, de ellos 2 231 de carga): se acepta y la carga queda pendiente en el issue #50. La escritura de la corrida SHALL quedar por debajo de 300 ms en ese volumen. El test SHALL ejecutarse solo con `RECON_BENCH=1`, nunca en CI, con la máquina tranquila (sin `pnpm dev`), y SHALL registrar por separado la carga, el motor y la escritura con sus fases. Un caso extremo (rangos de meses, ~23 000 hallazgos) se ejecuta en el mismo test solo para registrarlo, sin aserción.
+Validar y guardar una corrida del volumen de referencia, carga desde SQL Server incluida, SHALL tardar menos de 4 segundos, afirmado por el test, y su escritura menos de 300 ms. El objetivo local de 2 segundos no se alcanza en la Entrega 2 y la carga queda pendiente en el issue #50. El test SHALL ejecutarse solo con `RECON_BENCH=1`, nunca en CI, con la máquina tranquila (sin `pnpm dev`).
 
 #### Scenario: Volumen de referencia contra la base
-- **GIVEN** `RECON_BENCH=1`, un import analizado de 2 000 filas y 50 000 movimientos anteriores del proveedor en la base, con rangos de pocos días
+- **GIVEN** `RECON_BENCH=1`, un import analizado de 2 000 filas, 50 000 movimientos anteriores del proveedor en la base y rangos de pocos días (perfil del doc 06)
 - **WHEN** se llama a `POST validations`
 - **THEN** responde `201` en menos de 4 s, con la carga, el motor y la escritura (y sus fases) registrados por separado
-
-#### Scenario: Caso extremo registrado
-- **GIVEN** `RECON_BENCH=1` y el escenario extremo (rangos de meses, ~23 000 hallazgos)
-- **WHEN** se llama a `POST validations`
-- **THEN** responde `201` y su tiempo queda registrado en el log, sin aserción
+- **AND** el dato medido en la Entrega 2 (2 603 ms, 2 231 de ellos de carga) queda anotado en el PR, sin alcanzar el objetivo de 2 s
 
 #### Scenario: Sin la variable
 - **WHEN** se ejecuta la suite de integración sin `RECON_BENCH=1` (también en CI)
 - **THEN** el test de rendimiento se omite y no crea fixtures
+
+### Requirement: Caso extremo registrado
+El test de rendimiento SHALL ejecutar también un caso extremo (rangos de meses) solo para registrar su tiempo, sin aserción.
+
+#### Scenario: Rangos de meses
+- **GIVEN** `RECON_BENCH=1` y un escenario con rangos de meses y ~23 000 hallazgos
+- **WHEN** se llama a `POST validations`
+- **THEN** responde `201` y su tiempo, con la carga, el motor y la escritura, queda en el log
