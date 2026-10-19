@@ -13,6 +13,7 @@ import type {
   ValidationIssuesQuery,
   ValidationOutcome,
 } from '@recon/shared'
+import type { Prisma } from '../../../generated/prisma/client.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import type {
   AccountScope,
@@ -198,13 +199,13 @@ export interface StoredIssueDetail {
 }
 
 /**
- * #11 calls it inside the transaction that processes or undoes a batch (README §3.2 Faltantes, HU2 CA9). Only the
- * findings of current runs count (isSuperseded = 0), as in RegisteredMissingSource. Declared here, implemented by #11
- * (design D11), which also fixes the type of the transactional client.
+ * Called inside the transaction that processes or undoes a batch (README §3.2 Faltantes, HU2 CA9), with its
+ * transactional client. Only the findings of current runs count (isSuperseded = 0), as in RegisteredMissingSource.
+ * Implemented by PrismaMissingResolution (settlement-process D11).
  */
 export interface MissingResolution {
   /** Persistent missing findings of the provider whose (transactionId, cycle) is in the batch → resolved with it. */
-  resolveForBatch(tx: unknown, batchId: string, at: Date): Promise<number>
+  resolveForBatch(tx: Prisma.TransactionClient, batchId: string, at: Date): Promise<number>
   /** Findings resolved by this batch → persistent again, resolvedInBatchId/resolvedAt cleared. */
-  reopenForBatch(tx: unknown, batchId: string): Promise<number>
+  reopenForBatch(tx: Prisma.TransactionClient, batchId: string): Promise<number>
 }

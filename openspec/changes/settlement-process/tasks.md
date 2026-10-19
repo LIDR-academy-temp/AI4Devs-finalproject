@@ -59,8 +59,8 @@ Rama `feat/settlement-process`, PR hacia `feature/entrega-2-MVP`. El grupo 0 va 
 
 ## 7. MissingResolution
 
-- [ ] 7.1 Tests primero `settlement-missing.int.test.ts` (fixtures 9xxx): `resolveForBatch` resuelve un `missing` persistente de la corrida vigente de otro import y de otra cuenta del proveedor, con `resolvedInBatchId` y `resolvedAt` y sin `resolvedByUserId`; no toca otro ciclo, otra transacción, una corrida superada ni otro proveedor; devuelve el número. `reopenForBatch` reabre solo los resueltos por ese batch y no los resueltos a mano. Verificación: fallan sin implementación.
-- [ ] 7.2 Implementar `validation/infrastructure/prisma-missing-resolution.ts` (design D11) y fijar `tx: Prisma.TransactionClient` en `MissingResolution` de `validation/application/ports.ts`. Verificación: 7.1 en verde y `validation-*.int.test.ts` sin regresiones.
+- [x] 7.1 Tests primero `settlement-missing.int.test.ts` (fixtures 9xxx): `resolveForBatch` resuelve un `missing` persistente de la corrida vigente de otro import y de otra cuenta del proveedor, con `resolvedInBatchId` y `resolvedAt` y sin `resolvedByUserId`; no toca otro ciclo, otra transacción, una corrida superada ni otro proveedor; devuelve el número. `reopenForBatch` reabre solo los resueltos por ese batch y no los resueltos a mano. Verificación: fallan sin implementación.
+- [x] 7.2 Implementar `validation/infrastructure/prisma-missing-resolution.ts` (design D11) y fijar `tx: Prisma.TransactionClient` en `MissingResolution` de `validation/application/ports.ts`. Verificación: 7.1 en verde y `validation-*.int.test.ts` sin regresiones.
 - Commit: `test(validation): resolución y reapertura de faltantes por batch`
 - Commit: `feat(validation): implementar MissingResolution para procesar y deshacer`
 
