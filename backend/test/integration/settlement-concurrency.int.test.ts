@@ -11,7 +11,7 @@ import {
   type WritePhase,
 } from '../../src/modules/settlement/infrastructure/prisma-settlement-repository.js'
 import { PrismaMissingResolution } from '../../src/modules/validation/infrastructure/prisma-missing-resolution.js'
-import { createTestApp, fixtureId } from './helpers.js'
+import { createTestApp, fixtureId, fixtureIds } from './helpers.js'
 import { type AccountChannelRow, ImportFlow, restoreAccountChannels, snapshotAccountChannels } from './import-flow.js'
 
 // Overlaps of processing (settlement-process design D5–D7; spec settlement "Procesamiento atómico y auditado",
@@ -32,7 +32,7 @@ beforeAll(async () => {
   // Approved transactions of RAM-01 (primary of ProviderA-USD) never settled: one per small import.
   ids = (
     await ctx.prisma.$queryRaw<{ sourceTransactionId: string }[]>(Prisma.sql`
-      SELECT TOP 8 t.[sourceTransactionId] FROM [Transaction] t
+      SELECT TOP 12 t.[sourceTransactionId] FROM [Transaction] t
       WHERE t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 2
         AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st WHERE st.[transactionId] = t.[transactionId])
       ORDER BY t.[transactionId] DESC`)
@@ -107,8 +107,11 @@ describe('two processes of the same import', () => {
     const waiting = process(repository(g.beforeClaim), importId, { runId, batchNo: 9811 })
     await g.reached
 
-    await process(repository(), importId, { runId, batchNo: 9812 })
-    g.open()
+    try {
+      await process(repository(), importId, { runId, batchNo: 9812 })
+    } finally {
+      g.open()
+    }
 
     await expect(waiting).rejects.toMatchObject({ code: 'import_not_validated', details: { status: 'processed' } })
     expect(await batchesOf(importId)).toBe(1)
@@ -123,8 +126,11 @@ describe('the same batchNo in two imports of the account', () => {
     const waiting = process(repository(g.beforeClaim), first.importId, { runId: first.runId, batchNo: 9813 })
     await g.reached
 
-    await process(repository(), second.importId, { runId: second.runId, batchNo: 9813 })
-    g.open()
+    try {
+      await process(repository(), second.importId, { runId: second.runId, batchNo: 9813 })
+    } finally {
+      g.open()
+    }
 
     await expect(waiting).rejects.toMatchObject({
       code: 'batch_no_taken',
@@ -133,23 +139,79 @@ describe('the same batchNo in two imports of the account', () => {
     expect(await batchesOf(first.importId)).toBe(0)
     expect(await statusOf(first.importId)).toBe('validated')
   })
+
+  it('the range lock (UPDLOCK, HOLDLOCK) holds B until A commits; then B answers 409 with the attempt of A', async () => {
+    const a = await validatedImport(8)
+    const b = await validatedImport(9)
+    // A pauses before its first write, with the number already locked: no attempt of 9818 exists yet.
+    const g = gate()
+    const first = process(
+      repository(undefined, async (phase) => {
+        if (phase === 'batch') await g.beforeClaim()
+      }),
+      a.importId,
+      { runId: a.runId, batchNo: 9818 },
+    )
+    await g.reached
+
+    let settled = false
+    const second = process(repository(), b.importId, { runId: b.runId, batchNo: 9818 }).finally(() => {
+      settled = true
+    })
+    second.catch(() => undefined)
+    try {
+      // Without the range lock B finds no attempt of 9818, writes its own and commits while A waits.
+      await new Promise((resolve) => setTimeout(resolve, 1_500))
+      expect(settled).toBe(false)
+    } finally {
+      g.open()
+    }
+
+    const { batchId } = await first
+    await expect(second).rejects.toMatchObject({
+      code: 'batch_no_taken',
+      details: { batchNo: 9818, attemptNo: 1, importId: a.importId },
+    })
+    expect((await ctx.prisma.settlementBatch.findUniqueOrThrow({ where: { batchId } })).importId).toBe(a.importId)
+    expect(await batchesOf(b.importId)).toBe(0)
+  })
 })
 
-// The last barrier (design D7): the range lock makes the race unreachable from two requests, so the violation the
-// database would raise is thrown from beforePhase('batch'), after the number was locked. SQL Server's own messages.
-const indexViolation = (index: string) => () =>
-  Promise.reject(
-    new Error(`Cannot insert duplicate key row in object 'dbo.SettlementBatch' with unique index '${index}'.`),
-  )
-const keyViolation = (constraint: string) => () =>
-  Promise.reject(new Error(`Violation of UNIQUE KEY constraint '${constraint}'. Cannot insert duplicate key.`))
+// The last barrier (design D7): the range lock makes the race unreachable from two requests, so the violation is
+// provoked for real inside the same transaction. The client writes, right before the attempt of the process, the
+// attempt it collides with; SQL Server rejects the second insert and the rollback takes both away.
+type BatchCreate = Parameters<typeof ctx.prisma.settlementBatch.create>[0]
+const colliding = (collision: (data: BatchCreate['data']) => Partial<BatchCreate['data']>) =>
+  ctx.prisma.$extends({
+    query: {
+      settlementBatch: {
+        async create({ args, query }) {
+          await query({ ...args, data: { ...args.data, batchId: randomUUID(), ...collision(args.data) } } as never)
+          return query(args)
+        },
+      },
+    },
+  }) as unknown as typeof ctx.prisma
+
+const realRepository = (client: typeof ctx.prisma) =>
+  new PrismaSettlementRepository(client, { missing: new PrismaMissingResolution(), log: ctx.app.log })
 
 describe('a unique index violation as the last barrier', () => {
+  // A processed import of ProviderA-USD without attempts: the import of the colliding attempts.
+  const holderImportId = randomUUID()
   // An active attempt of another account (ProviderB-Main) with the number of the race: never the holder of the 409.
   const foreignImportId = randomUUID()
   const foreignBatchId = randomUUID()
 
   beforeAll(async () => {
+    await ctx.prisma.import.create({
+      data: {
+        importId: holderImportId,
+        accountId: flow.accountIds['ProviderA-USD']!,
+        createdByUserId: flow.userIds.analyst,
+        status: 'processed',
+      },
+    })
     await ctx.prisma.import.create({
       data: {
         importId: foreignImportId,
@@ -172,27 +234,33 @@ describe('a unique index violation as the last barrier', () => {
 
   afterAll(async () => {
     await ctx.prisma.settlementBatch.deleteMany({ where: { batchId: fixtureId(foreignBatchId, 'foreignBatchId') } })
-    await ctx.prisma.import.deleteMany({ where: { importId: fixtureId(foreignImportId, 'foreignImportId') } })
+    await ctx.prisma.import.deleteMany({
+      where: { importId: { in: fixtureIds([foreignImportId, holderImportId], 'fixture imports') } },
+    })
   })
 
-  it('names the attempted number of its own account, not the attempt of another account', async () => {
-    const { importId, runId } = await validatedImport(5)
-    const repo = repository(undefined, indexViolation('UX_SettlementBatch_active_accountBatchNo'))
+  // Another active attempt of the same account and number: UX_SettlementBatch_active_accountBatchNo.
+  const activeHolder = () => colliding(() => ({ importId: holderImportId, attemptNo: 2 }))
 
-    const error = await process(repo, importId, { runId, batchNo: 9816 }).catch((e: unknown) => e)
+  it('UX_SettlementBatch_active_accountBatchNo: 409 with the number of its own account, not the attempt of another', async () => {
+    const { importId, runId } = await validatedImport(5)
+
+    const error = await process(realRepository(activeHolder()), importId, { runId, batchNo: 9816 }).catch(
+      (e: unknown) => e,
+    )
 
     expect(error).toMatchObject({ code: 'batch_no_taken', details: { batchNo: 9816, attemptNo: 1 } })
     expect((error as { details: { importId: string } }).details.importId).not.toBe(foreignImportId)
     expect(await batchesOf(importId)).toBe(0)
+    expect(await batchesOf(holderImportId)).toBe(0)
   })
 
   it('without batchNo, the proposed number of the account, never 0', async () => {
     const { importId, runId } = await validatedImport(6)
     const accountId = flow.accountIds['ProviderA-USD']!
     const { _max } = await ctx.prisma.settlementBatch.aggregate({ where: { accountId }, _max: { batchNo: true } })
-    const repo = repository(undefined, indexViolation('UX_SettlementBatch_active_accountBatchNo'))
 
-    await expect(process(repo, importId, { runId })).rejects.toMatchObject({
+    await expect(process(realRepository(activeHolder()), importId, { runId })).rejects.toMatchObject({
       code: 'batch_no_taken',
       details: { batchNo: (_max.batchNo ?? 0) + 1, attemptNo: 1 },
     })
@@ -200,13 +268,21 @@ describe('a unique index violation as the last barrier', () => {
 
   it('UNIQUE (accountId, batchNo, attemptNo) answers 409 batch_no_taken too, never a 500', async () => {
     const { importId, runId } = await validatedImport(7)
-    const repo = repository(undefined, keyViolation('SettlementBatch_accountId_batchNo_attemptNo_key'))
+    // An undone attempt with the same number and attempt: out of the active index, into the unique key.
+    const undoneTwin = colliding(() => ({
+      importId: holderImportId,
+      status: 'undone',
+      undoneAt: new Date(),
+      undoneByUserId: flow.userIds.analyst,
+      undoReason: 'test',
+    }))
 
-    await expect(process(repo, importId, { runId, batchNo: 9817 })).rejects.toMatchObject({
+    await expect(process(realRepository(undoneTwin), importId, { runId, batchNo: 9817 })).rejects.toMatchObject({
       code: 'batch_no_taken',
       details: { batchNo: 9817, attemptNo: 1 },
     })
     expect(await statusOf(importId)).toBe('validated')
+    expect(await batchesOf(holderImportId)).toBe(0)
   })
 })
 
@@ -217,9 +293,12 @@ describe('the review invalidated meanwhile', () => {
     const waiting = process(repository(g.beforeClaim), importId, { runId, batchNo: 9814 })
     await g.reached
 
-    const rerun = await flow.call('POST', `/imports/${importId}/validations`)
-    expect(rerun.statusCode, rerun.body).toBe(201)
-    g.open()
+    try {
+      const rerun = await flow.call('POST', `/imports/${importId}/validations`)
+      expect(rerun.statusCode, rerun.body).toBe(201)
+    } finally {
+      g.open()
+    }
 
     await expect(waiting).rejects.toMatchObject({ code: 'import_not_validated', details: { status: 'analyzed' } })
     expect(await batchesOf(importId)).toBe(0)
@@ -233,8 +312,12 @@ describe('another run reviewed meanwhile', () => {
     const waiting = process(repository(g.beforeClaim), importId, { runId, batchNo: 9815 })
     await g.reached
 
-    const currentRunId = await flow.validateAndReview(importId)
-    g.open()
+    let currentRunId: number
+    try {
+      currentRunId = await flow.validateAndReview(importId)
+    } finally {
+      g.open()
+    }
 
     await expect(waiting).rejects.toMatchObject({
       code: 'validation_run_superseded',
