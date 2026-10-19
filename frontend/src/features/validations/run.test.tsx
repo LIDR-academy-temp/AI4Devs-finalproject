@@ -135,3 +135,58 @@ describe('Analysis & Validations: warning before running again (spec "aviso ante
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
   })
 })
+
+describe('Analysis & Validations: what is on its way is said on every control that waits for it', () => {
+  const control = (name: string) => screen.getByRole('button', { name, hidden: true })
+
+  it('while a run is on its way, Run, Continue and Cancel and reprocess say so', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    const hold = holdNextValidation('run')
+    const { user } = await openAnalysis(importId)
+
+    await user.click(control('Run again'))
+    await hold.arrived
+
+    for (const name of ['Run again', 'Continue to settlement review', 'Cancel and reprocess']) {
+      expect(control(name)).toBeDisabled()
+      expect(control(name)).toHaveAccessibleDescription('Running the validations…')
+    }
+    hold.release()
+    await waitFor(() => expect(control('Run again')).toBeEnabled())
+  })
+
+  it('while the review is on its way, Run waits too, and the three controls say so', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    const hold = holdNextValidation('review')
+    const { user } = await openAnalysis(importId)
+
+    await user.click(control('Continue to settlement review'))
+    await hold.arrived
+
+    for (const name of ['Run again', 'Continue to settlement review', 'Cancel and reprocess']) {
+      expect(control(name)).toBeDisabled()
+      expect(control(name)).toHaveAccessibleDescription('Saving the review…')
+    }
+    hold.release()
+    expect(await section().findByRole('button', { name: 'Run again' })).toBeEnabled()
+  })
+
+  it('while a change of the drawer is on its way, Run waits too', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const { issues } = seedValidationRun(importId)
+    const duplicate = issues.find((i) => i.validationCode === 'duplicate_in_batch')!
+    const hold = holdNextValidation('inclusion')
+    const { user } = renderApp(`/imports/${importId}?step=analysis&issue=${duplicate.issueId}`, { as: 'analyst' })
+    const drawer = within(await screen.findByRole('dialog', {}, OPENING))
+
+    await user.click(drawer.getByRole('switch', { name: /row 338$/ }))
+    await hold.arrived
+
+    expect(control('Run again')).toBeDisabled()
+    expect(control('Run again')).toHaveAccessibleDescription('Saving the change…')
+    hold.release()
+    await waitFor(() => expect(control('Run again')).toBeEnabled())
+  })
+})
