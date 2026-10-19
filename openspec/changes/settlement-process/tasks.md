@@ -13,7 +13,7 @@ Rama `feat/settlement-process`, PR hacia `feature/entrega-2-MVP`. El grupo 0 va 
 
 ## 1. Gate pendiente
 
-- [ ] 1.1 La persona responde P6b (fee de un ajuste sin fecha) o acepta la opción provisional, y decide si P16 (`status_mismatch` con el gateway en `Pending`) se lleva a un change de `validation`. Si P6b cambia, se actualiza con `/opsx:update` antes del grupo 11. Verificación: proposal.md con las dos respuestas anotadas y `openspec validate settlement-process --strict` en verde.
+- [x] 1.1 La persona responde P6b (fee de un ajuste sin fecha) o acepta la opción provisional, y decide si P16 (`status_mismatch` con el gateway en `Pending`) se lleva a un change de `validation`. Si P6b cambia, se actualiza con `/opsx:update` antes del grupo 11. Verificación: proposal.md con las dos respuestas anotadas y `openspec validate settlement-process --strict` en verde.
 
 ## 2. Esquema: clave por fila y fecha de evento nullable (migración 0007)
 
