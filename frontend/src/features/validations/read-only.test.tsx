@@ -40,9 +40,8 @@ describe('Analysis & Validations: read only (spec "solo lectura")', () => {
   it('viewer sees the run, the validations, the findings and their occurrences, without any action', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const { issues } = seedValidationRun(importId, withoutControls(batchIssuesFixture()))
-    const duplicate = issues.find((i) => i.validationCode === 'duplicate_in_batch')!
     const nra = issues.find((i) => i.issueType === 'non_recorded_adjustment')!
-    const { user } = await openAnalysis(importId, 'viewer')
+    const { user, unmount } = await openAnalysis(importId, 'viewer')
 
     expect(within(screen.getByRole('table', { name: 'Validation results' })).getAllByRole('row')).toHaveLength(9)
     expectNoActions()
@@ -60,10 +59,11 @@ describe('Analysis & Validations: read only (spec "solo lectura")', () => {
     await user.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
+    // A second app on the same address: the first one is unmounted, so only one is on the page.
+    unmount()
     renderApp(`/imports/${importId}?step=analysis&issue=${nra.issueId}`, { as: 'viewer' })
     const nraDrawer = within(await screen.findByRole('dialog', { name: /281520820250015/ }, OPENING))
     expect(nraDrawer.queryByRole('button', { name: 'Mark as resolved' })).not.toBeInTheDocument()
-    expect(duplicate.issueId).not.toBe(nra.issueId)
 
     expect(validationRequests().filter((r) => r.method !== 'GET')).toHaveLength(0)
     expect(importRequests('cancel')).toHaveLength(0)
