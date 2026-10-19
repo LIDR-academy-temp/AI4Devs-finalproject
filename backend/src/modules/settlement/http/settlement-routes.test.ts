@@ -90,6 +90,21 @@ describe('POST /imports/{id}/settlements', () => {
     }
   })
 
+  it('answers 400 validation_error for values the database cannot hold, instead of failing on write', async () => {
+    await app()
+    const fee = { feeTypeId: 119, feeId: null, description: 'x', source: 'manual' }
+
+    for (const bad of [
+      { ...body, batchFees: [{ ...fee, amount: '1234567890123456789.1' }] },
+      { ...body, settlementDate: '2026-13-01' },
+      { ...body, batchNo: 3_000_000_000 },
+    ]) {
+      const res = await call('POST', `/imports/${input.importId}/settlements`, 'analyst', bad)
+      expect(res.statusCode, JSON.stringify(bad)).toBe(400)
+      expect(res.json().code).toBe('validation_error')
+    }
+  })
+
   it('answers 409 import_not_validated in another status', async () => {
     await app({ status: 'analyzed' })
 

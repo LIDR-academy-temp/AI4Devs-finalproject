@@ -128,6 +128,23 @@ describe('SettlementRequest (README §4.3, runId required)', () => {
     expect(SettlementRequest.safeParse({ ...body, settlementDate: '24/10/2026' }).success).toBe(false)
   })
 
+  it('keeps runId and batchNo within an INT column', () => {
+    expect(SettlementRequest.safeParse({ ...body, runId: 2_147_483_647, batchNo: 2_147_483_647 }).success).toBe(true)
+    expect(SettlementRequest.safeParse({ ...body, runId: 2_147_483_648 }).success).toBe(false)
+    expect(SettlementRequest.safeParse({ ...body, batchNo: 3_000_000_000 }).success).toBe(false)
+  })
+
+  it('rejects an impossible settlementDate', () => {
+    expect(SettlementRequest.safeParse({ ...body, settlementDate: '2026-13-01' }).success).toBe(false)
+    expect(SettlementRequest.safeParse({ ...body, settlementDate: '2026-02-30' }).success).toBe(false)
+  })
+
+  it('takes at most 100 batch fees', () => {
+    const fee = body.batchFees[0]
+    expect(SettlementRequest.safeParse({ ...body, batchFees: Array(100).fill(fee) }).success).toBe(true)
+    expect(SettlementRequest.safeParse({ ...body, batchFees: Array(101).fill(fee) }).success).toBe(false)
+  })
+
   it('caps the note at 500 characters', () => {
     expect(SettlementRequest.safeParse({ ...body, note: 'x'.repeat(500) }).success).toBe(true)
     expect(SettlementRequest.safeParse({ ...body, note: 'x'.repeat(501) }).success).toBe(false)
@@ -146,6 +163,11 @@ describe('BatchFeeInput', () => {
   it('takes the amount as a decimal string with sign and up to 4 decimals', () => {
     expect(BatchFeeInput.safeParse(fee).success).toBe(true)
     expect(BatchFeeInput.safeParse({ ...fee, amount: '150' }).success).toBe(true)
+  })
+
+  it('rejects more than 15 integer digits, which DECIMAL(19,4) cannot hold', () => {
+    expect(BatchFeeInput.safeParse({ ...fee, amount: '999999999999999.9999' }).success).toBe(true)
+    expect(BatchFeeInput.safeParse({ ...fee, amount: '1234567890123456789.1' }).success).toBe(false)
   })
 
   it('rejects a JSON number, more than 4 decimals and zero', () => {

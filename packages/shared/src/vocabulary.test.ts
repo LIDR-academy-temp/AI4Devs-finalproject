@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   ChannelAssignment,
   IntId,
+  IsoDate,
+  Money,
   ReadinessField,
   RowReason,
   TRANSACTION_STATUSES,
@@ -67,5 +69,38 @@ describe('IntId', () => {
 
   it.each(['2147483648', '99999999999', '0', '-1', '1.5', 'abc', '1e3', '0x10', ' 12'])('rejects %s', (value) => {
     expect(IntId.safeParse(value).success).toBe(false)
+  })
+})
+
+describe('Money (DECIMAL(19,4): at most 15 integer digits)', () => {
+  it.each(['0', '-42.5', '150', '1.0001', '999999999999999', '-999999999999999.9999'])('accepts %s', (value) => {
+    expect(Money.safeParse(value).success).toBe(true)
+  })
+
+  it.each(['1000000000000000', '-1000000000000000.5', '1234567890123456789.1', '1.00001', '.5', '1.', ''])(
+    'rejects %s',
+    (value) => {
+      expect(Money.safeParse(value).success).toBe(false)
+    },
+  )
+})
+
+describe('IsoDate (a calendar date)', () => {
+  it.each(['2026-10-24', '2026-01-31', '2026-12-31', '2028-02-29', '2000-02-29'])('accepts %s', (value) => {
+    expect(IsoDate.safeParse(value).success).toBe(true)
+  })
+
+  it.each([
+    '2026-13-01',
+    '2026-00-10',
+    '2026-02-30',
+    '2026-02-29',
+    '1900-02-29',
+    '2026-04-31',
+    '2026-10-00',
+    '2026-10-32',
+    '24/10/2026',
+  ])('rejects %s', (value) => {
+    expect(IsoDate.safeParse(value).success).toBe(false)
   })
 })
