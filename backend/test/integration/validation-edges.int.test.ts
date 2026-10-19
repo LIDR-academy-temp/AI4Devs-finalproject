@@ -466,6 +466,42 @@ describe('scope: an import of ProviderC-Alt (merchant 2) read and written by use
     expect(after.changedByUserId).toBeNull()
   })
 
+  it('the same user: POST validations and POST review on the merchant-2 import answer 404 like an unknown one, and nothing changes', async () => {
+    const runsBefore = await ctx.prisma.validationRun.findMany({
+      where: { importId },
+      select: { runId: true, isSuperseded: true },
+      orderBy: { runId: 'asc' },
+    })
+    const statusBefore = (await ctx.prisma.import.findUniqueOrThrow({ where: { importId } })).status
+    const post = (url: string, body?: object) =>
+      ctx.app.inject({
+        method: 'POST',
+        url: `/api/v1${url}`,
+        headers: { authorization: `Bearer ${scopedToken}` },
+        ...(body === undefined ? {} : { payload: body }),
+      })
+    const currentRunId = runsBefore.find((r) => !r.isSuperseded)?.runId ?? 1
+
+    const pairs: [string, string, object | undefined][] = [
+      [`/imports/${importId}/validations`, `/imports/${UNKNOWN_UUID}/validations`, undefined],
+      [`/imports/${importId}/review`, `/imports/${UNKNOWN_UUID}/review`, { runId: currentRunId }],
+    ]
+    for (const [foreign, unknown, body] of pairs) {
+      const a = await post(foreign, body)
+      const b = await post(unknown, body)
+      expect(a.statusCode, foreign).toBe(404)
+      expect(a.json(), foreign).toEqual(b.json())
+    }
+    expect(
+      await ctx.prisma.validationRun.findMany({
+        where: { importId },
+        select: { runId: true, isSuperseded: true },
+        orderBy: { runId: 'asc' },
+      }),
+    ).toEqual(runsBefore)
+    expect((await ctx.prisma.import.findUniqueOrThrow({ where: { importId } })).status).toBe(statusBefore)
+  })
+
   it('the same user reads the merchant-2 import as not found too', async () => {
     const a = await as(scopedToken, 'GET', `/imports/${importId}/validations`)
     const b = await as(scopedToken, 'GET', `/imports/${UNKNOWN_UUID}/validations`)
