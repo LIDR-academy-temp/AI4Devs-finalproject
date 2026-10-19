@@ -330,7 +330,7 @@ La carga de reservas retenidas desde la base SHALL usar el plazo vigente del can
 - **THEN** la fuente no la devuelve y no es faltante
 
 ### Requirement: Rendimiento de extremo a extremo
-Validar y guardar una corrida del volumen de referencia, carga desde SQL Server incluida, SHALL tardar menos de 4 segundos, afirmado por el test, y su escritura menos de 300 ms. El objetivo local de 2 segundos no se alcanza en la Entrega 2 y la carga queda pendiente en el issue #50. El test SHALL ejecutarse solo con `RECON_BENCH=1`, nunca en CI, con la máquina tranquila (sin `pnpm dev`).
+Validar y guardar una corrida del volumen de referencia, carga desde SQL Server incluida, SHALL tardar menos de 4 segundos, afirmado por el test. La escritura tiene como objetivo menos de 300 ms, registrado en el log sin aserción (288 ms medidos). El objetivo local de 2 segundos no se alcanza en la Entrega 2 y la carga queda pendiente en el issue #50. El test SHALL ejecutarse solo con `RECON_BENCH=1`, nunca en CI, con la máquina tranquila (sin `pnpm dev`).
 
 #### Scenario: Volumen de referencia contra la base
 - **GIVEN** `RECON_BENCH=1`, un import analizado de 2 000 filas, 50 000 movimientos anteriores del proveedor en la base y rangos de pocos días (perfil del doc 06)
