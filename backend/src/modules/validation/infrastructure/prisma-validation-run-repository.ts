@@ -93,6 +93,11 @@ export interface RunRepositoryOptions {
   rowsPerStatement?: number
   /** Called after each bulk statement with its kind and row count (tests observe the chunking). */
   onBulkStatement?: (kind: 'issues' | 'merge' | 'occurrences', rows: number) => void
+  /**
+   * Awaited inside the transaction right after the guard on Import, holding its lock (tests pause a write there to
+   * make an overlap deterministic: what the other request reads before its own guard is what this one left).
+   */
+  afterClaim?: (operation: 'saveRun' | 'setInclusion' | 'review') => Promise<void>
 }
 
 export class PrismaValidationRunRepository implements ValidationRunRepository {
@@ -139,6 +144,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
           })
           // From here on the Import row is locked: everything read below is what the change is decided on (D9).
           const previousStatus = await this.claimForInclusion(tx, run.importId, now)
+          await this.options.afterClaim?.('setInclusion')
           const { isSuperseded } = await tx.validationRun.findUniqueOrThrow({
             where: { runId: run.runId },
             select: { isSuperseded: true },
@@ -227,6 +233,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
           const current = await tx.import.findUnique({ where: { importId }, select: { status: true } })
           throw new ImportNotAnalyzedError(current?.status ?? 'unknown')
         }
+        await this.options.afterClaim?.('review')
         const current = await tx.validationRun.findFirst({
           where: { importId, isSuperseded: false },
           select: {
@@ -353,6 +360,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
           }
           const previousStatus = await this.claimForRun(tx, importId, expectedUpdatedAt, now)
           lap('claimMs')
+          await this.options.afterClaim?.('saveRun')
           const previous = await tx.validationRun.findFirst({
             where: { importId, isSuperseded: false },
             select: { runId: true },
