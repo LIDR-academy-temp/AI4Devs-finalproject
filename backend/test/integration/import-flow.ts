@@ -137,6 +137,22 @@ export class ImportFlow {
     return this.analyzed(this.accountIds[account] as string, files.map(samplePart))
   }
 
+  /** Run the validations and review the run: the import ends `validated`. Returns the reviewed runId. */
+  async validateAndReview(importId: string): Promise<number> {
+    const run = await this.call('POST', `/imports/${importId}/validations`)
+    expect(run.statusCode, run.body).toBe(201)
+    const runId = run.json().run.runId as number
+    const review = await this.call('POST', `/imports/${importId}/review`, { runId })
+    expect(review.statusCode, review.body).toBe(200)
+    return runId
+  }
+
+  /** A sample uploaded, analyzed, validated and reviewed. */
+  async validatedSample(sample: SampleName): Promise<{ importId: string; runId: number }> {
+    const detail = await this.analyzedSample(sample)
+    return { importId: detail.importId, runId: await this.validateAndReview(detail.importId) }
+  }
+
   /** Removes the imports with their runs, findings, occurrences, audit entries, rows, sheets and files. Idempotent. */
   async removeImports(importIds: string[]): Promise<void> {
     if (importIds.length === 0) return
