@@ -113,6 +113,25 @@ describe('Analysis & Validations: resolving by hand with a note (spec "resolver 
     expect(drawer().queryByLabelText('Note')).not.toBeInTheDocument()
   })
 
+  it('409 issue_already_resolved without who or when still says it was resolved', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const nra = nraOf(
+      seedValidationRun(importId, undefined, {
+        patches: {
+          [NRA]: {
+            error: { status: 409, code: 'issue_already_resolved', details: { resolvedAt: null, resolvedBy: null } },
+          },
+        },
+      }).issues,
+    )
+    const { user } = await openFinding(importId, nra.issueId)
+
+    await user.type(drawer().getByLabelText('Note'), NOTE)
+    await user.click(drawer().getByRole('button', { name: 'Mark as resolved' }))
+
+    expect(await drawer().findByText('This finding was already resolved.')).toBeInTheDocument()
+  })
+
   it('two clicks on Mark as resolved in the same tick send a single PATCH', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const nra = nraOf(seedValidationRun(importId).issues)

@@ -141,6 +141,25 @@ describe('Analysis & Validations: changing the inclusion (spec "cambiar la inclu
     await waitFor(() => expect(switchOf(SECOND)).toBeEnabled())
   })
 
+  it('409 occurrence_not_includable with a reason the screen does not know still says why not', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const key = issueKey('duplicate_in_batch', '441706751475644')
+    const duplicate = duplicateOf(
+      seedValidationRun(importId, undefined, {
+        patches: {
+          [occurrenceKey(key, 1)]: {
+            error: { status: 409, code: 'occurrence_not_includable', details: { reason: 'something_new' } },
+          },
+        },
+      }).issues,
+    )
+    const { user } = await openFinding(importId, duplicate.issueId)
+
+    await user.click(switchOf(SECOND))
+
+    expect(await drawer().findByText('This occurrence cannot be included.')).toBeInTheDocument()
+  })
+
   it('two clicks on a switch in the same tick send a single PATCH', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const duplicate = duplicateOf(seedValidationRun(importId).issues)
