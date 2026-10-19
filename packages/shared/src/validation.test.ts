@@ -260,6 +260,12 @@ describe('ValidationIssuesQuery', () => {
     expect(ValidationIssuesQuery.safeParse({ pageSize: '501' }).success).toBe(false)
     expect(ValidationIssuesQuery.safeParse({ type: 'failed' }).success).toBe(false)
   })
+
+  it('caps page at 10 000 (5 000 000 findings at 500 per page): beyond it, rejected', () => {
+    expect(ValidationIssuesQuery.safeParse({ page: '10000' }).success).toBe(true)
+    expect(ValidationIssuesQuery.safeParse({ page: '10001' }).success).toBe(false)
+    expect(ValidationIssuesQuery.safeParse({ page: '999999999999' }).success).toBe(false)
+  })
 })
 
 describe('ValidationIssueSummary, ValidationIssueDetail and the page', () => {

@@ -133,8 +133,8 @@ describe('GET /imports/:importId/validation-issues', () => {
     expect(page.items[0]?.occurrenceCount).toBe(2)
   })
 
-  it('400 validation_error for type=failed and pageSize=501', async () => {
-    for (const q of ['type=failed', 'pageSize=501']) {
+  it('400 validation_error for type=failed, pageSize=501 and page=10001', async () => {
+    for (const q of ['type=failed', 'pageSize=501', 'page=10001']) {
       const res = await request('GET', `/imports/${importId}/validation-issues?${q}`)
       expect(res.statusCode, q).toBe(400)
       expect(errorCode(res.json())).toBe('validation_error')
