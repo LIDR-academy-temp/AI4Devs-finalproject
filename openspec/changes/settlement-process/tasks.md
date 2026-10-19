@@ -27,8 +27,8 @@ Rama `feat/settlement-process`, PR hacia `feature/entrega-2-MVP`. El grupo 0 va 
 
 ## 3. Contrato compartido
 
-- [ ] 3.1 Tests primero `packages/shared/src/settlement.test.ts` y `fees.test.ts`: `SettlementRequest` estricto (`runId` obligatorio; `amount` como string decimal de hasta 4 decimales y distinto de 0, rechaza `number`; `description` ≤ 200; `note` ≤ 500; `settlementDate` `YYYY-MM-DD`; `source` ∈ file | manual), `SettlementPreview`, `SettlementView` (cinco categorías en orden, dinero como string), `PayableLine` (nueve códigos, `sign` ∈ + | −), `NextBatchNumber`, `AccountFee`, `FeeTypeView`, `SettlementWarning`, `Skipped` y los `details` de cada error, con los ejemplos de "Contrato para #13". Verificación: fallan sin los esquemas.
-- [ ] 3.2 Implementar `packages/shared/src/settlement.ts` y `fees.ts` y exportarlos desde el índice. Verificación: `pnpm --filter @recon/shared test` y `pnpm typecheck` en verde.
+- [x] 3.1 Tests primero `packages/shared/src/settlement.test.ts` y `fees.test.ts`: `SettlementRequest` estricto (`runId` obligatorio; `amount` como string decimal de hasta 4 decimales y distinto de 0, rechaza `number`; `description` ≤ 200; `note` ≤ 500; `settlementDate` `YYYY-MM-DD`; `source` ∈ file | manual), `SettlementPreview`, `SettlementView` (cinco categorías en orden, dinero como string), `PayableLine` (nueve códigos, `sign` ∈ + | −), `NextBatchNumber`, `AccountFee`, `FeeTypeView`, `SettlementWarning`, `Skipped` y los `details` de cada error, con los ejemplos de "Contrato para #13". Verificación: fallan sin los esquemas.
+- [x] 3.2 Implementar `packages/shared/src/settlement.ts` y `fees.ts` y exportarlos desde el índice. Verificación: `pnpm --filter @recon/shared test` y `pnpm typecheck` en verde.
 - Commit: `test(shared): esquemas de procesar, vista previa, vista del intento, desglose del payable y fees`
 - Commit: `feat(shared): contrato de settlement y fees para #12 y #13`
 
