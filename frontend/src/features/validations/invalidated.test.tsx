@@ -4,12 +4,13 @@ import { auditInstant } from '@/lib/format'
 import { seedImport } from '@/test/msw/imports'
 import { seedInvalidatedReview, seedValidationRun } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
+import { OPENING } from '@/test/validation-screens'
 
 process.env.TZ = 'Asia/Tokyo'
 
 async function openAnalysis(importId: string, search = '') {
   const view = renderApp(`/imports/${importId}?step=analysis${search}`, { as: 'analyst' })
-  await screen.findByRole('region', { name: 'Validations' })
+  await screen.findByRole('region', { name: 'Validations' }, OPENING)
   return view
 }
 

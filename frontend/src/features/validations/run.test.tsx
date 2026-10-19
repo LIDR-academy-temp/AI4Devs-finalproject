@@ -3,10 +3,11 @@ import { describe, expect, it } from 'vitest'
 import { importRecord, importRequests, seedImport } from '@/test/msw/imports'
 import { holdNextValidation, respondNext, seedValidationRun, validationRequests } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
+import { OPENING } from '@/test/validation-screens'
 
 async function openAnalysis(importId: string) {
   const view = renderApp(`/imports/${importId}?step=analysis`, { as: 'analyst' })
-  await screen.findByRole('region', { name: 'Validations' })
+  await screen.findByRole('region', { name: 'Validations' }, OPENING)
   return view
 }
 

@@ -3,10 +3,18 @@ import { describe, expect, it } from 'vitest'
 import { seedImport } from '@/test/msw/imports'
 import { seedValidationRun, validationRequests } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
+import { OPENING } from '@/test/validation-screens'
 
 async function openAnalysis(importId: string, search = '') {
   const view = renderApp(`/imports/${importId}?step=analysis${search}`, { as: 'analyst' })
-  await screen.findByRole('table', { name: 'Validation results' })
+  await screen.findByRole('table', { name: 'Validation results' }, OPENING)
+  return view
+}
+
+/** With a finding in the address the modal drawer opens first and hides what is behind it until it is closed. */
+async function openWithFinding(importId: string, search: string) {
+  const view = renderApp(`/imports/${importId}?step=analysis${search}`, { as: 'analyst' })
+  await screen.findByRole('dialog', {}, OPENING)
   return view
 }
 
@@ -61,11 +69,10 @@ describe('Analysis & Validations: findings of a validation (spec "lista de halla
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const { issues } = seedValidationRun(importId)
     const duplicate = issues.find((i) => i.validationCode === 'duplicate_in_batch')!
-    const { user, router } = await openAnalysis(
+    const { user, router } = await openWithFinding(
       importId,
       `&validation=duplicate_in_batch&ipage=2&issue=${duplicate.issueId}`,
     )
-    await screen.findByRole('dialog')
     await user.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
@@ -81,9 +88,9 @@ describe('Analysis & Validations: findings of a validation (spec "lista de halla
     const { issues } = seedValidationRun(importId)
     const duplicate = issues.find((i) => i.validationCode === 'duplicate_in_batch')!
 
-    const { user } = await openAnalysis(importId, `&validation=duplicate_in_batch&issue=${duplicate.issueId}`)
+    const { user } = await openWithFinding(importId, `&validation=duplicate_in_batch&issue=${duplicate.issueId}`)
 
-    expect(await screen.findByRole('dialog', { name: /441706751475644/ })).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: /441706751475644/ })).toBeInTheDocument()
     // The drawer is modal: what is behind it is checked once it is closed, as a user would see it.
     await user.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())

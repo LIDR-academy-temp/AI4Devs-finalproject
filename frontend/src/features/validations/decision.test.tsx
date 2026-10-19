@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { importRequests, seedImport } from '@/test/msw/imports'
 import { holdNextValidation, respondNext, seedValidationRun, validationRequests } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
+import { OPENING } from '@/test/validation-screens'
 
 process.env.TZ = 'Asia/Tokyo'
 
@@ -10,7 +11,7 @@ const BLOCKED = 'provider_mismatch: cancel the import and process it under the c
 
 async function openAnalysis(importId: string) {
   const view = renderApp(`/imports/${importId}?step=analysis`, { as: 'analyst' })
-  await screen.findByRole('region', { name: 'Validations' })
+  await screen.findByRole('region', { name: 'Validations' }, OPENING)
   return view
 }
 

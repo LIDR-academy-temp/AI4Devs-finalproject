@@ -5,6 +5,7 @@ import { issueTokens } from '@/test/msw/handlers'
 import { seedImport } from '@/test/msw/imports'
 import { batchIssuesFixture, seedValidationRun } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
+import { OPENING } from '@/test/validation-screens'
 
 // Audit instants are converted to New York time whatever the zone of the browser.
 process.env.TZ = 'Asia/Tokyo'
@@ -13,7 +14,7 @@ const FILE = 'Recon_Template_ProviderB-Main_batch-issues.xlsx'
 
 async function openFinding(importId: string, issueId: number) {
   const view = renderApp(`/imports/${importId}?step=analysis&issue=${issueId}`, { as: 'analyst' })
-  await screen.findByRole('dialog')
+  await screen.findByRole('dialog', {}, OPENING)
   return view
 }
 
@@ -130,7 +131,7 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
     seedValidationRun(importId)
     const { router } = renderApp(`/imports/${importId}?step=analysis&issue=999999`, { as: 'analyst' })
 
-    await waitFor(() => expect(router.state.location.search).not.toHaveProperty('issue'))
+    await waitFor(() => expect(router.state.location.search).not.toHaveProperty('issue'), OPENING)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
@@ -138,7 +139,7 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     seedValidationRun(importId)
     const { user } = renderApp(`/imports/${importId}?step=analysis&validation=duplicate_in_batch`, { as: 'analyst' })
-    const opener = await within(await screen.findByRole('table', { name: 'Findings' })).findByRole('button', {
+    const opener = await within(await screen.findByRole('table', { name: 'Findings' }, OPENING)).findByRole('button', {
       name: '441706751475644',
     })
 

@@ -4,6 +4,7 @@ import type { UserName } from '@/test/msw/fixtures'
 import { importRequests, seedImport } from '@/test/msw/imports'
 import { batchIssuesFixture, type RunFixture, seedValidationRun, validationRequests } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
+import { OPENING } from '@/test/validation-screens'
 
 /** What #9 answers to someone who cannot change anything: every control flag off (D9 of #9). */
 function withoutControls(fixture: RunFixture, { resolvable = false } = {}): RunFixture {
@@ -19,7 +20,7 @@ function withoutControls(fixture: RunFixture, { resolvable = false } = {}): RunF
 
 async function openAnalysis(importId: string, as: UserName, search = '') {
   const view = renderApp(`/imports/${importId}?step=analysis${search}`, { as })
-  await screen.findByRole('region', { name: 'Validations' })
+  await screen.findByRole('region', { name: 'Validations' }, OPENING)
   return view
 }
 
@@ -60,7 +61,7 @@ describe('Analysis & Validations: read only (spec "solo lectura")', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     renderApp(`/imports/${importId}?step=analysis&issue=${nra.issueId}`, { as: 'viewer' })
-    const nraDrawer = within(await screen.findByRole('dialog', { name: /281520820250015/ }))
+    const nraDrawer = within(await screen.findByRole('dialog', { name: /281520820250015/ }, OPENING))
     expect(nraDrawer.queryByRole('button', { name: 'Mark as resolved' })).not.toBeInTheDocument()
     expect(duplicate.issueId).not.toBe(nra.issueId)
 
@@ -74,7 +75,7 @@ describe('Analysis & Validations: read only (spec "solo lectura")', () => {
     const nra = issues.find((i) => i.issueType === 'non_recorded_adjustment')!
     await openAnalysis(importId, 'analyst', `&issue=${nra.issueId}`)
 
-    const drawer = within(await screen.findByRole('dialog', { name: /281520820250015/ }))
+    const drawer = within(await screen.findByRole('dialog', { name: /281520820250015/ }, OPENING))
     expect(drawer.queryByRole('switch')).not.toBeInTheDocument()
     expect(drawer.getByRole('button', { name: 'Mark as resolved' })).toBeInTheDocument()
     await screen.findByRole('dialog')

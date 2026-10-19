@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { seedImport } from '@/test/msw/imports'
 import { reserveVariant, seedValidationRun, validationRequests } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
+import { OPENING } from '@/test/validation-screens'
 
 /** Moves the focus with Tab only until it reaches the element `matches` accepts. */
 async function tabTo(user: UserEvent, matches: (element: Element) => boolean, limit = 200) {
@@ -24,7 +25,7 @@ describe('Analysis & Validations: keyboard (design D14)', () => {
     const { importId } = seedImport('batch-issues', { status: 'validated' })
     seedValidationRun(importId, undefined, { reviewedBy: 'analyst' })
     const { user } = renderApp(`/imports/${importId}?step=analysis`, { as: 'analyst' })
-    await screen.findByRole('table', { name: 'Validation results' })
+    await screen.findByRole('table', { name: 'Validation results' }, OPENING)
 
     await tabTo(user, named('Duplicate in batch'))
     await user.keyboard('{Enter}')
@@ -52,7 +53,7 @@ describe('Analysis & Validations: keyboard (design D14)', () => {
     const { importId } = seedImport('batch-blocked', { status: 'analyzed' })
     seedValidationRun(importId)
     renderApp(`/imports/${importId}?step=analysis`, { as: 'analyst' })
-    const decision = await screen.findByRole('region', { name: 'Decision' })
+    const decision = await screen.findByRole('region', { name: 'Decision' }, OPENING)
     const disabled = within(decision)
       .getAllByRole('button')
       .filter((b) => b.hasAttribute('disabled'))
@@ -65,7 +66,7 @@ describe('Analysis & Validations: keyboard (design D14)', () => {
     const { issues } = seedValidationRun(importId, reserveVariant())
     const reserve = issues.find((i) => i.validationCode === 'duplicate_in_batch' && i.cycle === 'R')!
     renderApp(`/imports/${importId}?step=analysis&issue=${reserve.issueId}`, { as: 'analyst' })
-    const drawer = within(await screen.findByRole('dialog'))
+    const drawer = within(await screen.findByRole('dialog', {}, OPENING))
 
     const disabled = drawer.getAllByRole('switch').filter((s) => s.hasAttribute('disabled'))
     expect(disabled).toHaveLength(1)

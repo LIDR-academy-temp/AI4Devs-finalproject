@@ -4,6 +4,7 @@ import { auditInstant } from '@/lib/format'
 import { seedImport } from '@/test/msw/imports'
 import { issueKey, seedValidationRun, validationRequests } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
+import { OPENING } from '@/test/validation-screens'
 
 process.env.TZ = 'Asia/Tokyo'
 
@@ -12,7 +13,7 @@ const NOTE = 'Checked in the gateway: adjustment recorded late'
 
 async function openFinding(importId: string, issueId: number) {
   const view = renderApp(`/imports/${importId}?step=analysis&issue=${issueId}`, { as: 'analyst' })
-  await screen.findByRole('dialog')
+  await screen.findByRole('dialog', {}, OPENING)
   return view
 }
 

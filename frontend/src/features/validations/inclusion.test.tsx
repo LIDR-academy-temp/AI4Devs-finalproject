@@ -10,6 +10,7 @@ import {
   validationRequests,
 } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
+import { OPENING } from '@/test/validation-screens'
 
 process.env.TZ = 'Asia/Tokyo'
 
@@ -20,7 +21,7 @@ async function openFinding(importId: string, issueId: number, validation = 'dupl
   const view = renderApp(`/imports/${importId}?step=analysis&validation=${validation}&issue=${issueId}`, {
     as: 'analyst',
   })
-  await screen.findByRole('dialog')
+  await screen.findByRole('dialog', {}, OPENING)
   return view
 }
 

@@ -3,13 +3,14 @@ import { describe, expect, it } from 'vitest'
 import { seedImport } from '@/test/msw/imports'
 import { batchBlockedFixture, batchIssuesFixture, seedValidationRun, validationRequests } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
+import { OPENING } from '@/test/validation-screens'
 
 // Business dates must not move whatever the zone of the browser (spec "fechas en hora de Nueva York").
 process.env.TZ = 'Asia/Tokyo'
 
 async function openAnalysis(importId: string) {
   const view = renderApp(`/imports/${importId}?step=analysis`, { as: 'analyst' })
-  await screen.findByRole('region', { name: 'Validations' })
+  await screen.findByRole('region', { name: 'Validations' }, OPENING)
   return view
 }
 
