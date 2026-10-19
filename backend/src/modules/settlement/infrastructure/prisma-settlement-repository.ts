@@ -59,11 +59,10 @@ const ROWS_PER_STATEMENT = 5_000
 const iso = (date: Date | null) => (date === null ? null : date.toISOString())
 const businessDate = (day: string | undefined) => (day === undefined ? null : new Date(`${day}T00:00:00.000Z`))
 
+/** A unique violation (P2002) of the index or key, by its name (as validation's isCurrentRunViolation). */
 function violates(error: unknown, index: string): boolean {
-  if (!(error instanceof Prisma.PrismaClientKnownRequestError) && !(error instanceof Error)) return false
-  const known = error instanceof Prisma.PrismaClientKnownRequestError
-  if (known && error.code !== UNIQUE_VIOLATION) return false
-  return `${error.message} ${known ? JSON.stringify(error.meta ?? {}) : ''}`.includes(index)
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== UNIQUE_VIOLATION) return false
+  return `${error.message} ${JSON.stringify(error.meta ?? {})}`.includes(index)
 }
 
 function chunks<T>(items: readonly T[], size = ROWS_PER_STATEMENT): T[][] {
