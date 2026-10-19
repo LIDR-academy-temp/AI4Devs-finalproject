@@ -47,19 +47,35 @@ function attemptBlock(view: SettlementView): string[][] {
     ['Processed at', auditTime(view.processedAt)],
     ['Settlement date', view.settlementDate ?? ''],
     ['Channels', view.channels.join('; ')],
-    ['APP range (New York time)', range(view.dateRanges.APP)],
-    ['DEC range (New York time)', range(view.dateRanges.DEC)],
-    ['I range (New York time)', range(view.dateRanges.I)],
-    ['R range (New York time)', range(view.dateRanges.R)],
+    ['APP range (ET)', range(view.dateRanges.APP)],
+    ['DEC range (ET)', range(view.dateRanges.DEC)],
+    ['I range (ET)', range(view.dateRanges.I)],
+    ['R range (ET)', range(view.dateRanges.R)],
   ]
 }
 
-function warningRow(w: SettlementWarning): string[] {
+/** The internal transaction a warning names, if any. */
+function warningTransaction(w: SettlementWarning): string | null {
+  return w.code === 'undated_adjustment' || w.code === 'reserve_already_released' ? w.transactionId : null
+}
+
+/** The distinct internal transactionIds of the view's warnings: what the summary needs translated (design D2). */
+export function warningTransactionIds(view: SettlementView): string[] {
+  return [...new Set(view.warnings.flatMap((w) => warningTransaction(w) ?? []))]
+}
+
+function sourceIdOf(transactionId: string, sourceIds: ReadonlyMap<string, string>): string {
+  const sourceId = sourceIds.get(transactionId)
+  if (sourceId === undefined) throw new Error(`No source id for transaction ${transactionId} of a warning`)
+  return sourceId
+}
+
+function warningRow(w: SettlementWarning, sourceIds: ReadonlyMap<string, string>): string[] {
   switch (w.code) {
     case 'undated_adjustment':
-      return [w.code, w.transactionId, `Row ${w.rowNo}${w.feeSkipped ? '; fee skipped' : ''}`]
+      return [w.code, sourceIdOf(w.transactionId, sourceIds), `Row ${w.rowNo}${w.feeSkipped ? '; fee skipped' : ''}`]
     case 'reserve_already_released':
-      return [w.code, w.transactionId, `Row ${w.rowNo}`]
+      return [w.code, sourceIdOf(w.transactionId, sourceIds), `Row ${w.rowNo}`]
     case 'fee_variant_not_applied':
       return [w.code, '', `Fee ${w.feeId}`]
     default:
@@ -67,7 +83,8 @@ function warningRow(w: SettlementWarning): string[] {
   }
 }
 
-export function summaryCsv(view: SettlementView): string {
+/** `sourceIds` maps the internal transactionId of each warning (warningTransactionIds) to its source id. */
+export function summaryCsv(view: SettlementView, sourceIds: ReadonlyMap<string, string>): string {
   const issues = view.validationSummary
   const blocks = [
     toCsv(['Field', 'Value'], attemptBlock(view)),
@@ -112,7 +129,10 @@ export function summaryCsv(view: SettlementView): string {
       ['Reason', 'Count'],
       issues === null ? NOT_AVAILABLE : SKIPPED_LABEL.map(([key, label]) => [label, String(view.skipped[key])]),
     ),
-    toCsv(['Code', 'Internal transaction ID', 'Detail'], view.warnings.map(warningRow)),
+    toCsv(
+      ['Code', 'Transaction ID', 'Detail'],
+      view.warnings.map((w) => warningRow(w, sourceIds)),
+    ),
   ]
   return blocks.join(CRLF)
 }
