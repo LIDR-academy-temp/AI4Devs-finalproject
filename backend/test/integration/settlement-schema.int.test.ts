@@ -52,6 +52,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
+  await prisma.settlementTransactionFee.deleteMany({ where: { settlementTxn: { batchId } } })
   await prisma.settlementTransaction.deleteMany({ where: { batchId } })
   await prisma.settlementBatch.deleteMany({ where: { batchId } })
   await prisma.importSheet.deleteMany({ where: { sheetId } })
@@ -132,5 +133,21 @@ describe('SettlementTransaction.eventDate', () => {
     const stored = await prisma.$queryRaw<{ n: number }[]>`
       SELECT COUNT(*) AS n FROM [SettlementTransaction] WHERE [batchId] = ${batchId} AND [eventDate] IS NULL`
     expect(Number(stored[0]!.n)).toBe(1)
+  })
+})
+
+// Migration 0008: the fee of an undated adjustment (P6b, a NULL…NULL fee) keeps the movement's NULL event date.
+describe('SettlementTransactionFee.eventDate', () => {
+  it('admits NULL for the fee of an undated adjustment', async () => {
+    const [undated] = await prisma.$queryRaw<{ settlementTxnId: bigint }[]>`
+      SELECT TOP 1 [settlementTxnId] FROM [SettlementTransaction] WHERE [batchId] = ${batchId} AND [eventDate] IS NULL`
+    const fee = await prisma.fee.findFirstOrThrow({ where: { feeTypeId: 4 }, select: { feeId: true } })
+
+    await prisma.$executeRaw`
+      INSERT INTO [SettlementTransactionFee] ([settlementTxnId], [feeId], [feeTypeId], [eventDate], [amountUsd],
+        [configurationSnapshot])
+      VALUES (${undated!.settlementTxnId}, ${fee.feeId}, 4, NULL, 40, '{}')`
+
+    expect(await prisma.settlementTransactionFee.count({ where: { settlementTxn: { batchId } } })).toBe(1)
   })
 })
