@@ -4,7 +4,7 @@ import { Prisma } from '../../../../generated/prisma/client.js'
 import { expectedOf } from '../../../validation/test-support/builders.js'
 import { exampleView } from '../../test-support/example-view.js'
 import { payableBreakdown } from '../payable-breakdown.js'
-import { summaryCsv } from './summary-csv.js'
+import { summaryCsv, warningTransactionIds } from './summary-csv.js'
 
 // Spec settlement "Summary del merchant" (design D7): nine blocks, each with its header and separated by an empty line;
 // the figures of the view, never recalculated; business dates without converting and processedAt in ET.
@@ -90,6 +90,9 @@ function blocks(body: string): string[][] {
     .split('\r\n\r\n')
     .map((block) => block.split('\r\n'))
 }
+/** Without warnings that name a transaction there is nothing to translate. */
+const summarize = (view: SettlementView, sourceIds: ReadonlyMap<string, string> = new Map()) =>
+  summaryCsv(view, sourceIds)
 const block = (body: string, header: string) => blocks(body).find((b) => b[0] === header)!
 const fieldValue = (body: string, field: string) =>
   block(body, 'Field,Value')
@@ -97,7 +100,7 @@ const fieldValue = (body: string, field: string) =>
     ?.slice(field.length + 1)
 
 describe('summary of batch-clean against its expected.json', () => {
-  const body = summaryCsv(batchCleanView())
+  const body = summarize(batchCleanView())
 
   it('has nine blocks in order, each with its header', () => {
     expect(blocks(body).map((b) => b[0])).toEqual([
@@ -109,7 +112,7 @@ describe('summary of batch-clean against its expected.json', () => {
       'Line,Sign,Amount',
       'Item,Count',
       'Reason,Count',
-      'Code,Internal transaction ID,Detail',
+      'Code,Transaction ID,Detail',
     ])
   })
 
@@ -212,22 +215,22 @@ describe('summary of batch-clean against its expected.json', () => {
   })
 
   it('writes a row per warning', () => {
-    expect(block(body, 'Code,Internal transaction ID,Detail').slice(1)).toEqual(['transactional_fees_not_computed,,'])
+    expect(block(body, 'Code,Transaction ID,Detail').slice(1)).toEqual(['transactional_fees_not_computed,,'])
   })
 })
 
 describe('dates of the summary (spec scenario "Fechas del summary")', () => {
-  const body = summaryCsv(batchCleanView({ settlementDate: '2026-10-24' }))
+  const body = summarize(batchCleanView({ settlementDate: '2026-10-24' }))
 
   it('converts processedAt to New York time with ET', () => {
     expect(fieldValue(body, 'Processed at')).toBe('2026-10-19 11:40:03 ET')
   })
 
   it('writes the business ranges without converting, and an empty range as empty', () => {
-    expect(fieldValue(body, 'APP range (New York time)')).toBe('2026-09-28 00:04:11 - 2026-10-07 23:58:40')
-    expect(fieldValue(body, 'DEC range (New York time)')).toBe('')
-    expect(fieldValue(body, 'I range (New York time)')).toBe('')
-    expect(fieldValue(body, 'R range (New York time)')).toBe('')
+    expect(fieldValue(body, 'APP range (ET)')).toBe('2026-09-28 00:04:11 - 2026-10-07 23:58:40')
+    expect(fieldValue(body, 'DEC range (ET)')).toBe('')
+    expect(fieldValue(body, 'I range (ET)')).toBe('')
+    expect(fieldValue(body, 'R range (ET)')).toBe('')
   })
 
   it('writes the settlement date as it is', () => {
@@ -238,7 +241,7 @@ describe('dates of the summary (spec scenario "Fechas del summary")', () => {
 describe('summaryCsv details', () => {
   it('quotes a batch fee description with a comma and keeps the columns of the block', () => {
     const view = batchCleanView()
-    const body = summaryCsv({
+    const body = summarize({
       ...view,
       batchFees: [{ ...view.batchFees[0]!, description: 'Wire fee, October' }],
     })
@@ -249,7 +252,7 @@ describe('summaryCsv details', () => {
 
   it('writes a negative batch fee with its sign and an empty description as empty', () => {
     const view = batchCleanView()
-    const body = summaryCsv({
+    const body = summarize({
       ...view,
       batchFees: [{ ...view.batchFees[0]!, amount: '-25.0000', description: null, source: 'manual' }],
     })
@@ -257,7 +260,7 @@ describe('summaryCsv details', () => {
   })
 
   it('says Not available in Issues and Not processed for an attempt without settlement.process audit', () => {
-    const body = summaryCsv(batchCleanView({ validationSummary: null, warnings: [] }))
+    const body = summarize(batchCleanView({ validationSummary: null, warnings: [] }))
     expect(block(body, 'Item,Count').slice(1)).toEqual(['Not available,'])
     expect(block(body, 'Reason,Count').slice(1)).toEqual(['Not available,'])
     expect(block(body, 'Line,Sign,Amount').at(-1)).toBe(`Amount payable,,${expected.amountPayable}`)
@@ -265,35 +268,58 @@ describe('summaryCsv details', () => {
 
   it('takes the payment from settledStatus', () => {
     const payment = (settledStatus: SettlementView['settledStatus']) =>
-      fieldValue(summaryCsv(batchCleanView({ settledStatus })), 'Payment')
+      fieldValue(summarize(batchCleanView({ settledStatus })), 'Payment')
     expect(payment('pending_payment')).toBe('Pending payment')
     expect(payment('settled')).toBe('Settled')
     expect(payment('undone')).toBe('Undone')
   })
 
-  it('writes the internal id and row of a row warning as they are', () => {
-    const body = summaryCsv(
-      batchCleanView({
-        warnings: [
-          {
-            code: 'undated_adjustment',
-            transactionId: '40711',
-            sheetId: '2d4e6f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f',
-            rowNo: 7,
-            feeSkipped: true,
-          },
-          { code: 'fee_variant_not_applied', feeId: '0b8e1c2d-3e4f-4a5b-9c6d-7e8f9a0b1c2d' },
-        ],
-      }),
-    )
-    expect(block(body, 'Code,Internal transaction ID,Detail').slice(1)).toEqual([
-      'undated_adjustment,40711,Row 7; fee skipped',
-      'fee_variant_not_applied,,Fee 0b8e1c2d-3e4f-4a5b-9c6d-7e8f9a0b1c2d',
-    ])
+  describe('warnings with the source id (design D2, D7)', () => {
+    const undated = {
+      code: 'undated_adjustment' as const,
+      transactionId: '40711',
+      sheetId: '2d4e6f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f',
+      rowNo: 7,
+      feeSkipped: true,
+    }
+    const variant = { code: 'fee_variant_not_applied' as const, feeId: '0b8e1c2d-3e4f-4a5b-9c6d-7e8f9a0b1c2d' }
+
+    it('writes an undated_adjustment with the source id of its transaction, never the internal id', () => {
+      const body = summarize(batchCleanView({ warnings: [undated, variant] }), new Map([['40711', '911545598812004']]))
+      expect(block(body, 'Code,Transaction ID,Detail').slice(1)).toEqual([
+        'undated_adjustment,911545598812004,Row 7; fee skipped',
+        'fee_variant_not_applied,,Fee 0b8e1c2d-3e4f-4a5b-9c6d-7e8f9a0b1c2d',
+      ])
+      expect(body).not.toContain(',40711,')
+    })
+
+    it('writes a UUID source id as it is', () => {
+      const uuid = 'df14616d-4b26-4ffb-9984-72717ebff6a6'
+      const body = summarize(batchCleanView({ warnings: [undated] }), new Map([['40711', uuid]]))
+      expect(block(body, 'Code,Transaction ID,Detail')[1]).toBe(`undated_adjustment,${uuid},Row 7; fee skipped`)
+    })
+
+    it('fails instead of writing a warning whose transaction has no source id', () => {
+      expect(() => summarize(batchCleanView({ warnings: [undated] }))).toThrow(/40711/)
+    })
+  })
+
+  it('lists the transactions its warnings need translated', () => {
+    const undated = {
+      code: 'undated_adjustment' as const,
+      transactionId: '40711',
+      sheetId: '2d4e6f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f',
+      rowNo: 7,
+      feeSkipped: false,
+    }
+    const released = { ...undated, code: 'reserve_already_released' as const, transactionId: '40712' }
+    const view = batchCleanView({ warnings: [undated, released, { ...undated, rowNo: 8 }] })
+    expect(warningTransactionIds(view)).toEqual(['40711', '40712'])
+    expect(warningTransactionIds(batchCleanView())).toEqual([])
   })
 
   it('does not convert money to a number', () => {
     const view = batchCleanView({ amountPayable: '123456789012345.1234' })
-    expect(block(summaryCsv(view), 'Line,Sign,Amount').at(-1)).toBe('Amount payable,,123456789012345.1234')
+    expect(block(summarize(view), 'Line,Sign,Amount').at(-1)).toBe('Amount payable,,123456789012345.1234')
   })
 })
