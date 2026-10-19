@@ -21,9 +21,10 @@ export class InMemorySettlementSource implements SettlementSource {
     private readonly options: InMemorySourceOptions = {},
   ) {}
 
-  async importContext(scope: Scope, importId: string): Promise<ImportContext | null> {
+  async importContext(scope: Scope | null, importId: string): Promise<ImportContext | null> {
     this.calls.push('importContext')
-    if (importId !== this.input.importId || !scope.merchantIds.includes(this.options.merchantId ?? 1)) return null
+    if (importId !== this.input.importId) return null
+    if (scope !== null && !scope.merchantIds.includes(this.options.merchantId ?? 1)) return null
     return { importId, status: this.options.status ?? 'validated', account: this.input.account }
   }
 

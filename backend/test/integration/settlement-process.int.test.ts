@@ -229,6 +229,8 @@ describe('legacy-provider: the CHB 2 and the findings of the run', () => {
     expect(issues).toHaveLength(3)
     expect(issues.every((i) => i.detectedInBatchId === batchId)).toBe(true)
     expect(processed.validationSummary).toMatchObject({ runId, persistent: 3, resolved: 0, blocking: 0 })
+    // The next suites need ProviderC-Alt transactions never settled.
+    await flow.removeImports([importId])
   })
 })
 

@@ -28,8 +28,11 @@ export interface CurrentRun {
 }
 
 export interface SettlementSource {
-  /** The import with its account, when it is inside the scope; null otherwise (404 identical for both). */
-  importContext(scope: Scope, importId: string): Promise<ImportContext | null>
+  /**
+   * The import with its account, when it is inside the scope; null otherwise (404 identical for both). A null scope
+   * reads it without one: processing, inside its transaction, after the service checked the scope.
+   */
+  importContext(scope: Scope | null, importId: string): Promise<ImportContext | null>
   /** The current (not superseded) validation run of the import. */
   currentRun(importId: string): Promise<CurrentRun | null>
   /** Every ImportRow of the import with its sheet, file order and matched transaction. */

@@ -44,9 +44,12 @@ function chunks<T>(items: readonly T[], size = MAX_SQL_PARAMETERS): T[][] {
 export class PrismaSettlementSource implements SettlementSource {
   constructor(private readonly db: Db) {}
 
-  async importContext(scope: Scope, importId: string): Promise<ImportContext | null> {
+  async importContext(scope: Scope | null, importId: string): Promise<ImportContext | null> {
     const found = await this.db.import.findFirst({
-      where: { importId, account: { provider: { merchantId: { in: [...scope.merchantIds] } } } },
+      where: {
+        importId,
+        ...(scope === null ? {} : { account: { provider: { merchantId: { in: [...scope.merchantIds] } } } }),
+      },
       select: {
         importId: true,
         status: true,
