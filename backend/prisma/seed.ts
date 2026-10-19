@@ -14,6 +14,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PrismaMssql } from '@prisma/adapter-mssql'
+import { Decimal } from '@prisma/client/runtime/client'
 import { ROLES } from '@recon/shared'
 import argon2 from 'argon2'
 import { config as loadEnv } from 'dotenv'
@@ -21,6 +22,7 @@ import { PrismaClient } from '../src/generated/prisma/client.js'
 import {
   ACCOUNT_FEES,
   ACCOUNTS,
+  amount4,
   type BatchPlan,
   buildWorld,
   CHANNELS,
@@ -32,7 +34,6 @@ import {
   GLOBAL_SHEET_RULES,
   LEGACY_RULE_SET,
   MERCHANTS,
-  money,
   mulberry32,
   PROVIDERS,
   SETTLEMENT_STATUSES,
@@ -359,7 +360,8 @@ async function insertBatch(
   type Row = SettlementMovement & { transactionId: bigint }
   const rows: Row[] = settlementMovementsOf(world, plan).map((m) => ({ ...m, transactionId: idOf(m.key) }))
 
-  const sum = (xs: Row[], f: (r: Row) => number) => money(xs.reduce((a, r) => a + f(r), 0))
+  // Amounts are DECIMAL(19,4) text; sums with Decimal, never with JS numbers.
+  const sum = (xs: Row[], f: (r: Row) => string) => xs.reduce((a, r) => a.plus(f(r)), new Decimal(0))
   const E = rows.filter((r) => r.cycle === 'E')
   const I = rows.filter((r) => r.cycle === 'I')
   const R = rows.filter((r) => r.cycle === 'R')
@@ -373,12 +375,13 @@ async function insertBatch(
   ]
   const deposit = sum(cat(E, 'Successful'), (r) => r.amount)
   const mdrPct = (ACCOUNT_FEES[plan.account] ?? []).find((f) => f.feeTypeId === 1)?.pct ?? 0
-  const mdrAmt = money(deposit * mdrPct)
+  const mdrAmt = amount4(deposit.times(mdrPct))
   const fees = sum(rows, (r) => r.feeAmount)
   const held = sum(E, (r) => r.held)
   const released = sum(R, (r) => r.released)
-  const adjustments = sum(cat(I, 'Chargeback'), (r) => r.amount) + sum(cat(I, 'Refund'), (r) => r.amount)
-  const amountPayable = money(deposit - fees - held + released - adjustments)
+  // Chargebacks, refunds and RDRs deduct from the merchant (the seeded history has no batch fees nor CHB 2).
+  const adjustments = sum(I, (r) => r.amount)
+  const amountPayable = deposit.minus(fees).minus(held).plus(released).minus(adjustments)
   const minMax = (xs: Row[]) =>
     xs.length
       ? [

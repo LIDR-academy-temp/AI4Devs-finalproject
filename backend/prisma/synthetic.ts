@@ -3,16 +3,25 @@
  *
  * Generates catalogs, accounts, transactions and batch history from a fixed seed,
  * so that the database seed and the sample files (data/samples) match exactly
- * across runs. No dependencies.
+ * across runs. Its only dependency is Prisma's Decimal (decimal.js), for the amounts
+ * the system computes.
  *
  * Parameters taken from the v1 profile (doc 06): ~30 % declined, 1.5 % chargebacks,
  * 1 % refunds, median ticket ~100 USD with a long tail, brands 60/30/7/3, 10 % reserve
  * for 180 days, 10-day E window, settlement ~17 days after the window closes.
  *
+ * Amounts: tickets and the amounts written in the provider's files are inputs in cents
+ * (`money`). Fees, reserves and totals are computed with 4 decimals, rounding half up in
+ * the fourth only when a product has more (`amount4`; gate of settlement-process).
+ *
  * All IDs are made up: 15 digits for the numeric gateway, UUID v4 for the UUID
  * gateway. No value comes from real data.
  */
+import { Decimal } from '@prisma/client/runtime/client'
 import type { RoleName } from '@recon/shared'
+
+// Re-exported for data/samples/plan.ts, which lives outside the backend package and cannot resolve @prisma/client.
+export { Decimal }
 
 export const ANCHOR = new Date(Date.UTC(2026, 9, 12)) // 2026-10-12, the dataset's fixed "today"
 
@@ -35,7 +44,15 @@ const _pick = <T>(rng: Rng, xs: readonly T[]): T => xs[Math.floor(rng() * xs.len
 const between = (rng: Rng, a: number, b: number) => a + Math.floor(rng() * (b - a + 1))
 export const day = (d: Date, n: number) => new Date(d.getTime() + n * 86_400_000)
 export const iso = (d: Date) => d.toISOString().slice(0, 10)
+/** Inputs in cents: generated tickets and the amounts the provider writes in its files. */
 export const money = (n: number) => Math.round(n * 100) / 100
+/** A computed amount: 4 decimals, half up in the fourth (DECIMAL(19,4)). */
+export const amount4 = (value: Decimal.Value) => new Decimal(value).toDecimalPlaces(4, Decimal.ROUND_HALF_UP)
+/** DECIMAL(19,4) text, as money travels in the API. */
+export const text4 = (value: Decimal.Value) => new Decimal(value).toFixed(4)
+/** Reserve of a transaction: amount × applied percentage, 4 decimals. */
+export const reserveOf = (t: Pick<Txn, 'amount' | 'appliedReservePct'>) =>
+  amount4(new Decimal(t.amount).times(t.appliedReservePct))
 
 /** Log-normal ticket: median ~100, mean ~139, tail up to ~1500. */
 function ticket(rng: Rng) {
@@ -407,7 +424,8 @@ export const ACCOUNT_FEES: Record<
     { feeTypeId: 4, fixed: 40 },
     { feeTypeId: 5, fixed: 4 },
   ],
-  'ProviderC-Alt': [],
+  // Only a Chargeback fee: the legacy sample checks that a CHB 2 gets the Chargeback fee (settlement-process).
+  'ProviderC-Alt': [{ feeTypeId: 4, fixed: 40 }],
 }
 
 /** Global rules (ruleSetId NULL) derived from the standardized template. */
@@ -712,21 +730,25 @@ export interface SettlementMovement {
   statusId: number
   /** Status used for the batch totals (for R, the current one). */
   status: StatusCode
-  amount: number
-  feeAmount: number
+  /** DECIMAL(19,4) text, like every amount below. */
+  amount: string
+  feeAmount: string
   eventDate: Date
   pct: number
   days: number
-  held: number
-  released: number
+  held: string
+  released: string
   expectedAt: Date | null
   brand: string
 }
 
+const ZERO = text4(0)
+
 /**
  * The movements the seed inserts for a batch plan: E with the status when settling (Successful or Declined; the
- * later adjustment is settled in I) and the held reserve, I with the current status at the date of the change,
- * R with the released reserve at the settlement date.
+ * later adjustment is settled in I) and the held reserve, I with the current status at the date of the change and
+ * the transaction amount (an RDR too: it deducts like a Chargeback or a Refund), R with the released reserve at the
+ * settlement date.
  */
 export function settlementMovementsOf(world: World, plan: BatchPlan): SettlementMovement[] {
   const movements: SettlementMovement[] = []
@@ -735,20 +757,20 @@ export function settlementMovementsOf(world: World, plan: BatchPlan): Settlement
     const t = world.txnByKey.get(k)!
     const c = chan(t.channelId)
     const st: StatusCode = t.status === 'Declined' ? 'Declined' : 'Successful'
-    const held = st === 'Successful' ? money(t.amount * t.appliedReservePct) : 0
+    const held = st === 'Successful' ? reserveOf(t) : new Decimal(0)
     movements.push({
       key: k,
       cycle: 'E',
       statusId: STATUS[st],
       status: st,
-      amount: st === 'Successful' ? t.amount : 0,
+      amount: st === 'Successful' ? text4(t.amount) : ZERO,
       feeAmount: feeFor(plan.account, st, t.amount, 'E'),
       eventDate: t.transactionDate,
       pct: t.appliedReservePct,
       days: c.days,
-      held,
-      released: 0,
-      expectedAt: held ? new Date(t.transactionDate.getTime() + c.days * 86_400_000) : null,
+      held: held.toFixed(4),
+      released: ZERO,
+      expectedAt: held.isZero() ? null : new Date(t.transactionDate.getTime() + c.days * 86_400_000),
       brand: t.cardBrand,
     })
   }
@@ -760,13 +782,13 @@ export function settlementMovementsOf(world: World, plan: BatchPlan): Settlement
       cycle: 'I',
       statusId: STATUS[t.status],
       status: t.status,
-      amount: t.status === 'RDR' ? 0 : t.amount,
+      amount: text4(t.amount),
       feeAmount: feeFor(plan.account, t.status, t.amount, 'I'),
       eventDate: t.lastStatusChangedAt!,
       pct: t.appliedReservePct,
       days: c.days,
-      held: 0,
-      released: 0,
+      held: ZERO,
+      released: ZERO,
       expectedAt: null,
       brand: t.cardBrand,
     })
@@ -779,13 +801,13 @@ export function settlementMovementsOf(world: World, plan: BatchPlan): Settlement
       cycle: 'R',
       statusId: STATUS[t.status === 'Declined' ? 'Successful' : t.status],
       status: t.status,
-      amount: 0,
-      feeAmount: 0,
+      amount: ZERO,
+      feeAmount: ZERO,
       eventDate: plan.settlementDate,
       pct: t.appliedReservePct,
       days: c.days,
-      held: 0,
-      released: money(t.amount * t.appliedReservePct),
+      held: ZERO,
+      released: reserveOf(t).toFixed(4),
       expectedAt: null,
       brand: t.cardBrand,
     })
@@ -793,15 +815,22 @@ export function settlementMovementsOf(world: World, plan: BatchPlan): Settlement
   return movements
 }
 
-/** Transactional fee applied to a movement (same rule the MVP engine will use). */
-export function feeFor(account: string, status: StatusCode, amount: number, cycle: 'E' | 'I' | 'R') {
+/**
+ * Transactional fee applied to a movement (same rule the MVP engine uses), as DECIMAL(19,4) text: the percentage part
+ * is rounded half up in the fourth decimal, then the fixed part is added.
+ */
+export function feeFor(account: string, status: StatusCode, amount: number, cycle: 'E' | 'I' | 'R'): string {
   const fees = ACCOUNT_FEES[account] ?? []
-  if (cycle === 'R') return 0
+  if (cycle === 'R') return ZERO
   const byType = (id: number) => fees.find((f) => f.feeTypeId === id)
-  if (cycle === 'E' && status === 'Successful') return money(amount * (byType(1)?.pct ?? 0) + (byType(2)?.fixed ?? 0))
-  if (cycle === 'E' && status === 'Declined') return byType(3)?.fixed ?? 0
-  if (cycle === 'I' && status === 'Chargeback') return byType(4)?.fixed ?? 0
-  if (cycle === 'I' && status === 'Refund') return byType(5)?.fixed ?? 0
-  if (cycle === 'I' && status === 'RDR') return byType(6)?.fixed ?? 0
-  return 0
+  const fixed = (id: number) => text4(byType(id)?.fixed ?? 0)
+  if (cycle === 'E' && status === 'Successful')
+    return amount4(new Decimal(amount).times(byType(1)?.pct ?? 0))
+      .plus(byType(2)?.fixed ?? 0)
+      .toFixed(4)
+  if (cycle === 'E' && status === 'Declined') return fixed(3)
+  if (cycle === 'I' && status === 'Chargeback') return fixed(4)
+  if (cycle === 'I' && status === 'Refund') return fixed(5)
+  if (cycle === 'I' && status === 'RDR') return fixed(6)
+  return ZERO
 }
