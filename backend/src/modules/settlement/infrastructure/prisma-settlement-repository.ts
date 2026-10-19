@@ -2,7 +2,7 @@
 // run and review, load and calculation after the guard, number under a range lock, bulk writes, channels, missing
 // findings, the import and the audit — all or nothing.
 import { randomUUID } from 'node:crypto'
-import type { ChannelAssigned } from '@recon/shared'
+import type { ChannelAssigned, ChannelToAssign } from '@recon/shared'
 import type { FastifyBaseLogger } from 'fastify'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import type { MissingResolution } from '../../validation/application/ports.js'
@@ -18,6 +18,7 @@ import {
 import { loadSettlementInput } from '../application/load-settlement-input.js'
 import type { ProcessCommand, SettlementRepository } from '../application/ports.js'
 import { attemptFor } from '../domain/batch-number.js'
+import { batchChannels, channelStateOf } from '../domain/channels.js'
 import { computeSettlement, type SettlementPlan } from '../domain/compute-settlement.js'
 import type { AccountAttempt, MovementPlan, SettlementChannel } from '../domain/types.js'
 import { PrismaSettlementSource } from './prisma-settlement-source.js'
@@ -50,6 +51,7 @@ const UNIQUE_VIOLATION = 'P2002'
 const ACTIVE_NUMBER_INDEX = 'UX_SettlementBatch_active_accountBatchNo'
 const ACTIVE_IMPORT_INDEX = 'UX_SettlementBatch_active_import'
 const ATTEMPT_KEY = 'SettlementBatch_accountId_batchNo_attemptNo_key'
+const PRIMARY_CHANNEL_INDEX = 'UX_AccountChannel_primary'
 /** batch-clean writes in well under a second; the default 5 s leaves no margin for the gates of the tests. */
 const PROCESS_TX_TIMEOUT_MS = 60_000
 const PROCESS_TX_MAX_WAIT_MS = 10_000
@@ -81,7 +83,10 @@ export class PrismaSettlementRepository implements SettlementRepository {
     const { importId, request } = command
     const batchId = randomUUID()
     // The number this process locked, for the 409 of a violation raised by the writes (set inside the transaction).
-    const race: { attempted?: { accountId: string; batchNo: number; attemptNo: number } } = {}
+    const race: {
+      attempted?: { accountId: string; batchNo: number; attemptNo: number }
+      toAssign?: ChannelToAssign[]
+    } = {}
     try {
       return await this.prisma.$transaction(
         async (tx) => {
@@ -113,8 +118,12 @@ export class PrismaSettlementRepository implements SettlementRepository {
           if (plan.batchFeeError) throw new BatchFeeInvalidError(plan.batchFeeError.index, plan.batchFeeError.reason)
           const attemptNo = await this.lockNumber(tx, context.account.accountId, plan.batchNo)
           race.attempted = { accountId: context.account.accountId, batchNo: plan.batchNo, attemptNo }
-          if (plan.channels.toAssign.length > 0 && request.confirmChannelAssignment !== true)
-            throw new ChannelAssignmentNotConfirmedError(plan.channels.toAssign)
+          // The channels as they are under lock (design D7, D14): another account may have taken one since the load.
+          const lockedChannels = await this.lockChannels(tx, context.account.accountId, input.channels)
+          const batchChannelsNow = batchChannels(plan.movements, lockedChannels)
+          race.toAssign = batchChannelsNow.toAssign
+          if (batchChannelsNow.toAssign.length > 0 && request.confirmChannelAssignment !== true)
+            throw new ChannelAssignmentNotConfirmedError(batchChannelsNow.toAssign)
 
           await this.phase('batch')
           await this.writeBatch(tx, batchId, context.account.accountId, importId, plan, attemptNo, command)
@@ -141,13 +150,11 @@ export class PrismaSettlementRepository implements SettlementRepository {
               data: plan.summary.brandTotals.map((b) => ({ batchId, ...b })),
             })
           await this.phase('channels')
-          const channels = new Map(input.channels.map((c) => [c.channelId, c]))
           const channelsAssigned = await this.assignChannels(
             tx,
             batchId,
             context.account.accountId,
-            plan,
-            channels,
+            batchChannelsNow.toAssign,
             command,
           )
           await this.phase('missing')
@@ -191,7 +198,12 @@ export class PrismaSettlementRepository implements SettlementRepository {
             },
             'settlement processed',
           )
-          return { batchId, plan: { ...plan, attemptNo }, channelsAssigned, resolvedMissing }
+          return {
+            batchId,
+            plan: { ...plan, attemptNo, channels: batchChannelsNow },
+            channelsAssigned,
+            resolvedMissing,
+          }
         },
         { timeout: PROCESS_TX_TIMEOUT_MS, maxWait: PROCESS_TX_MAX_WAIT_MS },
       )
@@ -216,6 +228,8 @@ export class PrismaSettlementRepository implements SettlementRepository {
         )
       }
       if (violates(error, ACTIVE_IMPORT_INDEX)) throw new ImportNotValidatedError('processed')
+      // One primary per channel: another account became primary in between, so the confirmation is stale.
+      if (violates(error, PRIMARY_CHANNEL_INDEX)) throw new ChannelAssignmentNotConfirmedError(race.toAssign ?? [])
       throw error
     }
   }
@@ -367,6 +381,38 @@ export class PrismaSettlementRepository implements SettlementRepository {
   }
 
   /**
+   * The AccountChannel rows of the batch's channels under UPDLOCK + HOLDLOCK, in channelId order (design D7): another
+   * process that would assign one of them waits for this commit, and the state decided here is the one written.
+   */
+  private async lockChannels(
+    tx: Tx,
+    accountId: string,
+    channels: readonly SettlementChannel[],
+  ): Promise<Map<number, SettlementChannel>> {
+    const ids = channels.map((c) => c.channelId).sort((a, b) => a - b)
+    if (ids.length === 0) return new Map()
+    const rows = await tx.$queryRaw<{ channelId: number; accountId: string; isPrimary: boolean; name: string }[]>`
+      SELECT ac.[channelId], LOWER(CONVERT(VARCHAR(36), ac.[accountId])) AS accountId, ac.[isPrimary], a.[name]
+      FROM [AccountChannel] ac WITH (UPDLOCK, HOLDLOCK)
+      JOIN [Account] a ON a.[accountId] = ac.[accountId]
+      WHERE ac.[channelId] IN (${Prisma.join(ids)})
+      ORDER BY ac.[channelId]`
+    return new Map(
+      channels.map((c) => [
+        c.channelId,
+        channelStateOf(
+          accountId,
+          c,
+          rows
+            .filter((r) => r.channelId === c.channelId)
+            .filter((r) => r.isPrimary || r.accountId === accountId.toLowerCase())
+            .map((r) => ({ accountId: r.accountId, isPrimary: Boolean(r.isPrimary), accountName: r.name })),
+        ),
+      ]),
+    )
+  }
+
+  /**
    * Every channel of the batch not primary for the account becomes so (design D14), in channelId order so two
    * batches never wait on each other in opposite orders. An existing row of the account keeps its creation fields.
    */
@@ -374,13 +420,11 @@ export class PrismaSettlementRepository implements SettlementRepository {
     tx: Tx,
     batchId: string,
     accountId: string,
-    plan: SettlementPlan,
-    channels: ReadonlyMap<number, SettlementChannel>,
+    toAssign: readonly ChannelToAssign[],
     command: ProcessCommand,
   ): Promise<ChannelAssigned[]> {
     const assigned: ChannelAssigned[] = []
-    for (const toAssign of plan.channels.toAssign) {
-      const channel = channels.get(toAssign.channelId)!
+    for (const channel of toAssign) {
       await tx.accountChannel.updateMany({
         where: { channelId: channel.channelId, isPrimary: true, NOT: { accountId } },
         data: { isPrimary: false },

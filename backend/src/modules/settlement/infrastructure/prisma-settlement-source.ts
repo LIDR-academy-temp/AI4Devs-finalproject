@@ -15,6 +15,7 @@ import type { Scope } from '../../catalog/domain/scope.js'
 import { businessDay } from '../../fees/domain/fee-selection.js'
 import { MAX_SQL_PARAMETERS } from '../../imports/infrastructure/sql-limits.js'
 import type { CurrentRun, ImportContext, SettlementSource } from '../application/ports.js'
+import { channelStateOf } from '../domain/channels.js'
 import type {
   AccountAttempt,
   AccountFeeConfig,
@@ -264,18 +265,17 @@ export class PrismaSettlementSource implements SettlementSource {
       },
       orderBy: { channelId: 'asc' },
     })
-    return channels.map((c) => {
-      const primary = c.accountChannels.find((ac) => ac.isPrimary) ?? null
-      const ownRow = c.accountChannels.some((ac) => ac.accountId === accountId)
-      const base = { channelId: c.channelId, name: c.name, rollingReserveDays: c.rollingReserveDays }
-      if (primary?.accountId === accountId) return { ...base, assignment: 'assigned' as const, otherAccount: null }
-      if (primary === null && !ownRow) return { ...base, assignment: 'unassigned' as const, otherAccount: null }
-      return {
-        ...base,
-        assignment: 'assigned_to_other_account' as const,
-        otherAccount: primary === null ? null : { accountId: primary.account.accountId, name: primary.account.name },
-      }
-    })
+    return channels.map((c) =>
+      channelStateOf(
+        accountId,
+        { channelId: c.channelId, name: c.name, rollingReserveDays: c.rollingReserveDays },
+        c.accountChannels.map((ac) => ({
+          accountId: ac.account.accountId,
+          isPrimary: ac.isPrimary,
+          accountName: ac.account.name,
+        })),
+      ),
+    )
   }
 
   async previousE(

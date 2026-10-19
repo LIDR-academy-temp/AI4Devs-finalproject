@@ -14,6 +14,35 @@ export interface BatchChannels {
   toAssign: ChannelToAssign[]
 }
 
+/** A row of AccountChannel of the channel: the account's own one, or the primary of any account. */
+export interface AccountChannelRow {
+  accountId: string
+  isPrimary: boolean
+  accountName: string
+}
+
+/**
+ * The state of a channel for the account (the rule of the channel notice of the analysis): primary for it,
+ * not assigned to anyone (no primary and no row of its own), or with another primary account. Ids compare
+ * case-insensitively: SQL Server and the client do not agree on the case of a uniqueidentifier.
+ */
+export function channelStateOf(
+  accountId: string,
+  base: Pick<SettlementChannel, 'channelId' | 'name' | 'rollingReserveDays'>,
+  rows: readonly AccountChannelRow[],
+): SettlementChannel {
+  const same = (id: string) => id.toLowerCase() === accountId.toLowerCase()
+  const primary = rows.find((r) => r.isPrimary) ?? null
+  if (primary && same(primary.accountId)) return { ...base, assignment: 'assigned', otherAccount: null }
+  if (primary === null && !rows.some((r) => same(r.accountId)))
+    return { ...base, assignment: 'unassigned', otherAccount: null }
+  return {
+    ...base,
+    assignment: 'assigned_to_other_account',
+    otherAccount: primary === null ? null : { accountId: primary.accountId, name: primary.accountName },
+  }
+}
+
 export function batchChannels(
   movements: readonly MovementPlan[],
   channels: ReadonlyMap<number, SettlementChannel>,
