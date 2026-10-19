@@ -1517,13 +1517,14 @@ Permiso `settlement.process`. Requiere un import en `validated` cuya revisión s
             required: [runId]
             additionalProperties: false
             properties:
-              runId: { type: integer, description: "Corrida de validaciones revisada; otra vigente → 409 validation_run_superseded" }
-              batchNo: { type: integer, minimum: 1, description: "Si se omite, el siguiente de la cuenta; tras deshacer, el mismo número con nuevo intento" }
-              settlementDate: { type: string, format: date, description: "Fecha de negocio de referencia del batch" }
+              runId: { type: integer, minimum: 1, maximum: 2147483647, description: "Corrida de validaciones revisada; otra vigente → 409 validation_run_superseded" }
+              batchNo: { type: integer, minimum: 1, maximum: 2147483647, description: "Si se omite, el siguiente de la cuenta; tras deshacer, el mismo número con nuevo intento" }
+              settlementDate: { type: string, format: date, description: "Fecha de negocio de referencia del batch; una fecha de calendario válida (2026-02-30 → 400)" }
               note: { type: string, maxLength: 500, description: "Solo queda en la auditoría" }
               confirmChannelAssignment: { type: boolean, description: "Obligatorio en true si el batch trae canales sin asociar o de otra cuenta" }
               batchFees:
                 type: array
+                maxItems: 100
                 description: "En el orden en que el analista los confirma; la respuesta los devuelve igual"
                 items:
                   type: object
@@ -1531,7 +1532,7 @@ Permiso `settlement.process`. Requiere un import en `validated` cuya revisión s
                   properties:
                     feeTypeId: { type: integer }
                     feeId: { type: string, format: uuid, nullable: true, description: "Preestablecido de la cuenta; null si es importe libre" }
-                    amount: { type: string, description: "Decimal con signo, hasta 4 decimales, distinto de 0" }
+                    amount: { type: string, description: "Decimal con signo, hasta 15 dígitos enteros y 4 decimales (DECIMAL(19,4)), distinto de 0" }
                     description: { type: string, maxLength: 200, description: "Obligatoria en un importe libre añadido a mano" }
                     source: { type: string, enum: [file, manual], description: "file: prellenado de Other Fees" }
           example:
@@ -1633,13 +1634,19 @@ Permiso `settlement.process`. Requiere un import en `validated` cuya revisión s
 
 El ejemplo es de `batch-clean` (cifras de `data/samples/batch-clean/expected.json`), con los fees transaccionales calculados, como siempre en el API, y los dos fees de `Other Fees` prellenados. `mdrAmt` es la parte MDR incluida en el fee de los depósitos. La suma con signo de `payableBreakdown` es `amountPayable`.
 
+Un cuerpo que la base no podría guardar responde `400 validation_error` antes de escribir: `runId` o `batchNo` por encima de 2147483647 (`INT`), un `amount` con más de 15 dígitos enteros, una `settlementDate` que no es una fecha de calendario o más de 100 `batchFees`.
+
+`otherAccount` (en `channelsToAssign` de la vista previa y en `details.channels` de `409 channel_assignment_not_confirmed`) y `previousAccount` (en `channelsAssigned`) pasan el mismo filtro de alcance que el aviso de canales de `GET /imports/{id}`: si la otra cuenta es de un merchant fuera del alcance de quien llama, sale como `{ accountId: null, name: null, outOfScope: true }`.
+
+La respuesta `201` se lee de lo escrito, con la forma que devolverá `GET /settlements/{id}` (#12). `skipped`, `warnings`, `channelsAssigned` y `validationSummary` se leen de la auditoría `settlement.process` del intento; un intento sin esa auditoría (el histórico del seed) devuelve `skipped` a ceros, `warnings` y `channelsAssigned` vacíos y `validationSummary: null`.
+
 **`400 batch_fee_invalid`.** Los fees por batch se validan en el orden del cuerpo y la validación se detiene en el primero no válido: `details.index` es su posición (desde 0) y `details.reason`, uno de:
 
 | `reason` | Cuándo |
 |---|---|
 | `unknown_fee_type` | `feeTypeId` no existe |
 | `transactional_fee_type` | El tipo es transaccional: lo aplica el motor por movimiento, no va por batch |
-| `fee_not_in_account` | `feeId` no es un fee de la cuenta |
+| `fee_not_in_account` | `feeId` no es un fee de la cuenta de un tipo no transaccional (un fee transaccional de la cuenta no es preestablecido de un batch) |
 | `fee_type_mismatch` | El fee preestablecido es de otro tipo que `feeTypeId` |
 | `fee_not_in_force` | El fee preestablecido no está vigente el día de referencia del batch |
 | `free_amount_not_allowed` | Importe libre (`feeId: null`) de un tipo sin `allowsFreeAmount`, salvo un prellenado de `Other Fees` (`source: file`) de un tipo que el archivo trae |
