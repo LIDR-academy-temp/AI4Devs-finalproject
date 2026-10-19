@@ -165,9 +165,69 @@ export class ImportFlow {
   }
 }
 
+/**
+ * The settlement attempts of the imports and everything that hangs from them (settlement-process): fees, totals,
+ * movements, the associations they created, the findings they resolved or detected, occurrences that point at them
+ * and their audit entries. Primary flags that a test moved are restored with `restoreAccountChannels`.
+ */
+export async function removeSettlementsFrom(prisma: Ctx['prisma'], importIds: string[]): Promise<void> {
+  if (importIds.length === 0) return
+  const batches = Prisma.sql`SELECT [batchId] FROM [SettlementBatch] WHERE [importId] IN (${Prisma.join(importIds)})`
+  await prisma.$executeRaw`UPDATE [Import] SET [currentBatchId] = NULL WHERE [currentBatchId] IN (${batches})`
+  await prisma.$executeRaw`DELETE FROM [SettlementTransactionFee] WHERE [settlementTxnId] IN (
+    SELECT [settlementTxnId] FROM [SettlementTransaction] WHERE [batchId] IN (${batches}))`
+  await prisma.$executeRaw`DELETE FROM [SettlementTransaction] WHERE [batchId] IN (${batches})`
+  await prisma.$executeRaw`DELETE FROM [SettlementBatchFee] WHERE [batchId] IN (${batches})`
+  await prisma.$executeRaw`DELETE FROM [SettlementBatchTotal] WHERE [batchId] IN (${batches})`
+  await prisma.$executeRaw`DELETE FROM [SettlementBatchBrandTotal] WHERE [batchId] IN (${batches})`
+  await prisma.$executeRaw`UPDATE [ValidationIssue] SET [resolutionStatus] = 'persistent', [resolvedInBatchId] = NULL,
+    [resolvedAt] = NULL WHERE [resolvedInBatchId] IN (${batches}) AND [resolvedByUserId] IS NULL`
+  await prisma.$executeRaw`UPDATE [ValidationIssue] SET [detectedInBatchId] = NULL WHERE [detectedInBatchId] IN (${batches})`
+  await prisma.$executeRaw`DELETE FROM [ConflictOccurrence] WHERE [batchId] IN (${batches})`
+  await prisma.$executeRaw`DELETE FROM [AccountChannel] WHERE [assignedInBatchId] IN (${batches})`
+  await prisma.$executeRaw`DELETE FROM [AuditLog] WHERE [entityType] = 'AccountChannel'
+    AND JSON_VALUE([detailJson], '$.batchId') IN (SELECT LOWER(CONVERT(VARCHAR(36), [batchId])) FROM (${batches}) b)`
+  await prisma.$executeRaw`DELETE FROM [AuditLog] WHERE [entityType] = 'SettlementBatch'
+    AND [entityId] IN (SELECT LOWER(CONVERT(VARCHAR(36), [batchId])) FROM (${batches}) b)`
+  await prisma.$executeRaw`DELETE FROM [SettlementBatch] WHERE [importId] IN (${Prisma.join(importIds)})`
+}
+
+export interface AccountChannelRow {
+  accountId: string
+  channelId: number
+  isPrimary: boolean
+}
+
+/** The AccountChannel rows as they are, to put them back after a test that processes batches. */
+export async function snapshotAccountChannels(prisma: Ctx['prisma']): Promise<AccountChannelRow[]> {
+  return prisma.accountChannel.findMany({ select: { accountId: true, channelId: true, isPrimary: true } })
+}
+
+/** Rows a test created go; the primary flags go back to the snapshot (clear first: one primary per channel). */
+export async function restoreAccountChannels(prisma: Ctx['prisma'], snapshot: AccountChannelRow[]): Promise<void> {
+  const key = (r: AccountChannelRow) => `${r.accountId.toLowerCase()}:${r.channelId}`
+  const kept = new Set(snapshot.map(key))
+  for (const row of await snapshotAccountChannels(prisma))
+    if (!kept.has(key(row)))
+      await prisma.accountChannel.delete({
+        where: { accountId_channelId: { accountId: row.accountId, channelId: row.channelId } },
+      })
+  for (const row of snapshot.filter((r) => !r.isPrimary))
+    await prisma.accountChannel.update({
+      where: { accountId_channelId: { accountId: row.accountId, channelId: row.channelId } },
+      data: { isPrimary: false },
+    })
+  for (const row of snapshot.filter((r) => r.isPrimary))
+    await prisma.accountChannel.update({
+      where: { accountId_channelId: { accountId: row.accountId, channelId: row.channelId } },
+      data: { isPrimary: true },
+    })
+}
+
 /** The cleanup of `ImportFlow.removeImports`, usable without a flow (fixtures created straight in the database). */
 export async function removeImportsFrom(prisma: Ctx['prisma'], importIds: string[]): Promise<void> {
   if (importIds.length === 0) return
+  await removeSettlementsFrom(prisma, importIds)
   // Subqueries, not id lists: a large run has tens of thousands of findings, over the 2 100-parameter limit.
   const runs = Prisma.sql`SELECT [runId] FROM [ValidationRun] WHERE [importId] IN (${Prisma.join(importIds)})`
   const issues = Prisma.sql`SELECT i.[issueId] FROM [ValidationIssue] i
