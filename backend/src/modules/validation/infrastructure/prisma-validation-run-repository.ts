@@ -75,10 +75,23 @@ function visibleAccount(scope: Scope): Prisma.AccountWhereInput {
 
 const json = (value: unknown) => (value === null ? null : JSON.stringify(value))
 
+/** Rows per bulk statement (findings, MERGE, occurrences): ~2,5 MB of JSON per statement at most. */
+const ROWS_PER_BULK_STATEMENT = 10_000
+
+export interface RunRepositoryOptions {
+  /** Rows per bulk statement; tests lower it to force several chunks. */
+  rowsPerStatement?: number
+  /** Called after each bulk statement with its kind and row count (tests observe the chunking). */
+  onBulkStatement?: (kind: 'issues' | 'merge' | 'occurrences', rows: number) => void
+}
+
 export class PrismaValidationRunRepository implements ValidationRunRepository {
   private readonly issues: PrismaIssueReader
 
-  constructor(private readonly prisma: PrismaClient) {
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly options: RunRepositoryOptions = {},
+  ) {
     this.issues = new PrismaIssueReader(prisma)
   }
 
@@ -428,13 +441,14 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
       }
     }
     const createdAt = Prisma.sql`CAST(${now.toISOString()} AS datetime2(7))`
-    // One statement for every finding without occurrences: the rows travel as one JSON parameter and are typed in the
-    // WITH clause exactly as the columns (no implicit NVARCHAR → VARCHAR conversion).
-    if (plain.length > 0) {
+    // The findings without occurrences in statements of at most rowsPerStatement rows: each chunk travels as one JSON
+    // parameter, typed in the WITH clause exactly as the columns (no implicit NVARCHAR → VARCHAR conversion).
+    for (const chunk of this.chunks(plain)) {
       await tx.$executeRaw`
         INSERT INTO [ValidationIssue] (${ISSUE_INSERT_COLUMNS})
         SELECT j.[r], j.[t], j.[s], j.[b], j.[raw], j.[tx], j.[c], j.[st], j.[m], j.[d], j.[j], ${createdAt}
-        FROM OPENJSON(${JSON.stringify(plain)}) WITH (${ISSUE_JSON_COLUMNS}) j`
+        FROM OPENJSON(${JSON.stringify(chunk)}) WITH (${ISSUE_JSON_COLUMNS}) j`
+      this.options.onBulkStatement?.('issues', chunk.length)
     }
     lap('plainIssuesMs')
 
@@ -458,19 +472,23 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
     )
     if (withOccurrences.length > 0) {
       // MERGE … OUTPUT correlates each inserted issueId with the ordinal of its finding (D5): it does not depend on
-      // the order IDENTITY assigns in a multi-row insert.
+      // the order IDENTITY assigns in a multi-row insert. Ordinals are global, so chunking does not break it.
       const sources = withOccurrences.map(({ resultId, issue }, o) => ({ o, ...issueJson(resultId, issue) }))
-      const inserted = await tx.$queryRaw<{ ordinal: number; issueId: number }[]>`
-        MERGE INTO [ValidationIssue] AS t
-        USING (
-          SELECT * FROM OPENJSON(${JSON.stringify(sources)}) WITH ([o] INT, ${ISSUE_JSON_COLUMNS})
-        ) AS j
-        ON 1 = 0
-        WHEN NOT MATCHED THEN
-          INSERT (${ISSUE_INSERT_COLUMNS})
-          VALUES (j.[r], j.[t], j.[s], j.[b], j.[raw], j.[tx], j.[c], j.[st], j.[m], j.[d], j.[j], ${createdAt})
-        OUTPUT j.[o] AS ordinal, inserted.[issueId] AS issueId;`
-      const issueIdOf = new Map(inserted.map((row) => [Number(row.ordinal), Number(row.issueId)]))
+      const issueIdOf = new Map<number, number>()
+      for (const chunk of this.chunks(sources)) {
+        const inserted = await tx.$queryRaw<{ ordinal: number; issueId: number }[]>`
+          MERGE INTO [ValidationIssue] AS t
+          USING (
+            SELECT * FROM OPENJSON(${JSON.stringify(chunk)}) WITH ([o] INT, ${ISSUE_JSON_COLUMNS})
+          ) AS j
+          ON 1 = 0
+          WHEN NOT MATCHED THEN
+            INSERT (${ISSUE_INSERT_COLUMNS})
+            VALUES (j.[r], j.[t], j.[s], j.[b], j.[raw], j.[tx], j.[c], j.[st], j.[m], j.[d], j.[j], ${createdAt})
+          OUTPUT j.[o] AS ordinal, inserted.[issueId] AS issueId;`
+        for (const row of inserted) issueIdOf.set(Number(row.ordinal), Number(row.issueId))
+        this.options.onBulkStatement?.('merge', chunk.length)
+      }
       const occurrences = withOccurrences.flatMap(({ issue }, ordinal) =>
         issue.occurrences.map((o) => ({
           i: issueIdOf.get(ordinal),
@@ -490,14 +508,25 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
           def: o.defaultIncluded,
         })),
       )
-      await tx.$executeRaw`
-        INSERT INTO [ConflictOccurrence] ([issueId], [sourceType], [batchId], [fileId], [sheetId], [rowNo], [statusId],
-          [includeInSettlement], [defaultIncluded])
-        SELECT j.[i], j.[k], j.[bt], j.[f], j.[sh], j.[rn], j.[st], j.[inc], j.[def]
-        FROM OPENJSON(${JSON.stringify(occurrences)}) WITH ([i] INT, [k] VARCHAR(20), [bt] UNIQUEIDENTIFIER,
-          [f] UNIQUEIDENTIFIER, [sh] UNIQUEIDENTIFIER, [rn] INT, [st] INT, [inc] BIT, [def] BIT) j`
+      for (const chunk of this.chunks(occurrences)) {
+        await tx.$executeRaw`
+          INSERT INTO [ConflictOccurrence] ([issueId], [sourceType], [batchId], [fileId], [sheetId], [rowNo],
+            [statusId], [includeInSettlement], [defaultIncluded])
+          SELECT j.[i], j.[k], j.[bt], j.[f], j.[sh], j.[rn], j.[st], j.[inc], j.[def]
+          FROM OPENJSON(${JSON.stringify(chunk)}) WITH ([i] INT, [k] VARCHAR(20), [bt] UNIQUEIDENTIFIER,
+            [f] UNIQUEIDENTIFIER, [sh] UNIQUEIDENTIFIER, [rn] INT, [st] INT, [inc] BIT, [def] BIT) j`
+        this.options.onBulkStatement?.('occurrences', chunk.length)
+      }
     }
     lap('occurrenceIssuesMs')
+  }
+
+  /** At most rowsPerStatement rows per bulk statement: bounds the JSON parameter whatever the size of the run. */
+  private chunks<T>(items: readonly T[]): T[][] {
+    const size = this.options.rowsPerStatement ?? ROWS_PER_BULK_STATEMENT
+    const out: T[][] = []
+    for (let offset = 0; offset < items.length; offset += size) out.push(items.slice(offset, offset + size))
+    return out
   }
 
   /** AuditLog `import.review.invalidate` with the reviewer of the last review of that run copied (D16). */
