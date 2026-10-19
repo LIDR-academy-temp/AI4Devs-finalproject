@@ -174,6 +174,34 @@ export const strings = {
     tooLong: 'The note can have at most 500 characters.',
   },
 
+  decision: {
+    label: 'Decision',
+    continue: 'Continue to settlement review',
+    blocked: 'provider_mismatch: cancel the import and process it under the correct provider.',
+    viewBlocking: 'View the blocking finding',
+    noRun: 'Run the validations before continuing.',
+    cancel: 'Cancel and reprocess',
+    reviewedBy: (userName: string, at: string) => `Reviewed by ${userName} · ${at}`,
+    settlementReview: 'Settlement Review',
+    notAvailable: 'Settlement Review is not available yet.',
+    errors: {
+      superseded: 'A newer validation run exists. Review it before continuing.',
+      blocking: 'The validations found a blocking finding. The results were reloaded.',
+      required: 'There is no current validation run. The results were reloaded.',
+      notAnalyzed: (status: ImportStatus) => `This import can no longer be reviewed (${status}).`,
+      forbidden: 'You cannot review this import.',
+      failed: 'The review could not be saved. Try again.',
+    },
+  },
+
+  invalidated: {
+    label: 'Review invalidated',
+    text: (reviewer: string, reviewedAt: string, by: string, at: string, why: string) =>
+      `The review by ${reviewer} on ${reviewedAt} was invalidated by ${by} on ${at}: ${why}.`,
+    rerun: (newRunId: number | null) => `the validations ran again${newRunId ? ` (run #${newRunId})` : ''}`,
+    inclusionChange: 'an inclusion was changed',
+  },
+
   /** Answers of the API to the actions of the drawer, by code (design D3). */
   actionErrors: {
     reserve_already_included: 'A reserve is released only once: exclude the included occurrence first.',

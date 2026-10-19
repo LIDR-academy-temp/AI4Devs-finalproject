@@ -92,15 +92,15 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 6. Revisión invalidada, Continue, Cancel and reprocess y Settlement Review (D8, D9)
 
-- [ ] 6.1 Test (rojo) `features/validations/decision.test.tsx` con "continuar o cancelar" y "acceso a Settlement Review" (los tests del Continue deshabilitado que pide la Definición de hecho del issue):
+- [x] 6.1 Test (rojo) `features/validations/decision.test.tsx` con "continuar o cancelar" y "acceso a Settlement Review" (los tests del Continue deshabilitado que pide la Definición de hecho del issue):
   - `batch-blocked` → Continue deshabilitado con el texto de `provider_mismatch` enlazado por `aria-describedby`, enlace que abre los hallazgos de `provider_mismatch` y **Cancel and reprocess** disponible;
   - sin corrida → `Run the validations before continuing.`;
   - `batch-issues` → `POST review` con el `runId` pintado, `validated`, `Reviewed by analyst` y **Settlement Review** deshabilitado con `Settlement Review is not available yet.`, sin ningún enlace hacia él;
   - `409 validation_run_superseded` y `409 blocking_validation_issue` → mensaje y relectura;
   - **Cancel and reprocess** confirmado → `cancelled` con corrida, tabla y hallazgos visibles y sin acciones
-- [ ] 6.2 Test (rojo) `features/validations/invalidated.test.tsx` con "aviso de revisión invalidada": re-ejecutar un import `validated` → texto con revisor, invalidador, fechas y `run #<nuevo>`; tras un `review` nuevo desaparece; `lastInvalidatedReview` anterior a `run.review.reviewedAt` → sin aviso
-- [ ] 6.3 Implementar `features/validations/{DecisionBar.tsx,InvalidatedReviewNotice.tsx,next-step.ts}` (`SETTLEMENT_REVIEW = null`, D9), `useReview` con guarda síncrona y la prop `label` en `features/imports/CancelImportDialog.tsx` (sin cambiar su comportamiento ni sus tests); verificar 6.1, 6.2 y `features/imports/cancel.test.tsx` en verde; romper a propósito el habilitado de Continue (ignorar `run.blocked`) y la comparación de fechas del aviso, y ver fallar 6.1 y 6.2; restaurar
-- [ ] 6.4 Commit: `test(frontend): decisión de conjunto, aviso de revisión invalidada y Settlement Review deshabilitado` y `feat(frontend): Continue, Cancel and reprocess y aviso de revisión invalidada`
+- [x] 6.2 Test (rojo) `features/validations/invalidated.test.tsx` con "aviso de revisión invalidada": re-ejecutar un import `validated` → texto con revisor, invalidador, fechas y `run #<nuevo>`; tras un `review` nuevo desaparece; `lastInvalidatedReview` anterior a `run.review.reviewedAt` → sin aviso
+- [x] 6.3 Implementar `features/validations/{DecisionBar.tsx,InvalidatedReviewNotice.tsx,next-step.ts}` (`SETTLEMENT_REVIEW = null`, D9), `useReview` con guarda síncrona y la prop `label` en `features/imports/CancelImportDialog.tsx` (sin cambiar su comportamiento ni sus tests); verificar 6.1, 6.2 y `features/imports/cancel.test.tsx` en verde; romper a propósito el habilitado de Continue (ignorar `run.blocked`) y la comparación de fechas del aviso, y ver fallar 6.1 y 6.2; restaurar
+- [x] 6.4 Commit: `test(frontend): decisión de conjunto, aviso de revisión invalidada y Settlement Review deshabilitado` y `feat(frontend): Continue, Cancel and reprocess y aviso de revisión invalidada`
 
 ## 7. Solo lectura, teclado y anchura (D10, D14)
 

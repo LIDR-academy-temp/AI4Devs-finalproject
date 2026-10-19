@@ -1,16 +1,18 @@
 import type { ImportStatus, ValidationCode } from '@recon/shared'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCanProcess } from '@/features/imports/permissions'
 import type { ImportSearch } from '@/features/imports/validate-search'
 import type { ImportDetail } from '@/lib/api/types'
+import { DecisionBar } from './DecisionBar'
+import { InvalidatedReviewNotice } from './InvalidatedReviewNotice'
 import { IssueDrawer } from './IssueDrawer'
 import { IssuesList } from './IssuesList'
 import { useRunValidations } from './mutations'
-import { validationRunQuery } from './queries'
+import { validationRunKey, validationRunQuery } from './queries'
 import { RunButton } from './RunButton'
 import { RunHeader } from './RunHeader'
 import { strings } from './strings'
@@ -40,6 +42,12 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
   )
 
   const view = query.data
+  // The import changed elsewhere (cancelled, reviewed, back to analyzed): the run says the same status again.
+  const queryClient = useQueryClient()
+  const stale = view !== undefined && view.importStatus !== detail.status
+  useEffect(() => {
+    if (stale) void queryClient.invalidateQueries({ queryKey: validationRunKey(detail.importId), exact: true })
+  }, [stale, queryClient, detail.importId])
   // The region appears with its content; while the first read is on its way there is only a placeholder.
   if (query.isPending) return <Skeleton className="h-24 w-full" aria-label={strings.loading} />
 
@@ -62,6 +70,7 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
         </div>
       ) : view?.run ? (
         <>
+          <InvalidatedReviewNotice view={view} />
           <RunHeader run={view.run} />
           <ValidationsTable results={view.run.results} selected={search.validation} onSelect={select} />
           {search.validation && (
@@ -75,8 +84,12 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
           )}
         </>
       ) : (
-        <p className="text-sm text-muted-foreground">{strings.noRun}</p>
+        <>
+          {view && <InvalidatedReviewNotice view={view} />}
+          <p className="text-sm text-muted-foreground">{strings.noRun}</p>
+        </>
       )}
+      {view && <DecisionBar detail={detail} view={view} running={runner.running} onShowBlocking={select} />}
       <IssueDrawer issueId={search.issue} onClose={close} />
     </section>
   )

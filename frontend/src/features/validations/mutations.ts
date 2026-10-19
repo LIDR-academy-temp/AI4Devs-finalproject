@@ -10,6 +10,7 @@ import {
   type ErrorDetails,
   type OccurrenceView,
   resolveIssue,
+  reviewImport,
   runValidations,
   setOccurrenceInclusion,
   type ValidationIssueDetail,
@@ -152,3 +153,36 @@ export function useIssueActions(issue: ValidationIssueDetail) {
 }
 
 export type IssueActions = ReturnType<typeof useIssueActions>
+
+/** POST review on the run shown, with the same synchronous guard as the run (design D9). */
+export function useReview(importId: string) {
+  const queryClient = useQueryClient()
+  const guard = useRef(false)
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const e = strings.decision.errors
+
+  async function review(runId: number) {
+    if (guard.current) return
+    guard.current = true
+    setPending(true)
+    setError(null)
+    try {
+      storeRun(queryClient, await reviewImport(importId, runId))
+    } catch (failure) {
+      const code = failure instanceof ApiError ? failure.code : undefined
+      if (code === 'validation_run_superseded') setError(e.superseded)
+      else if (code === 'blocking_validation_issue') setError(e.blocking)
+      else if (code === 'validation_run_required') setError(e.required)
+      else if (code === 'import_not_analyzed')
+        setError(e.notAnalyzed(((failure as ApiError).details as ErrorDetails['import_not_analyzed']).status))
+      else setError(failure instanceof ApiError && failure.status === 403 ? e.forbidden : e.failed)
+      if (code) reloadRunAndImport(queryClient, importId)
+    } finally {
+      guard.current = false
+      setPending(false)
+    }
+  }
+
+  return { review, pending, error }
+}

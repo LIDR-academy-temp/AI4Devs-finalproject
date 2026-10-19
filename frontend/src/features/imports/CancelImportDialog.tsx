@@ -25,11 +25,14 @@ export function CancelImportDialog({
   detail,
   cancellable,
   disabled,
+  label = s.button,
 }: {
   detail: ImportDetail
   /** Whether the button is offered; the component stays mounted so its last error remains visible. */
   cancellable: boolean
   disabled: boolean
+  /** Text of the button: Cancel and reprocess in the decision of Analysis & Validations (web-validations D9). */
+  label?: string
 }) {
   const [open, setOpen] = useState(false)
   const cancel = useCancelImport(detail.importId)
@@ -59,7 +62,7 @@ export function CancelImportDialog({
         <AlertDialog open={open} onOpenChange={setOpen}>
           <AlertDialogTrigger asChild>
             <Button variant="outline" size="sm" disabled={disabled || cancel.isPending}>
-              {s.button}
+              {label}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
