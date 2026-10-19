@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '../../src/generated/prisma/client.js'
 import { createPrismaClient } from './helpers.js'
@@ -52,22 +53,40 @@ describe('ValidationRun informative counters', () => {
 })
 
 describe('ImportSheet.sheetIndex', () => {
-  const someSheet = () => prisma.importSheet.findFirstOrThrow({ orderBy: { sheetId: 'asc' } })
+  // A file and a sheet of its own: the seed creates none, and other suites remove theirs.
+  const fileId = randomUUID()
+  const sheetId = randomUUID()
+
+  beforeAll(async () => {
+    await prisma.importFile.create({
+      data: {
+        fileId,
+        importId,
+        fileName: 'schema-test.xlsx',
+        storagePath: 'none',
+        sizeBytes: 1,
+        sha256: fileId.replaceAll('-', '').padEnd(64, '0'),
+      },
+    })
+    await prisma.importSheet.create({
+      data: { sheetId, fileId, sheetName: 'APP', kind: 'transactions', sheetIndex: 0 },
+    })
+  })
+
+  afterAll(async () => {
+    await prisma.importSheet.deleteMany({ where: { sheetId } })
+    await prisma.importFile.deleteMany({ where: { fileId } })
+  })
 
   it('rejects a negative position (CK_ImportSheet_sheetIndex)', async () => {
-    const sheet = await someSheet()
-
     await expect(
-      prisma.$executeRaw`UPDATE [ImportSheet] SET sheetIndex = -1 WHERE sheetId = ${sheet.sheetId}`,
+      prisma.$executeRaw`UPDATE [ImportSheet] SET sheetIndex = -1 WHERE sheetId = ${sheetId}`,
     ).rejects.toThrow(/CK_ImportSheet_sheetIndex/)
   })
 
   it('accepts NULL', async () => {
-    const sheet = await someSheet()
-    const previous = sheet.sheetIndex
+    await prisma.importSheet.update({ where: { sheetId }, data: { sheetIndex: null } })
 
-    await prisma.importSheet.update({ where: { sheetId: sheet.sheetId }, data: { sheetIndex: null } })
-    expect((await someSheet()).sheetIndex).toBeNull()
-    await prisma.importSheet.update({ where: { sheetId: sheet.sheetId }, data: { sheetIndex: previous } })
+    expect((await prisma.importSheet.findUniqueOrThrow({ where: { sheetId } })).sheetIndex).toBeNull()
   })
 })
