@@ -7820,7 +7820,7 @@ paths:
             default: 1
             type: integer
             minimum: 1
-            maximum: 9007199254740991
+            maximum: 10000
           in: query
           name: page
           required: false

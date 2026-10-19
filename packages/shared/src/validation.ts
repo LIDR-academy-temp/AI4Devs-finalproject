@@ -225,7 +225,8 @@ export const ValidationIssuesQuery = z.object({
   status: ResolutionStatus.optional(),
   validationCode: ValidationCode.optional(),
   cycle: Cycle.optional(),
-  page: z.coerce.number().int().min(1).default(1),
+  /** Capped: 10 000 pages of 500 are 5 000 000 findings, far beyond any run; a larger value is a malformed request. */
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(500).default(50),
 })
 export type ValidationIssuesQuery = z.infer<typeof ValidationIssuesQuery>
