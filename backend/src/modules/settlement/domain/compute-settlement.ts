@@ -7,6 +7,7 @@ import { classifyRows } from './inclusion.js'
 import { ZERO } from './money.js'
 import { buildMovements } from './movements.js'
 import { type BatchSummary, summarize } from './totals.js'
+import { applyTransactionalFees } from './transactional-fees.js'
 import type {
   AccountAttempt,
   BatchFeeInvalidReason,
@@ -36,7 +37,6 @@ export interface SettlementPlan {
 }
 
 export function computeSettlement(input: SettlementInput): SettlementPlan {
-  if (input.options.transactionalFees) throw new Error('transactional fees are not implemented yet (design D17)')
   const proposed = proposeBatchNumber(input.attempts, input.importId)
   const batchNo = input.request.batchNo ?? proposed.batchNo
   const { attemptNo, available, holder } = attemptFor(input.attempts, batchNo)
@@ -48,6 +48,15 @@ export function computeSettlement(input: SettlementInput): SettlementPlan {
     previousE: input.previousE,
     policy: input.account.chargebackReservePolicy,
   })
+  // The transactional fees are an optional step (design D17): without it every fee is 0 and the plan says so.
+  const priced = input.options.transactionalFees
+    ? applyTransactionalFees(built.movements, { fees: input.fees, feeTypes: input.feeTypes })
+    : { movements: built.movements, skipped: [], warnings: [{ code: 'transactional_fees_not_computed' } as const] }
+  const skippedFee = new Set(priced.skipped.map((s) => `${s.sheetId}:${s.rowNo}`))
+  const movementWarnings = built.warnings.map((w) =>
+    w.code === 'undated_adjustment' && skippedFee.has(`${w.sheetId}:${w.rowNo}`) ? { ...w, feeSkipped: true } : w,
+  )
+  const movements = priced.movements
 
   const batchFees = validateBatchFees(input.request.batchFees ?? [], {
     feeTypes: input.feeTypes,
@@ -56,11 +65,11 @@ export function computeSettlement(input: SettlementInput): SettlementPlan {
     referenceDay: referenceDay(input),
   })
 
-  const warnings: SettlementWarning[] = [{ code: 'transactional_fees_not_computed' }, ...built.warnings]
+  const warnings: SettlementWarning[] = [...priced.warnings, ...movementWarnings]
   if (input.account.rollingReserveCapAmt !== null) warnings.push({ code: 'reserve_cap_not_applied' })
   if (
     input.account.chargebackReservePolicy === 'release_on_chargeback' &&
-    built.movements.some((m) => m.cycle === 'I' && m.statusCode === 'Chargeback')
+    movements.some((m) => m.cycle === 'I' && m.statusCode === 'Chargeback')
   )
     warnings.push({ code: 'chargeback_reserve_policy_not_applied' })
 
@@ -69,13 +78,13 @@ export function computeSettlement(input: SettlementInput): SettlementPlan {
     attemptNo,
     batchNoAvailable: available,
     holder,
-    movements: built.movements,
+    movements,
     batchFees: batchFees.ok ? batchFees.fees : [],
     batchFeeError: batchFees.ok ? null : { index: batchFees.index, reason: batchFees.reason },
-    summary: summarize(built.movements, batchFees.ok ? batchFees.otherFeeAmt : ZERO),
+    summary: summarize(movements, batchFees.ok ? batchFees.otherFeeAmt : ZERO),
     skipped,
     warnings,
-    channels: batchChannels(built.movements, channels),
+    channels: batchChannels(movements, channels),
     dateRanges: input.ranges,
   }
 }

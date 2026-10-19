@@ -103,7 +103,7 @@ export class PrismaSettlementRepository implements SettlementRepository {
             run,
             prefilledFeeTypeIds: command.prefilledFeeTypeIds,
             request,
-            options: { transactionalFees: false },
+            options: { transactionalFees: true },
           })
           const loaded = performance.now()
           const plan = computeSettlement(input)

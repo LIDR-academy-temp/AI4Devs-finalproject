@@ -35,6 +35,7 @@ export function buildMovements(
       channelId: t.channelId,
       cardBrand: t.cardBrand,
       excludeAmount: row.excludeAmount,
+      gatewayAmount: text4(t.amount),
       appliedReservePct: t.appliedReservePct,
       reserveDaysUsed: days,
       reserveHeldAmt: ZERO,

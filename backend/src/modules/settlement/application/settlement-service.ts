@@ -60,7 +60,7 @@ export class SettlementService {
         run,
         prefilledFeeTypeIds: await this.deps.prefilled.feeTypeIdsOf(scope, importId),
         request,
-        options: { transactionalFees: false },
+        options: { transactionalFees: true },
       }),
     )
     if (plan.batchFeeError) throw new BatchFeeInvalidError(plan.batchFeeError.index, plan.batchFeeError.reason)

@@ -694,8 +694,8 @@ model SettlementTransactionFee {
   settlementTxnId       BigInt
   feeId                 String   @db.UniqueIdentifier
   feeTypeId             Int
-  eventDate             DateTime @db.DateTime2
-  amountUsd             Decimal  @db.Decimal(19, 4)
+  eventDate             DateTime? @db.DateTime2
+  amountUsd            Decimal  @db.Decimal(19, 4)
   configurationSnapshot String   @db.NVarChar(Max)
 
   settlementTxn SettlementTransaction @relation(fields: [settlementTxnId], references: [settlementTxnId], onDelete: NoAction, onUpdate: NoAction)
