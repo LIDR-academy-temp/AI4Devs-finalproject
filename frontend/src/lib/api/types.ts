@@ -2,11 +2,11 @@
 import type { paths } from './schema.gen'
 
 type JsonBody<R> = R extends { content: { 'application/json': infer Body } } ? Body : never
-type Method = 'get' | 'post' | 'put' | 'delete'
+type Method = 'get' | 'post' | 'put' | 'patch' | 'delete'
 
-/** JSON body of the 200 response of `method path`. */
-export type ApiResponse<P extends keyof paths, M extends Method> = JsonBody<
-  NonNullable<paths[P][M]> extends { responses: { 200: infer Ok } } ? Ok : never
+/** JSON body of the `status` response (200 by default) of `method path`. */
+export type ApiResponse<P extends keyof paths, M extends Method, S extends number = 200> = JsonBody<
+  NonNullable<paths[P][M]> extends { responses: infer R } ? (R extends { [K in S]: infer Ok } ? Ok : never) : never
 >
 
 export type TokenPair = ApiResponse<'/api/v1/auth/login', 'post'>

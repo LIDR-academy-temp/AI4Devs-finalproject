@@ -2,7 +2,8 @@
 // results, `blocked`, `blocking`, `editable`, `includable` and `resolvable` are fixed by the fixture of each
 // scenario, and a PATCH answers what the scenario scripts for it. The fake only models what changes between
 // requests: the import analyzed ↔ validated, the run superseded on a re-run, manualChangeCount, the invalidated
-// review and the history (who and when of every applied change). Typed with the hand-copied contract until #9.
+// review and the history (who and when of every applied change). Typed with the generated contract of #9; its own
+// test checks every answer with the shared schemas of @recon/shared.
 import { TRANSACTION_STATUSES, type TransactionStatusCode, type ValidationCode } from '@recon/shared'
 import { HttpResponse, http, type PathParams } from 'msw'
 import type {
@@ -162,7 +163,7 @@ const previous = (code: TransactionStatusCode, rowNo: number): FixtureOccurrence
   location: {
     fileId: 'f0000000-0000-4000-8000-000000000907',
     fileName: 'Recon_Template_ProviderB-Main_batch-07.xlsx',
-    sheetId: 's0000000-0000-4000-8000-000000000907',
+    sheetId: '5e000000-0000-4000-8000-000000000907',
     sheetName: code === 'Declined' ? 'DEC' : 'APP',
     rowNo,
   },
@@ -722,6 +723,8 @@ const superseded = (run: StoredRun) =>
   })
 
 const canProcess = (user: UserName) => USERS[user].permissions.includes('settlement.process')
+/** occurrenceId is a SQL Server BIGINT: a longer value is a malformed id, as #9 answers it. */
+const MAX_BIGINT = 9_223_372_036_854_775_807n
 const RUNNABLE = ['analyzed', 'validated']
 
 interface RouteArgs {
@@ -817,7 +820,14 @@ export function createValidationHandlers(caller: (request: Request) => UserName 
           const query = new URL(request.url).searchParams
           const page = Number(query.get('page') ?? '1')
           const pageSize = Number(query.get('pageSize') ?? '50')
-          if (!Number.isInteger(page) || page < 1 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 500) {
+          if (
+            !Number.isInteger(page) ||
+            page < 1 ||
+            page > 10_000 ||
+            !Number.isInteger(pageSize) ||
+            pageSize < 1 ||
+            pageSize > 500
+          ) {
             return error(400, 'validation_error', 'Invalid query')
           }
           const filters: [string, keyof ValidationIssueSummary][] = [
@@ -908,7 +918,9 @@ export function createValidationHandlers(caller: (request: Request) => UserName 
         'inclusion',
         async ({ request, params, user }) => {
           const occurrenceId = String(params.occurrenceId)
-          if (!/^\d{1,19}$/.test(occurrenceId)) return error(400, 'validation_error', 'Invalid occurrenceId')
+          if (!/^\d{1,19}$/.test(occurrenceId) || BigInt(occurrenceId) > MAX_BIGINT) {
+            return error(400, 'validation_error', 'Invalid occurrenceId')
+          }
           const found = findOccurrence(occurrenceId)
           const record = found && visibleImport(user, found.run.importId)
           if (!canProcess(user)) return record ? forbidden() : notFound('Conflict occurrence')
