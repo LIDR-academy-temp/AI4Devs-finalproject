@@ -5,6 +5,8 @@ import path from 'node:path'
 import { ValidationIssueDetail, ValidationIssuesPage, ValidationRunView } from '@recon/shared'
 import argon2 from 'argon2'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { Prisma } from '../../src/generated/prisma/client.js'
+import { PrismaImportRepository } from '../../src/modules/imports/infrastructure/prisma-import-repository.js'
 import { buildXlsx } from '../../src/modules/imports/infrastructure/xlsx/test-support.js'
 import { createTestApp } from './helpers.js'
 import { ImportFlow } from './import-flow.js'
@@ -258,6 +260,42 @@ describe('the informative counters from the engine to GET validations (spec "Con
       (await flow.call('GET', `/imports/${detail.importId}/validation-issues?type=missing`)).json(),
     )
     expect(missing.items.map((i) => i.transactionIdRaw)).not.toContain(ids.undatedCandidate)
+  })
+})
+
+// ───────────────────────── Review L4: Import.updatedAt keeps datetime2 precision ─────────────────────────
+
+describe('every writer of Import.updatedAt keeps datetime2 precision (review L4)', () => {
+  const created: string[] = []
+
+  afterAll(async () => {
+    await flow.removeImports(created)
+  })
+
+  it('cancel stores updatedAt as the current UTC instant to the exact millisecond (the optimistic version compares it)', async () => {
+    const { prisma } = ctx
+    const repo = new PrismaImportRepository(prisma)
+    for (let n = 0; n < 6; n++) {
+      const importId = randomUUID()
+      created.push(importId)
+      await prisma.import.create({
+        data: {
+          importId,
+          accountId: flow.accountIds['ProviderA-USD'] as string,
+          createdByUserId: flow.userIds.analyst,
+          status: 'uploaded',
+        },
+      })
+      await repo.cancel(importId)
+    }
+
+    // A value rounded to datetime (1/300 s) lands on .xx0, .xx3 or .xx7 ms: only one in three is a whole millisecond.
+    const rows = await prisma.$queryRaw<{ importId: string; ns: number }[]>`
+      SELECT LOWER(CONVERT(VARCHAR(36), [importId])) AS importId, DATEPART(nanosecond, [updatedAt]) % 1000000 AS ns
+      FROM [Import] WHERE [importId] IN (${Prisma.join(created)})`
+    expect(rows.map((r) => Number(r.ns))).toEqual(created.map(() => 0))
+    const stored = await prisma.import.findMany({ where: { importId: { in: created } }, select: { updatedAt: true } })
+    for (const s of stored) expect(Math.abs(s.updatedAt.getTime() - Date.now())).toBeLessThan(60_000)
   })
 })
 
