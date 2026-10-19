@@ -29,14 +29,14 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 2. Formulario de Settlement Review como funciones puras (D4)
 
-- [ ] 2.1 Test (rojo) `features/settlements/review-form.test.ts`:
+- [x] 2.1 Test (rojo) `features/settlements/review-form.test.ts`:
   - `batchNo`: `123` válido; `0`, `-1`, `12a`, `1.5` y vacío → `Enter a positive whole number.`;
   - `settlementDate`: `2026-10-24` válida; vacía → `Choose the settlement date.`; `2026-02-30` y `24/10/2026` no válidas;
   - `amount`: `25.0000`, `-42.5000`, `30`, `123456789012345.1234` válidos; `12.34567`, `0`, `-0.0000`, `1,5`, `1e3` y vacío → `Enter an amount with up to 4 decimals, other than zero.`;
   - descripción obligatoria solo en filas `free`; fila `file` con `feeTypeId = null` sin tipo → no válida, con el motivo de tipo desconocido;
   - `toRequest` con `runId`: `batchNo` entero, `settlementDate` siempre, `batchFees` en el orden de las filas con `source` `file` o `manual`, `feeId` del preestablecido o `null`, importes **idénticos** al texto escrito y `confirmChannelAssignment` solo si se pide y está marcada
-- [ ] 2.2 Implementar `features/settlements/review-form.ts` (esquema Zod y `toRequest`) sin `Number`, `parseFloat` ni `z.coerce` sobre importes; verificar 2.1 en verde, `pnpm typecheck` y `pnpm lint`; romper a propósito el importe con `Number(amount).toString()` y ver fallar el caso de 15 dígitos; restaurar
-- [ ] 2.3 Commit: `test(frontend): esquema y cuerpo del formulario de Settlement Review` y `feat(frontend): formulario de Settlement Review como funciones puras sobre texto`
+- [x] 2.2 Implementar `features/settlements/review-form.ts` (esquema Zod y `toRequest`) sin `Number`, `parseFloat` ni `z.coerce` sobre importes; verificar 2.1 en verde, `pnpm typecheck` y `pnpm lint`; romper a propósito el importe con `Number(amount).toString()` y ver fallar el caso de 15 dígitos; restaurar
+- [x] 2.3 Commit: `test(frontend): esquema y cuerpo del formulario de Settlement Review` y `feat(frontend): formulario de Settlement Review como funciones puras sobre texto`
 
 ## 3. Rutas, acceso por estado y enlaces desde Analysis (D1, D13)
 
