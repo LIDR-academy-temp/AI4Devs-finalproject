@@ -32,7 +32,18 @@ import { statusIdOf } from './status-ids.js'
 
 type Tx = Prisma.TransactionClient
 
-export type WritePhase = 'batch' | 'movements' | 'batchFees' | 'totals' | 'channels' | 'missing' | 'import' | 'audit'
+/** 'number' and 'channelLock' come right before the locks of the number and of the channels; the rest, the writes. */
+export type WritePhase =
+  | 'number'
+  | 'channelLock'
+  | 'batch'
+  | 'movements'
+  | 'batchFees'
+  | 'totals'
+  | 'channels'
+  | 'missing'
+  | 'import'
+  | 'audit'
 
 export interface SettlementRepositoryOptions {
   missing: MissingResolution
@@ -42,7 +53,10 @@ export interface SettlementRepositoryOptions {
    * there so another request commits in between (design D20).
    */
   beforeClaim?: (operation: 'process') => Promise<void>
-  /** Awaited before each write phase: tests inject a failure halfway to see that nothing stays. */
+  /**
+   * Awaited right before the locks of the number ('number') and of the channels ('channelLock'), and before each write
+   * phase: tests see where a process waits, and inject a failure halfway to see that nothing stays.
+   */
   beforePhase?: (phase: WritePhase) => Promise<void>
 }
 
@@ -122,9 +136,11 @@ export class PrismaSettlementRepository implements SettlementRepository {
           const plan = computeSettlement(input)
           const computed = performance.now()
           if (plan.batchFeeError) throw new BatchFeeInvalidError(plan.batchFeeError.index, plan.batchFeeError.reason)
+          await this.phase('number')
           const attemptNo = await this.lockNumber(tx, context.account.accountId, plan.batchNo)
           race.attempted = { accountId: context.account.accountId, batchNo: plan.batchNo, attemptNo }
           // The channels as they are under lock (design D7, D14): another account may have taken one since the load.
+          await this.phase('channelLock')
           const lockedChannels = await this.lockChannels(tx, context.account.accountId, input.channels)
           const batchChannelsNow = batchChannels(plan.movements, lockedChannels)
           race.toAssign = batchChannelsNow.toAssign

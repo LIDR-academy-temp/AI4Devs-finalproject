@@ -12,7 +12,13 @@ import {
 } from '../../src/modules/settlement/infrastructure/prisma-settlement-repository.js'
 import { PrismaMissingResolution } from '../../src/modules/validation/infrastructure/prisma-missing-resolution.js'
 import { createTestApp, fixtureId, fixtureIds } from './helpers.js'
-import { type AccountChannelRow, ImportFlow, restoreAccountChannels, snapshotAccountChannels } from './import-flow.js'
+import {
+  type AccountChannelRow,
+  ImportFlow,
+  removeImportsFrom,
+  restoreAccountChannels,
+  snapshotAccountChannels,
+} from './import-flow.js'
 
 // Overlaps of processing (settlement-process design D5–D7; spec settlement "Procesamiento atómico y auditado",
 // "Precondición de procesar", "Intentos de batch"). Deterministic: one process waits inside its transaction right
@@ -28,6 +34,20 @@ beforeAll(async () => {
   ctx = await createTestApp({ UPLOAD_DIR: uploadDir })
   flow = new ImportFlow(ctx)
   await flow.init()
+  // What an interrupted run left behind: attempts with the numbers of this file (9811–9821), with their imports.
+  const leftovers = await ctx.prisma.settlementBatch.findMany({
+    where: {
+      batchNo: { gte: 9811, lte: 9821 },
+      accountId: {
+        in: fixtureIds(
+          [flow.accountIds['ProviderA-USD'], flow.accountIds['ProviderA-EUR'], flow.accountIds['ProviderB-Main']],
+          'accounts',
+        ),
+      },
+    },
+    select: { importId: true },
+  })
+  await removeImportsFrom(ctx.prisma, [...new Set(leftovers.map((b) => b.importId))])
   channels = await snapshotAccountChannels(ctx.prisma)
   // Approved transactions of RAM-01 (primary of ProviderA-USD) never settled: one per small import.
   ids = (
@@ -148,7 +168,17 @@ describe('the same batchNo in two imports of the account', () => {
 
   it('the range lock (UPDLOCK, HOLDLOCK) holds B until A commits; then B answers 409 with the attempt of A', async () => {
     const a = await validatedImport(8)
-    const b = await validatedImport(9)
+    // A on RAM-01, B on RAM-07 (a channel of its own; its 409 comes before it assigns RAM-07). Oldest first, so the
+    // shared-channel case keeps its own. A different channel is not enough to keep B out of the lock of the channels:
+    // past the number B also waits at lockChannels, so the test looks at the step in between (see below).
+    const [ram07] = (
+      await ctx.prisma.$queryRaw<{ sourceTransactionId: string }[]>(Prisma.sql`
+        SELECT TOP 1 t.[sourceTransactionId] FROM [Transaction] t
+        WHERE t.[providerId] = 101 AND t.[channelId] = 1007 AND t.[statusId] = 2
+          AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st WHERE st.[transactionId] = t.[transactionId])
+        ORDER BY t.[transactionId] ASC`)
+    ).map((r) => r.sourceTransactionId) as [string]
+    const b = await validatedImportOf('ProviderA-USD', ram07)
     // A pauses before its first write, with the number already locked: no attempt of 9818 exists yet.
     const g = gate()
     const first = process(
@@ -160,15 +190,27 @@ describe('the same batchNo in two imports of the account', () => {
     )
     await g.reached
 
-    let settled = false
-    const second = process(repository(), b.importId, { runId: b.runId, batchNo: 9818 }).finally(() => {
-      settled = true
+    // B tells when it is about to lock the number ('number') and whether it got past it: 'channelLock' comes right
+    // after lockNumber, before the lock of the channels, so only the range of the number can hold B in between.
+    let signalNumber!: () => void
+    const bAtNumber = new Promise<void>((resolve) => {
+      signalNumber = resolve
     })
+    let bPastNumber = false
+    const second = process(
+      repository(undefined, async (phase) => {
+        if (phase === 'number') signalNumber()
+        if (phase === 'channelLock') bPastNumber = true
+      }),
+      b.importId,
+      { runId: b.runId, batchNo: 9818, confirmChannelAssignment: true },
+    )
     second.catch(() => undefined)
     try {
-      // Without the range lock B finds no attempt of 9818, writes its own and commits while A waits.
-      await new Promise((resolve) => setTimeout(resolve, 1_500))
-      expect(settled).toBe(false)
+      await bAtNumber
+      // Without the range lock B finds no attempt of 9818 and goes on to write its own while A waits.
+      await new Promise((resolve) => setTimeout(resolve, 1_000))
+      expect(bPastNumber).toBe(false)
     } finally {
       g.open()
     }
