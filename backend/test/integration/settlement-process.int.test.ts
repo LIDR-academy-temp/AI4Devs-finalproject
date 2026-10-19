@@ -48,8 +48,11 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (ctx) {
-    await flow.close()
-    await restoreAccountChannels(ctx.prisma, channels)
+    try {
+      await flow.close()
+    } finally {
+      await restoreAccountChannels(ctx.prisma, channels)
+    }
     await ctx.app.close()
     await ctx.prisma.$disconnect()
   }
@@ -105,6 +108,7 @@ describe('batch-clean end to end', () => {
   let batchId: string
   let processed: SettlementView
   let planned: ReturnType<typeof computeSettlement>
+  let elapsedMs: number
 
   beforeAll(async () => {
     ;({ importId, runId } = await flow.validatedSample('batch-clean'))
@@ -125,14 +129,23 @@ describe('batch-clean end to end', () => {
     )
     const started = Date.now()
     ;({ batchId } = await process(importId, request, [121, 117]))
-    expect(Date.now() - started).toBeLessThan(3_000)
+    elapsedMs = Date.now() - started
     processed = await view(batchId)
   })
 
   // The next suites expect RAM-07 not assigned yet and batch-clean not settled.
   afterAll(async () => {
-    await flow.removeImports([importId])
-    await restoreAccountChannels(ctx.prisma, channels)
+    try {
+      await flow.removeImports([importId])
+    } finally {
+      await restoreAccountChannels(ctx.prisma, channels)
+    }
+  })
+
+  // Target 3 s (design D6); the assertion leaves margin for a cold SQL Server in CI.
+  it('processes batch-clean within 5 s, logging when it misses the 3 s target', () => {
+    if (elapsedMs > 3_000) ctx.app.log.warn({ elapsedMs, targetMs: 3_000 }, 'batch-clean processing above target')
+    expect(elapsedMs).toBeLessThan(5_000)
   })
 
   it('creates a processed attempt with the proposed number, nothing settled', async () => {
@@ -179,6 +192,9 @@ describe('batch-clean end to end', () => {
     expect(Object.fromEntries(processed.totals.map((t) => [t.category, t.feeAmount]))).toEqual(byCategory)
     expect(processed.transactionalFeeAmt).toBe(total)
     expect(processed.amountPayable).toBe(fees.amountPayable)
+    // The MDR part of the deposit fee: ProviderA-USD charges a single 10 % MDR.
+    expect(processed.mdrAmt).toBe(fees.fees.mdrIncludedInDeposit)
+    expect(processed.mdrRate).toBe('0.100000')
     const mismatched = await ctx.prisma.$queryRaw<{ n: number }[]>`
       SELECT COUNT(*) AS n FROM [SettlementTransaction] st
       WHERE st.[batchId] = ${batchId}
@@ -195,6 +211,18 @@ describe('batch-clean end to end', () => {
     expect(processed.amountPayable).toBe(planned.summary.amountPayable)
     expect(processed.payableBreakdown).toEqual(planned.summary.payableBreakdown)
     expect(signedSum(processed)).toBe(processed.amountPayable)
+    // Each line against the oracle: the sum alone repeats the definition of amountPayable (review L3).
+    expect(processed.payableBreakdown.map((l) => [l.code, l.sign, l.amount])).toEqual([
+      ['deposit', '+', summary.amounts.deposit],
+      ['chargeback', '-', summary.amounts.chargeback],
+      ['refund', '-', summary.amounts.refund],
+      ['rdr', '-', summary.amounts.rdr],
+      ['transactional_fees', '-', '4336.6070'],
+      ['batch_fees', '-', '40.0000'],
+      ['reserve_held', '-', summary.amounts.reserveHeld],
+      ['reserve_released', '+', summary.amounts.reserveReleased],
+      ['reserve_early_released', '+', '0.0000'],
+    ])
     expect(processed.skipped).toEqual(planned.skipped)
     expect(processed.warnings).toEqual(planned.warnings)
   })
@@ -254,18 +282,34 @@ describe('legacy-provider: the CHB 2 and the findings of the run', () => {
 })
 
 describe('attempts', () => {
-  it('a number with an undone attempt is accepted again as attempt 2', async () => {
+  it('a number with an undone attempt is accepted again as attempt 2, with its movements and rounds', async () => {
     const id = await sourceIdOf(Prisma.sql`t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 2`)
-    const first = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [
-      { name: 'a1.xlsx', bytes: xlsx('APP', [id]) },
-    ])
-    const runId = await flow.validateAndReview(first.importId)
-    const { batchId } = await process(first.importId, { runId, batchNo: 9801 })
-    // Undo is tramo 6: the test marks the attempt undone and the import analyzed, as undo will.
-    await ctx.prisma.settlementBatch.update({
-      where: { batchId },
-      data: { status: 'undone', undoneAt: new Date(), undoneByUserId: flow.userIds.analyst, undoReason: 'test' },
+    // Y: a refund whose E was settled in a paid batch of the history (another import): round 2.
+    const y = await adjustmentIdOf(
+      Prisma.sql`t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 5 AND t.[lastStatusChangedAt] IS NOT NULL`,
+    )
+    const bytes = buildXlsx({
+      sheets: [
+        {
+          name: 'APP',
+          rows: [
+            ['ID', 'Amount', 'Currency'],
+            [id, { v: '10' }, 'USD'],
+          ],
+        },
+        {
+          name: 'REF',
+          rows: [
+            ['ID', 'Amount', 'Currency'],
+            [id, { v: '10' }, 'USD'],
+            [y, { v: '10' }, 'USD'],
+          ],
+        },
+      ],
     })
+    const first = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [{ name: 'a1.xlsx', bytes }])
+    const runId = await flow.validateAndReview(first.importId)
+    const { batchId } = await undone(await process(first.importId, { runId, batchNo: 9801 }))
     await ctx.prisma.import.update({
       where: { importId: first.importId },
       data: { status: 'analyzed', currentBatchId: null },
@@ -275,8 +319,56 @@ describe('attempts', () => {
     const second = await process(first.importId, { runId: rerun, batchNo: 9801 })
 
     expect(await view(second.batchId)).toMatchObject({ batchNo: 9801, attemptNo: 2, status: 'processed' })
+    // The E of `id` in the undone attempt of the same import is not a previous E: its refund is round 1 (E in this
+    // batch); Y's E is in a batch of another import: round 2.
+    const [tId, tY] = [await transactionOf(101, id), await transactionOf(101, y)]
+    const rounds = await ctx.prisma.settlementTransaction.findMany({
+      where: { batchId: second.batchId },
+      orderBy: [{ cycle: 'asc' }, { transactionId: 'asc' }],
+      select: { cycle: true, transactionId: true, roundNo: true },
+    })
+    expect(rounds).toEqual(
+      [
+        { cycle: 'E', transactionId: tId.transactionId, roundNo: null },
+        { cycle: 'I', transactionId: tId.transactionId, roundNo: 1 },
+        { cycle: 'I', transactionId: tY.transactionId, roundNo: 2 },
+      ].sort((a, b) => (a.cycle === b.cycle ? Number(a.transactionId - b.transactionId) : a.cycle < b.cycle ? -1 : 1)),
+    )
+    expect(batchId).not.toBe(second.batchId)
+    // Their runs flag the neighbours of these transactions as missing in range: the next suites need them clean.
+    await flow.removeImports([first.importId])
+  })
+
+  it('an E only in an undone attempt of another import is not a previous E: the adjustment has no round', async () => {
+    const id = await sourceIdOf(Prisma.sql`t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 2`)
+    const withE = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [
+      { name: 'u1.xlsx', bytes: xlsx('APP', [id]) },
+    ])
+    await undone(await process(withE.importId, { runId: await flow.validateAndReview(withE.importId), batchNo: 9802 }))
+    const withI = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [
+      { name: 'u2.xlsx', bytes: xlsx('REF', [id]) },
+    ])
+
+    const { batchId } = await process(withI.importId, { runId: await flow.validateAndReview(withI.importId) })
+
+    const t = await transactionOf(101, id)
+    const [movement] = await ctx.prisma.settlementTransaction.findMany({
+      where: { batchId, transactionId: t.transactionId },
+      select: { cycle: true, roundNo: true },
+    })
+    expect(movement).toEqual({ cycle: 'I', roundNo: null })
+    await flow.removeImports([withE.importId, withI.importId])
   })
 })
+
+/** Undo is tramo 6: the test marks the attempt undone, as undo will. */
+async function undone<T extends { batchId: string }>(processed: T): Promise<T> {
+  await ctx.prisma.settlementBatch.update({
+    where: { batchId: processed.batchId },
+    data: { status: 'undone', undoneAt: new Date(), undoneByUserId: flow.userIds.analyst, undoReason: 'test' },
+  })
+  return processed
+}
 
 describe('rows that are not processed', () => {
   it('a row whose status could not be resolved is counted in skipped, not processed', async () => {

@@ -59,8 +59,11 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (ctx) {
-    await flow.close()
-    await restoreAccountChannels(ctx.prisma, channels)
+    try {
+      await flow.close()
+    } finally {
+      await restoreAccountChannels(ctx.prisma, channels)
+    }
     await removeScopedUser()
     await ctx.app.close()
     await ctx.prisma.$disconnect()
