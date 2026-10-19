@@ -1,8 +1,8 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { auditInstant } from '@/lib/format'
 import { seedImport } from '@/test/msw/imports'
-import { issueKey, seedValidationRun, validationRequests } from '@/test/msw/validations'
+import { holdNextValidation, issueKey, seedValidationRun, validationRequests } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
 import { OPENING } from '@/test/validation-screens'
 
@@ -111,5 +111,25 @@ describe('Analysis & Validations: resolving by hand with a note (spec "resolver 
 
     expect(drawer().queryByRole('button', { name: 'Mark as resolved' })).not.toBeInTheDocument()
     expect(drawer().queryByLabelText('Note')).not.toBeInTheDocument()
+  })
+
+  it('two clicks on Mark as resolved in the same tick send a single PATCH', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const nra = nraOf(seedValidationRun(importId).issues)
+    const hold = holdNextValidation('resolve')
+    const { user } = await openFinding(importId, nra.issueId)
+    await user.type(drawer().getByLabelText('Note'), NOTE)
+    const button = drawer().getByRole('button', { name: 'Mark as resolved' })
+
+    // Inside one act the button cannot be disabled between the clicks: only the synchronous guard stops the second.
+    act(() => {
+      fireEvent.click(button)
+      fireEvent.click(button)
+    })
+    await hold.arrived
+    hold.release()
+
+    expect(await drawer().findByText(/^Resolved by analyst · /)).toBeInTheDocument()
+    expect(validationRequests('resolve')).toHaveLength(1)
   })
 })

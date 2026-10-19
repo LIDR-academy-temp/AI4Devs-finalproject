@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { seedImport } from '@/test/msw/imports'
 import {
@@ -139,6 +139,25 @@ describe('Analysis & Validations: changing the inclusion (spec "cambiar la inclu
     for (const control of drawer().getAllByRole('switch')) expect(control).toBeDisabled()
     hold.release()
     await waitFor(() => expect(switchOf(SECOND)).toBeEnabled())
+  })
+
+  it('two clicks on a switch in the same tick send a single PATCH', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const duplicate = duplicateOf(seedValidationRun(importId).issues)
+    const hold = holdNextValidation('inclusion')
+    await openFinding(importId, duplicate.issueId)
+    const control = switchOf(SECOND)
+
+    // Inside one act the switch cannot be disabled between the clicks: only the synchronous guard stops the second.
+    act(() => {
+      fireEvent.click(control)
+      fireEvent.click(control)
+    })
+    await hold.arrived
+    hold.release()
+
+    await waitFor(() => expect(switchOf(SECOND)).toBeChecked())
+    expect(validationRequests('inclusion')).toHaveLength(1)
   })
 })
 
