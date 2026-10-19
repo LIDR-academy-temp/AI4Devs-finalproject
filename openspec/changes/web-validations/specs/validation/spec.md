@@ -124,7 +124,7 @@ Abrir un hallazgo SHALL mostrar en un panel lateral todas sus apariciones: las d
 #### Scenario: Duplicado en el batch (HU2 CA2)
 - **GIVEN** la corrida vigente de `batch-issues`
 - **WHEN** abre el hallazgo `Duplicate in batch` de `441706751475644`
-- **THEN** ve dos apariciones de `batch-issues.xlsx` · `APP`, cada una con su fila y `Successful`; la primera `Included by default` e incluida, y la segunda excluida por defecto
+- **THEN** ve dos apariciones de `Recon_Template_ProviderB-Main_batch-issues.xlsx` · `APP`, en las filas 12 y 338, ambas `Successful`; la primera `Included by default` e incluida, y la segunda excluida por defecto
 
 #### Scenario: Aparición de un batch anterior
 - **WHEN** abre el hallazgo `Duplicate across batches` de `504712738863260`
