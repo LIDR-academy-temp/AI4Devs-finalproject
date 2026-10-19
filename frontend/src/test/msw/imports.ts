@@ -558,7 +558,8 @@ function route(
   }
 }
 
-function visibleImport(user: UserName, importId: unknown): FakeImport | null {
+/** The stored import if the user's merchant scope covers it; the fake validations API reads it too. */
+export function visibleImport(user: UserName, importId: unknown): FakeImport | null {
   const record = state.imports.get(String(importId))
   return record && canSee(user, record.accountId) ? record : null
 }

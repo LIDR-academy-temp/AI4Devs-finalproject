@@ -1,4 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
+import { ValidationsSection } from '@/features/validations/ValidationsSection'
 import type { ImportDetail } from '@/lib/api/types'
 import type { ImportSearch } from '../validate-search'
 import { ChannelNotice } from './ChannelNotice'
@@ -7,8 +8,8 @@ import { RowsTable } from './RowsTable'
 import { Warnings } from './Warnings'
 
 /**
- * The result of the analysis: counters, channel notice, warnings and rows (design D9). The validations of T3 (#10)
- * go below it.
+ * The result of the analysis (counters, channel notice, warnings), then the validations of T3 (#10) with the
+ * decision on the whole, and the rows last (design D9; web-validations design D1).
  */
 export function AnalysisStep({ detail }: { detail: ImportDetail }) {
   const search = useSearch({ from: '/app/imports/$importId' })
@@ -20,6 +21,7 @@ export function AnalysisStep({ detail }: { detail: ImportDetail }) {
       <Counters importId={detail.importId} analysis={detail.analysis} />
       <ChannelNotice channels={detail.channels ?? []} />
       <Warnings warnings={detail.analysis.warnings} />
+      <ValidationsSection detail={detail} />
       <RowsTable
         importId={detail.importId}
         match={search.match}

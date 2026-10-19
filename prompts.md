@@ -409,3 +409,45 @@ En la segunda revisión, el hallazgo sobre los cambios sin confirmar describía 
 - Extremo: 5 060 ms (carga 3 922, motor 40, escritura 935, de ella 845 en hallazgos sin apariciones); 23 659 hallazgos. Sin aserción.
 
 *Ajuste humano.* La persona decidió P1–P7, revisó y aplicó la `0006`, y a mitad del change fijó la convención de fechas: las de negocio son hora de pared de America/New_York sin zona (la `Z` del API es solo transporte, deuda en #48) y las de auditoría, instantes UTC; pidió documentarla y revisar, sin corregir, si alguna regla mezclaba las dos clases (no las mezcla ninguna). Pidió además dejar escrito en README §3.3 que la inclusión manual de un duplicado E entre batches existe solo para procesar batches históricos, porque un E no se paga dos veces, y abrir el issue #49 para cerrarla. Tras el primer bench decidió que aquel escenario no representaba un batch real y fijó los dos nuevos: un volumen de referencia (historial grande, rangos de pocos días calibrados con el doc 06, 2 000 filas, como máximo 2 000 faltantes) con aserción de menos de 4 s, y un caso extremo sin aserción, solo registrado. Con el segundo bench aceptó el resultado para la Entrega 2: la escritura queda por debajo de 300 ms (D5 cumplido) y el cuello de botella es la carga (86 % del total), que pasa a un issue de la Entrega 3.
+
+**Prompt 9:**
+
+*Contexto.* `web-validations` (issue #10): la pantalla Analysis & Validations de HU2. Muestra la corrida con sus rangos, la tabla de las ocho validaciones, la lista de hallazgos y un drawer con las apariciones, el historial y las dos acciones del analista (cambiar una inclusión y resolver con nota). Añade el aviso de revisión invalidada y la decisión de conjunto (Continue / Cancel and reprocess). Se construyó mientras #9 seguía en curso, contra el contrato que publicaba su design y con un API falso de MSW. El último grupo de tareas era el rebase sobre #9 ya fusionado.
+
+*Prompt.* Proponer el change con `/opsx:propose` a partir del issue y del contrato de #9, leído solo con `git show`, sin cambiarlo y diciendo en el proposal lo que faltara. Restricciones de partida:
+- El drawer lleva las acciones completas; el resumen previo por ciclo es de #13.
+- Run se deshabilita mientras corre y relee ante `409 import_changed`; avisa antes de re-ejecutar si hay cambios manuales; Continue se deshabilita con un bloqueante, con el motivo visible.
+- Los controles siguen `editable`, `includable` y `resolvable` sin duplicar reglas, y `viewer` queda en solo lectura.
+- El motivo al cancelar queda como pregunta abierta, y Settlement Review, que aún no existe, se resuelve con una propuesta.
+- Tipos y handlers del contrato aislados en un solo sitio.
+
+Después, aplicar grupo a grupo con test primero y una rotura a propósito por grupo, sin integración ni E2E contra la base compartida mientras #9 siguiera en curso. Las capturas, con Playwright y avisando antes de lanzarlas.
+
+*Resultado.* En el gate del design el asistente se detuvo al fijar la zona horaria. Todas las fechas son `DATETIME2` sin zona y el API las serializa con `Z`, pero ningún documento decía si las de negocio eran instantes UTC u hora de Nueva York, y presentó lo que había encontrado antes de decidir nada. Con la convención fijada, las fechas se tipan con marcas `BusinessDate` y `AuditInstant`, de modo que pasar una al formateador de la otra no compila, y los dos formateadores se prueban con la zona del proceso en Tokio, en horario de verano y en horario estándar. El API falso quedó guionizado: los resultados y las marcas vienen fijados en las fixtures, cada `PATCH` devuelve lo que el escenario declara, y el falso solo modela lo que cambia entre peticiones.
+
+En `apply`, una rotura no cayó porque `dblClick` da tiempo a React a deshabilitar el botón entre los dos clics. Se añadió el test de dos clics dentro de un `act`, como en web-import. Otra pasaba con el foco en el `body`, porque la página entera contiene el ID del hallazgo; la aserción pasó a exigir el botón exacto. Al volver a las esperas por defecto de `findBy`, la suite fallaba unos 25 tests en cada pasada. La medición dio dos causas:
+- Una cascada propia: el drawer pedía el hallazgo después de la corrida.
+- El primer render del paso Analysis en frío, unos 750 ms aislado y más de 1 s con la suite en paralelo.
+
+Se corrigió la cascada y solo las aperturas de esas pantallas esperan más. Al abrir con un hallazgo en la dirección, el drawer modal oculta el fondo con `aria-hidden`, así que esos tests esperan primero el drawer.
+
+En el rebase, los esquemas Zod compartidos de #9 encontraron tres desajustes en el falso: UUID no válidos, `page` sin tope y un `occurrenceId` fuera del rango de BIGINT. Contra el API real, los conteos de las ocho validaciones de `batch-issues` coincidieron con el oráculo y se cumplieron los cuatro criterios del issue. También aparecieron diferencias con el falso:
+- `missing_in_range` de `batch-blocked` trae diez faltantes.
+- Los hallazgos de una sola fila llegan sin apariciones.
+- Un estado reportado y el del gateway estaban invertidos en la fixture.
+- Las filas reales del duplicado son otras.
+
+Y cuatro defectos de pantalla:
+- El drawer salía estrecho, porque una clase del sheet de shadcn pisaba la anchura.
+- Un hallazgo de una sola fila decía que la transacción no estaba en el batch.
+- El título quedaba bajo el botón de cerrar.
+- La decisión de un import cancelado quedaba vacía.
+
+Se corrigieron con test primero y se comprobaron en las capturas a 1280 y 1024 px, sin desplazamiento horizontal. El smoke de web-import siguió en verde.
+
+*Ajuste humano.* La persona fijó la convención de fechas: las de negocio son la hora de pared de America/New_York del gateway principal, mostradas sin convertir; las de auditoría son instantes UTC convertidos a Nueva York, todas con el sufijo `ET`. Dejó en el roadmap averiguar la zona del gateway UUID y abrió con el asistente los issues de deuda:
+- #48, para serializar sin `Z` las fechas de negocio;
+- #47, el motivo al cancelar, que el 23 se queda sin motivo;
+- #55, el motivo de `includable = false`.
+
+Pidió que el falso no recalculara reglas de negocio. Decidió cada test que estaba mal, en lugar de dejar que se ajustara para pasar: comprobar el fondo de un modal después de cerrarlo, alargar solo las esperas de apertura y buscar la reserva también por su validación. Hizo él mismo el login como `viewer`, porque el asistente no inicia sesión. Corrigió dos veces el texto de un import procesado: no podía decir que el batch estaba *settled*, porque solo lo está cuando está `paid`, ni que ya no cambiaba nada, porque un ajuste se sigue resolviendo a mano (P5 de #9).

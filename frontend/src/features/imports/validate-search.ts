@@ -1,5 +1,5 @@
 // Search params of New Reconciliation and of the import workspace (design D2). Invalid values are dropped.
-import { IntId, MatchResult } from '@recon/shared'
+import { IntId, MatchResult, ValidationCode } from '@recon/shared'
 import { z } from 'zod'
 
 export interface NewReconciliationSearch {
@@ -15,6 +15,12 @@ export interface ImportSearch {
   step?: Step
   match?: MatchResult
   page?: number
+  /** The validation whose findings are listed (web-validations design D5). */
+  validation?: ValidationCode
+  /** Page of that list; `page` belongs to the rows table. */
+  ipage?: number
+  /** The finding open in the drawer. */
+  issue?: number
 }
 
 const intId = (value: unknown): number | undefined => {
@@ -37,5 +43,20 @@ export const validateImportSearch = (search: Record<string, unknown>): ImportSea
   const step = STEPS.find((s) => s === search.step)
   const match = MatchResult.safeParse(search.match)
   const page = intId(search.page)
-  return { step, match: match.success ? match.data : undefined, page: page && page > 1 ? page : undefined }
+  const validation = ValidationCode.safeParse(search.validation)
+  const ipage = intId(search.ipage)
+  const issue = intId(search.issue)
+  return dropUndefined({
+    step,
+    match: match.success ? match.data : undefined,
+    page: page && page > 1 ? page : undefined,
+    validation: validation.success ? validation.data : undefined,
+    ipage: ipage && ipage > 1 ? ipage : undefined,
+    issue,
+  })
+}
+
+/** Absent keys stay absent, so the address carries only what is set. */
+function dropUndefined<T extends object>(value: T): T {
+  return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as T
 }
