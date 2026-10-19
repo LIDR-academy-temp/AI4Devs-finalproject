@@ -63,6 +63,8 @@ export interface ProcessCommand {
   prefilledFeeTypeIds: ReadonlySet<number>
   /** Audit instant (processedAt, assignedAt, resolvedAt). */
   now: Date
+  /** The caller's scope: other accounts outside it are hidden in the answer (channel-notice.ts). */
+  scope?: Scope
 }
 
 /** Processing in one transaction (design D5–D7); answers the id of the attempt it wrote. */
@@ -72,5 +74,6 @@ export interface SettlementRepository {
 
 /** The view of an attempt read back from what was written (design D19). */
 export interface SettlementReader {
-  view(batchId: string): Promise<SettlementView | null>
+  /** With a scope, the previous accounts of the assigned channels outside it are hidden. */
+  view(batchId: string, scope?: Scope): Promise<SettlementView | null>
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { movement, RAM_01 } from '../test-support/builders.js'
-import { batchChannels } from './channels.js'
+import { batchChannels, channelsToAssignFor, shownAccount } from './channels.js'
 
 // Spec settlement "Asociación de canales al procesar" (design D14): channels of the movements, the ones to assign,
 // and the VARCHAR(100) label of SettlementBatch.channels.
@@ -10,7 +10,7 @@ const RAM_03 = {
   channelId: 1003,
   name: 'RAM-03',
   assignment: 'assigned_to_other_account' as const,
-  otherAccount: { accountId: 'a0000000-0000-4000-8000-000000000002', name: 'ProviderA-EUR' },
+  otherAccount: { accountId: 'a0000000-0000-4000-8000-000000000002', name: 'ProviderA-EUR', merchantId: 1 },
 }
 const channels = new Map([RAM_01, RAM_07, RAM_03].map((c) => [c.channelId, c]))
 
@@ -54,5 +54,38 @@ describe('batchChannels', () => {
     expect(label.length).toBeLessThanOrEqual(100)
     expect(label.endsWith(',…')).toBe(true)
     expect(label.startsWith('RAM-LONG-100,RAM-LONG-101,')).toBe(true)
+  })
+})
+
+// Review L1 of #66: the other account goes through the same scope filter as the channel notice (channel-notice.ts).
+describe('shownAccount and channelsToAssignFor', () => {
+  const eur = { accountId: 'a0000000-0000-4000-8000-000000000002', name: 'ProviderA-EUR', merchantId: 1 }
+
+  it('shows the account inside the scope, without its merchant', () => {
+    expect(shownAccount({ merchantIds: [1] }, eur)).toEqual({ accountId: eur.accountId, name: 'ProviderA-EUR' })
+  })
+
+  it('hides an account of a merchant outside the scope, and one whose merchant is unknown', () => {
+    const hidden = { accountId: null, name: null, outOfScope: true }
+    expect(shownAccount({ merchantIds: [2] }, eur)).toEqual(hidden)
+    expect(shownAccount({ merchantIds: [1] }, { accountId: eur.accountId, name: eur.name })).toEqual(hidden)
+  })
+
+  it('without a scope (internal reads) shows it', () => {
+    expect(shownAccount(undefined, eur)).toEqual({ accountId: eur.accountId, name: 'ProviderA-EUR' })
+  })
+
+  it('shapes the channels to assign for the caller', () => {
+    const { toAssign } = batchChannels([movement(2, { channelId: 1003 }), movement(3, { channelId: 1007 })], channels)
+
+    expect(channelsToAssignFor({ merchantIds: [2] }, toAssign)).toEqual([
+      {
+        channelId: 1003,
+        name: 'RAM-03',
+        assignment: 'assigned_to_other_account',
+        otherAccount: { accountId: null, name: null, outOfScope: true },
+      },
+      { channelId: 1007, name: 'RAM-07', assignment: 'unassigned', otherAccount: null },
+    ])
   })
 })

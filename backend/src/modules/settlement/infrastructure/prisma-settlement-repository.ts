@@ -2,7 +2,7 @@
 // run and review, load and calculation after the guard, number under a range lock, bulk writes, channels, missing
 // findings, the import and the audit — all or nothing.
 import { randomUUID } from 'node:crypto'
-import type { ChannelAssigned, ChannelToAssign } from '@recon/shared'
+import type { ChannelAssigned } from '@recon/shared'
 import type { FastifyBaseLogger } from 'fastify'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import type { MissingResolution } from '../../validation/application/ports.js'
@@ -18,9 +18,15 @@ import {
 import { loadSettlementInput } from '../application/load-settlement-input.js'
 import type { ProcessCommand, SettlementRepository } from '../application/ports.js'
 import { attemptFor } from '../domain/batch-number.js'
-import { batchChannels, channelStateOf } from '../domain/channels.js'
+import {
+  batchChannels,
+  channelStateOf,
+  channelsToAssignFor,
+  type PlannedChannelToAssign,
+  shownAccount,
+} from '../domain/channels.js'
 import { computeSettlement, type SettlementPlan } from '../domain/compute-settlement.js'
-import type { AccountAttempt, MovementPlan, SettlementChannel } from '../domain/types.js'
+import type { AccountAttempt, MovementPlan, OtherAccount, SettlementChannel } from '../domain/types.js'
 import { PrismaSettlementSource } from './prisma-settlement-source.js'
 import { statusIdOf } from './status-ids.js'
 
@@ -85,7 +91,7 @@ export class PrismaSettlementRepository implements SettlementRepository {
     // The number this process locked, for the 409 of a violation raised by the writes (set inside the transaction).
     const race: {
       attempted?: { accountId: string; batchNo: number; attemptNo: number }
-      toAssign?: ChannelToAssign[]
+      toAssign?: PlannedChannelToAssign[]
     } = {}
     try {
       return await this.prisma.$transaction(
@@ -123,7 +129,7 @@ export class PrismaSettlementRepository implements SettlementRepository {
           const batchChannelsNow = batchChannels(plan.movements, lockedChannels)
           race.toAssign = batchChannelsNow.toAssign
           if (batchChannelsNow.toAssign.length > 0 && request.confirmChannelAssignment !== true)
-            throw new ChannelAssignmentNotConfirmedError(batchChannelsNow.toAssign)
+            throw new ChannelAssignmentNotConfirmedError(channelsToAssignFor(command.scope, batchChannelsNow.toAssign))
 
           await this.phase('batch')
           await this.writeBatch(tx, batchId, context.account.accountId, importId, plan, attemptNo, command)
@@ -201,7 +207,10 @@ export class PrismaSettlementRepository implements SettlementRepository {
           return {
             batchId,
             plan: { ...plan, attemptNo, channels: batchChannelsNow },
-            channelsAssigned,
+            channelsAssigned: channelsAssigned.map((c) => ({
+              ...c,
+              previousAccount: c.previousAccount === null ? null : shownAccount(command.scope, c.previousAccount),
+            })),
             resolvedMissing,
           }
         },
@@ -229,7 +238,8 @@ export class PrismaSettlementRepository implements SettlementRepository {
       }
       if (violates(error, ACTIVE_IMPORT_INDEX)) throw new ImportNotValidatedError('processed')
       // One primary per channel: another account became primary in between, so the confirmation is stale.
-      if (violates(error, PRIMARY_CHANNEL_INDEX)) throw new ChannelAssignmentNotConfirmedError(race.toAssign ?? [])
+      if (violates(error, PRIMARY_CHANNEL_INDEX))
+        throw new ChannelAssignmentNotConfirmedError(channelsToAssignFor(command.scope, race.toAssign ?? []))
       throw error
     }
   }
@@ -391,10 +401,14 @@ export class PrismaSettlementRepository implements SettlementRepository {
   ): Promise<Map<number, SettlementChannel>> {
     const ids = channels.map((c) => c.channelId).sort((a, b) => a - b)
     if (ids.length === 0) return new Map()
-    const rows = await tx.$queryRaw<{ channelId: number; accountId: string; isPrimary: boolean; name: string }[]>`
-      SELECT ac.[channelId], LOWER(CONVERT(VARCHAR(36), ac.[accountId])) AS accountId, ac.[isPrimary], a.[name]
+    const rows = await tx.$queryRaw<
+      { channelId: number; accountId: string; isPrimary: boolean; name: string; merchantId: number }[]
+    >`
+      SELECT ac.[channelId], LOWER(CONVERT(VARCHAR(36), ac.[accountId])) AS accountId, ac.[isPrimary], a.[name],
+        p.[merchantId]
       FROM [AccountChannel] ac WITH (UPDLOCK, HOLDLOCK)
       JOIN [Account] a ON a.[accountId] = ac.[accountId]
+      JOIN [Provider] p ON p.[providerId] = a.[providerId]
       WHERE ac.[channelId] IN (${Prisma.join(ids)})
       ORDER BY ac.[channelId]`
     return new Map(
@@ -406,7 +420,12 @@ export class PrismaSettlementRepository implements SettlementRepository {
           rows
             .filter((r) => r.channelId === c.channelId)
             .filter((r) => r.isPrimary || r.accountId === accountId.toLowerCase())
-            .map((r) => ({ accountId: r.accountId, isPrimary: Boolean(r.isPrimary), accountName: r.name })),
+            .map((r) => ({
+              accountId: r.accountId,
+              isPrimary: Boolean(r.isPrimary),
+              accountName: r.name,
+              merchantId: Number(r.merchantId),
+            })),
         ),
       ]),
     )
@@ -420,10 +439,10 @@ export class PrismaSettlementRepository implements SettlementRepository {
     tx: Tx,
     batchId: string,
     accountId: string,
-    toAssign: readonly ChannelToAssign[],
+    toAssign: readonly PlannedChannelToAssign[],
     command: ProcessCommand,
-  ): Promise<ChannelAssigned[]> {
-    const assigned: ChannelAssigned[] = []
+  ): Promise<AssignedChannel[]> {
+    const assigned: AssignedChannel[] = []
     for (const channel of toAssign) {
       await tx.accountChannel.updateMany({
         where: { channelId: channel.channelId, isPrimary: true, NOT: { accountId } },
@@ -449,7 +468,7 @@ export class PrismaSettlementRepository implements SettlementRepository {
             assignedByUserId: command.userId,
           },
         })
-      const entry: ChannelAssigned = {
+      const entry: AssignedChannel = {
         channelId: channel.channelId,
         name: channel.name,
         assignment: channel.otherAccount === null ? 'new_primary' : 'primary_moved_from',
@@ -479,3 +498,6 @@ function countByCycle(movements: readonly MovementPlan[]) {
   const count = (cycle: string) => movements.filter((m) => m.cycle === cycle).length
   return { E: count('E'), I: count('I'), R: count('R') }
 }
+
+/** A channel assigned by the batch as the audit keeps it: the previous account with its merchant (for the scope). */
+type AssignedChannel = Omit<ChannelAssigned, 'previousAccount'> & { previousAccount: OtherAccount | null }

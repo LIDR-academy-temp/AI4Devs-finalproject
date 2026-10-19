@@ -1,17 +1,23 @@
 // Channels of a batch (settlement-process design D14): their names, the ones the account has to become primary of
 // (with the analyst's confirmation), and the VARCHAR(100) label kept in SettlementBatch.channels.
-import type { ChannelToAssign } from '@recon/shared'
-import type { MovementPlan, SettlementChannel } from './types.js'
+import type { AccountRef, ChannelToAssign, HiddenAccountRef } from '@recon/shared'
+import type { Scope } from '../../catalog/domain/scope.js'
+import type { MovementPlan, OtherAccount, SettlementChannel } from './types.js'
 
 const LABEL_MAX = 100
 const ELLIPSIS = '…'
 const byCode = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
 
+/** A channel to assign as the engine plans it: the other account keeps its merchant until the answer is shaped. */
+export interface PlannedChannelToAssign extends Omit<ChannelToAssign, 'otherAccount'> {
+  otherAccount: OtherAccount | null
+}
+
 export interface BatchChannels {
   names: string[]
   /** Names joined by commas; cut at the last whole name with "…" when longer than 100 characters. */
   label: string
-  toAssign: ChannelToAssign[]
+  toAssign: PlannedChannelToAssign[]
 }
 
 /** A row of AccountChannel of the channel: the account's own one, or the primary of any account. */
@@ -19,6 +25,7 @@ export interface AccountChannelRow {
   accountId: string
   isPrimary: boolean
   accountName: string
+  merchantId: number
 }
 
 /**
@@ -39,8 +46,36 @@ export function channelStateOf(
   return {
     ...base,
     assignment: 'assigned_to_other_account',
-    otherAccount: primary === null ? null : { accountId: primary.accountId, name: primary.accountName },
+    otherAccount:
+      primary === null
+        ? null
+        : { accountId: primary.accountId, name: primary.accountName, merchantId: primary.merchantId },
   }
+}
+
+/**
+ * The other account as the caller may see it (the same filter as channel-notice.ts): hidden when its merchant is
+ * outside the scope. Without a scope (internal reads, tests) it is shown.
+ */
+export function shownAccount(
+  scope: Scope | undefined,
+  account: Partial<OtherAccount> & Pick<OtherAccount, 'accountId' | 'name'>,
+): AccountRef | HiddenAccountRef {
+  if (scope === undefined) return { accountId: account.accountId, name: account.name }
+  if (account.merchantId === undefined || !scope.merchantIds.includes(account.merchantId))
+    return { accountId: null, name: null, outOfScope: true }
+  return { accountId: account.accountId, name: account.name }
+}
+
+/** The channels to assign as the API answers them to the caller. */
+export function channelsToAssignFor(
+  scope: Scope | undefined,
+  toAssign: readonly PlannedChannelToAssign[],
+): ChannelToAssign[] {
+  return toAssign.map((c) => ({
+    ...c,
+    otherAccount: c.otherAccount === null ? null : shownAccount(scope, c.otherAccount),
+  }))
 }
 
 export function batchChannels(

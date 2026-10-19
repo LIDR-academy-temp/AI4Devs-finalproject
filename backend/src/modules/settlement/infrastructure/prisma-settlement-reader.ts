@@ -10,6 +10,8 @@ import {
 import type { FastifyBaseLogger } from 'fastify'
 import type { PrismaClient } from '../../../generated/prisma/client.js'
 import { toMoney, toPercentage } from '../../../infrastructure/decimal.js'
+import type { Scope } from '../../catalog/domain/scope.js'
+import { shownAccount } from '../domain/channels.js'
 import { payableBreakdown } from '../domain/payable-breakdown.js'
 
 const API = '/api/v1'
@@ -23,7 +25,10 @@ interface ProcessAudit {
   runId: number
   skipped: Skipped
   warnings: SettlementWarning[]
-  channelsAssigned: ChannelAssigned[]
+  /** The previous account carries its merchant since the review of #66 (older entries do not). */
+  channelsAssigned: (Omit<ChannelAssigned, 'previousAccount'> & {
+    previousAccount: { accountId: string; name: string; merchantId?: number } | null
+  })[]
   resolvedMissing: number
 }
 
@@ -41,7 +46,7 @@ export class PrismaSettlementReader {
     private readonly options: SettlementReaderOptions = {},
   ) {}
 
-  async view(batchId: string): Promise<SettlementView | null> {
+  async view(batchId: string, scope?: Scope): Promise<SettlementView | null> {
     const batch = await this.prisma.settlementBatch.findUnique({
       where: { batchId },
       include: {
@@ -170,7 +175,10 @@ export class PrismaSettlementReader {
       payableBreakdown: breakdown.lines,
       skipped: detail?.skipped ?? NO_SKIPPED,
       warnings: detail?.warnings ?? [],
-      channelsAssigned: detail?.channelsAssigned ?? [],
+      channelsAssigned: (detail?.channelsAssigned ?? []).map((c) => ({
+        ...c,
+        previousAccount: c.previousAccount === null ? null : shownAccount(scope, c.previousAccount),
+      })),
       validationSummary:
         detail === null
           ? null

@@ -80,8 +80,15 @@ export interface SettlementChannel {
   rollingReserveDays: number
   /** Its situation for the account of the import (same rule as the channel notice of the analysis). */
   assignment: ChannelAssignment
-  /** The current primary account when `assignment = assigned_to_other_account`. */
-  otherAccount: { accountId: string; name: string } | null
+  /** The current primary account when `assignment = assigned_to_other_account`, with its merchant for the scope. */
+  otherAccount: OtherAccount | null
+}
+
+/** Another account of a channel; the merchant decides whether the caller may see it (channel-notice.ts). */
+export interface OtherAccount {
+  accountId: string
+  name: string
+  merchantId: number
 }
 
 /** A fee of the account with its configuration (any validity). */

@@ -4935,11 +4935,18 @@ export interface paths {
                                 name: string;
                                 /** @enum {string} */
                                 assignment: "new_primary" | "primary_moved_from";
-                                previousAccount: {
+                                previousAccount: ({
                                     /** Format: uuid */
                                     accountId: string;
                                     name: string;
-                                } | null;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
                             }[];
                             validationSummary: {
                                 runId: number;
@@ -5212,11 +5219,18 @@ export interface paths {
                                 name: string;
                                 /** @enum {string} */
                                 assignment: "unassigned" | "assigned_to_other_account";
-                                otherAccount: {
+                                otherAccount: ({
                                     /** Format: uuid */
                                     accountId: string;
                                     name: string;
-                                } | null;
+                                } | {
+                                    /** @enum {string|null} */
+                                    accountId: null;
+                                    /** @enum {string|null} */
+                                    name: null;
+                                    /** @enum {boolean} */
+                                    outOfScope: true;
+                                }) | null;
                             }[];
                         };
                     };

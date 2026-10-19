@@ -5,7 +5,16 @@
  * seed's channels, fees, fee types and attempts of the account.
  */
 import { type BatchFeeInput, TRANSACTION_STATUSES, type TransactionStatusCode } from '@recon/shared'
-import { ACCOUNT_FEES, ACCOUNTS, buildWorld, CHANNELS, FEE_TYPES, STATUS, text4 } from '../../../../prisma/synthetic.js'
+import {
+  ACCOUNT_FEES,
+  ACCOUNTS,
+  buildWorld,
+  CHANNELS,
+  FEE_TYPES,
+  PROVIDERS,
+  STATUS,
+  text4,
+} from '../../../../prisma/synthetic.js'
 import { ACCOUNT_IDS, type AccountName } from '../../catalog/application/__fakes__/in-memory.js'
 import { computeRanges } from '../../validation/domain/ranges.js'
 import { runValidations } from '../../validation/domain/run-validations.js'
@@ -114,7 +123,11 @@ export async function settlementSampleInput(
     otherAccount:
       c.account === null || c.account === accountName
         ? null
-        : { accountId: ACCOUNT_IDS[c.account as AccountName], name: c.account },
+        : {
+            accountId: ACCOUNT_IDS[c.account as AccountName],
+            name: c.account,
+            merchantId: merchantOf(c.account),
+          },
   }))
   const { ranges } = computeRanges(input.rows, input.account, STATUSES)
   const prefilled = prefilledBatchFees(name)
@@ -151,3 +164,11 @@ export async function settlementSampleInput(
 }
 
 export { STATUS }
+
+/** The merchant of a synthetic account, through its provider. */
+function merchantOf(account: string): number {
+  const providerId = ACCOUNTS.find((a) => a.name === account)?.providerId
+  const merchantId = PROVIDERS.find((p) => p.providerId === providerId)?.merchantId
+  if (merchantId === undefined) throw new Error(`no merchant for the synthetic account ${account}`)
+  return merchantId
+}

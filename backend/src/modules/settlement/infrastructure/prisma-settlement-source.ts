@@ -260,7 +260,11 @@ export class PrismaSettlementSource implements SettlementSource {
         rollingReserveDays: true,
         accountChannels: {
           where: { OR: [{ isPrimary: true }, { accountId }] },
-          select: { accountId: true, isPrimary: true, account: { select: { accountId: true, name: true } } },
+          select: {
+            accountId: true,
+            isPrimary: true,
+            account: { select: { accountId: true, name: true, provider: { select: { merchantId: true } } } },
+          },
         },
       },
       orderBy: { channelId: 'asc' },
@@ -273,6 +277,7 @@ export class PrismaSettlementSource implements SettlementSource {
           accountId: ac.account.accountId,
           isPrimary: ac.isPrimary,
           accountName: ac.account.name,
+          merchantId: ac.account.provider.merchantId,
         })),
       ),
     )

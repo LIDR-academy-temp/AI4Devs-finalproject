@@ -4,6 +4,7 @@ import { NotFoundError } from '../../../shared/errors.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import { assertCanProcess } from '../../imports/domain/import-state.js'
 import { proposeBatchNumber } from '../domain/batch-number.js'
+import { channelsToAssignFor } from '../domain/channels.js'
 import { computeSettlement, type SettlementPlan } from '../domain/compute-settlement.js'
 import {
   BatchFeeInvalidError,
@@ -64,7 +65,7 @@ export class SettlementService {
       }),
     )
     if (plan.batchFeeError) throw new BatchFeeInvalidError(plan.batchFeeError.index, plan.batchFeeError.reason)
-    return previewOf(plan, importId, context.account.accountId, run.runId)
+    return previewOf(plan, importId, context.account.accountId, run.runId, scope)
   }
 
   /** Processing in one transaction (the repository); answers the attempt read back from what was written. */
@@ -79,8 +80,9 @@ export class SettlementService {
       request,
       prefilledFeeTypeIds: await this.deps.prefilled.feeTypeIdsOf(scope, importId),
       now: this.clock(),
+      scope,
     })
-    const view = await this.deps.reader.view(batchId)
+    const view = await this.deps.reader.view(batchId, scope)
     if (view === null) throw new Error(`processed batch ${batchId} cannot be read back`)
     return view
   }
@@ -89,7 +91,13 @@ export class SettlementService {
 const iso = (range: { min: Date; max: Date } | null) =>
   range === null ? null : { min: range.min.toISOString(), max: range.max.toISOString() }
 
-export function previewOf(plan: SettlementPlan, importId: string, accountId: string, runId: number): SettlementPreview {
+export function previewOf(
+  plan: SettlementPlan,
+  importId: string,
+  accountId: string,
+  runId: number,
+  scope?: Scope,
+): SettlementPreview {
   const { summary } = plan
   const count = (cycle: string) => plan.movements.filter((m) => m.cycle === cycle).length
   return {
@@ -100,7 +108,7 @@ export function previewOf(plan: SettlementPlan, importId: string, accountId: str
     attemptNo: plan.attemptNo,
     batchNoAvailable: plan.batchNoAvailable,
     requiresChannelConfirmation: plan.channels.toAssign.length > 0,
-    channelsToAssign: plan.channels.toAssign,
+    channelsToAssign: channelsToAssignFor(scope, plan.channels.toAssign),
     dateRanges: {
       APP: iso(plan.dateRanges.APP),
       DEC: iso(plan.dateRanges.DEC),

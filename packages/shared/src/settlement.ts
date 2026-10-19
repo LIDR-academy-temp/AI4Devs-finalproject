@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { UserRef } from './auth.js'
 import { AccountRef } from './catalog.js'
+import { HiddenAccountRef } from './imports.js'
 import { BatchStatus, ImportStatus, IsoDate, Money } from './vocabulary.js'
 
 /** BIGINT ids travel as decimal strings, never as JSON numbers (README §4). */
@@ -187,7 +188,8 @@ export const ChannelToAssign = z.object({
   channelId: z.number().int(),
   name: z.string(),
   assignment: z.enum(['unassigned', 'assigned_to_other_account']),
-  otherAccount: AccountRef.nullable(),
+  /** Hidden outside the caller's scope, as in the channel notice of the analysis. */
+  otherAccount: z.union([AccountRef, HiddenAccountRef]).nullable(),
 })
 export type ChannelToAssign = z.infer<typeof ChannelToAssign>
 
@@ -212,7 +214,8 @@ export const ChannelAssigned = z.object({
   channelId: z.number().int(),
   name: z.string(),
   assignment: z.enum(['new_primary', 'primary_moved_from']),
-  previousAccount: AccountRef.nullable(),
+  /** Hidden outside the caller's scope, as in the channel notice of the analysis. */
+  previousAccount: z.union([AccountRef, HiddenAccountRef]).nullable(),
 })
 export type ChannelAssigned = z.infer<typeof ChannelAssigned>
 

@@ -91,15 +91,23 @@ describe('preview', () => {
 })
 
 describe('process', () => {
-  it('delegates to the repository with the user, the pre-filled fee types and the clock, and answers the view', async () => {
+  it('delegates to the repository with the user, the pre-filled fee types, the clock and the scope, and answers the view', async () => {
     const { service: s, repository } = service()
     const request = { runId: input.runId, confirmChannelAssignment: true, batchFees: fees }
 
     const view = await s.process(ANALYST, 2, input.importId, request)
 
     expect(view).toEqual(exampleView())
+    // The scope hides other accounts outside it in the answer (review L1 of #66).
     expect(repository.commands).toEqual([
-      { importId: input.importId, userId: 2, request, prefilledFeeTypeIds: input.prefilledFeeTypeIds, now: NOW },
+      {
+        importId: input.importId,
+        userId: 2,
+        request,
+        prefilledFeeTypeIds: input.prefilledFeeTypeIds,
+        now: NOW,
+        scope: ANALYST,
+      },
     ])
   })
 
