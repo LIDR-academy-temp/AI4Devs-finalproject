@@ -154,4 +154,36 @@ export const strings = {
       `${userName} · ${at} · ${where} · ${from ? 'included' : 'excluded'} → ${to ? 'included' : 'excluded'}`,
     resolveEntry: (userName: string, at: string, note: string) => `${userName} · ${at} · resolved: "${note}"`,
   },
+
+  inclusion: {
+    label: (where: string) => `Included in settlement — ${where}`,
+    notIncludable:
+      'This reserve cannot be included: another occurrence is included or it was released in a previous batch.',
+    confirm: {
+      title: 'Change the inclusion?',
+      body: 'Changing an inclusion invalidates the review: the import returns to analyzed.',
+      keep: 'Keep the review',
+      confirm: 'Change the inclusion',
+    },
+  },
+
+  resolve: {
+    note: 'Note',
+    submit: 'Mark as resolved',
+    required: 'Write a note before resolving.',
+    tooLong: 'The note can have at most 500 characters.',
+  },
+
+  /** Answers of the API to the actions of the drawer, by code (design D3). */
+  actionErrors: {
+    reserve_already_included: 'A reserve is released only once: exclude the included occurrence first.',
+    reserve_already_released: 'This reserve was already released in a previous batch.',
+    superseded: 'A newer validation run exists. The results were reloaded.',
+    importNotEditable: (status: ImportStatus) => `This import can no longer change (${status}).`,
+    occurrenceNotEditable: 'This occurrence cannot change.',
+    alreadyResolved: (userName: string, at: string) => `This finding was already resolved by ${userName} on ${at}.`,
+    notResolvable: 'Only non-recorded adjustments and status mismatches are resolved by hand.',
+    forbidden: 'You cannot change this finding.',
+    failed: 'The change could not be saved. Try again.',
+  },
 }

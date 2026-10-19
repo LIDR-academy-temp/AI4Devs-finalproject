@@ -1,21 +1,29 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ApiError } from '@/lib/api/client'
 import { formatAuditDateTime, formatBusinessDateTime } from '@/lib/format'
 import type { OccurrenceView, ValidationIssueDetail } from './contract'
+import { InclusionSwitch } from './InclusionSwitch'
 import { IssueHistory } from './IssueHistory'
 import { idOf, typeOf } from './IssuesList'
+import { useIssueActions } from './mutations'
 import { Occurrences } from './Occurrences'
 import { validationIssueQuery } from './queries'
+import { ResolveForm } from './ResolveForm'
 import { strings } from './strings'
 
 const s = strings.drawer
-
-/** Whether an occurrence is included now, as text: read-only, or not editable for this user and run. */
-export function InclusionText({ occurrence }: { occurrence: OccurrenceView }) {
-  return <span className="font-medium">{occurrence.includeInSettlement ? s.included : s.excluded}</span>
-}
 
 function Facts({ issue }: { issue: ValidationIssueDetail }) {
   const where = issue.source && s.location(issue.source.fileName, issue.source.sheetName, issue.source.rowNo)
@@ -53,23 +61,60 @@ function Resolution({ issue }: { issue: ValidationIssueDetail }) {
   )
 }
 
+/** The loaded finding with its actions (design D7); the controls follow only the flags the API sends. */
+function Finding({ issue }: { issue: ValidationIssueDetail }) {
+  const actions = useIssueActions(issue)
+  const [asking, setAsking] = useState<{ occurrence: OccurrenceView; to: boolean } | null>(null)
+  const c = strings.inclusion.confirm
+
+  // On a validated import a change invalidates the review: ask first.
+  const change = (occurrence: OccurrenceView, to: boolean) => {
+    if (issue.importStatus === 'validated') setAsking({ occurrence, to })
+    else void actions.setInclusion(occurrence, to)
+  }
+
+  return (
+    <>
+      {!issue.run.isCurrent && <p className="text-sm text-amber-700 dark:text-amber-400">{s.superseded}</p>}
+      <Facts issue={issue} />
+      <div aria-live="polite" className="text-sm">
+        {actions.message && <p className="text-destructive">{actions.message}</p>}
+      </div>
+      <Occurrences
+        occurrences={issue.occurrences}
+        inclusion={(occurrence) => <InclusionSwitch occurrence={occurrence} busy={actions.pending} onChange={change} />}
+      />
+      <Resolution issue={issue} />
+      {issue.resolvable && <ResolveForm actions={actions} />}
+      <IssueHistory history={issue.history} occurrences={issue.occurrences} />
+      <AlertDialog open={asking !== null} onOpenChange={(open) => !open && setAsking(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{c.title}</AlertDialogTitle>
+            <AlertDialogDescription>{c.body}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{c.keep}</AlertDialogCancel>
+            <Button
+              onClick={() => {
+                if (asking) void actions.setInclusion(asking.occurrence, asking.to)
+                setAsking(null)
+              }}
+            >
+              {c.confirm}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}
+
 /**
  * The finding open in the address (design D6): a panel on the right with its occurrences, resolution and history.
  * Closing gives the focus back to the finding in the list, also when it was opened from a link.
  */
-export function IssueDrawer({
-  issueId,
-  onClose,
-  inclusion = (occurrence) => <InclusionText occurrence={occurrence} />,
-  actions,
-}: {
-  issueId: number | undefined
-  onClose: () => void
-  /** The control of an occurrence's inclusion; text by default. */
-  inclusion?: (occurrence: OccurrenceView, issue: ValidationIssueDetail) => React.ReactNode
-  /** Actions on the whole finding, below its occurrences. */
-  actions?: (issue: ValidationIssueDetail) => React.ReactNode
-}) {
+export function IssueDrawer({ issueId, onClose }: { issueId: number | undefined; onClose: () => void }) {
   const query = useQuery({ ...validationIssueQuery(issueId ?? 0), enabled: issueId !== undefined })
   const lastOpened = useRef<number | undefined>(issueId)
   if (issueId !== undefined) lastOpened.current = issueId
@@ -98,16 +143,7 @@ export function IssueDrawer({
         </SheetHeader>
         <div className="flex flex-col gap-4 px-4 pb-4">
           {query.isError && !gone && <p className="text-sm text-destructive">{s.loadError}</p>}
-          {issue && (
-            <>
-              {!issue.run.isCurrent && <p className="text-sm text-amber-700 dark:text-amber-400">{s.superseded}</p>}
-              <Facts issue={issue} />
-              <Occurrences occurrences={issue.occurrences} inclusion={(o) => inclusion(o, issue)} />
-              <Resolution issue={issue} />
-              {actions?.(issue)}
-              <IssueHistory history={issue.history} occurrences={issue.occurrences} />
-            </>
-          )}
+          {issue && <Finding key={issue.issueId} issue={issue} />}
         </div>
       </SheetContent>
     </Sheet>

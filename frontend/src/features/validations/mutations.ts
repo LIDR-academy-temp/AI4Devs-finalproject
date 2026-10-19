@@ -5,8 +5,17 @@ import { useRef, useState } from 'react'
 import { importKey } from '@/features/imports/queries'
 import { ApiError } from '@/lib/api/client'
 import type { ImportDetail } from '@/lib/api/types'
-import { type ErrorDetails, runValidations, type ValidationRunView } from './contract'
-import { validationRunKey } from './queries'
+import { formatAuditDateTime } from '@/lib/format'
+import {
+  type ErrorDetails,
+  type OccurrenceView,
+  resolveIssue,
+  runValidations,
+  setOccurrenceInclusion,
+  type ValidationIssueDetail,
+  type ValidationRunView,
+} from './contract'
+import { validationIssueKey, validationRunKey } from './queries'
 import { strings } from './strings'
 
 /** The detail of the import is read again if its status changed on the server (validated ↔ analyzed). */
@@ -68,3 +77,78 @@ export function useRunValidations(importId: string) {
 }
 
 export type RunValidations = ReturnType<typeof useRunValidations>
+
+/** A finding answered by a PATCH: written into the cache; the run and its lists counted it, so they are read again. */
+function storeIssue(queryClient: QueryClient, detail: ValidationIssueDetail) {
+  queryClient.setQueryData(validationIssueKey(detail.issueId), detail)
+  void queryClient.invalidateQueries({ queryKey: validationRunKey(detail.importId) })
+  syncImportStatus(queryClient, detail.importId, detail.importStatus)
+}
+
+/**
+ * The actions of the drawer on one finding (design D7): change an inclusion, resolve by hand. No optimistic update:
+ * the screen shows what the server answers, and every 409 reads again what it may have made stale.
+ */
+export function useIssueActions(issue: ValidationIssueDetail) {
+  const queryClient = useQueryClient()
+  const [pending, setPending] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const e = strings.actionErrors
+
+  const rereadIssue = () => void queryClient.invalidateQueries({ queryKey: validationIssueKey(issue.issueId) })
+
+  function explain(failure: unknown) {
+    if (!(failure instanceof ApiError)) return setMessage(e.failed)
+    switch (failure.code) {
+      case 'occurrence_not_includable': {
+        const { reason } = failure.details as ErrorDetails['occurrence_not_includable']
+        setMessage(e[reason])
+        return rereadIssue()
+      }
+      case 'validation_run_superseded':
+        setMessage(e.superseded)
+        void queryClient.invalidateQueries({ queryKey: validationRunKey(issue.importId) })
+        return rereadIssue()
+      case 'import_not_editable':
+        setMessage(e.importNotEditable((failure.details as ErrorDetails['import_not_editable']).status))
+        reloadRunAndImport(queryClient, issue.importId)
+        return rereadIssue()
+      case 'occurrence_not_editable':
+        setMessage(e.occurrenceNotEditable)
+        return rereadIssue()
+      case 'issue_already_resolved': {
+        const { resolvedBy, resolvedAt } = failure.details as ErrorDetails['issue_already_resolved']
+        setMessage(e.alreadyResolved(resolvedBy.userName, formatAuditDateTime(resolvedAt)))
+        return rereadIssue()
+      }
+      case 'issue_not_resolvable':
+        return setMessage(e.notResolvable)
+      default:
+        return setMessage(failure.status === 403 ? e.forbidden : e.failed)
+    }
+  }
+
+  async function act(call: () => Promise<ValidationIssueDetail>): Promise<boolean> {
+    setPending(true)
+    setMessage(null)
+    try {
+      storeIssue(queryClient, await call())
+      return true
+    } catch (failure) {
+      explain(failure)
+      return false
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return {
+    pending,
+    message,
+    setInclusion: (occurrence: OccurrenceView, to: boolean) =>
+      act(() => setOccurrenceInclusion(occurrence.occurrenceId, to)),
+    resolve: (note: string) => act(() => resolveIssue(issue.issueId, note)),
+  }
+}
+
+export type IssueActions = ReturnType<typeof useIssueActions>

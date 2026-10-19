@@ -77,8 +77,8 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 5. Acciones del drawer: inclusión y resolución (D7)
 
-- [ ] 5.1 Añadir los componentes shadcn `switch` y `textarea` (formateados con Biome y versionados), comprobar que no entra ninguna dependencia fuera de `radix-ui` y verificar `pnpm lint` y `pnpm --filter @recon/frontend build`
-- [ ] 5.2 Test (rojo) `features/validations/inclusion.test.tsx` con "cambiar la inclusión de una aparición" e "inclusión sobre un import validado":
+- [x] 5.1 Añadir los componentes shadcn `switch` y `textarea` (formateados con Biome y versionados), comprobar que no entra ninguna dependencia fuera de `radix-ui` y verificar `pnpm lint` y `pnpm --filter @recon/frontend build`
+- [x] 5.2 Test (rojo) `features/validations/inclusion.test.tsx` con "cambiar la inclusión de una aparición" e "inclusión sobre un import validado":
   - incluir la segunda aparición del duplicado → `PATCH` con `{ includeInSettlement: true }`, `Changed by analyst` con la fecha, entrada del historial y `2 / 2` en la lista;
   - variante de reserva R del falso, con la aparición declarada `editable: true, includable: false` → interruptor deshabilitado con el texto genérico enlazado por `aria-describedby`;
   - `409 occurrence_not_includable` guionizado → mensaje específico y valor del servidor;
@@ -86,9 +86,9 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   - `409 validation_run_superseded` → mensaje y relectura;
   - interruptores deshabilitados mientras se retiene el `PATCH`;
   - sobre `validated` → diálogo, y tras confirmar, `analyzed` y aviso con `an inclusion was changed`; desistir → sin `PATCH`
-- [ ] 5.3 Test (rojo) `features/validations/resolve.test.tsx` con "resolver a mano con nota": nota → `PATCH` con la nota recortada y `Resolved by analyst` con fecha en `ET` (el escenario de horario estándar, `2026-11-02 10:00 ET`) y nota, también en el historial; vacía o solo espacios → `Write a note before resolving.` sin `PATCH`; 501 caracteres → error de longitud; `409 issue_already_resolved` → mensaje con usuario y fecha de `details` y relectura; duplicado → sin **Mark as resolved**
-- [ ] 5.4 Implementar `features/validations/{InclusionSwitch.tsx,ResolveForm.tsx}` y sus mutaciones en `mutations.ts` (escritura del detalle devuelto, invalidación de corrida y listas, sin optimismo); verificar 5.2 y 5.3 en verde; romper a propósito el habilitado del interruptor (ignorar `includable`) y ver fallar 5.2; restaurar
-- [ ] 5.5 Commit: `chore(frontend): componentes switch y textarea de shadcn`, `test(frontend): cambiar la inclusión y resolver a mano desde el drawer` y `feat(frontend): acciones del drawer con usuario, fecha e historial`
+- [x] 5.3 Test (rojo) `features/validations/resolve.test.tsx` con "resolver a mano con nota": nota → `PATCH` con la nota recortada y `Resolved by analyst` con fecha en `ET` (el escenario de horario estándar, `2026-11-02 10:00 ET`) y nota, también en el historial; vacía o solo espacios → `Write a note before resolving.` sin `PATCH`; 501 caracteres → error de longitud; `409 issue_already_resolved` → mensaje con usuario y fecha de `details` y relectura; duplicado → sin **Mark as resolved**
+- [x] 5.4 Implementar `features/validations/{InclusionSwitch.tsx,ResolveForm.tsx}` y sus mutaciones en `mutations.ts` (escritura del detalle devuelto, invalidación de corrida y listas, sin optimismo); verificar 5.2 y 5.3 en verde; romper a propósito el habilitado del interruptor (ignorar `includable`) y ver fallar 5.2; restaurar
+- [x] 5.5 Commit: `chore(frontend): componentes switch y textarea de shadcn`, `test(frontend): cambiar la inclusión y resolver a mano desde el drawer` y `feat(frontend): acciones del drawer con usuario, fecha e historial`
 
 ## 6. Revisión invalidada, Continue, Cancel and reprocess y Settlement Review (D8, D9)
 
