@@ -85,6 +85,15 @@ describe('Analysis & Validations: read only (spec "solo lectura")', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('viewer on an analyzed import: no empty section for the decision', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId, withoutControls(batchIssuesFixture()))
+    await openAnalysis(importId, 'viewer')
+
+    expect(screen.getByRole('table', { name: 'Validation results' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Decision' })).not.toBeInTheDocument()
+  })
+
   it('a processed import: no Run nor Continue', async () => {
     const { importId } = seedImport('batch-issues', { status: 'processed' })
     seedValidationRun(importId, withoutControls(batchIssuesFixture()))
