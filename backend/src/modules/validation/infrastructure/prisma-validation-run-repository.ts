@@ -224,6 +224,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
   async review(importId: string, runId: number, userId: number, now: Date): Promise<void> {
     await this.prisma.$transaction(
       async (tx) => {
+        // Keep the hook right before the guard: a read placed between the two would not be caught by any test.
         await this.options.beforeClaim?.('review')
         // The guard takes the Import lock first: the current run read below cannot change before the commit.
         const claimed = await tx.import.updateMany({
