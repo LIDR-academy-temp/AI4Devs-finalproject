@@ -21,8 +21,16 @@ export interface ValidationRoutesOptions {
 
 const ImportParams = z.object({ importId: z.uuid() })
 const IssueParams = z.object({ issueId: IntId })
-/** ConflictOccurrence.occurrenceId is a BIGINT: digits only, at most 19 (its range), kept as text. */
-const OccurrenceParams = z.object({ occurrenceId: z.string().regex(/^\d{1,19}$/) })
+/** Largest value of a SQL Server BIGINT. */
+const BIGINT_MAX = 9_223_372_036_854_775_807n
+/** ConflictOccurrence.occurrenceId is a BIGINT: digits only and within its range (a 400, not a driver error), as text. */
+const OccurrenceParams = z.object({
+  occurrenceId: z
+    .string()
+    .regex(/^\d{1,19}$/)
+    // Guarded by the same pattern: the refinement may run after a failed regex, and BigInt('abc') throws.
+    .refine((v) => /^\d{1,19}$/.test(v) && BigInt(v) <= BIGINT_MAX, { message: 'occurrenceId is out of range' }),
+})
 
 const validations = { tags: ['validations'], security: [{ bearerAuth: [] }] }
 const readErrors = { 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse }
