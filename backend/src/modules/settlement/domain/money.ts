@@ -19,11 +19,6 @@ export function text4(value: Value): string {
   return amount4(value).toFixed(4)
 }
 
-/** DECIMAL(9,6) text. */
-export function text6(value: Value): string {
-  return new Prisma.Decimal(value).toFixed(6)
-}
-
 /** Exact sum of DECIMAL texts. */
 export function sum(values: readonly Value[]): Prisma.Decimal {
   return values.reduce<Prisma.Decimal>((total, v) => total.plus(v), new Prisma.Decimal(0))

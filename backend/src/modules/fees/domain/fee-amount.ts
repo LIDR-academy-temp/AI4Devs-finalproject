@@ -12,5 +12,5 @@ export function feeAmountOf(fee: FeeConfiguration, base: string): string {
     fee.percentage === null
       ? new Prisma.Decimal(0)
       : new Prisma.Decimal(base).times(fee.percentage).toDecimalPlaces(4, Prisma.Decimal.ROUND_HALF_UP)
-  return percentPart.plus(fee.fixedAmount ?? 0).toFixed(4)
+  return percentPart.plus(fee.fixedAmount ?? '0').toFixed(4)
 }

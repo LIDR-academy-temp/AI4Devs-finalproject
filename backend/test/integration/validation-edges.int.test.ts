@@ -57,7 +57,10 @@ describe('a previous_batch occurrence whose movement has a sheet and a row (spec
   async function removeFixture(): Promise<void> {
     const { prisma } = ctx
     const batches = await prisma.settlementBatch.findMany({
-      where: { batchNo: fixtureId(BATCH_NO, 'BATCH_NO') },
+      where: {
+        batchNo: fixtureId(BATCH_NO, 'BATCH_NO'),
+        accountId: fixtureId(flow.accountIds['ProviderB-Main'], 'ProviderB-Main'),
+      },
       select: { batchId: true, importId: true },
     })
     const batchIds = fixtureIds(
@@ -178,7 +181,10 @@ describe('two historical movements of the same transaction and cycle in a batch 
   async function removeFixture(): Promise<void> {
     const { prisma } = ctx
     const batches = await prisma.settlementBatch.findMany({
-      where: { batchNo: fixtureId(BATCH_NO, 'BATCH_NO') },
+      where: {
+        batchNo: fixtureId(BATCH_NO, 'BATCH_NO'),
+        accountId: fixtureId(flow.accountIds['ProviderB-Main'], 'ProviderB-Main'),
+      },
       select: { batchId: true, importId: true },
     })
     const batchIds = fixtureIds(

@@ -53,7 +53,7 @@ export class PrismaSettlementReader {
         account: { select: { name: true } },
         approvedBy: { select: { userId: true, userName: true } },
         totals: true,
-        brandTotals: { orderBy: { cardBrand: 'asc' } },
+        brandTotals: true,
         fees: {
           orderBy: { batchFeeId: 'asc' },
           include: {
@@ -151,7 +151,10 @@ export class PrismaSettlementReader {
       channels: channelRows.map((c) => c.name).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
       movements: { E: count('E'), I: count('I'), R: count('R') },
       totals,
-      brandTotals: batch.brandTotals.map((b) => ({ cardBrand: b.cardBrand, qty: b.qty, amount: toMoney(b.amount) })),
+      // Code order, as the engine sorts them for the preview: SQL Server's collation would order them otherwise.
+      brandTotals: batch.brandTotals
+        .map((b) => ({ cardBrand: b.cardBrand, qty: b.qty, amount: toMoney(b.amount) }))
+        .sort((a, b) => (a.cardBrand < b.cardBrand ? -1 : a.cardBrand > b.cardBrand ? 1 : 0)),
       reservesReleasedQty: count('R'),
       mdrAmt: toMoney(batch.mdrAmt),
       mdrRate: toPercentage(batch.mdrRate),

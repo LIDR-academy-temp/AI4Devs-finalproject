@@ -51,7 +51,9 @@ function invalidReason(input: BatchFeeInput, ctx: BatchFeeContext): BatchFeeInva
   if (!type) return 'unknown_fee_type'
   if (type.isTransactional) return 'transactional_fee_type'
   if (input.feeId !== null) {
-    const preset = ctx.fees.find((f) => f.feeId === input.feeId)
+    // Only the account's fees of non-transactional types are presets of a batch; a transactional one is not among them.
+    const transactional = (feeTypeId: number) => ctx.feeTypes.find((t) => t.feeTypeId === feeTypeId)?.isTransactional
+    const preset = ctx.fees.find((f) => f.feeId === input.feeId && !transactional(f.feeTypeId))
     if (!preset) return 'fee_not_in_account'
     if (preset.feeTypeId !== input.feeTypeId) return 'fee_type_mismatch'
     if (ctx.referenceDay !== null && !isInForce(preset, ctx.referenceDay)) return 'fee_not_in_force'
