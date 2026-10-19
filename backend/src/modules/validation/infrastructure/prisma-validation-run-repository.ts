@@ -402,7 +402,11 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
     } catch (error) {
       // UX_ValidationRun_current_import is the last barrier: if it fires, another run won the race. Any other unique
       // violation is a programming error and is rethrown as is.
-      if (isCurrentRunViolation(error)) throw new ImportChangedError('analyzed')
+      if (isCurrentRunViolation(error)) {
+        // The transaction rolled back: the status to answer is the one the import has now.
+        const current = await this.prisma.import.findUnique({ where: { importId }, select: { status: true } })
+        throw new ImportChangedError(current?.status ?? 'unknown')
+      }
       throw error
     }
   }
@@ -425,7 +429,8 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
     }
     const current = await tx.import.findUnique({ where: { importId }, select: { status: true } })
     const status = current?.status ?? 'unknown'
-    if (status !== 'analyzed' && status !== 'validated') throw new ImportNotAnalyzedError(status)
+    if (status !== 'analyzed' && status !== 'validated')
+      throw new ImportNotAnalyzedError(status, ['analyzed', 'validated'])
     throw new ImportChangedError(status)
   }
 

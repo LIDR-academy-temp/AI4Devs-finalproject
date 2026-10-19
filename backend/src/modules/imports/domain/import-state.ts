@@ -39,7 +39,7 @@ export const VALIDATABLE_STATUSES: ReadonlySet<ImportStatus> = new Set(['analyze
 
 /** `POST /imports/{id}/validations`: `analyzed` or `validated`. */
 export function assertCanValidate(status: ImportStatus): void {
-  if (!VALIDATABLE_STATUSES.has(status)) throw new ImportNotAnalyzedError(status)
+  if (!VALIDATABLE_STATUSES.has(status)) throw new ImportNotAnalyzedError(status, [...VALIDATABLE_STATUSES])
 }
 
 /** `POST /imports/{id}/review`: `analyzed` only (the decision on the whole moves it to `validated`). */

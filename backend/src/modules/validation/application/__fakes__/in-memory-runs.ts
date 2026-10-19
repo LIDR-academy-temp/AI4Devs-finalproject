@@ -236,7 +236,7 @@ export class InMemoryRunRepository implements ValidationRunRepository {
     this.beforeSave?.()
     const imported = this.requireImport(importId)
     if (imported.status !== 'analyzed' && imported.status !== 'validated')
-      throw new ImportNotAnalyzedError(imported.status)
+      throw new ImportNotAnalyzedError(imported.status, ['analyzed', 'validated'])
     if (imported.updatedAt.getTime() !== expectedUpdatedAt.getTime()) throw new ImportChangedError(imported.status)
     const previousStatus = imported.status
     const previous = this.runs.find((r) => r.importId === importId && !r.isSuperseded)

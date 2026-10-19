@@ -122,8 +122,9 @@ export class ImportNotAnalyzedError extends DomainError {
   readonly status = 409
   readonly code = 'import_not_analyzed'
 
-  constructor(status: string) {
-    super(`The import is ${status}: it must be analyzed`, { status })
+  /** `admitted`: the statuses the refused action accepts, named in the message. */
+  constructor(status: string, admitted: readonly string[] = ['analyzed']) {
+    super(`The import is ${status}; this action needs ${admitted.join(' or ')}`, { status })
   }
 }
 
