@@ -94,16 +94,16 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 7. Settlement Summary y descargas (D11, D12)
 
-- [ ] 7.1 Test (rojo) `features/settlements/SettlementSummary.test.tsx` con "estado y cabecera del intento", "totales y amount payable auditable", "fees, reservas, canales e incidencias", "recarga por su enlace" y "fechas en hora de Nueva York":
+- [x] 7.1 Test (rojo) `features/settlements/SettlementSummary.test.tsx` con "estado y cabecera del intento", "totales y amount payable auditable", "fees, reservas, canales e incidencias", "recarga por su enlace" y "fechas en hora de Nueva York":
   - tras procesar: título, cuenta e intento, `Processed · pending payment`, `Processed by analyst on <fecha ET>` y el aviso de no Settled;
   - nueve líneas del desglose en orden con su signo y **Amount payable**; `reserve_early_released` en `0.0000` visible;
   - totales por categoría y por marca y `R · Reserve released` con `reservesReleasedQty`;
   - `Wire Fee · From file · 30.0000 · entered by analyst`; `RAM-07 · assigned to this account as primary`; incidencias con enlace a Analysis;
   - recargar → `GET /settlements/<batchId>` y el mismo intento; `404` → `Settlement not found` con enlace a Dashboard;
   - con `TZ` distinta de Nueva York: `2026-10-24 ET`, `2026-09-28 00:04 ET` y `2026-10-19 11:40 ET`
-- [ ] 7.2 Test (rojo) `features/settlements/exports.test.tsx` con "descargas": con `SETTLEMENT_EXPORTS_AVAILABLE = false`, tres botones deshabilitados con `Downloads are not available yet.` por `aria-describedby` y ningún `<a>` de descarga; con la constante forzada a `true` en el test, cada botón pide su URL con `Authorization`, descarga con el nombre de `Content-Disposition` o, sin ella, `ProviderA-USD_B123_A1_<type>` y no cambia el estado pintado ni lanza otra lectura; sin `reports.view`, sin botones
-- [ ] 7.3 Implementar `features/settlements/{SettlementSummaryPage.tsx,SummaryHeader.tsx,SummaryFees.tsx,SummaryIssues.tsx,Exports.tsx,exports.ts}` reutilizando las tablas y el desglose del grupo 4; verificar 7.1 y 7.2 en verde; romper a propósito `formatAuditDateTime` por `formatBusinessDateTime` en `processedAt` (no compila: anotarlo) y la constante de descargas a `true` sin URL autenticada (falla 7.2); restaurar
-- [ ] 7.4 Commit: `test(frontend): Settlement Summary con desglose auditable y descargas` y `feat(frontend): pantalla Settlement Summary con descargas pendientes de #12`
+- [x] 7.2 Test (rojo) `features/settlements/exports.test.tsx` con "descargas": con `SETTLEMENT_EXPORTS_AVAILABLE = false`, tres botones deshabilitados con `Downloads are not available yet.` por `aria-describedby` y ningún `<a>` de descarga; con la constante forzada a `true` en el test, cada botón pide su URL con `Authorization`, descarga con el nombre de `Content-Disposition` o, sin ella, `ProviderA-USD_B123_A1_<type>` y no cambia el estado pintado ni lanza otra lectura; sin `reports.view`, sin botones
+- [x] 7.3 Implementar `features/settlements/{SettlementSummaryPage.tsx,SummaryHeader.tsx,SummaryFees.tsx,SummaryIssues.tsx,Exports.tsx,exports.ts}` reutilizando las tablas y el desglose del grupo 4; verificar 7.1 y 7.2 en verde; romper a propósito `formatAuditDateTime` por `formatBusinessDateTime` en `processedAt` (no compila: anotarlo) y la constante de descargas a `true` sin URL autenticada (falla 7.2); restaurar
+- [x] 7.4 Commit: `test(frontend): Settlement Summary con desglose auditable y descargas` y `feat(frontend): pantalla Settlement Summary con descargas pendientes de #12`
 
 ## 8. Solo lectura, teclado y anchura (D13, D17)
 

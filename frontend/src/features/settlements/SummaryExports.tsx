@@ -1,0 +1,72 @@
+import { useId, useRef, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useMe } from '@/lib/session/me'
+import { downloadSettlementExport, type ExportType, type SettlementView } from './contract'
+import { exportFileName, SETTLEMENT_EXPORTS_AVAILABLE, saveFile } from './exports'
+import { strings } from './strings'
+
+const s = strings.summary
+const TYPES: ExportType[] = ['summary', 'transactions', 'reserves']
+
+/**
+ * The three downloads of the attempt for whoever has reports.view (presentation only: the API answers 403). The links
+ * need the Bearer token, so each file is fetched authenticated and saved; downloading changes nothing (design D12).
+ */
+export function SummaryExports({ view }: { view: SettlementView }) {
+  const canDownload = useMe().permissions.includes('reports.view')
+  const reasonId = useId()
+  const busy = useRef(new Set<ExportType>())
+  const [downloading, setDownloading] = useState<ExportType | null>(null)
+  const [failed, setFailed] = useState<ExportType | null>(null)
+
+  if (!canDownload) return null
+
+  async function download(type: ExportType) {
+    // One download per button at a time, even with two clicks in the same tick.
+    if (busy.current.has(type)) return
+    busy.current.add(type)
+    setDownloading(type)
+    setFailed(null)
+    try {
+      const file = await downloadSettlementExport(view.exports[type])
+      saveFile(file.blob, file.fileName ?? exportFileName(view, type, file.contentType))
+    } catch {
+      setFailed(type)
+    } finally {
+      busy.current.delete(type)
+      setDownloading(null)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{s.exports}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2 text-sm">
+        <div className="flex flex-wrap gap-2">
+          {TYPES.map((type) => (
+            <Button
+              key={type}
+              variant="outline"
+              disabled={!SETTLEMENT_EXPORTS_AVAILABLE || downloading === type}
+              aria-describedby={SETTLEMENT_EXPORTS_AVAILABLE ? undefined : reasonId}
+              onClick={() => void download(type)}
+            >
+              {s.exportNames[type]}
+            </Button>
+          ))}
+        </div>
+        {SETTLEMENT_EXPORTS_AVAILABLE ? (
+          <p className="text-muted-foreground">{s.exportsNote}</p>
+        ) : (
+          <p id={reasonId} className="text-muted-foreground">
+            {s.exportsUnavailable}
+          </p>
+        )}
+        <div aria-live="polite">{failed && <p className="text-destructive">{s.exportFailed}</p>}</div>
+      </CardContent>
+    </Card>
+  )
+}

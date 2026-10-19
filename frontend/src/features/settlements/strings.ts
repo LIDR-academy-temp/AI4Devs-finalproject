@@ -151,6 +151,42 @@ export const strings = {
 
   summary: {
     title: (batchNo: number) => `Settlement Summary · batch ${batchNo}`,
+    attempt: (accountName: string, attemptNo: number) => `${accountName} · attempt ${attemptNo}`,
+    status: { pending_payment: 'Processed · pending payment', settled: 'Paid', undone: 'Undone' },
+    processedBy: (userName: string, at: string) => `Processed by ${userName} on ${at}`,
+    settlementDate: (date: string) => `Settlement date: ${date}`,
+    notSettled: 'Movements are not Settled yet: that happens when the batch is marked as paid.',
+    ranges: 'Date ranges',
+    range: (cycle: string, from: string | null, to: string | null) =>
+      from && to ? `${cycle} ${from} – ${to}` : `${cycle} —`,
+    totals: 'Totals by type',
+    reservesReleased: 'R · Reserve released',
+    brands: 'Totals by brand',
+    brandColumns: { brand: 'Brand', qty: 'Qty', amount: 'Amount USD' },
+    fees: 'Fees',
+    transactionalFees: (amount: string, mdr: string, rate: string | null) =>
+      `Transaction fees: ${amount} · MDR ${mdr}${rate ? ` (rate ${rate})` : ''}`,
+    batchFee: (title: string, origin: string, amount: string, userName: string | null) =>
+      [title, origin, amount, userName ? `entered by ${userName}` : null].filter(Boolean).join(' · '),
+    reserves: 'Reserves',
+    reserveLines: { held: 'Held in this batch', released: 'Released (R)', early: 'Released on chargeback' },
+    payable: 'Reserve and payable',
+    channels: 'Channels assigned',
+    channelNew: (name: string) => `${name} · assigned to this account as primary`,
+    channelMoved: (name: string, from: string | null) =>
+      from ? `${name} · primary account moved here from ${from}` : `${name} · primary account moved here`,
+    noChannels: 'No channel changed its primary account.',
+    issues: 'Issues',
+    issueCounts: (v: { persistent: number; resolved: number; blocking: number; resolvedMissing: number }) =>
+      `${v.persistent} persistent · ${v.resolved} resolved · ${v.blocking} blocking · ${v.resolvedMissing} missing resolved by this batch`,
+    viewValidations: 'View the validations',
+    exports: 'Exports',
+    exportNames: { summary: 'Merchant summary', transactions: 'Transactions (CSV)', reserves: 'Reserves (CSV)' },
+    exportsNote: 'Generated at processing; run in the Back-Office after the payment. Downloading changes nothing.',
+    exportsUnavailable: 'Downloads are not available yet.',
+    exportFailed: 'The file could not be downloaded. Try again.',
+    backToDashboard: 'Back to Dashboard',
+    newReconciliation: 'New reconciliation',
     loading: 'Loading the settlement…',
     loadError: 'The settlement could not be loaded.',
     notFoundTitle: 'Settlement not found',
