@@ -44,7 +44,7 @@ tests {
       ['Wire Fee', 'analyst'],
       ['Settlement Fee', 'analyst'],
     ]);
-    const sum = res.body.payableBreakdown.reduce((s, l) => (l.sign === '+' ? s + units(l.amount) : s - units(l.amount)), 0n);
+    const sum = res.body.payableBreakdown.reduce((s, l) => (l.sign === '+' ? s + units(l.amount) : s - units(l.amount)), BigInt(0));
     expect(sum === units(res.body.amountPayable)).to.equal(true);
   });
   // Oracle: data/samples/batch-clean/expected.json, summary.fees.total and summary.amountPayable.

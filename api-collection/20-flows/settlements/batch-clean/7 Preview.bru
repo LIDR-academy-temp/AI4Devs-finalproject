@@ -36,7 +36,7 @@ tests {
     expect(res.body.batchNoAvailable).to.equal(true);
     expect(res.body.otherFeeAmt).to.equal('40.0000');
     expect(res.body.channelsToAssign.map((c) => c.name)).to.eql(['RAM-07']);
-    const sum = res.body.payableBreakdown.reduce((s, l) => (l.sign === '+' ? s + units(l.amount) : s - units(l.amount)), 0n);
+    const sum = res.body.payableBreakdown.reduce((s, l) => (l.sign === '+' ? s + units(l.amount) : s - units(l.amount)), BigInt(0));
     expect(sum === units(res.body.amountPayable)).to.equal(true);
   });
   // Oracle: data/samples/batch-clean/expected.json, summary.fees.total and summary.amountPayable.
