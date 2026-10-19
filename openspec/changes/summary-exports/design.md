@@ -181,7 +181,7 @@ type SettlementMovement = {
   cycle: 'E' | 'I' | 'R'
   status: 'Successful' | 'Declined' | 'Chargeback' | 'Refund' | 'RDR'
   roundNo: 1 | 2 | null
-  sheetId: string | null; sheetName: string | null; rowNo: number | null   // null for seeded history
+  sheetId: string | null /* uuid */; sheetName: string | null; rowNo: number | null   // null for seeded history
   amount: Money; excludeAmount: boolean; feeAmount: Money
   eventDate: string | null        // null: undated adjustment
   appliedReservePct: Rate; reserveDaysUsed: number; expectedReserveReleaseAt: string | null
@@ -282,7 +282,7 @@ Amount payable,,33771.3600
 { "batchId": "5c3f9e21-8a4b-4f0e-b1d2-6e7f8a9b0c1d", "type": "I", "page": 1, "pageSize": 50, "total": 10,
   "items": [
     { "settlementTxnId": "88213", "transactionId": "40711", "sourceTransactionId": "911545598812004", "gatewayId": 1,
-      "cycle": "I", "status": "Chargeback", "roundNo": 2, "sheetId": "5121", "sheetName": "CHB", "rowNo": 2,
+      "cycle": "I", "status": "Chargeback", "roundNo": 2, "sheetId": "2d4e6f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f", "sheetName": "CHB", "rowNo": 2,
       "amount": "96.9300", "excludeAmount": false, "feeAmount": "45.0000",
       "eventDate": "2026-10-03T14:12:00.000Z",
       "appliedReservePct": "0.100000", "reserveDaysUsed": 180, "expectedReserveReleaseAt": null,
