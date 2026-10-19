@@ -19,7 +19,7 @@ const START = Date.UTC(2025, 10, 1)
 const END = Date.UTC(2026, 9, 7)
 const CHANNELS = [1011, 1012]
 
-interface BenchTxn {
+export interface BenchTxn {
   transactionId: bigint
   channelId: number
   statusId: number
@@ -30,6 +30,8 @@ interface BenchTxn {
 export interface BenchInput {
   input: ValidationInput
   undoneBatchMovements: number
+  /** Every transaction of the bench (settled first, then unsettled), with its dates. */
+  transactions: readonly BenchTxn[]
 }
 
 export function benchInput(seed = 20261017): BenchInput {
@@ -182,5 +184,6 @@ export function benchInput(seed = 20261017): BenchInput {
       statuses: STATUSES,
     },
     undoneBatchMovements: undone,
+    transactions: txns,
   }
 }

@@ -23,7 +23,6 @@ import {
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import { ImportNotEditableError } from '../../imports/domain/errors.js'
-import { MAX_SQL_PARAMETERS } from '../../imports/infrastructure/sql-limits.js'
 import {
   BlockingValidationIssueError,
   ImportChangedError,
@@ -57,9 +56,6 @@ import type { Issue, ValidationReport } from '../domain/types.js'
 type Tx = Prisma.TransactionClient
 
 const UNIQUE_VIOLATION = 'P2002'
-/** Bound columns of a ValidationIssue row in createMany (every column, defaults included). */
-const ISSUE_COLUMNS = 16
-const ISSUES_PER_STATEMENT = Math.floor(MAX_SQL_PARAMETERS / ISSUE_COLUMNS)
 /** A run of the reference volume writes in well under a second (D14 bench); the default 5 s leaves no margin. */
 const RUN_TX_TIMEOUT_MS = 60_000
 const RUN_TX_MAX_WAIT_MS = 10_000
@@ -360,7 +356,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
             select: { runId: true },
           })
           lap('runMs')
-          await this.writeResults(tx, runId, report, lap)
+          await this.writeResults(tx, runId, report, now, lap)
           if (previousStatus === 'validated' && previous) {
             await this.recordInvalidation(tx, importId, previous.runId, userId, now, {
               reason: 'rerun',
@@ -399,11 +395,12 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
     throw new ImportChangedError(status)
   }
 
-  /** Eight results in order, then the findings: one-row ones in batches, those with occurrences one by one (D5). */
+  /** Eight results in order, then the findings in bulk: those without occurrences, then those with them (D5). */
   private async writeResults(
     tx: Tx,
     runId: number,
     report: ValidationReport,
+    now: Date,
     lap: (phase: keyof WritePhases) => void,
   ): Promise<void> {
     await tx.validationResult.createMany({
@@ -421,17 +418,24 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
       ),
     )
     lap('resultsMs')
-    const plain: Prisma.ValidationIssueCreateManyInput[] = []
+    const plain: IssueJson[] = []
     const withOccurrences: { resultId: number; issue: Issue }[] = []
     for (const result of report.results) {
       const resultId = resultIds.get(result.code) as number
       for (const issue of result.issues) {
-        if (issue.occurrences.length === 0) plain.push(issueRow(resultId, issue))
+        if (issue.occurrences.length === 0) plain.push(issueJson(resultId, issue))
         else withOccurrences.push({ resultId, issue })
       }
     }
-    for (let offset = 0; offset < plain.length; offset += ISSUES_PER_STATEMENT)
-      await tx.validationIssue.createMany({ data: plain.slice(offset, offset + ISSUES_PER_STATEMENT) })
+    const createdAt = Prisma.sql`CAST(${now.toISOString()} AS datetime2(7))`
+    // One statement for every finding without occurrences: the rows travel as one JSON parameter and are typed in the
+    // WITH clause exactly as the columns (no implicit NVARCHAR → VARCHAR conversion).
+    if (plain.length > 0) {
+      await tx.$executeRaw`
+        INSERT INTO [ValidationIssue] (${ISSUE_INSERT_COLUMNS})
+        SELECT j.[r], j.[t], j.[s], j.[b], j.[raw], j.[tx], j.[c], j.[st], j.[m], j.[d], j.[j], ${createdAt}
+        FROM OPENJSON(${JSON.stringify(plain)}) WITH (${ISSUE_JSON_COLUMNS}) j`
+    }
     lap('plainIssuesMs')
 
     // The file of a historical occurrence comes from the sheet its movement was settled from.
@@ -452,39 +456,46 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
             })
           ).map((s) => [s.sheetId, s.fileId]),
     )
-    for (const { resultId, issue } of withOccurrences) {
-      await tx.validationIssue.create({
-        data: {
-          ...issueRow(resultId, issue),
-          occurrences: {
-            createMany: {
-              data: issue.occurrences.map((o) =>
-                o.sourceType === 'current_import'
-                  ? {
-                      sourceType: o.sourceType,
-                      fileId: o.fileId,
-                      sheetId: o.sheetId,
-                      rowNo: o.rowNo,
-                      statusId: o.statusId,
-                      includeInSettlement: o.defaultIncluded,
-                      defaultIncluded: o.defaultIncluded,
-                    }
-                  : {
-                      sourceType: o.sourceType,
-                      batchId: o.batchId,
-                      fileId: o.sheetId === null ? null : (fileOfSheet.get(o.sheetId) ?? null),
-                      sheetId: o.sheetId,
-                      rowNo: o.rowNo,
-                      statusId: o.statusId,
-                      includeInSettlement: o.defaultIncluded,
-                      defaultIncluded: o.defaultIncluded,
-                    },
-              ),
-            },
-          },
-        },
-        select: { issueId: true },
-      })
+    if (withOccurrences.length > 0) {
+      // MERGE … OUTPUT correlates each inserted issueId with the ordinal of its finding (D5): it does not depend on
+      // the order IDENTITY assigns in a multi-row insert.
+      const sources = withOccurrences.map(({ resultId, issue }, o) => ({ o, ...issueJson(resultId, issue) }))
+      const inserted = await tx.$queryRaw<{ ordinal: number; issueId: number }[]>`
+        MERGE INTO [ValidationIssue] AS t
+        USING (
+          SELECT * FROM OPENJSON(${JSON.stringify(sources)}) WITH ([o] INT, ${ISSUE_JSON_COLUMNS})
+        ) AS j
+        ON 1 = 0
+        WHEN NOT MATCHED THEN
+          INSERT (${ISSUE_INSERT_COLUMNS})
+          VALUES (j.[r], j.[t], j.[s], j.[b], j.[raw], j.[tx], j.[c], j.[st], j.[m], j.[d], j.[j], ${createdAt})
+        OUTPUT j.[o] AS ordinal, inserted.[issueId] AS issueId;`
+      const issueIdOf = new Map(inserted.map((row) => [Number(row.ordinal), Number(row.issueId)]))
+      const occurrences = withOccurrences.flatMap(({ issue }, ordinal) =>
+        issue.occurrences.map((o) => ({
+          i: issueIdOf.get(ordinal),
+          k: o.sourceType,
+          bt: o.sourceType === 'previous_batch' ? o.batchId : null,
+          f:
+            o.sourceType === 'current_import'
+              ? o.fileId
+              : o.sheetId === null
+                ? null
+                : (fileOfSheet.get(o.sheetId) ?? null),
+          sh: o.sheetId,
+          rn: o.rowNo,
+          st: o.statusId,
+          // A new run starts every occurrence at its default inclusion (P6).
+          inc: o.defaultIncluded,
+          def: o.defaultIncluded,
+        })),
+      )
+      await tx.$executeRaw`
+        INSERT INTO [ConflictOccurrence] ([issueId], [sourceType], [batchId], [fileId], [sheetId], [rowNo], [statusId],
+          [includeInSettlement], [defaultIncluded])
+        SELECT j.[i], j.[k], j.[bt], j.[f], j.[sh], j.[rn], j.[st], j.[inc], j.[def]
+        FROM OPENJSON(${JSON.stringify(occurrences)}) WITH ([i] INT, [k] VARCHAR(20), [bt] UNIQUEIDENTIFIER,
+          [f] UNIQUEIDENTIFIER, [sh] UNIQUEIDENTIFIER, [rn] INT, [st] INT, [inc] BIT, [def] BIT) j`
     }
     lap('occurrenceIssuesMs')
   }
@@ -945,18 +956,47 @@ interface SheetInfo {
   sheetOrder: number
 }
 
-function issueRow(resultId: number, issue: Issue): Prisma.ValidationIssueCreateManyInput {
+/** A ValidationIssue row as it travels in the JSON of the bulk insert; keys are the WITH columns below. */
+interface IssueJson {
+  r: number
+  t: string
+  s: string | null
+  b: boolean
+  raw: string | null
+  /** BIGINT as text: a JSON number would lose digits. */
+  tx: string | null
+  c: string | null
+  st: number | null
+  m: string | null
+  /** ISO text, read as datetime2(7). */
+  d: string | null
+  j: string | null
+}
+
+/** Columns written by the bulk insert of findings; resolutionStatus takes its default ('persistent'). */
+const ISSUE_INSERT_COLUMNS = Prisma.raw(
+  '[resultId], [issueType], [scope], [blocking], [transactionIdRaw], [transactionId], [cycle], [statusId], ' +
+    '[missingType], [relevantDate], [detailJson], [createdAt]',
+)
+
+/** The JSON of a finding typed exactly as its columns (ValidationIssue in 0001_init). */
+const ISSUE_JSON_COLUMNS = Prisma.raw(
+  '[r] INT, [t] VARCHAR(30), [s] VARCHAR(30), [b] BIT, [raw] NVARCHAR(100), [tx] BIGINT, [c] CHAR(1), [st] INT, ' +
+    '[m] VARCHAR(30), [d] DATETIME2(7), [j] NVARCHAR(MAX)',
+)
+
+function issueJson(resultId: number, issue: Issue): IssueJson {
   return {
-    resultId,
-    issueType: issue.issueType,
-    scope: issue.scope,
-    blocking: issue.blocking,
-    transactionIdRaw: issue.transactionIdRaw,
-    transactionId: issue.transactionId,
-    cycle: issue.cycle,
-    statusId: issue.statusId,
-    missingType: issue.missingType ?? null,
-    relevantDate: issue.relevantDate ?? null,
-    detailJson: json(issueDetailOf(issue)),
+    r: resultId,
+    t: issue.issueType,
+    s: issue.scope,
+    b: issue.blocking,
+    raw: issue.transactionIdRaw,
+    tx: issue.transactionId === null ? null : String(issue.transactionId),
+    c: issue.cycle,
+    st: issue.statusId,
+    m: issue.missingType ?? null,
+    d: issue.relevantDate?.toISOString() ?? null,
+    j: json(issueDetailOf(issue)),
   }
 }
