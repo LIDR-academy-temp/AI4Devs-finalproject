@@ -106,6 +106,12 @@ describe('invalid batch fees: the first one that fails, by its position', () => 
     })
   })
 
+  it('a transactional fee of the account is not a preset of the batch: fee_not_in_account (review L9 of #66)', () => {
+    expect(reasonOf([{ feeTypeId: 111, feeId: mdr.feeId, amount: '1', source: 'manual' }])).toMatchObject({
+      reason: 'fee_not_in_account',
+    })
+  })
+
   it('fee_not_in_force at the reference day of the batch (settlementDate, or the max of the ranges)', () => {
     const closed = fee({ feeTypeId: 111, feeId: 'fe000000-0000-4000-8000-000000000999', endDate: '2026-10-15' })
     const fees = [{ feeTypeId: 111, feeId: closed.feeId, amount: '1', source: 'manual' as const }]
