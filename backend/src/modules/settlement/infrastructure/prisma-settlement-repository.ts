@@ -49,6 +49,7 @@ export interface ProcessResult {
 const UNIQUE_VIOLATION = 'P2002'
 const ACTIVE_NUMBER_INDEX = 'UX_SettlementBatch_active_accountBatchNo'
 const ACTIVE_IMPORT_INDEX = 'UX_SettlementBatch_active_import'
+const ATTEMPT_KEY = 'SettlementBatch_accountId_batchNo_attemptNo_key'
 /** batch-clean writes in well under a second; the default 5 s leaves no margin for the gates of the tests. */
 const PROCESS_TX_TIMEOUT_MS = 60_000
 const PROCESS_TX_MAX_WAIT_MS = 10_000
@@ -80,6 +81,8 @@ export class PrismaSettlementRepository implements SettlementRepository {
   async process(command: ProcessCommand): Promise<ProcessResult> {
     const { importId, request } = command
     const batchId = randomUUID()
+    // The number this process locked, for the 409 of a violation raised by the writes (set inside the transaction).
+    const race: { attempted?: { accountId: string; batchNo: number; attemptNo: number } } = {}
     try {
       return await this.prisma.$transaction(
         async (tx) => {
@@ -110,6 +113,7 @@ export class PrismaSettlementRepository implements SettlementRepository {
           const computed = performance.now()
           if (plan.batchFeeError) throw new BatchFeeInvalidError(plan.batchFeeError.index, plan.batchFeeError.reason)
           const attemptNo = await this.lockNumber(tx, context.account.accountId, plan.batchNo)
+          race.attempted = { accountId: context.account.accountId, batchNo: plan.batchNo, attemptNo }
           if (plan.channels.toAssign.length > 0 && request.confirmChannelAssignment !== true)
             throw new ChannelAssignmentNotConfirmedError(plan.channels.toAssign)
 
@@ -193,19 +197,22 @@ export class PrismaSettlementRepository implements SettlementRepository {
         { timeout: PROCESS_TX_TIMEOUT_MS, maxWait: PROCESS_TX_MAX_WAIT_MS },
       )
     } catch (error) {
-      // The filtered unique indexes are the last barrier (design D7): an attempt that won a race in between.
-      if (violates(error, ACTIVE_NUMBER_INDEX)) {
+      // The unique indexes are the last barrier (design D7): an attempt of the same account and number that won a race
+      // in between. Its holder is read outside the rolled-back transaction; the attempted number when none is seen.
+      const { attempted } = race
+      if (attempted && (violates(error, ACTIVE_NUMBER_INDEX) || violates(error, ATTEMPT_KEY))) {
         const holder = await this.prisma.settlementBatch.findFirst({
           where: {
+            accountId: attempted.accountId,
+            batchNo: attempted.batchNo,
             importId: { not: importId },
             status: { not: 'undone' },
-            ...(request.batchNo ? { batchNo: request.batchNo } : {}),
           },
           orderBy: { createdAt: 'desc' },
         })
         throw new BatchNoTakenError(
-          request.batchNo ?? holder?.batchNo ?? 0,
-          holder?.attemptNo ?? 1,
+          attempted.batchNo,
+          holder?.attemptNo ?? attempted.attemptNo,
           holder?.importId ?? importId,
         )
       }
