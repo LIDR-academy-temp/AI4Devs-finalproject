@@ -623,6 +623,18 @@ function detailOf(run: StoredRun, issue: StoredIssue): ValidationIssueDetail {
   }
 }
 
+/**
+ * The answer of an applied PATCH. A `next` script is the next state of the finding as the scenario declares it: it
+ * is stored, so the following reads answer the same, as the API would.
+ */
+function afterScript(run: StoredRun, issue: StoredIssue, script: PatchScript | undefined): ValidationIssueDetail {
+  const answer = detailOf(run, issue)
+  if (!script || !('next' in script)) return answer
+  const { importStatus: _s, run: _r, ...next } = script.next(answer)
+  Object.assign(issue.detail, next)
+  return detailOf(run, issue)
+}
+
 function summaryOf(issue: StoredIssue): ValidationIssueSummary {
   const { importId: _i, resolvable: _r, occurrences: _o, history: _h, ...summary } = issue.detail
   return summary
@@ -925,8 +937,7 @@ export function createValidationHandlers(caller: (request: Request) => UserName 
             resolvable: false,
             history: [...issue.detail.history, entry],
           })
-          const answer = detailOf(run, issue)
-          return HttpResponse.json(script && 'next' in script ? script.next(answer) : answer)
+          return HttpResponse.json(afterScript(run, issue, script))
         },
         caller,
       ),
@@ -978,8 +989,7 @@ export function createValidationHandlers(caller: (request: Request) => UserName 
             })
             invalidate(record, run, user, 'inclusion_change', { newRunId: null, occurrenceId })
           }
-          const answer = detailOf(run, issue)
-          return HttpResponse.json(script && 'next' in script ? script.next(answer) : answer)
+          return HttpResponse.json(afterScript(run, issue, script))
         },
         caller,
       ),
