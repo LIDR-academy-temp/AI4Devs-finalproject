@@ -101,7 +101,7 @@ Rama `feat/settlement-process`, PR hacia `feature/entrega-2-MVP`. El grupo 0 va 
 ## 12. Verificación de conjunto
 
 - [ ] 12.1 `pnpm lint`, `pnpm typecheck`, `pnpm test` y la integración completa contra la base local en verde; `openspec validate settlement-process --strict` en verde. Verificación: salida de los comandos en el PR.
-- [ ] 12.2 `/review-diff` del PR con los cinco focos (README §7): dinero nunca `number`, fechas de negocio frente a auditoría, ningún movimiento Settled al procesar, ningún comentario en español en `.ts`/`.sql`, ningún `console.log`. Verificación: hallazgos resueltos o anotados en el PR.
+- [x] 12.2 `/review-diff` del PR con los cinco focos (README §7): dinero nunca `number`, fechas de negocio frente a auditoría, ningún movimiento Settled al procesar, ningún comentario en español en `.ts`/`.sql`, ningún `console.log`. Verificación: hallazgos resueltos o anotados en el PR.
 
 ## Workflow follow-up
 
