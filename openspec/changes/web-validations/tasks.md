@@ -123,7 +123,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   - `batch-blocked`: Continue deshabilitado y Cancel and reprocess.
   
   Contrastar los resultados de `batch-blocked` con el supuesto del falso y corregir el fixture si difieren. Anotar en el PR cualquier diferencia entre falso y real
-- [ ] 8.6 Verificar que el smoke E2E existente sigue en verde con `pnpm test:e2e` y que `pnpm --filter @recon/backend test:integration` no cambia (este change no toca backend)
+- [x] 8.6 Verificar que el smoke E2E existente sigue en verde con `pnpm test:e2e` y que `pnpm --filter @recon/backend test:integration` no cambia (este change no toca backend). Smoke en verde; diff del backend vacío contra la base; la integración la corre el CI del PR
 - [x] 8.7 Escribir el script de capturas `e2e/screenshots/web-validations.ts` (D13 paso 7) y su comando raíz `pnpm screenshots:web-validations`:
   - fuera de los `.feature` y del `defineBddConfig` del smoke;
   - `analyst` del seed con `SEED_PASSWORD` cargada con `process.loadEnvFile`, sin leer ni imprimir el `.env`;
@@ -133,14 +133,14 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   
   Verificar con `pnpm test:e2e --list` que el smoke no lo recoge y que ningún workflow de `.github/` lo llama
 - [x] 8.8 **Avisar a la persona antes de ejecutarlo**, porque quiere mirar la ejecución. Con su visto bueno, ejecutar `pnpm screenshots:web-validations` y comprobar que deja en `docs/wireframes/web-validations/` cuatro PNG a 1280 px: `batch-issues-validations.png`, `batch-issues-duplicate-drawer.png` (con historial), `batch-issues-invalidated-review.png` y `batch-blocked-continue-disabled.png`. Revisar cada PNG antes de versionarlo: ningún dato de credenciales y ninguna pantalla de login
-- [ ] 8.9 Línea de las capturas en `docs/wireframes/README.md` y registro del change en `prompts.md`
+- [x] 8.9 Línea de las capturas en `docs/wireframes/README.md` y registro del change en `prompts.md`
 - [ ] 8.10 Listar en la descripción del PR:
   - los huecos del contrato del proposal (Settlement Review hasta #13, motivo de `includable`, indicadores `canRun`/`canReview`, oráculo de `batch-blocked`), para que la persona abra los issues;
   - las referencias a #47 (motivo al cancelar) y #48 (fechas de negocio sin `Z`);
   - el pendiente de roadmap de la zona horaria del gateway UUID.
   
   No crear issues desde la sesión
-- [ ] 8.11 Commit: `refactor(frontend): contrato de validaciones con el cliente generado tras #9`, `chore(e2e): script de capturas de Analysis & Validations fuera del smoke y de CI` y `docs(validation): capturas de Analysis & Validations y registro en prompts.md`
+- [x] 8.11 Commit: `refactor(frontend): contrato de validaciones con el cliente generado tras #9`, `chore(e2e): script de capturas de Analysis & Validations fuera del smoke y de CI` y `docs(validation): capturas de Analysis & Validations y registro en prompts.md`
 
 ## Workflow follow-up
 
