@@ -14,6 +14,8 @@ import { ImportPage } from '@/features/imports/ImportPage'
 import { NewReconciliationPage } from '@/features/imports/NewReconciliationPage'
 import { strings as importStrings } from '@/features/imports/strings'
 import { validateImportSearch, validateNewReconciliationSearch } from '@/features/imports/validate-search'
+import { SettlementReviewPage } from '@/features/settlements/SettlementReviewPage'
+import { SettlementSummaryPage } from '@/features/settlements/SettlementSummaryPage'
 import { ApiError } from '@/lib/api/client'
 import type { Permission } from '@/lib/api/types'
 import { meQuery } from '@/lib/session/me'
@@ -103,6 +105,25 @@ const importRoute = createRoute({
   component: ImportPage,
 })
 
+// The form processes the batch: settlement.process, like New Reconciliation (web-settlement design D1, D13).
+const settlementReviewRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/imports/$importId/settlement-review',
+  staticData: {
+    requires: 'settlement.process',
+    crumbs: [strings.groups.reconciliation, strings.screens.settlementReview],
+  },
+  component: SettlementReviewPage,
+})
+
+// No permission required: the API decides the scope and viewer may read an attempt (design D13).
+const settlementSummaryRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settlements/$batchId',
+  staticData: { crumbs: [strings.groups.reconciliation, strings.screens.settlementSummary] },
+  component: SettlementSummaryPage,
+})
+
 const notFoundRoute = createRoute({ getParentRoute: () => appRoute, path: '$', component: NotFoundPage })
 
 function buildRouteTree(extraRoutes: AnyRoute[]) {
@@ -113,6 +134,8 @@ function buildRouteTree(extraRoutes: AnyRoute[]) {
       accountsRoute,
       newReconciliationRoute,
       importRoute,
+      settlementReviewRoute,
+      settlementSummaryRoute,
       ...extraRoutes,
       notFoundRoute,
     ]),
