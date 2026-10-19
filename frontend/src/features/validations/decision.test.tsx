@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { importRequests, seedImport } from '@/test/msw/imports'
 import { holdNextValidation, respondNext, seedValidationRun, validationRequests } from '@/test/msw/validations'
@@ -98,6 +98,42 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
       await screen.findByText('The validations found a blocking finding. The results were reloaded.'),
     ).toBeInTheDocument()
     await waitFor(() => expect(validationRequests('get').length).toBeGreaterThan(gets))
+  })
+
+  it('a double click on Continue sends one POST review and the button stays disabled until the answer', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    const hold = holdNextValidation('review')
+    const { user } = await openAnalysis(importId)
+    const button = continueButton()
+
+    await user.dblClick(button)
+    await hold.arrived
+
+    expect(validationRequests('review')).toHaveLength(1)
+    expect(button).toBeDisabled()
+    hold.release()
+    expect(await header().findByText('validated')).toBeInTheDocument()
+    expect(validationRequests('review')).toHaveLength(1)
+  })
+
+  it('two clicks on Continue in the same tick, before React re-renders, still send a single POST review', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    const hold = holdNextValidation('review')
+    await openAnalysis(importId)
+    const button = continueButton()
+
+    // Inside one act the button cannot be disabled between the clicks: only the synchronous guard stops the second.
+    act(() => {
+      fireEvent.click(button)
+      fireEvent.click(button)
+    })
+    await hold.arrived
+    hold.release()
+
+    expect(await header().findByText('validated')).toBeInTheDocument()
+    expect(validationRequests('review')).toHaveLength(1)
   })
 
   it('Continue waits while a run is on its way', async () => {
