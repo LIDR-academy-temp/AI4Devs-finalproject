@@ -1,6 +1,7 @@
 import type { ValidationCode } from '@recon/shared'
 import { useQuery } from '@tanstack/react-query'
 import { createColumnHelper, rowPaginationFeature, tableFeatures, useTable } from '@tanstack/react-table'
+import { useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import type { ValidationIssueSummary } from './contract'
@@ -81,12 +82,17 @@ export function IssuesList({
   onOpen: (issueId: number) => void
 }) {
   const query = useQuery(validationIssuesQuery(importId, { validationCode, page }))
+  // Stable columns: a new definition on every render would mount new ID buttons and lose the focus going back to
+  // them when the drawer closes (design D14).
+  const open = useRef(onOpen)
+  open.current = onOpen
+  const columns = useMemo(() => columnsFor((issueId) => open.current(issueId)), [])
   const total = query.data?.total ?? 0
   const pageCount = Math.max(1, Math.ceil(total / ISSUES_PAGE_SIZE))
 
   const table = useTable({
     features,
-    columns: columnsFor(onOpen),
+    columns,
     data: query.data?.items ?? [],
     manualPagination: true,
     rowCount: total,

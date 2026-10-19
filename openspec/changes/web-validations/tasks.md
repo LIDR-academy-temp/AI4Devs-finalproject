@@ -104,11 +104,11 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 7. Solo lectura, teclado y anchura (D10, D14)
 
-- [ ] 7.1 Test (rojo) `features/validations/read-only.test.tsx` con "solo lectura": `viewer` ve las ocho validaciones, la lista y las apariciones con `Included`/`Excluded` como texto, sin Run, Continue, Cancel and reprocess, interruptores ni **Mark as resolved**, y sin peticiones de escritura; import `cancelled` con el NRA `resolvable` → sin Run ni Continue, sin interruptores y con **Mark as resolved**; import `processed` → sin Run ni Continue
-- [ ] 7.2 Test (rojo) de teclado en `features/validations/keyboard.test.tsx`: con solo Tab, Enter, Espacio y Escape se elige una validación, se abre un hallazgo, se cambia una inclusión, se confirma un diálogo y se vuelve a la lista; todos los botones deshabilitados tienen un motivo visible asociado
-- [ ] 7.3 Ajustar lo que 7.1 y 7.2 descubran (permisos de D10 en `ValidationsSection` y `DecisionBar`, `aria-describedby`, foco) y verificar 7.1 y 7.2 en verde; romper a propósito el ocultado de Run para `viewer` y ver fallar 7.1; restaurar. La revisión de anchura a 1280 px y 1024 px necesita datos reales y queda en 8.5, porque MSW solo corre en los tests
-- [ ] 7.4 Verificar `pnpm lint && pnpm typecheck && pnpm test && pnpm --filter @recon/frontend build` en verde y `openspec validate web-validations --type change --strict` sin avisos
-- [ ] 7.5 Commit: `test(frontend): solo lectura y teclado en Analysis & Validations` y `fix(frontend): permisos y accesibilidad de la pantalla de validaciones`
+- [x] 7.1 Test (rojo) `features/validations/read-only.test.tsx` con "solo lectura": `viewer` ve las ocho validaciones, la lista y las apariciones con `Included`/`Excluded` como texto, sin Run, Continue, Cancel and reprocess, interruptores ni **Mark as resolved**, y sin peticiones de escritura; import `cancelled` con el NRA `resolvable` → sin Run ni Continue, sin interruptores y con **Mark as resolved**; import `processed` → sin Run ni Continue
+- [x] 7.2 Test (rojo) de teclado en `features/validations/keyboard.test.tsx`: con solo Tab, Enter, Espacio y Escape se elige una validación, se abre un hallazgo, se cambia una inclusión, se confirma un diálogo y se vuelve a la lista; todos los botones deshabilitados tienen un motivo visible asociado
+- [x] 7.3 Ajustar lo que 7.1 y 7.2 descubran (permisos de D10 en `ValidationsSection` y `DecisionBar`, `aria-describedby`, foco) y verificar 7.1 y 7.2 en verde; romper a propósito el ocultado de Run para `viewer` y ver fallar 7.1; restaurar. La revisión de anchura a 1280 px y 1024 px necesita datos reales y queda en 8.5, porque MSW solo corre en los tests
+- [x] 7.4 Verificar `pnpm lint && pnpm typecheck && pnpm test && pnpm --filter @recon/frontend build` en verde y `openspec validate web-validations --type change --strict` sin avisos
+- [x] 7.5 Commit: `test(frontend): solo lectura y teclado en Analysis & Validations` y `fix(frontend): permisos y accesibilidad de la pantalla de validaciones`
 
 ## 8. Rebase sobre #9 y prueba contra el API real — espera al merge de #9 (D13)
 
