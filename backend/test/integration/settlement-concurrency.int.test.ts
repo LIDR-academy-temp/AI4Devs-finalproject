@@ -41,30 +41,36 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (ctx) {
-    await flow.close()
-    await restoreAccountChannels(ctx.prisma, channels)
+    try {
+      await flow.close()
+    } finally {
+      await restoreAccountChannels(ctx.prisma, channels)
+    }
     await ctx.app.close()
     await ctx.prisma.$disconnect()
   }
   if (uploadDir) await rm(uploadDir, { recursive: true, force: true })
 })
 
-/** A validated one-row import of ProviderA-USD. */
-async function validatedImport(index: number): Promise<{ importId: string; runId: number }> {
+/** A validated one-row import of the account with the approved transaction `id`. */
+async function validatedImportOf(account: string, id: string): Promise<{ importId: string; runId: number }> {
   const bytes = buildXlsx({
     sheets: [
       {
         name: 'APP',
         rows: [
           ['ID', 'Amount', 'Currency'],
-          [ids[index]!, { v: '10' }, 'USD'],
+          [id, { v: '10' }, 'USD'],
         ],
       },
     ],
   })
-  const detail = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [{ name: `c${index}.xlsx`, bytes }])
+  const detail = await flow.analyzed(flow.accountIds[account]!, [{ name: `c-${id}.xlsx`, bytes }])
   return { importId: detail.importId, runId: await flow.validateAndReview(detail.importId) }
 }
+
+/** A validated one-row import of ProviderA-USD. */
+const validatedImport = (index: number) => validatedImportOf('ProviderA-USD', ids[index]!)
 
 /** A gate: `reached` resolves when the paused side arrives; `open()` lets it go on. */
 function gate() {
@@ -325,5 +331,101 @@ describe('another run reviewed meanwhile', () => {
     })
     expect(await batchesOf(importId)).toBe(0)
     expect(await statusOf(importId)).toBe('validated')
+  })
+})
+
+describe('two accounts of the provider processing a shared channel', () => {
+  it('the one that waited moves the channel from the other account: primary_moved_from, in the response and the audit', async () => {
+    // RAM-07 (channel 1007 of provider 101) has no account yet: ProviderA-EUR and ProviderA-USD both process it.
+    const [eurId, usdId] = (
+      await ctx.prisma.$queryRaw<{ sourceTransactionId: string }[]>(Prisma.sql`
+        SELECT TOP 2 t.[sourceTransactionId] FROM [Transaction] t
+        WHERE t.[providerId] = 101 AND t.[channelId] = 1007 AND t.[statusId] = 2
+          AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st WHERE st.[transactionId] = t.[transactionId])
+        ORDER BY t.[transactionId] DESC`)
+    ).map((r) => r.sourceTransactionId) as [string, string]
+    const eur = await validatedImportOf('ProviderA-EUR', eurId)
+    const usd = await validatedImportOf('ProviderA-USD', usdId)
+    // EUR pauses before its first write, with the number and the channels already locked.
+    const g = gate()
+    const first = process(
+      repository(undefined, async (phase) => {
+        if (phase === 'batch') await g.beforeClaim()
+      }),
+      eur.importId,
+      { runId: eur.runId, batchNo: 9819, confirmChannelAssignment: true },
+    )
+    await g.reached
+
+    let settled = false
+    const second = process(repository(), usd.importId, {
+      runId: usd.runId,
+      batchNo: 9820,
+      confirmChannelAssignment: true,
+    }).finally(() => {
+      settled = true
+    })
+    second.catch(() => undefined)
+    try {
+      // Without the lock on the channels USD reads RAM-07 as not assigned and commits while EUR waits.
+      await new Promise((resolve) => setTimeout(resolve, 1_500))
+      expect(settled).toBe(false)
+    } finally {
+      g.open()
+    }
+
+    const eurResult = await first
+    const usdResult = await second
+    const eurAccount = { accountId: flow.accountIds['ProviderA-EUR']!.toLowerCase(), name: 'ProviderA-EUR' }
+    const lower = (a: { accountId: string; name: string } | null) => a && { ...a, accountId: a.accountId.toLowerCase() }
+    expect(eurResult.channelsAssigned).toEqual([
+      { channelId: 1007, name: 'RAM-07', assignment: 'new_primary', previousAccount: null },
+    ])
+    expect(usdResult.channelsAssigned.map((c) => ({ ...c, previousAccount: lower(c.previousAccount) }))).toEqual([
+      { channelId: 1007, name: 'RAM-07', assignment: 'primary_moved_from', previousAccount: eurAccount },
+    ])
+    const audit = await ctx.prisma.auditLog.findFirstOrThrow({
+      where: { action: 'account_channel.assign', detailJson: { contains: usdResult.batchId } },
+    })
+    expect(JSON.parse(audit.detailJson!)).toMatchObject({ assignment: 'primary_moved_from' })
+    expect(JSON.parse(audit.detailJson!).previousAccountId.toLowerCase()).toBe(eurAccount.accountId)
+    const primary = await ctx.prisma.accountChannel.findFirstOrThrow({ where: { channelId: 1007, isPrimary: true } })
+    expect(primary.accountId.toLowerCase()).toBe(flow.accountIds['ProviderA-USD']!.toLowerCase())
+  })
+})
+
+describe('one primary per channel as the last barrier', () => {
+  it('a violation of UX_AccountChannel_primary answers 409 channel_assignment_not_confirmed, nothing written', async () => {
+    const [id] = (
+      await ctx.prisma.$queryRaw<{ sourceTransactionId: string }[]>(Prisma.sql`
+        SELECT TOP 1 t.[sourceTransactionId] FROM [Transaction] t
+        WHERE t.[providerId] = 101 AND t.[channelId] = 1007 AND t.[statusId] = 2
+          AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st WHERE st.[transactionId] = t.[transactionId])
+        ORDER BY t.[transactionId] DESC`)
+    ).map((r) => r.sourceTransactionId) as [string]
+    // RAM-07 back to not assigned (the suite before leaves it primary of ProviderA-USD).
+    await restoreAccountChannels(ctx.prisma, channels)
+    const { importId, runId } = await validatedImportOf('ProviderA-USD', id)
+    // Right before the row of the process, a primary row of ProviderA-EUR for the same channel, in the same transaction.
+    const otherPrimary = ctx.prisma.$extends({
+      query: {
+        accountChannel: {
+          async create({ args, query }) {
+            await query({
+              ...args,
+              data: { ...args.data, accountId: flow.accountIds['ProviderA-EUR']!, assignedInBatchId: null },
+            } as never)
+            return query(args)
+          },
+        },
+      },
+    }) as unknown as typeof ctx.prisma
+    const before = await ctx.prisma.accountChannel.count({ where: { channelId: 1007 } })
+
+    await expect(
+      process(realRepository(otherPrimary), importId, { runId, batchNo: 9821, confirmChannelAssignment: true }),
+    ).rejects.toMatchObject({ code: 'channel_assignment_not_confirmed' })
+    expect(await batchesOf(importId)).toBe(0)
+    expect(await ctx.prisma.accountChannel.count({ where: { channelId: 1007 } })).toBe(before)
   })
 })
