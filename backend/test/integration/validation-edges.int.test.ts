@@ -261,6 +261,54 @@ describe('the informative counters from the engine to GET validations (spec "Con
   })
 })
 
+// ───────────────────────── Review L2: file order in the detail ─────────────────────────
+
+describe('the detail orders the files as the engine does: (uploadedAt, fileName, fileId) (review L2)', () => {
+  it('a collision spread over two files uploaded at the same instant lists the file first by name first', async () => {
+    const [found] = await ctx.prisma.$queryRaw<{ sourceTransactionId: string }[]>`
+      SELECT TOP 1 t.[sourceTransactionId] FROM [Transaction] t
+      WHERE t.[providerId] = 102 AND t.[channelId] = 1011 AND t.[statusId] = 2
+        AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st WHERE st.[transactionId] = t.[transactionId])
+      ORDER BY t.[transactionId] DESC`
+    const id = found!.sourceTransactionId
+    // In a-dec.xlsx the row is the second one (row 3); in b-app.xlsx the first one (row 2): only the file name can
+    // put a-dec first, as the engine does.
+    const decBytes = buildXlsx({
+      sheets: [
+        {
+          name: 'DEC',
+          rows: [
+            ['ID', 'Amount', 'Currency'],
+            ['', { v: '10' }, 'USD'],
+            [id, { v: '10' }, 'USD'],
+          ],
+        },
+      ],
+    })
+    const detail = await flow.analyzed(flow.accountIds['ProviderB-Main'] as string, [
+      { name: 'b-app.xlsx', bytes: xlsx('APP', [id]) },
+      { name: 'a-dec.xlsx', bytes: decBytes },
+    ])
+    await ctx.prisma.importFile.updateMany({
+      where: { importId: detail.importId },
+      data: { uploadedAt: new Date('2026-10-18T10:00:00.000Z') },
+    })
+    await run(detail.importId)
+    const page = ValidationIssuesPage.parse(
+      (await flow.call('GET', `/imports/${detail.importId}/validation-issues?type=collision&scope=in_batch`)).json(),
+    )
+    const collision = page.items.find((i) => i.transactionIdRaw === id)!
+
+    const res = await flow.call('GET', `/validation-issues/${collision.issueId}`)
+
+    const current = ValidationIssueDetail.parse(res.json()).occurrences.filter((o) => o.sourceType === 'current_import')
+    expect(current.map((o) => [o.location?.fileName, o.location?.sheetName, o.location?.rowNo])).toEqual([
+      ['a-dec.xlsx', 'DEC', 3],
+      ['b-app.xlsx', 'APP', 2],
+    ])
+  })
+})
+
 // ───────────────────────── W6: scope of every route with an import of another merchant ─────────────────────────
 
 describe('scope: an import of ProviderC-Alt (merchant 2) read and written by users of merchant 1 only', () => {
