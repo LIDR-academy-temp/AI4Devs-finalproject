@@ -1,0 +1,198 @@
+# Design — web-settlement
+
+## Context
+
+- **Espacio del import** (`web-import`, `web-validations`, archivados): una ruta `/imports/$importId?step=…` sin permiso propio (`router.tsx`), `importQuery` / `importKey` (`features/imports/queries.ts`; cada `GET` del detalle relee los `.xlsx`, `web-import` D3), `useImportAccess` / `useCanProcess` (`features/imports/permissions.ts`, solo presentación). `ImportDetail` ya trae `accountId`, `status`, `currentBatchId`, `channels` y `batchFees` (`{ feeTypeId | null, code, title, amount | null, currency, source: 'file', warning? }`).
+- **Validaciones** (`features/validations/`): `validationRunQuery(importId)` da la corrida vigente con `runId` y `review`. `DecisionBar` pinta **Settlement Review** con la constante `SETTLEMENT_REVIEW` de `next-step.ts`, hoy `null` (entrada deshabilitada para todos, también para `viewer`).
+- **Guarda por permiso** (`web-shell`): una ruta con `staticData.requires` muestra `ForbiddenPage` dentro del layout sin montar la pantalla (`AppLayout.tsx`), así que no se llama a sus endpoints.
+- **Contrato**: "Contrato para #13" y "Contrato para #12" de `settlement-process/design.md` (rama `feat/settlement-process`): tipos, rutas, errores, mensajes y ejemplos para MSW. Ninguna de las siete rutas está en `docs/openapi.yaml` ni en `schema.gen.ts` de esta rama, y `@recon/shared` no tiene todavía `settlement.ts` ni `fees.ts`. Lo que dice el proposal en "Huecos del contrato" no se arregla aquí.
+- **Patrones heredados de `web-validations`**: contrato aislado en `contract.ts` con `createAuthFetch(session)` y `apiOrigin()` hasta el rebase (D2), falso de MSW guionizado (D12), `BusinessDate` / `AuditInstant` con sus formateadores en `lib/format.ts` (D11), guarda síncrona con `useRef` además de `isPending` (D4), sin optimismo (D7), `OPENING` para la primera espera tras `renderApp` (D14), script de capturas fuera del smoke y de CI (D13). `formatDecimal` agrupa miles sobre el texto, sin pasar por `number`.
+- **Datos del seed que usan los escenarios**: ProviderA-USD propone el batch 123 (`expected.proposedBatchNo`), sus prellenados de `batch-clean` son `Wire Fee` (121, 25.0000) y `Settlement Fee` (117, 15.0000), su único preestablecido no transaccional es `Chargeback over 1%` (105, solo porcentaje, con condición) y `RAM-07` está sin cuenta. ProviderB-Main tiene `Monthly Fee` (111, fijo 250). Los tipos con importe libre son `Bram Fine`, `Chargeback over 1/2/3%`, `Chargeback Reversed`, `Rebate 2%/3%`, `Release of Frozen Funds`, `Special Adjustment` y `Special Deduction` (`backend/prisma/synthetic.ts`).
+- La base local la comparte #11 mientras está en curso: este change no ejecuta integración ni E2E hasta su último grupo.
+
+## Goals / Non-Goals
+
+**Goals:**
+- Que el rebase sobre #11/#12 toque solo `contract.ts`, el falso y la constante de las descargas, sin cambiar los tests de componentes.
+- Ningún importe calculado en el navegador: lo que se pinta es lo que el API devolvió, y lo que se envía es lo que el analista escribió, como texto.
+- Que lo que se procesa sea lo que el analista vio en el resumen previo.
+
+**Non-Goals:**
+- Borradores del formulario ("Save and leave" del prototipo) y persistencia entre recargas: Settlement Review se recompone desde el API al abrirla.
+- Tiempo real: lo que cambie otra persona se ve como `409` o en la vista previa siguiente.
+- Pantallas de pagar, deshacer, Settlement Detail y listas (tramo 6, Entrega 3).
+
+## Decisions
+
+### D1. Dos rutas propias: Review del import y Summary del intento
+- `/imports/$importId/settlement-review` con `staticData: { requires: 'settlement.process', crumbs: [Reconciliation, Settlement Review] }` y `/settlements/$batchId` sin permiso propio, con `crumbs: [Reconciliation, Settlement Summary]`. La entrada activa de la barra lateral sigue siendo New Reconciliation bajo `/imports/` (`activeUnder`); el Summary no marca ninguna.
+- Carpeta `features/settlements/` (como el módulo `settlement` del backend), con `SettlementReviewPage`, `SettlementSummaryPage` y sus piezas. De `imports` solo importa `importQuery`, `importKey`, `useCanProcess` e `ImportHeader` (si encaja sin cambios); de `validations`, `validationRunQuery`.
+- La cabecera de Review muestra cuenta, import y estado, y un enlace **← Analysis** al paso Analysis. No se amplían los `StepTabs` del import con "Review" y "Summary" del prototipo.
+- *Alternativa descartada 1*: un paso `?step=review` dentro de `/imports/$importId`. La ruta del import no exige permiso (`viewer` la lee), así que la guarda tendría que reimplementarse dentro de la pantalla, y `defaultStep` tendría que inventar un paso para `validated`.
+- *Alternativa descartada 2*: el Summary bajo `/imports/$importId/settlement`. Un import puede tener varios intentos (deshacer y reprocesar), `GET /settlements/{id}` se pide por intento y Settlement Detail (tramo 6) también es por intento.
+
+### D2. Contrato aislado en dos ficheros hasta el rebase
+- **`features/settlements/contract.ts`**: los tipos de "Contrato para #13" copiados tal cual (`SettlementRequest`, `BatchFeeInput`, `SettlementPreview`, `SettlementView`, `SettlementFigures`, `PayableLine`, `CategoryTotal`, `BrandTotal`, `BatchFeeView`, `ChannelToAssign`, `SettlementWarning`, `Skipped`, `NextBatchNumber`, `AccountFee`, `FeeTypeView`, `UserRef`) y `details` de los errores (`batch_no_taken`, `channel_assignment_not_confirmed`, `batch_fee_invalid`, `import_not_validated`, `validation_run_superseded`, `blocking_validation_issue`). Siete llamadas: `getNextBatchNumber`, `getAccountFees`, `getFeeTypes`, `previewSettlement`, `processSettlement`, `getSettlement` y `downloadSettlementExport`. Usan `createAuthFetch(session)` y `apiOrigin()` y lanzan `ApiError`, como `web-validations` antes de su rebase. Es **el único fichero** que conoce estas rutas, y su cabecera lo marca como temporal hasta #11/#12.
+- Fechas con tipo marca: `BusinessDate` en `dateRanges.*.min/max`, `settlementDate`, `startDate` y `endDate`; `AuditInstant` en `processedAt`. Dinero (`Money`) y tasas (`Rate`) como `string` en todos los campos: ningún tipo del contrato admite `number` para un importe.
+- **`test/msw/settlements.ts`**: el falso de las siete rutas (D15). `handlers.ts` solo lo registra.
+- **En el rebase** (último grupo): tipos como alias de `ApiResponse<…>` con las fechas marcadas por nombre de campo (el `Dated<>` de `validations/contract.ts`), llamadas con `api.GET/POST`, mismos nombres exportados. Un test del falso hace `safeParse` de cada fixture con los esquemas Zod de `@recon/shared` (`settlement.ts`, `fees.ts`). La descarga sigue con `fetch` autenticado, porque devuelve un archivo y no JSON (D12).
+- *Alternativa descartada 1*: añadir las rutas a mano a `docs/openapi.yaml`. Lo genera `openapi:export` desde el backend, CI (`openapi:check`) fallaría y chocaría con el mismo fichero de #11.
+- *Alternativa descartada 2*: esquemas Zod propios en el frontend para validar respuestas. Duplicarían los de `@recon/shared` y quedarían huérfanos en el rebase.
+
+### D3. Estado de servidor
+- Claves:
+  - `nextBatchNumberKey(accountId, importId) = ['accounts', accountId, 'batch-number', { importId }]`, `staleTime: 0` (es una propuesta, no una reserva);
+  - `accountFeesKey(accountId, asOf) = ['accounts', accountId, 'fees', { transactional: false, asOf }]` y `feeTypesKey = ['fee-types']`, con `staleTime` de 5 min (catálogos que no cambian durante la pantalla);
+  - `settlementPreviewKey(importId, request) = [...importKey(importId), 'settlement-preview', request]` (D6);
+  - `settlementKey(batchId) = ['settlements', batchId]`.
+- **Procesar** (`201 SettlementView`): `setQueryData(settlementKey(batchId), view)`, `invalidateQueries(importKey(importId), { exact: true })` (el import pasa a `processed` con `currentBatchId`), invalidar `validationRunKey(importId)` (cambia `importStatus`) y `removeQueries` de las vistas previas del import. Después, `navigate({ to: '/settlements/$batchId', replace: true })`: volver atrás no reabre un formulario de un import ya procesado.
+- `replace` y la caché sembrada hacen que el Summary pinte la respuesta sin `GET`. `getSettlement` solo sale al recargar o al llegar por enlace (`staleTime: Infinity` mientras la pantalla no tenga acciones que lo cambien).
+- *Alternativa descartada*: navegar sin sembrar la caché y dejar que el Summary pida `GET /settlements/{id}`. Hasta #12 respondería `404` contra el API real justo después de procesar, y aun después sería una petición más para lo que ya está en la mano.
+
+### D4. Formulario con React Hook Form y Zod, todo como texto
+- Valores: `{ batchNo: string, settlementDate: string, fees: FeeRow[], confirmChannels: boolean }`, con `FeeRow = { key, origin: 'file' | 'preset' | 'free', feeTypeId: number | null, feeId: string | null, amount: string, description: string, fileWarning?: string, percentage?: Rate }`. `useFieldArray` para las filas, con `key` estable.
+- Esquema (`features/settlements/review-form.ts`, puro y con test propio):
+  - `batchNo`: `/^[1-9]\d{0,8}$/` → `Enter a positive whole number.`;
+  - `settlementDate`: obligatoria, `YYYY-MM-DD` válido (el `input type="date"` ya lo da así), vacía al abrir → `Choose the settlement date.` (P8 de #11, decidido en la revisión);
+  - `amount`: `/^-?\d{1,15}(\.\d{1,4})?$/` y al menos un dígito distinto de cero (`/[1-9]/`) → `Enter an amount with up to 4 decimals, other than zero.`. Nunca `Number(...)`, `parseFloat` ni `z.coerce`;
+  - `description`: hasta 200; obligatoria (1–200 tras recortar) en las filas `free` (D5);
+  - una fila `file` con `feeTypeId = null` no es válida hasta que tenga tipo (o se quite).
+- `toRequest(values, runId)` construye el `SettlementRequest`: `batchNo` como número entero (no es dinero), `settlementDate` siempre, `batchFees` en el orden de las filas con `source` (`file` para las del archivo, `manual` para las demás) y `confirmChannelAssignment: true` solo si la casilla está marcada y la vista previa la pide. La misma función alimenta la vista previa y el procesamiento.
+- **Valores iniciales una sola vez**: el formulario se monta cuando han llegado el detalle del import, la corrida y el siguiente número; `defaultValues` toma `batchNo` del número propuesto, `settlementDate` vacía y las filas `file` de `batchFees`. Las relecturas posteriores (p. ej. al volver a enfocar) no reinician lo escrito.
+- *Alternativa descartada* para la fecha: dejarla opcional y que el servidor use el máximo de los rangos de la corrida. La vista previa no devuelve qué fecha usaría, así que la pantalla no podría decirla ni pedir los preestablecidos vigentes en ella (hueco 1 del proposal, decidido en la revisión).
+- *Alternativa descartada*: estado controlado a mano con `useState` por campo. `web-import` ya usa React Hook Form + `zodResolver` para el pareo y `web-validations` para la nota, y las filas dinámicas con errores por fila son justo lo que `useFieldArray` resuelve.
+
+### D5. Filas de fees: tres orígenes, sin reglas propias
+- **`file`** (de `batchFees`): tipo y título del archivo, importe editable, descripción con el título, **Remove**. Con `amount = null`, el importe queda vacío y es obligatorio. `currency` se muestra como referencia; el importe que se escribe es USD.
+- **`file` con `feeTypeId = null`** (hueco 2, decidido en la revisión): la fila se pinta marcada (borde ámbar) con su `warning` y `Unknown fee type in the file: choose a free-amount type or remove the fee.`, y un `select` con los tipos de importe libre. Elegido uno, deja de estar marcada y se envía con ese `feeTypeId` y `source = file`. Mientras quede alguna sin tipo, no se pide la vista previa y **Process** está deshabilitado con `Choose a type for the fees of unknown type, or remove them.`. El mantenimiento de tipos nuevos es #60. *Descartado*: enviarla con el texto del archivo como descripción y dejar que el API decida, porque `BatchFeeInput.feeTypeId` es obligatorio y cada vista previa respondería `400`.
+- **`preset`** (**Add preset fee**): `select` con los `AccountFee` de `getAccountFees(accountId, { transactional: false, asOf: settlementDate })`, cada opción con título, `fixedAmount` o `percentage` y vigencia (`formatBusinessDate`, `Always` para `null`). Sin **Settlement date**, el botón está deshabilitado con `Choose the settlement date first.` y la consulta no se activa. Si la fecha cambia, la lista se vuelve a pedir; una fila ya añadida que deje de estar en vigencia la marca el `400 fee_not_in_force` de la vista previa. Con `fixedAmount`, el importe llega con ese texto; sin él (P9), vacío y con `Percentage-only fee (rate <percentage>): enter the amount.`.
+- **`free`** (**Add free-amount fee**): `select` con los `FeeTypeView` de `getFeeTypes()` que tienen `!isTransactional && allowsFreeAmount`. Filtrar por esos dos indicadores es presentación de lo que el API declara, como `editable`/`includable` en `web-validations`.
+- Una fila con errores de formulario no se envía en la vista previa (D6) y deshabilita **Process** con `Fix the highlighted fields.`.
+- **Descripción obligatoria en importe libre** (decidido en la revisión): HU3 CA2 dice "importe libre con su categoría y descripción", y en un ajuste la descripción es lo único que dice por qué existe. #11 la exige también en el API (`400 batch_fee_invalid` con `reason = description_required`). El formulario la valida igual para no esperar al `400`, y si el API la rechaza, el error se pinta en la descripción de su fila (D6). *Descartado*: validarla solo en el cliente, porque otro cliente (la colección Bruno, un script) podría crear un ajuste sin texto que nadie puede auditar después.
+- *Alternativa descartada 1* para el preestablecido solo con porcentaje: calcular `percentage × base` en el navegador. Prohibido (dinero en el cliente, y la base es del servidor), y el gate de #11 (P9) decidió que lo escribe el analista.
+- *Alternativa descartada 2*: no validar nada en el cliente y dejar que el `400 batch_fee_invalid` marque las filas. Cada tecla dispararía un `400`, y el API solo devuelve el primer fallo (`index`), así que el analista corregiría las filas de una en una.
+
+### D6. Vista previa con debounce, como consulta
+- `useDebouncedValue(watch(), 400 ms)` (hook propio de pocas líneas, sin dependencia). Si los valores del momento pasan el esquema (con **Settlement date** elegida y ninguna fila de tipo desconocido), `request = toRequest(values, runId)` y `useQuery({ queryKey: settlementPreviewKey(importId, request), queryFn: ({ signal }) => previewSettlement(importId, request, signal), placeholderData: keepPreviousData, retry: false })`. Con valores no válidos no hay petición. Antes de la primera, el panel dice `Choose the settlement date to see the pre-summary.`.
+- Al ser una consulta con el cuerpo en la clave: dos cambios dentro de 400 ms producen una sola petición; una petición superada se cancela por `signal` y su respuesta nunca se pinta, porque se pinta la de la clave actual; volver a un valor ya visto reutiliza la respuesta en caché.
+- **Al día o no**: `isCurrent = previewQuery.isSuccess && !previewQuery.isPlaceholderData && deepEqual(previewKeyOf(currentValues), lastRequest)`. Si no está al día, el panel muestra la última vista previa con `Updating the pre-summary…` y opacidad reducida, y **Process** está deshabilitado con `Waiting for the pre-summary.`. Esta comprobación, junto con la guarda de D10, es la guarda síncrona de la vista previa.
+- Errores de la vista previa:
+  - `400 batch_fee_invalid` → `setError('fees.<index>.amount' | 'fees.<index>.feeTypeId' | 'fees.<index>.description', texto de su reason)`, con `description_required` en la descripción. Se borra cuando esa fila cambia;
+  - `409 import_not_validated` → mensaje y relectura de `importKey` (`exact`); la página pasa al estado del import (D13);
+  - `409 validation_run_superseded`, `validation_run_required`, `blocking_validation_issue` → mensaje con enlace al paso Analysis y **Process** deshabilitado;
+  - otro error o red → `The pre-summary could not be loaded.` con **Retry** (`refetch`).
+- *Alternativa descartada 1*: un botón **Refresh pre-summary** manual. El contrato pide la vista previa "en cada cambio del formulario (con debounce)", y un resumen que el analista olvida refrescar es justo lo que hace procesar algo distinto de lo visto.
+- *Alternativa descartada 2*: una mutación por cambio. Habría que descartar a mano las respuestas fuera de orden y cancelar las superadas, que TanStack Query ya hace con la clave.
+- *Alternativa descartada 3*: 250 ms o 1 s de debounce. Con 250 ms se piden vistas previas a mitad de un importe (`30` antes de `30.5`); con 1 s el panel tarda en reaccionar. 400 ms (aprobado en la revisión) es el valor habitual para entrada de texto y queda en una constante (`PREVIEW_DEBOUNCE_MS`).
+
+### D7. Panel del resumen previo y lo que se pinta de cada cifra
+- Contenido, en este orden (alineado con el prototipo): movimientos `E · I · R`; tabla de las cinco categorías (`Deposits`, `Declined`, `Chargebacks`, `Refunds`, `RDR`) con `qty`, `amount` y `feeAmount` tal cual; las nueve líneas de `payableBreakdown`; **Amount payable**; `Not processed: …` con los motivos de `skipped` distintos de cero; las advertencias; el aviso de canales (D9).
+- **Signo en su columna**: cada línea del desglose se pinta como `<signo> <etiqueta> <importe>`, con el signo de `sign` (`+` o `−`) en una columna propia y el importe con `formatDecimal(amount)`, sin anteponerle nada. Así una línea `batch_fees` con `sign = '-'` y `amount = "-42.5000"` se lee `− Batch fees -42.5000`, que es exactamente la operación que hace el servidor. *Descartado*: componer `-${amount}`, que con un importe negativo daría `--42.5000` y obligaría a "corregir" el texto, que es aritmética de signos en el cliente.
+- **Etiquetas por `code`** en `strings.ts` (las nueve, con el mismo texto que el `label` del contrato), y el `label` del API como respaldo para un código que la pantalla no conozca. *Descartado*: pintar siempre el `label` del API, porque `web-shell` exige que cada texto visible salga del módulo de textos de la pantalla. Un test del falso comprueba que las etiquetas de las fixtures coinciden con las de `strings.ts`, para detectar que el API las cambia.
+- Advertencias por `code` con sus datos (`transactionId`, `feeId`); una desconocida se pinta con su `code` crudo.
+- Nada de lo pintado se suma, se resta ni se reordena en el cliente. Un test con una vista previa guionizada cuyo `amountPayable` no cuadra con sus líneas comprueba que se pinta el del API.
+
+### D8. Número de batch
+- `getNextBatchNumber(accountId, importId)` da el valor inicial y el texto `Proposed: N · attempt M`, con `(the previous attempt of this import was undone)` si `reason = 'reprocess'`. El intento que se pinta junto a **Process** es el `attemptNo` de la vista previa al día, que corresponde al número escrito.
+- `batchNoAvailable = false` en la vista previa al día → error en el campo con `Batch N already has an active attempt for this account.` (D6) y motivo de **Process** `Choose a batch number that is not in use.`. Es lo que el API dice del número, no una comprobación del cliente.
+- `409 batch_no_taken` al procesar → mismo texto en el campo con `details.batchNo`, sin salir de la pantalla, e invalidación de la vista previa actual (`invalidateQueries(settlementPreviewKey(importId, request))`), que vuelve a pedirse y ya dirá `batchNoAvailable = false`.
+- *Alternativa descartada*: pedir de nuevo `batch-number/next` y sobrescribir el campo tras el `409`. Cambiaría en silencio el número que el analista escribió; el analista decide el siguiente.
+
+### D9. Canales a asociar desde la vista previa
+- El aviso sale de `channelsToAssign` y `requiresChannelConfirmation` de la vista previa al día: `RAM-07 · not assigned yet` o `RAM-03 · primary account: ProviderA-EUR`. La casilla (`checkbox` de shadcn, Radix) **Assign these channels to this account as primary** se guarda en `confirmChannels`.
+- La casilla se desmarca sola cuando cambia el conjunto de `channelId` a asociar entre dos vistas previas: lo confirmado era otra lista.
+- `409 channel_assignment_not_confirmed` → se desmarca, se muestran los canales de `details.channels` hasta la siguiente vista previa y se invalida la vista previa.
+- *Alternativa descartada*: el aviso desde `ImportDetail.channels` (el del paso Analysis). Cuenta las filas del archivo, incluidas las que no se procesan (excluidas, ignoradas), y no dice si el procesamiento exige confirmación. La vista previa calcula los canales de los movimientos que se procesan, que es lo que el `409` comprueba.
+
+### D10. Process
+- `useProcessSettlement(importId)`: mutación con guarda síncrona (`useRef`) además de `isPending`, como `useRunValidations`. Envía `lastRequest`, el mismo objeto de la vista previa al día, con `confirmChannelAssignment` si procede; nunca recompone el cuerpo desde el formulario en el momento del clic.
+- Habilitado si y solo si: **Settlement date** elegida, ninguna fila de tipo desconocido, vista previa al día (D6), sin errores de formulario ni de la vista previa, `batchNoAvailable`, casilla marcada si `requiresChannelConfirmation`, y nada en curso. Cada condición que falla aporta su motivo a un párrafo visible enlazado por `aria-describedby` (varios a la vez si hace falta). La etiqueta es `Process batch <batchNo>` con el número de la vista previa al día.
+- Mientras el `POST` está en curso: campos y botones deshabilitados (`fieldset disabled`), región `aria-live="polite"` con `Processing the batch…`. #11 mide menos de 3 s para `batch-clean`.
+- Errores: `409 batch_no_taken` (D8), `409 channel_assignment_not_confirmed` (D9), `400 batch_fee_invalid` (D6), `409 import_not_validated` (relee el import), `409 validation_run_superseded` / `blocking_validation_issue` (enlace a Analysis), red → `The batch could not be processed. Try again.` sin suponer nada.
+- **Sin optimismo**: nada se pinta como procesado hasta el `201`.
+- *Alternativa descartada*: un diálogo de confirmación antes de procesar. La pantalla entera es la confirmación (número, fees, resumen previo y canales a la vista), y un diálogo en cada procesamiento enseña a confirmar sin leer (mismo argumento que `web-validations` D4). Las acciones que el prototipo marca como irreversibles con motivo son Cancel, Undo y Unpay.
+
+### D11. Settlement Summary
+- Datos: `useQuery(settlementQuery(batchId))`, sembrada por D3 tras procesar. `404` → `Settlement not found` con enlace a Dashboard, usando `PageMessage` como el resto de páginas.
+- Secciones, en el orden del prototipo:
+  - cabecera: `Settlement Summary · batch N`, cuenta, intento, `Badge` de estado (`settledStatus`: `Processed · pending payment` / `Paid` / `Undone`), `Processed by <user> on <processedAt ET>`, `settlementDate` y rangos APP/DEC/I/R (`formatBusinessDate*`);
+  - aviso `Movements are not Settled yet: that happens when the batch is marked as paid.` cuando `settledStatus = 'pending_payment'`;
+  - **Totals by type** (cinco categorías y `R · Reserve released` con `reservesReleasedQty`) y **Totals by brand**;
+  - **Fees**: transaccionales (`transactionalFeeAmt`, `mdrAmt` y `mdrRate`) y cada fee por batch con origen y `entered by <user>`;
+  - **Reserve and payable**: las nueve líneas del desglose (D7) y **Amount payable**;
+  - **Channels assigned**, **Issues** (`validationSummary`, con enlace al paso Analysis del import), `Not processed` y advertencias;
+  - **Exports** (D12);
+  - pie: **Back to Dashboard** y, con `settlement.process`, **New reconciliation**. *Descartado*: **Open Settlement Detail** del prototipo, que es del tramo 6 y hoy acabaría en `NotFoundPage`.
+- El panel del desglose y las tablas de totales son los mismos componentes que el resumen previo (D7), alimentados por `SettlementFigures`, que comparten `SettlementPreview` y `SettlementView`.
+
+### D12. Descargas: constante hasta #12 y `fetch` autenticado
+- `features/settlements/exports.ts` exporta `SETTLEMENT_EXPORTS_AVAILABLE = false`. Con `false`, los tres botones se pintan deshabilitados con `Downloads are not available yet.` enlazado por `aria-describedby`, y un test fija que no hay ningún `<a>` de descarga. El rebase la pasa a `true` solo si #12 está fusionado. Es el mismo patrón que `SETTLEMENT_REVIEW` (`web-validations` D9).
+- Con `true`: `downloadSettlementExport(url)` hace `fetch` autenticado de la URL de `exports.*`, lee el `Blob`, toma el nombre de `Content-Disposition` (comentado en #12, con su exposición en CORS) y, si no llega o el navegador no puede leerla (hueco 4), usa `<accountName>_B<batchNo>_A<attemptNo>_<type>` con la extensión según `Content-Type`. Descarga con un `<a download>` temporal y `URL.revokeObjectURL`. Guarda síncrona por botón. Un error se muestra junto al botón. Descargar no invalida ninguna consulta (no cambia estado).
+- Visibles solo con `reports.view` (presentación; el API responde `403`).
+- *Alternativa descartada 1*: `<a href={exports.summary}>`. Sin `Authorization` el API responde `401`, y poner el token en la URL lo dejaría en el historial y en los registros del servidor.
+- *Alternativa descartada 2*: ocultar las descargas hasta #12. HU3 CA6 y el criterio 3 del issue piden que estén "disponibles", y sin nada el analista no sabe que existirán.
+
+### D13. Permisos, estado del import y enlaces desde Analysis
+- Review: la guarda de ruta cubre `viewer` (D1). Con permiso, la página lee `importQuery` y `validationRunQuery` y decide por estado:
+  - `validated` con `run.review` → formulario;
+  - `analyzed` o `uploaded`/`mapped` → `This import is not validated. Review its validations before processing.` con enlace al paso Analysis;
+  - `processed` → `This import is already processed.` con **View settlement summary** (`currentBatchId`);
+  - `cancelled` → `This import is cancelled.`.
+
+  Las consultas de número, fees, tipos y vista previa solo se activan (`enabled`) con el import `validated`.
+- `next-step.ts`: `SETTLEMENT_REVIEW` pasa de constante a función de ruta tipada, `settlementReviewRoute(importId) → { to: '/imports/$importId/settlement-review', params: { importId } }`. La constante desaparece, y su único lector (`DecisionBar`) pasa a usar la función.
+- `DecisionBar`: con `validated`, el enlace **Settlement Review** solo con `canProcess`, y `viewer` ve solo `Reviewed by …`. Con `processed` y `currentBatchId`, el texto de solo lectura lleva **View settlement summary** a `/settlements/$currentBatchId`.
+- Summary: sin `requires`. Lo que se ve lo decide el alcance del API (`404` idéntico), como el import.
+- *Alternativa descartada* para `viewer` en Analysis: seguir mostrando el enlace y dejar que la guarda responda. Ofrecería un camino que acaba siempre en `You don't have access to this page`.
+- *Alternativa descartada* para el enlace del import procesado: esperar a la lista de Settlements (Entrega 3). Hasta entonces, tras cerrar la pestaña del Summary no habría forma de volver a él desde la aplicación.
+
+### D14. Fechas
+Las de `web-validations` D11 sin cambios: `formatBusinessDate` para `settlementDate` y vigencias, `formatBusinessDateTime` para los rangos y `formatAuditDateTime` para `processedAt`. El `input type="date"` de **Settlement date** llega vacío (sin valor por defecto, ni hoy ni el final de los rangos: lo elige el analista), da `YYYY-MM-DD` y se envía tal cual: ni `Date`, ni `toISOString()`, que desplazarían el día según la zona del navegador.
+
+### D15. Tests de componentes con MSW y falso guionizado
+- **El falso** (`test/msw/settlements.ts`) **no calcula cifras ni decide reglas**:
+  - **Fijado en fixtures**: la vista previa base de `batch-clean` (las cifras ilustrativas del ejemplo de "Contrato para #13", coherentes entre sí), una variante de ProviderB-Main (`Monthly Fee` preestablecido y advertencia `chargeback_reserve_policy_not_applied`), las listas de `AccountFee` y `FeeTypeView` del seed y el `SettlementView` base. La vista previa devuelve la fixture del escenario con solo dos campos copiados del request: `batchNo` y `batchFees` como `BatchFeeView` (copia campo a campo, con `title` y `code` buscados en la lista de tipos). `otherFeeAmt`, `amountPayable` y el desglose son los de la fixture, digan lo que digan los fees enviados.
+  - **Guion por escenario**: `scriptPreview(importId, [respuesta | error, …])` y `respondNextSettlement(route, error)` para el `400 batch_fee_invalid` (incluido `description_required`: el falso no lo deduce de la descripción enviada), el `409 channel_assignment_not_confirmed` o una vista previa que no cuadra (D7).
+  - **Lo que modela** (estado entre peticiones, no reglas): los números con intento vigente por cuenta (sembrados y creados), de donde salen `batchNoAvailable` y el `409 batch_no_taken`; el estado del import `validated → processed` y `currentBatchId` en `importRecord(id)` de `imports.ts`, de donde sale `409 import_not_validated`; el `runId` vigente de `validations.ts`, de donde sale `409 validation_run_superseded`; el almacén de intentos creados para `GET /settlements/:id`, con `approvedBy` = quien llama y un `processedAt` `AuditInstant`; `requiresChannelConfirmation` de la fixture contra `confirmChannelAssignment` del cuerpo; `viewer` → `403` en vista previa y procesar; fuera de alcance → `404`.
+  - Registro de peticiones (`settlementRequests(route)`), `holdNextSettlement(route)` y `failNextSettlement(route)`, como los demás falsos.
+  - Test propio `test/msw/settlements.test.ts` de solo lo que modela.
+  - *Descartado*: un falso que sume los fees enviados en `otherFeeAmt` y recalcule el payable. Sería una segunda implementación del cálculo en el frontend, y los tests acabarían probando el falso. Con fixtures, cada test dice qué devuelve el API y comprueba cómo lo pinta la pantalla y qué envía.
+- **Escenarios**: cada escenario de la spec es un test con `renderApp('/imports/<id>/settlement-review', { as })` sobre `seedImport(sample, { status: 'validated' })` + `seedValidationRun(…, { reviewedBy })`, o `renderApp('/settlements/<batchId>')` sobre un intento sembrado. La Definición de hecho del issue pide expresamente los del formulario de fees y los del número de batch.
+- **Debounce en los tests**: temporizadores falsos de Vitest con `shouldAdvanceTime` y `user-event` con `advanceTimers`, para contar peticiones sin esperar 400 ms reales en cada test.
+- **Rotura deliberada** una vez por pieza crítica: quitar la guarda síncrona de Process (llegan dos `POST`); habilitar Process sin `isCurrent` (falla "Escritura seguida"); componer el cuerpo de Process desde el formulario en vez de `lastRequest` (falla el test que cambia un importe con la vista previa retenida); convertir el importe con `Number()` (falla "Importe con muchos dígitos"); mostrar `formatDecimal` del total sumado en el cliente (falla "Una cifra que no cuadra con la suma").
+- `OPENING` (5 s) solo para la primera espera tras `renderApp`, porque la pantalla encadena me → import → corrida → número → vista previa.
+
+### D16. Rebase, API real y capturas (último grupo, espera al merge de #11)
+1. Rebase de `feat/web-settlement` sobre `feature/entrega-2-MVP` con #11 fusionado (y #12 si ya lo está). `docs/openapi.yaml` y `schema.gen.ts` llegan regenerados; si no, `pnpm --filter @recon/frontend api:generate`.
+2. `contract.ts` → alias de los tipos generados y llamadas con `api` (D2); `lib/api/types.ts` ya admite `201` tras `web-validations`. Las rutas de #12 que no estén siguen copiadas, con su comentario.
+3. El falso, tipado con los tipos generados y contrastado con `safeParse` de los esquemas de `@recon/shared/settlement` y `fees` (test en rojo primero).
+4. `SETTLEMENT_EXPORTS_AVAILABLE = true` solo si #12 está fusionado y sus descargas responden. Si no, se queda en `false` y se anota en el PR.
+5. Prueba manual contra el API real con `batch-clean`, como `analyst` (número 123, prellenados, preestablecido solo con porcentaje, importe libre, casilla de `RAM-07`, número ocupado con otro import, procesar, Summary, recarga si #12 está) y como `viewer` (Review sin acceso, Summary en solo lectura). Se contrastan las cifras del falso con las reales y se ajustan las fixtures si la forma difiere. Se comprueba que `batchFees` llega en el orden del request (hueco 3, contrato de #11), el `400 description_required` (hueco 5) y, si #12 está, `Content-Disposition` (hueco 4).
+6. Smoke E2E existente en verde. No se amplía (suite E2E de settlement: Entrega 3).
+7. **Capturas**: `e2e/screenshots/web-settlement.ts` y `pnpm screenshots:web-settlement`, con las protecciones de `web-validations` D13: `analyst` del seed con `SEED_PASSWORD` por `process.loadEnvFile`, que nunca se lee ni se imprime; contraseña vaciada tras el login; sin trace ni vídeo; ninguna captura de la pantalla de login ni antes de que la pantalla esté cargada; `headless: false` y aviso a la persona antes de lanzarlo. Recorre `batch-clean` por la pantalla hasta procesar. Como no hay deshacer, el import queda procesado: el script lo dice en consola y la persona vuelve a sembrar con `! pnpm db:seed`. PNG en `docs/wireframes/web-settlement/`: `settlement-review.png` (formulario con resumen previo y aviso de canales), `settlement-review-batch-taken.png` (número en uso en el campo), `settlement-review-1024.png` y `settlement-summary.png`, con la comprobación en consola del desplazamiento horizontal a 1280 y 1024 px.
+
+### D17. Textos, teclado y anchura
+- `features/settlements/strings.ts` con todos los textos de las dos pantallas. Los de la spec van literales; los errores, por `code`; las etiquetas del desglose y de las categorías, por `code` (D7).
+- Teclado: campos y `select` nativos o Radix, **Add preset fee** / **Add free-amount fee** como `select` que añaden la fila al elegir, **Remove** como botón con nombre accesible `Remove <título>`, casilla Radix con Espacio, foco al nuevo importe tras añadir una fila y de vuelta al botón de añadir tras quitarla.
+- Importes alineados a la derecha con `font-variant-numeric: tabular-nums`; IDs de transacción de las advertencias en monoespaciada y como texto.
+- A 1280 px, formulario y resumen previo en dos columnas (como el prototipo). A 1024 px, una columna con el resumen debajo. En ninguna de las dos la página se desplaza en horizontal: las tablas se desplazan dentro de su tarjeta.
+
+## Risks / Trade-offs
+
+- [El contrato de #11 cambia antes del merge] → Solo se tocan `contract.ts` y el falso (D2). El último grupo lo detecta con `typecheck` y con `safeParse` de las fixtures.
+- [Las fixtures del falso tienen cifras ilustrativas, no las del oráculo corregido en el grupo 0 de #11] → Los tests comprueban que se pinta lo que llega y lo que se envía, no cifras concretas del negocio. Las cifras reales se ven en la prueba contra el API y en las capturas (D16).
+- [`GET /settlements/{id}` y las descargas dependen de #12] → Caché sembrada tras procesar (D3) y descargas deshabilitadas con motivo (D12). Si #12 no llega al 23, la recarga del Summary contra el API real responde `404` y la pantalla lo dice.
+- [Una vista previa por cambio carga el servidor] → Debounce de 400 ms, caché por cuerpo y cancelación de las superadas (D6). #11 calcula en memoria sin escribir (`batch-clean` < 1 s).
+- [Process se deshabilita mientras la vista previa no está al día, y una red lenta lo retrasa] → Es el precio de procesar lo visto. El motivo `Waiting for the pre-summary.` lo explica y **Retry** cubre el fallo.
+- [El contrato de #11 aún no trae `description_required` ni el orden de `batchFees` escrito] → Decidido en la revisión que #11 los añade. El falso los guioniza (D15) y el rebase los comprueba contra el API real (D16). Si no llegan, se anota en el PR.
+- [Cambiar **Settlement date** con un preestablecido ya añadido puede dejarlo fuera de vigencia] → La lista se vuelve a pedir con el nuevo `asOf` y el `400 fee_not_in_force` marca la fila (D5, D6).
+- [El script de capturas deja `batch-clean` procesado sin deshacer] → Lo avisa en consola, y la persona vuelve a sembrar (D16), como la colección Bruno de #11.
+- [Sin E2E de settlement hasta la Entrega 3] → Tests de componentes por escenario, prueba manual contra el API real y capturas en el PR.
+
+## Migration Plan
+
+Sin migraciones ni cambios de API. Despliegue: el de la SPA. Rollback: revertir el PR. Orden: los grupos 1–7 se fusionan solo después del grupo 8, porque el PR no se abre contra `feature/entrega-2-MVP` hasta que #11 esté fusionado y el rebase hecho.
+
+## Open Questions
+
+- Textos finales de botones y mensajes que la spec no fija: se ajustan en la revisión visual sin cambiar specs.
