@@ -698,3 +698,71 @@ describe('a failure halfway', () => {
     expect(await ctx.prisma.auditLog.count()).toBe(before)
   })
 })
+
+// SQL Server chooses one transaction as the deadlock victim (1205): through the mssql adapter it arrives as a
+// PrismaClientKnownRequestError (P2010 from raw SQL, P2034 from the client) whose driver adapter cause has
+// kind TransactionWriteConflict, the kind the adapter gives only to 1205. The shape observed in a real deadlock.
+const deadlockVictim = () =>
+  new Prisma.PrismaClientKnownRequestError(
+    'Transaction failed due to a write conflict or a deadlock. Please retry your transaction',
+    {
+      code: 'P2034',
+      clientVersion: Prisma.prismaVersion.client,
+      meta: {
+        driverAdapterError: {
+          name: 'DriverAdapterError',
+          cause: {
+            originalCode: 'EREQUEST',
+            originalMessage:
+              'Transaction (Process ID 70) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction.',
+            kind: 'TransactionWriteConflict',
+          },
+        },
+      },
+    },
+  )
+
+describe('a deadlock victim', () => {
+  const victimAt = (failures: number) => {
+    let left = failures
+    return async (phase: string) => {
+      if (phase === 'totals' && left > 0) {
+        left -= 1
+        throw deadlockVictim()
+      }
+    }
+  }
+
+  it('is retried: the second attempt of the transaction processes the batch', async () => {
+    const id = await sourceIdOf(Prisma.sql`t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 2`)
+    const detail = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [
+      { name: 'victim-once.xlsx', bytes: xlsx('APP', [id]) },
+    ])
+    const runId = await flow.validateAndReview(detail.importId)
+
+    const { batchId } = await process(detail.importId, { runId }, [], { beforePhase: victimAt(1) })
+
+    expect(await view(batchId)).toMatchObject({ status: 'processed', movements: { E: 1, I: 0, R: 0 } })
+    expect(await ctx.prisma.settlementBatch.count({ where: { importId: detail.importId } })).toBe(1)
+  })
+
+  it('three in a row answer 409 settlement_busy and leave nothing', async () => {
+    const id = await sourceIdOf(Prisma.sql`t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 2`)
+    const detail = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [
+      { name: 'victim-thrice.xlsx', bytes: xlsx('APP', [id]) },
+    ])
+    const runId = await flow.validateAndReview(detail.importId)
+    const before = await ctx.prisma.auditLog.count()
+
+    await expect(process(detail.importId, { runId }, [], { beforePhase: victimAt(3) })).rejects.toMatchObject({
+      status: 409,
+      code: 'settlement_busy',
+      message: 'Another settlement is being processed for this provider; retry',
+    })
+    expect(await ctx.prisma.settlementBatch.count({ where: { importId: detail.importId } })).toBe(0)
+    expect((await ctx.prisma.import.findUniqueOrThrow({ where: { importId: detail.importId } })).status).toBe(
+      'validated',
+    )
+    expect(await ctx.prisma.auditLog.count()).toBe(before)
+  })
+})
