@@ -40,3 +40,13 @@ export class BatchFeeInvalidError extends DomainError {
     super(`Batch fee ${index} is not valid: ${reason}`, { index, reason })
   }
 }
+
+/** SQL Server chose the processing as a deadlock victim three times in a row (design D7): a retry later succeeds. */
+export class SettlementBusyError extends DomainError {
+  readonly status = 409
+  readonly code = 'settlement_busy'
+
+  constructor() {
+    super('Another settlement is being processed for this provider; retry')
+  }
+}

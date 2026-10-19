@@ -12,6 +12,7 @@ import {
   BlockingValidationIssueError,
   ChannelAssignmentNotConfirmedError,
   ImportNotValidatedError,
+  SettlementBusyError,
   ValidationRunRequiredError,
   ValidationRunSupersededError,
 } from '../application/errors.js'
@@ -47,7 +48,7 @@ export type WritePhase =
 
 export interface SettlementRepositoryOptions {
   missing: MissingResolution
-  log?: Pick<FastifyBaseLogger, 'info'>
+  log?: Pick<FastifyBaseLogger, 'info' | 'warn'>
   /**
    * Awaited inside the transaction right before the guard on Import, without holding any lock: tests pause a process
    * there so another request commits in between (design D20).
@@ -77,6 +78,9 @@ const PROCESS_TX_TIMEOUT_MS = 60_000
 const PROCESS_TX_MAX_WAIT_MS = 10_000
 /** Rows per bulk statement of movements. */
 const ROWS_PER_STATEMENT = 5_000
+/** Attempts of the transaction when SQL Server chooses it as a deadlock victim, and the base of the random pause. */
+const MAX_ATTEMPTS = 3
+const RETRY_PAUSE_MS = 50
 
 const iso = (date: Date | null) => (date === null ? null : date.toISOString())
 const businessDate = (day: string | undefined) => (day === undefined ? null : new Date(`${day}T00:00:00.000Z`))
@@ -85,6 +89,18 @@ const businessDate = (day: string | undefined) => (day === undefined ? null : ne
 function violates(error: unknown, index: string): boolean {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== UNIQUE_VIOLATION) return false
   return `${error.message} ${JSON.stringify(error.meta ?? {})}`.includes(index)
+}
+
+/**
+ * SQL Server's deadlock victim (1205) as the mssql adapter reports it: P2010 from raw SQL or P2034 from the client,
+ * with the driver adapter cause of kind TransactionWriteConflict, the kind the adapter gives to 1205 and nothing else.
+ */
+function isDeadlockVictim(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false
+  if (error.code !== 'P2010' && error.code !== 'P2034') return false
+  const cause = (error.meta as { driverAdapterError?: { cause?: { kind?: string } } } | undefined)?.driverAdapterError
+    ?.cause
+  return cause?.kind === 'TransactionWriteConflict'
 }
 
 function chunks<T>(items: readonly T[], size = ROWS_PER_STATEMENT): T[][] {
@@ -99,7 +115,27 @@ export class PrismaSettlementRepository implements SettlementRepository {
     private readonly options: SettlementRepositoryOptions,
   ) {}
 
+  /**
+   * The transaction, retried whole when SQL Server chooses it as a deadlock victim (1205, design D7): up to three
+   * attempts with a short random pause in between; then 409 settlement_busy. Nothing of a failed attempt stays.
+   */
   async process(command: ProcessCommand): Promise<ProcessResult> {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await this.processOnce(command)
+      } catch (error) {
+        if (!isDeadlockVictim(error)) throw error
+        if (attempt === MAX_ATTEMPTS) throw new SettlementBusyError()
+        this.options.log?.warn(
+          { importId: command.importId, attempt, maxAttempts: MAX_ATTEMPTS },
+          'settlement chosen as deadlock victim, retrying',
+        )
+        await new Promise((resolve) => setTimeout(resolve, RETRY_PAUSE_MS + Math.random() * RETRY_PAUSE_MS))
+      }
+    }
+  }
+
+  private async processOnce(command: ProcessCommand): Promise<ProcessResult> {
     const { importId, request } = command
     const batchId = randomUUID()
     // The number this process locked, for the 409 of a violation raised by the writes (set inside the transaction).

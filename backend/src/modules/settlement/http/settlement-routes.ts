@@ -32,7 +32,8 @@ export const settlementRoutes: FastifyPluginAsyncZod<SettlementRoutesOptions> = 
         summary: 'Process the validated import as a batch attempt (processed, pending payment)',
         description:
           'runId is the reviewed validation run. 409 import_not_validated, validation_run_required, ' +
-          'validation_run_superseded, blocking_validation_issue, batch_no_taken, channel_assignment_not_confirmed; ' +
+          'validation_run_superseded, blocking_validation_issue, batch_no_taken, channel_assignment_not_confirmed, ' +
+          'settlement_busy (chosen three times as a deadlock victim; retry); ' +
           '400 batch_fee_invalid. No movement is Settled until the batch is paid.',
         params: ImportParams,
         body: SettlementRequest,
