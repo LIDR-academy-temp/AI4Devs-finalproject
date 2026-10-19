@@ -241,3 +241,95 @@ describe('a run of 20 000 missing findings and 300 duplicates', () => {
     expect((phases.plainIssuesMs ?? 0) + (phases.occurrenceIssuesMs ?? 0)).toBeLessThan(WRITE_BUDGET_MS)
   })
 })
+
+describe('the bulk statements are chunked (review M2): 7 rows per statement', () => {
+  const ROWS = 7
+  const statements: { kind: string; rows: number }[] = []
+  let runId: number
+
+  beforeAll(async () => {
+    const { importId } = await flow.analyzedSample('batch-blocked')
+    const sheet = await ctx.prisma.importSheet.findFirstOrThrow({
+      where: { file: { importId } },
+      select: { sheetId: true, fileId: true },
+    })
+    const txIds = (await ctx.prisma.transaction.findMany({ select: { transactionId: true }, take: 50 })).map(
+      (t) => t.transactionId,
+    )
+    // 20 findings without occurrences (3 chunks) and 9 duplicates with 2 occurrences each: 2 MERGE chunks, 3 chunks
+    // of occurrences, and the rows of each duplicate fall on different chunks than its finding's ordinal.
+    const missing: Issue[] = Array.from({ length: 20 }, (_, n) => ({
+      issueType: 'missing',
+      scope: 'in_range',
+      blocking: false,
+      transactionIdRaw: `cm-${n}`,
+      transactionId: txIds[n] as bigint,
+      cycle: 'E',
+      statusId: 2,
+      missingType: 'in_range',
+      missingRange: 'APP',
+      relevantDate: new Date(Date.UTC(2026, 9, 1, 0, n)),
+      occurrences: [],
+    }))
+    const row = (rowNo: number, defaultIncluded: boolean): Occurrence => ({
+      sourceType: 'current_import',
+      fileId: sheet.fileId,
+      sheetId: sheet.sheetId,
+      rowNo,
+      statusId: 2,
+      excludeAmount: false,
+      defaultIncluded,
+    })
+    const duplicates: Issue[] = Array.from({ length: 9 }, (_, n) => ({
+      issueType: 'duplicate',
+      scope: 'in_batch',
+      blocking: false,
+      transactionIdRaw: `cd-${n}`,
+      transactionId: txIds[20 + n] as bigint,
+      cycle: 'E',
+      statusId: 2,
+      occurrences: [row(1_000 + 10 * n, true), row(1_001 + 10 * n, false)],
+    }))
+    const report: ValidationReport = {
+      results: ValidationCode.options.map((code) => {
+        const issues = code === 'missing_in_range' ? missing : code === 'duplicate_in_batch' ? duplicates : []
+        return { code, outcome: issues.length > 0 ? 'warning' : 'passed', issueCount: issues.length, issues }
+      }),
+      blocked: false,
+      ranges: { APP: null, DEC: null, I: null, R: null },
+      pendingInRangeCount: 0,
+      undatedAdjustmentCount: 0,
+      undatedCandidateCount: 0,
+    }
+    const imported = await ctx.prisma.import.findUniqueOrThrow({ where: { importId } })
+    const repo = new PrismaValidationRunRepository(ctx.prisma, {
+      rowsPerStatement: ROWS,
+      onBulkStatement: (kind, rows) => statements.push({ kind, rows }),
+    })
+
+    runId = (await repo.saveRun(importId, imported.updatedAt, flow.userIds.analyst, report, new Date())).runId
+  })
+
+  it('splits each bulk insert into statements of at most 7 rows', () => {
+    const sizes = (kind: string) => statements.filter((s) => s.kind === kind).map((s) => s.rows)
+    expect(sizes('issues')).toEqual([7, 7, 6])
+    expect(sizes('merge')).toEqual([7, 2])
+    expect(sizes('occurrences')).toEqual([7, 7, 4])
+  })
+
+  it('stores every finding and puts each occurrence on its own finding across chunks', async () => {
+    expect(await ctx.prisma.validationIssue.count({ where: { result: { runId } } })).toBe(29)
+    const duplicates = await ctx.prisma.validationIssue.findMany({
+      where: { result: { runId }, issueType: 'duplicate' },
+      select: { transactionIdRaw: true, occurrences: { select: { rowNo: true, defaultIncluded: true } } },
+    })
+    expect(duplicates).toHaveLength(9)
+    for (const d of duplicates) {
+      const n = Number(d.transactionIdRaw?.slice(3))
+      expect(d.occurrences.map((o) => [o.rowNo, o.defaultIncluded]).sort(), d.transactionIdRaw ?? '').toEqual([
+        [1_000 + 10 * n, true],
+        [1_001 + 10 * n, false],
+      ])
+    }
+  })
+})
