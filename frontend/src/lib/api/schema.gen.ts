@@ -5040,7 +5040,7 @@ export interface paths {
         put?: never;
         /**
          * What processing would do, without writing anything
-         * @description Same body and errors as processing; a number with an active attempt is batchNoAvailable: false.
+         * @description Same body as processing; answers 200 with a SettlementPreview. 409 import_not_validated, validation_run_required, validation_run_superseded, blocking_validation_issue; 400 batch_fee_invalid. batch_no_taken and channel_assignment_not_confirmed are not errors here: a number with an active attempt is batchNoAvailable: false, and channels to assign are requiresChannelConfirmation: true with channelsToAssign.
          */
         post: {
             parameters: {
