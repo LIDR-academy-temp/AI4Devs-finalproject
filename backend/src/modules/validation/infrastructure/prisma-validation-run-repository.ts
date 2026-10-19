@@ -1,6 +1,8 @@
 // Prisma adapter of ValidationRunRepository (validation-runs design D4–D8, D16). Every write starts with a guarded
 // UPDATE of the Import row, which holds its exclusive lock until commit: the writes of the flow serialize, and one
 // computed on a version that changed meanwhile persists nothing (ImportChangedError).
+
+import { performance } from 'node:perf_hooks'
 import {
   Cycle,
   type ImportStatus,
@@ -40,6 +42,7 @@ import type {
   StoredOccurrence,
   StoredRun,
   ValidationRunRepository,
+  WritePhases,
 } from '../application/ports.js'
 import { reserveRuleBlocks } from '../application/reserve-rule.js'
 import {
@@ -314,12 +317,29 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
     try {
       return await this.prisma.$transaction(
         async (tx) => {
+          const phases: WritePhases = {
+            claimMs: 0,
+            supersedeMs: 0,
+            runMs: 0,
+            resultsMs: 0,
+            plainIssuesMs: 0,
+            occurrenceIssuesMs: 0,
+            auditMs: 0,
+          }
+          let mark = performance.now()
+          const lap = (phase: keyof WritePhases) => {
+            const at = performance.now()
+            phases[phase] += Math.round(at - mark)
+            mark = at
+          }
           const previousStatus = await this.claimForRun(tx, importId, expectedUpdatedAt, now)
+          lap('claimMs')
           const previous = await tx.validationRun.findFirst({
             where: { importId, isSuperseded: false },
             select: { runId: true },
           })
           await tx.validationRun.updateMany({ where: { importId, isSuperseded: false }, data: { isSuperseded: true } })
+          lap('supersedeMs')
           const { runId } = await tx.validationRun.create({
             data: {
               importId,
@@ -339,14 +359,16 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
             },
             select: { runId: true },
           })
-          await this.writeResults(tx, runId, report)
+          lap('runMs')
+          await this.writeResults(tx, runId, report, lap)
           if (previousStatus === 'validated' && previous) {
             await this.recordInvalidation(tx, importId, previous.runId, userId, now, {
               reason: 'rerun',
               newRunId: runId,
             })
           }
-          return { runId, previousStatus }
+          lap('auditMs')
+          return { runId, previousStatus, phases }
         },
         { timeout: RUN_TX_TIMEOUT_MS, maxWait: RUN_TX_MAX_WAIT_MS },
       )
@@ -378,7 +400,12 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
   }
 
   /** Eight results in order, then the findings: one-row ones in batches, those with occurrences one by one (D5). */
-  private async writeResults(tx: Tx, runId: number, report: ValidationReport): Promise<void> {
+  private async writeResults(
+    tx: Tx,
+    runId: number,
+    report: ValidationReport,
+    lap: (phase: keyof WritePhases) => void,
+  ): Promise<void> {
     await tx.validationResult.createMany({
       data: report.results.map((r) => ({
         runId,
@@ -393,6 +420,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
         (r) => [r.validationCode, r.resultId],
       ),
     )
+    lap('resultsMs')
     const plain: Prisma.ValidationIssueCreateManyInput[] = []
     const withOccurrences: { resultId: number; issue: Issue }[] = []
     for (const result of report.results) {
@@ -404,6 +432,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
     }
     for (let offset = 0; offset < plain.length; offset += ISSUES_PER_STATEMENT)
       await tx.validationIssue.createMany({ data: plain.slice(offset, offset + ISSUES_PER_STATEMENT) })
+    lap('plainIssuesMs')
 
     // The file of a historical occurrence comes from the sheet its movement was settled from.
     const historicalSheets = [
@@ -457,6 +486,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
         select: { issueId: true },
       })
     }
+    lap('occurrenceIssuesMs')
   }
 
   /** AuditLog `import.review.invalidate` with the reviewer of the last review of that run copied (D16). */

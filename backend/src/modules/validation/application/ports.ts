@@ -106,6 +106,24 @@ export interface StoredRun {
   manualChangeCount: number
 }
 
+/** Milliseconds of each phase of the write of a run, for the log (bench of design D14). */
+export interface WritePhases {
+  /** Guarded UPDATE of the Import row. */
+  claimMs: number
+  /** Previous current run marked superseded. */
+  supersedeMs: number
+  /** The ValidationRun row. */
+  runMs: number
+  /** The eight ValidationResult rows. */
+  resultsMs: number
+  /** Findings without occurrences (missing, provider_mismatch, non_recorded_adjustment, status_mismatch). */
+  plainIssuesMs: number
+  /** Findings with occurrences (duplicate, collision) and their ConflictOccurrence rows. */
+  occurrenceIssuesMs: number
+  /** Invalidation of the review, when there was one. */
+  auditMs: number
+}
+
 /** The review history of an import, from AuditLog, oldest first. */
 export type ReviewEvent =
   | { kind: 'review'; runId: number; by: UserRef; at: Date }
@@ -138,7 +156,7 @@ export interface ValidationRunRepository {
     userId: number,
     report: ValidationReport,
     now: Date,
-  ): Promise<{ runId: number; previousStatus: ImportStatus }>
+  ): Promise<{ runId: number; previousStatus: ImportStatus; phases?: WritePhases }>
   currentRun(importId: string): Promise<StoredRun | null>
   reviewEvents(importId: string): Promise<ReviewEvent[]>
   /** Findings of the current run, filtered and paged in the fixed order of issue-order.ts (D8); empty without a run. */

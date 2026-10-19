@@ -50,7 +50,7 @@ export class ValidationService {
     const loaded = performance.now()
     const report = runValidations(input)
     const computed = performance.now()
-    const { runId } = await this.deps.runs.saveRun(importId, ref.updatedAt, userId, report, this.now())
+    const { runId, phases } = await this.deps.runs.saveRun(importId, ref.updatedAt, userId, report, this.now())
     const written = performance.now()
     this.deps.log.info(
       {
@@ -59,6 +59,8 @@ export class ValidationService {
         loadMs: Math.round(loaded - started),
         engineMs: Math.round(computed - loaded),
         writeMs: Math.round(written - computed),
+        issueCount: report.results.reduce((n, r) => n + r.issueCount, 0),
+        ...(phases ? { writePhases: phases } : {}),
       },
       'validation run stored',
     )
