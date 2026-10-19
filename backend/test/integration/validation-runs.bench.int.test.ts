@@ -2,9 +2,10 @@ import { randomUUID } from 'node:crypto'
 import { performance } from 'node:perf_hooks'
 import { ValidationRunView } from '@recon/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { Prisma } from '../../src/generated/prisma/client.js'
 import { benchInput } from '../../src/modules/validation/test-support/bench-input.js'
 import { createTestApp } from './helpers.js'
-import { ImportFlow, removeImportsFrom } from './import-flow.js'
+import { ImportFlow } from './import-flow.js'
 
 // Spec "Rendimiento de extremo a extremo" (validation-runs design D14): POST validations of a 2 000-row import against
 // 50 000 previous movements, loading from SQL Server included, under 4 s (2 s locally, noted in the PR). Only with
@@ -20,26 +21,80 @@ const ACCOUNT_NAME = 'ZZ-Bench'
 const ROWS_PER_STATEMENT = 10_000
 const SOURCE_BASE = 100_000_000_000_000n
 
+type Db = Awaited<ReturnType<typeof createTestApp>>['prisma']
+
+/**
+ * Removes the bench world, idempotent, in FK order: what hangs from the bench imports (occurrences, findings, results,
+ * runs, audit, rows, sheets, files), then the movements, the attempts, the imports and the transactions, and last the
+ * catalog rows. Set-based joins, not `IN` lists: a run of the extreme case has ~23 000 findings.
+ */
+async function removeBenchWorld(prisma: Db): Promise<void> {
+  const benchImports = Prisma.sql`SELECT [importId] FROM [Import] WHERE [accountId] = ${ACCOUNT_ID}`
+  const benchRuns = Prisma.sql`SELECT [runId] FROM [ValidationRun] WHERE [importId] IN (${benchImports})`
+  const benchIssues = Prisma.sql`SELECT i.[issueId] FROM [ValidationIssue] i
+    JOIN [ValidationResult] r ON r.[resultId] = i.[resultId] WHERE r.[runId] IN (${benchRuns})`
+  const benchSheets = Prisma.sql`SELECT s.[sheetId] FROM [ImportSheet] s
+    JOIN [ImportFile] f ON f.[fileId] = s.[fileId] WHERE f.[importId] IN (${benchImports})`
+  await prisma.$executeRaw`DELETE FROM [AuditLog] WHERE [entityType] = 'ConflictOccurrence' AND [entityId] IN (
+    SELECT CONVERT(VARCHAR(64), o.[occurrenceId]) FROM [ConflictOccurrence] o WHERE o.[issueId] IN (${benchIssues}))`
+  await prisma.$executeRaw`DELETE FROM [AuditLog] WHERE [entityType] = 'ValidationIssue' AND [entityId] IN (
+    SELECT CONVERT(VARCHAR(64), x.[issueId]) FROM (${benchIssues}) x)`
+  await prisma.$executeRaw`DELETE FROM [ConflictOccurrence] WHERE [issueId] IN (${benchIssues})`
+  await prisma.$executeRaw`DELETE FROM [ValidationIssue] WHERE [issueId] IN (${benchIssues})`
+  await prisma.$executeRaw`DELETE FROM [ValidationResult] WHERE [runId] IN (${benchRuns})`
+  await prisma.$executeRaw`DELETE FROM [ValidationRun] WHERE [runId] IN (${benchRuns})`
+  await prisma.$executeRaw`DELETE FROM [AuditLog] WHERE [entityType] = 'Import' AND [entityId] IN (
+    SELECT LOWER(CONVERT(VARCHAR(36), x.[importId])) FROM (${benchImports}) x)`
+  await prisma.$executeRaw`DELETE FROM [ImportRow] WHERE [sheetId] IN (${benchSheets})`
+  await prisma.$executeRaw`DELETE FROM [ImportSheetColumnMap] WHERE [sheetId] IN (${benchSheets})`
+  await prisma.$executeRaw`DELETE FROM [ImportSheet] WHERE [sheetId] IN (${benchSheets})`
+  await prisma.$executeRaw`DELETE FROM [ImportFile] WHERE [importId] IN (${benchImports})`
+  await prisma.$executeRaw`DELETE st FROM [SettlementTransaction] st
+    JOIN [SettlementBatch] b ON b.[batchId] = st.[batchId] WHERE b.[accountId] = ${ACCOUNT_ID}`
+  await prisma.$executeRaw`DELETE FROM [SettlementBatch] WHERE [accountId] = ${ACCOUNT_ID}`
+  await prisma.$executeRaw`DELETE FROM [Import] WHERE [accountId] = ${ACCOUNT_ID}`
+  await prisma.$executeRaw`DELETE FROM [Transaction] WHERE [providerId] = ${PROVIDER}`
+  await prisma.accountChannel.deleteMany({ where: { accountId: ACCOUNT_ID } })
+  await prisma.account.deleteMany({ where: { accountId: ACCOUNT_ID } })
+  await prisma.channel.deleteMany({ where: { providerId: PROVIDER } })
+  await prisma.provider.deleteMany({ where: { providerId: PROVIDER } })
+  await prisma.gateway.deleteMany({ where: { gatewayId: GATEWAY } })
+}
+
+/** Read-only: what is left of any 9xxx fixture world (the bench's and the other suites'). Every count must be 0. */
+async function leftovers9xxx(prisma: Db): Promise<Record<string, number>> {
+  const [row] = await prisma.$queryRaw<Record<string, number | bigint>[]>`
+    SELECT
+      (SELECT COUNT(*) FROM [Gateway] WHERE [gatewayId] BETWEEN 9000 AND 9999) AS gateways,
+      (SELECT COUNT(*) FROM [Provider] WHERE [providerId] BETWEEN 9000 AND 9999) AS providers,
+      (SELECT COUNT(*) FROM [Channel] WHERE [channelId] BETWEEN 9000 AND 9999 OR [providerId] BETWEEN 9000 AND 9999) AS channels,
+      (SELECT COUNT(*) FROM [Account] WHERE [providerId] BETWEEN 9000 AND 9999 OR [name] LIKE 'ZZ-%') AS accounts,
+      (SELECT COUNT(*) FROM [Transaction] WHERE [providerId] BETWEEN 9000 AND 9999 OR [channelId] BETWEEN 9000 AND 9999) AS transactions,
+      (SELECT COUNT(*) FROM [SettlementBatch] WHERE [batchNo] BETWEEN 9000 AND 9999 OR [accountId] = ${ACCOUNT_ID}) AS batches,
+      (SELECT COUNT(*) FROM [Import] WHERE [accountId] = ${ACCOUNT_ID}) AS benchImports`
+  return Object.fromEntries(Object.entries(row ?? {}).map(([k, v]) => [k, Number(v)]))
+}
+
+describe.skipIf(!BENCH)('bench world cleanup (RECON_BENCH=1)', () => {
+  it('removes the bench world and leaves nothing of the 9xxx fixtures', async () => {
+    const ctx = await createTestApp()
+    try {
+      await removeBenchWorld(ctx.prisma)
+      const left = await leftovers9xxx(ctx.prisma)
+      expect(left).toEqual(Object.fromEntries(Object.keys(left).map((k) => [k, 0])))
+    } finally {
+      await ctx.app.close()
+      await ctx.prisma.$disconnect()
+    }
+  }, 600_000)
+})
+
 describe.skipIf(!BENCH)('POST validations at the reference volume (RECON_BENCH=1)', () => {
   let ctx: Awaited<ReturnType<typeof createTestApp>>
   let flow: ImportFlow
   let importId: string
 
-  async function cleanup(): Promise<void> {
-    const { prisma } = ctx
-    const imports = (
-      await prisma.import.findMany({ where: { accountId: ACCOUNT_ID }, select: { importId: true } })
-    ).map((i) => i.importId)
-    await prisma.$executeRaw`DELETE st FROM [SettlementTransaction] st JOIN [SettlementBatch] b ON b.[batchId] = st.[batchId] WHERE b.[accountId] = ${ACCOUNT_ID}`
-    await prisma.settlementBatch.deleteMany({ where: { accountId: ACCOUNT_ID } })
-    await removeImportsFrom(prisma, imports)
-    await prisma.$executeRaw`DELETE FROM [Transaction] WHERE [providerId] = ${PROVIDER}`
-    await prisma.accountChannel.deleteMany({ where: { accountId: ACCOUNT_ID } })
-    await prisma.account.deleteMany({ where: { accountId: ACCOUNT_ID } })
-    await prisma.channel.deleteMany({ where: { providerId: PROVIDER } })
-    await prisma.provider.deleteMany({ where: { providerId: PROVIDER } })
-    await prisma.gateway.deleteMany({ where: { gatewayId: GATEWAY } })
-  }
+  const cleanup = () => removeBenchWorld(ctx.prisma)
 
   /** One INSERT … SELECT FROM OPENJSON per chunk: a single parameter, whatever the number of rows. */
   async function insertChunks<T>(items: T[], insert: (json: string) => Promise<unknown>): Promise<void> {
