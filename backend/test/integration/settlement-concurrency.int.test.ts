@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -5,7 +6,10 @@ import type { SettlementRequest } from '@recon/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Prisma } from '../../src/generated/prisma/client.js'
 import { buildXlsx } from '../../src/modules/imports/infrastructure/xlsx/test-support.js'
-import { PrismaSettlementRepository } from '../../src/modules/settlement/infrastructure/prisma-settlement-repository.js'
+import {
+  PrismaSettlementRepository,
+  type WritePhase,
+} from '../../src/modules/settlement/infrastructure/prisma-settlement-repository.js'
 import { PrismaMissingResolution } from '../../src/modules/validation/infrastructure/prisma-missing-resolution.js'
 import { createTestApp } from './helpers.js'
 import { type AccountChannelRow, ImportFlow, restoreAccountChannels, snapshotAccountChannels } from './import-flow.js'
@@ -82,11 +86,12 @@ function gate() {
   }
 }
 
-const repository = (beforeClaim?: () => Promise<void>) =>
+const repository = (beforeClaim?: () => Promise<void>, beforePhase?: (phase: WritePhase) => Promise<void>) =>
   new PrismaSettlementRepository(ctx.prisma, {
     missing: new PrismaMissingResolution(),
     log: ctx.app.log,
     ...(beforeClaim ? { beforeClaim } : {}),
+    ...(beforePhase ? { beforePhase } : {}),
   })
 
 const process = (repo: PrismaSettlementRepository, importId: string, request: SettlementRequest) =>
@@ -127,6 +132,81 @@ describe('the same batchNo in two imports of the account', () => {
     })
     expect(await batchesOf(first.importId)).toBe(0)
     expect(await statusOf(first.importId)).toBe('validated')
+  })
+})
+
+// The last barrier (design D7): the range lock makes the race unreachable from two requests, so the violation the
+// database would raise is thrown from beforePhase('batch'), after the number was locked. SQL Server's own messages.
+const indexViolation = (index: string) => () =>
+  Promise.reject(
+    new Error(`Cannot insert duplicate key row in object 'dbo.SettlementBatch' with unique index '${index}'.`),
+  )
+const keyViolation = (constraint: string) => () =>
+  Promise.reject(new Error(`Violation of UNIQUE KEY constraint '${constraint}'. Cannot insert duplicate key.`))
+
+describe('a unique index violation as the last barrier', () => {
+  // An active attempt of another account (ProviderB-Main) with the number of the race: never the holder of the 409.
+  const foreignImportId = randomUUID()
+  const foreignBatchId = randomUUID()
+
+  beforeAll(async () => {
+    await ctx.prisma.import.create({
+      data: {
+        importId: foreignImportId,
+        accountId: flow.accountIds['ProviderB-Main']!,
+        createdByUserId: flow.userIds.analyst,
+        status: 'processed',
+      },
+    })
+    await ctx.prisma.settlementBatch.create({
+      data: {
+        batchId: foreignBatchId,
+        accountId: flow.accountIds['ProviderB-Main']!,
+        batchNo: 9816,
+        importId: foreignImportId,
+        status: 'processed',
+        approvedByUserId: flow.userIds.analyst,
+      },
+    })
+  })
+
+  afterAll(async () => {
+    await ctx.prisma.settlementBatch.deleteMany({ where: { batchId: foreignBatchId } })
+    await ctx.prisma.import.deleteMany({ where: { importId: foreignImportId } })
+  })
+
+  it('names the attempted number of its own account, not the attempt of another account', async () => {
+    const { importId, runId } = await validatedImport(5)
+    const repo = repository(undefined, indexViolation('UX_SettlementBatch_active_accountBatchNo'))
+
+    const error = await process(repo, importId, { runId, batchNo: 9816 }).catch((e: unknown) => e)
+
+    expect(error).toMatchObject({ code: 'batch_no_taken', details: { batchNo: 9816, attemptNo: 1 } })
+    expect((error as { details: { importId: string } }).details.importId).not.toBe(foreignImportId)
+    expect(await batchesOf(importId)).toBe(0)
+  })
+
+  it('without batchNo, the proposed number of the account, never 0', async () => {
+    const { importId, runId } = await validatedImport(6)
+    const accountId = flow.accountIds['ProviderA-USD']!
+    const { _max } = await ctx.prisma.settlementBatch.aggregate({ where: { accountId }, _max: { batchNo: true } })
+    const repo = repository(undefined, indexViolation('UX_SettlementBatch_active_accountBatchNo'))
+
+    await expect(process(repo, importId, { runId })).rejects.toMatchObject({
+      code: 'batch_no_taken',
+      details: { batchNo: (_max.batchNo ?? 0) + 1, attemptNo: 1 },
+    })
+  })
+
+  it('UNIQUE (accountId, batchNo, attemptNo) answers 409 batch_no_taken too, never a 500', async () => {
+    const { importId, runId } = await validatedImport(7)
+    const repo = repository(undefined, keyViolation('SettlementBatch_accountId_batchNo_attemptNo_key'))
+
+    await expect(process(repo, importId, { runId, batchNo: 9817 })).rejects.toMatchObject({
+      code: 'batch_no_taken',
+      details: { batchNo: 9817, attemptNo: 1 },
+    })
+    expect(await statusOf(importId)).toBe('validated')
   })
 })
 
