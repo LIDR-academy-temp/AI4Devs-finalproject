@@ -136,14 +136,17 @@ export function IssueDrawer({ issueId, onClose }: { issueId: number | undefined;
   return (
     <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
       <SheetContent
-        className="w-[min(42rem,100vw)] overflow-y-auto sm:max-w-2xl"
+        // Same variants as the sheet's own width classes, so these replace them instead of losing to them (D14).
+        className="overflow-y-auto data-[side=right]:w-[min(42rem,100vw)] data-[side=right]:sm:max-w-2xl"
         onCloseAutoFocus={(event) => {
           event.preventDefault()
           document.querySelector<HTMLElement>(`[data-issue-button="${lastOpened.current}"]`)?.focus()
         }}
       >
         <SheetHeader>
-          <SheetTitle>{issue ? s.title(strings.validations[issue.validationCode], idOf(issue)) : s.loading}</SheetTitle>
+          <SheetTitle className="pr-8 break-words">
+            {issue ? s.title(strings.validations[issue.validationCode], idOf(issue)) : s.loading}
+          </SheetTitle>
           <SheetDescription>{issue ? typeOf(issue) : ''}</SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-4 px-4 pb-4">
