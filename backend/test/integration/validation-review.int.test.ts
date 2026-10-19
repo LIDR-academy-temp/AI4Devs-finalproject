@@ -186,8 +186,22 @@ describe('review and run overlapping (D4)', () => {
   it('a run confirms while the review waits: the review reads the current run in its transaction and gets 409 validation_run_superseded', async () => {
     const { importId } = await flow.analyzedSample('batch-issues')
     const first = await run(importId)
+    // The review pauses inside its transaction right before its guard (beforeClaim) while a run commits. A review that
+    // read the current run before its guard would still hold the first run and approve it with the second current;
+    // the correct review reads after its guard and sees the second one.
     const g = gate()
-    const pending = pausedService('review', g)
+    const pausedReview = new ValidationService({
+      sources: new PrismaValidationSources(ctx.prisma),
+      runs: new PrismaValidationRunRepository(ctx.prisma, {
+        beforeClaim: async (operation) => {
+          if (operation !== 'review') return
+          g.arrive()
+          await g.released
+        },
+      }),
+      log: { info: () => {} },
+    })
+    const pending = pausedReview
       .review(ANALYST_SCOPE, flow.userIds.analyst, importId, first.run!.runId)
       .catch((e: unknown) => e)
     await g.arrived
