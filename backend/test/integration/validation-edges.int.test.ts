@@ -164,6 +164,117 @@ describe('a previous_batch occurrence whose movement has a sheet and a row (spec
   })
 })
 
+// ──────────── settlement-process D3: two historical movements of the same key in one batch ────────────
+
+describe('two historical movements of the same transaction and cycle in a batch (spec "Dos movimientos históricos de la misma clave en un batch")', () => {
+  const BATCH_NO = 9402
+  let accountId: string
+  let sourceId: string
+  let chbSheetId: string
+
+  async function removeFixture(): Promise<void> {
+    const { prisma } = ctx
+    const batches = await prisma.settlementBatch.findMany({
+      where: { batchNo: BATCH_NO },
+      select: { batchId: true, importId: true },
+    })
+    const batchIds = batches.map((b) => b.batchId)
+    const dependent = await prisma.import.findMany({
+      where: {
+        runs: {
+          some: { results: { some: { issues: { some: { occurrences: { some: { batchId: { in: batchIds } } } } } } } },
+        },
+      },
+      select: { importId: true },
+    })
+    await flow.removeImports(dependent.map((i) => i.importId))
+    await prisma.settlementTransaction.deleteMany({ where: { batchId: { in: batchIds } } })
+    await prisma.settlementBatch.deleteMany({ where: { batchId: { in: batchIds } } })
+    await flow.removeImports(batches.map((b) => b.importId))
+  }
+
+  beforeAll(async () => {
+    await removeFixture()
+    const { prisma } = ctx
+    accountId = flow.accountIds['ProviderB-Main'] as string
+    // A chargeback of a primary channel never settled in I: its only I history is the fixture batch.
+    const [found] = await prisma.$queryRaw<{ sourceTransactionId: string; transactionId: bigint }[]>`
+      SELECT TOP 1 t.[sourceTransactionId], t.[transactionId] FROM [Transaction] t
+      WHERE t.[providerId] = 102 AND t.[channelId] = 1011 AND t.[statusId] = 4
+        AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st
+                        WHERE st.[transactionId] = t.[transactionId] AND st.[cycle] = 'I')
+      ORDER BY t.[transactionId]`
+    sourceId = found!.sourceTransactionId
+    // The previous import has the chargeback twice in CHB (rows 2 and 3); batch 9402 settled both, the second as CHB 2.
+    const previous = await flow.analyzed(accountId, [
+      { name: 'previous-9402.xlsx', bytes: xlsx('CHB', [sourceId, sourceId]) },
+    ])
+    const sheet = await prisma.importSheet.findFirstOrThrow({
+      where: { file: { importId: previous.importId }, sheetName: 'CHB' },
+      select: { sheetId: true },
+    })
+    chbSheetId = sheet.sheetId
+    await prisma.import.update({ where: { importId: previous.importId }, data: { status: 'processed' } })
+    const batchId = randomUUID()
+    await prisma.settlementBatch.create({
+      data: {
+        batchId,
+        accountId,
+        batchNo: BATCH_NO,
+        importId: previous.importId,
+        status: 'processed',
+        approvedByUserId: flow.userIds.analyst,
+      },
+    })
+    for (const [rowNo, excludeAmount] of [
+      [2, false],
+      [3, true],
+    ] as const) {
+      await prisma.settlementTransaction.create({
+        data: {
+          batchId,
+          transactionId: found!.transactionId,
+          cycle: 'I',
+          statusId: 4,
+          settlementStatusId: 0,
+          sheetId: chbSheetId,
+          rowNo,
+          amount: '10.0000',
+          excludeAmount,
+          eventDate: new Date('2026-10-01T00:00:00.000Z'),
+          appliedReservePct: '0.100000',
+          reserveDaysUsed: 180,
+        },
+      })
+    }
+  })
+
+  afterAll(async () => {
+    await removeFixture()
+  })
+
+  it('shows each historical occurrence with its own row and excludeAmount', async () => {
+    const current = await flow.analyzed(accountId, [{ name: 'current-9402.xlsx', bytes: xlsx('REF', [sourceId]) }])
+    await run(current.importId)
+    const page = ValidationIssuesPage.parse(
+      (
+        await flow.call('GET', `/imports/${current.importId}/validation-issues?type=collision&scope=across_batches`)
+      ).json(),
+    )
+    const issue = page.items.find((i) => i.transactionIdRaw === sourceId)!
+
+    const res = await flow.call('GET', `/validation-issues/${issue.issueId}`)
+    expect(res.statusCode).toBe(200)
+    const historical = ValidationIssueDetail.parse(res.json())
+      .occurrences.filter((o) => o.sourceType === 'previous_batch')
+      .map((o) => ({ rowNo: o.location?.rowNo, excludeAmount: o.excludeAmount }))
+    expect(historical).toEqual([
+      { rowNo: 2, excludeAmount: false },
+      { rowNo: 3, excludeAmount: true },
+    ])
+  })
+})
+
 // ───────────────────────── W5: informative counters end to end ─────────────────────────
 
 describe('the informative counters from the engine to GET validations (spec "Contadores informativos")', () => {
