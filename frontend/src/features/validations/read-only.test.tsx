@@ -94,16 +94,15 @@ describe('Analysis & Validations: read only (spec "solo lectura")', () => {
     expect(screen.queryByRole('region', { name: 'Decision' })).not.toBeInTheDocument()
   })
 
-  it('viewer on a validated import sees who reviewed and Settlement Review, without Run nor Continue', async () => {
+  it('viewer on a validated import sees who reviewed, without Settlement Review, Run nor Continue', async () => {
     const { importId } = seedImport('batch-issues', { status: 'validated' })
     seedValidationRun(importId, withoutControls(batchIssuesFixture()), { reviewedBy: 'analyst' })
     await openAnalysis(importId, 'viewer')
 
     const decision = within(screen.getByRole('region', { name: 'Decision' }))
     expect(decision.getByText(/^Reviewed by analyst · /)).toBeInTheDocument()
-    expect(decision.getByRole('button', { name: 'Settlement Review' })).toHaveAccessibleDescription(
-      'Settlement Review is not available yet.',
-    )
+    expect(decision.queryByRole('link', { name: 'Settlement Review' })).not.toBeInTheDocument()
+    expect(decision.queryByRole('button', { name: 'Settlement Review' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Run again' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Continue to settlement review' })).not.toBeInTheDocument()
   })
