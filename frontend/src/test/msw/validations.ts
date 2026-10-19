@@ -577,6 +577,9 @@ function createRun(record: FakeImport, fixture: RunFixture, runBy: UserName, see
 
 const currentRun = (importId: string) => state.runs.find((r) => r.importId === importId && r.isCurrent) ?? null
 
+/** The id of the current run of an import, or null; the fake settlement API checks the runId of a body against it. */
+export const currentRunId = (importId: string) => currentRun(importId)?.runId ?? null
+
 /** Occurrences changed from their default and findings resolved by hand, as #9 counts them. */
 function manualChangeCount(run: StoredRun): number {
   const issues = run.issues.map((i) => i.detail)

@@ -6,7 +6,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 1. Contrato aislado y API falso de settlement (D2, D15)
 
-- [ ] 1.1 Test (rojo) `test/msw/settlements.test.ts` sobre el falso, sin pantallas, **solo de lo que el falso modela** (D15):
+- [x] 1.1 Test (rojo) `test/msw/settlements.test.ts` sobre el falso, sin pantallas, **solo de lo que el falso modela** (D15):
   - con el import de `batch-clean` `validated` y su corrida revisada, como `analyst`: `GET batch-number/next?importId=` → `{ batchNo: 123, attemptNo: 1, reason: 'next' }`; `GET /accounts/<ProviderA-USD>/fees?transactional=false&asOf=2026-10-24` → `Chargeback over 1%` con `fixedAmount = null` y la petición registrada con su `asOf`; `GET /fee-types` → los tipos del seed con `allowsFreeAmount`;
   - `POST settlements/preview` → la fixture base con `batchNo` y `batchFees` copiados del cuerpo, y `otherFeeAmt`, `amountPayable` y `payableBreakdown` **iguales a los de la fixture** aunque los fees enviados cambien;
   - un número sembrado como vigente → `batchNoAvailable = false` en la vista previa y `409 batch_no_taken` con `details` al procesar;
@@ -17,15 +17,15 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   - `viewer` → `403` en vista previa y procesar; un import de `ProviderC-Alt` → `404`;
   - las etiquetas de `payableBreakdown` de las fixtures coinciden con las de `features/settlements/strings.ts` (D7);
   - `holdNextSettlement` y `failNextSettlement` retienen o fallan una petición a voluntad
-- [ ] 1.2 Implementar `features/settlements/contract.ts`:
+- [x] 1.2 Implementar `features/settlements/contract.ts`:
   - tipos copiados de "Contrato para #13", con dinero y tasas como `string`, cada fecha como `BusinessDate` o `AuditInstant` (D2) y un comentario por campo;
   - `details` de los seis errores;
   - las siete llamadas con `createAuthFetch(session)` y `apiOrigin()`, lanzando `ApiError`, marcando las fechas al recibir y aceptando `signal` en la vista previa;
   - cabecera que lo marca como temporal hasta #11/#12.
 
   Implementar `test/msw/settlements.ts`: fixtures (vista previa y vista base de `batch-clean`, variante de ProviderB-Main, `AccountFee` y `FeeTypeView` del seed), almacén de intentos y de números vigentes por cuenta, guion por escenario, transiciones escritas en `importRecord(id)`, registro de peticiones. Registrarlo en `handlers.ts` y reiniciarlo con `resetDb`. Verificar 1.1 en verde y los tests existentes en verde (`pnpm --filter @recon/frontend test`). Romper a propósito la copia de `batchNo` del cuerpo y ver fallar 1.1; restaurar
-- [ ] 1.3 Comprobar con `rg` que `test/msw/settlements.ts` no suma ni multiplica importes ni lee `amount` de los fees enviados para componer cifras, y que ninguna ruta `/settlements`, `/batch-number`, `/fee-types` ni `/accounts/:id/fees` aparece fuera de `contract.ts` y del falso; anotarlo en el PR
-- [ ] 1.4 Commit: `test(frontend): API falso de settlement guionizado sobre el contrato de #11 y #12` y `feat(frontend): contrato de settlement aislado y API falso para los tests`
+- [x] 1.3 Comprobar con `rg` que `test/msw/settlements.ts` no suma ni multiplica importes ni lee `amount` de los fees enviados para componer cifras, y que ninguna ruta `/settlements`, `/batch-number`, `/fee-types` ni `/accounts/:id/fees` aparece fuera de `contract.ts` y del falso; anotarlo en el PR
+- [x] 1.4 Commit: `test(frontend): API falso de settlement guionizado sobre el contrato de #11 y #12` y `feat(frontend): contrato de settlement aislado y API falso para los tests`
 
 ## 2. Formulario de Settlement Review como funciones puras (D4)
 

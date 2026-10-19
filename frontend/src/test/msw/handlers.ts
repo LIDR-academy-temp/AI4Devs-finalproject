@@ -16,6 +16,7 @@ import {
   type UserName,
 } from './fixtures'
 import { createImportHandlers, resetImports } from './imports'
+import { createSettlementHandlers, resetSettlements } from './settlements'
 import { createValidationHandlers, resetValidations } from './validations'
 
 const API = '*/api/v1'
@@ -40,6 +41,7 @@ export function resetDb() {
   db = freshDb()
   resetImports()
   resetValidations()
+  resetSettlements()
 }
 
 /** Issues a token pair for a user, as a successful login would. */
@@ -186,4 +188,5 @@ export const handlers = [
 
   ...createImportHandlers(caller),
   ...createValidationHandlers(caller),
+  ...createSettlementHandlers(caller),
 ]
