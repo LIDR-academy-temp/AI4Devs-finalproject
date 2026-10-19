@@ -276,7 +276,7 @@ export function batchIssuesFixture(): RunFixture {
         // The real run: the file reports it Declined and the gateway has it Successful.
         status: status('Declined'),
         gatewayStatus: status('Successful'),
-        source: { sheetName: 'DEC', rowNo: 9 },
+        source: { sheetName: 'DEC', rowNo: 102 },
         resolvable: true,
         occurrences: [],
       }),
@@ -372,7 +372,7 @@ export function batchBlockedFixture(): RunFixture {
         transactionId: '252570479111759',
         cycle: 'E',
         status: status('Successful'),
-        source: { sheetName: 'APP', rowNo: 5 },
+        source: { sheetName: 'APP', rowNo: 22 },
         occurrences: [],
       }),
       ...BLOCKED_MISSING_APP.map((id, i) =>
