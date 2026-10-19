@@ -79,7 +79,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 ## 6. Canales a asociar y Process (D9, D10)
 
 - [x] 6.1 Añadir el componente shadcn `checkbox` (formateado con Biome y versionado), comprobar que no entra ninguna dependencia fuera de `radix-ui` y verificar `pnpm lint` y `pnpm --filter @recon/frontend build`
-- [ ] 6.2 Test (rojo) `features/settlements/process.test.tsx` con "canales a asociar" y "procesar":
+- [x] 6.2 Test (rojo) `features/settlements/process.test.tsx` con "canales a asociar" y "procesar":
   - `RAM-07 · not assigned yet`, casilla sin marcar y Process deshabilitado con `Confirm the channel assignment.`; marcada → habilitado;
   - la casilla se desmarca si cambia la lista de canales entre dos vistas previas;
   - `409 channel_assignment_not_confirmed` con `RAM-03` → lista, casilla desmarcada y nueva vista previa;
@@ -89,8 +89,8 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   - `POST` retenido → campos y botones deshabilitados y `Processing the batch…`;
   - `409 import_not_validated` → mensaje, relectura del import y estado de no validado; red → mensaje y Process de nuevo disponible;
   - cada motivo de deshabilitado enlazado por `aria-describedby`
-- [ ] 6.3 Implementar `features/settlements/{ChannelsToAssign.tsx,ProcessBar.tsx,mutations.ts}` (`useProcessSettlement` con guarda síncrona, envío de `lastRequest`, escrituras de caché de D3, `navigate` con `replace`); verificar 6.2 en verde; romper a propósito la guarda síncrona y ver llegar dos `POST`; romper el envío componiendo el cuerpo desde el formulario y ver fallar el caso de la vista previa retenida; restaurar
-- [ ] 6.4 Commit: `chore(frontend): componente checkbox de shadcn`, `test(frontend): canales a asociar y Process sin doble envío` y `feat(frontend): confirmación de canales y procesar el batch desde Settlement Review`
+- [x] 6.3 Implementar `features/settlements/{ChannelsToAssign.tsx,ProcessBar.tsx,mutations.ts}` (`useProcessSettlement` con guarda síncrona, envío de `lastRequest`, escrituras de caché de D3, `navigate` con `replace`); verificar 6.2 en verde; romper a propósito la guarda síncrona y ver llegar dos `POST`; romper el envío componiendo el cuerpo desde el formulario y ver fallar el caso de la vista previa retenida; restaurar
+- [x] 6.4 Commit: `chore(frontend): componente checkbox de shadcn`, `test(frontend): canales a asociar y Process sin doble envío` y `feat(frontend): confirmación de canales y procesar el batch desde Settlement Review`
 
 ## 7. Settlement Summary y descargas (D11, D12)
 

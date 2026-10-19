@@ -42,6 +42,13 @@ Element.prototype.scrollIntoView ??= () => {}
 // jsdom does not implement scrolling; the router's scroll restoration calls it on every navigation.
 window.scrollTo = () => {}
 
+// Radix Checkbox measures its hidden input with ResizeObserver; jsdom implements none.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
 // Any request without a handler fails the test: the screens may only call the endpoints they are meant to.
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => {

@@ -9,7 +9,8 @@ import { ApiError } from '@/lib/api/client'
 import type { ImportDetail } from '@/lib/api/types'
 import { BatchFees } from './BatchFees'
 import { BatchSection } from './BatchSection'
-import type { ErrorDetails, NextBatchNumber } from './contract'
+import { ChannelsToAssign } from './ChannelsToAssign'
+import type { ChannelToAssign, ErrorDetails, NextBatchNumber } from './contract'
 import type { RowApiError } from './FeeRow'
 import { useProcessSettlement } from './mutations'
 import { PreSummary } from './PreSummary'
@@ -117,6 +118,21 @@ function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: numb
 
   const asOf = values.settlementDate && !issues.settlementDate ? values.settlementDate : null
 
+  // Channels to assign (design D9): those of a 409 until the next preview arrives, then those of the preview. What
+  // was confirmed was a list: when the list changes, the box is unchecked again.
+  const [channelsOverride, setChannelsOverride] = useState<ChannelToAssign[] | null>(null)
+  useEffect(() => {
+    if (preview) setChannelsOverride(null)
+  }, [preview])
+  const channelSet = preview?.channelsToAssign.map((c) => c.channelId).join(',') ?? ''
+  useEffect(() => {
+    void channelSet
+    form.setValue('confirmChannels', false)
+  }, [channelSet, form])
+  const confirmationRequired = channelsOverride !== null || Boolean(preview?.requiresChannelConfirmation)
+  const channelsToAssign = channelsOverride ?? (preview?.requiresChannelConfirmation ? preview.channelsToAssign : [])
+  const unconfirmed = confirmationRequired && !values.confirmChannels
+
   const r = strings.process.reasons
   const reasons: string[] = []
   if (!values.settlementDate) reasons.push(r.chooseDate)
@@ -127,6 +143,7 @@ function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: numb
     if (error) reasons.push(r.previewFailed)
     else if (!isCurrent) reasons.push(r.waiting)
     else if (preview && !preview.batchNoAvailable) reasons.push(r.batchTaken)
+    else if (unconfirmed) reasons.push(r.confirmChannels)
   }
 
   const hint = valid ? null : !values.settlementDate ? strings.preSummary.chooseDate : strings.preSummary.fixFields
@@ -150,14 +167,26 @@ function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: numb
           hint={hint}
           error={error}
           onRetry={retry}
-        />
+        >
+          {channelsToAssign.length > 0 && <ChannelsToAssign channels={channelsToAssign} />}
+        </PreSummary>
       </form>
       <ProcessBar
         batchNo={isCurrent && preview ? preview.batchNo : batchNo}
         reasons={reasons}
         processing={processor.processing}
         error={processor.error}
-        onProcess={() => lastRequest && void processor.process(lastRequest, { onFeeInvalid: recordFeeError })}
+        onProcess={() =>
+          lastRequest &&
+          void processor.process(lastRequest, {
+            confirmChannels: confirmationRequired && values.confirmChannels,
+            onFeeInvalid: recordFeeError,
+            onChannels: (channels) => {
+              setChannelsOverride(channels)
+              form.setValue('confirmChannels', false)
+            },
+          })
+        }
       />
     </FormProvider>
   )

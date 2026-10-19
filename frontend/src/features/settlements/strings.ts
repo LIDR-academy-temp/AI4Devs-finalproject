@@ -50,6 +50,14 @@ export const strings = {
       })[reason] ?? `This fee is not valid (${reason}).`,
   },
 
+  channels: {
+    label: 'Channels to assign',
+    intro: 'Processing assigns these channels to this account as their primary account:',
+    unassigned: (name: string) => `${name} · not assigned yet`,
+    otherAccount: (name: string, account: string) => `${name} · primary account: ${account}`,
+    confirm: 'Assign these channels to this account as primary',
+  },
+
   preSummary: {
     label: 'Pre-summary',
     title: 'Pre-summary · what will be processed',
@@ -101,6 +109,7 @@ export const strings = {
       unknownTypes: 'Choose a type for the fees of unknown type, or remove them.',
       waiting: 'Waiting for the pre-summary.',
       batchTaken: 'Choose a batch number that is not in use.',
+      confirmChannels: 'Confirm the channel assignment.',
       previewFailed: 'The pre-summary is not available.',
     },
   },

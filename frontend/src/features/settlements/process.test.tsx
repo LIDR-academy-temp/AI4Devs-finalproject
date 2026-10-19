@@ -79,9 +79,11 @@ describe('Settlement Review: channels to assign (spec "canales a asociar")', () 
   })
 
   it('409 channel_assignment_not_confirmed: the channels of the answer, the box unchecked and a new preview', async () => {
-    const { user } = await readyToProcess()
+    const { user, importId } = await readyToProcess()
     await user.click(confirmBox())
     const previews = settlementRequests('preview').length
+    // What the API would answer next: the preview now lists the channel too.
+    scriptPreview(importId, [{ ...batchCleanPreview(), channelsToAssign: [RAM_03] }])
     respondNextSettlement('process', {
       status: 409,
       code: 'channel_assignment_not_confirmed',
