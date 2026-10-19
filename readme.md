@@ -1614,7 +1614,7 @@ Permiso `settlement.process`. Requiere un import en `validated` cuya revisión s
               batchFeeInvalid:
                 value: { code: batch_fee_invalid, message: "Batch fee 1 is not valid: free_amount_not_allowed", details: { index: 1, reason: free_amount_not_allowed } }
       '409':
-        description: El import no está validado, no hay corrida vigente, la corrida no es la revisada, hay hallazgos bloqueantes, ya existe un intento vigente para ese número, o faltan confirmaciones
+        description: El import no está validado, no hay corrida vigente, la corrida no es la revisada, hay hallazgos bloqueantes, ya existe un intento vigente para ese número, faltan confirmaciones, o el procesado fue víctima de un interbloqueo tres veces seguidas (reintentar)
         content:
           application/json:
             examples:
@@ -1630,6 +1630,8 @@ Permiso `settlement.process`. Requiere un import en `validated` cuya revisión s
                 value: { code: batch_no_taken, message: "Batch 123 already has an active attempt for this account", details: { batchNo: 123, attemptNo: 1, importId: "0a1b2c3d-…" } }
               channelsNotConfirmed:
                 value: { code: channel_assignment_not_confirmed, message: "The import includes channels not assigned to this account; confirm the assignment", details: { channels: [{ channelId: 1007, name: "RAM-07", assignment: unassigned, otherAccount: null }] } }
+              settlementBusy:
+                value: { code: settlement_busy, message: "Another settlement is being processed for this provider; retry" }
 ```
 
 El ejemplo es de `batch-clean` (cifras de `data/samples/batch-clean/expected.json`), con los fees transaccionales calculados, como siempre en el API, y los dos fees de `Other Fees` prellenados. `mdrAmt` es la parte MDR incluida en el fee de los depósitos. La suma con signo de `payableBreakdown` es `amountPayable`.
@@ -1697,7 +1699,7 @@ Lista consolidada de lo que el MVP necesita; los tres documentados arriba están
 | Validaciones | `PATCH /validation-issues/{id}` | `settlement.process` | Acción opcional: `{ resolutionStatus: "resolved", note }` resuelve a mano un `non_recorded_adjustment` o un `status_mismatch` de la corrida vigente, con nota, en cualquier estado del import. `409 issue_already_resolved` / `validation_run_superseded`, `422 issue_not_resolvable` |
 | Validaciones | `PATCH /conflict-occurrences/{id}` | `settlement.process` | Acción opcional: `{ includeInSettlement }` en una aparición `current_import` de la corrida vigente, en `analyzed` o `validated` (vuelve a `analyzed`), auditado; regla de R de 3.3. `409 import_not_editable` / `validation_run_superseded` / `occurrence_not_editable` / `occurrence_not_includable` |
 | Validaciones | `POST /imports/{id}/review` | `settlement.process` | Decisión de conjunto "continuar" con cuerpo `{ runId }`: el import pasa a `validated` si es la corrida vigente y no hay bloqueantes, auditado. `409 import_not_analyzed` / `validation_run_required` / `validation_run_superseded` / `blocking_validation_issue` |
-| Settlement | **`POST /imports/{id}/settlements`** ✅ | `settlement.process` | Procesar (4.3). `409 import_not_validated` / `validation_run_required` / `validation_run_superseded` / `blocking_validation_issue` / `batch_no_taken` / `channel_assignment_not_confirmed`, `400 batch_fee_invalid` |
+| Settlement | **`POST /imports/{id}/settlements`** ✅ | `settlement.process` | Procesar (4.3). `409 import_not_validated` / `validation_run_required` / `validation_run_superseded` / `blocking_validation_issue` / `batch_no_taken` / `channel_assignment_not_confirmed` / `settlement_busy`, `400 batch_fee_invalid` |
 | Settlement | `POST /imports/{id}/settlements/preview` | `settlement.process` | El mismo cálculo y cuerpo que procesar, sin escribir ni auditar; responde `200` con `SettlementPreview`: resumen previo de Settlement Review con `batchNoAvailable` y los canales a asociar (`requiresChannelConfirmation`, `channelsToAssign`) en lugar de `409 batch_no_taken` / `channel_assignment_not_confirmed`. `409 import_not_validated` / `validation_run_required` / `validation_run_superseded` / `blocking_validation_issue`, `400 batch_fee_invalid` |
 | Settlement | `GET /settlements/{id}` | — | Intento de batch con summary y estado de pago |
 | Settlement | `GET /settlements/{id}/transactions?type=E\|I\|R&page=` | — | Movimientos del intento con sus fees aplicados y reserva |
