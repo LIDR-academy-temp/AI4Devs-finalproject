@@ -90,7 +90,7 @@ function storeIssue(queryClient: QueryClient, detail: ValidationIssueDetail) {
  * The actions of the drawer on one finding (design D7): change an inclusion, resolve by hand. No optimistic update:
  * the screen shows what the server answers, and every 409 reads again what it may have made stale.
  */
-export function useIssueActions(issue: ValidationIssueDetail) {
+export function useIssueActions(issue: ValidationIssueDetail, onPending?: (pending: boolean) => void) {
   const queryClient = useQueryClient()
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -146,6 +146,7 @@ export function useIssueActions(issue: ValidationIssueDetail) {
     if (guard.current) return false
     guard.current = true
     setPending(true)
+    onPending?.(true)
     setMessage(null)
     try {
       storeIssue(queryClient, await call())
@@ -156,6 +157,7 @@ export function useIssueActions(issue: ValidationIssueDetail) {
     } finally {
       guard.current = false
       setPending(false)
+      onPending?.(false)
     }
   }
 
@@ -202,3 +204,5 @@ export function useReview(importId: string) {
 
   return { review, pending, error }
 }
+
+export type Review = ReturnType<typeof useReview>

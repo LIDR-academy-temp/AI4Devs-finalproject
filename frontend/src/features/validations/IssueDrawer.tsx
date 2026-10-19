@@ -62,8 +62,8 @@ function Resolution({ issue }: { issue: ValidationIssueDetail }) {
 }
 
 /** The loaded finding with its actions (design D7); the controls follow only the flags the API sends. */
-function Finding({ issue }: { issue: ValidationIssueDetail }) {
-  const actions = useIssueActions(issue)
+function Finding({ issue, onPending }: { issue: ValidationIssueDetail; onPending?: (pending: boolean) => void }) {
+  const actions = useIssueActions(issue, onPending)
   const [asking, setAsking] = useState<{ occurrence: OccurrenceView; to: boolean } | null>(null)
   const c = strings.inclusion.confirm
 
@@ -119,7 +119,16 @@ function Finding({ issue }: { issue: ValidationIssueDetail }) {
  * The finding open in the address (design D6): a panel on the right with its occurrences, resolution and history.
  * Closing gives the focus back to the finding in the list, also when it was opened from a link.
  */
-export function IssueDrawer({ issueId, onClose }: { issueId: number | undefined; onClose: () => void }) {
+export function IssueDrawer({
+  issueId,
+  onClose,
+  onPending,
+}: {
+  issueId: number | undefined
+  onClose: () => void
+  /** Told when a change of the finding is on its way, so the rest of the section waits for it. */
+  onPending?: (pending: boolean) => void
+}) {
   const query = useQuery({ ...validationIssueQuery(issueId ?? 0), enabled: issueId !== undefined })
   const lastOpened = useRef<number | undefined>(issueId)
   if (issueId !== undefined) lastOpened.current = issueId
@@ -151,7 +160,7 @@ export function IssueDrawer({ issueId, onClose }: { issueId: number | undefined;
         </SheetHeader>
         <div className="flex flex-col gap-4 px-4 pb-4">
           {query.isError && !gone && <p className="text-sm text-destructive">{s.loadError}</p>}
-          {issue && <Finding key={issue.issueId} issue={issue} />}
+          {issue && <Finding key={issue.issueId} issue={issue} onPending={onPending} />}
         </div>
       </SheetContent>
     </Sheet>

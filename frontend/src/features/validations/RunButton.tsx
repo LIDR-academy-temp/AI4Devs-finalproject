@@ -19,7 +19,18 @@ const s = strings.run
  * Run validations / Run again. Asks first only when something is lost: manual changes of the current run, or the
  * review of a validated import (design D4). Without either, it runs at once.
  */
-export function RunButton({ view, runner }: { view: ValidationRunView; runner: RunValidations }) {
+export function RunButton({
+  view,
+  runner,
+  busy,
+  busyId,
+}: {
+  view: ValidationRunView
+  runner: RunValidations
+  /** A run, a review or a change of the drawer is on its way: the button waits and points at the text saying so. */
+  busy: boolean
+  busyId: string
+}) {
   const [open, setOpen] = useState(false)
   const lostChanges = view.run?.manualChangeCount ?? 0
   const invalidatesReview = view.importStatus === 'validated'
@@ -31,7 +42,7 @@ export function RunButton({ view, runner }: { view: ValidationRunView; runner: R
 
   return (
     <>
-      <Button size="sm" onClick={click} disabled={runner.running}>
+      <Button size="sm" onClick={click} disabled={busy} aria-describedby={busy ? busyId : undefined}>
         {view.run ? s.again : s.first}
       </Button>
       <AlertDialog open={open} onOpenChange={setOpen}>

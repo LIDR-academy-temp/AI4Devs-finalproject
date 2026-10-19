@@ -7,7 +7,7 @@ import { useImportAccess } from '@/features/imports/permissions'
 import type { ImportDetail } from '@/lib/api/types'
 import { formatAuditDateTime } from '@/lib/format'
 import type { ValidationRunView } from './contract'
-import { useReview } from './mutations'
+import type { Review } from './mutations'
 import { SETTLEMENT_REVIEW } from './next-step'
 import { strings } from './strings'
 
@@ -43,16 +43,21 @@ function SettlementReview() {
 export function DecisionBar({
   detail,
   view,
-  running,
+  reviewer,
+  busy,
+  busyId,
   onShowBlocking,
 }: {
   detail: ImportDetail
   view: ValidationRunView
-  running: boolean
+  /** The review lives in the section, so Run waits for it too. */
+  reviewer: Review
+  /** A run, a review or a change of the drawer is on its way; `busyId` is the text that says which. */
+  busy: boolean
+  busyId: string
   onShowBlocking: (validation: ValidationCode) => void
 }) {
   const { canProcess, cancellable } = useImportAccess(detail.status)
-  const reviewer = useReview(detail.importId)
   const reasonId = useId()
   const run = view.run
   const reason = !run ? s.noRun : run.blocked ? s.blocked : null
@@ -76,8 +81,8 @@ export function DecisionBar({
           <Button
             size="sm"
             onClick={() => run && void reviewer.review(run.runId)}
-            disabled={reason !== null || running || reviewer.pending}
-            aria-describedby={reason ? reasonId : undefined}
+            disabled={reason !== null || busy}
+            aria-describedby={[reason && reasonId, busy && busyId].filter(Boolean).join(' ') || undefined}
           >
             {s.continue}
           </Button>
@@ -93,7 +98,13 @@ export function DecisionBar({
           </>
         )}
         {canProcess && (
-          <CancelImportDialog detail={detail} cancellable={cancellable} disabled={running} label={s.cancel} />
+          <CancelImportDialog
+            detail={detail}
+            cancellable={cancellable}
+            disabled={busy}
+            describedBy={busy ? busyId : undefined}
+            label={s.cancel}
+          />
         )}
       </div>
       {view.importStatus === 'analyzed' && canProcess && reason && (

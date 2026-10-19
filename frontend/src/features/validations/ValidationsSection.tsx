@@ -1,7 +1,7 @@
 import type { ImportStatus, ValidationCode } from '@recon/shared'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCanProcess } from '@/features/imports/permissions'
@@ -11,7 +11,7 @@ import { DecisionBar } from './DecisionBar'
 import { InvalidatedReviewNotice } from './InvalidatedReviewNotice'
 import { IssueDrawer } from './IssueDrawer'
 import { IssuesList } from './IssuesList'
-import { useRunValidations } from './mutations'
+import { useReview, useRunValidations } from './mutations'
 import { validationRunKey, validationRunQuery } from './queries'
 import { RunButton } from './RunButton'
 import { RunHeader } from './RunHeader'
@@ -28,6 +28,19 @@ const RUNNABLE: readonly ImportStatus[] = ['analyzed', 'validated']
 export function ValidationsSection({ detail }: { detail: ImportDetail }) {
   const query = useQuery(validationRunQuery(detail.importId))
   const runner = useRunValidations(detail.importId)
+  const reviewer = useReview(detail.importId)
+  const [patching, setPatching] = useState(false)
+  // One write at a time: while a run, the review or a change of the drawer is on its way, Run, Continue and Cancel
+  // and reprocess wait, and all point at the same text saying what they wait for.
+  const busyText = runner.running
+    ? strings.run.running
+    : reviewer.pending
+      ? strings.decision.reviewing
+      : patching
+        ? strings.inclusion.saving
+        : null
+  const busy = busyText !== null
+  const busyId = useId()
   const canProcess = useCanProcess()
   const search = useSearch({ from: '/app/imports/$importId' })
   const navigate = useNavigate({ from: '/imports/$importId' })
@@ -49,7 +62,7 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
     if (stale) void queryClient.invalidateQueries({ queryKey: validationRunKey(detail.importId), exact: true })
   }, [stale, queryClient, detail.importId])
   // The finding of the address is read at the same time as the run, not after it.
-  const drawer = <IssueDrawer issueId={search.issue} onClose={close} />
+  const drawer = <IssueDrawer issueId={search.issue} onClose={close} onPending={setPatching} />
   // The region appears with its content; while the first read is on its way there is only a placeholder.
   if (query.isPending) {
     return (
@@ -64,10 +77,12 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
     <section aria-label={strings.title} className="flex flex-col gap-3 rounded-md border bg-background p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-medium">{strings.title}</h3>
-        {view && canProcess && RUNNABLE.includes(view.importStatus) && <RunButton view={view} runner={runner} />}
+        {view && canProcess && RUNNABLE.includes(view.importStatus) && (
+          <RunButton view={view} runner={runner} busy={busy} busyId={busyId} />
+        )}
       </div>
       <div aria-live="polite" className="text-sm">
-        {runner.running && <p>{strings.run.running}</p>}
+        {busyText && <p id={busyId}>{busyText}</p>}
         {runner.error && <p className="text-destructive">{runner.error}</p>}
       </div>
       {query.isError ? (
@@ -98,7 +113,16 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
           <p className="text-sm text-muted-foreground">{strings.noRun}</p>
         </>
       )}
-      {view && <DecisionBar detail={detail} view={view} running={runner.running} onShowBlocking={select} />}
+      {view && (
+        <DecisionBar
+          detail={detail}
+          view={view}
+          reviewer={reviewer}
+          busy={busy}
+          busyId={busyId}
+          onShowBlocking={select}
+        />
+      )}
       {drawer}
     </section>
   )

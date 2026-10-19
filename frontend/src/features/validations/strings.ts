@@ -157,6 +157,7 @@ export const strings = {
 
   inclusion: {
     label: (where: string) => `Included in settlement — ${where}`,
+    saving: 'Saving the change…',
     notIncludable:
       'This reserve cannot be included: another occurrence is included or it was released in a previous batch.',
     confirm: {
@@ -184,6 +185,7 @@ export const strings = {
     reviewedBy: (userName: string, at: string) => `Reviewed by ${userName} · ${at}`,
     settlementReview: 'Settlement Review',
     notAvailable: 'Settlement Review is not available yet.',
+    reviewing: 'Saving the review…',
     /** One text per status that leaves nothing to decide; the API does not say who cancelled or processed. */
     closed: {
       cancelled: 'This import is cancelled. Its run and findings are kept for reference.',
