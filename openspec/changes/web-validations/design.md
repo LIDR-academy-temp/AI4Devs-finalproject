@@ -140,7 +140,8 @@
     - la corrida superada al re-ejecutar (una corrida nueva desde la misma fixture, con `runId` nuevo);
     - `manualChangeCount`, que cuenta los `PATCH` guionizados aplicados en la corrida vigente y vuelve a 0 al re-ejecutar;
     - `lastInvalidatedReview`, al re-ejecutar o cambiar una inclusión sobre `validated`;
-    - el historial: cada `PATCH` aplicado añade su entrada con el usuario que llama y su `AuditInstant`.
+    - el historial: cada `PATCH` aplicado añade su entrada con el usuario que llama y su `AuditInstant`;
+    - los rechazos que se deducen de ese estado, no de reglas de negocio: `import_not_analyzed` e `import_not_editable` según el estado del import, `validation_run_superseded` para una corrida que ya no es la vigente y `validation_run_required` sin corrida vigente.
     
     Como consecuencia directa del contrato, no como regla propia, al resolver un hallazgo deja `resolvable` en `false` (ya no es `persistent`), y los hallazgos de una corrida superada se leen con todos los controles apagados, porque #9 exige la corrida vigente para `editable`, `includable` y `resolvable`.
   - **Fixtures base**, con los ids de `affectedIds` y los `defaults` de `expected.json`:

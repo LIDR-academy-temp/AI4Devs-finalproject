@@ -2,8 +2,10 @@
 // results, `blocked`, `blocking`, `editable`, `includable` and `resolvable` are fixed by the fixture of each
 // scenario, and a PATCH answers what the scenario scripts for it. The fake only models what changes between
 // requests: the import analyzed ↔ validated, the run superseded on a re-run, manualChangeCount, the invalidated
-// review and the history (who and when of every applied change). Typed with the generated contract of #9; its own
-// test checks every answer with the shared schemas of @recon/shared.
+// review and the history (who and when of every applied change). The rejections it answers follow from that state,
+// not from business rules: import_not_analyzed and import_not_editable from the status of the import,
+// validation_run_superseded for a run that is no longer the current one, validation_run_required without one.
+// Typed with the generated contract of #9; its own test checks every answer with the shared schemas of @recon/shared.
 import { TRANSACTION_STATUSES, type TransactionStatusCode, type ValidationCode } from '@recon/shared'
 import { HttpResponse, http, type PathParams } from 'msw'
 import type {
