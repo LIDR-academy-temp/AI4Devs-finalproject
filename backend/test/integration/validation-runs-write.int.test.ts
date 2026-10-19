@@ -333,3 +333,62 @@ describe('the bulk statements are chunked (review M2): 7 rows per statement', ()
     }
   })
 })
+
+describe('only the current-run index becomes import_changed (review L1)', () => {
+  it('another unique violation (two results of one validation) is rethrown, not answered as import_changed', async () => {
+    const { importId } = await flow.analyzedSample('batch-blocked')
+    const imported = await ctx.prisma.import.findUniqueOrThrow({ where: { importId } })
+    const passed = (code: ValidationCode) => ({ code, outcome: 'passed' as const, issueCount: 0, issues: [] })
+    // UNIQUE (runId, validationCode) of ValidationResult: a programming error, never a concurrent run.
+    const report: ValidationReport = {
+      results: [...ValidationCode.options.map(passed), passed('provider_mismatch')],
+      blocked: false,
+      ranges: { APP: null, DEC: null, I: null, R: null },
+      pendingInRangeCount: 0,
+      undatedAdjustmentCount: 0,
+      undatedCandidateCount: 0,
+    }
+
+    const error = await new PrismaValidationRunRepository(ctx.prisma)
+      .saveRun(importId, imported.updatedAt, flow.userIds.analyst, report, new Date())
+      .catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(Error)
+    expect((error as { code?: string }).code).not.toBe('import_changed')
+    expect(await ctx.prisma.validationRun.count({ where: { importId } })).toBe(0)
+  })
+
+  it('a violation of UX_ValidationRun_current_import is answered as import_changed', async () => {
+    const { importId } = await flow.analyzedSample('batch-blocked')
+    const passed = (code: ValidationCode) => ({ code, outcome: 'passed' as const, issueCount: 0, issues: [] })
+    const report: ValidationReport = {
+      results: ValidationCode.options.map(passed),
+      blocked: false,
+      ranges: { APP: null, DEC: null, I: null, R: null },
+      pendingInRangeCount: 0,
+      undatedAdjustmentCount: 0,
+      undatedCandidateCount: 0,
+    }
+    const plain = new PrismaValidationRunRepository(ctx.prisma)
+    const first = await ctx.prisma.import.findUniqueOrThrow({ where: { importId } })
+    await plain.saveRun(importId, first.updatedAt, flow.userIds.analyst, report, new Date())
+    // The superseding UPDATE does nothing: the new run collides with the current one on the filtered unique index.
+    const noSupersede = ctx.prisma.$extends({
+      query: {
+        validationRun: {
+          async updateMany() {
+            return { count: 0 }
+          },
+        },
+      },
+    }) as unknown as typeof ctx.prisma
+    const second = await ctx.prisma.import.findUniqueOrThrow({ where: { importId } })
+
+    const error = await new PrismaValidationRunRepository(noSupersede)
+      .saveRun(importId, second.updatedAt, flow.userIds.analyst, report, new Date())
+      .catch((e: unknown) => e)
+
+    expect(error).toMatchObject({ code: 'import_changed' })
+    expect(await ctx.prisma.validationRun.count({ where: { importId, isSuperseded: false } })).toBe(1)
+  })
+})
