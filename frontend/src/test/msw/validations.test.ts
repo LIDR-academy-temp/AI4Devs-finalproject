@@ -1,16 +1,24 @@
 // The fake validations API on its own, without screens (web-validations design D12). It covers only what the fake
 // models between requests: transitions, superseded runs, manualChangeCount, invalidated reviews, history, the
 // scripted PATCH answers and the scope. Flags and results are fixed by the fixtures, never computed.
+import {
+  ValidationIssueDetail as SharedIssueDetail,
+  ValidationIssuesPage as SharedIssuesPage,
+  ValidationRunView as SharedRunView,
+} from '@recon/shared'
 import { describe, expect, it } from 'vitest'
 import type { ValidationIssueDetail, ValidationIssuesPage, ValidationRunView } from '@/features/validations/contract'
 import type { UserName } from './fixtures'
 import { issueTokens } from './handlers'
 import { importRecord, seedImport } from './imports'
 import {
+  batchBlockedFixture,
+  batchIssuesFixture,
   failNextValidation,
   holdNextValidation,
   issueKey,
   occurrenceKey,
+  type RunFixture,
   reserveVariant,
   respondNext,
   seedValidationRun,
@@ -312,5 +320,53 @@ describe('fake validations API', () => {
     hold.release()
     expect((await pending).status).toBe(201)
     expect(validationRequests('run').map((r) => r.status)).toEqual([409, null, 201])
+  })
+})
+
+describe('fake validations API against the shared schemas of #9 (design D13)', () => {
+  /** Every answer the screens read, for a run built from `fixture`, checked with the schemas the backend uses. */
+  async function expectConformant(importId: string, fixture?: RunFixture) {
+    seedValidationRun(importId, fixture)
+    const view = SharedRunView.safeParse(await current(importId))
+    expect(view.error?.issues ?? []).toEqual([])
+    const page = await call('analyst', 'GET', `/imports/${importId}/validation-issues?page=1&pageSize=500`)
+    const parsed = SharedIssuesPage.safeParse(page.body)
+    expect(parsed.error?.issues ?? []).toEqual([])
+    for (const summary of (page.body as ValidationIssuesPage).items) {
+      const detail = SharedIssueDetail.safeParse(await issue(summary.issueId))
+      expect(detail.error?.issues ?? [], `finding ${summary.issueId}`).toEqual([])
+    }
+  }
+
+  it('batch-issues', async () => {
+    await expectConformant(seedImport('batch-issues', { status: 'analyzed' }).importId, batchIssuesFixture())
+  })
+
+  it('batch-blocked', async () => {
+    await expectConformant(seedImport('batch-blocked', { status: 'analyzed' }).importId, batchBlockedFixture())
+  })
+
+  it('the reserve variant', async () => {
+    await expectConformant(seedImport('batch-issues', { status: 'analyzed' }).importId, reserveVariant())
+  })
+
+  it('a run without findings', async () => {
+    await expectConformant(seedImport('batch-clean', { status: 'analyzed' }).importId)
+  })
+
+  it('answers 400 validation_error to a page above 10 000 and to an occurrence id beyond BIGINT', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+
+    const page = await call('analyst', 'GET', `/imports/${importId}/validation-issues?page=10001&pageSize=50`)
+    expect(page.status).toBe(400)
+    expect(page.body.code).toBe('validation_error')
+    expect((await call('analyst', 'GET', `/imports/${importId}/validation-issues?page=10000`)).status).toBe(200)
+
+    const beyond = await call('analyst', 'PATCH', '/conflict-occurrences/9223372036854775808', {
+      includeInSettlement: true,
+    })
+    expect(beyond.status).toBe(400)
+    expect(beyond.body.code).toBe('validation_error')
   })
 })
