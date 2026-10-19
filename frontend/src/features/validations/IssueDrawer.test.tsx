@@ -144,7 +144,7 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
     const nra = issues.find((i) => i.issueType === 'non_recorded_adjustment')!
     await openFinding(importId, nra.issueId)
 
-    expect(drawer().getByText(`${FILE} · CHB · row 3`)).toBeInTheDocument()
+    expect(drawer().getByText(`${FILE} · CHB · row 8`)).toBeInTheDocument()
     expect(drawer().queryByText('No occurrences: the transaction is not in this batch.')).not.toBeInTheDocument()
   })
 

@@ -250,7 +250,7 @@ export function batchIssuesFixture(): RunFixture {
         cycle: 'I',
         status: status('Chargeback'),
         gatewayStatus: status('Successful'),
-        source: { sheetName: 'CHB', rowNo: 3 },
+        source: { sheetName: 'CHB', rowNo: 8 },
         resolvable: true,
         // A one-row finding carries its row in `source` and no occurrences, as the real API of #9 answers it.
         occurrences: [],
