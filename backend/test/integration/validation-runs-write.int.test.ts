@@ -388,13 +388,15 @@ describe('only the current-run index becomes import_changed (review L1)', () => 
         },
       },
     }) as unknown as typeof ctx.prisma
+    // A validated import: the translation answers its real status, not a fixed one (review L5).
+    await ctx.prisma.import.update({ where: { importId }, data: { status: 'validated' } })
     const second = await ctx.prisma.import.findUniqueOrThrow({ where: { importId } })
 
     const error = await new PrismaValidationRunRepository(noSupersede)
       .saveRun(importId, second.updatedAt, flow.userIds.analyst, report, new Date())
       .catch((e: unknown) => e)
 
-    expect(error).toMatchObject({ code: 'import_changed' })
+    expect(error).toMatchObject({ code: 'import_changed', details: { status: 'validated' } })
     expect(await ctx.prisma.validationRun.count({ where: { importId, isSuperseded: false } })).toBe(1)
   })
 })

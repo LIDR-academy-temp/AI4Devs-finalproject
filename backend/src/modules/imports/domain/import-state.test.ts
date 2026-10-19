@@ -87,6 +87,11 @@ describe('import state machine', () => {
     })
   })
 
+  it('import_not_analyzed says which statuses the action admits (review L5)', () => {
+    expect(() => assertCanValidate('mapped')).toThrow(/mapped.*analyzed or validated/)
+    expect(() => assertCanReview('validated')).toThrow(/validated.*needs analyzed$/)
+  })
+
   it('exposes the editable statuses for the file routes', () => {
     expect([...EDITABLE_STATUSES].sort()).toEqual(['mapped', 'uploaded'])
   })
