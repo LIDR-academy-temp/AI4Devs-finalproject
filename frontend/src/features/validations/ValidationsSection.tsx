@@ -48,8 +48,17 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
   useEffect(() => {
     if (stale) void queryClient.invalidateQueries({ queryKey: validationRunKey(detail.importId), exact: true })
   }, [stale, queryClient, detail.importId])
+  // The finding of the address is read at the same time as the run, not after it.
+  const drawer = <IssueDrawer issueId={search.issue} onClose={close} />
   // The region appears with its content; while the first read is on its way there is only a placeholder.
-  if (query.isPending) return <Skeleton className="h-24 w-full" aria-label={strings.loading} />
+  if (query.isPending) {
+    return (
+      <>
+        <Skeleton className="h-24 w-full" aria-label={strings.loading} />
+        {drawer}
+      </>
+    )
+  }
 
   return (
     <section aria-label={strings.title} className="flex flex-col gap-3 rounded-md border bg-background p-3">
@@ -90,7 +99,7 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
         </>
       )}
       {view && <DecisionBar detail={detail} view={view} running={runner.running} onShowBlocking={select} />}
-      <IssueDrawer issueId={search.issue} onClose={close} />
+      {drawer}
     </section>
   )
 }
