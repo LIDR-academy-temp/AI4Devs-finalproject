@@ -54,7 +54,11 @@ describe('Settlement Review: settlement date (spec "fecha de liquidación")', ()
 
     chooseDate('')
 
-    expect(await preSummary().findByText('Updating the pre-summary…')).toBeInTheDocument()
+    expect(await preSummary().findByText('Choose the settlement date to see the pre-summary.')).toBeInTheDocument()
+    expect(preSummary().getByRole('table', { name: 'Amount payable' }).closest('[aria-busy]')).toHaveAttribute(
+      'aria-busy',
+      'true',
+    )
     expect(processButton()).toBeDisabled()
     expect(processButton()).toHaveAccessibleDescription(/Choose the settlement date\./)
   })

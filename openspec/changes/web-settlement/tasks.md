@@ -47,8 +47,8 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 4. Número de batch, fecha y resumen previo (D6, D7, D8, D14)
 
-- [ ] 4.1 Test (rojo) `features/settlements/batch-number.test.tsx` con "número de batch propuesto y editable" y "número de batch en uso": `123` y `Proposed: 123 · attempt 1`; `reprocess` → `118` con el texto del intento deshecho; `0` → error sin vista previa; `batchNoAvailable = false` → error en el campo y motivo de Process; `409 batch_no_taken` al procesar → error en el campo, sigue en la pantalla con lo escrito y se vuelve a pedir la vista previa
-- [ ] 4.2 Test (rojo) `features/settlements/preview.test.tsx` con "resumen previo", "resumen previo al día" y "fecha de liquidación", con temporizadores falsos (D15):
+- [x] 4.1 Test (rojo) `features/settlements/batch-number.test.tsx` con "número de batch propuesto y editable" y "número de batch en uso": `123` y `Proposed: 123 · attempt 1`; `reprocess` → `118` con el texto del intento deshecho; `0` → error sin vista previa; `batchNoAvailable = false` → error en el campo y motivo de Process; `409 batch_no_taken` al procesar → error en el campo, sigue en la pantalla con lo escrito y se vuelve a pedir la vista previa
+- [x] 4.2 Test (rojo) `features/settlements/preview.test.tsx` con "resumen previo", "resumen previo al día" y "fecha de liquidación", con temporizadores falsos (D15):
   - al abrir, **Settlement date** vacía con su motivo, `Choose the settlement date to see the pre-summary.`, Process deshabilitado con `Choose the settlement date.` y ninguna vista previa;
   - al elegir `2026-10-24`, una vista previa con el `runId` revisado, esa `settlementDate` y los dos prellenados, y el panel con cinco categorías, nueve líneas con su signo en columna propia, `Batch fees` y **Amount payable** de la respuesta con separador de miles;
   - `skipped` con dos motivos distintos de cero → `Not processed: 3 ignored · 2 excluded`;
@@ -59,8 +59,8 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   - respuesta fuera de orden → sigue la última;
   - borrar la fecha → error en el campo, panel desactualizado y Process deshabilitado con ese motivo;
   - `409 validation_run_superseded` → mensaje con enlace a Analysis; error de red → mensaje y **Retry**
-- [ ] 4.3 Implementar `useDebouncedValue`, `PREVIEW_DEBOUNCE_MS`, `features/settlements/{queries.ts,BatchSection.tsx,PreSummary.tsx,FiguresTables.tsx,PayableBreakdown.tsx,strings.ts}` (claves de D3, vista previa como consulta con `signal` y `keepPreviousData`, `isCurrent`, errores de D6 y D8); verificar 4.1 y 4.2 en verde; romper a propósito `isCurrent` (dar por buena la vista previa anterior) y ver fallar "Escritura seguida"; romper el signo componiendo `-${amount}` y ver fallar la línea de `-42.5000`; restaurar
-- [ ] 4.4 Commit: `test(frontend): número de batch, fecha y resumen previo de Settlement Review` y `feat(frontend): número de batch editable y resumen previo con debounce`
+- [x] 4.3 Implementar `useDebouncedValue`, `PREVIEW_DEBOUNCE_MS`, `features/settlements/{queries.ts,BatchSection.tsx,PreSummary.tsx,FiguresTables.tsx,PayableBreakdown.tsx,strings.ts}` (claves de D3, vista previa como consulta con `signal` y `keepPreviousData`, `isCurrent`, errores de D6 y D8); verificar 4.1 y 4.2 en verde; romper a propósito `isCurrent` (dar por buena la vista previa anterior) y ver fallar "Escritura seguida"; romper el signo componiendo `-${amount}` y ver fallar la línea de `-42.5000`; restaurar
+- [x] 4.4 Commit: `test(frontend): número de batch, fecha y resumen previo de Settlement Review` y `feat(frontend): número de batch editable y resumen previo con debounce`
 
 ## 5. Fees por batch (D5)
 
