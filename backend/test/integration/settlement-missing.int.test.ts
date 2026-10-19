@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '../../src/generated/prisma/client.js'
 import { PrismaMissingResolution } from '../../src/modules/validation/infrastructure/prisma-missing-resolution.js'
 import { createPrismaClient, fixtureIds } from './helpers.js'
+import { removeImportsFrom } from './import-flow.js'
 
 // MissingResolution (settlement-process design D11; spec validation "Los hallazgos persisten", spec settlement
 // "Faltantes resueltos al procesar"): inside the transaction that processes or undoes a batch, the persistent missing
@@ -10,7 +11,7 @@ import { createPrismaClient, fixtureIds } from './helpers.js'
 // Fixture of its own: imports, runs and findings created straight in the base, batches 9711 and 9712; removed after.
 let prisma: PrismaClient
 const resolution = new PrismaMissingResolution()
-const created = { imports: [] as string[], batches: [] as string[] }
+const created = { imports: [] as string[] }
 let analystId: number
 let accounts: Record<string, string>
 let x: bigint // Provider A transaction, the one the batch settles in E
@@ -33,23 +34,25 @@ beforeAll(async () => {
     ).map((t) => t.transactionId)
   ;[x, y] = (await ofProvider(101, 2)) as [bigint, bigint]
   ;[foreign] = (await ofProvider(102, 1)) as [bigint]
+  // What an interrupted run left behind: batches 9711 and 9712 of these accounts, with their imports.
+  const leftovers = await prisma.settlementBatch.findMany({
+    where: {
+      batchNo: { in: [9711, 9712] },
+      accountId: { in: fixtureIds([accounts['ProviderA-EUR'], accounts['ProviderA-USD']], 'accounts') },
+    },
+    select: { importId: true },
+  })
+  await removeImportsFrom(prisma, [...new Set(leftovers.map((b) => b.importId))])
 })
 
+// removeImportsFrom first takes the batches away from findings of other imports that they resolved or detected
+// (resolveForBatch resolves findings of any import of the provider), then deletes batches, runs and imports.
 afterAll(async () => {
-  const imports = fixtureIds(created.imports, 'created.imports')
-  const batches = fixtureIds(created.batches, 'created.batches')
-  const runs = await prisma.validationRun.findMany({ where: { importId: { in: imports } }, select: { runId: true } })
-  const runIds = fixtureIds(
-    runs.map((r) => r.runId),
-    'runIds',
-  )
-  await prisma.validationIssue.deleteMany({ where: { result: { runId: { in: runIds } } } })
-  await prisma.validationResult.deleteMany({ where: { runId: { in: runIds } } })
-  await prisma.validationRun.deleteMany({ where: { runId: { in: runIds } } })
-  await prisma.settlementTransaction.deleteMany({ where: { batchId: { in: batches } } })
-  await prisma.settlementBatch.deleteMany({ where: { batchId: { in: batches } } })
-  await prisma.import.deleteMany({ where: { importId: { in: imports } } })
-  await prisma.$disconnect()
+  try {
+    await removeImportsFrom(prisma, fixtureIds(created.imports, 'created.imports'))
+  } finally {
+    await prisma.$disconnect()
+  }
 })
 
 async function importOf(account: string): Promise<string> {
@@ -105,7 +108,6 @@ async function batchWith(account: string, batchNo: number, transactionId: bigint
       approvedByUserId: analystId,
     },
   })
-  created.batches.push(batchId)
   await prisma.settlementTransaction.create({
     data: {
       batchId,
