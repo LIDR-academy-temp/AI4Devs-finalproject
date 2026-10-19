@@ -117,6 +117,16 @@ export class ImportNotEditableError extends DomainError {
   }
 }
 
+/** Processing a batch and its preview need `validated` (settlement-process). */
+export class ImportNotValidatedError extends DomainError {
+  readonly status = 409
+  readonly code = 'import_not_validated'
+
+  constructor(status: string) {
+    super(`The import must be validated before processing (status: ${status})`, { status })
+  }
+}
+
 /** Validating needs `analyzed` or `validated`; reviewing needs `analyzed` (validation-runs, P1). */
 export class ImportNotAnalyzedError extends DomainError {
   readonly status = 409

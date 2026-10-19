@@ -173,6 +173,30 @@ describe('buildApp', () => {
     await app.close()
   })
 
+  it('publishes the settlement and fee routes with bearer security (settlement-process)', async () => {
+    const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
+
+    const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json()
+
+    const operations: [string, 'get' | 'post', string][] = [
+      ['/api/v1/imports/{importId}/settlements', 'post', 'settlements'],
+      ['/api/v1/imports/{importId}/settlements/preview', 'post', 'settlements'],
+      ['/api/v1/accounts/{accountId}/batch-number/next', 'get', 'settlements'],
+      ['/api/v1/accounts/{accountId}/fees', 'get', 'fees'],
+      ['/api/v1/fee-types', 'get', 'fees'],
+    ]
+    for (const [path, method, tag] of operations) {
+      const operation = doc.paths[path]?.[method]
+      expect(operation, `${method} ${path}`).toBeDefined()
+      expect(operation.tags, path).toEqual([tag])
+      expect(operation.security, path).toEqual([{ bearerAuth: [] }])
+      expect(operation.responses, path).toHaveProperty('401')
+    }
+    expect(doc.paths['/api/v1/imports/{importId}/settlements'].post.responses).toHaveProperty('201')
+    expect(doc.paths['/api/v1/imports/{importId}/settlements'].post.responses).toHaveProperty('409')
+    await app.close()
+  })
+
   it('does not disconnect an injected Prisma client on close', async () => {
     const prisma = fakePrisma(async () => [{ ok: 1 }])
     const app = await buildApp({ env, prisma })

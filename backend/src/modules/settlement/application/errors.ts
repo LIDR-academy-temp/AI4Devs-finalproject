@@ -3,21 +3,13 @@
 import type { BatchFeeInvalidReason, ChannelToAssign } from '@recon/shared'
 import { DomainError } from '../../../shared/errors.js'
 
+// import_not_validated lives with the import state machine (imports/domain), which raises it in assertCanProcess.
+export { ImportNotValidatedError } from '../../imports/domain/errors.js'
 export {
   BlockingValidationIssueError,
   ValidationRunRequiredError,
   ValidationRunSupersededError,
 } from '../../validation/application/errors.js'
-
-/** Processing and its preview need a validated import. */
-export class ImportNotValidatedError extends DomainError {
-  readonly status = 409
-  readonly code = 'import_not_validated'
-
-  constructor(status: string) {
-    super(`The import must be validated before processing (status: ${status})`, { status })
-  }
-}
 
 /** An active (not undone) attempt of the account already holds the number. */
 export class BatchNoTakenError extends DomainError {

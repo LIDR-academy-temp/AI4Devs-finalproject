@@ -19,6 +19,7 @@ import type {
   AccountAttempt,
   AccountFeeConfig,
   RowInclusion,
+  SettlementAccount,
   SettlementChannel,
   SettlementFeeType,
   SettlementRow,
@@ -76,6 +77,25 @@ export class PrismaSettlementSource implements SettlementSource {
         chargebackReservePolicy: ChargebackReservePolicy.parse(account.chargebackReservePolicy),
         rollingReserveCapAmt: toMoney(account.rollingReserveCapAmt),
       },
+    }
+  }
+
+  async account(scope: Scope, accountId: string): Promise<SettlementAccount | null> {
+    const account = await this.db.account.findFirst({
+      where: { accountId, provider: { merchantId: { in: [...scope.merchantIds] } } },
+      select: {
+        accountId: true,
+        name: true,
+        providerId: true,
+        chargebackReservePolicy: true,
+        rollingReserveCapAmt: true,
+      },
+    })
+    if (account === null) return null
+    return {
+      ...account,
+      chargebackReservePolicy: ChargebackReservePolicy.parse(account.chargebackReservePolicy),
+      rollingReserveCapAmt: toMoney(account.rollingReserveCapAmt),
     }
   }
 

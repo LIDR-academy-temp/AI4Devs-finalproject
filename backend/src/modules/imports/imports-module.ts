@@ -17,6 +17,13 @@ import { PrismaTransactionLookup } from './infrastructure/prisma-transaction-loo
 import { DEFAULT_READ_LIMITS } from './infrastructure/xlsx/limits.js'
 import { XlsxWorkbookReader } from './infrastructure/xlsx-workbook-reader.js'
 
+declare module 'fastify' {
+  interface FastifyInstance {
+    /** The import service of the imports module (settlement reads the pre-filled batch fees through it). */
+    importService: ImportService
+  }
+}
+
 export interface ImportsModuleOptions {
   /** Where the import routes are mounted, e.g. /api/v1. */
   routePrefix: string
@@ -53,6 +60,8 @@ export const importsModule = fp(
         audit: new PrismaAuditLogger(app.prisma),
         limits: { maxRowsPerImport: DEFAULT_READ_LIMITS.maxRowsPerImport },
       })
+    // Shared with the settlement module, which needs the pre-filled batch fees as the import detail proposes them.
+    app.decorate('importService', service)
     await app.register(importRoutes, { prefix: options.routePrefix, service, files })
   },
   { name: 'imports-module', dependencies: ['prisma', 'auth'] },

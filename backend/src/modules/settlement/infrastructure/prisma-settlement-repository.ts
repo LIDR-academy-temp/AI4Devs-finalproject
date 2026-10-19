@@ -2,7 +2,7 @@
 // run and review, load and calculation after the guard, number under a range lock, bulk writes, channels, missing
 // findings, the import and the audit — all or nothing.
 import { randomUUID } from 'node:crypto'
-import type { ChannelAssigned, SettlementRequest } from '@recon/shared'
+import type { ChannelAssigned } from '@recon/shared'
 import type { FastifyBaseLogger } from 'fastify'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import type { MissingResolution } from '../../validation/application/ports.js'
@@ -16,6 +16,7 @@ import {
   ValidationRunSupersededError,
 } from '../application/errors.js'
 import { loadSettlementInput } from '../application/load-settlement-input.js'
+import type { ProcessCommand, SettlementRepository } from '../application/ports.js'
 import { attemptFor } from '../domain/batch-number.js'
 import { computeSettlement, type SettlementPlan } from '../domain/compute-settlement.js'
 import type { AccountAttempt, MovementPlan, SettlementChannel } from '../domain/types.js'
@@ -36,15 +37,6 @@ export interface SettlementRepositoryOptions {
   beforeClaim?: (operation: 'process') => Promise<void>
   /** Awaited before each write phase: tests inject a failure halfway to see that nothing stays. */
   beforePhase?: (phase: WritePhase) => Promise<void>
-}
-
-export interface ProcessCommand {
-  importId: string
-  userId: number
-  request: SettlementRequest
-  prefilledFeeTypeIds: ReadonlySet<number>
-  /** Audit instant (processedAt, assignedAt, resolvedAt). */
-  now: Date
 }
 
 export interface ProcessResult {
@@ -79,7 +71,7 @@ function chunks<T>(items: readonly T[], size = ROWS_PER_STATEMENT): T[][] {
   return out
 }
 
-export class PrismaSettlementRepository {
+export class PrismaSettlementRepository implements SettlementRepository {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly options: SettlementRepositoryOptions,

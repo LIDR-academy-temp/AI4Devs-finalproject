@@ -6,6 +6,7 @@ import {
   ImportNotCancellableError,
   ImportNotEditableError,
   ImportNotMappedError,
+  ImportNotValidatedError,
 } from './errors.js'
 
 /** Files and mapping can change only before the analysis (README HU1 CA2, CA8). */
@@ -50,6 +51,11 @@ export function assertCanReview(status: ImportStatus): void {
 /** `PATCH /conflict-occurrences/{id}`: `analyzed` or `validated`. */
 export function assertCanChangeInclusion(status: ImportStatus): void {
   if (!VALIDATABLE_STATUSES.has(status)) throw new ImportNotEditableError(status)
+}
+
+/** `POST /imports/{id}/settlements` and its preview: `validated` only, which processing moves to `processed`. */
+export function assertCanProcess(status: ImportStatus): void {
+  if (status !== 'validated') throw new ImportNotValidatedError(status)
 }
 
 /** `POST /imports/{id}/cancel`: anything but `processed` and `cancelled`. */
