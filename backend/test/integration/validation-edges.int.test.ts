@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Prisma } from '../../src/generated/prisma/client.js'
 import { PrismaImportRepository } from '../../src/modules/imports/infrastructure/prisma-import-repository.js'
 import { buildXlsx } from '../../src/modules/imports/infrastructure/xlsx/test-support.js'
-import { createTestApp } from './helpers.js'
+import { createTestApp, fixtureId, fixtureIds } from './helpers.js'
 import { ImportFlow } from './import-flow.js'
 
 // Edges of validation-runs against SQL Server (verify W4–W6): a historical occurrence with its sheet and row, the
@@ -57,10 +57,13 @@ describe('a previous_batch occurrence whose movement has a sheet and a row (spec
   async function removeFixture(): Promise<void> {
     const { prisma } = ctx
     const batches = await prisma.settlementBatch.findMany({
-      where: { batchNo: BATCH_NO },
+      where: { batchNo: fixtureId(BATCH_NO, 'BATCH_NO') },
       select: { batchId: true, importId: true },
     })
-    const batchIds = batches.map((b) => b.batchId)
+    const batchIds = fixtureIds(
+      batches.map((b) => b.batchId),
+      'batchIds',
+    )
     // Imports whose findings point at the fixture batch go first (their occurrences reference it).
     const dependent = await prisma.import.findMany({
       where: {
@@ -175,10 +178,13 @@ describe('two historical movements of the same transaction and cycle in a batch 
   async function removeFixture(): Promise<void> {
     const { prisma } = ctx
     const batches = await prisma.settlementBatch.findMany({
-      where: { batchNo: BATCH_NO },
+      where: { batchNo: fixtureId(BATCH_NO, 'BATCH_NO') },
       select: { batchId: true, importId: true },
     })
-    const batchIds = batches.map((b) => b.batchId)
+    const batchIds = fixtureIds(
+      batches.map((b) => b.batchId),
+      'batchIds',
+    )
     const dependent = await prisma.import.findMany({
       where: {
         runs: {

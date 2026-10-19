@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '../../src/generated/prisma/client.js'
-import { createPrismaClient } from './helpers.js'
+import { createPrismaClient, fixtureId } from './helpers.js'
 
 // Migration 0007_settlement_process (settlement-process design D3, D4): a movement per source row of the batch
 // (UX_SettlementTransaction_batch_row, filtered to rows with a sheet), sheet and row go together
@@ -52,12 +52,13 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await prisma.settlementTransactionFee.deleteMany({ where: { settlementTxn: { batchId } } })
-  await prisma.settlementTransaction.deleteMany({ where: { batchId } })
-  await prisma.settlementBatch.deleteMany({ where: { batchId } })
-  await prisma.importSheet.deleteMany({ where: { sheetId } })
-  await prisma.importFile.deleteMany({ where: { fileId } })
-  await prisma.import.deleteMany({ where: { importId } })
+  const batch = fixtureId(batchId, 'batchId')
+  await prisma.settlementTransactionFee.deleteMany({ where: { settlementTxn: { batchId: batch } } })
+  await prisma.settlementTransaction.deleteMany({ where: { batchId: batch } })
+  await prisma.settlementBatch.deleteMany({ where: { batchId: batch } })
+  await prisma.importSheet.deleteMany({ where: { sheetId: fixtureId(sheetId, 'sheetId') } })
+  await prisma.importFile.deleteMany({ where: { fileId: fixtureId(fileId, 'fileId') } })
+  await prisma.import.deleteMany({ where: { importId: fixtureId(importId, 'importId') } })
   await prisma.$disconnect()
 })
 

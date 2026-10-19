@@ -15,7 +15,7 @@ import {
 } from '../../src/modules/settlement/infrastructure/prisma-settlement-repository.js'
 import { PrismaSettlementSource } from '../../src/modules/settlement/infrastructure/prisma-settlement-source.js'
 import { PrismaMissingResolution } from '../../src/modules/validation/infrastructure/prisma-missing-resolution.js'
-import { createTestApp } from './helpers.js'
+import { createTestApp, fixtureId, fixtureIds } from './helpers.js'
 import {
   type AccountChannelRow,
   expectedOf,
@@ -470,12 +470,16 @@ describe('missing findings resolved by processing', () => {
   let issueId: number
 
   afterAll(async () => {
-    const runs = await ctx.prisma.validationRun.findMany({ where: { importId: fixtureImportId } })
-    const runIds = runs.map((r) => r.runId)
+    const importId = fixtureId(fixtureImportId, 'fixtureImportId')
+    const runs = await ctx.prisma.validationRun.findMany({ where: { importId } })
+    const runIds = fixtureIds(
+      runs.map((r) => r.runId),
+      'runIds',
+    )
     await ctx.prisma.validationIssue.deleteMany({ where: { result: { runId: { in: runIds } } } })
     await ctx.prisma.validationResult.deleteMany({ where: { runId: { in: runIds } } })
     await ctx.prisma.validationRun.deleteMany({ where: { runId: { in: runIds } } })
-    await ctx.prisma.import.deleteMany({ where: { importId: fixtureImportId } })
+    await ctx.prisma.import.deleteMany({ where: { importId } })
   })
 
   it('a persistent missing of another import passes to resolved, and validationSummary.resolvedMissing = 1', async () => {

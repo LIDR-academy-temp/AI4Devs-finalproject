@@ -11,7 +11,7 @@ import {
   type WritePhase,
 } from '../../src/modules/settlement/infrastructure/prisma-settlement-repository.js'
 import { PrismaMissingResolution } from '../../src/modules/validation/infrastructure/prisma-missing-resolution.js'
-import { createTestApp } from './helpers.js'
+import { createTestApp, fixtureId } from './helpers.js'
 import { type AccountChannelRow, ImportFlow, restoreAccountChannels, snapshotAccountChannels } from './import-flow.js'
 
 // Overlaps of processing (settlement-process design D5–D7; spec settlement "Procesamiento atómico y auditado",
@@ -171,8 +171,8 @@ describe('a unique index violation as the last barrier', () => {
   })
 
   afterAll(async () => {
-    await ctx.prisma.settlementBatch.deleteMany({ where: { batchId: foreignBatchId } })
-    await ctx.prisma.import.deleteMany({ where: { importId: foreignImportId } })
+    await ctx.prisma.settlementBatch.deleteMany({ where: { batchId: fixtureId(foreignBatchId, 'foreignBatchId') } })
+    await ctx.prisma.import.deleteMany({ where: { importId: fixtureId(foreignImportId, 'foreignImportId') } })
   })
 
   it('names the attempted number of its own account, not the attempt of another account', async () => {

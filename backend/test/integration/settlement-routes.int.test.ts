@@ -5,7 +5,7 @@ import path from 'node:path'
 import { ImportDetail, NextBatchNumber, SettlementPreview, SettlementView } from '@recon/shared'
 import argon2 from 'argon2'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { createTestApp } from './helpers.js'
+import { createTestApp, fixtureId } from './helpers.js'
 import { type AccountChannelRow, ImportFlow, restoreAccountChannels, snapshotAccountChannels } from './import-flow.js'
 
 // The three settlement routes through the API against SQL Server (settlement-process task 9.2): the composition of
@@ -21,10 +21,11 @@ let scopedToken: string
 async function removeScopedUser(): Promise<void> {
   const user = await ctx.prisma.user.findUnique({ where: { userName: SCOPED_USER }, select: { userId: true } })
   if (!user) return
-  await ctx.prisma.auditLog.deleteMany({ where: { userId: user.userId } })
-  await ctx.prisma.refreshToken.deleteMany({ where: { userId: user.userId } })
-  await ctx.prisma.userMerchant.deleteMany({ where: { userId: user.userId } })
-  await ctx.prisma.user.delete({ where: { userId: user.userId } })
+  const userId = fixtureId(user.userId, 'userId')
+  await ctx.prisma.auditLog.deleteMany({ where: { userId } })
+  await ctx.prisma.refreshToken.deleteMany({ where: { userId } })
+  await ctx.prisma.userMerchant.deleteMany({ where: { userId } })
+  await ctx.prisma.user.delete({ where: { userId } })
 }
 
 beforeAll(async () => {

@@ -5,7 +5,7 @@ import { ImportDetail, type MappingConfirmation } from '@recon/shared'
 import { expect } from 'vitest'
 import { Prisma } from '../../src/generated/prisma/client.js'
 import type { createTestApp } from './helpers.js'
-import { SEED_PASSWORD } from './helpers.js'
+import { fixtureIds, SEED_PASSWORD } from './helpers.js'
 
 // Upload → confirm the proposal → analyze through the API, and the cleanup of what a flow leaves behind (imports with
 // their runs, findings, occurrences and audit entries). Shared by the validation-runs suites.
@@ -170,7 +170,8 @@ export class ImportFlow {
  * movements, the associations they created, the findings they resolved or detected, occurrences that point at them
  * and their audit entries. Primary flags that a test moved are restored with `restoreAccountChannels`.
  */
-export async function removeSettlementsFrom(prisma: Ctx['prisma'], importIds: string[]): Promise<void> {
+export async function removeSettlementsFrom(prisma: Ctx['prisma'], ids: string[]): Promise<void> {
+  const importIds = fixtureIds(ids, 'importIds')
   if (importIds.length === 0) return
   const batches = Prisma.sql`SELECT [batchId] FROM [SettlementBatch] WHERE [importId] IN (${Prisma.join(importIds)})`
   await prisma.$executeRaw`UPDATE [Import] SET [currentBatchId] = NULL WHERE [currentBatchId] IN (${batches})`
@@ -205,6 +206,9 @@ export async function snapshotAccountChannels(prisma: Ctx['prisma']): Promise<Ac
 
 /** Rows a test created go; the primary flags go back to the snapshot (clear first: one primary per channel). */
 export async function restoreAccountChannels(prisma: Ctx['prisma'], snapshot: AccountChannelRow[]): Promise<void> {
+  // Every row missing from the snapshot is deleted: an absent or empty one would delete them all (the seed has seven).
+  if (fixtureIds(snapshot, 'snapshot').length === 0)
+    throw new Error('cleanup refused: the AccountChannel snapshot is empty')
   const key = (r: AccountChannelRow) => `${r.accountId.toLowerCase()}:${r.channelId}`
   const kept = new Set(snapshot.map(key))
   for (const row of await snapshotAccountChannels(prisma))

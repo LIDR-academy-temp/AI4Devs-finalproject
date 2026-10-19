@@ -45,3 +45,18 @@ export function signHs256(claims: Record<string, unknown>, secret: string): stri
   const signature = createHmac('sha256', secret).update(head).digest('base64url')
   return `${head}.${signature}`
 }
+
+/**
+ * An id a cleanup filters on. In a Prisma filter an undefined value drops the condition, so a deleteMany of a fixture
+ * whose setup failed would empty the whole table: fail instead of deleting.
+ */
+export function fixtureId<T>(value: T | null | undefined, name: string): T {
+  if (value === undefined || value === null) throw new Error(`cleanup refused: ${name} is not defined`)
+  return value
+}
+
+/** The ids of an `in` filter of a cleanup: the list and each id defined (an empty list deletes nothing). */
+export function fixtureIds<T>(values: readonly (T | null | undefined)[] | undefined, name: string): T[] {
+  if (values === undefined) throw new Error(`cleanup refused: ${name} is not defined`)
+  return values.map((v, i) => fixtureId(v, `${name}[${i}]`))
+}

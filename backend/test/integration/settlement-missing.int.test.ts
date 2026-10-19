@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { PrismaClient } from '../../src/generated/prisma/client.js'
 import { PrismaMissingResolution } from '../../src/modules/validation/infrastructure/prisma-missing-resolution.js'
-import { createPrismaClient } from './helpers.js'
+import { createPrismaClient, fixtureIds } from './helpers.js'
 
 // MissingResolution (settlement-process design D11; spec validation "Los hallazgos persisten", spec settlement
 // "Faltantes resueltos al procesar"): inside the transaction that processes or undoes a batch, the persistent missing
@@ -36,17 +36,19 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  const runs = await prisma.validationRun.findMany({
-    where: { importId: { in: created.imports } },
-    select: { runId: true },
-  })
-  const runIds = runs.map((r) => r.runId)
+  const imports = fixtureIds(created.imports, 'created.imports')
+  const batches = fixtureIds(created.batches, 'created.batches')
+  const runs = await prisma.validationRun.findMany({ where: { importId: { in: imports } }, select: { runId: true } })
+  const runIds = fixtureIds(
+    runs.map((r) => r.runId),
+    'runIds',
+  )
   await prisma.validationIssue.deleteMany({ where: { result: { runId: { in: runIds } } } })
   await prisma.validationResult.deleteMany({ where: { runId: { in: runIds } } })
   await prisma.validationRun.deleteMany({ where: { runId: { in: runIds } } })
-  await prisma.settlementTransaction.deleteMany({ where: { batchId: { in: created.batches } } })
-  await prisma.settlementBatch.deleteMany({ where: { batchId: { in: created.batches } } })
-  await prisma.import.deleteMany({ where: { importId: { in: created.imports } } })
+  await prisma.settlementTransaction.deleteMany({ where: { batchId: { in: batches } } })
+  await prisma.settlementBatch.deleteMany({ where: { batchId: { in: batches } } })
+  await prisma.import.deleteMany({ where: { importId: { in: imports } } })
   await prisma.$disconnect()
 })
 
