@@ -80,10 +80,15 @@ function Finding({ issue }: { issue: ValidationIssueDetail }) {
       <div aria-live="polite" className="text-sm">
         {actions.message && <p className="text-destructive">{actions.message}</p>}
       </div>
-      <Occurrences
-        occurrences={issue.occurrences}
-        inclusion={(occurrence) => <InclusionSwitch occurrence={occurrence} busy={actions.pending} onChange={change} />}
-      />
+      {/* A one-row finding has its row in `source` and no occurrences: there is no list to show. */}
+      {(issue.occurrences.length > 0 || !issue.source) && (
+        <Occurrences
+          occurrences={issue.occurrences}
+          inclusion={(occurrence) => (
+            <InclusionSwitch occurrence={occurrence} busy={actions.pending} onChange={change} />
+          )}
+        />
+      )}
       <Resolution issue={issue} />
       {issue.resolvable && <ResolveForm actions={actions} />}
       <IssueHistory history={issue.history} occurrences={issue.occurrences} />

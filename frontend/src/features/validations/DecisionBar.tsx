@@ -57,6 +57,18 @@ export function DecisionBar({
   const run = view.run
   const reason = !run ? s.noRun : run.blocked ? s.blocked : null
 
+  // A cancelled or processed import has nothing left to decide: the section says so instead of standing empty.
+  // The API does not say who cancelled, so the text names only the status.
+  if (view.importStatus === 'cancelled' || view.importStatus === 'processed') {
+    return (
+      <section aria-label={s.label} className="border-t pt-3 text-sm text-muted-foreground">
+        <p>{s.closed(view.importStatus)}</p>
+      </section>
+    )
+  }
+  // Without the permission there is no decision to take on an analyzed import.
+  if (view.importStatus === 'analyzed' && !canProcess) return null
+
   return (
     <section aria-label={s.label} className="flex flex-col gap-2 border-t pt-3">
       <div className="flex flex-wrap items-start gap-3">

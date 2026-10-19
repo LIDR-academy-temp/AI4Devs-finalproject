@@ -184,6 +184,8 @@ export const strings = {
     reviewedBy: (userName: string, at: string) => `Reviewed by ${userName} · ${at}`,
     settlementReview: 'Settlement Review',
     notAvailable: 'Settlement Review is not available yet.',
+    closed: (status: 'cancelled' | 'processed') =>
+      `This import is ${status}. Its run and findings are kept for reference.`,
     errors: {
       superseded: 'A newer validation run exists. Review it before continuing.',
       blocking: 'The validations found a blocking finding. The results were reloaded.',
