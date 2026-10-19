@@ -222,6 +222,21 @@ describe('PATCH /conflict-occurrences/:occurrenceId', () => {
     expect(long.statusCode).toBe(400)
   })
 
+  it('400 validation_error for 19 digits above the BIGINT maximum; the maximum itself is a well-formed id (404)', async () => {
+    await inBatchDuplicate()
+
+    const over = await request('PATCH', '/conflict-occurrences/9223372036854775808', {
+      body: { includeInSettlement: true },
+    })
+    const max = await request('PATCH', '/conflict-occurrences/9223372036854775807', {
+      body: { includeInSettlement: true },
+    })
+
+    expect(over.statusCode).toBe(400)
+    expect(errorCode(over.json())).toBe('validation_error')
+    expect(max.statusCode).toBe(404)
+  })
+
   it('404 not_found for an unknown occurrence', async () => {
     await inBatchDuplicate()
 
