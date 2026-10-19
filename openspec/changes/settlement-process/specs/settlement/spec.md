@@ -5,6 +5,8 @@
 ### Requirement: Intentos de batch
 Procesar SHALL crear un `SettlementBatch` con `batchNo` propuesto (último + 1, editable) y `attemptNo`; solo un intento vigente por (cuenta, batchNo) y por import. Deshacer SHALL marcar el intento `undone`, devolver el import a `analyzed` y conservar todo; el siguiente intento incrementa `attemptNo`. El `attemptNo` de un número SHALL ser el mayor intento de ese (cuenta, batchNo) en cualquier estado + 1, o 1 si no hay ninguno.
 
+Nota: deshacer y pagar (y sus rutas) son del tramo 6; este change no los implementa. Los escenarios "Deshacer y reprocesar con el mismo número" y "Un batch pagado no se deshace" se conservan como requisito vigente de esa entrega; aquí el intento `undone` se prepara en los tests.
+
 #### Scenario: Número de batch propuesto y editable
 - GIVEN un import en `validated` de una cuenta cuyo último batch es el 117
 - WHEN el analista abre Settlement Review
@@ -64,7 +66,7 @@ Cada fila incluida SHALL producir una `SettlementTransaction` con su `cycle`, es
 - THEN el batch tiene dos movimientos E de esa transacción, uno por fila
 
 ### Requirement: Fees por batch prellenados
-Las filas de `Other Fees` SHALL aparecer en Settlement Review como `SettlementBatchFee` propuestos (`source = file`), con el tipo resuelto por nombre contra `FeeType`; un tipo desconocido SHALL quedar como importe libre con advertencia. El analista puede ajustar, quitar o añadir (`source = manual`). Cada fee procesado SHALL guardar `feeTypeId` de un tipo no transaccional, el `feeId` del preestablecido de la cuenta o `null`, el importe y quién lo registró; `null` en `feeId` exige un tipo con `allowsFreeAmount` salvo en los de `source = file`.
+Las filas de `Other Fees` SHALL aparecer en Settlement Review como `SettlementBatchFee` propuestos (`source = file`), con el tipo resuelto por nombre contra `FeeType`; un tipo desconocido SHALL quedar como importe libre con advertencia. El analista puede ajustar, quitar o añadir (`source = manual`). Cada fee procesado SHALL guardar `feeTypeId` de un tipo no transaccional, el `feeId` del preestablecido de la cuenta o `null`, el importe y quién lo registró; `null` en `feeId` exige un tipo con `allowsFreeAmount` salvo en los de `source = file` cuyo tipo se prellenó de verdad desde `Other Fees` en ese import.
 
 #### Scenario: Fees de Other Fees prellenados
 - GIVEN un import en `validated` cuya hoja `Other Fees` trae `Monthly Fee` por 150.0000 USD
