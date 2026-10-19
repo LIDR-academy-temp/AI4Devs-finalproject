@@ -118,13 +118,13 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 - [x] 8.2 Test (rojo) en `test/msw/validations.test.ts`: cada fixture del falso pasa `safeParse` con los esquemas de respuesta que #9 publique en `@recon/shared` (`ValidationRunView`, `ValidationIssueDetail` y la página de la lista); si #9 no los publica, anotarlo en el PR y apoyarse solo en `typecheck`
 - [x] 8.3 Sustituir en `features/validations/contract.ts` los tipos copiados por alias de `ApiResponse<…>` (ampliando `lib/api/types.ts` a `patch` y a respuestas `201`) y las llamadas por `api.GET/POST/PATCH`, sin cambiar los nombres exportados; tipar el falso con los tipos generados; verificar `pnpm typecheck`, `pnpm lint` y `pnpm test` en verde **sin tocar ningún test de componente**, y 8.2 en verde
 - [x] 8.4 La persona prepara la base con `! pnpm db:up`, `! pnpm db:migrate` (migración `0006`) y `! pnpm db:seed`, y levanta `! pnpm dev`, con la base ya libre de las pruebas de #9
-- [ ] 8.5 Prueba manual contra el API real con `analyst` y `viewer`, a 1280 px y 1024 px:
+- [x] 8.5 Prueba manual contra el API real con `analyst` y `viewer`, a 1280 px y 1024 px:
   - `batch-issues`: corrida, duplicado `441706751475644`, incluir la segunda aparición, resolver el NRA, Continue, re-ejecutar con el diálogo y ver el aviso de revisión invalidada;
   - `batch-blocked`: Continue deshabilitado y Cancel and reprocess.
   
   Contrastar los resultados de `batch-blocked` con el supuesto del falso y corregir el fixture si difieren. Anotar en el PR cualquier diferencia entre falso y real
 - [ ] 8.6 Verificar que el smoke E2E existente sigue en verde con `pnpm test:e2e` y que `pnpm --filter @recon/backend test:integration` no cambia (este change no toca backend)
-- [ ] 8.7 Escribir el script de capturas `e2e/screenshots/web-validations.ts` (D13 paso 7) y su comando raíz `pnpm screenshots:web-validations`:
+- [x] 8.7 Escribir el script de capturas `e2e/screenshots/web-validations.ts` (D13 paso 7) y su comando raíz `pnpm screenshots:web-validations`:
   - fuera de los `.feature` y del `defineBddConfig` del smoke;
   - `analyst` del seed con `SEED_PASSWORD` cargada con `process.loadEnvFile`, sin leer ni imprimir el `.env`;
   - campo de contraseña vaciado tras el login, `trace: 'off'`, `video: 'off'` y `headless: false`;
@@ -132,7 +132,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   - imports de `batch-issues` y `batch-blocked` creados por la pantalla y cancelados al terminar.
   
   Verificar con `pnpm test:e2e --list` que el smoke no lo recoge y que ningún workflow de `.github/` lo llama
-- [ ] 8.8 **Avisar a la persona antes de ejecutarlo**, porque quiere mirar la ejecución. Con su visto bueno, ejecutar `pnpm screenshots:web-validations` y comprobar que deja en `docs/wireframes/web-validations/` cuatro PNG a 1280 px: `batch-issues-validations.png`, `batch-issues-duplicate-drawer.png` (con historial), `batch-issues-invalidated-review.png` y `batch-blocked-continue-disabled.png`. Revisar cada PNG antes de versionarlo: ningún dato de credenciales y ninguna pantalla de login
+- [x] 8.8 **Avisar a la persona antes de ejecutarlo**, porque quiere mirar la ejecución. Con su visto bueno, ejecutar `pnpm screenshots:web-validations` y comprobar que deja en `docs/wireframes/web-validations/` cuatro PNG a 1280 px: `batch-issues-validations.png`, `batch-issues-duplicate-drawer.png` (con historial), `batch-issues-invalidated-review.png` y `batch-blocked-continue-disabled.png`. Revisar cada PNG antes de versionarlo: ningún dato de credenciales y ninguna pantalla de login
 - [ ] 8.9 Línea de las capturas en `docs/wireframes/README.md` y registro del change en `prompts.md`
 - [ ] 8.10 Listar en la descripción del PR:
   - los huecos del contrato del proposal (Settlement Review hasta #13, motivo de `includable`, indicadores `canRun`/`canReview`, oráculo de `batch-blocked`), para que la persona abra los issues;
