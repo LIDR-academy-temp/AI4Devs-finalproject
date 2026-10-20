@@ -9,7 +9,7 @@ import { validationRunKey } from '@/features/validations/queries'
 import { ApiError } from '@/lib/api/client'
 import { type ChannelToAssign, type ErrorDetails, processSettlement, type SettlementRequest } from './contract'
 import { previewErrorOf } from './preview'
-import { settlementKey, settlementPreviewKey, settlementPreviewsKey } from './queries'
+import { accountSettlementsPrefix, settlementKey, settlementPreviewKey, settlementPreviewsKey } from './queries'
 import { strings } from './strings'
 
 /** Errors after which the preview of the same body must be asked again: it was answered before the change. */
@@ -67,6 +67,8 @@ export function useProcessSettlement(importId: string, onNotValidated?: (text: s
       queryClient.removeQueries({ queryKey: settlementPreviewsKey(importId) })
       void queryClient.invalidateQueries({ queryKey: importKey(importId), exact: true })
       void queryClient.invalidateQueries({ queryKey: validationRunKey(importId) })
+      // The new attempt goes first in the list of its account (settlements-browse D12).
+      void queryClient.invalidateQueries({ queryKey: accountSettlementsPrefix(view.accountId) })
     } catch (e) {
       if (onFeeInvalid?.(e)) return
       if (e instanceof ApiError && e.code === 'batch_no_taken') {

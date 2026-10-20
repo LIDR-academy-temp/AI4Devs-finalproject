@@ -61,14 +61,14 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 6. Lista: columnas, filtros, paginación y errores (D7, D9, D14)
 
-- [ ] 6.1 Test (rojo) `features/settlements/SettlementList.test.tsx` con "columnas", "filtros y paginación", "abrir el Settlement Summary" y "carga y errores":
+- [x] 6.1 Test (rojo) `features/settlements/SettlementList.test.tsx` con "columnas", "filtros y paginación", "abrir el Settlement Summary" y "carga y errores":
   - fila del 122 con `122`, `1`, `Paid`, fecha `ET`, `analyst` con el instante en ET (con `process.env.TZ` distinta de Nueva York), importe con separador de miles alineado a la derecha y canales; `settlementDate = null` → `Not set`; `"123456789012345.1234"` → `123,456,789,012,345.1234`; un `undone` atenuado con su estado;
   - `Paid` → consulta `status=paid&page=1` y dirección; **From**/**To** enviadas tal cual y sin `dateField`; **Date** `Processed (ET)` → `dateField=processedAt` en la consulta y en la dirección, y sigue elegida al recargar; **From > To** → error en el campo y ninguna petición; cambiar un filtro en la página 2 vuelve a la 1;
   - 22 intentos con 20 por página → **Next** → `Page 2 of 2 · 22 settlements`, 102 y 101, **Next** deshabilitado con `This is the last page.` por `aria-describedby`;
   - sin resultados → `No settlements match these filters.`; error → `The settlements could not be loaded.` con **Retry** y los filtros en la dirección; `404` → cuenta no disponible;
   - `Batch 122 · attempt 1` lleva a `/settlements/<batchId>` y ve `Paid`
-- [ ] 6.2 Implementar `SettlementsTable.tsx`, `SettlementFilters.tsx`, `accountSettlementsQuery` en `queries.ts` (`keepPreviousData`), `SETTLEMENTS_PAGE_SIZE = 20` y los textos en `strings.ts`; invalidar `['accounts', accountId, 'settlements']` en `useProcessSettlement` con un caso nuevo en `process.test.tsx` (procesar y volver a la lista → el intento nuevo primero); verificar 6.1 en verde; romper a propósito el importe con `Number()` y ver fallar el de 15 dígitos, y quitar `page = 1` al filtrar y ver fallar su caso; restaurar
-- [ ] 6.3 Commit: `test(frontend): columnas, filtros y paginación de Settlement List` y `feat(frontend): tabla de Settlement List con filtros y paginación en la dirección`
+- [x] 6.2 Implementar `SettlementsTable.tsx`, `SettlementFilters.tsx`, `accountSettlementsQuery` en `queries.ts` (`keepPreviousData`), `SETTLEMENTS_PAGE_SIZE = 20` y los textos en `strings.ts`; invalidar `['accounts', accountId, 'settlements']` en `useProcessSettlement` con un caso nuevo en `process.test.tsx` (procesar y volver a la lista → el intento nuevo primero); verificar 6.1 en verde; romper a propósito el importe con `Number()` y ver fallar el de 15 dígitos, y quitar `page = 1` al filtrar y ver fallar su caso; restaurar
+- [x] 6.3 Commit: `test(frontend): columnas, filtros y paginación de Settlement List` y `feat(frontend): tabla de Settlement List con filtros y paginación en la dirección`
 
 ## 7. Settlement Summary: pestaña Movements y vuelta a la lista (D8, D10, D11)
 

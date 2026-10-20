@@ -2,11 +2,14 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 import { importKey } from '@/features/imports/queries'
 import {
+  type BatchStatus,
   getAccountFees,
+  getAccountSettlements,
   getFeeTypes,
   getNextBatchNumber,
   getSettlement,
   previewSettlement,
+  type SettlementDateField,
   type SettlementRequest,
 } from './contract'
 
@@ -30,6 +33,29 @@ export const settlementKey = (batchId: string) => ['settlements', batchId] as co
 /** An attempt: seeded by Process with its 201, so it is read only on a reload or a link (no action changes it yet). */
 export const settlementQuery = (batchId: string) =>
   queryOptions({ queryKey: settlementKey(batchId), queryFn: () => getSettlement(batchId), staleTime: Infinity })
+
+/** Rows per page of Settlement List: the 22 seeded batches of ProviderA-USD take two pages (settlements-browse D9). */
+export const SETTLEMENTS_PAGE_SIZE = 20
+
+export interface AccountSettlementsFilters {
+  status?: BatchStatus
+  dateField?: SettlementDateField
+  from?: string
+  to?: string
+  page: number
+}
+
+/** Every page and filter of the list of an account: what a new attempt of the account makes stale. */
+export const accountSettlementsPrefix = (accountId: string) => ['accounts', accountId, 'settlements'] as const
+
+export const accountSettlementsQuery = (accountId: string, filters: AccountSettlementsFilters, enabled = true) =>
+  queryOptions({
+    queryKey: [...accountSettlementsPrefix(accountId), filters] as const,
+    queryFn: ({ signal }) => getAccountSettlements(accountId, { ...filters, pageSize: SETTLEMENTS_PAGE_SIZE }, signal),
+    enabled,
+    // The previous page stays while the next one loads, never the list of another account.
+    placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === accountId ? previous : undefined),
+  })
 
 /** The proposed number is a proposal, not a reservation: always asked again when the screen opens. */
 export const nextBatchNumberQuery = (accountId: string, importId: string) =>
