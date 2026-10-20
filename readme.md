@@ -1869,9 +1869,17 @@ Tres historias principales del flujo. Son amplias y se descomponen en tickets; l
 
 Tres tickets representativos del backlog, uno por capa; no representan todo el trabajo del MVP. Responsable: **Manfred Valverde Perrogón**. Estimación en puntos Fibonacci (1 punto ≈ media jornada), a validar antes de implementar. Las dependencias se crean como tareas separadas, sin afirmar que ya están resueltas; en particular **RT2-DB-000 · Esquema base y migraciones** (catálogo, transacciones, importación, conjuntos de reglas de pareo por proveedor, usuarios) precede a los tres.
 
+**Estado de RT2-DB-000 en la Entrega 2 (hecho).** El esquema base entró con el tramo 0 en las migraciones [`0001_init`](backend/prisma/migrations/0001_init/) y [`0002_constraints`](backend/prisma/migrations/0002_constraints/), esta última escrita y revisada a mano. Tres decisiones del modelo (3.1 y 3.2) quedan fijadas en él:
+
+- **`MatchingRuleSet`.** Las reglas de pareo se agrupan en conjuntos por proveedor (`UNIQUE (providerId, name)`), a los que se enlaza cada cuenta con `Account.matchingRuleSetId`; las reglas con `ruleSetId NULL` son globales y actúan como fallback. Así dos cuentas del mismo proveedor pueden compartir reglas y una cuenta nueva hereda las globales sin configurar nada.
+- **`Fee.startDate NULL`** significa "desde siempre" y `endDate NULL` "sin fin": la `CHECK CK_Fee_validity` solo compara fechas cuando ambas están informadas, y el trigger `TR_Fee_NoOverlap` trata los NULL como −∞ y +∞ al impedir el solapamiento de fees del mismo tipo en la misma cuenta. Los fees no se borran: se cierran informando `endDate`.
+- **`MatchingSheetRule.kind`** ∈ `transactions` | `batch_fees` | `ignore` sustituye a la antigua tabla de hojas resumen. Tres `CHECK` mantienen la coherencia: una hoja `transactions` lleva ciclo; `batch_fees` e `ignore` no llevan ni ciclo ni estado; y el ciclo `R` nunca lleva estado.
+
 ### Ticket 1 — RT2-DB-001 · Persistencia de intentos de batch, movimientos y fees aplicados
 
-**Tipo:** Base de datos. **Historia:** HU3. **Estimación:** 8 puntos. **Depende de:** RT2-DB-000.
+**Tipo:** Base de datos. **Historia:** HU3. **Estimación:** 8 puntos. **Depende de:** RT2-DB-000. **Issue:** [#11](https://github.com/kajirioji/AI4Devs-finalproject/issues/11).
+
+> **Estado en la Entrega 2 (hecho).** Las tablas de settlement, sus `CHECK` y los índices únicos filtrados por `status <> 'undone'` venían en el esquema base (RT2-DB-000). El change `settlement-process` ([#66](https://github.com/kajirioji/AI4Devs-finalproject/pull/66)) añadió dos migraciones escritas a mano: [`0007_settlement_process`](backend/prisma/migrations/0007_settlement_process/) sustituye `UNIQUE (transactionId, cycle, batchId)` por un movimiento por fila de origen `(batchId, sheetId, rowNo)` y admite una fecha de evento desconocida (NULL) en lugar de inventarla; [`0008_settlement_fee_event_date`](backend/prisma/migrations/0008_settlement_fee_event_date/) extiende ese NULL al detalle de fees del movimiento. Los fees se resuelven con la vigencia de RT2-DB-000 (un `Fee` con `startDate NULL` y `endDate NULL` aplica también a un ajuste sin fecha); el ciclo de cada movimiento lo fija la regla de hoja (`MatchingSheetRule.kind = 'transactions'` con su `cycle`), y los fees de la hoja `batch_fees` llegan prellenados al Settlement Review y se guardan en `SettlementBatchFee` con `source = 'file'`. Queda para la Entrega 3 la reserva por política ante chargeback ([#62](https://github.com/kajirioji/AI4Devs-finalproject/issues/62)).
 
 **Objetivo:** guardar cada procesamiento con trazabilidad, distinguirlo del pago y permitir reprocesar sin borrar el intento anterior.
 
@@ -1899,13 +1907,13 @@ Tres tickets representativos del backlog, uno por capa; no representan todo el t
 
 ### Ticket 2 — RT2-BE-002 · Ejecutar validaciones de duplicados y colisiones
 
-**Tipo:** Backend. **Historia:** HU2. **Estimación:** 8 puntos. **Depende de:** RT2-DB-000, RT2-DB-001, caso de uso de análisis (HU1), archivos de muestra con resultado esperado.
+**Tipo:** Backend. **Historia:** HU2. **Estimación:** 8 puntos. **Depende de:** RT2-DB-000, RT2-DB-001, caso de uso de análisis (HU1), archivos de muestra con resultado esperado. **Issue:** [#8](https://github.com/kajirioji/AI4Devs-finalproject/issues/8) (motor de validaciones, [#41](https://github.com/kajirioji/AI4Devs-finalproject/pull/41)); las corridas, los endpoints y las acciones del analista siguieron en [#9](https://github.com/kajirioji/AI4Devs-finalproject/issues/9) ([#52](https://github.com/kajirioji/AI4Devs-finalproject/pull/52)).
 
 **Objetivo:** identificar repeticiones e incompatibilidades después del cruce, conservar hallazgos con todas sus apariciones y evitar contabilizar dos veces un movimiento.
 
 **Tareas:**
 
-1. Implementar cuatro validaciones como funciones puras en `modules/validations/domain/`: `duplicate_in_batch`, `status_collision_in_batch`, `duplicate_across_batches`, `status_collision_across_batches`.
+1. Implementar cuatro validaciones como funciones puras en `modules/validation/domain/`: `duplicate_in_batch`, `status_collision_in_batch`, `duplicate_across_batches`, `status_collision_across_batches`.
 2. Comparar por identidad externa `(gatewayId, sourceTransactionId)` resuelta a `transactionId`, y por `cycle`, con la regla de 3.3: mismo estado → duplicado, estado distinto → colisión, con la excepción legacy `Chargeback` / `CHB 2` (`excludeAmount`) codificada en `statusRules.ts`; ningún par bloquea.
 3. Considerar como anteriores los batches `processed` y `paid` de **todas las cuentas del proveedor**; excluir `undone`. Respetar el alcance por merchant del usuario.
 4. Producir `ValidationIssue` con N `ConflictOccurrence` y la inclusión por defecto de cada aparición según las reglas de 3.2.
@@ -1929,7 +1937,7 @@ Tres tickets representativos del backlog, uno por capa; no representan todo el t
 
 ### Ticket 3 — RT2-FE-003 · Pantallas Upload Files y Column Mapping
 
-**Tipo:** Frontend. **Historia:** HU1. **Estimación:** 8 puntos. **Depende de:** contrato OpenAPI 4.2 (puede empezar con respuestas simuladas); RT2-DB-000 y caso de uso de importación para la integración real.
+**Tipo:** Frontend. **Historia:** HU1. **Estimación:** 8 puntos. **Issue:** [#6](https://github.com/kajirioji/AI4Devs-finalproject/issues/6). **Depende de:** contrato OpenAPI 4.2 (puede empezar con respuestas simuladas); RT2-DB-000 y caso de uso de importación para la integración real.
 
 **Objetivo:** cargar los archivos de la plantilla, revisar el pareo propuesto y confirmarlo antes de analizar.
 
