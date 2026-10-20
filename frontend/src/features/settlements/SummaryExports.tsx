@@ -29,7 +29,7 @@ export function SummaryExports({ view }: { view: SettlementView }) {
     setDownloading(type)
     setFailed(null)
     try {
-      const file = await downloadSettlementExport(view.exports[type])
+      const file = await downloadSettlementExport(view.batchId, type)
       saveFile(file.blob, file.fileName ?? exportFileName(view, type, file.contentType))
     } catch {
       setFailed(type)

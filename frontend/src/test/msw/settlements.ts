@@ -2,13 +2,15 @@
 // nor decide business rules: totals, the payable and its breakdown, skipped, warnings and the channels to assign are
 // fixed by the fixture of each scenario, whatever fees the request sends. A preview only copies two fields of the
 // body: `batchNo` and `batchFees` (field by field, with the title of the fee type and each amount written with four
-// decimals, as the API returns it). Bodies are checked with the SettlementRequest schema of @recon/shared. The fake models what changes
+// decimals, as the API returns it). Bodies are checked with the SettlementRequest schema of @recon/shared and the
+// export query with ExportQuery (settlement-reads); downloads answer as #12: a CSV named by attempt in
+// Content-Disposition, errors as JSON. The fake models what changes
 // between requests: the batch numbers with an active attempt per account, the import validated → processed with its
 // currentBatchId, the attempts it creates (read back by GET /settlements/{id}) and the scripted answers. The
 // rejections follow from that state, not from business rules: import_not_validated from the status of the import,
 // validation_run_superseded from the current run, batch_no_taken from the active numbers, and
 // channel_assignment_not_confirmed when the fixture requires a confirmation the body does not carry.
-import { SettlementRequest as SettlementRequestSchema, TRANSACTION_STATUSES } from '@recon/shared'
+import { ExportQuery, SettlementRequest as SettlementRequestSchema, TRANSACTION_STATUSES } from '@recon/shared'
 import { HttpResponse, http, type PathParams } from 'msw'
 import type {
   AccountFee,
@@ -738,10 +740,9 @@ export function createSettlementHandlers(caller: (request: Request) => UserName 
           if (!USERS[user].permissions.includes('reports.view')) return forbidden()
           const view = state.attempts.get(String(params.batchId))
           if (!view || !canSeeAccount(user, view.accountId)) return notFound('Settlement')
-          const type = new URL(request.url).searchParams.get('type')
-          if (type !== 'summary' && type !== 'transactions' && type !== 'reserves') {
-            return error(400, 'validation_error', 'Invalid export type')
-          }
+          const query = ExportQuery.safeParse(Object.fromEntries(new URL(request.url).searchParams))
+          if (!query.success) return error(400, 'validation_error', 'Invalid export type')
+          const { type } = query.data
           const headers: Record<string, string> = { 'content-type': 'text/csv; charset=utf-8' }
           if (state.exportDisposition) {
             headers['content-disposition'] =

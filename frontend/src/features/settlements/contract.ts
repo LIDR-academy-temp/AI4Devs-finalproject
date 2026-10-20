@@ -1,17 +1,11 @@
-// The settlement routes of #11 (settlement-process), the only place of the screens that knows them (web-settlement
-// design D2). Types are aliases of the generated contract with the dates branded by kind; the calls go through the
-// typed `api` client. The names exported are the ones the screens used with the hand-copied contract before #11.
-// TEMPORARY until #12 is merged: GET /settlements/{id} and the export downloads are not in docs/openapi.yaml yet, so
-// those two calls stay hand-written ("Contract for #12" of the settlement-process design), typed with the view of the
-// 201 of processing, which is the same SettlementView. Money and rates are always strings.
+// The settlement routes of #11 (settlement-process) and #12 (summary-exports), the only place of the screens that
+// knows them (web-settlement design D2). Types are aliases of the generated contract with the dates branded by kind;
+// the calls go through the typed `api` client. Money and rates are always strings.
 import type { ImportStatus } from '@recon/shared'
-import { ApiError, api, unwrap } from '@/lib/api/client'
+import { api, unwrap } from '@/lib/api/client'
 import type { paths } from '@/lib/api/schema.gen'
 import type { ApiResponse } from '@/lib/api/types'
 import type { AuditInstant, BusinessDate } from '@/lib/format'
-import { apiOrigin } from '@/lib/session/api-origin'
-import { createAuthFetch } from '@/lib/session/auth-fetch'
-import { session } from '@/lib/session/session'
 
 export type { AuditInstant, BusinessDate }
 
@@ -37,6 +31,7 @@ type ProcessPath = '/api/v1/imports/{importId}/settlements'
 type PreviewPath = '/api/v1/imports/{importId}/settlements/preview'
 type NextPath = '/api/v1/accounts/{accountId}/batch-number/next'
 type FeesPath = '/api/v1/accounts/{accountId}/fees'
+type ExportPath = '/api/v1/settlements/{batchId}/export'
 type JsonRequest<B> = B extends { content: { 'application/json': infer Body } } ? Body : never
 
 /** Body of the preview and of Process. */
@@ -44,7 +39,7 @@ export type SettlementRequest = JsonRequest<paths[ProcessPath]['post']['requestB
 export type BatchFeeInput = NonNullable<SettlementRequest['batchFees']>[number]
 
 export type SettlementPreview = Dated<ApiResponse<PreviewPath, 'post'>>
-/** An attempt as written: the 201 of processing and, in #12, GET /settlements/{id}. */
+/** An attempt as written: the 201 of processing, the same view GET /settlements/{id} answers. */
 export type SettlementView = Dated<ApiResponse<ProcessPath, 'post', 201>>
 /** What the preview and the view share. */
 export type SettlementFigures = Omit<
@@ -109,7 +104,7 @@ export interface ErrorDetails {
   batch_fee_invalid: { index: number; reason: BatchFeeInvalidReason | (string & {}) }
 }
 
-export type ExportType = 'summary' | 'transactions' | 'reserves'
+export type ExportType = NonNullable<paths[ExportPath]['get']['parameters']['query']>['type']
 
 // --- Calls ---------------------------------------------------------------------------------------------------------
 // The casts only brand the dates of an answer typed by the generated contract.
@@ -141,25 +136,9 @@ export const processSettlement = (importId: string, body: SettlementRequest) =>
     api.POST('/api/v1/imports/{importId}/settlements', { params: { path: { importId } }, body }),
   ) as Promise<SettlementView>
 
-// --- Calls of #12, hand-written until its merge ----------------------------------------------------------------------
-
-const authFetch = createAuthFetch(session)
-
-/** The error body of a non-2xx answer as ApiError. */
-async function toApiError(response: Response): Promise<ApiError> {
-  const error = ((await response.json().catch(() => undefined)) ?? {}) as {
-    code?: string
-    message?: string
-    details?: unknown
-  }
-  return new ApiError(response.status, error.code, error.message ?? `HTTP ${response.status}`, error.details)
-}
-
-export async function getSettlement(batchId: string): Promise<SettlementView> {
-  const response = await authFetch(new Request(`${apiOrigin()}/api/v1/settlements/${batchId}`, { method: 'GET' }))
-  if (!response.ok) throw await toApiError(response)
-  return (await response.json()) as SettlementView
-}
+/** The attempt as written; the same SettlementView as the 201 of processing. */
+export const getSettlement = (batchId: string) =>
+  unwrap(api.GET('/api/v1/settlements/{batchId}', { params: { path: { batchId } } })) as Promise<SettlementView>
 
 /** A downloaded export: the file and the name the API gave it in Content-Disposition, if it could be read. */
 export interface DownloadedExport {
@@ -177,12 +156,16 @@ export function fileNameOf(disposition: string | null): string | null {
   return plain ? plain[1]!.trim() : null
 }
 
-/** GET of an export URL of the view (a path with /api/v1), authenticated: the links need the Bearer token (D12). */
-export async function downloadSettlementExport(url: string): Promise<DownloadedExport> {
-  const response = await authFetch(new Request(`${apiOrigin()}${url}`, { method: 'GET' }))
-  if (!response.ok) throw await toApiError(response)
+/** An export of the attempt, authenticated: the links of `exports` need the Bearer token (D12). Errors are JSON. */
+export async function downloadSettlementExport(batchId: string, type: ExportType): Promise<DownloadedExport> {
+  const call = api.GET('/api/v1/settlements/{batchId}/export', {
+    params: { path: { batchId }, query: { type } },
+    parseAs: 'blob',
+  })
+  const blob = await unwrap(call)
+  const { response } = await call
   return {
-    blob: await response.blob(),
+    blob,
     fileName: fileNameOf(response.headers.get('content-disposition')),
     contentType: response.headers.get('content-type'),
   }
