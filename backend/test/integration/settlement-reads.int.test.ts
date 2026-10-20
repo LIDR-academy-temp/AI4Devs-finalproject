@@ -1,12 +1,13 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { type SettlementRequest, SettlementView } from '@recon/shared'
+import { ImportSettlements, type SettlementRequest, SettlementTransactionsPage, SettlementView } from '@recon/shared'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { Prisma } from '../../src/generated/prisma/client.js'
 import type { StoredMovement } from '../../src/modules/settlement/application/read-ports.js'
 import { PrismaSettlementQueries } from '../../src/modules/settlement/infrastructure/prisma-settlement-queries.js'
-import { createTestApp, fixtureId } from './helpers.js'
+import { dataLines } from '../../src/modules/settlement/test-support/export-rows.js'
+import { createTestApp, fixtureId, fixtureIds } from './helpers.js'
 import {
   type AccountChannelRow,
   expectedOf,
@@ -27,6 +28,10 @@ const log = { warn: vi.fn() }
 const ALL = { merchantIds: [1, 2] }
 const MERCHANT_1 = { merchantIds: [1] }
 const UNKNOWN = '00000000-0000-4000-8000-00000000ffff'
+/** A channel of batch-clean without an account in the seed. */
+const RAM_07 = 1007
+/** Seeded batches this file downloads: their settlement.export rows are removed in afterAll. */
+const exportedSeeded = new Set<string>()
 const BATCH_CLEAN_FEES: SettlementRequest['batchFees'] = [
   { feeTypeId: 121, feeId: null, amount: '25.0000', description: 'Wire Fee', source: 'file' },
   { feeTypeId: 117, feeId: null, amount: '15.0000', description: 'Settlement Fee', source: 'file' },
@@ -44,6 +49,9 @@ beforeAll(async () => {
 afterAll(async () => {
   if (ctx) {
     try {
+      const seeded = fixtureIds([...exportedSeeded], 'exportedSeeded')
+      if (seeded.length > 0)
+        await ctx.prisma.auditLog.deleteMany({ where: { action: 'settlement.export', entityId: { in: seeded } } })
       await flow.close()
     } finally {
       await restoreAccountChannels(ctx.prisma, channels)
@@ -55,6 +63,13 @@ afterAll(async () => {
 })
 
 const lower = (id: string) => id.toLowerCase()
+
+const countStatus = (lines: string[]) =>
+  lines.reduce<Record<string, number>>((acc, line) => {
+    const status = line.split(',')[1]!
+    acc[status] = (acc[status] ?? 0) + 1
+    return acc
+  }, {})
 
 /** A seeded batch of the account: only the seed writes paid batches (no sheet nor row on its movements). */
 async function seededBatch(account: string): Promise<string> {
@@ -77,8 +92,20 @@ async function allPages(batchId: string, pageSize: number, pages: number): Promi
 describe('batch-clean processed', () => {
   let importId: string
   let batchId: string
+  let created: SettlementView
 
   beforeAll(async () => {
+    // RAM-07 has no account in the seed: give it a primary of merchant 2 (ProviderC-USD), so processing moves it and
+    // the view has a previous account outside the viewer's scope. restoreAccountChannels removes the row.
+    await ctx.prisma.accountChannel.create({
+      data: {
+        accountId: fixtureId(flow.accountIds['ProviderC-USD'], 'ProviderC-USD'),
+        channelId: RAM_07,
+        isPrimary: true,
+        assignedAt: new Date(),
+        assignedByUserId: flow.userIds.analyst,
+      },
+    })
     const validated = await flow.validatedSample('batch-clean')
     importId = validated.importId
     const res = await flow.call('POST', `/imports/${importId}/settlements`, {
@@ -87,7 +114,107 @@ describe('batch-clean processed', () => {
       batchFees: BATCH_CLEAN_FEES,
     })
     expect(res.statusCode, res.body).toBe(201)
-    batchId = SettlementView.parse(res.json()).batchId
+    created = SettlementView.parse(res.json())
+    batchId = created.batchId
+  })
+
+  describe('through the API (task 6.4)', () => {
+    const summary = expectedOf('batch-clean').summary as { qty: Record<string, number>; amountPayable: string }
+
+    it('GET /settlements/{id} answers the same view as the 201 of processing', async () => {
+      const res = await flow.call('GET', `/settlements/${batchId}`)
+      expect(res.statusCode, res.body).toBe(200)
+      expect(SettlementView.parse(res.json())).toEqual(created)
+    })
+
+    it('shows the previous account of merchant 2 to analyst and hides it from viewer', async () => {
+      const moved = (view: SettlementView) => view.channelsAssigned.find((c) => c.channelId === RAM_07)
+      const analyst = SettlementView.parse((await flow.call('GET', `/settlements/${batchId}`)).json())
+      expect(moved(analyst)).toMatchObject({
+        assignment: 'primary_moved_from',
+        previousAccount: { name: 'ProviderC-USD' },
+      })
+      const viewer = SettlementView.parse(
+        (await flow.call('GET', `/settlements/${batchId}`, undefined, 'viewer')).json(),
+      )
+      expect(moved(viewer)?.previousAccount).toEqual({ accountId: null, name: null, outOfScope: true })
+    })
+
+    it('answers the 10 adjustments, not settled while the attempt is processed', async () => {
+      const page = SettlementTransactionsPage.parse(
+        (await flow.call('GET', `/settlements/${batchId}/transactions?type=I`)).json(),
+      )
+      expect(page.total).toBe(10)
+      expect(page.items.every((m) => m.settled === false)).toBe(true)
+    })
+
+    it('answers the attempts of the import with the current one', async () => {
+      const attempts = ImportSettlements.parse((await flow.call('GET', `/imports/${importId}/settlements`)).json())
+      expect(attempts.items).toHaveLength(1)
+      expect(attempts.items[0]).toMatchObject({ batchNo: 123, attemptNo: 1, isCurrent: true })
+    })
+
+    it('exports the TXN of the oracle: 350 rows, 340 SUC, 2 CHB, 6 REF and 2 RDR', async () => {
+      const res = await flow.call('GET', `/settlements/${batchId}/export?type=transactions`)
+      expect(res.statusCode, res.body).toBe(200)
+      expect(res.headers['content-type']).toBe('text/csv; charset=utf-8')
+      expect(res.headers['content-disposition']).toBe('attachment; filename="ProviderA-USD_B123_A1_transactions.csv"')
+      const lines = dataLines(res.body)
+      expect(res.body.startsWith('ID,Status\r\n')).toBe(true)
+      expect(lines).toHaveLength(350)
+      expect(countStatus(lines)).toEqual({
+        SUC: summary.qty.deposit,
+        CHB: summary.qty.chargeback,
+        REF: summary.qty.refund,
+        RDR: summary.qty.rdr,
+      })
+    })
+
+    it('exports the RR of the oracle: 320 rows, all Batch 123', async () => {
+      const res = await flow.call('GET', `/settlements/${batchId}/export?type=reserves`)
+      const lines = dataLines(res.body)
+      expect(res.body.startsWith('ID,Description\r\n')).toBe(true)
+      expect(lines).toHaveLength(summary.qty.reservesReleased!)
+      expect(lines.every((l) => l.endsWith(',Batch 123'))).toBe(true)
+    })
+
+    it('exports the summary with the amount payable of the oracle', async () => {
+      const res = await flow.call('GET', `/settlements/${batchId}/export?type=summary`)
+      expect(res.statusCode, res.body).toBe(200)
+      expect(res.body).toContain(`\r\nAmount payable,,${summary.amountPayable}\r\n`)
+      expect(res.body).toContain('\r\nPayment,Pending payment\r\n')
+    })
+
+    it('three downloads change neither the batch nor its movements and leave three settlement.export rows', async () => {
+      const exports = () =>
+        ctx.prisma.auditLog.count({ where: { action: 'settlement.export', entityId: lower(batchId) } })
+      const state = async () => ({
+        batch: await ctx.prisma.settlementBatch.findUniqueOrThrow({
+          where: { batchId },
+          select: { status: true, amountPayable: true, updatedAt: true },
+        }),
+        movements: await ctx.prisma.settlementTransaction.findMany({
+          where: { batchId },
+          orderBy: { settlementTxnId: 'asc' },
+          select: { settlementTxnId: true, settlementStatusId: true, statusId: true, amount: true },
+        }),
+      })
+      const before = { state: await state(), exports: await exports() }
+      for (let i = 0; i < 3; i++)
+        expect((await flow.call('GET', `/settlements/${batchId}/export?type=transactions`)).statusCode).toBe(200)
+      expect(await state()).toEqual(before.state)
+      expect(await exports()).toBe(before.exports + 3)
+      const last = await ctx.prisma.auditLog.findFirstOrThrow({
+        where: { action: 'settlement.export', entityId: lower(batchId) },
+        orderBy: { auditId: 'desc' },
+      })
+      expect(last.userId).toBe(flow.userIds.analyst)
+      expect(JSON.parse(last.detailJson!)).toEqual({
+        type: 'transactions',
+        fileName: 'ProviderA-USD_B123_A1_transactions.csv',
+        rows: 350,
+      })
+    })
   })
 
   describe('batchHeader', () => {
@@ -241,5 +368,61 @@ describe('sourceIds', () => {
     expect(txns).toHaveLength(1200)
     const map = await queries.sourceIds(txns.map((t) => String(t.transactionId)))
     expect(map.size).toBe(1200)
+  })
+})
+
+describe('legacy-provider processed (task 6.4)', () => {
+  it('exports its CHB 2 row as CHB: 61 rows, 60 SUC and 1 CHB', async () => {
+    const validated = await flow.validatedSample('legacy-provider')
+    const res = await flow.call('POST', `/imports/${validated.importId}/settlements`, {
+      runId: validated.runId,
+      confirmChannelAssignment: true,
+    })
+    expect(res.statusCode, res.body).toBe(201)
+    const batchId = SettlementView.parse(res.json()).batchId
+    const [chb2Id] = expectedOf('legacy-provider').excludeAmountRows as string[]
+
+    const txn = await flow.call('GET', `/settlements/${batchId}/export?type=transactions`)
+    const lines = dataLines(txn.body)
+    expect(lines).toHaveLength(61)
+    expect(countStatus(lines)).toEqual({ SUC: 60, CHB: 1 })
+    expect(lines).toContain(`${chb2Id},CHB`)
+  })
+})
+
+describe('seeded history through the API (task 6.4)', () => {
+  it('answers a seeded paid batch as settled, without validation summary, and its movements as settled', async () => {
+    const batchId = await seededBatch('ProviderA-USD')
+    const view = SettlementView.parse((await flow.call('GET', `/settlements/${batchId}`)).json())
+    expect(view).toMatchObject({ status: 'paid', settledStatus: 'settled', validationSummary: null })
+    const page = SettlementTransactionsPage.parse(
+      (await flow.call('GET', `/settlements/${batchId}/transactions?type=E&pageSize=10`)).json(),
+    )
+    expect(page.items.length).toBeGreaterThan(0)
+    expect(page.items.every((m) => m.settled)).toBe(true)
+  })
+
+  it('exports the summary of a seeded batch with Not available in Issues and Not processed', async () => {
+    const batchId = await seededBatch('ProviderA-USD')
+    exportedSeeded.add(lower(batchId))
+    const res = await flow.call('GET', `/settlements/${batchId}/export?type=summary`)
+    expect(res.statusCode, res.body).toBe(200)
+    expect(res.body).toContain('\r\n\r\nItem,Count\r\nNot available,\r\n')
+    expect(res.body).toContain('\r\n\r\nReason,Count\r\nNot available,\r\n')
+    expect(res.body).toContain('\r\nPayment,Settled\r\n')
+  })
+
+  it('answers viewer the same 404 for a batch of ProviderC-Alt as for an unknown one, without auditing', async () => {
+    const batchId = await seededBatch('ProviderC-Alt')
+    for (const suffix of ['', '/transactions?type=E', '/export?type=transactions']) {
+      const foreign = await flow.call('GET', `/settlements/${batchId}${suffix}`, undefined, 'viewer')
+      const unknown = await flow.call('GET', `/settlements/${UNKNOWN}${suffix}`, undefined, 'viewer')
+      expect(foreign.statusCode, suffix).toBe(404)
+      expect(foreign.json()).toEqual({ code: 'not_found', message: 'Settlement not found' })
+      expect(unknown.json()).toEqual(foreign.json())
+    }
+    expect(await ctx.prisma.auditLog.count({ where: { action: 'settlement.export', entityId: lower(batchId) } })).toBe(
+      0,
+    )
   })
 })
