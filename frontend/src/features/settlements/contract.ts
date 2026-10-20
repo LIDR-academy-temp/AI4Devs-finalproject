@@ -1,7 +1,12 @@
 // The settlement routes of #11 (settlement-process) and #12 (summary-exports), the only place of the screens that
 // knows them (web-settlement design D2). Types are aliases of the generated contract with the dates branded by kind;
 // the calls go through the typed `api` client. Money and rates are always strings.
-import type { ImportStatus } from '@recon/shared'
+import type {
+  BatchFeeInvalidDetails,
+  BatchNoTakenDetails,
+  ChannelAssignmentNotConfirmedDetails,
+  ImportNotValidatedDetails,
+} from '@recon/shared'
 import { api, unwrap } from '@/lib/api/client'
 import type { paths } from '@/lib/api/schema.gen'
 import type { ApiResponse } from '@/lib/api/types'
@@ -80,28 +85,15 @@ export type NextBatchNumber = ApiResponse<NextPath, 'get'>
 export type AccountFee = Dated<ApiResponse<FeesPath, 'get'>[number]>
 export type FeeTypeView = ApiResponse<'/api/v1/fee-types', 'get'>[number]
 
-export type BatchFeeInvalidReason =
-  | 'unknown_fee_type'
-  | 'transactional_fee_type'
-  | 'fee_not_in_account'
-  | 'fee_type_mismatch'
-  | 'fee_not_in_force'
-  | 'free_amount_not_allowed'
-  | 'description_required'
-
 /**
- * `details` of the errors the screens read; the generated error body types them as unknown, so the screens have a
- * text for when they are missing.
+ * `details` of the errors the screens read, as @recon/shared defines them; the generated error body types them as
+ * unknown, so the screens have a text for when they are missing (and for a reason they do not know yet).
  */
 export interface ErrorDetails {
-  import_not_validated: { status: ImportStatus }
-  validation_run_superseded: { runId: number; currentRunId: number | null }
-  validation_run_required: Record<string, never>
-  blocking_validation_issue: { runId: number; validationCodes: string[]; issueIds: number[] }
-  batch_no_taken: { batchNo: number; attemptNo: number; importId: string }
-  channel_assignment_not_confirmed: { channels: ChannelToAssign[] }
-  /** A reason this screen does not know yet gets a generic text. */
-  batch_fee_invalid: { index: number; reason: BatchFeeInvalidReason | (string & {}) }
+  import_not_validated: ImportNotValidatedDetails
+  batch_no_taken: BatchNoTakenDetails
+  channel_assignment_not_confirmed: ChannelAssignmentNotConfirmedDetails
+  batch_fee_invalid: BatchFeeInvalidDetails
 }
 
 export type ExportType = NonNullable<paths[ExportPath]['get']['parameters']['query']>['type']
