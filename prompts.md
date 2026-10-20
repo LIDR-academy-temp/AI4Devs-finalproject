@@ -341,6 +341,22 @@ Las pull requests de código van de una rama por feature (`feat/<módulo>-<tema>
 
 **Prompt 4:**
 
+*Contexto.* `api-collection` (PR #30, issue #29): una colección Bruno del API para probarlo a mano y como suite de humo contra el backend local. Es transversal al tramo 1: cubre auth, catálogo y health con un caso feliz y uno negativo por endpoint, y añade los scripts `pnpm test:api` y `pnpm test:api:smoke`. No toca el backend.
+
+*Prompt.* Proponer el change con `/opsx:propose` y aplicarlo con las condiciones de partida:
+- La colección se importa una sola vez desde `docs/openapi.yaml` y después se mantiene a mano.
+- El login es automático, para que cualquier carpeta o petición se pueda ejecutar sola.
+- Las credenciales viven solo en `api-collection/.env`, ignorado por git y que el agente no lee; los tokens, solo en variables de ejecución, nunca en disco.
+- Una aserción se rompe a propósito para comprobar que la ejecución da rojo.
+
+*Resultado.* Tres carpetas: `00-auth` (10 peticiones), `10-smoke` (19) y `20-flows` (11). Bruno 4.2.1 importa en YAML por defecto, así que la importación se forzó en formato `bru`. El pre-request de la colección inicia sesión como `analyst`; `viewer` solo se usa en los negativos de alcance. Refresh, logout y el flujo de sesión hacen su propio login (`selfAuth`) para no invalidar la sesión que comparten las demás peticiones. Resultados: 40/40 en verde; con el backend inalcanzable o una contraseña incorrecta, la ejecución termina con código 1. Los scripts usan `cd api-collection && bru run`, porque `pnpm exec` arranca desde la raíz del workspace, y `-r`, porque `20-flows` tiene subcarpetas.
+
+El review-diff encontró el README §4 desalineado con el API real: refresh, logout y health son anónimos, y el código es `validation_error` en minúsculas. Además: los logins pasaron a declarar `selfAuth` en lugar de reconocerse por el nombre; la cuenta de prueba se resuelve en un solo punto con un error explícito; las listas se comparan por miembros y no por orden; y se quitó una entrada duplicada de `.gitignore`. Por el camino, los hooks del agente pasaron a lanzarse con `$CLAUDE_PROJECT_DIR`, porque desde una subcarpeta no se ejecutaban. Al comprobarlo, el seed lanzado desde `api-collection/` quedó bloqueado como debía. `guard-schema` reconoce ahora las rutas de Windows, y los hooks tienen pruebas propias en la CI (`pnpm test:hooks`).
+
+*Ajuste humano.* La persona fijó la convención de los códigos de error: snake_case en minúsculas en todo el API. Los ejemplos en mayúsculas del README quedaron marcados como desactualizados y la regla pasó a `CLAUDE.md`. Aceptó el peso de `@usebruno/cli` (unos 280 paquetes transitivos, solo como devDependency) porque hará falta para ejecutar la colección en la CI de la Entrega 3. Probó la colección a mano en la aplicación de escritorio de Bruno, como `analyst` y como `viewer`.
+
+**Prompt 5:**
+
 *Contexto.* `import-upload-mapping` (PR #33, issue #4): el primer tramo de HU1 y el primer change que recibe archivos del usuario. Subida de uno o varios `.xlsx` de la plantilla por cuenta, conservación del archivo original bajo `UPLOAD_DIR`, lectura de las hojas como texto y propuesta de pareo con el origen de cada decisión (`account`, `global` o `none`) más `readiness`. Cinco rutas nuevas y sin cambios de esquema.
 
 *Prompt.* Proponer el change a partir del issue con `/opsx:propose`, dejando explícitas para aprobación las decisiones de riesgo: con qué se leen los `.xlsx`, cómo evitar que IDs e importes pasen por `number`, los límites de subida y descompresión, la ruta en disco, el alcance del rechazo por duplicado y el orden archivo/base cuando algo falla a medias. La pieza de riesgo era el lector `.xlsx` propio sobre `fflate` y `saxes`: ExcelJS convierte toda celda numérica a `number` y descomprime sin tope, y SheetJS arrastra CVE sin corregir en npm. Se aprobó con timebox: el lector sería el primer grupo de tareas y tenía que quedar en verde contra las cinco muestras y contra un archivo guardado por Excel de escritorio; si no, se paraba y se proponía la alternativa (ExcelJS con detección de precisión y un límite de descompresión previo con `fflate`), documentada como deuda.
@@ -349,7 +365,7 @@ Las pull requests de código van de una rama por feature (`feat/<módulo>-<tema>
 
 *Ajuste humano.* Las seis decisiones de riesgo del design se aprobaron antes de `apply`, y la puerta de salida del lector la fijó la persona, que además aportó el archivo de Excel real cuando el primer grupo lo pidió. Se aceptaron como deuda registrada el marcador `ignore` hasta que una migración por otro motivo haga `kind` nullable, y el barrido de archivos huérfanos en `UPLOAD_DIR`; y se decidió que el duplicado por `sha256` se rechace solo dentro del import, no entre imports, para poder reprocesar tras cancelar.
 
-**Prompt 5:**
+**Prompt 6:**
 
 *Contexto.* `import-analyze` (PR #36, issue #5): el tramo backend que cierra HU1. El analista confirma el pareo de cada hoja y el servidor analiza el import: normaliza los IDs según el `idFormat` del gateway, los cruza contra las transacciones propias y guarda una `ImportRow` por fila con su fila original. Después lista las filas con las no asociadas y las ambiguas primero, permite resolver una ambigua eligiendo gateway y cancela conservando la evidencia. Cinco rutas nuevas y sin cambios de esquema.
 
@@ -359,7 +375,7 @@ Las pull requests de código van de una rama por feature (`feat/<módulo>-<tema>
 
 *Ajuste humano.* Las preguntas abiertas y las nueve decisiones del diseño las resolvió la persona antes de `apply`, incluidas las dos reglas nuevas del README. Ante el caso de 200 000 filas eligió el tope por import en lugar de un análisis asíncrono o de insertar también con `OPENJSON`, que quedan como deuda por si aparecen imports reales grandes. Para M3 decidió ocultar: el cruce no cambia, pero al leer, lo que pertenece a un merchant fuera del alcance de quien consulta sale a `null` con `outOfScope: true`, conservando solo lo necesario para resolver la fila, y la forma oculta se documentó en el README.
 
-**Prompt 6:**
+**Prompt 7:**
 
 *Contexto.* `validation-engine` (PR #41, issue #8): el motor de las ocho validaciones de HU2 como funciones puras, sin base de datos ni HTTP, con los cinco puertos de lectura que implementará #9 y sus dobles en memoria sobre el mundo sintético. Trae dos migraciones (`0004_validation_outcome`, el nuevo vocabulario del resultado, y `0005_conflict_occurrence_unresolved_status`, `ConflictOccurrence.statusId` nullable) y varias decisiones de negocio que se llevaron al README.
 
@@ -369,7 +385,7 @@ Las pull requests de código van de una rama por feature (`feat/<módulo>-<tema>
 
 *Ajuste humano.* Las decisiones de negocio las tomó la persona y se documentaron en el README antes de programarlas. El resultado de cada validación usa `passed`, `warning`, `blocked`, `not_applicable` y `not_implemented`, y desaparece `failed`: solo `provider_mismatch` bloquea. `non_recorded_adjustment` incluye `status_mismatch`: una fila E reportada `Declined` que el gateway tiene aprobada, o al revés, es un hallazgo no bloqueante con la fila incluida. Una aparición con estado no resuelto (`status_unresolved`) cuenta como distinta de cualquier otra: es colisión con todas las apariciones actuales incluidas, nunca duplicado, en el batch y contra el histórico, y por eso `ConflictOccurrence.statusId` admite NULL. El rango R se calcula por vencimiento de la reserva, creación más `rollingReserveDays` del canal; entre usar el plazo vigente del canal o el aplicado al liquidar (`expectedReserveReleaseAt`), eligió el vigente (opción B), porque el plazo de un canal no cambia con el tiempo, con la condición de que la fuente de reservas retenidas de #9 filtre con el mismo cálculo; el plazo aplicado queda como deuda para la Entrega 3. Y R no tiene estado: dos apariciones R de la misma transacción son siempre duplicado. Además revisó el SQL de las migraciones antes de aplicarlas, confirmó cada lanzamiento de la integración y decidió no editar `0004`, ya aplicada, y dejar la observación de la revisión anotada en el PR.
 
-**Prompt 7:**
+**Prompt 8:**
 
 *Contexto.* `web-import` (PR #43, issues #6 y #7): las pantallas de HU1 sobre las rutas de #4 y #5. New Reconciliation con la elección de la cuenta y un espacio por import con tres pasos (Files, Mapping y Analysis), cancelación y solo lectura sin permiso, más el primer smoke E2E con Playwright y playwright-bdd. Sin tocar el backend salvo un test de integración que contrasta el catálogo de estados de la base con la constante compartida.
 
@@ -400,7 +416,7 @@ Aprobó que dos tests cambiaran con la spec. Dejó para la revisión de la Entre
 
 En la segunda revisión, el hallazgo sobre los cambios sin confirmar describía un mecanismo real: al quitar un archivo, el reset con `keepDirtyValues` deja `isDirty` en `false`. Reproducido con el código anterior al arreglo, Analyze no llegaba a habilitarse, porque `useForm` vuelve a calcular `isDirty` en la pasada siguiente, cuando Mapping ni siquiera está montado. Entre conservar el cálculo nuevo, basado en `dirtyFields`, y volver a `isDirty`, la persona eligió volver a `isDirty` (opción a): revertir el arreglo y conservar su test como regresión, con la aserción negativa esperando antes a que Mapping muestre un solo archivo y comprobando que cae si nada cuenta como cambio. También coordinó con la sesión de `validation-engine` el orden de las entradas de esta sección y el rebase sobre la rama de entrega.
 
-**Prompt 8:**
+**Prompt 9:**
 
 *Contexto.* `validation-runs` (PR #52, issue #9): el backend que cierra HU2 sobre el motor de #8. Adaptadores Prisma de los cinco puertos de lectura, corridas persistidas con una sola vigente por import, lista y detalle de hallazgos, cambio de inclusión y resolución manual auditados, decisión de conjunto (`POST review`) y su invalidación, y la máquina de estados `analyzed ↔ validated`. Siete rutas nuevas y la migración `0006_validation_runs`. Las siete preguntas que el README no resolvía (P1–P7) se decidieron en la revisión del design, antes de `apply`.
 
@@ -412,7 +428,7 @@ En la segunda revisión, el hallazgo sobre los cambios sin confirmar describía 
 
 *Ajuste humano.* La persona decidió P1–P7, revisó y aplicó la `0006`, y a mitad del change fijó la convención de fechas: las de negocio son hora de pared de America/New_York sin zona (la `Z` del API es solo transporte, deuda en #48) y las de auditoría, instantes UTC; pidió documentarla y revisar, sin corregir, si alguna regla mezclaba las dos clases (no las mezcla ninguna). Pidió además dejar escrito en README §3.3 que la inclusión manual de un duplicado E entre batches existe solo para procesar batches históricos, porque un E no se paga dos veces, y abrir el issue #49 para cerrarla. Tras el primer bench decidió que aquel escenario no representaba un batch real y fijó los dos nuevos: un volumen de referencia (historial grande, rangos de pocos días calibrados con el doc 06, 2 000 filas, como máximo 2 000 faltantes) con aserción de menos de 4 s, y un caso extremo sin aserción, solo registrado. Con el segundo bench aceptó el resultado para la Entrega 2: la escritura queda por debajo de 300 ms (D5 cumplido) y el cuello de botella es la carga (86 % del total), que pasa a un issue de la Entrega 3.
 
-**Prompt 9:**
+**Prompt 10:**
 
 *Contexto.* `web-validations` (PR #57, issue #10): la pantalla Analysis & Validations de HU2. Muestra la corrida con sus rangos, la tabla de las ocho validaciones, la lista de hallazgos y un drawer con las apariciones, el historial y las dos acciones del analista (cambiar una inclusión y resolver con nota). Añade el aviso de revisión invalidada y la decisión de conjunto (Continue / Cancel and reprocess). Se construyó mientras #9 seguía en curso, contra el contrato que publicaba su design y con un API falso de MSW. El último grupo de tareas era el rebase sobre #9 ya fusionado.
 
@@ -454,7 +470,7 @@ Se corrigieron con test primero y se comprobaron en las capturas a 1280 y 1024 p
 
 Pidió que el falso no recalculara reglas de negocio. Decidió cada test que estaba mal, en lugar de dejar que se ajustara para pasar: comprobar el fondo de un modal después de cerrarlo, alargar solo las esperas de apertura y buscar la reserva también por su validación. Hizo en persona el login como `viewer`, porque el asistente no inicia sesión. Corrigió dos veces el texto de un import procesado: no podía decir que el batch estaba *settled*, porque solo lo está cuando está `paid`, ni que ya no cambiaba nada, porque un ajuste se sigue resolviendo a mano (P5 de #9).
 
-**Prompt 10:**
+**Prompt 11:**
 
 *Contexto.* `settlement-process` (PR #66, issue #11) cierra la HU3 mínima en el backend. Procesar un import `validated` crea un intento de batch, pendiente de pago, con:
 - número propuesto e intento;
@@ -526,7 +542,31 @@ Además:
 - Llevó a #56 los timeouts de `pnpm -r test` en paralelo.
 - En cada review pidió reproducir el hallazgo antes de corregirlo; así se vio que el primer arreglo del test del número no lo aislaba.
 
-**Prompt 11:**
+**Prompt 12:**
+
+*Contexto.* `summary-exports` (PR #71, issue #12) añade las lecturas y las descargas del intento de settlement:
+- volver a abrir el intento;
+- ver sus movimientos por ciclo con el desglose de fees;
+- listar los intentos de un import;
+- descargar el summary del merchant y los CSV del Back-Office (TXN y RR), cada descarga auditada.
+
+Se desarrolló en una rama apilada sobre `settlement-process`, que se rebasó con `git rebase --onto` cuando esta se fusionó.
+
+*Prompt.* Proponer el change con `/opsx:propose` a partir del issue y del contrato que publicaba el design de #11: cuatro lecturas y tres descargas por intento, con seis decisiones abiertas para el gate. Después, aplicar grupo a grupo con test primero y una rotura a propósito por grupo, con los `expected.json` de las muestras como oráculo de cada export.
+
+*Resultado.* Los exports reproducen los oráculos. El summary de `batch-clean` cuadra su amount payable con la suma con signo de sus nueve líneas, y el `CHB 2` de `legacy-provider` sale como `CHB` en el TXN. Una tarea no se podía comprobar contra la base: el desempate del orden de los movimientos. Los movimientos sembrados empatan en la fila de origen y el índice ya los devuelve en ese orden, así que quitar el desempate dejaba la integración en verde. Se fijó con un test unitario del adaptador, que sí cae al quitarlo. El review-diff pidió el negativo `404` de Bruno que faltaba en los intentos de un import y algunas limpiezas menores. Dejó como deuda transversal que la validación del esquema corra antes que la autenticación en todo el API (#72). Bruno, 141/141.
+
+*Ajuste humano.* En el gate, la persona decidió:
+- **CSV limpios.** Los del Back-Office van sin trucos para Excel (ni `="…"`, ni apóstrofo), porque los consume una herramienta de terceros. El aviso de cómo abrirlos sin estropear los IDs queda junto a las descargas, y un `.xlsx` para lectura humana pasa a la Entrega 3 (#68).
+- **Filas:** una por par (ID, Status).
+- **Reserva:** la R que libera 0 sale igualmente en el RR.
+- **Formato:** RFC 4180, CRLF y UTF-8 sin BOM.
+- **Sin CORS,** porque la SPA y el API comparten origen.
+- **Summary:** sus advertencias llevan el ID de origen, no el interno, y las fechas, el sufijo "(ET)".
+
+En el triaje añadió neutralizar fórmulas en las celdas de texto del summary: un texto que empieza por `=`, `+`, `-` o `@` lleva un apóstrofo delante. Los importes, las fechas y los IDs no se tocan.
+
+**Prompt 13:**
 
 *Contexto.* `web-settlement` (PR #74, issue #13): las pantallas Settlement Review y Settlement Summary de la HU3. El analista revisa el número de batch propuesto, la fecha de liquidación y los fees por batch (prellenados de `Other Fees`, preestablecidos de la cuenta e importes libres), ve un resumen previo que calcula el servidor, confirma los canales que se asociarán y procesa; el Summary muestra el intento con su desglose auditable. Se construyó mientras #11 seguía en curso, contra los contratos que publicaba su design y con un API falso de MSW. El último grupo de tareas era el rebase sobre #11 ya fusionado; #12 (relectura del intento y descargas) seguía sin fusionar.
 
