@@ -17,7 +17,13 @@ export function usePreview(importId: string, currentRequest: SettlementRequest |
   const debouncedKey = useDebouncedValue(currentKey, PREVIEW_DEBOUNCE_MS)
   const request = useMemo(() => (debouncedKey ? (JSON.parse(debouncedKey) as SettlementRequest) : null), [debouncedKey])
   const query = useQuery(settlementPreviewQuery(importId, request))
-  const isCurrent = currentKey !== null && currentKey === debouncedKey && query.isSuccess && !query.isPlaceholderData
+  // An answer being asked again (after a 409 that made it stale) is not current until the new one arrives.
+  const isCurrent =
+    currentKey !== null &&
+    currentKey === debouncedKey &&
+    query.isSuccess &&
+    !query.isPlaceholderData &&
+    !query.isFetching
   const failed = currentKey !== null && currentKey === debouncedKey && query.isError
   return {
     /** The last answer, current or not (shown as out of date until the current one arrives). */

@@ -157,10 +157,11 @@ function ReviewForm({
   if (rows.some((row) => row.feeTypeId === null)) reasons.push(r.unknownTypes)
   const otherIssues = Object.keys(issues).some((path) => path !== 'settlementDate' && !UNKNOWN_TYPE_PATH.test(path))
   if (otherIssues || (values.settlementDate && issues.settlementDate) || activeFeeError) reasons.push(r.fixFields)
+  // The number in use, from the current preview or from a 409 of Process while the field keeps it.
+  if (taken !== null) reasons.push(r.batchTaken)
   if (reasons.length === 0) {
     if (error) reasons.push(r.previewFailed)
     else if (!isCurrent) reasons.push(r.waiting)
-    else if (preview && !preview.batchNoAvailable) reasons.push(r.batchTaken)
     else if (unconfirmed) reasons.push(r.confirmChannels)
   }
 
