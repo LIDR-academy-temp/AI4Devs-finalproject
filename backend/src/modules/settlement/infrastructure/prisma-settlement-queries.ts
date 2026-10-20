@@ -1,13 +1,27 @@
-// Reads of an attempt for GET /settlements/{id}/transactions, GET /imports/{id}/settlements and the exports
-// (summary-exports design D3, D4, D6, D11). Money leaves as DECIMAL text, BIGINT ids as strings and business dates
+// Reads of an attempt for GET /settlements/{id}/transactions, GET /imports/{id}/settlements, GET
+// /accounts/{id}/settlements and the exports (summary-exports design D3, D4, D6, D11; settlements-browse D1–D4). Money leaves as DECIMAL text, BIGINT ids as strings and business dates
 // without converting; the stable order is (cycle, sheetId, rowNo, settlementTxnId), where SQL Server sorts NULL first,
 // so seeded movements (no sheet, no row) come in settlementTxnId order.
-import { BatchStatus, Cycle, type ImportSettlements, MovementStatus, TRANSACTION_STATUSES } from '@recon/shared'
+import {
+  type AccountSettlementsQuery,
+  BatchStatus,
+  Cycle,
+  type ImportSettlements,
+  MovementStatus,
+  type SettlementDateField,
+  TRANSACTION_STATUSES,
+} from '@recon/shared'
 import type { FastifyBaseLogger } from 'fastify'
-import type { PrismaClient } from '../../../generated/prisma/client.js'
+import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import { toMoney, toPercentage } from '../../../infrastructure/decimal.js'
 import type { Scope } from '../../catalog/domain/scope.js'
-import type { BatchHeader, SettlementQueries, StoredMovement, StoredMovementsPage } from '../application/read-ports.js'
+import type {
+  BatchHeader,
+  SettlementQueries,
+  StoredAccountSettlementsPage,
+  StoredMovement,
+  StoredMovementsPage,
+} from '../application/read-ports.js'
 import type { ExportRow } from '../domain/exports/transactions-csv.js'
 import { settledStatusOf } from '../domain/settled.js'
 
@@ -17,6 +31,15 @@ const CHUNK = 500
 const STATUS_CODE = new Map<number, string>(TRANSACTION_STATUSES.map((s) => [s.statusId, s.code]))
 const statusOf = (statusId: number) => MovementStatus.parse(STATUS_CODE.get(statusId))
 const businessDate = (value: Date | null) => (value === null ? null : value.toISOString())
+
+/**
+ * The day that from and to compare, from a closed map (never from the request text): the stored business date, or the
+ * New York calendar day of the UTC processing instant, daylight saving included (settlements-browse design D2).
+ */
+const DATE_FIELD_SQL: Record<SettlementDateField, Prisma.Sql> = {
+  settlementDate: Prisma.sql`b.[settlementDate]`,
+  processedAt: Prisma.sql`CAST(b.[processedAt] AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS date)`,
+}
 
 export interface SettlementQueriesOptions {
   /** Warned when a stored JSON snapshot cannot be read (it is answered as null). */
@@ -174,6 +197,69 @@ export class PrismaSettlementQueries implements SettlementQueries {
         }
       }),
     }
+  }
+
+  async accountSettlements(
+    scope: Scope,
+    accountId: string,
+    query: AccountSettlementsQuery,
+  ): Promise<StoredAccountSettlementsPage | null> {
+    const account = await this.prisma.account.findFirst({
+      where: { accountId, provider: { merchantId: { in: [...scope.merchantIds] } } },
+      select: { accountId: true },
+    })
+    if (account === null) return null
+    const day = DATE_FIELD_SQL[query.dateField]
+    const filters = [
+      Prisma.sql`b.[accountId] = ${account.accountId}`,
+      ...(query.status ? [Prisma.sql`b.[status] = ${query.status}`] : []),
+      ...(query.from ? [Prisma.sql`${day} >= CAST(${query.from} AS date)`] : []),
+      ...(query.to ? [Prisma.sql`${day} <= CAST(${query.to} AS date)`] : []),
+    ]
+    const from = Prisma.sql`FROM [SettlementBatch] b WHERE ${Prisma.join(filters, ' AND ')}`
+    const [counted] = await this.prisma.$queryRaw<{ total: number | bigint }[]>`SELECT COUNT(*) AS total ${from}`
+    const page = await this.prisma.$queryRaw<{ batchId: string }[]>`
+      SELECT b.[batchId] ${from}
+      ORDER BY b.[processedAt] DESC, b.[batchNo] DESC, b.[attemptNo] DESC
+      OFFSET ${(query.page - 1) * query.pageSize} ROWS FETCH NEXT ${query.pageSize} ROWS ONLY`
+    const total = Number(counted?.total ?? 0)
+    if (page.length === 0) return { items: [], total }
+    const batches = await this.prisma.settlementBatch.findMany({
+      where: { batchId: { in: page.map((p) => p.batchId) } },
+      select: {
+        batchId: true,
+        importId: true,
+        batchNo: true,
+        attemptNo: true,
+        status: true,
+        settlementDate: true,
+        processedAt: true,
+        amountPayable: true,
+        channels: true,
+        approvedBy: { select: { userId: true, userName: true } },
+      },
+    })
+    const byId = new Map(batches.map((b) => [b.batchId.toLowerCase(), b]))
+    const items = page.map(({ batchId }) => {
+      const b = byId.get(batchId.toLowerCase())
+      if (b === undefined) throw new Error(`settlement batch ${batchId} vanished between the page and its columns`)
+      const status = BatchStatus.parse(b.status)
+      return {
+        batchId: b.batchId,
+        importId: b.importId,
+        batchNo: b.batchNo,
+        attemptNo: b.attemptNo,
+        status,
+        settledStatus: settledStatusOf(status),
+        // A DATE column: the day as stored, never shifted by a time zone.
+        settlementDate: b.settlementDate === null ? null : b.settlementDate.toISOString().slice(0, 10),
+        processedAt: b.processedAt.toISOString(),
+        approvedBy: b.approvedBy,
+        amountPayable: toMoney(b.amountPayable),
+        channels: b.channels,
+      }
+    })
+    return { items, total }
   }
 
   async sourceIds(transactionIds: readonly string[]): Promise<Map<string, string>> {

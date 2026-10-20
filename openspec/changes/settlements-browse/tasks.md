@@ -19,19 +19,19 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 2. Servicio y ruta del backend (D1, D3, D5)
 
-- [ ] 2.1 Test (rojo) en `settlement-read-service.test.ts` con el falso en memoria (`__fakes__/in-memory-reads.ts`, ampliado con `accountSettlements`): cuenta inexistente o fuera del alcance → `NotFoundError('Account')` idéntico; la página lleva `accountId`, `page`, `pageSize`, `total` y los intentos tal como los da el puerto
-- [ ] 2.2 Test (rojo) en `settlement-read-routes.test.ts` con `inject`: `200` con la página para `analyst` y para `viewer` (sin permiso propio); `401 unauthorized` sin token; el mismo `404 not_found` "Account not found" para una cuenta de otro merchant y una inexistente; `400 validation_error` para `accountId` no UUID, `status=settled`, `dateField=createdAt`, `from=24/10/2026`, `from > to` y `pageSize=501`; `dateField=processedAt` llega al servicio tal cual
-- [ ] 2.3 Implementar `SettlementQueries.accountSettlements` (puerto), `SettlementReadService.accountSettlements` y la ruta `GET /accounts/:accountId/settlements` en `settlementReadRoutes`, con `summary` y `description` en inglés; verificar 2.1 y 2.2 en verde, `pnpm lint` y `pnpm typecheck`; romper a propósito el `NotFoundError` (devolver página vacía) y ver fallar el caso de otro merchant; restaurar
-- [ ] 2.4 Regenerar el contrato con `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`, y verificar `pnpm openapi:check` en verde con la ruta nueva en `docs/openapi.yaml` y `schema.gen.ts`
-- [ ] 2.5 README §4.4: la fila de `GET /accounts/{id}/settlements` en negrita con ✅, con filtros (`dateField` y los días de D2), orden, paginación y errores en minúsculas, como las filas de #12; verificar que la fila coincide con "Contrato" del design
-- [ ] 2.6 Commit: `test(settlement): lectura de los settlements de una cuenta` y `feat(settlement): GET /accounts/{id}/settlements con filtros y paginación`
+- [x] 2.1 Test (rojo) en `settlement-read-service.test.ts` con el falso en memoria (`__fakes__/in-memory-reads.ts`, ampliado con `accountSettlements`): cuenta inexistente o fuera del alcance → `NotFoundError('Account')` idéntico; la página lleva `accountId`, `page`, `pageSize`, `total` y los intentos tal como los da el puerto
+- [x] 2.2 Test (rojo) en `settlement-read-routes.test.ts` con `inject`: `200` con la página para `analyst` y para `viewer` (sin permiso propio); `401 unauthorized` sin token; el mismo `404 not_found` "Account not found" para una cuenta de otro merchant y una inexistente; `400 validation_error` para `accountId` no UUID, `status=settled`, `dateField=createdAt`, `from=24/10/2026`, `from > to` y `pageSize=501`; `dateField=processedAt` llega al servicio tal cual
+- [x] 2.3 Implementar `SettlementQueries.accountSettlements` (puerto), `SettlementReadService.accountSettlements` y la ruta `GET /accounts/:accountId/settlements` en `settlementReadRoutes`, con `summary` y `description` en inglés; verificar 2.1 y 2.2 en verde, `pnpm lint` y `pnpm typecheck`; romper a propósito el `NotFoundError` (devolver página vacía) y ver fallar el caso de otro merchant; restaurar
+- [x] 2.4 Regenerar el contrato con `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`, y verificar `pnpm openapi:check` en verde con la ruta nueva en `docs/openapi.yaml` y `schema.gen.ts`
+- [x] 2.5 README §4.4: la fila de `GET /accounts/{id}/settlements` en negrita con ✅, con filtros (`dateField` y los días de D2), orden, paginación y errores en minúsculas, como las filas de #12; verificar que la fila coincide con "Contrato" del design
+- [x] 2.6 Commit: `test(settlement): lectura de los settlements de una cuenta` y `feat(settlement): GET /accounts/{id}/settlements con filtros y paginación`
 
 ## 3. Consulta contra la base (D1–D4) — con turno de base
 
 **No empezar sin turno de base de la persona** (dado el 2026-10-20). Mientras, se puede seguir con los grupos 4 en adelante contra MSW.
 
 - [ ] 3.1 La persona prepara la base con `! pnpm db:up`, `! pnpm db:migrate` y `! pnpm db:seed`, y confirma el turno
-- [ ] 3.2 Test (rojo) en `prisma-settlement-queries.test.ts` (proyecto `integration`) sobre el seed:
+- [x] 3.2 Test (rojo) en `backend/test/integration/account-settlements.int.test.ts` (proyecto `integration`, que solo recoge `test/integration/**/*.int.test.ts`; `prisma-settlement-queries.test.ts` es el unitario con Prisma falso) sobre el seed:
   - ProviderA-USD sin filtros → `total = 22`, del 122 al 101, todos `paid`/`settled`, intento 1, `approvedBy.userName = analyst`, `settlementDate` `YYYY-MM-DD`, `amountPayable` con cuatro decimales y `channels` como el texto guardado;
   - la suma de los `total` con `status=paid` de las cinco cuentas es 68;
   - `status=processed` → vacío; `from = to = settlementDate` del 122 → solo el 122; solo `from` del 112 → del 112 al 122;
@@ -41,8 +41,8 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
   - intentos creados en el test con `processedAt` `2026-10-21T03:59:59Z` y `2026-10-21T04:00:00Z`: `dateField=processedAt` con el día `2026-10-20` → solo el primero y con `2026-10-21` → solo el segundo;
   - cambio de hora: `2026-11-02T04:30:00Z` y `2026-11-02T05:00:00Z` → `2026-11-01` solo el primero y `2026-11-02` solo el segundo;
   - cuenta de ProviderC-Alt con el alcance de `viewer` → `null`
-- [ ] 3.3 Implementar `PrismaSettlementQueries.accountSettlements` (alcance en el `where` de la cuenta; filtros `Prisma.sql` con la expresión de fecha de un mapa cerrado por `dateField`, `COUNT(*)` y página de ids con `OFFSET/FETCH` en el orden de D3, `findMany` con el `select` del contrato; `settledStatusOf`, `toMoney`, día de `settlementDate` sin convertir); verificar 3.2 en verde con `pnpm --filter @recon/backend test:integration`; romper a propósito el orden (`asc`) y ver fallar el caso del 122 al 101, filtrar `settlementDate` con la expresión de `processedAt` y ver fallar "solo el 122", y usar un desfase fijo `-04:00` en vez de `AT TIME ZONE` y ver fallar el cambio de hora; restaurar. Dejar los datos creados por el test limpios al terminar
-- [ ] 3.4 Commit: `test(settlement): consulta de los settlements de una cuenta contra el seed` y `feat(settlement): consulta Prisma de los settlements de una cuenta`
+- [x] 3.3 Implementar `PrismaSettlementQueries.accountSettlements` (alcance en el `where` de la cuenta; filtros `Prisma.sql` con la expresión de fecha de un mapa cerrado por `dateField`, `COUNT(*)` y página de ids con `OFFSET/FETCH` en el orden de D3, `findMany` con el `select` del contrato; `settledStatusOf`, `toMoney`, día de `settlementDate` sin convertir); verificar 3.2 en verde con `pnpm --filter @recon/backend test:integration`; romper a propósito el orden (`asc`) y ver fallar el caso del 122 al 101, filtrar `settlementDate` con la expresión de `processedAt` y ver fallar "solo el 122", y usar un desfase fijo `-04:00` en vez de `AT TIME ZONE` y ver fallar el cambio de hora; restaurar. Dejar los datos creados por el test limpios al terminar
+- [x] 3.4 Commit: `test(settlement): consulta de los settlements de una cuenta contra el seed` y `feat(settlement): consulta Prisma de los settlements de una cuenta`
 
 ## 4. Contrato del frontend y API falso (D12, D13)
 

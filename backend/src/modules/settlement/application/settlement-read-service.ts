@@ -2,6 +2,8 @@
 // the batch header before anything else (the same 404 for unknown and foreign), the view is #11's reader with the
 // caller's scope, Settled comes from the attempt, and every download is audited after generating and before answering.
 import type {
+  AccountSettlementsPage,
+  AccountSettlementsQuery,
   ExportType,
   ImportSettlements,
   SettlementTransactionsPage,
@@ -61,6 +63,17 @@ export class SettlementReadService {
     const attempts = await this.deps.queries.importAttempts(scope, importId)
     if (attempts === null) throw new NotFoundError('Import')
     return attempts
+  }
+
+  /** The scope is in the port's query: an unknown account and a foreign one answer the same 404. */
+  async accountSettlements(
+    scope: Scope,
+    accountId: string,
+    query: AccountSettlementsQuery,
+  ): Promise<AccountSettlementsPage> {
+    const found = await this.deps.queries.accountSettlements(scope, accountId, query)
+    if (found === null) throw new NotFoundError('Account')
+    return { accountId, page: query.page, pageSize: query.pageSize, total: found.total, items: found.items }
   }
 
   /** Generates the file in memory and audits the download; a failed audit fails the request and sends nothing. */
