@@ -395,6 +395,11 @@ describe('seeded history through the API (task 6.4)', () => {
     const batchId = await seededBatch('ProviderA-USD')
     const view = SettlementView.parse((await flow.call('GET', `/settlements/${batchId}`)).json())
     expect(view).toMatchObject({ status: 'paid', settledStatus: 'settled', validationSummary: null })
+    // Spec scenario "Batch del seed": the signed breakdown adds up to the stored amount payable.
+    const signed = view.payableBreakdown
+      .reduce((s, l) => (l.sign === '+' ? s.plus(l.amount) : s.minus(l.amount)), new Prisma.Decimal(0))
+      .toFixed(4)
+    expect({ batchId, signed }).toEqual({ batchId, signed: view.amountPayable })
     const page = SettlementTransactionsPage.parse(
       (await flow.call('GET', `/settlements/${batchId}/transactions?type=E&pageSize=10`)).json(),
     )
