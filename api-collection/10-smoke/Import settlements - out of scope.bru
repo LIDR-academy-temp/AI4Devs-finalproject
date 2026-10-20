@@ -1,0 +1,43 @@
+meta {
+  name: Import settlements - out of scope
+  type: http
+  seq: 58
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements
+  body: none
+  auth: bearer
+}
+
+params:path {
+  importId: {{providerCAltImportId}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+script:pre-request {
+  // The importId of a seeded import of ProviderC-Alt (merchant 2) is resolved as analyst.
+  if (!bru.getVar('providerCAltImportId')) {
+    await bru.runRequest('10-smoke/Provider C-Alt imports');
+  }
+  if (!bru.getVar('providerCAltImportId')) {
+    throw new Error(bru.getVar('providerCAltImportLookupError') || 'a ProviderC-Alt import could not be resolved');
+  }
+}
+
+tests {
+  test('viewer gets the same 404 not_found as for an unknown import, never 403', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body).to.eql({ code: 'not_found', message: 'Import not found' });
+  });
+}

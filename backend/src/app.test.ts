@@ -197,6 +197,31 @@ describe('buildApp', () => {
     await app.close()
   })
 
+  it('publishes the four reads of an attempt, the export as text/csv with 403 and 500 (summary-exports)', async () => {
+    const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
+
+    const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json()
+
+    for (const path of [
+      '/api/v1/settlements/{batchId}',
+      '/api/v1/settlements/{batchId}/transactions',
+      '/api/v1/settlements/{batchId}/export',
+      '/api/v1/imports/{importId}/settlements',
+    ]) {
+      const operation = doc.paths[path]?.get
+      expect(operation, `get ${path}`).toBeDefined()
+      expect(operation.tags, path).toEqual(['settlements'])
+      expect(operation.security, path).toEqual([{ bearerAuth: [] }])
+      expect(operation.responses, path).toHaveProperty('401')
+      expect(operation.responses, path).toHaveProperty('404')
+    }
+    const exportResponses = doc.paths['/api/v1/settlements/{batchId}/export'].get.responses
+    expect(Object.keys(exportResponses['200'].content)).toEqual(['text/csv'])
+    expect(exportResponses).toHaveProperty('403')
+    expect(exportResponses).toHaveProperty('500')
+    await app.close()
+  })
+
   it('does not disconnect an injected Prisma client on close', async () => {
     const prisma = fakePrisma(async () => [{ ok: 1 }])
     const app = await buildApp({ env, prisma })

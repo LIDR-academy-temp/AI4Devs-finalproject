@@ -1,0 +1,46 @@
+meta {
+  name: 15 Export transactions
+  type: http
+  seq: 15
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/export?type=transactions
+  body: none
+  auth: inherit
+}
+
+params:query {
+  type: transactions
+}
+
+params:path {
+  batchId: {{setBatchId}}
+}
+
+tests {
+  const lines = () => {
+    const all = String(res.body).split('\r\n');
+    expect(all.pop()).to.equal('');
+    return all;
+  };
+  test('a CSV named by attempt, not cached', () => {
+    expect(res.status).to.equal(200);
+    expect(res.getHeader('content-type')).to.equal('text/csv; charset=utf-8');
+    expect(res.getHeader('content-disposition')).to.equal(
+      `attachment; filename="ProviderA-USD_B${bru.getVar('setBatchNo')}_A1_transactions.csv"`,
+    );
+    expect(res.getHeader('cache-control')).to.equal('no-store');
+  });
+  // Oracle: data/samples/batch-clean/expected.json, summary.qty (no declined in the TXN).
+  test('header ID,Status and 350 rows: 340 SUC, 2 CHB, 6 REF, 2 RDR (351 lines)', () => {
+    const all = lines();
+    expect(all).to.have.length(351);
+    expect(all[0]).to.equal('ID,Status');
+    const count = (code) => all.filter((l) => l.endsWith(`,${code}`)).length;
+    expect([count('SUC'), count('CHB'), count('REF'), count('RDR')]).to.eql([340, 2, 6, 2]);
+  });
+}

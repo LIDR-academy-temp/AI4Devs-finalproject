@@ -1,0 +1,48 @@
+meta {
+  name: Provider C-Alt imports
+  type: http
+  seq: 51
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/imports?status=processed
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: processed
+}
+
+params:path {
+  accountId: {{providerCAltAccountId}}
+}
+
+script:pre-request {
+  if (!bru.getVar('providerCAltAccountId')) {
+    await bru.runRequest('10-smoke/Provider C accounts');
+  }
+  if (!bru.getVar('providerCAltAccountId')) {
+    throw new Error(bru.getVar('providerCAltLookupError') || 'ProviderC-Alt accountId could not be resolved');
+  }
+}
+
+script:post-response {
+  // A seeded import of ProviderC-Alt (merchant 2): its attempts are read in Import settlements - Provider C-Alt.
+  const found = Array.isArray(res.body) && res.body.find((i) => i.currentBatchId !== null);
+  if (found) {
+    bru.setVar('providerCAltImportId', found.importId);
+  } else {
+    bru.setVar('providerCAltImportLookupError', `no processed import of ProviderC-Alt (status ${res.status})`);
+  }
+}
+
+tests {
+  test('analyst lists the seeded processed imports of ProviderC-Alt', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.length).to.be.above(0);
+  });
+}

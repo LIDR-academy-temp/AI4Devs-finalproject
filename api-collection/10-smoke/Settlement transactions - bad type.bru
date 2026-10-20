@@ -1,0 +1,29 @@
+meta {
+  name: Settlement transactions - bad type
+  type: http
+  seq: 56
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/transactions?type=X
+  body: none
+  auth: inherit
+}
+
+params:query {
+  type: X
+}
+
+params:path {
+  batchId: {{$randomUUID}}
+}
+
+tests {
+  test('responds 400 validation_error for a cycle outside E, I and R', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}

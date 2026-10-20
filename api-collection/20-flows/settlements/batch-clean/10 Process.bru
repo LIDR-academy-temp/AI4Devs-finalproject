@@ -31,6 +31,14 @@ script:pre-request {
   });
 }
 
+script:post-response {
+  // The reads of the attempt (12-17) compare against this 201.
+  if (res.status === 201) {
+    bru.setVar('setBatchId', res.body.batchId);
+    bru.setVar('setProcessed', res.body);
+  }
+}
+
 tests {
   const units = (text) => BigInt(text.replace('.', ''));
   test('201 processed, pending payment, RAM-07 now primary, fees by batch with the user', () => {
