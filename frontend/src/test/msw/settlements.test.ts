@@ -6,6 +6,7 @@ import {
   AccountFee,
   BatchNoTakenDetails,
   ChannelAssignmentNotConfirmedDetails,
+  ExportQuery,
   FeeTypeView,
   ImportNotValidatedDetails,
   NextBatchNumber,
@@ -13,10 +14,10 @@ import {
   SettlementRequest,
   SettlementView,
 } from '@recon/shared'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
 import { z } from 'zod'
 import { strings } from '@/features/settlements/strings'
-import { ACCOUNT_IDS, type UserName } from './fixtures'
+import { ACCOUNT_IDS, USERS, type UserName } from './fixtures'
 import { issueTokens } from './handlers'
 import { importRecord, seedImport } from './imports'
 import {
@@ -27,6 +28,7 @@ import {
   respondNextSettlement,
   scriptPreview,
   seedActiveBatch,
+  seedSettlement,
   settlementRequests,
 } from './settlements'
 import { seedValidationRun } from './validations'
@@ -389,6 +391,17 @@ describe('fake settlement API: the shapes of @recon/shared (web-settlement task 
     )
   })
 
+  it('the export URLs of the view carry the query of @recon/shared/settlement-reads', async () => {
+    const { importId } = validatedClean()
+    const view = seedSettlement(importId, { batchNo: 123 })
+    for (const [type, url] of Object.entries(view.exports)) {
+      const { pathname, searchParams } = new URL(url, window.location.origin)
+      expect(pathname).toBe(`/api/v1/settlements/${view.batchId}/export`)
+      expectShape(ExportQuery, Object.fromEntries(searchParams))
+      expect(searchParams.get('type')).toBe(type)
+    }
+  })
+
   it('rejects a body the strict schema of the API rejects: an unknown field or a batch number past INT', async () => {
     const { importId, runId } = validatedClean()
     const extra = await call('analyst', 'POST', `/imports/${importId}/settlements/preview`, {
@@ -401,5 +414,47 @@ describe('fake settlement API: the shapes of @recon/shared (web-settlement task 
     expect([huge.status, huge.body.code]).toEqual([400, 'validation_error'])
     const notADay = await preview(importId, { runId, settlementDate: '2026-02-30' })
     expect([notADay.status, notADay.body.code]).toEqual([400, 'validation_error'])
+  })
+})
+
+/** A download as the API of #12 sends it: the CSV with its headers, or the JSON error. */
+async function download(as: UserName, path: string) {
+  const { accessToken } = issueTokens(as)
+  const response = await fetch(`${window.location.origin}/api/v1${path}`, {
+    headers: { authorization: `Bearer ${accessToken}` },
+  })
+  return { status: response.status, headers: response.headers, text: await response.text() }
+}
+
+describe('fake settlement API: the downloads as #12 fixed them', () => {
+  it('a CSV named by attempt in Content-Disposition, for viewer too', async () => {
+    const { importId } = validatedClean()
+    const view = seedSettlement(importId, { batchNo: 123 })
+    for (const type of ExportQuery.shape.type.options) {
+      const file = await download('viewer', `/settlements/${view.batchId}/export?type=${type}`)
+      expect(file.status).toBe(200)
+      expect(file.headers.get('content-type')).toMatch(/^text\/csv/)
+      expect(file.headers.get('content-disposition')).toBe(`attachment; filename="ProviderA-USD_B123_A1_${type}.csv"`)
+    }
+  })
+
+  it('a type outside the query of @recon/shared is a 400 validation_error, as JSON', async () => {
+    const { importId } = validatedClean()
+    const view = seedSettlement(importId)
+    expect(ExportQuery.safeParse({ type: 'pdf' }).success).toBe(false)
+    const answer = await download('analyst', `/settlements/${view.batchId}/export?type=pdf`)
+    expect([answer.status, JSON.parse(answer.text).code]).toEqual([400, 'validation_error'])
+  })
+
+  it('403 without reports.view before the scope, and 404 for an attempt that does not exist', async () => {
+    const permissions = USERS.viewer.permissions
+    USERS.viewer.permissions = ['fee.view']
+    onTestFinished(() => {
+      USERS.viewer.permissions = permissions
+    })
+    const missing = '5c3f9e21-8a4b-4f0e-b1d2-000000000999'
+    expect((await download('viewer', `/settlements/${missing}/export?type=summary`)).status).toBe(403)
+    const notFound = await download('analyst', `/settlements/${missing}/export?type=summary`)
+    expect([notFound.status, JSON.parse(notFound.text).code]).toEqual([404, 'not_found'])
   })
 })
