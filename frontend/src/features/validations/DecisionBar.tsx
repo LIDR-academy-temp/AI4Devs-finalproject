@@ -8,32 +8,10 @@ import type { ImportDetail } from '@/lib/api/types'
 import { formatAuditDateTime } from '@/lib/format'
 import type { ValidationRunView } from './contract'
 import type { Review } from './mutations'
-import { SETTLEMENT_REVIEW } from './next-step'
+import { settlementReviewRoute, settlementSummaryRoute } from './next-step'
 import { strings } from './strings'
 
 const s = strings.decision
-
-/** Settlement Review: a link once #13 gives it a route, a disabled entry with its reason until then. */
-function SettlementReview() {
-  const reasonId = useId()
-  if (SETTLEMENT_REVIEW) {
-    return (
-      <Button asChild size="sm">
-        <Link to={SETTLEMENT_REVIEW.to}>{s.settlementReview}</Link>
-      </Button>
-    )
-  }
-  return (
-    <div className="flex flex-col gap-1">
-      <Button size="sm" disabled aria-describedby={reasonId}>
-        {s.settlementReview}
-      </Button>
-      <p id={reasonId} className="text-xs text-muted-foreground">
-        {s.notAvailable}
-      </p>
-    </div>
-  )
-}
 
 /**
  * One decision on the whole (design D9): continue on the run shown, or cancel and reprocess. Continue is offered on
@@ -63,11 +41,19 @@ export function DecisionBar({
   const reason = !run ? s.noRun : run.blocked ? s.blocked : null
 
   // A cancelled or processed import has nothing left to decide: the section says so instead of standing empty.
-  // The API does not say who cancelled, so the text names only the status.
+  // The API does not say who cancelled, so the text names only the status; a processed one links to its attempt.
   if (view.importStatus === 'cancelled' || view.importStatus === 'processed') {
     return (
-      <section aria-label={s.label} className="border-t pt-3 text-sm text-muted-foreground">
-        <p>{s.closed[view.importStatus]}</p>
+      <section aria-label={s.label} className="flex flex-wrap items-center gap-3 border-t pt-3 text-sm">
+        <p className="text-muted-foreground">{s.closed[view.importStatus]}</p>
+        {view.importStatus === 'processed' && detail.currentBatchId && (
+          <Link
+            {...settlementSummaryRoute(detail.currentBatchId)}
+            className="text-primary underline underline-offset-4"
+          >
+            {s.viewSummary}
+          </Link>
+        )}
       </section>
     )
   }
@@ -94,7 +80,12 @@ export function DecisionBar({
                 {s.reviewedBy(run.review.reviewedBy.userName, formatAuditDateTime(run.review.reviewedAt))}
               </span>
             )}
-            <SettlementReview />
+            {/* The screen requires settlement.process: without it there is no step to offer. */}
+            {canProcess && (
+              <Button asChild size="sm">
+                <Link {...settlementReviewRoute(detail.importId)}>{s.settlementReview}</Link>
+              </Button>
+            )}
           </>
         )}
         {canProcess && (

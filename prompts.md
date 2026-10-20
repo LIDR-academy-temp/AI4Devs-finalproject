@@ -523,3 +523,41 @@ Además:
 - Aplicó las dos migraciones, sembró y ejecutó Bruno.
 - Llevó a #56 los timeouts de `pnpm -r test` en paralelo.
 - En cada review pidió reproducir el hallazgo antes de corregirlo; así se vio que el primer arreglo del test del número no lo aislaba.
+
+**Prompt 11:**
+
+*Contexto.* `web-settlement` (issue #13): las pantallas Settlement Review y Settlement Summary de la HU3. El analista revisa el número de batch propuesto, la fecha de liquidación y los fees por batch (prellenados de `Other Fees`, preestablecidos de la cuenta e importes libres), ve un resumen previo que calcula el servidor, confirma los canales que se asociarán y procesa; el Summary muestra el intento con su desglose auditable. Se construyó mientras #11 seguía en curso, contra los contratos que publicaba su design y con un API falso de MSW. El último grupo de tareas era el rebase sobre #11 ya fusionado; #12 (relectura del intento y descargas) seguía sin fusionar.
+
+*Prompt.* Proponer el change con `/opsx:propose` a partir del issue y de los contratos de #11 y #12, leídos solo con `git show` y sin tocar la carpeta de #11. Restricciones de partida:
+- Ninguna cifra se calcula en el navegador y el dinero es texto de principio a fin.
+- Fechas con `BusinessDate` y `AuditInstant`, como en web-validations.
+- Contrato aislado en un solo fichero y falso de MSW guionizado.
+- Guardas síncronas en Process y en la vista previa, sin actualizaciones optimistas.
+- Interfaz en inglés y usable con teclado; cada botón deshabilitado dice por qué con `aria-describedby`.
+- El último grupo espera a que #11 esté fusionado.
+
+Después, aplicar grupo a grupo: primero los tests, después el código, una rotura a propósito por grupo y sin modificar un test para que pase. Sin integración, E2E ni `pnpm dev` hasta el último grupo, porque la base y los puertos los usaba #11.
+
+*Resultado.* **El design.** En la revisión se cerraron los huecos del contrato:
+- La fecha de liquidación es obligatoria en la pantalla.
+- Una fila de `Other Fees` de tipo desconocido queda marcada hasta que se le elige un tipo de importe libre o se quita (#60).
+- #11 conserva el orden de `batchFees` y exige la descripción del importe libre (`description_required`).
+- `Content-Disposition` se pidió a #12, y la lista de Settlements quedó en #64.
+
+**Vista previa y Process.** La vista previa es una consulta con el cuerpo entero como clave, enviada 400 ms después del último cambio. Process envía el cuerpo de la vista previa que está en pantalla, nunca uno recompuesto del formulario. Una rotura prevista no podía caer: mientras la vista previa no está al día Process está deshabilitado, así que formulario y vista previa coinciden siempre que se puede pulsar. Se rompió en su lugar la espera de Process a la vista previa. Otra rotura, la guarda síncrona, enviaba dos `POST` con dos clics en el mismo tick. El test de teclado encontró un hueco real: las listas para añadir fees se deshabilitaban mientras cargaban sin decir por qué.
+
+**El rebase.** Los tipos pasaron a ser alias de los generados y las llamadas, del cliente tipado. Las rutas de #12 siguen escritas a mano y las descargas, deshabilitadas con su motivo. Los esquemas de `@recon/shared` encontraron dos desajustes en el falso:
+- devolvía los importes tal como se escribieron (`30`), no con cuatro decimales;
+- no rechazaba un campo desconocido, un número de batch fuera de `INT` ni un día que no existe.
+
+Con el merge llegaron cambios del contrato que se llevaron a la spec, cada uno con su test nuevo:
+- la cuenta de otro merchant, que solo se nombra como tal;
+- un intento sin resumen de incidencias;
+- `409 settlement_busy` con **Retry** y el mismo cuerpo;
+- el tope del número de batch.
+
+**Contra el API real.** La forma de las respuestas coincidió con el falso y el orden de `batchFees` es el del cuerpo. El `400 description_required`, forzado quitando la descripción en la página, se pinta en su fila. Un batch sembrado como pagado cuenta como número ocupado. La recarga del Summary dice que no existe hasta que entre #12. El smoke falló una vez porque el procesado manual había asociado RAM-07; tras volver a sembrar, en verde.
+
+**Las capturas.** Destaparon importes recortados: a 1024 px en el resumen previo, y a 1280 px en el desglose y en los totales del Summary. El contenedor de la tabla de shadcn los desplazaba fuera de la vista sin que la página desbordara, así que la comprobación de desplazamiento horizontal decía que todo estaba bien y jsdom no calcula el diseño. Ahora las etiquetas se parten, el resumen previo pasa debajo del formulario por debajo de 1280 px y el Summary usa dos columnas desde ese ancho. El script también falla si una tabla queda recortada; hicieron falta dos vueltas, porque la primera aún recortaba los totales por tipo. Por último, la intermitencia de #56 apareció en tres ficheros de imports con la suite del frontend sola, por la carga de las esperas reales del debounce.
+
+*Ajuste humano.* La persona revisó el design punto por punto: la fecha obligatoria, el tipo desconocido con #60, los dos huecos de #11, el comentario en #12 y el issue #64. Aprobó también el debounce de 400 ms y el enlace desde un import procesado a su Summary. Revisó los tests que cambiaron (los dos de Analysis que fijaban el escenario retirado y cuatro tests propios todavía en rojo) y aceptó los desvíos del design. Tras el rebase pidió juntar dos commits para que cada uno compilara por separado. Decidió que las descargas se habiliten en un commit aparte cuando entre #12. Dio los turnos de base, aplicó las migraciones, sembró antes y después de cada procesado y entró como `analyst` y como `viewer` en el navegador, porque el asistente no inicia sesión. Vio en directo cada ejecución de las capturas y pidió llevar a #13 las notas del PR y a #56 los ficheros nuevos que fallaban por carga.

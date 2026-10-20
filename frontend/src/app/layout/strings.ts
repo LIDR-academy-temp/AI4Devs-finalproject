@@ -20,6 +20,8 @@ export const strings = {
     dashboard: 'Dashboard',
     newReconciliation: 'New Reconciliation',
     inProgress: 'In Progress',
+    settlementReview: 'Settlement Review',
+    settlementSummary: 'Settlement Summary',
     settlementList: 'Settlement List',
     payments: 'Payments',
     transactionSearch: 'Transaction Search',

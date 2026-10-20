@@ -187,7 +187,7 @@ export const strings = {
     cancel: 'Cancel and reprocess',
     reviewedBy: (userName: string, at: string) => `Reviewed by ${userName} · ${at}`,
     settlementReview: 'Settlement Review',
-    notAvailable: 'Settlement Review is not available yet.',
+    viewSummary: 'View settlement summary',
     reviewing: 'Saving the review…',
     /** One text per status that leaves nothing to decide; the API does not say who cancelled or processed. */
     closed: {

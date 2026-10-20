@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { importRequests, seedImport } from '@/test/msw/imports'
+import { seedSettlement } from '@/test/msw/settlements'
 import { holdNextValidation, respondNext, seedValidationRun, validationRequests } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
 import { OPENING } from '@/test/validation-screens'
@@ -58,11 +59,19 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
     })
     expect(screen.getByText(`Run #${runId} · 2026-10-18 07:15 ET · admin`)).toBeInTheDocument()
     expect(decision().getByText('Reviewed by analyst · 2026-10-18 10:00 ET')).toBeInTheDocument()
-    const next = decision().getByRole('button', { name: 'Settlement Review' })
-    expect(next).toBeDisabled()
-    expect(next).toHaveAccessibleDescription('Settlement Review is not available yet.')
-    expect(screen.queryByRole('link', { name: /settlement review/i })).not.toBeInTheDocument()
+    expect(decision().getByRole('link', { name: 'Settlement Review' })).toBeInTheDocument()
     expect(decision().queryByRole('button', { name: 'Continue to settlement review' })).not.toBeInTheDocument()
+  })
+
+  it('a validated import (spec "enlace a Settlement Review"): the link leads to Settlement Review of the import', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'validated' })
+    seedValidationRun(importId, undefined, { reviewedBy: 'analyst' })
+    const { user, router } = await openAnalysis(importId)
+
+    await user.click(decision().getByRole('link', { name: 'Settlement Review' }))
+
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/imports/${importId}/settlement-review`))
+    expect(await screen.findByRole('heading', { name: 'Settlement Review' }, OPENING)).toBeInTheDocument()
   })
 
   it('409 validation_run_superseded says so, reads the run again and the next click reviews the new one', async () => {
@@ -173,6 +182,20 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
     ).toBeInTheDocument()
     expect(decision().queryByText(/cancelled/)).not.toBeInTheDocument()
     expect(decision().queryAllByRole('button')).toHaveLength(0)
+  })
+
+  it('a processed import with its attempt links to its Settlement Summary', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'validated' })
+    seedValidationRun(importId, undefined, { reviewedBy: 'analyst' })
+    const { batchId } = seedSettlement(importId)
+    const { user, router } = await openAnalysis(importId)
+
+    expect(
+      decision().getByText('This import is processed. Its run and findings are kept for reference.'),
+    ).toBeInTheDocument()
+    expect(decision().queryAllByRole('button')).toHaveLength(0)
+    await user.click(decision().getByRole('link', { name: 'View settlement summary' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/settlements/${batchId}`))
   })
 
   it('Cancel and reprocess (HU2 CA8): after confirming, the run, its table and findings stay in read only', async () => {

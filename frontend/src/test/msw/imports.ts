@@ -59,6 +59,8 @@ export interface FakeImport {
   rows: ImportRowItem[] | null
   channels: ImportDetail['channels']
   batchFees: ImportDetail['batchFees']
+  /** The current attempt once processed; the fake settlement API writes it. */
+  currentBatchId: string | null
 }
 
 /** Routes of the fake import API that a test can hold or make fail. */
@@ -289,7 +291,7 @@ export function detailOf(record: FakeImport): ImportDetail {
     rowsTotal: analyzed ? record.rows!.length : null,
     rowsMatched: analyzed ? record.rows!.filter((r) => r.matchResult === 'matched').length : null,
     rowsUnmatched: analyzed ? record.rows!.filter((r) => r.matchResult === 'unmatched').length : null,
-    currentBatchId: null,
+    currentBatchId: record.currentBatchId,
     fileCount: record.files.length,
     files: record.files.map((f) => ({
       fileId: f.fileId,
@@ -452,6 +454,7 @@ export function seedImport(
     rows: null,
     channels: null,
     batchFees: null,
+    currentBatchId: null,
   }
   state.imports.set(record.importId, record)
   if (status !== 'uploaded') confirm(record, proposalBody(record))
@@ -648,6 +651,7 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
             rows: null,
             channels: null,
             batchFees: null,
+            currentBatchId: null,
           }
           state.imports.set(record.importId, record)
           return HttpResponse.json(detailOf(record), { status: 201 })
