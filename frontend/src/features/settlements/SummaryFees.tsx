@@ -47,7 +47,7 @@ export function SummaryReserves({ view }: { view: SettlementView }) {
       <TableBody>
         {lines.map(([label, amount]) => (
           <TableRow key={label}>
-            <TableCell>{label}</TableCell>
+            <TableCell className="whitespace-normal">{label}</TableCell>
             <TableCell className="text-right tabular-nums">{formatDecimal(amount)}</TableCell>
           </TableRow>
         ))}

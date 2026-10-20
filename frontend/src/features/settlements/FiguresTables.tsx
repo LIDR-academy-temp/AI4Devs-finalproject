@@ -5,6 +5,8 @@ import { strings } from './strings'
 
 const s = strings.preSummary
 const num = 'text-right tabular-nums'
+/** A label wraps in a narrow card so the amounts stay in view (the table container would scroll them away). */
+const label = 'whitespace-normal'
 
 /**
  * The five categories as the API sends them, in its order: quantity, amount and fees, never added up here. The
@@ -30,7 +32,7 @@ export function TotalsByType({
       <TableBody>
         {totals.map((t) => (
           <TableRow key={t.category}>
-            <TableCell>{strings.categories[t.category] ?? t.category}</TableCell>
+            <TableCell className={label}>{strings.categories[t.category] ?? t.category}</TableCell>
             <TableCell className={num}>{t.qty}</TableCell>
             <TableCell className={num}>{formatDecimal(t.amount)}</TableCell>
             <TableCell className={num}>{formatDecimal(t.feeAmount)}</TableCell>
@@ -38,7 +40,7 @@ export function TotalsByType({
         ))}
         {reservesReleased && (
           <TableRow>
-            <TableCell>{strings.summary.reservesReleased}</TableCell>
+            <TableCell className={label}>{strings.summary.reservesReleased}</TableCell>
             <TableCell className={num}>{reservesReleased.qty}</TableCell>
             <TableCell className={num}>{formatDecimal(reservesReleased.amount)}</TableCell>
             <TableCell />

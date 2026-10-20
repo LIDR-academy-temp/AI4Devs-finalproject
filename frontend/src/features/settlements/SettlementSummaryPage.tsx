@@ -24,7 +24,7 @@ function Summary({ view }: { view: SettlementView }) {
   return (
     <section className="flex flex-col gap-4">
       <SummaryHeader view={view} />
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>{s.totals}</CardTitle>

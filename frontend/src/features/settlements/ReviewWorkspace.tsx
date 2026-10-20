@@ -150,7 +150,7 @@ function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: numb
 
   return (
     <FormProvider {...form}>
-      <form className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]" onSubmit={(e) => e.preventDefault()}>
+      <form className="grid gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]" onSubmit={(e) => e.preventDefault()}>
         <fieldset disabled={processor.processing} className="flex min-w-0 flex-col gap-4">
           <BatchSection
             next={next}
