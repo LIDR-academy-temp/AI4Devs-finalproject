@@ -294,7 +294,7 @@ Al abrir o recargar `/settlements/<batchId>`, la pantalla SHALL pedir `GET /sett
 - **THEN** ve `Settlement not found` y un enlace a Dashboard
 
 ### Requirement: Pantalla Settlement Summary: descargas
-La pantalla SHALL ofrecer **Merchant summary**, **Transactions (CSV)** y **Reserves (CSV)** a quien tenga `reports.view`. Mientras las descargas del API no existan, SHALL mostrarlas deshabilitadas con su motivo. Disponibles, cada una SHALL descargar el archivo con el nombre identificado por intento, y descargar SHALL NOT cambiar nada en pantalla.
+La pantalla SHALL ofrecer **Merchant summary**, **Transactions (CSV)** y **Reserves (CSV)** a quien tenga `reports.view`. Mientras las descargas del API no existan, SHALL mostrarlas deshabilitadas con su motivo. Disponibles, cada una SHALL descargar el archivo con el nombre identificado por intento, y descargar SHALL NOT cambiar nada en pantalla. Junto a los CSV del Back-Office SHALL avisar de que no se abren con Excel antes de subirlos.
 
 #### Scenario: Antes de las descargas del API
 - **GIVEN** las descargas aún no disponibles
@@ -303,7 +303,12 @@ La pantalla SHALL ofrecer **Merchant summary**, **Transactions (CSV)** y **Reser
 #### Scenario: Descargar los tres (criterio 3 del issue)
 - **GIVEN** las descargas disponibles y un intento `processed`
 - **WHEN** `analyst` pulsa los tres botones
-- **THEN** se descargan `ProviderA-USD_B123_A1_summary`, `ProviderA-USD_B123_A1_transactions.csv` y `ProviderA-USD_B123_A1_reserves.csv` y el estado sigue `Processed · pending payment`
+- **THEN** se descargan `ProviderA-USD_B123_A1_summary.csv`, `ProviderA-USD_B123_A1_transactions.csv` y `ProviderA-USD_B123_A1_reserves.csv` y el estado sigue `Processed · pending payment`
+
+#### Scenario: Aviso de Excel en los CSV del Back-Office
+- **GIVEN** las descargas disponibles
+- **THEN** junto a los botones se lee que los CSV se suben al Back-Office tal como se descargan, sin abrirlos ni guardarlos con Excel, y que para mirarlos se usa Data → From Text/CSV con la columna ID como Text
+- **AND** ese aviso describe **Transactions (CSV)** y **Reserves (CSV)**, y no **Merchant summary**
 
 #### Scenario: Sin reports.view
 - **GIVEN** un usuario sin `reports.view`
