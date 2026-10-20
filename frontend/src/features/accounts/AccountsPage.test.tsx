@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
-import { ACCOUNT_IDS } from '@/test/msw/fixtures'
+import { ACCOUNT_IDS, ACCOUNTS } from '@/test/msw/fixtures'
 import { db } from '@/test/msw/handlers'
 import { recordRequests } from '@/test/msw/record'
 import { server } from '@/test/msw/server'
@@ -152,6 +152,39 @@ describe('Accounts: channels not assigned yet', () => {
 
     expect(await accountNames()).toEqual(['ProviderC-Alt', 'ProviderC-USD'])
     expect(unassignedWarning()).not.toBeInTheDocument()
+  })
+})
+
+describe('Accounts: the settlements of each account (settlements-browse)', () => {
+  it('links ProviderA-USD to its Settlement List with merchant, provider and account chosen', async () => {
+    const { user, router } = renderApp('/accounts?merchantId=1&providerId=101', { as: 'viewer' })
+
+    const usd = await accountRow('ProviderA-USD')
+    await user.click(usd.getByRole('link', { name: strings.settlementsOf('ProviderA-USD') }))
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/settlements'))
+    expect(router.state.location.search).toMatchObject({
+      merchantId: 1,
+      providerId: 101,
+      accountId: ACCOUNT_IDS['ProviderA-USD'],
+    })
+    await waitFor(() => expect(screen.getByLabelText(strings.picker.account)).toHaveValue(ACCOUNT_IDS['ProviderA-USD']))
+  })
+
+  it('offers the link on a closed account too', async () => {
+    db.accounts.push({
+      ...ACCOUNTS[0]!,
+      accountId: '0b6f4c1e-1a2b-4c3d-8e4f-000000000009',
+      name: 'ProviderA-Old',
+      isActive: false,
+    })
+    renderApp('/accounts?merchantId=1&providerId=101', { as: 'viewer' })
+
+    const old = await accountRow('ProviderA-Old')
+    expect(old.getByRole('link', { name: strings.settlementsOf('ProviderA-Old') })).toHaveAttribute(
+      'href',
+      '/settlements?merchantId=1&providerId=101&accountId=0b6f4c1e-1a2b-4c3d-8e4f-000000000009',
+    )
   })
 })
 
