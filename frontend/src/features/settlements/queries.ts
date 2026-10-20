@@ -3,11 +3,13 @@ import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 import { importKey } from '@/features/imports/queries'
 import {
   type BatchStatus,
+  type Cycle,
   getAccountFees,
   getAccountSettlements,
   getFeeTypes,
   getNextBatchNumber,
   getSettlement,
+  getSettlementTransactions,
   previewSettlement,
   type SettlementDateField,
   type SettlementRequest,
@@ -55,6 +57,23 @@ export const accountSettlementsQuery = (accountId: string, filters: AccountSettl
     enabled,
     // The previous page stays while the next one loads, never the list of another account.
     placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === accountId ? previous : undefined),
+  })
+
+/** Movements per page of the Movements tab: the default of the API. */
+export const MOVEMENTS_PAGE_SIZE = 50
+
+/**
+ * A page of the movements of a cycle, under the attempt's key: an attempt as written does not change until the
+ * payment actions of a later change, which will invalidate the whole attempt.
+ */
+export const settlementTransactionsQuery = (batchId: string, cycle: Cycle, page: number) =>
+  queryOptions({
+    queryKey: [...settlementKey(batchId), 'transactions', { cycle, page }] as const,
+    queryFn: () => getSettlementTransactions(batchId, { type: cycle, page }),
+    staleTime: Infinity,
+    // The previous page stays while the next one of the same cycle loads, never the rows of another cycle.
+    placeholderData: (previous, previousQuery) =>
+      (previousQuery?.queryKey[3] as { cycle: Cycle } | undefined)?.cycle === cycle ? previous : undefined,
   })
 
 /** The proposed number is a proposal, not a reservation: always asked again when the screen opens. */

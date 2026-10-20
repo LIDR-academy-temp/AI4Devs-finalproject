@@ -72,15 +72,15 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 7. Settlement Summary: pestaña Movements y vuelta a la lista (D8, D10, D11)
 
-- [ ] 7.1 Test (rojo) `features/settlements/SummaryMovements.test.tsx` con "pestaña Movements" y "volver a la lista":
+- [x] 7.1 Test (rojo) `features/settlements/SummaryMovements.test.tsx` con "pestaña Movements" y "volver a la lista":
   - pestañas **Summary** y **Movements**; Summary sin cambios (los tests existentes del Summary siguen en verde sin tocarlos);
   - **Movements** → `type=E&page=1`, ciclos `E (450)`, `I (10)`, `R (320)` desde `view.movements` y `Page 1 of 9 · 450 movements`; ninguna petición de movimientos mientras la pestaña no está activa;
   - `I` → `type=I&page=1`, estado, ronda y `feeAmount`, y el desglose `N fees` con `title · amountUsd`; `excludeAmount` → `excluded from the totals`;
   - `eventDate = null` → `Undated`; `sheetId = null` → `—`; `settled` → `Settled` / `Pending payment`; `eventDate` en ET sin convertir con otra `TZ`;
   - recargar `?tab=movements&cycle=R&page=2` → Movements, `R`, página 2; error → `The movements could not be loaded.` con **Retry** y Summary disponible;
   - **Settlements of ProviderA-USD** → `/settlements?accountId=<ProviderA-USD>`
-- [ ] 7.2 Implementar `validateSearch` de `settlementSummaryRoute`, `SummaryTabs.tsx`, `SummaryMovements.tsx`, `settlementTransactionsQuery` y el enlace del pie, con los textos en `strings.ts`; verificar 7.1 en verde; romper a propósito el contador de un ciclo con `query.data.total` del ciclo activo (contaría solo uno) y ver fallar "ciclos desde la vista", y `formatBusinessDate` por `formatAuditDateTime` en `eventDate` (no compila: anotarlo); restaurar
-- [ ] 7.3 Commit: `test(frontend): pestaña Movements del Settlement Summary` y `feat(frontend): movimientos E/I/R del intento en solo lectura y vuelta a la lista`
+- [x] 7.2 Implementar `validateSearch` de `settlementSummaryRoute`, `SummaryTabs.tsx`, `SummaryMovements.tsx`, `settlementTransactionsQuery` y el enlace del pie, con los textos en `strings.ts`; verificar 7.1 en verde; romper a propósito el contador de un ciclo con `query.data.total` del ciclo activo (contaría solo uno) y ver fallar "ciclos desde la vista", y `formatBusinessDate` por `formatAuditDateTime` en `eventDate` (no compila: anotarlo); restaurar
+- [x] 7.3 Commit: `test(frontend): pestaña Movements del Settlement Summary` y `feat(frontend): movimientos E/I/R del intento en solo lectura y vuelta a la lista`
 
 ## 8. Solo lectura, teclado y anchura (spec "solo lectura" y "teclado y motivos")
 

@@ -18,6 +18,7 @@ import { validateSettlementListSearch } from '@/features/settlements/list-search
 import { SettlementListPage } from '@/features/settlements/SettlementListPage'
 import { SettlementReviewPage } from '@/features/settlements/SettlementReviewPage'
 import { SettlementSummaryPage } from '@/features/settlements/SettlementSummaryPage'
+import { validateSettlementSummarySearch } from '@/features/settlements/summary-search'
 import { ApiError } from '@/lib/api/client'
 import type { Permission } from '@/lib/api/types'
 import { meQuery } from '@/lib/session/me'
@@ -131,6 +132,7 @@ const settlementListRoute = createRoute({
 const settlementSummaryRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/settlements/$batchId',
+  validateSearch: validateSettlementSummarySearch,
   staticData: { crumbs: [strings.groups.reconciliation, strings.screens.settlementSummary] },
   component: SettlementSummaryPage,
 })

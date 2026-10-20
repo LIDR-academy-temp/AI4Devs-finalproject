@@ -1,11 +1,10 @@
 import { Link } from '@tanstack/react-router'
 import { createColumnHelper, rowPaginationFeature, tableFeatures, useTable } from '@tanstack/react-table'
-import { useId } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatAuditDateTime, formatBusinessDate, formatDecimal } from '@/lib/format'
 import type { AccountSettlement, AccountSettlementsPage } from './contract'
+import { Pager } from './Pager'
 import { SETTLEMENTS_PAGE_SIZE } from './queries'
 import { strings } from './strings'
 
@@ -71,7 +70,6 @@ export function SettlementsTable({
   page: number
   onPage: (page: number) => void
 }) {
-  const reasons = { previous: useId(), next: useId() }
   const pageCount = Math.max(1, Math.ceil(data.total / SETTLEMENTS_PAGE_SIZE))
 
   const table = useTable({
@@ -88,8 +86,6 @@ export function SettlementsTable({
     },
     getRowId: (row) => row.batchId,
   })
-  const canPrevious = table.getCanPreviousPage()
-  const canNext = table.getCanNextPage()
 
   return (
     <section className="flex flex-col gap-2">
@@ -130,31 +126,13 @@ export function SettlementsTable({
         </Table>
       </div>
       {data.total === 0 && <p className="text-sm text-muted-foreground">{s.empty}</p>}
-      <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
-        <span className="text-muted-foreground">{s.pageOf(page, pageCount, data.total)}</span>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => table.previousPage()}
-          disabled={!canPrevious}
-          aria-describedby={canPrevious ? undefined : reasons.previous}
-        >
-          {s.previous}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => table.nextPage()}
-          disabled={!canNext}
-          aria-describedby={canNext ? undefined : reasons.next}
-        >
-          {s.next}
-        </Button>
-      </div>
-      <div className="flex justify-end gap-3 text-xs text-muted-foreground">
-        {!canPrevious && <span id={reasons.previous}>{s.firstPage}</span>}
-        {!canNext && <span id={reasons.next}>{s.lastPage}</span>}
-      </div>
+      <Pager
+        summary={s.pageOf(page, pageCount, data.total)}
+        canPrevious={table.getCanPreviousPage()}
+        canNext={table.getCanNextPage()}
+        onPrevious={() => table.previousPage()}
+        onNext={() => table.nextPage()}
+      />
     </section>
   )
 }

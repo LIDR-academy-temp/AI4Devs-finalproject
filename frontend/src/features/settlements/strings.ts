@@ -1,7 +1,15 @@
-// Texts of Settlement Review and Settlement Summary (web-shell "Textos de interfaz en inglés y centralizados").
-// Those fixed by the spec of web-settlement are literal.
+// Texts of Settlement Review, Settlement Summary and Settlement List (web-shell "Textos de interfaz en inglés y
+// centralizados"). Those fixed by the specs of web-settlement and settlements-browse are literal.
 import type { ImportStatus } from '@recon/shared'
 import type { Category, PayableLineCode, SettlementWarning, Skipped } from './contract'
+
+/** Previous / Next of the paginated tables, with the reason a button is disabled. */
+const PAGER = {
+  previous: 'Previous',
+  next: 'Next',
+  firstPage: 'This is the first page.',
+  lastPage: 'This is the last page.',
+}
 
 export const strings = {
   batch: {
@@ -202,6 +210,8 @@ export const strings = {
     exportsUnavailable: 'Downloads are not available yet.',
     exportFailed: 'The file could not be downloaded. Try again.',
     backToDashboard: 'Back to Dashboard',
+    backToList: (accountName: string) => `Settlements of ${accountName}`,
+    tabs: { label: 'Settlement views', summary: 'Summary', movements: 'Movements' },
     newReconciliation: 'New reconciliation',
     loading: 'Loading the settlement…',
     loadError: 'The settlement could not be loaded.',
@@ -236,14 +246,47 @@ export const strings = {
     processed: (userName: string, at: string) => `${userName} · ${at}`,
     pageOf: (page: number, pages: number, total: number) =>
       `Page ${page} of ${pages} · ${total} ${total === 1 ? 'settlement' : 'settlements'}`,
-    previous: 'Previous',
-    next: 'Next',
-    firstPage: 'This is the first page.',
-    lastPage: 'This is the last page.',
+    ...PAGER,
     empty: 'No settlements match these filters.',
     loading: 'Loading the settlements…',
     loadError: 'The settlements could not be loaded.',
   },
+
+  /** The Movements tab of the Settlement Summary (settlements-browse D11). */
+  movements: {
+    cycleLabel: 'Cycle',
+    cycle: (cycle: string, count: number) => `${cycle} (${count})`,
+    tableLabel: 'Movements',
+    columns: {
+      transaction: 'Transaction',
+      status: 'Status',
+      round: 'Round',
+      sourceRow: 'Source row',
+      eventDate: 'Event date',
+      amount: 'Amount',
+      fees: 'Fees',
+      reserveHeld: 'Reserve held',
+      reserveReleased: 'Reserve released',
+      reserveEarlyReleased: 'Released on chargeback',
+      settled: 'Settled',
+    },
+    sourceRow: (sheetName: string, rowNo: number) => `${sheetName} · ${rowNo}`,
+    noSourceRow: '—',
+    undated: 'Undated',
+    excluded: 'excluded from the totals',
+    feeCount: (count: number) => `${count} ${count === 1 ? 'fee' : 'fees'}`,
+    feeLine: (title: string, amount: string) => `${title} · ${amount}`,
+    releaseOn: (date: string) => `release ${date}`,
+    settled: 'Settled',
+    pendingPayment: 'Pending payment',
+    pageOf: (page: number, pages: number, total: number) =>
+      `Page ${page} of ${pages} · ${total} ${total === 1 ? 'movement' : 'movements'}`,
+    empty: 'This cycle has no movements.',
+    loading: 'Loading the movements…',
+    loadError: 'The movements could not be loaded.',
+  },
+
+  pager: PAGER,
 
   retry: 'Retry',
 
