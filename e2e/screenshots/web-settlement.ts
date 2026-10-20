@@ -91,9 +91,18 @@ async function previewShown(page: Page) {
   await expect(panel.getByText('Updating the pre-summary…')).toBeHidden()
 }
 
-/** Whether the page scrolls sideways at the current width (it must not). */
+/**
+ * Whether the page scrolls sideways at the current width, or a table scrolls inside its card and hides some figures
+ * (neither must happen).
+ */
 async function overflows(page: Page): Promise<boolean> {
-  return page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
+  return page.evaluate(
+    () =>
+      document.documentElement.scrollWidth > window.innerWidth ||
+      [...document.querySelectorAll<HTMLElement>('[data-slot="table-container"]')].some(
+        (container) => container.scrollWidth > container.clientWidth,
+      ),
+  )
 }
 
 async function shot(page: Page, name: string) {
@@ -144,7 +153,7 @@ async function main() {
     await page.getByRole('textbox', { name: 'Amount — Chargeback over 1%' }).fill('12.5000')
     await previewShown(page)
     await shot(page, 'settlement-review')
-    console.log(`horizontal scroll at 1280 px: ${await overflows(page)}`)
+    console.log(`horizontal scroll or clipped table at 1280 px: ${await overflows(page)}`)
 
     // A number with an active attempt, said in the field from the preview.
     await batchNo.fill(TAKEN_BATCH_NO)
@@ -158,7 +167,7 @@ async function main() {
     // At 1024 px.
     await page.setViewportSize({ width: 1024, height: 768 })
     await shot(page, 'settlement-review-1024')
-    console.log(`horizontal scroll at 1024 px: ${await overflows(page)}`)
+    console.log(`horizontal scroll or clipped table at 1024 px: ${await overflows(page)}`)
     await page.setViewportSize({ width: 1280, height: 900 })
 
     // Confirm the channels, Process and the Summary of the attempt.
@@ -169,7 +178,9 @@ async function main() {
     await expect(page.getByRole('heading', { name: 'Settlement Summary · batch 123' })).toBeVisible({ timeout: 60_000 })
     processed = true
     await shot(page, 'settlement-summary')
-    console.log(`horizontal scroll at 1280 px (Summary): ${await overflows(page)}`)
+    console.log(`horizontal scroll or clipped table at 1280 px (Summary): ${await overflows(page)}`)
+    await page.setViewportSize({ width: 1024, height: 768 })
+    console.log(`horizontal scroll or clipped table at 1024 px (Summary): ${await overflows(page)}`)
   } finally {
     if (!processed) await cancelOpen(page, created)
     await browser.close()
