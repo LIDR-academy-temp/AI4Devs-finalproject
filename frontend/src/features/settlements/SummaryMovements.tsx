@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { createColumnHelper, rowPaginationFeature, tableFeatures, useTable } from '@tanstack/react-table'
+import { useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatBusinessDate, formatBusinessDateTime, formatDecimal } from '@/lib/format'
-import type { Cycle, SettlementMovement, SettlementTransactionsPage, SettlementView } from './contract'
+import type { AppliedFee, Cycle, SettlementMovement, SettlementTransactionsPage, SettlementView } from './contract'
 import { Pager } from './Pager'
 import { MOVEMENTS_PAGE_SIZE, settlementTransactionsQuery } from './queries'
 import { strings } from './strings'
@@ -16,6 +17,30 @@ const features = tableFeatures({ rowPaginationFeature })
 const helper = createColumnHelper<typeof features, SettlementMovement>()
 
 const money = (value: string) => formatDecimal(value)
+
+/** The fees of a movement, each with its title and its amount as the API sent them; nothing is added up here. */
+function FeeBreakdown({ fees }: { fees: AppliedFee[] }) {
+  const [open, setOpen] = useState(false)
+  const listId = useId()
+  return (
+    <div className="flex flex-col items-end text-xs">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={() => setOpen((value) => !value)}
+        className="text-muted-foreground underline underline-offset-2"
+      >
+        {s.feeCount(fees.length)}
+      </button>
+      <ul id={listId} hidden={!open} className="text-left">
+        {fees.map((fee) => (
+          <li key={fee.appliedFeeId}>{s.feeLine(fee.title, money(fee.amountUsd))}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
 
 const columns = helper.columns([
   helper.accessor('sourceTransactionId', {
@@ -54,17 +79,7 @@ const columns = helper.columns([
     cell: ({ row }) => (
       <div className="flex flex-col items-end">
         <span>{money(row.original.feeAmount)}</span>
-        {row.original.fees.length > 0 && (
-          // A native disclosure: Enter and Space open it, and nothing is added up here.
-          <details className="text-left text-xs">
-            <summary className="cursor-pointer text-muted-foreground">{s.feeCount(row.original.fees.length)}</summary>
-            <ul>
-              {row.original.fees.map((fee) => (
-                <li key={fee.appliedFeeId}>{s.feeLine(fee.title, money(fee.amountUsd))}</li>
-              ))}
-            </ul>
-          </details>
-        )}
+        {row.original.fees.length > 0 && <FeeBreakdown fees={row.original.fees} />}
       </div>
     ),
   }),
