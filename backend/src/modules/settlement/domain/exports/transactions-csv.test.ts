@@ -59,10 +59,10 @@ describe('transactionsCsv with built rows', () => {
     expect(dataLines(body)).toEqual(['911545598812004,CHB', '911545598812004,REF'])
   })
 
-  it('writes a Chargeback and a CHB 2 of the same transaction as one CHB row', () => {
+  it('writes a Chargeback and a CHB 2 of the same transaction as one CHB row (CHB 2 is stored as Chargeback)', () => {
     const { body, rows } = transactionsCsv([
       exportRow('911545598812004', 'I', 'Chargeback'),
-      exportRow('911545598812004', 'I', 'Chargeback', true),
+      exportRow('911545598812004', 'I', 'Chargeback'),
     ])
     expect(dataLines(body)).toEqual(['911545598812004,CHB'])
     expect(rows).toBe(1)

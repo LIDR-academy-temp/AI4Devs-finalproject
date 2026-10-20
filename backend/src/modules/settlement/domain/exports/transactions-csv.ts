@@ -3,13 +3,14 @@
 import type { Cycle, TransactionStatusCode } from '@recon/shared'
 import { toCsv } from './csv.js'
 
-/** A movement as the exports read it, in the stable order (cycle, sheetId, rowNo, settlementTxnId). */
+/**
+ * A movement as the exports read it, in the stable order (cycle, sheetId, rowNo, settlementTxnId). A CHB 2 row is
+ * stored with status Chargeback (its excludeAmount only changes the amount), so it is a CHB for the Back-Office.
+ */
 export interface ExportRow {
   sourceTransactionId: string
   cycle: Cycle
   status: TransactionStatusCode
-  /** CHB 2: a Chargeback whose amount is excluded; it is still a CHB for the Back-Office. */
-  excludeAmount: boolean
 }
 
 export interface ExportFile {

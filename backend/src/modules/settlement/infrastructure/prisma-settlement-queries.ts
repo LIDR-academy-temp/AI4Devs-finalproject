@@ -127,7 +127,6 @@ export class PrismaSettlementQueries implements SettlementQueries {
       select: {
         cycle: true,
         statusId: true,
-        excludeAmount: true,
         transaction: { select: { sourceTransactionId: true } },
       },
     })
@@ -135,7 +134,6 @@ export class PrismaSettlementQueries implements SettlementQueries {
       sourceTransactionId: r.transaction.sourceTransactionId,
       cycle: r.cycle as Cycle,
       status: statusOf(r.statusId),
-      excludeAmount: r.excludeAmount,
     }))
   }
 

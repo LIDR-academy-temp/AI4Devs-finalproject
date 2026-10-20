@@ -10,17 +10,15 @@ export async function sampleExportRows(name: 'batch-clean' | 'legacy-provider'):
     sourceTransactionId: m.sourceTransactionId,
     cycle: m.cycle,
     status: m.statusCode,
-    excludeAmount: m.excludeAmount,
   }))
   return (['E', 'I', 'R'] as const).flatMap((cycle) => rows.filter((r) => r.cycle === cycle))
 }
 
-export const exportRow = (
-  sourceTransactionId: string,
-  cycle: Cycle,
-  status: TransactionStatusCode,
-  excludeAmount = false,
-): ExportRow => ({ sourceTransactionId, cycle, status, excludeAmount })
+export const exportRow = (sourceTransactionId: string, cycle: Cycle, status: TransactionStatusCode): ExportRow => ({
+  sourceTransactionId,
+  cycle,
+  status,
+})
 
 /** The data lines of a CSV body, without the header. */
 export const dataLines = (body: string) => body.split('\r\n').slice(1, -1)
