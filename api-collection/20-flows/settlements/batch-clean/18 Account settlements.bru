@@ -1,0 +1,35 @@
+meta {
+  name: 18 Account settlements
+  type: http
+  seq: 18
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/settlements?status=processed
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: processed
+}
+
+params:path {
+  accountId: {{providerAUsdAccountId}}
+}
+
+tests {
+  test('the attempt just processed comes first in the list of ProviderA-USD, pending payment', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.total).to.be.at.least(1);
+    const [first] = res.body.items;
+    expect(first.batchId.toLowerCase()).to.equal(String(bru.getVar('setBatchId')).toLowerCase());
+    expect(first.importId.toLowerCase()).to.equal(String(bru.getVar('setImportId')).toLowerCase());
+    expect([first.batchNo, first.attemptNo]).to.eql([bru.getVar('setBatchNo'), 1]);
+    expect([first.status, first.settledStatus]).to.eql(['processed', 'pending_payment']);
+    expect(first.amountPayable).to.equal('33771.3600');
+  });
+}

@@ -1,0 +1,37 @@
+meta {
+  name: Account settlements - processed date
+  type: http
+  seq: 61
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/settlements?dateField=processedAt&from=2000-01-01&status=paid
+  body: none
+  auth: inherit
+}
+
+params:query {
+  dateField: processedAt
+  from: 2000-01-01
+  status: paid
+}
+
+params:path {
+  accountId: {{providerAUsdAccountId}}
+}
+
+script:pre-request {
+  if (!bru.getVar('providerAUsdAccountId')) {
+    await bru.runRequest('10-smoke/Provider accounts');
+  }
+}
+
+tests {
+  test('filters by the New York day of processedAt: the 22 paid batches of ProviderA-USD', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.total).to.equal(22);
+  });
+}
