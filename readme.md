@@ -213,27 +213,109 @@ Lo que el usuario ve en cada paso del flujo principal:
 
 ### 1.4. Instrucciones de instalación
 
-> **Procedimiento previsto, no verificado.** La Entrega 1 contiene documentación. Los comandos de instalación, arranque y pruebas se verificarán con el código en la Entrega 2. Todos los datos de demostración serán sintéticos.
+[![CI](https://github.com/kajirioji/AI4Devs-finalproject/actions/workflows/ci.yml/badge.svg?branch=feature/entrega-2-MVP)](https://github.com/kajirioji/AI4Devs-finalproject/actions/workflows/ci.yml?query=branch%3Afeature%2Fentrega-2-MVP)
 
-**Prerrequisitos previstos:** Node.js 22 LTS o superior, npm, Docker y Docker Compose, Git.
+Procedimiento de la Entrega 2, pensado para seguirse paso a paso en un clon limpio. Todos los datos son sintéticos: el seed crea el mundo de demostración y los archivos de prueba están en [`data/samples/`](data/samples/). Los comandos se ejecutan desde la raíz del repositorio; valen igual en PowerShell, Git Bash, macOS o Linux salvo donde se indica.
 
-**Instalación inicial prevista:**
+**1. Requisitos**
 
-1. Clonar el repositorio y copiar `.env.example` a `.env` en `backend/` y `frontend/`. El `.env` del backend incluye la cadena de conexión a SQL Server con el usuario de aplicación `recon_app`; la contraseña de `sa` solo la usa el script de inicialización del contenedor para crear la base y ese usuario, y no se utiliza desde la aplicación.
-2. Levantar la base de datos: `docker compose up -d db` (SQL Server 2022 Developer Edition en contenedor, puerto 1433). Al primer arranque, un script de inicialización crea la base `ReconTool2` y el usuario `recon_app` con permisos solo sobre ese esquema.
-3. Instalar dependencias: `npm install` en `backend/` y en `frontend/`.
-4. Ejecutar migraciones y seed sintético: `npm run db:migrate && npm run db:seed` en `backend/`. El seed utiliza exclusivamente datos sintéticos y es idempotente: crea o actualiza los datos de ejemplo sin borrar el trabajo existente (proveedores, cuentas, canales, fees, usuarios de prueba, un lote de transacciones propias y archivos de settlement de ejemplo en `data/samples/`).
+| Herramienta | Versión | Para qué |
+|---|---|---|
+| Git | cualquiera reciente | clonar el repositorio |
+| Node.js | 22.x (fijada en [`.node-version`](.node-version); el `package.json` exige `>=22 <23`) | backend, frontend y scripts |
+| pnpm | 10.18.0 (fijada en `packageManager` del [`package.json`](package.json)) | monorepo; se activa con Corepack, que viene con Node |
+| Docker | Docker Desktop (Windows/macOS) o Docker Engine con el plugin Compose (Linux) | SQL Server 2022 en contenedor |
 
-**Arranque habitual previsto (sin reiniciar datos):**
+Puertos que deben estar libres: `1433` (SQL Server), `3000` (API) y `5173` (web).
 
-5. Arrancar backend (`npm run dev`, puerto 3000) y frontend (`npm run dev`, puerto 5173).
-6. Entrar con el usuario de prueba indicado en el seed.
+**2. Clonar e instalar dependencias**
 
-Alternativa todo-en-uno prevista: `docker compose up` levanta base de datos, backend y frontend sin borrar sus volúmenes ni ejecutar un reset.
+```bash
+git clone -b feature/entrega-2-MVP https://github.com/kajirioji/AI4Devs-finalproject.git
+cd AI4Devs-finalproject
+corepack enable          # activa la versión de pnpm fijada en package.json
+pnpm install             # instala todo el monorepo e instala los hooks de git (husky)
+```
 
-**Reinicio explícito de datos de prueba:** `npm run db:reset`, únicamente en desarrollo y bajo acción explícita del usuario. Es destructivo para los datos de ese entorno y no forma parte del arranque habitual.
+**3. Variables de entorno**
 
-**Credenciales:** inicialización y migraciones utilizan una identidad administrativa separada. La aplicación usa `recon_app` con permisos de ejecución y acceso a datos, sin permisos de modificación del esquema. Los comandos y permisos exactos se verificarán en la Entrega 2.
+Hay un único `.env` en la raíz del repositorio; lo leen Docker Compose, Prisma, el backend, el seed y las pruebas. Se crea a partir de la plantilla versionada, que no contiene secretos reales:
+
+```bash
+cp .env.example .env                 # Git Bash, macOS o Linux
+Copy-Item .env.example .env          # PowerShell
+```
+
+Abre `.env` y sustituye los valores de ejemplo, como indican sus comentarios:
+
+- `MSSQL_SA_PASSWORD`: contraseña de `sa` dentro del contenedor. Solo la usa el script de arranque de SQL Server para crear la base y los usuarios; la aplicación nunca entra como `sa`. SQL Server exige una contraseña fuerte (8 caracteres o más, con mayúsculas, minúsculas, números y símbolos); si no la cumple, el contenedor no arranca.
+- `RECON_APP_PASSWORD`: contraseña del usuario de aplicación `recon_app` (también fuerte, por el mismo motivo).
+- `JWT_SECRET`: secreto de firma de las sesiones, de **32 caracteres o más**; con menos, el backend no arranca.
+- `SEED_PASSWORD`: contraseña común de los cuatro usuarios de demostración que crea el seed.
+
+El `.env` está en `.gitignore`: nunca se versiona.
+
+**4. Base de datos**
+
+```bash
+pnpm db:up          # arranca SQL Server 2022 (contenedor recon-mssql)
+pnpm db:logs        # opcional: espera a "ready for client connections" y sal con Ctrl+C
+pnpm db:generate    # genera el cliente de Prisma
+pnpm db:migrate     # aplica las migraciones escritas a mano (prisma migrate deploy)
+pnpm db:seed        # carga el mundo sintético; tarda uno o dos minutos
+```
+
+El primer `db:up` tarda más (descarga la imagen); al arrancar por primera vez, el contenedor crea la base `ReconTool` y los usuarios `recon_app` (aplicación y migraciones) y `recon_reader` (solo lectura) con las contraseñas del `.env`. Los datos viven en el volumen `recon-mssql-data`, así que sobreviven a `pnpm db:down`. El seed es idempotente: vacía las tablas y recarga el mismo mundo sintético (catálogos, cuentas con sus fees y reglas de pareo, unas 24 000 transacciones e historial de batches pagados); ejecutarlo de nuevo deja la base exactamente igual y borra el trabajo hecho en la aplicación.
+
+> No se usan `prisma db push` ni `prisma migrate dev`: los índices únicos filtrados y las `CHECK` solo existen en las migraciones escritas a mano y se perderían.
+
+**5. Arrancar la aplicación**
+
+```bash
+pnpm dev            # backend (http://localhost:3000) y frontend (http://localhost:5173) en paralelo
+```
+
+Abre http://localhost:5173 y entra con cualquiera de los usuarios de demostración y la contraseña de `SEED_PASSWORD`:
+
+| Usuario | Rol | Alcance |
+|---|---|---|
+| `analyst` | analista: importa, valida y procesa | merchants 1 y 2 |
+| `payments` | pagos (permiso `payment.process`) | merchants 1 y 2 |
+| `viewer` | solo consulta | merchant 1 |
+| `admin` | administración | todos los merchants |
+
+Comprobación rápida: http://localhost:5173/api/v1/health responde a través del proxy de Vite. Para recorrer el flujo principal, entra como `analyst`, crea una reconciliación nueva y sube los archivos de un conjunto de [`data/samples/`](data/samples/) (su [`README`](data/samples/README.md) explica cada conjunto y su resultado esperado).
+
+Arranques siguientes: `pnpm db:up` y `pnpm dev`; no hace falta migrar ni sembrar otra vez. `pnpm db:down` para el contenedor sin borrar los datos.
+
+**6. Pruebas**
+
+| Comando | Qué ejecuta | Necesita |
+|---|---|---|
+| `pnpm lint` · `pnpm typecheck` | Biome y TypeScript en todo el monorepo | solo el paso 2 y `pnpm db:generate` |
+| `pnpm test` | pruebas unitarias con Vitest (dominio, backend y frontend) | solo el paso 2 y `pnpm db:generate` |
+| `pnpm --filter @recon/backend test:integration` | pruebas de integración del backend contra el SQL Server local | pasos 3 y 4 (base migrada y sembrada) |
+| `pnpm test:api` | colección Bruno de la API ([`api-collection/`](api-collection/)); `pnpm test:api:smoke` ejecuta solo `10-smoke` | pasos 4 y 5 con `pnpm dev` en marcha, y el `.env` de la colección (abajo) |
+| `pnpm test:e2e` | smoke E2E del flujo de importación con Playwright y Gherkin ([`e2e/`](e2e/)) | pasos 4 y 5 con `pnpm dev` en marcha, y el navegador de Playwright (abajo) |
+
+Preparación de una sola vez para las dos últimas:
+
+```bash
+# Colección Bruno: credenciales propias en api-collection/.env (ignorado por git)
+cp api-collection/.env.example api-collection/.env           # o Copy-Item en PowerShell
+#   y pon en SEED_PASSWORD el mismo valor que en el .env de la raíz
+
+# Playwright: descarga Chromium
+pnpm --filter @recon/e2e exec playwright install chromium
+```
+
+Las pruebas de integración, la colección y el E2E crean sus propios imports y batches sobre la base local; `pnpm db:seed` la devuelve al estado inicial. La CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) ejecuta en cada pull request lint, typecheck, pruebas unitarias, la comprobación del contrato OpenAPI y el build del frontend; en otro job, migración, seed y pruebas de integración contra un SQL Server 2022 efímero; y gitleaks. La colección Bruno y el E2E se ejecutan en local; su job de CI queda para la Entrega 3 ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)).
+
+**Problemas frecuentes**
+
+- *El contenedor se detiene nada más arrancar:* `pnpm db:logs` lo explica; casi siempre es una `MSSQL_SA_PASSWORD` que no cumple la política de SQL Server. Corrige el `.env`, borra el contenedor y su volumen con `docker compose --env-file .env -f infra/docker-compose.yml down -v` (destructivo: solo en local) y vuelve a `pnpm db:up`.
+- *`Invalid environment variables: JWT_SECRET` al arrancar el backend:* el secreto tiene menos de 32 caracteres.
+- *`pnpm` no se reconoce:* falta `corepack enable` (en Windows, a veces en una terminal como administrador).
 
 ---
 
