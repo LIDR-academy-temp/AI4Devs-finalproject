@@ -32,21 +32,31 @@ const SKIPPED_LABEL: readonly [keyof Skipped, string][] = [
 /** Without a settlement.process audit (seeded history) the view has no issues nor skipped rows to tell (#65). */
 const NOT_AVAILABLE = [['Not available', '']]
 
+/** What Excel and other spreadsheets read as the start of a formula. */
+const FORMULA_LEAD = /^[=+\-@\t\r]/
+
+/**
+ * A free-text cell (names, titles, descriptions) as the merchant's spreadsheet must read it: one that starts like a
+ * formula gets an apostrophe in front, so it is shown and never run (design D7). Figures and ids never go through
+ * here, so a negative amount keeps its sign; TXN and RR carry no free text.
+ */
+const text = (value: string) => (FORMULA_LEAD.test(value) ? `'${value}` : value)
+
 type Range = SettlementView['dateRanges']['APP']
 
 const range = (r: Range) => (r === null ? '' : `${businessTime(r.min)} - ${businessTime(r.max)}`)
 
 function attemptBlock(view: SettlementView): string[][] {
   return [
-    ['Account', view.accountName],
+    ['Account', text(view.accountName)],
     ['Batch', String(view.batchNo)],
     ['Attempt', String(view.attemptNo)],
     ['Status', view.status],
     ['Payment', PAYMENT_LABEL[view.settledStatus]],
-    ['Processed by', view.approvedBy.userName],
+    ['Processed by', text(view.approvedBy.userName)],
     ['Processed at', auditTime(view.processedAt)],
     ['Settlement date', view.settlementDate ?? ''],
-    ['Channels', view.channels.join('; ')],
+    ['Channels', text(view.channels.join('; '))],
     ['APP range (ET)', range(view.dateRanges.APP)],
     ['DEC range (ET)', range(view.dateRanges.DEC)],
     ['I range (ET)', range(view.dateRanges.I)],
@@ -94,11 +104,17 @@ export function summaryCsv(view: SettlementView, sourceIds: ReadonlyMap<string, 
     ),
     toCsv(
       ['Card brand', 'Qty', 'Amount'],
-      view.brandTotals.map((b) => [b.cardBrand, String(b.qty), b.amount]),
+      view.brandTotals.map((b) => [text(b.cardBrand), String(b.qty), b.amount]),
     ),
     toCsv(
       ['Fee type', 'Description', 'Source', 'Amount', 'Entered by'],
-      view.batchFees.map((f) => [f.title, f.description ?? '', f.source, f.amount, f.enteredBy?.userName ?? '']),
+      view.batchFees.map((f) => [
+        text(f.title),
+        text(f.description ?? ''),
+        f.source,
+        f.amount,
+        text(f.enteredBy?.userName ?? ''),
+      ]),
     ),
     toCsv(
       ['Item', 'Qty', 'Amount'],
