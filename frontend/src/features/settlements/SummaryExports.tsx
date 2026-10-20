@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useMe } from '@/lib/session/me'
 import { downloadSettlementExport, type ExportType, type SettlementView } from './contract'
-import { exportFileName, SETTLEMENT_EXPORTS_AVAILABLE, saveFile } from './exports'
+import { BACK_OFFICE_EXPORTS, exportFileName, SETTLEMENT_EXPORTS_AVAILABLE, saveFile } from './exports'
 import { strings } from './strings'
 
 const s = strings.summary
@@ -16,6 +16,7 @@ const TYPES: ExportType[] = ['summary', 'transactions', 'reserves']
 export function SummaryExports({ view }: { view: SettlementView }) {
   const canDownload = useMe().permissions.includes('reports.view')
   const reasonId = useId()
+  const excelId = useId()
   const busy = useRef(new Set<ExportType>())
   const [downloading, setDownloading] = useState<ExportType | null>(null)
   const [failed, setFailed] = useState<ExportType | null>(null)
@@ -51,7 +52,9 @@ export function SummaryExports({ view }: { view: SettlementView }) {
               key={type}
               variant="outline"
               disabled={!SETTLEMENT_EXPORTS_AVAILABLE || downloading === type}
-              aria-describedby={SETTLEMENT_EXPORTS_AVAILABLE ? undefined : reasonId}
+              aria-describedby={
+                !SETTLEMENT_EXPORTS_AVAILABLE ? reasonId : BACK_OFFICE_EXPORTS.includes(type) ? excelId : undefined
+              }
               onClick={() => void download(type)}
             >
               {s.exportNames[type]}
@@ -59,7 +62,10 @@ export function SummaryExports({ view }: { view: SettlementView }) {
           ))}
         </div>
         {SETTLEMENT_EXPORTS_AVAILABLE ? (
-          <p className="text-muted-foreground">{s.exportsNote}</p>
+          <>
+            <p className="text-muted-foreground">{s.exportsNote}</p>
+            <p id={excelId}>{s.exportsExcel}</p>
+          </>
         ) : (
           <p id={reasonId} className="text-muted-foreground">
             {s.exportsUnavailable}

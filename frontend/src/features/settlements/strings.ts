@@ -192,6 +192,9 @@ export const strings = {
     exports: 'Exports',
     exportNames: { summary: 'Merchant summary', transactions: 'Transactions (CSV)', reserves: 'Reserves (CSV)' },
     exportsNote: 'Generated at processing; run in the Back-Office after the payment. Downloading changes nothing.',
+    exportsExcel:
+      'Upload these CSV files to the Back-Office as downloaded: do not open or save them with Excel first. ' +
+      'To look at one, use Data → From Text/CSV and set the ID column to Text.',
     exportsUnavailable: 'Downloads are not available yet.',
     exportFailed: 'The file could not be downloaded. Try again.',
     backToDashboard: 'Back to Dashboard',

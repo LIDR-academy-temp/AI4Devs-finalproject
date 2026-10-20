@@ -1,9 +1,11 @@
-// The downloads of an attempt (web-settlement design D12). The export routes are #12's: until it is merged the
-// buttons are shown disabled with their reason, like SETTLEMENT_REVIEW was before #13. A separate commit turns this
-// on once #12 is merged.
+// The downloads of an attempt (web-settlement design D12). The export routes are #12's: until it was merged the
+// buttons were shown disabled with their reason, like SETTLEMENT_REVIEW was before #13.
 import type { ExportType, SettlementView } from './contract'
 
-export const SETTLEMENT_EXPORTS_AVAILABLE = false
+export const SETTLEMENT_EXPORTS_AVAILABLE = true
+
+/** The Back-Office CSVs: Excel would rewrite their text IDs as numbers, so the screen warns next to them. */
+export const BACK_OFFICE_EXPORTS: readonly ExportType[] = ['transactions', 'reserves']
 
 const EXTENSIONS: Record<string, string> = { 'text/csv': 'csv', 'application/pdf': 'pdf' }
 
