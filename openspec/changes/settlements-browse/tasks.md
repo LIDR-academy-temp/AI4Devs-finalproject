@@ -11,11 +11,11 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 ## 1. Esquemas compartidos (Contrato)
 
-- [ ] 1.1 Test (rojo) en `packages/shared/src/settlement-reads.test.ts`:
+- [x] 1.1 Test (rojo) en `packages/shared/src/settlement-reads.test.ts`:
   - `AccountSettlementsQuery`: sin nada → `page = 1`, `pageSize = 50`, `dateField = settlementDate`; `page`/`pageSize` como texto se coercen; `status` `processed`/`paid`/`undone` válidos y `settled` no; `dateField` `settlementDate`/`processedAt` válidos y `createdAt` no; `from`/`to` `2026-10-24` válidas, `24/10/2026` y `2026-02-30` no; `from = to` válido y `from > to` no; `pageSize = 501` y un parámetro desconocido no;
   - `AccountSettlementsPage` y `AccountSettlement`: un ejemplo con `amountPayable` `"33771.3600"`, `settlementDate` `null` y `channels` `null` pasa; `amountPayable` como número, `processedAt` sin `Z` o `status` desconocido no
-- [ ] 1.2 Implementar los tres esquemas en `settlement-reads.ts` (exportados desde `index.ts`) según "Contrato" del design; verificar 1.1 en verde y `pnpm --filter @recon/shared test`; romper a propósito el `superRefine` de `from ≤ to` y ver fallar su caso; restaurar
-- [ ] 1.3 Commit: `test(shared): esquemas de los settlements de una cuenta` y `feat(shared): consulta y página de los settlements de una cuenta`
+- [x] 1.2 Implementar los tres esquemas en `settlement-reads.ts` (exportados desde `index.ts`) según "Contrato" del design; verificar 1.1 en verde y `pnpm --filter @recon/shared test`; romper a propósito el `superRefine` de `from ≤ to` y ver fallar su caso; restaurar
+- [x] 1.3 Commit: `test(shared): esquemas de los settlements de una cuenta` y `feat(shared): consulta y página de los settlements de una cuenta`
 
 ## 2. Servicio y ruta del backend (D1, D3, D5)
 
