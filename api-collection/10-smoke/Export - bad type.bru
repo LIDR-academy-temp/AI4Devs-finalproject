@@ -1,0 +1,30 @@
+meta {
+  name: Export - bad type
+  type: http
+  seq: 57
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/export?type=pdf
+  body: none
+  auth: inherit
+}
+
+params:query {
+  type: pdf
+}
+
+params:path {
+  batchId: {{$randomUUID}}
+}
+
+tests {
+  test('responds 400 validation_error in JSON for an unknown export type, not a CSV', () => {
+    expect(res.status).to.equal(400);
+    expect(res.getHeader('content-type')).to.match(/^application\/json/);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}

@@ -1,0 +1,40 @@
+meta {
+  name: 13 Transactions I
+  type: http
+  seq: 13
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/transactions?type=I
+  body: none
+  auth: inherit
+}
+
+params:query {
+  type: I
+}
+
+params:path {
+  batchId: {{setBatchId}}
+}
+
+tests {
+  const units = (text) => BigInt(text.replace('.', ''));
+  test('the 10 adjustments: 2 Chargeback, 6 Refund, 2 RDR, none settled', () => {
+    expect(res.status).to.equal(200);
+    expect([res.body.type, res.body.page, res.body.pageSize, res.body.total]).to.eql(['I', 1, 50, 10]);
+    const count = (status) => res.body.items.filter((m) => m.status === status).length;
+    expect([count('Chargeback'), count('Refund'), count('RDR')]).to.eql([2, 6, 2]);
+    expect(res.body.items.every((m) => m.settled === false)).to.equal(true);
+  });
+  test('each fee breakdown adds up to the feeAmount of its movement; ids travel as strings', () => {
+    for (const m of res.body.items) {
+      expect(typeof m.settlementTxnId).to.equal('string');
+      const sum = m.fees.reduce((s, f) => s + units(f.amountUsd), BigInt(0));
+      expect(sum === units(m.feeAmount)).to.equal(true);
+    }
+  });
+}
