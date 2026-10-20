@@ -1,7 +1,14 @@
 import { screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { ACCOUNT_IDS } from '@/test/msw/fixtures'
-import { batchCleanPreview, seedActiveBatch, seedNextBatchNumber, settlementRequests } from '@/test/msw/settlements'
+import {
+  batchCleanPreview,
+  holdNextSettlement,
+  respondNextSettlement,
+  seedActiveBatch,
+  seedNextBatchNumber,
+  settlementRequests,
+} from '@/test/msw/settlements'
 import {
   AFTER_DEBOUNCE,
   batchNoField,
@@ -93,5 +100,44 @@ describe('Settlement Review: batch number in use (spec "número de batch en uso"
     expect(screen.getByLabelText('Settlement date')).toHaveValue('2026-10-24')
     await waitFor(() => expect(settlementRequests('preview').length).toBeGreaterThan(previews))
     await waitFor(() => expect(processButton()).toBeDisabled())
+  })
+
+  it('after a 409 batch_no_taken, Process is disabled with its reason until the new preview arrives', async () => {
+    const { importId } = validatedImport('batch-clean', noChannels())
+    const { user } = await openReview(importId)
+    chooseDate('2026-10-24')
+    await previewShown()
+    await waitFor(() => expect(processButton()).toBeEnabled())
+    seedActiveBatch(USD, 123)
+    const refetch = holdNextSettlement('preview')
+
+    await user.click(processButton())
+    await refetch.arrived
+
+    // The preview on screen still says 123 is available, but it is being asked again: it is not current.
+    expect(processButton()).toBeDisabled()
+    expect(processButton()).toHaveAccessibleDescription(/Choose a batch number that is not in use\./)
+    refetch.release()
+    await waitFor(() => expect(settlementRequests('preview').at(-1)!.status).toBe(200))
+    expect(processButton()).toBeDisabled()
+    expect(processButton()).toHaveAccessibleDescription(/Choose a batch number that is not in use\./)
+  })
+
+  it('a preview being asked again after a 409 is not current: Process waits for it', async () => {
+    const { importId } = validatedImport('batch-clean', noChannels())
+    const { user } = await openReview(importId)
+    chooseDate('2026-10-24')
+    await previewShown()
+    await waitFor(() => expect(processButton()).toBeEnabled())
+    respondNextSettlement('process', { status: 409, code: 'blocking_validation_issue' })
+    const refetch = holdNextSettlement('preview')
+
+    await user.click(processButton())
+    await refetch.arrived
+
+    expect(processButton()).toBeDisabled()
+    expect(processButton()).toHaveAccessibleDescription(/Waiting for the pre-summary\./)
+    refetch.release()
+    await waitFor(() => expect(settlementRequests('preview').at(-1)!.status).toBe(200))
   })
 })
