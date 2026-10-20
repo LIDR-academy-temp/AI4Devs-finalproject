@@ -1,10 +1,17 @@
 import { screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { USERS } from '@/test/msw/fixtures'
-import { omitExportDisposition, seedSettlement, settlementRequests } from '@/test/msw/settlements'
+import {
+  holdNextSettlement,
+  omitExportDisposition,
+  respondNextSettlement,
+  seedSettlement,
+  settlementRequests,
+} from '@/test/msw/settlements'
 import { renderApp } from '@/test/render'
 import { validatedImport } from '@/test/settlement-screens'
 import { OPENING } from '@/test/validation-screens'
+import { fileNameOf } from './contract'
 
 // The constant that #12 turned on; each test says which way it is.
 const flags = vi.hoisted(() => ({ available: false }))
@@ -104,6 +111,43 @@ describe('Settlement Summary: downloads with #12 (spec "descargas")', () => {
     await user.click(screen.getByRole('button', { name: 'Reserves (CSV)' }))
 
     await waitFor(() => expect(saved.map((s) => s.name)).toEqual(['ProviderA-USD_B123_A1_reserves.csv']))
+  })
+
+  it('each button has its own guard: another download does not release the one on its way', async () => {
+    const { user } = await openSummary()
+    const hold = holdNextSettlement('export')
+
+    await user.click(screen.getByRole('button', { name: 'Merchant summary' }))
+    await hold.arrived
+    await user.click(screen.getByRole('button', { name: 'Transactions (CSV)' }))
+    await waitFor(() => expect(saved.map((s) => s.name)).toEqual(['ProviderA-USD_B123_A1_transactions.csv']))
+
+    expect(screen.getByRole('button', { name: 'Merchant summary' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'Merchant summary' }))
+    expect(settlementRequests('export')).toHaveLength(2)
+    hold.release()
+    await waitFor(() => expect(saved).toHaveLength(2))
+    expect(screen.getByRole('button', { name: 'Merchant summary' })).toBeEnabled()
+  })
+
+  it('a failed download says so next to the buttons, and a new try takes the message away', async () => {
+    const { user } = await openSummary()
+    respondNextSettlement('export', { status: 500, code: 'internal_error' })
+
+    await user.click(screen.getByRole('button', { name: 'Reserves (CSV)' }))
+
+    expect(await screen.findByText('The file could not be downloaded. Try again.')).toBeInTheDocument()
+    expect(saved).toHaveLength(0)
+    await user.click(screen.getByRole('button', { name: 'Reserves (CSV)' }))
+    await waitFor(() => expect(saved.map((s) => s.name)).toEqual(['ProviderA-USD_B123_A1_reserves.csv']))
+    expect(screen.queryByText('The file could not be downloaded. Try again.')).not.toBeInTheDocument()
+  })
+
+  it('a Content-Disposition name that cannot be decoded falls back to the name of the attempt, without an error', () => {
+    expect(fileNameOf("attachment; filename*=UTF-8''%E0%A4%A")).toBeNull()
+    expect(fileNameOf('attachment; filename="ProviderA-USD_B123_A1_summary.csv"')).toBe(
+      'ProviderA-USD_B123_A1_summary.csv',
+    )
   })
 
   it('without reports.view there are no download buttons', async () => {
