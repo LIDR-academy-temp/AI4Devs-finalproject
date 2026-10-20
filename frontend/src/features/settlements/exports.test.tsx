@@ -6,7 +6,7 @@ import { renderApp } from '@/test/render'
 import { validatedImport } from '@/test/settlement-screens'
 import { OPENING } from '@/test/validation-screens'
 
-// The constant that #12 turns on; each test says which way it is.
+// The constant that #12 turned on; each test says which way it is.
 const flags = vi.hoisted(() => ({ available: false }))
 vi.mock('./exports', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./exports')>()),
@@ -78,6 +78,23 @@ describe('Settlement Summary: downloads with #12 (spec "descargas")', () => {
     ])
     expect(screen.getByText('Processed · pending payment')).toBeInTheDocument()
     expect(settlementRequests('get')).toHaveLength(reads)
+  })
+
+  it('the downloads are on since the merge of #12', async () => {
+    const actual = await vi.importActual<typeof import('./exports')>('./exports')
+    expect(actual.SETTLEMENT_EXPORTS_AVAILABLE).toBe(true)
+  })
+
+  it('the Back-Office CSVs warn against opening them with Excel and say how to look at them', async () => {
+    await openSummary()
+
+    const warning =
+      'Upload these CSV files to the Back-Office as downloaded: do not open or save them with Excel first. ' +
+      'To look at one, use Data → From Text/CSV and set the ID column to Text.'
+    expect(screen.getByText(warning)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Transactions (CSV)' })).toHaveAccessibleDescription(warning)
+    expect(screen.getByRole('button', { name: 'Reserves (CSV)' })).toHaveAccessibleDescription(warning)
+    expect(screen.getByRole('button', { name: 'Merchant summary' })).not.toHaveAccessibleDescription(warning)
   })
 
   it('without Content-Disposition (not exposed by CORS) the file takes the name of the attempt', async () => {
