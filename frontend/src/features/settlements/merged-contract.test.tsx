@@ -1,6 +1,6 @@
 // What the contract of #11 brought with its merge (web-settlement task 9.13): accounts of another merchant named only
 // as such, an attempt without a validation summary and the 409 settlement_busy of Process.
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { batchCleanPreview, respondNextSettlement, seedSettlement, settlementRequests } from '@/test/msw/settlements'
 import { renderApp } from '@/test/render'
@@ -65,7 +65,46 @@ describe('Settlement Review: the contract of #11 after its merge', () => {
     expect(settlementRequests('process')).toHaveLength(2)
     expect(second!.body).toEqual(first!.body)
   })
+
+  it('after settlement_busy, unchecking the channel box disables Retry with the reason of Process', async () => {
+    const { user } = await busyAfterProcess()
+
+    await user.click(screen.getByRole('checkbox', { name: CONFIRM }))
+
+    const retry = screen.getByRole('button', { name: 'Retry' })
+    expect(retry).toBeDisabled()
+    expect(retry).toHaveAccessibleDescription(/Confirm the channel assignment\./)
+    await user.click(retry)
+    expect(settlementRequests('process')).toHaveLength(1)
+  })
+
+  it('after settlement_busy, changing a field takes the "Try again" message away', async () => {
+    const { user } = await busyAfterProcess()
+
+    const amount = screen.getByRole('textbox', { name: 'Amount — Wire Fee' })
+    await user.clear(amount)
+    await user.type(amount, '30.0000')
+
+    await waitFor(() => expect(screen.queryByText(BUSY)).not.toBeInTheDocument())
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
+  })
 })
+
+const CONFIRM = 'Assign these channels to this account as primary'
+const BUSY = 'Another settlement is being processed for this provider. Try again.'
+
+/** Settlement Review of batch-clean after a Process answered 409 settlement_busy. */
+async function busyAfterProcess() {
+  const { importId } = validatedImport()
+  const view = await openReview(importId)
+  chooseDate('2026-10-24')
+  await previewShown()
+  await view.user.click(screen.getByRole('checkbox', { name: CONFIRM }))
+  respondNextSettlement('process', { status: 409, code: 'settlement_busy' })
+  await view.user.click(processButton())
+  await screen.findByText(BUSY)
+  return view
+}
 
 describe('Settlement Summary: the contract of #11 after its merge', () => {
   it('a channel moved from an account of another merchant names it only as such', async () => {
