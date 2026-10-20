@@ -317,6 +317,44 @@ Las pruebas de integración, la colección y el E2E crean sus propios imports y 
 - *`Invalid environment variables: JWT_SECRET` al arrancar el backend:* el secreto tiene menos de 32 caracteres.
 - *`pnpm` no se reconoce:* falta `corepack enable` (en Windows, a veces en una terminal como administrador).
 
+### 1.5. Plan de recorte de la Entrega 2
+
+La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al 100 %. El criterio de recorte fue proteger la cadena **importar → parear → validar → decidir → procesar → resumir y exportar** (HU1 → HU2 → HU3) con sus pruebas, y sacar lo que la rodea. Nada se descarta: todo lo recortado tiene su issue en el milestone *Entrega 3 - 11 nov* (seguimiento en [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38)) o la etiqueta `roadmap` cuando es una mejora fuera del MVP.
+
+**Funcionalidad recortada del plan**
+
+| Qué queda fuera | Por qué | Issue |
+|---|---|---|
+| Marcar pagado / retirar la marca y deshacer un intento (HU3, criterios de pago y deshacer) | Un batch queda `processed`; el pago es un paso posterior que no hace falta para demostrar la cadena. Hasta entonces ningún movimiento procesado en la aplicación llega a Settled (solo los del historial sembrado) | sin issue propio todavía |
+| Administración de cuentas y fees (`POST /accounts/{id}/fees`, sección 4.1; creación de cuentas) | El seed crea cuentas, fees y reglas de pareo; el flujo solo necesita leerlos | sin issue propio todavía |
+| Reserva ante chargeback por política de la cuenta (`release_on_chargeback`) | Recortable previsto en el design de `settlement-process`: el núcleo de HU3 no depende de ella | [#62](https://github.com/kajirioji/AI4Devs-finalproject/issues/62) |
+| Lista de Settlements de la cuenta | El Summary se abre desde su import; la lista es navegación, no flujo | [#64](https://github.com/kajirioji/AI4Devs-finalproject/issues/64) |
+| Resolver filas ambiguas desde la interfaz y lista *In Progress* para retomar imports | El endpoint de resolución ya existe (`PATCH` de la fila); la pantalla solo las muestra | [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38) |
+| Suite E2E completa y job E2E en CI | Entra solo el smoke de importación, en local; la integración y la colección Bruno cubren el resto del API | [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38), [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40) |
+| Huecos del API vistos en las pantallas: límite de archivos por import, catálogo de estados, motivo al cancelar | No bloquean el flujo; el límite por petición ya existe | [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40), [#47](https://github.com/kajirioji/AI4Devs-finalproject/issues/47) |
+| Hojas sin confirmar en la readiness del detalle | La pantalla las deriva de `mappingConfirmed` mientras tanto | [#42](https://github.com/kajirioji/AI4Devs-finalproject/issues/42) |
+| Motivo de `includable = false` en el detalle del hallazgo | La regla se aplica; falta mostrar el motivo al analista | [#55](https://github.com/kajirioji/AI4Devs-finalproject/issues/55) |
+| La decisión de conjunto no fija las inclusiones que vio el analista | Aceptado en el review de `validation-runs`: la corrida vigente sí se exige | [#53](https://github.com/kajirioji/AI4Devs-finalproject/issues/53) |
+| `status_mismatch` cuando el gateway está en `Pending` | Decisión del gate: la fila se procesa con su estado y el aviso llega después | [#63](https://github.com/kajirioji/AI4Devs-finalproject/issues/63) |
+| Guardar `skipped`, `warnings` y `channelsAssigned` en el batch | Hoy se reconstruyen desde la auditoría; funciona, pero no es su sitio | [#65](https://github.com/kajirioji/AI4Devs-finalproject/issues/65) |
+| Descarga `.xlsx` de los movimientos con el ID como texto | Los CSV del Back-Office ya salen; el `.xlsx` es para el analista | [#68](https://github.com/kajirioji/AI4Devs-finalproject/issues/68) |
+
+**Deuda técnica registrada** (no cambia el comportamiento visible del flujo)
+
+| Qué | Issue |
+|---|---|
+| Endurecimiento de imports (hallazgos LOW del review de #33) | [#34](https://github.com/kajirioji/AI4Devs-finalproject/issues/34) |
+| Vencimiento de reservas con el plazo aplicado al liquidar (`expectedReserveReleaseAt`) | [#44](https://github.com/kajirioji/AI4Devs-finalproject/issues/44) |
+| Serializar las fechas de negocio sin `Z` | [#48](https://github.com/kajirioji/AI4Devs-finalproject/issues/48) |
+| Carga de la corrida de validaciones: 2,2 s con 50 000 movimientos (objetivo local: 2 s) | [#50](https://github.com/kajirioji/AI4Devs-finalproject/issues/50) |
+| Estructura del repositorio de validaciones | [#51](https://github.com/kajirioji/AI4Devs-finalproject/issues/51) |
+| Tests intermitentes del frontend con las suites en paralelo | [#56](https://github.com/kajirioji/AI4Devs-finalproject/issues/56) |
+| Concurrencia (interbloqueos) y precisión de `settlement-process` | [#67](https://github.com/kajirioji/AI4Devs-finalproject/issues/67) |
+| Autenticación antes que la validación del esquema (`onRequest`) | [#72](https://github.com/kajirioji/AI4Devs-finalproject/issues/72) |
+| Calidad de los tests de settlement con el API falso | [#75](https://github.com/kajirioji/AI4Devs-finalproject/issues/75) |
+
+**Roadmap** (etiqueta `roadmap`, sin fecha): cerrar la inclusión manual de duplicados E entre batches, que hoy existe solo para procesar batches históricos ([#49](https://github.com/kajirioji/AI4Devs-finalproject/issues/49)); mantenimiento de tipos de fees ([#60](https://github.com/kajirioji/AI4Devs-finalproject/issues/60)); y alerta de tope de reserva alcanzado ([#61](https://github.com/kajirioji/AI4Devs-finalproject/issues/61)).
+
 ---
 
 ## 2. Arquitectura del Sistema
