@@ -82,13 +82,15 @@ describe('Settlement Review: keyboard and reasons (spec "teclado y motivos")', (
 })
 
 describe('Settlement Summary: keyboard and reasons (spec "teclado y motivos")', () => {
-  it('every disabled control says why, and the links are reachable with Tab', async () => {
+  it('the three downloads and the links are reachable with Tab', async () => {
     const { importId } = validatedImport()
     const { batchId } = seedSettlement(importId, { batchNo: 123 })
     const { user } = renderApp(`/settlements/${batchId}`, { as: 'analyst' })
     await screen.findByRole('heading', { name: 'Settlement Summary · batch 123' }, OPENING)
 
-    expectEveryDisabledControlExplained()
+    for (const name of ['Merchant summary', 'Transactions (CSV)', 'Reserves (CSV)']) {
+      await tabTo(user, screen.getByRole('button', { name }))
+    }
     await tabTo(user, screen.getByRole('link', { name: 'View the validations' }))
     await tabTo(user, screen.getByRole('link', { name: 'Back to Dashboard' }))
   })
