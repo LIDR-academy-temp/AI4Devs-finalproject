@@ -186,8 +186,11 @@ function ReviewForm({
           hint={hint}
           error={error}
           onRetry={retry}
+          disabled={processor.processing}
         >
-          {channelsToAssign.length > 0 && <ChannelsToAssign channels={channelsToAssign} />}
+          {channelsToAssign.length > 0 && (
+            <ChannelsToAssign channels={channelsToAssign} disabled={processor.processing} />
+          )}
         </PreSummary>
       </form>
       <ProcessBar

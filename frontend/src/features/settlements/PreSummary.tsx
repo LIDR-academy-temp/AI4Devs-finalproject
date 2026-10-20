@@ -43,6 +43,7 @@ export function PreSummary({
   hint,
   error,
   onRetry,
+  disabled,
   children,
 }: {
   importId: string
@@ -52,6 +53,8 @@ export function PreSummary({
   hint: string | null
   error: unknown
   onRetry: () => void
+  /** While Process is on its way: the panel's own controls wait, like the fields. */
+  disabled: boolean
   /** What goes under the figures (the channels to assign). */
   children?: ReactNode
 }) {
@@ -79,7 +82,7 @@ export function PreSummary({
                 </Link>
               )}
               {problem.retry && (
-                <Button variant="outline" size="sm" onClick={onRetry}>
+                <Button variant="outline" size="sm" onClick={onRetry} disabled={disabled}>
                   {strings.retry}
                 </Button>
               )}

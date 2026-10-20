@@ -19,7 +19,7 @@ function describe(channel: ChannelToAssign): string {
  * The channels processing will assign to this account as primary, from the preview (or from a 409 until the next
  * preview), and the box that confirms it (design D9). The API decides which channels need it.
  */
-export function ChannelsToAssign({ channels }: { channels: ChannelToAssign[] }) {
+export function ChannelsToAssign({ channels, disabled }: { channels: ChannelToAssign[]; disabled: boolean }) {
   const { control } = useFormContext<ReviewFormValues>()
   const boxId = useId()
   return (
@@ -38,6 +38,7 @@ export function ChannelsToAssign({ channels }: { channels: ChannelToAssign[] }) 
             <Checkbox
               id={boxId}
               checked={field.value}
+              disabled={disabled}
               onCheckedChange={(checked) => field.onChange(checked === true)}
               onBlur={field.onBlur}
               ref={field.ref}
