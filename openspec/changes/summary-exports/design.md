@@ -199,6 +199,8 @@ type SettlementMovement = {
 }
 
 type SettlementTransactionsQuery = { type: 'E' | 'I' | 'R'; page?: number /* ≥1, 1 */; pageSize?: number /* 1–500, 50 */ }
+// Items in the stable order (cycle, sheetId, rowNo, settlementTxnId): stable across pages and calls, but by sheetId (an
+// identifier), not by the order of the sheets in the file; seeded movements (no sheet) come by settlementTxnId.
 type SettlementTransactionsPage = { batchId: string; type: 'E' | 'I' | 'R'
                                     items: SettlementMovement[]; page: number; pageSize: number; total: number }
 
@@ -317,6 +319,7 @@ Los ids, el importe del chargeback y su fee son ilustrativos. Las cifras del sum
 - [Lectura de una descarga que audita] → una petición `GET` escribe en `AuditLog`. Un prefetch o un reintento del navegador dejarían dos filas. #13 descarga con `fetch` explícito al pulsar, sin prefetch.
 - [Excel y el UTF-8 sin BOM en el summary] → los textos no ASCII (descripciones de fees, nombres) se ven mal al abrir con doble clic. Hoy los datos son sintéticos y ASCII. Se aceptó sin BOM en el gate (P4).
 - [La señal "sin auditoría" es `validationSummary === null`] → depende de cómo construye la vista #11. Un test lo fija con un batch del seed; #65 debe revisarlo.
+- [`exportRows` sin probar por encima de 2 100 movimientos (review-diff, L4)] → lee todos los movimientos del intento sin paginar, y Prisma carga la relación `transaction` con una segunda consulta `IN (…)` sobre sus ids. Que esa lista no supere los 2 100 parámetros de SQL Server depende del troceo que haga el adaptador de Prisma (`@prisma/adapter-mssql`), no de nuestro código. Los oráculos llegan a 780 movimientos (`batch-clean`) y ningún test pasa de 2 100. Si un intento real los supera y falla, la salida es leer en páginas o con un `JOIN` en `$queryRaw` (como `sourceIds`, que ya trocea en 500).
 - [El `403` del export no se ejecuta con usuarios del seed] → test de rutas con permisos inyectados; en Bruno solo hay negativos `404`/`400`.
 - [Base de datos compartida con #11 y #13] → ningún grupo con base se ejecuta hasta el insumo 4.
 
