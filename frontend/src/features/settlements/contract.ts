@@ -136,7 +136,6 @@ export const getSettlement = (batchId: string) =>
 export interface DownloadedExport {
   blob: Blob
   fileName: string | null
-  contentType: string | null
 }
 
 /**
@@ -168,6 +167,5 @@ export async function downloadSettlementExport(batchId: string, type: ExportType
   return {
     blob,
     fileName: fileNameOf(response.headers.get('content-disposition')),
-    contentType: response.headers.get('content-type'),
   }
 }

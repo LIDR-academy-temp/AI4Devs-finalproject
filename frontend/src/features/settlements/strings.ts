@@ -60,6 +60,8 @@ export const strings = {
     unassigned: (name: string) => `${name} · not assigned yet`,
     otherAccount: (name: string, account: string) => `${name} · primary account: ${account}`,
     otherMerchant: (name: string) => `${name} · primary account: an account of another merchant`,
+    /** Assigned elsewhere, without the account in the answer. */
+    anotherAccount: (name: string) => `${name} · primary account: another account`,
     confirm: 'Assign these channels to this account as primary',
   },
 
@@ -75,6 +77,8 @@ export const strings = {
     columns: { type: 'Type', qty: 'Qty', amount: 'Amount USD', fee: 'Fees USD' },
     payable: 'Amount payable',
     signs: { '+': '+', '-': '−' } as const,
+    /** What a screen reader says for each sign. */
+    signNames: { '+': 'plus', '-': 'minus' } as const,
     notProcessed: (skipped: Skipped) => {
       const parts = (Object.keys(SKIPPED) as (keyof Skipped)[])
         .filter((reason) => skipped[reason] > 0)

@@ -11,7 +11,8 @@ const s = strings.channels
 /** A channel and its current primary account; an account of another merchant is named only as such. */
 function describe(channel: ChannelToAssign): string {
   const other = channel.otherAccount
-  if (channel.assignment === 'unassigned' || !other) return s.unassigned(channel.name)
+  if (channel.assignment === 'unassigned') return s.unassigned(channel.name)
+  if (!other) return s.anotherAccount(channel.name)
   return other.name === null ? s.otherMerchant(channel.name) : s.otherAccount(channel.name, other.name)
 }
 

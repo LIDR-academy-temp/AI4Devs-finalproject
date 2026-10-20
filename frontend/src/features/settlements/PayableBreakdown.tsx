@@ -19,7 +19,7 @@ export function PayableBreakdown({ lines, amountPayable }: { lines: PayableLine[
       <TableBody>
         {lines.map((line) => (
           <TableRow key={line.code}>
-            <TableCell className="w-6 text-center" aria-label={line.sign === '+' ? 'plus' : 'minus'}>
+            <TableCell className="w-6 text-center" aria-label={s.signNames[line.sign]}>
               {s.signs[line.sign]}
             </TableCell>
             <TableCell className={label}>{strings.payableLines[line.code] ?? line.label}</TableCell>

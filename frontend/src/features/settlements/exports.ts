@@ -7,15 +7,12 @@ export const SETTLEMENT_EXPORTS_AVAILABLE = true
 /** The Back-Office CSVs: Excel would rewrite their text IDs as numbers, so the screen warns next to them. */
 export const BACK_OFFICE_EXPORTS: readonly ExportType[] = ['transactions', 'reserves']
 
-const EXTENSIONS: Record<string, string> = { 'text/csv': 'csv', 'application/pdf': 'pdf' }
-
 /**
  * The name of the file when the API did not give one (Content-Disposition missing or not exposed by CORS): the
- * attempt and the type, `<account>_B<batchNo>_A<attempt>_<type>.<ext>`, as #12 names them.
+ * attempt and the type, `<account>_B<batchNo>_A<attempt>_<type>.csv`, as #12 names them (the three are CSV).
  */
-export function exportFileName(view: SettlementView, type: ExportType, contentType: string | null): string {
-  const extension = EXTENSIONS[contentType?.split(';')[0]?.trim() ?? ''] ?? 'csv'
-  return `${view.accountName}_B${view.batchNo}_A${view.attemptNo}_${type}.${extension}`
+export function exportFileName(view: SettlementView, type: ExportType): string {
+  return `${view.accountName}_B${view.batchNo}_A${view.attemptNo}_${type}.csv`
 }
 
 /** Saves a downloaded file through a temporary link: the browser's download, nothing kept in the page. */
