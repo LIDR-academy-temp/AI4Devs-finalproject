@@ -134,7 +134,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 - [x] 9.9 **Avisar a la persona antes de ejecutarlo**, porque quiere mirar la ejecución. Con su visto bueno, ejecutar `pnpm screenshots:web-settlement` y comprobar que deja en `docs/wireframes/web-settlement/` `settlement-review.png`, `settlement-review-batch-taken.png`, `settlement-review-1024.png` y `settlement-summary.png`, y que la consola dice que no hay desplazamiento horizontal a 1280 ni a 1024 px. Revisar cada PNG antes de versionarlo: ninguna credencial y ninguna pantalla de login. Después, la persona vuelve a sembrar con `! pnpm db:seed`
 - [x] 9.10 Línea de las capturas en `docs/wireframes/README.md` y registro del change en `prompts.md`
 - [ ] 9.11 Listar en la descripción del PR los huecos del contrato del proposal con su resolución (fecha obligatoria, tipo desconocido con #60, orden de `batchFees` y `description_required` en #11, `Content-Disposition` en #12) y lo que siga pendiente de #12, el estado de las descargas y la referencia a #64 (lista de Settlements). No crear issues desde la sesión
-- [ ] 9.12 Commit: `refactor(frontend): contrato de settlement con el cliente generado tras #11`, `chore(e2e): script de capturas de Settlement Review y Summary fuera del smoke y de CI` y `docs(settlement): capturas de Settlement Review y Summary y registro en prompts.md`
+- [x] 9.12 Commit: `refactor(frontend): contrato de settlement con el cliente generado tras #11`, `chore(e2e): script de capturas de Settlement Review y Summary fuera del smoke y de CI` y `docs(settlement): capturas de Settlement Review y Summary y registro en prompts.md`
 
 ## Workflow follow-up
 
