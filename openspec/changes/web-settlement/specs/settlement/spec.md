@@ -239,6 +239,7 @@ Si la vista previa trae `requiresChannelConfirmation = true`, la pantalla SHALL 
 - **WHEN** **Process** responde `409 settlement_busy`
 - **THEN** ve `Another settlement is being processed for this provider. Try again.` con **Retry**, sigue en Settlement Review con lo escrito y la vista previa no se vuelve a pedir
 - **AND** **Retry** envía otra vez el mismo cuerpo, y con el `201` pasa al Settlement Summary
+- **AND** **Retry** se deshabilita con los mismos motivos que **Process** (por ejemplo, la casilla de canales desmarcada), y cambiar un campo quita el aviso
 
 ### Requirement: Pantalla Settlement Summary: estado y cabecera del intento
 Settlement Summary SHALL mostrar el intento (cuenta, batch, intento), su estado (`Processed · pending payment`, `Paid` o `Undone`), quién lo procesó y cuándo, la fecha de liquidación y los rangos de fechas, y SHALL decir que un intento `processed` no tiene movimientos Settled.

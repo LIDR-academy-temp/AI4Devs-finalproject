@@ -126,6 +126,18 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 - [x] 9.15 Tras el merge de #12, test en `test/msw/settlements.test.ts` de las descargas del falso contra el contrato de #12: URL de `exports` con la consulta de `ExportQuery` (`settlement-reads`), CSV nombrado por intento en `Content-Disposition`, `400` en JSON para un tipo fuera de la consulta, `403` sin `reports.view` antes del alcance y `404`. Después, `getSettlement` y `downloadSettlementExport` con el cliente generado, sin nada escrito a mano en `contract.ts`
 - [x] 9.16 Test (rojo) en `exports.test.tsx` y, en un commit aparte, `SETTLEMENT_EXPORTS_AVAILABLE = true` con el aviso de Excel junto a los CSV del Back-Office (D12)
 - [x] 9.18 Test del teclado del Summary con las descargas encendidas: llega con Tab a las tres descargas, a **View the validations** y a **Back to Dashboard**, sin la comprobación de motivos (no quedan controles deshabilitados)
+- [x] 9.19 Triaje del review-diff del PR #74, test primero y rotura a propósito en M1, M2 y M3:
+  - M1: Retry de `settlement_busy` con los motivos de Process y aviso limpio al cambiar `lastRequest`.
+  - M2: motivo de `import_not_validated` en el estado de import no validado.
+  - M3: vista previa que se vuelve a pedir no está al día, y motivo del número en uso tras el `409`.
+  - L1: casilla y Retry de la vista previa deshabilitados durante el `POST`.
+  - L2: todos los motivos a la vez.
+  - L3: descargas por botón, `revokeObjectURL` diferido y `filename*` mal codificado.
+  - L4: `ErrorDetails` desde `@recon/shared`.
+  - L7: ya estaba (`process.env.TZ` en el test del Summary).
+  - L8, L9 y `.pdf`: hechos.
+  - L10: nota en D11.
+  - L5 y L6: issue aparte.
 - [x] 9.17 Con turno de base de la persona, prueba contra el API real: recarga del Summary como `analyst` y como `viewer`, y las tres descargas con su nombre por intento
 - [x] 9.5 La persona prepara la base con `! pnpm db:up`, `! pnpm db:migrate` (migración `0007`) y `! pnpm db:seed`, y levanta `! pnpm dev`, con la base ya libre de las pruebas de #11
 - [x] 9.6 Prueba manual contra el API real con `batch-clean`, como `analyst` y `viewer`, a 1280 px y 1024 px:

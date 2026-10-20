@@ -37,7 +37,7 @@
 - Fechas con tipo marca: `BusinessDate` en `dateRanges.*.min/max`, `settlementDate`, `startDate` y `endDate`; `AuditInstant` en `processedAt`. Dinero (`Money`) y tasas (`Rate`) como `string` en todos los campos: ningún tipo del contrato admite `number` para un importe.
 - **`test/msw/settlements.ts`**: el falso de las siete rutas (D15). `handlers.ts` solo lo registra.
 - *Tras el merge de #11*: `ErrorDetails` no lleva entrada para `409 settlement_busy`, que llega sin `details`; lo trata `useProcessSettlement` por su `code` (D10).
-- *Tras el merge de #12*: `getSettlement` y `downloadSettlementExport` van por `api.GET` con los tipos generados, y `ExportType` sale del contrato generado; ya no queda nada escrito a mano. El falso valida la consulta de la descarga con `ExportQuery` (`settlement-reads`). `GET /settlements/{id}/transactions` y `GET /imports/{id}/settlements` no tienen llamada ni alias: ninguna pantalla de este change los consume (proposal §4.4), así que el orden de los movimientos por `sheetId` no afecta a estas pantallas.
+- *Tras el merge de #12*: `getSettlement` y `downloadSettlementExport` van por `api.GET` con los tipos generados, y `ExportType` sale del contrato generado; ya no queda nada escrito a mano. El falso valida la consulta de la descarga con `ExportQuery` (`settlement-reads`). `GET /settlements/{id}/transactions` y `GET /imports/{id}/settlements` no tienen llamada ni alias: ninguna pantalla de este change los consume (proposal §4.4), así que el orden de los movimientos por `sheetId` no afecta a estas pantallas. *Tras el review-diff del PR #74*: `ErrorDetails` se compone de los tipos de `@recon/shared` (`ImportNotValidatedDetails`, `BatchNoTakenDetails`, `ChannelAssignmentNotConfirmedDetails`, `BatchFeeInvalidDetails`); fuera los escritos a mano y las entradas que ninguna pantalla lee.
 - **En el rebase** (último grupo): tipos como alias de `ApiResponse<…>` con las fechas marcadas por nombre de campo (el `Dated<>` de `validations/contract.ts`), llamadas con `api.GET/POST`, mismos nombres exportados. Un test del falso hace `safeParse` de cada fixture con los esquemas Zod de `@recon/shared` (`settlement.ts`, `fees.ts`). La descarga sigue con `fetch` autenticado, porque devuelve un archivo y no JSON (D12).
 - *Alternativa descartada 1*: añadir las rutas a mano a `docs/openapi.yaml`. Lo genera `openapi:export` desde el backend, CI (`openapi:check`) fallaría y chocaría con el mismo fichero de #11.
 - *Alternativa descartada 2*: esquemas Zod propios en el frontend para validar respuestas. Duplicarían los de `@recon/shared` y quedarían huérfanos en el rebase.
@@ -79,7 +79,7 @@
 ### D6. Vista previa con debounce, como consulta
 - `useDebouncedValue(watch(), 400 ms)` (hook propio de pocas líneas, sin dependencia). Si los valores del momento pasan el esquema (con **Settlement date** elegida y ninguna fila de tipo desconocido), `request = toRequest(values, runId)` y `useQuery({ queryKey: settlementPreviewKey(importId, request), queryFn: ({ signal }) => previewSettlement(importId, request, signal), placeholderData: keepPreviousData, retry: false })`. Con valores no válidos no hay petición. Antes de la primera, el panel dice `Choose the settlement date to see the pre-summary.`.
 - Al ser una consulta con el cuerpo en la clave: dos cambios dentro de 400 ms producen una sola petición; una petición superada se cancela por `signal` y su respuesta nunca se pinta, porque se pinta la de la clave actual; volver a un valor ya visto reutiliza la respuesta en caché.
-- **Al día o no**: `isCurrent = previewQuery.isSuccess && !previewQuery.isPlaceholderData && deepEqual(previewKeyOf(currentValues), lastRequest)`. Si no está al día, el panel muestra la última vista previa con `Updating the pre-summary…` y opacidad reducida, y **Process** está deshabilitado con `Waiting for the pre-summary.`. Esta comprobación, junto con la guarda de D10, es la guarda síncrona de la vista previa.
+- **Al día o no**: `isCurrent = previewQuery.isSuccess && !previewQuery.isPlaceholderData && deepEqual(previewKeyOf(currentValues), lastRequest)`. Si no está al día, el panel muestra la última vista previa con `Updating the pre-summary…` y opacidad reducida, y **Process** está deshabilitado con `Waiting for the pre-summary.`. Esta comprobación, junto con la guarda de D10, es la guarda síncrona de la vista previa. *Tras el review-diff del PR #74*: además `!previewQuery.isFetching`, para que una respuesta que se vuelve a pedir (invalidada por un `409` de Process) no cuente como al día hasta que llega la nueva.
 - Errores de la vista previa:
   - `400 batch_fee_invalid` → `setError('fees.<index>.amount' | 'fees.<index>.feeTypeId' | 'fees.<index>.description', texto de su reason)`, con `description_required` en la descripción. Se borra cuando esa fila cambia;
   - `409 import_not_validated` → mensaje y relectura de `importKey` (`exact`); la página pasa al estado del import (D13);
@@ -107,6 +107,7 @@
 - La casilla se desmarca sola cuando cambia el conjunto de `channelId` a asociar entre dos vistas previas: lo confirmado era otra lista.
 - `409 channel_assignment_not_confirmed` → se desmarca, se muestran los canales de `details.channels` hasta la siguiente vista previa y se invalida la vista previa.
 - *Tras el merge de #11*: `otherAccount` (Review) y `previousAccount` (Summary) pueden llegar como `HiddenAccountRef` (`accountId` y `name` nulos, `outOfScope: true`) cuando la cuenta es de un merchant fuera del alcance. Se nombran solo como tal, igual que el aviso de canales de Analysis: `RAM-08 · primary account: an account of another merchant` y `RAM-03 · primary account moved here from an account of another merchant`.
+- *Tras el review-diff del PR #74*: `assigned_to_other_account` con `otherAccount` nulo dice `RAM-03 · primary account: another account`, no `not assigned yet`. La casilla se deshabilita mientras el `POST` de Process está en curso, como los campos.
 - *Alternativa descartada*: el aviso desde `ImportDetail.channels` (el del paso Analysis). Cuenta las filas del archivo, incluidas las que no se procesan (excluidas, ignoradas), y no dice si el procesamiento exige confirmación. La vista previa calcula los canales de los movimientos que se procesan, que es lo que el `409` comprueba.
 
 ### D10. Process
@@ -114,6 +115,12 @@
 - Habilitado si y solo si: **Settlement date** elegida, ninguna fila de tipo desconocido, vista previa al día (D6), sin errores de formulario ni de la vista previa, `batchNoAvailable`, casilla marcada si `requiresChannelConfirmation`, y nada en curso. Cada condición que falla aporta su motivo a un párrafo visible enlazado por `aria-describedby` (varios a la vez si hace falta). La etiqueta es `Process batch <batchNo>` con el número de la vista previa al día.
 - Mientras el `POST` está en curso: campos y botones deshabilitados (`fieldset disabled`), región `aria-live="polite"` con `Processing the batch…`. #11 mide menos de 3 s para `batch-clean`.
 - Errores: `409 batch_no_taken` (D8), `409 channel_assignment_not_confirmed` (D9), `400 batch_fee_invalid` (D6), `409 import_not_validated` (relee el import), `409 validation_run_superseded` / `blocking_validation_issue` (enlace a Analysis), red → `The batch could not be processed. Try again.` sin suponer nada. *Tras el merge de #11*: `409 settlement_busy` (otro procesamiento del proveedor tenía las filas; no se escribió nada) → `Another settlement is being processed for this provider. Try again.` con **Retry**, que reenvía el mismo cuerpo (`lastRequest`) por la misma guarda síncrona; el formulario se conserva y la vista previa no se vuelve a pedir.
+- *Tras el review-diff del PR #74*:
+  - **Retry** de `settlement_busy` es Process otra vez: se deshabilita con sus mismos motivos, enlazados por `aria-describedby`. El aviso de un Process fallido se limpia cuando cambia `lastRequest`, porque era del cuerpo enviado.
+  - Se muestran a la vez todos los motivos que aplican (el número en uso y la casilla sin marcar, por ejemplo). Los de la vista previa (`waiting`, `previewFailed`) solo con un cuerpo que enviar.
+  - El número en uso entra en los motivos tanto por la vista previa al día como por el `409 batch_no_taken` mientras el campo lo conserva.
+  - Una vista previa que se vuelve a pedir tras un `409` no está al día (`!isFetching`, D6): Process espera a la respuesta nueva.
+  - El **Retry** de la vista previa también se deshabilita durante el `POST`.
 - **Sin optimismo**: nada se pinta como procesado hasta el `201`.
 - *Alternativa descartada*: un diálogo de confirmación antes de procesar. La pantalla entera es la confirmación (número, fees, resumen previo y canales a la vista), y un diálogo en cada procesamiento enseña a confirmar sin leer (mismo argumento que `web-validations` D4). Las acciones que el prototipo marca como irreversibles con motivo son Cancel, Undo y Unpay.
 
@@ -123,7 +130,7 @@
   - cabecera: `Settlement Summary · batch N`, cuenta, intento, `Badge` de estado (`settledStatus`: `Processed · pending payment` / `Paid` / `Undone`), `Processed by <user> on <processedAt ET>`, `settlementDate` y rangos APP/DEC/I/R (`formatBusinessDate*`);
   - aviso `Movements are not Settled yet: that happens when the batch is marked as paid.` cuando `settledStatus = 'pending_payment'`;
   - **Totals by type** (cinco categorías y `R · Reserve released` con `reservesReleasedQty`) y **Totals by brand**;
-  - **Fees**: transaccionales (`transactionalFeeAmt`, `mdrAmt` y `mdrRate`) y cada fee por batch con origen y `entered by <user>`;
+  - **Fees**: transaccionales (`transactionalFeeAmt`, `mdrAmt` y `mdrRate`) y cada fee por batch con origen y `entered by <user>`. El API solo distingue `source` `file` o `manual`; entre los manuales, **Preset** o **Free amount** se deduce de `feeId` (con o sin fee de la cuenta). Es presentación: no decide nada ni se envía;
   - **Reserve and payable**: las nueve líneas del desglose (D7) y **Amount payable**;
   - **Channels assigned**, **Issues** (`validationSummary`, con enlace al paso Analysis del import), `Not processed` y advertencias; *tras el merge de #11*, `validationSummary` puede ser `null` (intento sin auditoría de `settlement.process`, como el historial sembrado): se dice `The validation summary of this attempt is not available.`, sin contadores y con el enlace;
   - **Exports** (D12);
@@ -138,6 +145,11 @@
 - *Desvío aceptado*: el componente de los botones se llama `SummaryExports.tsx`, no `Exports.tsx`. En un sistema de ficheros que no distingue mayúsculas, dos nombres que solo difieren en eso (`Exports.tsx` junto a `exports.ts`) se prestan a importar el que no es.
 - *Tras el merge de #11*: `SETTLEMENT_EXPORTS_AVAILABLE` sigue en `false`. Se enciende en un commit aparte del mismo PR cuando entre #12, junto con la prueba de la recarga del Summary contra el API real.
 - *Tras el merge de #12*: `SETTLEMENT_EXPORTS_AVAILABLE = true`, en su propio commit. La descarga pide `downloadSettlementExport(batchId, type)` por el cliente generado, que arma la misma URL que `exports.*`. Las tres son CSV, y el nombre llega en `Content-Disposition`, legible porque el API va en el mismo origen. Junto a los botones, el aviso de Excel: los CSV del Back-Office se suben sin abrirlos ni guardarlos con Excel, y para mirarlos se usa Data → From Text/CSV con la columna ID como Text. Lo describen por `aria-describedby` solo **Transactions (CSV)** y **Reserves (CSV)**: el summary del merchant ya neutraliza las fórmulas para abrirse en Excel.
+- *Tras el review-diff del PR #74*:
+  - Cada botón lleva su propia descarga en curso y su fallo, así que otra descarga no libera la que está en camino.
+  - `URL.revokeObjectURL` se difiere a la tarea siguiente al clic.
+  - Un `filename*` mal codificado no es nombre: se usa el de respaldo, sin dar la descarga por fallida.
+  - El nombre de respaldo siempre termina en `.csv`, y sobra la extensión según `Content-Type`.
 - *Alternativa descartada 1*: `<a href={exports.summary}>`. Sin `Authorization` el API responde `401`, y poner el token en la URL lo dejaría en el historial y en los registros del servidor.
 - *Alternativa descartada 2*: ocultar las descargas hasta #12. HU3 CA6 y el criterio 3 del issue piden que estén "disponibles", y sin nada el analista no sabe que existirán.
 
@@ -149,6 +161,8 @@
   - `cancelled` → `This import is cancelled.`.
 
   Las consultas de número, fees, tipos y vista previa solo se activan (`enabled`) con el import `validated`.
+
+  *Tras el review-diff del PR #74*: cuando Process o la vista previa responden `409 import_not_validated`, la página guarda el texto (`The import is no longer validated (status: …). Review its validations again.`). El formulario se desmonta al releer el import, y ese texto sustituye al genérico en el estado de import no validado, con el enlace a Analysis.
 - `next-step.ts`: `SETTLEMENT_REVIEW` pasa de constante a función de ruta tipada, `settlementReviewRoute(importId) → { to: '/imports/$importId/settlement-review', params: { importId } }`. La constante desaparece, y su único lector (`DecisionBar`) pasa a usar la función.
 - `DecisionBar`: con `validated`, el enlace **Settlement Review** solo con `canProcess`, y `viewer` ve solo `Reviewed by …`. Con `processed` y `currentBatchId`, el texto de solo lectura lleva **View settlement summary** a `/settlements/$currentBatchId`.
 - Summary: sin `requires`. Lo que se ve lo decide el alcance del API (`404` idéntico), como el import.
