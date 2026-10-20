@@ -196,6 +196,19 @@ describe('Settlement Review: process (spec "procesar")', () => {
     await screen.findByRole('heading', { name: 'Settlement Summary · batch 123' })
   })
 
+  it('while the POST is on its way the channel box is disabled too', async () => {
+    const { user } = await readyToProcess()
+    await user.click(confirmBox())
+    const hold = holdNextSettlement('process')
+
+    await user.click(processButton())
+    await hold.arrived
+
+    expect(confirmBox()).toBeDisabled()
+    hold.release()
+    await screen.findByRole('heading', { name: 'Settlement Summary · batch 123' })
+  })
+
   it('409 import_not_validated: the import is read again and the screen shows it is not validated', async () => {
     const { user, importId } = await readyToProcess()
     await user.click(confirmBox())
