@@ -159,11 +159,11 @@ function ReviewForm({
   if (otherIssues || (values.settlementDate && issues.settlementDate) || activeFeeError) reasons.push(r.fixFields)
   // The number in use, from the current preview or from a 409 of Process while the field keeps it.
   if (taken !== null) reasons.push(r.batchTaken)
-  if (reasons.length === 0) {
-    if (error) reasons.push(r.previewFailed)
-    else if (!isCurrent) reasons.push(r.waiting)
-    else if (unconfirmed) reasons.push(r.confirmChannels)
-  }
+  // Every reason that applies, at once. The preview's own (failed, or on its way) only once there is a body to send;
+  // a fee the API rejected is already "fix the fields".
+  if (valid && error && !activeFeeError) reasons.push(r.previewFailed)
+  else if (valid && !isCurrent) reasons.push(r.waiting)
+  if (unconfirmed) reasons.push(r.confirmChannels)
 
   const hint = valid ? null : !values.settlementDate ? strings.preSummary.chooseDate : strings.preSummary.fixFields
 
