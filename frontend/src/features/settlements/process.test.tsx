@@ -9,6 +9,7 @@ import {
   type PreviewFixture,
   respondNextSettlement,
   scriptPreview,
+  seedActiveBatch,
   settlementRequests,
 } from '@/test/msw/settlements'
 import { seedValidationRun } from '@/test/msw/validations'
@@ -262,5 +263,16 @@ describe('Settlement Review: process (spec "procesar")', () => {
     const description = processButton().getAttribute('aria-describedby')!
     const reasons = within(document.getElementById(description)!)
     expect(reasons.getByText('Choose the settlement date.')).toBeVisible()
+  })
+
+  it('every reason that applies is shown at once: a number in use and the channels not confirmed', async () => {
+    seedActiveBatch(ACCOUNT_IDS['ProviderA-USD'], 123)
+    await readyToProcess()
+
+    expect(processButton()).toBeDisabled()
+    const description = processButton().getAttribute('aria-describedby')!
+    const reasons = within(document.getElementById(description)!)
+    expect(reasons.getByText('Choose a batch number that is not in use.')).toBeVisible()
+    expect(reasons.getByText('Confirm the channel assignment.')).toBeVisible()
   })
 })
