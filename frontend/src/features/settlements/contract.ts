@@ -147,11 +147,20 @@ export interface DownloadedExport {
   contentType: string | null
 }
 
-/** File name of a Content-Disposition header (`filename*=UTF-8''…` or `filename="…"`). */
+/**
+ * File name of a Content-Disposition header (`filename*=UTF-8''…` or `filename="…"`). A name that cannot be decoded
+ * is no name: the caller uses the name of the attempt, and the download goes on.
+ */
 export function fileNameOf(disposition: string | null): string | null {
   if (!disposition) return null
   const extended = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(disposition)
-  if (extended) return decodeURIComponent(extended[1]!.trim())
+  if (extended) {
+    try {
+      return decodeURIComponent(extended[1]!.trim())
+    } catch {
+      // Malformed percent-encoding: fall through to the plain filename, if any.
+    }
+  }
   const plain = /filename\s*=\s*"?([^";]+)"?/i.exec(disposition)
   return plain ? plain[1]!.trim() : null
 }

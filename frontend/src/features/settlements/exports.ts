@@ -27,5 +27,6 @@ export function saveFile(blob: Blob, name: string) {
   document.body.append(link)
   link.click()
   link.remove()
-  URL.revokeObjectURL(url)
+  // Some browsers read the object URL after click() returns: release it on the next task.
+  setTimeout(() => URL.revokeObjectURL(url), 0)
 }

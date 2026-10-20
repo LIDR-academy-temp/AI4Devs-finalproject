@@ -18,25 +18,33 @@ export function SummaryExports({ view }: { view: SettlementView }) {
   const reasonId = useId()
   const excelId = useId()
   const busy = useRef(new Set<ExportType>())
-  const [downloading, setDownloading] = useState<ExportType | null>(null)
-  const [failed, setFailed] = useState<ExportType | null>(null)
+  // Per button: a download on its way, and the last try that failed.
+  const [downloading, setDownloading] = useState<ReadonlySet<ExportType>>(new Set())
+  const [failed, setFailed] = useState<ReadonlySet<ExportType>>(new Set())
 
   if (!canDownload) return null
+
+  const withType = (set: ReadonlySet<ExportType>, type: ExportType) => new Set(set).add(type)
+  const withoutType = (set: ReadonlySet<ExportType>, type: ExportType) => {
+    const next = new Set(set)
+    next.delete(type)
+    return next
+  }
 
   async function download(type: ExportType) {
     // One download per button at a time, even with two clicks in the same tick.
     if (busy.current.has(type)) return
     busy.current.add(type)
-    setDownloading(type)
-    setFailed(null)
+    setDownloading((set) => withType(set, type))
+    setFailed((set) => withoutType(set, type))
     try {
       const file = await downloadSettlementExport(view.batchId, type)
       saveFile(file.blob, file.fileName ?? exportFileName(view, type, file.contentType))
     } catch {
-      setFailed(type)
+      setFailed((set) => withType(set, type))
     } finally {
       busy.current.delete(type)
-      setDownloading(null)
+      setDownloading((set) => withoutType(set, type))
     }
   }
 
@@ -51,7 +59,7 @@ export function SummaryExports({ view }: { view: SettlementView }) {
             <Button
               key={type}
               variant="outline"
-              disabled={!SETTLEMENT_EXPORTS_AVAILABLE || downloading === type}
+              disabled={!SETTLEMENT_EXPORTS_AVAILABLE || downloading.has(type)}
               aria-describedby={
                 !SETTLEMENT_EXPORTS_AVAILABLE ? reasonId : BACK_OFFICE_EXPORTS.includes(type) ? excelId : undefined
               }
@@ -71,7 +79,7 @@ export function SummaryExports({ view }: { view: SettlementView }) {
             {s.exportsUnavailable}
           </p>
         )}
-        <div aria-live="polite">{failed && <p className="text-destructive">{s.exportFailed}</p>}</div>
+        <div aria-live="polite">{failed.size > 0 && <p className="text-destructive">{s.exportFailed}</p>}</div>
       </CardContent>
     </Card>
   )
