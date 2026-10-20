@@ -4,43 +4,43 @@ import { PrismaSettlementQueries } from './prisma-settlement-queries.js'
 
 // The adapter's queries over a stub Prisma client (summary-exports design D4, D6, D11): the orders it asks for, which
 // SQL Server cannot tell apart on the seed (seeded movements tie on a NULL sheet and row and the (batchId, cycle)
-// index already returns them by settlementTxnId), and that it keeps movements of the same transaction apart.
+// index already returns them by settlementTxnId), and how a stored movement is mapped to the contract.
 const BATCH_ID = '6f1c2a5e-0000-4000-8000-000000000001'
 const IMPORT_ID = '6f1c2a5e-0000-4000-8000-000000000002'
 const money = (value: string) => new Prisma.Decimal(value)
 
-/** A Refund and a Chargeback of the same transaction in cycle I, as SettlementTransaction rows. */
-const SAME_TRANSACTION = [5, 4].map((statusId, i) => ({
-  settlementTxnId: BigInt(88213 + i),
+/** A CHB 2 Chargeback of cycle I as a SettlementTransaction row, with its transaction and sheet. */
+const MOVEMENT = {
+  settlementTxnId: BigInt(88213),
   batchId: BATCH_ID,
   transactionId: BigInt(40711),
   cycle: 'I',
-  statusId,
+  statusId: 4,
   settlementStatusId: 0,
-  roundNo: 1,
-  sheetId: null,
-  rowNo: null,
+  roundNo: 2,
+  sheetId: '2d4e6f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f',
+  rowNo: 2,
   amount: money('96.93'),
-  excludeAmount: false,
-  feeAmount: money('0'),
-  eventDate: null,
+  excludeAmount: true,
+  feeAmount: money('47.5'),
+  eventDate: new Date('2026-10-03T14:12:00.000Z'),
   appliedReservePct: money('0.1'),
   reserveDaysUsed: 180,
   expectedReserveReleaseAt: null,
-  reservePolicySnapshot: null,
-  reserveEarlyReleasedAmt: money('0'),
+  reservePolicySnapshot: null as string | null,
+  reserveEarlyReleasedAmt: money('-1.25'),
   reserveHeldAmt: money('0'),
   reserveReleasedAmt: money('0'),
   transaction: { sourceTransactionId: '911545598812004', gatewayId: 1 },
-  sheet: null,
-}))
+  sheet: { sheetName: 'CHB' },
+}
 
-function stubPrisma(rows: unknown[] = []) {
+function stubPrisma(rows: unknown[] = [], fees: unknown[] = []) {
   const findMany = vi.fn(async (_args: { orderBy: Record<string, string>[] }) => rows)
   const batchFindMany = vi.fn(async (_args: { orderBy: Record<string, string>[] }) => [])
   const prisma = {
     settlementTransaction: { count: vi.fn(async () => rows.length), findMany },
-    settlementTransactionFee: { findMany: vi.fn(async () => []) },
+    settlementTransactionFee: { findMany: vi.fn(async () => fees) },
     import: { findFirst: vi.fn(async () => ({ importId: IMPORT_ID, currentBatchId: null })) },
     settlementBatch: { findMany: batchFindMany },
   }
@@ -75,23 +75,84 @@ describe('PrismaSettlementQueries order', () => {
   })
 })
 
-describe('PrismaSettlementQueries with two movements of the same transaction and cycle', () => {
-  it('pages a Refund and a Chargeback of the same transaction as two movements', async () => {
-    const { prisma } = stubPrisma(SAME_TRANSACTION)
-    const { items, total } = await new PrismaSettlementQueries(prisma).movementsPage(BATCH_ID, 'I', 1, 50)
-    expect(total).toBe(2)
-    expect(items.map((m) => [m.settlementTxnId, m.sourceTransactionId, m.status])).toEqual([
-      ['88213', '911545598812004', 'Refund'],
-      ['88214', '911545598812004', 'Chargeback'],
-    ])
-  })
+describe('PrismaSettlementQueries mapping of a movement', () => {
+  it('answers BIGINT ids as strings, DECIMAL as fixed text and an unreadable snapshot as null with a warning', async () => {
+    const log = { warn: vi.fn() }
+    const fees = [
+      {
+        appliedFeeId: BigInt(120334),
+        settlementTxnId: BigInt(88213),
+        feeId: '0b8e1c2d-3e4f-4a5b-9c6d-7e8f9a0b1c2d',
+        feeTypeId: 4,
+        eventDate: new Date('2026-10-03T14:12:00.000Z'),
+        amountUsd: money('45'),
+        configurationSnapshot: '{"fixedAmount":"45.0000","percentage":null}',
+        feeType: { code: 'Chargeback', title: 'Chargeback' },
+      },
+      {
+        appliedFeeId: BigInt(120335),
+        settlementTxnId: BigInt(88213),
+        feeId: '0b8e1c2d-3e4f-4a5b-9c6d-7e8f9a0b1c2e',
+        feeTypeId: 5,
+        eventDate: null,
+        amountUsd: money('2.5'),
+        configurationSnapshot: '[1,2]',
+        feeType: { code: 'Refund', title: 'Refund' },
+      },
+    ]
+    const { prisma } = stubPrisma([{ ...MOVEMENT, reservePolicySnapshot: 'not json' }], fees)
+    const { items } = await new PrismaSettlementQueries(prisma, { log }).movementsPage(BATCH_ID, 'I', 1, 50)
 
-  it('answers both as export rows', async () => {
-    const { prisma } = stubPrisma(SAME_TRANSACTION)
-    const rows = await new PrismaSettlementQueries(prisma).exportRows(BATCH_ID, ['I'])
-    expect(rows.map((r) => [r.sourceTransactionId, r.status])).toEqual([
-      ['911545598812004', 'Refund'],
-      ['911545598812004', 'Chargeback'],
+    expect(items).toEqual([
+      {
+        settlementTxnId: '88213',
+        transactionId: '40711',
+        sourceTransactionId: '911545598812004',
+        gatewayId: 1,
+        cycle: 'I',
+        status: 'Chargeback',
+        roundNo: 2,
+        sheetId: '2d4e6f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f',
+        sheetName: 'CHB',
+        rowNo: 2,
+        amount: '96.9300',
+        excludeAmount: true,
+        feeAmount: '47.5000',
+        eventDate: '2026-10-03T14:12:00.000Z',
+        appliedReservePct: '0.100000',
+        reserveDaysUsed: 180,
+        expectedReserveReleaseAt: null,
+        reserveHeldAmt: '0.0000',
+        reserveReleasedAmt: '0.0000',
+        reserveEarlyReleasedAmt: '-1.2500',
+        reservePolicySnapshot: null,
+        fees: [
+          {
+            appliedFeeId: '120334',
+            feeId: '0b8e1c2d-3e4f-4a5b-9c6d-7e8f9a0b1c2d',
+            feeTypeId: 4,
+            code: 'Chargeback',
+            title: 'Chargeback',
+            eventDate: '2026-10-03T14:12:00.000Z',
+            amountUsd: '45.0000',
+            configurationSnapshot: { fixedAmount: '45.0000', percentage: null },
+          },
+          {
+            appliedFeeId: '120335',
+            feeId: '0b8e1c2d-3e4f-4a5b-9c6d-7e8f9a0b1c2e',
+            feeTypeId: 5,
+            code: 'Refund',
+            title: 'Refund',
+            eventDate: null,
+            amountUsd: '2.5000',
+            configurationSnapshot: null,
+          },
+        ],
+      },
+    ])
+    expect(log.warn.mock.calls.map(([where]) => where)).toEqual([
+      { settlementTxnId: '88213' },
+      { appliedFeeId: '120335' },
     ])
   })
 })
