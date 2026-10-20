@@ -323,3 +323,45 @@ describe('summaryCsv details', () => {
     expect(block(summarize(view), 'Line,Sign,Amount').at(-1)).toBe('Amount payable,,123456789012345.1234')
   })
 })
+
+describe('formula injection in the summary (design D7)', () => {
+  const fee = (description: string | null, amount = '25.0000') => {
+    const view = batchCleanView()
+    return { ...view.batchFees[0]!, description, amount }
+  }
+  const feeLine = (view: SettlementView) => block(summarize(view), 'Fee type,Description,Source,Amount,Entered by')[1]
+
+  it('neutralizes a description that Excel would run as a formula, keeping the CSV quoting', () => {
+    const view = batchCleanView({ batchFees: [fee('=HYPERLINK("http://example.test","click")')] })
+    expect(feeLine(view)).toBe(`Wire Fee,"'=HYPERLINK(""http://example.test"",""click"")",file,25.0000,analyst`)
+  })
+
+  it('neutralizes every text cell that starts with =, +, -, @, tab or carriage return', () => {
+    for (const lead of ['=', '+', '-', '@', '\t', '\r']) {
+      const line = feeLine(batchCleanView({ batchFees: [fee(`${lead}1+1`)] }))
+      expect(line.split(',')[1], JSON.stringify(lead)).toMatch(/^"?'/)
+    }
+  })
+
+  it('neutralizes the account, user, channel, brand and fee title texts', () => {
+    const view = batchCleanView({
+      accountName: '+Account',
+      approvedBy: { userId: 2, userName: '@analyst' },
+      channels: ['-RAM-01'],
+      brandTotals: [{ cardBrand: '=VISA', qty: 1, amount: '100.0000' }],
+      batchFees: [{ ...fee('Wire Fee'), title: '-Wire Fee', enteredBy: { userId: 2, userName: '=analyst' } }],
+    })
+    const body = summarize(view)
+    expect(fieldValue(body, 'Account')).toBe("'+Account")
+    expect(fieldValue(body, 'Processed by')).toBe("'@analyst")
+    expect(fieldValue(body, 'Channels')).toBe("'-RAM-01")
+    expect(block(body, 'Card brand,Qty,Amount')[1]).toBe("'=VISA,1,100.0000")
+    expect(feeLine(view)).toBe("'-Wire Fee,Wire Fee,file,25.0000,'=analyst")
+  })
+
+  it('leaves a plain text, a negative amount and the figures untouched', () => {
+    const view = batchCleanView({ batchFees: [fee('Wire fee refund', '-25.0000')], amountPayable: '-10.0000' })
+    expect(feeLine(view)).toBe('Wire Fee,Wire fee refund,file,-25.0000,analyst')
+    expect(block(summarize(view), 'Line,Sign,Amount').at(-1)).toBe('Amount payable,,-10.0000')
+  })
+})
