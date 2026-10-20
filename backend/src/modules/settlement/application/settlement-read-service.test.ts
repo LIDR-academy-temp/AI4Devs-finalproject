@@ -115,6 +115,60 @@ describe('importSettlements', () => {
   })
 })
 
+describe('accountSettlements', () => {
+  // Spec settlement "Settlements de una cuenta" and "Alcance de los settlements de una cuenta" (settlements-browse D1, D5).
+  const ACCOUNT_ID = BATCH_HEADER.accountId
+  const FOREIGN_ACCOUNT = 'c0000000-0000-4000-8000-000000000003'
+  const query = { dateField: 'settlementDate' as const, page: 2, pageSize: 1 }
+  const attempt = (batchNo: number) => ({
+    batchId: `00000000-0000-4000-8000-${String(batchNo).padStart(12, '0')}`,
+    importId: IMPORT_ID,
+    batchNo,
+    attemptNo: 1,
+    status: 'paid' as const,
+    settledStatus: 'settled' as const,
+    settlementDate: '2026-10-24',
+    processedAt: '2026-10-22T15:40:03.120Z',
+    approvedBy: { userId: 2, userName: 'analyst' },
+    amountPayable: '33771.3600',
+    channels: 'RAM-01,RAM-02',
+  })
+  const data = {
+    accountSettlements: new Map([
+      [ACCOUNT_ID, [attempt(122), attempt(121), attempt(120)]],
+      [FOREIGN_ACCOUNT, [attempt(7)]],
+    ]),
+    merchantOf: new Map([[FOREIGN_ACCOUNT, 2]]),
+  }
+
+  it('answers the page with the account, the paging and the attempts as the port gives them', async () => {
+    const { service } = setup(data)
+    expect(await service.accountSettlements(MERCHANT_1, ACCOUNT_ID, query)).toEqual({
+      accountId: ACCOUNT_ID,
+      page: 2,
+      pageSize: 1,
+      total: 3,
+      items: [attempt(121)],
+    })
+  })
+
+  it('passes the filters to the port untouched', async () => {
+    const { service, queries } = setup(data)
+    const filtered = { ...query, status: 'paid' as const, dateField: 'processedAt' as const, from: '2026-10-20' }
+    await service.accountSettlements(MERCHANT_1, ACCOUNT_ID, filtered)
+    expect(queries.asked.accountSettlements).toEqual([filtered])
+  })
+
+  it('answers the same 404 Account for an unknown account and for one outside the scope', async () => {
+    const { service } = setup(data)
+    for (const accountId of ['00000000-0000-4000-8000-00000000ffff', FOREIGN_ACCOUNT]) {
+      const error = await service.accountSettlements(MERCHANT_1, accountId, query).catch((e: unknown) => e)
+      expect(error).toBeInstanceOf(NotFoundError)
+      expect((error as Error).message).toBe('Account not found')
+    }
+  })
+})
+
 describe('export', () => {
   const rows = [
     exportRow('911545593909470', 'E', 'Successful'),
