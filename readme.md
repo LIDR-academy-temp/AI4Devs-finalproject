@@ -39,7 +39,7 @@ Pendiente de despliegue. La Entrega 1 contiene únicamente la documentación té
 
 **Repositorio:** [kajirioji/AI4Devs-finalproject](https://github.com/kajirioji/AI4Devs-finalproject).
 
-**Rama de la Entrega 1:** [`entrega-1-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/entrega-1-MVP). Las ramas siguientes seguirán el patrón del enunciado: `feature/entrega-2-MVP` y `final-project-MVP`.
+**Rama de la Entrega 1:** [`feature/entrega-1-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/feature/entrega-1-MVP). Las ramas siguientes seguirán el patrón del enunciado: `feature/entrega-2-MVP` y `final-project-MVP`.
 
 La Entrega 1 contiene `readme.md` y `prompts.md`; no incluye código.
 
