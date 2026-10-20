@@ -2,7 +2,7 @@
 // (summary-exports design D3, D4, D6, D11). Money leaves as DECIMAL text, BIGINT ids as strings and business dates
 // without converting; the stable order is (cycle, sheetId, rowNo, settlementTxnId), where SQL Server sorts NULL first,
 // so seeded movements (no sheet, no row) come in settlementTxnId order.
-import { BatchStatus, type Cycle, type ImportSettlements, MovementStatus, TRANSACTION_STATUSES } from '@recon/shared'
+import { BatchStatus, Cycle, type ImportSettlements, MovementStatus, TRANSACTION_STATUSES } from '@recon/shared'
 import type { FastifyBaseLogger } from 'fastify'
 import type { PrismaClient } from '../../../generated/prisma/client.js'
 import { toMoney, toPercentage } from '../../../infrastructure/decimal.js'
@@ -17,7 +17,6 @@ const CHUNK = 500
 const STATUS_CODE = new Map<number, string>(TRANSACTION_STATUSES.map((s) => [s.statusId, s.code]))
 const statusOf = (statusId: number) => MovementStatus.parse(STATUS_CODE.get(statusId))
 const businessDate = (value: Date | null) => (value === null ? null : value.toISOString())
-const roundOf = (value: number | null) => (value === 1 || value === 2 ? value : null)
 
 export interface SettlementQueriesOptions {
   /** Warned when a stored JSON snapshot cannot be read (it is answered as null). */
@@ -91,7 +90,7 @@ export class PrismaSettlementQueries implements SettlementQueries {
       gatewayId: r.transaction.gatewayId,
       cycle,
       status: statusOf(r.statusId),
-      roundNo: roundOf(r.roundNo),
+      roundNo: this.round(r.roundNo, r.settlementTxnId),
       sheetId: r.sheetId,
       sheetName: r.sheet?.sheetName ?? null,
       rowNo: r.rowNo,
@@ -132,7 +131,7 @@ export class PrismaSettlementQueries implements SettlementQueries {
     })
     return rows.map((r) => ({
       sourceTransactionId: r.transaction.sourceTransactionId,
-      cycle: r.cycle as Cycle,
+      cycle: Cycle.parse(r.cycle),
       status: statusOf(r.statusId),
     }))
   }
@@ -187,6 +186,13 @@ export class PrismaSettlementQueries implements SettlementQueries {
       for (const r of rows) map.set(String(r.transactionId), r.sourceTransactionId)
     }
     return map
+  }
+
+  /** The round of an I movement (1 or 2) or none; any other stored value is answered as null, with a warning. */
+  private round(value: number | null, settlementTxnId: bigint): 1 | 2 | null {
+    if (value === null || value === 1 || value === 2) return value
+    this.options.log?.warn({ settlementTxnId: String(settlementTxnId), roundNo: value }, 'unexpected stored roundNo')
+    return null
   }
 
   /** A stored JSON object; null (and a warning) when it is missing or cannot be read as an object. */
