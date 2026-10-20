@@ -156,3 +156,25 @@ describe('PrismaSettlementQueries mapping of a movement', () => {
     ])
   })
 })
+
+describe('PrismaSettlementQueries on unexpected stored values', () => {
+  it('answers a round outside 1 and 2 as null and warns about it', async () => {
+    const log = { warn: vi.fn() }
+    const { prisma } = stubPrisma([{ ...MOVEMENT, roundNo: 3 }])
+    const { items } = await new PrismaSettlementQueries(prisma, { log }).movementsPage(BATCH_ID, 'I', 1, 50)
+    expect(items[0]!.roundNo).toBeNull()
+    expect(log.warn).toHaveBeenCalledWith({ settlementTxnId: '88213', roundNo: 3 }, expect.any(String))
+  })
+
+  it('does not warn for a round of 1, 2 or none', async () => {
+    const log = { warn: vi.fn() }
+    const rows = [1, 2, null].map((roundNo) => ({ ...MOVEMENT, roundNo }))
+    await new PrismaSettlementQueries(stubPrisma(rows).prisma, { log }).movementsPage(BATCH_ID, 'I', 1, 50)
+    expect(log.warn).not.toHaveBeenCalled()
+  })
+
+  it('rejects an export row whose cycle is not E, I or R', async () => {
+    const { prisma } = stubPrisma([{ ...MOVEMENT, cycle: 'X' }])
+    await expect(new PrismaSettlementQueries(prisma).exportRows(BATCH_ID, ['I'])).rejects.toThrow()
+  })
+})
