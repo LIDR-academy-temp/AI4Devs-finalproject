@@ -7,12 +7,20 @@ import {
   failNextSettlement,
   holdNextSettlement,
   type PreviewFixture,
+  paidHistory,
   respondNextSettlement,
   scriptPreview,
+  seedAccountSettlements,
   seedActiveBatch,
   settlementRequests,
 } from '@/test/msw/settlements'
 import { seedValidationRun } from '@/test/msw/validations'
+import { renderApp } from '@/test/render'
+import { OPENING } from '@/test/validation-screens'
+import { strings } from './strings'
+
+const listStrings = strings.list
+
 import {
   AFTER_DEBOUNCE,
   batchNoField,
@@ -48,6 +56,33 @@ async function readyToProcess(fixture?: PreviewFixture) {
   await previewShown()
   return { ...ids, ...view }
 }
+
+describe('Settlement Review: back to the list of the account (settlements-browse D12)', () => {
+  it('the attempt just processed comes first in Settlement List, without a reload', async () => {
+    const USD = ACCOUNT_IDS['ProviderA-USD']
+    seedAccountSettlements(USD, paidHistory(USD, 3))
+    const { importId } = validatedImport('batch-clean', noChannels())
+    const { user, router } = renderApp(`/settlements?accountId=${USD}`, { as: 'analyst' })
+    await screen.findByRole('table', { name: listStrings.tableLabel }, OPENING)
+
+    await router.navigate({ to: '/imports/$importId/settlement-review', params: { importId } })
+    await screen.findByRole('textbox', { name: 'Batch number' }, OPENING)
+    chooseDate('2026-10-24')
+    await previewShown()
+    await user.click(processButton())
+    await screen.findByRole('heading', { name: 'Settlement Summary · batch 123' })
+    await router.navigate({ to: '/settlements', search: { accountId: USD } })
+
+    const table = await screen.findByRole('table', { name: listStrings.tableLabel })
+    await waitFor(() =>
+      expect(
+        within(within(table).getAllByRole('row')[1]!)
+          .getAllByRole('cell')
+          .map((c) => c.textContent),
+      ).toEqual(expect.arrayContaining(['123', 'Processed · pending payment'])),
+    )
+  })
+})
 
 describe('Settlement Review: channels to assign (spec "canales a asociar")', () => {
   it('RAM-07 without account (HU3 CA5): listed, the box unchecked and Process waits for it', async () => {
