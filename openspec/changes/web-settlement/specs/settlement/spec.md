@@ -334,3 +334,8 @@ Todas las acciones de Settlement Review y Settlement Summary SHALL poder hacerse
 #### Scenario: Procesar con teclado
 - **WHEN** `analyst` recorre Settlement Review con Tab, Enter y Espacio
 - **THEN** puede editar el número, añadir y quitar fees, marcar la casilla de canales y pulsar **Process**, y cada botón deshabilitado anuncia su motivo
+
+#### Scenario: Summary con teclado
+- **GIVEN** las descargas disponibles
+- **WHEN** `analyst` recorre el Settlement Summary con Tab
+- **THEN** llega a **Merchant summary**, **Transactions (CSV)**, **Reserves (CSV)**, **View the validations** y **Back to Dashboard**
