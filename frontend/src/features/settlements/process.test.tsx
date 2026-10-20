@@ -204,9 +204,12 @@ describe('Settlement Review: process (spec "procesar")', () => {
 
     await user.click(processButton())
 
+    // The screen moves to the state of an import not validated and keeps saying why.
     expect(
-      await screen.findByText('This import is not validated. Review its validations before processing.'),
+      await screen.findByText('The import is no longer validated (status: analyzed). Review its validations again.'),
     ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Go to the Analysis step' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Process batch/ })).not.toBeInTheDocument()
     expect(importRequests('detail').length).toBeGreaterThan(reads)
     expect(settlementRequests('process')[0]!.status).toBe(409)
   })
