@@ -35,7 +35,8 @@ export interface ProcessHandlers {
   onChannels?: (channels: ChannelToAssign[]) => void
 }
 
-export function useProcessSettlement(importId: string) {
+/** `onNotValidated` receives what to say when the import stopped being validated; the page keeps it. */
+export function useProcessSettlement(importId: string, onNotValidated?: (text: string) => void) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const guard = useRef(false)
@@ -75,7 +76,10 @@ export function useProcessSettlement(importId: string) {
         const details = e.details as ErrorDetails['channel_assignment_not_confirmed'] | undefined
         onChannels?.(details?.channels ?? [])
       } else if (e instanceof ApiError && e.code === 'import_not_validated') {
-        setError({ text: previewErrorOf(e).text, retry: false })
+        // The form goes away when the import is read again: the page says why (spec "Import que ya no está validado").
+        const text = previewErrorOf(e).text
+        if (onNotValidated) onNotValidated(text)
+        else setError({ text, retry: false })
         void queryClient.invalidateQueries({ queryKey: importKey(importId), exact: true })
       } else if (e instanceof ApiError && e.code === 'settlement_busy') {
         // Another processing of the provider held the rows: nothing was written, the same body can go again.

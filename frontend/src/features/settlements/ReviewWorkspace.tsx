@@ -15,7 +15,7 @@ import type { RowApiError } from './FeeRow'
 import { useProcessSettlement } from './mutations'
 import { PreSummary } from './PreSummary'
 import { ProcessBar } from './ProcessBar'
-import { usePreview } from './preview'
+import { previewErrorOf, usePreview } from './preview'
 import { nextBatchNumberQuery } from './queries'
 import { type FeeRow, type ReviewFormValues, reviewFormSchema, toRequest } from './review-form'
 import { strings } from './strings'
@@ -56,7 +56,17 @@ function issuesOf(values: ReviewFormValues): Record<string, string> {
 }
 
 /** The form of a validated import, mounted once its run and the proposed number are known (design D4). */
-function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: number; next: NextBatchNumber }) {
+function ReviewForm({
+  detail,
+  runId,
+  next,
+  onNotValidated,
+}: {
+  detail: ImportDetail
+  runId: number
+  next: NextBatchNumber
+  onNotValidated: (text: string) => void
+}) {
   const form = useForm<ReviewFormValues>({
     defaultValues: {
       batchNo: String(next.batchNo),
@@ -70,7 +80,7 @@ function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: numb
   const valid = Object.keys(issues).length === 0
   const currentRequest = useMemo(() => (valid ? toRequest(values, runId, false) : null), [valid, values, runId])
   const { preview, lastRequest, isCurrent, error, retry } = usePreview(detail.importId, currentRequest)
-  const processor = useProcessSettlement(detail.importId)
+  const processor = useProcessSettlement(detail.importId, onNotValidated)
   const { clearError } = processor
   // The message of a failed Process (and its Retry) belongs to the body it sent: a new body takes it away.
   useEffect(() => {
@@ -95,11 +105,13 @@ function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: numb
 
   useEffect(() => {
     recordFeeError(error)
-    // The import is no longer validated (another tab re-ran or cancelled): read it again, the page shows its status.
+    // The import is no longer validated (another tab re-ran or cancelled): read it again, the page shows its status
+    // and keeps saying why.
     if (error instanceof ApiError && error.code === 'import_not_validated') {
+      onNotValidated(previewErrorOf(error).text)
       void queryClient.invalidateQueries({ queryKey: importKey(detail.importId), exact: true })
     }
-  }, [error, queryClient, detail.importId, recordFeeError])
+  }, [error, queryClient, detail.importId, recordFeeError, onNotValidated])
 
   const activeFeeError =
     feeError && rows.some((r) => r.key === feeError.key && JSON.stringify(r) === feeError.snapshot) ? feeError : null
@@ -198,8 +210,18 @@ function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: numb
   )
 }
 
-/** The form of a validated import: batch number, settlement date, batch fees, pre-summary and Process. */
-export function ReviewWorkspace({ detail }: { detail: ImportDetail }) {
+/**
+ * The form of a validated import: batch number, settlement date, batch fees, pre-summary and Process.
+ * `onNotValidated` hands the page what the API said when the import stopped being validated (409
+ * import_not_validated), so that it outlives the form.
+ */
+export function ReviewWorkspace({
+  detail,
+  onNotValidated,
+}: {
+  detail: ImportDetail
+  onNotValidated: (text: string) => void
+}) {
   const run = useQuery(validationRunQuery(detail.importId))
   const next = useQuery(nextBatchNumberQuery(detail.accountId, detail.importId))
 
@@ -220,5 +242,5 @@ export function ReviewWorkspace({ detail }: { detail: ImportDetail }) {
   }
   const current = run.data.run
   if (!current?.review) return <p className="text-sm">{strings.review.notValidated}</p>
-  return <ReviewForm detail={detail} runId={current.runId} next={next.data} />
+  return <ReviewForm detail={detail} runId={current.runId} next={next.data} onNotValidated={onNotValidated} />
 }

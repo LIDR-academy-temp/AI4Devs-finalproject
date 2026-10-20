@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -43,11 +44,15 @@ function ReviewHeader({ detail }: { detail: ImportDetail }) {
   )
 }
 
-/** Why there is no form for an import that is not validated, and where to go on (design D13). */
-function NotReviewable({ detail }: { detail: ImportDetail }) {
+/**
+ * Why there is no form for an import that is not validated, and where to go on (design D13). `lost` is what the API
+ * said when the import stopped being validated under the form (409 import_not_validated), kept after the form goes.
+ */
+function NotReviewable({ detail, lost }: { detail: ImportDetail; lost: string | null }) {
   if (detail.status === 'processed') {
     return (
       <div className="flex flex-wrap items-center gap-3 text-sm">
+        {lost && <p className="text-destructive">{lost}</p>}
         <p>{s.processed}</p>
         {detail.currentBatchId && (
           <Link {...settlementSummaryRoute(detail.currentBatchId)} className={linkClass}>
@@ -57,10 +62,17 @@ function NotReviewable({ detail }: { detail: ImportDetail }) {
       </div>
     )
   }
-  if (detail.status === 'cancelled') return <p className="text-sm">{s.cancelled}</p>
+  if (detail.status === 'cancelled') {
+    return (
+      <div className="flex flex-col gap-1 text-sm">
+        {lost && <p className="text-destructive">{lost}</p>}
+        <p>{s.cancelled}</p>
+      </div>
+    )
+  }
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm">
-      <p>{s.notValidated}</p>
+      {lost ? <p className="text-destructive">{lost}</p> : <p>{s.notValidated}</p>}
       <Link
         to="/imports/$importId"
         params={{ importId: detail.importId }}
@@ -80,6 +92,12 @@ function NotReviewable({ detail }: { detail: ImportDetail }) {
 export function SettlementReviewPage() {
   const { importId } = useParams({ from: '/app/imports/$importId/settlement-review' })
   const query = useQuery(importQuery(importId))
+  // Why the import stopped being validated while its form was open; it outlives the form, which unmounts.
+  const [lost, setLost] = useState<string | null>(null)
+  const status = query.data?.status
+  useEffect(() => {
+    if (status === 'validated') setLost(null)
+  }, [status])
 
   if (query.isPending) return <Skeleton className="h-40 w-full" aria-label={s.loading} />
   if (query.isError) {
@@ -100,7 +118,11 @@ export function SettlementReviewPage() {
   return (
     <section className="flex flex-col gap-4">
       <ReviewHeader detail={detail} />
-      {detail.status === 'validated' ? <ReviewWorkspace detail={detail} /> : <NotReviewable detail={detail} />}
+      {detail.status === 'validated' ? (
+        <ReviewWorkspace detail={detail} onNotValidated={setLost} />
+      ) : (
+        <NotReviewable detail={detail} lost={lost} />
+      )}
     </section>
   )
 }
