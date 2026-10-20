@@ -1,5 +1,6 @@
 // The downloads of an attempt (web-settlement design D12). The export routes are #12's: until it is merged the
-// buttons are shown disabled with their reason, like SETTLEMENT_REVIEW was before #13. The rebase turns this on.
+// buttons are shown disabled with their reason, like SETTLEMENT_REVIEW was before #13. A separate commit turns this
+// on once #12 is merged.
 import type { ExportType, SettlementView } from './contract'
 
 export const SETTLEMENT_EXPORTS_AVAILABLE = false
