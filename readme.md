@@ -325,8 +325,9 @@ La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al
 
 | Qué queda fuera | Por qué | Issue |
 |---|---|---|
-| Marcar pagado / retirar la marca y deshacer un intento (HU3, criterios de pago y deshacer) | Un batch queda `processed`; el pago es un paso posterior que no hace falta para demostrar la cadena. Hasta entonces ningún movimiento procesado en la aplicación llega a Settled (solo los del historial sembrado) | sin issue propio todavía |
-| Administración de cuentas y fees (`POST /accounts/{id}/fees`, sección 4.1; creación de cuentas) | El seed crea cuentas, fees y reglas de pareo; el flujo solo necesita leerlos | sin issue propio todavía |
+| Marcar un intento como pagado y retirar el pago (HU3, criterio 7) | Un batch queda `processed`; el pago es un paso posterior que no hace falta para demostrar la cadena. Hasta entonces ningún movimiento procesado en la aplicación llega a Settled (solo los del historial sembrado) | [#78](https://github.com/kajirioji/AI4Devs-finalproject/issues/78) |
+| Deshacer un intento y reprocesar (HU3, criterio 8) | El esquema ya admite intentos `undone` y `attemptNo`; falta el caso de uso y su pantalla | [#79](https://github.com/kajirioji/AI4Devs-finalproject/issues/79) |
+| Administración de cuentas, canales, fees y reglas de pareo (`POST /accounts/{id}/fees`, sección 4.1) | El seed crea cuentas, fees y reglas de pareo; el flujo solo necesita leerlos | [#80](https://github.com/kajirioji/AI4Devs-finalproject/issues/80) |
 | Reserva ante chargeback por política de la cuenta (`release_on_chargeback`) | Recortable previsto en el design de `settlement-process`: el núcleo de HU3 no depende de ella | [#62](https://github.com/kajirioji/AI4Devs-finalproject/issues/62) |
 | Lista de Settlements de la cuenta | El Summary se abre desde su import; la lista es navegación, no flujo | [#64](https://github.com/kajirioji/AI4Devs-finalproject/issues/64) |
 | Resolver filas ambiguas desde la interfaz y lista *In Progress* para retomar imports | El endpoint de resolución ya existe (`PATCH` de la fila); la pantalla solo las muestra | [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38) |
