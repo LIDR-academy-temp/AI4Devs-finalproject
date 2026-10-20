@@ -24,7 +24,8 @@ function Summary({ view }: { view: SettlementView }) {
   return (
     <section className="flex flex-col gap-4">
       <SummaryHeader view={view} />
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+      {/* Two columns only from 1280 px: the totals by type have four columns of figures that must stay in view. */}
+      <div className="grid items-start gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>{s.totals}</CardTitle>
@@ -37,17 +38,6 @@ function Summary({ view }: { view: SettlementView }) {
             />
           </CardContent>
         </Card>
-        <div className="flex flex-col gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{s.brands}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TotalsByBrand brands={view.brandTotals} />
-            </CardContent>
-          </Card>
-          <SummaryFees view={view} />
-        </div>
         <Card>
           <CardHeader>
             <CardTitle>{s.payable}</CardTitle>
@@ -57,6 +47,15 @@ function Summary({ view }: { view: SettlementView }) {
             <PayableBreakdown lines={view.payableBreakdown} amountPayable={view.amountPayable} />
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>{s.brands}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TotalsByBrand brands={view.brandTotals} />
+          </CardContent>
+        </Card>
+        <SummaryFees view={view} />
       </div>
       <SummaryIssues view={view} />
       <SummaryExports view={view} />
