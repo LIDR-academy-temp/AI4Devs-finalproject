@@ -80,7 +80,7 @@ Los tres exports SHALL ser CSV RFC 4180: separador `,`, fila de cabecera, CRLF, 
 - THEN esa celda sale entre comillas dobles y el archivo sigue teniendo el mismo número de columnas en ese bloque
 
 ### Requirement: Summary del merchant
-El export `summary` SHALL contener bloques separados por una línea vacía, cada uno con su cabecera: intento, totales por categoría, marcas, fees por batch, reservas, desglose del amount payable (nueve líneas en orden con signo e importe, y la fila `Amount payable`), incidencias y filas no procesadas. Las cifras SHALL ser las de la vista del intento, sin recalcular la fórmula. Las fechas de negocio SHALL ir sin convertir y `processedAt` en hora de Nueva York con sufijo `ET`.
+El export `summary` SHALL tener nueve bloques con cabecera, separados por una línea vacía: intento, totales, marcas, fees por batch, reservas, amount payable (nueve líneas con signo e importe y la fila `Amount payable`), incidencias, filas no procesadas y advertencias. Las cifras SHALL ser las de la vista, sin recalcular. Las fechas de negocio SHALL ir sin convertir y `processedAt` en hora de Nueva York (`ET`). Una advertencia con transacción SHALL llevar su ID de origen.
 
 #### Scenario: Summary de batch-clean
 - GIVEN `batch-clean` procesado con los dos fees prellenados
@@ -98,6 +98,19 @@ El export `summary` SHALL contener bloques separados por una línea vacía, cada
 - WHEN se descarga su summary
 - THEN el bloque de incidencias y el de filas no procesadas dicen `Not available` en lugar de ceros, y el resto de bloques sale con las cifras del batch
 
+#### Scenario: Advertencia con el ID de origen
+- GIVEN un intento con una advertencia `undated_adjustment` de la transacción interna `40711`, cuyo ID de origen es `911545598812004`
+- WHEN se descarga el summary
+- THEN el bloque de advertencias (`Code,Transaction ID,Detail`) muestra `911545598812004` y no `40711`
+
+### Requirement: Texto del summary sin fórmulas
+En el export `summary`, toda celda de texto (nombre de la cuenta, usuarios, canales, marcas, tipo y descripción de los fees por batch) que empiece por `=`, `+`, `-`, `@`, tabulador o retorno de carro SHALL llevar un apóstrofo delante, para que una hoja de cálculo la muestre y no la ejecute. Las cifras (también los importes negativos), las fechas y los IDs no SHALL cambiar. TXN y RR no llevan texto libre y no cambian.
+
+#### Scenario: Texto que empieza como una fórmula
+- GIVEN un fee por batch con descripción `=HYPERLINK("http://example.test","click")` y otro con importe `-25.0000`
+- WHEN se descarga el summary
+- THEN la descripción sale como `'=HYPERLINK(…)` (con las comillas de RFC 4180) y el importe sale `-25.0000`, sin apóstrofo
+
 ### Requirement: Lectura del intento
 `GET /api/v1/settlements/{id}` SHALL responder `200` con la vista del intento, la misma forma que la respuesta `201` de procesar, construida a partir de lo escrito. También SHALL servir los intentos sin auditoría `settlement.process` (los del seed), con `validationSummary = null`, `skipped` en 0 y sin advertencias ni canales asociados. `settledStatus` SHALL derivarse del estado del intento: `processed` → `pending_payment`, `paid` → `settled`, `undone` → `undone`.
 
@@ -110,6 +123,11 @@ El export `summary` SHALL contener bloques separados por una línea vacía, cada
 - GIVEN un batch sembrado `paid` de ProviderA-USD
 - WHEN `analyst` lo pide
 - THEN recibe `200` con `status = paid`, `settledStatus = settled` y `validationSummary = null`, y el desglose del payable suma su `amountPayable`
+
+#### Scenario: Cuenta anterior de otro merchant
+- GIVEN `batch-clean` procesado (merchant 1) con un canal cuya cuenta primaria anterior era de un merchant 2
+- WHEN `analyst` (merchants 1 y 2) y `viewer` (solo merchant 1) piden `GET /settlements/{batchId}`
+- THEN `analyst` ve esa cuenta en `channelsAssigned[].previousAccount` y `viewer` recibe `{ accountId: null, name: null, outOfScope: true }`, como en la respuesta de procesar
 
 ### Requirement: Movimientos del intento
 `GET /api/v1/settlements/{id}/transactions` SHALL exigir `type` ∈ `E` | `I` | `R` y devolver, paginados (`page` desde 1, `pageSize` 1–500, 50 por defecto) y con `total`, los movimientos del ciclo en orden estable. Cada uno SHALL traer transacción, estado, fila de origen, importes, fees con su desglose, fecha del evento (o `null`), reserva y `settled`, y los de la misma transacción y ciclo SHALL salir por separado.

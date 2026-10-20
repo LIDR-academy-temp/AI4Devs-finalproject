@@ -46,6 +46,12 @@ modules/settlement/
   settlement-module.ts                 (wiring only: registers the read routes)
 packages/shared/src/settlement-reads.ts
 ```
+- **Cableado real (apply).** Además de `settlement-module.ts` y `app.test.ts`, el apply tocó:
+  - `app.ts` y `test-support/build-test-app.ts`, con la opción `settlement.reads` para inyectar el servicio de lectura en los tests de rutas, junto a la `service` que ya tenía #11.
+  - Un archivo nuevo, `domain/settled.ts` (`settledStatusOf`, `isSettled`), que usan el adaptador y el servicio. El lector de #11 conserva su copia privada.
+  - En Bruno, `10-smoke/Provider C accounts.bru` (guarda también el `accountId` de ProviderC-Alt) y `20-flows/settlements/batch-clean/10 Process.bru` (guarda el `batchId` y la respuesta `201` para las peticiones 12–17).
+
+  Fuera de eso no cambió código de #11.
 - *Alternativa descartada*: ampliar `SettlementReader`, `settlement-service.ts` y `settlement-routes.ts` de #11. Tocaría código en revisión y mezclaría escritura y lectura en el mismo servicio. Los puertos nuevos van en archivo propio y el lector de #11 se inyecta tal cual.
 - *Alternativa descartada*: un módulo `reports`. Los exports son del intento ("los exports se identifican por intento") y la spec `settlement` ya los tiene.
 
@@ -103,6 +109,7 @@ packages/shared/src/settlement-reads.ts
 | Warnings | `Code,Transaction ID,Detail` | una fila por advertencia; `Transaction ID` es el ID de origen tal cual (D5), traducido con `sourceIds` (D2), y vacío en las advertencias sin transacción; `Detail` = `Row <rowNo>` (más `; fee skipped`) o `Fee <feeId>` |
 
 - `Payment` = `Pending payment` | `Settled` | `Undone` desde `settledStatus`, nunca desde `settlementStatusId`.
+- **Neutralización de fórmulas (revisión de la persona tras el verify).** El merchant abre el summary en una hoja de cálculo, así que toda celda de **texto** que empiece por `=`, `+`, `-`, `@`, tabulador o retorno de carro lleva un apóstrofo delante (`'=HYPERLINK(…)`), y después se aplican las comillas de RFC 4180 si hacen falta. Esto vale para el nombre de la cuenta, `Processed by`, `Channels`, la marca, el tipo y la descripción de los fees por batch, y `Entered by`. Las cifras (también los importes negativos), las fechas, los códigos fijos y los IDs no pasan por ahí. TXN y RR no cambian: no llevan texto libre y los lee el Back-Office (P1). Rotura prevista: quitar `-` de los prefijos hace fallar el test de neutralización.
 - `audit-time.ts`: `Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', hourCycle: 'h23', … })` → `YYYY-MM-DD HH:mm:ss ET`, el mismo criterio que `formatAuditDateTime` de la pantalla (con otro formato, porque es un archivo). Test con una fecha en horario de verano y otra en horario estándar.
 - Saber si el intento tiene auditoría `settlement.process`: la vista no lo dice directamente. Se toma `validationSummary === null` como señal, porque el lector de #11 lo pone a `null` justo en ese caso. Si #65 cambia eso, cambia esta regla.
 - *Alternativa descartada*: una sola tabla larga (`Section,Item,Qty,Amount,…`), más fácil de leer por máquina pero ilegible para el merchant, que es quien lo lee.
@@ -166,7 +173,7 @@ type ExportType = 'summary' | 'transactions' | 'reserves'
 
 type AppliedFee = {
   appliedFeeId: string            // BIGINT as string
-  feeId: string | null            // uuid
+  feeId: string | null            // uuid; nullable in the contract although NOT NULL in the database today
   feeTypeId: number; code: string; title: string
   eventDate: string | null        // business date (ISO, Z is transport)
   amountUsd: Money
