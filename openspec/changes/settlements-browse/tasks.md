@@ -30,7 +30,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 
 **No empezar sin turno de base de la persona** (dado el 2026-10-20). Mientras, se puede seguir con los grupos 4 en adelante contra MSW.
 
-- [ ] 3.1 La persona prepara la base con `! pnpm db:up`, `! pnpm db:migrate` y `! pnpm db:seed`, y confirma el turno
+- [x] 3.1 La persona prepara la base con `! pnpm db:up`, `! pnpm db:migrate` y `! pnpm db:seed`, y confirma el turno
 - [x] 3.2 Test (rojo) en `backend/test/integration/account-settlements.int.test.ts` (proyecto `integration`, que solo recoge `test/integration/**/*.int.test.ts`; `prisma-settlement-queries.test.ts` es el unitario con Prisma falso) sobre el seed:
   - ProviderA-USD sin filtros → `total = 22`, del 122 al 101, todos `paid`/`settled`, intento 1, `approvedBy.userName = analyst`, `settlementDate` `YYYY-MM-DD`, `amountPayable` con cuatro decimales y `channels` como el texto guardado;
   - la suma de los `total` con `status=paid` de las cinco cuentas es 68;
@@ -87,7 +87,7 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 - [x] 8.1 Test (rojo) en `features/settlements/read-only.test.tsx`: `viewer` recorre la lista de ProviderA-USD, el batch 122 y su Movements; ve lo mismo que `analyst`, sin pagar, retirar el pago, deshacer ni exportar la lista, y el registro del falso solo tiene `GET`
 - [x] 8.2 Test (rojo) en `features/settlements/keyboard.test.tsx`: con Tab, flechas, Enter y Espacio, elegir cuenta, estado, **Date** y fechas, cambiar de página, abrir un batch, pasar a Movements, cambiar de ciclo y abrir un desglose; **Previous**/**Next** deshabilitados con su motivo
 - [x] 8.3 Ajustar lo que 8.1 y 8.2 descubran y verificar en verde; romper a propósito el `aria-describedby` de **Next** y ver fallar 8.2; restaurar. La revisión a 1280 y 1024 px necesita datos reales y queda en el grupo 9
-- [ ] 8.4 Verificar `pnpm lint && pnpm typecheck && pnpm test && pnpm --filter @recon/frontend build` en verde y `openspec validate settlements-browse --type change --strict` sin avisos
+- [x] 8.4 Verificar `pnpm lint && pnpm typecheck && pnpm test && pnpm --filter @recon/frontend build` en verde y `openspec validate settlements-browse --type change --strict` sin avisos. Cierre (criterio de la persona, 2026-10-20): `pnpm test` con las tres suites en paralelo da timeouts de ~5 s en tests del backend ya existentes (validaciones, OpenAPI, health), distintos en cada ejecución; no se tocan tiempos en este change. Verde: lint, typecheck, build, `openspec validate`, y cada paquete por separado (backend 1022, frontend 501, shared 196); falta el CI del PR. Ningún test nuevo mostró el patrón de #56, así que no se comenta allí
 - [x] 8.5 Commit: `test(frontend): solo lectura y teclado en Settlement List y Movements` y `fix(frontend): accesibilidad de Settlement List y Movements`
 
 ## 9. API real con el seed, Bruno y capturas — con turno de base (D16)
