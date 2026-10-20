@@ -19,7 +19,7 @@
 
 **Herramienta y modelo.** ChatGPT — GPT-6 Astra.
 
-*Contexto.* Con el borrador de `readme.md` y `prompts.md` preparado, se solicitó una segunda revisión antes de completar la entrega técnica. Se proporcionaron los requisitos del curso, las plantillas oficiales y aclaraciones del funcionamiento actual: gateways S2 y Proxima, consolidación en ATHENA, diferencia entre transacción reconciliada y batch pagado, cruce por identificadores y reglas de rolling reserve según proveedor.
+*Contexto.* Con el borrador de `readme.md` y `prompts.md` preparado, se solicitó una segunda revisión antes de completar la entrega técnica. Se proporcionaron los requisitos del curso, las plantillas oficiales y aclaraciones del funcionamiento actual: el gateway principal y un gateway alterno que se evaluó, consolidación en el servidor de base de datos y reportes, diferencia entre transacción reconciliada y batch pagado, cruce por identificadores y reglas de rolling reserve según proveedor.
 
 *Prompt representativo (literal).* «Listo, te voy a mandar mis dos archivos para que los revises en contra de estos requerimientos. Sé que le faltan unos detalles. Pero quiero ver que analices inconsistencias, faltantes, cosas por mejorar.»
 
