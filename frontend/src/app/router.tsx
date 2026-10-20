@@ -14,6 +14,8 @@ import { ImportPage } from '@/features/imports/ImportPage'
 import { NewReconciliationPage } from '@/features/imports/NewReconciliationPage'
 import { strings as importStrings } from '@/features/imports/strings'
 import { validateImportSearch, validateNewReconciliationSearch } from '@/features/imports/validate-search'
+import { validateSettlementListSearch } from '@/features/settlements/list-search'
+import { SettlementListPage } from '@/features/settlements/SettlementListPage'
 import { SettlementReviewPage } from '@/features/settlements/SettlementReviewPage'
 import { SettlementSummaryPage } from '@/features/settlements/SettlementSummaryPage'
 import { ApiError } from '@/lib/api/client'
@@ -116,6 +118,15 @@ const settlementReviewRoute = createRoute({
   component: SettlementReviewPage,
 })
 
+// No permission required: viewer reads the attempts of the accounts of its scope (settlements-browse D7).
+const settlementListRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settlements',
+  validateSearch: validateSettlementListSearch,
+  staticData: { crumbs: [strings.groups.settlements, strings.screens.settlementList] },
+  component: SettlementListPage,
+})
+
 // No permission required: the API decides the scope and viewer may read an attempt (design D13).
 const settlementSummaryRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -135,6 +146,7 @@ function buildRouteTree(extraRoutes: AnyRoute[]) {
       newReconciliationRoute,
       importRoute,
       settlementReviewRoute,
+      settlementListRoute,
       settlementSummaryRoute,
       ...extraRoutes,
       notFoundRoute,

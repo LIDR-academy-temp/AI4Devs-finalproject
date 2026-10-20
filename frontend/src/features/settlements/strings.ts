@@ -209,6 +209,12 @@ export const strings = {
     notFoundBody: 'The settlement does not exist or is not in your scope.',
   },
 
+  /** Settlements › Settlement List (settlements-browse). */
+  list: {
+    title: 'Settlement List',
+    chooseAccount: 'Choose an account to see its settlements.',
+  },
+
   retry: 'Retry',
 
   /** The labels of the nine payable lines, by code: the same text the API sends in `label` (design D7). */
