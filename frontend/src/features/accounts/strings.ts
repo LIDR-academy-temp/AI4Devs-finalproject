@@ -18,6 +18,7 @@ export const strings = {
     reservePolicy: 'Reserve policy on chargeback',
     reserveCap: 'Reserve cap',
     status: 'Status',
+    settlements: 'Settlements',
   },
   none: 'none',
   active: 'active',
@@ -28,6 +29,19 @@ export const strings = {
   noPrimary: 'no primary account',
   noChannels: 'No channels yet',
   loadingChannels: 'Loading channels…',
+  settlements: 'Settlements',
+  settlementsOf: (account: string) => `Settlements of ${account}`,
+  /** The merchant → provider → account choice of New Reconciliation and Settlement List. */
+  picker: {
+    merchant: 'Merchant',
+    provider: 'Provider',
+    account: 'Account',
+    chooseMerchant: 'Choose a merchant',
+    chooseProvider: 'Choose a provider',
+    chooseAccount: 'Choose an account',
+    closedAccount: (account: string) => `${account} (closed)`,
+    notAvailable: 'This merchant, provider or account is not available.',
+  },
   unassignedTitle: 'Channels not assigned yet',
   unassignedBody: (channels: string[]) =>
     `${channels.join(', ')} ${plural(channels.length, 'has', 'have')} transactions but no account yet. ` +
