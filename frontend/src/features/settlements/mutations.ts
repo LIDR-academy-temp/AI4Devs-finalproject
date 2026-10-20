@@ -3,7 +3,7 @@
 // is shown as processed before the 201, and then the Summary paints that answer without asking for it again.
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { importKey } from '@/features/imports/queries'
 import { validationRunKey } from '@/features/validations/queries'
 import { ApiError } from '@/lib/api/client'
@@ -92,5 +92,8 @@ export function useProcessSettlement(importId: string) {
     }
   }
 
-  return { process, processing: mutation.isPending, takenBatchNo, error }
+  /** Forgets the last failed Process: what it said was about a body that is no longer on screen. */
+  const clearError = useCallback(() => setError(null), [])
+
+  return { process, processing: mutation.isPending, takenBatchNo, error, clearError }
 }

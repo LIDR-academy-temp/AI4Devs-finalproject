@@ -71,6 +71,12 @@ function ReviewForm({ detail, runId, next }: { detail: ImportDetail; runId: numb
   const currentRequest = useMemo(() => (valid ? toRequest(values, runId, false) : null), [valid, values, runId])
   const { preview, lastRequest, isCurrent, error, retry } = usePreview(detail.importId, currentRequest)
   const processor = useProcessSettlement(detail.importId)
+  const { clearError } = processor
+  // The message of a failed Process (and its Retry) belongs to the body it sent: a new body takes it away.
+  useEffect(() => {
+    void lastRequest
+    clearError()
+  }, [lastRequest, clearError])
   const queryClient = useQueryClient()
   const rows = values.fees ?? []
   const rowsRef = useRef(rows)

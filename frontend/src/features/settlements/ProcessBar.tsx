@@ -37,7 +37,14 @@ export function ProcessBar({
         <div className="flex items-center gap-2">
           <p className="text-sm text-destructive">{error.text}</p>
           {error.retry && (
-            <Button variant="outline" size="sm" onClick={onProcess} disabled={processing}>
+            // Retry is Process again: the same reasons hold it back.
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onProcess}
+              disabled={disabled}
+              aria-describedby={shown.length > 0 ? reasonsId : undefined}
+            >
               {strings.retry}
             </Button>
           )}
