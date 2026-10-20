@@ -207,6 +207,22 @@ describe('export', () => {
     expect([...audit.entries, ...missing.audit.entries]).toEqual([])
   })
 
+  it('exports an undone attempt too, named by its own attemptNo (spec "Export de un intento deshecho")', async () => {
+    const UNDONE = '1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d'
+    const { service, audit } = setup(
+      {
+        headers: [{ ...BATCH_HEADER, batchId: UNDONE, batchNo: 118, attemptNo: 2, status: 'undone' }],
+        exportRows: rows,
+      },
+      new Map([[UNDONE, exampleView({ batchId: UNDONE, status: 'undone', settledStatus: 'undone' })]]),
+    )
+    for (const type of ['summary', 'transactions', 'reserves'] as const) {
+      const file = await service.export(MERCHANT_1, ANALYST_ID, UNDONE, type)
+      expect(file.fileName).toBe(`ProviderA-USD_B118_A2_${type}.csv`)
+    }
+    expect(audit.entries.map((e) => e.detail.type)).toEqual(['summary', 'transactions', 'reserves'])
+  })
+
   it('writes one audit entry per download and changes nothing else', async () => {
     const { service, audit } = setup({ exportRows: rows })
     for (let i = 0; i < 3; i++) await service.export(MERCHANT_1, ANALYST_ID, EXAMPLE_BATCH_ID, 'transactions')
