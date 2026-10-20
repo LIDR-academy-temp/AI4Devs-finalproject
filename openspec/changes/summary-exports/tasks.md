@@ -66,7 +66,7 @@ Requiere el insumo 4: base local libre, migraciones de #11 aplicadas y seed reci
 
 ## 7. Verificación de conjunto
 
-- [ ] 7.1 `pnpm lint`, `pnpm typecheck`, `pnpm test` y la integración completa contra la base local en verde, y `openspec validate summary-exports --strict` en verde. Verificación: salida de los comandos en el PR.
+- [x] 7.1 `pnpm lint`, `pnpm typecheck`, `pnpm test` y la integración completa contra la base local en verde, y `openspec validate summary-exports --strict` en verde. Verificación: salida de los comandos en el PR.
 - [ ] 7.2 `/review-diff` del PR con los cinco focos (README §7): dinero nunca `number` (tampoco en los CSV), fechas de negocio sin convertir frente a auditoría en ET, Settled solo desde `paid`, ningún comentario en español en `.ts`/`.sql` y ningún `console.log`. Comprobar además que no se tocó código de #11 salvo el cableado de `settlement-module.ts` y `app.test.ts`. Verificación: hallazgos resueltos o anotados en el PR.
 
 ## Workflow follow-up
