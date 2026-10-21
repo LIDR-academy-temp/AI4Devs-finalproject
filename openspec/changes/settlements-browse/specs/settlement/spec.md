@@ -166,8 +166,26 @@ Mientras se pide la lista SHALL verse un estado de carga. Un error SHALL mostrar
 - **WHEN** la lectura responde `404`
 - **THEN** ve que la cuenta no está disponible
 
+### Requirement: Settlement List y Movements: anchos
+Las tablas de Settlement List y de Movements SHALL caber a 1280 y a 1024 px sin desplazamiento horizontal ni columnas recortadas. Los textos SHALL poder partirse en líneas; los importes y el ID de transacción nunca SHALL partirse ni recortarse, y las etiquetas de canales solo SHALL partirse tras una coma, sin cambiar ni quitar un carácter.
+
+#### Scenario: Lista a 1024 px
+- **GIVEN** el intento recién procesado de ProviderA-USD, con los canales `RAM-01,RAM-02,RAM-07`
+- **WHEN** la ventana mide 1024 px
+- **THEN** se ven las siete columnas sin desplazarse; el estado, quién y cuándo y los canales pueden ocupar dos líneas, y el amount payable sigue en una línea
+
+#### Scenario: Movimientos a 1024 px
+- **GIVEN** los movimientos E e I de `batch-clean`, con el desglose de un fee abierto
+- **WHEN** la ventana mide 1024 px
+- **THEN** se ven las nueve columnas sin desplazarse y ningún importe ni ID de transacción se parte en dos líneas
+
 ### Requirement: Pantalla Settlement Summary: pestaña Movements
-El Settlement Summary SHALL tener las pestañas **Summary** y **Movements**. **Movements** SHALL mostrar los movimientos del ciclo elegido (E, I o R, con E por defecto) en el orden del API, paginados en el servidor, con transacción, estado, ronda, fila de origen, fecha del evento, importe, fees con su desglose, reserva y Settled, tal como llegan. Pestaña, ciclo y página SHALL guardarse en la dirección.
+El Settlement Summary SHALL tener las pestañas **Summary** y **Movements**. **Movements** SHALL mostrar los movimientos del ciclo elegido (E, I o R, con E por defecto) en el orden del API, paginados en el servidor, con transacción, estado, ronda, fila de origen, fecha del evento, importe, fees con su desglose, reservas (en una columna **Reserves**) y Settled, tal como llegan. Pestaña, ciclo y página SHALL guardarse en la dirección.
+
+#### Scenario: Reservas en una columna
+- **GIVEN** un movimiento con `reserveHeldAmt = "11.5240"`, `reserveReleasedAmt = "7.2500"`, `reserveEarlyReleasedAmt = "1.1000"` y `expectedReserveReleaseAt = "2027-03-27T00:04:11.000Z"`
+- **THEN** las columnas son **Transaction**, **Status**, **Round**, **Source row**, **Event date**, **Amount**, **Fees**, **Reserves** y **Settled**, y **Reserves** muestra `Held 11.5240`, `Released 7.2500`, `Released on chargeback 1.1000` y `Expected release 2027-03-27 ET`
+
 
 #### Scenario: Movimientos E de batch-clean
 - **GIVEN** `batch-clean` procesado
