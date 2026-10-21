@@ -66,7 +66,7 @@ Los estados en Badge SHALL llevar un color según su sentido, siempre con su tex
 - **THEN** todos llegan al menos a 4,5:1
 
 ### Requirement: Navegación dentro de la página: desplazamiento y foco
-Una acción que solo cambia lo que muestra la pantalla actual (elegir una validación, "Show … rows", un filtro, una página, una pestaña o un ciclo) SHALL dejar la página en su posición. Si actualiza una lista, el desplazamiento y el foco SHALL ir al encabezado de esa lista. Llegar por enlace, recargar o volver atrás SHALL no mover el foco a ninguna lista.
+Una acción que solo cambia lo que muestra la pantalla actual (validación, "Show … rows", filtro, página, pestaña o ciclo) SHALL dejar la página en su posición. Si es un botón que actualiza una lista, el foco SHALL ir al encabezado de esa lista; un desplegable o una fecha SHALL conservar el foco. Llegar por enlace, recargar o volver atrás SHALL no mover el foco.
 
 #### Scenario: Elegir una validación
 - **GIVEN** `analyst` en el paso Analysis de `batch-issues`, desplazado hasta la tabla de las ocho validaciones
@@ -95,7 +95,9 @@ Una acción que solo cambia lo que muestra la pantalla actual (elegir una valida
 
 #### Scenario: Settlement List
 - **GIVEN** la lista de ProviderA-USD desplazada hasta la tabla
-- **WHEN** elige `Paid` en el estado o pulsa **Next**
+- **WHEN** elige `Paid` en el estado con el teclado
+- **THEN** la página no vuelve arriba y el foco sigue en el desplegable de estado
+- **WHEN** después pulsa **Next**
 - **THEN** la página no vuelve arriba y el foco va al encabezado de la tabla de settlements
 
 #### Scenario: Pestañas y ciclos del Settlement Summary
