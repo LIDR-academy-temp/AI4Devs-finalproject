@@ -120,7 +120,7 @@
   - Readiness: hoja en `<strong>` y el `li` leído como `DEC: Fixed status…`.
 - **Tests existentes que cambian a propósito** (se cambian en el commit `test:` del grupo que los toca, citando el escenario modificado):
   - `frontend/src/lib/format.test.ts:36` — `'2026-09-28 ET'` → `'2026-09-28'`.
-  - `frontend/src/features/settlements/SettlementSummary.test.tsx:37` y `:153` — `Processed by analyst on 2026-10-19 11:40 ET` → rejilla `Processed by` `analyst · 2026-10-19 11:40 ET`; `:151` — `Settlement date: 2026-10-24 ET` → `Settlement date` `2026-10-24`; `:152` — línea `APP 2026-09-28 00:04 ET – 2026-10-07 23:58 ET` → fila `E` `APP` de la tabla.
+  - `frontend/src/features/settlements/SettlementSummary.test.tsx:37` y `:153` — `Processed by analyst on 2026-10-19 11:40 ET` → rejilla `Processed by` `analyst · 2026-10-19 11:40 ET`; `:151` — `Settlement date: 2026-10-24 ET` → `Settlement date: 2026-10-24` en el grupo 5 (D12 cambia el formateador) y → rejilla `Settlement date` `2026-10-24` en el grupo 7; `:152` — línea `APP 2026-09-28 00:04 ET – 2026-10-07 23:58 ET` → fila `E` `APP` de la tabla.
   - `frontend/src/features/settlements/SettlementList.test.tsx:59` y `:110` (de #64) — `'2026-10-02 ET'` → `'2026-10-02'` (en `:110`, la pieza sin partir sigue con `whitespace-nowrap`).
   - `frontend/src/features/settlements/SummaryMovements.test.tsx:158` y `:172` (de #64) — `Expected release 2027-03-27 ET` y `release 2027-03-27 ET` → sin `ET`; la fecha sigue pegada a `release` por el espacio de no separación de `Labelled`.
   - `frontend/src/features/validations/ValidationsSection.test.tsx:54-60` y `:75-77` — lista `Ranges used` → tabla `Date ranges used by the validations`; `:61-66` — contadores con su explicación.

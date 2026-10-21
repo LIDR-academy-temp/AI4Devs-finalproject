@@ -34,9 +34,9 @@ Orden test-first en los grupos de comportamiento: los tests se escriben y se ven
 
 ## 5. Fechas de un día sin ET (D12)
 
-- [ ] 5.1 Test (rojo): `lib/format.test.ts:36` → `formatBusinessDate` da `2026-09-28` (cambio a propósito); `formatBusinessDateTime` y `formatAuditDateTime` siguen con `ET` (`:35`, `:40`, `:44` sin cambios); `SettlementList.test.tsx:59` y `:110` → `2026-10-02`; en `batch-fees.test.tsx`, la vigencia de un preestablecido sin `ET` (escenario "Vigencia de un fee preestablecido"); en `SummaryMovements.test.tsx:158` y `:172`, `expectedReserveReleaseAt` sin `ET` y pegado a `release`
-- [ ] 5.2 Implementar en `lib/format.ts` el sufijo `ET` solo con hora y actualizar el comentario de cabecera de las fechas; verificar 5.1 en verde y que los tests con hora listados en D15 siguen en verde sin tocarlos; romper a propósito volviendo a añadir `ET` siempre y ver fallar 5.1; restaurar
-- [ ] 5.3 Commit: `test(frontend): fechas de un día sin sufijo de zona` y `feat(frontend): fechas sin hora sin el sufijo ET`
+- [x] 5.1 Test (rojo): `lib/format.test.ts:36` → `formatBusinessDate` da `2026-09-28` (cambio a propósito); `formatBusinessDateTime` y `formatAuditDateTime` siguen con `ET` (`:35`, `:40`, `:44` sin cambios); `SettlementList.test.tsx:59` y `:110` → `2026-10-02`; en `batch-fees.test.tsx`, la vigencia de un preestablecido sin `ET` (escenario "Vigencia de un fee preestablecido"); en `SummaryMovements.test.tsx:158` y `:172`, `expectedReserveReleaseAt` sin `ET` y pegado a `release`; `SettlementSummary.test.tsx:151` → `Settlement date: 2026-10-24` (fecha sin hora: el formateador lo cambia ya aquí; el grupo 7 lo pasa a la rejilla)
+- [x] 5.2 Implementar en `lib/format.ts` el sufijo `ET` solo con hora y actualizar el comentario de cabecera de las fechas; verificar 5.1 en verde y que los tests con hora listados en D15 siguen en verde sin tocarlos; romper a propósito volviendo a añadir `ET` siempre y ver fallar 5.1; restaurar
+- [x] 5.3 Commit: `test(frontend): fechas de un día sin sufijo de zona` y `feat(frontend): fechas sin hora sin el sufijo ET`
 
 ## 6. Tabla de rangos compartida y cabecera de Validations (D9, D10)
 
