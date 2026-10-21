@@ -68,9 +68,13 @@ export const settlementTransactionsQuery = (batchId: string, cycle: Cycle, page:
     queryKey: [...settlementKey(batchId), 'transactions', { cycle, page }] as const,
     queryFn: () => getSettlementTransactions(batchId, { type: cycle, page }),
     staleTime: Infinity,
-    // The previous page stays while the next one of the same cycle loads, never the rows of another cycle.
+    // The previous page stays while the next one of the same attempt and cycle loads, never the rows of another
+    // attempt or cycle.
     placeholderData: (previous, previousQuery) =>
-      (previousQuery?.queryKey[3] as { cycle: Cycle } | undefined)?.cycle === cycle ? previous : undefined,
+      previousQuery?.queryKey[1] === batchId &&
+      (previousQuery.queryKey[3] as { cycle: Cycle } | undefined)?.cycle === cycle
+        ? previous
+        : undefined,
   })
 
 /** The proposed number is a proposal, not a reservation: always asked again when the screen opens. */
