@@ -60,9 +60,11 @@ export function AccountsPage() {
     }
   }, [search.merchantId, search.providerId, merchantVisible, providerVisible, merchantId, providerId, navigate])
 
-  const chooseMerchant = (value: string) => navigate({ search: { merchantId: toId(value), providerId: undefined } })
+  // Choosing in place: the page stays where it is and the drop-down keeps the focus (ui-polish design D13).
+  const chooseMerchant = (value: string) =>
+    navigate({ search: { merchantId: toId(value), providerId: undefined }, resetScroll: false })
   const chooseProvider = (value: string) =>
-    navigate({ search: (prev: AccountsSearch) => ({ ...prev, providerId: toId(value) }) })
+    navigate({ search: (prev: AccountsSearch) => ({ ...prev, providerId: toId(value) }), resetScroll: false })
 
   return (
     <section className="flex flex-col gap-4">

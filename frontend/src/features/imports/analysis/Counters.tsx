@@ -1,7 +1,9 @@
 import type { MatchResult } from '@recon/shared'
 import { Link } from '@tanstack/react-router'
 import type { ImportDetail } from '@/lib/api/types'
+import { requestListFocus } from '@/lib/list-focus'
 import { strings } from '../strings'
+import { ROWS_LIST } from './RowsTable'
 
 const c = strings.analysis.counters
 
@@ -30,6 +32,9 @@ export function Counters({
             params={{ importId }}
             search={{ step: 'analysis', match: filter }}
             replace
+            // The rows below are filtered in place, and they take the focus (ui-polish design D13).
+            resetScroll={false}
+            onClick={() => requestListFocus(ROWS_LIST)}
             className="text-xs text-primary underline underline-offset-4"
           >
             {c.showRows(label)}

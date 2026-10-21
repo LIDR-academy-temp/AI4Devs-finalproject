@@ -84,6 +84,8 @@ function Summary({ view }: { view: SettlementView }) {
               ...prev,
               tab: value === 'movements' ? 'movements' : undefined,
             }),
+            // The tab keeps the focus and the page stays where it is (ui-polish design D13).
+            resetScroll: false,
           })
         }
         className="flex flex-col gap-4"
@@ -108,6 +110,7 @@ function Summary({ view }: { view: SettlementView }) {
                   page: next.page > 1 ? next.page : undefined,
                 }),
                 replace: options?.replace,
+                resetScroll: false,
               })
             }
           />

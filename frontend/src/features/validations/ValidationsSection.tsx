@@ -7,10 +7,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useCanProcess } from '@/features/imports/permissions'
 import type { ImportSearch } from '@/features/imports/validate-search'
 import type { ImportDetail } from '@/lib/api/types'
+import { requestListFocus } from '@/lib/list-focus'
 import { DecisionBar } from './DecisionBar'
 import { InvalidatedReviewNotice } from './InvalidatedReviewNotice'
 import { IssueDrawer } from './IssueDrawer'
-import { IssuesList } from './IssuesList'
+import { FINDINGS_LIST, IssuesList } from './IssuesList'
 import { useReview, useRunValidations } from './mutations'
 import { validationRunKey, validationRunQuery } from './queries'
 import { RunButton } from './RunButton'
@@ -45,12 +46,22 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
   const search = useSearch({ from: '/app/imports/$importId' })
   const navigate = useNavigate({ from: '/imports/$importId' })
 
+  // Only what the section shows changes: the page stays where it is (ui-polish design D13).
   const go = (change: Partial<ImportSearch>) =>
-    navigate({ search: (prev: ImportSearch) => ({ ...prev, step: 'analysis', ...change }), replace: true })
-  const select = (validation: ValidationCode) => go({ validation, ipage: undefined, issue: undefined })
+    navigate({
+      search: (prev: ImportSearch) => ({ ...prev, step: 'analysis', ...change }),
+      replace: true,
+      resetScroll: false,
+    })
+  // Choosing a validation, from its table or from the decision, takes the focus to its findings.
+  const select = (validation: ValidationCode) => {
+    requestListFocus(FINDINGS_LIST)
+    return go({ validation, ipage: undefined, issue: undefined })
+  }
   // Stable, because the drawer closes itself from an effect when its finding is gone.
   const close = useCallback(
-    () => navigate({ search: (prev: ImportSearch) => ({ ...prev, issue: undefined }), replace: true }),
+    () =>
+      navigate({ search: (prev: ImportSearch) => ({ ...prev, issue: undefined }), replace: true, resetScroll: false }),
     [navigate],
   )
 

@@ -4,12 +4,16 @@ import { Fragment, type ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatAuditDateTime, formatBusinessDate, formatDecimal } from '@/lib/format'
+import { requestListFocus } from '@/lib/list-focus'
 import { SETTLED_STATUS_TONE, toneOf } from '@/lib/status-tone'
 import type { AccountSettlement, AccountSettlementsPage } from './contract'
 import { Pager, useLastPageLimit } from './Pager'
 import { strings } from './strings'
 
 const s = strings.list
+
+/** The name of the settlements list for requestListFocus. */
+export const SETTLEMENTS_LIST = 'settlements'
 
 const features = tableFeatures({ rowPaginationFeature })
 const helper = createColumnHelper<typeof features, AccountSettlement>()
@@ -182,8 +186,15 @@ export function SettlementsTable({
         summary={s.pageOf(page, pageCount, data.total)}
         canPrevious={table.getCanPreviousPage()}
         canNext={table.getCanNextPage()}
-        onPrevious={() => table.previousPage()}
-        onNext={() => table.nextPage()}
+        // Only the clicks ask for the focus: useLastPageLimit also changes the page, with no user action (design D13).
+        onPrevious={() => {
+          requestListFocus(SETTLEMENTS_LIST)
+          table.previousPage()
+        }}
+        onNext={() => {
+          requestListFocus(SETTLEMENTS_LIST)
+          table.nextPage()
+        }}
       />
     </section>
   )

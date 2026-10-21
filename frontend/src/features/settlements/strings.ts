@@ -236,6 +236,7 @@ export const strings = {
     from: 'From',
     to: 'To',
     reversedRange: 'The start date must not be after the end date.',
+    heading: 'Settlements',
     tableLabel: 'Settlements',
     columns: {
       batch: 'Batch',
@@ -262,6 +263,7 @@ export const strings = {
   movements: {
     cycleLabel: 'Cycle',
     cycle: (cycle: string, count: number) => `${cycle} (${count})`,
+    heading: (cycle: string) => `Movements · ${cycle}`,
     tableLabel: 'Movements',
     columns: {
       transaction: 'Transaction',
