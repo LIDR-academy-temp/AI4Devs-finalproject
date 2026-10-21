@@ -1,0 +1,35 @@
+.DS_Store
+.worktrees/
+
+# Local editor configuration.
+.vscode/
+
+# Per-machine agent permissions. The shared agent configuration under
+# .claude/ and .cursor/ stays tracked; only this local override does not.
+.claude/settings.local.json
+
+# Environment files — hold DSP API credentials and AWS keys.
+# .env.example is the committed template and must stay tracked.
+.env
+.env.*
+!.env.example
+
+# Source data samples — the current GeoQ working files the analysis was built from.
+# They are inputs to the documentation, not deliverables, and they carry real
+# commercial figures. Two of them also exceed GitHub's 100 MB per-file limit
+# (Campaigns_all_1.qvd is 251 MB, C.C.C. v2.qvf is 40 MB), so the push would fail.
+# Ignored by extension rather than by name, so a new sample dropped into the
+# repository is excluded by default instead of being committed by accident.
+*.xlsx
+*.xls
+*.xlsm
+*.qvd
+*.qvf
+
+# Excel lock files, written while a workbook is open.
+~$*
+
+# Analysis extract carrying the same real commercial figures: the 136 campaign-months
+# with no delivery, by agency, brand and contracted revenue. Ignored by exact path
+# rather than as *.csv, so that CSV fixtures and seed data stay trackable.
+docs/campanas-sin-entrega.csv
