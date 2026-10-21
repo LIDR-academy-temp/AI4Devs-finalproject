@@ -164,14 +164,20 @@ describe('Settlement List: filters and pages', () => {
     seedAccountSettlements(USD, paidHistory(USD, 3))
     await openList()
     const before = settlementRequests('accountSettlements').length
+    const sent = () => settlementRequests('accountSettlements')
 
+    // From alone is a valid range: its request goes out.
     day(s.from, '2026-10-24')
+    await waitFor(() => expect(sent()).toHaveLength(before + 1))
     day(s.to, '2026-10-01')
 
     expect(await screen.findByText(s.reversedRange)).toBeInTheDocument()
     expect(screen.getByLabelText(s.from)).toHaveAttribute('aria-invalid', 'true')
-    expect(settlementRequests('accountSettlements').filter((r) => r.url.includes('to=2026-10-01'))).toEqual([])
-    expect(settlementRequests('accountSettlements').length).toBeLessThanOrEqual(before + 1)
+    // A witness: a valid To goes out after it, so a request for the reversed range would be logged before it.
+    day(s.to, '2026-10-31')
+    await waitFor(() => expect(lastQuery()).toMatchObject({ from: '2026-10-24', to: '2026-10-31' }))
+    expect(sent().filter((r) => r.url.includes('to=2026-10-01'))).toEqual([])
+    expect(sent()).toHaveLength(before + 2)
   })
 
   it('pages 22 attempts in two pages of 20; Next is disabled on the last one with its reason', async () => {
