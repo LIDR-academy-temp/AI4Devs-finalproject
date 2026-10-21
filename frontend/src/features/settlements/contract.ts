@@ -1,6 +1,6 @@
 // The settlement routes of #11 (settlement-process), #12 (summary-exports) and #64 (settlements-browse), the only
-// place of the screens that knows them (web-settlement design D2). Types are aliases of the generated contract with the dates branded by kind;
-// the calls go through the typed `api` client. Money and rates are always strings.
+// place of the screens that knows them (web-settlement design D2). Types are aliases of the generated contract with
+// the dates branded by kind; the calls go through the typed `api` client. Money and rates are always strings.
 import type {
   BatchFeeInvalidDetails,
   BatchNoTakenDetails,

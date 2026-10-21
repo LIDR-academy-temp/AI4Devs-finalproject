@@ -1,7 +1,8 @@
 // Reads of an attempt for GET /settlements/{id}/transactions, GET /imports/{id}/settlements, GET
-// /accounts/{id}/settlements and the exports (summary-exports design D3, D4, D6, D11; settlements-browse D1–D4). Money leaves as DECIMAL text, BIGINT ids as strings and business dates
-// without converting; the stable order is (cycle, sheetId, rowNo, settlementTxnId), where SQL Server sorts NULL first,
-// so seeded movements (no sheet, no row) come in settlementTxnId order.
+// /accounts/{id}/settlements and the exports (summary-exports design D3, D4, D6, D11; settlements-browse D1–D4).
+// Money leaves as DECIMAL text, BIGINT ids as strings and business dates without converting; the stable order is
+// (cycle, sheetId, rowNo, settlementTxnId), where SQL Server sorts NULL first, so seeded movements (no sheet, no row)
+// come in settlementTxnId order.
 import {
   type AccountSettlementsQuery,
   BatchStatus,

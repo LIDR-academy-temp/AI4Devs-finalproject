@@ -165,7 +165,7 @@ describe('Settlement List: filters and pages', () => {
     expect(router.state.location.search).toMatchObject({ from: '2026-09-01', to: '2026-09-30' })
   })
 
-  it('filters by the processed day in ET, and keeps it after a reload', async () => {
+  it('filters by the processed day in ET and writes it to the address (the reload is the next case)', async () => {
     seedAccountSettlements(USD, paidHistory(USD, 3))
     const { user, router } = await openList()
 
