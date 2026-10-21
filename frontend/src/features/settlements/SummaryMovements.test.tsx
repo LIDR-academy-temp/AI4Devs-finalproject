@@ -111,7 +111,7 @@ describe('Settlement Summary: the Summary and Movements tabs', () => {
     expect(row.getByText('Chargeback per txn fee · 45.0000')).toBeVisible()
   })
 
-  it('fits 1024 px: nine columns, the reserves in one cell with a label per line, amounts and ids on one line', async () => {
+  it('fits 1024 px: nine columns, reserves whose labels may wrap but whose figures never split, whole dates and rows', async () => {
     const { user, view } = await openSummary()
     seedMovements(view.batchId, 'R', [
       settlementMovement({
@@ -148,12 +148,14 @@ describe('Settlement Summary: the Summary and Movements tabs', () => {
     expect(within(cells[0]!).getByText('911545593909470')).toHaveClass('whitespace-nowrap')
     expect(within(cells[5]!).getByText('115.2400')).toHaveClass('whitespace-nowrap')
     expect(within(cells[6]!).getByText('12.0240')).toHaveClass('whitespace-nowrap')
+    // A no-break space joins the figure to the last word of its label.
+    const NBSP = ' '
     const reserves = within(cells[7]!).getAllByRole('listitem')
     expect(reserves.map((line) => line.textContent)).toEqual([
-      'Held 11.5240',
-      'Released 7.2500',
-      'Released on chargeback 1.1000',
-      'Expected release 2027-03-27 ET',
+      `Held${NBSP}11.5240`,
+      `Released${NBSP}7.2500`,
+      `Released on chargeback${NBSP}1.1000`,
+      `Expected release${NBSP}2027-03-27 ET`,
     ])
     for (const [line, value] of [
       [reserves[0]!, '11.5240'],
@@ -162,8 +164,22 @@ describe('Settlement Summary: the Summary and Movements tabs', () => {
     ] as const) {
       expect(within(line).getByText(value)).toHaveClass('whitespace-nowrap')
     }
-    // Label and figure on one line together, never split between them (review B9).
-    for (const line of reserves.slice(0, 3)) expect(line).toHaveClass('whitespace-nowrap')
+    // Only the label may wrap, between its words; the figure is never split and stays with the last word (design D11).
+    expect(reserves.map((line) => line.querySelector(':scope > .whitespace-nowrap')?.textContent)).toEqual([
+      `Held${NBSP}11.5240`,
+      `Released${NBSP}7.2500`,
+      `chargeback${NBSP}1.1000`,
+      `release${NBSP}2027-03-27 ET`,
+    ])
+    for (const line of reserves) expect(line).not.toHaveClass('whitespace-nowrap')
+    // The date and the time of the event each stay whole: at most two lines, never cut at a hyphen or a colon.
+    expect([...cells[4]!.querySelectorAll('.whitespace-nowrap')].map((piece) => piece.textContent)).toEqual([
+      '2026-09-28',
+      '00:04 ET',
+    ])
+    expect(cells[4]!.textContent).toBe('2026-09-28 00:04 ET')
+    // The source row is one piece.
+    expect(within(cells[3]!).getByText('APP · 2')).toHaveClass('whitespace-nowrap')
     for (const cell of cells) {
       expect(cell).toHaveClass('whitespace-normal')
       expect(cell).not.toHaveClass('whitespace-nowrap')
