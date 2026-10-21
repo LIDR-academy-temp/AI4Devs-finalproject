@@ -113,6 +113,16 @@ describe('Settlement Review: pre-summary (spec "resumen previo")', () => {
     expect(payableRow('Amount payable')).toEqual(['', 'Amount payable', '33,952.9085'])
   })
 
+  it('below the form up to 1536 px: beside it, the Date range column clips the card at 1280 px (review 12.3)', async () => {
+    const { importId } = validatedImport()
+    await openReview(importId)
+
+    // jsdom does not lay out: the breakpoint is in the classes, and the screenshot script measures it.
+    const form = dateField().closest('form')
+    expect(form).toHaveClass('2xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]')
+    expect(form?.className).not.toMatch(/(^|\s)xl:grid-cols/)
+  })
+
   it('rows not processed: only the reasons other than zero', async () => {
     const { importId } = validatedImport('batch-clean', {
       ...batchCleanPreview(),
