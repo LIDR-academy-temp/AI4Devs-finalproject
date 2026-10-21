@@ -265,10 +265,15 @@ export const strings = {
       eventDate: 'Event date',
       amount: 'Amount',
       fees: 'Fees',
-      reserveHeld: 'Reserve held',
-      reserveReleased: 'Reserve released',
-      reserveEarlyReleased: 'Released on chargeback',
+      reserves: 'Reserves',
       settled: 'Settled',
+    },
+    /** One labelled line per figure of the Reserves cell (design D11). */
+    reserveLines: {
+      held: 'Held',
+      released: 'Released',
+      early: 'Released on chargeback',
+      expected: 'Expected release',
     },
     sourceRow: (sheetName: string, rowNo: number) => `${sheetName} · ${rowNo}`,
     noSourceRow: '—',
@@ -276,7 +281,6 @@ export const strings = {
     excluded: 'excluded from the totals',
     feeCount: (count: number) => `${count} ${count === 1 ? 'fee' : 'fees'}`,
     feeLine: (title: string, amount: string) => `${title} · ${amount}`,
-    releaseOn: (date: string) => `release ${date}`,
     settled: 'Settled',
     pendingPayment: 'Pending payment',
     pageOf: (page: number, pages: number, total: number) =>

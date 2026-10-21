@@ -16,7 +16,33 @@ const CYCLES = ['E', 'I', 'R'] as const satisfies readonly Cycle[]
 const features = tableFeatures({ rowPaginationFeature })
 const helper = createColumnHelper<typeof features, SettlementMovement>()
 
-const money = (value: string) => formatDecimal(value)
+/** An amount of the API, grouped and kept on one line: the cells around it wrap, the figure never does. */
+function Figure({ value }: { value: string }) {
+  return <span className="whitespace-nowrap">{formatDecimal(value)}</span>
+}
+
+/** The reserve figures of a movement, one labelled line each, as the API sent them. */
+function Reserves({ movement }: { movement: SettlementMovement }) {
+  const lines = s.reserveLines
+  return (
+    <ul className="flex flex-col items-end">
+      <li>
+        {lines.held} <Figure value={movement.reserveHeldAmt} />
+      </li>
+      <li>
+        {lines.released} <Figure value={movement.reserveReleasedAmt} />
+      </li>
+      <li>
+        {lines.early} <Figure value={movement.reserveEarlyReleasedAmt} />
+      </li>
+      {movement.expectedReserveReleaseAt && (
+        <li className="text-muted-foreground">
+          {lines.expected} {formatBusinessDate(movement.expectedReserveReleaseAt)}
+        </li>
+      )}
+    </ul>
+  )
+}
 
 /** The fees of a movement, each with its title and its amount as the API sent them; nothing is added up here. */
 function FeeBreakdown({ fees }: { fees: AppliedFee[] }) {
@@ -35,7 +61,7 @@ function FeeBreakdown({ fees }: { fees: AppliedFee[] }) {
       </button>
       <ul id={listId} hidden={!open} className="text-left">
         {fees.map((fee) => (
-          <li key={fee.appliedFeeId}>{s.feeLine(fee.title, money(fee.amountUsd))}</li>
+          <li key={fee.appliedFeeId}>{s.feeLine(fee.title, formatDecimal(fee.amountUsd))}</li>
         ))}
       </ul>
     </div>
@@ -68,7 +94,7 @@ const columns = helper.columns([
     header: s.columns.amount,
     cell: ({ row }) => (
       <div className="flex flex-col items-end">
-        <span>{money(row.original.amount)}</span>
+        <Figure value={row.original.amount} />
         {row.original.excludeAmount && <span className="text-xs text-muted-foreground">{s.excluded}</span>}
       </div>
     ),
@@ -78,34 +104,15 @@ const columns = helper.columns([
     header: s.columns.fees,
     cell: ({ row }) => (
       <div className="flex flex-col items-end">
-        <span>{money(row.original.feeAmount)}</span>
+        <Figure value={row.original.feeAmount} />
         {row.original.fees.length > 0 && <FeeBreakdown fees={row.original.fees} />}
       </div>
     ),
   }),
   helper.display({
-    id: 'reserveHeld',
-    header: s.columns.reserveHeld,
-    cell: ({ row }) => (
-      <div className="flex flex-col items-end">
-        <span>{money(row.original.reserveHeldAmt)}</span>
-        {row.original.expectedReserveReleaseAt && (
-          <span className="text-xs text-muted-foreground">
-            {s.releaseOn(formatBusinessDate(row.original.expectedReserveReleaseAt))}
-          </span>
-        )}
-      </div>
-    ),
-  }),
-  helper.display({
-    id: 'reserveReleased',
-    header: s.columns.reserveReleased,
-    cell: ({ row }) => money(row.original.reserveReleasedAmt),
-  }),
-  helper.display({
-    id: 'reserveEarlyReleased',
-    header: s.columns.reserveEarlyReleased,
-    cell: ({ row }) => money(row.original.reserveEarlyReleasedAmt),
+    id: 'reserves',
+    header: s.columns.reserves,
+    cell: ({ row }) => <Reserves movement={row.original} />,
   }),
   helper.display({
     id: 'settled',
@@ -115,7 +122,7 @@ const columns = helper.columns([
   }),
 ])
 
-const RIGHT = new Set(['amount', 'fees', 'reserveHeld', 'reserveReleased', 'reserveEarlyReleased'])
+const RIGHT = new Set(['amount', 'fees', 'reserves'])
 
 function MovementsTable({
   data,
@@ -152,7 +159,7 @@ function MovementsTable({
                 {group.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className={`whitespace-nowrap ${RIGHT.has(header.column.id) ? 'text-right' : ''}`}
+                    className={`whitespace-normal ${RIGHT.has(header.column.id) ? 'text-right' : ''}`}
                   >
                     {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                   </TableHead>
@@ -166,7 +173,7 @@ function MovementsTable({
                 {row.getAllCells().map((cell) => (
                   <TableCell
                     key={cell.id}
-                    className={`align-top ${RIGHT.has(cell.column.id) ? 'text-right tabular-nums' : 'whitespace-nowrap'}`}
+                    className={`align-top whitespace-normal ${RIGHT.has(cell.column.id) ? 'text-right tabular-nums' : ''}`}
                   >
                     <table.FlexRender cell={cell} />
                   </TableCell>

@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { createColumnHelper, rowPaginationFeature, tableFeatures, useTable } from '@tanstack/react-table'
+import { Fragment } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatAuditDateTime, formatBusinessDate, formatDecimal } from '@/lib/format'
@@ -32,7 +33,11 @@ const columns = helper.columns([
   helper.display({
     id: 'status',
     header: s.columns.status,
-    cell: ({ row }) => <Badge variant="outline">{strings.summary.status[row.original.settledStatus]}</Badge>,
+    cell: ({ row }) => (
+      <Badge variant="outline" className="h-auto whitespace-normal">
+        {strings.summary.status[row.original.settledStatus]}
+      </Badge>
+    ),
   }),
   helper.display({
     id: 'settlementDate',
@@ -48,12 +53,39 @@ const columns = helper.columns([
   helper.display({
     id: 'amountPayable',
     header: () => <span className="block text-right">{s.columns.amountPayable}</span>,
-    // The decimal string of the API, grouped: never a JS number.
-    cell: ({ row }) => formatDecimal(row.original.amountPayable),
+    // The decimal string of the API, grouped: never a JS number, never wrapped.
+    cell: ({ row }) => <span className="whitespace-nowrap">{formatDecimal(row.original.amountPayable)}</span>,
   }),
-  // The stored label, possibly cut with an ellipsis: shown as it comes, never split (design D4).
-  helper.accessor('channels', { header: s.columns.channels, cell: ({ getValue }) => getValue() ?? '' }),
+  // The stored label, possibly cut with an ellipsis: shown as it comes, never split (design D4); it may only wrap
+  // after a comma.
+  helper.accessor('channels', {
+    header: s.columns.channels,
+    cell: ({ getValue }) => <WrapAfterCommas text={getValue() ?? ''} />,
+  }),
 ])
+
+/** The text as it is, with a line break allowed after each comma (a `<wbr>` adds no character). */
+function WrapAfterCommas({ text }: { text: string }) {
+  const [first = '', ...rest] = text.split(',')
+  // Each piece is keyed by where it starts in the text, which never repeats.
+  let start = first.length
+  const pieces = rest.map((part) => {
+    const piece = (
+      <Fragment key={start}>
+        ,<wbr />
+        {part}
+      </Fragment>
+    )
+    start += part.length + 1
+    return piece
+  })
+  return (
+    <>
+      {first}
+      {pieces}
+    </>
+  )
+}
 
 const RIGHT = new Set(['amountPayable'])
 
@@ -95,7 +127,7 @@ export function SettlementsTable({
             {table.getHeaderGroups().map((group) => (
               <TableRow key={group.id}>
                 {group.headers.map((header) => (
-                  <TableHead key={header.id} className="whitespace-nowrap">
+                  <TableHead key={header.id} className="whitespace-normal">
                     {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                   </TableHead>
                 ))}
@@ -114,7 +146,7 @@ export function SettlementsTable({
                   {row.getAllCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className={RIGHT.has(cell.column.id) ? 'text-right tabular-nums' : 'whitespace-nowrap'}
+                      className={`whitespace-normal ${RIGHT.has(cell.column.id) ? 'text-right tabular-nums' : ''}`}
                     >
                       <table.FlexRender cell={cell} />
                     </TableCell>
