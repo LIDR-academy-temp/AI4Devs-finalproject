@@ -1,5 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { FINDINGS_LIST } from '@/features/validations/IssuesList'
+import { requestListFocus } from '@/lib/list-focus'
 import { seedImport } from '@/test/msw/imports'
 import { batchBlockedFixture, batchIssuesFixture, seedValidationRun } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
@@ -25,6 +27,17 @@ async function expectListInFocus(scroll: ReturnType<typeof watchScroll>, name: s
   await waitFor(() => expect(document.activeElement).toBe(heading(name)))
   expect(scroll.scrolledIntoView(heading(name))).toBe(true)
   expect(scroll.wentToTop()).toBe(false)
+}
+
+/** Goes to Dashboard from the menu and back to the import with the history, as the Back button does. */
+async function leaveAndComeBack(
+  user: ReturnType<typeof renderApp>['user'],
+  history: ReturnType<typeof renderApp>['history'],
+) {
+  await user.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'Dashboard' }))
+  await waitFor(() => expect(screen.queryByRole('region', { name: 'Validations' })).not.toBeInTheDocument())
+  history.back()
+  await screen.findByRole('region', { name: 'Validations' }, OPENING)
 }
 
 /** batch-issues with sixty findings of Missing previous to batch: two pages of fifty. */
@@ -111,6 +124,45 @@ describe('in-page navigation in Analysis & Validations', () => {
 
     expect(heading(FINDINGS)).toBeInTheDocument()
     expect(heading('Rows')).toBeInTheDocument()
+    await within(screen.getByRole('region', { name: FINDINGS })).findByRole('button', { name: '292185165085382' })
+    expect(focusOnAListHeading()).toBe(false)
+  })
+
+  // An action that changes nothing asks for nothing: no request is left behind for a heading mounted later.
+  it('choosing the validation already shown, leaving and coming back with Back does not move the focus', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    const { user, history } = await openAnalysis(importId, '&validation=missing_previous_to_batch')
+    await within(screen.getByRole('region', { name: FINDINGS })).findByRole('button', { name: '292185165085382' })
+
+    await user.click(screen.getByRole('button', { name: 'Missing previous to batch' }))
+    await leaveAndComeBack(user, history)
+
+    await within(screen.getByRole('region', { name: FINDINGS })).findByRole('button', { name: '292185165085382' })
+    expect(focusOnAListHeading()).toBe(false)
+  })
+
+  it('Show unmatched rows with the rows already filtered, leaving and coming back with Back does not move the focus', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    const { user, history } = await openAnalysis(importId, '&match=unmatched')
+
+    await user.click(screen.getByRole('link', { name: 'Show unmatched rows' }))
+    await leaveAndComeBack(user, history)
+
+    await screen.findByRole('table', { name: 'Rows' }, OPENING)
+    expect(focusOnAListHeading()).toBe(false)
+  })
+
+  it('a request no heading took lives for one navigation only: it is forgotten before coming back', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    const { user, history } = await openAnalysis(importId, '&validation=missing_previous_to_batch')
+
+    // Any action that asks for the focus and then leaves the page without the list showing.
+    requestListFocus(FINDINGS_LIST)
+    await leaveAndComeBack(user, history)
+
     await within(screen.getByRole('region', { name: FINDINGS })).findByRole('button', { name: '292185165085382' })
     expect(focusOnAListHeading()).toBe(false)
   })
