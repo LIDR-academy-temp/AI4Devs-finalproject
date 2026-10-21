@@ -1,6 +1,6 @@
-import { MissingRange } from '@recon/shared'
+import { DateRangesTable } from '@/components/DateRangesTable'
 import { Badge } from '@/components/ui/badge'
-import { formatAuditDateTime, formatBusinessDateTime } from '@/lib/format'
+import { formatAuditDateTime } from '@/lib/format'
 import { RUN_OVERALL_TONE, type RunOverall } from '@/lib/status-tone'
 import type { ValidationRun } from './contract'
 import { strings } from './strings'
@@ -18,9 +18,9 @@ function overall(run: ValidationRun): RunOverall {
 export function RunHeader({ run }: { run: ValidationRun }) {
   const state = overall(run)
   const counters = [
-    [s.pendingInRange, run.pendingInRangeCount],
-    [s.undatedAdjustments, run.undatedAdjustmentCount],
-    [s.undatedCandidates, run.undatedCandidateCount],
+    [s.pendingInRange, run.pendingInRangeCount, s.explain.pendingInRange],
+    [s.undatedAdjustments, run.undatedAdjustmentCount, s.explain.undatedAdjustments],
+    [s.undatedCandidates, run.undatedCandidateCount, s.explain.undatedCandidates],
   ] as const
 
   return (
@@ -31,24 +31,19 @@ export function RunHeader({ run }: { run: ValidationRun }) {
           {s.run(run.runId, formatAuditDateTime(run.runAt), run.runBy.userName)}
         </span>
       </div>
-      <ul aria-label={s.ranges} className="flex flex-wrap gap-x-6 gap-y-1">
-        {MissingRange.options.map((key) => {
-          const range = run.ranges[key]
-          return (
-            <li key={key}>
-              <span className="font-medium">{key}</span>{' '}
-              {range ? `${formatBusinessDateTime(range.min)} – ${formatBusinessDateTime(range.max)}` : s.noRange}
-            </li>
-          )
-        })}
-      </ul>
-      <ul aria-label={s.counters} className="flex flex-wrap gap-x-6 gap-y-1 text-muted-foreground">
-        {counters.map(([label, value]) => (
-          <li key={label}>
-            {label} <span className="font-semibold tabular-nums text-foreground">{value}</span>
-          </li>
-        ))}
-      </ul>
+      <DateRangesTable title={s.ranges} ranges={run.ranges} />
+      <section aria-label={s.counters} className="flex flex-col gap-1">
+        <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-3">
+          {counters.map(([label, value, explain]) => (
+            <div key={label} className="flex flex-col">
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="font-semibold tabular-nums">{value}</dd>
+              <dd className="text-xs text-muted-foreground">{explain}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="text-xs text-muted-foreground">{s.explain.note}</p>
+      </section>
     </section>
   )
 }

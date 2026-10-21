@@ -40,12 +40,20 @@ export const strings = {
     label: 'Validation run',
     overall: { blocked: 'Blocked', warnings: 'Warnings', passed: 'Passed' },
     run: (runId: number, at: string, userName: string) => `Run #${runId} · ${at} · ${userName}`,
-    ranges: 'Ranges used',
-    noRange: '—',
+    ranges: 'Date ranges used by the validations',
     counters: 'Informative counters',
     pendingInRange: 'Pending in range',
     undatedAdjustments: 'Undated adjustments',
     undatedCandidates: 'Undated candidates',
+    // What each counter counts (README §3.3, "Candidatas I sin fecha" and "Pending"; design D10).
+    explain: {
+      pendingInRange:
+        "Transactions of the account's channels still Pending on the gateway, created within the APP or DEC range.",
+      undatedAdjustments: 'Rows of this batch in cycle I without a status-change date.',
+      undatedCandidates:
+        'Gateway transactions in a cycle I status without a status-change date: they cannot be compared with the I range.',
+      note: 'Informative: none of them is a finding.',
+    },
   },
 
   table: {

@@ -40,10 +40,10 @@ Orden test-first en los grupos de comportamiento: los tests se escriben y se ven
 
 ## 6. Tabla de rangos compartida y cabecera de Validations (D9, D10)
 
-- [ ] 6.1 Test (rojo) `components/DateRangesTable.test.tsx`: `caption` como nombre accesible; filas `E` `APP`, `E` `DEC`, `I` `CHB`, `I` `REF`, `I` `RDR`, `R` `—` en ese orden; una sola celda de rango I con `rowSpan = 3`; `—` en un rango `null`; columnas `Cycle`, `Status`, `Date range` sin `transactions` y con `Transactions` (valores tal como llegan) cuando se pasa
-- [ ] 6.2 Test (rojo) en `features/validations/ValidationsSection.test.tsx` (escenarios "Corrida con advertencias", "Filas de la tabla de rangos", "Contadores explicados" y "Rango sin filas"): tabla `Date ranges used by the validations` con las seis filas y los rangos de la fixture en `ET`, sin columna `Transactions`; los tres contadores con su valor y su explicación; `ranges.DEC = null` → `—`. Sustituye a propósito las aserciones de `:54-60`, `:61-66` y `:75-77`
-- [ ] 6.3 Implementar `components/DateRangesTable.tsx` y `components/strings.ts`, y en `RunHeader` la tabla y los contadores como `<dl>` con `strings.header.explain.*`; verificar 6.1 y 6.2 en verde; romper a propósito pasando `transactions` desde Validations y ver fallar 6.2; quitar el `rowSpan` y ver fallar 6.1; restaurar
-- [ ] 6.4 Commit: `test(frontend): tabla de rangos por ciclo y estado y contadores explicados en Validations` y `feat(frontend): tabla de rangos compartida en la cabecera de Validations`
+- [x] 6.1 Test (rojo) `components/DateRangesTable.test.tsx`: `caption` como nombre accesible; filas `E` `APP`, `E` `DEC`, `I` `CHB`, `I` `REF`, `I` `RDR`, `R` `—` en ese orden; una sola celda de rango I con `rowSpan = 3`; `—` en un rango `null`; columnas `Cycle`, `Status`, `Date range` sin `transactions` y con `Transactions` (valores tal como llegan) cuando se pasa
+- [x] 6.2 Test (rojo) en `features/validations/ValidationsSection.test.tsx` (escenarios "Corrida con advertencias", "Filas de la tabla de rangos", "Contadores explicados" y "Rango sin filas"): tabla `Date ranges used by the validations` con las seis filas y los rangos de la fixture en `ET`, sin columna `Transactions`; los tres contadores con su valor y su explicación; `ranges.DEC = null` → `—`. Sustituye a propósito las aserciones de `:54-60`, `:61-66` y `:75-77`
+- [x] 6.3 Implementar `components/DateRangesTable.tsx` y `components/strings.ts`, y en `RunHeader` la tabla y los contadores como `<dl>` con `strings.header.explain.*`; verificar 6.1 y 6.2 en verde; romper a propósito pasando `transactions` desde Validations y ver fallar 6.2; quitar el `rowSpan` y ver fallar 6.1; restaurar
+- [x] 6.4 Commit: `test(frontend): tabla de rangos por ciclo y estado y contadores explicados en Validations` y `feat(frontend): tabla de rangos compartida en la cabecera de Validations`
 
 ## 7. Cabecera del Settlement Summary (D9, D11)
 
