@@ -243,7 +243,8 @@ export const strings = {
     },
     batchLink: (batchNo: number, attemptNo: number) => `Batch ${batchNo} · attempt ${attemptNo}`,
     notSet: 'Not set',
-    processed: (userName: string, at: string) => `${userName} · ${at}`,
+    /** Followed by the instant, on its own unbreakable span. */
+    processedBy: (userName: string) => `${userName} · `,
     pageOf: (page: number, pages: number, total: number) =>
       `Page ${page} of ${pages} · ${total} ${total === 1 ? 'settlement' : 'settlements'}`,
     ...PAGER,

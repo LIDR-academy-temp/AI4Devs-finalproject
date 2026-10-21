@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { createColumnHelper, rowPaginationFeature, tableFeatures, useTable } from '@tanstack/react-table'
-import { Fragment } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatAuditDateTime, formatBusinessDate, formatDecimal } from '@/lib/format'
@@ -43,18 +43,28 @@ const columns = helper.columns([
     id: 'settlementDate',
     header: s.columns.settlementDate,
     cell: ({ row }) =>
-      row.original.settlementDate === null ? s.notSet : formatBusinessDate(row.original.settlementDate),
+      row.original.settlementDate === null ? (
+        s.notSet
+      ) : (
+        <NoBreak>{formatBusinessDate(row.original.settlementDate)}</NoBreak>
+      ),
   }),
   helper.display({
     id: 'processed',
     header: s.columns.processed,
-    cell: ({ row }) => s.processed(row.original.approvedBy.userName, formatAuditDateTime(row.original.processedAt)),
+    // The line may break between who and when, never inside the date.
+    cell: ({ row }) => (
+      <>
+        {s.processedBy(row.original.approvedBy.userName)}
+        <NoBreak>{formatAuditDateTime(row.original.processedAt)}</NoBreak>
+      </>
+    ),
   }),
   helper.display({
     id: 'amountPayable',
     header: () => <span className="block text-right">{s.columns.amountPayable}</span>,
     // The decimal string of the API, grouped: never a JS number, never wrapped.
-    cell: ({ row }) => <span className="whitespace-nowrap">{formatDecimal(row.original.amountPayable)}</span>,
+    cell: ({ row }) => <NoBreak>{formatDecimal(row.original.amountPayable)}</NoBreak>,
   }),
   // The stored label, possibly cut with an ellipsis: shown as it comes, never split (design D4); it may only wrap
   // after a comma.
@@ -64,7 +74,15 @@ const columns = helper.columns([
   }),
 ])
 
-/** The text as it is, with a line break allowed after each comma (a `<wbr>` adds no character). */
+/** Text kept on one line: the cell around it wraps, this never does (not even at a hyphen). */
+function NoBreak({ children }: { children: ReactNode }) {
+  return <span className="whitespace-nowrap">{children}</span>
+}
+
+/**
+ * The text as it is, with a line break allowed only after a comma: each piece stays on one line, and a `<wbr>` adds
+ * no character.
+ */
 function WrapAfterCommas({ text }: { text: string }) {
   const [first = '', ...rest] = text.split(',')
   // Each piece is keyed by where it starts in the text, which never repeats.
@@ -73,7 +91,7 @@ function WrapAfterCommas({ text }: { text: string }) {
     const piece = (
       <Fragment key={start}>
         ,<wbr />
-        {part}
+        <NoBreak>{part}</NoBreak>
       </Fragment>
     )
     start += part.length + 1
@@ -81,7 +99,7 @@ function WrapAfterCommas({ text }: { text: string }) {
   })
   return (
     <>
-      {first}
+      <NoBreak>{first}</NoBreak>
       {pieces}
     </>
   )
