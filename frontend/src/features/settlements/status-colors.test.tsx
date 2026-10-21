@@ -28,6 +28,12 @@ describe('status colours of the attempt', () => {
     expect((await summaryHeader(settledStatus)).getByText(text)).toHaveAttribute('data-variant', tone)
   })
 
+  // Something is still pending (the payment), so the notice speaks with the tone of its Badge, not in green.
+  it('Summary: the notice that movements are not Settled yet has the warning tone', async () => {
+    const notice = (await summaryHeader('pending_payment')).getByText(strings.summary.notSettled)
+    expect(notice).toHaveAttribute('data-tone', 'warning')
+  })
+
   it('Settlement List: each attempt with the tone of its status and its text', async () => {
     seedAccountSettlements(USD, [
       accountSettlement({ batchNo: 124, status: 'processed', settledStatus: 'pending_payment' }),
