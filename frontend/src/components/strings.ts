@@ -6,5 +6,7 @@ export const strings = {
     transactions: 'Transactions',
     dateRange: 'Date range',
     none: '—',
+    cycles: { E: 'E', I: 'I', R: 'R' },
+    statuses: { APP: 'APP', DEC: 'DEC', CHB: 'CHB', REF: 'REF', RDR: 'RDR' },
   },
 } as const

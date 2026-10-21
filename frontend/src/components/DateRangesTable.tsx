@@ -9,13 +9,14 @@ type StatusKey = 'APP' | 'DEC' | 'CHB' | 'REF' | 'RDR' | 'R'
 type DateRange = { min: BusinessDate; max: BusinessDate } | null
 
 /** The rows by cycle and status; the I range is one for CHB, REF and RDR, so only the first of them carries it. */
-const ROWS: { key: StatusKey; cycle: 'E' | 'I' | 'R'; status: string; range?: RangeKey; span?: number }[] = [
-  { key: 'APP', cycle: 'E', status: 'APP', range: 'APP' },
-  { key: 'DEC', cycle: 'E', status: 'DEC', range: 'DEC' },
-  { key: 'CHB', cycle: 'I', status: 'CHB', range: 'I', span: 3 },
-  { key: 'REF', cycle: 'I', status: 'REF' },
-  { key: 'RDR', cycle: 'I', status: 'RDR' },
-  { key: 'R', cycle: 'R', status: s.none, range: 'R' },
+const ROWS: { key: StatusKey; cycle: string; status: string; range?: RangeKey; span?: number }[] = [
+  { key: 'APP', cycle: s.cycles.E, status: s.statuses.APP, range: 'APP' },
+  { key: 'DEC', cycle: s.cycles.E, status: s.statuses.DEC, range: 'DEC' },
+  { key: 'CHB', cycle: s.cycles.I, status: s.statuses.CHB, range: 'I', span: 3 },
+  { key: 'REF', cycle: s.cycles.I, status: s.statuses.REF },
+  { key: 'RDR', cycle: s.cycles.I, status: s.statuses.RDR },
+  // R has no status: the rolling reserve is a stage, not a status.
+  { key: 'R', cycle: s.cycles.R, status: s.none, range: 'R' },
 ]
 
 function rangeText(range: DateRange): string {
