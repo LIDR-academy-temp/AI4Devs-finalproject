@@ -1,8 +1,9 @@
 import { screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
+import { businessDate } from '@/lib/format'
 import { importRecord } from '@/test/msw/imports'
 import { recordRequests } from '@/test/msw/record'
-import { scriptPreview, settlementRequests } from '@/test/msw/settlements'
+import { ACCOUNT_FEES, scriptPreview, settlementRequests } from '@/test/msw/settlements'
 import {
   AFTER_DEBOUNCE,
   chooseDate,
@@ -172,6 +173,21 @@ describe('Settlement Review: add a preset fee (spec "añadir un fee preestableci
     expect(lastFees()).toEqual([
       { feeTypeId: 111, feeId: 'f0000000-0000-4000-8000-000000000311', amount: '240.0000', source: 'manual' },
     ])
+  })
+
+  it('the validity of a preset is a day without ET (spec "Vigencia de un fee preestablecido")', async () => {
+    const original = ACCOUNT_FEES['ProviderB-Main']
+    ACCOUNT_FEES['ProviderB-Main'] = original.map((fee) => ({ ...fee, startDate: businessDate('2026-01-01') }))
+    onTestFinished(() => {
+      ACCOUNT_FEES['ProviderB-Main'] = original
+    })
+    const { importId } = withFileFees('batch-issues', [])
+    await openReview(importId)
+    chooseDate('2026-10-24')
+    await waitFor(() => expect(addPreset()).toBeEnabled())
+
+    const option = within(addPreset()).getByRole('option', { name: /^Monthly Fee/ })
+    expect(option.textContent).toMatch(/ · 2026-01-01 – no end$/)
   })
 
   it('a percentage-only preset comes empty: the screen does not compute it, and no preview until it is written', async () => {

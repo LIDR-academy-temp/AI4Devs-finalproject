@@ -148,7 +148,7 @@ describe('Settlement Summary: dates in New York time (spec "fechas en hora de Nu
   it('business dates as they arrive and the audit instant converted, whatever the zone of the browser', async () => {
     await openSummary({ settlementDate: '2026-10-24' })
 
-    expect(screen.getByText('Settlement date: 2026-10-24 ET')).toBeInTheDocument()
+    expect(screen.getByText('Settlement date: 2026-10-24')).toBeInTheDocument()
     expect(screen.getByText('APP 2026-09-28 00:04 ET – 2026-10-07 23:58 ET')).toBeInTheDocument()
     expect(screen.getByText('Processed by analyst on 2026-10-19 11:40 ET')).toBeInTheDocument()
   })

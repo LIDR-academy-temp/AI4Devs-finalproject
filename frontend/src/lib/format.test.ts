@@ -33,7 +33,7 @@ describe('dates shown in New York time (design D11)', () => {
   it('shows a business date as it arrives: it is already New York wall-clock time despite the Z', () => {
     const value = businessDate('2026-09-28T00:00:00.000Z')
     expect(formatBusinessDateTime(value)).toBe('2026-09-28 00:00 ET')
-    expect(formatBusinessDate(value)).toBe('2026-09-28 ET')
+    expect(formatBusinessDate(value)).toBe('2026-09-28')
   })
 
   it('converts an audit instant to New York daylight time (EDT, -4 h)', () => {
