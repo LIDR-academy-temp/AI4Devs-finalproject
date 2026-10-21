@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, type BoundFunctions, fireEvent, type queries, screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
@@ -25,6 +25,17 @@ const analyzeButton = () => screen.getByRole('button', { name: strings.analyze.b
 const readiness = () => within(screen.getByRole('status', { name: strings.readiness.label }))
 const sheet = (name: string) => within(screen.getByRole('region', { name }))
 const tab = (name: string) => screen.getByRole('tab', { name })
+type Scope = BoundFunctions<typeof queries>
+/** The items of the readiness whose description starts with this text, read as `<sheet>: <description>`. */
+const itemsAbout = (scope: Scope, description: string) =>
+  scope
+    .queryAllByRole('listitem')
+    .filter((li) => /^[^:]+: (.*)$/.exec(li.textContent ?? '')?.[1]?.startsWith(description))
+/** The sheet of a readiness item: its name in bold. */
+const sheetOf = (item: HTMLElement) => item.querySelector(':scope strong')?.textContent
+/** The readiness item that reads entirely as this text: its sheet, the hidden separator and its description. */
+const itemReading = (scope: Scope, text: string) =>
+  scope.getByText((_, element) => element?.tagName === 'LI' && element.textContent === text)
 
 /** A batch-clean import mapped with APP confirmed without its Transaction ID column. */
 function mappedWithoutId() {
@@ -39,7 +50,7 @@ describe('Column Mapping: readiness and Analyze (spec "Pantalla Column Mapping: 
     const { user } = await openMapping(mappedWithoutId())
 
     expect(analyzeButton()).toBeDisabled()
-    expect(readiness().getByText(/^APP · transactionId: /)).toBeInTheDocument()
+    expect(itemsAbout(readiness(), 'transactionId: ').map(sheetOf)).toEqual(['APP'])
     expect(screen.getByText(strings.analyze.resolveMissing)).toBeInTheDocument()
 
     await choose(user, sheet('APP').getByRole('combobox', { name: strings.mapping.fieldFor('ID') }), 'Transaction ID')
@@ -81,8 +92,8 @@ describe('Column Mapping: readiness and Analyze (spec "Pantalla Column Mapping: 
     await user.click(tab(strings.steps.mapping))
 
     const part2Sheets = importRecord(importId).files[1]!.sheets.map((s) => s.template.sheetName)
-    const confirmations = readiness().getAllByText(/ · confirmation: /)
-    expect(confirmations.map((item) => item.textContent?.split(' · ')[0])).toEqual(part2Sheets)
+    const confirmations = itemsAbout(readiness(), 'confirmation: ')
+    expect(confirmations.map(sheetOf)).toEqual(part2Sheets)
     expect(analyzeButton()).toBeDisabled()
     expect(within(screen.getByRole('region', { name: PART1 })).getAllByRole('region').length).toBe(10)
   })
@@ -91,24 +102,27 @@ describe('Column Mapping: readiness and Analyze (spec "Pantalla Column Mapping: 
 describe('Column Mapping: readiness per file (spec "Pantalla Column Mapping: readiness por archivo")', () => {
   const PART2 = 'Recon_Template_ProviderA-USD_batch-split_part2.xlsx'
   const group = (fileName: string) => within(readiness().getByRole('region', { name: `Readiness · ${fileName}` }))
-  const folded = (text: string) => readiness().getByText(text).closest('details')
+  const folded = (text: string) => itemReading(readiness(), text).closest('details')
 
   it('groups the notes by file with the actionable ones first and the informational ones folded', async () => {
     await openMapping(seedImport('batch-split').importId)
 
     const part1 = group(PART1)
     expect(part1.getByRole('heading', { name: PART1 })).toBeInTheDocument()
-    const declined = part1.getByText('DEC · Fixed status Declined with rows: the DEC range will open at validation')
+    // The sheet in bold, apart from its description; the item reads as one sentence (spec "Nombre de hoja destacado").
+    const declined = itemReading(part1, 'DEC: Fixed status Declined with rows: the DEC range will open at validation')
+    expect(declined.tagName).toBe('LI')
+    expect(within(declined).getByText('DEC').tagName).toBe('STRONG')
     expect(declined.closest('details')).toBeNull()
     const summary1 = part1.getByText('8 informational notes')
     expect(summary1.closest('details')).not.toHaveAttribute('open')
     expect(declined.compareDocumentPosition(summary1) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     for (const note of [
-      'CHB · The sheet has no rows',
-      'Settings · The sheet is hidden in the workbook',
-      'Settings · Sheet "Settings" is ignored by rule "Settings"',
+      'CHB: The sheet has no rows',
+      'Settings: The sheet is hidden in the workbook',
+      'Settings: Sheet "Settings" is ignored by rule "Settings"',
     ]) {
-      expect(part1.getByText(note).closest('details')).toBe(summary1.closest('details'))
+      expect(itemReading(part1, note).closest('details')).toBe(summary1.closest('details'))
     }
 
     const part2 = group(PART2)
@@ -125,17 +139,28 @@ describe('Column Mapping: readiness per file (spec "Pantalla Column Mapping: rea
     await findFileEntry(PART2)
     await user.click(tab(strings.steps.mapping))
 
-    const confirmations = group(PART2).getAllByText(/ · confirmation: /)
+    const confirmations = itemsAbout(group(PART2), 'confirmation: ')
     expect(confirmations).toHaveLength(10)
     expect(confirmations.every((item) => item.closest('details') === null)).toBe(true)
-    expect(group(PART1).queryAllByText(/ · confirmation: /)).toHaveLength(0)
+    expect(itemsAbout(group(PART1), 'confirmation: ')).toHaveLength(0)
   })
 
   it('shows what concerns the whole import before the groups of the files', async () => {
     await openMapping(seedImport('batch-clean', { labels: [] }).importId)
 
-    expect(readiness().getByText('Import · transactions: The import has no files')).toBeInTheDocument()
-    expect(folded('Import · transactions: The import has no files')).toBeNull()
+    expect(itemReading(readiness(), 'Import: transactions: The import has no files')).toBeInTheDocument()
+    expect(folded('Import: transactions: The import has no files')).toBeNull()
+  })
+
+  it('Ready to analyze: each informational note with its sheet in bold, apart from its description', async () => {
+    await openMapping(seedImport('batch-clean', { status: 'mapped' }).importId)
+
+    expect(readiness().getByText(strings.readiness.ready)).toBeInTheDocument()
+    const items = readiness().getAllByRole('listitem')
+    expect(items.length).toBeGreaterThan(0)
+    for (const item of items)
+      expect(item.textContent).toBe(`${sheetOf(item)}: ${item.lastElementChild!.textContent!.slice(2)}`)
+    expect(items.map(sheetOf)).toContain('CHB Alerts')
   })
 })
 
@@ -205,7 +230,7 @@ describe('Column Mapping: analysis in progress (spec "Pantalla Column Mapping: a
 
     await user.click(analyzeButton())
 
-    expect(await readiness().findByText(/^APP · transactionId: /)).toBeInTheDocument()
+    await waitFor(() => expect(itemsAbout(readiness(), 'transactionId: ').map(sheetOf)).toEqual(['APP']))
     expect(tab(strings.steps.mapping)).toHaveAttribute('aria-selected', 'true')
     expect(analyzeButton()).toBeDisabled()
   })
