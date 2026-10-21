@@ -212,6 +212,16 @@ describe('Settlement List: filters and pages', () => {
     expect(screen.getByRole('button', { name: s.previous })).toBeEnabled()
   })
 
+  it('takes a page past the last one back to the last one, in place', async () => {
+    seedAccountSettlements(USD, paidHistory(USD, 22))
+    const { router } = await openList('&page=5')
+
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ page: 2 }))
+    expect(await screen.findByText(s.pageOf(2, 2, 22))).toBeInTheDocument()
+    await waitFor(() => expect(batchNos()).toEqual(['102', '101']))
+    expect(lastQuery()).toMatchObject({ page: '2' })
+  })
+
   it('says so when the filters leave nothing', async () => {
     seedAccountSettlements(USD, [])
     await openList('&status=undone')

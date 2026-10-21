@@ -195,6 +195,14 @@ describe('Settlement Summary: the Summary and Movements tabs', () => {
     await waitFor(() => expect(transactionsQuery()).toEqual(['type=R&page=2']))
   })
 
+  it('takes a page past the last one back to the last one, in place, as the list does', async () => {
+    const { router } = await openSummary('?tab=movements&page=12')
+
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ page: 9 }))
+    expect(await screen.findByText(m.pageOf(9, 9, 450))).toBeInTheDocument()
+    await waitFor(() => expect(transactionsQuery().at(-1)).toBe('type=E&page=9'))
+  })
+
   it('a failed read of the movements says so with Retry, and Summary is still there', async () => {
     failNextSettlement('transactions')
     const { user } = await openSummary('?tab=movements')
