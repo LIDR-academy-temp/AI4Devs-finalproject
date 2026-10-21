@@ -98,11 +98,20 @@ describe('Settlement List: columns', () => {
     const cells = within(bodyRows()[0]!).getAllByRole('cell')
     expect(within(cells[2]!).getByText('Processed · pending payment')).toHaveClass('whitespace-normal')
     expect(cells[4]).toHaveClass('whitespace-normal')
+    // Dates are never cut at a hyphen: the line may only break between who and when.
+    expect(within(cells[3]!).getByText('2026-10-02 ET')).toHaveClass('whitespace-nowrap')
+    expect(within(cells[4]!).getByText('2026-09-30 11:40 ET')).toHaveClass('whitespace-nowrap')
     expect(within(cells[5]!).getByText('33,771.3600')).toHaveClass('whitespace-nowrap')
     // The label as stored, with a break opportunity after each comma: nothing is split nor dropped.
     expect(cells[6]).toHaveClass('whitespace-normal')
     expect(cells[6]!.textContent).toBe('RAM-01,RAM-02,RAM-07')
     expect(cells[6]!.querySelectorAll('wbr')).toHaveLength(2)
+    // Never at the hyphen of a channel name.
+    expect([...cells[6]!.querySelectorAll('.whitespace-nowrap')].map((piece) => piece.textContent)).toEqual([
+      'RAM-01',
+      'RAM-02',
+      'RAM-07',
+    ])
   })
 })
 
