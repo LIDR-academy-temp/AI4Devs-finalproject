@@ -1,8 +1,9 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { ACCOUNT_IDS } from '@/test/msw/fixtures'
 import {
   failNextSettlement,
+  holdNextSettlement,
   seedMovements,
   seedSettlement,
   settlementMovement,
@@ -201,6 +202,30 @@ describe('Settlement Summary: the Summary and Movements tabs', () => {
     await waitFor(() => expect(router.state.location.search).toMatchObject({ page: 9 }))
     expect(await screen.findByText(m.pageOf(9, 9, 450))).toBeInTheDocument()
     await waitFor(() => expect(transactionsQuery().at(-1)).toBe('type=E&page=9'))
+  })
+
+  it('never shows the rows of another attempt while the movements of this one load', async () => {
+    const first = seedSettlement(validatedImport().importId, { batchNo: 123 })
+    seedMovements(first.batchId, 'E', E_MOVEMENTS)
+    const other = seedSettlement(validatedImport().importId, { batchNo: 124 })
+    seedMovements(other.batchId, 'E', [
+      settlementMovement({ settlementTxnId: '1', sourceTransactionId: '700000000000001' }),
+    ])
+    // Batch 124 is opened first, so its view is cached and the screen does not unmount when it comes back.
+    const { router } = renderApp(`/settlements/${other.batchId}`, { as: 'analyst' })
+    await screen.findByRole('heading', { name: 'Settlement Summary · batch 124' }, OPENING)
+    await act(() => router.navigate({ href: `/settlements/${first.batchId}?tab=movements` }))
+    await screen.findByText(m.pageOf(1, 9, 450))
+    const held = holdNextSettlement('transactions')
+
+    await act(() => router.navigate({ href: `/settlements/${other.batchId}?tab=movements` }))
+    await held.arrived
+
+    expect(screen.getByRole('heading', { name: 'Settlement Summary · batch 124' })).toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: m.tableLabel })).not.toBeInTheDocument()
+    expect(screen.queryByText(m.pageOf(1, 9, 450))).not.toBeInTheDocument()
+    held.release()
+    expect(await screen.findByText('700000000000001')).toBeInTheDocument()
   })
 
   it('a failed read of the movements says so with Retry, and Summary is still there', async () => {
