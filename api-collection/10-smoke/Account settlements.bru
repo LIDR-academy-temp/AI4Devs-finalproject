@@ -38,6 +38,10 @@ tests {
   test('newest first by processedAt', () => {
     const instants = res.body.items.map((i) => i.processedAt);
     expect(instants).to.eql([...instants].sort().reverse());
+    // The New York day of batch 122, for "Account settlements - processed date" (as the integration test does).
+    const batch122 = res.body.items.find((i) => i.batchNo === 122);
+    bru.setVar('batch122EtDay', new Date(batch122.processedAt).toLocaleDateString('en-CA', { timeZone: 'America/New_York' }));
+    bru.setVar('batch122SettlementDate', batch122.settlementDate);
   });
   test('money as text with four decimals and the settlement date as a day', () => {
     for (const item of res.body.items) {

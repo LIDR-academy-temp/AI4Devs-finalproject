@@ -8,15 +8,15 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/v1/accounts/:accountId/settlements?dateField=processedAt&from=2000-01-01&status=paid
+  url: {{baseUrl}}/api/v1/accounts/:accountId/settlements?dateField=processedAt&from={{batch122EtDay}}&to={{batch122EtDay}}
   body: none
   auth: inherit
 }
 
 params:query {
   dateField: processedAt
-  from: 2000-01-01
-  status: paid
+  from: {{batch122EtDay}}
+  to: {{batch122EtDay}}
 }
 
 params:path {
@@ -24,14 +24,17 @@ params:path {
 }
 
 script:pre-request {
-  if (!bru.getVar('providerAUsdAccountId')) {
-    await bru.runRequest('10-smoke/Provider accounts');
+  if (!bru.getVar('batch122EtDay')) {
+    await bru.runRequest('10-smoke/Account settlements');
   }
 }
 
 tests {
-  test('filters by the New York day of processedAt: the 22 paid batches of ProviderA-USD', () => {
+  test('filters by the New York day of processedAt: only batch 122, whose settlement date is another day', () => {
     expect(res.status).to.equal(200);
-    expect(res.body.total).to.equal(22);
+    // Ignoring dateField would filter the settlement date by this day, which is not the one of batch 122.
+    expect(bru.getVar('batch122SettlementDate')).to.not.equal(bru.getVar('batch122EtDay'));
+    expect(res.body.items.map((i) => i.batchNo)).to.eql([122]);
+    expect(res.body.total).to.equal(1);
   });
 }
