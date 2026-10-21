@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { formatAuditDateTime, formatBusinessDate } from '@/lib/format'
-import { SETTLED_STATUS_TONE, toneOf } from '@/lib/status-tone'
+import { SETTLED_STATUS_TONE, TONE_NOTICE_CLASS, toneOf } from '@/lib/status-tone'
 import type { SettlementView } from './contract'
 import { strings } from './strings'
 
@@ -9,12 +9,13 @@ const s = strings.summary
 
 /** The attempt in a compact grid and whether it is Settled (design D11); its date ranges are in Totals by type (D9). */
 export function SummaryHeader({ view }: { view: SettlementView }) {
+  const tone = toneOf(SETTLED_STATUS_TONE, view.settledStatus)
   const items: [string, ReactNode][] = [
     [s.grid.account, view.accountName],
     [s.grid.batch, s.batchAttempt(view.batchNo, view.attemptNo)],
     [
       s.grid.status,
-      <Badge key="status" variant={toneOf(SETTLED_STATUS_TONE, view.settledStatus)}>
+      <Badge key="status" variant={tone}>
         {s.status[view.settledStatus]}
       </Badge>,
     ],
@@ -34,11 +35,8 @@ export function SummaryHeader({ view }: { view: SettlementView }) {
         ))}
       </dl>
       {view.settledStatus === 'pending_payment' && (
-        // The payment is still pending: the tone of the status Badge, from the theme (design D8, status notice).
-        <p
-          data-tone={toneOf(SETTLED_STATUS_TONE, view.settledStatus)}
-          className="rounded-md border border-status-warning-foreground/40 bg-status-warning p-2 text-sm text-status-warning-foreground"
-        >
+        // The payment is still pending: the colours of the tone of the status Badge (design D8, status notice).
+        <p data-tone={tone} className={`rounded-md border p-2 text-sm ${TONE_NOTICE_CLASS[tone]}`}>
           {s.notSettled}
         </p>
       )}
