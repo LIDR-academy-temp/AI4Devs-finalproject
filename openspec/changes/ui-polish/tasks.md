@@ -93,7 +93,7 @@ Orden test-first en los grupos de comportamiento: los tests se escriben y se ven
 - [x] 12.4 Describir en el PR los tests cambiados a propósito (D15) con el escenario que los motiva, las mediciones de contraste, la clasificación de D8 aprobada por la persona y los issues #85, #86 y #87
 - [x] 12.5 Commit: `docs(ui-polish): capturas de Validations, Settlement y Settlement List tras el pulido de la interfaz`
 - [x] 12.12 Revisión del PR #91: una petición de foco dura una navegación y no se pide si la lista no cambia (D13); aviso de no Settled con el tono warning (D8); textos de por qué es faltante con "batch vigente del proveedor", también en corridas anteriores (D18); contraste calculado y no medido (D8, spec web-shell); excepciones de tests de clases (D15); nombre del test de `RowsTable`; docs desactualizados (wireframes, revisión de UAT, proposal, design). Commits docs y test + fix por punto, y push
-- [ ] 12.13 Con turno de base: rehacer solo `settlement-summary.png` con `pnpm screenshots:web-settlement` (aviso de no Settled en ámbar), revisarla y versionarla; la persona vuelve a sembrar después
+- [x] 12.13 Con turno de base: rehacer solo `settlement-summary.png` con `pnpm screenshots:web-settlement` (aviso de no Settled en ámbar), revisarla y versionarla; la persona vuelve a sembrar después
 
 ## Workflow follow-up
 
