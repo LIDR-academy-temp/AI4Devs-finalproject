@@ -24,7 +24,7 @@ const cellsOf = (row: HTMLElement) =>
     .map((c) => c.textContent)
 
 describe('DateRangesTable', () => {
-  it('without transactions: the caption names it, six rows in order and one I range spanning three', () => {
+  it('the title names it, six rows in order and one I range spanning three', () => {
     render(<DateRangesTable title="Date ranges of this test" ranges={RANGES} />)
 
     expect(headers()).toEqual(['Cycle', 'Status', 'Date range'])
@@ -38,25 +38,5 @@ describe('DateRangesTable', () => {
     ])
     const iRange = within(bodyRows()[2]!).getAllByRole('cell')[2]!
     expect(iRange).toHaveAttribute('rowspan', '3')
-  })
-
-  it('with transactions: the Transactions column with the values as they arrive', () => {
-    render(
-      <DateRangesTable
-        title="Date ranges of this test"
-        ranges={RANGES}
-        transactions={{ APP: 12, DEC: 0, CHB: 2, REF: 1, RDR: 0, R: 3 }}
-      />,
-    )
-
-    expect(headers()).toEqual(['Cycle', 'Status', 'Transactions', 'Date range'])
-    expect(bodyRows().map(cellsOf)).toEqual([
-      ['E', 'APP', '12', '2026-09-28 00:00 ET – 2026-10-07 23:59 ET'],
-      ['E', 'DEC', '0', '—'],
-      ['I', 'CHB', '2', '2026-09-28 00:00 ET – 2026-10-11 00:00 ET'],
-      ['I', 'REF', '1'],
-      ['I', 'RDR', '0'],
-      ['R', '—', '3', '2026-03-31 00:00 ET – 2026-04-09 00:00 ET'],
-    ])
   })
 })

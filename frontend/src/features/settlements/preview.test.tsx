@@ -87,7 +87,11 @@ describe('Settlement Review: pre-summary (spec "resumen previo")', () => {
     expect(panel.getByText('E 450 · I 10 · R 320')).toBeInTheDocument()
     const totals = within(panel.getByRole('table', { name: 'Totals by type' }))
     expect(totals.getAllByRole('row')).toHaveLength(6)
-    expect(totals.getByRole('row', { name: /Deposits/ })).toHaveTextContent('Deposits34039,181.07004,139.2500')
+    expect(totals.getByRole('row', { name: /Deposits/ })).toHaveTextContent(
+      'Deposits34039,181.07004,139.25002026-09-28 – 2026-10-07',
+    )
+    // The same column as in the Summary: the I range of the preview on each of its three rows.
+    expect(totals.getByRole('row', { name: /RDR/ })).toHaveTextContent('2026-09-28 – 2026-10-11')
     expect(payableRow('Deposits')).toEqual(['+', 'Deposits', '39,181.0700'])
     expect(payableRow('Chargebacks')).toEqual(['−', 'Chargebacks', '193.8600'])
     expect(payableRow('Batch fees')).toEqual(['−', 'Batch fees', '40.0000'])
