@@ -139,6 +139,9 @@ describe('Settlement Summary: date range of each type (spec "totales y amount pa
       '2026-09-28',
       '2026-10-07',
     ])
+    // The table cell does not split by default; this one must, or the column clips the card at 1280 px (review 12.3).
+    expect(cell).toHaveClass('whitespace-normal')
+    expect(cell).not.toHaveClass('whitespace-nowrap')
   })
 })
 
