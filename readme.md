@@ -28,7 +28,7 @@ Firmadoc es un **servicio de firma digital institucional**: un único componente
 _Pendiente — se completará cuando exista un despliegue (Entrega 3)._
 
 ### 0.5. URL o archivo comprimido del repositorio
-https://github.com/aflorenciacabrera/AI4Devs-finalproject (fork de `LIDR-academy/AI4Devs-finalproject`, rama `feature/entrega-1-AFC`)
+https://github.com/aflorenciacabrera/AI4Devs-finalproject-temp (fork de `LIDR-academy-temp/AI4Devs-finalproject`, rama `feature/entrega-1-AFC`)
 
 ---
 
