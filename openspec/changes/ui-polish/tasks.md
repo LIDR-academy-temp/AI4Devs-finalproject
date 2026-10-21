@@ -15,8 +15,8 @@ Orden test-first en los grupos de comportamiento: los tests se escriben y se ven
 
 ## 2. Documento de la revisión (D17)
 
-- [ ] 2.1 Escribir `docs/uat/2026-10-20-revision-interfaz.md`: fecha, participantes por rol ("líder del equipo", "analista del proyecto"), objetivo, y tabla Pantalla · Observación · Clasificación · Referencia con los doce puntos de este change (`ui-polish`, con el requisito del delta) y los de fuera de alcance: plegar archivos en Mapping (#85, Entrega 3), columna Round (#86, Entrega 3), Transactions por estado en Validations (#87, Entrega 3), summary `.xlsx` (#82, Entrega 3), selector de merchant (#83, roadmap) y modo oscuro (#84, roadmap). Verificar con `rg` que no aparece ningún nombre de persona
-- [ ] 2.2 Commit: `docs(uat): observaciones de la revisión de la interfaz del 20-oct`
+- [x] 2.1 Escribir `docs/uat/2026-10-20-revision-interfaz.md`: fecha, participantes por rol ("líder del equipo", "analista del proyecto"), objetivo, y tabla Pantalla · Observación · Clasificación · Referencia con los doce puntos de este change (`ui-polish`, con el requisito del delta) y los de fuera de alcance: plegar archivos en Mapping (#85, Entrega 3), columna Round (#86, Entrega 3), Transactions por estado en Validations (#87, Entrega 3), summary `.xlsx` (#82, Entrega 3), selector de merchant (#83, roadmap) y modo oscuro (#84, roadmap). Verificar con `rg` que no aparece ningún nombre de persona
+- [x] 2.2 Commit: `docs(uat): observaciones de la revisión de la interfaz del 20-oct`
 
 ## 3. Tema, menú, tarjetas y barra superior (D2, D3, D4)
 
