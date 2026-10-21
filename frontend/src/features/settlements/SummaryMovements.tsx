@@ -21,18 +21,21 @@ function Figure({ value }: { value: string }) {
   return <span className="whitespace-nowrap">{formatDecimal(value)}</span>
 }
 
-/** The reserve figures of a movement, one labelled line each, as the API sent them. */
+/**
+ * The reserve figures of a movement, one labelled line each, as the API sent them. A label and its figure share one
+ * line that never wraps; the expected release date may.
+ */
 function Reserves({ movement }: { movement: SettlementMovement }) {
   const lines = s.reserveLines
   return (
     <ul className="flex flex-col items-end">
-      <li>
+      <li className="whitespace-nowrap">
         {lines.held} <Figure value={movement.reserveHeldAmt} />
       </li>
-      <li>
+      <li className="whitespace-nowrap">
         {lines.released} <Figure value={movement.reserveReleasedAmt} />
       </li>
-      <li>
+      <li className="whitespace-nowrap">
         {lines.early} <Figure value={movement.reserveEarlyReleasedAmt} />
       </li>
       {movement.expectedReserveReleaseAt && (
