@@ -34,7 +34,11 @@ export function SummaryHeader({ view }: { view: SettlementView }) {
         ))}
       </dl>
       {view.settledStatus === 'pending_payment' && (
-        <p className="rounded-md border border-emerald-600/40 bg-emerald-50/50 p-2 text-sm dark:bg-emerald-950/30">
+        // The payment is still pending: the tone of the status Badge, from the theme (design D8, status notice).
+        <p
+          data-tone={toneOf(SETTLED_STATUS_TONE, view.settledStatus)}
+          className="rounded-md border border-status-warning-foreground/40 bg-status-warning p-2 text-sm text-status-warning-foreground"
+        >
           {s.notSettled}
         </p>
       )}
