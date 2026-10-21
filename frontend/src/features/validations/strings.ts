@@ -144,11 +144,15 @@ export const strings = {
     /** The range of the batch for the cycle and status of a missing finding (design D18). */
     batchRange: (cycleStatus: string) => `Batch range (${cycleStatus})`,
     noRange: '—',
-    /** Why a finding is missing, by missingType (README §3.3, "Faltantes"). */
+    /**
+     * Why a finding is missing, by missingType (README §3.3, "Faltantes": not in the batch and not processed in that
+     * cycle in a batch in force, not undone, of any account of the provider).
+     */
     whyMissing: {
       in_range:
-        'Its date is inside the batch range, but it is not in this batch and no batch processed it in this cycle.',
-      previous_to_batch: 'Its date is before the batch range and no batch processed it in this cycle.',
+        'Its date is inside the batch range, but it is not in this batch and no batch of the provider in force (not undone) processed it in this cycle.',
+      previous_to_batch:
+        'Its date is before the batch range, it is not in this batch and no batch of the provider in force (not undone) processed it in this cycle.',
     },
     relevantDate: 'Date',
     source: 'Row',
