@@ -48,7 +48,7 @@ Ninguna.
 ## Impact
 
 - **Código modificado** (solo `frontend/`): `index.css` (variables de sombra, tonos de archivo y colores de estado), `components/ui/badge.tsx` (variantes de estado) y `card.tsx` (sombra), `app/layout/{Sidebar,Header,strings}.tsx`, `features/imports/files/FileList.tsx`, `features/imports/mapping/{MappingStep,ReadinessBar}.tsx`, `features/imports/analysis/{RowsTable,Counters,AnalysisStep}.tsx`, `features/imports/ImportHeader.tsx`, `features/validations/{RunHeader,ValidationsTable,ValidationsSection,IssuesList,Occurrences,strings}.tsx`, `features/settlements/{SummaryHeader,SettlementsTable,SettlementListPage,SettlementFilters,SettlementSummaryPage,SummaryMovements,Pager,strings}.tsx` (las pestañas Summary | Movements viven en `SettlementSummaryPage`), `features/accounts/AccountsPage.tsx`, `features/imports/NewReconciliationPage.tsx` (el `writeChoice` que recibe `account-choice`), `lib/format.ts`.
-- **Código nuevo**: componente compartido de la tabla de rangos con sus textos, módulo de tonos de estado y la ayuda de foco tras navegar (design D6, D7, D9).
+- **Código nuevo**: componente compartido de la tabla de rangos con sus textos, módulo de tonos de estado y la ayuda de foco tras navegar (design D8, D9, D13).
 - **Tests que cambian a propósito**: los que fijan `ET` en fechas sin hora, el texto de la cabecera de la corrida y del Summary, el nombre de archivo truncado, la línea de readiness y los merchants de la cabecera (lista en design D15).
 - **Capturas**: se relanzan `web-validations`, `web-settlement` y `settlements-browse` (con turno de base); Files y Mapping se revisan en el navegador.
 - **Dependencias nuevas**: ninguna (`lucide-react` ya está).

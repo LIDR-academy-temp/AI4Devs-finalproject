@@ -44,7 +44,6 @@ Toda tarjeta (Card) SHALL mostrar una sombra suave que la separe del fondo. La s
 
 ### Requirement: Colores de estado
 Los estados en Badge SHALL llevar un color según su sentido, siempre con su texto (nunca solo color) y con contraste AA (4,5:1) entre texto y fondo: verde para lo correcto o terminado bien, ámbar para lo que pide atención sin bloquear, rojo para lo que bloquea y gris para lo que no aplica o es neutro. Los colores SHALL ser variables del tema, con valor para el tema claro y el oscuro.
-
 #### Scenario: Resultados de las validaciones
 - **GIVEN** la corrida vigente de `batch-issues` con `Provider mismatch` en `passed`, siete validaciones en `warning` y ninguna `blocked`
 - **WHEN** abre el paso Analysis
@@ -65,10 +64,11 @@ Los estados en Badge SHALL llevar un color según su sentido, siempre con su tex
 #### Scenario: Estados del intento
 - **WHEN** el Settlement Summary, Settlement List o una aparición de un hallazgo muestran el estado de un intento
 - **THEN** `Processed · pending payment` (`processed`) se ve en ámbar, `Paid` (`paid`, `settled`) en verde y `Undone` en gris, siempre con su texto
+- **AND** en el Summary, el aviso `Movements are not Settled yet: that happens when the batch is marked as paid.` se ve en ámbar, como su Badge
 
 #### Scenario: Contraste
-- **WHEN** se mide en el navegador el contraste de cada color de estado sobre su fondo
-- **THEN** todos llegan al menos a 4,5:1
+- **WHEN** se calcula el contraste de cada color de estado sobre su fondo desde los tokens OKLCH del tema con la fórmula de WCAG
+- **THEN** todos llegan al menos a 4,5:1, en el tema claro y en el oscuro (cálculo aceptado en la revisión 12.2)
 
 ### Requirement: Navegación dentro de la página: desplazamiento y foco
 Una acción que solo cambia lo que muestra la pantalla actual (validación, "Show … rows", filtro, página, pestaña o ciclo) SHALL dejar la página en su posición. Si es un botón que actualiza una lista, el foco SHALL ir al encabezado de esa lista; un desplegable o una fecha SHALL conservar el foco. Llegar por enlace, recargar o volver atrás SHALL no mover el foco.
@@ -113,3 +113,8 @@ Una acción que solo cambia lo que muestra la pantalla actual (validación, "Sho
 #### Scenario: Recargar o llegar por enlace
 - **WHEN** abre `/imports/<importId>?step=analysis&validation=missing_previous_to_batch&match=unmatched` por enlace o recarga esa dirección
 - **THEN** ve la lista de hallazgos y la tabla filtrada, y el foco no se mueve a ninguna de las dos
+
+#### Scenario: Una acción que no cambia nada y volver atrás
+- **GIVEN** Analysis con `validation=missing_previous_to_batch` en la primera página de sus hallazgos
+- **WHEN** pulsa `Missing previous to batch` (la validación ya elegida), va a Dashboard y vuelve con Atrás
+- **THEN** ve la lista de hallazgos y el foco no se mueve a su encabezado; lo mismo con **Show unmatched rows** cuando la tabla ya está filtrada por `Unmatched`

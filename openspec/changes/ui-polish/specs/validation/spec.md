@@ -32,7 +32,7 @@ Con corrida vigente, la pantalla SHALL mostrar junto al título `Validations` la
 - **THEN** la fila `E` `DEC` muestra `—` como rango
 
 ### Requirement: Pantalla Analysis & Validations: detalle de un hallazgo
-Abrir un hallazgo SHALL mostrar en un panel lateral todas sus apariciones: las del import, con archivo, hoja y fila, y las de batches anteriores, con número de batch, intento, cuenta y estado actual del batch. De cada una SHALL mostrar el estado (`Unresolved status` si es nulo), `CHB 2` si `excludeAmount`, si está incluida por defecto, si está incluida ahora y quién y cuándo la cambió. Debajo, la resolución y el historial con usuario y fecha. Un faltante de la corrida vigente SHALL mostrar además el rango del batch de su ciclo y estado, tal como lo da la corrida, y una línea que diga por qué es faltante.
+Abrir un hallazgo SHALL mostrar en un panel lateral todas sus apariciones: las del import, con archivo, hoja y fila, y las de batches anteriores, con número de batch, intento, cuenta y estado actual del batch. De cada una SHALL mostrar el estado (`Unresolved status` si es nulo), `CHB 2` si `excludeAmount`, si está incluida por defecto, si está incluida ahora y quién y cuándo la cambió. Debajo, la resolución y el historial con usuario y fecha. Un faltante de la corrida vigente SHALL mostrar además el rango del batch de su ciclo y estado, tal como lo da la corrida. Todo faltante, también el de una corrida anterior, SHALL mostrar una línea que diga por qué es faltante, que solo depende de su `missingType`.
 
 #### Scenario: Duplicado en el batch (HU2 CA2)
 - **GIVEN** la corrida vigente de `batch-issues`
@@ -59,16 +59,17 @@ Abrir un hallazgo SHALL mostrar en un panel lateral todas sus apariciones: las d
 - **GIVEN** la corrida vigente con `ranges.APP` de `2026-09-28 00:04 ET` a `2026-10-07 23:58 ET`
 - **WHEN** abre un hallazgo `Missing in range` con `missingRange = APP`
 - **THEN** ve `Batch range (E/APP)` `2026-09-28 00:04 ET – 2026-10-07 23:58 ET`, leído de la corrida sin calcular nada en el navegador
-- **AND** ve `Its date is inside the batch range, but it is not in this batch and no batch processed it in this cycle.`
+- **AND** ve `Its date is inside the batch range, but it is not in this batch and no batch of the provider in force (not undone) processed it in this cycle.`
 
 #### Scenario: Rango del batch de un faltante anterior
 - **WHEN** abre un hallazgo `Missing previous to batch` con `missingRange = I` y estado del gateway `Chargeback`
 - **THEN** ve `Batch range (I/CHB)` con el rango I de la corrida
-- **AND** ve `Its date is before the batch range and no batch processed it in this cycle.`
+- **AND** ve `Its date is before the batch range, it is not in this batch and no batch of the provider in force (not undone) processed it in this cycle.`
 
 #### Scenario: Faltante de una corrida anterior
 - **WHEN** abre un faltante cuya corrida ya no es la vigente
 - **THEN** no ve `Batch range`, porque la pantalla solo tiene los rangos de la corrida vigente, y ve el ciclo en `Range` como hasta ahora
+- **AND** ve la línea de por qué es faltante de su `missingType`, que no depende de la corrida
 
 #### Scenario: Teclado
 - **WHEN** el usuario abre un hallazgo con Enter desde la lista y pulsa Escape
