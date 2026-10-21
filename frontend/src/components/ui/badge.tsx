@@ -15,6 +15,11 @@ const badgeVariants = cva(
         outline: 'border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground',
         ghost: 'hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50',
         link: 'text-primary underline-offset-4 hover:underline',
+        // Status tones (design D8): always with the text of the status, never the colour alone.
+        success: 'bg-status-success text-status-success-foreground',
+        warning: 'bg-status-warning text-status-warning-foreground',
+        danger: 'bg-status-danger text-status-danger-foreground',
+        neutral: 'bg-status-neutral text-status-neutral-foreground',
       },
     },
     defaultVariants: {

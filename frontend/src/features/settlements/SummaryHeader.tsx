@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { formatAuditDateTime, formatBusinessDate, formatBusinessDateTime } from '@/lib/format'
+import { SETTLED_STATUS_TONE, toneOf } from '@/lib/status-tone'
 import type { SettlementView } from './contract'
 import { strings } from './strings'
 
@@ -12,7 +13,7 @@ export function SummaryHeader({ view }: { view: SettlementView }) {
     <section aria-label={s.title(view.batchNo)} className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">{s.title(view.batchNo)}</h1>
-        <Badge variant="outline">{s.status[view.settledStatus]}</Badge>
+        <Badge variant={toneOf(SETTLED_STATUS_TONE, view.settledStatus)}>{s.status[view.settledStatus]}</Badge>
       </div>
       <p className="text-sm text-muted-foreground">{s.attempt(view.accountName, view.attemptNo)}</p>
       <p className="text-sm">{s.processedBy(view.approvedBy.userName, formatAuditDateTime(view.processedAt))}</p>

@@ -1,17 +1,17 @@
 import { MissingRange } from '@recon/shared'
 import { Badge } from '@/components/ui/badge'
 import { formatAuditDateTime, formatBusinessDateTime } from '@/lib/format'
+import { RUN_OVERALL_TONE, type RunOverall } from '@/lib/status-tone'
 import type { ValidationRun } from './contract'
 import { strings } from './strings'
 
 const s = strings.header
 
 /** An aggregate to present, not a rule: blocking comes from the API (design D5). */
-function overall(run: ValidationRun) {
-  if (run.blocked) return { label: s.overall.blocked, variant: 'destructive' as const }
-  if (run.results.some((r) => r.outcome === 'warning'))
-    return { label: s.overall.warnings, variant: 'secondary' as const }
-  return { label: s.overall.passed, variant: 'outline' as const }
+function overall(run: ValidationRun): RunOverall {
+  if (run.blocked) return 'blocked'
+  if (run.results.some((r) => r.outcome === 'warning')) return 'warnings'
+  return 'passed'
 }
 
 /** Overall result, the run, the ranges it used and its informative counters (spec "cabecera de la corrida"). */
@@ -26,7 +26,7 @@ export function RunHeader({ run }: { run: ValidationRun }) {
   return (
     <section aria-label={s.label} className="flex flex-col gap-2 text-sm">
       <div className="flex flex-wrap items-center gap-3">
-        <Badge variant={state.variant}>{state.label}</Badge>
+        <Badge variant={RUN_OVERALL_TONE[state]}>{s.overall[state]}</Badge>
         <span className="text-muted-foreground">
           {s.run(run.runId, formatAuditDateTime(run.runAt), run.runBy.userName)}
         </span>

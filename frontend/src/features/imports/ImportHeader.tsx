@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { Badge } from '@/components/ui/badge'
 import { accountQuery } from '@/features/accounts/queries'
 import type { ImportDetail } from '@/lib/api/types'
+import { IMPORT_STATUS_TONE, toneOf } from '@/lib/status-tone'
 import { CancelImportDialog } from './CancelImportDialog'
 import { useImportAccess } from './permissions'
 import { strings } from './strings'
@@ -23,7 +24,7 @@ export function ImportHeader({ detail, busy }: { detail: ImportDetail; busy: boo
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1.5 text-sm">
           <span className="text-muted-foreground">{strings.header.status}</span>
-          <Badge variant="outline">{detail.status}</Badge>
+          <Badge variant={toneOf(IMPORT_STATUS_TONE, detail.status)}>{detail.status}</Badge>
         </span>
         {canProcess && <CancelImportDialog detail={detail} cancellable={cancellable} disabled={busy} />}
         {detail.status === 'cancelled' && canProcess && account.data && (

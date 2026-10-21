@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { formatAuditDateTime } from '@/lib/format'
+import { BATCH_STATUS_TONE, toneOf } from '@/lib/status-tone'
 import type { OccurrenceView } from './contract'
 import { strings } from './strings'
 
@@ -44,7 +45,9 @@ export function Occurrences({
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{whereOf(occurrence)}</span>
-                {occurrence.batch && <Badge variant="outline">{occurrence.batch.status}</Badge>}
+                {occurrence.batch && (
+                  <Badge variant={toneOf(BATCH_STATUS_TONE, occurrence.batch.status)}>{occurrence.batch.status}</Badge>
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
                 <span>{occurrence.status?.name ?? s.unresolvedStatus}</span>

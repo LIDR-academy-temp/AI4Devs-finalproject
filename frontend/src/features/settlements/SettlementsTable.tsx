@@ -4,6 +4,7 @@ import { Fragment, type ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatAuditDateTime, formatBusinessDate, formatDecimal } from '@/lib/format'
+import { SETTLED_STATUS_TONE, toneOf } from '@/lib/status-tone'
 import type { AccountSettlement, AccountSettlementsPage } from './contract'
 import { Pager, useLastPageLimit } from './Pager'
 import { strings } from './strings'
@@ -33,7 +34,7 @@ const columns = helper.columns([
     id: 'status',
     header: s.columns.status,
     cell: ({ row }) => (
-      <Badge variant="outline" className="h-auto whitespace-normal">
+      <Badge variant={toneOf(SETTLED_STATUS_TONE, row.original.settledStatus)} className="h-auto whitespace-normal">
         {strings.summary.status[row.original.settledStatus]}
       </Badge>
     ),
