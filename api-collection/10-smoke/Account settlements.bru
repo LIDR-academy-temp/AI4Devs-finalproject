@@ -38,9 +38,24 @@ tests {
   test('newest first by processedAt', () => {
     const instants = res.body.items.map((i) => i.processedAt);
     expect(instants).to.eql([...instants].sort().reverse());
-    // The New York day of batch 122, for "Account settlements - processed date" (as the integration test does).
+  });
+  test('keeps the New York day of batch 122 for "Account settlements - processed date"', () => {
+    // The script sandbox has no reliable Intl time zones: the US rule (EDT from the second Sunday of March at 07:00
+    // UTC to the first Sunday of November at 06:00 UTC, EST otherwise) is applied by hand.
+    const etDay = (iso) => {
+      const instant = new Date(iso).getTime();
+      const year = new Date(iso).getUTCFullYear();
+      const sunday = (month, nth) => {
+        const firstDay = new Date(Date.UTC(year, month, 1)).getUTCDay();
+        return 1 + ((7 - firstDay) % 7) + 7 * (nth - 1);
+      };
+      const edt = instant >= Date.UTC(year, 2, sunday(2, 2), 7) && instant < Date.UTC(year, 10, sunday(10, 1), 6);
+      return new Date(instant - (edt ? 4 : 5) * 3600000).toISOString().slice(0, 10);
+    };
     const batch122 = res.body.items.find((i) => i.batchNo === 122);
-    bru.setVar('batch122EtDay', new Date(batch122.processedAt).toLocaleDateString('en-CA', { timeZone: 'America/New_York' }));
+    const day = etDay(batch122.processedAt);
+    expect(day).to.match(/^\d{4}-\d{2}-\d{2}$/);
+    bru.setVar('batch122EtDay', day);
     bru.setVar('batch122SettlementDate', batch122.settlementDate);
   });
   test('money as text with four decimals and the settlement date as a day', () => {
