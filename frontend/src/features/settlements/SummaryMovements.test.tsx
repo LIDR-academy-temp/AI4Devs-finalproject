@@ -110,6 +110,56 @@ describe('Settlement Summary: the Summary and Movements tabs', () => {
     expect(row.getByText('Chargeback per txn fee · 45.0000')).toBeVisible()
   })
 
+  it('fits 1024 px: nine columns, the reserves in one cell with a label per line, amounts and ids on one line', async () => {
+    const { user, view } = await openSummary()
+    seedMovements(view.batchId, 'R', [
+      settlementMovement({
+        cycle: 'R',
+        reserveHeldAmt: '11.5240',
+        reserveReleasedAmt: '7.2500',
+        reserveEarlyReleasedAmt: '1.1000',
+      }),
+    ])
+
+    await user.click(screen.getByRole('tab', { name: strings.summary.tabs.movements }))
+    await screen.findByText(m.pageOf(1, 9, 450))
+    await user.click(screen.getByRole('button', { name: 'R (320)' }))
+    await waitFor(() => expect(bodyRows()).toHaveLength(1))
+
+    const headers = movementsTable().getAllByRole('columnheader')
+    expect(headers.map((h) => h.textContent)).toEqual([
+      'Transaction',
+      'Status',
+      'Round',
+      'Source row',
+      'Event date',
+      'Amount',
+      'Fees',
+      'Reserves',
+      'Settled',
+    ])
+    for (const header of headers) expect(header).toHaveClass('whitespace-normal')
+    const cells = within(bodyRows()[0]!).getAllByRole('cell')
+    expect(within(cells[0]!).getByText('911545593909470')).toHaveClass('whitespace-nowrap')
+    expect(within(cells[5]!).getByText('115.2400')).toHaveClass('whitespace-nowrap')
+    expect(within(cells[6]!).getByText('12.0240')).toHaveClass('whitespace-nowrap')
+    const reserves = within(cells[7]!).getAllByRole('listitem')
+    expect(reserves.map((line) => line.textContent)).toEqual([
+      'Held 11.5240',
+      'Released 7.2500',
+      'Released on chargeback 1.1000',
+      'Expected release 2027-03-27 ET',
+    ])
+    for (const [line, value] of [
+      [reserves[0]!, '11.5240'],
+      [reserves[1]!, '7.2500'],
+      [reserves[2]!, '1.1000'],
+    ] as const) {
+      expect(within(line).getByText(value)).toHaveClass('whitespace-nowrap')
+    }
+    for (const cell of cells.slice(1)) expect(cell).toHaveClass('whitespace-normal')
+  })
+
   it('an undated movement, a seeded one without row, Settled from the API and the event date in ET', async () => {
     const { user, view } = await openSummary()
     seedMovements(view.batchId, 'R', [

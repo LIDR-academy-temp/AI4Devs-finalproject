@@ -81,6 +81,29 @@ describe('Settlement List: columns', () => {
     expect(undone).toHaveClass('text-muted-foreground')
     expect(unset).not.toHaveAttribute('data-undone')
   })
+
+  it('fits 1024 px: headers, status, processed and channels wrap; the amount never does', async () => {
+    seedAccountSettlements(USD, [
+      accountSettlement({
+        batchNo: 123,
+        status: 'processed',
+        settledStatus: 'pending_payment',
+        channels: 'RAM-01,RAM-02,RAM-07',
+      }),
+    ])
+    await openList()
+
+    const table = within(screen.getByRole('table', { name: s.tableLabel }))
+    for (const header of table.getAllByRole('columnheader')) expect(header).toHaveClass('whitespace-normal')
+    const cells = within(bodyRows()[0]!).getAllByRole('cell')
+    expect(within(cells[2]!).getByText('Processed · pending payment')).toHaveClass('whitespace-normal')
+    expect(cells[4]).toHaveClass('whitespace-normal')
+    expect(within(cells[5]!).getByText('33,771.3600')).toHaveClass('whitespace-nowrap')
+    // The label as stored, with a break opportunity after each comma: nothing is split nor dropped.
+    expect(cells[6]).toHaveClass('whitespace-normal')
+    expect(cells[6]!.textContent).toBe('RAM-01,RAM-02,RAM-07')
+    expect(cells[6]!.querySelectorAll('wbr')).toHaveLength(2)
+  })
 })
 
 describe('Settlement List: filters and pages', () => {
