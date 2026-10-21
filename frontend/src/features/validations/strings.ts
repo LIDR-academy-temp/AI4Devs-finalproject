@@ -141,6 +141,15 @@ export const strings = {
     reported: 'Reported status',
     gateway: 'Gateway status',
     range: 'Range',
+    /** The range of the batch for the cycle and status of a missing finding (design D18). */
+    batchRange: (cycleStatus: string) => `Batch range (${cycleStatus})`,
+    noRange: '—',
+    /** Why a finding is missing, by missingType (README §3.3, "Faltantes"). */
+    whyMissing: {
+      in_range:
+        'Its date is inside the batch range, but it is not in this batch and no batch processed it in this cycle.',
+      previous_to_batch: 'Its date is before the batch range and no batch processed it in this cycle.',
+    },
     relevantDate: 'Date',
     source: 'Row',
     occurrences: 'Occurrences',
