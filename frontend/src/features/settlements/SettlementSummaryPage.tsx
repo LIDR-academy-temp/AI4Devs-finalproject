@@ -35,6 +35,7 @@ function SummaryFigures({ view }: { view: SettlementView }) {
             <p className="tabular-nums">{strings.preSummary.movements(view.movements)}</p>
             <TotalsByType
               totals={view.totals}
+              ranges={view.dateRanges}
               reservesReleased={{ qty: view.reservesReleasedQty, amount: view.reserveReleasedAmt }}
             />
           </CardContent>

@@ -17,7 +17,7 @@ export function Figures({ figures }: { figures: SettlementFigures }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="tabular-nums">{s.movements(figures.movements)}</p>
-      <TotalsByType totals={figures.totals} />
+      <TotalsByType totals={figures.totals} ranges={figures.dateRanges} />
       <PayableBreakdown lines={figures.payableBreakdown} amountPayable={figures.amountPayable} />
       {notProcessed && <p className="text-muted-foreground">{notProcessed}</p>}
       {figures.warnings.length > 0 && (

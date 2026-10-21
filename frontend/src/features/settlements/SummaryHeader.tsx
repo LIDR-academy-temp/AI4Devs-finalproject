@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { DateRangesTable } from '@/components/DateRangesTable'
 import { Badge } from '@/components/ui/badge'
 import { formatAuditDateTime, formatBusinessDate } from '@/lib/format'
 import { SETTLED_STATUS_TONE, toneOf } from '@/lib/status-tone'
@@ -8,25 +7,7 @@ import { strings } from './strings'
 
 const s = strings.summary
 
-type Category = SettlementView['totals'][number]['category']
-
-/**
- * The count of each status as the view sends it, read without operating (design D9): the qty of its category (the
- * API always sends the five, in order) and the R movements.
- */
-function transactionsOf(view: SettlementView) {
-  const qty = Object.fromEntries(view.totals.map((total) => [total.category, total.qty])) as Record<Category, number>
-  return {
-    APP: qty.deposit,
-    DEC: qty.declined,
-    CHB: qty.chargeback,
-    REF: qty.refund,
-    RDR: qty.rdr,
-    R: view.movements.R,
-  }
-}
-
-/** The attempt in a compact grid, its date ranges by cycle and status, and whether it is Settled (design D11). */
+/** The attempt in a compact grid and whether it is Settled (design D11); its date ranges are in Totals by type (D9). */
 export function SummaryHeader({ view }: { view: SettlementView }) {
   const items: [string, ReactNode][] = [
     [s.grid.account, view.accountName],
@@ -52,7 +33,6 @@ export function SummaryHeader({ view }: { view: SettlementView }) {
           </div>
         ))}
       </dl>
-      <DateRangesTable title={s.ranges} ranges={view.dateRanges} transactions={transactionsOf(view)} />
       {view.settledStatus === 'pending_payment' && (
         <p className="rounded-md border border-emerald-600/40 bg-emerald-50/50 p-2 text-sm dark:bg-emerald-950/30">
           {s.notSettled}

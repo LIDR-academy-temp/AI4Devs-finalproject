@@ -82,7 +82,8 @@ export const strings = {
     updating: 'Updating the pre-summary…',
     movements: (m: { E: number; I: number; R: number }) => `E ${m.E} · I ${m.I} · R ${m.R}`,
     totals: 'Totals by type',
-    columns: { type: 'Type', qty: 'Qty', amount: 'Amount USD', fee: 'Fees USD' },
+    columns: { type: 'Type', qty: 'Qty', amount: 'Amount USD', fee: 'Fees USD', range: 'Date range' },
+    noRange: '—',
     payable: 'Amount payable',
     signs: { '+': '+', '-': '−' } as const,
     /** What a screen reader says for each sign. */
@@ -181,7 +182,6 @@ export const strings = {
     byAt: (userName: string, at: string) => `${userName} · ${at}`,
     notSet: 'Not set',
     notSettled: 'Movements are not Settled yet: that happens when the batch is marked as paid.',
-    ranges: 'Date ranges of this batch',
     totals: 'Totals by type',
     reservesReleased: 'R · Reserve released',
     brands: 'Totals by brand',
