@@ -67,21 +67,40 @@ async function overflows(page: Page): Promise<boolean> {
   )
 }
 
+/**
+ * The pieces of the tables that must never split (figures, dates, times, the source row, a figure with the last word
+ * of its label) that the browser drew over more than one line: an inline piece split across lines has more than one
+ * box, a block one is taller than a line. Which text goes in each piece is checked by the jsdom tests.
+ */
+async function splitPieces(page: Page): Promise<string[]> {
+  return page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('[data-slot="table-container"] .whitespace-nowrap')]
+      .filter((piece) => {
+        const lineHeight = Number.parseFloat(getComputedStyle(piece).lineHeight)
+        return piece.getClientRects().length > 1 || piece.getBoundingClientRect().height > lineHeight * 1.5
+      })
+      .map((piece) => piece.textContent ?? ''),
+  )
+}
+
 async function shot(page: Page, name: string) {
   await page.screenshot({ path: `${OUT}${name}.png`, fullPage: true })
   console.log(`saved docs/wireframes/settlements-browse/${name}.png`)
 }
 
-/** The measurements that found a horizontal scroll or a clipped table; any of them makes the run fail. */
+/** The measurements that found an overflow or a split piece; any of them makes the run fail. */
 const overflowing: string[] = []
 
-/** Reports the overflow check at 1280 and at 1024 px, keeps the failing ones, and leaves the page at 1280. */
+/** Reports both checks at 1280 and at 1024 px, keeps the failing ones, and leaves the page at 1280. */
 async function checkWidths(page: Page, screen: string) {
   for (const width of [1280, 1024]) {
     await page.setViewportSize(width === 1280 ? { width, height: 900 } : { width, height: 768 })
     const overflow = await overflows(page)
     console.log(`horizontal scroll or clipped table at ${width} px (${screen}): ${overflow}`)
     if (overflow) overflowing.push(`${screen} at ${width} px`)
+    const split = await splitPieces(page)
+    console.log(`pieces split over two lines at ${width} px (${screen}): ${split.length}`)
+    if (split.length > 0) overflowing.push(`${screen} at ${width} px, split: ${split.slice(0, 5).join(' | ')}`)
   }
   await page.setViewportSize({ width: 1280, height: 900 })
 }
@@ -138,7 +157,7 @@ async function main() {
   }
   // The screenshots stay on disk to look at, but a run with any overflow is not one to commit.
   if (overflowing.length > 0) {
-    throw new Error(`Horizontal scroll or clipped table: ${overflowing.join(', ')}. Do not commit these screenshots.`)
+    throw new Error(`Overflow or split piece: ${overflowing.join('; ')}. Do not commit these screenshots.`)
   }
 }
 
