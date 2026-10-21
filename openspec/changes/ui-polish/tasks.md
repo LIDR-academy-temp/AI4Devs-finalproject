@@ -6,12 +6,12 @@ Orden test-first en los grupos de comportamiento: los tests se escriben y se ven
 
 ## 1. Rebase sobre `feature/entrega-2-MVP` con #64 fusionado (D1, D14)
 
-**No empezar hasta que la persona confirme que #64 (`settlements-browse`) está fusionado en `feature/entrega-2-MVP` y archivado.** El grupo parte de la versión fusionada de `SettlementsTable` y `SummaryMovements`, que #64 cambió en su revisión (Processed y Channels en varias líneas; una sola columna Reserves con líneas etiquetadas y el desglose de fees debajo de la celda): los grupos 4, 5 y 9 trabajan sobre esa versión, no sobre la que leyó el proposal.
+#64 (`settlements-browse`) está fusionado (#88) y archivado (#89). El grupo parte de la versión fusionada de `SettlementsTable` y `SummaryMovements`, que #64 cambió en su revisión (Processed y Channels en varias líneas con `NoBreak` y `WrapAfterCommas`; una sola columna Reserves con líneas `Labelled` y el desglose de fees debajo de la celda): los grupos 4, 5 y 9 trabajan sobre esa versión, no sobre la que leyó el proposal.
 
-- [ ] 1.1 Rebase de `feat/ui-polish` sobre `feature/entrega-2-MVP`; verificar `pnpm lint && pnpm typecheck && pnpm test` en verde sin tocar nada
-- [ ] 1.2 Comprobar que existen `SettlementsTable.tsx`, `SettlementListPage.tsx`, `SummaryMovements.tsx`, `list-search.ts`, `summary-search.ts` y `accounts/account-choice.tsx`, y que el texto de "Pantallas de settlement: fechas en hora de Nueva York" y "Pantalla Settlement List: columnas" en `openspec/changes/settlements-browse/specs/settlement/spec.md` (o en `openspec/specs/settlement/spec.md` si ya se archivó) coincide con el que modifica `specs/settlement/spec.md` de este change; si cambió en la revisión de #64, actualizar el delta y verificar `openspec validate ui-polish --type change --strict`
-- [ ] 1.3 Volver a listar con `rg` los `navigate(` y `search={` de `frontend/src` y contrastarlos con la lista de D13; anotar en D13 cualquier sitio nuevo
-- [ ] 1.4 Commit (solo si 1.2 o 1.3 cambiaron artifacts): `docs(openspec): ui-polish sobre la spec y el código de settlements-browse`
+- [x] 1.1 Rebase de `feat/ui-polish` sobre `feature/entrega-2-MVP`; verificar `pnpm lint && pnpm typecheck && pnpm test` en verde sin tocar nada
+- [x] 1.2 Comprobar que existen `SettlementsTable.tsx`, `SettlementListPage.tsx`, `SummaryMovements.tsx`, `list-search.ts`, `summary-search.ts` y `accounts/account-choice.tsx`, y que el texto de "Pantallas de settlement: fechas en hora de Nueva York" y "Pantalla Settlement List: columnas" en `openspec/changes/settlements-browse/specs/settlement/spec.md` (o en `openspec/specs/settlement/spec.md` si ya se archivó) coincide con el que modifica `specs/settlement/spec.md` de este change; si cambió en la revisión de #64, actualizar el delta y verificar `openspec validate ui-polish --type change --strict`
+- [x] 1.3 Volver a listar con `rg` los `navigate(` y `search={` de `frontend/src` y contrastarlos con la lista de D13; anotar en D13 cualquier sitio nuevo
+- [x] 1.4 Commit (solo si 1.2 o 1.3 cambiaron artifacts): `docs(openspec): ui-polish sobre la spec y el código de settlements-browse`
 
 ## 2. Documento de la revisión (D17)
 
@@ -20,7 +20,7 @@ Orden test-first en los grupos de comportamiento: los tests se escriben y se ven
 
 ## 3. Tema, menú, tarjetas y barra superior (D2, D3, D4)
 
-- [ ] 3.1 Test (rojo) en `app/layout/AppLayout.test.tsx` (escenarios "Alcance asignado" y "Alcance total" modificados): la cabecera muestra nombre, rol y **Sign out**, y no contiene `Merchant A, Merchant B` ni `All merchants` (cambio a propósito de `:102` y `:105-111`)
+- [ ] 3.1 Test (rojo) en `app/layout/AppLayout.test.tsx` (escenarios "Alcance asignado" y "Alcance total" modificados): la cabecera muestra nombre, rol y **Sign out**, y no contiene `Merchant A, Merchant B` ni `All merchants` (cambio a propósito de `:108-114` y `:117-123`)
 - [ ] 3.2 Implementar `Header` sin merchants y quitar `allMerchants` / `noMerchants` de `app/layout/strings.ts`; verificar 3.1 en verde; romper a propósito devolviendo la lista y ver fallar 3.1; restaurar
 - [ ] 3.3 Añadir a `index.css` `--card-shadow` (`:root` y `.dark`) y `--shadow-card` en `@theme inline`, y `shadow-card` en `components/ui/card.tsx`; sangría de las entradas de grupo en `Sidebar` (`pl-6`, títulos y Dashboard en `px-3`); verificar `pnpm lint`, `pnpm --filter @recon/frontend build` y que los tests de `app/` siguen en verde. La comprobación visual queda en 12.2
 - [ ] 3.4 Commit: `test(frontend): barra superior sin la lista de merchants` y `feat(frontend): sangría del menú, sombra de las tarjetas como variable del tema y barra superior sin merchants`
@@ -34,7 +34,7 @@ Orden test-first en los grupos de comportamiento: los tests se escriben y se ven
 
 ## 5. Fechas de un día sin ET (D12)
 
-- [ ] 5.1 Test (rojo): `lib/format.test.ts:36` → `formatBusinessDate` da `2026-09-28` (cambio a propósito); `formatBusinessDateTime` y `formatAuditDateTime` siguen con `ET` (`:35`, `:40`, `:44` sin cambios); `SettlementList.test.tsx:59` → `2026-10-02`; en `batch-fees.test.tsx`, la vigencia de un preestablecido sin `ET` (escenario "Vigencia de un fee preestablecido"); en `SummaryMovements.test.tsx`, `expectedReserveReleaseAt` sin `ET` si la fixture lo trae
+- [ ] 5.1 Test (rojo): `lib/format.test.ts:36` → `formatBusinessDate` da `2026-09-28` (cambio a propósito); `formatBusinessDateTime` y `formatAuditDateTime` siguen con `ET` (`:35`, `:40`, `:44` sin cambios); `SettlementList.test.tsx:59` y `:110` → `2026-10-02`; en `batch-fees.test.tsx`, la vigencia de un preestablecido sin `ET` (escenario "Vigencia de un fee preestablecido"); en `SummaryMovements.test.tsx:158` y `:172`, `expectedReserveReleaseAt` sin `ET` y pegado a `release`
 - [ ] 5.2 Implementar en `lib/format.ts` el sufijo `ET` solo con hora y actualizar el comentario de cabecera de las fechas; verificar 5.1 en verde y que los tests con hora listados en D15 siguen en verde sin tocarlos; romper a propósito volviendo a añadir `ET` siempre y ver fallar 5.1; restaurar
 - [ ] 5.3 Commit: `test(frontend): fechas de un día sin sufijo de zona` y `feat(frontend): fechas sin hora sin el sufijo ET`
 

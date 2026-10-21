@@ -1,6 +1,6 @@
 # Proposal — ui-polish
 
-Origen: revisión de la interfaz con el líder del equipo (2026-10-20). Solo frontend: ningún endpoint nuevo ni modificado, ninguna regla de negocio nueva. Se apoya en `web-shell`, `web-import`, `web-validations`, `web-settlement` (archivados) y en `settlements-browse` (#64, rama `feat/settlements-browse`, en revisión), que añade Settlement List al menú y la pestaña Movements al Summary. **El apply empieza cuando #64 esté fusionado**; su primer grupo es el rebase.
+Origen: revisión de la interfaz con el líder del equipo (2026-10-20). Solo frontend: ningún endpoint nuevo ni modificado, ninguna regla de negocio nueva. Se apoya en `web-shell`, `web-import`, `web-validations`, `web-settlement` (archivados) y en `settlements-browse` (#64, fusionado en #88 y archivado en #89), que añade Settlement List al menú y la pestaña Movements al Summary. La rama se rebasó sobre `feature/entrega-2-MVP` con #64 ya fusionado (grupo 1).
 
 ## Why
 
@@ -45,7 +45,7 @@ Ninguna.
 
 ## Impact
 
-- **Código modificado** (solo `frontend/`): `index.css` (variables de sombra, tonos de archivo y colores de estado), `components/ui/badge.tsx` (variantes de estado) y `card.tsx` (sombra), `app/layout/{Sidebar,Header,strings}.tsx`, `features/imports/files/FileList.tsx`, `features/imports/mapping/{MappingStep,ReadinessBar}.tsx`, `features/imports/analysis/{RowsTable,Counters,AnalysisStep}.tsx`, `features/imports/ImportHeader.tsx`, `features/validations/{RunHeader,ValidationsTable,ValidationsSection,IssuesList,Occurrences,strings}.tsx`, `features/settlements/{SummaryHeader,SettlementsTable,SettlementListPage,SettlementSummaryPage,SummaryMovements,strings}.tsx`, `lib/format.ts`.
+- **Código modificado** (solo `frontend/`): `index.css` (variables de sombra, tonos de archivo y colores de estado), `components/ui/badge.tsx` (variantes de estado) y `card.tsx` (sombra), `app/layout/{Sidebar,Header,strings}.tsx`, `features/imports/files/FileList.tsx`, `features/imports/mapping/{MappingStep,ReadinessBar}.tsx`, `features/imports/analysis/{RowsTable,Counters,AnalysisStep}.tsx`, `features/imports/ImportHeader.tsx`, `features/validations/{RunHeader,ValidationsTable,ValidationsSection,IssuesList,Occurrences,strings}.tsx`, `features/settlements/{SummaryHeader,SettlementsTable,SettlementListPage,SettlementFilters,SettlementSummaryPage,SummaryMovements,Pager,strings}.tsx` (las pestañas Summary | Movements viven en `SettlementSummaryPage`), `features/accounts/AccountsPage.tsx`, `features/imports/NewReconciliationPage.tsx` (el `writeChoice` que recibe `account-choice`), `lib/format.ts`.
 - **Código nuevo**: componente compartido de la tabla de rangos con sus textos, módulo de tonos de estado y la ayuda de foco tras navegar (design D6, D7, D9).
 - **Tests que cambian a propósito**: los que fijan `ET` en fechas sin hora, el texto de la cabecera de la corrida y del Summary, el nombre de archivo truncado, la línea de readiness y los merchants de la cabecera (lista en design D15).
 - **Capturas**: se relanzan `web-validations`, `web-settlement` y `settlements-browse` (con turno de base); Files y Mapping se revisan en el navegador.
@@ -53,6 +53,6 @@ Ninguna.
 
 ## Insumos que necesito de la persona
 
-1. **Aviso de merge de #64**: el grupo 1 (rebase) espera a que esté en `feature/entrega-2-MVP`.
+1. ~~**Aviso de merge de #64**~~: hecho (#88 y archivo en #89, 2026-10-21).
 2. **Revisión de D8** (qué estado lleva qué color): la clasificación de `cancelled`, `undone` y `processed`/`pending_payment` es una propuesta.
 3. **Turno de base** para el último grupo (prueba en el navegador a 1280 y 1024 px y capturas); aviso antes de lanzar los scripts.
