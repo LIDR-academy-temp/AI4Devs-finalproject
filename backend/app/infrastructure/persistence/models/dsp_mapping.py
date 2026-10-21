@@ -1,0 +1,18 @@
+"""DSP mapping: external IDs that bind campaign lines to DSPs."""
+
+from datetime import datetime
+from sqlalchemy import String, ForeignKey, DateTime
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.infrastructure.persistence.base import Base
+
+
+class DSPMappingRecord(Base):
+    __tablename__ = "dsp_mappings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    campaign_line_id: Mapped[int] = mapped_column(ForeignKey("campaign_lines.id"), nullable=False)
+    dsp_id: Mapped[int] = mapped_column(ForeignKey("dsps.id"), nullable=False)
+    external_campaign_id: Mapped[str] = mapped_column(String, nullable=False)
+    external_line_item_id: Mapped[str] = mapped_column(String, nullable=False)
+    validated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

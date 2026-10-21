@@ -1,0 +1,97 @@
+# AdOps360 — containerised monolith on a single EC2 instance.
+# Four services: backend, frontend, db, nginx.
+# Cognito and S3 are managed AWS services and are not part of this stack;
+# only the configuration needed to reach them is declared here.
+#
+# Configuration comes from .env (copied from .env.example, never committed).
+# Compose also reads .env for the ${...} interpolation below.
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - adops360
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # Database, Cognito, S3 and DSP credentials. Only the backend needs the secrets.
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - adops360
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Public Cognito settings, inlined into the browser bundle at build time.
+        # No env_file here on purpose: the DSP credentials must not reach this container.
+        NEXT_PUBLIC_COGNITO_REGION: ${COGNITO_REGION}
+        NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${COGNITO_USER_POOL_ID}
+        NEXT_PUBLIC_COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID}
+        NEXT_PUBLIC_COGNITO_DOMAIN: ${COGNITO_DOMAIN}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - adops360
+
+  nginx:
+    image: nginx:1.27
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot_certs:/etc/letsencrypt:ro
+      - certbot_webroot:/var/www/certbot:ro
+    networks:
+      - adops360
+
+  # TLS certificate issuance and renewal.
+  # Run on demand: docker compose run --rm certbot renew
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    profiles:
+      - tls
+
+volumes:
+  postgres_data:
+  certbot_certs:
+  certbot_webroot:
+
+networks:
+  adops360:
+    driver: bridge
