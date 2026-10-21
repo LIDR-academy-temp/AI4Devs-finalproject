@@ -128,6 +128,23 @@ describe('Settlement List: filters and pages', () => {
     expect(router.state.location.search).not.toHaveProperty('page')
   })
 
+  it('back to All statuses and with From and To emptied, the keys leave the query and the address', async () => {
+    seedAccountSettlements(USD, paidHistory(USD, 3))
+    const { user, router } = await openList('&status=paid&from=2026-09-01&to=2026-09-30')
+    expect(lastQuery()).toMatchObject({ status: 'paid', from: '2026-09-01', to: '2026-09-30' })
+
+    await user.selectOptions(screen.getByLabelText(s.status), s.statuses.all)
+    await waitFor(() => expect(lastQuery()).not.toHaveProperty('status'))
+    day(s.from, '')
+    await waitFor(() => expect(lastQuery()).not.toHaveProperty('from'))
+    day(s.to, '')
+    await waitFor(() => expect(lastQuery()).not.toHaveProperty('to'))
+
+    expect(lastQuery()).toEqual({ page: '1', pageSize: '20' })
+    for (const key of ['status', 'from', 'to']) expect(router.state.location.search).not.toHaveProperty(key)
+    expect(router.state.location.searchStr).not.toMatch(/status|from|to=/)
+  })
+
   it('sends From and To as typed, without a date field by default', async () => {
     seedAccountSettlements(USD, paidHistory(USD, 3))
     const { router } = await openList()
