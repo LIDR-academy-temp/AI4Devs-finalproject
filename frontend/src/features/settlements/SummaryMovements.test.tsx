@@ -158,6 +158,8 @@ describe('Settlement Summary: the Summary and Movements tabs', () => {
     ] as const) {
       expect(within(line).getByText(value)).toHaveClass('whitespace-nowrap')
     }
+    // Label and figure on one line together, never split between them (review B9).
+    for (const line of reserves.slice(0, 3)) expect(line).toHaveClass('whitespace-nowrap')
     for (const cell of cells.slice(1)) expect(cell).toHaveClass('whitespace-normal')
   })
 
