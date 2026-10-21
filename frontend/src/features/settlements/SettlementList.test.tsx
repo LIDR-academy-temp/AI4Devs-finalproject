@@ -94,8 +94,16 @@ describe('Settlement List: columns', () => {
     await openList()
 
     const table = within(screen.getByRole('table', { name: s.tableLabel }))
-    for (const header of table.getAllByRole('columnheader')) expect(header).toHaveClass('whitespace-normal')
+    // The nowrap of the shadcn cell must not survive next to whitespace-normal.
+    for (const header of table.getAllByRole('columnheader')) {
+      expect(header).toHaveClass('whitespace-normal')
+      expect(header).not.toHaveClass('whitespace-nowrap')
+    }
     const cells = within(bodyRows()[0]!).getAllByRole('cell')
+    for (const cell of cells) {
+      expect(cell).toHaveClass('whitespace-normal')
+      expect(cell).not.toHaveClass('whitespace-nowrap')
+    }
     expect(within(cells[2]!).getByText('Processed · pending payment')).toHaveClass('whitespace-normal')
     expect(cells[4]).toHaveClass('whitespace-normal')
     // Dates are never cut at a hyphen: the line may only break between who and when.

@@ -139,7 +139,11 @@ describe('Settlement Summary: the Summary and Movements tabs', () => {
       'Reserves',
       'Settled',
     ])
-    for (const header of headers) expect(header).toHaveClass('whitespace-normal')
+    // The nowrap of the shadcn cell must not survive next to whitespace-normal.
+    for (const header of headers) {
+      expect(header).toHaveClass('whitespace-normal')
+      expect(header).not.toHaveClass('whitespace-nowrap')
+    }
     const cells = within(bodyRows()[0]!).getAllByRole('cell')
     expect(within(cells[0]!).getByText('911545593909470')).toHaveClass('whitespace-nowrap')
     expect(within(cells[5]!).getByText('115.2400')).toHaveClass('whitespace-nowrap')
@@ -160,7 +164,10 @@ describe('Settlement Summary: the Summary and Movements tabs', () => {
     }
     // Label and figure on one line together, never split between them (review B9).
     for (const line of reserves.slice(0, 3)) expect(line).toHaveClass('whitespace-nowrap')
-    for (const cell of cells.slice(1)) expect(cell).toHaveClass('whitespace-normal')
+    for (const cell of cells) {
+      expect(cell).toHaveClass('whitespace-normal')
+      expect(cell).not.toHaveClass('whitespace-nowrap')
+    }
   })
 
   it('an undated movement, a seeded one without row, Settled from the API and the event date in ET', async () => {
