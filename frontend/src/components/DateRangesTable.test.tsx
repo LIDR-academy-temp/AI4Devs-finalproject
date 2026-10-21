@@ -24,7 +24,7 @@ const cellsOf = (row: HTMLElement) =>
     .map((c) => c.textContent)
 
 describe('DateRangesTable', () => {
-  it('the title names it, six rows in order and one I range spanning three', () => {
+  it('in its card, the title names it, six rows in order and one I range spanning three', () => {
     render(<DateRangesTable title="Date ranges of this test" ranges={RANGES} />)
 
     expect(headers()).toEqual(['Cycle', 'Status', 'Date range'])
@@ -38,5 +38,8 @@ describe('DateRangesTable', () => {
     ])
     const iRange = within(bodyRows()[2]!).getAllByRole('cell')[2]!
     expect(iRange).toHaveAttribute('rowspan', '3')
+    // In its own card, whose title names the table (ui-polish review 12.2).
+    const card = table().closest<HTMLElement>('[data-slot="card"]')
+    expect(within(card!).getByText('Date ranges of this test')).toHaveAttribute('data-slot', 'card-title')
   })
 })

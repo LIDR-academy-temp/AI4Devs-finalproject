@@ -11,7 +11,8 @@ async function openAnalysis(importId: string, search = '') {
   await screen.findByRole('region', { name: 'Validations' }, OPENING)
 }
 
-const runHeader = () => within(screen.getByRole('region', { name: 'Validation run' }))
+/** The overall result, next to the title of the section. */
+const overall = () => within(screen.getByRole('heading', { name: 'Validations' }).parentElement!)
 const outcomeBadges = () =>
   within(screen.getByRole('table', { name: 'Validation results' }))
     .getAllByRole('row')
@@ -25,7 +26,7 @@ describe('status colours in Analysis & Validations', () => {
     seedValidationRun(importId)
     await openAnalysis(importId)
 
-    expect(runHeader().getByText('Warnings')).toHaveAttribute('data-variant', 'warning')
+    expect(overall().getByText('Warnings')).toHaveAttribute('data-variant', 'warning')
     expect(outcomeBadges().map(toneAndText)).toEqual([
       ['success', 'Passed'],
       ...Array.from({ length: 7 }, () => ['warning', 'Warning']),
@@ -37,7 +38,7 @@ describe('status colours in Analysis & Validations', () => {
     seedValidationRun(importId, batchBlockedFixture())
     await openAnalysis(importId)
 
-    expect(runHeader().getByText('Blocked')).toHaveAttribute('data-variant', 'danger')
+    expect(overall().getByText('Blocked')).toHaveAttribute('data-variant', 'danger')
     expect(toneAndText(outcomeBadges()[0]!)).toEqual(['danger', 'Blocked'])
   })
 

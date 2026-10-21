@@ -16,7 +16,11 @@ async function openAnalysis(importId: string) {
 
 const section = () => within(screen.getByRole('region', { name: 'Validations' }))
 const runHeader = () => within(screen.getByRole('region', { name: 'Validation run' }))
-const rangesTable = () => within(runHeader().getByRole('table', { name: 'Date ranges used by the validations' }))
+/** The row of the title: the heading, then the overall result of the run. */
+const titleRow = () => section().getByRole('heading', { name: 'Validations' }).parentElement!
+const overall = () => within(titleRow())
+const RANGES_TITLE = 'Date ranges used by the validations'
+const rangesTable = () => within(runHeader().getByRole('table', { name: RANGES_TITLE }))
 const rangeHeaders = () =>
   rangesTable()
     .getAllByRole('columnheader')
@@ -67,9 +71,16 @@ describe('Analysis & Validations: header of the run (spec "cabecera de la corrid
     const { runId } = seedValidationRun(importId)
     await openAnalysis(importId)
 
-    expect(runHeader().getByText('Warnings')).toBeInTheDocument()
-    // The fake's audit clock starts at 14:00 UTC, 10:00 in New York (EDT).
-    expect(runHeader().getByText(`Run #${runId} · 2026-10-18 10:00 ET · analyst`)).toBeInTheDocument()
+    // Next to the title: the label, the overall result and, as secondary text, the run. The fake's audit clock starts
+    // at 14:00 UTC, 10:00 in New York (EDT).
+    expect(titleRow()).toHaveTextContent(
+      `ValidationsOverall resultWarningsRun #${runId} · 2026-10-18 10:00 ET · analyst`,
+    )
+    expect(overall().getByText('Warnings')).toHaveAttribute('data-slot', 'badge')
+    expect(runHeader().queryByText('Warnings')).not.toBeInTheDocument()
+    // The table of ranges in its own card, which titles it.
+    const card = runHeader().getByRole('table', { name: RANGES_TITLE }).closest<HTMLElement>('[data-slot="card"]')
+    expect(within(card!).getByText(RANGES_TITLE)).toHaveAttribute('data-slot', 'card-title')
     // Six rows by cycle and status, one I range for CHB, REF and RDR, and no Transactions column (#87).
     expect(rangeHeaders()).toEqual(['Cycle', 'Status', 'Date range'])
     expect(rangeRows()).toEqual([
@@ -97,20 +108,24 @@ describe('Analysis & Validations: header of the run (spec "cabecera de la corrid
     expect(runHeader().getByText('Informative: none of them is a finding.')).toBeInTheDocument()
   })
 
-  it('batch-blocked: Blocked, and a range without rows as — (spec "Rango sin filas")', async () => {
+  it('batch-blocked: Blocked next to the title and no table of ranges', async () => {
     const { importId } = seedImport('batch-blocked', { status: 'analyzed' })
     seedValidationRun(importId)
     await openAnalysis(importId)
 
-    expect(runHeader().getByText('Blocked')).toBeInTheDocument()
-    expect(rangeRows()).toEqual([
-      ['E', 'APP', '2026-09-28 00:00 ET – 2026-10-07 23:59 ET'],
-      ['E', 'DEC', '—'],
-      ['I', 'CHB', '—'],
-      ['I', 'REF'],
-      ['I', 'RDR'],
-      ['R', '—', '—'],
-    ])
+    expect(overall().getByText('Blocked')).toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: RANGES_TITLE })).not.toBeInTheDocument()
+    expect(runHeader().getByRole('region', { name: 'Informative counters' })).toBeInTheDocument()
+  })
+
+  it('a range without rows is — (spec "Rango sin filas")', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const fixture = batchIssuesFixture()
+    fixture.ranges = { ...fixture.ranges, DEC: null }
+    seedValidationRun(importId, fixture)
+    await openAnalysis(importId)
+
+    expect(rangeRows()[1]).toEqual(['E', 'DEC', '—'])
   })
 
   it('a run without warnings is Passed', async () => {
@@ -118,7 +133,7 @@ describe('Analysis & Validations: header of the run (spec "cabecera de la corrid
     seedValidationRun(importId)
     await openAnalysis(importId)
 
-    expect(runHeader().getByText('Passed')).toBeInTheDocument()
+    expect(overall().getByText('Passed')).toBeInTheDocument()
   })
 })
 
