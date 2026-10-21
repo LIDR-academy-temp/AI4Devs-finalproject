@@ -91,7 +91,7 @@
 - *Alternativa descartada*: explicación en un `Tooltip`. No se ve con pantalla táctil ni en las capturas de la demo, y en teclado exige foco en un elemento que no es interactivo.
 
 ### D11. Cabecera del Summary en rejilla
-- `SummaryHeader`: `h1` y `Badge` como hoy; debajo un `<dl>` en rejilla (`grid-cols-2`, `lg:grid-cols-5`) con **Account**, **Batch** (`123 · attempt 1`), **Status** (Badge con el tono de D8), **Processed by** (`analyst · <formatAuditDateTime>`) y **Settlement date** (`formatBusinessDate` o `Not set`); después `DateRangesTable` y el aviso de no Settled. Se quitan `s.attempt`, `s.processedBy`, `s.settlementDate` y `s.range` de los textos si no quedan usos.
+- `SummaryHeader`: `h1` como hoy y, debajo, un `<dl>` en rejilla (el `Badge` de estado pasa del lado del `h1` a la rejilla, para que el estado se vea una sola vez: `read-only.test.tsx` y `exports.test.tsx` lo buscan por su texto y deben seguir sin cambios) (`grid-cols-2`, `lg:grid-cols-5`) con **Account**, **Batch** (`123 · attempt 1`), **Status** (Badge con el tono de D8), **Processed by** (`analyst · <formatAuditDateTime>`) y **Settlement date** (`formatBusinessDate` o `Not set`); después `DateRangesTable` y el aviso de no Settled. Se quitan `s.attempt`, `s.processedBy`, `s.settlementDate` y `s.range` de los textos si no quedan usos.
 - *Alternativa descartada*: meter la cabecera en una `Card` con tabla clave-valor. Quita altura a las tarjetas de cifras, que son lo que se audita, y la rejilla cabe en una línea a 1280 px.
 
 ### D12. Fechas de un día sin `ET`

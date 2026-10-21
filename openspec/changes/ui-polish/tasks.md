@@ -47,9 +47,9 @@ Orden test-first en los grupos de comportamiento: los tests se escriben y se ven
 
 ## 7. Cabecera del Settlement Summary (D9, D11)
 
-- [ ] 7.1 Test (rojo) en `features/settlements/SettlementSummary.test.tsx` (escenarios "Recién procesado", "Sin fecha de liquidación", "Tabla de rangos del batch", "Rango nulo" y "Fechas del intento"): rejilla con `Account` `ProviderA-USD`, `Batch` `123 · attempt 1`, `Status`, `Processed by` `analyst · 2026-10-19 11:40 ET` y `Settlement date` `2026-10-24` (o `Not set`); tabla `Date ranges of this batch` con `Transactions` igual al `qty` de cada categoría de la fixture y a `movements.R`; aviso de no Settled. Sustituye a propósito `:37`, `:151`, `:152` y `:153`
-- [ ] 7.2 Implementar `SummaryHeader` con la rejilla `<dl>` y `DateRangesTable` (`transactions` leídos de `view.totals` por categoría y de `view.movements.R`, sin operar), y quitar de `strings.ts` los textos que se queden sin uso; verificar 7.1 en verde y que `read-only.test.tsx`, `keyboard.test.tsx` y `SummaryMovements.test.tsx` siguen en verde; romper a propósito tomando `movements.E` en la fila `APP` y ver fallar 7.1; restaurar
-- [ ] 7.3 Commit: `test(frontend): cabecera del Settlement Summary en rejilla con la tabla de rangos` y `feat(frontend): cabecera compacta del Settlement Summary`
+- [x] 7.1 Test (rojo) en `features/settlements/SettlementSummary.test.tsx` (escenarios "Recién procesado", "Sin fecha de liquidación", "Tabla de rangos del batch", "Rango nulo" y "Fechas del intento"): rejilla con `Account` `ProviderA-USD`, `Batch` `123 · attempt 1`, `Status`, `Processed by` `analyst · 2026-10-19 11:40 ET` y `Settlement date` `2026-10-24` (o `Not set`); tabla `Date ranges of this batch` con `Transactions` igual al `qty` de cada categoría de la fixture y a `movements.R`; aviso de no Settled. Sustituye a propósito `:37`, `:151`, `:152` y `:153`
+- [x] 7.2 Implementar `SummaryHeader` con la rejilla `<dl>` y `DateRangesTable` (`transactions` leídos de `view.totals` por categoría y de `view.movements.R`, sin operar), y quitar de `strings.ts` los textos que se queden sin uso; verificar 7.1 en verde y que `read-only.test.tsx`, `keyboard.test.tsx` y `SummaryMovements.test.tsx` siguen en verde; romper a propósito tomando `movements.E` en la fila `APP` y ver fallar 7.1; restaurar
+- [x] 7.3 Commit: `test(frontend): cabecera del Settlement Summary en rejilla con la tabla de rangos` y `feat(frontend): cabecera compacta del Settlement Summary`
 
 ## 8. Archivos en Files y Mapping, readiness y tabla de filas (D5, D6, D7)
 

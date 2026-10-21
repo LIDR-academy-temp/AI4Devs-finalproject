@@ -169,14 +169,19 @@ export const strings = {
 
   summary: {
     title: (batchNo: number) => `Settlement Summary · batch ${batchNo}`,
-    attempt: (accountName: string, attemptNo: number) => `${accountName} · attempt ${attemptNo}`,
     status: { pending_payment: 'Processed · pending payment', settled: 'Paid', undone: 'Undone' },
-    processedBy: (userName: string, at: string) => `Processed by ${userName} on ${at}`,
-    settlementDate: (date: string) => `Settlement date: ${date}`,
+    grid: {
+      account: 'Account',
+      batch: 'Batch',
+      status: 'Status',
+      processedBy: 'Processed by',
+      settlementDate: 'Settlement date',
+    },
+    batchAttempt: (batchNo: number, attemptNo: number) => `${batchNo} · attempt ${attemptNo}`,
+    byAt: (userName: string, at: string) => `${userName} · ${at}`,
+    notSet: 'Not set',
     notSettled: 'Movements are not Settled yet: that happens when the batch is marked as paid.',
-    ranges: 'Date ranges',
-    range: (cycle: string, from: string | null, to: string | null) =>
-      from && to ? `${cycle} ${from} – ${to}` : `${cycle} —`,
+    ranges: 'Date ranges of this batch',
     totals: 'Totals by type',
     reservesReleased: 'R · Reserve released',
     brands: 'Totals by brand',
