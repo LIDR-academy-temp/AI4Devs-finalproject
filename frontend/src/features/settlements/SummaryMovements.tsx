@@ -6,8 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatBusinessDate, formatBusinessDateTime, formatDecimal } from '@/lib/format'
 import type { AppliedFee, Cycle, SettlementMovement, SettlementTransactionsPage, SettlementView } from './contract'
-import { Pager } from './Pager'
-import { MOVEMENTS_PAGE_SIZE, settlementTransactionsQuery } from './queries'
+import { Pager, useLastPageLimit } from './Pager'
+import { settlementTransactionsQuery } from './queries'
 import { strings } from './strings'
 
 const s = strings.movements
@@ -131,18 +131,20 @@ function MovementsTable({
 }: {
   data: SettlementTransactionsPage
   page: number
-  onPage: (page: number) => void
+  onPage: (page: number, options?: { replace?: boolean }) => void
 }) {
-  const pageCount = Math.max(1, Math.ceil(data.total / MOVEMENTS_PAGE_SIZE))
+  // The page size the API answered with, as in Settlement List.
+  const pageCount = Math.max(1, Math.ceil(data.total / data.pageSize))
+  useLastPageLimit(page, pageCount, (last) => onPage(last, { replace: true }))
   const table = useTable({
     features,
     columns,
     data: data.items,
     manualPagination: true,
     rowCount: data.total,
-    state: { pagination: { pageIndex: page - 1, pageSize: MOVEMENTS_PAGE_SIZE } },
+    state: { pagination: { pageIndex: page - 1, pageSize: data.pageSize } },
     onPaginationChange: (updater) => {
-      const current = { pageIndex: page - 1, pageSize: MOVEMENTS_PAGE_SIZE }
+      const current = { pageIndex: page - 1, pageSize: data.pageSize }
       const next = typeof updater === 'function' ? updater(current) : updater
       onPage(next.pageIndex + 1)
     },
@@ -208,7 +210,7 @@ export function SummaryMovements({
   view: SettlementView
   cycle: Cycle
   page: number
-  onChange: (next: { cycle: Cycle; page: number }) => void
+  onChange: (next: { cycle: Cycle; page: number }, options?: { replace?: boolean }) => void
 }) {
   const query = useQuery(settlementTransactionsQuery(view.batchId, cycle, page))
 
@@ -236,7 +238,11 @@ export function SummaryMovements({
           </Button>
         </div>
       ) : query.data ? (
-        <MovementsTable data={query.data} page={page} onPage={(next) => onChange({ cycle, page: next })} />
+        <MovementsTable
+          data={query.data}
+          page={page}
+          onPage={(next, options) => onChange({ cycle, page: next }, options)}
+        />
       ) : (
         <Skeleton className="h-40 w-full" aria-label={s.loading} />
       )}

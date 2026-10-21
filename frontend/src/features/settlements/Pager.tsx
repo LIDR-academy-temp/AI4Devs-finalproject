@@ -1,8 +1,19 @@
-import { useId } from 'react'
+import { useEffect, useEffectEvent, useId } from 'react'
 import { Button } from '@/components/ui/button'
 import { strings } from './strings'
 
 const s = strings.pager
+
+/**
+ * The same rule for every table paged on the server: a page past the last one of the answer (an old link, a list that
+ * shrank) goes back to the last one. `toLast` replaces the address, so Back does not return to the missing page.
+ */
+export function useLastPageLimit(page: number, pageCount: number, toLast: (page: number) => void) {
+  const goToLast = useEffectEvent(toLast)
+  useEffect(() => {
+    if (page > pageCount) goToLast(pageCount)
+  }, [page, pageCount])
+}
 
 /**
  * Previous / Next of a table paged on the server. A disabled button carries its reason as visible text through

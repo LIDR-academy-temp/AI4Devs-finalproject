@@ -5,8 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatAuditDateTime, formatBusinessDate, formatDecimal } from '@/lib/format'
 import type { AccountSettlement, AccountSettlementsPage } from './contract'
-import { Pager } from './Pager'
-import { SETTLEMENTS_PAGE_SIZE } from './queries'
+import { Pager, useLastPageLimit } from './Pager'
 import { strings } from './strings'
 
 const s = strings.list
@@ -118,9 +117,11 @@ export function SettlementsTable({
 }: {
   data: AccountSettlementsPage
   page: number
-  onPage: (page: number) => void
+  onPage: (page: number, options?: { replace?: boolean }) => void
 }) {
-  const pageCount = Math.max(1, Math.ceil(data.total / SETTLEMENTS_PAGE_SIZE))
+  // The page size the API answered with, not the one asked for.
+  const pageCount = Math.max(1, Math.ceil(data.total / data.pageSize))
+  useLastPageLimit(page, pageCount, (last) => onPage(last, { replace: true }))
 
   const table = useTable({
     features,
@@ -128,9 +129,9 @@ export function SettlementsTable({
     data: data.items,
     manualPagination: true,
     rowCount: data.total,
-    state: { pagination: { pageIndex: page - 1, pageSize: SETTLEMENTS_PAGE_SIZE } },
+    state: { pagination: { pageIndex: page - 1, pageSize: data.pageSize } },
     onPaginationChange: (updater) => {
-      const current = { pageIndex: page - 1, pageSize: SETTLEMENTS_PAGE_SIZE }
+      const current = { pageIndex: page - 1, pageSize: data.pageSize }
       const next = typeof updater === 'function' ? updater(current) : updater
       onPage(next.pageIndex + 1)
     },

@@ -100,13 +100,14 @@ function Summary({ view }: { view: SettlementView }) {
             view={view}
             cycle={cycle}
             page={search.page ?? 1}
-            onChange={(next) =>
+            onChange={(next, options) =>
               void navigate({
                 search: (prev: SettlementSummarySearch) => ({
                   ...prev,
                   cycle: next.cycle === 'E' ? undefined : next.cycle,
                   page: next.page > 1 ? next.page : undefined,
                 }),
+                replace: options?.replace,
               })
             }
           />

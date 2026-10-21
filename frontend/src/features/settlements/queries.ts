@@ -59,12 +59,9 @@ export const accountSettlementsQuery = (accountId: string, filters: AccountSettl
     placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === accountId ? previous : undefined),
   })
 
-/** Movements per page of the Movements tab: the default of the API. */
-export const MOVEMENTS_PAGE_SIZE = 50
-
 /**
- * A page of the movements of a cycle, under the attempt's key: an attempt as written does not change until the
- * payment actions of a later change, which will invalidate the whole attempt.
+ * A page of the movements of a cycle, with the page size of the API (50), under the attempt's key: an attempt as
+ * written does not change until the payment actions of a later change, which will invalidate the whole attempt.
  */
 export const settlementTransactionsQuery = (batchId: string, cycle: Cycle, page: number) =>
   queryOptions({

@@ -25,7 +25,7 @@ function AccountSettlements({
   accountId: string
   search: SettlementListSearch
   onFilters: (next: ListFilters) => void
-  onPage: (page: number) => void
+  onPage: (page: number, options?: { replace?: boolean }) => void
 }) {
   const filters: ListFilters = { status: search.status, dateField: search.dateField, from: search.from, to: search.to }
   const page = search.page ?? 1
@@ -97,9 +97,10 @@ export function SettlementListPage() {
               onFilters={(next) =>
                 void navigate({ search: (prev: SettlementListSearch) => ({ ...prev, ...next, page: undefined }) })
               }
-              onPage={(page) =>
+              onPage={(page, options) =>
                 void navigate({
                   search: (prev: SettlementListSearch) => ({ ...prev, page: page > 1 ? page : undefined }),
+                  replace: options?.replace,
                 })
               }
             />
