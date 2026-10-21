@@ -202,7 +202,7 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
     expect(facts().map(([term]) => term)).not.toContain('Range')
     expect(
       drawer().getByText(
-        'Its date is inside the batch range, but it is not in this batch and no batch processed it in this cycle.',
+        'Its date is inside the batch range, but it is not in this batch and no batch of the provider in force (not undone) processed it in this cycle.',
       ),
     ).toBeInTheDocument()
   })
@@ -215,7 +215,9 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
 
     expect(facts()).toContainEqual(['Batch range (E/DEC)', '2026-09-29 00:00 ET – 2026-10-07 23:59 ET'])
     expect(
-      drawer().getByText('Its date is before the batch range and no batch processed it in this cycle.'),
+      drawer().getByText(
+        'Its date is before the batch range, it is not in this batch and no batch of the provider in force (not undone) processed it in this cycle.',
+      ),
     ).toBeInTheDocument()
   })
 
@@ -244,7 +246,9 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
     expect(facts()).toContainEqual(['Range', 'DEC'])
     expect(facts().map(([term]) => term)).not.toContain('Batch range (E/DEC)')
     expect(
-      drawer().getByText('Its date is before the batch range and no batch processed it in this cycle.'),
+      drawer().getByText(
+        'Its date is before the batch range, it is not in this batch and no batch of the provider in force (not undone) processed it in this cycle.',
+      ),
     ).toBeInTheDocument()
   })
 
