@@ -203,7 +203,7 @@ function MovementsTable({
                 {group.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className={`whitespace-normal ${RIGHT.has(header.column.id) ? 'text-right' : ''}`}
+                    className={`px-1.5 whitespace-normal ${RIGHT.has(header.column.id) ? 'text-right' : ''}`}
                   >
                     {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                   </TableHead>
@@ -217,7 +217,7 @@ function MovementsTable({
                 {row.getAllCells().map((cell) => (
                   <TableCell
                     key={cell.id}
-                    className={`align-top whitespace-normal ${RIGHT.has(cell.column.id) ? 'text-right tabular-nums' : ''}`}
+                    className={`align-top px-1.5 whitespace-normal ${RIGHT.has(cell.column.id) ? 'text-right tabular-nums' : ''}`}
                   >
                     <table.FlexRender cell={cell} />
                   </TableCell>
