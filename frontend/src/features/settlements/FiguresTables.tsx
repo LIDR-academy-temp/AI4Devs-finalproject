@@ -25,7 +25,7 @@ const RANGE_OF = {
  */
 function RangeCell({ range }: { range: DateRange | null }) {
   return (
-    <TableCell className="tabular-nums">
+    <TableCell className="whitespace-normal tabular-nums">
       {range ? (
         <>
           <span className="whitespace-nowrap">{formatBusinessDate(range.min)}</span>
