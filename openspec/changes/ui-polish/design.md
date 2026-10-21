@@ -125,7 +125,7 @@
   - `frontend/src/features/settlements/SummaryMovements.test.tsx:158` y `:172` (de #64) — `Expected release 2027-03-27 ET` y `release 2027-03-27 ET` → sin `ET`; la fecha sigue pegada a `release` por el espacio de no separación de `Labelled`.
   - `frontend/src/features/validations/ValidationsSection.test.tsx:54-60` y `:75-77` — lista `Ranges used` → tabla `Date ranges used by the validations`; `:61-66` — contadores con su explicación.
   - `frontend/src/features/imports/analysis/RowsTable.test.tsx:145-157` — `toHaveClass('truncate')` → nombre entero, sin `truncate`, con `title`.
-  - `frontend/src/features/imports/mapping/analyze.test.tsx:84-85`, `:101`, `:107-110` y `:128-131` — textos `DEC · …`, `CHB · …` y `/ · confirmation: /` → hoja en negrita y `li` leído con `: `.
+  - `frontend/src/features/imports/mapping/analyze.test.tsx:84-85`, `:101`, `:107-110` y `:128-131` — textos `DEC · …`, `CHB · …` y `/ · confirmation: /` → hoja en negrita y `li` leído con `: `; también `:42`, `:137-138` y `:208` (`APP · transactionId: …`, `Import · transactions: …`), con el mismo formato de la readiness.
   - `frontend/src/app/layout/AppLayout.test.tsx:108-114` y `:117-123` — `Merchant A, Merchant B` y `strings.allMerchants` → ausentes.
 - **No cambian** (fechas con hora, conservan `ET`): `format.test.ts:35`, `:40`, `:44`; `IssueDrawer.test.tsx:97`, `:121`, `:164`; `decision.test.tsx:61`; `inclusion.test.tsx:54`; `resolve.test.tsx:41`; `SummaryMovements.test.tsx:176-180` y `:206` (de #64); `SettlementList.test.tsx:60` y `:111`.
 - Lo puramente visual (sangría, sombra, tonos de archivo) no lleva test de clases: se comprueba en el navegador y en las capturas (D16).

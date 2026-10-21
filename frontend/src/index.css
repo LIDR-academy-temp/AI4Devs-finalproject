@@ -55,6 +55,14 @@
   --color-status-danger-foreground: var(--status-danger-foreground);
   --color-status-neutral: var(--status-neutral);
   --color-status-neutral-foreground: var(--status-neutral-foreground);
+  --color-file-tone-1: var(--file-tone-1);
+  --color-file-tone-1-header: var(--file-tone-1-header);
+  --color-file-tone-2: var(--file-tone-2);
+  --color-file-tone-2-header: var(--file-tone-2-header);
+  --color-file-tone-3: var(--file-tone-3);
+  --color-file-tone-3-header: var(--file-tone-3-header);
+  --color-file-tone-4: var(--file-tone-4);
+  --color-file-tone-4-header: var(--file-tone-4-header);
 }
 
 :root {
@@ -103,6 +111,16 @@
   --status-danger-foreground: oklch(0.48 0.17 27);
   --status-neutral: oklch(0.95 0 0);
   --status-neutral-foreground: oklch(0.4 0 0);
+  /* File tones of Files and Mapping: blue, violet, cyan and slate, of low chroma so as not to read as status
+     colours; block background and header background (design D5). */
+  --file-tone-1: oklch(0.97 0.015 250);
+  --file-tone-1-header: oklch(0.93 0.03 250);
+  --file-tone-2: oklch(0.97 0.015 300);
+  --file-tone-2-header: oklch(0.93 0.03 300);
+  --file-tone-3: oklch(0.97 0.015 210);
+  --file-tone-3-header: oklch(0.93 0.03 210);
+  --file-tone-4: oklch(0.97 0.008 260);
+  --file-tone-4-header: oklch(0.93 0.015 260);
 }
 
 .dark {
@@ -146,6 +164,14 @@
   --status-danger-foreground: oklch(0.86 0.1 25);
   --status-neutral: oklch(0.27 0 0);
   --status-neutral-foreground: oklch(0.82 0 0);
+  --file-tone-1: oklch(0.24 0.03 250);
+  --file-tone-1-header: oklch(0.3 0.045 250);
+  --file-tone-2: oklch(0.24 0.03 300);
+  --file-tone-2-header: oklch(0.3 0.045 300);
+  --file-tone-3: oklch(0.24 0.03 210);
+  --file-tone-3-header: oklch(0.3 0.045 210);
+  --file-tone-4: oklch(0.24 0.015 260);
+  --file-tone-4-header: oklch(0.3 0.0225 260);
 }
 
 @layer base {

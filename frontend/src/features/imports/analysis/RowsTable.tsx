@@ -36,11 +36,12 @@ const columns = helper.columns([
   helper.display({
     id: 'file',
     header: s.columns.file,
-    // The sheet always shows; the file, long and shared by many rows, is cut with its whole name as tooltip.
+    // The sheet always shows; the file, long and shared by many rows, wraps where it does not fit (the names of the
+    // template have no spaces) and keeps its whole name as tooltip (design D7).
     cell: ({ row }) => (
-      <div className="flex max-w-56 flex-col">
+      <div className="flex max-w-64 flex-col">
         <span className="whitespace-nowrap font-medium">{row.original.sheetName}</span>
-        <span className="truncate text-muted-foreground" title={row.original.fileName}>
+        <span className="text-muted-foreground [overflow-wrap:anywhere]" title={row.original.fileName}>
           {row.original.fileName}
         </span>
       </div>

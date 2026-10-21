@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api/client'
 import type { ImportDetail } from '@/lib/api/types'
 import type { Analysis } from '../analyze'
+import { FileHeader } from '../FileHeader'
+import { fileTone } from '../file-tone'
 import { useConfirmMapping, useReloadImport } from '../mutations'
 import { useImportAccess } from '../permissions'
 import { strings } from '../strings'
@@ -61,23 +63,27 @@ export function MappingStep({ detail, analysis }: { detail: ImportDetail; analys
 
   return (
     <div className="flex flex-col gap-4">
-      {detail.files.map((file) => (
-        <section
-          key={file.fileId}
-          aria-label={file.fileName}
-          className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3"
-        >
-          <h2 className="break-all font-medium">{file.fileName}</h2>
-          {file.sheets.map((sheet) => (
-            <SheetCard
-              key={sheet.sheetId}
-              sheet={sheet}
-              editable={editable}
-              disabled={!editable || confirm.isPending || analysis.running}
-            />
-          ))}
-        </section>
-      ))}
+      {detail.files.map((file, position) => {
+        // The same tone as in Files: by position in detail.files (design D5).
+        const tone = fileTone(position)
+        return (
+          <section
+            key={file.fileId}
+            aria-label={file.fileName}
+            className={`flex flex-col gap-3 rounded-lg border p-3 ${tone.block}`}
+          >
+            <FileHeader fileName={file.fileName} sheetCount={file.sheets.length} toneClass={tone.header} heading />
+            {file.sheets.map((sheet) => (
+              <SheetCard
+                key={sheet.sheetId}
+                sheet={sheet}
+                editable={editable}
+                disabled={!editable || confirm.isPending || analysis.running}
+              />
+            ))}
+          </section>
+        )
+      })}
       <ReadinessBar detail={detail} missing={missing} />
       {editable && (
         <div className="flex flex-col gap-1.5">
