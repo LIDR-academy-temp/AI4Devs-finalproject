@@ -185,11 +185,13 @@ const previous = (code: TransactionStatusCode, rowNo: number): FixtureOccurrence
   includable: false,
 })
 
-const missing = (
+/** A missing finding; cycle I takes the status of its transaction (Chargeback unless told). */
+export const missing = (
   validationCode: 'missing_previous_to_batch' | 'missing_in_range',
-  missingRange: 'APP' | 'DEC' | 'R',
+  missingRange: 'APP' | 'DEC' | 'I' | 'R',
   transactionIdRaw: string,
   relevantDate: string,
+  statusCode: TransactionStatusCode = 'Chargeback',
 ): FixtureIssue =>
   finding({
     validationCode,
@@ -197,11 +199,14 @@ const missing = (
     scope: validationCode === 'missing_in_range' ? 'in_range' : 'previous_to_batch',
     transactionIdRaw,
     transactionId: transactionIdRaw,
-    cycle: missingRange === 'R' ? 'R' : 'E',
+    cycle: missingRange === 'R' ? 'R' : missingRange === 'I' ? 'I' : 'E',
     missingType: validationCode === 'missing_in_range' ? 'in_range' : 'previous_to_batch',
     missingRange,
     relevantDate: businessDate(relevantDate),
-    status: missingRange === 'R' ? null : status(missingRange === 'DEC' ? 'Declined' : 'Successful'),
+    status:
+      missingRange === 'R'
+        ? null
+        : status(missingRange === 'I' ? statusCode : missingRange === 'DEC' ? 'Declined' : 'Successful'),
   })
 
 // data/samples/batch-issues/expected.json: validations, affectedIds and defaults.

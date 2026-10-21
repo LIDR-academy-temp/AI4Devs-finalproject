@@ -4,7 +4,7 @@ import { auditInstant } from '@/lib/format'
 import type { UserName } from '@/test/msw/fixtures'
 import { issueTokens } from '@/test/msw/handlers'
 import { seedImport } from '@/test/msw/imports'
-import { batchIssuesFixture, issueKey, occurrenceKey, seedValidationRun } from '@/test/msw/validations'
+import { batchIssuesFixture, issueKey, missing, occurrenceKey, seedValidationRun } from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
 import { OPENING } from '@/test/validation-screens'
 
@@ -20,6 +20,11 @@ async function openFinding(importId: string, issueId: number) {
 }
 
 const drawer = () => within(screen.getByRole('dialog'))
+/** The facts of the finding as [term, definition] pairs. */
+const facts = () =>
+  drawer()
+    .getAllByRole('term')
+    .map((term) => [term.textContent, term.nextElementSibling?.textContent])
 const occurrences = () => within(drawer().getByRole('region', { name: 'Occurrences' })).getAllByRole('listitem')
 
 /** Whether an occurrence is included now, shown as text or as the state of its switch. */
@@ -185,6 +190,62 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
     await openFinding(importId, missing.issueId)
 
     expect(drawer().getByText('No occurrences: the transaction is not in this batch.')).toBeInTheDocument()
+  })
+
+  it('missing in range: the batch range of its cycle and status, from the run, and why it is missing', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const { issues } = seedValidationRun(importId)
+    const inRange = issues.find((i) => i.validationCode === 'missing_in_range' && i.missingRange === 'APP')!
+    await openFinding(importId, inRange.issueId)
+
+    expect(facts()).toContainEqual(['Batch range (E/APP)', '2026-09-28 00:00 ET – 2026-10-07 23:59 ET'])
+    expect(facts().map(([term]) => term)).not.toContain('Range')
+    expect(
+      drawer().getByText(
+        'Its date is inside the batch range, but it is not in this batch and no batch processed it in this cycle.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('missing previous to batch: the DEC range and why it is missing', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const { issues } = seedValidationRun(importId)
+    const previous = issues.find((i) => i.validationCode === 'missing_previous_to_batch')!
+    await openFinding(importId, previous.issueId)
+
+    expect(facts()).toContainEqual(['Batch range (E/DEC)', '2026-09-29 00:00 ET – 2026-10-07 23:59 ET'])
+    expect(
+      drawer().getByText('Its date is before the batch range and no batch processed it in this cycle.'),
+    ).toBeInTheDocument()
+  })
+
+  it('cycle I names the status of the transaction, and R has no status', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const fixture = batchIssuesFixture()
+    fixture.issues.push(missing('missing_previous_to_batch', 'I', '900000000000001', '2026-09-20T12:00:00.000Z'))
+    const { issues } = seedValidationRun(importId, fixture)
+    const chargeback = issues.find((i) => i.transactionIdRaw === '900000000000001')!
+    const { unmount } = await openFinding(importId, chargeback.issueId)
+
+    expect(facts()).toContainEqual(['Batch range (I/CHB)', '2026-09-28 00:00 ET – 2026-10-11 00:00 ET'])
+    unmount()
+
+    const reserve = issues.find((i) => i.validationCode === 'missing_in_range' && i.missingRange === 'R')!
+    await openFinding(importId, reserve.issueId)
+    expect(facts()).toContainEqual(['Batch range (R)', '2026-03-31 00:00 ET – 2026-04-09 00:00 ET'])
+  })
+
+  it('a missing finding of a superseded run keeps Range: the screen only has the ranges of the current run', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const old = seedValidationRun(importId).issues.find((i) => i.validationCode === 'missing_previous_to_batch')!
+    seedValidationRun(importId)
+    await openFinding(importId, old.issueId)
+
+    expect(facts()).toContainEqual(['Range', 'DEC'])
+    expect(facts().map(([term]) => term)).not.toContain('Batch range (E/DEC)')
+    expect(
+      drawer().getByText('Its date is before the batch range and no batch processed it in this cycle.'),
+    ).toBeInTheDocument()
   })
 
   it('a finding of a superseded run says so', async () => {
