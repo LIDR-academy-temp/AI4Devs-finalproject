@@ -73,8 +73,8 @@ Orden test-first en los grupos de comportamiento: los tests se escriben y se ven
 
 ## 11. Registro
 
-- [ ] 11.1 Añadir el change a `prompts.md` (origen en la revisión del 20-oct, decisiones D8 y D13, issues #85–#87) y una línea en `docs/wireframes/README.md` si las capturas de 12.3 cambian de nombre o de pantalla
-- [ ] 11.2 Commit: `docs(ui-polish): registro del change en prompts.md`
+- [x] 11.1 Añadir el change a `prompts.md` (origen en la revisión del 20-oct, decisiones D8 y D13, issues #85–#87) y una línea en `docs/wireframes/README.md` si las capturas de 12.3 cambian de nombre o de pantalla — *La línea de `docs/wireframes/README.md` se decide tras 12.3: hasta entonces las capturas no cambian de nombre ni de pantalla.*
+- [x] 11.2 Commit: `docs(ui-polish): registro del change en prompts.md`
 
 ## 12. Revisión en el navegador y capturas — con turno de base (D16)
 
