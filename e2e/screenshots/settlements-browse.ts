@@ -58,26 +58,30 @@ async function signIn(page: Page) {
  * (neither must happen).
  */
 async function overflows(page: Page): Promise<boolean> {
-  return page.evaluate(
-    () =>
-      document.documentElement.scrollWidth > window.innerWidth ||
-      [...document.querySelectorAll<HTMLElement>('[data-slot="table-container"]')].some(
-        (container) => container.scrollWidth > container.clientWidth,
-      ),
-  )
+  const { pagePx, tablesPx } = await page.evaluate(() => ({
+    pagePx: document.documentElement.scrollWidth - window.innerWidth,
+    tablesPx: [...document.querySelectorAll<HTMLElement>('[data-slot="table-container"]')].map(
+      (container) => container.scrollWidth - container.clientWidth,
+    ),
+  }))
+  const overflow = pagePx > 0 || tablesPx.some((px) => px > 0)
+  // How much, to know what to fix.
+  if (overflow) console.log(`  page ${pagePx} px over, tables ${tablesPx.join(', ')} px over`)
+  return overflow
 }
 
 /**
  * The pieces of the tables that must never split (figures, dates, times, the source row, a figure with the last word
- * of its label) that the browser drew over more than one line: an inline piece split across lines has more than one
- * box, a block one is taller than a line. Which text goes in each piece is checked by the jsdom tests.
+ * of its label) that the browser drew over more than one line: taller than one and a half lines. (Counting client
+ * rects does not work: an inline piece with a nested span has several on one line.) Which text goes in each piece is
+ * checked by the jsdom tests.
  */
 async function splitPieces(page: Page): Promise<string[]> {
   return page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>('[data-slot="table-container"] .whitespace-nowrap')]
       .filter((piece) => {
         const lineHeight = Number.parseFloat(getComputedStyle(piece).lineHeight)
-        return piece.getClientRects().length > 1 || piece.getBoundingClientRect().height > lineHeight * 1.5
+        return piece.getBoundingClientRect().height > lineHeight * 1.5
       })
       .map((piece) => piece.textContent ?? ''),
   )
