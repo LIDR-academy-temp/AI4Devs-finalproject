@@ -1,4 +1,6 @@
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useId } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { type BusinessDate, formatBusinessDateTime } from '@/lib/format'
 import { strings } from './strings'
 
@@ -22,31 +24,41 @@ function rangeText(range: DateRange): string {
   return range ? `${formatBusinessDateTime(range.min)} – ${formatBusinessDateTime(range.max)}` : s.none
 }
 
-/** The date ranges by cycle and status that the validations used (ui-polish design D9). */
+/**
+ * The date ranges by cycle and status that the validations used (ui-polish design D9): in its own card, as wide as
+ * the table and aligned to the left; the title of the card names the table.
+ */
 export function DateRangesTable({ title, ranges }: { title: string; ranges: Record<RangeKey, DateRange> }) {
+  const titleId = useId()
   return (
-    <Table className="w-auto text-sm">
-      <TableCaption className="mt-0 mb-1 caption-top text-left font-medium text-foreground">{title}</TableCaption>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{s.cycle}</TableHead>
-          <TableHead>{s.status}</TableHead>
-          <TableHead>{s.dateRange}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {ROWS.map((row) => (
-          <TableRow key={row.key}>
-            <TableCell className="font-medium">{row.cycle}</TableCell>
-            <TableCell>{row.status}</TableCell>
-            {row.range && (
-              <TableCell rowSpan={row.span} className="align-top tabular-nums">
-                {rangeText(ranges[row.range])}
-              </TableCell>
-            )}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <Card className="w-fit max-w-full">
+      <CardHeader>
+        <CardTitle id={titleId}>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table aria-labelledby={titleId} className="w-auto">
+          <TableHeader>
+            <TableRow>
+              <TableHead>{s.cycle}</TableHead>
+              <TableHead>{s.status}</TableHead>
+              <TableHead>{s.dateRange}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {ROWS.map((row) => (
+              <TableRow key={row.key}>
+                <TableCell className="font-medium">{row.cycle}</TableCell>
+                <TableCell>{row.status}</TableCell>
+                {row.range && (
+                  <TableCell rowSpan={row.span} className="align-top tabular-nums">
+                    {rangeText(ranges[row.range])}
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   )
 }

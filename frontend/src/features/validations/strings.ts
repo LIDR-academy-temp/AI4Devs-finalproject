@@ -38,6 +38,7 @@ export const strings = {
 
   header: {
     label: 'Validation run',
+    overallLabel: 'Overall result',
     overall: { blocked: 'Blocked', warnings: 'Warnings', passed: 'Passed' },
     run: (runId: number, at: string, userName: string) => `Run #${runId} · ${at} · ${userName}`,
     ranges: 'Date ranges used by the validations',
