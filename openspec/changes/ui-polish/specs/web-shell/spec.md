@@ -44,6 +44,7 @@ Toda tarjeta (Card) SHALL mostrar una sombra suave que la separe del fondo. La s
 
 ### Requirement: Colores de estado
 Los estados en Badge SHALL llevar un color según su sentido, siempre con su texto (nunca solo color) y con contraste AA (4,5:1) entre texto y fondo: verde para lo correcto o terminado bien, ámbar para lo que pide atención sin bloquear, rojo para lo que bloquea y gris para lo que no aplica o es neutro. Los colores SHALL ser variables del tema, con valor para el tema claro y el oscuro.
+
 #### Scenario: Resultados de las validaciones
 - **GIVEN** la corrida vigente de `batch-issues` con `Provider mismatch` en `passed`, siete validaciones en `warning` y ninguna `blocked`
 - **WHEN** abre el paso Analysis
@@ -63,7 +64,8 @@ Los estados en Badge SHALL llevar un color según su sentido, siempre con su tex
 
 #### Scenario: Estados del intento
 - **WHEN** el Settlement Summary, Settlement List o una aparición de un hallazgo muestran el estado de un intento
-- **THEN** `Processed · pending payment` (`processed`) se ve en ámbar, `Paid` (`paid`, `settled`) en verde y `Undone` en gris, siempre con su texto
+- **THEN** `processed` / `pending_payment` se ve en ámbar, `paid` / `settled` en verde y `undone` en gris, siempre con su texto
+- **AND** el Summary y Settlement List dicen `Processed · pending payment`, `Paid` y `Undone`; el panel de un hallazgo pinta el estado del batch en crudo (`processed`, `paid`, `undone`), con el mismo color
 - **AND** en el Summary, el aviso `Movements are not Settled yet: that happens when the batch is marked as paid.` se ve en ámbar, como su Badge
 
 #### Scenario: Contraste
