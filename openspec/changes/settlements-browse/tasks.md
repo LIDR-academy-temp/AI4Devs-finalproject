@@ -105,6 +105,23 @@ Orden test-first en cada grupo: los tests se escriben y se ven fallar (rojo) ant
 - [x] 9.8 Descripción del PR con la plantilla: §1.3, §4.4 y el issue (`Closes #64`), decisiones de los insumos 1 y 2, lo comprobado en 4.3, las capturas y que pagar, retirar el pago y deshacer quedan para el tramo 6. No crear ni mover issues desde la sesión
 - [x] 9.9 Commit: `test(api): colección Bruno de los settlements de una cuenta`, `chore(e2e): script de capturas de Settlement List y Movements fuera del smoke y de CI` y `docs(settlement): capturas de Settlement List y Movements y registro en prompts.md`
 
+## 10. Arreglos del review-diff de la PR #88 (veredicto: aprobar con cambios menores)
+
+Commits separados por tema, test primero cuando aplica. B8 (`aria-disabled` en el Pager) no se toca: va a un issue de la Entrega 3.
+
+- [x] 10.1 M1: el test del rango al revés espera a la petición de **From** solo, y una petición testigo (un **To** válido después) demuestra que la del rango al revés nunca salió: ninguna con `to=2026-10-01` y exactamente `before + 2` (la de **From** y la testigo). Rotura a propósito: pedir la lista aunque el rango esté al revés → cae
+- [x] 10.2 M2 (jsdom): ninguna celda ni encabezado de la lista y de Movements conserva `whitespace-nowrap` junto a `whitespace-normal`
+- [x] 10.3 M2 (script): `settlement-movements-i-1024.png` y el script termina con error si cualquier medición da desplazamiento o tabla recortada (las capturas se quedan en disco, pero no se versionan)
+- [x] 10.4 B3: volver a `All statuses` y vaciar **From** / **To** quita las claves de la consulta y de la dirección (el comportamiento ya era correcto; queda fijado con su test)
+- [x] 10.5 B4: `Account settlements` guarda el día ET del `processedAt` del 122 y `Account settlements - processed date` filtra `from = to` ese día con `dateField=processedAt` → solo el 122. Si se ignorara `dateField`, se filtraría la fecha de liquidación, que es otro día: la petición comprueba también que lo es
+- [x] 10.6 B5: `from` / `to` de la dirección se validan con `IsoDate` de `@recon/shared`; `2026-02-30`, `2026-13-01` y `2027-02-29` se descartan como cualquier otro valor inválido (`list-search.test.ts`)
+- [x] 10.7 B6: la lista y Movements usan la misma regla, `useLastPageLimit` en `Pager.tsx`: una página más allá de la última vuelve a la última con `replace` (sin entrada nueva en el historial). Tests con `?page=5` (lista, 22 intentos → página 2) y `?page=12` (E de 450 → página 9). Rotura a propósito: no limitar → caen los dos. Las páginas se cuentan con el `pageSize` de la respuesta
+- [x] 10.8 B7: el placeholder de Movements solo conserva filas del mismo intento (`queryKey[1] === batchId`) y del mismo ciclo. El test vuelve a un intento ya visitado, cuya vista está en caché, con su respuesta retenida: sin el arreglo se veían las filas del otro intento
+- [x] 10.9 B9: en **Reserves**, `Held`, `Released` y `Released on chargeback` van en una sola línea con su cifra (`whitespace-nowrap` en el par); `Expected release` puede partirse
+- [x] 10.10 Nits: cabeceras de `prisma-settlement-queries.ts` y `contract.ts` dentro del ancho; el test del día ET de procesado ya no dice que recarga
+- [x] 10.11 `pnpm lint`, `pnpm typecheck` y los unitarios de cada paquete en verde (shared 196, frontend 514, backend 1022 y 3 omitidos)
+- [ ] 10.12 **Con turno de base de la persona**: `pnpm --filter @recon/backend test:integration`, Bruno (`pnpm test:api`, que lanza la persona) y `pnpm screenshots:settlements-browse` con las seis mediciones y la nueva a 1024 px en `false`; versionar los PNG solo entonces
+
 ## Workflow follow-up
 
 - `/opsx:verify` para contrastar implementación y artifacts.
