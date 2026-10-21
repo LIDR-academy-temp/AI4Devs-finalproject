@@ -1,17 +1,12 @@
 // Texts of New Reconciliation and the import workspace (Upload Files, Column Mapping, Analysis). Those fixed by
 // openspec/specs/import are literal.
+import { strings as accountStrings } from '@/features/accounts/strings'
+
 export const strings = {
   newTitle: 'New Reconciliation',
   importTitle: 'Import',
-  picker: {
-    merchant: 'Merchant',
-    provider: 'Provider',
-    account: 'Account',
-    chooseMerchant: 'Choose a merchant',
-    chooseProvider: 'Choose a provider',
-    chooseAccount: 'Choose an account',
-    notAvailable: 'This merchant, provider or account is not available.',
-  },
+  /** The shared account choice (features/accounts/account-choice). */
+  picker: accountStrings.picker,
   upload: {
     dropZone: 'Drop .xlsx files here or choose files',
     chooseAccount: 'Choose an account to upload files.',

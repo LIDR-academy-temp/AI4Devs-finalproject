@@ -1,0 +1,35 @@
+meta {
+  name: Account settlements - bad date field
+  type: http
+  seq: 64
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/settlements?dateField=createdAt
+  body: none
+  auth: inherit
+}
+
+params:query {
+  dateField: createdAt
+}
+
+params:path {
+  accountId: {{providerAUsdAccountId}}
+}
+
+script:pre-request {
+  if (!bru.getVar('providerAUsdAccountId')) {
+    await bru.runRequest('10-smoke/Provider accounts');
+  }
+}
+
+tests {
+  test('a date field other than settlementDate or processedAt responds 400 validation_error', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}

@@ -1,4 +1,5 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -32,7 +33,15 @@ function ChannelList({ channels }: { channels: AccountChannelItem[] | undefined 
   )
 }
 
-function AccountRow({ account, channels }: { account: AccountSummary; channels: AccountChannelItem[] | undefined }) {
+function AccountRow({
+  account,
+  merchantId,
+  channels,
+}: {
+  account: AccountSummary
+  merchantId: number
+  channels: AccountChannelItem[] | undefined
+}) {
   return (
     <TableRow>
       <TableCell className="font-medium">{account.name}</TableCell>
@@ -45,6 +54,17 @@ function AccountRow({ account, channels }: { account: AccountSummary; channels: 
       </TableCell>
       <TableCell>
         <Badge variant="outline">{account.isActive ? strings.active : strings.closed}</Badge>
+      </TableCell>
+      <TableCell>
+        {/* Closed accounts too: their settlements are still there (spec accounts, settlements-browse D8). */}
+        <Link
+          to="/settlements"
+          search={{ merchantId, providerId: account.providerId, accountId: account.accountId }}
+          aria-label={strings.settlementsOf(account.name)}
+          className="text-primary underline underline-offset-4"
+        >
+          {strings.settlements}
+        </Link>
       </TableCell>
     </TableRow>
   )
@@ -93,11 +113,17 @@ export function ProviderAccounts({ providerId }: { providerId: number }) {
               <TableHead>{strings.columns.reservePolicy}</TableHead>
               <TableHead>{strings.columns.reserveCap}</TableHead>
               <TableHead>{strings.columns.status}</TableHead>
+              <TableHead>{strings.columns.settlements}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {accounts.map((account, index) => (
-              <AccountRow key={account.accountId} account={account} channels={channels[index]?.data} />
+              <AccountRow
+                key={account.accountId}
+                account={account}
+                merchantId={provider.data.merchantId}
+                channels={channels[index]?.data}
+              />
             ))}
           </TableBody>
         </Table>

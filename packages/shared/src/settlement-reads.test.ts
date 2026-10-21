@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  AccountSettlement,
+  AccountSettlementsPage,
+  AccountSettlementsQuery,
   AppliedFee,
   ExportQuery,
   ExportType,
@@ -185,6 +188,96 @@ describe('ImportSettlements', () => {
     const { isCurrent: _omitted, ...withoutCurrent } = attempt
     expect(ImportSettlementAttempt.safeParse(withoutCurrent).success).toBe(false)
     expect(ImportSettlementAttempt.safeParse({ ...attempt, amountPayable: 33771.36 }).success).toBe(false)
+  })
+})
+
+const ACCOUNT_ID = '9a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d'
+
+const accountSettlement = {
+  batchId: BATCH_ID,
+  importId: IMPORT_ID,
+  batchNo: 123,
+  attemptNo: 1,
+  status: 'processed',
+  settledStatus: 'pending_payment',
+  settlementDate: '2026-10-24',
+  processedAt: '2026-10-20T15:40:03.120Z',
+  approvedBy: { userId: 2, userName: 'analyst' },
+  amountPayable: '33771.3600',
+  channels: 'RAM-01,RAM-02,RAM-07',
+}
+
+describe('AccountSettlementsQuery', () => {
+  it('defaults page 1, pageSize 50 and the settlement date', () => {
+    expect(AccountSettlementsQuery.parse({})).toEqual({ dateField: 'settlementDate', page: 1, pageSize: 50 })
+  })
+
+  it('coerces query strings and bounds page and pageSize', () => {
+    expect(AccountSettlementsQuery.parse({ page: '2', pageSize: '20' })).toMatchObject({ page: 2, pageSize: 20 })
+    for (const bad of [{ page: '0' }, { pageSize: '0' }, { pageSize: '501' }, { page: '1.5' }])
+      expect(AccountSettlementsQuery.safeParse(bad).success).toBe(false)
+  })
+
+  it('accepts only the three attempt statuses', () => {
+    for (const status of ['processed', 'paid', 'undone'])
+      expect(AccountSettlementsQuery.parse({ status }).status).toBe(status)
+    for (const status of ['settled', 'Paid', ''])
+      expect(AccountSettlementsQuery.safeParse({ status }).success).toBe(false)
+  })
+
+  it('filters on the settlement date or the processed day', () => {
+    for (const dateField of ['settlementDate', 'processedAt'])
+      expect(AccountSettlementsQuery.parse({ dateField }).dateField).toBe(dateField)
+    for (const dateField of ['createdAt', 'processedat', ''])
+      expect(AccountSettlementsQuery.safeParse({ dateField }).success).toBe(false)
+  })
+
+  it('takes calendar days as YYYY-MM-DD', () => {
+    expect(AccountSettlementsQuery.parse({ from: '2026-10-24', to: '2026-10-24' })).toMatchObject({
+      from: '2026-10-24',
+      to: '2026-10-24',
+    })
+    for (const from of ['24/10/2026', '2026-02-30', '2026-10-24T00:00:00Z'])
+      expect(AccountSettlementsQuery.safeParse({ from }).success).toBe(false)
+  })
+
+  it('rejects a range whose start is after its end', () => {
+    const parsed = AccountSettlementsQuery.safeParse({ from: '2026-10-24', to: '2026-10-01' })
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.issues[0]?.path).toEqual(['from'])
+    expect(AccountSettlementsQuery.safeParse({ from: '2026-10-01', to: '2026-10-24' }).success).toBe(true)
+  })
+
+  it('rejects an unknown parameter', () => {
+    expect(AccountSettlementsQuery.safeParse({ cycle: 'E' }).success).toBe(false)
+  })
+})
+
+describe('AccountSettlementsPage', () => {
+  it('accepts the contract example', () => {
+    const page = { accountId: ACCOUNT_ID, page: 1, pageSize: 2, total: 23, items: [accountSettlement] }
+    expect(AccountSettlementsPage.parse(page)).toEqual(page)
+  })
+
+  it('admits an attempt without settlement date or channels', () => {
+    const bare = { ...accountSettlement, settlementDate: null, channels: null }
+    expect(AccountSettlement.parse(bare)).toEqual(bare)
+  })
+
+  it('carries the amount payable as a string and the audit instant in UTC', () => {
+    expect(AccountSettlement.safeParse({ ...accountSettlement, amountPayable: 33771.36 }).success).toBe(false)
+    expect(AccountSettlement.safeParse({ ...accountSettlement, processedAt: '2026-10-20T15:40:03.120' }).success).toBe(
+      false,
+    )
+    expect(AccountSettlement.safeParse({ ...accountSettlement, status: 'settled' }).success).toBe(false)
+  })
+
+  it('requires the account and the totals', () => {
+    const page = { accountId: ACCOUNT_ID, page: 1, pageSize: 50, total: 0, items: [] }
+    for (const key of ['accountId', 'page', 'pageSize', 'total', 'items']) {
+      const { [key]: _omitted, ...rest } = page as Record<string, unknown>
+      expect(AccountSettlementsPage.safeParse(rest).success).toBe(false)
+    }
   })
 })
 

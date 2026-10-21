@@ -1,4 +1,10 @@
-import { ImportSettlements, ROLES, SettlementTransactionsPage, SettlementView } from '@recon/shared'
+import {
+  AccountSettlementsPage,
+  ImportSettlements,
+  ROLES,
+  SettlementTransactionsPage,
+  SettlementView,
+} from '@recon/shared'
 import { afterEach, describe, expect, it } from 'vitest'
 import { buildTestApp, PASSWORD } from '../../../test-support/build-test-app.js'
 import { InMemoryAuditLogger } from '../../../test-support/in-memory-audit-logger.js'
@@ -28,8 +34,27 @@ const OTHER_BATCH = '9d1e2f30-4a5b-4c6d-8e7f-901a2b3c4d5e'
 const IMPORT_ID = '7b0c2a52-3f8e-4d0a-9a61-0d8f3b1e2c44'
 /** A user of merchant 1 with every viewer permission but reports.view (no seeded role lacks it: design insumo 3). */
 const NO_REPORTS = 'no_reports'
+const ACCOUNT_ID = BATCH_HEADER.accountId
+const OTHER_ACCOUNT = 'c0000000-0000-4000-8000-000000000003'
 let ctx: Awaited<ReturnType<typeof buildTestApp>> | undefined
 let audit: InMemoryAuditLogger
+let lastQueries: InMemorySettlementQueries
+
+function accountAttempt(batchNo: number) {
+  return {
+    batchId: `00000000-0000-4000-8000-${String(batchNo).padStart(12, '0')}`,
+    importId: IMPORT_ID,
+    batchNo,
+    attemptNo: 1,
+    status: 'paid' as const,
+    settledStatus: 'settled' as const,
+    settlementDate: '2026-10-24',
+    processedAt: '2026-10-22T15:40:03.120Z',
+    approvedBy: { userId: 2, userName: 'analyst' },
+    amountPayable: '33771.3600',
+    channels: 'RAM-01,RAM-02',
+  }
+}
 
 afterEach(async () => {
   await ctx?.app.close()
@@ -40,11 +65,19 @@ async function app() {
   audit = new InMemoryAuditLogger()
   const queries = new InMemorySettlementQueries({
     headers: [BATCH_HEADER, { ...BATCH_HEADER, batchId: OTHER_BATCH, status: 'paid' }],
-    merchantOf: new Map([[OTHER_BATCH, 2]]),
     movements: [storedMovement()],
     exportRows: [exportRow('911545593909470', 'E', 'Successful'), exportRow('911545512345678', 'R', 'Successful')],
     attempts: [{ importId: IMPORT_ID, currentBatchId: null, items: [] }],
+    accountSettlements: new Map([
+      [ACCOUNT_ID, [accountAttempt(122), accountAttempt(121)]],
+      [OTHER_ACCOUNT, [accountAttempt(7)]],
+    ]),
+    merchantOf: new Map([
+      [OTHER_BATCH, 2],
+      [OTHER_ACCOUNT, 2],
+    ]),
   })
+  lastQueries = queries
   const reads = new SettlementReadService({
     queries,
     reader: new RecordingSettlementReader(new Map([[EXAMPLE_BATCH_ID, exampleView()]])),
@@ -110,6 +143,71 @@ describe('GET /settlements/{id}, /transactions and /imports/{id}/settlements', (
   it('serves the reads to a user without reports.view', async () => {
     await app()
     expect((await get(`/settlements/${EXAMPLE_BATCH_ID}`, NO_REPORTS)).statusCode).toBe(200)
+  })
+})
+
+describe('GET /accounts/{id}/settlements', () => {
+  // Spec settlement "Settlements de una cuenta", "Filtros…" and "Alcance…" (settlements-browse "Contrato", D5).
+  it('answers the page of the account to analyst and to viewer, without a permission of its own', async () => {
+    await app()
+    for (const userName of ['analyst', 'viewer', NO_REPORTS]) {
+      const res = await get(`/accounts/${ACCOUNT_ID}/settlements?page=1&pageSize=50`, userName)
+      expect(res.statusCode, res.body).toBe(200)
+      expect(AccountSettlementsPage.parse(res.json())).toEqual({
+        accountId: ACCOUNT_ID,
+        page: 1,
+        pageSize: 50,
+        total: 2,
+        items: [accountAttempt(122), accountAttempt(121)],
+      })
+    }
+  })
+
+  it('passes the filters to the service, processedAt as it comes and the settlement date by default', async () => {
+    await app()
+    await get(`/accounts/${ACCOUNT_ID}/settlements?status=paid&from=2026-10-01&to=2026-10-31`, 'analyst')
+    await get(`/accounts/${ACCOUNT_ID}/settlements?dateField=processedAt&from=2026-10-20&pageSize=20`, 'analyst')
+    expect(lastQueries.asked.accountSettlements).toEqual([
+      { status: 'paid', dateField: 'settlementDate', from: '2026-10-01', to: '2026-10-31', page: 1, pageSize: 50 },
+      { dateField: 'processedAt', from: '2026-10-20', page: 1, pageSize: 20 },
+    ])
+  })
+
+  it('answers 401 unauthorized without a token', async () => {
+    await app()
+    const res = await get(`/accounts/${ACCOUNT_ID}/settlements`)
+    expect(res.statusCode).toBe(401)
+    expect(res.json().code).toBe('unauthorized')
+  })
+
+  it('answers the same 404 for an account of another merchant and for an unknown one', async () => {
+    await app()
+    const foreign = await get(`/accounts/${OTHER_ACCOUNT}/settlements`, 'viewer')
+    const unknown = await get(`/accounts/${UNKNOWN}/settlements`, 'viewer')
+    expect(foreign.statusCode).toBe(404)
+    expect(foreign.json()).toEqual({ code: 'not_found', message: 'Account not found' })
+    expect(unknown.statusCode).toBe(404)
+    expect(unknown.json()).toEqual(foreign.json())
+  })
+
+  it('answers 400 validation_error for a bad id, status, date field, day, range or page size', async () => {
+    await app()
+    const bad = [
+      '/accounts/not-a-uuid/settlements',
+      `/accounts/${ACCOUNT_ID}/settlements?status=settled`,
+      `/accounts/${ACCOUNT_ID}/settlements?dateField=createdAt`,
+      `/accounts/${ACCOUNT_ID}/settlements?from=24/10/2026`,
+      `/accounts/${ACCOUNT_ID}/settlements?from=2026-02-30`,
+      `/accounts/${ACCOUNT_ID}/settlements?from=2026-10-24&to=2026-10-01`,
+      `/accounts/${ACCOUNT_ID}/settlements?pageSize=501`,
+      `/accounts/${ACCOUNT_ID}/settlements?cycle=E`,
+    ]
+    for (const url of bad) {
+      const res = await get(url, 'analyst')
+      expect(res.statusCode, url).toBe(400)
+      expect(res.json().code, url).toBe('validation_error')
+    }
+    expect(lastQueries.asked.accountSettlements).toEqual([])
   })
 })
 
