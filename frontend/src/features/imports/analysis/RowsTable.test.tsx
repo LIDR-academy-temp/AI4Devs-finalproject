@@ -142,7 +142,8 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
     expect(within(first).queryByRole('combobox')).not.toBeInTheDocument()
   })
 
-  it('shows the sheet of each row first and its whole file name, wrapped and not cut, also as tooltip', async () => {
+  // jsdom does not lay out: whether the browser wraps the name is seen in the screenshots (design D7).
+  it('shows the sheet of each row first and its whole file name, without truncate and also as tooltip', async () => {
     const { importId } = seedImport('batch-split', { status: 'analyzed' })
     await openRows(`/imports/${importId}?step=analysis`)
 
