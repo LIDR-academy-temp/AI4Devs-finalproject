@@ -1,6 +1,6 @@
-// Search params of Settlement List (settlements-browse design D7). Invalid values are dropped; the days are YYYY-MM-DD
-// text, never parsed into a Date.
-import { BatchStatus, IntId } from '@recon/shared'
+// Search params of Settlement List (settlements-browse design D7). Invalid values are dropped, impossible days too;
+// the days are YYYY-MM-DD text, never parsed into a Date.
+import { BatchStatus, IntId, IsoDate } from '@recon/shared'
 import { z } from 'zod'
 import type { AccountChoiceSearch } from '@/features/accounts/account-choice'
 import type { SettlementDateField } from './contract'
@@ -14,8 +14,6 @@ export interface SettlementListSearch extends AccountChoiceSearch {
   page?: number
 }
 
-const DAY = /^\d{4}-\d{2}-\d{2}$/
-
 const intId = (value: unknown): number | undefined => {
   const parsed = IntId.safeParse(typeof value === 'number' ? String(value) : value)
   return parsed.success ? parsed.data : undefined
@@ -26,7 +24,11 @@ const uuid = (value: unknown): string | undefined => {
   return parsed.success ? parsed.data : undefined
 }
 
-const day = (value: unknown): string | undefined => (typeof value === 'string' && DAY.test(value) ? value : undefined)
+/** A day of the calendar, as the API checks it: `2026-02-30` is dropped like a malformed one. */
+const day = (value: unknown): string | undefined => {
+  const parsed = IsoDate.safeParse(value)
+  return parsed.success ? parsed.data : undefined
+}
 
 export const validateSettlementListSearch = (search: Record<string, unknown>): SettlementListSearch => {
   const status = BatchStatus.safeParse(search.status)
