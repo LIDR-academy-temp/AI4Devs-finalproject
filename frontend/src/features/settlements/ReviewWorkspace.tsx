@@ -169,7 +169,8 @@ function ReviewForm({
 
   return (
     <FormProvider {...form}>
-      <form className="grid gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]" onSubmit={(e) => e.preventDefault()}>
+      {/* The pre-summary beside the form only from 1536 px: narrower, its Date range column clips the card. */}
+      <form className="grid gap-4 2xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]" onSubmit={(e) => e.preventDefault()}>
         <fieldset disabled={processor.processing} className="flex min-w-0 flex-col gap-4">
           <BatchSection
             next={next}
