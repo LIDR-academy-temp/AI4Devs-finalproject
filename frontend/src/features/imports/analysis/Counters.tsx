@@ -1,5 +1,5 @@
 import type { MatchResult } from '@recon/shared'
-import { Link } from '@tanstack/react-router'
+import { Link, useSearch } from '@tanstack/react-router'
 import type { ImportDetail } from '@/lib/api/types'
 import { requestListFocus } from '@/lib/list-focus'
 import { strings } from '../strings'
@@ -16,6 +16,7 @@ export function Counters({
   analysis: NonNullable<ImportDetail['analysis']>
 }) {
   const { rows, byCycle } = analysis
+  const search = useSearch({ from: '/app/imports/$importId' })
   const card = (label: string, value: number, filter?: MatchResult) => {
     const warn = filter !== undefined && value > 0
     return (
@@ -34,7 +35,10 @@ export function Counters({
             replace
             // The rows below are filtered in place, and they take the focus (ui-polish design D13).
             resetScroll={false}
-            onClick={() => requestListFocus(ROWS_LIST)}
+            onClick={() => {
+              // Already filtered on its first page: the rows do not change, so it asks for nothing.
+              if (search.match !== filter || search.page !== undefined) requestListFocus(ROWS_LIST)
+            }}
             className="text-xs text-primary underline underline-offset-4"
           >
             {c.showRows(label)}

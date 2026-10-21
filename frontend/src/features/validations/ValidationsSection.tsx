@@ -53,9 +53,10 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
       replace: true,
       resetScroll: false,
     })
-  // Choosing a validation, from its table or from the decision, takes the focus to its findings.
+  // Choosing a validation, from its table or from the decision, takes the focus to its findings; choosing the one
+  // already shown on its first page changes nothing, so it asks for nothing.
   const select = (validation: ValidationCode) => {
-    requestListFocus(FINDINGS_LIST)
+    if (validation !== search.validation || search.ipage !== undefined) requestListFocus(FINDINGS_LIST)
     return go({ validation, ipage: undefined, issue: undefined })
   }
   // Stable, because the drawer closes itself from an effect when its finding is gone.

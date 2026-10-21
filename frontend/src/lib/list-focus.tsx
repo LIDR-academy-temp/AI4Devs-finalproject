@@ -1,13 +1,33 @@
+import { useRouterState } from '@tanstack/react-router'
 import { type ReactNode, useEffect, useRef } from 'react'
 
 // Focus after an in-page navigation (ui-polish design D13). The handler of a user action that updates a list asks
 // for the focus before navigating; the heading of that list takes it once it shows what was asked (its focusKey
 // changed or it mounted). Reloading, arriving by a link and Back/Forward ask nothing, so they never move the focus.
+// A request lives for one navigation only: ListFocusReset forgets it when that navigation is on screen, so an action
+// that changed nothing cannot leave one behind for a heading mounted later.
 let pending: string | null = null
 
 /** Asks the heading of the list `name` to take the focus after the navigation this action starts. */
 export function requestListFocus(name: string) {
   pending = name
+}
+
+/** Forgets a request no heading took. */
+export function forgetListFocus() {
+  pending = null
+}
+
+/**
+ * Forgets the request once each navigation is on screen. It goes after the routes, so their headings (whose effects
+ * run first) take theirs before it is forgotten.
+ */
+export function ListFocusReset() {
+  const shown = useRouterState({ select: (state) => state.resolvedLocation?.href })
+  useEffect(() => {
+    if (shown !== undefined) forgetListFocus()
+  }, [shown])
+  return null
 }
 
 /**
