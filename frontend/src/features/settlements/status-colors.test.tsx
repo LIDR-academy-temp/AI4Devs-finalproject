@@ -1,5 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { TONE_NOTICE_CLASS } from '@/lib/status-tone'
 import { ACCOUNT_IDS } from '@/test/msw/fixtures'
 import { accountSettlement, seedAccountSettlements, seedSettlement } from '@/test/msw/settlements'
 import { renderApp } from '@/test/render'
@@ -32,6 +33,8 @@ describe('status colours of the attempt', () => {
   it('Summary: the notice that movements are not Settled yet has the warning tone', async () => {
     const notice = (await summaryHeader('pending_payment')).getByText(strings.summary.notSettled)
     expect(notice).toHaveAttribute('data-tone', 'warning')
+    // The colour comes from the tone, like a Badge from its variant: a fixed colour in the notice breaks this.
+    expect(notice).toHaveClass(...TONE_NOTICE_CLASS.warning.split(' '))
   })
 
   it('Settlement List: each attempt with the tone of its status and its text', async () => {
