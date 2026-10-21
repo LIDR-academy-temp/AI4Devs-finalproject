@@ -202,7 +202,8 @@ describe('Settlement Summary: the Summary and Movements tabs', () => {
 
     await user.click(screen.getByRole('tab', { name: strings.summary.tabs.movements }))
     await screen.findByText(m.pageOf(1, 9, 450))
-    expect(within(bodyRows()[0]!).getByText('2026-09-28 00:04 ET')).toBeInTheDocument()
+    // Date and time are two whole pieces of the same cell (design D11).
+    expect(within(bodyRows()[0]!).getAllByRole('cell')[4]).toHaveTextContent(/^2026-09-28 00:04 ET$/)
     await user.click(screen.getByRole('button', { name: 'R (320)' }))
 
     await waitFor(() => expect(bodyRows()).toHaveLength(2))
