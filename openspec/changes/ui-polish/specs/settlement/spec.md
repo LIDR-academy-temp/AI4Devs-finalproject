@@ -59,6 +59,10 @@ Tras cada cambio válido del formulario, con debounce, la pantalla SHALL pedir `
 - **GIVEN** la vista previa con `dateRanges` APP, DEC e I
 - **THEN** `Totals by type` tiene la columna `Date range` con el mismo formato que en el Settlement Summary
 
+#### Scenario: Resumen previo a 1280 px
+- **GIVEN** la vista previa de `batch-clean` a 1280 px
+- **THEN** el resumen previo va debajo del formulario, como a 1024 px, y ninguna cifra ni rango de `Totals by type` se recorta ni obliga a desplazar la tabla
+
 #### Scenario: Filas que no se procesan
 - **GIVEN** la vista previa con `skipped = { ignored: 3, unmatched: 0, ambiguous: 0, excluded: 2, unresolvedStatus: 0, pending: 0 }`
 - **THEN** ve `Not processed: 3 ignored · 2 excluded` y ningún motivo con 0
