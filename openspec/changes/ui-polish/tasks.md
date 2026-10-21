@@ -20,10 +20,10 @@ Orden test-first en los grupos de comportamiento: los tests se escriben y se ven
 
 ## 3. Tema, menú, tarjetas y barra superior (D2, D3, D4)
 
-- [ ] 3.1 Test (rojo) en `app/layout/AppLayout.test.tsx` (escenarios "Alcance asignado" y "Alcance total" modificados): la cabecera muestra nombre, rol y **Sign out**, y no contiene `Merchant A, Merchant B` ni `All merchants` (cambio a propósito de `:108-114` y `:117-123`)
-- [ ] 3.2 Implementar `Header` sin merchants y quitar `allMerchants` / `noMerchants` de `app/layout/strings.ts`; verificar 3.1 en verde; romper a propósito devolviendo la lista y ver fallar 3.1; restaurar
-- [ ] 3.3 Añadir a `index.css` `--card-shadow` (`:root` y `.dark`) y `--shadow-card` en `@theme inline`, y `shadow-card` en `components/ui/card.tsx`; sangría de las entradas de grupo en `Sidebar` (`pl-6`, títulos y Dashboard en `px-3`); verificar `pnpm lint`, `pnpm --filter @recon/frontend build` y que los tests de `app/` siguen en verde. La comprobación visual queda en 12.2
-- [ ] 3.4 Commit: `test(frontend): barra superior sin la lista de merchants` y `feat(frontend): sangría del menú, sombra de las tarjetas como variable del tema y barra superior sin merchants`
+- [x] 3.1 Test (rojo) en `app/layout/AppLayout.test.tsx` (escenarios "Alcance asignado" y "Alcance total" modificados): la cabecera muestra nombre, rol y **Sign out**, y no contiene `Merchant A, Merchant B` ni `All merchants` (cambio a propósito de `:108-114` y `:117-123`)
+- [x] 3.2 Implementar `Header` sin merchants y quitar `allMerchants` / `noMerchants` de `app/layout/strings.ts`; verificar 3.1 en verde; romper a propósito devolviendo la lista y ver fallar 3.1; restaurar
+- [x] 3.3 Añadir a `index.css` `--card-shadow` (`:root` y `.dark`) y `--shadow-card` en `@theme inline`, y `shadow-card` en `components/ui/card.tsx`; sangría de las entradas de grupo en `Sidebar` (`pl-6`, títulos y Dashboard en `px-3`); verificar `pnpm lint`, `pnpm --filter @recon/frontend build` y que los tests de `app/` siguen en verde. La comprobación visual queda en 12.2
+- [x] 3.4 Commit: `test(frontend): barra superior sin la lista de merchants` y `feat(frontend): sangría del menú, sombra de las tarjetas como variable del tema y barra superior sin merchants`
 
 ## 4. Colores de estado (D8)
 

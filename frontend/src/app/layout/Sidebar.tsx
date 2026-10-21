@@ -4,18 +4,23 @@ import { useMe } from '@/lib/session/me'
 import { type NavItem, visibleNav } from './nav-config'
 import { strings } from './strings'
 
-const itemClass = 'flex items-center justify-between rounded-md px-3 py-1.5 text-sm'
+const itemClass = 'flex items-center justify-between rounded-md py-1.5 text-sm'
+
+// Entries of a titled group sit indented under the title; Dashboard lines up with the titles (design D2).
+const inGroupClass = 'pl-6 pr-3'
+const topLevelClass = 'px-3'
 
 const activeClass = 'bg-accent font-semibold'
 
-function Entry({ item }: { item: NavItem }) {
+function Entry({ item, inGroup }: { item: NavItem; inGroup: boolean }) {
   const pathname = useLocation({ select: (location) => location.pathname })
+  const indent = inGroup ? inGroupClass : topLevelClass
   if (!item.to) {
     return (
       <span
         aria-disabled="true"
         title={strings.notAvailableYet}
-        className={`${itemClass} cursor-not-allowed text-muted-foreground`}
+        className={`${itemClass} ${indent} cursor-not-allowed text-muted-foreground`}
       >
         <span>{item.label}</span>
         <Badge variant="outline" className="text-[10px]" aria-hidden="true">
@@ -29,7 +34,7 @@ function Entry({ item }: { item: NavItem }) {
     <Link
       to={item.to}
       activeOptions={{ exact: true, includeSearch: false }}
-      className={`${itemClass} hover:bg-accent ${activeUnder ? activeClass : ''}`}
+      className={`${itemClass} ${indent} hover:bg-accent ${activeUnder ? activeClass : ''}`}
       aria-current={activeUnder ? 'page' : undefined}
       activeProps={{ className: activeClass }}
     >
@@ -54,7 +59,7 @@ export function Sidebar() {
             <ul className="flex flex-col gap-0.5">
               {group.items.map((item) => (
                 <li key={item.label}>
-                  <Entry item={item} />
+                  <Entry item={item} inGroup={group.label !== undefined} />
                 </li>
               ))}
             </ul>

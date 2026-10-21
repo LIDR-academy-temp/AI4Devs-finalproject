@@ -7,8 +7,6 @@ export const strings = {
   soon: 'Soon',
   notAvailableYet: 'not available yet',
   signOut: 'Sign out',
-  allMerchants: 'All merchants',
-  noMerchants: 'No merchants',
   groups: {
     reconciliation: 'Reconciliation',
     settlements: 'Settlements',
