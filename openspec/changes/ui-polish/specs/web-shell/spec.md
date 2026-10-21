@@ -26,12 +26,17 @@ En la barra lateral, las entradas de un grupo SHALL verse sangradas respecto al 
 - **THEN** tiene la misma sangría que las entradas activas de su grupo
 
 ### Requirement: Aspecto de las tarjetas
-Toda tarjeta (Card) SHALL mostrar una sombra suave que la separe del fondo. La sombra SHALL salir de una variable del tema con un valor para el tema claro y otro para el oscuro, nunca de un valor fijo en el componente.
+Toda tarjeta (Card) SHALL mostrar una sombra suave que la separe del fondo. La sombra SHALL salir de una variable del tema con un valor para el tema claro y otro para el oscuro, nunca de un valor fijo en el componente. La sombra SHALL sumarse a lo que la tarjeta ya tenía: su relleno interior y su borde suave del color del tema, nunca un borde oscuro.
 
 #### Scenario: Tarjetas del Settlement Summary
 - **GIVEN** el Settlement Summary de un intento a 1280 px
 - **WHEN** lo mira con el tema claro
 - **THEN** cada tarjeta (totales, amount payable, marcas, fees) se distingue del fondo por una sombra suave hacia abajo y a la derecha
+
+#### Scenario: Relleno y borde de la tarjeta
+- **GIVEN** Login, New Reconciliation, Settlement Review, Settlement Summary o Settlement List
+- **WHEN** mira cualquier tarjeta
+- **THEN** su contenido no toca el borde, que conserva el gris suave del tema, y la sombra se ve fuera de él
 
 #### Scenario: Sombra del tema
 - **WHEN** se revisa la hoja de estilos
