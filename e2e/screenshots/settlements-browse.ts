@@ -39,10 +39,34 @@ async function clearPassword(page: Page) {
     .catch(() => {})
 }
 
+/**
+ * The look of the sign-in card, measured before anything is typed and never captured (ui-polish design D3): its
+ * padding, a translucent ring (the soft border of the theme, not currentColor) and the shadow of the theme. jsdom does
+ * not apply the CSS, so only a browser sees a class Tailwind does not recognise.
+ */
+async function checkLoginCard(page: Page) {
+  const { paddingTop, boxShadow } = await page
+    .locator('[data-slot="card"]')
+    .first()
+    .evaluate((card) => {
+      const style = getComputedStyle(card)
+      return { paddingTop: Number.parseFloat(style.paddingTop), boxShadow: style.boxShadow }
+    })
+  // The ring is the 1 px spread shadow; its colour must carry an alpha below 1.
+  const ring = boxShadow.split(/,(?![^(]*\))/).find((shadow) => /0px 0px 0px 1px/.test(shadow)) ?? ''
+  const translucentRing = /\/\s*0?\.\d+\)|rgba\([^)]*,\s*0?\.\d+\)/.test(ring)
+  const themeShadow = /2px 2px 9px/.test(boxShadow)
+  console.log(`login card: padding-top ${paddingTop} px, translucent ring ${translucentRing}, shadow ${themeShadow}`)
+  if (paddingTop <= 0 || !translucentRing || !themeShadow) {
+    throw new Error(`The sign-in card lost its look: padding-top ${paddingTop} px, box-shadow "${boxShadow}".`)
+  }
+}
+
 async function signIn(page: Page) {
   const password = process.env.SEED_PASSWORD
   if (!password) throw new Error('SEED_PASSWORD is not set: copy .env.example to .env at the repository root.')
   await page.goto(`${BASE_URL}/login`)
+  await checkLoginCard(page)
   await page.getByLabel('User name').fill('analyst')
   await setPassword(page, password)
   try {

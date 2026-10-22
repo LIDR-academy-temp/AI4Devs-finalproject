@@ -6,7 +6,7 @@
 // is on screen.
 import { existsSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { type Browser, chromium, expect, type Page } from '@playwright/test'
+import { type Browser, chromium, expect, type Locator, type Page } from '@playwright/test'
 
 const BASE_URL = 'http://localhost:5173'
 const OUT = fileURLToPath(new URL('../../docs/wireframes/web-validations/', import.meta.url))
@@ -81,6 +81,11 @@ async function overflows(page: Page): Promise<boolean> {
   return page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
 }
 
+/** Waits for the animations and transitions inside an element to finish (a drawer sliding in, a switch moving). */
+async function settled(element: Locator) {
+  await element.evaluate((node) => Promise.all(node.getAnimations({ subtree: true }).map((a) => a.finished)))
+}
+
 async function shot(page: Page, name: string) {
   await page.screenshot({ path: `${OUT}${name}.png` })
   console.log(`saved docs/wireframes/web-validations/${name}.png`)
@@ -126,6 +131,7 @@ async function main() {
     const drawer = page.getByRole('dialog')
     await drawer.getByRole('switch', { name: /row 338$/ }).click()
     await expect(drawer.getByText(/^Changed by analyst · /)).toBeVisible()
+    await settled(drawer)
     await shot(page, 'batch-issues-duplicate-drawer')
     await page.setViewportSize({ width: 1024, height: 768 })
     await shot(page, 'batch-issues-duplicate-drawer-1024')
@@ -133,6 +139,15 @@ async function main() {
     await expect(drawer).toBeHidden()
     console.log(`horizontal scroll at 1024 px: ${await overflows(page)}`)
     await page.setViewportSize({ width: 1280, height: 900 })
+
+    // A missing finding: the range of its cycle and status and why it is missing (ui-polish design D18).
+    await page.getByRole('button', { name: 'Missing in range' }).click()
+    await page.getByRole('table', { name: 'Findings' }).locator('[data-issue-button]').first().click()
+    await expect(drawer.getByText(/^Batch range \(/)).toBeVisible()
+    await settled(drawer)
+    await shot(page, 'batch-issues-missing-drawer')
+    await page.keyboard.press('Escape')
+    await expect(drawer).toBeHidden()
 
     // Continue, run again and the invalidated review.
     await page.getByRole('button', { name: 'Continue to settlement review' }).click()

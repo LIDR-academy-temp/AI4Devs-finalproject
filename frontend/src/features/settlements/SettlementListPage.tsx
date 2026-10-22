@@ -7,10 +7,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { type AccountChoiceSearch, AccountPicker, useAccountChoice } from '@/features/accounts/account-choice'
 import { strings as accountStrings } from '@/features/accounts/strings'
 import { ApiError } from '@/lib/api/client'
+import { ListHeading } from '@/lib/list-focus'
 import type { SettlementListSearch } from './list-search'
 import { accountSettlementsQuery } from './queries'
 import { isReversed, type ListFilters, SettlementFilters } from './SettlementFilters'
-import { SettlementsTable } from './SettlementsTable'
+import { SETTLEMENTS_LIST, SettlementsTable } from './SettlementsTable'
 import { strings } from './strings'
 
 const s = strings.list
@@ -52,6 +53,10 @@ function AccountSettlements({
   return (
     <div className="flex flex-col gap-4">
       <SettlementFilters filters={filters} onChange={onFilters} />
+      {/* Above the table, so it is there while the next page loads (ui-polish design D13). */}
+      <ListHeading name={SETTLEMENTS_LIST} focusKey={String(page)} as="h2" className="font-medium">
+        {s.heading}
+      </ListHeading>
       {body}
     </div>
   )
@@ -75,6 +80,8 @@ export function SettlementListPage() {
           page: next.accountId === prev.accountId ? prev.page : undefined,
         }),
         replace: options?.replace,
+        // Choosing in place: the page stays where it is (ui-polish design D13).
+        resetScroll: false,
       }),
     [navigate],
   )
@@ -94,13 +101,18 @@ export function SettlementListPage() {
               accountId={choice.account.accountId}
               search={search}
               // A new filter is a new list: back to its first page.
+              // The list changes in place: the page stays where it is, and the filters keep the focus (design D13).
               onFilters={(next) =>
-                void navigate({ search: (prev: SettlementListSearch) => ({ ...prev, ...next, page: undefined }) })
+                void navigate({
+                  search: (prev: SettlementListSearch) => ({ ...prev, ...next, page: undefined }),
+                  resetScroll: false,
+                })
               }
               onPage={(page, options) =>
                 void navigate({
                   search: (prev: SettlementListSearch) => ({ ...prev, page: page > 1 ? page : undefined }),
                   replace: options?.replace,
+                  resetScroll: false,
                 })
               }
             />

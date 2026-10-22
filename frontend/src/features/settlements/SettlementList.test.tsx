@@ -56,7 +56,7 @@ describe('Settlement List: columns', () => {
       '122',
       '1',
       'Paid',
-      '2026-10-02 ET',
+      '2026-10-02',
       'analyst · 2026-09-30 11:40 ET',
       '30,122.4500',
       'RAM-01,RAM-02',
@@ -107,7 +107,7 @@ describe('Settlement List: columns', () => {
     expect(within(cells[2]!).getByText('Processed · pending payment')).toHaveClass('whitespace-normal')
     expect(cells[4]).toHaveClass('whitespace-normal')
     // Dates are never cut at a hyphen: the line may only break between who and when.
-    expect(within(cells[3]!).getByText('2026-10-02 ET')).toHaveClass('whitespace-nowrap')
+    expect(within(cells[3]!).getByText('2026-10-02')).toHaveClass('whitespace-nowrap')
     expect(within(cells[4]!).getByText('2026-09-30 11:40 ET')).toHaveClass('whitespace-nowrap')
     expect(within(cells[5]!).getByText('33,771.3600')).toHaveClass('whitespace-nowrap')
     // The label as stored, with a break opportunity after each comma: nothing is split nor dropped.

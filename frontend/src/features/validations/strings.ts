@@ -38,14 +38,23 @@ export const strings = {
 
   header: {
     label: 'Validation run',
+    overallLabel: 'Overall result',
     overall: { blocked: 'Blocked', warnings: 'Warnings', passed: 'Passed' },
     run: (runId: number, at: string, userName: string) => `Run #${runId} · ${at} · ${userName}`,
-    ranges: 'Ranges used',
-    noRange: '—',
+    ranges: 'Date ranges used by the validations',
     counters: 'Informative counters',
     pendingInRange: 'Pending in range',
     undatedAdjustments: 'Undated adjustments',
     undatedCandidates: 'Undated candidates',
+    // What each counter counts (README §3.3, "Candidatas I sin fecha" and "Pending"; design D10).
+    explain: {
+      pendingInRange:
+        "Transactions of the account's channels still Pending on the gateway, created within the APP or DEC range.",
+      undatedAdjustments: 'Rows of this batch in cycle I without a status-change date.',
+      undatedCandidates:
+        'Gateway transactions in a cycle I status without a status-change date: they cannot be compared with the I range.',
+      note: 'Informative: none of them is a finding.',
+    },
   },
 
   table: {
@@ -132,6 +141,19 @@ export const strings = {
     reported: 'Reported status',
     gateway: 'Gateway status',
     range: 'Range',
+    /** The range of the batch for the cycle and status of a missing finding (design D18). */
+    batchRange: (cycleStatus: string) => `Batch range (${cycleStatus})`,
+    noRange: '—',
+    /**
+     * Why a finding is missing, by missingType (README §3.3, "Faltantes": not in the batch and not processed in that
+     * cycle in a batch in force, not undone, of any account of the provider).
+     */
+    whyMissing: {
+      in_range:
+        'Its date is inside the batch range, but it is not in this batch and no batch of the provider in force (not undone) processed it in this cycle.',
+      previous_to_batch:
+        'Its date is before the batch range, it is not in this batch and no batch of the provider in force (not undone) processed it in this cycle.',
+    },
     relevantDate: 'Date',
     source: 'Row',
     occurrences: 'Occurrences',

@@ -1,38 +1,42 @@
+import type { ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { formatAuditDateTime, formatBusinessDate, formatBusinessDateTime } from '@/lib/format'
+import { formatAuditDateTime, formatBusinessDate } from '@/lib/format'
+import { SETTLED_STATUS_TONE, TONE_NOTICE_CLASS, toneOf } from '@/lib/status-tone'
 import type { SettlementView } from './contract'
 import { strings } from './strings'
 
 const s = strings.summary
-const CYCLES = ['APP', 'DEC', 'I', 'R'] as const
 
-/** The attempt, its status, who processed it and when, its business dates (design D11, D14). */
+/** The attempt in a compact grid and whether it is Settled (design D11); its date ranges are in Totals by type (D9). */
 export function SummaryHeader({ view }: { view: SettlementView }) {
+  const tone = toneOf(SETTLED_STATUS_TONE, view.settledStatus)
+  const items: [string, ReactNode][] = [
+    [s.grid.account, view.accountName],
+    [s.grid.batch, s.batchAttempt(view.batchNo, view.attemptNo)],
+    [
+      s.grid.status,
+      <Badge key="status" variant={tone}>
+        {s.status[view.settledStatus]}
+      </Badge>,
+    ],
+    [s.grid.processedBy, s.byAt(view.approvedBy.userName, formatAuditDateTime(view.processedAt))],
+    [s.grid.settlementDate, view.settlementDate ? formatBusinessDate(view.settlementDate) : s.notSet],
+  ]
+
   return (
-    <section aria-label={s.title(view.batchNo)} className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{s.title(view.batchNo)}</h1>
-        <Badge variant="outline">{s.status[view.settledStatus]}</Badge>
-      </div>
-      <p className="text-sm text-muted-foreground">{s.attempt(view.accountName, view.attemptNo)}</p>
-      <p className="text-sm">{s.processedBy(view.approvedBy.userName, formatAuditDateTime(view.processedAt))}</p>
-      {view.settlementDate && <p className="text-sm">{s.settlementDate(formatBusinessDate(view.settlementDate))}</p>}
-      <ul aria-label={s.ranges} className="flex flex-wrap gap-x-4 text-sm text-muted-foreground tabular-nums">
-        {CYCLES.map((cycle) => {
-          const range = view.dateRanges[cycle]
-          return (
-            <li key={cycle}>
-              {s.range(
-                cycle,
-                range ? formatBusinessDateTime(range.min) : null,
-                range ? formatBusinessDateTime(range.max) : null,
-              )}
-            </li>
-          )
-        })}
-      </ul>
+    <section aria-label={s.title(view.batchNo)} className="flex flex-col gap-3">
+      <h1 className="text-2xl font-semibold">{s.title(view.batchNo)}</h1>
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm lg:grid-cols-5">
+        {items.map(([term, definition]) => (
+          <div key={term} className="flex flex-col gap-0.5">
+            <dt className="text-muted-foreground">{term}</dt>
+            <dd className="font-medium tabular-nums">{definition}</dd>
+          </div>
+        ))}
+      </dl>
       {view.settledStatus === 'pending_payment' && (
-        <p className="rounded-md border border-emerald-600/40 bg-emerald-50/50 p-2 text-sm dark:bg-emerald-950/30">
+        // The payment is still pending: the colours of the tone of the status Badge (design D8, status notice).
+        <p data-tone={tone} className={`rounded-md border p-2 text-sm ${TONE_NOTICE_CLASS[tone]}`}>
           {s.notSettled}
         </p>
       )}

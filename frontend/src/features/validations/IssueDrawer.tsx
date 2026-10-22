@@ -13,26 +13,58 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ApiError } from '@/lib/api/client'
 import { formatAuditDateTime, formatBusinessDateTime } from '@/lib/format'
-import type { OccurrenceView, ValidationIssueDetail } from './contract'
+import type { DateRange, OccurrenceView, ValidationIssueDetail, ValidationRun } from './contract'
 import { InclusionSwitch } from './InclusionSwitch'
 import { IssueHistory } from './IssueHistory'
 import { idOf, typeOf } from './IssuesList'
 import { useIssueActions } from './mutations'
 import { Occurrences } from './Occurrences'
-import { validationIssueQuery } from './queries'
+import { validationIssueQuery, validationRunQuery } from './queries'
 import { ResolveForm } from './ResolveForm'
 import { strings } from './strings'
 
 const s = strings.drawer
 
-function Facts({ issue }: { issue: ValidationIssueDetail }) {
+/** The status of cycle I as the tables of ranges abbreviate it; the other statuses are not cycle I. */
+const I_STATUS: Partial<Record<string, string>> = { Chargeback: 'CHB', Refund: 'REF', RDR: 'RDR' }
+
+/** `E/APP`, `E/DEC`, `I/CHB` (just `I` without a status) or `R`, which has no status: a stage, not a status. */
+function cycleStatusOf(issue: ValidationIssueDetail): string | null {
+  switch (issue.missingRange) {
+    case 'APP':
+    case 'DEC':
+      return `E/${issue.missingRange}`
+    case 'I': {
+      const status = issue.status && I_STATUS[issue.status.code]
+      return status ? `I/${status}` : 'I'
+    }
+    case 'R':
+      return 'R'
+    default:
+      return null
+  }
+}
+
+const rangeText = (range: DateRange | null) =>
+  range ? `${formatBusinessDateTime(range.min)} – ${formatBusinessDateTime(range.max)}` : s.noRange
+
+/**
+ * The facts of the finding. A missing finding of the current run shows the range of the batch it was compared with,
+ * read from that run (design D18); one of a superseded run keeps the bare cycle in Range.
+ */
+function Facts({ issue, ranges }: { issue: ValidationIssueDetail; ranges: ValidationRun['ranges'] | null }) {
   const where = issue.source && s.location(issue.source.fileName, issue.source.sheetName, issue.source.rowNo)
+  const cycleStatus = cycleStatusOf(issue)
+  const batchRange =
+    ranges && issue.missingRange && cycleStatus
+      ? ([s.batchRange(cycleStatus), rangeText(ranges[issue.missingRange])] as const)
+      : null
   const facts = [
     [s.type, typeOf(issue)],
     [s.cycle, issue.cycle],
     [s.reported, issue.status?.name],
     [s.gateway, issue.gatewayStatus?.name],
-    [s.range, issue.missingRange],
+    batchRange ?? [s.range, issue.missingRange],
     [s.relevantDate, issue.relevantDate && formatBusinessDateTime(issue.relevantDate)],
     [s.source, where],
   ].filter((fact): fact is [string, string] => Boolean(fact[1]))
@@ -64,6 +96,9 @@ function Resolution({ issue }: { issue: ValidationIssueDetail }) {
 /** The loaded finding with its actions (design D7); the controls follow only the flags the API sends. */
 function Finding({ issue, onPending }: { issue: ValidationIssueDetail; onPending?: (pending: boolean) => void }) {
   const actions = useIssueActions(issue, onPending)
+  // The run is already read by the section; its ranges are the ones of this finding only if it is that run.
+  const run = useQuery(validationRunQuery(issue.importId)).data?.run
+  const ranges = issue.run.isCurrent && run?.runId === issue.runId ? run.ranges : null
   const [asking, setAsking] = useState<{ occurrence: OccurrenceView; to: boolean } | null>(null)
   const c = strings.inclusion.confirm
 
@@ -76,7 +111,8 @@ function Finding({ issue, onPending }: { issue: ValidationIssueDetail; onPending
   return (
     <>
       {!issue.run.isCurrent && <p className="text-sm text-amber-700 dark:text-amber-400">{s.superseded}</p>}
-      <Facts issue={issue} />
+      <Facts issue={issue} ranges={ranges} />
+      {issue.missingType && <p className="text-sm">{s.whyMissing[issue.missingType]}</p>}
       <div aria-live="polite" className="text-sm">
         {actions.message && <p className="text-destructive">{actions.message}</p>}
       </div>

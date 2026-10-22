@@ -2,6 +2,7 @@ import '@testing-library/jest-dom/vitest'
 import { Blob as NodeBlob, File as NodeFile } from 'node:buffer'
 import { cleanup } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll } from 'vitest'
+import { forgetListFocus } from '@/lib/list-focus'
 import { session } from '@/lib/session/session'
 import { resetDb } from './msw/handlers'
 import { server } from './msw/server'
@@ -56,6 +57,8 @@ afterEach(() => {
   server.resetHandlers()
   resetDb()
   session.clear()
+  // The focus request lives in its module: one a test leaves behind must not reach the next test.
+  forgetListFocus()
   localStorage.clear()
   sessionStorage.clear()
 })

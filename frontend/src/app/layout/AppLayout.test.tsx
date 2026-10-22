@@ -105,22 +105,24 @@ describe('navigation filtered by permissions', () => {
 })
 
 describe('identity', () => {
-  it('shows name, role and the visible merchants', async () => {
+  it('shows name, role and Sign out, without the merchants of the scope', async () => {
     renderApp('/', { as: 'analyst' })
     const banner = within(await screen.findByRole('banner'))
 
     expect(banner.getByText('Analyst')).toBeInTheDocument()
     expect(banner.getByText('analyst')).toBeInTheDocument()
-    expect(banner.getByText('Merchant A, Merchant B')).toBeInTheDocument()
+    expect(banner.getByRole('button', { name: strings.signOut })).toBeInTheDocument()
+    expect(banner.queryByText('Merchant A, Merchant B')).not.toBeInTheDocument()
   })
 
-  it('shows All merchants for a user whose scope is all', async () => {
+  it('does not show All merchants for a user whose scope is all', async () => {
     renderApp('/', { as: 'admin' })
     const banner = within(await screen.findByRole('banner'))
 
     expect(banner.getByText('Admin')).toBeInTheDocument()
     expect(banner.getByText('admin')).toBeInTheDocument()
-    expect(banner.getByText(strings.allMerchants)).toBeInTheDocument()
+    expect(banner.getByRole('button', { name: strings.signOut })).toBeInTheDocument()
+    expect(banner.queryByText('All merchants')).not.toBeInTheDocument()
   })
 })
 

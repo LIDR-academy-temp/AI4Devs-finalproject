@@ -23,6 +23,7 @@ export const strings = {
   files: {
     label: 'Files',
     sheet: (name: string, rows: number) => `${name} · ${rows} ${rows === 1 ? 'row' : 'rows'}`,
+    sheets: (count: number) => `${count} ${count === 1 ? 'sheet' : 'sheets'}`,
     hidden: 'hidden',
     uploading: 'Uploading…',
     pending: 'Waiting…',
@@ -48,10 +49,11 @@ export const strings = {
     ready: 'Ready to analyze',
     file: (fileName: string) => `Readiness · ${fileName}`,
     informational: (count: number) => `${count} informational ${count === 1 ? 'note' : 'notes'}`,
-    item: (sheetName: string | null, field: string | undefined, message: string) =>
-      `${sheetName ?? 'Import'} · ${field ?? 'note'}: ${message}`,
-    note: (sheetName: string | null, message: string) => `${sheetName ?? 'Import'} · ${message}`,
-    unconfirmed: (sheetName: string) => `${sheetName} · confirmation: the mapping of this sheet is not confirmed`,
+    // Each item is its sheet in bold and its description; the hidden separator makes it read as one sentence.
+    importSheet: 'Import',
+    separator: ': ',
+    item: (field: string | undefined, message: string) => `${field ?? 'note'}: ${message}`,
+    unconfirmed: 'confirmation: the mapping of this sheet is not confirmed',
   },
   mapping: {
     kind: 'Type',

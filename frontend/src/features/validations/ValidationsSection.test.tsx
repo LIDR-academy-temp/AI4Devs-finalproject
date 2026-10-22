@@ -16,6 +16,29 @@ async function openAnalysis(importId: string) {
 
 const section = () => within(screen.getByRole('region', { name: 'Validations' }))
 const runHeader = () => within(screen.getByRole('region', { name: 'Validation run' }))
+/** The row of the title: the heading, then the overall result of the run. */
+const titleRow = () => section().getByRole('heading', { name: 'Validations' }).parentElement!
+const overall = () => within(titleRow())
+const RANGES_TITLE = 'Date ranges used by the validations'
+const rangesTable = () => within(runHeader().getByRole('table', { name: RANGES_TITLE }))
+const rangeHeaders = () =>
+  rangesTable()
+    .getAllByRole('columnheader')
+    .map((h) => h.textContent)
+const rangeRows = () =>
+  rangesTable()
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) =>
+      within(row)
+        .getAllByRole('cell')
+        .map((c) => c.textContent),
+    )
+/** Each counter as [name, value, explanation], read from its term and its definitions. */
+const counters = () =>
+  within(runHeader().getByRole('region', { name: 'Informative counters' }))
+    .getAllByRole('term')
+    .map((term) => [term, ...within(term.parentElement!).getAllByRole('definition')].map((el) => el.textContent))
 const resultRows = () =>
   within(screen.getByRole('table', { name: 'Validation results' }))
     .getAllByRole('row')
@@ -43,42 +66,66 @@ describe('Analysis & Validations: running the validations (spec "ejecutar la cor
 })
 
 describe('Analysis & Validations: header of the run (spec "cabecera de la corrida")', () => {
-  it('batch-issues: Warnings, the run with its date in ET and its user, the ranges as they arrive and the counters', async () => {
+  it('batch-issues: Warnings, the run with its date in ET and its user, the table of ranges and the counters explained', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const { runId } = seedValidationRun(importId)
     await openAnalysis(importId)
 
-    expect(runHeader().getByText('Warnings')).toBeInTheDocument()
-    // The fake's audit clock starts at 14:00 UTC, 10:00 in New York (EDT).
-    expect(runHeader().getByText(`Run #${runId} · 2026-10-18 10:00 ET · analyst`)).toBeInTheDocument()
-    const ranges = within(runHeader().getByRole('list', { name: 'Ranges used' }))
-    expect(ranges.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      'APP 2026-09-28 00:00 ET – 2026-10-07 23:59 ET',
-      'DEC 2026-09-29 00:00 ET – 2026-10-07 23:59 ET',
-      'I 2026-09-28 00:00 ET – 2026-10-11 00:00 ET',
-      'R 2026-03-31 00:00 ET – 2026-04-09 00:00 ET',
+    // Next to the title: the label, the overall result and, as secondary text, the run. The fake's audit clock starts
+    // at 14:00 UTC, 10:00 in New York (EDT).
+    expect(titleRow()).toHaveTextContent(
+      `ValidationsOverall resultWarningsRun #${runId} · 2026-10-18 10:00 ET · analyst`,
+    )
+    expect(overall().getByText('Warnings')).toHaveAttribute('data-slot', 'badge')
+    expect(runHeader().queryByText('Warnings')).not.toBeInTheDocument()
+    // The table of ranges in its own card, which titles it.
+    const card = runHeader().getByRole('table', { name: RANGES_TITLE }).closest<HTMLElement>('[data-slot="card"]')
+    expect(within(card!).getByText(RANGES_TITLE)).toHaveAttribute('data-slot', 'card-title')
+    // Six rows by cycle and status, one I range for CHB, REF and RDR, and no Transactions column (#87).
+    expect(rangeHeaders()).toEqual(['Cycle', 'Status', 'Date range'])
+    expect(rangeRows()).toEqual([
+      ['E', 'APP', '2026-09-28 00:00 ET – 2026-10-07 23:59 ET'],
+      ['E', 'DEC', '2026-09-29 00:00 ET – 2026-10-07 23:59 ET'],
+      ['I', 'CHB', '2026-09-28 00:00 ET – 2026-10-11 00:00 ET'],
+      ['I', 'REF'],
+      ['I', 'RDR'],
+      ['R', '—', '2026-03-31 00:00 ET – 2026-04-09 00:00 ET'],
     ])
-    const counters = within(runHeader().getByRole('list', { name: 'Informative counters' }))
-    expect(counters.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      'Pending in range 0',
-      'Undated adjustments 1',
-      'Undated candidates 0',
+    // Each counter with its value and what it counts; none of them is a finding.
+    expect(counters()).toEqual([
+      [
+        'Pending in range',
+        '0',
+        "Transactions of the account's channels still Pending on the gateway, created within the APP or DEC range.",
+      ],
+      ['Undated adjustments', '1', 'Rows of this batch in cycle I without a status-change date.'],
+      [
+        'Undated candidates',
+        '0',
+        'Gateway transactions in a cycle I status without a status-change date: they cannot be compared with the I range.',
+      ],
     ])
+    expect(runHeader().getByText('Informative: none of them is a finding.')).toBeInTheDocument()
   })
 
-  it('batch-blocked: Blocked, and a range without rows as —', async () => {
+  it('batch-blocked: Blocked next to the title and no table of ranges', async () => {
     const { importId } = seedImport('batch-blocked', { status: 'analyzed' })
     seedValidationRun(importId)
     await openAnalysis(importId)
 
-    expect(runHeader().getByText('Blocked')).toBeInTheDocument()
-    const ranges = within(runHeader().getByRole('list', { name: 'Ranges used' }))
-    expect(ranges.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      'APP 2026-09-28 00:00 ET – 2026-10-07 23:59 ET',
-      'DEC —',
-      'I —',
-      'R —',
-    ])
+    expect(overall().getByText('Blocked')).toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: RANGES_TITLE })).not.toBeInTheDocument()
+    expect(runHeader().getByRole('region', { name: 'Informative counters' })).toBeInTheDocument()
+  })
+
+  it('a range without rows is — (spec "Rango sin filas")', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const fixture = batchIssuesFixture()
+    fixture.ranges = { ...fixture.ranges, DEC: null }
+    seedValidationRun(importId, fixture)
+    await openAnalysis(importId)
+
+    expect(rangeRows()[1]).toEqual(['E', 'DEC', '—'])
   })
 
   it('a run without warnings is Passed', async () => {
@@ -86,7 +133,7 @@ describe('Analysis & Validations: header of the run (spec "cabecera de la corrid
     seedValidationRun(importId)
     await openAnalysis(importId)
 
-    expect(runHeader().getByText('Passed')).toBeInTheDocument()
+    expect(overall().getByText('Passed')).toBeInTheDocument()
   })
 })
 

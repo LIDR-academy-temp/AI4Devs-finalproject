@@ -7,14 +7,15 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useCanProcess } from '@/features/imports/permissions'
 import type { ImportSearch } from '@/features/imports/validate-search'
 import type { ImportDetail } from '@/lib/api/types'
+import { requestListFocus } from '@/lib/list-focus'
 import { DecisionBar } from './DecisionBar'
 import { InvalidatedReviewNotice } from './InvalidatedReviewNotice'
 import { IssueDrawer } from './IssueDrawer'
-import { IssuesList } from './IssuesList'
+import { FINDINGS_LIST, IssuesList } from './IssuesList'
 import { useReview, useRunValidations } from './mutations'
 import { validationRunKey, validationRunQuery } from './queries'
 import { RunButton } from './RunButton'
-import { RunHeader } from './RunHeader'
+import { OverallResult, RunHeader } from './RunHeader'
 import { strings } from './strings'
 import { ValidationsTable } from './ValidationsTable'
 
@@ -45,12 +46,23 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
   const search = useSearch({ from: '/app/imports/$importId' })
   const navigate = useNavigate({ from: '/imports/$importId' })
 
+  // Only what the section shows changes: the page stays where it is (ui-polish design D13).
   const go = (change: Partial<ImportSearch>) =>
-    navigate({ search: (prev: ImportSearch) => ({ ...prev, step: 'analysis', ...change }), replace: true })
-  const select = (validation: ValidationCode) => go({ validation, ipage: undefined, issue: undefined })
+    navigate({
+      search: (prev: ImportSearch) => ({ ...prev, step: 'analysis', ...change }),
+      replace: true,
+      resetScroll: false,
+    })
+  // Choosing a validation, from its table or from the decision, takes the focus to its findings; choosing the one
+  // already shown on its first page changes nothing, so it asks for nothing.
+  const select = (validation: ValidationCode) => {
+    if (validation !== search.validation || search.ipage !== undefined) requestListFocus(FINDINGS_LIST)
+    return go({ validation, ipage: undefined, issue: undefined })
+  }
   // Stable, because the drawer closes itself from an effect when its finding is gone.
   const close = useCallback(
-    () => navigate({ search: (prev: ImportSearch) => ({ ...prev, issue: undefined }), replace: true }),
+    () =>
+      navigate({ search: (prev: ImportSearch) => ({ ...prev, issue: undefined }), replace: true, resetScroll: false }),
     [navigate],
   )
 
@@ -76,9 +88,12 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
   return (
     <section aria-label={strings.title} className="flex flex-col gap-3 rounded-md border bg-background p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-medium" tabIndex={-1} data-validations-heading>
-          {strings.title}
-        </h3>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <h3 className="font-medium" tabIndex={-1} data-validations-heading>
+            {strings.title}
+          </h3>
+          {view?.run && <OverallResult run={view.run} />}
+        </div>
         {view && canProcess && RUNNABLE.includes(view.importStatus) && (
           <RunButton view={view} runner={runner} busy={busy} busyId={busyId} />
         )}

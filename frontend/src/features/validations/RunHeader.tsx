@@ -1,54 +1,62 @@
-import { MissingRange } from '@recon/shared'
+import { DateRangesTable } from '@/components/DateRangesTable'
 import { Badge } from '@/components/ui/badge'
-import { formatAuditDateTime, formatBusinessDateTime } from '@/lib/format'
+import { formatAuditDateTime } from '@/lib/format'
+import { RUN_OVERALL_TONE, type RunOverall } from '@/lib/status-tone'
 import type { ValidationRun } from './contract'
 import { strings } from './strings'
 
 const s = strings.header
 
 /** An aggregate to present, not a rule: blocking comes from the API (design D5). */
-function overall(run: ValidationRun) {
-  if (run.blocked) return { label: s.overall.blocked, variant: 'destructive' as const }
-  if (run.results.some((r) => r.outcome === 'warning'))
-    return { label: s.overall.warnings, variant: 'secondary' as const }
-  return { label: s.overall.passed, variant: 'outline' as const }
+function overall(run: ValidationRun): RunOverall {
+  if (run.blocked) return 'blocked'
+  if (run.results.some((r) => r.outcome === 'warning')) return 'warnings'
+  return 'passed'
 }
 
-/** Overall result, the run, the ranges it used and its informative counters (spec "cabecera de la corrida"). */
-export function RunHeader({ run }: { run: ValidationRun }) {
+/**
+ * The overall result next to the title of the section, then the run as secondary text (design D10): the first thing
+ * the analyst wants to know.
+ */
+export function OverallResult({ run }: { run: ValidationRun }) {
   const state = overall(run)
+  return (
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+      <span className="text-muted-foreground">{s.overallLabel}</span>
+      <Badge variant={RUN_OVERALL_TONE[state]}>{s.overall[state]}</Badge>
+      <span className="text-muted-foreground">
+        {s.run(run.runId, formatAuditDateTime(run.runAt), run.runBy.userName)}
+      </span>
+    </p>
+  )
+}
+
+/**
+ * The ranges the run used and its informative counters (spec "cabecera de la corrida"). A blocked run has no table
+ * of ranges: provider_mismatch stops the import and the ranges do not help to solve it (design D9).
+ */
+export function RunHeader({ run }: { run: ValidationRun }) {
   const counters = [
-    [s.pendingInRange, run.pendingInRangeCount],
-    [s.undatedAdjustments, run.undatedAdjustmentCount],
-    [s.undatedCandidates, run.undatedCandidateCount],
+    [s.pendingInRange, run.pendingInRangeCount, s.explain.pendingInRange],
+    [s.undatedAdjustments, run.undatedAdjustmentCount, s.explain.undatedAdjustments],
+    [s.undatedCandidates, run.undatedCandidateCount, s.explain.undatedCandidates],
   ] as const
 
   return (
-    <section aria-label={s.label} className="flex flex-col gap-2 text-sm">
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge variant={state.variant}>{state.label}</Badge>
-        <span className="text-muted-foreground">
-          {s.run(run.runId, formatAuditDateTime(run.runAt), run.runBy.userName)}
-        </span>
-      </div>
-      <ul aria-label={s.ranges} className="flex flex-wrap gap-x-6 gap-y-1">
-        {MissingRange.options.map((key) => {
-          const range = run.ranges[key]
-          return (
-            <li key={key}>
-              <span className="font-medium">{key}</span>{' '}
-              {range ? `${formatBusinessDateTime(range.min)} – ${formatBusinessDateTime(range.max)}` : s.noRange}
-            </li>
-          )
-        })}
-      </ul>
-      <ul aria-label={s.counters} className="flex flex-wrap gap-x-6 gap-y-1 text-muted-foreground">
-        {counters.map(([label, value]) => (
-          <li key={label}>
-            {label} <span className="font-semibold tabular-nums text-foreground">{value}</span>
-          </li>
-        ))}
-      </ul>
+    <section aria-label={s.label} className="flex flex-col gap-3 text-sm">
+      {!run.blocked && <DateRangesTable title={s.ranges} ranges={run.ranges} />}
+      <section aria-label={s.counters} className="flex flex-col gap-1">
+        <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-3">
+          {counters.map(([label, value, explain]) => (
+            <div key={label} className="flex flex-col">
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="font-semibold tabular-nums">{value}</dd>
+              <dd className="text-xs text-muted-foreground">{explain}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="text-xs text-muted-foreground">{s.explain.note}</p>
+      </section>
     </section>
   )
 }

@@ -1,18 +1,11 @@
 import { MissingRange, type ValidationCode } from '@recon/shared'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { toneOf, VALIDATION_OUTCOME_TONE } from '@/lib/status-tone'
 import type { ValidationResultView } from './contract'
 import { strings } from './strings'
 
 const s = strings.table
-
-const OUTCOME_VARIANT = {
-  passed: 'outline',
-  warning: 'secondary',
-  blocked: 'destructive',
-  not_applicable: 'outline',
-  not_implemented: 'outline',
-} as const
 
 /** The breakdown without its zeros: `1 non-recorded adjustment · 2 status mismatches`, `APP 3 · R 3`. */
 function breakdownOf(result: ValidationResultView): string {
@@ -77,7 +70,9 @@ export function ValidationsTable({
                   )}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={OUTCOME_VARIANT[result.outcome]}>{strings.outcomes[result.outcome]}</Badge>
+                  <Badge variant={toneOf(VALIDATION_OUTCOME_TONE, result.outcome)}>
+                    {strings.outcomes[result.outcome]}
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{result.issueCount}</TableCell>
                 <TableCell>{result.blocking ? s.blocks : s.none}</TableCell>

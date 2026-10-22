@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { businessDate } from '@/lib/format'
 import { seedSettlement, settlementRequests } from '@/test/msw/settlements'
 import { renderApp } from '@/test/render'
 import { chooseDate, openReview, previewShown, processButton, validatedImport } from '@/test/settlement-screens'
@@ -17,10 +18,22 @@ async function openSummary(options: Parameters<typeof seedSettlement>[1] = {}) {
 }
 
 const table = (name: string) => within(screen.getByRole('table', { name }))
+const header = () => within(screen.getByRole('region', { name: 'Settlement Summary · batch 123' }))
+/** The grid of the header as [term, definition] pairs. */
+const grid = () =>
+  header()
+    .getAllByRole('term')
+    .map((term) => [term.textContent, term.nextElementSibling?.textContent])
 const cellsOf = (row: HTMLElement) =>
   within(row)
     .getAllByRole('cell')
     .map((c) => c.textContent)
+/** The Date range cell of each row of Totals by type. */
+const totalsRanges = () =>
+  table('Totals by type')
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) => cellsOf(row).at(-1))
 
 describe('Settlement Summary: status and header of the attempt (spec "estado y cabecera del intento")', () => {
   it('just processed (HU3 CA6): the attempt, its status, who and when, and nothing Settled', async () => {
@@ -32,12 +45,31 @@ describe('Settlement Summary: status and header of the attempt (spec "estado y c
     await user.click(processButton())
 
     expect(await screen.findByRole('heading', { name: 'Settlement Summary · batch 123' })).toBeInTheDocument()
-    expect(screen.getByText('ProviderA-USD · attempt 1')).toBeInTheDocument()
-    expect(screen.getByText('Processed · pending payment')).toBeInTheDocument()
-    expect(screen.getByText('Processed by analyst on 2026-10-19 11:40 ET')).toBeInTheDocument()
+    expect(grid()).toEqual([
+      ['Account', 'ProviderA-USD'],
+      ['Batch', '123 · attempt 1'],
+      ['Status', 'Processed · pending payment'],
+      ['Processed by', 'analyst · 2026-10-19 11:40 ET'],
+      ['Settlement date', '2026-10-24'],
+    ])
     expect(
       screen.getByText('Movements are not Settled yet: that happens when the batch is marked as paid.'),
     ).toBeInTheDocument()
+  })
+})
+
+describe('Settlement Summary: header grid of the attempt (spec "estado y cabecera del intento")', () => {
+  it('without a settlement date the grid says Not set', async () => {
+    await openSummary({ overrides: { settlementDate: null } })
+
+    expect(grid()).toContainEqual(['Settlement date', 'Not set'])
+  })
+
+  it('the header has no table of date ranges: they are in Totals by type', async () => {
+    await openSummary()
+
+    expect(screen.queryByRole('table', { name: 'Date ranges of this batch' })).not.toBeInTheDocument()
+    expect(header().queryByText(/2026-09-28/)).not.toBeInTheDocument()
   })
 })
 
@@ -63,19 +95,53 @@ describe('Settlement Summary: totals and an auditable amount payable (spec "tota
   it('totals by type with the reserves released, and by brand', async () => {
     await openSummary()
 
+    expect(
+      table('Totals by type')
+        .getAllByRole('columnheader')
+        .map((h) => h.textContent),
+    ).toEqual(['Type', 'Qty', 'Amount USD', 'Fees USD', 'Date range'])
     expect(table('Totals by type').getAllByRole('row').slice(1).map(cellsOf)).toEqual([
-      ['Deposits', '340', '39,181.0700', '4,139.2500'],
-      ['Declined', '110', '0.0000', '27.5000'],
-      ['Chargebacks', '2', '193.8600', '90.0000'],
-      ['Refunds', '6', '843.9900', '30.0000'],
-      ['RDR', '2', '210.0000', '50.0000'],
-      ['R · Reserve released', '320', '4,314.5455', ''],
+      ['Deposits', '340', '39,181.0700', '4,139.2500', '2026-09-28 – 2026-10-07'],
+      ['Declined', '110', '0.0000', '27.5000', '2026-09-28 – 2026-10-07'],
+      ['Chargebacks', '2', '193.8600', '90.0000', '2026-09-28 – 2026-10-11'],
+      ['Refunds', '6', '843.9900', '30.0000', '2026-09-28 – 2026-10-11'],
+      ['RDR', '2', '210.0000', '50.0000', '2026-09-28 – 2026-10-11'],
+      ['R · Reserve released', '320', '4,314.5455', '', '2026-09-27 – 2026-10-06'],
     ])
     expect(table('Totals by brand').getAllByRole('row').slice(1).map(cellsOf)).toEqual([
       ['VISA', '204', '23,508.6400'],
       ['MASTERCARD', '136', '15,672.4300'],
     ])
     expect(screen.getByText('E 450 · I 10 · R 320')).toBeInTheDocument()
+  })
+})
+
+describe('Settlement Summary: date range of each type (spec "totales y amount payable auditable")', () => {
+  it('a null range is —', async () => {
+    const range = { min: businessDate('2026-09-28T00:04:11.000Z'), max: businessDate('2026-10-07T23:58:40.000Z') }
+    await openSummary({ overrides: { dateRanges: { APP: range, DEC: null, I: range, R: null } } })
+
+    expect(totalsRanges()).toEqual([
+      '2026-09-28 – 2026-10-07',
+      '—',
+      '2026-09-28 – 2026-10-07',
+      '2026-09-28 – 2026-10-07',
+      '2026-09-28 – 2026-10-07',
+      '—',
+    ])
+  })
+
+  it('each date of a range is one piece that never splits, so the cell only wraps at the dash', async () => {
+    await openSummary()
+
+    const cell = table('Totals by type').getAllByRole('row')[1]!.lastElementChild as HTMLElement
+    expect([...cell.querySelectorAll('.whitespace-nowrap')].map((piece) => piece.textContent)).toEqual([
+      '2026-09-28',
+      '2026-10-07',
+    ])
+    // The table cell does not split by default; this one must, or the column clips the card at 1280 px (review 12.3).
+    expect(cell).toHaveClass('whitespace-normal')
+    expect(cell).not.toHaveClass('whitespace-nowrap')
   })
 })
 
@@ -148,8 +214,8 @@ describe('Settlement Summary: dates in New York time (spec "fechas en hora de Nu
   it('business dates as they arrive and the audit instant converted, whatever the zone of the browser', async () => {
     await openSummary({ settlementDate: '2026-10-24' })
 
-    expect(screen.getByText('Settlement date: 2026-10-24 ET')).toBeInTheDocument()
-    expect(screen.getByText('APP 2026-09-28 00:04 ET – 2026-10-07 23:58 ET')).toBeInTheDocument()
-    expect(screen.getByText('Processed by analyst on 2026-10-19 11:40 ET')).toBeInTheDocument()
+    expect(grid()).toContainEqual(['Settlement date', '2026-10-24'])
+    expect(totalsRanges()[0]).toBe('2026-09-28 – 2026-10-07')
+    expect(grid()).toContainEqual(['Processed by', 'analyst · 2026-10-19 11:40 ET'])
   })
 })

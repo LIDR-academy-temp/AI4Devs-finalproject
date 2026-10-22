@@ -17,7 +17,8 @@ export function NewReconciliationPage() {
   // The address of this screen is the choice alone.
   const writeChoice = useCallback(
     (next: AccountChoiceSearch, options?: { replace?: boolean }) =>
-      void navigate({ search: next, replace: options?.replace }),
+      // Choosing in place: the page stays where it is (ui-polish design D13).
+      void navigate({ search: next, replace: options?.replace, resetScroll: false }),
     [navigate],
   )
   const choice = useAccountChoice({ search, navigate: writeChoice, includeClosed: false })

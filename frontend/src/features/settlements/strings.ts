@@ -82,7 +82,8 @@ export const strings = {
     updating: 'Updating the pre-summary…',
     movements: (m: { E: number; I: number; R: number }) => `E ${m.E} · I ${m.I} · R ${m.R}`,
     totals: 'Totals by type',
-    columns: { type: 'Type', qty: 'Qty', amount: 'Amount USD', fee: 'Fees USD' },
+    columns: { type: 'Type', qty: 'Qty', amount: 'Amount USD', fee: 'Fees USD', range: 'Date range' },
+    noRange: '—',
     payable: 'Amount payable',
     signs: { '+': '+', '-': '−' } as const,
     /** What a screen reader says for each sign. */
@@ -169,14 +170,18 @@ export const strings = {
 
   summary: {
     title: (batchNo: number) => `Settlement Summary · batch ${batchNo}`,
-    attempt: (accountName: string, attemptNo: number) => `${accountName} · attempt ${attemptNo}`,
     status: { pending_payment: 'Processed · pending payment', settled: 'Paid', undone: 'Undone' },
-    processedBy: (userName: string, at: string) => `Processed by ${userName} on ${at}`,
-    settlementDate: (date: string) => `Settlement date: ${date}`,
+    grid: {
+      account: 'Account',
+      batch: 'Batch',
+      status: 'Status',
+      processedBy: 'Processed by',
+      settlementDate: 'Settlement date',
+    },
+    batchAttempt: (batchNo: number, attemptNo: number) => `${batchNo} · attempt ${attemptNo}`,
+    byAt: (userName: string, at: string) => `${userName} · ${at}`,
+    notSet: 'Not set',
     notSettled: 'Movements are not Settled yet: that happens when the batch is marked as paid.',
-    ranges: 'Date ranges',
-    range: (cycle: string, from: string | null, to: string | null) =>
-      from && to ? `${cycle} ${from} – ${to}` : `${cycle} —`,
     totals: 'Totals by type',
     reservesReleased: 'R · Reserve released',
     brands: 'Totals by brand',
@@ -231,6 +236,7 @@ export const strings = {
     from: 'From',
     to: 'To',
     reversedRange: 'The start date must not be after the end date.',
+    heading: 'Settlements',
     tableLabel: 'Settlements',
     columns: {
       batch: 'Batch',
@@ -257,6 +263,7 @@ export const strings = {
   movements: {
     cycleLabel: 'Cycle',
     cycle: (cycle: string, count: number) => `${cycle} (${count})`,
+    heading: (cycle: string) => `Movements · ${cycle}`,
     tableLabel: 'Movements',
     columns: {
       transaction: 'Transaction',

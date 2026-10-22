@@ -5,12 +5,16 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatBusinessDate, formatBusinessDateTime, formatDecimal } from '@/lib/format'
+import { ListHeading, requestListFocus } from '@/lib/list-focus'
 import type { AppliedFee, Cycle, SettlementMovement, SettlementTransactionsPage, SettlementView } from './contract'
 import { Pager, useLastPageLimit } from './Pager'
 import { settlementTransactionsQuery } from './queries'
 import { strings } from './strings'
 
 const s = strings.movements
+
+/** The name of the movements list for requestListFocus. */
+export const MOVEMENTS_LIST = 'movements'
 const CYCLES = ['E', 'I', 'R'] as const satisfies readonly Cycle[]
 
 const features = tableFeatures({ rowPaginationFeature })
@@ -232,8 +236,15 @@ function MovementsTable({
         summary={s.pageOf(page, pageCount, data.total)}
         canPrevious={table.getCanPreviousPage()}
         canNext={table.getCanNextPage()}
-        onPrevious={() => table.previousPage()}
-        onNext={() => table.nextPage()}
+        // Only the clicks ask for the focus: useLastPageLimit also changes the page, with no user action (design D13).
+        onPrevious={() => {
+          requestListFocus(MOVEMENTS_LIST)
+          table.previousPage()
+        }}
+        onNext={() => {
+          requestListFocus(MOVEMENTS_LIST)
+          table.nextPage()
+        }}
       />
     </div>
   )
@@ -266,12 +277,20 @@ export function SummaryMovements({
             size="sm"
             variant={c === cycle ? 'secondary' : 'ghost'}
             aria-pressed={c === cycle}
-            onClick={() => onChange({ cycle: c, page: 1 })}
+            onClick={() => {
+              if (c === cycle) return
+              requestListFocus(MOVEMENTS_LIST)
+              onChange({ cycle: c, page: 1 })
+            }}
           >
             {s.cycle(c, view.movements[c])}
           </Button>
         ))}
       </div>
+      {/* Outside the table: changing the cycle replaces the table with its placeholder (design D13). */}
+      <ListHeading name={MOVEMENTS_LIST} focusKey={`${cycle}:${page}`} className="font-medium">
+        {s.heading(cycle)}
+      </ListHeading>
       {query.isError ? (
         <div className="flex items-center gap-3 text-sm">
           <span>{s.loadError}</span>

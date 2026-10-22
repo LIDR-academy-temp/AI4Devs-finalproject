@@ -5,10 +5,14 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import type { ImportRowItem } from '@/lib/api/types'
 import { formatDecimal } from '@/lib/format'
+import { ListHeading, requestListFocus } from '@/lib/list-focus'
 import { importRowsQuery, ROWS_PAGE_SIZE } from '../queries'
 import { strings } from '../strings'
 
 const s = strings.analysis.rows
+
+/** The name of the rows list for requestListFocus. */
+export const ROWS_LIST = 'rows'
 const FILTERS = ['unmatched', 'ambiguous', 'matched', 'ignored'] as const satisfies readonly MatchResult[]
 
 const features = tableFeatures({ rowPaginationFeature })
@@ -36,11 +40,12 @@ const columns = helper.columns([
   helper.display({
     id: 'file',
     header: s.columns.file,
-    // The sheet always shows; the file, long and shared by many rows, is cut with its whole name as tooltip.
+    // The sheet always shows; the file, long and shared by many rows, wraps where it does not fit (the names of the
+    // template have no spaces) and keeps its whole name as tooltip (design D7).
     cell: ({ row }) => (
-      <div className="flex max-w-56 flex-col">
+      <div className="flex max-w-64 flex-col">
         <span className="whitespace-nowrap font-medium">{row.original.sheetName}</span>
-        <span className="truncate text-muted-foreground" title={row.original.fileName}>
+        <span className="text-muted-foreground [overflow-wrap:anywhere]" title={row.original.fileName}>
           {row.original.fileName}
         </span>
       </div>
@@ -130,20 +135,32 @@ export function RowsTable({
     getRowId: (row) => `${row.fileId}:${row.sheetId}:${row.rowNo}`,
   })
 
+  // A filter or a page the user picks takes the focus to the heading of the rows (ui-polish design D13).
   const filterButton = (value: MatchResult | undefined, label: string) => (
     <Button
       key={label}
       size="sm"
       variant={match === value ? 'secondary' : 'ghost'}
       aria-pressed={match === value}
-      onClick={() => onChange({ match: value, page: 1 })}
+      onClick={() => {
+        if (value === match) return
+        requestListFocus(ROWS_LIST)
+        onChange({ match: value, page: 1 })
+      }}
     >
       {label}
     </Button>
   )
+  const turn = (step: () => void) => {
+    requestListFocus(ROWS_LIST)
+    step()
+  }
 
   return (
     <section className="flex flex-col gap-2">
+      <ListHeading name={ROWS_LIST} focusKey={`${match}:${page}`} className="font-medium">
+        {s.title}
+      </ListHeading>
       <div role="toolbar" aria-label={s.filterLabel} className="flex flex-wrap items-center gap-1">
         <span className="pr-1 text-sm text-muted-foreground">{s.filterLabel}</span>
         {filterButton(undefined, s.filters.all)}
@@ -182,10 +199,20 @@ export function RowsTable({
       {query.isSuccess && total === 0 && <p className="text-sm text-muted-foreground">{s.empty}</p>}
       <div className="flex items-center justify-end gap-2 text-sm">
         <span className="text-muted-foreground">{s.pageOf(page, pageCount, total)}</span>
-        <Button size="sm" variant="outline" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => turn(() => table.previousPage())}
+          disabled={!table.getCanPreviousPage()}
+        >
           {s.previous}
         </Button>
-        <Button size="sm" variant="outline" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => turn(() => table.nextPage())}
+          disabled={!table.getCanNextPage()}
+        >
           {s.next}
         </Button>
       </div>

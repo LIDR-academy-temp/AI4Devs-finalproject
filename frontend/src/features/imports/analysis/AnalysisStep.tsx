@@ -30,6 +30,8 @@ export function AnalysisStep({ detail }: { detail: ImportDetail }) {
           navigate({
             search: (prev: ImportSearch) => ({ ...prev, step: 'analysis', match, page: page > 1 ? page : undefined }),
             replace: true,
+            // Only the rows change: the page stays where it is (ui-polish design D13).
+            resetScroll: false,
           })
         }
       />

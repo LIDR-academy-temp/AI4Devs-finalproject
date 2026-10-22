@@ -9,6 +9,7 @@ import { importQuery } from '@/features/imports/queries'
 import { settlementSummaryRoute } from '@/features/validations/next-step'
 import { ApiError } from '@/lib/api/client'
 import type { ImportDetail } from '@/lib/api/types'
+import { IMPORT_STATUS_TONE, toneOf } from '@/lib/status-tone'
 import { ReviewWorkspace } from './ReviewWorkspace'
 import { strings } from './strings'
 
@@ -29,7 +30,7 @@ function ReviewHeader({ detail }: { detail: ImportDetail }) {
       <div className="flex items-center gap-3 text-sm">
         <span className="flex items-center gap-1.5">
           <span className="text-muted-foreground">{s.status}</span>
-          <Badge variant="outline">{detail.status}</Badge>
+          <Badge variant={toneOf(IMPORT_STATUS_TONE, detail.status)}>{detail.status}</Badge>
         </span>
         <Link
           to="/imports/$importId"
