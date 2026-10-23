@@ -1,6 +1,6 @@
 # Recon Tool 2.0 — Proyecto Final AI4Devs
 
-> Entrega 1 · Documentación técnica. Sigue la plantilla oficial de `LIDR-academy/AI4Devs-finalproject`. Documento vivo: define el proyecto y se actualiza con cada entrega.
+> Entrega 2 · Backend, frontend y base de datos conectados con el flujo principal (HU1 → HU2 → HU3). Sigue la plantilla oficial de `LIDR-academy/AI4Devs-finalproject`. Documento vivo: define el proyecto y se actualiza con cada entrega.
 
 > **Sistema actual y desarrollo propuesto.** Existe una única herramienta Recon Tool en producción, implementada sobre reportes SSRS. "Recon Tool 2.0" es el nombre de este proyecto: su reemplazo como aplicación web independiente. Las versiones de los documentos de referencia son revisiones de la documentación, no versiones desplegadas del sistema.
 
@@ -33,15 +33,15 @@ Recon Tool 2.0 es una aplicación web para el equipo de reconciliaciones de una 
 
 ### 0.4. URL del proyecto
 
-Pendiente de despliegue. La Entrega 1 contiene únicamente la documentación técnica.
+Sin despliegue público en la Entrega 2: la aplicación se ejecuta en local siguiendo [1.4](#14-instrucciones-de-instalación), con datos sintéticos. El despliegue descrito en [2.4](#24-infraestructura-y-despliegue) queda para la Entrega 3.
+
+**Vídeo de la demo.** Previsto para la Entrega 3: el flujo import → validaciones → settlement → descargas con datos sintéticos ([#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96)).
 
 ### 0.5. URL o archivo comprimido del repositorio
 
 **Repositorio:** [kajirioji/AI4Devs-finalproject](https://github.com/kajirioji/AI4Devs-finalproject).
 
-**Rama de la Entrega 1:** [`entrega-1-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/entrega-1-MVP). Las ramas siguientes seguirán el patrón del enunciado: `feature/entrega-2-MVP` y `final-project-MVP`.
-
-La Entrega 1 contiene `readme.md` y `prompts.md`; no incluye código.
+**Rama de la Entrega 2:** [`feature/entrega-2-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/feature/entrega-2-MVP): monorepo con backend, frontend, base de datos (migraciones y seed), pruebas, `README.md` y `prompts.md`. La Entrega 1 (solo documentación) está en [`feature/entrega-1-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/feature/entrega-1-MVP); la final irá en `final-project-MVP`.
 
 ---
 
@@ -73,7 +73,7 @@ El producto se construye como MVP alrededor del flujo principal de reconciliaci�
   - **TXN** (`transactions`): `ID,Status` con los movimientos E `Successful` (`SUC`) y los I `Chargeback` (`CHB`, también los `CHB 2`/`excludeAmount`), `Refund` (`REF`) y `RDR` (`RDR`); los `Declined` no salen. Una fila por par (`ID`, `Status`) distinto, en el orden estable del intento `(cycle, sheetId, rowNo, settlementTxnId)`, que agrupa por hoja pero no sigue el orden de las hojas en el archivo: un Refund y un Chargeback de la misma transacción dan dos filas; un Chargeback y un `CHB 2`, o un duplicado E incluido a mano, una.
   - **RR** (`reserves`): `ID,Description` con los movimientos R y `Description = Batch <batchNo>`, una fila por `ID` distinto, también las R que liberan 0.
   - **Summary** (`summary`): nueve bloques, cada uno con su cabecera y separados por una línea vacía: intento (cuenta, batch, intento, estado, pago, quién y cuándo lo procesó en hora de Nueva York con sufijo `ET`, fecha de settlement, canales y rangos de fechas de negocio sin convertir), totales por categoría, marcas, fees por batch, reservas, desglose del amount payable (las nueve líneas con signo e importe y la fila `Amount payable`, para auditar la fórmula sumando la columna), incidencias, filas no procesadas y advertencias. Las cifras son las de la vista del intento, sin recalcular. Como el merchant lo abre en una hoja de cálculo, toda celda de **texto** (nombre de la cuenta, usuarios, canales, marcas, tipo y descripción de los fees por batch) que empiece por `=`, `+`, `-`, `@`, tabulador o retorno de carro lleva delante un apóstrofo (`'=HYPERLINK(…)`), para que se muestre y nunca se ejecute como fórmula. Las cifras (también los importes negativos) y los IDs no se tocan, y TXN y RR no llevan texto libre, así que no cambian. En los intentos sin auditoría de procesado (el histórico sembrado), incidencias y filas no procesadas dicen `Not available`.
-- **USD.** Los cálculos y totales usan el importe en USD proporcionado por los gateways; los fees configurados también están en USD. Se conservan monto y moneda originales del proveedor como referencia (`Currency` en ISO de tres letras: el proveedor liquida siempre en USD, pero en las transacciones puede informar la moneda original, EUR, MXN…); una fila en moneda distinta de USD no se bloquea ni se compara en importe; no se incorpora conversión cambiaria al MVP.
+- **Importes y moneda.** Todo se calcula en USD con el importe del gateway (lo que registró su API en el momento de la transacción): settlement, fees y reportes; los fees configurados también están en USD. El archivo del proveedor puede traer o no su propio importe, a veces en otra moneda (`Currency` en ISO de tres letras: EUR, MXN…): se guarda con su moneda solo como dato informativo, para revisión. La comparación de importes proveedor–gateway se omite cuando el proveedor no manda importe o lo manda en otra moneda. No se valida la moneda del archivo frente a la de la cuenta. No hay conversión cambiaria en el MVP; señalar importes del proveedor fuera de un tipo de cambio razonable queda en el roadmap ([#93](https://github.com/kajirioji/AI4Devs-finalproject/issues/93)).
 - **Identidad.** `transactionId BIGINT IDENTITY` es la clave interna para relaciones; la identidad externa es `(gatewayId, sourceTransactionId)`, donde `sourceTransactionId VARCHAR(36)` conserva el ID de origen normalizado según el formato del gateway (`numeric`: solo dígitos, sin ceros a la izquierda; `uuid`: 36 caracteres en minúsculas, sin llaves). El mismo identificador de origen en gateways distintos no es la misma transacción. El cruce busca el ID normalizado en los gateways de los canales asociados a la cuenta (`AccountChannel`) o, si la cuenta todavía no tiene ninguno, en los gateways de los canales de su proveedor; sin ninguno, la fila queda sin asociar con motivo explícito. Una coincidencia es `matched`, ninguna es `unmatched` y más de una es `ambiguous`, que no se procesa hasta que el analista elija el gateway o cancele. Hoy conviven un gateway numérico y uno UUID, así que el formato desambigua por sí solo; `ambiguous` solo puede aparecer con dos gateways del mismo formato en la misma cuenta. La columna de ID se lee siempre como texto para no perder dígitos ni formato (hoy los IDs numéricos tienen 15 dígitos; hubo una época de 16, y Excel pierde precisión a partir de 15, por eso la plantilla los pega como texto). Los exports (CSV y resumen) escriben el ID tal cual, como texto y nunca como número, sin ningún formato para Excel (ni `="…"`, ni apóstrofo, ni comillas que RFC 4180 no exija), porque el Back-Office los lee. Abrir un CSV con doble clic en Excel convierte el ID a número: aparece en notación científica y, como Excel guarda 15 dígitos significativos, un ID de 16–17 dígitos pierde los últimos. Por eso el CSV se sube al Back-Office **sin abrirlo ni guardarlo con Excel**, y para mirarlo se usa Excel → **Datos → Desde texto/CSV** con la columna `ID` como **Texto**. Una descarga `.xlsx` con el ID como texto, para lectura humana, queda en el issue #68 (Entrega 3).
 - **Fees múltiples y vigencias.** Cada movimiento puede tener varios fees; cada uno conserva tipo, configuración aplicada e importe USD. Para operaciones originales rige la fecha de la transacción; para chargebacks, refunds y returns, la fecha del evento. Ambas provienen del gateway; nunca se sustituyen por la fecha del batch. Las fechas de vigencia de un fee dicen **a qué movimientos aplica**, no cuándo se configuró: `startDate NULL` significa "desde siempre" (−∞) y `endDate NULL` "sin fin" (+∞); un fee `NULL…NULL` aplica a cualquier evento. Un fee nunca se ata a la fecha de creación de la cuenta ni del propio fee, porque una cuenta nueva puede recibir canales con historial.
 - **Reserva por cuenta.** Se configura si, cuando una `Successful` con reserva retenida pasa a `Chargeback`, esa reserva se libera de inmediato o se mantiene retenida hasta cumplir el plazo. Se conserva la regla aplicada y el importe liberado anticipadamente; una reserva liberada por chargeback deja de reportarse como pendiente de liberación y no se espera en R.
@@ -135,9 +135,14 @@ La vista previa mostraría el resultado de la interpretación y las reglas aplic
 
 La integración con el Back-Office del gateway se mantiene como hoy, mediante los CSV exportados: es una herramienta de terceros sobre la que no se pueden hacer cambios.
 
+#### Limitaciones conocidas
+
+- Un import cuyas filas no coinciden con la cuenta (p. ej., de otro merchant) puede procesarse como un batch solo de fees, sin aviso específico. Arreglo previsto en la Entrega 3 ([#92](https://github.com/kajirioji/AI4Devs-finalproject/issues/92)).
+- Lo recortado de la Entrega 2 (pagar, deshacer, administración de cuentas y fees, entre otros) está en [1.5](#15-plan-de-recorte-de-la-entrega-2).
+
 ### 1.3. Diseño y experiencia de usuario
 
-> En la Entrega 1 no existe todavía interfaz. Esta sección describe el mapa del sitio y el recorrido del usuario; las capturas reales y el vídeo se añadirán en las Entregas 2 y 3.
+> Esta sección describe el mapa del sitio y el recorrido del usuario. Los wireframes y el prototipo están en [`docs/wireframes/`](docs/wireframes/); las capturas de las pantallas construidas en la Entrega 2, en sus subcarpetas por change (`web-validations/`, `web-settlement/`, `settlements-browse/`). El vídeo llega en la Entrega 3 ([#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96)).
 
 #### Mapa de pantallas
 
@@ -213,27 +218,185 @@ Lo que el usuario ve en cada paso del flujo principal:
 
 ### 1.4. Instrucciones de instalación
 
-> **Procedimiento previsto, no verificado.** La Entrega 1 contiene documentación. Los comandos de instalación, arranque y pruebas se verificarán con el código en la Entrega 2. Todos los datos de demostración serán sintéticos.
+[![CI](https://github.com/kajirioji/AI4Devs-finalproject/actions/workflows/ci.yml/badge.svg?branch=feature/entrega-2-MVP)](https://github.com/kajirioji/AI4Devs-finalproject/actions/workflows/ci.yml?query=branch%3Afeature%2Fentrega-2-MVP)
 
-**Prerrequisitos previstos:** Node.js 22 LTS o superior, npm, Docker y Docker Compose, Git.
+Procedimiento de la Entrega 2, pensado para seguirse paso a paso en un clon limpio. Todos los datos son sintéticos: el seed crea el mundo de demostración y los archivos de prueba están en [`data/samples/`](data/samples/). Los comandos se ejecutan desde la raíz del repositorio; valen igual en PowerShell, Git Bash, macOS o Linux salvo donde se indica.
 
-**Instalación inicial prevista:**
+**1. Requisitos**
 
-1. Clonar el repositorio y copiar `.env.example` a `.env` en `backend/` y `frontend/`. El `.env` del backend incluye la cadena de conexión a SQL Server con el usuario de aplicación `recon_app`; la contraseña de `sa` solo la usa el script de inicialización del contenedor para crear la base y ese usuario, y no se utiliza desde la aplicación.
-2. Levantar la base de datos: `docker compose up -d db` (SQL Server 2022 Developer Edition en contenedor, puerto 1433). Al primer arranque, un script de inicialización crea la base `ReconTool2` y el usuario `recon_app` con permisos solo sobre ese esquema.
-3. Instalar dependencias: `npm install` en `backend/` y en `frontend/`.
-4. Ejecutar migraciones y seed sintético: `npm run db:migrate && npm run db:seed` en `backend/`. El seed utiliza exclusivamente datos sintéticos y es idempotente: crea o actualiza los datos de ejemplo sin borrar el trabajo existente (proveedores, cuentas, canales, fees, usuarios de prueba, un lote de transacciones propias y archivos de settlement de ejemplo en `data/samples/`).
+| Herramienta | Versión | Para qué |
+|---|---|---|
+| Git | cualquiera reciente | clonar el repositorio |
+| Node.js | 22.x (fijada en [`.node-version`](.node-version); el `package.json` exige `>=22 <23`) | backend, frontend y scripts |
+| pnpm | 10.18.0 (fijada en `packageManager` del [`package.json`](package.json)) | monorepo; se activa con Corepack, que viene con Node |
+| Docker | Docker Desktop (Windows/macOS) o Docker Engine con el plugin Compose (Linux) | SQL Server 2022 en contenedor |
+| Python 3 con `openpyxl` | opcional | solo para regenerar los archivos de `data/samples/`; no hace falta para instalar ni para probar |
 
-**Arranque habitual previsto (sin reiniciar datos):**
+Puertos que deben estar libres: `1433` (SQL Server), `3000` (API) y `5173` (web).
 
-5. Arrancar backend (`npm run dev`, puerto 3000) y frontend (`npm run dev`, puerto 5173).
-6. Entrar con el usuario de prueba indicado en el seed.
+Notas por sistema:
 
-Alternativa todo-en-uno prevista: `docker compose up` levanta base de datos, backend y frontend sin borrar sus volúmenes ni ejecutar un reset.
+- **Windows:** Docker Desktop con el backend WSL 2 activado. Los scripts del contenedor se versionan con fin de línea LF (`.gitattributes`), así que el clon no los rompe aunque Git convierta a CRLF.
+- **macOS con Apple Silicon:** la imagen de SQL Server 2022 es solo x86-64; en Docker Desktop activa *Use Rosetta for x86_64/amd64 emulation* antes de `pnpm db:up`.
+- **Linux:** el usuario debe poder ejecutar `docker` sin `sudo` (grupo `docker`), porque los scripts de `pnpm` lo invocan directamente.
 
-**Reinicio explícito de datos de prueba:** `npm run db:reset`, únicamente en desarrollo y bajo acción explícita del usuario. Es destructivo para los datos de ese entorno y no forma parte del arranque habitual.
+**2. Clonar e instalar dependencias**
 
-**Credenciales:** inicialización y migraciones utilizan una identidad administrativa separada. La aplicación usa `recon_app` con permisos de ejecución y acceso a datos, sin permisos de modificación del esquema. Los comandos y permisos exactos se verificarán en la Entrega 2.
+```bash
+git clone -b feature/entrega-2-MVP https://github.com/kajirioji/AI4Devs-finalproject.git
+cd AI4Devs-finalproject
+corepack enable          # activa la versión de pnpm fijada en package.json
+pnpm install             # instala todo el monorepo e instala los hooks de git (husky)
+```
+
+**3. Variables de entorno**
+
+Hacen falta **dos** archivos `.env`, cada uno creado a partir de su plantilla versionada (las plantillas solo traen valores de ejemplo, ningún secreto real); un tercero es opcional:
+
+| Archivo | Plantilla | Lo leen | ¿Obligatorio? |
+|---|---|---|---|
+| `.env` (raíz) | [`.env.example`](.env.example) | Docker Compose, Prisma, backend, seed, pruebas de integración y Playwright | Sí |
+| `api-collection/.env` | [`api-collection/.env.example`](api-collection/.env.example) | la colección Bruno (`pnpm test:api`) | Sí, para probar el API |
+| `frontend/.env` | [`frontend/.env.example`](frontend/.env.example) | Vite | No: sin él, el proxy de `/api` apunta a `http://localhost:3000` |
+
+```bash
+# Git Bash, macOS o Linux
+cp .env.example .env
+cp api-collection/.env.example api-collection/.env
+
+# PowerShell
+Copy-Item .env.example .env
+Copy-Item api-collection/.env.example api-collection/.env
+```
+
+Abre el `.env` de la raíz y sustituye los valores de ejemplo, como indican sus comentarios:
+
+- `MSSQL_SA_PASSWORD`: contraseña de `sa` dentro del contenedor. Solo la usa el script de arranque de SQL Server para crear la base y los usuarios; la aplicación nunca entra como `sa`. SQL Server exige una contraseña fuerte (8 caracteres o más, con mayúsculas, minúsculas, números y símbolos); si no la cumple, el contenedor no arranca.
+- `RECON_APP_PASSWORD`: contraseña del usuario de aplicación `recon_app` (también fuerte, por el mismo motivo); el usuario de solo lectura `recon_reader` se crea con la misma.
+- `JWT_SECRET`: secreto de firma de las sesiones, de **32 caracteres o más**; con menos, el backend no arranca.
+- `SEED_PASSWORD`: contraseña común de los cuatro usuarios de demostración que crea el seed.
+
+Las demás tienen un valor por defecto válido para local y solo se cambian si hace falta: `MSSQL_PORT` y `DB_PORT` (1433), `DB_HOST` (`localhost`), `DB_NAME` (`ReconTool`), `DB_USER` (`recon_app`), `PORT` (3000), `HOST` (`0.0.0.0`), `LOG_LEVEL` (`info`) y `UPLOAD_DIR` (`data/uploads`, relativo al directorio del backend). `DATABASE_URL`, si se define, sustituye a la conexión que Prisma arma con las `DB_*`; solo la usa la CI.
+
+En `api-collection/.env`, pon en `SEED_PASSWORD` **el mismo valor** que en el `.env` de la raíz; `SEED_USER` (`analyst`) y `SEED_VIEWER_USER` (`viewer`) ya vienen con los usuarios del seed.
+
+Los tres `.env` están en `.gitignore`: nunca se versionan.
+
+**4. Base de datos**
+
+```bash
+pnpm db:up          # arranca SQL Server 2022 (contenedor recon-mssql)
+pnpm db:logs        # opcional: espera a "ready for client connections" y sal con Ctrl+C
+pnpm db:generate    # genera el cliente de Prisma
+pnpm db:migrate     # aplica las migraciones escritas a mano (prisma migrate deploy)
+pnpm db:seed        # carga el mundo sintético; tarda uno o dos minutos
+```
+
+El primer `db:up` tarda más (descarga la imagen); al arrancar por primera vez, el contenedor crea la base `ReconTool` y los usuarios `recon_app` (aplicación y migraciones) y `recon_reader` (solo lectura) con las contraseñas del `.env`. Los datos viven en el volumen `recon-mssql-data`, así que sobreviven a `pnpm db:down`. El seed es idempotente: vacía las tablas y recarga el mismo mundo sintético (catálogos, cuentas con sus fees y reglas de pareo, unas 24 000 transacciones e historial de batches pagados); ejecutarlo de nuevo deja la base exactamente igual y borra el trabajo hecho en la aplicación.
+
+> No se usan `prisma db push` ni `prisma migrate dev`: los índices únicos filtrados y las `CHECK` solo existen en las migraciones escritas a mano y se perderían.
+
+**5. Arrancar la aplicación**
+
+```bash
+pnpm dev            # backend (http://localhost:3000) y frontend (http://localhost:5173) en paralelo
+```
+
+Abre http://localhost:5173 y entra con cualquiera de los usuarios de demostración y la contraseña de `SEED_PASSWORD`:
+
+| Usuario | Rol | Alcance |
+|---|---|---|
+| `analyst` | analista: importa, valida y procesa | merchants 1 y 2 |
+| `payments` | pagos (permiso `payment.process`) | merchants 1 y 2 |
+| `viewer` | solo consulta | merchant 1 |
+| `admin` | administración | todos los merchants |
+
+Comprobación rápida: http://localhost:5173/api/v1/health responde a través del proxy de Vite. Para recorrer el flujo principal, entra como `analyst`, crea una reconciliación nueva y sube los archivos de un conjunto de [`data/samples/`](data/samples/) (su [`README`](data/samples/README.md) explica cada conjunto y su resultado esperado).
+
+Arranques siguientes: `pnpm db:up` y `pnpm dev`; no hace falta migrar ni sembrar otra vez. `pnpm db:down` para el contenedor sin borrar los datos.
+
+**6. Pruebas**
+
+| Comando | Qué ejecuta | Necesita |
+|---|---|---|
+| `pnpm lint` · `pnpm typecheck` | Biome y TypeScript en todo el monorepo | solo el paso 2 y `pnpm db:generate` |
+| `pnpm test` | pruebas unitarias con Vitest (dominio, backend y frontend) | solo el paso 2 y `pnpm db:generate` |
+| `pnpm --filter @recon/backend test:integration` | pruebas de integración del backend contra el SQL Server local | pasos 3 y 4 (base migrada y sembrada) |
+| `pnpm test:api` | colección Bruno de la API ([`api-collection/`](api-collection/)); `pnpm test:api:smoke` ejecuta solo `10-smoke` | pasos 4 y 5 con `pnpm dev` en marcha, y `api-collection/.env` (paso 3) |
+| `pnpm test:e2e` | smoke E2E del flujo de importación con Playwright y Gherkin ([`e2e/`](e2e/)) | pasos 4 y 5 con `pnpm dev` en marcha, y el navegador de Playwright (abajo) |
+
+Preparación de una sola vez para el E2E (la CLI de Bruno ya llega con `pnpm install`):
+
+```bash
+# Playwright: descarga Chromium
+pnpm --filter @recon/e2e exec playwright install chromium
+```
+
+Las pruebas de integración, la colección y el E2E crean sus propios imports y batches sobre la base local; `pnpm db:seed` la devuelve al estado inicial. La CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) ejecuta en cada pull request lint, typecheck, pruebas unitarias, la comprobación del contrato OpenAPI y el build del frontend; en otro job, migración, seed y pruebas de integración contra un SQL Server 2022 efímero; y gitleaks. La colección Bruno y el E2E se ejecutan en local; su job de CI queda para la Entrega 3 ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)).
+
+**Problemas frecuentes**
+
+- *El contenedor se detiene nada más arrancar:* `pnpm db:logs` lo explica; casi siempre es una `MSSQL_SA_PASSWORD` que no cumple la política de SQL Server. Corrige el `.env`, borra el contenedor y su volumen con `docker compose --env-file .env -f infra/docker-compose.yml down -v` (destructivo: solo en local) y vuelve a `pnpm db:up`.
+- *`Invalid environment variables: JWT_SECRET` al arrancar el backend:* el secreto tiene menos de 32 caracteres.
+- *`pnpm` no se reconoce:* falta `corepack enable` (en Windows, a veces en una terminal como administrador).
+- *La colección Bruno falla en el login con `401`:* falta `api-collection/.env` o su `SEED_PASSWORD` no coincide con el del `.env` de la raíz que usó el seed.
+- *El contenedor no arranca en un Mac con Apple Silicon:* falta activar la emulación Rosetta en Docker Desktop (ver Requisitos).
+
+### 1.5. Plan de recorte de la Entrega 2
+
+La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al 100 %. El criterio de recorte fue proteger la cadena **importar → parear → validar → decidir → procesar → resumir y exportar** (HU1 → HU2 → HU3) con sus pruebas, y sacar lo que la rodea. Nada se descarta: todo lo recortado tiene su issue en el milestone *Entrega 3 - 11 nov* (seguimiento en [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38)) o la etiqueta `roadmap` cuando es una mejora fuera del MVP.
+
+**Funcionalidad recortada del plan**
+
+| Qué queda fuera | Por qué | Issue |
+|---|---|---|
+| Marcar un intento como pagado y retirar el pago (HU3, criterio 7) | Un batch queda `processed`; el pago es un paso posterior que no hace falta para demostrar la cadena. Hasta entonces ningún movimiento procesado en la aplicación llega a Settled (solo los del historial sembrado) | [#78](https://github.com/kajirioji/AI4Devs-finalproject/issues/78) |
+| Deshacer un intento y reprocesar (HU3, criterio 8) | El esquema ya admite intentos `undone` y `attemptNo`; falta el caso de uso y su pantalla | [#79](https://github.com/kajirioji/AI4Devs-finalproject/issues/79) |
+| Administración de cuentas, canales, fees y reglas de pareo (`POST /accounts/{id}/fees`, sección 4.1) | El seed crea cuentas, fees y reglas de pareo; el flujo solo necesita leerlos | [#80](https://github.com/kajirioji/AI4Devs-finalproject/issues/80) |
+| Reserva ante chargeback por política de la cuenta (`release_on_chargeback`) | Recortable previsto en el design de `settlement-process`: el núcleo de HU3 no depende de ella | [#62](https://github.com/kajirioji/AI4Devs-finalproject/issues/62) |
+| Resolver filas ambiguas desde la interfaz y lista *In Progress* para retomar imports | El endpoint de resolución ya existe (`PATCH` de la fila); la pantalla solo las muestra | [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38) |
+| Suite E2E completa y job E2E en CI | Entra solo el smoke de importación, en local; la integración y la colección Bruno cubren el resto del API | [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38), [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40) |
+| Huecos del API vistos en las pantallas: límite de archivos por import, catálogo de estados, motivo al cancelar | No bloquean el flujo; el límite por petición ya existe | [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40), [#47](https://github.com/kajirioji/AI4Devs-finalproject/issues/47) |
+| Hojas sin confirmar en la readiness del detalle | La pantalla las deriva de `mappingConfirmed` mientras tanto | [#42](https://github.com/kajirioji/AI4Devs-finalproject/issues/42) |
+| Motivo de `includable = false` en el detalle del hallazgo | La regla se aplica; falta mostrar el motivo al analista | [#55](https://github.com/kajirioji/AI4Devs-finalproject/issues/55) |
+| La decisión de conjunto no fija las inclusiones que vio el analista | Aceptado en el review de `validation-runs`: la corrida vigente sí se exige | [#53](https://github.com/kajirioji/AI4Devs-finalproject/issues/53) |
+| `status_mismatch` cuando el gateway está en `Pending` | Decisión del gate: la fila se procesa con su estado y el aviso llega después | [#63](https://github.com/kajirioji/AI4Devs-finalproject/issues/63) |
+| Guardar `skipped`, `warnings` y `channelsAssigned` en el batch | Hoy se reconstruyen desde la auditoría; funciona, pero no es su sitio | [#65](https://github.com/kajirioji/AI4Devs-finalproject/issues/65) |
+| Descarga `.xlsx` de los movimientos con el ID como texto | Los CSV del Back-Office ya salen; el `.xlsx` es para el analista | [#68](https://github.com/kajirioji/AI4Devs-finalproject/issues/68) |
+| Aviso cuando ninguna fila del import coincide con la cuenta | Hoy puede procesarse como un batch solo de fees (ver "Limitaciones conocidas" en 1.2) | [#92](https://github.com/kajirioji/AI4Devs-finalproject/issues/92) |
+| Vídeo de la demo | El tiempo de la Entrega 2 fue al flujo y a la revisión con usuarios | [#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96) |
+
+**Lo que entró al final.** La lista de Settlements de una cuenta y la pestaña Movements del Summary, que estaban recortadas, entraron con `settlements-browse` ([#64](https://github.com/kajirioji/AI4Devs-finalproject/issues/64), PR [#88](https://github.com/kajirioji/AI4Devs-finalproject/pull/88)).
+
+**Revisión con usuarios.** El 20 de octubre, el líder del equipo revisó con el analista del proyecto la interfaz del recorrido de la demo (Files → Mapping → Analysis → Settlement Review → Summary, y Settlement List) sobre el mundo sintético ([`docs/uat/`](docs/uat/), notas en [`2026-10-20-revision-interfaz.md`](docs/uat/2026-10-20-revision-interfaz.md)). La valoración general del progreso y del resultado fue buena; las observaciones fueron de legibilidad de la interfaz, ninguna de reglas ni cifras. Doce entraron en la Entrega 2 con `ui-polish` (PR [#91](https://github.com/kajirioji/AI4Devs-finalproject/pull/91)) y el resto pasó a issues:
+
+| Observación de la revisión | Destino | Issue |
+|---|---|---|
+| Plegar y desplegar cada archivo en Column Mapping | Entrega 3 | [#85](https://github.com/kajirioji/AI4Devs-finalproject/issues/85) |
+| Columna Round #1/#2 en las tablas de rangos | Entrega 3 | [#86](https://github.com/kajirioji/AI4Devs-finalproject/issues/86) |
+| Transacciones por estado en la tabla de rangos de Validations | Entrega 3 | [#87](https://github.com/kajirioji/AI4Devs-finalproject/issues/87) |
+| Merchant summary en `.xlsx` | Entrega 3 | [#82](https://github.com/kajirioji/AI4Devs-finalproject/issues/82) |
+| Selector del merchant activo en la barra superior | Roadmap | [#83](https://github.com/kajirioji/AI4Devs-finalproject/issues/83) |
+| Modo oscuro | Roadmap | [#84](https://github.com/kajirioji/AI4Devs-finalproject/issues/84) |
+
+**Deuda técnica registrada** (no cambia el comportamiento visible del flujo)
+
+| Qué | Issue |
+|---|---|
+| Endurecimiento de imports (hallazgos LOW del review de #33) | [#34](https://github.com/kajirioji/AI4Devs-finalproject/issues/34) |
+| Vencimiento de reservas con el plazo aplicado al liquidar (`expectedReserveReleaseAt`) | [#44](https://github.com/kajirioji/AI4Devs-finalproject/issues/44) |
+| Serializar las fechas de negocio sin `Z` | [#48](https://github.com/kajirioji/AI4Devs-finalproject/issues/48) |
+| Carga de la corrida de validaciones: 2,2 s con 50 000 movimientos (objetivo local: 2 s) | [#50](https://github.com/kajirioji/AI4Devs-finalproject/issues/50) |
+| Estructura del repositorio de validaciones | [#51](https://github.com/kajirioji/AI4Devs-finalproject/issues/51) |
+| Tests intermitentes del frontend con las suites en paralelo | [#56](https://github.com/kajirioji/AI4Devs-finalproject/issues/56) |
+| Concurrencia (interbloqueos) y precisión de `settlement-process` | [#67](https://github.com/kajirioji/AI4Devs-finalproject/issues/67) |
+| Autenticación antes que la validación del esquema (`onRequest`) | [#72](https://github.com/kajirioji/AI4Devs-finalproject/issues/72) |
+| Calidad de los tests de settlement con el API falso | [#75](https://github.com/kajirioji/AI4Devs-finalproject/issues/75) |
+| Falsos positivos del hook `guard-db.sh` con comandos citados en mensajes de commit | [#81](https://github.com/kajirioji/AI4Devs-finalproject/issues/81) |
+| Un solo ayudante para el texto que no se parte en el frontend | [#90](https://github.com/kajirioji/AI4Devs-finalproject/issues/90) |
+| Cobertura pendiente tras el review de `ui-polish` | [#94](https://github.com/kajirioji/AI4Devs-finalproject/issues/94) |
+
+**Roadmap** (etiqueta `roadmap`, sin fecha): cerrar la inclusión manual de duplicados E entre batches, que hoy existe solo para procesar batches históricos ([#49](https://github.com/kajirioji/AI4Devs-finalproject/issues/49)); mantenimiento de tipos de fees ([#60](https://github.com/kajirioji/AI4Devs-finalproject/issues/60)); alerta de tope de reserva alcanzado ([#61](https://github.com/kajirioji/AI4Devs-finalproject/issues/61)); y señalar importes del proveedor fuera de un tipo de cambio razonable ([#93](https://github.com/kajirioji/AI4Devs-finalproject/issues/93)).
 
 ---
 
@@ -241,7 +404,7 @@ Alternativa todo-en-uno prevista: `docker compose up` levanta base de datos, bac
 
 ### 2.1. Diagrama de arquitectura
 
-> **Arquitectura y stack propuestos, pendientes de validación técnica.** Todavía no se ha comenzado a programar. React, TypeScript, Fastify, Prisma y SQL Server son la propuesta de trabajo. Antes de implementarla se realizará una prueba pequeña de lectura de Excel, cruce contra transacciones sintéticas y persistencia en SQL Server. En producción, la integración se alimentará de los datos consolidados de los gateways.
+> **Estado en la Entrega 2.** La arquitectura y el stack descritos están implementados: React 19, TypeScript, Fastify 5, Zod 4, Prisma 7 con `@prisma/adapter-mssql` y SQL Server 2022. Las decisiones y sus desviaciones respecto del plan están en los ADR de [`docs/adr/`](docs/adr/). En producción, la integración se alimentará de los datos consolidados de los gateways.
 
 Recon Tool 2.0 es una aplicación web de tres piezas —una SPA en React, una API REST en Node/TypeScript y una base de datos SQL Server— organizada como **monolito modular con arquitectura hexagonal** (puertos y adaptadores) en el backend.
 
@@ -285,38 +448,43 @@ Las razones son de este proyecto, no genéricas:
 
 **Qué se sacrifica.** Más ficheros y más indirección que un CRUD directo (cada módulo tiene sus entidades, sus puertos y sus adaptadores), lo que cuesta al principio en un stack nuevo para el autor. El monolito no escala por partes, aunque la carga esperada (batches de 1.000–2.000 filas, decenas de usuarios) no lo requiere. Y la SPA obliga a mantener un contrato OpenAPI entre frontend y backend, que se convierte en tarea y en test.
 
-**Decisiones previstas como ADR** (en `docs/adr/`, formato MADR). Las reglas de negocio confirmadas y la sustitución de SSRS están acordadas; las elecciones tecnológicas mantienen estado **Propuesto**, pendiente de la prueba técnica:
+**Decisiones de arquitectura** ([`docs/adr/`](docs/adr/), formato MADR). Las seis previstas en la Entrega 1 están **aceptadas** y cada ADR anota en qué se desvió la implementación; los cambios de rumbo de la Entrega 2 son ADR-007 a ADR-011 (migraciones escritas a mano, lector `.xlsx` propio, un movimiento por fila de origen, resultado de las validaciones y códigos de error en minúsculas):
 
 | ADR | Decisión | Alternativa descartada | Consecuencia principal |
 |---|---|---|---|
-| 001 | Aplicación web propia en lugar de seguir extendiendo SSRS | Añadir reportes al sistema actual | Formularios, validación, sesiones y errores se resuelven de forma nativa; hay que reconstruir lo que el sistema actual ya hace |
-| 002 | SQL Server 2022 desde el MVP, contenedor oficial para desarrollo | PostgreSQL con portabilidad posterior | Reutiliza esquema y lógica del sistema actual; el paso a producción es un despliegue, no una migración; la imagen es solo x86-64 |
-| 003 | Tres ciclos de reconciliación (E, I, R) como eje del modelo, con Settled solo tras el pago | Un único estado "settled" por transacción | Una transacción puede tener varios movimientos distribuidos en los tres ciclos, cada uno con seguimiento propio; el modelo y el summary se construyen alrededor de eso |
-| 004 | Tabla de transacciones propia y desacoplada del gateway | Consultar la tabla de transacciones del gateway en vivo como el sistema actual | Tests reproducibles y sin acceso a producción; en producción hace falta un job o vista de carga |
-| 005 | Monolito modular hexagonal con Fastify + Prisma | NestJS (más estructura, más magia) · Express (menos estructura) | Curva corta, tipado de punta a punta, validación con Zod compartida con el frontend |
-| 006 | Batches como intentos conservados (`attemptNo`) en lugar de borrar al deshacer | Borrar y recrear el batch (comportamiento del sistema actual) | Trazabilidad completa del reprocesamiento; índices únicos filtrados para un solo intento vigente |
+| [001](docs/adr/001-aplicacion-web-propia.md) | Aplicación web propia en lugar de seguir extendiendo SSRS | Añadir reportes al sistema actual | Formularios, validación, sesiones y errores se resuelven de forma nativa; hay que reconstruir lo que el sistema actual ya hace |
+| [002](docs/adr/002-sql-server-2022.md) | SQL Server 2022 desde el MVP, contenedor oficial para desarrollo | PostgreSQL con portabilidad posterior | Reutiliza esquema y lógica del sistema actual; el paso a producción es un despliegue, no una migración; la imagen es solo x86-64 |
+| [003](docs/adr/003-ciclos-e-i-r-y-settled.md) | Tres ciclos de reconciliación (E, I, R) como eje del modelo, con Settled solo tras el pago | Un único estado "settled" por transacción | Una transacción puede tener varios movimientos distribuidos en los tres ciclos, cada uno con seguimiento propio; el modelo y el summary se construyen alrededor de eso |
+| [004](docs/adr/004-tabla-de-transacciones-propia.md) | Tabla de transacciones propia y desacoplada del gateway | Consultar la tabla de transacciones del gateway en vivo como el sistema actual | Tests reproducibles y sin acceso a producción; en producción hace falta un job o vista de carga |
+| [005](docs/adr/005-monolito-modular-hexagonal.md) | Monolito modular hexagonal con Fastify + Prisma | NestJS (más estructura, más magia) · Express (menos estructura) | Curva corta, tipado de punta a punta, validación con Zod compartida con el frontend |
+| [006](docs/adr/006-batches-como-intentos.md) | Batches como intentos conservados (`attemptNo`) en lugar de borrar al deshacer | Borrar y recrear el batch (comportamiento del sistema actual) | Trazabilidad completa del reprocesamiento; índices únicos filtrados para un solo intento vigente |
+| [007](docs/adr/007-migraciones-escritas-a-mano.md) | Migraciones escritas a mano; prohibidos `migrate dev` y `db push` | Generarlas desde `schema.prisma` | Índices filtrados, `CHECK` y trigger viven solo en las migraciones; `recon_app` sin permisos de *shadow database* |
+| [008](docs/adr/008-lector-xlsx-propio.md) | Lector `.xlsx` propio sobre `fflate` y `saxes`, todo como texto | SheetJS (CVE sin corregir en npm) · ExcelJS (convierte a `number`) | Ningún ID pierde dígitos; límites de descompresión propios; código propio que mantener |
+| [009](docs/adr/009-un-movimiento-por-fila-de-origen.md) | Un movimiento por fila de origen `(batchId, sheetId, rowNo)` y fecha de evento NULL si se desconoce | `UNIQUE (transactionId, cycle, batchId)` · inventar la fecha | Refund + Chargeback o un duplicado incluido a mano caben en el mismo batch; migraciones `0007` y `0008` |
+| [010](docs/adr/010-resultado-de-las-validaciones.md) | Resultado `passed` / `warning` / `blocked` / `not_applicable` / `not_implemented` | `passed` / `failed` | Solo `provider_mismatch` bloquea; "sin datos" no se confunde con "sin hallazgos" |
+| [011](docs/adr/011-codigos-de-error-en-minusculas.md) | Códigos de error en snake_case minúsculas | Mayúsculas de los ejemplos de la Entrega 1 | Los ejemplos del README se corrigen al implementar cada endpoint |
 
 ### 2.2. Descripción de componentes principales
 
-> Componentes y tecnologías previstos; esta sección describe el diseño propuesto, no una implementación existente.
+> Describe el diseño completo del MVP. En la Entrega 2 está implementado lo que necesita el flujo principal; lo recortado (administración de cuentas y fees, simulación de fees, pago y deshacer, entre otros) está en [1.5](#15-plan-de-recorte-de-la-entrega-2).
 
 **Frontend (React 19, TypeScript, Vite).** SPA con enrutado por pantalla (login, dashboard, flujo de reconciliación en seis pasos, settlements, pagos, búsqueda, administración). Estado de servidor con TanStack Query (caché, reintentos, invalidación tras cada acción); componentes de UI con shadcn/ui sobre Tailwind; formularios con React Hook Form y los mismos esquemas Zod que valida el backend. Tabla de datos virtualizada para las vistas de filas, hallazgos y apariciones.
 
-**API HTTP (Node.js 22, Fastify).** Expone la API REST bajo `/api/v1`, valida cada petición con Zod, publica la especificación OpenAPI en `/docs` (Scalar) y protege las rutas con JWT de corta duración más refresh. Un plugin de autorización resuelve por petición los permisos del usuario y su alcance de merchants, y lo inyecta en los casos de uso.
+**API HTTP (Node.js 22, Fastify).** Expone la API REST bajo `/api/v1`, valida cada petición con Zod, publica la especificación OpenAPI en `/docs` (Swagger UI, en el puerto del backend) y protege las rutas con JWT de corta duración más refresh. Un plugin de autorización resuelve por petición los permisos del usuario y su alcance de merchants, y lo inyecta en los casos de uso.
 
 **Módulo de catálogo.** Merchants, proveedores y canales de solo lectura (alimentados por el seed en el MVP y por un job desde los gateways en producción); cuentas con creación (sin fees o copiando los de otra cuenta del proveedor; enlace opcional a un conjunto de reglas) y edición, política de reserva ante chargeback, canales asociados y cuenta principal por canal; conjuntos de reglas de pareo por proveedor.
 
 **Módulo de fees.** Fees por cuenta con tipo, monto fijo o porcentaje, valor y vigencia; regla de no solapamiento; historial de cambios; simulación del efecto de una edición.
 
-**Módulo de importación.** Recibe uno o varios `.xlsx` por cuenta, los lee hoja a hoja (SheetJS), aplica el conjunto de reglas de pareo enlazado a la cuenta (o las globales) para proponer el mapeo, guarda cada fila con su identificador de origen, estado y el resto de columnas como JSON de referencia, y ejecuta el cruce por identidad externa contra la tabla de transacciones propias.
+**Módulo de importación.** Recibe uno o varios `.xlsx` por cuenta, los lee hoja a hoja con un lector OOXML propio que devuelve todas las celdas como texto ([ADR-008](docs/adr/008-lector-xlsx-propio.md)), aplica el conjunto de reglas de pareo enlazado a la cuenta (o las globales) para proponer el mapeo, guarda cada fila con su identificador de origen, estado y el resto de columnas como JSON de referencia, y ejecuta el cruce por identidad externa contra la tabla de transacciones propias.
 
 **Módulo de validaciones.** Las ocho validaciones como funciones puras sobre el conjunto de filas del import, el histórico de settlements vigentes de la cuenta y el ciclo de vida de estados. Devuelve por validación el resultado y los hallazgos, cada uno con sus N apariciones y su inclusión por defecto; persiste hallazgos como incidencias persistentes o resueltas.
 
 **Módulo de settlement.** Asigna el número de batch y el intento, registra los movimientos por ciclo E/I/R, aplica fees por fecha de evento y reservas por política de cuenta, produce el Settlement Summary y gestiona los estados del batch (`processed`, `paid`, `undone`).
 
-**Módulo de exports.** Genera el resumen para el merchant y los dos CSV con el formato que el Back-Office necesita, identificados por intento.
+**Exports (dentro del módulo de settlement).** Genera el resumen para el merchant y los dos CSV con el formato que el Back-Office necesita, identificados por intento.
 
-**Persistencia (Prisma sobre SQL Server 2022).** Esquema propio del Recon Tool 2.0, migraciones versionadas, seed sintético idempotente. Los repositorios son adaptadores de los puertos del dominio.
+**Persistencia (Prisma sobre SQL Server 2022).** Esquema propio del Recon Tool 2.0, migraciones versionadas escritas y revisadas a mano ([ADR-007](docs/adr/007-migraciones-escritas-a-mano.md)), seed sintético idempotente. Los repositorios son adaptadores de los puertos del dominio.
 
 **Autenticación y autorización.** Usuarios con contraseña hasheada (Argon2), permisos por acción, alcance de merchants (`assigned` / `all`) y asignación de merchants por usuario.
 
@@ -328,53 +496,56 @@ Monorepo con dos aplicaciones y la documentación al lado del código:
 recon-tool-2/
 ├── readme.md                     # este documento (plantilla oficial)
 ├── prompts.md                    # registro del uso de IA
-├── AGENTS.md                     # contexto para copilotos (CLAUDE.md → symlink)
-├── .claude/                      # skills y hooks del proyecto
-├── docker-compose.yml            # db (SQL Server) · api · web
-├── .github/workflows/            # CI: lint · tests · build (Entrega 3)
+├── AGENTS.md · CLAUDE.md         # contexto para los copilotos
+├── .claude/                      # skills, comandos de OpenSpec y hooks del proyecto
+├── .github/                      # CI (lint · typecheck · unitarios · contrato · build · integración · gitleaks) y plantilla de PR
+├── .env.example                  # plantilla del .env de la raíz (1.4)
+├── infra/
+│   ├── docker-compose.yml        # SQL Server 2022 para desarrollo
+│   └── mssql/                    # arranque: crea la base y los usuarios recon_app y recon_reader
 ├── docs/
-│   ├── adr/                      # ADR-001 … ADR-006 en formato MADR
-│   ├── diagrams/                 # fuentes Mermaid de arquitectura, infra y modelo
-│   ├── openapi.yaml              # contrato de la API
-│   └── wireframes/               # flujo de pantallas (Entrega 1) y capturas (E2/E3)
+│   ├── adr/                      # ADR-001 … ADR-011 en formato MADR
+│   ├── openapi.yaml              # contrato de la API, exportado del backend
+│   ├── uat/                      # sesiones de revisión con usuarios
+│   └── wireframes/               # prototipo (Entrega 1) y capturas por change (Entrega 2)
+├── openspec/
+│   ├── specs/                    # specs vivas por capacidad
+│   └── changes/archive/          # un change archivado por feature
 ├── data/
-│   └── samples/                  # archivos de settlement sintéticos (.xlsx) y resultados esperados
+│   └── samples/                  # archivos de settlement sintéticos (.xlsx) y expected.json
+├── packages/
+│   └── shared/                   # esquemas Zod y vocabulario compartidos por backend y frontend
 ├── backend/
 │   ├── prisma/
 │   │   ├── schema.prisma
-│   │   ├── migrations/
-│   │   └── seed.ts               # seed idempotente (upsert)
+│   │   ├── migrations/           # escritas y revisadas a mano (ADR-007)
+│   │   ├── synthetic.ts          # parámetros del mundo sintético
+│   │   └── seed.ts               # seed idempotente
 │   ├── src/
-│   │   ├── modules/
-│   │   │   ├── catalog/          # domain/ · application/ · infrastructure/ · http/
-│   │   │   ├── fees/
-│   │   │   ├── imports/
-│   │   │   ├── validations/
-│   │   │   ├── settlements/
-│   │   │   └── exports/
-│   │   ├── shared/               # errores, tipos, utilidades de dinero y fechas
-│   │   ├── auth/                 # JWT, permisos, alcance de merchants
+│   │   ├── modules/              # auth · catalog · fees · imports · matching · validation · settlement
+│   │   │   └── <módulo>/         # domain/ · application/ · infrastructure/ · http/
+│   │   ├── config/               # variables de entorno validadas con Zod
+│   │   ├── plugins/              # Prisma y manejador de errores
+│   │   ├── shared/               # errores y auditoría
+│   │   ├── openapi/              # exportación del contrato
 │   │   ├── app.ts                # composición de Fastify y plugins
 │   │   └── server.ts
-│   └── tests/
-│       ├── unit/                 # dominio: validaciones, settlement, fees
-│       └── integration/          # repositorios y rutas contra SQL Server efímero
+│   └── test/integration/         # rutas y repositorios contra SQL Server (los unitarios van junto al código)
 ├── frontend/
-│   ├── src/
-│   │   ├── app/                  # rutas y layout
-│   │   ├── features/             # una carpeta por pantalla: imports, validations, settlements, payments, fees, catalog, auth
-│   │   ├── components/ui/        # shadcn/ui
-│   │   ├── lib/api/              # cliente tipado generado desde openapi.yaml
-│   │   └── lib/schemas/          # esquemas Zod compartidos
-│   └── tests/                    # Vitest + Testing Library
-└── e2e/                          # Playwright: flujo importar → validar → procesar → pagar
+│   └── src/
+│       ├── app/                  # rutas y layout
+│       ├── features/             # accounts · auth · imports · validations · settlements
+│       ├── components/ui/        # shadcn/ui
+│       └── lib/api/              # cliente tipado generado desde openapi.yaml
+├── api-collection/               # colección Bruno: 00-auth · 10-smoke · 20-flows
+└── e2e/                          # Playwright + Gherkin: smoke de importación y scripts de capturas
 ```
 
-Cada módulo del backend sigue la misma división interna: `domain/` (entidades, reglas y puertos, sin dependencias externas), `application/` (casos de uso), `infrastructure/` (adaptadores Prisma y ficheros) y `http/` (rutas y esquemas). El frontend se organiza por *feature* en lugar de por tipo de fichero, de modo que cada pantalla tiene juntos sus componentes, sus consultas y sus tests.
+Cada módulo del backend sigue la misma división interna: `domain/` (entidades, reglas y puertos, sin dependencias externas), `application/` (casos de uso), `infrastructure/` (adaptadores Prisma y ficheros) y `http/` (rutas y esquemas). Los tests unitarios viven junto al código que prueban (`*.test.ts`). El frontend se organiza por *feature* en lugar de por tipo de fichero, de modo que cada pantalla tiene juntos sus componentes, sus consultas y sus tests.
 
 ### 2.4. Infraestructura y despliegue
 
-> **Despliegue previsto, pendiente de validación.** La intención es utilizar un servidor propio con Docker y túnel público exclusivamente para la demostración con datos sintéticos. La conectividad, los recursos y el procedimiento se verificarán antes de confirmar esta alternativa. La automatización descrita es propuesta, no implementada.
+> **Estado en la Entrega 2: solo entorno local.** La aplicación se ejecuta con Docker Compose (SQL Server) y `pnpm dev` siguiendo [1.4](#14-instrucciones-de-instalación); la CI de GitHub Actions ya corre en cada pull request. El entorno de demostración con URL pública que sigue (servidor propio con Docker y túnel, solo con datos sintéticos) es el plan para la Entrega 3 y no está implementado.
 
 **Entornos.**
 
@@ -401,13 +572,13 @@ flowchart LR
     T --> W
 ```
 
-**Proceso de despliegue previsto.** En la Entrega 2, manual y reproducible: `git pull` en el host Docker, `docker compose build` y `docker compose up -d`, con las migraciones ejecutadas como paso separado del despliegue, mediante una identidad distinta de la aplicación. En la Entrega 3 se automatiza con GitHub Actions: cada push a la rama de entrega ejecuta lint, tests unitarios y de integración (con SQL Server efímero en el runner) y build de las imágenes; el despliegue al servidor se dispara desde el runner sobre el túnel. La URL pública sale por Cloudflare Tunnel, que no requiere abrir puertos en el router; como respaldo ante indisponibilidad del servidor el día de la revisión, la Entrega 3 incluye vídeo del sistema funcionando.
+**Proceso de despliegue previsto (Entrega 3).** Primero manual y reproducible: `git pull` en el host Docker, `docker compose build` y `docker compose up -d`, con las migraciones ejecutadas como paso separado del despliegue, mediante una identidad distinta de la aplicación. Después, automatizado con GitHub Actions: el build de las imágenes y el despliegue al servidor se disparan desde el runner sobre el túnel. La parte de integración continua ya existe desde la Entrega 2: en cada pull request, lint, typecheck, tests unitarios, contrato OpenAPI, build del frontend, migración, seed e integración contra un SQL Server efímero en el runner, y gitleaks. La URL pública sale por Cloudflare Tunnel, que no requiere abrir puertos en el router; como respaldo ante indisponibilidad del servidor el día de la revisión, la Entrega 3 incluye vídeo del sistema funcionando.
 
 **Configuración.** Toda la configuración va por variables de entorno (`.env.example` versionado, `.env` no). Secretos del servidor fuera del repositorio.
 
 ### 2.5. Seguridad
 
-> Requisitos del MVP y controles previstos; todavía no implementados ni verificados.
+> **Estado en la Entrega 2.** Implementados y probados: login con Argon2, JWT de acceso y refresh con rotación, permisos por acción, alcance por merchant aplicado en la consulta (lo ajeno responde `404`), validación de entrada con Zod y límites del lector `.xlsx`, auditoría de las acciones del flujo, usuario de base `recon_app` con permisos mínimos y gitleaks en la CI. La administración de usuarios y lo que depende del despliegue (HTTPS en el túnel, red interna) llegan con la Entrega 3.
 
 **Perfiles y permisos.** Cada perfil agrupa acciones autorizadas. Se separan consulta y exports (`reports.view`), reconciliación y deshacer (`settlement.process`), registro y retiro de pago (`payment.process`), cuentas y reglas (`account.manage`), consulta y edición de fees (`fee.view`, `fee.manage`) y administración de usuarios, perfiles y asignaciones (`user.manage`). Administrar cuentas no concede administración de usuarios.
 
@@ -422,7 +593,7 @@ flowchart LR
 
 ### 2.6. Tests
 
-> **Pruebas previstas, todavía no ejecutadas.** La Entrega 1 documenta la estrategia; no afirma cobertura medida ni resultados de ejecución.
+> **Estado en la Entrega 2.** Los tres niveles están en marcha sobre las partes críticas: unitarios con Vitest (dominio de validaciones, pareo, fees y summary escritos test-first contra los `expected.json` de `data/samples/`, y pantallas con Testing Library), integración contra SQL Server real (`backend/test/integration/`) y la colección Bruno del API; del E2E existe el smoke de importación. Unitarios e integración corren en la CI en cada pull request; Bruno y el E2E, en local (comandos en [1.4](#14-instrucciones-de-instalación), paso 6). Lo que sigue es la estrategia completa; lo pendiente se indica en cada nivel.
 
 **Escenarios críticos de aceptación previstos:**
 
@@ -452,7 +623,7 @@ La estrategia sigue el principio del máster: el test es la especificación dete
 
 Todavía no corre en CI: el job llega con la suite completa en la Entrega 3.
 
-**En pipeline (Entrega 3).** Unitarios e integración en cada push, con objetivo de cobertura del 80 % en el dominio; E2E en la rama de entrega. Como métrica complementaria, mutation testing sobre el módulo de validaciones, que es donde un test que "pasa" sin detectar nada haría más daño.
+**En pipeline.** Unitarios e integración ya corren en cada pull request desde la Entrega 2. Para la Entrega 3: E2E y colección Bruno en la CI ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)) y objetivo de cobertura del 80 % en el dominio. Como métrica complementaria, mutation testing sobre el módulo de validaciones, que es donde un test que "pasa" sin detectar nada haría más daño.
 
 ---
 
@@ -1787,9 +1958,17 @@ Tres historias principales del flujo. Son amplias y se descomponen en tickets; l
 
 Tres tickets representativos del backlog, uno por capa; no representan todo el trabajo del MVP. Responsable: **Manfred Valverde Perrogón**. Estimación en puntos Fibonacci (1 punto ≈ media jornada), a validar antes de implementar. Las dependencias se crean como tareas separadas, sin afirmar que ya están resueltas; en particular **RT2-DB-000 · Esquema base y migraciones** (catálogo, transacciones, importación, conjuntos de reglas de pareo por proveedor, usuarios) precede a los tres.
 
+**Estado de RT2-DB-000 en la Entrega 2 (hecho).** El esquema base entró con el tramo 0 en las migraciones [`0001_init`](backend/prisma/migrations/0001_init/) y [`0002_constraints`](backend/prisma/migrations/0002_constraints/), esta última escrita y revisada a mano. Tres decisiones del modelo (3.1 y 3.2) quedan fijadas en él:
+
+- **`MatchingRuleSet`.** Las reglas de pareo se agrupan en conjuntos por proveedor (`UNIQUE (providerId, name)`), a los que se enlaza cada cuenta con `Account.matchingRuleSetId`; las reglas con `ruleSetId NULL` son globales y actúan como fallback. Así dos cuentas del mismo proveedor pueden compartir reglas y una cuenta nueva hereda las globales sin configurar nada.
+- **`Fee.startDate NULL`** significa "desde siempre" y `endDate NULL` "sin fin": la `CHECK CK_Fee_validity` solo compara fechas cuando ambas están informadas, y el trigger `TR_Fee_NoOverlap` trata los NULL como −∞ y +∞ al impedir el solapamiento de fees del mismo tipo en la misma cuenta. Los fees no se borran: se cierran informando `endDate`.
+- **`MatchingSheetRule.kind`** ∈ `transactions` | `batch_fees` | `ignore` sustituye a la antigua tabla de hojas resumen. Tres `CHECK` mantienen la coherencia: una hoja `transactions` lleva ciclo; `batch_fees` e `ignore` no llevan ni ciclo ni estado; y el ciclo `R` nunca lleva estado.
+
 ### Ticket 1 — RT2-DB-001 · Persistencia de intentos de batch, movimientos y fees aplicados
 
-**Tipo:** Base de datos. **Historia:** HU3. **Estimación:** 8 puntos. **Depende de:** RT2-DB-000.
+**Tipo:** Base de datos. **Historia:** HU3. **Estimación:** 8 puntos. **Depende de:** RT2-DB-000. **Issue:** [#11](https://github.com/kajirioji/AI4Devs-finalproject/issues/11).
+
+> **Estado en la Entrega 2 (hecho).** Las tablas de settlement, sus `CHECK` y los índices únicos filtrados por `status <> 'undone'` venían en el esquema base (RT2-DB-000). El change `settlement-process` ([#66](https://github.com/kajirioji/AI4Devs-finalproject/pull/66)) añadió dos migraciones escritas a mano: [`0007_settlement_process`](backend/prisma/migrations/0007_settlement_process/) sustituye `UNIQUE (transactionId, cycle, batchId)` por un movimiento por fila de origen `(batchId, sheetId, rowNo)` y admite una fecha de evento desconocida (NULL) en lugar de inventarla; [`0008_settlement_fee_event_date`](backend/prisma/migrations/0008_settlement_fee_event_date/) extiende ese NULL al detalle de fees del movimiento. Los fees se resuelven con la vigencia de RT2-DB-000 (un `Fee` con `startDate NULL` y `endDate NULL` aplica también a un ajuste sin fecha); el ciclo de cada movimiento lo fija la regla de hoja (`MatchingSheetRule.kind = 'transactions'` con su `cycle`), y los fees de la hoja `batch_fees` llegan prellenados al Settlement Review y se guardan en `SettlementBatchFee` con `source = 'file'`. Queda para la Entrega 3 la reserva por política ante chargeback ([#62](https://github.com/kajirioji/AI4Devs-finalproject/issues/62)).
 
 **Objetivo:** guardar cada procesamiento con trazabilidad, distinguirlo del pago y permitir reprocesar sin borrar el intento anterior.
 
@@ -1817,13 +1996,13 @@ Tres tickets representativos del backlog, uno por capa; no representan todo el t
 
 ### Ticket 2 — RT2-BE-002 · Ejecutar validaciones de duplicados y colisiones
 
-**Tipo:** Backend. **Historia:** HU2. **Estimación:** 8 puntos. **Depende de:** RT2-DB-000, RT2-DB-001, caso de uso de análisis (HU1), archivos de muestra con resultado esperado.
+**Tipo:** Backend. **Historia:** HU2. **Estimación:** 8 puntos. **Depende de:** RT2-DB-000, RT2-DB-001, caso de uso de análisis (HU1), archivos de muestra con resultado esperado. **Issue:** [#8](https://github.com/kajirioji/AI4Devs-finalproject/issues/8) (motor de validaciones, [#41](https://github.com/kajirioji/AI4Devs-finalproject/pull/41)); las corridas, los endpoints y las acciones del analista siguieron en [#9](https://github.com/kajirioji/AI4Devs-finalproject/issues/9) ([#52](https://github.com/kajirioji/AI4Devs-finalproject/pull/52)).
 
 **Objetivo:** identificar repeticiones e incompatibilidades después del cruce, conservar hallazgos con todas sus apariciones y evitar contabilizar dos veces un movimiento.
 
 **Tareas:**
 
-1. Implementar cuatro validaciones como funciones puras en `modules/validations/domain/`: `duplicate_in_batch`, `status_collision_in_batch`, `duplicate_across_batches`, `status_collision_across_batches`.
+1. Implementar cuatro validaciones como funciones puras en `modules/validation/domain/`: `duplicate_in_batch`, `status_collision_in_batch`, `duplicate_across_batches`, `status_collision_across_batches`.
 2. Comparar por identidad externa `(gatewayId, sourceTransactionId)` resuelta a `transactionId`, y por `cycle`, con la regla de 3.3: mismo estado → duplicado, estado distinto → colisión, con la excepción legacy `Chargeback` / `CHB 2` (`excludeAmount`) codificada en `statusRules.ts`; ningún par bloquea.
 3. Considerar como anteriores los batches `processed` y `paid` de **todas las cuentas del proveedor**; excluir `undone`. Respetar el alcance por merchant del usuario.
 4. Producir `ValidationIssue` con N `ConflictOccurrence` y la inclusión por defecto de cada aparición según las reglas de 3.2.
@@ -1847,7 +2026,7 @@ Tres tickets representativos del backlog, uno por capa; no representan todo el t
 
 ### Ticket 3 — RT2-FE-003 · Pantallas Upload Files y Column Mapping
 
-**Tipo:** Frontend. **Historia:** HU1. **Estimación:** 8 puntos. **Depende de:** contrato OpenAPI 4.2 (puede empezar con respuestas simuladas); RT2-DB-000 y caso de uso de importación para la integración real.
+**Tipo:** Frontend. **Historia:** HU1. **Estimación:** 8 puntos. **Issue:** [#6](https://github.com/kajirioji/AI4Devs-finalproject/issues/6). **Depende de:** contrato OpenAPI 4.2 (puede empezar con respuestas simuladas); RT2-DB-000 y caso de uso de importación para la integración real.
 
 **Objetivo:** cargar los archivos de la plantilla, revisar el pareo propuesto y confirmarlo antes de analizar.
 
@@ -1879,4 +2058,51 @@ Tres tickets representativos del backlog, uno por capa; no representan todo el t
 
 ## 7. Pull Requests
 
-Sin código en la Entrega 1. Las tres pull requests se documentarán a partir de la Entrega 2, con el flujo `feature/entrega-2-MVP` → rama principal del fork y la revisión de cada diff generado con IA según los cinco focos del módulo de backend (correctitud, seguridad, rendimiento, legibilidad y tests). La rama de la Entrega 1 es `entrega-1-MVP`.
+Las pull requests de la Entrega 2 van de una rama por change (`feat/<módulo>-<tema>`) a `feature/entrega-2-MVP`, con la plantilla del repositorio y la CI en verde. Cada change pasa dos revisiones de IA antes del merge:
+
+- **`/opsx:verify`** contrasta el código con la spec, el design y las tareas del change de OpenSpec (completitud, escenarios sin test, desfases con el README).
+- **`review-diff`**, en una sesión independiente de la que escribió el código, revisa el diff con los cinco focos del módulo de backend (correctitud, seguridad, rendimiento, legibilidad y tests), concretados para este proyecto en la skill [`review-diff`](.claude/skills/review-diff/SKILL.md): fidelidad al README y al vocabulario fijo, dinero y fechas, pruebas reales, seguridad y datos sintéticos, y arquitectura hexagonal. Los hallazgos se clasifican HIGH / MEDIUM / LOW; cada uno se reproduce antes de corregirlo y se cierra con una pareja de commits test/fix o pasa a un issue tras el triaje humano.
+
+El PR de archive (`/opsx:archive`, que sincroniza los delta specs con `openspec/specs/`) va en la misma fila que su change. Los issues que nacen del propose o del gate del design, no de las revisiones, se citan en la sección 1.5.
+
+#### Tramo 1 — Acceso y catálogo
+
+| PR | Título | Resumen | Qué revisó la IA |
+|---|---|---|---|
+| [#19](https://github.com/kajirioji/AI4Devs-finalproject/pull/19) · [#20](https://github.com/kajirioji/AI4Devs-finalproject/pull/20) | feat(auth): login con JWT, /auth/me y plugin de permisos | Access de 15 min y refresh de 7 días con rotación, logout, `/auth/me`, `requirePermission`; migración `0003_auth` | **Verify:** `authenticate` lee los merchants del usuario en una consulta; el `204` de logout, al OpenAPI; design y tareas alineados. Corregido en el PR. **Review-diff:** primer PR del proyecto, revisado con los cinco focos en la misma sesión; de ahí salió la regla de revisar cada diff en una sesión distinta de la que escribió el código |
+| [#22](https://github.com/kajirioji/AI4Devs-finalproject/pull/22) | chore(openspec): regla de escenarios para los delta specs | Todo change que toque una capability deja cada requisito con al menos un escenario | Sin verify ni review-diff: configuración de OpenSpec, sin código ([#21](https://github.com/kajirioji/AI4Devs-finalproject/issues/21)) |
+| [#23](https://github.com/kajirioji/AI4Devs-finalproject/pull/23) · [#25](https://github.com/kajirioji/AI4Devs-finalproject/pull/25) | feat(catalog): catálogo en solo lectura con alcance por merchant | Nueve `GET` del catálogo con el alcance aplicado en la consulta; lo ajeno responde `404`, nunca `403` | **Verify:** sin críticos; aviso y sugerencia resueltos. **Review-diff:** el alcance solo se aplicaba en un lado de las uniones `AccountChannel` y podía revelar una cuenta o un canal ajenos → corregido con filas cruzadas en la integración; la garantía en BD, a [#24](https://github.com/kajirioji/AI4Devs-finalproject/issues/24). `IntId` sin tope ni solo dígitos → `400 validation_error` |
+| [#26](https://github.com/kajirioji/AI4Devs-finalproject/pull/26) · [#28](https://github.com/kajirioji/AI4Devs-finalproject/pull/28) | feat(frontend): scaffold, sesión con JWT, Login y Accounts | Frontend con cliente generado del OpenAPI, sesión compartida entre pestañas (Web Locks), menú por permisos, Login y Accounts | **Verify:** tras el merge; en #28 el delta se alineó con las correcciones del review. **Review-diff:** 7 hallazgos; corregidos la expiración anunciada a todas las pestañas, Sign out con una petición en vuelo, `safeRedirect` por origen y validación del refresh; dos aceptados como nota y los LOW, a [#27](https://github.com/kajirioji/AI4Devs-finalproject/issues/27) |
+| [#30](https://github.com/kajirioji/AI4Devs-finalproject/pull/30) · [#31](https://github.com/kajirioji/AI4Devs-finalproject/pull/31) | chore(api): colección Bruno de la API y pnpm test:api | Colección Bruno con caso feliz y negativo por endpoint, y `pnpm test:api` / `test:api:smoke` | **Verify:** dos sugerencias de design (`selfAuth`, `bru run -r`) aplicadas en #31. **Review-diff:** README §4 desalineado (endpoints anónimos, códigos en minúsculas), `selfAuth` en los logins, cuenta de prueba resuelta en un solo punto. Corregido en el PR |
+
+#### Tramo 2 — Importar y parear (HU1)
+
+| PR | Título | Resumen | Qué revisó la IA |
+|---|---|---|---|
+| [#33](https://github.com/kajirioji/AI4Devs-finalproject/pull/33) · [#35](https://github.com/kajirioji/AI4Devs-finalproject/pull/35) | feat(import): subida de archivos de la plantilla y propuesta de pareo | Lector `.xlsx` propio (todo como texto), archivo original conservado y propuesta de pareo con `readiness` | **Verify:** sin críticos; mover `scope.ts` a `shared/` → [#32](https://github.com/kajirioji/AI4Devs-finalproject/issues/32). **Review-diff:** dos HIGH: una referencia de celda gigante (`ZZZZZ1`) eludía el límite de columnas (DoS) y un fallo tras la transacción borraba archivos ya guardados → corregidos; multipart malformado `500` → `400`; la 2.ª ronda halló un cuelgue introducido por ese arreglo → corregido. LOW → [#34](https://github.com/kajirioji/AI4Devs-finalproject/issues/34) |
+| [#36](https://github.com/kajirioji/AI4Devs-finalproject/pull/36) · [#37](https://github.com/kajirioji/AI4Devs-finalproject/pull/37) | feat(import): confirmar pareo, analizar y cruzar por identidad externa | Confirmar pareo, analizar (IDs normalizados, cruce por identidad externa, `ImportRow`), resolver ambiguas y cancelar | **Verify:** sin críticos; escenarios pendientes cubiertos; la búsqueda sin seek (`NVARCHAR` contra `VARCHAR`) pasó a `OPENJSON … WITH`: de 24,5 s a 14 s con 20 000 filas. **Review-diff:** escrituras sin guarda de estado → `UPDATE` condicionado; doble `PATCH` de una ambigua; datos de otro merchant visibles → ocultos con `outOfScope`; la 2.ª ronda halló más fugas y una carrera en el cancel. Todo corregido en el PR |
+| [#43](https://github.com/kajirioji/AI4Devs-finalproject/pull/43) · [#46](https://github.com/kajirioji/AI4Devs-finalproject/pull/46) | feat(web): pantallas de importación y smoke E2E | New Reconciliation, Upload Files, Column Mapping y Analysis sobre MSW, y el primer smoke E2E con Playwright y Gherkin | **Verify:** ejecutado; sus hallazgos no constan en el PR. **Review-diff:** las hojas de un archivo quitado seguían en el formulario y bloqueaban Analyze; la contraseña podía quedar en la instantánea de Playwright si el login fallaba (verificado con un login colgado). Corregidos, con timeouts propios en el smoke en la 2.ª ronda |
+
+#### Tramo 3 — Validar y decidir (HU2)
+
+| PR | Título | Resumen | Qué revisó la IA |
+|---|---|---|---|
+| [#41](https://github.com/kajirioji/AI4Devs-finalproject/pull/41) · [#45](https://github.com/kajirioji/AI4Devs-finalproject/pull/45) | feat(validation): motor puro de las ocho validaciones | Las ocho validaciones como funciones puras con TDD contra los `expected.json`; nuevo vocabulario de `outcome` | **Verify:** sin críticos. **Review-diff:** tres rondas. El rango R por fecha de creación daba faltantes falsos → por vencimiento, con oráculos recalculados; una RR repetida liberaba dos veces la reserva; el contador de candidatas I siempre valía 0. Corregidos; el plazo aplicado de la reserva → [#44](https://github.com/kajirioji/AI4Devs-finalproject/issues/44) |
+| [#52](https://github.com/kajirioji/AI4Devs-finalproject/pull/52) · [#54](https://github.com/kajirioji/AI4Devs-finalproject/pull/54) | feat(validation): corridas, hallazgos, acciones del analista y decisión de conjunto | Corridas con una sola vigente, hallazgos, inclusión y resolución auditadas, `POST review` y su invalidación; migración `0006` | **Verify:** sin críticos; separar el lector de hallazgos → [#51](https://github.com/kajirioji/AI4Devs-finalproject/issues/51). **Review-diff:** `occurrenceId` fuera de BIGINT daba `500` → `400`; un test no detectaba un review leído antes de la guarda → reproducido y reescrito con el gancho `beforeClaim`; el review no fija las inclusiones vistas → aceptado, [#53](https://github.com/kajirioji/AI4Devs-finalproject/issues/53). Resto → #51 |
+| [#57](https://github.com/kajirioji/AI4Devs-finalproject/pull/57) · [#58](https://github.com/kajirioji/AI4Devs-finalproject/pull/58) | feat(frontend): pantalla Analysis & Validations | Tabla de las ocho validaciones, hallazgos, drawer con inclusión y resolución, Continue y Cancel | **Verify:** tests de subida intermitentes con las tres suites en paralelo → [#56](https://github.com/kajirioji/AI4Devs-finalproject/issues/56). **Review-diff:** sin guarda síncrona en las acciones del drawer (dos clics, dos `PATCH`) → guarda con test; el API falso pasa ahora por los esquemas de `@recon/shared`. LOW corregidos |
+| [#59](https://github.com/kajirioji/AI4Devs-finalproject/pull/59) | docs(openspec): specs principales en verde con --strict | Escenarios para `fees` y `settlement`: `openspec validate --specs --strict` en verde | Sin verify ni review-diff: solo specs |
+
+#### Tramo 4 — Liquidar y resumir (HU3)
+
+| PR | Título | Resumen | Qué revisó la IA |
+|---|---|---|---|
+| [#66](https://github.com/kajirioji/AI4Devs-finalproject/pull/66) · [#69](https://github.com/kajirioji/AI4Devs-finalproject/pull/69) · [#70](https://github.com/kajirioji/AI4Devs-finalproject/pull/70) | feat(settlement): procesar el batch con fees, canales y resolución de faltantes | Intento de batch con movimientos por ciclo, fees vigentes, `Other Fees`, desglose del payable y canales; migraciones `0007` y `0008` | **Verify:** el número podía nombrar el intento de otra cuenta → corregido; siete escenarios sin test, cubiertos; lo pendiente → [#65](https://github.com/kajirioji/AI4Devs-finalproject/issues/65). **Review-diff:** ningún test ejercitaba el bloqueo del número y la última barrera se probaba con errores inventados → violaciones reales; canales decididos sin bloqueo → relectura bloqueada; reintento ante interbloqueos y `409 settlement_busy`. Fondo → [#67](https://github.com/kajirioji/AI4Devs-finalproject/issues/67) |
+| [#71](https://github.com/kajirioji/AI4Devs-finalproject/pull/71) · [#73](https://github.com/kajirioji/AI4Devs-finalproject/pull/73) | feat(settlement): Settlement Summary, movimientos y CSV del Back-Office | Relectura del intento y sus movimientos, Summary del merchant y CSV del Back-Office (TXN y RR) auditados | **Verify:** intento deshecho, desglose del seed y orden de los intentos → corregidos. **Review-diff:** faltaban negativos `404` en Bruno → añadidos; mapeos y validación del ciclo → corregidos; la validación corre antes que la autenticación en todo el API → [#72](https://github.com/kajirioji/AI4Devs-finalproject/issues/72) |
+| [#74](https://github.com/kajirioji/AI4Devs-finalproject/pull/74) · [#76](https://github.com/kajirioji/AI4Devs-finalproject/pull/76) | feat(frontend): pantallas Settlement Review y Settlement Summary | Review con número, fecha, fees por batch, vista previa calculada en el servidor y canales; Summary con descargas | **Verify:** 47/48 tareas (faltaba la descripción del PR); todos los requisitos con implementación y test; ninguna cifra calculada en el navegador; cuatro huecos de documentación corregidos en el PR (escenario "Summary con teclado", y D15, D16 y D17 del design). **Review-diff:** Retry tras `settlement_busy` sin los motivos de Process; se perdía el motivo del `409 import_not_validated`; Process pulsable con la vista previa recargándose. Corregidos; la calidad de los tests del falso → [#75](https://github.com/kajirioji/AI4Devs-finalproject/issues/75) |
+
+#### Cierre — Navegación y revisión con usuarios
+
+| PR | Título | Resumen | Qué revisó la IA |
+|---|---|---|---|
+| [#88](https://github.com/kajirioji/AI4Devs-finalproject/pull/88) · [#89](https://github.com/kajirioji/AI4Devs-finalproject/pull/89) | feat(settlement): Settlement List de una cuenta y pestaña Movements (#64) | `GET /accounts/{id}/settlements` con filtros, paginación y alcance; pantalla Settlement List desde el menú y desde Accounts; pestaña Movements del Summary con los movimientos E/I/R | **Verify:** sin errores de código; el flujo de Bruno no comprobaba el orden tras el intento nuevo → petición añadida; unificar los ayudantes de texto → [#90](https://github.com/kajirioji/AI4Devs-finalproject/issues/90). **Review-diff:** aprobar con cambios menores. El test del rango al revés no esperaba a la petición; `whitespace-nowrap` y el script de capturas pasaron a fallar si algo desborda; filtro por `processedAt` en Bruno sin efecto si se ignoraba `dateField`; páginas fuera de rango; placeholder de Movements con filas del intento anterior. Corregidos con test y rotura a propósito |
+| [#91](https://github.com/kajirioji/AI4Devs-finalproject/pull/91) · [#95](https://github.com/kajirioji/AI4Devs-finalproject/pull/95) | feat(frontend): pulido de la interfaz tras la revisión del 20-oct (ui-polish) | Las doce observaciones de la [revisión del 20 de octubre](docs/uat/2026-10-20-revision-interfaz.md): menú, tarjetas, barra superior, bloques por archivo, readiness, colores de estado por enumeración, tabla de rangos, contadores, cabecera del Summary, fechas sin `ET` y navegación sin volver arriba. Solo frontend | **Verify y revisión del PR:** el foco podía pedirse sin cambio en la lista → defensas complementarias con su test; el aviso de no Settled usaba un color fijo → tono del mapa, con test que falla ante un color fijo; la línea de por qué es faltante se ciñe a §3.3; docs y tareas desactualizados, corregidos. Cobertura y deuda menor sin bloquear → [#94](https://github.com/kajirioji/AI4Devs-finalproject/issues/94) |
