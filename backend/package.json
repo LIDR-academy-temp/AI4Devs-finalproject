@@ -12,7 +12,7 @@
     "test:integration": "vitest run --project integration",
     "test:coverage": "vitest run --project unit src/modules/validation --coverage --coverage.include=src/modules/validation/**",
     "test:watch": "vitest --project unit",
-    "db:generate": "prisma generate",
+    "db:generate": "prisma generate --no-hints",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
