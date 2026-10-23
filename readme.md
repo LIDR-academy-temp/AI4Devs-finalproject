@@ -404,7 +404,7 @@ La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al
 
 ### 2.1. Diagrama de arquitectura
 
-> **Arquitectura y stack propuestos, pendientes de validación técnica.** Todavía no se ha comenzado a programar. React, TypeScript, Fastify, Prisma y SQL Server son la propuesta de trabajo. Antes de implementarla se realizará una prueba pequeña de lectura de Excel, cruce contra transacciones sintéticas y persistencia en SQL Server. En producción, la integración se alimentará de los datos consolidados de los gateways.
+> **Estado en la Entrega 2.** La arquitectura y el stack descritos están implementados: React 19, TypeScript, Fastify 5, Zod 4, Prisma 7 con `@prisma/adapter-mssql` y SQL Server 2022. Las decisiones y sus desviaciones respecto del plan están en los ADR de [`docs/adr/`](docs/adr/). En producción, la integración se alimentará de los datos consolidados de los gateways.
 
 Recon Tool 2.0 es una aplicación web de tres piezas —una SPA en React, una API REST en Node/TypeScript y una base de datos SQL Server— organizada como **monolito modular con arquitectura hexagonal** (puertos y adaptadores) en el backend.
 
@@ -448,38 +448,43 @@ Las razones son de este proyecto, no genéricas:
 
 **Qué se sacrifica.** Más ficheros y más indirección que un CRUD directo (cada módulo tiene sus entidades, sus puertos y sus adaptadores), lo que cuesta al principio en un stack nuevo para el autor. El monolito no escala por partes, aunque la carga esperada (batches de 1.000–2.000 filas, decenas de usuarios) no lo requiere. Y la SPA obliga a mantener un contrato OpenAPI entre frontend y backend, que se convierte en tarea y en test.
 
-**Decisiones previstas como ADR** (en `docs/adr/`, formato MADR). Las reglas de negocio confirmadas y la sustitución de SSRS están acordadas; las elecciones tecnológicas mantienen estado **Propuesto**, pendiente de la prueba técnica:
+**Decisiones de arquitectura** ([`docs/adr/`](docs/adr/), formato MADR). Las seis previstas en la Entrega 1 están **aceptadas** y cada ADR anota en qué se desvió la implementación; los cambios de rumbo de la Entrega 2 son ADR-007 a ADR-011 (migraciones escritas a mano, lector `.xlsx` propio, un movimiento por fila de origen, resultado de las validaciones y códigos de error en minúsculas):
 
 | ADR | Decisión | Alternativa descartada | Consecuencia principal |
 |---|---|---|---|
-| 001 | Aplicación web propia en lugar de seguir extendiendo SSRS | Añadir reportes al sistema actual | Formularios, validación, sesiones y errores se resuelven de forma nativa; hay que reconstruir lo que el sistema actual ya hace |
-| 002 | SQL Server 2022 desde el MVP, contenedor oficial para desarrollo | PostgreSQL con portabilidad posterior | Reutiliza esquema y lógica del sistema actual; el paso a producción es un despliegue, no una migración; la imagen es solo x86-64 |
-| 003 | Tres ciclos de reconciliación (E, I, R) como eje del modelo, con Settled solo tras el pago | Un único estado "settled" por transacción | Una transacción puede tener varios movimientos distribuidos en los tres ciclos, cada uno con seguimiento propio; el modelo y el summary se construyen alrededor de eso |
-| 004 | Tabla de transacciones propia y desacoplada del gateway | Consultar la tabla de transacciones del gateway en vivo como el sistema actual | Tests reproducibles y sin acceso a producción; en producción hace falta un job o vista de carga |
-| 005 | Monolito modular hexagonal con Fastify + Prisma | NestJS (más estructura, más magia) · Express (menos estructura) | Curva corta, tipado de punta a punta, validación con Zod compartida con el frontend |
-| 006 | Batches como intentos conservados (`attemptNo`) en lugar de borrar al deshacer | Borrar y recrear el batch (comportamiento del sistema actual) | Trazabilidad completa del reprocesamiento; índices únicos filtrados para un solo intento vigente |
+| [001](docs/adr/001-aplicacion-web-propia.md) | Aplicación web propia en lugar de seguir extendiendo SSRS | Añadir reportes al sistema actual | Formularios, validación, sesiones y errores se resuelven de forma nativa; hay que reconstruir lo que el sistema actual ya hace |
+| [002](docs/adr/002-sql-server-2022.md) | SQL Server 2022 desde el MVP, contenedor oficial para desarrollo | PostgreSQL con portabilidad posterior | Reutiliza esquema y lógica del sistema actual; el paso a producción es un despliegue, no una migración; la imagen es solo x86-64 |
+| [003](docs/adr/003-ciclos-e-i-r-y-settled.md) | Tres ciclos de reconciliación (E, I, R) como eje del modelo, con Settled solo tras el pago | Un único estado "settled" por transacción | Una transacción puede tener varios movimientos distribuidos en los tres ciclos, cada uno con seguimiento propio; el modelo y el summary se construyen alrededor de eso |
+| [004](docs/adr/004-tabla-de-transacciones-propia.md) | Tabla de transacciones propia y desacoplada del gateway | Consultar la tabla de transacciones del gateway en vivo como el sistema actual | Tests reproducibles y sin acceso a producción; en producción hace falta un job o vista de carga |
+| [005](docs/adr/005-monolito-modular-hexagonal.md) | Monolito modular hexagonal con Fastify + Prisma | NestJS (más estructura, más magia) · Express (menos estructura) | Curva corta, tipado de punta a punta, validación con Zod compartida con el frontend |
+| [006](docs/adr/006-batches-como-intentos.md) | Batches como intentos conservados (`attemptNo`) en lugar de borrar al deshacer | Borrar y recrear el batch (comportamiento del sistema actual) | Trazabilidad completa del reprocesamiento; índices únicos filtrados para un solo intento vigente |
+| [007](docs/adr/007-migraciones-escritas-a-mano.md) | Migraciones escritas a mano; prohibidos `migrate dev` y `db push` | Generarlas desde `schema.prisma` | Índices filtrados, `CHECK` y trigger viven solo en las migraciones; `recon_app` sin permisos de *shadow database* |
+| [008](docs/adr/008-lector-xlsx-propio.md) | Lector `.xlsx` propio sobre `fflate` y `saxes`, todo como texto | SheetJS (CVE sin corregir en npm) · ExcelJS (convierte a `number`) | Ningún ID pierde dígitos; límites de descompresión propios; código propio que mantener |
+| [009](docs/adr/009-un-movimiento-por-fila-de-origen.md) | Un movimiento por fila de origen `(batchId, sheetId, rowNo)` y fecha de evento NULL si se desconoce | `UNIQUE (transactionId, cycle, batchId)` · inventar la fecha | Refund + Chargeback o un duplicado incluido a mano caben en el mismo batch; migraciones `0007` y `0008` |
+| [010](docs/adr/010-resultado-de-las-validaciones.md) | Resultado `passed` / `warning` / `blocked` / `not_applicable` / `not_implemented` | `passed` / `failed` | Solo `provider_mismatch` bloquea; "sin datos" no se confunde con "sin hallazgos" |
+| [011](docs/adr/011-codigos-de-error-en-minusculas.md) | Códigos de error en snake_case minúsculas | Mayúsculas de los ejemplos de la Entrega 1 | Los ejemplos del README se corrigen al implementar cada endpoint |
 
 ### 2.2. Descripción de componentes principales
 
-> Componentes y tecnologías previstos; esta sección describe el diseño propuesto, no una implementación existente.
+> Describe el diseño completo del MVP. En la Entrega 2 está implementado lo que necesita el flujo principal; lo recortado (administración de cuentas y fees, simulación de fees, pago y deshacer, entre otros) está en [1.5](#15-plan-de-recorte-de-la-entrega-2).
 
 **Frontend (React 19, TypeScript, Vite).** SPA con enrutado por pantalla (login, dashboard, flujo de reconciliación en seis pasos, settlements, pagos, búsqueda, administración). Estado de servidor con TanStack Query (caché, reintentos, invalidación tras cada acción); componentes de UI con shadcn/ui sobre Tailwind; formularios con React Hook Form y los mismos esquemas Zod que valida el backend. Tabla de datos virtualizada para las vistas de filas, hallazgos y apariciones.
 
-**API HTTP (Node.js 22, Fastify).** Expone la API REST bajo `/api/v1`, valida cada petición con Zod, publica la especificación OpenAPI en `/docs` (Scalar) y protege las rutas con JWT de corta duración más refresh. Un plugin de autorización resuelve por petición los permisos del usuario y su alcance de merchants, y lo inyecta en los casos de uso.
+**API HTTP (Node.js 22, Fastify).** Expone la API REST bajo `/api/v1`, valida cada petición con Zod, publica la especificación OpenAPI en `/docs` (Swagger UI, en el puerto del backend) y protege las rutas con JWT de corta duración más refresh. Un plugin de autorización resuelve por petición los permisos del usuario y su alcance de merchants, y lo inyecta en los casos de uso.
 
 **Módulo de catálogo.** Merchants, proveedores y canales de solo lectura (alimentados por el seed en el MVP y por un job desde los gateways en producción); cuentas con creación (sin fees o copiando los de otra cuenta del proveedor; enlace opcional a un conjunto de reglas) y edición, política de reserva ante chargeback, canales asociados y cuenta principal por canal; conjuntos de reglas de pareo por proveedor.
 
 **Módulo de fees.** Fees por cuenta con tipo, monto fijo o porcentaje, valor y vigencia; regla de no solapamiento; historial de cambios; simulación del efecto de una edición.
 
-**Módulo de importación.** Recibe uno o varios `.xlsx` por cuenta, los lee hoja a hoja (SheetJS), aplica el conjunto de reglas de pareo enlazado a la cuenta (o las globales) para proponer el mapeo, guarda cada fila con su identificador de origen, estado y el resto de columnas como JSON de referencia, y ejecuta el cruce por identidad externa contra la tabla de transacciones propias.
+**Módulo de importación.** Recibe uno o varios `.xlsx` por cuenta, los lee hoja a hoja con un lector OOXML propio que devuelve todas las celdas como texto ([ADR-008](docs/adr/008-lector-xlsx-propio.md)), aplica el conjunto de reglas de pareo enlazado a la cuenta (o las globales) para proponer el mapeo, guarda cada fila con su identificador de origen, estado y el resto de columnas como JSON de referencia, y ejecuta el cruce por identidad externa contra la tabla de transacciones propias.
 
 **Módulo de validaciones.** Las ocho validaciones como funciones puras sobre el conjunto de filas del import, el histórico de settlements vigentes de la cuenta y el ciclo de vida de estados. Devuelve por validación el resultado y los hallazgos, cada uno con sus N apariciones y su inclusión por defecto; persiste hallazgos como incidencias persistentes o resueltas.
 
 **Módulo de settlement.** Asigna el número de batch y el intento, registra los movimientos por ciclo E/I/R, aplica fees por fecha de evento y reservas por política de cuenta, produce el Settlement Summary y gestiona los estados del batch (`processed`, `paid`, `undone`).
 
-**Módulo de exports.** Genera el resumen para el merchant y los dos CSV con el formato que el Back-Office necesita, identificados por intento.
+**Exports (dentro del módulo de settlement).** Genera el resumen para el merchant y los dos CSV con el formato que el Back-Office necesita, identificados por intento.
 
-**Persistencia (Prisma sobre SQL Server 2022).** Esquema propio del Recon Tool 2.0, migraciones versionadas, seed sintético idempotente. Los repositorios son adaptadores de los puertos del dominio.
+**Persistencia (Prisma sobre SQL Server 2022).** Esquema propio del Recon Tool 2.0, migraciones versionadas escritas y revisadas a mano ([ADR-007](docs/adr/007-migraciones-escritas-a-mano.md)), seed sintético idempotente. Los repositorios son adaptadores de los puertos del dominio.
 
 **Autenticación y autorización.** Usuarios con contraseña hasheada (Argon2), permisos por acción, alcance de merchants (`assigned` / `all`) y asignación de merchants por usuario.
 
@@ -491,53 +496,56 @@ Monorepo con dos aplicaciones y la documentación al lado del código:
 recon-tool-2/
 ├── readme.md                     # este documento (plantilla oficial)
 ├── prompts.md                    # registro del uso de IA
-├── AGENTS.md                     # contexto para copilotos (CLAUDE.md → symlink)
-├── .claude/                      # skills y hooks del proyecto
-├── docker-compose.yml            # db (SQL Server) · api · web
-├── .github/workflows/            # CI: lint · tests · build (Entrega 3)
+├── AGENTS.md · CLAUDE.md         # contexto para los copilotos
+├── .claude/                      # skills, comandos de OpenSpec y hooks del proyecto
+├── .github/                      # CI (lint · typecheck · unitarios · contrato · build · integración · gitleaks) y plantilla de PR
+├── .env.example                  # plantilla del .env de la raíz (1.4)
+├── infra/
+│   ├── docker-compose.yml        # SQL Server 2022 para desarrollo
+│   └── mssql/                    # arranque: crea la base y los usuarios recon_app y recon_reader
 ├── docs/
-│   ├── adr/                      # ADR-001 … ADR-006 en formato MADR
-│   ├── diagrams/                 # fuentes Mermaid de arquitectura, infra y modelo
-│   ├── openapi.yaml              # contrato de la API
-│   └── wireframes/               # flujo de pantallas (Entrega 1) y capturas (E2/E3)
+│   ├── adr/                      # ADR-001 … ADR-011 en formato MADR
+│   ├── openapi.yaml              # contrato de la API, exportado del backend
+│   ├── uat/                      # sesiones de revisión con usuarios
+│   └── wireframes/               # prototipo (Entrega 1) y capturas por change (Entrega 2)
+├── openspec/
+│   ├── specs/                    # specs vivas por capacidad
+│   └── changes/archive/          # un change archivado por feature
 ├── data/
-│   └── samples/                  # archivos de settlement sintéticos (.xlsx) y resultados esperados
+│   └── samples/                  # archivos de settlement sintéticos (.xlsx) y expected.json
+├── packages/
+│   └── shared/                   # esquemas Zod y vocabulario compartidos por backend y frontend
 ├── backend/
 │   ├── prisma/
 │   │   ├── schema.prisma
-│   │   ├── migrations/
-│   │   └── seed.ts               # seed idempotente (upsert)
+│   │   ├── migrations/           # escritas y revisadas a mano (ADR-007)
+│   │   ├── synthetic.ts          # parámetros del mundo sintético
+│   │   └── seed.ts               # seed idempotente
 │   ├── src/
-│   │   ├── modules/
-│   │   │   ├── catalog/          # domain/ · application/ · infrastructure/ · http/
-│   │   │   ├── fees/
-│   │   │   ├── imports/
-│   │   │   ├── validations/
-│   │   │   ├── settlements/
-│   │   │   └── exports/
-│   │   ├── shared/               # errores, tipos, utilidades de dinero y fechas
-│   │   ├── auth/                 # JWT, permisos, alcance de merchants
+│   │   ├── modules/              # auth · catalog · fees · imports · matching · validation · settlement
+│   │   │   └── <módulo>/         # domain/ · application/ · infrastructure/ · http/
+│   │   ├── config/               # variables de entorno validadas con Zod
+│   │   ├── plugins/              # Prisma y manejador de errores
+│   │   ├── shared/               # errores y auditoría
+│   │   ├── openapi/              # exportación del contrato
 │   │   ├── app.ts                # composición de Fastify y plugins
 │   │   └── server.ts
-│   └── tests/
-│       ├── unit/                 # dominio: validaciones, settlement, fees
-│       └── integration/          # repositorios y rutas contra SQL Server efímero
+│   └── test/integration/         # rutas y repositorios contra SQL Server (los unitarios van junto al código)
 ├── frontend/
-│   ├── src/
-│   │   ├── app/                  # rutas y layout
-│   │   ├── features/             # una carpeta por pantalla: imports, validations, settlements, payments, fees, catalog, auth
-│   │   ├── components/ui/        # shadcn/ui
-│   │   ├── lib/api/              # cliente tipado generado desde openapi.yaml
-│   │   └── lib/schemas/          # esquemas Zod compartidos
-│   └── tests/                    # Vitest + Testing Library
-└── e2e/                          # Playwright: flujo importar → validar → procesar → pagar
+│   └── src/
+│       ├── app/                  # rutas y layout
+│       ├── features/             # accounts · auth · imports · validations · settlements
+│       ├── components/ui/        # shadcn/ui
+│       └── lib/api/              # cliente tipado generado desde openapi.yaml
+├── api-collection/               # colección Bruno: 00-auth · 10-smoke · 20-flows
+└── e2e/                          # Playwright + Gherkin: smoke de importación y scripts de capturas
 ```
 
-Cada módulo del backend sigue la misma división interna: `domain/` (entidades, reglas y puertos, sin dependencias externas), `application/` (casos de uso), `infrastructure/` (adaptadores Prisma y ficheros) y `http/` (rutas y esquemas). El frontend se organiza por *feature* en lugar de por tipo de fichero, de modo que cada pantalla tiene juntos sus componentes, sus consultas y sus tests.
+Cada módulo del backend sigue la misma división interna: `domain/` (entidades, reglas y puertos, sin dependencias externas), `application/` (casos de uso), `infrastructure/` (adaptadores Prisma y ficheros) y `http/` (rutas y esquemas). Los tests unitarios viven junto al código que prueban (`*.test.ts`). El frontend se organiza por *feature* en lugar de por tipo de fichero, de modo que cada pantalla tiene juntos sus componentes, sus consultas y sus tests.
 
 ### 2.4. Infraestructura y despliegue
 
-> **Despliegue previsto, pendiente de validación.** La intención es utilizar un servidor propio con Docker y túnel público exclusivamente para la demostración con datos sintéticos. La conectividad, los recursos y el procedimiento se verificarán antes de confirmar esta alternativa. La automatización descrita es propuesta, no implementada.
+> **Estado en la Entrega 2: solo entorno local.** La aplicación se ejecuta con Docker Compose (SQL Server) y `pnpm dev` siguiendo [1.4](#14-instrucciones-de-instalación); la CI de GitHub Actions ya corre en cada pull request. El entorno de demostración con URL pública que sigue (servidor propio con Docker y túnel, solo con datos sintéticos) es el plan para la Entrega 3 y no está implementado.
 
 **Entornos.**
 
@@ -564,13 +572,13 @@ flowchart LR
     T --> W
 ```
 
-**Proceso de despliegue previsto.** En la Entrega 2, manual y reproducible: `git pull` en el host Docker, `docker compose build` y `docker compose up -d`, con las migraciones ejecutadas como paso separado del despliegue, mediante una identidad distinta de la aplicación. En la Entrega 3 se automatiza con GitHub Actions: cada push a la rama de entrega ejecuta lint, tests unitarios y de integración (con SQL Server efímero en el runner) y build de las imágenes; el despliegue al servidor se dispara desde el runner sobre el túnel. La URL pública sale por Cloudflare Tunnel, que no requiere abrir puertos en el router; como respaldo ante indisponibilidad del servidor el día de la revisión, la Entrega 3 incluye vídeo del sistema funcionando.
+**Proceso de despliegue previsto (Entrega 3).** Primero manual y reproducible: `git pull` en el host Docker, `docker compose build` y `docker compose up -d`, con las migraciones ejecutadas como paso separado del despliegue, mediante una identidad distinta de la aplicación. Después, automatizado con GitHub Actions: el build de las imágenes y el despliegue al servidor se disparan desde el runner sobre el túnel. La parte de integración continua ya existe desde la Entrega 2: en cada pull request, lint, typecheck, tests unitarios, contrato OpenAPI, build del frontend, migración, seed e integración contra un SQL Server efímero en el runner, y gitleaks. La URL pública sale por Cloudflare Tunnel, que no requiere abrir puertos en el router; como respaldo ante indisponibilidad del servidor el día de la revisión, la Entrega 3 incluye vídeo del sistema funcionando.
 
 **Configuración.** Toda la configuración va por variables de entorno (`.env.example` versionado, `.env` no). Secretos del servidor fuera del repositorio.
 
 ### 2.5. Seguridad
 
-> Requisitos del MVP y controles previstos; todavía no implementados ni verificados.
+> **Estado en la Entrega 2.** Implementados y probados: login con Argon2, JWT de acceso y refresh con rotación, permisos por acción, alcance por merchant aplicado en la consulta (lo ajeno responde `404`), validación de entrada con Zod y límites del lector `.xlsx`, auditoría de las acciones del flujo, usuario de base `recon_app` con permisos mínimos y gitleaks en la CI. La administración de usuarios y lo que depende del despliegue (HTTPS en el túnel, red interna) llegan con la Entrega 3.
 
 **Perfiles y permisos.** Cada perfil agrupa acciones autorizadas. Se separan consulta y exports (`reports.view`), reconciliación y deshacer (`settlement.process`), registro y retiro de pago (`payment.process`), cuentas y reglas (`account.manage`), consulta y edición de fees (`fee.view`, `fee.manage`) y administración de usuarios, perfiles y asignaciones (`user.manage`). Administrar cuentas no concede administración de usuarios.
 
@@ -585,7 +593,7 @@ flowchart LR
 
 ### 2.6. Tests
 
-> **Pruebas previstas, todavía no ejecutadas.** La Entrega 1 documenta la estrategia; no afirma cobertura medida ni resultados de ejecución.
+> **Estado en la Entrega 2.** Los tres niveles están en marcha sobre las partes críticas: unitarios con Vitest (dominio de validaciones, pareo, fees y summary escritos test-first contra los `expected.json` de `data/samples/`, y pantallas con Testing Library), integración contra SQL Server real (`backend/test/integration/`) y la colección Bruno del API; del E2E existe el smoke de importación. Unitarios e integración corren en la CI en cada pull request; Bruno y el E2E, en local (comandos en [1.4](#14-instrucciones-de-instalación), paso 6). Lo que sigue es la estrategia completa; lo pendiente se indica en cada nivel.
 
 **Escenarios críticos de aceptación previstos:**
 
@@ -615,7 +623,7 @@ La estrategia sigue el principio del máster: el test es la especificación dete
 
 Todavía no corre en CI: el job llega con la suite completa en la Entrega 3.
 
-**En pipeline (Entrega 3).** Unitarios e integración en cada push, con objetivo de cobertura del 80 % en el dominio; E2E en la rama de entrega. Como métrica complementaria, mutation testing sobre el módulo de validaciones, que es donde un test que "pasa" sin detectar nada haría más daño.
+**En pipeline.** Unitarios e integración ya corren en cada pull request desde la Entrega 2. Para la Entrega 3: E2E y colección Bruno en la CI ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)) y objetivo de cobertura del 80 % en el dominio. Como métrica complementaria, mutation testing sobre el módulo de validaciones, que es donde un test que "pasa" sin detectar nada haría más daño.
 
 ---
 
