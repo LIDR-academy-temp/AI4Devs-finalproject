@@ -354,7 +354,6 @@ La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al
 | Deshacer un intento y reprocesar (HU3, criterio 8) | El esquema ya admite intentos `undone` y `attemptNo`; falta el caso de uso y su pantalla | [#79](https://github.com/kajirioji/AI4Devs-finalproject/issues/79) |
 | Administración de cuentas, canales, fees y reglas de pareo (`POST /accounts/{id}/fees`, sección 4.1) | El seed crea cuentas, fees y reglas de pareo; el flujo solo necesita leerlos | [#80](https://github.com/kajirioji/AI4Devs-finalproject/issues/80) |
 | Reserva ante chargeback por política de la cuenta (`release_on_chargeback`) | Recortable previsto en el design de `settlement-process`: el núcleo de HU3 no depende de ella | [#62](https://github.com/kajirioji/AI4Devs-finalproject/issues/62) |
-| Lista de Settlements de la cuenta | El Summary se abre desde su import; la lista es navegación, no flujo | [#64](https://github.com/kajirioji/AI4Devs-finalproject/issues/64) |
 | Resolver filas ambiguas desde la interfaz y lista *In Progress* para retomar imports | El endpoint de resolución ya existe (`PATCH` de la fila); la pantalla solo las muestra | [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38) |
 | Suite E2E completa y job E2E en CI | Entra solo el smoke de importación, en local; la integración y la colección Bruno cubren el resto del API | [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38), [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40) |
 | Huecos del API vistos en las pantallas: límite de archivos por import, catálogo de estados, motivo al cancelar | No bloquean el flujo; el límite por petición ya existe | [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40), [#47](https://github.com/kajirioji/AI4Devs-finalproject/issues/47) |
@@ -364,6 +363,21 @@ La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al
 | `status_mismatch` cuando el gateway está en `Pending` | Decisión del gate: la fila se procesa con su estado y el aviso llega después | [#63](https://github.com/kajirioji/AI4Devs-finalproject/issues/63) |
 | Guardar `skipped`, `warnings` y `channelsAssigned` en el batch | Hoy se reconstruyen desde la auditoría; funciona, pero no es su sitio | [#65](https://github.com/kajirioji/AI4Devs-finalproject/issues/65) |
 | Descarga `.xlsx` de los movimientos con el ID como texto | Los CSV del Back-Office ya salen; el `.xlsx` es para el analista | [#68](https://github.com/kajirioji/AI4Devs-finalproject/issues/68) |
+| Aviso cuando ninguna fila del import coincide con la cuenta | Hoy puede procesarse como un batch solo de fees (ver "Limitaciones conocidas" en 1.2) | [#92](https://github.com/kajirioji/AI4Devs-finalproject/issues/92) |
+| Vídeo de la demo | El tiempo de la Entrega 2 fue al flujo y a la revisión con usuarios | [#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96) |
+
+**Lo que entró al final.** La lista de Settlements de una cuenta y la pestaña Movements del Summary, que estaban recortadas, entraron con `settlements-browse` ([#64](https://github.com/kajirioji/AI4Devs-finalproject/issues/64), PR [#88](https://github.com/kajirioji/AI4Devs-finalproject/pull/88)).
+
+**Revisión con usuarios.** El 20 de octubre, el líder del equipo revisó con el analista del proyecto la interfaz del recorrido de la demo (Files → Mapping → Analysis → Settlement Review → Summary, y Settlement List) sobre el mundo sintético ([`docs/uat/`](docs/uat/), notas en [`2026-10-20-revision-interfaz.md`](docs/uat/2026-10-20-revision-interfaz.md)). La valoración general del progreso y del resultado fue buena; las observaciones fueron de legibilidad de la interfaz, ninguna de reglas ni cifras. Doce entraron en la Entrega 2 con `ui-polish` (PR [#91](https://github.com/kajirioji/AI4Devs-finalproject/pull/91)) y el resto pasó a issues:
+
+| Observación de la revisión | Destino | Issue |
+|---|---|---|
+| Plegar y desplegar cada archivo en Column Mapping | Entrega 3 | [#85](https://github.com/kajirioji/AI4Devs-finalproject/issues/85) |
+| Columna Round #1/#2 en las tablas de rangos | Entrega 3 | [#86](https://github.com/kajirioji/AI4Devs-finalproject/issues/86) |
+| Transacciones por estado en la tabla de rangos de Validations | Entrega 3 | [#87](https://github.com/kajirioji/AI4Devs-finalproject/issues/87) |
+| Merchant summary en `.xlsx` | Entrega 3 | [#82](https://github.com/kajirioji/AI4Devs-finalproject/issues/82) |
+| Selector del merchant activo en la barra superior | Roadmap | [#83](https://github.com/kajirioji/AI4Devs-finalproject/issues/83) |
+| Modo oscuro | Roadmap | [#84](https://github.com/kajirioji/AI4Devs-finalproject/issues/84) |
 
 **Deuda técnica registrada** (no cambia el comportamiento visible del flujo)
 
@@ -378,8 +392,11 @@ La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al
 | Concurrencia (interbloqueos) y precisión de `settlement-process` | [#67](https://github.com/kajirioji/AI4Devs-finalproject/issues/67) |
 | Autenticación antes que la validación del esquema (`onRequest`) | [#72](https://github.com/kajirioji/AI4Devs-finalproject/issues/72) |
 | Calidad de los tests de settlement con el API falso | [#75](https://github.com/kajirioji/AI4Devs-finalproject/issues/75) |
+| Falsos positivos del hook `guard-db.sh` con comandos citados en mensajes de commit | [#81](https://github.com/kajirioji/AI4Devs-finalproject/issues/81) |
+| Un solo ayudante para el texto que no se parte en el frontend | [#90](https://github.com/kajirioji/AI4Devs-finalproject/issues/90) |
+| Cobertura pendiente tras el review de `ui-polish` | [#94](https://github.com/kajirioji/AI4Devs-finalproject/issues/94) |
 
-**Roadmap** (etiqueta `roadmap`, sin fecha): cerrar la inclusión manual de duplicados E entre batches, que hoy existe solo para procesar batches históricos ([#49](https://github.com/kajirioji/AI4Devs-finalproject/issues/49)); mantenimiento de tipos de fees ([#60](https://github.com/kajirioji/AI4Devs-finalproject/issues/60)); y alerta de tope de reserva alcanzado ([#61](https://github.com/kajirioji/AI4Devs-finalproject/issues/61)).
+**Roadmap** (etiqueta `roadmap`, sin fecha): cerrar la inclusión manual de duplicados E entre batches, que hoy existe solo para procesar batches históricos ([#49](https://github.com/kajirioji/AI4Devs-finalproject/issues/49)); mantenimiento de tipos de fees ([#60](https://github.com/kajirioji/AI4Devs-finalproject/issues/60)); alerta de tope de reserva alcanzado ([#61](https://github.com/kajirioji/AI4Devs-finalproject/issues/61)); y señalar importes del proveedor fuera de un tipo de cambio razonable ([#93](https://github.com/kajirioji/AI4Devs-finalproject/issues/93)).
 
 ---
 
