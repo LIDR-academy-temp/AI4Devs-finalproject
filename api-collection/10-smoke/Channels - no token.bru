@@ -1,0 +1,29 @@
+meta {
+  name: Channels - no token
+  type: http
+  seq: 5
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/channels?unassigned=true
+  body: none
+  auth: none
+}
+
+params:query {
+  unassigned: true
+}
+
+vars:pre-request {
+  selfAuth: true
+}
+
+tests {
+  test('responds 401 unauthorized', () => {
+    expect(res.status).to.equal(401);
+    expect(res.body.code).to.equal('unauthorized');
+  });
+}

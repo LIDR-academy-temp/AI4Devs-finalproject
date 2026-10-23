@@ -1,0 +1,25 @@
+meta {
+  name: 3 Analyze
+  type: http
+  seq: 3
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/analyze
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{blkImportId}}
+}
+
+tests {
+  test('analyzes batch-blocked', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.status).to.equal('analyzed');
+  });
+}

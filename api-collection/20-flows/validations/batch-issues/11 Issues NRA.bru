@@ -1,0 +1,40 @@
+meta {
+  name: 11 Issues NRA
+  type: http
+  seq: 11
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId/validation-issues?type=non_recorded_adjustment
+  body: none
+  auth: inherit
+}
+
+params:query {
+  type: non_recorded_adjustment
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+script:post-response {
+  if (res.status === 200) {
+    const nra = res.body.items.find((i) => i.transactionIdRaw === '281520820250015');
+    if (nra) {
+      bru.setVar('nraIssueId', nra.issueId);
+    }
+  }
+}
+
+tests {
+  test('the non_recorded_adjustment of 281520820250015, persistent, with the gateway status', () => {
+    expect(res.status).to.equal(200);
+    const nra = res.body.items.find((i) => i.transactionIdRaw === '281520820250015');
+    expect(nra.resolutionStatus).to.equal('persistent');
+    expect(nra.gatewayStatus.code).to.equal('Successful');
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: 6 Shared session still valid
+  type: http
+  seq: 6
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/auth/me
+  body: none
+  auth: inherit
+}
+
+tests {
+  test('the shared session keeps answering 200 as the main user', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.userName).to.equal(bru.getProcessEnv('SEED_USER'));
+  });
+}

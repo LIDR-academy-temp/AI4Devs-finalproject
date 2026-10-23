@@ -1,0 +1,44 @@
+{
+  "name": "recon-tool-2",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "db:up": "docker compose --env-file .env -f infra/docker-compose.yml up -d",
+    "db:down": "docker compose --env-file .env -f infra/docker-compose.yml down",
+    "db:logs": "docker compose --env-file .env -f infra/docker-compose.yml logs -f mssql",
+    "db:migrate": "pnpm --filter @recon/backend db:migrate",
+    "db:seed": "pnpm --filter @recon/backend db:seed",
+    "db:generate": "pnpm --filter @recon/backend db:generate",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:api": "cd api-collection && bru run -r --env local",
+    "test:api:smoke": "cd api-collection && bru run 10-smoke --env local",
+    "test:hooks": "bash scripts/test-hooks.sh",
+    "test:e2e": "pnpm --filter @recon/e2e test:e2e",
+    "screenshots:web-validations": "pnpm --filter @recon/e2e screenshots:web-validations",
+    "screenshots:web-settlement": "pnpm --filter @recon/e2e screenshots:web-settlement",
+    "screenshots:settlements-browse": "pnpm --filter @recon/e2e screenshots:settlements-browse",
+    "openapi:export": "pnpm --filter @recon/backend openapi:export",
+    "openapi:check": "pnpm openapi:export && pnpm --filter @recon/frontend api:generate && git diff --exit-code -- docs/openapi.yaml frontend/src/lib/api/schema.gen.ts",
+    "samples:plan": "tsx data/samples/plan.ts > data/samples/plan.json",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@usebruno/cli": "4.2.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,json}": "biome check --write --no-errors-on-unmatched"
+  }
+}

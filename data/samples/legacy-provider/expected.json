@@ -1,0 +1,107 @@
+{
+  "sample": "legacy-provider",
+  "description": "Archivo con nombres de hoja y columna antiguos (TRX / Fail / CB / Summary, Merchant Order No#, Order Status) resuelto por el conjunto de reglas \"Provider C legacy\"; gateway UUID; un CHB 2 con importe excluido.",
+  "account": "ProviderC-Alt",
+  "files": ["Legacy_ProviderC-Alt_batch.xlsx"],
+  "ruleSet": "Provider C legacy",
+  "sheets": {
+    "TRX": {
+      "kind": "transactions",
+      "cycle": "E",
+      "statusBy": "column"
+    },
+    "Fail": {
+      "kind": "transactions",
+      "cycle": "E",
+      "status": "Declined"
+    },
+    "CB": {
+      "kind": "transactions",
+      "cycle": "I",
+      "statusBy": "column"
+    },
+    "Summary": {
+      "kind": "ignore"
+    }
+  },
+  "columns": {
+    "Merchant Order No#": "transactionId",
+    "Order Status": "status",
+    "Amount USD": "amount"
+  },
+  "rows": {
+    "read": 81,
+    "matched": 81,
+    "unmatched": 0
+  },
+  "byCycle": {
+    "E": 80,
+    "I": 1,
+    "R": 0
+  },
+  "statusAliases": {
+    "Failed": "Declined",
+    "CHB": "Chargeback",
+    "CHB 2": "Chargeback (excludeAmount)"
+  },
+  "excludeAmountRows": ["df14616d-4b26-4ffb-9984-72717ebff6a6"],
+  "validations": {
+    "provider_mismatch": 0,
+    "non_recorded_adjustment": {
+      "non_recorded_adjustment": 0,
+      "status_mismatch": 0
+    },
+    "duplicate_in_batch": 0,
+    "status_collision_in_batch": 0,
+    "duplicate_across_batches": 0,
+    "status_collision_across_batches": 0,
+    "missing_previous_to_batch": {
+      "E": 0,
+      "I": 3,
+      "R": 0
+    },
+    "missing_in_range": {
+      "E": 0,
+      "I": 0,
+      "R": 0
+    }
+  },
+  "affectedIds": {
+    "missing_previous_to_batch_I": [
+      "9f569235-27cd-42d6-9ccb-3956de1cac24",
+      "2e997b14-66e9-47f5-b6d9-0962d493402d",
+      "c312f825-ae60-42b1-8a6e-32ac8093ea9e"
+    ]
+  },
+  "fees": "La cuenta solo tiene un fee transaccional, el de Chargeback: los movimientos E no llevan fees y el CHB 2 lleva el de Chargeback.",
+  "proposedBatchNo": 7,
+  "summary": {
+    "qty": {
+      "deposit": 60,
+      "declined": 20,
+      "chargeback": 1,
+      "refund": 0,
+      "rdr": 0,
+      "reservesReleased": 0
+    },
+    "amounts": {
+      "deposit": "7431.5200",
+      "chargeback": "0.0000",
+      "refund": "0.0000",
+      "rdr": "0.0000",
+      "reserveHeld": "371.5760",
+      "reserveReleased": "0.0000"
+    },
+    "fees": {
+      "deposit": "0.0000",
+      "declined": "0.0000",
+      "chargeback": "40.0000",
+      "refund": "0.0000",
+      "rdr": "0.0000",
+      "mdrIncludedInDeposit": "0.0000",
+      "total": "40.0000"
+    },
+    "otherFeeAmt": "0.0000",
+    "amountPayable": "7019.9440"
+  }
+}

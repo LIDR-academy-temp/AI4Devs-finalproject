@@ -1,0 +1,37 @@
+meta {
+  name: 17 Review again
+  type: http
+  seq: 18
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/review
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({ runId: bru.getVar('runId2') });
+}
+
+tests {
+  test('a new review after the invalidation: validated again, the invalidated review is kept', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.importStatus).to.equal('validated');
+    expect(res.body.run.review).to.not.equal(null);
+    expect(res.body.lastInvalidatedReview.reason).to.equal('inclusion_change');
+  });
+}

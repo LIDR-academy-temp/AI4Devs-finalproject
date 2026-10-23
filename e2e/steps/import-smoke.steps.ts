@@ -1,0 +1,140 @@
+// Steps of the import smoke. Selectors are roles and accessible texts, the same as frontend/src/features/imports/strings.ts.
+import { fileURLToPath } from 'node:url'
+import { expect, type Page } from '@playwright/test'
+import { test as base, createBdd } from 'playwright-bdd'
+
+// The import the scenario created, taken from the answer of the POST that creates it, for the cleanup of a failure.
+// Exported so that bddgen finds the test the steps are bound to.
+export const test = base.extend<{ created: { importId?: string } }>({
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures take their dependencies as a destructured object
+  created: async ({}, use) => use({}),
+})
+
+const { Given, When, Then, After } = createBdd(test)
+
+const repositoryFile = (path: string) => fileURLToPath(new URL(`../../${path}`, import.meta.url))
+
+/** Sets the value of the password field from the page, so no step title nor log carries it. */
+async function setPassword(page: Page, value: string) {
+  await page.getByLabel('Password').evaluate((input, text) => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+    setter?.call(input, text)
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  }, value)
+}
+
+/**
+ * Empties the password field without waiting for it: after the click the form may be gone, and if signing in fails
+ * the snapshot of the page that the report attaches must not hold the password.
+ */
+async function clearPassword(page: Page) {
+  await page
+    .evaluate(() => {
+      const input = document.querySelector<HTMLInputElement>('input[type="password"]')
+      if (!input) return
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, '')
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    .catch(() => {})
+}
+
+Given('the analyst is signed in', async ({ page }) => {
+  const password = process.env.SEED_PASSWORD
+  if (!password) throw new Error('SEED_PASSWORD is not set: copy .env.example to .env at the repository root.')
+  await page.goto('/login')
+  await page.getByLabel('User name').fill('analyst')
+  // The password is set from the page, not with fill(): the title of a fill step carries the text it types, and
+  // the password must not reach the console nor the report.
+  await setPassword(page, password)
+  // The finally empties the field when the click fails or times out (actionTimeout, 15 s, well before the test
+  // timeout). It cannot when the page no longer answers or the test itself has run out of time: then the error of
+  // the evaluate is ignored and the field keeps its value.
+  try {
+    await page.getByRole('button', { name: 'Sign in' }).click()
+  } finally {
+    await clearPassword(page)
+  }
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
+})
+
+When(
+  'they start a new reconciliation in {string} › {string} › {string}',
+  async ({ page }, merchant: string, provider: string, account: string) => {
+    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'New Reconciliation' }).click()
+    await page.getByLabel('Merchant').selectOption({ label: merchant })
+    await page.getByLabel('Provider').selectOption({ label: provider })
+    await page.getByLabel('Account').selectOption({ label: account })
+  },
+)
+
+When('they upload {string}', async ({ page, created }, path: string) => {
+  const creation = page.waitForResponse(
+    (response) => response.request().method() === 'POST' && /\/api\/v1\/accounts\/[^/]+\/imports$/.test(response.url()),
+    { timeout: 15_000 },
+  )
+  const chooser = page.waitForEvent('filechooser')
+  await page.getByRole('button', { name: 'Drop .xlsx files here or choose files' }).click()
+  await (await chooser).setFiles(repositoryFile(path))
+  const response = await creation
+  if (response.ok()) created.importId = ((await response.json()) as { importId: string }).importId
+  await expect(page).toHaveURL(/\/imports\/[0-9a-f-]{36}/)
+  const fileName = path.split('/').at(-1)!
+  await expect(page.getByRole('listitem', { name: fileName })).toBeVisible()
+})
+
+When('they confirm the proposed mapping', async ({ page }) => {
+  await page.getByRole('tab', { name: 'Mapping' }).click()
+  await page.getByRole('button', { name: 'Confirm mapping' }).click()
+  await expect(page.getByRole('region', { name: 'Import' }).getByText('mapped', { exact: true })).toBeVisible()
+})
+
+When('they analyze the import', async ({ page }) => {
+  await page.getByRole('button', { name: 'Analyze' }).click()
+  await expect(page.getByRole('tab', { name: 'Analysis' })).toHaveAttribute('aria-selected', 'true', {
+    timeout: 90_000,
+  })
+})
+
+Then('they see {int} rows read and {int} matched', async ({ page }, read: number, matched: number) => {
+  // The card is its label and its number, nothing else: the whole text pins the count exactly.
+  await expect(page.getByRole('region', { name: 'Rows read' })).toHaveText(`Rows read${read}`)
+  await expect(page.getByRole('region', { name: 'Matched', exact: true })).toHaveText(`Matched${matched}`)
+})
+
+Then('they see the channel notice {string}', async ({ page }, text: string) => {
+  await expect(page.getByRole('region', { name: 'Channels to review' })).toContainText(text)
+})
+
+When('they cancel the import', async ({ page }) => {
+  await page.getByRole('button', { name: 'Cancel import' }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Yes, cancel the import' }).click()
+})
+
+Then('the import is {string}', async ({ page }, status: string) => {
+  await expect(page.getByRole('region', { name: 'Import' }).getByText(status, { exact: true })).toBeVisible()
+})
+
+// Cleanup of a scenario that fails half way: the import it created is cancelled, so none stays open in the local
+// database. A passing scenario cancels it in its last steps. It runs in a new tab, so the page of the failure stays as
+// it was for the report, and a cleanup that fails is noted on the test, not reported as a second error.
+After(async ({ page, created, $testInfo }) => {
+  if ($testInfo.status === $testInfo.expectedStatus || !created.importId) return
+  const tab = await page.context().newPage()
+  try {
+    await tab.goto(`/imports/${created.importId}`, { timeout: 10_000 })
+    const header = tab.getByRole('region', { name: 'Import' })
+    await header.getByText('Status').waitFor({ timeout: 10_000 })
+    const cancel = tab.getByRole('button', { name: 'Cancel import' })
+    if (!(await cancel.isVisible())) return
+    await cancel.click({ timeout: 5_000 })
+    await tab.getByRole('alertdialog').getByRole('button', { name: 'Yes, cancel the import' }).click({ timeout: 5_000 })
+    await header.getByText('cancelled', { exact: true }).waitFor({ timeout: 10_000 })
+  } catch (error) {
+    $testInfo.annotations.push({
+      type: 'cleanup',
+      description: `Import ${created.importId} could not be cancelled: ${(error as Error).message.split('\n')[0]}`,
+    })
+  } finally {
+    await tab.close()
+  }
+})

@@ -1,0 +1,39 @@
+meta {
+  name: Review - viewer
+  type: http
+  seq: 39
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/review
+  body: json
+  auth: bearer
+}
+
+params:path {
+  importId: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "runId": 1
+  }
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer lacks settlement.process: 403 forbidden', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

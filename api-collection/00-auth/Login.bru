@@ -1,0 +1,158 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+  tags: [
+    auth
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userName": "{{process.env.SEED_USER}}",
+    "password": "{{process.env.SEED_PASSWORD}}"
+  }
+}
+
+vars:pre-request {
+  selfAuth: true
+}
+
+script:post-response {
+  // Shared session of the main user; kept in runtime variables, never written to disk.
+  if (res.status === 200) {
+    bru.setVar('accessToken', res.body.accessToken);
+    bru.setVar('refreshToken', res.body.refreshToken);
+  }
+}
+
+tests {
+  test('responds 200 with a token pair', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.accessToken).to.be.a('string').and.not.empty;
+    expect(res.body.refreshToken).to.be.a('string').and.not.empty;
+  });
+}
+
+example {
+  name: 200 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/auth/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "userName": "",
+        "password": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "accessToken": "",
+          "refreshToken": "",
+          "expiresIn": 0
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 400 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/auth/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "userName": "",
+        "password": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 400
+      text: Bad Request
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/auth/login
+    method: POST
+    mode: json
+    body:json: {
+      {
+        "userName": "",
+        "password": ""
+      }
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}

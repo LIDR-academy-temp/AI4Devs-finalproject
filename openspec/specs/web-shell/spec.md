@@ -1,0 +1,349 @@
+# web-shell Specification
+
+## Purpose
+
+Comportamiento de la aplicación web común a todas las pantallas de Recon Tool: sesión en el navegador (login, renovación y expiración de tokens, logout), guardas de ruta por sesión y por permiso, layout con navegación filtrada por el rol e identidad del usuario. README §1.3, §2.2 y §2.5.
+
+## Requirements
+
+### Requirement: Acceso sin sesión
+Toda ruta de la aplicación salvo Login SHALL exigir una sesión. Sin sesión, la aplicación SHALL llevar a Login conservando la ruta pedida (ruta y parámetros) para volver a ella tras entrar. Una sesión es un refresh token vigente; al recargar la página la aplicación SHALL intentar recuperarla con `POST /auth/refresh` antes de decidir.
+
+#### Scenario: Ruta protegida sin sesión
+- **GIVEN** un navegador sin sesión
+- **WHEN** abre `/accounts?merchantId=1&providerId=101`
+- **THEN** ve la pantalla Login y la dirección conserva la ruta pedida como destino de vuelta
+- **AND** no se ha llamado a ninguna ruta protegida del API
+
+#### Scenario: Recarga con sesión vigente
+- **GIVEN** `analyst` con sesión iniciada en esta pestaña
+- **WHEN** recarga la página en `/accounts`
+- **THEN** la aplicación renueva el par con `POST /auth/refresh`, sigue en `/accounts` y no muestra Login
+
+#### Scenario: Login con sesión ya iniciada
+- **GIVEN** `analyst` con sesión iniciada
+- **WHEN** abre `/login`
+- **THEN** la aplicación lo lleva a Dashboard
+
+### Requirement: Inicio de sesión
+La pantalla Login SHALL pedir **User name** y **Password**, validarlos en el cliente con las mismas reglas que el API (ambos obligatorios, longitudes máximas de `LoginRequest`) sin llamar al API si no pasan, y con credenciales aceptadas SHALL llevar a la ruta de vuelta o, si no hay, a Dashboard.
+
+#### Scenario: Credenciales del seed
+- **GIVEN** el usuario sembrado `analyst` con la contraseña `SEED_PASSWORD`
+- **WHEN** las introduce en Login y pulsa **Sign in**
+- **THEN** llega a Dashboard y el layout muestra su nombre `Analyst` y su rol `analyst`
+
+#### Scenario: Vuelta a la ruta pedida
+- **GIVEN** que llegó a Login desde `/accounts?merchantId=1&providerId=101`
+- **WHEN** entra con credenciales válidas
+- **THEN** termina en `/accounts?merchantId=1&providerId=101`
+
+#### Scenario: Campos vacíos
+- **WHEN** pulsa **Sign in** con el campo User name vacío
+- **THEN** ve un mensaje de campo obligatorio junto a User name, el foco va a ese campo y no se envía ninguna petición al API
+
+#### Scenario: Envío en curso
+- **WHEN** pulsa **Sign in** con los dos campos rellenos
+- **THEN** el botón queda deshabilitado hasta que llega la respuesta, de modo que un segundo clic no envía otra petición
+
+### Requirement: Formulario de Login
+El formulario SHALL montarse siempre vacío, también al llegar tras **Sign out** o tras la expiración de la sesión. Tras un login rechazado SHALL vaciarse Password y conservarse User name; cambiar User name SHALL no vaciar Password. User name SHALL declarar `autocomplete="username"` y Password `autocomplete="current-password"`, para que funcionen los gestores de contraseñas.
+
+#### Scenario: Vacío tras Sign out
+- **GIVEN** `analyst` entró escribiendo sus credenciales
+- **WHEN** pulsa **Sign out**
+- **THEN** Login muestra User name y Password vacíos
+
+#### Scenario: Vacío tras expiración
+- **WHEN** la sesión expira y la aplicación lleva a Login
+- **THEN** User name y Password están vacíos
+
+#### Scenario: Login rechazado
+- **WHEN** `viewer` entra con una contraseña errónea
+- **THEN** Password queda vacío y User name conserva `viewer`
+
+#### Scenario: Corregir el usuario
+- **GIVEN** User name `viewr` y una contraseña escrita
+- **WHEN** corrige User name a `viewer`
+- **THEN** Password conserva lo escrito
+
+#### Scenario: Gestores de contraseñas
+- **WHEN** se muestra Login
+- **THEN** User name tiene `autocomplete="username"` y Password `autocomplete="current-password"`
+
+### Requirement: Error de credenciales genérico
+Ante un `401` de `POST /auth/login` la pantalla SHALL mostrar siempre el mismo mensaje, `Invalid user name or password`, sin distinguir usuario inexistente, inactivo o contraseña errónea, SHALL vaciar el campo Password y conservar User name. Un fallo de red o un `5xx` SHALL mostrar un mensaje distinto que no culpe a las credenciales.
+
+#### Scenario: Contraseña incorrecta
+- **WHEN** `viewer` entra con una contraseña errónea
+- **THEN** ve `Invalid user name or password`, el campo Password queda vacío y User name conserva `viewer`
+
+#### Scenario: Usuario inactivo
+- **WHEN** un usuario inactivo entra con su contraseña correcta
+- **THEN** ve exactamente el mismo mensaje que con una contraseña errónea
+
+#### Scenario: Servidor inalcanzable
+- **WHEN** el API no responde o responde `500` al login
+- **THEN** ve `Cannot reach the server. Try again in a moment.` y no el mensaje de credenciales
+
+### Requirement: Renovación transparente de la sesión
+Cuando una petición autenticada recibe `401`, la aplicación SHALL renovar el par con `POST /auth/refresh` y repetir la petición una sola vez, sin que el usuario lo note. Si varias peticiones reciben `401` a la vez, SHALL hacerse un único refresh y todas SHALL repetirse con el token nuevo.
+
+#### Scenario: Access token caducado
+- **GIVEN** una sesión cuyo access token ya no es válido y cuyo refresh sí lo es
+- **WHEN** abre Accounts
+- **THEN** la pantalla carga sus datos sin mostrar error ni volver a Login, tras exactamente una llamada a `POST /auth/refresh`
+
+#### Scenario: Varias peticiones caducadas a la vez
+- **GIVEN** la misma sesión
+- **WHEN** la pantalla lanza tres peticiones en paralelo y las tres reciben `401`
+- **THEN** se hace exactamente un `POST /auth/refresh` y las tres peticiones se repiten con el access token nuevo
+
+### Requirement: Expiración de la sesión
+Si el refresh responde `401`, o la petición repetida vuelve a recibir `401`, la aplicación SHALL descartar los tokens y los datos cacheados, y llevar a Login con la ruta actual como destino de vuelta y el aviso `Your session has expired. Please sign in again.` La expiración SHALL aplicarse a la vez en todas las pestañas abiertas, cada una con su propia ruta de vuelta.
+
+#### Scenario: Refresh caducado o revocado
+- **GIVEN** una sesión cuyo refresh token ya fue revocado
+- **WHEN** una petición autenticada recibe `401`
+- **THEN** el usuario ve Login con el aviso de sesión expirada, sin entrar en un bucle de refrescos
+- **AND** al volver a entrar termina en la pantalla donde estaba
+
+#### Scenario: Expiración en otra pestaña
+- **GIVEN** `analyst` con sesión en dos pestañas, una en Accounts y otra en Dashboard
+- **WHEN** la sesión expira en la pestaña de Accounts
+- **THEN** las dos pestañas muestran Login con el aviso de sesión expirada, sin datos de la sesión
+- **AND** cada una conserva su propia ruta como destino de vuelta (`/accounts` y Dashboard)
+
+### Requirement: Cierre de sesión
+**Sign out** SHALL llamar a `POST /auth/logout` con el refresh token, descartar tokens y datos cacheados aunque esa llamada falle, y llevar a Login. Tras cerrar sesión, volver atrás en el navegador SHALL no mostrar datos de la sesión anterior.
+
+#### Scenario: Sign out
+- **GIVEN** `analyst` con sesión en Accounts
+- **WHEN** pulsa **Sign out**
+- **THEN** se llama a `POST /auth/logout`, ve Login y, al pulsar Atrás en el navegador, sigue en Login
+
+#### Scenario: Logout con el servidor caído
+- **WHEN** pulsa **Sign out** y `POST /auth/logout` falla por red
+- **THEN** igualmente ve Login y la recarga de la página no recupera la sesión
+
+#### Scenario: Sign out con una petición en vuelo
+- **GIVEN** `analyst` en una pantalla cuya petición al API aún no ha respondido
+- **WHEN** pulsa **Sign out** y después esa petición recibe `401`
+- **THEN** ve Login sin el aviso de sesión expirada y la aplicación no intenta renovar la sesión
+
+### Requirement: Almacenamiento de los tokens
+El access token SHALL vivir solo en la memoria de cada pestaña y no escribirse en ningún almacenamiento. El refresh token SHALL guardarse en el almacenamiento persistente del navegador, compartido por todas las pestañas de la aplicación, y SHALL borrarse al cerrar sesión o al expirar. Ningún token SHALL aparecer en la URL ni en los registros de la consola.
+
+#### Scenario: Pestaña nueva
+- **GIVEN** `analyst` con sesión en una pestaña
+- **WHEN** abre la aplicación en otra pestaña
+- **THEN** la nueva pestaña entra sin pasar por Login y muestra la identidad de `analyst`
+
+#### Scenario: Tras cerrar sesión
+- **WHEN** `analyst` cierra sesión
+- **THEN** ni la memoria de ninguna pestaña ni el almacenamiento del navegador conservan access ni refresh token
+
+### Requirement: Renovación coordinada entre pestañas
+Las pestañas abiertas SHALL compartir una sola sesión. Cuando varias necesiten renovar el par a la vez, SHALL renovar una tras otra, cada una con el refresh token vigente en su turno, de modo que el API nunca reciba un refresh ya revocado y ninguna pestaña pierda la sesión. El access token de una pestaña SHALL no salir de ella.
+
+#### Scenario: Dos pestañas renuevan a la vez
+- **GIVEN** dos pestañas con la misma sesión cuyos access tokens ya no son válidos y cuyo refresh sí lo es
+- **WHEN** ambas lanzan a la vez una petición que recibe `401`
+- **THEN** el API recibe dos `POST /auth/refresh` en serie, cada uno con un refresh token distinto, y nunca uno ya revocado
+- **AND** las dos peticiones se repiten con éxito y ninguna pestaña va a Login
+
+### Requirement: Login y logout propagados entre pestañas
+Un **Sign out** en una pestaña SHALL llevar a Login a todas las pestañas abiertas y descartar en todas su access token y sus datos cacheados. Un login en una pestaña SHALL hacer entrar a las pestañas que estén en Login, cada una en su ruta de vuelta o en Dashboard.
+
+#### Scenario: Logout en una pestaña
+- **GIVEN** `analyst` con sesión en dos pestañas, una en Accounts y otra en Dashboard
+- **WHEN** pulsa **Sign out** en Accounts
+- **THEN** las dos pestañas muestran Login y ninguna conserva datos de la sesión
+
+#### Scenario: Login en una pestaña
+- **GIVEN** dos pestañas en Login, la segunda con `/accounts` como ruta de vuelta
+- **WHEN** `analyst` entra en la primera
+- **THEN** la primera llega a Dashboard y la segunda entra en `/accounts` sin volver a escribir credenciales
+
+### Requirement: Navegación filtrada por permisos
+La barra lateral SHALL mostrar el mapa de pantallas MVP de README §1.3 en sus grupos (Reconciliation, Settlements, Search, Reports, Administration), y SHALL ocultar cada entrada cuyo permiso requerido no tenga el rol; un grupo sin entradas visibles SHALL ocultarse. Las entradas aún no construidas SHALL mostrarse deshabilitadas, no como enlaces.
+
+#### Scenario: viewer
+- **GIVEN** el usuario `viewer` (permisos `fee.view`, `reports.view`)
+- **WHEN** entra
+- **THEN** no ve el grupo Reconciliation (New Reconciliation, In Progress) ni la entrada Payments, ni Users & Roles ni Audit Log
+- **AND** ve Dashboard, Settlements › Settlement List y Administration › Accounts como enlaces
+
+#### Scenario: analyst
+- **GIVEN** el usuario `analyst` (`settlement.process`, `fee.view`, `reports.view`)
+- **WHEN** entra
+- **THEN** ve New Reconciliation como enlace a `/reconciliations/new`, Settlement List como enlace a `/settlements`, In Progress deshabilitada mientras no exista, y no ve Payments ni Users & Roles
+
+#### Scenario: admin
+- **GIVEN** el usuario `admin` (los siete permisos)
+- **WHEN** entra
+- **THEN** ve todas las entradas MVP de §1.3; solo Dashboard, New Reconciliation, Settlement List y Accounts son enlaces en este tramo
+
+#### Scenario: Entrada deshabilitada
+- **WHEN** un usuario pulsa una entrada aún no construida
+- **THEN** no cambia de ruta y la entrada se anuncia como no disponible a los lectores de pantalla
+
+#### Scenario: Entrada activa en el espacio de un import
+- **GIVEN** `analyst` en `/imports/<importId>`
+- **WHEN** mira la barra lateral
+- **THEN** New Reconciliation aparece como la entrada activa
+
+#### Scenario: Entrada activa en la lista de settlements
+- **GIVEN** `viewer` en `/settlements?accountId=<ProviderA-USD>&status=paid`
+- **WHEN** mira la barra lateral
+- **THEN** Settlement List aparece como la entrada activa
+
+### Requirement: Guarda de ruta por permiso
+Una ruta que requiera un permiso SHALL mostrar, dentro del layout, la página `You don't have access to this page` a un usuario cuyo rol no lo tenga, sin llamar a los endpoints de esa pantalla. La guarda SHALL ser solo de presentación: el API sigue respondiendo `403` por su cuenta.
+
+#### Scenario: Acceso directo por URL sin permiso
+- **GIVEN** una ruta que requiere `settlement.process`
+- **WHEN** `viewer` escribe su dirección en el navegador
+- **THEN** ve `You don't have access to this page` con la barra lateral y un enlace a Dashboard, y no se llama a ningún endpoint de esa pantalla
+
+#### Scenario: Acceso con permiso
+- **GIVEN** la misma ruta
+- **WHEN** la abre `analyst`
+- **THEN** ve la pantalla normalmente
+
+### Requirement: Identidad visible
+El layout SHALL mostrar en todo momento el nombre (`displayName`) y el rol del usuario y el botón **Sign out**, tomados de `GET /auth/me`. La barra superior SHALL no listar los merchants del alcance del usuario: el alcance lo aplica el API y la elección de merchant activo es otra pantalla (#83).
+
+#### Scenario: Alcance asignado
+- **WHEN** `analyst` entra
+- **THEN** la cabecera muestra `Analyst`, `analyst` y **Sign out**, y no muestra `Merchant A, Merchant B`
+
+#### Scenario: Alcance total
+- **WHEN** `admin` entra
+- **THEN** la cabecera muestra `Admin`, `admin` y **Sign out**, y no muestra `All merchants`
+
+### Requirement: Migas de pan y Dashboard
+Cada pantalla del layout SHALL mostrar migas de pan con su posición en el mapa (p. ej. `Dashboard › Administration › Accounts`, con Dashboard como enlace). Dashboard SHALL existir como pantalla de llegada tras el login, con su título y un estado vacío mientras no tenga widgets.
+
+#### Scenario: Migas en Accounts
+- **WHEN** `viewer` abre Accounts
+- **THEN** ve `Dashboard › Administration › Accounts` y `Dashboard` lleva a la pantalla de llegada
+
+#### Scenario: Ruta desconocida
+- **WHEN** un usuario con sesión abre `/does-not-exist`
+- **THEN** ve dentro del layout `Page not found` con un enlace a Dashboard
+
+### Requirement: Textos de interfaz en inglés y centralizados
+Todos los textos visibles SHALL estar en inglés y definirse en un único módulo de textos por pantalla (y uno para el layout); los componentes SHALL no contener literales de texto visibles. Los nombres de pantallas y menús SHALL ser los de README §1.3.
+
+#### Scenario: Revisión de textos
+- **WHEN** se revisan los componentes de Login, layout y Accounts
+- **THEN** cada texto visible sale del módulo de textos de su pantalla y está en inglés
+
+### Requirement: Navegación lateral por grupos
+En la barra lateral, las entradas de un grupo SHALL verse sangradas respecto al título de su grupo (Reconciliation, Settlements, Search, Reports, Administration), como en el prototipo navegable. La entrada Dashboard, que no tiene grupo, SHALL alinearse con los títulos.
+
+#### Scenario: Sangría de las entradas
+- **GIVEN** `analyst` en Dashboard a 1280 px
+- **WHEN** mira la barra lateral
+- **THEN** New Reconciliation y Settlement List empiezan más a la derecha que los títulos `RECONCILIATION` y `SETTLEMENTS`, y Dashboard empieza a la altura de los títulos
+
+#### Scenario: Entradas deshabilitadas
+- **WHEN** mira una entrada aún no construida, como In Progress
+- **THEN** tiene la misma sangría que las entradas activas de su grupo
+
+### Requirement: Aspecto de las tarjetas
+Toda tarjeta (Card) SHALL mostrar una sombra suave que la separe del fondo. La sombra SHALL salir de una variable del tema con un valor para el tema claro y otro para el oscuro, nunca de un valor fijo en el componente. La sombra SHALL sumarse a lo que la tarjeta ya tenía: su relleno interior y su borde suave del color del tema, nunca un borde oscuro.
+
+#### Scenario: Tarjetas del Settlement Summary
+- **GIVEN** el Settlement Summary de un intento a 1280 px
+- **WHEN** lo mira con el tema claro
+- **THEN** cada tarjeta (totales, amount payable, marcas, fees) se distingue del fondo por una sombra suave hacia abajo y a la derecha
+
+#### Scenario: Relleno y borde de la tarjeta
+- **GIVEN** Login, New Reconciliation, Settlement Review, Settlement Summary o Settlement List
+- **WHEN** mira cualquier tarjeta
+- **THEN** su contenido no toca el borde, que conserva el gris suave del tema, y la sombra se ve fuera de él
+
+#### Scenario: Sombra del tema
+- **WHEN** se revisa la hoja de estilos
+- **THEN** la sombra de la tarjeta es una variable definida en el tema claro y en el oscuro, y el componente solo la referencia
+
+### Requirement: Colores de estado
+Los estados en Badge SHALL llevar un color según su sentido, siempre con su texto (nunca solo color) y con contraste AA (4,5:1) entre texto y fondo: verde para lo correcto o terminado bien, ámbar para lo que pide atención sin bloquear, rojo para lo que bloquea y gris para lo que no aplica o es neutro. Los colores SHALL ser variables del tema, con valor para el tema claro y el oscuro.
+
+#### Scenario: Resultados de las validaciones
+- **GIVEN** la corrida vigente de `batch-issues` con `Provider mismatch` en `passed`, siete validaciones en `warning` y ninguna `blocked`
+- **WHEN** abre el paso Analysis
+- **THEN** `Passed` se ve en verde, cada `Warning` en ámbar y el estado global `Warnings` en ámbar, cada uno con su texto
+
+#### Scenario: Corrida bloqueada
+- **GIVEN** la corrida vigente de `batch-blocked`
+- **THEN** el estado global `Blocked` y el resultado `Blocked` de `Provider mismatch` se ven en rojo, con su texto
+
+#### Scenario: No aplicable y no implementada
+- **WHEN** una validación llega con `outcome = not_applicable` o `not_implemented`
+- **THEN** `n/a` o `Not implemented` se ven en gris, con su texto
+
+#### Scenario: Estados del import
+- **WHEN** la cabecera del import muestra su estado
+- **THEN** `validated` y `processed` se ven en verde; `uploaded`, `mapped`, `analyzed` y `cancelled` en gris; siempre con el texto del estado
+
+#### Scenario: Estados del intento
+- **WHEN** el Settlement Summary, Settlement List o una aparición de un hallazgo muestran el estado de un intento
+- **THEN** `processed` / `pending_payment` se ve en ámbar, `paid` / `settled` en verde y `undone` en gris, siempre con su texto
+- **AND** el Summary y Settlement List dicen `Processed · pending payment`, `Paid` y `Undone`; el panel de un hallazgo pinta el estado del batch en crudo (`processed`, `paid`, `undone`), con el mismo color
+- **AND** en el Summary, el aviso `Movements are not Settled yet: that happens when the batch is marked as paid.` se ve en ámbar, como su Badge
+
+#### Scenario: Contraste
+- **WHEN** se calcula el contraste de cada color de estado sobre su fondo desde los tokens OKLCH del tema con la fórmula de WCAG
+- **THEN** todos llegan al menos a 4,5:1, en el tema claro y en el oscuro (cálculo aceptado en la revisión 12.2)
+
+### Requirement: Navegación dentro de la página: desplazamiento y foco
+Una acción que solo cambia lo que muestra la pantalla actual (validación, "Show … rows", filtro, página, pestaña o ciclo) SHALL dejar la página en su posición. Si es un botón que actualiza una lista, el foco SHALL ir al encabezado de esa lista; un desplegable o una fecha SHALL conservar el foco. Llegar por enlace, recargar o volver atrás SHALL no mover el foco.
+
+#### Scenario: Elegir una validación
+- **GIVEN** `analyst` en el paso Analysis de `batch-issues`, desplazado hasta la tabla de las ocho validaciones
+- **WHEN** pulsa `Missing previous to batch`
+- **THEN** la página no vuelve arriba, la lista de hallazgos de esa validación queda a la vista y el foco está en su encabezado
+
+#### Scenario: Mostrar las filas sin asociar
+- **GIVEN** el import de `batch-issues` analizado, con `Unmatched 1`
+- **WHEN** pulsa **Show unmatched rows** en el contador
+- **THEN** la página no vuelve arriba, la tabla de filas filtrada por `Unmatched` queda a la vista y el foco está en su encabezado
+
+#### Scenario: Filtro y página de la tabla de filas
+- **GIVEN** la tabla de filas de `batch-clean` a la vista
+- **WHEN** pulsa el filtro `Matched` y después **Next**
+- **THEN** en cada paso la página no vuelve arriba y el foco va al encabezado de la tabla de filas
+
+#### Scenario: Página de la lista de hallazgos
+- **GIVEN** la lista de hallazgos de una validación con más de una página
+- **WHEN** pulsa **Next**
+- **THEN** la página no vuelve arriba y el foco va al encabezado de la lista de hallazgos
+
+#### Scenario: Abrir y cerrar un hallazgo
+- **GIVEN** la lista de hallazgos a la vista
+- **WHEN** abre un hallazgo y cierra el panel
+- **THEN** la página sigue en la misma posición y el foco vuelve al ID que lo abrió
+
+#### Scenario: Settlement List
+- **GIVEN** la lista de ProviderA-USD desplazada hasta la tabla
+- **WHEN** elige `Paid` en el estado con el teclado
+- **THEN** la página no vuelve arriba y el foco sigue en el desplegable de estado
+- **WHEN** después pulsa **Next**
+- **THEN** la página no vuelve arriba y el foco va al encabezado de la tabla de settlements
+
+#### Scenario: Pestañas y ciclos del Settlement Summary
+- **GIVEN** el Settlement Summary de `batch-clean` desplazado hasta las pestañas
+- **WHEN** abre **Movements**, elige `I` y pulsa **Next**
+- **THEN** la página no vuelve arriba en ningún paso; al abrir la pestaña el foco sigue en ella, y al elegir el ciclo o la página el foco va al encabezado de la tabla de movimientos
+
+#### Scenario: Recargar o llegar por enlace
+- **WHEN** abre `/imports/<importId>?step=analysis&validation=missing_previous_to_batch&match=unmatched` por enlace o recarga esa dirección
+- **THEN** ve la lista de hallazgos y la tabla filtrada, y el foco no se mueve a ninguna de las dos
+
+#### Scenario: Una acción que no cambia nada y volver atrás
+- **GIVEN** Analysis con `validation=missing_previous_to_batch` en la primera página de sus hallazgos
+- **WHEN** pulsa `Missing previous to batch` (la validación ya elegida), va a Dashboard y vuelve con Atrás
+- **THEN** ve la lista de hallazgos y el foco no se mueve a su encabezado; lo mismo con **Show unmatched rows** cuando la tabla ya está filtrada por `Unmatched`

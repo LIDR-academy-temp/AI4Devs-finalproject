@@ -1,0 +1,39 @@
+meta {
+  name: 17 Export summary
+  type: http
+  seq: 17
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/export?type=summary
+  body: none
+  auth: inherit
+}
+
+params:query {
+  type: summary
+}
+
+params:path {
+  batchId: {{setBatchId}}
+}
+
+tests {
+  test('a CSV named by attempt', () => {
+    expect(res.status).to.equal(200);
+    expect(res.getHeader('content-type')).to.equal('text/csv; charset=utf-8');
+    expect(res.getHeader('content-disposition')).to.equal(
+      `attachment; filename="ProviderA-USD_B${bru.getVar('setBatchNo')}_A1_summary.csv"`,
+    );
+  });
+  // Oracle: data/samples/batch-clean/expected.json, summary.amountPayable.
+  test('starts with the attempt block and carries the amount payable of the oracle', () => {
+    const body = String(res.body);
+    expect(body.startsWith('Field,Value\r\nAccount,ProviderA-USD\r\n')).to.equal(true);
+    expect(body).to.contain('\r\nAmount payable,,33771.3600\r\n');
+    expect(body).to.contain('\r\nPayment,Pending payment\r\n');
+  });
+}

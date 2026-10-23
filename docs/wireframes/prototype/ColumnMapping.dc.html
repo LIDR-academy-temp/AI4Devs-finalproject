@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Column Mapping</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:16px;box-sizing:border-box}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:#4b5563;border-bottom:1px solid #d0d5dc;padding:8px}
+.tbl td{border-bottom:1px solid #e5e7eb;padding:6px 8px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.btn.pri{background:#1f4e9c;border-color:#1f4e9c;color:#fff}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.ok{border-color:#2f7d4f;color:#1e5c38;background:#e8f3ec}
+.warn{border-color:#b7791f;color:#7a4f0e;background:#fbf1dd}
+.cyc{display:inline-block;width:22px;text-align:center;border-radius:4px;font-weight:700;font-size:12px;background:#e3e8ef}
+.step{display:flex;gap:6px;align-items:center;font-size:13px;color:#6b7280;flex-wrap:wrap}
+.step b{color:#1f2328;background:#e3e8ef;padding:3px 10px;border-radius:999px}
+.step span{padding:3px 10px}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 10px}
+select{font:inherit;font-size:13px;padding:4px 6px;border:1px solid #9aa3ad;border-radius:6px;background:#fff}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:820px">
+  <nav class="nav" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+    <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+    <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+    <div class="grp">Reconciliation</div>
+    <a href="NewReconciliation.dc.html" class="on">New Reconciliation</a>
+    <a href="InProgress.dc.html">In Progress</a>
+    <div class="grp">Settlements</div>
+    <a href="SettlementList.dc.html">Settlement List</a>
+    <a href="Payments.dc.html">Payments</a>
+    <div class="grp">Search</div>
+    <a href="TransactionSearch.dc.html">Transaction Search</a>
+    <a href="MissingDuplicates.dc.html">Missing &amp; Duplicates</a>
+    <div class="grp">Reports</div>
+    <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+    <a href="ReportsRoadmap.dc.html">Aged Receivables · roadmap</a>
+    <div class="grp">Administration</div>
+    <a href="MerchantsProviders.dc.html">Merchants &amp; Providers</a>
+    <a href="Accounts.dc.html">Accounts</a>
+    <a href="FeesAll.dc.html">Fees</a>
+    <a href="ChannelAssignment.dc.html">Channel Assignment</a>
+    <a href="MatchingRules.dc.html">Matching Rules</a>
+    <a href="UsersRoles.dc.html">Users &amp; Roles</a>
+    <a href="AuditLog.dc.html">Audit Log</a>
+  </nav>
+  <main style="flex:999 1 560px;min-width:0;padding:20px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+    <div class="ctx">Merchant A › Provider A › <b>ProviderA-USD</b> · import #2041 · <span class="badge">mapped</span></div>
+    <h1>Column Mapping</h1>
+    <div class="step"><span>1 Account</span><span>2 Files</span><b>3 Mapping</b><span>4 Analysis</span><span>5 Review</span><span>6 Summary</span></div>
+    <div style="display:grid;grid-template-columns:minmax(0, 3fr) minmax(0, 2fr);gap:16px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="card">
+          <h2>Sheets · how each one is read</h2>
+          <table class="tbl">
+            <tr><th>Sheet</th><th>Cycle</th><th>Status</th><th>Proposed by</th><th class="num">Rows</th></tr>
+            <tr><td>APP</td><td><span class="cyc">E</span></td><td><select><option>Successful</option><option>from column</option></select></td><td>account rule "APP*"</td><td class="num">4,120</td></tr>
+            <tr><td>DEC</td><td><span class="cyc">E</span></td><td><select><option>Declined</option></select></td><td>global rule</td><td class="num">388</td></tr>
+            <tr><td>CHB</td><td><span class="cyc">I</span></td><td><select><option>Chargeback</option></select></td><td>global rule</td><td class="num">61</td></tr>
+            <tr><td>REF</td><td><span class="cyc">I</span></td><td><select><option>Refund</option></select></td><td>global rule</td><td class="num">94</td></tr>
+            <tr><td>RR</td><td><span class="cyc">R</span></td><td><span class="ctx">— (reserve release, no status)</span></td><td>global rule</td><td class="num">1,149</td></tr>
+            <tr><td>Summary</td><td colspan="2"><select><option>Summary sheet (not imported)</option><option>Ignore</option></select></td><td>account rule</td><td class="num">—</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h2>Columns · sheet APP (part1)</h2>
+          <table class="tbl">
+            <tr><th>Column in file</th><th>Maps to</th><th>Proposed by</th><th>Sample</th></tr>
+            <tr><td>Transaction ID</td><td><select><option>transactionId</option></select></td><td>global rule</td><td>4512308877</td></tr>
+            <tr><td>Status</td><td><select><option>status (alias)</option><option>reference only</option></select></td><td>global rule</td><td>App</td></tr>
+            <tr><td>Amount USD</td><td><select><option>amount</option></select></td><td>account rule</td><td>120.5000</td></tr>
+            <tr><td>Created</td><td><select><option>txnDate</option></select></td><td>global rule</td><td>2026-09-14</td></tr>
+            <tr><td>Merchant Ref</td><td><select><option>reference only</option></select></td><td>no rule</td><td>ORD-88812</td></tr>
+          </table>
+          <div style="font-size:12px;color:#6b7280;margin-top:8px">Tabs per sheet and file. "Reference only" keeps the column in rawData without using it. The ID column is read as text to avoid losing digits.</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="card">
+          <h2>Readiness</h2>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+            <div><span class="badge ok">ok</span> Transaction ID identified in every imported sheet</div>
+            <div><span class="badge ok">ok</span> Status resolved per sheet or column</div>
+            <div><span class="badge ok">ok</span> Cycle assigned to every imported sheet</div>
+            <div><span class="badge warn">check</span> 1 column without rule (Merchant Ref) · kept as reference</div>
+            <div><span class="badge">info</span> 3 rows ignored by rule "Total*"</div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Preview · first rows as they will be read</h2>
+          <table class="tbl">
+            <tr><th>ID</th><th>Cycle</th><th>Status</th><th class="num">Amount</th></tr>
+            <tr><td>4512308877</td><td><span class="cyc">E</span></td><td>Successful</td><td class="num">120.5000</td></tr>
+            <tr><td>4512308912</td><td><span class="cyc">E</span></td><td>Successful</td><td class="num">89.0000</td></tr>
+            <tr><td>4512301190</td><td><span class="cyc">I</span></td><td>Chargeback (CHB 2 · amount excluded)</td><td class="num">0.0000</td></tr>
+            <tr><td>4511990021</td><td><span class="cyc">R</span></td><td>— reserve release</td><td class="num">12.0500</td></tr>
+          </table>
+        </div>
+        <div style="font-size:12px;color:#6b7280">Changes here apply to this import only. To make them permanent: <a href="MatchingRules.dc.html">save as account rule</a>.</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:auto;padding-top:12px;border-top:1px solid #d0d5dc">
+      <a href="UploadFiles.dc.html" class="btn">← Files</a>
+      <div style="display:flex;gap:10px"><a href="InProgress.dc.html" class="btn">Save and leave</a><a href="Analysis.dc.html" class="btn pri">Confirm mapping and Analyze →</a></div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

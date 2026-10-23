@@ -1,0 +1,25 @@
+meta {
+  name: Analyze - unknown import
+  type: http
+  seq: 28
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/analyze
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{$randomUUID}}
+}
+
+tests {
+  test('an unknown import answers 404 not_found', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

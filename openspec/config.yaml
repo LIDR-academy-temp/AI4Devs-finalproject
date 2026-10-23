@@ -1,0 +1,49 @@
+schema: spec-driven
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+# Include constraints an agent cannot infer by reading the code.
+# Keep general project documentation and discoverable codebase facts out.
+# Example:
+#   context: |
+#     Designs and tasks must cover Windows, macOS, and Linux
+#     Write all artifacts in Spanish
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+rules:
+  specs:
+    # Tramo 0 specs still have requirements without scenarios (issue #21); they are completed change by change.
+    - >-
+      When a change touches an existing capability, its delta spec must leave every requirement of that
+      capability with at least one "#### Scenario:" (add MODIFIED requirements for the ones that lack it),
+      so that `openspec validate <capability> --type spec` passes after archiving.
+    - >-
+      Derive scenarios from README §3.3 and the acceptance criteria of the §6 tickets, using
+      data/samples/* and their expected.json as the oracle when they apply; do not invent business rules.
+  tasks:
+    - >-
+      End every task group with a commit step: "Commit: <type>(<scope>): <message in Spanish>".
+      Test-first groups commit the failing tests (test:) before the implementation (feat:).
+    - >-
+      Tasks that the hooks block for the agent (seed, migrations) say "run by the person with
+      `! pnpm ...` inside the session" so the output stays visible.
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

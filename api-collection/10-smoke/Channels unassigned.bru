@@ -1,0 +1,143 @@
+meta {
+  name: Channels unassigned
+  type: http
+  seq: 4
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/channels?unassigned=true
+  body: none
+  auth: inherit
+}
+
+params:query {
+  unassigned: true
+}
+
+tests {
+  test('responds the two seed channels without an account', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.map((c) => c.channelId)).to.have.members([1007, 1013]);
+  });
+}
+
+example {
+  name: 200 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/channels
+    method: GET
+    mode: none
+    params:query: {
+      ~unassigned: true
+      ~unassigned: false
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        [
+          {
+            "channelId": 0,
+            "gatewayId": 0,
+            "providerId": 0,
+            "name": "",
+            "isActive": false,
+            "settlementTermDays": 0,
+            "rollingReservePct": "",
+            "rollingReserveDays": 0
+          }
+        ]
+      '''
+    }
+  }
+}
+
+example {
+  name: 400 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/channels
+    method: GET
+    mode: none
+    params:query: {
+      ~unassigned: true
+      ~unassigned: false
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 400
+      text: Bad Request
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/channels
+    method: GET
+    mode: none
+    params:query: {
+      ~unassigned: true
+      ~unassigned: false
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}

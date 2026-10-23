@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Login</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.btn{display:inline-block;padding:10px 16px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer;text-align:center}
+.btn.pri{background:#1f4e9c;border-color:#1f4e9c;color:#fff}
+label{font-size:13px;color:#4b5563;display:block;margin-bottom:4px}
+input{font:inherit;padding:9px 10px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;width:100%;box-sizing:border-box}
+</style>
+</helmet>
+<div style="min-height:820px;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box">
+  <form style="width:380px;max-width:100%;background:#fff;border:1px solid #d0d5dc;border-radius:10px;padding:32px;display:flex;flex-direction:column;gap:18px">
+    <div>
+      <div style="font-size:22px;font-weight:700">Recon Tool 2.0</div>
+      <div style="font-size:13px;color:#6b7280;margin-top:4px">Payments reconciliation</div>
+    </div>
+    <div>
+      <label for="u">User</label>
+      <input id="u" type="text" placeholder="analyst">
+    </div>
+    <div>
+      <label for="p">Password</label>
+      <input id="p" type="password" placeholder="••••••••">
+    </div>
+    <a href="Dashboard.dc.html" class="btn pri">Sign in</a>
+    <div style="font-size:12px;color:#6b7280">Error state: "Invalid user or password" · "User inactive, contact an administrator". No self-registration; users are created in Administration.</div>
+  </form>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

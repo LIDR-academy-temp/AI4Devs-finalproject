@@ -1,0 +1,35 @@
+meta {
+  name: 0 Provider B accounts
+  type: http
+  seq: 0
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/providers/:providerId/accounts
+  body: none
+  auth: inherit
+}
+
+params:path {
+  providerId: 102
+}
+
+script:post-response {
+  // Resolves the ProviderB-Main accountId by name for the validation flows: no UUID literals.
+  const account = res.status === 200 && Array.isArray(res.body) ? res.body.find((a) => a.name === 'ProviderB-Main') : undefined;
+  if (account) {
+    bru.setVar('providerBMainAccountId', account.accountId);
+  } else {
+    bru.deleteVar('providerBMainAccountId');
+  }
+}
+
+tests {
+  test('provider 102 includes ProviderB-Main', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.map((a) => a.name)).to.include('ProviderB-Main');
+  });
+}

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Merchants and Providers</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:14px;box-sizing:border-box}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:#4b5563;border-bottom:1px solid #d0d5dc;padding:8px}
+.tbl td{border-bottom:1px solid #e5e7eb;padding:8px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.warn{border-color:#b7791f;color:#7a4f0e;background:#fbf1dd}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}
+.lvl1{padding-left:8px}.lvl2{padding-left:32px}.lvl3{padding-left:56px}.lvl4{padding-left:80px;color:#4b5563}
+.rm td{background:#e3e8ef;font-weight:600}
+.rp td{background:#f3f4f6}
+.rc td{color:#6b7280;font-size:12px}
+.typ{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;border:1px solid #9aa3ad;background:#fff;color:#4b5563}
+input,select{font:inherit;font-size:13px;padding:6px 8px;border:1px solid #9aa3ad;border-radius:6px;background:#fff}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:820px">
+  <nav class="nav" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+    <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+    <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+    <div class="grp">Reconciliation</div>
+    <a href="NewReconciliation.dc.html">New Reconciliation</a>
+    <a href="InProgress.dc.html">In Progress</a>
+    <div class="grp">Settlements</div>
+    <a href="SettlementList.dc.html">Settlement List</a>
+    <a href="Payments.dc.html">Payments</a>
+    <div class="grp">Search</div>
+    <a href="TransactionSearch.dc.html">Transaction Search</a>
+    <a href="MissingDuplicates.dc.html">Missing &amp; Duplicates</a>
+    <div class="grp">Reports</div>
+    <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+    <a href="ReportsRoadmap.dc.html">Aged Receivables · roadmap</a>
+    <div class="grp">Administration</div>
+    <a href="MerchantsProviders.dc.html" class="on">Merchants &amp; Providers</a>
+    <a href="Accounts.dc.html">Accounts</a>
+    <a href="FeesAll.dc.html">Fees</a>
+    <a href="ChannelAssignment.dc.html">Channel Assignment</a>
+    <a href="MatchingRules.dc.html">Matching Rules</a>
+    <a href="UsersRoles.dc.html">Users &amp; Roles</a>
+    <a href="AuditLog.dc.html">Audit Log</a>
+  </nav>
+  <main style="flex:999 1 560px;min-width:0;padding:20px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+    <div class="ctx"><a href="Dashboard.dc.html">Dashboard</a> › Administration › Merchants &amp; Providers</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h1>Merchants &amp; Providers <span class="badge">read-only · from gateways</span></h1><input placeholder="Filter by name…" style="width:240px"></div>
+    <div class="card">
+      <table class="tbl">
+        <tr><th>Name</th><th>Type</th><th>Gateway</th><th class="num">Accounts</th><th class="num">Channels</th><th>Last sync</th><th></th></tr>
+        <tr class="rm"><td class="lvl1"><b>Merchant A</b></td><td><span class="typ">merchant</span></td><td>Gateway 1, Gateway 2</td><td class="num">4</td><td class="num">11</td><td>today 06:00</td><td></td></tr>
+        <tr class="rp"><td class="lvl2">Provider A</td><td><span class="typ">provider</span></td><td>Gateway 1</td><td class="num">2</td><td class="num">6</td><td></td><td><a href="Accounts.dc.html">Accounts</a></td></tr>
+        <tr><td class="lvl3">ProviderA-USD</td><td><span class="typ">account</span></td><td></td><td></td><td class="num">4</td><td></td><td><a href="AccountDetail.dc.html">Detail</a></td></tr>
+        <tr class="rc"><td class="lvl4">RAM-01 · RAM-03 · RAM-07 · RAM-09 <span class="badge warn">not assigned yet</span></td><td colspan="5"><span class="typ">channel</span></td><td></td></tr>
+        <tr><td class="lvl3">ProviderA-EUR</td><td><span class="typ">account</span></td><td></td><td></td><td class="num">2</td><td></td><td><a href="AccountDetail.dc.html">Detail</a></td></tr>
+        <tr class="rp"><td class="lvl2">Provider C</td><td><span class="typ">provider</span></td><td>Gateway 2 (UUID)</td><td class="num">1</td><td class="num">3</td><td></td><td><a href="Accounts.dc.html">Accounts</a></td></tr>
+        <tr class="rp"><td class="lvl2">Provider D <span class="badge warn">new · no accounts</span></td><td><span class="typ">provider</span></td><td>Gateway 1</td><td class="num">0</td><td class="num">2</td><td></td><td><a href="Accounts.dc.html">Create account</a></td></tr>
+        <tr class="rm"><td class="lvl1"><b>Merchant B</b></td><td><span class="typ">merchant</span></td><td>Gateway 1</td><td class="num">1</td><td class="num">2</td><td>today 06:00</td><td></td></tr>
+        <tr class="rp"><td class="lvl2">Provider A</td><td><span class="typ">provider</span></td><td>Gateway 1</td><td class="num">1</td><td class="num">2</td><td></td><td><a href="Accounts.dc.html">Accounts</a></td></tr>
+      </table>
+    </div>
+    <div style="font-size:12px;color:#6b7280">Row shading: merchant = dark band, provider = light band, account = white, channels = small grey text. Merchants, providers and channels come from the gateways (seed in the MVP, sync job later) and cannot be edited here. A provider is listed under each merchant that uses it; a merchant never sees another merchant's providers. The only thing created here is the Account.</div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

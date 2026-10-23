@@ -1,0 +1,31 @@
+meta {
+  name: 3 Refresh rotated token
+  type: http
+  seq: 3
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/refresh
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refreshToken": "{{rotatedRefreshToken}}"
+  }
+}
+
+vars:pre-request {
+  selfAuth: true
+}
+
+tests {
+  test('a rotated refresh responds 401 invalid_token', () => {
+    expect(res.status).to.equal(401);
+    expect(res.body.code).to.equal('invalid_token');
+  });
+}

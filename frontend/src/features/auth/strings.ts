@@ -1,0 +1,15 @@
+export const strings = {
+  title: 'Recon Tool 2.0',
+  subtitle: 'Payments reconciliation',
+  userName: 'User name',
+  password: 'Password',
+  submit: 'Sign in',
+  userNameRequired: 'Enter your user name.',
+  userNameTooLong: 'The user name is too long.',
+  passwordRequired: 'Enter your password.',
+  passwordTooLong: 'The password is too long.',
+  invalidCredentials: 'Invalid user name or password',
+  serverUnreachable: 'Cannot reach the server. Try again in a moment.',
+  sessionExpired: 'Your session has expired. Please sign in again.',
+  noSelfRegistration: 'No self-registration: users are created in Administration.',
+} as const

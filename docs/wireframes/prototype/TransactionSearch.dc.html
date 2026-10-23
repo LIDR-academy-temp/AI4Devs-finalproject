@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Transaction Search</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:14px;box-sizing:border-box}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:#4b5563;border-bottom:1px solid #d0d5dc;padding:8px}
+.tbl td{border-bottom:1px solid #e5e7eb;padding:8px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.btn.pri{background:#1f4e9c;border-color:#1f4e9c;color:#fff}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.ok{border-color:#2f7d4f;color:#1e5c38;background:#e8f3ec}
+.cyc{display:inline-block;width:22px;text-align:center;border-radius:4px;font-weight:700;font-size:12px;background:#e3e8ef}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 10px}
+select,input{font:inherit;font-size:14px;padding:8px 10px;border:1px solid #9aa3ad;border-radius:6px;background:#fff}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:820px">
+  <nav class="nav" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+    <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+    <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+    <div class="grp">Reconciliation</div>
+    <a href="NewReconciliation.dc.html">New Reconciliation</a>
+    <a href="InProgress.dc.html">In Progress</a>
+    <div class="grp">Settlements</div>
+    <a href="SettlementList.dc.html">Settlement List</a>
+    <a href="Payments.dc.html">Payments</a>
+    <div class="grp">Search</div>
+    <a href="TransactionSearch.dc.html" class="on">Transaction Search</a>
+    <a href="MissingDuplicates.dc.html">Missing &amp; Duplicates</a>
+    <div class="grp">Reports</div>
+    <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+    <a href="ReportsRoadmap.dc.html">Aged Receivables · roadmap</a>
+    <div class="grp">Administration</div>
+    <a href="MerchantsProviders.dc.html">Merchants &amp; Providers</a>
+    <a href="Accounts.dc.html">Accounts</a>
+    <a href="FeesAll.dc.html">Fees</a>
+    <a href="ChannelAssignment.dc.html">Channel Assignment</a>
+    <a href="MatchingRules.dc.html">Matching Rules</a>
+    <a href="UsersRoles.dc.html">Users &amp; Roles</a>
+    <a href="AuditLog.dc.html">Audit Log</a>
+  </nav>
+  <main style="flex:999 1 560px;min-width:0;padding:20px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+    <div class="ctx"><a href="Dashboard.dc.html">Dashboard</a> › Search › Transaction Search</div>
+    <h1>Transaction Search</h1>
+    <div class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+      <div style="flex:1 1 320px"><label for="tid" class="ctx">Transaction ID (one or several, comma or line separated)</label><br><input id="tid" value="4512308877, 4512301190" style="width:100%;box-sizing:border-box"></div>
+      <div><label for="gw" class="ctx">Gateway</label><br><select id="gw"><option>Any</option><option>Gateway 1 (numeric)</option><option>Gateway 2 (UUID)</option></select></div>
+      <a href="TransactionSearch.dc.html" class="btn pri">Search</a>
+    </div>
+    <div class="card">
+      <h2>Results (2)</h2>
+      <table class="tbl">
+        <tr><th>Transaction</th><th>Gateway</th><th>Merchant / Provider / Channel</th><th>Status</th><th>Created</th><th class="num">Amount</th><th><span class="cyc">E</span></th><th><span class="cyc">I</span></th><th><span class="cyc">R</span></th><th></th></tr>
+        <tr><td>4512308877</td><td>Gateway 1</td><td>Merchant A / Provider A / RAM-01</td><td>Successful</td><td>2026-09-14</td><td class="num">120.5000</td><td><span class="badge">batch 119 · pending</span></td><td>—</td><td><span class="badge">reserve held</span></td><td><a href="TransactionDetail.dc.html">Detail</a></td></tr>
+        <tr><td>4512301190</td><td>Gateway 1</td><td>Merchant A / Provider A / RAM-01</td><td>Chargeback</td><td>2026-07-02</td><td class="num">120.5000</td><td><span class="badge ok">batch 112 · paid</span></td><td><span class="badge ok">batch 116 · paid</span></td><td><span class="badge">released early</span></td><td><a href="TransactionDetail.dc.html">Detail</a></td></tr>
+      </table>
+      <div style="font-size:12px;color:#6b7280;margin-top:8px">An ID that exists in two gateways returns two rows (that is what "ambiguous" means in an import). Scope: only merchants assigned to the user. Empty state: "No transaction with that ID in your merchants".</div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

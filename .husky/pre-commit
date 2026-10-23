@@ -1,0 +1,6 @@
+pnpm lint-staged
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks git --pre-commit --staged --redact --verbose
+else
+  echo "gitleaks not installed; skipping secret scan (see docs 07 §2)" >&2
+fi

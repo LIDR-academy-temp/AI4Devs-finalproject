@@ -1,0 +1,29 @@
+meta {
+  name: Review - missing runId
+  type: http
+  seq: 40
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/review
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{$randomUUID}}
+}
+
+body:json {
+  {}
+}
+
+tests {
+  test('the decision names the run the analyst saw: without runId, 400 validation_error', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}
