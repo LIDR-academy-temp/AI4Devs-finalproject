@@ -604,9 +604,9 @@ Con el merge llegaron cambios del contrato que se llevaron a la spec, cada uno c
 
 *Ajuste humano.* La persona revisó el design punto por punto: la fecha obligatoria, el tipo desconocido con #60, los dos huecos de #11, el comentario en #12 y el issue #64. Aprobó también el debounce de 400 ms y el enlace desde un import procesado a su Summary. Revisó los tests que cambiaron (los dos de Analysis que fijaban el escenario retirado y cuatro tests propios todavía en rojo) y aceptó los desvíos del design. Tras el rebase pidió juntar dos commits para que cada uno compilara por separado. Decidió que las descargas se habiliten en un commit aparte cuando entre #12. Dio los turnos de base, aplicó las migraciones, sembró antes y después de cada procesado y entró como `analyst` y como `viewer` en el navegador, porque el asistente no inicia sesión. Vio en directo cada ejecución de las capturas y pidió llevar a #13 las notas del PR y a #56 los ficheros nuevos que fallaban por carga.
 
-**Prompt 12:**
+**Prompt 14:**
 
-*Contexto.* `settlements-browse` (issue #64): la opción Settlements del menú para la Entrega 2. Es un change pequeño y de solo lectura. El backend añade `GET /accounts/{id}/settlements`, con filtros, paginación y alcance por merchant. El frontend añade la pantalla Settlement List, a la que se llega desde el menú y desde Accounts, y una pestaña Movements en el Settlement Summary que ya existía, con los movimientos E/I/R paginados. Pagar, retirar el pago y deshacer quedan para el tramo 6.
+*Contexto.* `settlements-browse` (PR #88, issue #64): la opción Settlements del menú para la Entrega 2. Es un change pequeño y de solo lectura. El backend añade `GET /accounts/{id}/settlements`, con filtros, paginación y alcance por merchant. El frontend añade la pantalla Settlement List, a la que se llega desde el menú y desde Accounts, y una pestaña Movements en el Settlement Summary que ya existía, con los movimientos E/I/R paginados. Pagar, retirar el pago y deshacer quedan para el tramo 6.
 
 *Prompt.* Proponer el change a partir del issue, con una sección "Contrato" para la ruta nueva y una alternativa descartada en cada decisión. Lo que hacía falta saber de la persona se listó en el proposal. Después, aplicar grupo a grupo: primero los tests, una rotura a propósito por grupo y el último grupo contra el API real con el seed, Bruno y capturas. Más restricciones:
 - El dinero, siempre como texto.
@@ -630,9 +630,9 @@ Ahora los textos se parten y los importes nunca. Las tres reservas van en una co
 
 *Ajuste humano.* La persona aprobó el design, con las dos fechas y `All statuses` por defecto, con los intentos deshechos atenuados. Dio los turnos de base, sembró antes y después de cada procesado, ejecutó Bruno y probó como `analyst` y como `viewer`. Ante las tablas recortadas eligió la columna **Reserves** frente a aceptar el desplazamiento dentro de la tabla. Exigió que cada línea llevara su etiqueta y que ningún importe se partiera, y que los PNG se versionaran solo con todas las mediciones limpias. Mantuvo sin tocar los tiempos de los tests (#56). En el triaje del verify dejó para `ui-polish` unificar los dos ayudantes que evitan partir el texto.
 
-**Prompt 13:**
+**Prompt 15:**
 
-*Contexto.* `ui-polish`: pulido de la interfaz tras la revisión con el líder del equipo del 20 de octubre (`docs/uat/2026-10-20-revision-interfaz.md`). Solo frontend, sin cambios de API ni de reglas. Doce observaciones entran en el change: menú, tarjetas, barra superior, bloques por archivo, readiness, nombre de archivo, colores de estado, tabla de rangos, contadores, cabecera del Summary, fechas sin hora y navegación dentro de la página. Seis quedan fuera: plegar archivos (#85), columna Round (#86), Transactions en Validations (#87), summary `.xlsx` (#82), selector de merchant (#83) y modo oscuro (#84).
+*Contexto.* `ui-polish` (PR #91): pulido de la interfaz tras la revisión con el líder del equipo del 20 de octubre (`docs/uat/2026-10-20-revision-interfaz.md`). Solo frontend, sin cambios de API ni de reglas. Doce observaciones entran en el change: menú, tarjetas, barra superior, bloques por archivo, readiness, nombre de archivo, colores de estado, tabla de rangos, contadores, cabecera del Summary, fechas sin hora y navegación dentro de la página. Seis quedan fuera: plegar archivos (#85), columna Round (#86), Transactions en Validations (#87), summary `.xlsx` (#82), selector de merchant (#83) y modo oscuro (#84).
 
 *Prompt.* Proponer el change con su design (D1–D17) y, tras el merge y el archivo de `settlements-browse`, aplicarlo grupo a grupo: test primero, una rotura a propósito por grupo, dos commits por grupo (`test` y `feat`) y push al cerrar cada uno. Más restricciones:
 - Ningún color, sombra ni tono fuera del tema, con valor claro y oscuro.
@@ -646,3 +646,24 @@ Ahora los textos se parten y los importes nunca. Las tres reservas van en una co
 **Tests que cambiaron a propósito.** Además de los listados en D15, cambiaron `SettlementSummary.test.tsx:151` en el grupo de fechas (el formateador ya lo cambiaba ahí) y tres aserciones de la readiness en `analyze.test.tsx`; quedaron anotados en D15. El Badge de estado del Summary pasó a la rejilla para no repetirse, porque `read-only` y `exports` lo buscan por su texto. La suite completa en local mostró otra vez la intermitencia de #56 bajo carga, la misma en el commit base.
 
 *Ajuste humano.* La persona aprobó el mapa de D8 con un criterio que quedó escrito en el design: el color responde a "¿queda algo pendiente?", no a "¿salió bien el paso?". Pidió gris para lo que no está en el mapa, con un test, y el color nunca solo, con el texto del estado y contraste AA. Mantuvo dos commits por grupo y dejó para la revisión de capturas ajustar el verde del import frente al ámbar del batch si confunde.
+
+**Prompt 16:**
+
+*Contexto.* Cierre de la Entrega 2 (issue #18): solo documentación, sin tocar código, base ni migraciones. El vídeo de la demo pasa a la Entrega 3.
+
+*Prompt.* Auditar primero y devolver una lista de huecos antes de escribir nada. La auditoría compara el repositorio con el enunciado de la Entrega 2 (flujo conectado, configuración reproducible, ADR de los cambios de rumbo, pruebas de las partes críticas, `prompts.md`) y con las tareas del #18. Tiene que comprobar que cada comando del §1.4 existe en un `package.json`, que el `.env.example` tiene todas las variables que lee el código y que los enlaces del README funcionan. Después del visto bueno, commits pequeños por sección y PR hacia la rama de entrega. Más restricciones:
+- Sin `cd` ni rutas absolutas.
+- No leer los `.env`.
+- Ningún nombre de sistema real.
+
+*Resultado.* La auditoría encontró:
+- `docs/adr/` vacía, aunque el README anunciaba seis ADR.
+- Textos que seguían diciendo "Entrega 1", "todavía no se ha comenzado a programar" o "pruebas previstas", y un árbol de ficheros que no coincidía con el repositorio.
+- El §1.5 con #64 como recortado, aunque ya se había entregado.
+- El §7 sin los dos últimos PR.
+- Numeración repetida en esta sección.
+- El §1.4 pidiendo un solo `.env`, aunque la colección Bruno necesita el suyo.
+
+Los comandos del §1.4 y los enlaces relativos estaban bien. El agente no pudo leer los `.env.example`, porque los ajustes de permisos se lo impedían, y no intentó saltárselo: la persona los pegó en la sesión. En `.env.example` aparecieron `JWT_SECRET` duplicado, un `CORS_ORIGIN` que no lee ningún código y la falta de un salto de línea final. Con el visto bueno se escribieron ADR-001 a ADR-011. Un subagente reunió la evidencia de cada decisión y el agente la contrastó con las migraciones y el código antes de escribir. También se actualizaron los §0, §1.2 a §1.5, §2 y §7 y el registro de `docs/uat/`, y se abrió el issue del vídeo (#96).
+
+*Ajuste humano.* La persona aprobó escribir los ADR con los cambios de rumbo reales y confirmó que solo hubo una sesión con revisores, la del 20 de octubre: buena valoración general y observaciones sobre todo de interfaz. Pidió que el §1.4 dejara claros los dos `.env` y todo lo que una instalación desde cero necesita. Dictó la regla de importes y moneda y la limitación del batch solo de fees (#92). Al comprobar las notas de la sesión, el agente vio que el resumen que había escrito no coincidía con lo ocurrido y lo corrigió: fue una revisión de pantallas con el líder del equipo, no de tareas guiadas.
