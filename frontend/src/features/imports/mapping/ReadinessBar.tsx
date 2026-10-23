@@ -2,7 +2,7 @@ import type { ImportDetail, ImportFile, ImportSheet } from '@/lib/api/types'
 import { strings } from '../strings'
 
 type Item = ImportDetail['readiness']['missing'][number]
-type Line = { key: string; text: string }
+type Line = { key: string; sheet: string; text: string }
 
 // Notes of the backend's readiness (domain/readiness.ts) that only describe the sheet: nothing to act on.
 const NO_ROWS = 'The sheet has no rows'
@@ -19,13 +19,16 @@ function informational(note: Item, sheet: ImportSheet | undefined): boolean {
   return note.message === NO_ROWS || note.message === HIDDEN || sheet?.proposed.kind === 'ignore'
 }
 
+const sheetOf = (item: Item) => item.sheetName ?? strings.readiness.importSheet
 const missingLine = (item: Item): Line => ({
   key: `missing:${item.sheetId}:${item.field}:${item.message}`,
-  text: strings.readiness.item(item.sheetName, item.field, item.message),
+  sheet: sheetOf(item),
+  text: strings.readiness.item(item.field, item.message),
 })
 const noteLine = (note: Item): Line => ({
   key: `note:${note.sheetId}:${note.message}`,
-  text: strings.readiness.note(note.sheetName, note.message),
+  sheet: sheetOf(note),
+  text: note.message,
 })
 
 type Group = { file: ImportFile; actionable: Line[]; informational: Line[] }
@@ -48,7 +51,7 @@ function groupsOf(detail: ImportDetail, missing: Item[], unconfirmed: ImportShee
         ...missing.filter(mine).map(missingLine),
         ...unconfirmed
           .filter((s) => sheets.has(s.sheetId))
-          .map((s) => ({ key: `confirm:${s.sheetId}`, text: strings.readiness.unconfirmed(s.sheetName) })),
+          .map((s) => ({ key: `confirm:${s.sheetId}`, sheet: s.sheetName, text: strings.readiness.unconfirmed })),
         ...notes.filter((n) => !informational(n, own(n)?.sheet)).map(noteLine),
       ],
       informational: notes.filter((n) => informational(n, own(n)?.sheet)).map(noteLine),
@@ -61,7 +64,13 @@ function Lines({ lines }: { lines: Line[] }) {
   return (
     <ul className="flex flex-col gap-0.5">
       {lines.map((line) => (
-        <li key={line.key}>{line.text}</li>
+        <li key={line.key} className="grid grid-cols-[minmax(4rem,max-content)_1fr] gap-x-2">
+          <strong className="font-semibold">{line.sheet}</strong>
+          <span>
+            <span className="sr-only">{strings.readiness.separator}</span>
+            {line.text}
+          </span>
+        </li>
       ))}
     </ul>
   )

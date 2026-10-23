@@ -4,6 +4,7 @@
 // from the fees the request sends.
 import {
   AccountFee,
+  AccountSettlementsPage as AccountSettlementsPageSchema,
   BatchNoTakenDetails,
   ChannelAssignmentNotConfirmedDetails,
   ExportQuery,
@@ -12,23 +13,30 @@ import {
   NextBatchNumber,
   SettlementPreview,
   SettlementRequest,
+  SettlementTransactionsPage as SettlementTransactionsPageSchema,
   SettlementView,
 } from '@recon/shared'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { z } from 'zod'
+import type { AccountSettlementsPage, SettlementTransactionsPage } from '@/features/settlements/contract'
 import { strings } from '@/features/settlements/strings'
 import { ACCOUNT_IDS, USERS, type UserName } from './fixtures'
 import { issueTokens } from './handlers'
 import { importRecord, seedImport } from './imports'
 import {
+  accountSettlement,
   batchCleanPreview,
   failNextSettlement,
   holdNextSettlement,
+  paidHistory,
   providerBPreview,
   respondNextSettlement,
   scriptPreview,
+  seedAccountSettlements,
   seedActiveBatch,
+  seedMovements,
   seedSettlement,
+  settlementMovement,
   settlementRequests,
 } from './settlements'
 import { seedValidationRun } from './validations'
@@ -414,6 +422,133 @@ describe('fake settlement API: the shapes of @recon/shared (web-settlement task 
     expect([huge.status, huge.body.code]).toEqual([400, 'validation_error'])
     const notADay = await preview(importId, { runId, settlementDate: '2026-02-30' })
     expect([notADay.status, notADay.body.code]).toEqual([400, 'validation_error'])
+  })
+})
+
+// --- The attempts of an account and the movements of an attempt (settlements-browse design D13) -------------------
+// The fake only paginates what the test seeds, already in the order of the API: it neither filters by status, date
+// field or days nor sorts. The filters are checked on the query the screen sends.
+
+describe('fake settlement API: the attempts of an account', () => {
+  const ALT = ACCOUNT_IDS['ProviderC-Alt']
+
+  it('pages the seeded attempts with their total, unfiltered and unsorted, and records the query', async () => {
+    const history = paidHistory(USD, 22)
+    seedAccountSettlements(USD, history)
+    const first = await call('viewer', 'GET', `/accounts/${USD}/settlements?page=1&pageSize=20`)
+    expect(first.status).toBe(200)
+    const page = first.body as AccountSettlementsPage
+    expect(page).toMatchObject({ accountId: USD, page: 1, pageSize: 20, total: 22 })
+    expect(page.items.map((i) => i.batchNo)).toEqual(history.slice(0, 20).map((i) => i.batchNo))
+    const second = await call('viewer', 'GET', `/accounts/${USD}/settlements?page=2&pageSize=20`)
+    expect((second.body as AccountSettlementsPage).items.map((i) => i.batchNo)).toEqual([102, 101])
+
+    // A filter is not applied: the same 22 come back, and the query is in the log.
+    const filtered = await call(
+      'viewer',
+      'GET',
+      `/accounts/${USD}/settlements?status=undone&dateField=processedAt&from=2030-01-01&to=2030-01-31`,
+    )
+    expect((filtered.body as AccountSettlementsPage).total).toBe(22)
+    expect(settlementRequests('accountSettlements').at(-1)!.url).toBe(
+      `/api/v1/accounts/${USD}/settlements?status=undone&dateField=processedAt&from=2030-01-01&to=2030-01-31`,
+    )
+  })
+
+  it('answers an empty page for an account without seeded attempts', async () => {
+    const answer = await call('analyst', 'GET', `/accounts/${ACCOUNT_IDS['ProviderA-EUR']}/settlements`)
+    expect(answer.body).toMatchObject({ page: 1, pageSize: 50, total: 0, items: [] })
+  })
+
+  it('puts an attempt created by Process first in the list of its account', async () => {
+    seedAccountSettlements(USD, paidHistory(USD, 3))
+    const { importId, runId } = validatedClean()
+    const created = await process(importId, { runId, settlementDate: '2026-10-24', confirmChannelAssignment: true })
+    const view = created.body as SettlementView
+    const page = (await call('analyst', 'GET', `/accounts/${USD}/settlements`)).body as AccountSettlementsPage
+    expect(page.total).toBe(4)
+    expect(page.items[0]).toMatchObject({
+      batchId: view.batchId,
+      importId,
+      batchNo: 123,
+      status: 'processed',
+      settledStatus: 'pending_payment',
+      settlementDate: '2026-10-24',
+      processedAt: view.processedAt,
+      amountPayable: view.amountPayable,
+      channels: 'RAM-01,RAM-02,RAM-07',
+    })
+  })
+
+  it('answers 404 for an account outside the scope of the user, and for an unknown one', async () => {
+    seedAccountSettlements(ALT, paidHistory(ALT, 2, 7))
+    expect((await call('viewer', 'GET', `/accounts/${ALT}/settlements`)).body).toEqual({
+      code: 'not_found',
+      message: 'Account not found',
+    })
+    expect((await call('analyst', 'GET', `/accounts/${ALT}/settlements`)).status).toBe(200)
+    expect((await call('analyst', 'GET', '/accounts/0b6f4c1e-1a2b-4c3d-8e4f-0000000000ff/settlements')).status).toBe(
+      404,
+    )
+  })
+
+  it('answers a scripted 400 once, as the API answers a range whose start is after its end', async () => {
+    seedAccountSettlements(USD, paidHistory(USD, 2))
+    respondNextSettlement('accountSettlements', { status: 400, code: 'validation_error', message: 'from: after to' })
+    const url = `/accounts/${USD}/settlements?from=2026-10-24&to=2026-10-01`
+    expect((await call('analyst', 'GET', url)).body).toMatchObject({ code: 'validation_error' })
+    // Without a script the fake does not decide it.
+    expect((await call('analyst', 'GET', url)).status).toBe(200)
+  })
+})
+
+describe('fake settlement API: the movements of an attempt', () => {
+  it('pages the seeded movements of one cycle and answers 404 outside the scope', async () => {
+    const { importId } = validatedClean()
+    const view = seedSettlement(importId, { batchNo: 123 })
+    const e = Array.from({ length: 60 }, (_, i) => settlementMovement({ settlementTxnId: String(1000 + i) }))
+    seedMovements(view.batchId, 'E', e)
+    seedMovements(view.batchId, 'I', [settlementMovement({ cycle: 'I', status: 'Chargeback', roundNo: 1 })])
+
+    const page = await call('viewer', 'GET', `/settlements/${view.batchId}/transactions?type=E&page=2`)
+    expect(page.status).toBe(200)
+    expect(page.body).toMatchObject({ batchId: view.batchId, type: 'E', page: 2, pageSize: 50, total: 60 })
+    expect((page.body as SettlementTransactionsPage).items.map((m) => m.settlementTxnId)).toEqual(
+      e.slice(50).map((m) => m.settlementTxnId),
+    )
+    const i = (await call('viewer', 'GET', `/settlements/${view.batchId}/transactions?type=I`))
+      .body as SettlementTransactionsPage
+    expect(i.items.map((m) => m.cycle)).toEqual(['I'])
+    expect(settlementRequests('transactions').map((r) => r.url)).toEqual([
+      `/api/v1/settlements/${view.batchId}/transactions?type=E&page=2`,
+      `/api/v1/settlements/${view.batchId}/transactions?type=I`,
+    ])
+
+    const { importId: alt } = seedImport('legacy-provider', { status: 'validated' })
+    seedValidationRun(alt, undefined, { reviewedBy: 'analyst' })
+    const foreign = seedSettlement(alt)
+    expect((await call('viewer', 'GET', `/settlements/${foreign.batchId}/transactions?type=E`)).status).toBe(404)
+  })
+})
+
+describe('fake settlement API: the shapes of the reads of settlements-browse', () => {
+  it('the attempts of an account and the movements pass the schemas of @recon/shared', async () => {
+    seedAccountSettlements(USD, [
+      ...paidHistory(USD, 2),
+      accountSettlement({ status: 'undone', settledStatus: 'undone', settlementDate: null, channels: null }),
+    ])
+    expectShape(AccountSettlementsPageSchema, (await call('analyst', 'GET', `/accounts/${USD}/settlements`)).body)
+
+    const { importId } = validatedClean()
+    const view = seedSettlement(importId)
+    seedMovements(view.batchId, 'I', [
+      settlementMovement({ cycle: 'I', status: 'Refund', roundNo: 2, eventDate: null }),
+      settlementMovement({ sheetId: null, sheetName: null, rowNo: null, fees: [], settled: true }),
+    ])
+    expectShape(
+      SettlementTransactionsPageSchema,
+      (await call('analyst', 'GET', `/settlements/${view.batchId}/transactions?type=I`)).body,
+    )
   })
 })
 

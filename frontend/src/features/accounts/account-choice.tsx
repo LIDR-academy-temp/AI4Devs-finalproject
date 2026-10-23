@@ -1,22 +1,33 @@
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate, useSearch } from '@tanstack/react-router'
 import { type ReactNode, useEffect, useId } from 'react'
-import { accountQuery, merchantsQuery, providerQuery, providersQuery } from '@/features/accounts/queries'
+import { accountQuery, merchantsQuery, providerQuery, providersQuery } from './queries'
 import { strings } from './strings'
-import type { NewReconciliationSearch } from './validate-search'
 
 const selectClass =
   'h-9 min-w-56 rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
 
-/**
- * Merchant → provider → active account of the scope (spec "Pantalla Upload Files: elección de la cuenta").
- * A single possible value is preselected and every choice goes to the address. Returns the chosen account.
- */
-export function useAccountChoice() {
-  const search = useSearch({ from: '/app/reconciliations/new' })
-  const navigate = useNavigate({ from: '/reconciliations/new' })
+/** The three choices as the address of a screen carries them. */
+export interface AccountChoiceSearch {
+  merchantId?: number
+  providerId?: number
+  accountId?: string
+}
 
-  // An account given alone (a link from an import) brings its merchant and provider.
+export interface AccountChoiceOptions {
+  /** The choices in the address of the screen. */
+  search: AccountChoiceSearch
+  /** Writes the three choices to the address; the screen decides what happens to its other params. Stable. */
+  navigate: (choice: AccountChoiceSearch, options?: { replace?: boolean }) => void
+  /** Closed accounts are offered too (Settlement List: their history is still there). */
+  includeClosed: boolean
+}
+
+/**
+ * Merchant → provider → account of the scope (spec "Pantalla Upload Files: elección de la cuenta", settlements-browse
+ * D6). A single possible value is preselected and every choice goes to the address. Returns the chosen account.
+ */
+export function useAccountChoice({ search, navigate, includeClosed }: AccountChoiceOptions) {
+  // An account given alone (a link from an import or from a summary) brings its merchant and provider.
   const linked = useQuery({
     ...accountQuery(search.accountId ?? ''),
     enabled: search.accountId !== undefined && (search.merchantId === undefined || search.providerId === undefined),
@@ -38,7 +49,7 @@ export function useAccountChoice() {
   const providerVisible = providerList.some((p) => p.providerId === providerId)
 
   const provider = useQuery({ ...providerQuery(providerId ?? 0), enabled: providerVisible })
-  const accountList = providerVisible ? (provider.data?.accounts.filter((a) => a.isActive) ?? []) : []
+  const accountList = providerVisible ? (provider.data?.accounts.filter((a) => includeClosed || a.isActive) ?? []) : []
   const accountId = search.accountId ?? (accountList.length === 1 ? accountList[0]?.accountId : undefined)
   const account = accountList.find((a) => a.accountId === accountId)
 
@@ -55,14 +66,14 @@ export function useAccountChoice() {
       accountId: search.accountId === undefined && account ? account.accountId : undefined,
     }
     if (auto.merchantId === undefined && auto.providerId === undefined && auto.accountId === undefined) return
-    void navigate({
-      search: (prev: NewReconciliationSearch) => ({
-        merchantId: auto.merchantId ?? prev.merchantId,
-        providerId: auto.providerId ?? prev.providerId,
-        accountId: auto.accountId ?? prev.accountId,
-      }),
-      replace: true,
-    })
+    navigate(
+      {
+        merchantId: auto.merchantId ?? search.merchantId,
+        providerId: auto.providerId ?? search.providerId,
+        accountId: auto.accountId ?? search.accountId,
+      },
+      { replace: true },
+    )
   }, [search, merchantVisible, providerVisible, merchantId, providerId, account, navigate])
 
   return {
@@ -74,24 +85,18 @@ export function useAccountChoice() {
     account,
     notAvailable,
     chooseMerchant: (value: string) =>
-      navigate({
-        search: { merchantId: value ? Number(value) : undefined, providerId: undefined, accountId: undefined },
-      }),
+      navigate({ merchantId: value ? Number(value) : undefined, providerId: undefined, accountId: undefined }),
     chooseProvider: (value: string) =>
       navigate({
-        search: (prev: NewReconciliationSearch) => ({
-          merchantId: prev.merchantId ?? merchantId,
-          providerId: value ? Number(value) : undefined,
-          accountId: undefined,
-        }),
+        merchantId: search.merchantId ?? merchantId,
+        providerId: value ? Number(value) : undefined,
+        accountId: undefined,
       }),
     chooseAccount: (value: string) =>
       navigate({
-        search: (prev: NewReconciliationSearch) => ({
-          merchantId: prev.merchantId ?? merchantId,
-          providerId: prev.providerId ?? providerId,
-          accountId: value || undefined,
-        }),
+        merchantId: search.merchantId ?? merchantId,
+        providerId: search.providerId ?? providerId,
+        accountId: value || undefined,
       }),
   }
 }
@@ -163,7 +168,7 @@ export function AccountPicker({ choice, disabled = false }: { choice: AccountCho
             <option value="">{strings.picker.chooseAccount}</option>
             {choice.accounts.map((a) => (
               <option key={a.accountId} value={a.accountId}>
-                {a.name}
+                {a.isActive ? a.name : strings.picker.closedAccount(a.name)}
               </option>
             ))}
           </select>,

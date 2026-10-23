@@ -5,7 +5,7 @@ import { strings } from './strings'
 
 export interface NavItem {
   label: string
-  to?: '/' | '/accounts' | '/reconciliations/new'
+  to?: '/' | '/accounts' | '/reconciliations/new' | '/settlements'
   /** Paths under which the entry is also the active one (the screens it leads to). */
   activeUnder?: string
   requires?: Permission
@@ -35,7 +35,10 @@ export const NAV: readonly NavGroup[] = [
   },
   {
     label: strings.groups.settlements,
-    items: [{ label: s.settlementList }, { label: s.payments, requires: 'payment.process' }],
+    items: [
+      { label: s.settlementList, to: '/settlements' },
+      { label: s.payments, requires: 'payment.process' },
+    ],
   },
   { label: strings.groups.search, items: [{ label: s.transactionSearch }, { label: s.missingDuplicates }] },
   { label: strings.groups.reports, items: [{ label: s.unsettledPerChannel, requires: 'reports.view' }] },

@@ -46,6 +46,23 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --shadow-card: var(--card-shadow);
+  --color-status-success: var(--status-success);
+  --color-status-success-foreground: var(--status-success-foreground);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-foreground: var(--status-warning-foreground);
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-foreground: var(--status-danger-foreground);
+  --color-status-neutral: var(--status-neutral);
+  --color-status-neutral-foreground: var(--status-neutral-foreground);
+  --color-file-tone-1: var(--file-tone-1);
+  --color-file-tone-1-header: var(--file-tone-1-header);
+  --color-file-tone-2: var(--file-tone-2);
+  --color-file-tone-2-header: var(--file-tone-2-header);
+  --color-file-tone-3: var(--file-tone-3);
+  --color-file-tone-3-header: var(--file-tone-3-header);
+  --color-file-tone-4: var(--file-tone-4);
+  --color-file-tone-4-header: var(--file-tone-4-header);
 }
 
 :root {
@@ -53,6 +70,8 @@
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
+  /* lightgrey (#d3d3d3), as in the navigable prototype. */
+  --card-shadow: 2px 2px 9px oklch(0.869 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   /* Blue = action that moves forward or confirms (docs/wireframes/README.md colour convention). */
@@ -82,6 +101,26 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Status tones of the Badge: green nothing pending, amber pending without blocking, red blocks, grey neutral
+     (design D8). Text over background must reach AA (4.5:1). */
+  --status-success: oklch(0.95 0.05 150);
+  --status-success-foreground: oklch(0.42 0.12 150);
+  --status-warning: oklch(0.96 0.06 85);
+  --status-warning-foreground: oklch(0.45 0.1 65);
+  --status-danger: oklch(0.95 0.04 25);
+  --status-danger-foreground: oklch(0.48 0.17 27);
+  --status-neutral: oklch(0.95 0 0);
+  --status-neutral-foreground: oklch(0.4 0 0);
+  /* File tones of Files and Mapping: blue, violet, cyan and slate, of low chroma so as not to read as status
+     colours; block background and header background (design D5). */
+  --file-tone-1: oklch(0.97 0.015 250);
+  --file-tone-1-header: oklch(0.93 0.03 250);
+  --file-tone-2: oklch(0.97 0.015 300);
+  --file-tone-2-header: oklch(0.93 0.03 300);
+  --file-tone-3: oklch(0.97 0.015 210);
+  --file-tone-3-header: oklch(0.93 0.03 210);
+  --file-tone-4: oklch(0.97 0.008 260);
+  --file-tone-4-header: oklch(0.93 0.015 260);
 }
 
 .dark {
@@ -89,6 +128,7 @@
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
+  --card-shadow: 2px 2px 9px oklch(0 0 0 / 50%);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
@@ -116,6 +156,22 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --status-success: oklch(0.3 0.06 150);
+  --status-success-foreground: oklch(0.86 0.12 150);
+  --status-warning: oklch(0.32 0.06 75);
+  --status-warning-foreground: oklch(0.88 0.12 85);
+  --status-danger: oklch(0.3 0.08 25);
+  --status-danger-foreground: oklch(0.86 0.1 25);
+  --status-neutral: oklch(0.27 0 0);
+  --status-neutral-foreground: oklch(0.82 0 0);
+  --file-tone-1: oklch(0.24 0.03 250);
+  --file-tone-1-header: oklch(0.3 0.045 250);
+  --file-tone-2: oklch(0.24 0.03 300);
+  --file-tone-2-header: oklch(0.3 0.045 300);
+  --file-tone-3: oklch(0.24 0.03 210);
+  --file-tone-3-header: oklch(0.3 0.045 210);
+  --file-tone-4: oklch(0.24 0.015 260);
+  --file-tone-4-header: oklch(0.3 0.0225 260);
 }
 
 @layer base {

@@ -87,7 +87,11 @@ describe('Settlement Review: pre-summary (spec "resumen previo")', () => {
     expect(panel.getByText('E 450 · I 10 · R 320')).toBeInTheDocument()
     const totals = within(panel.getByRole('table', { name: 'Totals by type' }))
     expect(totals.getAllByRole('row')).toHaveLength(6)
-    expect(totals.getByRole('row', { name: /Deposits/ })).toHaveTextContent('Deposits34039,181.07004,139.2500')
+    expect(totals.getByRole('row', { name: /Deposits/ })).toHaveTextContent(
+      'Deposits34039,181.07004,139.25002026-09-28 – 2026-10-07',
+    )
+    // The same column as in the Summary: the I range of the preview on each of its three rows.
+    expect(totals.getByRole('row', { name: /RDR/ })).toHaveTextContent('2026-09-28 – 2026-10-11')
     expect(payableRow('Deposits')).toEqual(['+', 'Deposits', '39,181.0700'])
     expect(payableRow('Chargebacks')).toEqual(['−', 'Chargebacks', '193.8600'])
     expect(payableRow('Batch fees')).toEqual(['−', 'Batch fees', '40.0000'])
@@ -107,6 +111,16 @@ describe('Settlement Review: pre-summary (spec "resumen previo")', () => {
       'Amount payable',
     ])
     expect(payableRow('Amount payable')).toEqual(['', 'Amount payable', '33,952.9085'])
+  })
+
+  it('below the form up to 1536 px: beside it, the Date range column clips the card at 1280 px (review 12.3)', async () => {
+    const { importId } = validatedImport()
+    await openReview(importId)
+
+    // jsdom does not lay out: the breakpoint is in the classes, and the screenshot script measures it.
+    const form = dateField().closest('form')
+    expect(form).toHaveClass('2xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]')
+    expect(form?.className).not.toMatch(/(^|\s)xl:grid-cols/)
   })
 
   it('rows not processed: only the reasons other than zero', async () => {

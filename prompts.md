@@ -603,3 +603,46 @@ Con el merge llegaron cambios del contrato que se llevaron a la spec, cada uno c
 **Las capturas.** Destaparon importes recortados: a 1024 px en el resumen previo, y a 1280 px en el desglose y en los totales del Summary. El contenedor de la tabla de shadcn los desplazaba fuera de la vista sin que la página desbordara, así que la comprobación de desplazamiento horizontal decía que todo estaba bien y jsdom no calcula el diseño. Ahora las etiquetas se parten, el resumen previo pasa debajo del formulario por debajo de 1280 px y el Summary usa dos columnas desde ese ancho. El script también falla si una tabla queda recortada; hicieron falta dos vueltas, porque la primera aún recortaba los totales por tipo. Por último, la intermitencia de #56 apareció en tres ficheros de imports con la suite del frontend sola, por la carga de las esperas reales del debounce.
 
 *Ajuste humano.* La persona revisó el design punto por punto: la fecha obligatoria, el tipo desconocido con #60, los dos huecos de #11, el comentario en #12 y el issue #64. Aprobó también el debounce de 400 ms y el enlace desde un import procesado a su Summary. Revisó los tests que cambiaron (los dos de Analysis que fijaban el escenario retirado y cuatro tests propios todavía en rojo) y aceptó los desvíos del design. Tras el rebase pidió juntar dos commits para que cada uno compilara por separado. Decidió que las descargas se habiliten en un commit aparte cuando entre #12. Dio los turnos de base, aplicó las migraciones, sembró antes y después de cada procesado y entró como `analyst` y como `viewer` en el navegador, porque el asistente no inicia sesión. Vio en directo cada ejecución de las capturas y pidió llevar a #13 las notas del PR y a #56 los ficheros nuevos que fallaban por carga.
+
+**Prompt 12:**
+
+*Contexto.* `settlements-browse` (issue #64): la opción Settlements del menú para la Entrega 2. Es un change pequeño y de solo lectura. El backend añade `GET /accounts/{id}/settlements`, con filtros, paginación y alcance por merchant. El frontend añade la pantalla Settlement List, a la que se llega desde el menú y desde Accounts, y una pestaña Movements en el Settlement Summary que ya existía, con los movimientos E/I/R paginados. Pagar, retirar el pago y deshacer quedan para el tramo 6.
+
+*Prompt.* Proponer el change a partir del issue, con una sección "Contrato" para la ruta nueva y una alternativa descartada en cada decisión. Lo que hacía falta saber de la persona se listó en el proposal. Después, aplicar grupo a grupo: primero los tests, una rotura a propósito por grupo y el último grupo contra el API real con el seed, Bruno y capturas. Más restricciones:
+- El dinero, siempre como texto.
+- Las fechas de negocio, sin convertir; las de auditoría, en ET.
+- La base, solo con turno.
+- Avisar antes de lanzar el script de capturas.
+
+*Resultado.* **Las dos fechas.** El issue no decía si `from` y `to` filtraban la fecha de liquidación o la de procesado. Se admiten las dos con `dateField`. Con `processedAt`, el día se calcula en Nueva York dentro del SQL con `AT TIME ZONE`, y lo prueban la medianoche de Nueva York y el cambio de hora de noviembre. La rotura con un desfase fijo de `-04:00` hace caer el caso del cambio de hora. La primera fixture de integración chocó con el índice único que admite un solo intento activo por import, así que cada intento tiene su propio import.
+
+**El selector de cuenta.** Pasó a compartirse con New Reconciliation sin modificar ninguno de sus tests. Los tests de la lista destaparon dos defectos:
+- Dos cambios de filtro seguidos se pisaban, porque el segundo partía de valores ya viejos. Ahora cada filtro envía solo lo que cambia.
+- Al llegar por un enlace con la cuenta, completar merchant y proveedor devolvía la lista a la página 1.
+
+El desglose de fees iba a ser un `<details>`, pero jsdom no lo abre con Enter y se cambió por un botón con `aria-expanded`. Al cerrar, el commit `feat` del endpoint no compilaba sin el adaptador y se juntaron.
+
+**Las capturas.** La primera pasada midió tablas recortadas, que ni jsdom ni la prueba manual habían visto:
+- En la lista, a 1024 px no se veían el amount payable ni los canales.
+- En Movements, las once columnas no cabían ni a 1280 px: **Released on chargeback** y **Settled** quedaban fuera.
+
+Ahora los textos se parten y los importes nunca. Las tres reservas van en una columna **Reserves**, con una línea y su etiqueta por cifra, y quedan nueve columnas. La segunda pasada midió todo bien, pero las imágenes mostraban `RAM-` / `07` y fechas partidas en el guion: el navegador también corta tras un guion, y la medición no lo ve. Cada nombre de canal y cada fecha quedaron en una sola línea, y la tercera pasada se versionó. El verify no encontró errores de código. Señaló que el flujo de Bruno filtraba por estado y no comprobaba que tras el intento nuevo viniera el 122, y se añadió esa petición.
+
+*Ajuste humano.* La persona aprobó el design, con las dos fechas y `All statuses` por defecto, con los intentos deshechos atenuados. Dio los turnos de base, sembró antes y después de cada procesado, ejecutó Bruno y probó como `analyst` y como `viewer`. Ante las tablas recortadas eligió la columna **Reserves** frente a aceptar el desplazamiento dentro de la tabla. Exigió que cada línea llevara su etiqueta y que ningún importe se partiera, y que los PNG se versionaran solo con todas las mediciones limpias. Mantuvo sin tocar los tiempos de los tests (#56). En el triaje del verify dejó para `ui-polish` unificar los dos ayudantes que evitan partir el texto.
+
+**Prompt 13:**
+
+*Contexto.* `ui-polish`: pulido de la interfaz tras la revisión con el líder del equipo del 20 de octubre (`docs/uat/2026-10-20-revision-interfaz.md`). Solo frontend, sin cambios de API ni de reglas. Doce observaciones entran en el change: menú, tarjetas, barra superior, bloques por archivo, readiness, nombre de archivo, colores de estado, tabla de rangos, contadores, cabecera del Summary, fechas sin hora y navegación dentro de la página. Seis quedan fuera: plegar archivos (#85), columna Round (#86), Transactions en Validations (#87), summary `.xlsx` (#82), selector de merchant (#83) y modo oscuro (#84).
+
+*Prompt.* Proponer el change con su design (D1–D17) y, tras el merge y el archivo de `settlements-browse`, aplicarlo grupo a grupo: test primero, una rotura a propósito por grupo, dos commits por grupo (`test` y `feat`) y push al cerrar cada uno. Más restricciones:
+- Ningún color, sombra ni tono fuera del tema, con valor claro y oscuro.
+- Ninguna cifra calculada en el navegador.
+- Parar solo si una decisión cambia el alcance o hace falta turno de base.
+
+*Resultado.* **Colores de estado (D8).** Un mapa por enumeración en `lib/status-tone.ts`, con `satisfies` para que un valor nuevo de `@recon/shared` rompa `typecheck`, y `toneOf`, que da gris a un valor sin entrada. La rotura `blocked → warning` hizo caer el mapa y la corrida bloqueada.
+
+**Navegación dentro de la página (D13).** El router vuelve arriba en cada cambio de búsqueda, también en jsdom, y los tests lo vieron con un espía de `window.scrollTo`. Cada navegación que solo cambia lo que muestra la pantalla lleva `resetScroll: false`. El foco va al encabezado de la lista solo cuando lo pide la acción del usuario: un botón de filtro, una validación, el ciclo o Previous/Next. Nunca lo piden un desplegable, una fecha, una recarga, un enlace ni el `useLastPageLimit`. Dos roturas: quitar `resetScroll` de `go` y quitar la comprobación de la petición pendiente, que robaba el foco al llegar por enlace.
+
+**Tests que cambiaron a propósito.** Además de los listados en D15, cambiaron `SettlementSummary.test.tsx:151` en el grupo de fechas (el formateador ya lo cambiaba ahí) y tres aserciones de la readiness en `analyze.test.tsx`; quedaron anotados en D15. El Badge de estado del Summary pasó a la rejilla para no repetirse, porque `read-only` y `exports` lo buscan por su texto. La suite completa en local mostró otra vez la intermitencia de #56 bajo carga, la misma en el commit base.
+
+*Ajuste humano.* La persona aprobó el mapa de D8 con un criterio que quedó escrito en el design: el color responde a "¿queda algo pendiente?", no a "¿salió bien el paso?". Pidió gris para lo que no está en el mapa, con un test, y el color nunca solo, con el texto del estado y contraste AA. Mantuvo dos commits por grupo y dejó para la revisión de capturas ajustar el verde del import frente al ámbar del batch si confunde.

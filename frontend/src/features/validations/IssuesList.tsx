@@ -4,11 +4,15 @@ import { createColumnHelper, rowPaginationFeature, tableFeatures, useTable } fro
 import { useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { ListHeading, requestListFocus } from '@/lib/list-focus'
 import type { ValidationIssueSummary } from './contract'
 import { ISSUES_PAGE_SIZE, validationIssuesQuery } from './queries'
 import { strings } from './strings'
 
 const s = strings.list
+
+/** The name of the findings list for requestListFocus. */
+export const FINDINGS_LIST = 'findings'
 
 const features = tableFeatures({ rowPaginationFeature })
 const helper = createColumnHelper<typeof features, ValidationIssueSummary>()
@@ -89,6 +93,11 @@ export function IssuesList({
   const columns = useMemo(() => columnsFor((issueId) => open.current(issueId)), [])
   const total = query.data?.total ?? 0
   const pageCount = Math.max(1, Math.ceil(total / ISSUES_PAGE_SIZE))
+  // Previous / Next take the focus to the heading of the list.
+  const turn = (step: () => void) => {
+    requestListFocus(FINDINGS_LIST)
+    step()
+  }
 
   const table = useTable({
     features,
@@ -107,7 +116,9 @@ export function IssuesList({
 
   return (
     <section aria-label={s.label(strings.validations[validationCode])} className="flex flex-col gap-2">
-      <h4 className="text-sm font-medium">{s.label(strings.validations[validationCode])}</h4>
+      <ListHeading name={FINDINGS_LIST} focusKey={`${validationCode}:${page}`} as="h4" className="text-sm font-medium">
+        {s.label(strings.validations[validationCode])}
+      </ListHeading>
       <div className="max-w-full overflow-x-auto rounded-md border">
         <Table aria-label={s.table} className="text-xs">
           <TableHeader>
@@ -138,10 +149,20 @@ export function IssuesList({
       {query.isSuccess && total === 0 && <p className="text-sm text-muted-foreground">{s.empty}</p>}
       <div className="flex items-center justify-end gap-2 text-sm">
         <span className="text-muted-foreground">{s.pageOf(page, pageCount, total)}</span>
-        <Button size="sm" variant="outline" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => turn(() => table.previousPage())}
+          disabled={!table.getCanPreviousPage()}
+        >
           {s.previous}
         </Button>
-        <Button size="sm" variant="outline" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => turn(() => table.nextPage())}
+          disabled={!table.getCanNextPage()}
+        >
           {s.next}
         </Button>
       </div>

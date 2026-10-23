@@ -13,6 +13,8 @@ export function formatDecimal(value: string): string {
 // - business dates (transaction dates, ranges, relevantDate, batch dates) are New York wall-clock time stored
 //   without a zone; the API sends them with a Z only as transport format, so they are shown without converting;
 // - audit instants (runAt, changedAt, reviewedAt…) are real UTC instants and are converted to New York time.
+// Only a date with a time carries the ET suffix: a day alone (settlement date, fee validity, expected release) is
+// the same day in any zone that matters here, and the suffix added nothing (ui-polish design D12).
 
 /** The zone dates are shown in, never the browser's. */
 export const DISPLAY_TIME_ZONE = 'America/New_York'
@@ -47,10 +49,10 @@ function parts(value: string, timeZone: string, withTime: boolean): Record<strin
 function compose(value: string, timeZone: string, withTime: boolean): string {
   const p = parts(value, timeZone, withTime)
   const date = `${p.year}-${p.month}-${p.day}`
-  return `${withTime ? `${date} ${p.hour}:${p.minute}` : date} ${DISPLAY_ZONE_LABEL}`
+  return withTime ? `${date} ${p.hour}:${p.minute} ${DISPLAY_ZONE_LABEL}` : date
 }
 
-/** "2026-09-28 ET": the digits as they arrive, read in UTC so that nothing moves. */
+/** "2026-09-28": the digits as they arrive, read in UTC so that nothing moves. */
 export function formatBusinessDate(value: BusinessDate): string {
   return compose(value, 'UTC', false)
 }

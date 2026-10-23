@@ -1,7 +1,15 @@
-// Texts of Settlement Review and Settlement Summary (web-shell "Textos de interfaz en inglés y centralizados").
-// Those fixed by the spec of web-settlement are literal.
+// Texts of Settlement Review, Settlement Summary and Settlement List (web-shell "Textos de interfaz en inglés y
+// centralizados"). Those fixed by the specs of web-settlement and settlements-browse are literal.
 import type { ImportStatus } from '@recon/shared'
 import type { Category, PayableLineCode, SettlementWarning, Skipped } from './contract'
+
+/** Previous / Next of the paginated tables, with the reason a button is disabled. */
+const PAGER = {
+  previous: 'Previous',
+  next: 'Next',
+  firstPage: 'This is the first page.',
+  lastPage: 'This is the last page.',
+}
 
 export const strings = {
   batch: {
@@ -74,7 +82,8 @@ export const strings = {
     updating: 'Updating the pre-summary…',
     movements: (m: { E: number; I: number; R: number }) => `E ${m.E} · I ${m.I} · R ${m.R}`,
     totals: 'Totals by type',
-    columns: { type: 'Type', qty: 'Qty', amount: 'Amount USD', fee: 'Fees USD' },
+    columns: { type: 'Type', qty: 'Qty', amount: 'Amount USD', fee: 'Fees USD', range: 'Date range' },
+    noRange: '—',
     payable: 'Amount payable',
     signs: { '+': '+', '-': '−' } as const,
     /** What a screen reader says for each sign. */
@@ -161,14 +170,18 @@ export const strings = {
 
   summary: {
     title: (batchNo: number) => `Settlement Summary · batch ${batchNo}`,
-    attempt: (accountName: string, attemptNo: number) => `${accountName} · attempt ${attemptNo}`,
     status: { pending_payment: 'Processed · pending payment', settled: 'Paid', undone: 'Undone' },
-    processedBy: (userName: string, at: string) => `Processed by ${userName} on ${at}`,
-    settlementDate: (date: string) => `Settlement date: ${date}`,
+    grid: {
+      account: 'Account',
+      batch: 'Batch',
+      status: 'Status',
+      processedBy: 'Processed by',
+      settlementDate: 'Settlement date',
+    },
+    batchAttempt: (batchNo: number, attemptNo: number) => `${batchNo} · attempt ${attemptNo}`,
+    byAt: (userName: string, at: string) => `${userName} · ${at}`,
+    notSet: 'Not set',
     notSettled: 'Movements are not Settled yet: that happens when the batch is marked as paid.',
-    ranges: 'Date ranges',
-    range: (cycle: string, from: string | null, to: string | null) =>
-      from && to ? `${cycle} ${from} – ${to}` : `${cycle} —`,
     totals: 'Totals by type',
     reservesReleased: 'R · Reserve released',
     brands: 'Totals by brand',
@@ -202,12 +215,90 @@ export const strings = {
     exportsUnavailable: 'Downloads are not available yet.',
     exportFailed: 'The file could not be downloaded. Try again.',
     backToDashboard: 'Back to Dashboard',
+    backToList: (accountName: string) => `Settlements of ${accountName}`,
+    tabs: { label: 'Settlement views', summary: 'Summary', movements: 'Movements' },
     newReconciliation: 'New reconciliation',
     loading: 'Loading the settlement…',
     loadError: 'The settlement could not be loaded.',
     notFoundTitle: 'Settlement not found',
     notFoundBody: 'The settlement does not exist or is not in your scope.',
   },
+
+  /** Settlements › Settlement List (settlements-browse). */
+  list: {
+    title: 'Settlement List',
+    chooseAccount: 'Choose an account to see its settlements.',
+    filtersLabel: 'Filters',
+    status: 'Status',
+    statuses: { all: 'All statuses', processed: 'Processed · pending payment', paid: 'Paid', undone: 'Undone' },
+    dateField: 'Date',
+    dateFields: { settlementDate: 'Settlement date', processedAt: 'Processed (ET)' },
+    from: 'From',
+    to: 'To',
+    reversedRange: 'The start date must not be after the end date.',
+    heading: 'Settlements',
+    tableLabel: 'Settlements',
+    columns: {
+      batch: 'Batch',
+      attempt: 'Attempt',
+      status: 'Status',
+      settlementDate: 'Settlement date',
+      processed: 'Processed',
+      amountPayable: 'Amount payable',
+      channels: 'Channels',
+    },
+    batchLink: (batchNo: number, attemptNo: number) => `Batch ${batchNo} · attempt ${attemptNo}`,
+    notSet: 'Not set',
+    /** Followed by the instant, on its own unbreakable span. */
+    processedBy: (userName: string) => `${userName} · `,
+    pageOf: (page: number, pages: number, total: number) =>
+      `Page ${page} of ${pages} · ${total} ${total === 1 ? 'settlement' : 'settlements'}`,
+    ...PAGER,
+    empty: 'No settlements match these filters.',
+    loading: 'Loading the settlements…',
+    loadError: 'The settlements could not be loaded.',
+  },
+
+  /** The Movements tab of the Settlement Summary (settlements-browse D11). */
+  movements: {
+    cycleLabel: 'Cycle',
+    cycle: (cycle: string, count: number) => `${cycle} (${count})`,
+    heading: (cycle: string) => `Movements · ${cycle}`,
+    tableLabel: 'Movements',
+    columns: {
+      transaction: 'Transaction',
+      status: 'Status',
+      round: 'Round',
+      sourceRow: 'Source row',
+      eventDate: 'Event date',
+      amount: 'Amount',
+      fees: 'Fees',
+      reserves: 'Reserves',
+      settled: 'Settled',
+    },
+    /** One labelled line per figure of the Reserves cell (design D11). */
+    reserveLines: {
+      held: 'Held',
+      released: 'Released',
+      early: 'Released on chargeback',
+      expected: 'Expected release',
+    },
+    sourceRow: (sheetName: string, rowNo: number) => `${sheetName} · ${rowNo}`,
+    noSourceRow: '—',
+    undated: 'Undated',
+    excluded: 'excluded from the totals',
+    feeCount: (count: number) => `${count} ${count === 1 ? 'fee' : 'fees'}`,
+    feeLine: (title: string, amount: string) => `${title} · ${amount}`,
+    settled: 'Settled',
+    pendingPayment: 'Pending payment',
+    pageOf: (page: number, pages: number, total: number) =>
+      `Page ${page} of ${pages} · ${total} ${total === 1 ? 'movement' : 'movements'}`,
+    empty: 'This cycle has no movements.',
+    loading: 'Loading the movements…',
+    loadError: 'The movements could not be loaded.',
+  },
+
+  pager: PAGER,
 
   retry: 'Retry',
 

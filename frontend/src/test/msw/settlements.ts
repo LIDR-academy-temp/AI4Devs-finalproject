@@ -9,17 +9,22 @@
 // currentBatchId, the attempts it creates (read back by GET /settlements/{id}) and the scripted answers. The
 // rejections follow from that state, not from business rules: import_not_validated from the status of the import,
 // validation_run_superseded from the current run, batch_no_taken from the active numbers, and
-// channel_assignment_not_confirmed when the fixture requires a confirmation the body does not carry.
-import { ExportQuery, SettlementRequest as SettlementRequestSchema, TRANSACTION_STATUSES } from '@recon/shared'
+// channel_assignment_not_confirmed when the fixture requires a confirmation the body does not carry. The attempts of
+// an account and the movements of an attempt (settlements-browse D13) are fixtures in the order of the API: the fake
+// only paginates them and records the query, never filtering by status or days nor sorting.
+import { Cycle, ExportQuery, SettlementRequest as SettlementRequestSchema, TRANSACTION_STATUSES } from '@recon/shared'
 import { HttpResponse, http, type PathParams } from 'msw'
 import type {
   AccountFee,
+  AccountSettlement,
   BatchFeeInput,
   BatchFeeView,
   ChannelToAssign,
+  Cycle as CycleCode,
   FeeTypeView,
   NextBatchNumber,
   SettlementFigures,
+  SettlementMovement,
   SettlementPreview,
   SettlementRequest,
   SettlementView,
@@ -268,7 +273,16 @@ type PreviewStep = PreviewFixture | ScriptedError
 
 const isError = (step: PreviewStep): step is ScriptedError => 'code' in step && 'status' in step
 
-export type SettlementRoute = 'next' | 'fees' | 'feeTypes' | 'preview' | 'process' | 'get' | 'export'
+export type SettlementRoute =
+  | 'next'
+  | 'fees'
+  | 'feeTypes'
+  | 'preview'
+  | 'process'
+  | 'get'
+  | 'export'
+  | 'accountSettlements'
+  | 'transactions'
 
 export interface SettlementRequestLog {
   route: SettlementRoute
@@ -296,6 +310,10 @@ function freshState() {
   return {
     active: [] as ActiveAttempt[],
     attempts: new Map<string, SettlementView>(),
+    /** The attempts of each account, newest first as the API orders them; the fake never reorders nor filters. */
+    accountSettlements: new Map<string, AccountSettlement[]>(),
+    /** The movements of each `batchId:cycle`, in the order of the API. */
+    movements: new Map<string, SettlementMovement[]>(),
     fixtures: new Map<string, PreviewFixture>(),
     nextNumbers: new Map<string, NextBatchNumber>(),
     scripts: new Map<string, PreviewStep[]>(),
@@ -427,6 +445,23 @@ function createAttempt(
     },
   }
   state.attempts.set(batchId, view)
+  // The newest attempt goes first in the list of its account, as GET /accounts/{id}/settlements orders it.
+  state.accountSettlements.set(record.accountId, [
+    {
+      batchId,
+      importId: record.importId,
+      batchNo,
+      attemptNo: view.attemptNo,
+      status: view.status,
+      settledStatus: view.settledStatus,
+      settlementDate: view.settlementDate,
+      processedAt: view.processedAt,
+      approvedBy: view.approvedBy,
+      amountPayable: view.amountPayable,
+      channels: fixture.channels.join(','),
+    },
+    ...(state.accountSettlements.get(record.accountId) ?? []),
+  ])
   state.active.push({ accountId: record.accountId, batchNo, attemptNo: view.attemptNo, importId: record.importId })
   record.status = 'processed'
   record.currentBatchId = batchId
@@ -487,6 +522,108 @@ export function seedSettlement(importId: string, options: SeedSettlementOptions 
   return stored
 }
 
+/** An attempt of an account as the list shows it: by default batch 122 of ProviderA-USD, paid by analyst. */
+export function accountSettlement(overrides: Partial<AccountSettlement> = {}): AccountSettlement {
+  return {
+    batchId: nextId('7d1c2b3a'),
+    importId: nextId('0a1b2c3d'),
+    batchNo: 122,
+    attemptNo: 1,
+    status: 'paid',
+    settledStatus: 'settled',
+    settlementDate: businessDate('2026-10-02'),
+    processedAt: auditInstant('2026-09-30T15:40:03.120Z'),
+    approvedBy: userRef('analyst'),
+    amountPayable: '33771.3600',
+    channels: 'RAM-01,RAM-02',
+    ...overrides,
+  }
+}
+
+/**
+ * The seeded history of an account, newest first: `count` paid attempts ending at `lastBatchNo`, one a week, each
+ * processed at 15:40 UTC and settled two days later. Amounts are illustrative text, never computed by a screen.
+ */
+export function paidHistory(_accountId: string, count: number, lastBatchNo = 122): AccountSettlement[] {
+  return Array.from({ length: count }, (_, i) => {
+    const batchNo = lastBatchNo - i
+    const processed = new Date(Date.UTC(2026, 8, 30, 15, 40, 3, 120) - i * 7 * 86_400_000)
+    const settled = new Date(processed.getTime() + 2 * 86_400_000)
+    return accountSettlement({
+      batchNo,
+      processedAt: auditInstant(processed.toISOString()),
+      settlementDate: businessDate(settled.toISOString().slice(0, 10)),
+      amountPayable: `${30_000 + batchNo}.4500`,
+    })
+  })
+}
+
+/** The attempts GET /accounts/{id}/settlements serves for an account, already in the order of the API. */
+export function seedAccountSettlements(accountId: string, items: AccountSettlement[]) {
+  state.accountSettlements.set(accountId, items)
+}
+
+/** A movement as the contract example for #13 shows it: an E deposit of batch-clean, not settled. */
+export function settlementMovement(overrides: Partial<SettlementMovement> = {}): SettlementMovement {
+  return {
+    settlementTxnId: '88213',
+    transactionId: '40711',
+    sourceTransactionId: '911545593909470',
+    gatewayId: 1,
+    cycle: 'E',
+    status: 'Successful',
+    roundNo: null,
+    sheetId: '2d4e6f80-1a2b-4c3d-8e9f-0a1b2c3d4e5f',
+    sheetName: 'APP',
+    rowNo: 2,
+    amount: '115.2400',
+    excludeAmount: false,
+    feeAmount: '12.0240',
+    eventDate: businessDate('2026-09-28T00:04:11.000Z'),
+    appliedReservePct: '0.100000',
+    reserveDaysUsed: 180,
+    expectedReserveReleaseAt: businessDate('2027-03-27T00:04:11.000Z'),
+    reserveHeldAmt: '11.5240',
+    reserveReleasedAmt: '0.0000',
+    reserveEarlyReleasedAmt: '0.0000',
+    reservePolicySnapshot: null,
+    settled: false,
+    fees: [
+      {
+        appliedFeeId: '120334',
+        feeId: 'f0000000-0000-4000-8000-000000000001',
+        feeTypeId: 1,
+        code: 'MDR',
+        title: 'MDR',
+        eventDate: businessDate('2026-09-28T00:04:11.000Z'),
+        amountUsd: '11.5240',
+        configurationSnapshot: null,
+      },
+      {
+        appliedFeeId: '120335',
+        feeId: 'f0000000-0000-4000-8000-000000000002',
+        feeTypeId: 2,
+        code: 'TRX Fee - Deposit',
+        title: 'Deposit per txn fee',
+        eventDate: businessDate('2026-09-28T00:04:11.000Z'),
+        amountUsd: '0.5000',
+        configurationSnapshot: null,
+      },
+    ],
+    ...overrides,
+  }
+}
+
+/** The movements GET /settlements/{id}/transactions serves for a cycle of an attempt, in the order of the API. */
+export function seedMovements(batchId: string, cycle: CycleCode, items: SettlementMovement[]) {
+  state.movements.set(`${batchId}:${cycle}`, items)
+}
+
+/** Stores an attempt as GET /settlements/{id} reads it, without an import (a seeded batch of the history). */
+export function seedSettlementView(view: SettlementView) {
+  state.attempts.set(view.batchId, view)
+}
+
 /** The export downloads answer without Content-Disposition, as when CORS does not expose it. */
 export function omitExportDisposition() {
   state.exportDisposition = false
@@ -530,6 +667,11 @@ const forbidden = () => error(403, 'forbidden', 'Forbidden')
 const scripted = (e: ScriptedError) => error(e.status, e.code, e.message ?? e.code, e.details)
 
 const canProcess = (user: UserName) => USERS[user].permissions.includes('settlement.process')
+
+/** page from 1 and pageSize 50 by default, as the paginated reads of the API. */
+function pagingOf(searchParams: URLSearchParams): { page: number; pageSize: number } {
+  return { page: Number(searchParams.get('page') ?? 1), pageSize: Number(searchParams.get('pageSize') ?? 50) }
+}
 
 interface RouteArgs {
   request: Request
@@ -727,6 +869,54 @@ export function createSettlementHandlers(caller: (request: Request) => UserName 
           const view = state.attempts.get(String(params.batchId))
           if (!view || !canSeeAccount(user, view.accountId)) return notFound('Settlement')
           return HttpResponse.json(view)
+        },
+        caller,
+      ),
+    ),
+
+    http.get(
+      `${API}/accounts/:accountId/settlements`,
+      route(
+        'accountSettlements',
+        ({ request, params, user }) => {
+          const accountId = String(params.accountId)
+          if (!accountNameOf(accountId) || !canSeeAccount(user, accountId)) return notFound('Account')
+          // Only the paging is read: status, dateField, from and to are recorded in the log, never applied.
+          const { page, pageSize } = pagingOf(new URL(request.url).searchParams)
+          const all = state.accountSettlements.get(accountId) ?? []
+          return HttpResponse.json({
+            accountId,
+            page,
+            pageSize,
+            total: all.length,
+            items: all.slice((page - 1) * pageSize, page * pageSize),
+          })
+        },
+        caller,
+      ),
+    ),
+
+    http.get(
+      `${API}/settlements/:batchId/transactions`,
+      route(
+        'transactions',
+        ({ request, params, user }) => {
+          const batchId = String(params.batchId)
+          const view = state.attempts.get(batchId)
+          if (!view || !canSeeAccount(user, view.accountId)) return notFound('Settlement')
+          const searchParams = new URL(request.url).searchParams
+          const type = Cycle.safeParse(searchParams.get('type'))
+          if (!type.success) return error(400, 'validation_error', 'type: Invalid option')
+          const { page, pageSize } = pagingOf(searchParams)
+          const all = state.movements.get(`${batchId}:${type.data}`) ?? []
+          return HttpResponse.json({
+            batchId,
+            type: type.data,
+            page,
+            pageSize,
+            total: all.length,
+            items: all.slice((page - 1) * pageSize, page * pageSize),
+          })
         },
         caller,
       ),

@@ -1,5 +1,7 @@
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { AccountPicker, useAccountChoice } from './AccountPicker'
+import { type AccountChoiceSearch, AccountPicker, useAccountChoice } from '@/features/accounts/account-choice'
 import { DropZone } from './files/DropZone'
 import { FileList } from './files/FileList'
 import { useQueueSnapshot, useUploadQueue } from './files/UploadQueueProvider'
@@ -10,7 +12,16 @@ import { strings } from './strings'
  * file the API accepts creates the import and the app moves to it (design D4).
  */
 export function NewReconciliationPage() {
-  const choice = useAccountChoice()
+  const search = useSearch({ from: '/app/reconciliations/new' })
+  const navigate = useNavigate({ from: '/reconciliations/new' })
+  // The address of this screen is the choice alone.
+  const writeChoice = useCallback(
+    (next: AccountChoiceSearch, options?: { replace?: boolean }) =>
+      // Choosing in place: the page stays where it is (ui-polish design D13).
+      void navigate({ search: next, replace: options?.replace, resetScroll: false }),
+    [navigate],
+  )
+  const choice = useAccountChoice({ search, navigate: writeChoice, includeClosed: false })
   const account = choice.account
   const queue = useUploadQueue()
   useQueueSnapshot(queue)

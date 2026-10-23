@@ -1,10 +1,22 @@
 // In-memory doubles of the reads of an attempt (summary-exports design D13): queries over fixed data that record what
 // they were asked, and a reader that records the scope it receives.
-import type { Cycle, ImportSettlements, SettlementView } from '@recon/shared'
+import type {
+  AccountSettlement,
+  AccountSettlementsQuery,
+  Cycle,
+  ImportSettlements,
+  SettlementView,
+} from '@recon/shared'
 import type { Scope } from '../../../catalog/domain/scope.js'
 import type { ExportRow } from '../../domain/exports/transactions-csv.js'
 import type { SettlementReader } from '../ports.js'
-import type { BatchHeader, SettlementQueries, StoredMovement, StoredMovementsPage } from '../read-ports.js'
+import type {
+  BatchHeader,
+  SettlementQueries,
+  StoredAccountSettlementsPage,
+  StoredMovement,
+  StoredMovementsPage,
+} from '../read-ports.js'
 
 export const BATCH_HEADER: BatchHeader = {
   batchId: '5c3f9e21-8a4b-4f0e-b1d2-6e7f8a9b0c1d',
@@ -60,13 +72,19 @@ export interface InMemoryQueriesData {
   movements?: StoredMovement[]
   exportRows?: ExportRow[]
   attempts?: ImportSettlements[]
+  /** The attempts of each account id, already in the order of the port; the double paginates, never filters. */
+  accountSettlements?: ReadonlyMap<string, AccountSettlement[]>
   sourceIds?: ReadonlyMap<string, string>
   /** The merchant of each batch and import id, for the scope; ids absent here are in merchant 1. */
   merchantOf?: ReadonlyMap<string, number>
 }
 
 export class InMemorySettlementQueries implements SettlementQueries {
-  readonly asked = { exportRows: [] as Cycle[][], sourceIds: [] as string[][] }
+  readonly asked = {
+    exportRows: [] as Cycle[][],
+    sourceIds: [] as string[][],
+    accountSettlements: [] as AccountSettlementsQuery[],
+  }
   failExportRowsWith: Error | null = null
 
   constructor(private readonly data: InMemoryQueriesData = {}) {}
@@ -94,6 +112,18 @@ export class InMemorySettlementQueries implements SettlementQueries {
   async importAttempts(scope: Scope, importId: string): Promise<ImportSettlements | null> {
     const found = (this.data.attempts ?? []).find((a) => a.importId.toLowerCase() === importId.toLowerCase())
     return found !== undefined && this.visible(scope, importId) ? structuredClone(found) : null
+  }
+
+  async accountSettlements(
+    scope: Scope,
+    accountId: string,
+    query: AccountSettlementsQuery,
+  ): Promise<StoredAccountSettlementsPage | null> {
+    this.asked.accountSettlements.push({ ...query })
+    const all = this.data.accountSettlements?.get(accountId.toLowerCase())
+    if (all === undefined || !this.visible(scope, accountId)) return null
+    const { page, pageSize } = query
+    return { items: structuredClone(all.slice((page - 1) * pageSize, page * pageSize)), total: all.length }
   }
 
   async sourceIds(transactionIds: readonly string[]): Promise<Map<string, string>> {

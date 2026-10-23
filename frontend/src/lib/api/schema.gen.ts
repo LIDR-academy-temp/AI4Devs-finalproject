@@ -5507,6 +5507,120 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/accounts/{accountId}/settlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Attempts of the account in any status, newest first, paginated
+         * @description Ordered by processedAt, batchNo and attemptNo, descending. status filters by attempt status. from and to are inclusive YYYY-MM-DD days of dateField: settlementDate (default) compares the business date as stored, and leaves out attempts without one; processedAt compares the New York calendar day of the processing instant, daylight saving included. from after to is a validation_error. page from 1, pageSize 1-500 (50). No permission of its own; 404 also outside the scope.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "processed" | "paid" | "undone";
+                    dateField?: "settlementDate" | "processedAt";
+                    from?: string;
+                    to?: string;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path: {
+                    accountId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            accountId: string;
+                            items: {
+                                /** Format: uuid */
+                                batchId: string;
+                                /** Format: uuid */
+                                importId: string;
+                                batchNo: number;
+                                attemptNo: number;
+                                /** @enum {string} */
+                                status: "processed" | "paid" | "undone";
+                                /** @enum {string} */
+                                settledStatus: "pending_payment" | "settled" | "undone";
+                                settlementDate: string | null;
+                                /** Format: date-time */
+                                processedAt: string;
+                                approvedBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                amountPayable: string;
+                                channels: string | null;
+                            }[];
+                            page: number;
+                            pageSize: number;
+                            total: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settlements/{batchId}/export": {
         parameters: {
             query?: never;

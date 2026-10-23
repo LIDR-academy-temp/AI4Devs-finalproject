@@ -1,7 +1,17 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { seedSettlement, settlementRequests } from '@/test/msw/settlements'
+import { strings as accountStrings } from '@/features/accounts/strings'
+import { ACCOUNT_IDS } from '@/test/msw/fixtures'
+import {
+  accountSettlement,
+  paidHistory,
+  seedAccountSettlements,
+  seedMovements,
+  seedSettlement,
+  settlementMovement,
+  settlementRequests,
+} from '@/test/msw/settlements'
 import { renderApp } from '@/test/render'
 import {
   batchNoField,
@@ -13,6 +23,7 @@ import {
   validatedImport,
 } from '@/test/settlement-screens'
 import { OPENING } from '@/test/validation-screens'
+import { strings } from './strings'
 
 /** Presses Tab until `target` has the focus; fails if it is not reachable from the keyboard. */
 async function tabTo(user: UserEvent, target: HTMLElement, limit = 60) {
@@ -78,6 +89,80 @@ describe('Settlement Review: keyboard and reasons (spec "teclado y motivos")', (
     await user.keyboard('{Enter}')
     expect(await screen.findByRole('heading', { name: 'Settlement Summary · batch 124' })).toBeInTheDocument()
     expect(settlementRequests('process')).toHaveLength(1)
+  })
+})
+
+describe('Settlement List and Movements: keyboard and reasons (spec "teclado y motivos", settlements-browse)', () => {
+  it('viewer chooses the account and the filters, pages, opens a batch, its Movements, a cycle and a breakdown', async () => {
+    const USD = ACCOUNT_IDS['ProviderA-USD']
+    const { importId } = validatedImport()
+    const view = seedSettlement(importId, { batchNo: 122, overrides: { status: 'paid', settledStatus: 'settled' } })
+    seedAccountSettlements(USD, [
+      accountSettlement({ batchId: view.batchId, importId, batchNo: 122 }),
+      ...paidHistory(USD, 21, 121),
+    ])
+    seedMovements(view.batchId, 'I', [settlementMovement({ cycle: 'I', status: 'Refund', roundNo: 1 })])
+    const { user, router } = renderApp('/settlements', { as: 'viewer' })
+    const list = strings.list
+
+    const provider = await screen.findByLabelText(accountStrings.picker.provider)
+    await waitFor(() => expect(provider).toBeEnabled())
+    await tabTo(user, provider)
+    await user.selectOptions(provider, 'Provider A')
+    const account = screen.getByLabelText(accountStrings.picker.account)
+    await waitFor(() => expect(account).toBeEnabled())
+    await tabTo(user, account)
+    await user.selectOptions(account, 'ProviderA-USD')
+    await screen.findByRole('table', { name: list.tableLabel }, OPENING)
+
+    await tabTo(user, screen.getByLabelText(list.status))
+    await user.selectOptions(screen.getByLabelText(list.status), list.statuses.paid)
+    await tabTo(user, screen.getByLabelText(list.dateField))
+    await user.selectOptions(screen.getByLabelText(list.dateField), list.dateFields.processedAt)
+    // The date inputs are the browser's own controls: reached with Tab, set as the picker would set them.
+    await tabTo(user, screen.getByLabelText(list.from))
+    fireEvent.change(screen.getByLabelText(list.from), { target: { value: '2026-01-01' } })
+    await waitFor(() =>
+      expect(router.state.location.search).toMatchObject({
+        status: 'paid',
+        dateField: 'processedAt',
+        from: '2026-01-01',
+      }),
+    )
+
+    await waitFor(() => expect(screen.getByText(list.pageOf(1, 2, 22))).toBeInTheDocument())
+    expectEveryDisabledControlExplained()
+    await tabTo(user, screen.getByRole('button', { name: list.next }))
+    await user.keyboard('{Enter}')
+    expect(await screen.findByText(list.pageOf(2, 2, 22))).toBeInTheDocument()
+    expectEveryDisabledControlExplained()
+    await tabTo(user, screen.getByRole('button', { name: list.previous }))
+    await user.keyboard('{Enter}')
+    await screen.findByText(list.pageOf(1, 2, 22))
+
+    await tabTo(user, await screen.findByRole('link', { name: list.batchLink(122, 1) }))
+    await user.keyboard('{Enter}')
+    expect(await screen.findByRole('heading', { name: 'Settlement Summary · batch 122' })).toBeInTheDocument()
+
+    await tabTo(user, screen.getByRole('tab', { name: strings.summary.tabs.summary }))
+    await user.keyboard('{ArrowRight}')
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: strings.summary.tabs.movements })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      ),
+    )
+    const cycleI = await screen.findByRole('button', { name: 'I (10)' })
+    await tabTo(user, cycleI)
+    await user.keyboard('{Enter}')
+    await waitFor(() => expect(cycleI).toHaveAttribute('aria-pressed', 'true'))
+
+    const breakdown = await screen.findByRole('button', { name: strings.movements.feeCount(2) })
+    expect(screen.getByText('MDR · 11.5240')).not.toBeVisible()
+    await tabTo(user, breakdown)
+    await user.keyboard('{Enter}')
+    expect(breakdown).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('MDR · 11.5240')).toBeVisible()
   })
 })
 

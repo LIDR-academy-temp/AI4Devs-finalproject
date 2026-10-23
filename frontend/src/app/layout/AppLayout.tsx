@@ -1,4 +1,5 @@
 import { Outlet, useMatches } from '@tanstack/react-router'
+import { ListFocusReset } from '@/lib/list-focus'
 import { useMe } from '@/lib/session/me'
 import { ForbiddenPage } from '../pages/ForbiddenPage'
 import { Breadcrumbs } from './Breadcrumbs'
@@ -19,6 +20,7 @@ export function AppLayout() {
         <main className="flex flex-col gap-4 p-6">
           <Breadcrumbs />
           {allowed ? <Outlet /> : <ForbiddenPage />}
+          <ListFocusReset />
         </main>
       </div>
     </div>

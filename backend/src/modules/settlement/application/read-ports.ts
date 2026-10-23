@@ -1,6 +1,13 @@
 // Ports of the reads of an attempt and its exports (summary-exports design D1, D3, D4, D6, D11). Kept apart from the
 // processing ports of #11: the view itself comes from SettlementReader.view, unchanged.
-import type { BatchStatus, Cycle, ImportSettlements, SettlementMovement } from '@recon/shared'
+import type {
+  AccountSettlement,
+  AccountSettlementsQuery,
+  BatchStatus,
+  Cycle,
+  ImportSettlements,
+  SettlementMovement,
+} from '@recon/shared'
 import type { Scope } from '../../catalog/domain/scope.js'
 import type { ExportRow } from '../domain/exports/transactions-csv.js'
 
@@ -22,6 +29,11 @@ export interface StoredMovementsPage {
   total: number
 }
 
+export interface StoredAccountSettlementsPage {
+  items: AccountSettlement[]
+  total: number
+}
+
 export interface SettlementQueries {
   /** null when the attempt does not exist or its merchant is outside the scope (the same 404). */
   batchHeader(scope: Scope, batchId: string): Promise<BatchHeader | null>
@@ -31,6 +43,15 @@ export interface SettlementQueries {
   exportRows(batchId: string, cycles: readonly Cycle[]): Promise<ExportRow[]>
   /** null when the import does not exist or is outside the scope; its attempts, newest first. */
   importAttempts(scope: Scope, importId: string): Promise<ImportSettlements | null>
+  /**
+   * null when the account does not exist or is outside the scope; its attempts filtered by status and by the days of
+   * query.dateField, newest first (processedAt, batchNo, attemptNo descending), one page.
+   */
+  accountSettlements(
+    scope: Scope,
+    accountId: string,
+    query: AccountSettlementsQuery,
+  ): Promise<StoredAccountSettlementsPage | null>
   /** Internal transactionId → sourceTransactionId, only for the given ids (the warnings of a summary, design D2). */
   sourceIds(transactionIds: readonly string[]): Promise<Map<string, string>>
 }

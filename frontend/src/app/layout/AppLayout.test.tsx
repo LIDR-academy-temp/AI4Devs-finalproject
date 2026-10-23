@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { strings as loginStrings } from '@/features/auth/strings'
 import { session } from '@/lib/session/session'
+import { ACCOUNT_IDS } from '@/test/msw/fixtures'
 import { seedImport } from '@/test/msw/imports'
 import { recordRequests } from '@/test/msw/record'
 import { renderApp } from '@/test/render'
@@ -50,7 +51,7 @@ describe('navigation filtered by permissions', () => {
     }
     expect(nav.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/')
     expect(nav.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/accounts')
-    expect(nav.getByText('Settlement List')).toBeInTheDocument()
+    expect(nav.getByRole('link', { name: 'Settlement List' })).toHaveAttribute('href', '/settlements')
   })
 
   it('analyst sees New Reconciliation as a link and In Progress disabled, and not Payments nor Users & Roles', async () => {
@@ -58,6 +59,7 @@ describe('navigation filtered by permissions', () => {
     const nav = await mainNav()
 
     expect(nav.getByRole('link', { name: 'New Reconciliation' })).toHaveAttribute('href', '/reconciliations/new')
+    expect(nav.getByRole('link', { name: 'Settlement List' })).toHaveAttribute('href', '/settlements')
     const inProgress = nav.getByText('In Progress').closest('[aria-disabled]')
     expect(inProgress).toHaveAttribute('aria-disabled', 'true')
     expect(nav.queryByRole('link', { name: 'In Progress' })).not.toBeInTheDocument()
@@ -65,12 +67,22 @@ describe('navigation filtered by permissions', () => {
     expect(nav.queryByText('Users & Roles')).not.toBeInTheDocument()
   })
 
-  it('admin sees every MVP entry; only Dashboard, New Reconciliation and Accounts are links in this release', async () => {
+  it('admin sees every MVP entry; only Dashboard, New Reconciliation, Settlement List and Accounts are links', async () => {
     renderApp('/', { as: 'admin' })
     const nav = await mainNav()
 
     for (const entry of MVP_ENTRIES) expect(nav.getByText(entry)).toBeInTheDocument()
-    expect(linkNames(nav)).toEqual(['Dashboard', 'New Reconciliation', 'Accounts'])
+    expect(linkNames(nav)).toEqual(['Dashboard', 'New Reconciliation', 'Settlement List', 'Accounts'])
+  })
+
+  it('marks Settlement List as the active entry with filters in the address', async () => {
+    renderApp(`/settlements?accountId=${ACCOUNT_IDS['ProviderA-USD']}&status=paid`, { as: 'viewer' })
+    const nav = await mainNav()
+
+    await waitFor(() =>
+      expect(nav.getByRole('link', { name: 'Settlement List' })).toHaveAttribute('aria-current', 'page'),
+    )
+    expect(nav.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
   })
 
   it('marks New Reconciliation as the active entry inside an import', async () => {
@@ -93,22 +105,24 @@ describe('navigation filtered by permissions', () => {
 })
 
 describe('identity', () => {
-  it('shows name, role and the visible merchants', async () => {
+  it('shows name, role and Sign out, without the merchants of the scope', async () => {
     renderApp('/', { as: 'analyst' })
     const banner = within(await screen.findByRole('banner'))
 
     expect(banner.getByText('Analyst')).toBeInTheDocument()
     expect(banner.getByText('analyst')).toBeInTheDocument()
-    expect(banner.getByText('Merchant A, Merchant B')).toBeInTheDocument()
+    expect(banner.getByRole('button', { name: strings.signOut })).toBeInTheDocument()
+    expect(banner.queryByText('Merchant A, Merchant B')).not.toBeInTheDocument()
   })
 
-  it('shows All merchants for a user whose scope is all', async () => {
+  it('does not show All merchants for a user whose scope is all', async () => {
     renderApp('/', { as: 'admin' })
     const banner = within(await screen.findByRole('banner'))
 
     expect(banner.getByText('Admin')).toBeInTheDocument()
     expect(banner.getByText('admin')).toBeInTheDocument()
-    expect(banner.getByText(strings.allMerchants)).toBeInTheDocument()
+    expect(banner.getByRole('button', { name: strings.signOut })).toBeInTheDocument()
+    expect(banner.queryByText('All merchants')).not.toBeInTheDocument()
   })
 })
 

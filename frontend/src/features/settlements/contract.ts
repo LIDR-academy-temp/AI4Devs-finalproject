@@ -1,6 +1,6 @@
-// The settlement routes of #11 (settlement-process) and #12 (summary-exports), the only place of the screens that
-// knows them (web-settlement design D2). Types are aliases of the generated contract with the dates branded by kind;
-// the calls go through the typed `api` client. Money and rates are always strings.
+// The settlement routes of #11 (settlement-process), #12 (summary-exports) and #64 (settlements-browse), the only
+// place of the screens that knows them (web-settlement design D2). Types are aliases of the generated contract with
+// the dates branded by kind; the calls go through the typed `api` client. Money and rates are always strings.
 import type {
   BatchFeeInvalidDetails,
   BatchNoTakenDetails,
@@ -14,9 +14,10 @@ import type { AuditInstant, BusinessDate } from '@/lib/format'
 
 export type { AuditInstant, BusinessDate }
 
-// Dates by kind: business dates (date ranges, the settlement date, fee validity) are New York dates, the ranges sent
-// with a Z; the processing instant is a UTC audit instant.
-type BusinessKey = 'min' | 'max' | 'settlementDate' | 'startDate' | 'endDate'
+// Dates by kind: business dates (date ranges, the settlement date, fee validity, the event and reserve release dates
+// of a movement) are New York dates, sent with a Z when they carry a time; the processing instant is a UTC audit
+// instant.
+type BusinessKey = 'min' | 'max' | 'settlementDate' | 'startDate' | 'endDate' | 'eventDate' | 'expectedReserveReleaseAt'
 type AuditKey = 'processedAt'
 type Brand<V, B> = V extends string ? B : V
 /** The generated type with each date field typed by its kind, at any depth. */
@@ -37,6 +38,8 @@ type PreviewPath = '/api/v1/imports/{importId}/settlements/preview'
 type NextPath = '/api/v1/accounts/{accountId}/batch-number/next'
 type FeesPath = '/api/v1/accounts/{accountId}/fees'
 type ExportPath = '/api/v1/settlements/{batchId}/export'
+type AccountSettlementsPath = '/api/v1/accounts/{accountId}/settlements'
+type TransactionsPath = '/api/v1/settlements/{batchId}/transactions'
 type JsonRequest<B> = B extends { content: { 'application/json': infer Body } } ? Body : never
 
 /** Body of the preview and of Process. */
@@ -98,6 +101,21 @@ export interface ErrorDetails {
 
 export type ExportType = NonNullable<paths[ExportPath]['get']['parameters']['query']>['type']
 
+/** The attempts of an account, newest first (settlements-browse "Contrato"). */
+export type AccountSettlementsPage = Dated<ApiResponse<AccountSettlementsPath, 'get'>>
+export type AccountSettlement = AccountSettlementsPage['items'][number]
+export type BatchStatus = AccountSettlement['status']
+export type SettledStatus = AccountSettlement['settledStatus']
+export type AccountSettlementsQuery = NonNullable<paths[AccountSettlementsPath]['get']['parameters']['query']>
+/** The date `from` and `to` filter: the business settlement date or the New York day of the processing instant. */
+export type SettlementDateField = NonNullable<AccountSettlementsQuery['dateField']>
+
+/** The movements of one cycle of an attempt, in the stable order of #12. */
+export type SettlementTransactionsPage = Dated<ApiResponse<TransactionsPath, 'get'>>
+export type SettlementMovement = SettlementTransactionsPage['items'][number]
+export type AppliedFee = SettlementMovement['fees'][number]
+export type Cycle = SettlementMovement['cycle']
+
 // --- Calls ---------------------------------------------------------------------------------------------------------
 // The casts only brand the dates of an answer typed by the generated contract.
 
@@ -131,6 +149,18 @@ export const processSettlement = (importId: string, body: SettlementRequest) =>
 /** The attempt as written; the same SettlementView as the 201 of processing. */
 export const getSettlement = (batchId: string) =>
   unwrap(api.GET('/api/v1/settlements/{batchId}', { params: { path: { batchId } } })) as Promise<SettlementView>
+
+/** The attempts of an account; the days of `from` and `to` travel as typed, YYYY-MM-DD, never through a Date. */
+export const getAccountSettlements = (accountId: string, query: AccountSettlementsQuery, signal?: AbortSignal) =>
+  unwrap(
+    api.GET('/api/v1/accounts/{accountId}/settlements', { params: { path: { accountId }, query }, signal }),
+  ) as Promise<AccountSettlementsPage>
+
+/** One page of the movements of a cycle of the attempt. */
+export const getSettlementTransactions = (batchId: string, query: { type: Cycle; page: number }) =>
+  unwrap(
+    api.GET('/api/v1/settlements/{batchId}/transactions', { params: { path: { batchId }, query } }),
+  ) as Promise<SettlementTransactionsPage>
 
 /** A downloaded export: the file and the name the API gave it in Content-Disposition, if it could be read. */
 export interface DownloadedExport {
