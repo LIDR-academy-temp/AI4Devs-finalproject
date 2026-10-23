@@ -1,6 +1,6 @@
 # Recon Tool 2.0 — Proyecto Final AI4Devs
 
-> Entrega 1 · Documentación técnica. Sigue la plantilla oficial de `LIDR-academy/AI4Devs-finalproject`. Documento vivo: define el proyecto y se actualiza con cada entrega.
+> Entrega 2 · Backend, frontend y base de datos conectados con el flujo principal (HU1 → HU2 → HU3). Sigue la plantilla oficial de `LIDR-academy/AI4Devs-finalproject`. Documento vivo: define el proyecto y se actualiza con cada entrega.
 
 > **Sistema actual y desarrollo propuesto.** Existe una única herramienta Recon Tool en producción, implementada sobre reportes SSRS. "Recon Tool 2.0" es el nombre de este proyecto: su reemplazo como aplicación web independiente. Las versiones de los documentos de referencia son revisiones de la documentación, no versiones desplegadas del sistema.
 
@@ -33,15 +33,15 @@ Recon Tool 2.0 es una aplicación web para el equipo de reconciliaciones de una 
 
 ### 0.4. URL del proyecto
 
-Pendiente de despliegue. La Entrega 1 contiene únicamente la documentación técnica.
+Sin despliegue público en la Entrega 2: la aplicación se ejecuta en local siguiendo [1.4](#14-instrucciones-de-instalación), con datos sintéticos. El despliegue descrito en [2.4](#24-infraestructura-y-despliegue) queda para la Entrega 3.
+
+**Vídeo de la demo.** Previsto para la Entrega 3: el flujo import → validaciones → settlement → descargas con datos sintéticos ([#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96)).
 
 ### 0.5. URL o archivo comprimido del repositorio
 
 **Repositorio:** [kajirioji/AI4Devs-finalproject](https://github.com/kajirioji/AI4Devs-finalproject).
 
-**Rama de la Entrega 1:** [`feature/entrega-1-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/feature/entrega-1-MVP). Las ramas siguientes seguirán el patrón del enunciado: `feature/entrega-2-MVP` y `final-project-MVP`.
-
-La Entrega 1 contiene `readme.md` y `prompts.md`; no incluye código.
+**Rama de la Entrega 2:** [`feature/entrega-2-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/feature/entrega-2-MVP): monorepo con backend, frontend, base de datos (migraciones y seed), pruebas, `README.md` y `prompts.md`. La Entrega 1 (solo documentación) está en [`feature/entrega-1-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/feature/entrega-1-MVP); la final irá en `final-project-MVP`.
 
 ---
 
@@ -137,7 +137,7 @@ La integración con el Back-Office del gateway se mantiene como hoy, mediante lo
 
 ### 1.3. Diseño y experiencia de usuario
 
-> En la Entrega 1 no existe todavía interfaz. Esta sección describe el mapa del sitio y el recorrido del usuario; las capturas reales y el vídeo se añadirán en las Entregas 2 y 3.
+> Esta sección describe el mapa del sitio y el recorrido del usuario. Los wireframes y el prototipo están en [`docs/wireframes/`](docs/wireframes/); las capturas de las pantallas construidas en la Entrega 2, en sus subcarpetas por change (`web-validations/`, `web-settlement/`, `settlements-browse/`). El vídeo llega en la Entrega 3 ([#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96)).
 
 #### Mapa de pantallas
 
