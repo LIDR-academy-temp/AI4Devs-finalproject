@@ -16,3 +16,11 @@ Cada sesión es un archivo `AAAA-MM-DD.md` en esta carpeta, copiado de [`plantil
 | `E3` | Pasa a un issue de la Entrega 3 (se anota el número) |
 | `README` | No cambia el código: aclara o corrige la documentación |
 | `descartar` | No se hará; se anota el motivo |
+
+## Sesiones
+
+| Fecha | Notas | Resultado |
+|---|---|---|
+| 2026-10-20 | [`2026-10-20-revision-interfaz.md`](2026-10-20-revision-interfaz.md) | Revisión de la interfaz con el líder del equipo. Valoración general buena del progreso y del resultado; doce observaciones resueltas en `ui-polish` (PR #91) y el resto a issues de la Entrega 3 o del roadmap. Esa sesión clasificó sus filas por destino (`ui-polish`, `Entrega 3`, `Roadmap`). |
+
+Las sesiones previstas para el 15 y el 22 de octubre no se celebraron; la Entrega 2 se revisó solo en la del 20.
