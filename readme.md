@@ -230,8 +230,15 @@ Procedimiento de la Entrega 2, pensado para seguirse paso a paso en un clon limp
 | Node.js | 22.x (fijada en [`.node-version`](.node-version); el `package.json` exige `>=22 <23`) | backend, frontend y scripts |
 | pnpm | 10.18.0 (fijada en `packageManager` del [`package.json`](package.json)) | monorepo; se activa con Corepack, que viene con Node |
 | Docker | Docker Desktop (Windows/macOS) o Docker Engine con el plugin Compose (Linux) | SQL Server 2022 en contenedor |
+| Python 3 con `openpyxl` | opcional | solo para regenerar los archivos de `data/samples/`; no hace falta para instalar ni para probar |
 
 Puertos que deben estar libres: `1433` (SQL Server), `3000` (API) y `5173` (web).
+
+Notas por sistema:
+
+- **Windows:** Docker Desktop con el backend WSL 2 activado. Los scripts del contenedor se versionan con fin de línea LF (`.gitattributes`), así que el clon no los rompe aunque Git convierta a CRLF.
+- **macOS con Apple Silicon:** la imagen de SQL Server 2022 es solo x86-64; en Docker Desktop activa *Use Rosetta for x86_64/amd64 emulation* antes de `pnpm db:up`.
+- **Linux:** el usuario debe poder ejecutar `docker` sin `sudo` (grupo `docker`), porque los scripts de `pnpm` lo invocan directamente.
 
 **2. Clonar e instalar dependencias**
 
@@ -244,21 +251,36 @@ pnpm install             # instala todo el monorepo e instala los hooks de git (
 
 **3. Variables de entorno**
 
-Hay un único `.env` en la raíz del repositorio; lo leen Docker Compose, Prisma, el backend, el seed y las pruebas. Se crea a partir de la plantilla versionada, que no contiene secretos reales:
+Hacen falta **dos** archivos `.env`, cada uno creado a partir de su plantilla versionada (las plantillas solo traen valores de ejemplo, ningún secreto real); un tercero es opcional:
+
+| Archivo | Plantilla | Lo leen | ¿Obligatorio? |
+|---|---|---|---|
+| `.env` (raíz) | [`.env.example`](.env.example) | Docker Compose, Prisma, backend, seed, pruebas de integración y Playwright | Sí |
+| `api-collection/.env` | [`api-collection/.env.example`](api-collection/.env.example) | la colección Bruno (`pnpm test:api`) | Sí, para probar el API |
+| `frontend/.env` | [`frontend/.env.example`](frontend/.env.example) | Vite | No: sin él, el proxy de `/api` apunta a `http://localhost:3000` |
 
 ```bash
-cp .env.example .env                 # Git Bash, macOS o Linux
-Copy-Item .env.example .env          # PowerShell
+# Git Bash, macOS o Linux
+cp .env.example .env
+cp api-collection/.env.example api-collection/.env
+
+# PowerShell
+Copy-Item .env.example .env
+Copy-Item api-collection/.env.example api-collection/.env
 ```
 
-Abre `.env` y sustituye los valores de ejemplo, como indican sus comentarios:
+Abre el `.env` de la raíz y sustituye los valores de ejemplo, como indican sus comentarios:
 
 - `MSSQL_SA_PASSWORD`: contraseña de `sa` dentro del contenedor. Solo la usa el script de arranque de SQL Server para crear la base y los usuarios; la aplicación nunca entra como `sa`. SQL Server exige una contraseña fuerte (8 caracteres o más, con mayúsculas, minúsculas, números y símbolos); si no la cumple, el contenedor no arranca.
-- `RECON_APP_PASSWORD`: contraseña del usuario de aplicación `recon_app` (también fuerte, por el mismo motivo).
+- `RECON_APP_PASSWORD`: contraseña del usuario de aplicación `recon_app` (también fuerte, por el mismo motivo); el usuario de solo lectura `recon_reader` se crea con la misma.
 - `JWT_SECRET`: secreto de firma de las sesiones, de **32 caracteres o más**; con menos, el backend no arranca.
 - `SEED_PASSWORD`: contraseña común de los cuatro usuarios de demostración que crea el seed.
 
-El `.env` está en `.gitignore`: nunca se versiona.
+Las demás tienen un valor por defecto válido para local y solo se cambian si hace falta: `MSSQL_PORT` y `DB_PORT` (1433), `DB_HOST` (`localhost`), `DB_NAME` (`ReconTool`), `DB_USER` (`recon_app`), `PORT` (3000), `HOST` (`0.0.0.0`), `LOG_LEVEL` (`info`) y `UPLOAD_DIR` (`data/uploads`, relativo al directorio del backend). `DATABASE_URL`, si se define, sustituye a la conexión que Prisma arma con las `DB_*`; solo la usa la CI.
+
+En `api-collection/.env`, pon en `SEED_PASSWORD` **el mismo valor** que en el `.env` de la raíz; `SEED_USER` (`analyst`) y `SEED_VIEWER_USER` (`viewer`) ya vienen con los usuarios del seed.
+
+Los tres `.env` están en `.gitignore`: nunca se versionan.
 
 **4. Base de datos**
 
@@ -300,16 +322,12 @@ Arranques siguientes: `pnpm db:up` y `pnpm dev`; no hace falta migrar ni sembrar
 | `pnpm lint` · `pnpm typecheck` | Biome y TypeScript en todo el monorepo | solo el paso 2 y `pnpm db:generate` |
 | `pnpm test` | pruebas unitarias con Vitest (dominio, backend y frontend) | solo el paso 2 y `pnpm db:generate` |
 | `pnpm --filter @recon/backend test:integration` | pruebas de integración del backend contra el SQL Server local | pasos 3 y 4 (base migrada y sembrada) |
-| `pnpm test:api` | colección Bruno de la API ([`api-collection/`](api-collection/)); `pnpm test:api:smoke` ejecuta solo `10-smoke` | pasos 4 y 5 con `pnpm dev` en marcha, y el `.env` de la colección (abajo) |
+| `pnpm test:api` | colección Bruno de la API ([`api-collection/`](api-collection/)); `pnpm test:api:smoke` ejecuta solo `10-smoke` | pasos 4 y 5 con `pnpm dev` en marcha, y `api-collection/.env` (paso 3) |
 | `pnpm test:e2e` | smoke E2E del flujo de importación con Playwright y Gherkin ([`e2e/`](e2e/)) | pasos 4 y 5 con `pnpm dev` en marcha, y el navegador de Playwright (abajo) |
 
-Preparación de una sola vez para las dos últimas:
+Preparación de una sola vez para el E2E (la CLI de Bruno ya llega con `pnpm install`):
 
 ```bash
-# Colección Bruno: credenciales propias en api-collection/.env (ignorado por git)
-cp api-collection/.env.example api-collection/.env           # o Copy-Item en PowerShell
-#   y pon en SEED_PASSWORD el mismo valor que en el .env de la raíz
-
 # Playwright: descarga Chromium
 pnpm --filter @recon/e2e exec playwright install chromium
 ```
@@ -321,6 +339,8 @@ Las pruebas de integración, la colección y el E2E crean sus propios imports y 
 - *El contenedor se detiene nada más arrancar:* `pnpm db:logs` lo explica; casi siempre es una `MSSQL_SA_PASSWORD` que no cumple la política de SQL Server. Corrige el `.env`, borra el contenedor y su volumen con `docker compose --env-file .env -f infra/docker-compose.yml down -v` (destructivo: solo en local) y vuelve a `pnpm db:up`.
 - *`Invalid environment variables: JWT_SECRET` al arrancar el backend:* el secreto tiene menos de 32 caracteres.
 - *`pnpm` no se reconoce:* falta `corepack enable` (en Windows, a veces en una terminal como administrador).
+- *La colección Bruno falla en el login con `401`:* falta `api-collection/.env` o su `SEED_PASSWORD` no coincide con el del `.env` de la raíz que usó el seed.
+- *El contenedor no arranca en un Mac con Apple Silicon:* falta activar la emulación Rosetta en Docker Desktop (ver Requisitos).
 
 ### 1.5. Plan de recorte de la Entrega 2
 
