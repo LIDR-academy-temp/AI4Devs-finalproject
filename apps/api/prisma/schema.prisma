@@ -1,0 +1,325 @@
+// Esquema de datos de Concilia — ver readme.md §3 (diagrama entidad-relación y descripción).
+// Montos siempre Decimal(14,2); nunca se almacena el número completo de tarjeta.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  ANALYST
+}
+
+enum SourceType {
+  POS
+  BANK
+}
+
+enum ReconciliationStatus {
+  DRAFT
+  PROCESSING
+  COMPLETED
+  FAILED
+  CLOSED
+}
+
+enum FileStatus {
+  UPLOADED
+  MAPPED
+  IMPORTED
+  FAILED
+}
+
+enum TransactionStatus {
+  PENDING
+  MATCHED
+  PROPOSED
+  EXCEPTION
+}
+
+enum MatchMethod {
+  EXACT
+  TOLERANCE
+  GROUPED
+  AI
+  MANUAL
+}
+
+enum MatchCardinality {
+  ONE_TO_ONE
+  MANY_TO_ONE
+  ONE_TO_MANY
+  MANY_TO_MANY
+}
+
+enum MatchStatus {
+  PROPOSED
+  CONFIRMED
+  REJECTED
+}
+
+// ─── Empresa y usuarios ─────────────────────────────────────────────────────
+
+/// Cadena comercial cliente de Concilia; unidad de aislamiento de datos.
+model Company {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  /// RUC o identificación tributaria, único
+  taxId     String   @unique @map("tax_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users           User[]
+  importTemplates ImportTemplate[]
+  reconciliations Reconciliation[]
+  auditLogs       AuditLog[]
+
+  @@map("companies")
+}
+
+/// Persona que accede al sistema.
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  companyId    String   @map("company_id") @db.Uuid
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(ANALYST)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  company                Company          @relation(fields: [companyId], references: [id])
+  createdReconciliations Reconciliation[] @relation("ReconciliationCreatedBy")
+  createdMatches         Match[]          @relation("MatchCreatedBy")
+  confirmedMatches       Match[]          @relation("MatchConfirmedBy")
+  auditLogs              AuditLog[]
+
+  @@index([companyId])
+  @@map("users")
+}
+
+// ─── Plantillas de importación ──────────────────────────────────────────────
+
+/// Configuración reutilizable para leer archivos de un banco o POS concreto.
+model ImportTemplate {
+  id               String     @id @default(uuid()) @db.Uuid
+  companyId        String     @map("company_id") @db.Uuid
+  name             String
+  sourceType       SourceType @map("source_type")
+  /// { "Fecha Trx": "transactionAt", "Valor": "amount", ... }
+  columnMapping    Json       @map("column_mapping")
+  dateFormat       String     @map("date_format")
+  decimalSeparator String     @map("decimal_separator") @db.VarChar(1)
+  headerRow        Int        @default(1) @map("header_row")
+  createdAt        DateTime   @default(now()) @map("created_at")
+
+  company       Company        @relation(fields: [companyId], references: [id])
+  importedFiles ImportedFile[]
+
+  @@unique([companyId, name])
+  @@map("import_templates")
+}
+
+// ─── Conciliación y archivos ────────────────────────────────────────────────
+
+/// Un proceso de cruce para un período determinado.
+model Reconciliation {
+  id          String               @id @default(uuid()) @db.Uuid
+  companyId   String               @map("company_id") @db.Uuid
+  createdById String               @map("created_by_id") @db.Uuid
+  name        String
+  periodStart DateTime             @map("period_start") @db.Date
+  periodEnd   DateTime             @map("period_end") @db.Date
+  status      ReconciliationStatus @default(DRAFT)
+  /// Parámetros del motor: { dateWindowDays, amountTolerance, feePercent, withholdingPercent, enableGrouping }
+  config      Json
+  /// Resumen calculado tras la ejecución (totales, cruzados por método, porcentaje conciliado)
+  stats       Json?
+  createdAt   DateTime             @default(now()) @map("created_at")
+  completedAt DateTime?            @map("completed_at")
+
+  company         Company          @relation(fields: [companyId], references: [id])
+  createdBy       User             @relation("ReconciliationCreatedBy", fields: [createdById], references: [id])
+  files           ImportedFile[]
+  posTransactions PosTransaction[]
+  bankMovements   BankMovement[]
+  matches         Match[]
+
+  @@index([companyId, status])
+  @@index([companyId, periodStart, periodEnd])
+  @@map("reconciliations")
+}
+
+/// Cada archivo subido a una conciliación.
+model ImportedFile {
+  id               String     @id @default(uuid()) @db.Uuid
+  reconciliationId String     @map("reconciliation_id") @db.Uuid
+  templateId       String?    @map("template_id") @db.Uuid
+  sourceType       SourceType @map("source_type")
+  originalName     String     @map("original_name")
+  storagePath      String     @map("storage_path")
+  /// Permite detectar si el mismo archivo se sube dos veces a la conciliación
+  sha256           String     @db.Char(64)
+  status           FileStatus @default(UPLOADED)
+  totalRows        Int        @default(0) @map("total_rows")
+  validRows        Int        @default(0) @map("valid_rows")
+  errorRows        Int        @default(0) @map("error_rows")
+  /// Filas rechazadas: [{ row, field, reason }]
+  errors           Json?
+  createdAt        DateTime   @default(now()) @map("created_at")
+
+  reconciliation  Reconciliation   @relation(fields: [reconciliationId], references: [id], onDelete: Cascade)
+  template        ImportTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  posTransactions PosTransaction[]
+  bankMovements   BankMovement[]
+
+  @@unique([reconciliationId, sha256])
+  @@map("imported_files")
+}
+
+// ─── Transacciones ──────────────────────────────────────────────────────────
+
+/// Una venta con tarjeta registrada en el punto de venta.
+model PosTransaction {
+  id               String            @id @default(uuid()) @db.Uuid
+  reconciliationId String            @map("reconciliation_id") @db.Uuid
+  fileId           String            @map("file_id") @db.Uuid
+  rowNumber        Int               @map("row_number")
+  transactionAt    DateTime          @map("transaction_at")
+  amount           Decimal           @db.Decimal(14, 2)
+  /// Únicamente los últimos 4 dígitos
+  cardLast4        String?           @map("card_last4") @db.VarChar(4)
+  authCode         String?           @map("auth_code")
+  cardBrand        String?           @map("card_brand")
+  batchNumber      String?           @map("batch_number")
+  terminalId       String?           @map("terminal_id")
+  storeCode        String?           @map("store_code")
+  reference        String?
+  status           TransactionStatus @default(PENDING)
+  exceptionReason  String?           @map("exception_reason")
+  exceptionNote    String?           @map("exception_note")
+  /// Fila original del archivo (con la tarjeta ya enmascarada), para trazabilidad
+  rawData          Json              @map("raw_data")
+
+  reconciliation Reconciliation @relation(fields: [reconciliationId], references: [id], onDelete: Cascade)
+  file           ImportedFile   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  matchItems     MatchItem[]
+
+  @@index([reconciliationId, status])
+  @@index([reconciliationId, authCode])
+  @@index([reconciliationId, amount, transactionAt])
+  @@index([fileId])
+  @@map("pos_transactions")
+}
+
+/// Una línea de crédito (abono) del extracto bancario.
+model BankMovement {
+  id                String            @id @default(uuid()) @db.Uuid
+  reconciliationId  String            @map("reconciliation_id") @db.Uuid
+  fileId            String            @map("file_id") @db.Uuid
+  rowNumber         Int               @map("row_number")
+  postedAt          DateTime          @map("posted_at") @db.Date
+  valueDate         DateTime?         @map("value_date") @db.Date
+  /// Monto efectivamente acreditado (el que se usa para cruzar)
+  amount            Decimal           @db.Decimal(14, 2)
+  grossAmount       Decimal?          @map("gross_amount") @db.Decimal(14, 2)
+  feeAmount         Decimal?          @map("fee_amount") @db.Decimal(14, 2)
+  withholdingAmount Decimal?          @map("withholding_amount") @db.Decimal(14, 2)
+  description       String?
+  reference         String?
+  batchNumber       String?           @map("batch_number")
+  authCode          String?           @map("auth_code")
+  cardLast4         String?           @map("card_last4") @db.VarChar(4)
+  status            TransactionStatus @default(PENDING)
+  exceptionReason   String?           @map("exception_reason")
+  exceptionNote     String?           @map("exception_note")
+  rawData           Json              @map("raw_data")
+
+  reconciliation Reconciliation @relation(fields: [reconciliationId], references: [id], onDelete: Cascade)
+  file           ImportedFile   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  matchItems     MatchItem[]
+
+  @@index([reconciliationId, status])
+  @@index([reconciliationId, authCode])
+  @@index([reconciliationId, amount, postedAt])
+  @@index([fileId])
+  @@map("bank_movements")
+}
+
+// ─── Cruces ─────────────────────────────────────────────────────────────────
+
+/// Resultado de relacionar una o más transacciones POS con uno o más movimientos bancarios.
+model Match {
+  id               String           @id @default(uuid()) @db.Uuid
+  reconciliationId String           @map("reconciliation_id") @db.Uuid
+  method           MatchMethod
+  cardinality      MatchCardinality
+  status           MatchStatus
+  /// Valor entre 0 y 1
+  confidence       Decimal          @db.Decimal(4, 3)
+  posTotal         Decimal          @map("pos_total") @db.Decimal(14, 2)
+  bankTotal        Decimal          @map("bank_total") @db.Decimal(14, 2)
+  /// difference = bankTotal − posTotal
+  difference       Decimal          @db.Decimal(14, 2)
+  /// Justificación textual (obligatoria en cruces por IA)
+  explanation      String?
+  /// Nulo para cruces automáticos
+  createdById      String?          @map("created_by_id") @db.Uuid
+  confirmedById    String?          @map("confirmed_by_id") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at")
+  confirmedAt      DateTime?        @map("confirmed_at")
+
+  reconciliation Reconciliation @relation(fields: [reconciliationId], references: [id], onDelete: Cascade)
+  createdBy      User?          @relation("MatchCreatedBy", fields: [createdById], references: [id])
+  confirmedBy    User?          @relation("MatchConfirmedBy", fields: [confirmedById], references: [id])
+  items          MatchItem[]
+
+  @@index([reconciliationId, status])
+  @@index([reconciliationId, method])
+  @@map("matches")
+}
+
+/// Detalle de cruce: cada fila referencia una transacción POS o un movimiento bancario
+/// (exactamente uno de los dos, garantizado por una restricción CHECK en la migración).
+model MatchItem {
+  id               String  @id @default(uuid()) @db.Uuid
+  matchId          String  @map("match_id") @db.Uuid
+  posTransactionId String? @map("pos_transaction_id") @db.Uuid
+  bankMovementId   String? @map("bank_movement_id") @db.Uuid
+
+  match          Match           @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  posTransaction PosTransaction? @relation(fields: [posTransactionId], references: [id], onDelete: Cascade)
+  bankMovement   BankMovement?   @relation(fields: [bankMovementId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@index([posTransactionId])
+  @@index([bankMovementId])
+  @@map("match_items")
+}
+
+// ─── Auditoría ──────────────────────────────────────────────────────────────
+
+/// Registro inmutable de acciones relevantes (RUN_RECONCILIATION, CREATE_MANUAL_MATCH, UNDO_MATCH, ...).
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @map("company_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id") @db.Uuid
+  details    Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([companyId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

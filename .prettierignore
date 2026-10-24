@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+openspec/changes/archive
+samples/standard
+*.md
+samples/scenarios

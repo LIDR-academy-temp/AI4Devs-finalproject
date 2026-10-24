@@ -329,6 +329,18 @@ _Resultado:_
 
 ---
 
+**Prompt 4:** _Documento de requisitos del producto (PRD)_ — Claude Code, modelo Fable 5.1
+
+```
+revisa el problema definido en el archivo readme.md, y ayúdame a generar un documento de
+requisitos del producto (PRD)
+```
+
+_Resultado:_ `docs/PRD.md` con resumen ejecutivo, objetivos y no-objetivos, personas, casos de uso, 41 requisitos funcionales (RF-01..RF-41) trazados a las HU, reglas de negocio del motor, 16 requisitos no funcionales, uso de IA, métricas de éxito, riesgos, plan de entregas y seis decisiones abiertas. Incorpora la revisión crítica del Prompt 3 (precisión antes que cobertura, nivel 2 como propuesta sin últimos 4 dígitos).
+
+---
+
+
 ## 2. Arquitectura del Sistema
 
 ### **2.1. Diagrama de arquitectura:**
@@ -413,11 +425,33 @@ _Resultado:_
 
 ### 6. Tickets de Trabajo
 
-**Prompt 1:** Se profundizarán en siguiente entregas
+**Prompt 1:** _Adopción de OpenSpec para ejecutar el backlog_ — Claude Code, modelo Fable 5.1
 
-**Prompt 2:** Se profundizarán en siguiente entregas
+```
+Quiero usar OpenSpec para ir desarrollando el proyecto, ayudame a generar los documentos
+necesarios para poder utilizar el framework que quiero usar, se me ocurre que de pronto
+historias de usuario y tickets ?
+```
 
-**Prompt 3:** Se profundizarán en siguiente entregas
+_Resultado:_ el asistente investigó la estructura de OpenSpec 1.14 (config.yaml, changes con proposal/specs/design/tasks, comandos `/opsx:*`), planteó cuatro decisiones (granularidad por bloque funcional, E2 completo y E3 solo propuestas, español con palabras clave en inglés, actualizar el CLI) y generó `openspec/config.yaml` con el contexto y las reglas del proyecto, 6 changes de E2 completos (10 specs con escenarios derivados de los criterios de aceptación de las HU y tasks derivadas de los tickets TK-01..TK-17) y 7 propuestas de E3. Validado con `openspec validate --strict`. Ajuste humano: ninguno todavía.
+
+**Prompt 2:** _Implementación del primer change con OpenSpec_ — Claude Code, modelo Fable 5.1
+
+```
+/opsx:apply setup-project-foundation
+```
+
+_Resultado:_ monorepo npm con `apps/api` (NestJS 12 en ESM, validación de entorno con Zod 4, Prisma 7 con driver adapter, Swagger, endpoint de salud), `apps/web` (React 18 + Vite + Tailwind 4 + TanStack Query), `samples` (generador de datasets sintéticos con `expected.json`), Docker Compose con PostgreSQL 16 y base de test, esquema Prisma de las diez entidades con restricciones CHECK añadidas a mano, seed idempotente, ESLint/Prettier compartidos, 6 tests unitarios de entorno, 8 de integración de base de datos y 22 del generador (Vitest). Ajuste humano: la primera versión usó NestJS 10 y Prisma 6 según el readme, lo que arrastraba 14 vulnerabilidades altas de `npm audit`; se decidió subir a NestJS 12, Prisma 7, TypeScript 6 y Vite 8 antes del primer commit, dejando una sola vulnerabilidad conocida (`xlsx`, sin parche en npm).
+
+**Prompt 3:** _Reglas de cruce con datos reales e implementación de autenticación_ — Claude Code, modelo Sonnet 5.5
+
+```
+En la carpeta docs/archivos_ejemplo coloqué 2 archivos ejemplo para realizar pruebas, Intranet_ejemplo.xlsx y Liquidaciones_Diners_ejemplo.xlsx, el primero viene de los datos del POS y el segundo viene del extracto del banco [...] cuentame con que change debemos continuar
+
+el cruce debería ser por local, lote y referencia, luego te compartiré una tabla de relación para poder cruzar los locales entre los 2 archivos. y si continua a aplicar auth-and-tenant-isolation
+```
+
+_Resultado:_ análisis de ambos Excel (el POS mezcla adquirentes y no trae autorización; el extracto Diners trae una fila por cuota con bruto y neto), notas en los `design.md` de `file-import-and-column-mapping` y `matching-engine-core` con la decisión de cruzar por local + lote + referencia mediante una tabla de relación de locales, e implementación de `auth-and-tenant-isolation` (JWT, guards globales, roles, rate limiting, Helmet, pantalla de login y tests unitarios, de integración y de componentes).
 
 ---
 

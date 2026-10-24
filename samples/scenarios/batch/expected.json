@@ -1,0 +1,624 @@
+{
+  "seed": "concilia-2026-batch",
+  "scenario": "batch",
+  "period": {
+    "start": "2026-09-01",
+    "end": "2026-09-30"
+  },
+  "config": {
+    "feePercent": 2.5,
+    "withholdingPercent": 1,
+    "dateWindowDays": 3
+  },
+  "formats": {
+    "pos": {
+      "delimiter": ";",
+      "dateFormat": "dd/MM/yyyy",
+      "decimalSeparator": ","
+    },
+    "bank": {
+      "delimiter": ",",
+      "dateFormat": "yyyy-MM-dd",
+      "decimalSeparator": "."
+    }
+  },
+  "summary": {
+    "posRows": 183,
+    "bankRows": 36,
+    "bankDebitRows": 0,
+    "byScenario": {
+      "exact": 0,
+      "dateShift": 0,
+      "batch": 36,
+      "net": 0,
+      "duplicate": 0,
+      "orphanPos": 0,
+      "orphanBank": 0
+    }
+  },
+  "matches": [
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        144,
+        145,
+        146,
+        151,
+        153
+      ],
+      "bankRows": [
+        30
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        55,
+        61,
+        82
+      ],
+      "bankRows": [
+        12
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        180,
+        181,
+        182,
+        183
+      ],
+      "bankRows": [
+        36
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        155,
+        156,
+        157,
+        159
+      ],
+      "bankRows": [
+        32
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        154,
+        160,
+        162,
+        163,
+        164,
+        165
+      ],
+      "bankRows": [
+        31
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139
+      ],
+      "bankRows": [
+        27
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        51,
+        54,
+        56,
+        62,
+        64,
+        65,
+        79
+      ],
+      "bankRows": [
+        16
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        2,
+        11,
+        12,
+        17
+      ],
+      "bankRows": [
+        1
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        47,
+        63,
+        68,
+        69,
+        70,
+        71,
+        76
+      ],
+      "bankRows": [
+        13
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        35,
+        37,
+        38,
+        41,
+        42
+      ],
+      "bankRows": [
+        11
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        23,
+        25,
+        27,
+        29
+      ],
+      "bankRows": [
+        7
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        46,
+        50,
+        57,
+        58,
+        59,
+        77,
+        81
+      ],
+      "bankRows": [
+        9
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        31,
+        34,
+        39,
+        40
+      ],
+      "bankRows": [
+        8
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        66,
+        72,
+        80
+      ],
+      "bankRows": [
+        18
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        107,
+        111,
+        112,
+        113,
+        115,
+        116,
+        117,
+        119
+      ],
+      "bankRows": [
+        22
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        48,
+        49,
+        52,
+        53,
+        60,
+        74,
+        78
+      ],
+      "bankRows": [
+        15
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        3,
+        5,
+        15
+      ],
+      "bankRows": [
+        2
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        85,
+        86,
+        88
+      ],
+      "bankRows": [
+        17
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        22,
+        24,
+        26,
+        28,
+        30
+      ],
+      "bankRows": [
+        6
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        19,
+        20,
+        21
+      ],
+      "bankRows": [
+        5
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        104,
+        105,
+        106,
+        108,
+        109,
+        110,
+        114,
+        118
+      ],
+      "bankRows": [
+        23
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179
+      ],
+      "bankRows": [
+        35
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        83,
+        84,
+        87,
+        89,
+        90
+      ],
+      "bankRows": [
+        19
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        32,
+        33,
+        36,
+        43,
+        44,
+        45
+      ],
+      "bankRows": [
+        10
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        4,
+        9,
+        10,
+        13,
+        16,
+        18
+      ],
+      "bankRows": [
+        4
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        91,
+        92,
+        93,
+        94,
+        95,
+        96
+      ],
+      "bankRows": [
+        20
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        140,
+        141,
+        142,
+        143
+      ],
+      "bankRows": [
+        28
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        120,
+        121,
+        122,
+        124,
+        125,
+        128
+      ],
+      "bankRows": [
+        26
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103
+      ],
+      "bankRows": [
+        21
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        67,
+        73,
+        75
+      ],
+      "bankRows": [
+        14
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        158,
+        161,
+        166,
+        167
+      ],
+      "bankRows": [
+        33
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        168,
+        169,
+        170,
+        171,
+        172
+      ],
+      "bankRows": [
+        34
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        1,
+        6,
+        7,
+        8,
+        14
+      ],
+      "bankRows": [
+        3
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        123,
+        126,
+        127
+      ],
+      "bankRows": [
+        24
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        147,
+        148,
+        149,
+        150,
+        152
+      ],
+      "bankRows": [
+        29
+      ]
+    },
+    {
+      "scenario": "batch",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        129,
+        130,
+        131,
+        132
+      ],
+      "bankRows": [
+        25
+      ]
+    }
+  ],
+  "ambiguous": [],
+  "unmatchedPosRows": [],
+  "unmatchedBankRows": [],
+  "bankDebitRows": []
+}

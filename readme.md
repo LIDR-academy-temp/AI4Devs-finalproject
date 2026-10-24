@@ -103,18 +103,30 @@ _Se añadirán capturas y un vídeo demostrativo en la entrega final._
 
 ### 1.4 Instrucciones de instalación
 
-_Se completarán en la entrega 2. Esquema previsto:_
+**Requisitos:** Node.js ≥ 20.19 (recomendado 24, ver `.nvmrc`), npm ≥ 10 y Docker (para PostgreSQL). Alternativamente, cualquier PostgreSQL 16 accesible desde `DATABASE_URL`.
 
 ```bash
-git clone <repo>
-cd concilia
-cp .env.example .env            # DATABASE_URL, JWT_SECRET, ANTHROPIC_API_KEY
-docker compose up -d db         # PostgreSQL local
-npm install
-npm run db:migrate && npm run db:seed
-npm run dev                     # backend :3000 · frontend :5173
+git clone https://github.com/rafarteaga/AI4Devs-finalproject.git
+cd AI4Devs-finalproject
+cp .env.example .env            # DATABASE_URL, JWT_SECRET, ANTHROPIC_API_KEY, AI_MODEL, CORS_ORIGIN
+docker compose up -d db         # PostgreSQL 16 local (crea también la BD de test concilia_test)
+npm install                     # instala los tres workspaces: apps/api, apps/web y samples
+npm run db:migrate              # aplica las migraciones de Prisma
+npm run db:seed                 # empresa demo + usuarios admin@demo.concilia.app y analista@demo.concilia.app
+npm run dev                     # API en http://localhost:3000/api/v1 · docs en /api/docs · web en http://localhost:5173
 ```
 
+Contraseña por defecto de los usuarios demo: `Concilia2026!` (configurable con `SEED_ADMIN_PASSWORD` y `SEED_ANALYST_PASSWORD` antes del seed).
+
+Otros comandos útiles:
+
+| Comando | Qué hace |
+|---|---|
+| `npm run lint` · `npm run format` | Lint y formato de todo el monorepo |
+| `npm test` | Tests unitarios de todos los workspaces |
+| `npm run test:integration` | Tests de integración de la API contra `DATABASE_URL_TEST` |
+| `npm run samples:generate` | Regenera los datasets sintéticos en `samples/standard/` |
+| `PORT=3100 npm run dev -w apps/api` | Arranca la API en otro puerto (el frontend lee `VITE_API_URL`) |
 ---
 
 ## 2. Arquitectura del sistema
@@ -155,13 +167,13 @@ flowchart LR
 | Componente | Tecnología | Responsabilidad |
 |---|---|---|
 | Frontend | React 18, Vite, TypeScript, TanStack Query, React Router, Tailwind CSS + shadcn/ui | Interfaz de usuario, wizard de importación, panel de resultados y conciliación manual |
-| API | NestJS 10, TypeScript, class-validator, Swagger | Endpoints REST, validación de entrada, documentación OpenAPI automática |
+| API | NestJS 12 (ESM), TypeScript 6, class-validator, Swagger | Endpoints REST, validación de entrada, documentación OpenAPI automática |
 | Auth | Passport + JWT, bcrypt | Autenticación, autorización por roles y aislamiento de datos por empresa |
 | Importación | SheetJS (xlsx), csv-parse, Multer | Lectura de archivos, vista previa, aplicación del mapeo, normalización y validación de filas |
 | Motor de conciliación | TypeScript puro (sin dependencias de framework) | Pipeline de estrategias de cruce; lógica de dominio aislada y altamente testeable |
 | Módulo IA | SDK de Anthropic (Claude, modelo configurable por variable de entorno) | Sugerencia de mapeo de columnas y propuesta de cruces para pendientes |
 | Exportación | ExcelJS | Generación del reporte Excel |
-| Persistencia | PostgreSQL 16 + Prisma ORM | Modelo relacional, migraciones y consultas tipadas |
+| Persistencia | PostgreSQL 16 + Prisma 7 (driver adapter `pg`) | Modelo relacional, migraciones y consultas tipadas |
 
 **Diseño del motor de conciliación.** Se implementa con el patrón *Strategy* dentro de un *pipeline*:
 
@@ -260,11 +272,13 @@ flowchart LR
 
 | Tipo | Herramienta | Alcance |
 |---|---|---|
-| Unitarios | Jest | Estrategias del motor, normalizadores de fecha y monto, cálculo de neto esperado, servicios |
-| Integración | Jest + Supertest + PostgreSQL de test | Endpoints de la API contra base de datos real: importación, ejecución de conciliación, cruces manuales |
+| Unitarios | Vitest | Estrategias del motor, normalizadores de fecha y monto, cálculo de neto esperado, servicios |
+| Integración | Vitest + Supertest + PostgreSQL de test | Endpoints de la API contra base de datos real: importación, ejecución de conciliación, cruces manuales |
 | E2E | Playwright | Flujo completo: login → crear conciliación → subir archivos → ejecutar → cruce manual → exportar |
 
-Se generarán **datasets sintéticos** (`samples/`) con casos controlados: cruces exactos, desfases de fechas, depósitos por lote, depósitos netos, duplicados y transacciones huérfanas. Esto permite medir el porcentaje de cruce del motor de forma objetiva. El objetivo de cobertura del motor es ≥ 90 %.
+Se generan **datasets sintéticos** (`samples/`, ver [`samples/README.md`](samples/README.md)) con casos controlados: cruces exactos, desfases de fechas, depósitos por lote, depósitos netos, duplicados y transacciones huérfanas. Cada dataset incluye un `expected.json` con la contraparte y el nivel esperado de cada fila, lo que permite medir precisión y cobertura del motor de forma objetiva por escenario. El objetivo de cobertura de tests del motor es ≥ 90 %.
+
+Proporciones del dataset estándar (`samples/standard/`, 1.205 ventas POS y 986 líneas bancarias, semilla fija `concilia-2026`): 60 % cruces exactos, 15 % desfase de fechas (1-3 días), 15 % depósitos por lote, 5 % depósitos netos (comisión 2,5 %, retención 1 %), 3 % ventas duplicadas, 1 % ventas sin abono y 1 % abonos sin venta, más 12 débitos que la importación debe descartar. Los archivos POS y banco usan a propósito formatos distintos (`;` + `dd/MM/yyyy` + decimal coma frente a `,` + `yyyy-MM-dd` + decimal punto) para ejercitar la normalización. Se regenera con `npm run samples:generate -- --all`; la misma semilla produce archivos idénticos byte a byte.
 
 ---
 
@@ -785,6 +799,26 @@ Estimación en *story points* (1 SP ≈ medio día de trabajo asistido por IA).
 
 > Aunque los tests formales se agrupan en E3, se escribirán tests unitarios del motor en paralelo a TK-12 y TK-13, ya que el motor es la parte más crítica del producto.
 
+### 6.1.1 Ejecución del backlog con OpenSpec
+
+El backlog se implementa con [OpenSpec](https://github.com/Fission-AI/OpenSpec) (desarrollo guiado por especificaciones: `/opsx:propose` → `/opsx:apply` → `/opsx:archive`). Cada *change* en `openspec/changes/` agrupa los tickets de un bloque funcional y contiene `proposal.md`, `specs/` (requisitos con escenarios derivados de los criterios de aceptación), `design.md` y `tasks.md` (checklist de implementación). Los changes de E2 están completos; los de E3 solo tienen propuesta hasta que E2 esté archivado. El documento de requisitos del producto está en [`docs/PRD.md`](docs/PRD.md).
+
+| Change | Entrega | Tickets | HU |
+|---|---|---|---|
+| `setup-project-foundation` | E2 | TK-01, TK-02, TK-03 | — |
+| `auth-and-tenant-isolation` | E2 | TK-04, TK-05 | HU-01 |
+| `reconciliation-management` | E2 | TK-06, TK-07 | HU-02 |
+| `file-import-and-column-mapping` | E2 | TK-08, TK-09, TK-10, TK-11 | HU-03, HU-04, HU-05 |
+| `matching-engine-core` | E2 | TK-12, TK-13, TK-14 | HU-06 |
+| `results-and-manual-matching` | E2 | TK-15, TK-16, TK-17 | HU-07, HU-08 |
+| `matching-engine-grouped` | E3 | TK-18 | HU-06 |
+| `ai-column-mapping-suggestions` | E3 | TK-19 | HU-05 |
+| `ai-match-suggestions` | E3 | TK-20 | HU-09 |
+| `exception-management-and-audit` | E3 | TK-21, TK-24 | HU-10 |
+| `excel-export` | E3 | TK-22 | HU-11 |
+| `import-templates` | E3 | TK-23 | HU-12 |
+| `quality-ci-and-deployment` | E3 | TK-25 a TK-29 | — |
+
 ### 6.2 Tickets en detalle
 
 #### TK-10 · Aplicación de mapeo, normalización y validación de filas
@@ -872,4 +906,4 @@ _Se documentarán a partir de la entrega 2._
 
 | PR | Título | Tickets | Descripción |
 |---|---|---|---|
-| #1 | _pendiente_ | | |
+| #1 | _pendiente de abrir_ — `feature/entrega-1-RJAM` | TK-04, TK-05 | Autenticación JWT, aislamiento por empresa y pantalla de login (change `auth-and-tenant-isolation`). |

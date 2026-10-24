@@ -1,0 +1,1145 @@
+{
+  "seed": "concilia-2026-duplicate",
+  "scenario": "duplicate",
+  "period": {
+    "start": "2026-09-01",
+    "end": "2026-09-30"
+  },
+  "config": {
+    "feePercent": 2.5,
+    "withholdingPercent": 1,
+    "dateWindowDays": 3
+  },
+  "formats": {
+    "pos": {
+      "delimiter": ";",
+      "dateFormat": "dd/MM/yyyy",
+      "decimalSeparator": ","
+    },
+    "bank": {
+      "delimiter": ",",
+      "dateFormat": "yyyy-MM-dd",
+      "decimalSeparator": "."
+    }
+  },
+  "summary": {
+    "posRows": 200,
+    "bankRows": 100,
+    "bankDebitRows": 0,
+    "byScenario": {
+      "exact": 0,
+      "dateShift": 0,
+      "batch": 0,
+      "net": 0,
+      "duplicate": 100,
+      "orphanPos": 0,
+      "orphanBank": 0
+    }
+  },
+  "matches": [],
+  "ambiguous": [
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        41,
+        42
+      ],
+      "bankRows": [
+        19
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        71,
+        72
+      ],
+      "bankRows": [
+        37
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        77,
+        78
+      ],
+      "bankRows": [
+        39
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        95,
+        96
+      ],
+      "bankRows": [
+        46
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        155,
+        156
+      ],
+      "bankRows": [
+        77
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        193,
+        194
+      ],
+      "bankRows": [
+        97
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        27,
+        28
+      ],
+      "bankRows": [
+        16
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        81,
+        82
+      ],
+      "bankRows": [
+        41
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        99,
+        100
+      ],
+      "bankRows": [
+        51
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        129,
+        130
+      ],
+      "bankRows": [
+        70
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        17,
+        18
+      ],
+      "bankRows": [
+        7
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        49,
+        50
+      ],
+      "bankRows": [
+        25
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        3,
+        4
+      ],
+      "bankRows": [
+        2
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        7,
+        8
+      ],
+      "bankRows": [
+        5
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        133,
+        134
+      ],
+      "bankRows": [
+        68
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        195,
+        196
+      ],
+      "bankRows": [
+        100
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        23,
+        24
+      ],
+      "bankRows": [
+        12
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        121,
+        122
+      ],
+      "bankRows": [
+        64
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        93,
+        94
+      ],
+      "bankRows": [
+        49
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        167,
+        168
+      ],
+      "bankRows": [
+        83
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        53,
+        54
+      ],
+      "bankRows": [
+        28
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        165,
+        166
+      ],
+      "bankRows": [
+        84
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        137,
+        138
+      ],
+      "bankRows": [
+        67
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        117,
+        118
+      ],
+      "bankRows": [
+        57
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        127,
+        128
+      ],
+      "bankRows": [
+        63
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        135,
+        136
+      ],
+      "bankRows": [
+        65
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        111,
+        112
+      ],
+      "bankRows": [
+        56
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        25,
+        26
+      ],
+      "bankRows": [
+        13
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        123,
+        124
+      ],
+      "bankRows": [
+        60
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        109,
+        110
+      ],
+      "bankRows": [
+        55
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        181,
+        182
+      ],
+      "bankRows": [
+        90
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        161,
+        162
+      ],
+      "bankRows": [
+        82
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        43,
+        44
+      ],
+      "bankRows": [
+        21
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        47,
+        48
+      ],
+      "bankRows": [
+        24
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        33,
+        34
+      ],
+      "bankRows": [
+        18
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        89,
+        90
+      ],
+      "bankRows": [
+        43
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        173,
+        174
+      ],
+      "bankRows": [
+        88
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        101,
+        102
+      ],
+      "bankRows": [
+        54
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        65,
+        66
+      ],
+      "bankRows": [
+        33
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        197,
+        198
+      ],
+      "bankRows": [
+        98
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        159,
+        160
+      ],
+      "bankRows": [
+        81
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        175,
+        176
+      ],
+      "bankRows": [
+        87
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        151,
+        152
+      ],
+      "bankRows": [
+        72
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        171,
+        172
+      ],
+      "bankRows": [
+        85
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        113,
+        114
+      ],
+      "bankRows": [
+        59
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        31,
+        32
+      ],
+      "bankRows": [
+        15
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        149,
+        150
+      ],
+      "bankRows": [
+        74
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        57,
+        58
+      ],
+      "bankRows": [
+        30
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        63,
+        64
+      ],
+      "bankRows": [
+        32
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        59,
+        60
+      ],
+      "bankRows": [
+        27
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        29,
+        30
+      ],
+      "bankRows": [
+        14
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        131,
+        132
+      ],
+      "bankRows": [
+        69
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        157,
+        158
+      ],
+      "bankRows": [
+        80
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        21,
+        22
+      ],
+      "bankRows": [
+        10
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        75,
+        76
+      ],
+      "bankRows": [
+        35
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        105,
+        106
+      ],
+      "bankRows": [
+        50
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        169,
+        170
+      ],
+      "bankRows": [
+        86
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        1,
+        2
+      ],
+      "bankRows": [
+        3
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        5,
+        6
+      ],
+      "bankRows": [
+        1
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        69,
+        70
+      ],
+      "bankRows": [
+        36
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        153,
+        154
+      ],
+      "bankRows": [
+        78
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        35,
+        36
+      ],
+      "bankRows": [
+        17
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        199,
+        200
+      ],
+      "bankRows": [
+        99
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        73,
+        74
+      ],
+      "bankRows": [
+        38
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        13,
+        14
+      ],
+      "bankRows": [
+        9
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        97,
+        98
+      ],
+      "bankRows": [
+        47
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        39,
+        40
+      ],
+      "bankRows": [
+        22
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        11,
+        12
+      ],
+      "bankRows": [
+        4
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        163,
+        164
+      ],
+      "bankRows": [
+        79
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        183,
+        184
+      ],
+      "bankRows": [
+        91
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        87,
+        88
+      ],
+      "bankRows": [
+        44
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        139,
+        140
+      ],
+      "bankRows": [
+        66
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        115,
+        116
+      ],
+      "bankRows": [
+        58
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        191,
+        192
+      ],
+      "bankRows": [
+        95
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        15,
+        16
+      ],
+      "bankRows": [
+        8
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        19,
+        20
+      ],
+      "bankRows": [
+        11
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        51,
+        52
+      ],
+      "bankRows": [
+        26
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        107,
+        108
+      ],
+      "bankRows": [
+        53
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        143,
+        144
+      ],
+      "bankRows": [
+        76
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        187,
+        188
+      ],
+      "bankRows": [
+        96
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        83,
+        84
+      ],
+      "bankRows": [
+        42
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        9,
+        10
+      ],
+      "bankRows": [
+        6
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        45,
+        46
+      ],
+      "bankRows": [
+        23
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        147,
+        148
+      ],
+      "bankRows": [
+        73
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        185,
+        186
+      ],
+      "bankRows": [
+        94
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        119,
+        120
+      ],
+      "bankRows": [
+        62
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        179,
+        180
+      ],
+      "bankRows": [
+        92
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        91,
+        92
+      ],
+      "bankRows": [
+        48
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        141,
+        142
+      ],
+      "bankRows": [
+        75
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        103,
+        104
+      ],
+      "bankRows": [
+        52
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        61,
+        62
+      ],
+      "bankRows": [
+        31
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        125,
+        126
+      ],
+      "bankRows": [
+        61
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        55,
+        56
+      ],
+      "bankRows": [
+        29
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        145,
+        146
+      ],
+      "bankRows": [
+        71
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        177,
+        178
+      ],
+      "bankRows": [
+        89
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        85,
+        86
+      ],
+      "bankRows": [
+        45
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        189,
+        190
+      ],
+      "bankRows": [
+        93
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        67,
+        68
+      ],
+      "bankRows": [
+        34
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        79,
+        80
+      ],
+      "bankRows": [
+        40
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    },
+    {
+      "scenario": "duplicate",
+      "posRows": [
+        37,
+        38
+      ],
+      "bankRows": [
+        20
+      ],
+      "note": "Dos ventas POS idénticas (misma autorización, monto y fecha) para un solo abono"
+    }
+  ],
+  "unmatchedPosRows": [],
+  "unmatchedBankRows": [],
+  "bankDebitRows": []
+}
