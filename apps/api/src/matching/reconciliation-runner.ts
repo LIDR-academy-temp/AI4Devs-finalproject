@@ -119,6 +119,10 @@ export class ReconciliationRunner implements OnModuleInit {
     await this.persist(tx, id, candidates);
 
     const stats = await this.computeStats(tx, id, userId, config, [...unmapped].sort());
+    Object.assign(stats, {
+      posWithoutStore: posRows.filter((r) => normalizeStoreName(r.storeCode) === null).length,
+      bankWithoutStore: bankRows.filter((r) => !r.storeCode?.trim()).length,
+    });
     await tx.reconciliation.update({
       where: { id },
       data: {

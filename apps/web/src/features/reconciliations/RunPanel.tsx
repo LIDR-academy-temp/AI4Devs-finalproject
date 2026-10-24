@@ -16,6 +16,8 @@ interface Stats {
   pendingBank?: number;
   proposed?: number;
   unmappedStores?: string[];
+  posWithoutStore?: number;
+  bankWithoutStore?: number;
   error?: string;
 }
 
@@ -122,6 +124,13 @@ export function RunPanel({ reconciliation }: { reconciliation: ReconciliationDet
           <li>
             Pendientes: {stats.pendingPos ?? 0} POS y {stats.pendingBank ?? 0} banco
           </li>
+          {((stats.posWithoutStore ?? 0) > 0 || (stats.bankWithoutStore ?? 0) > 0) && (
+            <li className="text-amber-700">
+              Sin local en el archivo: {stats.posWithoutStore ?? 0} ventas POS y{' '}
+              {stats.bankWithoutStore ?? 0} movimientos del banco. Reimporta mapeando la columna del
+              local para poder cruzar por local, lote y referencia.
+            </li>
+          )}
           {(stats.unmappedStores?.length ?? 0) > 0 && (
             <li className="text-amber-700">
               Locales sin relación con el banco: {stats.unmappedStores?.join(', ')}
