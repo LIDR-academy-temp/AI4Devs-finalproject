@@ -79,6 +79,7 @@ model Company {
   importTemplates ImportTemplate[]
   reconciliations Reconciliation[]
   auditLogs       AuditLog[]
+  storeMappings   StoreMapping[]
 
   @@map("companies")
 }
@@ -102,6 +103,24 @@ model User {
 
   @@index([companyId])
   @@map("users")
+}
+
+// ─── Relación de locales ────────────────────────────────────────────────────
+
+/// Relaciona el nombre del local en el POS con el código de establecimiento del banco.
+model StoreMapping {
+  id            String   @id @default(uuid()) @db.Uuid
+  companyId     String   @map("company_id") @db.Uuid
+  /// Nombre del local del POS normalizado (mayúsculas, sin espacios sobrantes)
+  posStoreName  String   @map("pos_store_name")
+  bankStoreCode String   @map("bank_store_code")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, posStoreName])
+  @@index([companyId])
+  @@map("store_mappings")
 }
 
 // ─── Plantillas de importación ──────────────────────────────────────────────

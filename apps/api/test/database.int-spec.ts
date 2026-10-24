@@ -22,6 +22,7 @@ const TABLAS_ESPERADAS = [
   'matches',
   'pos_transactions',
   'reconciliations',
+  'store_mappings',
   'users',
 ];
 

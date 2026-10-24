@@ -60,8 +60,8 @@
 
 | Nivel | Estrategia | Regla | Confianza |
 |---|---|---|---|
-| 1 | Exacto | Mismo código de autorización + mismo monto + misma fecha | Alta (auto-confirmado) |
-| 2 | Tolerancia | Mismo monto (o monto neto esperado) + últimos 4 dígitos, dentro de una ventana de días configurable | Media-alta (auto-confirmado si es único) |
+| 1 | Exacto | Mismo **local + lote + referencia** (lote y referencia sin prefijo ni ceros a la izquierda; el local se traduce con la tabla de relación POS ↔ banco de la empresa) y mismo monto bruto. Si ambos lados traen código de autorización, también cruza por autorización + monto + fecha. La ambigüedad bloquea | Alta (auto-confirmado) |
+| 2 | Tolerancia | Mismo monto (o monto neto esperado) dentro de una ventana de días configurable (el abono no puede ser anterior a la venta). Candidato único en ambos lados; se confirma solo si además coinciden los últimos 4 dígitos, si no queda como propuesta | Media-alta (auto-confirmado solo con candidato único y últimos 4 coincidentes) |
 | 3 | Agrupado (N:1) | Suma de varias ventas del POS (mismo día, lote o marca) = un depósito bancario, considerando comisión y retención configuradas | Media (propuesto) |
 | 4 | Asistido por IA | Un LLM analiza los pendientes pre-filtrados y propone posibles cruces con una explicación | Variable (siempre requiere confirmación humana) |
 
@@ -277,6 +277,8 @@ flowchart LR
 | E2E | Playwright | Flujo completo: login → crear conciliación → subir archivos → ejecutar → cruce manual → exportar |
 
 Se generan **datasets sintéticos** (`samples/`, ver [`samples/README.md`](samples/README.md)) con casos controlados: cruces exactos, desfases de fechas, depósitos por lote, depósitos netos, duplicados y transacciones huérfanas. Cada dataset incluye un `expected.json` con la contraparte y el nivel esperado de cada fila, lo que permite medir precisión y cobertura del motor de forma objetiva por escenario. El objetivo de cobertura de tests del motor es ≥ 90 %.
+
+**Precisión y cobertura medidas (niveles 1 y 2, `apps/api/test/matching.int-spec.ts`).** Con el dataset estándar (semilla `concilia-2026`): 900 cruces confirmados (720 exactos y 180 por tolerancia), 0 incorrectos, precisión 100 % y cobertura 100 % de los cruces esperados de niveles 1 y 2. Con los archivos reales de `docs/archivos_ejemplo/` (POS 14.484 filas, extracto Diners 7.578 filas y tabla de locales de 30 relaciones): 4.171 cruces exactos confirmados por local + lote + referencia (en el 98 % de las claves el monto bruto del banco coincide con el del POS), 292 propuestas, 235 ventas de un local sin relación (`ALM. EXTERNOS 02`) y ejecución en pocos segundos. El POS real mezcla adquirentes (solo las filas DINERS pueden cruzar con ese extracto) y las cuotas de una misma referencia quedan para el nivel agrupado.
 
 Proporciones del dataset estándar (`samples/standard/`, 1.205 ventas POS y 986 líneas bancarias, semilla fija `concilia-2026`): 60 % cruces exactos, 15 % desfase de fechas (1-3 días), 15 % depósitos por lote, 5 % depósitos netos (comisión 2,5 %, retención 1 %), 3 % ventas duplicadas, 1 % ventas sin abono y 1 % abonos sin venta, más 12 débitos que la importación debe descartar. Los archivos POS y banco usan a propósito formatos distintos (`;` + `dd/MM/yyyy` + decimal coma frente a `,` + `yyyy-MM-dd` + decimal punto) para ejercitar la normalización. Se regenera con `npm run samples:generate -- --all`; la misma semilla produce archivos idénticos byte a byte.
 

@@ -10,6 +10,9 @@ export function normalizeText(value: RawCell): string | null {
   ) {
     return null;
   }
-  const text = String(value).replace(/\u00a0/g, ' ').trim().toUpperCase();
+  const text = String(value)
+    .replace(/\u00a0/g, ' ')
+    .trim()
+    .toUpperCase();
   return text === '' ? null : text;
 }

@@ -56,3 +56,4 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 export const apiGet = <T>(path: string) => request<T>('GET', path);
 export const apiUpload = <T>(path: string, form: FormData) => request<T>('POST', path, form);
 export const apiPost = <T>(path: string, body?: unknown) => request<T>('POST', path, body);
+export const apiPutUpload = <T>(path: string, form: FormData) => request<T>('PUT', path, form);

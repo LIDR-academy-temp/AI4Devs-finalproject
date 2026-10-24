@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPost } from '@/api/client';
+import { apiGet, apiPost, apiPutUpload } from '@/api/client';
 
 export type ReconciliationStatus = 'DRAFT' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CLOSED';
 
@@ -100,11 +100,57 @@ export function useReconciliations(filters: ListFilters) {
   });
 }
 
+/** Intervalo de sondeo mientras la conciliación se está procesando. */
+export const POLL_INTERVAL_MS = 2000;
+
 export function useReconciliation(id: string) {
   return useQuery({
     queryKey: queryKeys.detail(id),
     queryFn: () => apiGet<ReconciliationDetail>(`/reconciliations/${id}`),
     retry: false,
+    refetchInterval: (query) =>
+      query.state.data?.status === 'PROCESSING' ? POLL_INTERVAL_MS : false,
+  });
+}
+
+export interface RunParams {
+  dateWindowDays: number;
+  amountTolerance: number;
+  feePercent: number;
+  withholdingPercent: number;
+}
+
+export function useRunReconciliation(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: RunParams) =>
+      apiPost<{ id: string; status: string }>(`/reconciliations/${id}/run`, params),
+    // Al recibir 202 se vuelve a consultar el detalle, que pasa a PROCESSING y activa el sondeo
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.all }),
+  });
+}
+
+export interface StoreMapping {
+  posStoreName: string;
+  bankStoreCode: string;
+}
+
+export function useStoreMappings() {
+  return useQuery({
+    queryKey: ['store-mappings'],
+    queryFn: () => apiGet<StoreMapping[]>('/store-mappings'),
+  });
+}
+
+export function useUploadStoreMappings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      return apiPutUpload<{ count: number }>('/store-mappings', form);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['store-mappings'] }),
   });
 }
 

@@ -23,26 +23,49 @@ Cada venta POS y cada movimiento bancario SHALL pertenecer como máximo a un cru
 - **WHEN** un movimiento bancario ya participa en un cruce confirmado o propuesto
 - **THEN** el motor no lo incluye en ningún otro cruce
 
-### Requirement: Nivel 1 cruce exacto
-El motor SHALL cruzar una venta con un movimiento cuando coincidan código de autorización, monto y fecha, generando un cruce 1:1 confirmado con confianza 1,0.
+### Requirement: Nivel 1 cruce por local, lote y referencia
+El motor SHALL cruzar una venta con un movimiento cuando coincidan el local (a través de la tabla de relación de locales de la empresa), el lote y la referencia, comparando lote y referencia sin prefijo alfabético ni ceros a la izquierda, y cuando el monto bruto del movimiento coincida con el de la venta; el cruce SHALL ser 1:1, confirmado, con confianza 1,0.
 
-#### Scenario: Coincidencia exacta única
-- **WHEN** existe exactamente una venta y un movimiento con el mismo código de autorización, monto y fecha
+#### Scenario: Coincidencia por clave única
+- **WHEN** existe exactamente una venta y un movimiento con el mismo local (según la tabla de relación), lote `D001004` frente a `1004` y referencia `000001533` frente a `1533`, y el mismo monto bruto
 - **THEN** se genera un cruce EXACT, ONE_TO_ONE, CONFIRMED, confianza 1,0 y diferencia 0
 
-#### Scenario: Sin código de autorización
-- **WHEN** la venta o el movimiento no tienen código de autorización
-- **THEN** el nivel exacto no los cruza y quedan disponibles para niveles posteriores
+#### Scenario: Local sin relación
+- **WHEN** el local de la venta no figura en la tabla de relación de locales
+- **THEN** la venta no se cruza en el nivel 1, queda disponible para niveles posteriores y se informa en las estadísticas como "locales sin mapear"
+
+#### Scenario: Sin lote o sin referencia
+- **WHEN** la venta o el movimiento no tienen lote o referencia
+- **THEN** el nivel 1 no los cruza y quedan disponibles para niveles posteriores
+
+#### Scenario: Misma clave, monto distinto
+- **WHEN** local, lote y referencia coinciden pero el monto bruto difiere
+- **THEN** no se genera cruce en el nivel 1 y el par se ofrece como propuesta con la diferencia indicada
 
 #### Scenario: Dataset de casos exactos
 - **WHEN** se ejecuta el motor sobre el dataset sintético de casos exactos
 - **THEN** cruza el 100 % de las transacciones sin ningún cruce incorrecto
 
+### Requirement: Tabla de relación de locales
+El sistema SHALL mantener por empresa una tabla que relaciona el nombre del local del POS (normalizado: sin espacios sobrantes ni diferencias de mayúsculas) con el código de establecimiento del banco, y SHALL permitir cargarla desde un archivo Excel de dos columnas.
+
+#### Scenario: Carga de la tabla
+- **WHEN** el analista carga un archivo con columnas código de local y nombre del local
+- **THEN** se guardan las relaciones de su empresa y se reemplazan las anteriores
+
+#### Scenario: Espacios distintos en el nombre
+- **WHEN** el POS trae `ALM. QUICENTRO  SUR` y la tabla `ALM. QUICENTRO SUR`
+- **THEN** ambos se consideran el mismo local
+
+#### Scenario: Aislamiento por empresa
+- **WHEN** otra empresa consulta la tabla de relación
+- **THEN** no ve ni usa las relaciones de la primera
+
 ### Requirement: La ambigüedad bloquea el cruce
 Cuando una clave de cruce tenga más de un candidato en cualquiera de los dos lados, el nivel MUST NOT elegir uno al azar: deja las transacciones sin cruzar para niveles posteriores o para propuesta.
 
 #### Scenario: Clave duplicada
-- **WHEN** dos ventas comparten código de autorización, monto y fecha y hay un solo movimiento coincidente
+- **WHEN** dos ventas comparten local, lote y referencia y hay un solo movimiento coincidente
 - **THEN** ninguna de las dos se cruza en el nivel exacto
 
 ### Requirement: Nivel 2 cruce por tolerancia

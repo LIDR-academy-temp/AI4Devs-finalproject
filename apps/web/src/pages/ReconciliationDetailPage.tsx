@@ -2,6 +2,8 @@ import { Link, useParams } from 'react-router-dom';
 import { ApiError } from '@/api/client';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useReconciliation } from '@/features/reconciliations/api';
+import { RunPanel } from '@/features/reconciliations/RunPanel';
+import { StoreMappingsCard } from '@/features/reconciliations/StoreMappingsCard';
 
 const FILE_STATUS_LABELS: Record<string, string> = {
   UPLOADED: 'Subido',
@@ -111,6 +113,9 @@ export function ReconciliationDetailPage() {
           </ul>
         )}
       </div>
+
+      <StoreMappingsCard />
+      <RunPanel reconciliation={data} />
     </section>
   );
 }

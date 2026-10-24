@@ -469,6 +469,18 @@ haz el commit y continúa con file-import-and-column-mapping
 
 _Resultado:_ commit de `reconciliation-management` e implementación de `file-import-and-column-mapping`: normalizadores puros (fechas, montos, tarjetas, textos) con tablas de casos borde, subida de CSV/XLSX con hash anti-duplicados, vista previa con PAN enmascarado, importación transaccional por lotes con reporte de errores y descarte de débitos, y el asistente de carga y mapeo en el frontend. Probado con los datasets sintéticos y con los archivos reales de `docs/archivos_ejemplo` (14.484 y 7.578 filas).
 
+**Prompt 6:** _Commit y motor de conciliación_ — Claude Code, modelo Sonnet 5.5
+
+```
+ok has el commit y continua con el siguiente change
+```
+
+```
+la tabla de mapero de locales esta en docs/archivos_ejemplo y se llama Locales_mapeo_ejemplo.xlsx, el lote en POS si tiene ceros por delante el cruce se debe hacer sin los ceros ni el prefijo
+```
+
+_Resultado:_ commit de `file-import-and-column-mapping` y, al ver que `matching-engine-core` contradecía la decisión de cruzar por local + lote + referencia, se detuvo la implementación para pedir la tabla de locales y la regla de comparación. Con ambas se validó la regla contra los archivos reales (4.188 claves cruzan y en el 98 % el monto bruto coincide), se reescribieron las especificaciones y se implementó el change: tabla `store_mappings` por empresa con carga desde Excel, motor de dominio puro (nivel 1 por local + lote + referencia sin prefijo ni ceros, con bloqueo por ambigüedad; nivel 2 por tolerancia con neto esperado), ejecución asíncrona con candado de estado, persistencia transaccional, estadísticas, recuperación de ejecuciones interrumpidas y botón "Ejecutar" con diálogo, sondeo y relación de locales en el frontend.
+
 ---
 
 ### 7. Pull Requests
