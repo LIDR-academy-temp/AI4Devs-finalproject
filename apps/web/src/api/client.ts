@@ -29,13 +29,15 @@ export function setUnauthorizedHandler(handler: (() => void) | undefined): void 
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const token = getToken();
+  const isForm = body instanceof FormData;
   const response = await fetch(`${baseUrl}${API_PREFIX}${path}`, {
     method,
     headers: {
-      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      // Con FormData el navegador fija el Content-Type (con el boundary)
+      ...(body !== undefined && !isForm ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -52,4 +54,5 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 }
 
 export const apiGet = <T>(path: string) => request<T>('GET', path);
+export const apiUpload = <T>(path: string, form: FormData) => request<T>('POST', path, form);
 export const apiPost = <T>(path: string, body?: unknown) => request<T>('POST', path, body);

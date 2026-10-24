@@ -53,7 +53,7 @@ export function NewReconciliationPage() {
         periodEnd: values.periodEnd,
         config: toConfig(values),
       });
-      navigate(`/reconciliations/${created.id}`);
+      navigate(`/reconciliations/${created.id}/import/pos`);
     } catch (e) {
       setServerError(
         e instanceof ApiError ? e.message : 'No se pudo crear la conciliación. Inténtalo de nuevo',

@@ -170,6 +170,8 @@ model ImportedFile {
   totalRows        Int        @default(0) @map("total_rows")
   validRows        Int        @default(0) @map("valid_rows")
   errorRows        Int        @default(0) @map("error_rows")
+  /// Filas descartadas a propósito (débitos en extractos bancarios); no son errores
+  discardedRows    Int        @default(0) @map("discarded_rows")
   /// Filas rechazadas: [{ row, field, reason }]
   errors           Json?
   createdAt        DateTime   @default(now()) @map("created_at")
@@ -234,6 +236,7 @@ model BankMovement {
   description       String?
   reference         String?
   batchNumber       String?           @map("batch_number")
+  storeCode         String?           @map("store_code")
   authCode          String?           @map("auth_code")
   cardLast4         String?           @map("card_last4") @db.VarChar(4)
   status            TransactionStatus @default(PENDING)

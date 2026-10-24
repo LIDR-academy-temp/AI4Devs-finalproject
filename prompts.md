@@ -461,6 +461,14 @@ solo procede con el commit y sigue con el siguiente change reconciliation-manage
 
 _Resultado:_ commit de la base del proyecto y de `auth-and-tenant-isolation`, e implementación de `reconciliation-management`: módulo `reconciliations` en el API (creación, listado paginado con filtros por estado y solapamiento de período, detalle, parámetros con defaults y máquina de estados) y, en el frontend, layout autenticado, listado, paso 1 del asistente y detalle, con tests unitarios, de integración y de componentes.
 
+**Prompt 5:** _Commit e implementación de la importación de archivos_ — Claude Code, modelo Sonnet 5.5
+
+```
+haz el commit y continúa con file-import-and-column-mapping
+```
+
+_Resultado:_ commit de `reconciliation-management` e implementación de `file-import-and-column-mapping`: normalizadores puros (fechas, montos, tarjetas, textos) con tablas de casos borde, subida de CSV/XLSX con hash anti-duplicados, vista previa con PAN enmascarado, importación transaccional por lotes con reporte de errores y descarte de débitos, y el asistente de carga y mapeo en el frontend. Probado con los datasets sintéticos y con los archivos reales de `docs/archivos_ejemplo` (14.484 y 7.578 filas).
+
 ---
 
 ### 7. Pull Requests

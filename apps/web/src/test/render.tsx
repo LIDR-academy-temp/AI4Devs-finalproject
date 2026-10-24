@@ -12,6 +12,7 @@ export function renderPage(element: ReactElement, { path = '/', initial = '/' } 
         <Routes>
           <Route path={path} element={element} />
           <Route path="/reconciliations/:id" element={<h1>Detalle de conciliación</h1>} />
+          <Route path="/reconciliations/:id/import/:source" element={<h1>Carga de archivos</h1>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,

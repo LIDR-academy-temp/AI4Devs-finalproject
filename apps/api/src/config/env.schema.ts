@@ -23,6 +23,7 @@ export const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('8h'),
   LOGIN_RATE_LIMIT: z.coerce.number().int().positive().default(5),
   LOGIN_RATE_TTL_MS: z.coerce.number().int().positive().default(60_000),
+  STORAGE_DIR: z.string().default('./storage'),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   ANTHROPIC_API_KEY: z.string().optional().default(''),
   AI_MODEL: z.string().default('claude-sonnet-5-5'),

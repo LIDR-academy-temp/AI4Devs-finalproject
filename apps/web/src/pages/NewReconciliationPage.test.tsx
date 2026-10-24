@@ -85,7 +85,7 @@ describe('Paso 1 del asistente', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('crea la conciliación con los parámetros y navega al detalle', async () => {
+  it('crea la conciliación con los parámetros y navega al paso 2 (archivo POS)', async () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ id: 'abc-1' }), { status: 201 }));
     render();
     const user = userEvent.setup();
@@ -95,9 +95,7 @@ describe('Paso 1 del asistente', () => {
     await user.click(screen.getByLabelText('Habilitar cruce agrupado'));
     await user.click(screen.getByRole('button', { name: 'Crear conciliación' }));
 
-    expect(
-      await screen.findByRole('heading', { name: 'Detalle de conciliación' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Carga de archivos' })).toBeInTheDocument();
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toContain('/api/v1/reconciliations');
     expect(JSON.parse(init.body)).toEqual({

@@ -39,3 +39,15 @@ Existen conciliaciones y autenticación. El readme §2.2 fija SheetJS, csv-parse
 - **Archivos reales de ejemplo** (`docs/archivos_ejemplo/`, 1,0 y 1,6 MB; dentro del límite de 10 MB pero con 14.484 y 7.578 filas, por encima de las 5.000 de RNF-01: medir también con ellos):
   - POS (`Intranet_ejemplo.xlsx`, hoja `Detalle`): la columna `TARJETA` es en realidad el adquirente (DINERS, PRODUBANCO, GUAYAQUIL, PACIFICO), de modo que el archivo mezcla adquirentes; decidir si el mapeo permite un filtro por valor de columna (p. ej. solo DINERS) o si se importa todo. Sin código de autorización ni últimos 4 dígitos. Cabecera `AÑO` con encoding corrupto y textos con espacios de relleno (`normalizeText`).
   - Banco (`Liquidaciones_Diners_ejemplo.xlsx`, 42 columnas): fechas `yyyyMMdd`, tarjeta enmascarada con tabuladores, una fila por cuota (`Cuotas trasladadas`/`Total cuotas`), monto bruto (`Valor Bruto Cuota`) y neto (`Valor Pago Cuota`) con comisión y retenciones. No contiene débitos: el descarte por tipo/signo no se ejercita con este archivo.
+
+## Decisiones tomadas durante la implementación
+
+- **Código de local en el banco:** el cruce se hará por local + lote + referencia (decisión del usuario), así que `bank_movements` incorpora `store_code` y el campo estándar "Código de local" también está disponible para el extracto (el spec solo lo listaba para el POS). Migración `bank_store_code`.
+- **Filas descartadas:** `imported_files.discarded_rows` registra los débitos descartados (no son errores). Migración `file_discarded_rows`.
+- **Clave del mapeo:** `columnMapping` usa el índice de columna (base 0) como clave, no el nombre de cabecera, porque las cabeceras pueden estar vacías o repetidas.
+- **Archivo con todas las filas inválidas:** queda en estado FAILED (con sus errores guardados) en lugar de IMPORTED con 0 filas.
+- **Errores:** se guardan hasta 1.000 en `imported_files.errors`; la respuesta devuelve los 50 primeros y `GET /files/{id}` los guardados (el frontend los usa para el CSV).
+- **SheetJS 0.20.3 desde el CDN oficial:** la versión de npm (0.18.5) está desactualizada y tiene vulnerabilidades conocidas; se procesan archivos subidos por usuarios.
+- **Falsos positivos del detector de PAN:** cualquier secuencia de 13–19 dígitos contiguos (o separados por espacio o guion) se enmascara, también en columnas no mapeadas como tarjeta. Ejemplo real: la columna `DOCUMENTO` del POS (15 dígitos) queda enmascarada en `rawData`. Los montos con separador de miles (`1.234.567,89`) no se ven afectados.
+- **Sin filtro por adquirente:** el POS de ejemplo mezcla adquirentes (columna `TARJETA`); se importa todo. Pendiente decidir si el mapeo admite un filtro por valor de columna (p. ej. solo DINERS).
+- **Hora separada en el POS:** si el archivo trae la hora en otra columna (como el dataset sintético), no se combina con la fecha; la transacción conserva solo la fecha.
