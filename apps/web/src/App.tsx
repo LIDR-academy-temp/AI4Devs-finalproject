@@ -1,8 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '@/auth/AuthContext';
 import { ProtectedRoute } from '@/auth/ProtectedRoute';
+import { AppLayout } from '@/components/AppLayout';
 import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/LoginPage';
+import { NewReconciliationPage } from '@/pages/NewReconciliationPage';
+import { ReconciliationDetailPage } from '@/pages/ReconciliationDetailPage';
 import { ReconciliationsPage } from '@/pages/ReconciliationsPage';
 
 export function App() {
@@ -13,7 +16,11 @@ export function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/status" element={<HomePage />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/reconciliations" element={<ReconciliationsPage />} />
+            <Route element={<AppLayout />}>
+              <Route path="/reconciliations" element={<ReconciliationsPage />} />
+              <Route path="/reconciliations/new" element={<NewReconciliationPage />} />
+              <Route path="/reconciliations/:id" element={<ReconciliationDetailPage />} />
+            </Route>
           </Route>
           <Route path="*" element={<Navigate to="/reconciliations" replace />} />
         </Routes>

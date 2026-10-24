@@ -6,7 +6,7 @@ import { AuthProvider } from '@/auth/AuthContext';
 import { ProtectedRoute } from '@/auth/ProtectedRoute';
 import { clearSession, getToken } from '@/auth/session';
 import { LoginPage } from './LoginPage';
-import { ReconciliationsPage } from './ReconciliationsPage';
+import { AppLayout } from '@/components/AppLayout';
 
 const USER = {
   id: 'u1',
@@ -27,7 +27,9 @@ function renderApp(initial = '/login') {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/reconciliations" element={<ReconciliationsPage />} />
+            <Route element={<AppLayout />}>
+              <Route path="/reconciliations" element={<h1>Conciliaciones</h1>} />
+            </Route>
           </Route>
         </Routes>
       </AuthProvider>

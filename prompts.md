@@ -453,6 +453,14 @@ el cruce debería ser por local, lote y referencia, luego te compartiré una tab
 
 _Resultado:_ análisis de ambos Excel (el POS mezcla adquirentes y no trae autorización; el extracto Diners trae una fila por cuota con bruto y neto), notas en los `design.md` de `file-import-and-column-mapping` y `matching-engine-core` con la decisión de cruzar por local + lote + referencia mediante una tabla de relación de locales, e implementación de `auth-and-tenant-isolation` (JWT, guards globales, roles, rate limiting, Helmet, pantalla de login y tests unitarios, de integración y de componentes).
 
+**Prompt 4:** _Commit y siguiente change con OpenSpec_ — Claude Code, modelo Sonnet 5.5
+
+```
+solo procede con el commit y sigue con el siguiente change reconciliation-management
+```
+
+_Resultado:_ commit de la base del proyecto y de `auth-and-tenant-isolation`, e implementación de `reconciliation-management`: módulo `reconciliations` en el API (creación, listado paginado con filtros por estado y solapamiento de período, detalle, parámetros con defaults y máquina de estados) y, en el frontend, layout autenticado, listado, paso 1 del asistente y detalle, con tests unitarios, de integración y de componentes.
+
 ---
 
 ### 7. Pull Requests

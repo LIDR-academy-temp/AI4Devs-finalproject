@@ -906,4 +906,4 @@ _Se documentarán a partir de la entrega 2._
 
 | PR | Título | Tickets | Descripción |
 |---|---|---|---|
-| #1 | _pendiente de abrir_ — `feature/entrega-1-RJAM` | TK-04, TK-05 | Autenticación JWT, aislamiento por empresa y pantalla de login (change `auth-and-tenant-isolation`). |
+| #1 | _pendiente de abrir_ — `feature/entrega-1-RJAM` | TK-04..TK-07 | Autenticación JWT, aislamiento por empresa, login y gestión de conciliaciones (changes `auth-and-tenant-isolation` y `reconciliation-management`). |
