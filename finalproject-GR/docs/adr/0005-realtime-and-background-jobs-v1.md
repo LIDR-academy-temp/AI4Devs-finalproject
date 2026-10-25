@@ -1,6 +1,6 @@
 # ADR 0005: Real-time Updates and Background Jobs for v1
 
-**Status:** Accepted
+**Status:** Accepted, amended by [ADR 0012](0012-execution-completion-and-sign-off.md) (execution completion, sign-off and test case eligibility)
 **Date:** 2026-09-23
 **Amends:** [ADR 0001](0001-tech-stack.md) (Real-time and Background Jobs layers)
 

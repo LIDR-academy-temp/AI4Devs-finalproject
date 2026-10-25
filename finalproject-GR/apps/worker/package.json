@@ -1,0 +1,13 @@
+{
+  "name": "@railgun-qa/worker",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@railgun-qa/config": "*",
+    "@types/node": "^26.6.5",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@railgun-qa/shared-types",
+  "private": true,
+  "version": "0.1.0",
+  "main": "index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@railgun-qa/config": "*",
+    "@types/node": "^26.6.5",
+    "typescript": "^6.0.3"
+  }
+}

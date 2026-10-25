@@ -1,6 +1,6 @@
 # ADR 0007: Activity Log Immutability and Trash Purge
 
-**Status:** Accepted
+**Status:** Accepted, amended by [ADR 0013](0013-bug-lifecycle-and-auto-creation.md) (bug lifecycle, snapshot source and auto-creation)
 **Date:** 2026-09-23
 **Amends:** [ADR 0001](0001-tech-stack.md) (adds a layer ADR 0001 did not cover; it justified Postgres partly by "FK cascades on deletes")
 

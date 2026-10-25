@@ -1,0 +1,11 @@
+// Prisma schema — scaffold only, zero models yet (see next change for ADR 0003's
+// tenant-isolated base tables: workspace, user, project, membership).
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}

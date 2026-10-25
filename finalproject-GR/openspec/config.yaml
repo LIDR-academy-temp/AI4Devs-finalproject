@@ -1,0 +1,30 @@
+schema: spec-driven
+
+context: |
+  This is the QA Automation Platform (see ../PRD.md and ../CLAUDE.md).
+  Architecture decisions are recorded as ADRs in ../docs/adr/ — check
+  ../docs/open-questions.md before assuming something undecided is settled.
+  Two implementation tracks exist: ../docs/roadmap-mvp.md (current) and
+  ../docs/roadmap-full.md. Confirm which is active before scoping a change.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

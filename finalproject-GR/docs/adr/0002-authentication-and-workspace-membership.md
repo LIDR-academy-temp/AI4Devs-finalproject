@@ -1,6 +1,6 @@
 # ADR 0002: Authentication and Workspace Membership
 
-**Status:** Accepted
+**Status:** Accepted, amended by [ADR 0009](0009-api-authentication-transport.md) (API authentication transport)
 **Date:** 2026-09-23
 **Amends:** [ADR 0001](0001-tech-stack.md) (Authentication layer)
 
@@ -66,7 +66,7 @@ Design points that follow from the decision:
 
 - Choice of transactional email provider.
 - Whether Clerk's application-level invitations (sign-up tickets) can supply a pre-verified email for new users arriving through an invitation link, or whether the emailed token alone is treated as proof of address ownership.
-- How the browser authenticates to the API given the frontend and API are on different hosts (bearer token versus cookie), including WebSocket handshake authentication.
+- ~~How the browser authenticates to the API given the frontend and API are on different hosts (bearer token versus cookie), including WebSocket handshake authentication.~~ Settled in [ADR 0009](0009-api-authentication-transport.md): bearer token (Clerk session JWT verified against Clerk's JWKS), reused by the SSE client later.
 - Confirm in Clerk's documentation whether ownership-related and profile events needed for mirroring `users` are delivered by webhook.
 
 ## Sources

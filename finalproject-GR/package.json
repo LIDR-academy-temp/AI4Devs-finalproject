@@ -1,5 +1,26 @@
 {
-  "dependencies": {
-    "mermaid": "^11.16.1"
+  "name": "railgun-qa-platform-gr",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:check-rls": "node scripts/check-rls-coverage.js",
+    "db:migrate": "node scripts/apply-migrations.js"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "eslint": "^10.13.0",
+    "mermaid": "^11.16.1",
+    "pg": "^8.23.1",
+    "prisma": "6.19.3"
   }
 }

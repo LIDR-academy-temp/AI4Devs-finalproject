@@ -24,7 +24,7 @@ The highest organisational container. A workspace represents a company or team. 
 A project represents a single application or product under test. It is the primary unit that organises test cases, executions, bugs, environments, tags, and folders. A user may have access to multiple projects within the same workspace, each with independently assigned roles.
 
 ### 2.3 Folder
-An organisational container for test cases, nestable up to three levels deep. Folders can be renamed, reordered, and moved.
+An organisational container for test cases, nestable up to four levels deep. Folders can be renamed, reordered, and moved.
 
 ### 2.4 Tag
 A coloured, named label that can be applied to both test cases and bugs to aid filtering and categorisation. Tags are created and managed per project.
@@ -51,9 +51,9 @@ An immutable, chronological audit trail of every significant action taken within
 Deleting a test case, folder, execution, bug, or project does not remove it immediately. Deleted items move to a trash, where they can be restored for 30 days; after that they are permanently removed. While an item is in the trash it is hidden from all lists, dashboards, and reports.
 
 How deletion affects related content:
-- **Test case deleted:** a test case cannot be deleted while it is part of an execution that is Draft, Ready, In Progress, or Paused; the Admin must first remove it from those executions. Once deleted, its past runs remain inside their executions, keeping the test case name and Gherkin script as they were when the execution started.
+- **Test case deleted:** a test case cannot be deleted while it is part of an execution that is Ready, In Progress, or Paused (a Draft execution does not block deletion; see ADR 0012); the Admin must first remove it from those executions. Once deleted, its past runs remain inside their executions, keeping the test case name and Gherkin script as they were when the execution started.
 - **Execution deleted:** its runs are removed from all metrics, dashboards, and reports.
-- **Folder deleted:** the folder is deleted together with all of its subfolders and test cases. A confirmation dialog shows how many items will be affected. A folder cannot be deleted while any test case inside it is part of a Draft, Ready, In Progress, or Paused execution.
+- **Folder deleted:** the folder is deleted together with all of its subfolders and test cases. A confirmation dialog shows how many items will be affected. A folder cannot be deleted while any test case inside it is part of a Ready, In Progress, or Paused (a Draft execution does not block deletion; see ADR 0012) execution.
 - **Bug links to deleted items:** a bug that points to a deleted test case, run, or execution shows that link as "deleted" instead of a navigable link.
 - **Project deleted:** the whole project, with everything in it, moves to the trash and can be restored by a Workspace Owner (Section 6.9).
 - **Activity Log:** never deleted. Entries keep the name of the item as it was, even after the item is permanently removed.
@@ -231,7 +231,7 @@ An aggregate statistics view showing:
 **Folder actions:**
 - Create a new folder (via toolbar button or right-click context menu on an existing folder).
 - Rename a folder (Contributors and above; inline editing).
-- Delete a folder together with all its subfolders and test cases (Admins only; a confirmation shows how many items are affected, and deleted items go to the Trash, Section 2.11). Refused, with the executions listed, if any test case inside is part of a Draft, Ready, In Progress, or Paused execution.
+- Delete a folder together with all its subfolders and test cases (Admins only; a confirmation shows how many items are affected, and deleted items go to the Trash, Section 2.11). Refused, with the executions listed, if any test case inside is part of a Ready, In Progress, or Paused (a Draft execution does not block deletion; see ADR 0012) execution.
 - Drag folders to reorder them or move them within the hierarchy.
 
 **Test case actions:**
@@ -240,7 +240,7 @@ An aggregate statistics view showing:
 - Edit a test case's name inline.
 - Edit the Gherkin script (auto-saves on blur).
 - Run a test case (create a new execution or add to an existing one).
-- Delete a test case (Admins only, via right-click menu; it goes to the Trash). Refused, with the executions listed, if the test case is part of a Draft, Ready, In Progress, or Paused execution.
+- Delete a test case (Admins only, via right-click menu; it goes to the Trash). Refused, with the executions listed, if the test case is part of a Ready, In Progress, or Paused (a Draft execution does not block deletion; see ADR 0012) execution.
 - Drag test cases to reorder them or move them to a different folder.
 - Filter the tree by name, status, or tags.
 - Switch between tree view and dashboard view.

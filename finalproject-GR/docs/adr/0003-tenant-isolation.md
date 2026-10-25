@@ -1,6 +1,6 @@
 # ADR 0003: Tenant Isolation
 
-**Status:** Accepted
+**Status:** Accepted, amended by [ADR 0008](0008-tenant-context-implementation.md) (tenant context implementation mechanism)
 **Date:** 2026-09-23
 **Amends:** [ADR 0001](0001-tech-stack.md) (Database and ORM layers)
 
@@ -50,6 +50,6 @@ Membership and roles live in our database (ADR 0002), so each request can be res
 
 ## Open Items
 
-- Exact mechanism for applying the tenant context with the chosen ORM (extension versus explicit transaction helper).
+- ~~Exact mechanism for applying the tenant context with the chosen ORM (extension versus explicit transaction helper).~~ Settled in [ADR 0008](0008-tenant-context-implementation.md): an explicit `withTenantContext` transaction helper.
 - Design of the user-scoped path for membership and invitation lookups.
 - Immutability of the activity log (append-only enforcement) is a related database-level control, deferred to its own decision.

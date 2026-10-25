@@ -1,0 +1,9 @@
+{
+  "extends": "@railgun-qa/config/tsconfig.base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022"
+  },
+  "include": ["index.ts"]
+}
