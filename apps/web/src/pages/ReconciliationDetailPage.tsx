@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ApiError } from '@/api/client';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useReconciliation } from '@/features/reconciliations/api';
+import { ResultsPanel } from '@/features/results/ResultsPanel';
 import { RunPanel } from '@/features/reconciliations/RunPanel';
 import { StoreMappingsCard } from '@/features/reconciliations/StoreMappingsCard';
 
@@ -116,6 +117,14 @@ export function ReconciliationDetailPage() {
 
       <StoreMappingsCard />
       <RunPanel reconciliation={data} />
+      {data.files.length > 0 && data.status !== 'PROCESSING' && (
+        <ResultsPanel
+          reconciliationId={data.id}
+          version={`${data.status}:${String((data.stats as { lastRunAt?: string } | null)?.lastRunAt ?? '')}`}
+          readOnly={data.status === 'CLOSED'}
+          tolerance={data.config.amountTolerance}
+        />
+      )}
     </section>
   );
 }

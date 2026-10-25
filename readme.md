@@ -908,4 +908,4 @@ _Se documentarán a partir de la entrega 2._
 
 | PR | Título | Tickets | Descripción |
 |---|---|---|---|
-| #1 | _pendiente de abrir_ — `feature/entrega-1-RJAM` | TK-04..TK-07 | Autenticación JWT, aislamiento por empresa, login y gestión de conciliaciones (changes `auth-and-tenant-isolation` y `reconciliation-management`). |
+| #1 | _pendiente de abrir_ — `feature/entrega-1-RJAM` | TK-04..TK-07 | Autenticación JWT, aislamiento por empresa, login y gestión de conciliaciones (changes `auth-and-tenant-isolation` y `reconciliation-management`); importación y mapeo de columnas, motor de conciliación niveles 1 y 2, y resultados con cruce manual (`results-and-manual-matching`). |

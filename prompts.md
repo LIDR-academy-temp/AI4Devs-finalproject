@@ -481,6 +481,14 @@ la tabla de mapero de locales esta en docs/archivos_ejemplo y se llama Locales_m
 
 _Resultado:_ commit de `file-import-and-column-mapping` y, al ver que `matching-engine-core` contradecía la decisión de cruzar por local + lote + referencia, se detuvo la implementación para pedir la tabla de locales y la regla de comparación. Con ambas se validó la regla contra los archivos reales (4.188 claves cruzan y en el 98 % el monto bruto coincide), se reescribieron las especificaciones y se implementó el change: tabla `store_mappings` por empresa con carga desde Excel, motor de dominio puro (nivel 1 por local + lote + referencia sin prefijo ni ceros, con bloqueo por ambigüedad; nivel 2 por tolerancia con neto esperado), ejecución asíncrona con candado de estado, persistencia transaccional, estadísticas, recuperación de ejecuciones interrumpidas y botón "Ejecutar" con diálogo, sondeo y relación de locales en el frontend.
 
+**Prompt 7:** _Commit y resultados con cruce manual_ — Claude Code, modelo Sonnet 5.5
+
+```
+haz el commit y continúa con results-and-manual-matching
+```
+
+_Resultado:_ commit del archivado de los changes anteriores e implementación de `results-and-manual-matching`: listados paginados con filtros de ventas POS, movimientos y cruces, resumen de indicadores en vivo, `MatchesService` (cruce manual N:M, confirmar y rechazar propuestas, deshacer) con exclusividad garantizada por reserva atómica e índices únicos parciales sobre `match_items.active`, auditoría mínima, descarte de combinaciones rechazadas en el motor y, en el frontend, panel de KPIs, pestañas con contadores, tabla con filtros y fila original, vista de cruce manual con diferencia en vivo y acciones de deshacer, confirmar y rechazar.
+
 ---
 
 ### 7. Pull Requests

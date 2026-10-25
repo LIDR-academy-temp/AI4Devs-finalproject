@@ -34,4 +34,12 @@ Existen cruces, estados de transacción y `stats` producidos por `matching-engin
 
 ## Open Questions
 
-- Si confirmar una propuesta con diferencia > tolerancia debe exigir nota (propuesta: sí, misma regla que el cruce manual con diferencia).
+- Resuelta: confirmar una propuesta con diferencia mayor que la tolerancia exige una nota (400 sin ella; la UI la pide antes de enviar).
+
+## Decisiones tomadas durante la implementación
+
+- `GET /reconciliations/{id}/summary` devuelve los indicadores calculados en vivo con agregaciones SQL (`computeStatsCounts`); `recomputeStats` además guarda el resultado en `reconciliations.stats`, conservando los datos de la última ejecución, para que el listado muestre el porcentaje correcto.
+- Deshacer **elimina** el cruce (no lo marca): el registro queda en `audit_logs` (`UNDO_MATCH`) con sus totales. Rechazar una propuesta lo conserva como `REJECTED` con sus items inactivos, y el motor descarta esa combinación exacta en las ejecuciones siguientes.
+- La exclusividad se garantiza con tres capas: comprobación de estado, reserva atómica con `updateMany ... status = PENDING` comparando el recuento, e índices únicos parciales sobre `match_items` (`WHERE active`) cuya violación se traduce a 409.
+- El gancho de auditoría es un `AuditService.record` mínimo que escribe en `audit_logs`; `exception-management-and-audit` lo amplía.
+- Las acciones manuales responden 409 si la conciliación está en PROCESSING y 400 si está CLOSED.

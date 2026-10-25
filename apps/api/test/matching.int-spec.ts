@@ -13,38 +13,17 @@ import request from 'supertest';
 import { PrismaClient } from '../src/generated/prisma/client.js';
 import { DEFAULT_PASSWORD, DEMO_USERS, runSeed } from '../prisma/seed-data.js';
 import { createTestApp, loginAs } from './helpers/create-app.js';
+import {
+  POS_MAPPING,
+  importFile as importFileFixture,
+  importStandard as importStandardFixture,
+} from './helpers/import-fixtures.js';
 
 const ROOT = path.resolve(import.meta.dirname, '../../..');
 const OTHER_EMAIL = 'otro-match@empresa-c.test';
 const OTHER_TAX_ID = '0555555555001';
 const PREFIX = 'INT-MATCH';
 const MIME_XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-
-const POS_MAPPING = {
-  '0': 'transactionAt',
-  '2': 'storeCode',
-  '3': 'terminalId',
-  '4': 'batchNumber',
-  '5': 'authCode',
-  '6': 'cardLast4',
-  '7': 'cardBrand',
-  '8': 'amount',
-  '9': 'reference',
-};
-const BANK_MAPPING = {
-  '0': 'postedAt',
-  '1': 'valueDate',
-  '2': 'description',
-  '3': 'reference',
-  '4': 'batchNumber',
-  '5': 'authCode',
-  '6': 'cardLast4',
-  '7': 'grossAmount',
-  '8': 'feeAmount',
-  '9': 'withholdingAmount',
-  '10': 'amount',
-  '11': 'movementType',
-};
 
 describe('Motor de conciliación (nivel 1 y 2) y ejecución', () => {
   let prisma: PrismaClient;
@@ -70,51 +49,16 @@ describe('Motor de conciliación (nivel 1 y 2) y ejecución', () => {
         })
     ).body.id as string;
 
-  const importFile = async (
+  const importFile = (
     id: string,
     sourceType: 'POS' | 'BANK',
     file: string,
     filename: string,
     mime: string,
     body: Record<string, unknown>,
-  ) => {
-    const up = await http()
-      .post(`/api/v1/reconciliations/${id}/files`)
-      .set(auth())
-      .field('sourceType', sourceType)
-      .attach('file', readFileSync(file), { filename, contentType: mime });
-    expect(up.status).toBe(201);
-    const res = await http().post(`/api/v1/files/${up.body.id}/import`).set(auth()).send(body);
-    expect(res.body.status).toBe('IMPORTED');
-    return res.body;
-  };
+  ) => importFileFixture(app, tokenA, id, sourceType, file, filename, mime, body);
 
-  const importStandard = async (id: string) => {
-    await importFile(
-      id,
-      'POS',
-      path.join(ROOT, 'samples/standard/pos.csv'),
-      'pos.csv',
-      'text/csv',
-      {
-        columnMapping: POS_MAPPING,
-        dateFormat: 'dd/MM/yyyy',
-        decimalSeparator: ',',
-      },
-    );
-    await importFile(
-      id,
-      'BANK',
-      path.join(ROOT, 'samples/standard/bank.csv'),
-      'bank.csv',
-      'text/csv',
-      {
-        columnMapping: BANK_MAPPING,
-        dateFormat: 'yyyy-MM-dd',
-        decimalSeparator: '.',
-      },
-    );
-  };
+  const importStandard = (id: string) => importStandardFixture(app, tokenA, id);
 
   const run = (id: string, body: Record<string, unknown> = {}, token = tokenA) =>
     http().post(`/api/v1/reconciliations/${id}/run`).set(auth(token)).send(body);

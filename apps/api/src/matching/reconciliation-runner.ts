@@ -8,6 +8,7 @@ import {
   withConfigDefaults,
 } from '../reconciliations/reconciliation-config.js';
 import { MatchingEngine, type BankMov, type MatchCandidate, type PosTxn } from './engine/index.js';
+import { computeStatsCounts } from './stats.js';
 import { StoreMappingsService } from './store-mappings/store-mappings.service.js';
 import { normalizeStoreName } from './store-mappings/store-name.js';
 
@@ -18,6 +19,9 @@ const dec = (value: Prisma.Decimal | null) =>
   value === null ? null : new Decimal(value.toString());
 
 type Tx = Prisma.TransactionClient;
+
+const pairKey = (posIds: string[], bankIds: string[]) =>
+  `${[...posIds].sort().join(',')}|${[...bankIds].sort().join(',')}`;
 
 /**
  * Carga las transacciones pendientes, invoca el motor y guarda los resultados en una sola
@@ -115,14 +119,21 @@ export class ReconciliationRunner implements OnModuleInit {
       storeCode: r.storeCode?.trim() || null,
     }));
 
-    const candidates = this.engine.run({ pos, bank }, config);
+    const rejected = await this.rejectedPairs(tx, id);
+    const candidates = this.engine
+      .run({ pos, bank }, config)
+      .filter((c) => !rejected.has(pairKey(c.posIds, c.bankIds)));
     await this.persist(tx, id, candidates);
 
-    const stats = await this.computeStats(tx, id, userId, config, [...unmapped].sort());
-    Object.assign(stats, {
+    const stats = {
+      ...(await computeStatsCounts(tx, id)),
+      unmappedStores: [...unmapped].sort(),
+      lastRunAt: new Date().toISOString(),
+      lastRunBy: userId,
+      config,
       posWithoutStore: posRows.filter((r) => normalizeStoreName(r.storeCode) === null).length,
       bankWithoutStore: bankRows.filter((r) => !r.storeCode?.trim()).length,
-    });
+    };
     await tx.reconciliation.update({
       where: { id },
       data: {
@@ -131,6 +142,22 @@ export class ReconciliationRunner implements OnModuleInit {
         stats: stats as unknown as Prisma.InputJsonValue,
       },
     });
+  }
+
+  /** Combinaciones que el usuario rechazó: el motor no las vuelve a proponer. */
+  private async rejectedPairs(tx: Tx, id: string): Promise<Set<string>> {
+    const matches = await tx.match.findMany({
+      where: { reconciliationId: id, status: 'REJECTED' },
+      select: { items: { select: { posTransactionId: true, bankMovementId: true } } },
+    });
+    return new Set(
+      matches.map((m) =>
+        pairKey(
+          m.items.flatMap((i) => (i.posTransactionId ? [i.posTransactionId] : [])),
+          m.items.flatMap((i) => (i.bankMovementId ? [i.bankMovementId] : [])),
+        ),
+      ),
+    );
   }
 
   /**
@@ -208,67 +235,5 @@ export class ReconciliationRunner implements OnModuleInit {
         data: { status: txStatus },
       });
     }
-  }
-
-  private async computeStats(
-    tx: Tx,
-    id: string,
-    userId: string,
-    config: ReconciliationConfig,
-    unmappedStores: string[],
-  ) {
-    const [posAgg, bankAgg, posByStatus, bankByStatus, matches] = await Promise.all([
-      tx.posTransaction.aggregate({
-        where: { reconciliationId: id },
-        _count: true,
-        _sum: { amount: true },
-      }),
-      tx.bankMovement.aggregate({
-        where: { reconciliationId: id },
-        _count: true,
-        _sum: { amount: true },
-      }),
-      tx.posTransaction.groupBy({ by: ['status'], where: { reconciliationId: id }, _count: true }),
-      tx.bankMovement.groupBy({ by: ['status'], where: { reconciliationId: id }, _count: true }),
-      tx.match.groupBy({
-        by: ['method', 'status'],
-        where: { reconciliationId: id },
-        _count: true,
-        _sum: { difference: true },
-      }),
-    ]);
-    const countOf = (rows: { status: string; _count: number }[], status: string) =>
-      rows.find((r) => r.status === status)?._count ?? 0;
-
-    const matchedByMethod: Record<string, number> = {};
-    let proposed = 0;
-    let totalDifference = new Decimal(0);
-    for (const m of matches) {
-      if (m.status === 'CONFIRMED') {
-        matchedByMethod[m.method] = (matchedByMethod[m.method] ?? 0) + m._count;
-        totalDifference = totalDifference.plus(m._sum.difference?.toString() ?? '0');
-      } else if (m.status === 'PROPOSED') {
-        proposed += m._count;
-      }
-    }
-    const posCount = posAgg._count;
-    const matchedPos = countOf(posByStatus, 'MATCHED');
-    return {
-      posCount,
-      posTotal: (posAgg._sum.amount ?? new Prisma.Decimal(0)).toFixed(2),
-      bankCount: bankAgg._count,
-      bankTotal: (bankAgg._sum.amount ?? new Prisma.Decimal(0)).toFixed(2),
-      matchedByMethod,
-      pendingPos: countOf(posByStatus, 'PENDING'),
-      pendingBank: countOf(bankByStatus, 'PENDING'),
-      proposed,
-      exceptions: countOf(posByStatus, 'EXCEPTION') + countOf(bankByStatus, 'EXCEPTION'),
-      matchedPercent: posCount === 0 ? 0 : Math.round((matchedPos / posCount) * 1000) / 10,
-      totalDifference: totalDifference.toFixed(2),
-      unmappedStores,
-      lastRunAt: new Date().toISOString(),
-      lastRunBy: userId,
-      config,
-    };
   }
 }

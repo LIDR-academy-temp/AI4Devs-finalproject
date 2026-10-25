@@ -314,6 +314,8 @@ model MatchItem {
   matchId          String  @map("match_id") @db.Uuid
   posTransactionId String? @map("pos_transaction_id") @db.Uuid
   bankMovementId   String? @map("bank_movement_id") @db.Uuid
+  /// Verdadero mientras el cruce está CONFIRMED o PROPOSED; lo mantiene MatchesService
+  active           Boolean @default(true)
 
   match          Match           @relation(fields: [matchId], references: [id], onDelete: Cascade)
   posTransaction PosTransaction? @relation(fields: [posTransactionId], references: [id], onDelete: Cascade)
