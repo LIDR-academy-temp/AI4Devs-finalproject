@@ -1,0 +1,22 @@
+# Blueprint de Render para la API (plan gratuito). La base de datos es externa (Neon).
+services:
+  - type: web
+    name: concilia-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build -w apps/api
+    startCommand: npm run start:prod -w apps/api
+    healthCheckPath: /api/docs
+    envVars:
+      - key: NODE_VERSION
+        value: 24
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false # cadena de Neon con ?sslmode=require
+      - key: CORS_ORIGIN
+        sync: false # URL del frontend en Vercel, sin barra final
+      - key: STORAGE_DIR
+        value: /tmp/concilia-storage # disco efímero en el plan gratuito
