@@ -71,7 +71,7 @@ Existen trackers de candidaturas y asistentes de búsqueda de empleo (por ejempl
 
 ## 6. Alcance
 
-Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `MVP` se detallan en el PRD.
+Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `MVP` se detallan en el PRD. Dentro del MVP, `should-have` marca lo que se construye solo si queda tiempo después de lo imprescindible.
 
 ### 6.1 Lo que hará
 
@@ -83,9 +83,10 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 | Configurar filtros duros: modalidad, ubicación, salario mínimo y seniority | `MVP` |
 | Calcular un puntaje de encaje (0-100) con fortalezas, brechas y evidencia | `MVP` |
 | Gestionar candidaturas en un pipeline (guardada, aplicada, entrevista, oferta, rechazada) | `MVP` |
-| Pegar un correo en una candidatura; la IA lo clasifica y extrae fecha y siguiente paso | `MVP` |
-| Alertas de seguimiento para candidaturas sin actividad | `MVP` |
-| Interfaz bilingüe (español e inglés) | `MVP` |
+| Interfaz en inglés (idioma principal), preparada para i18n | `MVP` |
+| Pegar un correo en una candidatura; la IA lo clasifica y extrae fecha y siguiente paso | `MVP (should-have)` |
+| Alertas de seguimiento para candidaturas sin actividad | `MVP (should-have)` |
+| Traducción de la interfaz al español | `MVP (should-have)` |
 | Segunda fuente de ofertas | `v1.1` |
 | Lectura directa de Gmail (OAuth, solo lectura) para vincular hilos automáticamente | `v1.1` |
 | Dashboard de métricas (tasa de respuesta, tiempo por etapa) | `v1.1` |
@@ -112,7 +113,7 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 - **Proveedor de IA:** Claude API.
 - **Idioma:**
   - Código, clases, tablas y campos en inglés.
-  - Interfaz bilingüe (español e inglés).
+  - Interfaz en inglés como idioma principal; español como segundo idioma (`should-have`).
   - Documentación del curso en español.
 
 ## 8. Supuestos y riesgos

@@ -68,3 +68,16 @@
   ```
 
 - **Resultado:** Se creó `docs/vision.md` (borrador v0.1) con problema, usuario, hipótesis y métricas, propuesta de valor, alcance etiquetado `MVP`/`v1.1`/`futuro`, exclusiones, restricciones, riesgos y preguntas abiertas para la arquitectura.
+
+### Prompt 6
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  HU5 se queda como should-have, i18n también pero usando el inglés como lenguaje principal; arranca el PRD
+  ```
+
+- **Resultado:** Se actualizó `docs/vision.md` (correos, alertas y traducción al español como `should-have`; interfaz en inglés) y se creó `docs/prd.md` (borrador v0.1) con objetivos, flujo principal, 4 historias must-have y 2 should-have, requisitos funcionales y no funcionales, criterios de aceptación de alto nivel, entidades del dominio y decisiones pendientes.
