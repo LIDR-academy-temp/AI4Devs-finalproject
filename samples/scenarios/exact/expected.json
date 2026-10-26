@@ -1,0 +1,2445 @@
+{
+  "seed": "concilia-2026-exact",
+  "scenario": "exact",
+  "period": {
+    "start": "2026-09-01",
+    "end": "2026-09-30"
+  },
+  "config": {
+    "feePercent": 2.5,
+    "withholdingPercent": 1,
+    "dateWindowDays": 3
+  },
+  "formats": {
+    "pos": {
+      "delimiter": ";",
+      "dateFormat": "dd/MM/yyyy",
+      "decimalSeparator": ","
+    },
+    "bank": {
+      "delimiter": ",",
+      "dateFormat": "yyyy-MM-dd",
+      "decimalSeparator": "."
+    }
+  },
+  "summary": {
+    "posRows": 200,
+    "bankRows": 200,
+    "bankDebitRows": 0,
+    "byScenario": {
+      "exact": 200,
+      "dateShift": 0,
+      "batch": 0,
+      "net": 0,
+      "duplicate": 0,
+      "orphanPos": 0,
+      "orphanBank": 0
+    }
+  },
+  "matches": [
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        152
+      ],
+      "bankRows": [
+        154
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        34
+      ],
+      "bankRows": [
+        37
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        28
+      ],
+      "bankRows": [
+        24
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        146
+      ],
+      "bankRows": [
+        146
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        11
+      ],
+      "bankRows": [
+        13
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        1
+      ],
+      "bankRows": [
+        7
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        92
+      ],
+      "bankRows": [
+        97
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        139
+      ],
+      "bankRows": [
+        137
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        13
+      ],
+      "bankRows": [
+        12
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        63
+      ],
+      "bankRows": [
+        61
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        163
+      ],
+      "bankRows": [
+        163
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        44
+      ],
+      "bankRows": [
+        44
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        65
+      ],
+      "bankRows": [
+        68
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        37
+      ],
+      "bankRows": [
+        39
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        49
+      ],
+      "bankRows": [
+        47
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        118
+      ],
+      "bankRows": [
+        119
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        76
+      ],
+      "bankRows": [
+        76
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        114
+      ],
+      "bankRows": [
+        117
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        17
+      ],
+      "bankRows": [
+        22
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        178
+      ],
+      "bankRows": [
+        180
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        190
+      ],
+      "bankRows": [
+        192
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        145
+      ],
+      "bankRows": [
+        144
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        61
+      ],
+      "bankRows": [
+        58
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        179
+      ],
+      "bankRows": [
+        179
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        180
+      ],
+      "bankRows": [
+        181
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        50
+      ],
+      "bankRows": [
+        46
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        74
+      ],
+      "bankRows": [
+        78
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        119
+      ],
+      "bankRows": [
+        120
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        106
+      ],
+      "bankRows": [
+        109
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        24
+      ],
+      "bankRows": [
+        26
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        48
+      ],
+      "bankRows": [
+        50
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        128
+      ],
+      "bankRows": [
+        122
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        19
+      ],
+      "bankRows": [
+        18
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        77
+      ],
+      "bankRows": [
+        74
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        16
+      ],
+      "bankRows": [
+        10
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        87
+      ],
+      "bankRows": [
+        84
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        149
+      ],
+      "bankRows": [
+        147
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        84
+      ],
+      "bankRows": [
+        81
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        185
+      ],
+      "bankRows": [
+        187
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        81
+      ],
+      "bankRows": [
+        87
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        150
+      ],
+      "bankRows": [
+        150
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        29
+      ],
+      "bankRows": [
+        32
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        85
+      ],
+      "bankRows": [
+        82
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        47
+      ],
+      "bankRows": [
+        48
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        110
+      ],
+      "bankRows": [
+        106
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        82
+      ],
+      "bankRows": [
+        83
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        176
+      ],
+      "bankRows": [
+        177
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        104
+      ],
+      "bankRows": [
+        98
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        60
+      ],
+      "bankRows": [
+        64
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        191
+      ],
+      "bankRows": [
+        193
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        125
+      ],
+      "bankRows": [
+        130
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        102
+      ],
+      "bankRows": [
+        100
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        181
+      ],
+      "bankRows": [
+        178
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        54
+      ],
+      "bankRows": [
+        51
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        66
+      ],
+      "bankRows": [
+        66
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        59
+      ],
+      "bankRows": [
+        62
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        158
+      ],
+      "bankRows": [
+        159
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        83
+      ],
+      "bankRows": [
+        86
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        14
+      ],
+      "bankRows": [
+        16
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        183
+      ],
+      "bankRows": [
+        185
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        10
+      ],
+      "bankRows": [
+        11
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        111
+      ],
+      "bankRows": [
+        118
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        99
+      ],
+      "bankRows": [
+        103
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        55
+      ],
+      "bankRows": [
+        52
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        45
+      ],
+      "bankRows": [
+        49
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        69
+      ],
+      "bankRows": [
+        65
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        96
+      ],
+      "bankRows": [
+        94
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        58
+      ],
+      "bankRows": [
+        59
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        132
+      ],
+      "bankRows": [
+        133
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        168
+      ],
+      "bankRows": [
+        169
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        159
+      ],
+      "bankRows": [
+        160
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        141
+      ],
+      "bankRows": [
+        141
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        30
+      ],
+      "bankRows": [
+        30
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        193
+      ],
+      "bankRows": [
+        188
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        35
+      ],
+      "bankRows": [
+        43
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        175
+      ],
+      "bankRows": [
+        168
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        116
+      ],
+      "bankRows": [
+        113
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        79
+      ],
+      "bankRows": [
+        75
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        41
+      ],
+      "bankRows": [
+        40
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        93
+      ],
+      "bankRows": [
+        96
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        6
+      ],
+      "bankRows": [
+        8
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        71
+      ],
+      "bankRows": [
+        73
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        194
+      ],
+      "bankRows": [
+        196
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        75
+      ],
+      "bankRows": [
+        77
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        157
+      ],
+      "bankRows": [
+        156
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        143
+      ],
+      "bankRows": [
+        145
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        167
+      ],
+      "bankRows": [
+        166
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        187
+      ],
+      "bankRows": [
+        183
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        64
+      ],
+      "bankRows": [
+        63
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        172
+      ],
+      "bankRows": [
+        170
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        200
+      ],
+      "bankRows": [
+        195
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        39
+      ],
+      "bankRows": [
+        36
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        174
+      ],
+      "bankRows": [
+        173
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        46
+      ],
+      "bankRows": [
+        45
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        42
+      ],
+      "bankRows": [
+        41
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        32
+      ],
+      "bankRows": [
+        29
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        33
+      ],
+      "bankRows": [
+        31
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        22
+      ],
+      "bankRows": [
+        17
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        38
+      ],
+      "bankRows": [
+        34
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        40
+      ],
+      "bankRows": [
+        38
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        196
+      ],
+      "bankRows": [
+        199
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        195
+      ],
+      "bankRows": [
+        198
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        27
+      ],
+      "bankRows": [
+        28
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        52
+      ],
+      "bankRows": [
+        56
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        198
+      ],
+      "bankRows": [
+        200
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        177
+      ],
+      "bankRows": [
+        182
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        62
+      ],
+      "bankRows": [
+        57
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        5
+      ],
+      "bankRows": [
+        9
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        94
+      ],
+      "bankRows": [
+        93
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        89
+      ],
+      "bankRows": [
+        89
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        112
+      ],
+      "bankRows": [
+        116
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        36
+      ],
+      "bankRows": [
+        42
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        197
+      ],
+      "bankRows": [
+        197
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        135
+      ],
+      "bankRows": [
+        132
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        120
+      ],
+      "bankRows": [
+        121
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        199
+      ],
+      "bankRows": [
+        194
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        51
+      ],
+      "bankRows": [
+        55
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        18
+      ],
+      "bankRows": [
+        19
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        73
+      ],
+      "bankRows": [
+        70
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        90
+      ],
+      "bankRows": [
+        90
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        182
+      ],
+      "bankRows": [
+        176
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        3
+      ],
+      "bankRows": [
+        1
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        147
+      ],
+      "bankRows": [
+        149
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        26
+      ],
+      "bankRows": [
+        27
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        117
+      ],
+      "bankRows": [
+        111
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        80
+      ],
+      "bankRows": [
+        85
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        98
+      ],
+      "bankRows": [
+        101
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        97
+      ],
+      "bankRows": [
+        95
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        15
+      ],
+      "bankRows": [
+        14
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        184
+      ],
+      "bankRows": [
+        184
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        68
+      ],
+      "bankRows": [
+        69
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        123
+      ],
+      "bankRows": [
+        126
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        164
+      ],
+      "bankRows": [
+        158
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        129
+      ],
+      "bankRows": [
+        131
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        53
+      ],
+      "bankRows": [
+        54
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        138
+      ],
+      "bankRows": [
+        139
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        105
+      ],
+      "bankRows": [
+        102
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        156
+      ],
+      "bankRows": [
+        152
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        122
+      ],
+      "bankRows": [
+        123
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        56
+      ],
+      "bankRows": [
+        53
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        133
+      ],
+      "bankRows": [
+        134
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        192
+      ],
+      "bankRows": [
+        189
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        78
+      ],
+      "bankRows": [
+        79
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        137
+      ],
+      "bankRows": [
+        136
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        189
+      ],
+      "bankRows": [
+        190
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        88
+      ],
+      "bankRows": [
+        88
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        126
+      ],
+      "bankRows": [
+        124
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        121
+      ],
+      "bankRows": [
+        112
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        70
+      ],
+      "bankRows": [
+        72
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        153
+      ],
+      "bankRows": [
+        155
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        108
+      ],
+      "bankRows": [
+        108
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        142
+      ],
+      "bankRows": [
+        140
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        109
+      ],
+      "bankRows": [
+        107
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        4
+      ],
+      "bankRows": [
+        4
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        86
+      ],
+      "bankRows": [
+        80
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        140
+      ],
+      "bankRows": [
+        142
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        100
+      ],
+      "bankRows": [
+        99
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        23
+      ],
+      "bankRows": [
+        21
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        151
+      ],
+      "bankRows": [
+        151
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        165
+      ],
+      "bankRows": [
+        175
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        171
+      ],
+      "bankRows": [
+        174
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        103
+      ],
+      "bankRows": [
+        105
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        173
+      ],
+      "bankRows": [
+        167
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        9
+      ],
+      "bankRows": [
+        6
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        20
+      ],
+      "bankRows": [
+        20
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        7
+      ],
+      "bankRows": [
+        5
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        21
+      ],
+      "bankRows": [
+        23
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        67
+      ],
+      "bankRows": [
+        67
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        12
+      ],
+      "bankRows": [
+        15
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        166
+      ],
+      "bankRows": [
+        171
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        101
+      ],
+      "bankRows": [
+        104
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        154
+      ],
+      "bankRows": [
+        157
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        25
+      ],
+      "bankRows": [
+        25
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        188
+      ],
+      "bankRows": [
+        191
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        134
+      ],
+      "bankRows": [
+        135
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        113
+      ],
+      "bankRows": [
+        114
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        136
+      ],
+      "bankRows": [
+        138
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        8
+      ],
+      "bankRows": [
+        3
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        31
+      ],
+      "bankRows": [
+        33
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        72
+      ],
+      "bankRows": [
+        71
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        148
+      ],
+      "bankRows": [
+        148
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        2
+      ],
+      "bankRows": [
+        2
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        186
+      ],
+      "bankRows": [
+        186
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        155
+      ],
+      "bankRows": [
+        153
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        161
+      ],
+      "bankRows": [
+        164
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        131
+      ],
+      "bankRows": [
+        125
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        107
+      ],
+      "bankRows": [
+        110
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        162
+      ],
+      "bankRows": [
+        162
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        95
+      ],
+      "bankRows": [
+        92
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        130
+      ],
+      "bankRows": [
+        127
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        124
+      ],
+      "bankRows": [
+        128
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        91
+      ],
+      "bankRows": [
+        91
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        127
+      ],
+      "bankRows": [
+        129
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        170
+      ],
+      "bankRows": [
+        172
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        115
+      ],
+      "bankRows": [
+        115
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        57
+      ],
+      "bankRows": [
+        60
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        43
+      ],
+      "bankRows": [
+        35
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        160
+      ],
+      "bankRows": [
+        161
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        144
+      ],
+      "bankRows": [
+        143
+      ]
+    },
+    {
+      "scenario": "exact",
+      "level": "EXACT",
+      "cardinality": "ONE_TO_ONE",
+      "autoConfirm": true,
+      "posRows": [
+        169
+      ],
+      "bankRows": [
+        165
+      ]
+    }
+  ],
+  "ambiguous": [],
+  "unmatchedPosRows": [],
+  "unmatchedBankRows": [],
+  "bankDebitRows": []
+}

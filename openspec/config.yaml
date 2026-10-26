@@ -1,0 +1,65 @@
+schema: spec-driven
+
+# Contexto del proyecto: se inyecta en las instrucciones de todos los artefactos.
+context: |
+  Producto: Concilia, aplicación web que concilia el reporte de ventas con tarjeta del POS
+  contra el extracto bancario de una cadena comercial mediante un motor por niveles
+  (exacto, tolerancia, agrupado, asistido por IA). Principio rector: precisión antes que
+  cobertura; ante duda el motor PROPONE, nunca confirma.
+
+  Fuentes de verdad (leer antes de escribir cualquier artefacto, no duplicar su contenido):
+  - readme.md §1.2 niveles del motor · §2 arquitectura y diseño del motor · §3 modelo de datos
+    · §4 API REST · §5 historias de usuario HU-01..HU-12 con criterios de aceptación
+    · §6 tickets TK-01..TK-29 con estimaciones y detalle de TK-10, TK-12, TK-20.
+  - docs/PRD.md §7 requisitos funcionales RF-01..RF-41 · §8 reglas del motor
+    · §9 requisitos no funcionales RNF-01..RNF-16 · §15 decisiones abiertas.
+
+  Stack fijado: monorepo npm workspaces; apps/api = NestJS 12 (ESM, imports relativos con
+  extensión .js) + TypeScript 6 + Prisma 7 (driver adapter pg, cliente generado en
+  src/generated/prisma) + PostgreSQL 16; apps/web = React 18 + Vite + TanStack Query + Tailwind + shadcn/ui;
+  tests con Vitest, Supertest y Playwright; IA con el SDK de Anthropic (modelo por variable
+  de entorno AI_MODEL). El motor de conciliación vive en apps/api/src/matching/engine como
+  dominio puro sin dependencias de framework ni base de datos.
+
+  Reglas duras que todo artefacto debe respetar:
+  - Montos siempre en decimal (DECIMAL(14,2) en BD, decimal.js en código); nunca float.
+  - Nunca se persiste ni se registra en logs el número completo de tarjeta; solo los
+    últimos 4 dígitos.
+  - Toda consulta se filtra por companyId obtenido del JWT, nunca del cliente.
+  - Las propuestas de IA nunca se confirman automáticamente; el backend recalcula totales.
+  - Una transacción pertenece como máximo a un cruce activo (CONFIRMED o PROPOSED).
+
+  Idioma: todos los artefactos se escriben en español. Las palabras clave que OpenSpec
+  parsea permanecen en inglés: "## ADDED Requirements", "## MODIFIED Requirements",
+  "### Requirement:", "#### Scenario:", "**WHEN**", "**THEN**", "**AND**", SHALL/MUST,
+  y los encabezados de plantilla (Why, What Changes, Capabilities, Impact, Context,
+  Goals / Non-Goals, Decisions, Risks / Trade-offs, Purpose).
+
+  Plan de entregas: E2 (2026-10-23) flujo principal HU-01..HU-08; E3 (2026-11-11) resto.
+  Los changes de E3 solo tienen proposal.md hasta que los de E2 estén archivados.
+
+rules:
+  proposal:
+    - Indicar explícitamente qué HU-xx del readme y qué RF-xx del PRD cubre el change.
+    - Indicar qué tickets TK-xx del readme §6.1 agrupa el change.
+    - Mantener la propuesta por debajo de 500 palabras; el detalle técnico va en design.md.
+  specs:
+    - Derivar cada escenario de un criterio de aceptación de la HU o de un ticket; no inventar comportamiento nuevo sin anotarlo.
+    - Un requisito por comportamiento observable; descripción de 500 caracteres o menos.
+    - No mencionar nombres de clases, librerías ni endpoints concretos; eso pertenece a design.md.
+  design:
+    - Referenciar secciones del readme (§2.2, §3, §4) en lugar de copiar diagramas o esquemas.
+    - Cada decisión debe listar al menos una alternativa descartada y el motivo.
+  tasks:
+    - Un grupo "## N. TK-xx · título" por ticket del readme, en orden de dependencia.
+    - Incluir tareas de test junto a la implementación (unitarios del motor y normalizadores, integración de endpoints).
+    - Incluir una tarea final para actualizar readme.md §7 (pull requests) y prompts.md cuando aplique.
+
+operations:
+  apply:
+    guidance:
+      - Antes de implementar, ejecutar openspec show del change y leer las secciones del readme referenciadas en design.md.
+      - Ejecutar los tests del paquete afectado antes de marcar una tarea como completada.
+  archive:
+    guidance:
+      - Resumir qué specs principales se crearon o modificaron y qué queda pendiente para E3.

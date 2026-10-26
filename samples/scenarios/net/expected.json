@@ -1,0 +1,640 @@
+{
+  "seed": "concilia-2026-net",
+  "scenario": "net",
+  "period": {
+    "start": "2026-09-01",
+    "end": "2026-09-30"
+  },
+  "config": {
+    "feePercent": 2.5,
+    "withholdingPercent": 1,
+    "dateWindowDays": 3
+  },
+  "formats": {
+    "pos": {
+      "delimiter": ";",
+      "dateFormat": "dd/MM/yyyy",
+      "decimalSeparator": ","
+    },
+    "bank": {
+      "delimiter": ",",
+      "dateFormat": "yyyy-MM-dd",
+      "decimalSeparator": "."
+    }
+  },
+  "summary": {
+    "posRows": 199,
+    "bankRows": 36,
+    "bankDebitRows": 0,
+    "byScenario": {
+      "exact": 0,
+      "dateShift": 0,
+      "batch": 0,
+      "net": 36,
+      "duplicate": 0,
+      "orphanPos": 0,
+      "orphanBank": 0
+    }
+  },
+  "matches": [
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199
+      ],
+      "bankRows": [
+        36
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        24,
+        25,
+        26,
+        27,
+        28,
+        31
+      ],
+      "bankRows": [
+        7
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        41,
+        45,
+        48,
+        49,
+        50
+      ],
+      "bankRows": [
+        10
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        165,
+        166,
+        168,
+        169,
+        175,
+        177,
+        178
+      ],
+      "bankRows": [
+        32
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        133,
+        135,
+        139,
+        142
+      ],
+      "bankRows": [
+        24
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        123,
+        124,
+        125,
+        127
+      ],
+      "bankRows": [
+        25
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "bankRows": [
+        1
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191
+      ],
+      "bankRows": [
+        34
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        73,
+        75,
+        77,
+        83,
+        84,
+        86,
+        88
+      ],
+      "bankRows": [
+        15
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        42,
+        43,
+        44,
+        46,
+        47,
+        51
+      ],
+      "bankRows": [
+        9
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        15,
+        19,
+        21,
+        22
+      ],
+      "bankRows": [
+        5
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        92,
+        93,
+        94
+      ],
+      "bankRows": [
+        17
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109
+      ],
+      "bankRows": [
+        19
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        112,
+        113,
+        115
+      ],
+      "bankRows": [
+        21
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        79,
+        81,
+        82,
+        85
+      ],
+      "bankRows": [
+        14
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155
+      ],
+      "bankRows": [
+        28
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        172,
+        174,
+        179
+      ],
+      "bankRows": [
+        31
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        16,
+        17,
+        18,
+        20,
+        23
+      ],
+      "bankRows": [
+        4
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        7,
+        9,
+        11,
+        13,
+        14
+      ],
+      "bankRows": [
+        2
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102
+      ],
+      "bankRows": [
+        18
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        120,
+        121,
+        122
+      ],
+      "bankRows": [
+        22
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        158,
+        161,
+        163
+      ],
+      "bankRows": [
+        29
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        8,
+        10,
+        12
+      ],
+      "bankRows": [
+        3
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        164,
+        167,
+        170,
+        171,
+        173,
+        176,
+        180
+      ],
+      "bankRows": [
+        33
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "bankRows": [
+        8
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        131,
+        134,
+        136,
+        137,
+        145,
+        146,
+        147
+      ],
+      "bankRows": [
+        27
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        74,
+        76,
+        78,
+        80,
+        87,
+        89,
+        90,
+        91
+      ],
+      "bankRows": [
+        13
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        60,
+        63,
+        65,
+        66,
+        67,
+        68,
+        69,
+        72
+      ],
+      "bankRows": [
+        16
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        61,
+        62,
+        64,
+        70,
+        71
+      ],
+      "bankRows": [
+        11
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        181,
+        182,
+        183
+      ],
+      "bankRows": [
+        35
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        29,
+        30,
+        32
+      ],
+      "bankRows": [
+        6
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        130,
+        132,
+        138,
+        140,
+        141,
+        143,
+        144
+      ],
+      "bankRows": [
+        26
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        126,
+        128,
+        129
+      ],
+      "bankRows": [
+        23
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        110,
+        111,
+        114,
+        116,
+        117,
+        118,
+        119
+      ],
+      "bankRows": [
+        20
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59
+      ],
+      "bankRows": [
+        12
+      ]
+    },
+    {
+      "scenario": "net",
+      "level": "GROUPED",
+      "cardinality": "MANY_TO_ONE",
+      "autoConfirm": false,
+      "posRows": [
+        156,
+        157,
+        159,
+        160,
+        162
+      ],
+      "bankRows": [
+        30
+      ]
+    }
+  ],
+  "ambiguous": [],
+  "unmatchedPosRows": [],
+  "unmatchedBankRows": [],
+  "bankDebitRows": []
+}

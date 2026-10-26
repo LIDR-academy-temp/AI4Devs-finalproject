@@ -1,0 +1,35 @@
+# dependencias
+node_modules/
+
+# builds
+dist/
+build/
+coverage/
+
+# entorno
+.env
+.env.*
+!.env.example
+
+# archivos subidos en desarrollo
+storage/
+
+# prisma
+apps/api/prisma/*.db
+
+# sistema / editores
+.DS_Store
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# playwright
+e2e/test-results/
+e2e/playwright-report/
+
+# cliente Prisma generado (prisma generate)
+apps/api/src/generated/
+
+# caché incremental de TypeScript
+*.tsbuildinfo
