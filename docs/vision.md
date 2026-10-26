@@ -1,0 +1,135 @@
+# Visión del producto — ATS personal
+
+> Fase 0 (Descubrimiento) del AI SDLC. Este documento fija el problema, el usuario, la hipótesis y el perímetro del producto. El detalle de requisitos vive en `docs/prd.md`.
+
+- **Nombre provisional:** ATS personal (panel inteligente de búsqueda de empleo)
+- **Estado:** borrador v0.1
+- **Fecha:** 2026-11-04
+
+---
+
+## 1. Problema
+
+Buscar empleo en Estados Unidos exige revisar ofertas en varios portales, decidir una por una si el perfil encaja y llevar el seguimiento de cada candidatura. Hoy esas tres tareas son manuales y están dispersas:
+
+1. **Encontrar ofertas (descubrimiento).** Las ofertas están repartidas en varios portales y sitios de empresas. Revisarlas consume tiempo y es fácil perder ofertas relevantes.
+2. **Evaluar el encaje.** Para cada oferta hay que leer la descripción completa y compararla mentalmente con el currículum: habilidades, experiencia, modalidad, ubicación, salario y seniority. Es lento y poco consistente.
+3. **Seguir las candidaturas.** El historial de cada candidatura (confirmaciones, invitaciones a entrevista, rechazos) solo existe en hilos de correo electrónico difíciles de localizar. No hay una vista del estado de cada proceso ni del siguiente paso.
+
+## 2. Usuario
+
+**Usuario principal:** el propio autor, una persona profesional del software que busca empleo en Estados Unidos.
+
+- Preferencia de modalidad: híbrido; también acepta remoto y presencial.
+- No necesita patrocinio de visa.
+- Trabaja con un único currículum (a largo plazo, uno por tipo de rol).
+- Usa el correo electrónico como único registro del historial de candidaturas.
+
+Como el autor es el usuario real, la hipótesis se valida con su propia búsqueda de empleo.
+
+## 3. Hipótesis
+
+> Si las ofertas llegan a un solo panel, se filtran con mis criterios no negociables y reciben un puntaje de encaje explicado contra mi currículum, y si cada candidatura tiene un pipeline con su historial de correos, entonces reviso cada oferta en menos de 2 minutos y no pierdo ningún seguimiento.
+
+**Métricas de validación:**
+
+| Métrica | Línea base | Objetivo |
+| --- | --- | --- |
+| Tiempo para decidir si aplico a una oferta | ~15 min (**supuesto**, por medir) | < 2 min |
+| Seguimientos olvidados (candidaturas sin respuesta y sin acción después de 10 días) | Desconocido (**supuesto**) | 0 |
+| Tiempo para encontrar el historial de una candidatura | Búsqueda manual en el correo | < 30 s desde el panel |
+| Acuerdo entre el puntaje de la IA y mi juicio manual | — | ≥ 80 % en un conjunto de referencia (golden set) |
+
+> Los valores marcados como **supuesto** se medirán durante la primera semana de uso para fijar la línea base real.
+
+## 4. Propuesta de valor
+
+Un panel personal que concentra las ofertas, explica por qué encajan o no con el currículum y convierte los correos dispersos en una línea de tiempo por candidatura.
+
+```text
+Fuentes de ofertas ──▶ Filtros duros ──▶ Puntaje de encaje (IA) ──▶ Pipeline de candidaturas
+  (pegar + API)        (sin IA)          + explicación               + línea de tiempo de correos
+                                                                       (IA clasifica cada correo)
+```
+
+**Principios de diseño:**
+
+- **Determinista primero, IA después.** Los filtros duros (modalidad, ubicación, salario, seniority) se resuelven sin IA: son baratos, rápidos y verificables con pruebas unitarias. La IA se reserva para el juicio semántico.
+- **IA explicable.** Todo puntaje muestra fortalezas, brechas y la evidencia citada de la oferta y del currículum.
+- **IA medible.** Las salidas de la IA usan respuestas estructuradas y se evalúan contra un conjunto de referencia.
+- **El usuario decide.** El sistema recomienda; la decisión de aplicar siempre es humana.
+
+## 5. Alternativas existentes
+
+Existen trackers de candidaturas y asistentes de búsqueda de empleo (por ejemplo Teal, Huntr y Simplify), normalmente centrados en guardar ofertas desde el navegador y autocompletar formularios. Este proyecto se diferencia por:
+
+- Separar filtros duros y puntaje semántico explicado, con evaluación medible.
+- Reconstruir el historial de cada candidatura a partir de los correos.
+- Ser un sistema propio, extensible y sin dependencia de un servicio de terceros.
+
+> El análisis comparativo detallado queda fuera del alcance de esta fase.
+
+## 6. Alcance
+
+Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `MVP` se detallan en el PRD.
+
+### 6.1 Lo que hará
+
+| Capacidad | Etapa |
+| --- | --- |
+| Registrar ofertas pegando el texto o la URL; la IA extrae los campos estructurados | `MVP` |
+| Importar ofertas desde una fuente pública de EE. UU. (job boards de Greenhouse/Lever o Adzuna; se decide en la arquitectura) | `MVP` |
+| Cargar un currículum en PDF; la IA lo convierte en un perfil estructurado | `MVP` |
+| Configurar filtros duros: modalidad, ubicación, salario mínimo y seniority | `MVP` |
+| Calcular un puntaje de encaje (0-100) con fortalezas, brechas y evidencia | `MVP` |
+| Gestionar candidaturas en un pipeline (guardada, aplicada, entrevista, oferta, rechazada) | `MVP` |
+| Pegar un correo en una candidatura; la IA lo clasifica y extrae fecha y siguiente paso | `MVP` |
+| Alertas de seguimiento para candidaturas sin actividad | `MVP` |
+| Interfaz bilingüe (español e inglés) | `MVP` |
+| Segunda fuente de ofertas | `v1.1` |
+| Lectura directa de Gmail (OAuth, solo lectura) para vincular hilos automáticamente | `v1.1` |
+| Dashboard de métricas (tasa de respuesta, tiempo por etapa) | `v1.1` |
+| Carta de presentación o currículum adaptado a una oferta | `v1.1` |
+| Varios currículums, uno por tipo de rol, con selección automática del mejor para cada oferta | `futuro` |
+| Vista híbrida: analizar el currículum como lo haría el ATS de una empresa (palabras clave faltantes, problemas de lectura) | `futuro` |
+| Preparación de entrevistas con RAG sobre la oferta y la empresa | `futuro` |
+| Extensión de navegador para guardar ofertas | `futuro` |
+| Multiusuario | `futuro` |
+
+### 6.2 Lo que no hará
+
+- No aplicará automáticamente a ofertas ni llenará formularios de terceros.
+- No hará scraping de LinkedIn, Indeed u otros portales cuyos términos de uso lo prohíban.
+- No será un ATS para reclutadores ni gestionará candidatos de terceros.
+- No enviará correos en nombre del usuario.
+- No tomará decisiones por el usuario: el puntaje es una recomendación.
+
+## 7. Restricciones
+
+- **Tiempo:** unas 30 horas de desarrollo asistido por IA (recomendación del curso AI4Devs).
+- **Entregas:** documentación (Entrega 1), código funcional con el flujo principal (Entrega 2) y entrega final con pruebas y despliegue.
+- **Stack tecnológico (preferido, alineado con el curso):** TypeScript, AdonisJS, PostgreSQL con Lucid, React 19, Vite, Tuyau y despliegue en Railway. La versión de AdonisJS se confirma en la fase de arquitectura.
+- **Proveedor de IA:** Claude API.
+- **Idioma:**
+  - Código, clases, tablas y campos en inglés.
+  - Interfaz bilingüe (español e inglés).
+  - Documentación del curso en español.
+
+## 8. Supuestos y riesgos
+
+| Tipo | Descripción | Mitigación |
+| --- | --- | --- |
+| Supuesto | La línea base de tiempo por oferta (~15 min) es representativa | Medirla durante la primera semana |
+| Riesgo | La fuente pública elegida tiene poca cobertura en mis roles o ubicación | Validar la cobertura con una prueba rápida (spike) en la arquitectura; mantener el ingreso manual |
+| Riesgo | El puntaje de la IA no coincide con mi criterio | Conjunto de referencia de unas 10 ofertas evaluadas a mano; iterar el prompt con evaluaciones |
+| Riesgo | El costo de la API de Claude crece con el volumen de ofertas | Aplicar los filtros duros antes de la IA; guardar en caché los análisis por oferta y currículum |
+| Riesgo | 30 horas no alcanzan para todo el MVP | Priorizar: puntaje de encaje y pipeline primero; correos y alertas después |
+| Riesgo | Los currículums en PDF no se leen bien | Permitir revisar y corregir el perfil extraído |
+| Riesgo | Datos personales (currículum, correos) en la nube | Un solo usuario autenticado, secretos en variables de entorno, sin compartir datos con terceros salvo la API de Claude |
+
+## 9. Preguntas abiertas para las siguientes fases
+
+- ¿Qué fuente de ofertas entra al MVP: job boards de Greenhouse/Lever (empresas objetivo) o Adzuna (búsqueda amplia)?
+- ¿Qué modelo de Claude se usa para extracción y cuál para el puntaje (costo frente a calidad)?
+- ¿Cuántos días sin actividad disparan una alerta de seguimiento?
+- ¿Cómo se ponderan habilidades, experiencia y preferencias blandas (por ejemplo, la preferencia por híbrido) dentro del puntaje?
