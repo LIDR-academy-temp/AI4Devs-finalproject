@@ -1235,232 +1235,114 @@ Reproducible por otro developer.
 
 # Entrega 2 — Flujo de implementación con IA (octubre 2026)
 
-> Esta sección cubre el eje de evaluación **"Uso de la IA"** durante la fase de codificación. La metodología aplicada fue **SDD (Spec-Driven Development)**: cada ticket pasa por `/iniciar → /definir → /diseñar → /ejecutar → /revisar → /completar` antes de escribir una línea de código. Claude actúa como arquitecto, revisor adversarial y generador de código según la fase.
+> Esta sección cubre el eje **"Uso de la IA"** durante la codificación. Metodología: **SDD (Spec-Driven Development)** — cada ticket pasa por `/iniciar → /definir → /diseñar → /ejecutar → /revisar → /completar`. La pasada adversarial (`abogado-del-diablo`) es obligatoria en `/definir` y `/diseñar`.
+>
+> **Trazabilidad:** todo lo citado aquí es verificable en `ContextoCuartaQuinientos/.planning/tkt-<id>/` (`spec.md`, `design.md`, `impl.md`, `_index.md` con log de estados) y en `_sdd_evolution.md`. Los prompts de `/ejecutar` se muestran en forma resumida; la fuente de verdad son los artefactos SDD que el agente recibió como contexto.
 
 ## Herramientas y modelos — Entrega 2
 
-| Herramienta | Modelo / versión | Uso principal |
-|-------------|-----------------|---------------|
-| Claude (Cowork / Code) | Sonnet 4.5 / 4.6 | Spec SDD, diseño, generación de código .NET y React, revisión adversarial |
-| Cursor | claude-sonnet-4-5 | Autocompletado, refactors inline, fix de tests en TypeScript |
-| Claude CLI | claude-sonnet | Subagentes especializados: `backend-developer`, `frontend-tester`, `abogado-del-diablo` |
+| Herramienta | Uso principal |
+|-------------|---------------|
+| Claude (Cowork / Claude Code, familia Sonnet) | Spec y design SDD, generación de código .NET y React, revisión adversarial |
+| Cursor | Autocompletado, refactors inline, ajustes de tests TypeScript |
+| Subagentes Claude Code | `desarrollador-react`, `frontend-tester`, `git-frontend` (declarados en cada spec, sección «Agentes previstos») |
 
-**Configuración de contexto activa:** `CLAUDE.md` (convenciones no negociables), `sdd.config.yaml` (workflow de tickets), skills `.claude/skills/` (frontend-design-master, austero, abogado-del-diablo, sdd-workflow). Los agentes leen `ContextoCuartaQuinientos/specs/<dominio>.md` antes de escribir código.
-
----
-
-## Flujo 1 — Generación de un endpoint REST desde spec SDD
-
-**Ticket:** `SGR-BE-030` — Gestión de usuarios (listar, crear, editar, cambiar contraseña forzada)
-
-**Fase: `/definir`** — Prompt enviado a Claude Sonnet:
-
-```
-## Rol
-Arquitecto .NET 9 + revisor adversarial (skill abogado-del-diablo activo).
-
-## Contexto
-readme.md §3 (modelo usuarios/perfiles), §4 (rutas SGR/Usuarios), CLAUDE.md convenciones:
-sin SPs, Dapper parametrizado, identidad del JWT, catálogos por nombre, soft delete bEliminado.
-
-## Objetivo
-Genera spec.md para SGR-BE-030: endpoints CRUD de usuarios + cambio de contraseña forzada.
-Incluye AC Given/When/Then, poke-holes (mínimo 3) y dependencias con SGR-BE (perfiles, menus).
-
-## Restricciones
-- IdentidadID siempre del JWT (sub), nunca del body.
-- Passwords: BCrypt con sal, nunca en texto claro en logs ni en respuesta.
-- Catálogos: PerfilID resuelto por nombre, no hardcodeado.
-- ProblemDetails con code de negocio en errores.
-
-## Non-goals
-No generes código todavía. Solo el contrato (spec.md).
-```
-
-**Respuesta del asistente — fragmento representativo del spec generado** (`ContextoCuartaQuinientos/specs/sgr-usuarios.md`):
-
-```markdown
-### AC-02 · Crear usuario admin
-- **Given** un admin autenticado (JWT válido, perfil `Administrador`)
-  **When** POST /SGR/Usuarios con correo ya registrado
-  **Then** 409 Conflict · code: "CONFLICT" · "El correo ya está en uso"
-
-### AC-05 · Cambiar contraseña forzada
-- **Given** el admin con sub=X en JWT
-  **When** POST /SGR/Usuarios/{id}/CambiarPassword donde id == X (el admin se cambia a sí mismo)
-  **Then** 200 OK — permitido (solo auto-cambio; no confundir con deshabilitar cuenta propia)
-
-### Poke-holes generados por abogado-del-diablo en /definir:
-1. ¿Qué pasa si el admin intenta deshabilitar su propia cuenta? → no cubierto en AC-01..AC-09 → añadir AC-10
-2. ¿El correo es case-sensitive en la búsqueda de duplicados? → UNIQUE INDEX en BD es case-insensitive por collation SQL Server → confirmar con DBA o añadir LOWER() en query
-3. ¿Cómo se invalidan tokens activos al deshabilitar un usuario? → RefreshToken en tabla; AccessToken no revocable sin lista negra → documentar como deuda técnica en spec
-```
-
-**Fase: `/ejecutar`** — Prompt a Claude Code (subagente `backend-developer`):
-
-```
-Implementa SGR-BE-030 según spec.md y design.md acordados.
-Sigue CLAUDE.md: Dapper parametrizado, IDbTransaction en operaciones de escritura,
-identidad del JWT, catálogos por nombre, ProblemDetails.
-Genera también los tests unitarios en GraphApi.Tests/ (xUnit + Moq).
-```
-
-**Artefacto generado:** `GraphApi/Controllers/SGR/Usuarios/UsuariosController.cs`, `GraphApi/Services/SGR/Usuarios/CuartaUsuarioAdminService.cs`, `GraphApi/GraphApi.Tests/CuartaUsuarioAdminServiceTests.cs`.
-
-**Refinamiento humano — ciclo 1:** Se detectó que el agente usaba `User.Identity.Name` en lugar de `User.FindFirst(ClaimTypes.NameIdentifier)` para leer el `sub` del JWT. Corregido manualmente. También se detectó que el poke-hole "admin se deshabilita a sí mismo" (AC-10) no fue implementado → ciclo `REQUIERE CAMBIOS`.
-
-**Refinamiento humano — ciclo 2:** Tras re-ejecución, el agente resolvía `PerfilID` por ID hardcodeado (1 = Residente) en lugar de buscar por nombre. Violaba CLAUDE.md explícitamente. Fix: query `SELECT PerfilID FROM SGR.Perfiles WHERE Nombre = @Nombre`. Este patrón se documentó en la tabla de "Criterio humano" como recurrente.
+**Contexto activo para los agentes:** `CLAUDE.md` (convenciones no negociables), `sdd.config.yaml`, skills en `.claude/skills/` (`abogado-del-diablo`, `frontend-design-master`, `austero`, `sdd-workflow`) y `ContextoCuartaQuinientos/specs/<dominio>.md`.
 
 ---
 
-## Flujo 2 — Componentes React con patrón CRUD admin desde diseño visual
+## Flujo 1 — Backend JWT de navegación y permisos (SGR-BE-030)
 
-**Ticket:** `FE-CRUD-001` — Tablas admin con paginación, búsqueda y modal de edición (usuarios, tickets, finanzas)
+**Ticket:** `SGR-BE-030` — API JWT para navegación y permisos · talla M · `.planning/tkt-sgr-be-030/`
 
-**Prompt enviado (skill `frontend-design-master` activo):**
+**`/definir` — objetivo dado a la IA:** endpoints bajo `/SGR` protegidos por JWT para menú jerárquico por perfil, CRUD de menús (solo admin) y asignación de menús a perfil, respetando `CLAUDE.md` (Dapper parametrizado, `sub` del JWT = `UsuarioID`, sin IDs hardcodeados, legacy sin romper).
+
+**Criterios de aceptación generados (literal de `spec.md` §3):**
 
 ```
-## Rol
-Desarrollador React 18 + TypeScript. Skill frontend-design-master cargado.
-
-## Contexto
-Web/src/features/ con Apollo Client configurado. API base: SGR/Usuarios (ya implementada).
-Tailwind 3, componentes shared en Web/src/shared/. Tests con Vitest + Testing Library.
-
-## Objetivo
-Implementa AdminUsuariosPage: tabla con paginación server-side, búsqueda por nombre/correo,
-modal para crear/editar usuario, confirmación de baja lógica (bEliminado).
-
-## Restricciones
-- Sin IDs hardcodeados: perfiles se cargan del endpoint GET /SGR/Perfiles.
-- El modal reutiliza el componente shared/Modal.tsx existente.
-- Tests: renderiza la tabla, abre el modal, maneja error de API.
-- No usar any en TypeScript.
-
-## Non-goals
-No implementes el flujo de recuperación de contraseña (ticket separado).
+- CA-1: Residente con JWT solo recibe rutas de su PerfilMenus (no admin).
+- CA-2: Admin recibe menús admin + operativos según seed/BD.
+- CA-3: CRUD menú persiste en sgr.Menus con auditoría (Creado, UsuarioCreacionID, …).
+- CA-4: Tests integración GraphApi.Tests happy + 403 no admin + 401 sin token.
+- CA-5: Legacy endpoints sin romper (GraphQL/MVC antiguo).
 ```
 
-**Aporte concreto del skill `frontend-design-master`:** el asistente generó el componente usando el token de color `cq-primary` y la clase `cq-admin-table-pane` (definidos en `bootstrap-pantone.css`) en lugar de colores Tailwind hardcodeados, y aplicó el patrón `AdminFilterableTable` con `AdminMobileCardList` para móvil — comportamiento que el skill instruye explícitamente y que un prompt plano no habría producido sin especificarlo.
+**Pasada adversarial — veredicto literal:** *«APROBADO — acotar MVP a `GET Navegacion/menus` + CRUD Menus + PerfilMenus antes de botones.»* La IA recortó el alcance: botones, CRUD JWT de perfiles y seed `DB-006` quedaron documentados como «Fuera de MVP» en `impl.md`.
 
-**Respuesta del asistente:** `AdminUsuariosPage.tsx` + `AdminUsuariosPage.test.tsx` + hook `useUsuariosAdmin.ts` con query Apollo + mutación.
+**`/ejecutar` → artefactos:** `CuartaNavegacionRepository`, `CuartaNavegacionService`, `MenuArbolBuilder`, `NavegacionController`; tests `CuartaNavegacionServiceTests` + `NavegacionAuthorizationTests` (9 tests); `SGR-BE-030_api_tests.http`.
 
-**Refinamiento humano:** Los tests generados mockeaban Apollo con `MockedProvider` pero no cubrían el caso de error de red. Se añadió manualmente el test `muestra error cuando la API falla`. La paginación server-side inicial usaba `offset/limit` en lugar del esquema con `Pagina/TamanoPagina` definido en `readme.md §4` — corregido tras detectar la inconsistencia en revisión.
+**`/revisar` — 3 pasadas (log real de `_index.md`):**
+
+| Pasada | Resultado | Motivo |
+|--------|-----------|--------|
+| 1ª | REQUIERE CAMBIOS | Tests 9/9 en verde, **pero faltaba smoke HTTP** — no se aceptó «tests verdes» como suficiente |
+| 2ª | REQUIERE CAMBIOS | Smoke de login devolvía **401** |
+| 3ª | LISTO PARA PR | Fix `Perfil`/`Nombre` + smoke 200 |
+
+**Criterio humano:** la causa del fallo no estaba en el código generado sino en el esquema real: la columna de `sgr.Perfiles` se llama distinto según el entorno (`Perfil` vs `Nombre`). Se resolvió con `SqlSchemaCompat.PerfilNombreColumn` en `ResolverPerfilIdAsync`, y se registró como aprendizaje en el cierre: *«reutilizar `SqlSchemaCompat` al tocar `sgr.Perfiles` en nuevos repos Dapper»*. El smoke final se validó con un JWT HS256 firmado con la clave de user-secrets (nunca en repo): `GET` admin → 200, residente `POST` admin → **403**.
 
 ---
 
-## Flujo 3 — Corrección de tests rotos tras refactor de UX global
+## Flujo 2 — Anuncios: residente + admin (FE-043)
 
-**Ticket:** `FE-UX-001` — Rediseño UX integral: navegación, responsividad, sidebar colapsable
+**Ticket:** `FE-043` · talla M · 2 ciclos REQUIERE CAMBIOS · `.planning/tkt-fe-043/`
 
-**Contexto del problema:** tras implementar el nuevo layout con sidebar y tokens de color, 14 tests de páginas fallaban porque referenciaban selectores del DOM que habían cambiado.
+**Pasada adversarial en `/definir` (literal de `spec.md`):**
 
-**Salida de `npm test` que se adjuntó al prompt (fragmento representativo):**
+| # | Objeción | Resolución |
+|---|----------|------------|
+| B1 | CA-1 requiere dos usuarios | Test manual o Vitest mock API; E2E opcional |
+| B2 | Auto `PATCH` al scroll lista | Solo en detalle, no en listado |
+| B3 | Admin también ve `/anuncios` | Admin puede usar bandeja admin; no Must duplicar |
 
-```
-FAIL  src/pages/AdminAnunciosPage.test.tsx
-  ● AdminAnunciosPage › muestra la tabla de anuncios
-    TestingLibraryElementError: Unable to find an element with the text: /Anuncios/
-    The above error likely occurred because the component renders inside a context that
-    is not provided in the test. Make sure all needed Providers are included.
-    ...
-  ● AdminAnunciosPage › abre el modal de creación
-    Error: Your test suite must contain at least one test.
-    (Providers faltantes: ThemeProvider, ToastProvider)
+**Pasada adversarial en `/diseñar` (literal de `design.md`):**
 
-FAIL  src/pages/AdminCasasPage.test.tsx
-  ● AdminCasasPage › lista casas con paginación
-    TypeError: Cannot read properties of undefined (reading 'success')
-    at useToast (ToastContext.tsx:12:5)  ← useToast fuera de ToastProvider
-```
+| # | Objeción | Resolución |
+|---|----------|------------|
+| F1 | Doble PATCH en StrictMode | `useRef` guard o ignorar 204 duplicado |
+| F2 | Admin sin tipos seed | Modal deshabilitado + texto «Sin tipos configurados» |
 
-**Prompt enviado a Claude (subagente `frontend-tester`):**
+Pre-mortem registrado: *«API antigua sin reiniciar → 404 en `/visto`»*. F1 es un bug que solo aparece en desarrollo con React 18 StrictMode — se previno antes de escribir código.
 
-```
-## Rol
-QA engineer React. Analiza los tests rotos y propón la corrección mínima.
+**`/revisar` — log real:**
 
-## Contexto
-Acabo de refactorizar el layout global (FE-UX-001): sidebar colapsable,
-ThemeContext con dark/light, ToastContext. Los tests fallan porque buscan
-elementos que ya no existen o porque el mock de contexto es incompleto.
-Adjunto la salida de `npm test` con los 14 tests fallidos (ver arriba).
+| Pasada | Resultado | Motivo |
+|--------|-----------|--------|
+| 1ª | REQUIERE CAMBIOS | tsc/vitest/build OK, pero faltaba columna vigencia en admin y el PATCH fallaba en silencio |
+| → `/ejecutar` | corrección | columna vigencia, errores visibles en delete/PATCH, modal accesible (`role="dialog"`) |
+| 2ª | REQUIERE CAMBIOS | CA-1..3 (Must) sin evidencia de prueba |
+| → reintento | corrección | tests Vitest CA-1..3 con mock de `apiClient` + badge «Nuevo» |
+| final | LISTO PARA PR | vitest 35/35, `tsc --noEmit`, `vite build` |
 
-## Objetivo
-Para cada test fallido: identifica la causa raíz y genera el fix mínimo.
-No reescribas la lógica de negocio del test, solo actualiza los selectores
-o añade los providers faltantes.
-
-## Restricciones
-- No uses snapshots.
-- Usa `stubToast` de Web/src/test/stubToast.ts para mockear useToast.
-- No vi.mock global en setup.ts (rompe ToastContext.test.tsx).
-
-## Non-goals
-No añadas tests nuevos en este ticket.
-```
-
-**Respuesta del asistente:** diagnóstico por test (selector obsoleto vs. provider faltante vs. mock incompleto), fixes específicos usando `renderWithProviders` wrapper con ThemeProvider + ToastProvider.
-
-**Refinamiento humano:** el agente propuso `vi.mock('../../shared/ToastContext')` global en 3 archivos — revertido porque rompía `ToastContext.test.tsx` propio. Se estandarizó el patrón `import '../test/stubToast'` por archivo (ver `Web/src/test/stubToast.ts`), documentado como convención en `ContextoCuartaQuinientos/specs/frontend.md §Tests tema/toast`.
+**Criterio humano:** «compila y los tests pasan» no se aceptó como cierre: se exigió que cada CA *Must* tuviera evidencia y que los errores de API llegaran al usuario.
 
 ---
 
-## Flujo 4 — Ciclo completo `REQUIERE CAMBIOS` con revisión adversarial documentada
+## Flujo 3 — Convención de tests que evolucionó con la revisión (FE-UX-005 → FE-UX-006)
 
-> Este flujo muestra el pipeline SDD **desde la pasada del abogado-del-diablo hasta el merge**, para evidenciar que la supervisión humana no es reactiva sino estructural.
+**Problema:** al introducir `ToastContext` en todas las páginas admin, los tests de página necesitaban mockear `useToast`.
 
-**Ticket:** `FE-043` — Listado y gestión de anuncios (panel admin)  
-**Talla:** M · **Ciclos REQUIERE CAMBIOS:** 2 (según `_sdd_evolution.md`)
+1. **FE-UX-005** — opción descartada registrada en `delta.md`: *mock global en `setup.ts`* → rechazado porque **rompía `ToastContext.test.tsx`** (el propio test del provider). Se creó `Web/src/test/stubToast.ts`, importado por archivo de test. Se documentó en `specs/frontend.md`.
+2. **FE-UX-006** — al sumar `ThemeProvider` (modo oscuro) el import por archivo ya no escalaba. Se revisó la decisión anterior: `setup.ts` importa `stubTheme` + `stubToast`, y **`ToastContext.test.tsx` hace `vi.unmock`**, resolviendo el problema original de raíz.
 
-**Fase `/revisar` — salida del abogado-del-diablo sobre el PR:**
-
-```
-[abogado del diablo · revisar]
-1. [Alta] AdminAnunciosPage.test.tsx no cubre el caso en que `eliminarAnuncio` falla
-   con error de servidor → el botón "Eliminar" queda en estado indeterminado en PROD.
-   → Añadir test: mock rechaza la promesa, verificar que el toast.error se llama.
-
-2. [Media] El componente llama a `tipoAnuncioId` directamente en el body de la mutación,
-   pero CLAUDE.md §Catálogos dice "catálogos por nombre, no por ID".
-   → Cambiar a `tipoAnuncio: string` y resolver ID en el servicio de backend.
-
-3. [Media] La paginación usa `currentPage * pageSize` (0-indexed) pero el endpoint
-   espera `Pagina` 1-indexed según readme.md §4.
-   → Corregir offset: `(Pagina - 1) * TamanoPagina`.
-
-Veredicto: 3 objeciones sustantivas — REQUIERE CAMBIOS antes de merge.
-```
-
-**Acción humana:** se aceptaron las 3 objeciones. Se devolvió al agente con el comentario exacto del abogado-del-diablo como contexto adicional.
-
-**Re-ejecución del agente (`frontend-developer`):**
-
-```
-Corrige FE-043 según las objeciones del abogado-del-diablo adjuntas.
-- Test de error en eliminación: mock de eliminarAnuncio que rechaza → verificar toast.error.
-- Catálogo: cambiar tipoAnuncioId → tipoAnuncio (string) en mutación.
-- Paginación: corregir a Pagina 1-indexed.
-No modifiques lógica no relacionada.
-```
-
-**Resultado:** PR aprobado en 2º ciclo. Tests: 4 casos cubiertos (renderiza, abre modal, elimina OK, elimina con error). El patrón `Pagina 1-indexed` se añadió al `CLAUDE.md` como convención para evitar repetición en tickets FE-CRUD-002..004.
+**Por qué se incluye:** muestra que las decisiones de la IA no se aplican ciegamente ni se congelan: una convención se adopta con su razón, se documenta y se reemplaza cuando la razón cambia — todo trazado en `delta.md`.
 
 ---
 
-## Criterio humano aplicado (supervisión IA)
+## Criterio humano aplicado (supervisión de la IA)
 
-| Patrón detectado | Frecuencia | Acción correctiva |
-|-----------------|-----------|------------------|
-| Leer identidad del body en vez del JWT | Recurrente en endpoints de escritura | Regla en CLAUDE.md + revisión en `/revisar` |
-| `any` en TypeScript en respuestas de API | Ocasional | Rechazado en auditoría; se tipan con interfaces generadas del swagger |
-| Mock global en Vitest que rompe otros tests | 2 tickets | Convención `import '../test/stubToast'` por archivo; documentada en specs/frontend.md |
-| Poke-holes en spec no implementados en código | 3 tickets (SGR-BE-030 ×2, FE-043) | Ciclo `REQUIERE CAMBIOS` → fix antes de merge |
-| Catálogos con IDs hardcodeados en frontend o backend | 2 tickets | Convertido a carga dinámica; regla reforzada en CLAUDE.md |
-| Paginación 0-indexed vs 1-indexed | 2 tickets (FE-CRUD-001, FE-043) | Fix + convención añadida a CLAUDE.md tras 1er incidente |
+| Patrón detectado | Evidencia | Acción |
+|------------------|-----------|--------|
+| «Tests verdes» sin prueba real contra la API | SGR-BE-030 1ª revisión | Smoke HTTP obligatorio antes de LISTO PARA PR |
+| Código correcto contra un esquema supuesto (`(asumido)`) | SGR-BE-030 `Perfil`/`Nombre` | `SqlSchemaCompat` + learning en cierre |
+| Errores de API silenciosos en la UI | FE-043 1ª revisión | Error visible obligatorio; luego toasts (FE-UX-006) |
+| CA *Must* sin test que lo demuestre | FE-043 2ª revisión | Cada CA Must ligado a un test o smoke en `impl.md` |
+| Mock global que rompe tests del propio provider | FE-UX-005 `delta.md` | `stubToast` → `vi.unmock` en FE-UX-006 |
+| Alcance que crece durante el ticket | SGR-BE-030 veredicto adversarial | MVP acotado; lo demás a «Fuera de MVP» |
 
-**Métrica de proceso:** 23 tickets SDD cerrados entre oct-16 y oct-28  
-· **159 tests unitarios API** en verde (45 archivos · xUnit + Moq · `GraphApi/GraphApi.Tests/`)  
-· **268 tests Web** en verde (83 archivos · Vitest + Testing Library · `Web/src/**/*.test.tsx`)  
-· Promedio: **1.1 ciclos `REQUIERE CAMBIOS`** por ticket de talla M/L  
-· Tickets en 1ª auditoría sin ciclo adicional: FE-CRUD-003, FE-QA-001, FE-UX-002..005
+## Métricas de proceso (verificables)
+
+- **23 tickets SDD** cerrados entre el 16 y el 28 de octubre (`_sdd_evolution.md`), cada uno con `spec.md` + `impl.md` + log de estados.
+- **API:** 45 archivos de test xUnit + Moq con **159 casos** `[Fact]`/`[Theory]` en `GraphApi/GraphApi.Tests/`.
+- **Web:** 83 archivos de test Vitest + Testing Library; última corrida registrada **Vitest 226/226** (`tkt-fe-ux-005/_index.md`).
+- Tickets aprobados en la 1ª auditoría sin ciclo REQUIERE CAMBIOS: FE-CRUD-003, FE-QA-001, FE-UX-001..004 (según `_sdd_evolution.md`).
