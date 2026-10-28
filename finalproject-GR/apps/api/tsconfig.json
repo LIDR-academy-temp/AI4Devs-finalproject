@@ -1,0 +1,15 @@
+{
+  "extends": "@railgun-qa/config/tsconfig.base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "noEmit": false,
+    "types": ["node", "jest"]
+  },
+  "include": ["src/**/*.ts"]
+}

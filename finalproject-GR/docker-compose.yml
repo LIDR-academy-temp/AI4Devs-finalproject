@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: railgun
+    ports:
+      # Host port 5433, not 5432 — some dev machines already run a native Postgres
+      # service bound to 5432 (discovered the hard way: connections silently hit that
+      # instead of this container). The container's own internal port stays 5432.
+      - '5433:5432'
+    volumes:
+      - railgun-pg-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  railgun-pg-data:

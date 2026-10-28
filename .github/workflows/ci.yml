@@ -1,0 +1,57 @@
+name: CI (finalproject-GR)
+
+on:
+  push:
+    paths:
+      - 'finalproject-GR/**'
+  pull_request:
+    paths:
+      - 'finalproject-GR/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: railgun
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: finalproject-GR
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # graphile-worker (apps/worker, ADR 0018) requires Node 22.18+.
+          node-version: '22'
+      - run: npm install
+      # npm run lint / typecheck (not `--workspaces --if-present` directly) — the root
+      # scripts already wrap that; running it bare fails hard on a workspace with no
+      # lint script (packages/shared-types, packages/reporting).
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Set up database roles
+        run: |
+          node scripts/apply-sql.js db/init/01-roles.sql
+          node scripts/apply-sql.js db/init/02-worker-role.sql
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/railgun
+      # Installs the graphile_worker schema first, then every SQL migration (scripts/install-job-queue.js).
+      - name: Apply migrations (as railgun_migrator)
+        run: node scripts/apply-migrations.js
+        env:
+          DATABASE_URL: postgresql://railgun_migrator:migrator_dev_password@localhost:5432/railgun
+      - name: RLS coverage check
+        run: npm run db:check-rls
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/railgun
