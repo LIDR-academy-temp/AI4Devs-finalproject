@@ -1228,3 +1228,154 @@ Reproducible por otro developer.
 **Refinamiento humano:** alinear con DoD §5 y CI §2.4 cuando haya código.
 
 **Pull Request — Entrega 1 (documentación):** _(rama `feature/entrega-1-AFS` → base del curso — enlace `gh pr` pendiente)_
+
+---
+
+---
+
+# Entrega 2 — Flujo de implementación con IA (octubre 2026)
+
+> Esta sección cubre el eje de evaluación **"Uso de la IA"** durante la fase de codificación. La metodología aplicada fue **SDD (Spec-Driven Development)**: cada ticket pasa por `/iniciar → /definir → /diseñar → /ejecutar → /revisar → /completar` antes de escribir una línea de código. Claude actúa como arquitecto, revisor adversarial y generador de código según la fase.
+
+## Herramientas y modelos — Entrega 2
+
+| Herramienta | Modelo / versión | Uso principal |
+|-------------|-----------------|---------------|
+| Claude (Cowork / Code) | Sonnet 4.5 / 4.6 | Spec SDD, diseño, generación de código .NET y React, revisión adversarial |
+| Cursor | claude-4-sonnet | Autocompletado, refactors inline, fix de tests en TypeScript |
+| Claude CLI | claude-sonnet | Subagentes especializados: `backend-developer`, `frontend-tester`, `abogado-del-diablo` |
+
+**Configuración de contexto activa:** `CLAUDE.md` (convenciones no negociables), `sdd.config.yaml` (workflow de tickets), skills `.claude/skills/` (frontend-design-master, austero, abogado-del-diablo, sdd-workflow). Los agentes leen `ContextoCuartaQuinientos/specs/<dominio>.md` antes de escribir código.
+
+---
+
+## Flujo 1 — Generación de un endpoint REST desde spec SDD
+
+**Ticket:** `SGR-BE-030` — Gestión de usuarios (listar, crear, editar, cambiar contraseña forzada)
+
+**Fase: `/definir`** — Prompt enviado a Claude Sonnet:
+
+```
+## Rol
+Arquitecto .NET 9 + revisor adversarial (skill abogado-del-diablo activo).
+
+## Contexto
+readme.md §3 (modelo usuarios/perfiles), §4 (rutas SGR/Usuarios), CLAUDE.md convenciones:
+sin SPs, Dapper parametrizado, identidad del JWT, catálogos por nombre, soft delete bEliminado.
+
+## Objetivo
+Genera spec.md para SGR-BE-030: endpoints CRUD de usuarios + cambio de contraseña forzada.
+Incluye AC Given/When/Then, poke-holes (mínimo 3) y dependencias con SGR-BE (perfiles, menus).
+
+## Restricciones
+- IdentidadID siempre del JWT (sub), nunca del body.
+- Passwords: BCrypt con sal, nunca en texto claro en logs ni en respuesta.
+- Catálogos: PerfilID resuelto por nombre, no hardcodeado.
+- ProblemDetails con code de negocio en errores.
+
+## Non-goals
+No generes código todavía. Solo el contrato (spec.md).
+```
+
+**Respuesta del asistente:** spec.md con 4 endpoints (`GET /SGR/Usuarios`, `POST /SGR/Usuarios`, `PUT /SGR/Usuarios/{id}`, `POST /SGR/Usuarios/{id}/CambiarPassword`), 9 AC con Given/When/Then, poke-holes: "¿qué pasa si el admin se elimina a sí mismo?", "¿el correo es case-sensitive en el login?", "¿cómo se invalidan tokens activos al deshabilitar un usuario?".
+
+**Fase: `/ejecutar`** — Prompt a Claude Code (subagente `backend-developer`):
+
+```
+Implementa SGR-BE-030 según spec.md y design.md acordados.
+Sigue CLAUDE.md: Dapper parametrizado, IDbTransaction en operaciones de escritura,
+identidad del JWT, catálogos por nombre, ProblemDetails.
+Genera también los tests unitarios en GraphApi.Tests/ (xUnit + Moq).
+```
+
+**Artefacto generado:** `GraphApi/Controllers/SGR/Usuarios/UsuariosController.cs`, `GraphApi/Services/USR/CuartaUsuarioAdminService.cs`, `GraphApi/GraphApi.Tests/CuartaUsuarioAdminServiceTests.cs`.
+
+**Refinamiento humano:** Se detectó que el agente usaba `User.Identity.Name` en lugar de `User.FindFirst(ClaimTypes.NameIdentifier)` para leer el `sub` del JWT. Corregido manualmente. También se añadió validación de que un admin no puede deshabilitarse a sí mismo (poke-hole que la IA generó en spec pero no implementó en el primer ciclo → ciclo de revisión `REQUIERE CAMBIOS`).
+
+---
+
+## Flujo 2 — Componentes React con patrón CRUD admin desde diseño visual
+
+**Ticket:** `FE-CRUD-001` — Tablas admin con paginación, búsqueda y modal de edición (usuarios, tickets, finanzas)
+
+**Prompt enviado (skill `frontend-design-master` activo):**
+
+```
+## Rol
+Desarrollador React 18 + TypeScript. Skill frontend-design-master cargado.
+
+## Contexto
+Web/src/features/ con Apollo Client configurado. API base: SGR/Usuarios (ya implementada).
+Tailwind 3, componentes shared en Web/src/shared/. Tests con Vitest + Testing Library.
+
+## Objetivo
+Implementa AdminUsuariosPage: tabla con paginación server-side, búsqueda por nombre/correo,
+modal para crear/editar usuario, confirmación de baja lógica (bEliminado).
+
+## Restricciones
+- Sin IDs hardcodeados: perfiles se cargan del endpoint GET /SGR/Perfiles.
+- El modal reutiliza el componente shared/Modal.tsx existente.
+- Tests: renderiza la tabla, abre el modal, maneja error de API.
+- No usar any en TypeScript.
+
+## Non-goals
+No implementes el flujo de recuperación de contraseña (ticket separado).
+```
+
+**Respuesta del asistente:** `AdminUsuariosPage.tsx` + `AdminUsuariosPage.test.tsx` + hook `useUsuariosAdmin.ts` con query Apollo + mutación. 
+
+**Refinamiento humano:** Los tests generados mockeaban Apollo con `MockedProvider` pero no cubrían el caso de error de red. Se añadió manualmente el test `muestra error cuando la API falla`. La paginación server-side inicial usaba `offset/limit` en lugar del esquema con `Pagina/TamanoPagina` definido en `readme.md §4` — corregido tras detectar la inconsistencia en revisión.
+
+---
+
+## Flujo 3 — Corrección de tests rotos tras refactor de UX global
+
+**Ticket:** `FE-UX-001` — Rediseño UX integral: navegación, responsividad, sidebar colapsable
+
+**Contexto del problema:** tras implementar el nuevo layout con sidebar y tokens de color, 14 tests de páginas fallaban porque referenciaban selectores del DOM que habían cambiado.
+
+**Prompt enviado a Claude (subagente `frontend-tester`):**
+
+```
+## Rol
+QA engineer React. Analiza los tests rotos y propón la corrección mínima.
+
+## Contexto
+Acabo de refactorizar el layout global (FE-UX-001): sidebar colapsable,
+ThemeContext con dark/light, ToastContext. Los tests fallan porque buscan
+elementos que ya no existen o porque el mock de contexto es incompleto.
+
+Adjunto: salida de `npm test` con los 14 tests fallidos.
+
+## Objetivo
+Para cada test fallido: identifica la causa raíz y genera el fix mínimo.
+No reescribas la lógica de negocio del test, solo actualiza los selectores
+o añade los providers faltantes.
+
+## Restricciones
+- No uses snapshots.
+- Usa `stubToast` de Web/src/test/stubToast.ts para mockear useToast.
+- No vi.mock global en setup.ts (rompe ToastContext.test.tsx).
+
+## Non-goals
+No añadas tests nuevos en este ticket.
+```
+
+**Respuesta del asistente:** diagnóstico por test (selector obsoleto vs. provider faltante vs. mock incompleto), fixes específicos usando `renderWithProviders` wrapper con ThemeProvider + ToastProvider. 
+
+**Refinamiento humano:** el agente propuso `vi.mock('../../shared/ToastContext')` global en 3 archivos — revertido porque rompía `ToastContext.test.tsx` propio. Se estandarizó el patrón `stubToast` por archivo, documentado como convención en `ContextoCuartaQuinientos/specs/frontend.md`.
+
+---
+
+## Criterio humano aplicado (supervisión IA)
+
+| Patrón detectado | Frecuencia | Acción correctiva |
+|-----------------|-----------|------------------|
+| Leer identidad del body en vez del JWT | Recurrente en endpoints de escritura | Regla en CLAUDE.md + revisión en `/revisar` |
+| `any` en TypeScript en respuestas de API | Ocasional | Rechazado en auditoría; se tipan con interfaces generadas del swagger |
+| Mock global en Vitest que rompe otros tests | 2 tickets | Convención `stubToast` por archivo documentada en specs |
+| Poke-holes en spec no implementados en código | 3 tickets | Ciclo `REQUIERE CAMBIOS` → fix antes de merge |
+| Catálogos con IDs hardcodeados en frontend | Puntual | Convertido a carga dinámica desde endpoint de catálogo |
+
+**Métrica de proceso:** 23 tickets SDD cerrados entre oct-16 y oct-28 · 57 tests unitarios API en verde · 22 tests Web en verde · 1 ciclo de `REQUIERE CAMBIOS` promedio por ticket de talla M/L.
+
