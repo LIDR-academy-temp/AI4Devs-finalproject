@@ -176,6 +176,27 @@ describe('executions: authoring (e2e, specs/test-execution-authoring)', () => {
       expect(list.body[0].runs).toBeUndefined();
     });
 
+    it("lists each execution's test case tags, each once; untagged executions list none", async () => {
+      const f = await fixture('Exec-ListTags');
+      const contributor = await setUpProjectMember(prisma, f.workspaceId, f.projectId, 'Contributor');
+      const [a, b, c] = await insertTestCases(prisma, f.workspaceId, f.projectId, ['A', 'B', 'C']);
+      const tag = async (name: string): Promise<string> =>
+        (await api().post(`/projects/${f.projectId}/tags`).set('Authorization', `Bearer ${contributor}`).send({ name })).body.id;
+      const [smoke, checkout] = [await tag('smoke'), await tag('checkout')];
+      const setTags = (id: string, tagIds: string[]) =>
+        api().patch(`/projects/${f.projectId}/test-cases/${id}`).set('Authorization', `Bearer ${contributor}`).send({ tagIds });
+      await setTags(a, [smoke]);
+      await setTags(b, [smoke, checkout]);
+      await createExecution(f, contributor, { name: 'Tagged', testCaseIds: [a, b] });
+      await createExecution(f, contributor, { name: 'Untagged', testCaseIds: [c] });
+
+      const list = await api().get(`/projects/${f.projectId}/executions`).set('Authorization', `Bearer ${contributor}`);
+
+      const byName = new Map((list.body as { name: string; tagIds: string[] }[]).map((e) => [e.name, e.tagIds]));
+      expect([...byName.get('Tagged')!].sort()).toEqual([smoke, checkout].sort());
+      expect(byName.get('Untagged')).toEqual([]);
+    });
+
     it('a Viewer retrieves an execution with its runs in position order', async () => {
       const f = await fixture('Exec-Detail');
       const contributor = await setUpProjectMember(prisma, f.workspaceId, f.projectId, 'Contributor');

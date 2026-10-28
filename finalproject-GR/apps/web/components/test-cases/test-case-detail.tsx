@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { ActionError } from '../action-error';
 import { GherkinView } from '../gherkin-view';
+import { tagKeys } from '../../lib/tags-api';
+import { TagsField } from '../tags/tags-field';
 import { notifySuccess } from '../../lib/notify';
 
 const STATUSES: TestCaseStatus[] = ['Draft', 'Ready', 'Deprecated'];
@@ -68,9 +70,13 @@ export function TestCaseDetail({
   const updateMutation = useMutation({
     mutationFn: (patch: Parameters<typeof updateTestCase>[3]) => updateTestCase(apiClient, projectId, testCaseId, patch),
     onSuccess: (updated, patch) => {
-      notifySuccess(patch.status ? `Status changed to ${updated.status}` : 'Test case saved');
+      notifySuccess(patch.status ? `Status changed to ${updated.status}` : patch.tagIds ? 'Tags updated' : 'Test case saved');
       queryClient.setQueryData(detailKey, updated);
       queryClient.invalidateQueries({ queryKey: listKey });
+      if (patch.tagIds) {
+        // Usage counts in the tag list changed too.
+        queryClient.invalidateQueries({ queryKey: tagKeys.list(projectId) });
+      }
       onUpdated();
     },
   });
@@ -162,6 +168,14 @@ export function TestCaseDetail({
         ) : (
           <span>{testCase.status}</span>
         )}
+
+        <TagsField
+          projectId={projectId}
+          tagIds={testCase.tagIds ?? []}
+          canEdit={canEdit}
+          onChange={(tagIds) => updateMutation.mutate({ tagIds })}
+          disabled={updateMutation.isPending}
+        />
 
         {canEdit ? (
           <div className="flex flex-col gap-1.5">

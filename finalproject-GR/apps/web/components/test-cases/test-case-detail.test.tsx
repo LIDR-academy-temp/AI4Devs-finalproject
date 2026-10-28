@@ -12,6 +12,14 @@ vi.mock('../../lib/test-cases-api', () => ({
   updateTestCase: vi.fn(),
   deleteTestCase: vi.fn(),
 }));
+vi.mock('../../lib/tags-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/tags-api')>()),
+  listTags: vi.fn(async () => [
+    { id: 'tag-smoke', name: 'smoke', color: 'green', testCaseCount: 1, bugCount: 0 },
+    { id: 'tag-reg', name: 'regression', color: 'blue', testCaseCount: 0, bugCount: 0 },
+  ]),
+  createTag: vi.fn(),
+}));
 
 const mockedGetTestCase = getTestCase as unknown as ReturnType<typeof vi.fn>;
 const mockedUpdateTestCase = updateTestCase as unknown as ReturnType<typeof vi.fn>;
@@ -23,6 +31,7 @@ const baseTestCase = {
   gherkinScript: 'Given a user',
   status: 'Draft' as const,
   sourceType: 'Gherkin' as const,
+  tagIds: ['tag-smoke'],
 };
 
 describe('TestCaseDetail', () => {
@@ -130,5 +139,29 @@ describe('TestCaseDetail', () => {
 
     await screen.findByText(baseTestCase.name);
     expect(screen.queryByText('Delete')).toBeNull();
+  });
+
+  it('a Contributor adds a tag from the picker and the full new set is saved', async () => {
+    mockedUpdateTestCase.mockResolvedValue({ ...baseTestCase, tagIds: ['tag-smoke', 'tag-reg'] });
+    renderWithProviders(
+      <TestCaseDetail projectId="p1" testCaseId="tc1" canEdit={true} canDelete={false} onUpdated={() => {}} onDeleted={() => {}} />,
+    );
+
+    expect(await screen.findByText('smoke')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit tags' }));
+    fireEvent.click(await screen.findByRole('option', { name: /regression/ }));
+
+    await waitFor(() =>
+      expect(mockedUpdateTestCase).toHaveBeenCalledWith(expect.anything(), 'p1', 'tc1', { tagIds: ['tag-smoke', 'tag-reg'] }),
+    );
+  });
+
+  it('a Viewer sees the tag badges and no picker', async () => {
+    renderWithProviders(
+      <TestCaseDetail projectId="p1" testCaseId="tc1" canEdit={false} canDelete={false} onUpdated={() => {}} onDeleted={() => {}} />,
+    );
+
+    expect(await screen.findByText('smoke')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Edit tags' })).toBeNull();
   });
 });

@@ -31,9 +31,28 @@ export async function provisionIdentity(
     if (existing.length > 0) {
       const userId = existing[0].id;
       await tx.$executeRaw`SELECT set_config('app.user_id', ${userId}, true)`;
-      // Any membership, not just Owner — an existing user can be Collaborator-only
-      // (project-authorization's tests are the first to exercise that case; this
-      // used to assume Owner, which crashed for anyone who wasn't one).
+      // The active project (ADR 0017): the last one switched to, while it's live and
+      // accessible; otherwise the oldest accessible live project, oldest workspace first.
+      // A stale last_project_id is simply outranked, never cleared — reads stay read-only.
+      const accessible = await tx.$queryRaw<{ id: string; workspace_id: string }[]>`
+        SELECT p.id, p.workspace_id
+        FROM project p
+        JOIN workspace_membership wm ON wm.workspace_id = p.workspace_id AND wm.user_id = ${userId}::uuid
+        JOIN "user" u ON u.id = ${userId}::uuid
+        WHERE p.deleted_at IS NULL
+          AND (wm.role = 'Owner' OR EXISTS (
+            SELECT 1 FROM project_membership pm WHERE pm.project_id = p.id AND pm.user_id = ${userId}::uuid
+          ))
+        ORDER BY (p.id IS NOT DISTINCT FROM u.last_project_id) DESC, wm.created_at ASC, p.created_at ASC
+        LIMIT 1
+      `;
+      if (accessible.length > 0) {
+        return { userId, workspaceId: accessible[0].workspace_id, projectId: accessible[0].id, created: false };
+      }
+
+      // Nothing accessible: the oldest workspace's oldest live project, which the web app
+      // shows as access denied. Any membership, not just Owner — an existing user can be
+      // Collaborator-only (project-authorization's tests are the first to exercise that case).
       const membership = await tx.$queryRaw<{ workspace_id: string }[]>`
         SELECT workspace_id FROM workspace_membership
         WHERE user_id = ${userId}::uuid
@@ -45,10 +64,11 @@ export async function provisionIdentity(
       }
       const workspaceId = membership[0].workspace_id;
       const project = await tx.$queryRaw<{ id: string }[]>`
-        SELECT id FROM project WHERE workspace_id = ${workspaceId}::uuid ORDER BY created_at ASC LIMIT 1
+        SELECT id FROM project WHERE workspace_id = ${workspaceId}::uuid AND deleted_at IS NULL
+        ORDER BY created_at ASC LIMIT 1
       `;
       if (project.length === 0) {
-        throw new Error(`Workspace ${workspaceId} has no project row at all — cannot resolve a default project`);
+        throw new Error(`Workspace ${workspaceId} has no live project at all — cannot resolve a default project`);
       }
       return { userId, workspaceId, projectId: project[0].id, created: false };
     }
@@ -72,8 +92,8 @@ export async function provisionIdentity(
     // needed once a secret-holding feature starts writing rows.
     await createWorkspaceDek(tx, workspaceId);
 
-    // Every workspace gets one default project at creation (frontend-bootstrap) — until
-    // real Project CRUD exists, this is the only project a signed-up user will ever have.
+    // Every workspace gets one project at creation (frontend-bootstrap), so a new user
+    // always has something to land on; Owners create more from the app (project-management).
     await tx.$executeRaw`
       INSERT INTO project (id, workspace_id, name, slug)
       VALUES (${projectId}::uuid, ${workspaceId}::uuid, 'My First Project', 'my-first-project')

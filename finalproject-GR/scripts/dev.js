@@ -1,6 +1,6 @@
-// Starts the API and web dev servers together (`npm run dev` from finalproject-GR),
-// prefixing each line of output with its app. Ctrl+C, or either server exiting, stops
-// both. Plain Node instead of a `concurrently` dependency, same posture as the other
+// Starts the API and web dev servers and the background worker together (`npm run dev`
+// from finalproject-GR), prefixing each line of output with its app. Ctrl+C, or any of
+// them exiting, stops the rest. Plain Node instead of a `concurrently` dependency, same posture as the other
 // scripts here. Postgres (docker compose up -d) is not started by this.
 const { spawn, execSync } = require('child_process');
 const path = require('path');
@@ -9,6 +9,7 @@ const root = path.join(__dirname, '..');
 const apps = [
   { name: 'api', workspace: 'apps/api', color: '\x1b[36m' },
   { name: 'web', workspace: 'apps/web', color: '\x1b[35m' },
+  { name: 'worker', workspace: 'apps/worker', color: '\x1b[33m' },
 ];
 const reset = '\x1b[0m';
 
@@ -26,7 +27,7 @@ const children = apps.map((app) => {
   }
   child.on('exit', (code) => {
     if (!stopping) {
-      console.log(`${prefix}exited with code ${code}; stopping the other server.`);
+      console.log(`${prefix}exited with code ${code}; stopping the others.`);
       stopAll(code ?? 1);
     }
   });

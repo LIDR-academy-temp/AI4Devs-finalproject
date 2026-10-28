@@ -23,6 +23,21 @@ vi.mock('../../lib/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/api-client')>()),
   useApiClient: () => ({ request: vi.fn() }),
 }));
+// Tags created during a test show up in later listTags calls, as after a refetch.
+const tagStore = vi.hoisted(() => ({ created: [] as { id: string; name: string; color: 'gray'; testCaseCount: number; bugCount: number }[] }));
+vi.mock('../../lib/tags-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/tags-api')>()),
+  listTags: vi.fn(async () => [
+    { id: 'tag-checkout', name: 'checkout', color: 'green', testCaseCount: 0, bugCount: 1 },
+    { id: 'tag-payments', name: 'payments', color: 'blue', testCaseCount: 0, bugCount: 0 },
+    ...tagStore.created,
+  ]),
+  createTag: vi.fn(async (_client: unknown, _projectId: string, input: { name: string }) => {
+    const tag = { id: 'tag-new', name: input.name, color: 'gray' as const, testCaseCount: 0, bugCount: 0 };
+    tagStore.created.push(tag);
+    return tag;
+  }),
+}));
 vi.mock('../../lib/bugs-api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/bugs-api')>()),
   listBugs: vi.fn(),
@@ -99,6 +114,24 @@ describe('BugList', () => {
     expect(titles[0]).toContain('Outage');
   });
 
+  it('filtering by a tag narrows the list, and Manage tags opens the dialog', async () => {
+    vi.mocked(listBugs).mockResolvedValue([
+      makeBug({ id: 'a', title: 'Tagged one', tagIds: ['tag-checkout'] }),
+      makeBug({ id: 'b', title: 'Untagged one' }),
+    ]);
+    renderList(true);
+    await screen.findByText('Tagged one');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by tags' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'checkout' }));
+
+    expect(screen.queryByText('Untagged one')).toBeNull();
+    expect(screen.getByText('Tagged one')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: /Manage tags/ }));
+    expect(await screen.findByRole('dialog', { name: 'Manage tags' })).toBeTruthy();
+  });
+
   it('a Viewer sees the empty state with no way to file', async () => {
     vi.mocked(listBugs).mockResolvedValue([]);
     renderList(false);
@@ -152,6 +185,28 @@ describe('BugDetail', () => {
     expect((await screen.findByLabelText('Status')).textContent).toContain('In Progress');
   });
 
+  it('a Contributor adds a tag from the detail and the full set is saved', async () => {
+    const tagged = { ...linkedBug, tagIds: ['tag-checkout'] };
+    vi.mocked(getBug).mockResolvedValue(tagged);
+    vi.mocked(updateBug).mockResolvedValue({ ...tagged, tagIds: ['tag-checkout', 'tag-payments'] });
+    renderDetail('Contributor');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit tags' }));
+    fireEvent.click(await screen.findByRole('option', { name: /payments/ }));
+
+    await waitFor(() =>
+      expect(updateBug).toHaveBeenCalledWith(expect.anything(), 'p1', 'bug-linked', { tagIds: ['tag-checkout', 'tag-payments'] }),
+    );
+  });
+
+  it('a Viewer sees the tag badges and no picker', async () => {
+    vi.mocked(getBug).mockResolvedValue({ ...linkedBug, tagIds: ['tag-checkout'] });
+    renderDetail('Viewer');
+
+    expect(await screen.findByText('checkout')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Edit tags' })).toBeNull();
+  });
+
   it('shows a deleted test case as plain text, and a manual bug as having no links', async () => {
     vi.mocked(getBug).mockResolvedValue({ ...linkedBug, testCase: { id: 'tc-1', deleted: true } });
     renderDetail('Viewer');
@@ -192,6 +247,25 @@ describe('BugFormDialog', () => {
 
     expect(await screen.findByText('Title is required')).toBeTruthy();
     expect(createBug).not.toHaveBeenCalled();
+  });
+
+  it('tags picked and created in the form are sent with the bug', async () => {
+    tagStore.created.length = 0;
+    renderWithProviders(<BugFormDialog projectId="p1" open onOpenChange={() => {}} onSaved={() => {}} />);
+
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Tagged bug' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit tags' }));
+    fireEvent.click(await screen.findByRole('option', { name: /checkout/ }));
+    fireEvent.change(screen.getByPlaceholderText('Search or create a tag'), { target: { value: 'flaky' } });
+    fireEvent.click(screen.getByRole('option', { name: /Create “flaky”/ }));
+    // The new tag shows as a badge next to its picker option once it's selected.
+    await waitFor(() => expect(screen.getAllByText('flaky')).toHaveLength(2));
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: 'File bug' }));
+
+    await waitFor(() =>
+      expect(createBug).toHaveBeenCalledWith(expect.anything(), 'p1', expect.objectContaining({ title: 'Tagged bug', tagIds: ['tag-checkout', 'tag-new'] })),
+    );
   });
 
   it('without a run, there is no failed-step picker and no run is sent', async () => {

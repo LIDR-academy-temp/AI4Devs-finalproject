@@ -12,7 +12,8 @@ export interface SeedTarget {
 
 /**
  * Read-only version of provisionIdentity's lookup (design.md decision 2): Clerk id →
- * user → oldest workspace membership → oldest project, the one the app opens on.
+ * user → oldest workspace membership → oldest live project. Deliberately not the user's
+ * last active project (ADR 0017): a fixed target keeps reruns idempotent.
  */
 export async function resolveSeedTarget(prisma: PrismaClient, clerkUserId: string): Promise<SeedTarget> {
   return prisma.$transaction(async (tx) => {
@@ -32,7 +33,7 @@ export async function resolveSeedTarget(prisma: PrismaClient, clerkUserId: strin
     }
     await tx.$executeRaw`SELECT set_config('app.workspace_id', ${membership.workspace_id}, true)`;
     const [project] = await tx.$queryRaw<{ id: string }[]>`
-      SELECT id FROM project WHERE workspace_id = ${membership.workspace_id}::uuid ORDER BY created_at ASC LIMIT 1
+      SELECT id FROM project WHERE workspace_id = ${membership.workspace_id}::uuid AND deleted_at IS NULL ORDER BY created_at ASC LIMIT 1
     `;
     if (!project) {
       throw new SeedTargetError(`Workspace ${membership.workspace_id} has no project`);

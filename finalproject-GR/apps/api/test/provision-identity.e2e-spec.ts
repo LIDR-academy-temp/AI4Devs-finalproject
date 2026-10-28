@@ -76,6 +76,86 @@ describe('provisionIdentity (e2e)', () => {
     expect(Number(projectCount[0].count)).toBe(1);
   });
 
+  describe('active project resolution (ADR 0017)', () => {
+    async function addProject(workspaceId: string, name: string, createdAt: Date): Promise<string> {
+      const projectId = randomUUID();
+      await withTenantContext(prisma, workspaceId, (tx) =>
+        tx.$executeRaw`INSERT INTO project (id, workspace_id, name, slug, created_at)
+          VALUES (${projectId}::uuid, ${workspaceId}::uuid, ${name}, ${`${name.toLowerCase()}-${projectId.slice(0, 8)}`}, ${createdAt})`,
+      );
+      return projectId;
+    }
+
+    async function setLastProject(userId: string, projectId: string | null): Promise<void> {
+      await withUserContext(prisma, userId, (tx) =>
+        tx.$executeRaw`UPDATE "user" SET last_project_id = ${projectId}::uuid WHERE id = ${userId}::uuid`,
+      );
+    }
+
+    async function trash(workspaceId: string, projectId: string): Promise<void> {
+      await withTenantContext(prisma, workspaceId, (tx) =>
+        tx.$executeRaw`UPDATE project SET deleted_at = now() WHERE id = ${projectId}::uuid`,
+      );
+    }
+
+    it('keeps the oldest project while no project was ever switched to', async () => {
+      const clerkUserId = `clerk-active-default-${randomUUID()}`;
+      const first = await provisionIdentity(prisma, clerkUserId, 'a@example.com', 'Active Default');
+      await addProject(first.workspaceId, 'Second', new Date(Date.now() + 1000));
+
+      const again = await provisionIdentity(prisma, clerkUserId, 'a@example.com', 'Active Default');
+
+      expect(again.projectId).toBe(first.projectId);
+    });
+
+    it('resolves to the last active project when one is set', async () => {
+      const clerkUserId = `clerk-active-last-${randomUUID()}`;
+      const first = await provisionIdentity(prisma, clerkUserId, 'b@example.com', 'Active Last');
+      const second = await addProject(first.workspaceId, 'Second', new Date(Date.now() + 1000));
+      await setLastProject(first.userId, second);
+
+      const again = await provisionIdentity(prisma, clerkUserId, 'b@example.com', 'Active Last');
+
+      expect(again.projectId).toBe(second);
+      expect(again.workspaceId).toBe(first.workspaceId);
+    });
+
+    it('falls back to the oldest live project when the last active one is in the trash', async () => {
+      const clerkUserId = `clerk-active-trash-${randomUUID()}`;
+      const first = await provisionIdentity(prisma, clerkUserId, 'c@example.com', 'Active Trash');
+      const second = await addProject(first.workspaceId, 'Second', new Date(Date.now() + 1000));
+      await setLastProject(first.userId, second);
+      await trash(first.workspaceId, second);
+
+      const again = await provisionIdentity(prisma, clerkUserId, 'c@example.com', 'Active Trash');
+
+      expect(again.projectId).toBe(first.projectId);
+    });
+
+    it("resolves a Collaborator to the project they're a member of, not the oldest one", async () => {
+      const owner = await provisionIdentity(prisma, `clerk-active-owner-${randomUUID()}`, 'd@example.com', 'Owner');
+      const second = await addProject(owner.workspaceId, 'Second', new Date(Date.now() + 1000));
+      const clerkUserId = `clerk-active-collab-${randomUUID()}`;
+      const collaboratorId = await prisma.$transaction(async (tx) => {
+        const id = randomUUID();
+        await tx.$executeRaw`SELECT set_config('app.user_id', ${id}, true)`;
+        await tx.$executeRaw`INSERT INTO "user" (id, clerk_user_id, display_name, email)
+          VALUES (${id}::uuid, ${clerkUserId}, 'Collaborator', 'e@example.com')`;
+        return id;
+      });
+      await withTenantContext(prisma, owner.workspaceId, async (tx) => {
+        await tx.$executeRaw`INSERT INTO workspace_membership (workspace_id, user_id, role)
+          VALUES (${owner.workspaceId}::uuid, ${collaboratorId}::uuid, 'Collaborator')`;
+        await tx.$executeRaw`INSERT INTO project_membership (project_id, workspace_id, user_id, role)
+          VALUES (${second}::uuid, ${owner.workspaceId}::uuid, ${collaboratorId}::uuid, 'Viewer')`;
+      });
+
+      const result = await provisionIdentity(prisma, clerkUserId, 'e@example.com', 'Collaborator');
+
+      expect(result.projectId).toBe(second);
+    });
+  });
+
   it('resolves an existing user whose only membership is Collaborator (project-authorization correction)', async () => {
     const clerkUserId = `clerk-prov-collab-${randomUUID()}`;
     const workspaceId = randomUUID();

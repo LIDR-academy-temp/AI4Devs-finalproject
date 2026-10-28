@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
 import { createTestPrismaClient } from './helpers/prisma-test-client';
 import { createWorkspaceWithProject } from './helpers/cross-tenant-harness';
+import { withTenantContext } from '../src/common/tenant-context';
 import { insertTestUser, insertWorkspaceMembership, insertProjectMembership } from './helpers/membership-fixtures';
 
 jest.mock('@clerk/backend', () => ({
@@ -454,4 +455,149 @@ describe('test cases: delete (e2e)', () => {
       expect(response.status).toBe(204);
     },
   );
+});
+
+describe('test cases: tags and activity (e2e, ADR 0015/0016)', () => {
+  let app: INestApplication;
+  let prisma: PrismaClient;
+
+  beforeAll(async () => {
+    prisma = createTestPrismaClient();
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    app = moduleRef.createNestApplication();
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+    await prisma.$disconnect();
+  });
+
+  const api = () => request(app.getHttpServer());
+
+  async function setUp(label: string) {
+    const fixture = await createWorkspaceWithProject(prisma, `${label}-${randomUUID().slice(0, 8)}`);
+    const contributor = await setUpContributor(prisma, fixture.workspaceId, fixture.projectId);
+    const admin = await setUpAdmin(prisma, fixture.workspaceId, fixture.projectId);
+    const base = `/projects/${fixture.projectId}`;
+    const tag = async (name: string): Promise<string> =>
+      (await api().post(`${base}/tags`).set('Authorization', `Bearer ${contributor}`).send({ name })).body.id;
+    const testCase = async (name: string): Promise<string> =>
+      (await api().post(`${base}/test-cases`).set('Authorization', `Bearer ${contributor}`).send({ name })).body.id;
+    const patch = (id: string, body: Record<string, unknown>) =>
+      api().patch(`${base}/test-cases/${id}`).set('Authorization', `Bearer ${contributor}`).send(body);
+    return { fixture, contributor, admin, base, tag, testCase, patch };
+  }
+
+  async function entries(workspaceId: string, entityId: string) {
+    return withTenantContext(prisma, workspaceId, (tx) =>
+      tx.$queryRaw<{ action_code: string; actor_display_name: string; details: Record<string, unknown> | null }[]>`
+        SELECT action_code, actor_display_name, details FROM activity_entries WHERE entity_id = ${entityId}::uuid ORDER BY created_at`,
+    );
+  }
+
+  it('setting tags replaces the set; list and detail report them', async () => {
+    const s = await setUp('TC-Tags');
+    const [smoke, checkout, other] = [await s.tag('smoke'), await s.tag('checkout'), await s.tag('other')];
+    const tagged = await s.testCase('Tagged');
+    const plain = await s.testCase('Plain');
+
+    await s.patch(tagged, { tagIds: [smoke, other] });
+    const response = await s.patch(tagged, { tagIds: [smoke, checkout, smoke] });
+    const list = await api().get(`${s.base}/test-cases`).set('Authorization', `Bearer ${s.contributor}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.tagIds).toEqual([smoke, checkout].sort());
+    const byId = new Map((list.body as { id: string; tagIds: string[] }[]).map((t) => [t.id, t.tagIds]));
+    expect(byId.get(tagged)).toEqual([smoke, checkout].sort());
+    expect(byId.get(plain)).toEqual([]);
+  });
+
+  it('a tag of another project, an unknown id, or a malformed list is refused (400) and changes nothing', async () => {
+    const s = await setUp('TC-TagsInvalid');
+    const other = await setUp('TC-TagsInvalid-Other');
+    const mine = await s.tag('mine');
+    const foreign = await other.tag('foreign');
+    const id = await s.testCase('Case');
+    await s.patch(id, { tagIds: [mine] });
+
+    for (const tagIds of [[mine, foreign], [randomUUID()], 'not-an-array', ['abc']]) {
+      expect((await s.patch(id, { tagIds })).status).toBe(400);
+    }
+    const detail = await api().get(`${s.base}/test-cases/${id}`).set('Authorization', `Bearer ${s.contributor}`);
+    expect(detail.body.tagIds).toEqual([mine]);
+  });
+
+  it('logs creation, a status change, and tags added and removed by name; an unchanged update logs nothing', async () => {
+    const s = await setUp('TC-Activity');
+    const [smoke, legacy] = [await s.tag('smoke'), await s.tag('legacy')];
+    const id = await s.testCase('Logged');
+    await s.patch(id, { tagIds: [legacy] });
+
+    await s.patch(id, { status: 'Ready' });
+    await s.patch(id, { tagIds: [smoke] });
+    await s.patch(id, { status: 'Ready', tagIds: [smoke], name: 'Logged' });
+    await s.patch(id, { name: 'Renamed', gherkinScript: 'Given x' });
+
+    const log = await entries(s.fixture.workspaceId, id);
+    expect(log.map((e) => e.action_code)).toEqual([
+      'test_case.created',
+      'test_case.updated',
+      'test_case.updated',
+      'test_case.updated',
+      'test_case.updated',
+    ]);
+    expect(log[0].actor_display_name).toBe('Contributor User');
+    expect(log.slice(1).map((e) => e.details)).toEqual([
+      { changes: { tags: { added: ['legacy'], removed: [] } } },
+      { changes: { status: { from: 'Draft', to: 'Ready' } } },
+      { changes: { tags: { added: ['smoke'], removed: ['legacy'] } } },
+      { changes: { name: { from: 'Logged', to: 'Renamed' }, gherkinScript: true } },
+    ]);
+  });
+
+  it('creating with tags stores exactly them and names them in the creation entry', async () => {
+    const s = await setUp('TC-CreateTags');
+    const [smoke, checkout] = [await s.tag('smoke'), await s.tag('checkout')];
+
+    const response = await api()
+      .post(`${s.base}/test-cases`)
+      .set('Authorization', `Bearer ${s.contributor}`)
+      .send({ name: 'Born tagged', tagIds: [smoke, checkout] });
+
+    expect(response.status).toBe(201);
+    expect(response.body.tagIds).toEqual([smoke, checkout].sort());
+    const [created] = await entries(s.fixture.workspaceId, response.body.id);
+    expect(created.details).toEqual({ folderId: null, tags: ['checkout', 'smoke'] });
+  });
+
+  it('creating with a foreign or unknown tag is refused (400) and creates nothing', async () => {
+    const s = await setUp('TC-CreateTagsInvalid');
+    const other = await setUp('TC-CreateTagsInvalid-Other');
+    const foreign = await other.tag('foreign');
+
+    for (const tagIds of [[foreign], [randomUUID()], 'nope']) {
+      const response = await api()
+        .post(`${s.base}/test-cases`)
+        .set('Authorization', `Bearer ${s.contributor}`)
+        .send({ name: 'Should not exist', tagIds });
+      expect(response.status).toBe(400);
+    }
+    const list = await api().get(`${s.base}/test-cases`).set('Authorization', `Bearer ${s.contributor}`);
+    expect(list.body).toEqual([]);
+  });
+
+  it('deleting logs one entry naming the Admin', async () => {
+    const s = await setUp('TC-DeleteLog');
+    const id = await s.testCase('Doomed');
+
+    const response = await api().delete(`${s.base}/test-cases/${id}`).set('Authorization', `Bearer ${s.admin}`);
+
+    expect(response.status).toBe(204);
+    const log = await entries(s.fixture.workspaceId, id);
+    expect(log.map((e) => [e.action_code, e.actor_display_name])).toEqual([
+      ['test_case.created', 'Contributor User'],
+      ['test_case.deleted', 'Admin User'],
+    ]);
+  });
 });

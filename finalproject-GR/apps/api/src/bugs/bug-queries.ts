@@ -17,7 +17,8 @@ const BUG_SELECT = Prisma.sql`
          b.reporter_display_name, b.auto_created, b.created_at, b.updated_at,
          b.test_run_id, r.position AS run_position, r.outcome AS run_outcome,
          e.id AS execution_id, e.name AS execution_name, (e.deleted_at IS NOT NULL) AS execution_deleted,
-         b.test_case_id, (tc.deleted_at IS NOT NULL) AS test_case_deleted
+         b.test_case_id, (tc.deleted_at IS NOT NULL) AS test_case_deleted,
+         COALESCE((SELECT array_agg(bt.tag_id ORDER BY bt.tag_id) FROM bug_tag bt WHERE bt.bug_id = b.id), '{}') AS tag_ids
   FROM bug b
   LEFT JOIN test_run r ON r.id = b.test_run_id
   LEFT JOIN test_execution e ON e.id = r.execution_id
@@ -46,6 +47,7 @@ interface BugRow {
   execution_deleted: boolean | null;
   test_case_id: string | null;
   test_case_deleted: boolean | null;
+  tag_ids: string[];
 }
 
 export interface BugResponse {
@@ -72,6 +74,8 @@ export interface BugResponse {
     deleted: boolean;
   } | null;
   testCase: { id: string; deleted: boolean } | null;
+  /** Tags carried (ADR 0016), sorted by id. */
+  tagIds: string[];
 }
 
 function toResponse(row: BugRow): BugResponse {
@@ -101,6 +105,7 @@ function toResponse(row: BugRow): BugResponse {
           }
         : null,
     testCase: row.test_case_id ? { id: row.test_case_id, deleted: row.test_case_deleted === true } : null,
+    tagIds: row.tag_ids,
   };
 }
 

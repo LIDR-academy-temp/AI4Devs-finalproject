@@ -14,10 +14,12 @@ The repo structure decided in [ADR 0010](docs/adr/0010-monorepo-layout.md) exist
 
 **Commands** (run from `finalproject-GR/`):
 - `npm install` — installs every workspace.
-- `npm run dev` — starts the API and web dev servers together in one terminal (`scripts/dev.js`, output prefixed `[api]`/`[web]`; Ctrl+C stops both). Postgres must already be up (`docker compose up -d`).
+- `npm run dev` — starts the API and web dev servers and the background worker together in one terminal (`scripts/dev.js`, output prefixed `[api]`/`[web]`/`[worker]`; Ctrl+C stops all three). Postgres must already be up (`docker compose up -d`).
 - `npm run dev -w apps/web` — Next.js dev server (`localhost:3000`).
 - `npm run dev -w apps/api` — NestJS dev server (`localhost:3001`; `GET /health`).
+- `npm run dev -w apps/worker` — the background worker alone (Graphile Worker, [ADR 0018](docs/adr/0018-queue-library.md)): runs queued jobs and the daily `trash_purge` (03:00 UTC). It connects as `railgun_worker`.
 - `npm test -w apps/api` — Jest/Supertest tests for the API.
+- `npm test -w apps/worker` — Jest tests for the worker, against the docker-compose database. `graphile-worker` is ESM-only, so the script runs Jest through `node --experimental-vm-modules` (call `npm test`, not `npx jest`).
 - `npm run test -w apps/web` — Vitest/React Testing Library tests for the web app.
 - `npm run lint` / `npm run typecheck` — the root scripts already wrap `--workspaces --if-present`, so this runs across every workspace that defines the script and skips the placeholders that don't; append `-w <workspace>` (e.g. `npm run lint -w apps/api`) to scope to one. Running `npm run lint --workspaces` directly (bypassing the root script) fails hard on any workspace without a `lint` script — use the plain `npm run lint` form.
 
@@ -28,6 +30,18 @@ The repo structure decided in [ADR 0010](docs/adr/0010-monorepo-layout.md) exist
 - `WEB_ORIGIN` — optional; the CORS origin `apps/api` allows, defaults to `http://localhost:3000` (`main.ts`). Only matters for local dev — production CORS origin is a deployment-time decision (open-questions.md E1–E4), not yet made.
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — **required** for `apps/web` as of [frontend-bootstrap](docs/roadmap-mvp.md): Clerk's publishable key, needs a real Clerk account to exist (same posture as `CLERK_SECRET_KEY` above). **Currently set via `apps/web/.env.local`** (gitignored, not committed), provisioned by `npx clerk@latest init` — a *temporary* dev-only Clerk app with no real account behind it. This is a stopgap so the app is demoable now; replace it with a real Clerk account's keys before any real/graded demo, since this temporary app and its keys can be revoked or expire without notice. Without a valid key, Clerk's hosted `<SignIn>`/`<SignUp>` components and `ClerkProvider` have nothing to talk to.
 - `NEXT_PUBLIC_API_URL` — optional for `apps/web`; the base URL its API client targets, defaults to `http://localhost:3001` (matching `apps/api`'s own default port).
+- `WORKER_DATABASE_URL` — optional for `apps/worker`; defaults to the docker-compose Postgres as `railgun_worker` (`postgresql://railgun_worker:worker_dev_password@localhost:5433/railgun`). Never point it at the migrator role.
+
+**Database roles and the job queue.** Four roles, all created by `db/init/` on a fresh volume:
+- `railgun_migrator` owns everything and runs migrations;
+- `railgun_app` is the API's role: no ownership, no RLS bypass;
+- `railgun_worker` is the worker's role: same posture, plus only what migration `0014` grants it (the queue schema, delete and select on the trashable tables, insert into the activity log, workspace ids);
+- `railgun_breakglass` is inert.
+
+The API enqueues jobs only through `enqueue_job(task, payload, run_at)` inside its own transaction; the task name must be on that function's allow-list. `npm run db:migrate` installs Graphile Worker's `graphile_worker` schema (`scripts/install-job-queue.js`) before the SQL files. **A dev database created before `background-jobs` needs a one-time catch-up**:
+1. `DATABASE_URL=postgresql://postgres:postgres@localhost:5433/railgun node scripts/apply-sql.js db/init/02-worker-role.sql`
+2. `DATABASE_URL=postgresql://railgun_migrator:migrator_dev_password@localhost:5433/railgun node scripts/install-job-queue.js`
+3. Apply `db/migrations/0014_background_jobs.up.sql` as `railgun_migrator`, the same way as any other new migration on an existing database.
 
 **Demo data.** `npm run db:seed -w apps/api -- --email <you@…>` (or `-- --clerk-user-id <id>`) fills that user's default project with the ShopFlow demo dataset: a folder tree of test cases, executions in every status, bugs, two teammates, and backdated history ([demo-seed](openspec/specs/demo-seed/spec.md)). The user must have signed in once. The seed is additive and idempotent: it never changes existing rows, and a rerun writes nothing. It needs `SECRETS_MASTER_KEY` (credentials are encrypted) and, for `--email`, `CLERK_SECRET_KEY`, both read from `apps/api/.env`.
 
@@ -37,6 +51,7 @@ The repo structure decided in [ADR 0010](docs/adr/0010-monorepo-layout.md) exist
 - **Prisma CLI pinned to `6.19.3`**, not the current `7.x`/`8.0.0-rc` — Prisma 7 removed the `url` property from the `datasource` block entirely (connection config moves to `prisma.config.ts` plus a mandatory driver `adapter`), which has direct implications for [ADR 0008](docs/adr/0008-tenant-context-implementation.md)'s `withTenantContext` design and needs a deliberate evaluation, not a drive-by fix. Revisit when the DB foundation change starts.
 - **`@hookform/resolvers` pinned to `5.9.2`**, not the current `6.0.0` — `6.0.0`'s own optional peer chain is internally broken (`@typeschema/effect` requires `effect@^3.6.8` while `@hookform/resolvers` itself wants `effect@^4.0.0`), which fails `npm install` outright even though `effect`/zod are unrelated to what this project actually uses. `5.9.2` is the last version before that break and is the first to explicitly declare `zod: "^3.25.0 || ^4.0.0"` as a peer, matching the `zod@^4` actually installed.
 - **Postgres must be ≥ 15** (docker-compose runs 16) — as of `execution-lifecycle`, migration `0008` uses `ON DELETE SET NULL (column)` on composite tenant FKs, which clears only the referenced id and keeps `workspace_id` intact. Keep this in mind when hosting (open-questions.md E1–E4) is chosen.
+- **Node must be ≥ 22.18** as of `background-jobs`: `graphile-worker` 0.18 requires it, and CI runs Node 22. It is ESM-only and is loaded from CommonJS code through Node's `require(esm)`.
 
 ## OpenSpec setup — note the folder-hierarchy split
 
@@ -73,7 +88,7 @@ Settled in [ADR 0001](docs/adr/0001-tech-stack.md) and amended by ADRs 0002–00
 - **Authorization:** two-level RBAC — workspace role (Owner/Collaborator) is a ceiling, project role (Admin/Contributor/Viewer) governs day-to-day access. One NestJS guard/policy module evaluates both; Owners are implicit Project Admin everywhere.
 - **Secrets ([ADR 0004](docs/adr/0004-secrets-storage.md)):** application-level envelope encryption (AES-256-GCM), per-workspace data encryption key, wrapped by a master key (hosting secret store now, cloud KMS later via a swappable `KeyProvider`). Environment credentials are recoverable and revealable (audited); integration tokens and AI keys are write-only.
 - **Real-time ([ADR 0005](docs/adr/0005-realtime-and-background-jobs-v1.md)):** server-sent events, one multiplexed stream per tab. Events carry only identifiers — they're hints, not state; the client always refetches. Fan-out via Postgres `LISTEN/NOTIFY`.
-- **Background jobs ([ADR 0005](docs/adr/0005-realtime-and-background-jobs-v1.md)):** a Postgres-backed queue (pg-boss), enqueued in the same transaction as the triggering change. The execution lifecycle itself is a domain state machine persisted in the DB — the queue never owns lifecycle state.
+- **Background jobs ([ADR 0005](docs/adr/0005-realtime-and-background-jobs-v1.md)):** a Postgres-backed queue (Graphile Worker, [ADR 0018](docs/adr/0018-queue-library.md)), enqueued in the same transaction as the triggering change. The execution lifecycle itself is a domain state machine persisted in the DB — the queue never owns lifecycle state.
 - **Activity log ([ADR 0007](docs/adr/0007-activity-log-and-trash-purge.md)):** one append-only `activity_entries` table, no foreign keys (so it survives purges), written via `ActivityLogger.log(tx, …)` in the *same transaction* as the change it records. Immutability is enforced by revoked `UPDATE`/`DELETE` privileges plus a trigger, not by convention.
 - **Trash / soft delete ([ADR 0007](docs/adr/0007-activity-log-and-trash-purge.md)):** top-level entities carry `deleted_at`/`deleted_by`; a daily job purges anything deleted >30 days, in dependency order, without ever touching the activity log.
 - **Reports ([ADR 0006](docs/adr/0006-report-generation.md)):** generated by the worker from one allow-listed data object (no secrets, no trashed items). HTML export via a server-side template; PDF via pdfmake (no headless browser). Charts drawn once as SVG and shared between both outputs.

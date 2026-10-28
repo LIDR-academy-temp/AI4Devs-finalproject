@@ -29,7 +29,10 @@ import {
   type DropZone,
   type TreeNode,
 } from '../../lib/test-case-tree';
+import { listTags, tagKeys } from '../../lib/tags-api';
 import { notifySuccess } from '../../lib/notify';
+import { ManageTagsDialog } from '../tags/manage-tags-dialog';
+import { TagFilter } from '../tags/tag-filter';
 import { ActionError } from '../action-error';
 import { EmptyState, ErrorState, ListSkeleton } from '../states';
 import { actionsFor, type TreeAction } from './tree-actions';
@@ -80,11 +83,17 @@ export function TestCaseTree({ projectId, selected, onSelect, canCreate, canDele
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [nameFilter, setNameFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<TestCaseStatus | undefined>(undefined);
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [managingTags, setManagingTags] = useState(false);
   const [drop, setDrop] = useState<{ overId: string; zone: DropZone } | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const foldersQuery = useQuery({ queryKey: folderKeys.list(projectId), queryFn: () => listFolders(apiClient, projectId) });
   const testCasesQuery = useQuery({ queryKey: testCasesKey(projectId), queryFn: () => listTestCases(apiClient, projectId) });
+  const tagsQuery = useQuery({ queryKey: tagKeys.list(projectId), queryFn: () => listTags(apiClient, projectId) });
+  const tags = useMemo(() => tagsQuery.data ?? [], [tagsQuery.data]);
+  // A deleted tag drops out of the filter.
+  const activeTagFilter = useMemo(() => tagFilter.filter((id) => tags.some((tag) => tag.id === id)), [tagFilter, tags]);
 
   // Expansion is remembered per browser; restored after mount so SSR markup matches.
   useEffect(() => {
@@ -113,10 +122,13 @@ export function TestCaseTree({ projectId, selected, onSelect, canCreate, canDele
     () => buildTree(foldersQuery.data ?? [], testCasesQuery.data ?? []),
     [foldersQuery.data, testCasesQuery.data],
   );
-  const filtered = useMemo(() => filterTree(tree, { name: nameFilter, status: statusFilter }), [tree, nameFilter, statusFilter]);
+  const filtered = useMemo(
+    () => filterTree(tree, { name: nameFilter, status: statusFilter, tagIds: activeTagFilter }),
+    [tree, nameFilter, statusFilter, activeTagFilter],
+  );
   const visibleExpanded = useMemo(() => new Set([...expanded, ...filtered.expand]), [expanded, filtered.expand]);
   const rows = useMemo(() => flattenVisible(filtered.nodes, visibleExpanded), [filtered.nodes, visibleExpanded]);
-  const filtering = nameFilter.trim() !== '' || statusFilter !== undefined;
+  const filtering = nameFilter.trim() !== '' || statusFilter !== undefined || activeTagFilter.length > 0;
   const permissions = { canEdit: canCreate, canDelete };
 
   const move = useMutation({
@@ -196,7 +208,7 @@ export function TestCaseTree({ projectId, selected, onSelect, canCreate, canDele
         )}
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
-        <div className="grid grid-cols-[1fr_9rem] gap-2">
+        <div className="grid grid-cols-[1fr_9rem_7rem] gap-2">
           <Input
             aria-label="Filter by name"
             placeholder="Filter by name"
@@ -216,7 +228,15 @@ export function TestCaseTree({ projectId, selected, onSelect, canCreate, canDele
               ))}
             </SelectContent>
           </Select>
+          <TagFilter tags={tags} selectedIds={activeTagFilter} onChange={setTagFilter} onManage={() => setManagingTags(true)} />
         </div>
+        <ManageTagsDialog
+          projectId={projectId}
+          open={managingTags}
+          onOpenChange={setManagingTags}
+          canEdit={canCreate}
+          canDelete={canDelete}
+        />
 
         <ActionError error={move.error} />
 

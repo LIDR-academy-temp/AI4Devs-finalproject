@@ -130,6 +130,66 @@ describe('tenant isolation (e2e, specs/tenant-isolation)', () => {
     expect(noContext).toHaveLength(0);
   });
 
+  it('tags and test case tags are isolated per workspace and invisible without tenant context', async () => {
+    const a = await createWorkspaceWithProject(prisma, `Iso-T-${randomUUID().slice(0, 8)}`);
+    const b = await createWorkspaceWithProject(prisma, `Iso-U-${randomUUID().slice(0, 8)}`);
+    const insertTagged = async (workspaceId: string, projectId: string) => {
+      const tagId = randomUUID();
+      const testCaseId = randomUUID();
+      await withTenantContext(prisma, workspaceId, async (tx) => {
+        await tx.$executeRaw`INSERT INTO tag (id, project_id, workspace_id, name, color)
+          VALUES (${tagId}::uuid, ${projectId}::uuid, ${workspaceId}::uuid, 'iso', 'gray')`;
+        await tx.$executeRaw`INSERT INTO test_case (id, project_id, workspace_id, name, position_key)
+          VALUES (${testCaseId}::uuid, ${projectId}::uuid, ${workspaceId}::uuid, 'Iso case', 'i')`;
+        await tx.$executeRaw`INSERT INTO test_case_tag (test_case_id, tag_id, workspace_id)
+          VALUES (${testCaseId}::uuid, ${tagId}::uuid, ${workspaceId}::uuid)`;
+      });
+      return tagId;
+    };
+    const tagA = await insertTagged(a.workspaceId, a.projectId);
+    const tagB = await insertTagged(b.workspaceId, b.projectId);
+
+    const visible = await withTenantContext(prisma, a.workspaceId, async (tx) => ({
+      tags: await tx.$queryRaw<{ id: string }[]>`SELECT id FROM tag WHERE id IN (${tagA}::uuid, ${tagB}::uuid)`,
+      links: await tx.$queryRaw<{ tag_id: string }[]>`SELECT tag_id FROM test_case_tag WHERE tag_id IN (${tagA}::uuid, ${tagB}::uuid)`,
+    }));
+    const noContext = await prisma.$queryRaw<{ n: bigint }[]>`
+      SELECT (SELECT COUNT(*) FROM tag WHERE id = ${tagA}::uuid) + (SELECT COUNT(*) FROM test_case_tag WHERE tag_id = ${tagA}::uuid) AS n`;
+
+    expect(visible.tags.map((r) => r.id)).toEqual([tagA]);
+    expect(visible.links.map((r) => r.tag_id)).toEqual([tagA]);
+    expect(Number(noContext[0].n)).toBe(0);
+  });
+
+  it('bug tags are isolated per workspace and invisible without tenant context', async () => {
+    const a = await createWorkspaceWithProject(prisma, `Iso-V-${randomUUID().slice(0, 8)}`);
+    const b = await createWorkspaceWithProject(prisma, `Iso-W-${randomUUID().slice(0, 8)}`);
+    const insertTaggedBug = async (workspaceId: string, projectId: string) => {
+      const userId = await insertTestUser(prisma, `clerk-iso-bugtag-${randomUUID()}`, 'Iso Bug Tag User');
+      const tagId = randomUUID();
+      const bugId = randomUUID();
+      await withTenantContext(prisma, workspaceId, async (tx) => {
+        await tx.$executeRaw`INSERT INTO tag (id, project_id, workspace_id, name, color)
+          VALUES (${tagId}::uuid, ${projectId}::uuid, ${workspaceId}::uuid, 'iso', 'gray')`;
+        await tx.$executeRaw`INSERT INTO bug (id, project_id, workspace_id, title, severity, reporter_id, reporter_display_name)
+          VALUES (${bugId}::uuid, ${projectId}::uuid, ${workspaceId}::uuid, 'Iso bug', 'Low', ${userId}::uuid, 'Iso Bug Tag User')`;
+        await tx.$executeRaw`INSERT INTO bug_tag (bug_id, tag_id, workspace_id)
+          VALUES (${bugId}::uuid, ${tagId}::uuid, ${workspaceId}::uuid)`;
+      });
+      return tagId;
+    };
+    const tagA = await insertTaggedBug(a.workspaceId, a.projectId);
+    const tagB = await insertTaggedBug(b.workspaceId, b.projectId);
+
+    const visible = await withTenantContext(prisma, a.workspaceId, (tx) =>
+      tx.$queryRaw<{ tag_id: string }[]>`SELECT tag_id FROM bug_tag WHERE tag_id IN (${tagA}::uuid, ${tagB}::uuid)`,
+    );
+    const noContext = await prisma.$queryRaw<{ tag_id: string }[]>`SELECT tag_id FROM bug_tag WHERE tag_id = ${tagA}::uuid`;
+
+    expect(visible.map((r) => r.tag_id)).toEqual([tagA]);
+    expect(noContext).toHaveLength(0);
+  });
+
   it('executions and runs return zero rows without tenant context', async () => {
     const a = await createWorkspaceWithProject(prisma, `Iso-H-${randomUUID().slice(0, 8)}`);
     const exec = await insertExecutionWithRun(prisma, a.workspaceId, a.projectId);

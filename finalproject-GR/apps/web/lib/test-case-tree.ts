@@ -76,6 +76,8 @@ export function flattenVisible(nodes: TreeNode[], expanded: ReadonlySet<string>,
 export interface TreeFilter {
   name?: string;
   status?: TestCaseStatus;
+  /** Any of these tags (ADR 0016 decision 7); empty or missing = no tag filter. */
+  tagIds?: readonly string[];
 }
 
 /**
@@ -85,8 +87,9 @@ export interface TreeFilter {
  */
 export function filterTree(nodes: TreeNode[], filter: TreeFilter): { nodes: TreeNode[]; expand: Set<string> } {
   const text = filter.name?.trim().toLowerCase() ?? '';
+  const tagIds = filter.tagIds ?? [];
   const expand = new Set<string>();
-  if (!text && !filter.status) {
+  if (!text && !filter.status && tagIds.length === 0) {
     return { nodes, expand };
   }
   const nameMatches = (name: string) => !text || name.toLowerCase().includes(text);
@@ -95,13 +98,14 @@ export function filterTree(nodes: TreeNode[], filter: TreeFilter): { nodes: Tree
     list.flatMap((node): TreeNode[] => {
       if (node.kind === 'testCase') {
         const statusOk = !filter.status || node.testCase.status === filter.status;
-        return nameMatches(node.name) && statusOk ? [node] : [];
+        const tagsOk = tagIds.length === 0 || (node.testCase.tagIds ?? []).some((id) => tagIds.includes(id));
+        return nameMatches(node.name) && statusOk && tagsOk ? [node] : [];
       }
       const children = walk(node.children);
-      // A folder matches on its name only when no status filter applies (folders have no
-      // status). A matching folder keeps its whole subtree, and still expands when
+      // A folder matches on its name only when no status or tag filter applies (folders
+      // have neither). A matching folder keeps its whole subtree, and still expands when
       // something inside it matches too, so that match is visible.
-      if (text && !filter.status && nameMatches(node.name)) {
+      if (text && !filter.status && tagIds.length === 0 && nameMatches(node.name)) {
         if (children.length > 0) expand.add(node.id);
         return [node];
       }

@@ -1,5 +1,6 @@
 import { BUG_SEVERITIES, BUG_STATUSES, type Bug, type BugSeverity, type BugStatus } from './bugs-api';
 import type { SortDirection } from './execution-list-view';
+import { carriesAnyTag } from './tags-api';
 
 export type BugSortKey = 'updatedAt' | 'createdAt' | 'status' | 'severity';
 
@@ -7,6 +8,8 @@ export interface BugFilters {
   title?: string;
   status?: BugStatus;
   severity?: BugSeverity;
+  /** Any of these tags. */
+  tagIds?: string[];
 }
 
 /**
@@ -34,6 +37,7 @@ export function filterBugs(list: Bug[], filters: BugFilters): Bug[] {
     (bug) =>
       (!title || bug.title.toLowerCase().includes(title)) &&
       (!filters.status || bug.status === filters.status) &&
-      (!filters.severity || bug.severity === filters.severity),
+      (!filters.severity || bug.severity === filters.severity) &&
+      carriesAnyTag(bug.tagIds, filters.tagIds),
   );
 }

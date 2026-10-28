@@ -37,6 +37,17 @@ describe('filterBugs', () => {
     expect(ids(filterBugs([a, b, c], { severity: 'Medium' }))).toEqual(['c']);
   });
 
+  it('filters by any of the picked tags, combined with the other filters', () => {
+    const tagged = [
+      makeBug({ id: 't1', tagIds: ['checkout'], status: 'Open' }),
+      makeBug({ id: 't2', tagIds: ['payments'], status: 'Closed' }),
+      makeBug({ id: 't3' }),
+    ];
+    expect(ids(filterBugs(tagged, { tagIds: ['checkout', 'payments'] }))).toEqual(['t1', 't2']);
+    expect(ids(filterBugs(tagged, { tagIds: ['checkout', 'payments'], status: 'Closed' }))).toEqual(['t2']);
+    expect(ids(filterBugs(tagged, { tagIds: [] }))).toEqual(['t1', 't2', 't3']);
+  });
+
   it('returns everything with no filters', () => {
     expect(ids(filterBugs([a, b, c], {}))).toEqual(['a', 'b', 'c']);
   });

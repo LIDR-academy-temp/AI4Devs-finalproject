@@ -36,6 +36,7 @@ module.exports = [
       'src/common/seed-target.ts',
       'src/common/prisma.service.ts',
       'src/common/project-role.ts',
+      'src/common/workspace-role.ts',
       'src/common/resolve-project-workspace.ts',
       'src/common/secrets-encryption.ts',
     ],

@@ -40,6 +40,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { notifySuccess } from '../../lib/notify';
+import { tagKeys } from '../../lib/tags-api';
+import { TagsField } from '../tags/tags-field';
 
 export interface BugDetailProps {
   projectId: string;
@@ -48,7 +50,7 @@ export interface BugDetailProps {
   onDeleted: () => void;
 }
 
-/** Bug detail view (PRD §6.4.3, minus tags, images and the activity panel). */
+/** Bug detail view (PRD §6.4.3, minus images and the activity panel). */
 export function BugDetail({ projectId, bugId, role, onDeleted }: BugDetailProps) {
   const apiClient = useApiClient();
   const queryClient = useQueryClient();
@@ -67,8 +69,14 @@ export function BugDetail({ projectId, bugId, role, onDeleted }: BugDetailProps)
   const update = useMutation({
     mutationFn: (input: UpdateBugInput) => updateBug(apiClient, projectId, bugId, input),
     onSuccess: (updated, input) => {
-      notifySuccess(input.status ? `Status changed to ${BUG_STATUS_LABELS[updated.status]}` : 'Bug saved');
+      notifySuccess(
+        input.status ? `Status changed to ${BUG_STATUS_LABELS[updated.status]}` : input.tagIds ? 'Tags updated' : 'Bug saved',
+      );
       queryClient.setQueryData(bugKeys.detail(projectId, bugId), updated);
+      if (input.tagIds) {
+        // Usage counts in the tag list changed too.
+        queryClient.invalidateQueries({ queryKey: tagKeys.list(projectId) });
+      }
       queryClient.invalidateQueries({ queryKey: bugKeys.list(projectId) });
       queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'bugs', 'run'] });
     },
@@ -121,6 +129,13 @@ export function BugDetail({ projectId, bugId, role, onDeleted }: BugDetailProps)
               {bug.autoCreated && ' (auto-created on failure)'}
             </span>
           </div>
+          <TagsField
+            projectId={projectId}
+            tagIds={bug.tagIds ?? []}
+            canEdit={canEdit}
+            onChange={(tagIds) => update.mutate({ tagIds })}
+            disabled={update.isPending}
+          />
           <ActionError error={update.error} />
         </header>
 

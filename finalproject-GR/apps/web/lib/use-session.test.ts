@@ -14,10 +14,10 @@ describe('useSession', () => {
     request.mockReset();
   });
 
-  it('resolves workspaceId, projectId, and role from /me and /projects/:id', async () => {
+  it('resolves the workspace (name, role) and project (name, slug, role) from /me and /projects/:id', async () => {
     request.mockImplementation(async (path: string) => {
       if (path === '/me') {
-        return { id: 'u1', displayName: 'A', email: 'a@example.com', workspaceId: 'w1', projectId: 'p1' };
+        return { id: 'u1', displayName: 'A', email: 'a@example.com', workspaceId: 'w1', workspaceName: 'Acme', workspaceRole: 'Owner', projectId: 'p1' };
       }
       if (path === '/projects/p1') {
         return { id: 'p1', name: 'Project', slug: 'project', role: 'Contributor' };
@@ -31,8 +31,11 @@ describe('useSession', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.data).toEqual({
       workspaceId: 'w1',
+      workspaceName: 'Acme',
+      workspaceRole: 'Owner',
       projectId: 'p1',
       projectName: 'Project',
+      projectSlug: 'project',
       role: 'Contributor',
     });
     expect(result.current.error).toBeNull();
@@ -41,7 +44,7 @@ describe('useSession', () => {
   it('resolves role: null when the project response carries no role', async () => {
     request.mockImplementation(async (path: string) => {
       if (path === '/me') {
-        return { id: 'u1', displayName: 'A', email: 'a@example.com', workspaceId: 'w1', projectId: 'p1' };
+        return { id: 'u1', displayName: 'A', email: 'a@example.com', workspaceId: 'w1', workspaceName: 'Acme', workspaceRole: 'Owner', projectId: 'p1' };
       }
       return { id: 'p1', name: 'Project', slug: 'project' };
     });

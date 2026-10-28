@@ -267,6 +267,13 @@ One change for the whole phase (DB + API + Bugs screen + run panel), since it re
   - Single-statement batches keep the transaction well inside Prisma's 5s interactive-transaction timeout.
   - The dev Clerk app's account is `demo+clerk_test@example.com`, not the developer's own email.
 - **Deferred / out of scope:** stats / Overview readout; a reset or unseed command (impossible to do cleanly with the append-only activity log); seeding several projects; creating Clerk accounts; activity entries for test case and environment creation (an API logging gap).
+
+### Post-completion polish: form modals ✅
+
+- **OpenSpec change:** `form-modals` (archived 2026-10-26)
+- **Built:** A shared `FormDialog` (`components/form-dialog.tsx`) provides the frame for every create and edit form: title, scrolling body, the server's reason inside, then Cancel and the primary action (disabled while saving), in three widths. New Test Case is now a real modal, as PRD §7.1 always specified, instead of a card that replaced the detail pane. Saving selects the new test case, and cancelling keeps the selection. New/Edit Execution and New Bug / File bug moved onto the same component with no behaviour change.
+- **Key decisions / discoveries:** The test case form mounts only while the modal is open, so closing discards the input with no reset effect. Radix marks the background `aria-hidden` while a modal is open, so tests check the content behind it with label queries, not role queries. Confirmation and small dialogs (folder name, Move to…, delete, Run All mode) intentionally stay on plain `Dialog`.
+- **Deferred / out of scope:** an unsaved-changes prompt on close; the disabled "Generate from Sources" mode (PRD §7.1).
 ---
 
 This covers PRD §10's key journeys — onboarding, writing test cases, running a suite, investigating a bug — short of "Reviewing Project Health" (§10.5), which is deferred to the full roadmap's Phase 9. Every deferred item above is a pure addition on top of data already shaped correctly, so continuing into [roadmap-full.md](roadmap-full.md) from Phase 4 onward requires no rework of what the MVP built. (Phase numbers here are this document's own, independent of roadmap-full.md's — each roadmap orders its phases to fit its own build order, per CLAUDE.md's "Two roadmaps, one target architecture.")

@@ -26,6 +26,13 @@ vi.mock('../../lib/folders-api', async (importOriginal) => ({
   renameFolder: vi.fn(),
   folderDeleteImpact: vi.fn(),
 }));
+vi.mock('../../lib/tags-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/tags-api')>()),
+  listTags: vi.fn(async () => [
+    { id: 'tag-smoke', name: 'smoke', color: 'green', testCaseCount: 2, bugCount: 0 },
+    { id: 'tag-reg', name: 'regression', color: 'blue', testCaseCount: 1, bugCount: 0 },
+  ]),
+}));
 vi.mock('../../lib/test-cases-api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/test-cases-api')>()),
   listTestCases: vi.fn(),
@@ -82,6 +89,58 @@ describe('TestCaseTree', () => {
     expect(rowNames()).toEqual(['Folder Checkout', 'Test case Login', 'Test case Signup']);
     expect(screen.getByRole('img', { name: 'Last run: Fail' })).toBeTruthy();
     expect(screen.getAllByRole('img', { name: /Last run/ })).toHaveLength(1);
+  });
+
+  describe('tag filter', () => {
+    // Direct (in Checkout) and Signup carry smoke; Login carries regression and is Draft.
+    beforeEach(() => {
+      vi.mocked(listTestCases).mockResolvedValue(
+        CASES.map((c) => ({
+          ...c,
+          ...(c.id === 'login' ? { status: 'Draft' as const } : {}),
+          tagIds: { direct: ['tag-smoke'], signup: ['tag-smoke'], login: ['tag-reg'] }[c.id] ?? [],
+        })),
+      );
+    });
+
+    async function pickTags(...names: string[]) {
+      fireEvent.click(await screen.findByRole('button', { name: 'Filter by tags' }));
+      for (const name of names) {
+        fireEvent.click(await screen.findByRole('checkbox', { name }));
+      }
+      fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    }
+
+    it('shows only test cases carrying a picked tag, inside their folders', async () => {
+      renderTree();
+      await screen.findByText('Checkout');
+
+      await pickTags('smoke');
+
+      await waitFor(() => expect(rowNames()).toEqual(['Folder Checkout', 'Test case Direct', 'Test case Signup']));
+    });
+
+    it('combines with the status filter', async () => {
+      renderTree();
+      await screen.findByText('Checkout');
+      await pickTags('regression', 'smoke');
+
+      fireEvent.click(screen.getByRole('combobox', { name: 'Filter by status' }));
+      fireEvent.click(await screen.findByRole('option', { name: 'Draft' }));
+
+      await waitFor(() => expect(rowNames()).toEqual(['Test case Login']));
+    });
+
+    it('pauses dragging while a tag filter is active', async () => {
+      renderTree();
+      await screen.findByText('Checkout');
+
+      await pickTags('smoke');
+
+      await waitFor(() => expect(rowNames()).toContain('Test case Signup'));
+      const row = screen.getByRole('treeitem', { name: 'Test case Signup' });
+      expect(row.getAttribute('aria-disabled')).toBe('true');
+    });
   });
 
   it('remembers expanded folders across remounts', async () => {
@@ -259,20 +318,51 @@ describe('Test Cases screen with folders', () => {
     await waitFor(() => expect(screen.getByRole('navigation', { name: 'Breadcrumb' }).textContent).toBe('CheckoutPayments'));
   });
 
-  it('a new test case defaults to the selected folder, then opens selected', async () => {
+  it('New test case opens a modal over the screen, defaults to the selected folder, and selects what it creates', async () => {
     asRole('Contributor');
     vi.mocked(createTestCase).mockResolvedValue(tc('new', 'New one', 'c', 'z'));
     renderWithProviders(<TestCasesScreen />);
 
     fireEvent.click(await screen.findByText('Checkout'));
     fireEvent.click(screen.getByRole('button', { name: 'New test case' }));
-    fireEvent.change(await screen.findByLabelText('New test case name'), { target: { value: 'New one' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+    const dialog = await screen.findByRole('dialog', { name: 'New test case' });
+    // The folder summary stays rendered behind the modal (aria-hidden while it's open).
+    expect(screen.getByLabelText('Folder contents')).toBeTruthy();
+    expect((within(dialog).getByRole('radio', { name: 'Checkout' }) as HTMLInputElement).checked).toBe(true);
+    fireEvent.change(within(dialog).getByLabelText('New test case name'), { target: { value: 'New one' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Create test case' }));
 
     await waitFor(() =>
       expect(createTestCase).toHaveBeenCalledWith(expect.anything(), 'p1', expect.objectContaining({ name: 'New one', folderId: 'c' })),
     );
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     await waitFor(() => expect(getTestCase).toHaveBeenCalledWith(expect.anything(), 'p1', 'new'));
+  });
+
+  it('cancelling New test case keeps the selection', async () => {
+    asRole('Contributor');
+    vi.mocked(createTestCase).mockClear();
+    renderWithProviders(<TestCasesScreen />);
+
+    fireEvent.click(await screen.findByText('Checkout'));
+    fireEvent.click(screen.getByRole('button', { name: 'New test case' }));
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(screen.getByLabelText('Folder contents')).toBeTruthy();
+    expect(screen.getByRole('treeitem', { name: 'Folder Checkout' }).getAttribute('aria-selected')).toBe('true');
+    expect(createTestCase).not.toHaveBeenCalled();
+  });
+
+  it('"New test case here" on a folder opens the modal with that folder chosen', async () => {
+    asRole('Contributor');
+    renderWithProviders(<TestCasesScreen />);
+
+    fireEvent.pointerDown(await screen.findByRole('button', { name: 'Actions for Checkout' }), { button: 0, pointerType: 'mouse' });
+    fireEvent.click(await screen.findByRole('menuitem', { name: /New test case here/ }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'New test case' });
+    expect((within(dialog).getByRole('radio', { name: 'Checkout' }) as HTMLInputElement).checked).toBe(true);
   });
 
   it('Move to… moves the item to the picked folder', async () => {

@@ -9,6 +9,10 @@ vi.mock('../../lib/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/api-client')>()),
   useApiClient: () => ({ request: vi.fn() }),
 }));
+vi.mock('../../lib/tags-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/tags-api')>()),
+  listTags: vi.fn(async () => [{ id: 'tag-payments', name: 'payments', color: 'blue', testCaseCount: 1, bugCount: 0 }]),
+}));
 vi.mock('../../lib/executions-api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/executions-api')>()),
   listExecutions: vi.fn(),
@@ -80,5 +84,21 @@ describe('ExecutionList', () => {
 
     expect(await screen.findByText('No executions yet.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /create|new execution/i })).toBeNull();
+  });
+
+  it("filters by its test cases' tags, with no Manage tags action", async () => {
+    mockedList.mockResolvedValue([
+      makeExecution({ id: 'a', name: 'Payments smoke', tagIds: ['tag-payments'] }),
+      makeExecution({ id: 'b', name: 'Release regression', tagIds: [] }),
+    ]);
+    renderList(false);
+    await screen.findByText('Payments smoke');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by tags' }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'payments' }));
+
+    expect(screen.queryByText('Release regression')).toBeNull();
+    expect(screen.getByText('Payments smoke')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Manage tags/ })).toBeNull();
   });
 });

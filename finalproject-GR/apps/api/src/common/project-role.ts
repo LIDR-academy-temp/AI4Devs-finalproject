@@ -17,8 +17,10 @@ export async function resolveEffectiveProjectRole(
   projectId: string,
 ): Promise<ProjectRole | null> {
   return withUserContext(prisma, userId, async (tx) => {
+    // A project in the trash grants nobody a role, Owners included (project-management),
+    // so every project-scoped route is closed until it's restored.
     const project = await tx.$queryRaw<{ workspace_id: string }[]>`
-      SELECT workspace_id FROM project WHERE id = ${projectId}::uuid
+      SELECT workspace_id FROM project WHERE id = ${projectId}::uuid AND deleted_at IS NULL
     `;
     if (project.length === 0) {
       return null;

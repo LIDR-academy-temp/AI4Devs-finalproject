@@ -49,3 +49,25 @@ describe('filterExecutions', () => {
     expect(ids(filterExecutions([a, b, c], {}))).toEqual(['a', 'b', 'c']);
   });
 });
+
+describe('filterExecutions by tags', () => {
+  const tagged = [
+    makeExecution({ id: 't1', tagIds: ['smoke'], status: 'Done' }),
+    makeExecution({ id: 't2', tagIds: ['smoke', 'checkout'], status: 'Draft' }),
+    makeExecution({ id: 't3', tagIds: [] }),
+    makeExecution({ id: 't4' }),
+  ];
+
+  it('keeps executions whose test cases carry any picked tag', () => {
+    expect(ids(filterExecutions(tagged, { tagIds: ['checkout'] }))).toEqual(['t2']);
+    expect(ids(filterExecutions(tagged, { tagIds: ['checkout', 'smoke'] }))).toEqual(['t1', 't2']);
+  });
+
+  it('combines with the other filters', () => {
+    expect(ids(filterExecutions(tagged, { tagIds: ['smoke'], status: 'Done' }))).toEqual(['t1']);
+  });
+
+  it('an empty tag list filters nothing', () => {
+    expect(ids(filterExecutions(tagged, { tagIds: [] }))).toEqual(['t1', 't2', 't3', 't4']);
+  });
+});

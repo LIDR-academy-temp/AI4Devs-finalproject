@@ -15,6 +15,14 @@ vi.mock('next/navigation', () => ({
 vi.mock('./user-menu', () => ({
   UserMenu: () => <button type="button">User menu</button>,
 }));
+// The switcher fetches its project list; its own test covers it (project-switcher.test.tsx).
+vi.mock('./projects/project-switcher', () => ({
+  ProjectSwitcher: ({ projectName, isOwner }: { projectName: string; isOwner: boolean }) => (
+    <button type="button" data-owner={String(isOwner)}>
+      Switch project: {projectName}
+    </button>
+  ),
+}));
 
 const mockedUseSessionContext = useSessionContext as unknown as ReturnType<typeof vi.fn>;
 
@@ -22,7 +30,15 @@ function mockSession(result: Partial<UseSessionResult>) {
   mockedUseSessionContext.mockReturnValue({ data: null, loading: false, error: null, ...result });
 }
 
-const viewer = { workspaceId: 'w1', projectId: 'p1', projectName: 'Project', role: 'Viewer' as const };
+const viewer = {
+  workspaceId: 'w1',
+  workspaceName: 'Acme',
+  workspaceRole: 'Collaborator' as const,
+  projectId: 'p1',
+  projectName: 'Project',
+  projectSlug: 'project',
+  role: 'Viewer' as const,
+};
 
 /** The root layout provides TooltipProvider; tests supply it the same way. */
 function renderShell(props: { defaultOpen?: boolean } = {}) {
@@ -39,6 +55,28 @@ describe('Shell', () => {
   beforeEach(() => {
     pathname.mockReturnValue('/test-cases');
     document.cookie = 'sidebar_state=; max-age=0; path=/';
+  });
+
+  it('shows the project switcher with the project name, telling it whether the user is Owner', () => {
+    mockSession({ data: { ...viewer, workspaceRole: 'Owner' } });
+    renderShell();
+
+    const switcher = screen.getByRole('button', { name: 'Switch project: Project' });
+    expect(switcher.getAttribute('data-owner')).toBe('true');
+  });
+
+  it('offers Project Settings, with an icon, to Admins only', () => {
+    mockSession({ data: { ...viewer, role: 'Admin' } });
+    const { unmount } = renderShell();
+    expect(screen.getByRole('link', { name: 'Project Settings' }).querySelector('svg')).not.toBeNull();
+    unmount();
+
+    for (const role of ['Viewer', 'Contributor'] as const) {
+      mockSession({ data: { ...viewer, role } });
+      const view = renderShell();
+      expect(screen.queryByRole('link', { name: 'Project Settings' })).toBeNull();
+      view.unmount();
+    }
   });
 
   it('shows the access-denied state when role resolves to null', () => {

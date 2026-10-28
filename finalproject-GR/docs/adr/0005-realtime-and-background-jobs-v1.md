@@ -1,6 +1,6 @@
 # ADR 0005: Real-time Updates and Background Jobs for v1
 
-**Status:** Accepted, amended by [ADR 0012](0012-execution-completion-and-sign-off.md) (execution completion, sign-off and test case eligibility)
+**Status:** Accepted, amended by [ADR 0012](0012-execution-completion-and-sign-off.md) (execution completion, sign-off and test case eligibility) and [ADR 0018](0018-queue-library.md) (queue library: Graphile Worker)
 **Date:** 2026-09-23
 **Amends:** [ADR 0001](0001-tech-stack.md) (Real-time and Background Jobs layers)
 
@@ -70,5 +70,5 @@ Every push need is **one-way, server to browser**. Commands travel as ordinary r
 ## Open Items
 
 - Stream authentication approach (fetch-based client versus stream tickets), decided together with the ADR 0002 bearer-versus-cookie item.
-- Final queue library choice (pg-boss versus Graphile Worker), validated against the ORM and the pooler.
+- ~~Final queue library choice (pg-boss versus Graphile Worker), validated against the ORM and the pooler.~~ Resolved by [ADR 0018](0018-queue-library.md): Graphile Worker.
 - Where the worker process runs in the hosting layout.

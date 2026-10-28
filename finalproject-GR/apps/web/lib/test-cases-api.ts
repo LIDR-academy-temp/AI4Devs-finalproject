@@ -20,6 +20,8 @@ export interface TestCase {
   positionKey?: string;
   /** Newest recorded run outcome, or null if never run. */
   lastOutcome?: RunOutcome | null;
+  /** Tags carried (ADR 0016), sorted by id; missing = none. */
+  tagIds?: string[];
 }
 
 export interface CreateTestCaseInput {
@@ -27,12 +29,16 @@ export interface CreateTestCaseInput {
   gherkinScript?: string;
   /** Destination folder; omitted or null = the root. */
   folderId?: string | null;
+  /** Tags to create it with. */
+  tagIds?: string[];
 }
 
 export interface UpdateTestCaseInput {
   name?: string;
   gherkinScript?: string | null;
   status?: TestCaseStatus;
+  /** The full set of tags the test case should carry. */
+  tagIds?: string[];
 }
 
 export function listTestCases(client: ApiClient, projectId: string): Promise<TestCase[]> {

@@ -183,7 +183,7 @@ export function logTreeActivity(
   tx: Prisma.TransactionClient,
   actor: ExecutionActor,
   actionCode: string,
-  entity: { type: 'folder' | 'test_case'; id: string; name: string },
+  entity: { type: 'folder' | 'test_case' | 'tag'; id: string; name: string },
   details?: Record<string, unknown>,
 ): Promise<void> {
   return log(tx, {

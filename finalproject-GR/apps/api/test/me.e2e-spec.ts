@@ -2,7 +2,11 @@ import { randomUUID } from 'crypto';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { PrismaClient } from '@prisma/client';
 import { AppModule } from '../src/app.module';
+import { withTenantContext } from '../src/common/tenant-context';
+import { createTestPrismaClient } from './helpers/prisma-test-client';
+import { insertWorkspaceMembership } from './helpers/membership-fixtures';
 
 // Mocks Clerk at the boundary (design.md's corrected Risk resolution): the real
 // session-JWT verification against live Clerk JWKS needs a live account and either a
@@ -25,8 +29,10 @@ jest.mock('@clerk/backend', () => ({
 
 describe('GET /me (e2e, Clerk mocked at the boundary)', () => {
   let app: INestApplication;
+  let prisma: PrismaClient;
 
   beforeAll(async () => {
+    prisma = createTestPrismaClient();
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleRef.createNestApplication();
     await app.init();
@@ -34,6 +40,7 @@ describe('GET /me (e2e, Clerk mocked at the boundary)', () => {
 
   afterAll(async () => {
     await app.close();
+    await prisma.$disconnect();
   });
 
   it('provisions a new identity on first contact and returns its profile', async () => {
@@ -47,6 +54,8 @@ describe('GET /me (e2e, Clerk mocked at the boundary)', () => {
       displayName: 'Test User',
       email: `${clerkUserId}@example.com`,
       workspaceId: expect.any(String),
+      workspaceName: "Test User's Workspace",
+      workspaceRole: 'Owner',
       projectId: expect.any(String),
     });
   });
@@ -62,5 +71,48 @@ describe('GET /me (e2e, Clerk mocked at the boundary)', () => {
     expect(second.body.id).toBe(first.body.id);
     expect(second.body.workspaceId).toBe(first.body.workspaceId);
     expect(second.body.projectId).toBe(first.body.projectId);
+  });
+
+  describe('PUT /me/active-project', () => {
+    const asUser = (clerkUserId: string) => ({ Authorization: `Bearer ${clerkUserId}` });
+
+    async function addProject(workspaceId: string, deleted = false): Promise<string> {
+      const projectId = randomUUID();
+      await withTenantContext(prisma, workspaceId, (tx) =>
+        tx.$executeRaw`INSERT INTO project (id, workspace_id, name, slug, deleted_at)
+          VALUES (${projectId}::uuid, ${workspaceId}::uuid, 'Other', ${`other-${projectId}`}, ${deleted ? new Date() : null})`,
+      );
+      return projectId;
+    }
+
+    async function switchTo(clerkUserId: string, projectId: string) {
+      return request(app.getHttpServer()).put('/me/active-project').set(asUser(clerkUserId)).send({ projectId });
+    }
+
+    it('switches to an accessible project, and /me then reports it', async () => {
+      const clerkUserId = `clerk-me-switch-${randomUUID()}`;
+      const me = await request(app.getHttpServer()).get('/me').set(asUser(clerkUserId));
+      const other = await addProject(me.body.workspaceId);
+
+      const response = await switchTo(clerkUserId, other);
+      const after = await request(app.getHttpServer()).get('/me').set(asUser(clerkUserId));
+
+      expect(response.status).toBe(204);
+      expect(after.body.projectId).toBe(other);
+    });
+
+    it('refuses a project with no membership, one in the trash, or an unknown one, leaving the active project alone', async () => {
+      const owner = await request(app.getHttpServer()).get('/me').set(asUser(`clerk-me-owner-${randomUUID()}`));
+      const collaborator = `clerk-me-collab-${randomUUID()}`;
+      const collaboratorMe = await request(app.getHttpServer()).get('/me').set(asUser(collaborator));
+      await insertWorkspaceMembership(prisma, owner.body.workspaceId, collaboratorMe.body.id, 'Collaborator');
+      const trashed = await addProject(collaboratorMe.body.workspaceId, true);
+
+      for (const projectId of [owner.body.projectId, trashed, randomUUID(), 'not-a-uuid']) {
+        expect((await switchTo(collaborator, projectId)).status).toBe(403);
+      }
+      const after = await request(app.getHttpServer()).get('/me').set(asUser(collaborator));
+      expect(after.body.projectId).toBe(collaboratorMe.body.projectId);
+    });
   });
 });

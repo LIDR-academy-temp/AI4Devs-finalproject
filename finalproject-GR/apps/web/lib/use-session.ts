@@ -2,14 +2,16 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useApiClient } from './api-client';
-
-type ProjectRole = 'Viewer' | 'Contributor' | 'Admin';
+import { projectKeys, type ProjectRole } from './projects-api';
+import type { WorkspaceRole } from './workspace-api';
 
 interface MeResponse {
   id: string;
   displayName: string;
   email: string;
   workspaceId: string;
+  workspaceName: string;
+  workspaceRole: WorkspaceRole | null;
   projectId: string;
 }
 
@@ -22,8 +24,11 @@ interface ProjectResponse {
 
 export interface SessionData {
   workspaceId: string;
+  workspaceName: string;
+  workspaceRole: WorkspaceRole | null;
   projectId: string;
   projectName: string;
+  projectSlug: string;
   role: ProjectRole | null;
 }
 
@@ -52,7 +57,7 @@ export function useSession(): UseSessionResult {
   const projectId = meQuery.data?.projectId;
 
   const projectQuery = useQuery({
-    queryKey: ['projects', projectId],
+    queryKey: projectKeys.detail(projectId ?? ''),
     queryFn: () => request<ProjectResponse>(`/projects/${projectId}`),
     enabled: Boolean(projectId),
   });
@@ -66,8 +71,11 @@ export function useSession(): UseSessionResult {
     return {
       data: {
         workspaceId: meQuery.data.workspaceId,
+        workspaceName: meQuery.data.workspaceName,
+        workspaceRole: meQuery.data.workspaceRole,
         projectId: meQuery.data.projectId,
         projectName: projectQuery.data.name,
+        projectSlug: projectQuery.data.slug,
         role: projectQuery.data.role ?? null,
       },
       loading: false,

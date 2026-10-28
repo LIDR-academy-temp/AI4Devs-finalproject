@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { isUuid } from '../executions/execution-input';
+import { parseTagIds } from '../tags/tag-queries';
 
 /** Any status may change to any other (ADR 0013 decision 1). */
 export type BugStatus = 'Open' | 'InProgress' | 'Resolved' | 'Closed' | 'WontFix';
@@ -30,6 +31,8 @@ export interface BugCreateInput {
   stepsToReproduce: string | null;
   testRunId: string | null;
   failedStep: string | null;
+  /** Tags to file it with (ADR 0016); empty = none. */
+  tagIds: string[];
 }
 
 export interface BugUpdateInput {
@@ -38,6 +41,8 @@ export interface BugUpdateInput {
   status?: BugStatus;
   description?: string | null;
   stepsToReproduce?: string | null;
+  /** The full set of tags the bug should carry. */
+  tagIds?: string[];
 }
 
 function parseTitle(value: unknown): string {
@@ -84,6 +89,7 @@ export function parseBugCreate(body: Record<string, unknown>): BugCreateInput {
     stepsToReproduce: parseOptionalText(body.stepsToReproduce, 'stepsToReproduce') ?? null,
     testRunId,
     failedStep,
+    tagIds: parseTagIds(body.tagIds) ?? [],
   };
 }
 
@@ -96,5 +102,7 @@ export function parseBugUpdate(body: Record<string, unknown>): BugUpdateInput {
   if (description !== undefined) input.description = description;
   const steps = parseOptionalText(body.stepsToReproduce, 'stepsToReproduce');
   if (steps !== undefined) input.stepsToReproduce = steps;
+  const tagIds = parseTagIds(body.tagIds);
+  if (tagIds !== undefined) input.tagIds = tagIds;
   return input;
 }

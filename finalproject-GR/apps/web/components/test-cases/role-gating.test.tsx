@@ -15,6 +15,11 @@ vi.mock('../../lib/test-cases-api', async () => {
   const actual = await vi.importActual<typeof import('../../lib/test-cases-api')>('../../lib/test-cases-api');
   return { ...actual, getTestCase: vi.fn(), updateTestCase: vi.fn(), deleteTestCase: vi.fn() };
 });
+// `listRequest` answers every request with the test case list; tags have their own endpoint.
+vi.mock('../../lib/tags-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/tags-api')>()),
+  listTags: vi.fn(async () => []),
+}));
 
 const mockedGetTestCase = getTestCase as unknown as ReturnType<typeof vi.fn>;
 

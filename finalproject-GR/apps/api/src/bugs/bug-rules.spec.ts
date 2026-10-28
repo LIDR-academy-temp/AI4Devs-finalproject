@@ -28,7 +28,7 @@ describe('failedStepOf', () => {
 });
 
 describe('parseBugCreate', () => {
-  it('accepts a manual bug and defaults optional fields to null', () => {
+  it('accepts a manual bug and defaults optional fields to null and no tags', () => {
     expect(parseBugCreate({ title: 'Broken', severity: 'High' })).toEqual({
       title: 'Broken',
       severity: 'High',
@@ -36,7 +36,12 @@ describe('parseBugCreate', () => {
       stepsToReproduce: null,
       testRunId: null,
       failedStep: null,
+      tagIds: [],
     });
+  });
+
+  it('reads tag ids, deduplicated', () => {
+    expect(parseBugCreate({ title: 'Broken', severity: 'Low', tagIds: [RUN, RUN] }).tagIds).toEqual([RUN]);
   });
 
   it('accepts a run and a failed step', () => {
@@ -53,6 +58,7 @@ describe('parseBugCreate', () => {
     ['non-uuid run', { title: 'Broken', severity: 'High', testRunId: 'run-1' }],
     ['failed step without a run', { title: 'Broken', severity: 'High', failedStep: 'Then x' }],
     ['non-string description', { title: 'Broken', severity: 'High', description: 5 }],
+    ['malformed tagIds', { title: 'Broken', severity: 'High', tagIds: ['not-a-uuid'] }],
   ])('rejects %s', (_label, body) => {
     expect(() => parseBugCreate(body)).toThrow(BadRequestException);
   });

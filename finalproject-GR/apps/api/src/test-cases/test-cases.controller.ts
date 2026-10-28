@@ -25,6 +25,7 @@ import { isUuid } from '../executions/execution-input';
 import { type ExecutionActor, loadActorDisplayName } from '../executions/execution-queries';
 import { parseMoveTarget, parseParentId } from '../folders/tree-rules';
 import { assertTargetFolder, keyForAppend, keyForMove, logTreeActivity } from '../folders/folder-queries';
+import { parseTagIds, projectTags, setItemTags } from '../tags/tag-queries';
 
 type TestCaseStatus = 'Draft' | 'Ready' | 'Deprecated';
 
@@ -36,6 +37,7 @@ interface TestCaseRow {
   folder_id: string | null;
   position_key: string;
   last_outcome: RunOutcome | null;
+  tag_ids: string[];
 }
 
 interface TestCaseResponse {
@@ -49,18 +51,24 @@ interface TestCaseResponse {
   positionKey: string;
   /** Newest recorded outcome in a non-deleted execution; null if never run. */
   lastOutcome: RunOutcome | null;
+  /** Tags carried (ADR 0016), sorted by id. */
+  tagIds: string[];
 }
 
 interface CreateTestCaseBody {
   name?: unknown;
   gherkinScript?: unknown;
   folderId?: unknown;
+  /** Tags to create the test case with. */
+  tagIds?: unknown;
 }
 
 interface UpdateTestCaseBody {
   name?: unknown;
   gherkinScript?: unknown;
   status?: unknown;
+  /** The full set of tags the test case should carry. */
+  tagIds?: unknown;
 }
 
 const TEST_CASE_STATUSES: TestCaseStatus[] = ['Draft', 'Ready', 'Deprecated'];
@@ -75,12 +83,14 @@ function toResponse(row: TestCaseRow): TestCaseResponse {
     folderId: row.folder_id,
     positionKey: row.position_key,
     lastOutcome: row.last_outcome,
+    tagIds: row.tag_ids,
   };
 }
 
 /** One read shape for list, detail and every write's response. */
 const TEST_CASE_SELECT = Prisma.sql`
-  SELECT tc.id, tc.name, tc.gherkin_script, tc.status, tc.folder_id, tc.position_key, last.outcome AS last_outcome
+  SELECT tc.id, tc.name, tc.gherkin_script, tc.status, tc.folder_id, tc.position_key, last.outcome AS last_outcome,
+    COALESCE((SELECT array_agg(tt.tag_id ORDER BY tt.tag_id) FROM test_case_tag tt WHERE tt.test_case_id = tc.id), '{}') AS tag_ids
   FROM test_case tc
   LEFT JOIN LATERAL (
     SELECT r.outcome FROM test_run r JOIN test_execution e ON e.id = r.execution_id
@@ -102,6 +112,12 @@ async function loadTestCase(tx: Prisma.TransactionClient, projectId: string, tes
 export class TestCasesController {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async actor(request: AuthenticatedRequest, projectId: string): Promise<ExecutionActor> {
+    const userId = request.auth!.userId;
+    const workspaceId = await resolveProjectWorkspaceId(this.prisma, userId, projectId);
+    return { workspaceId, projectId, userId, displayName: await loadActorDisplayName(this.prisma, userId) };
+  }
+
   @Post()
   @UseGuards(ProjectRoleGuard)
   @RequireProjectRole('Contributor')
@@ -115,11 +131,14 @@ export class TestCasesController {
     }
     const gherkinScript = typeof body.gherkinScript === 'string' && body.gherkinScript.length > 0 ? body.gherkinScript : null;
     const folderId = parseParentId(body.folderId, 'folderId');
+    const tagIds = parseTagIds(body.tagIds) ?? [];
 
-    const workspaceId = await resolveProjectWorkspaceId(this.prisma, request.auth!.userId, projectId);
+    const actor = await this.actor(request, projectId);
+    const workspaceId = actor.workspaceId;
 
     const row = await withTenantContext(this.prisma, workspaceId, async (tx) => {
       await assertTargetFolder(tx, projectId, folderId);
+      const tags = await projectTags(tx, projectId, tagIds);
       // New test cases go last among their siblings (folder-tree).
       const key = await keyForAppend(tx, 'test_case', projectId, folderId);
       const [created] = await tx.$queryRaw<{ id: string }[]>`
@@ -127,6 +146,13 @@ export class TestCasesController {
         VALUES (${projectId}::uuid, ${workspaceId}::uuid, ${body.name}, ${gherkinScript}, ${folderId}::uuid, ${key})
         RETURNING id
       `;
+      if (tags.length > 0) {
+        await setItemTags(tx, { item: 'test_case', itemId: created.id, workspaceId, projectId, tagIds });
+      }
+      await logTreeActivity(tx, actor, 'test_case.created', { type: 'test_case', id: created.id, name: body.name as string }, {
+        folderId,
+        tags: tags.map((t) => t.name),
+      });
       return (await loadTestCase(tx, projectId, created.id))!;
     });
 
@@ -187,25 +213,55 @@ export class TestCasesController {
     if (body.status !== undefined && !TEST_CASE_STATUSES.includes(body.status as TestCaseStatus)) {
       throw new BadRequestException(`status must be one of ${TEST_CASE_STATUSES.join(', ')}`);
     }
+    if (!isUuid(testCaseId)) {
+      throw new NotFoundException('test case not found');
+    }
+    const tagIds = parseTagIds(body.tagIds);
 
     const name = typeof body.name === 'string' ? body.name : null;
     const hasGherkinScriptUpdate = body.gherkinScript !== undefined;
     const gherkinScript = hasGherkinScriptUpdate ? (body.gherkinScript as string | null) : null;
     const status = typeof body.status === 'string' ? (body.status as TestCaseStatus) : null;
 
-    const workspaceId = await resolveProjectWorkspaceId(this.prisma, request.auth!.userId, projectId);
+    const actor = await this.actor(request, projectId);
 
-    const row = await withTenantContext(this.prisma, workspaceId, async (tx) => {
-      const updated = await tx.$queryRaw<{ id: string }[]>`
+    const row = await withTenantContext(this.prisma, actor.workspaceId, async (tx) => {
+      const [current] = await tx.$queryRaw<{ name: string; gherkin_script: string | null; status: TestCaseStatus }[]>`
+        SELECT name, gherkin_script, status FROM test_case
+        WHERE id = ${testCaseId}::uuid AND project_id = ${projectId}::uuid AND deleted_at IS NULL
+        FOR UPDATE
+      `;
+      if (!current) {
+        return null;
+      }
+
+      const changes: Record<string, unknown> = {};
+      if (name !== null && name !== current.name) changes.name = { from: current.name, to: name };
+      if (hasGherkinScriptUpdate && gherkinScript !== current.gherkin_script) changes.gherkinScript = true;
+      if (status !== null && status !== current.status) changes.status = { from: current.status, to: status };
+
+      if (tagIds !== undefined) {
+        const tags = await setItemTags(tx, { item: 'test_case', itemId: testCaseId, workspaceId: actor.workspaceId, projectId, tagIds });
+        if (tags.added.length > 0 || tags.removed.length > 0) {
+          changes.tags = tags;
+        }
+      }
+
+      await tx.$executeRaw`
         UPDATE test_case
         SET
           name = COALESCE(${name}, name),
           gherkin_script = CASE WHEN ${hasGherkinScriptUpdate} THEN ${gherkinScript} ELSE gherkin_script END,
           status = COALESCE(${status}, status)
-        WHERE id = ${testCaseId}::uuid AND project_id = ${projectId}::uuid AND deleted_at IS NULL
-        RETURNING id
+        WHERE id = ${testCaseId}::uuid
       `;
-      return updated.length === 0 ? null : loadTestCase(tx, projectId, testCaseId);
+      // ADR 0015: every change (status included) is logged; an update that changes nothing isn't.
+      if (Object.keys(changes).length > 0) {
+        await logTreeActivity(tx, actor, 'test_case.updated', { type: 'test_case', id: testCaseId, name: name ?? current.name }, {
+          changes,
+        });
+      }
+      return loadTestCase(tx, projectId, testCaseId);
     });
 
     if (!row) {
@@ -230,11 +286,9 @@ export class TestCasesController {
       throw new NotFoundException('test case not found');
     }
     const target = parseMoveTarget(body ?? {}, 'folderId');
-    const userId = request.auth!.userId;
-    const workspaceId = await resolveProjectWorkspaceId(this.prisma, userId, projectId);
-    const actor: ExecutionActor = { workspaceId, projectId, userId, displayName: await loadActorDisplayName(this.prisma, userId) };
+    const actor = await this.actor(request, projectId);
 
-    const row = await withTenantContext(this.prisma, workspaceId, async (tx) => {
+    const row = await withTenantContext(this.prisma, actor.workspaceId, async (tx) => {
       const [current] = await tx.$queryRaw<{ name: string; folder_id: string | null }[]>`
         SELECT name, folder_id FROM test_case
         WHERE id = ${testCaseId}::uuid AND project_id = ${projectId}::uuid AND deleted_at IS NULL
@@ -268,10 +322,9 @@ export class TestCasesController {
     @Param('testCaseId') testCaseId: string,
     @Req() request: AuthenticatedRequest,
   ): Promise<void> {
-    const userId = request.auth!.userId;
-    const workspaceId = await resolveProjectWorkspaceId(this.prisma, userId, projectId);
+    const actor = await this.actor(request, projectId);
 
-    const rows = await withTenantContext(this.prisma, workspaceId, async (tx) => {
+    const rows = await withTenantContext(this.prisma, actor.workspaceId, async (tx) => {
       // PRD §6.2.5 / ADR 0012: refused while part of a Ready, InProgress or Paused execution.
       const active = await tx.$queryRaw<{ name: string }[]>`
         SELECT e.name FROM test_run r
@@ -284,12 +337,16 @@ export class TestCasesController {
         throw new ConflictException(`test case is part of the active execution "${active[0].name}"`);
       }
 
-      return tx.$queryRaw<{ id: string }[]>`
+      const deleted = await tx.$queryRaw<{ id: string; name: string }[]>`
         UPDATE test_case
-        SET deleted_at = now(), deleted_by = ${userId}::uuid
+        SET deleted_at = now(), deleted_by = ${actor.userId}::uuid
         WHERE id = ${testCaseId}::uuid AND project_id = ${projectId}::uuid AND deleted_at IS NULL
-        RETURNING id
+        RETURNING id, name
       `;
+      if (deleted.length > 0) {
+        await logTreeActivity(tx, actor, 'test_case.deleted', { type: 'test_case', id: testCaseId, name: deleted[0].name });
+      }
+      return deleted;
     });
 
     if (rows.length === 0) {

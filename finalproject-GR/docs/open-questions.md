@@ -25,6 +25,10 @@ Each row says what it **blocks**, so the list can be worked in an order that unb
 | G11 (new, PRD §7.2): Which test case statuses can be selected into an execution | [ADR 0012](adr/0012-execution-completion-and-sign-off.md): Ready only, re-checked at Mark as Ready |
 | G4: Which bug status transitions are allowed, and who may make them | [ADR 0013](adr/0013-bug-lifecycle-and-auto-creation.md): any status to any other, for Contributors and Admins; every change activity-logged with old and new value |
 | G8: What triggers auto-create bug on failure in manual mode | [ADR 0013](adr/0013-bug-lifecycle-and-auto-creation.md): a tester setting a run to Fail on an execution with the toggle on; same transaction, at most one auto-created bug per run (DB-enforced) |
+| G2: How a test case changes status, and who may | [ADR 0015](adr/0015-test-case-status-changes.md): any status to any other, Contributors and Admins; status gates execution selection only; every change activity-logged |
+| G3: Tag management (rename, recolour, delete) | [ADR 0016](adr/0016-tag-management.md): created inline from the tag picker; a Manage tags dialog where Contributors rename and recolour and Admins delete; fixed eight-colour palette; deleting is permanent and removes the tag everywhere |
+| Where the "last active project" of PRD §5 is remembered, once a workspace has several projects | [ADR 0017](adr/0017-active-project.md): on the server (`user.last_project_id`), resolved on every request with fallbacks to the oldest accessible live project; URLs stay project-free |
+| B2: Queue library (pg-boss or Graphile Worker), checked against the ORM and the pooler | [ADR 0018](adr/0018-queue-library.md): Graphile Worker; enqueue through a migrator-owned SECURITY DEFINER wrapper inside the existing transaction (no Prisma adapter needed); the worker uses a direct connection |
 
 ## A. Authentication and API access
 
@@ -41,7 +45,6 @@ Each row says what it **blocks**, so the list can be worked in an order that unb
 | # | Question | Source | Blocks | Suggested resolution |
 |---|---|---|---|---|
 | B1 | ~~How is the tenant context applied with the chosen ORM (Prisma extension versus explicit transaction helper)? Does friction justify a different ORM?~~ | ADR 0003 | First data-access code | **Resolved:** [ADR 0008](adr/0008-tenant-context-implementation.md) — explicit `withTenantContext` helper. |
-| B2 | Queue library: pg-boss or Graphile Worker, and does it work with the ORM and the connection pooler? | ADR 0005 | Worker process | Verify against the chosen pooler; default pg-boss. |
 | B3 | Health Score snapshot job: how is history backfilled for a project that has runs but no snapshots yet? | Decision 2, readme §3 | Trend charts | Recompute from run history on first request, then snapshot daily. |
 | B4 | Activity log: partitioning threshold, who holds the break-glass credentials, the erasure runbook, and whether Owners can view a purged project's log. | ADR 0007 | Production readiness | Set thresholds and custody before the first external customer. |
 
@@ -89,8 +92,8 @@ Each row says what it **blocks**, so the list can be worked in an order that unb
 | # | Question | Where |
 |---|---|---|
 | G1 | Where does a **Manual** test case's description live? The detail view only has a Gherkin script editor. | PRD §2.5, §6.2.3 |
-| G2 | How does a test case change status (Draft, Ready, Deprecated), and who may? The detail view shows the status but lists no way to edit it. | PRD §6.2.3 |
-| G3 | Tag management: how are tags renamed, recoloured or deleted? There is no screen for it. | PRD §2.4 |
+| G2 | ~~How does a test case change status (Draft, Ready, Deprecated), and who may?~~ **Resolved:** [ADR 0015](adr/0015-test-case-status-changes.md). | PRD §6.2.3 |
+| G3 | ~~Tag management: how are tags renamed, recoloured or deleted?~~ **Resolved:** [ADR 0016](adr/0016-tag-management.md). | PRD §2.4 |
 | G5 | Concurrent edits (auto-save on blur): last write wins, or optimistic locking with a conflict message? | PRD §6.2.3 |
 | G7 | **Try Again:** what happens when a test case in the chosen subset was deleted, and does Restart keep attempt history? | PRD §6.3.4 |
 | G9 | UI language, date and time zone display, and the full lists of locales and timezones in the New Execution modal. (The API side is settled by `execution-lifecycle`: it accepts any valid BCP 47 locale and IANA timezone via `Intl`, so only the picker lists remain open.) | PRD §7.2 |

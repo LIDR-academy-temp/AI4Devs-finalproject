@@ -11,7 +11,7 @@ import { listTestCases, type TestCase } from '../../lib/test-cases-api';
 import { breadcrumb, buildTree, findNode, foldersOnly, type TreeNode } from '../../lib/test-case-tree';
 import { TestCaseTree, type TreeSelection } from './test-case-tree';
 import { TestCaseDetail } from './test-case-detail';
-import { CreateTestCaseForm } from './create-test-case-form';
+import { CreateTestCaseDialog } from './create-test-case-dialog';
 import { FolderSummary } from './folder-summary';
 import { Breadcrumb } from './breadcrumb';
 import { TreeDialogs, type TreeDialog } from './tree-dialogs';
@@ -39,7 +39,7 @@ export function TestCasesScreen() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [selected, setSelected] = useState<TreeSelection | null>(() => initialSelection(searchParams));
-  /** Set while creating a test case: its preselected destination folder (null = root). */
+  /** Set while the New Test Case modal is open: its preselected destination folder (null = root). */
   const [creatingIn, setCreatingIn] = useState<string | null | undefined>(undefined);
   const [dialog, setDialog] = useState<TreeDialog | null>(null);
   const [running, setRunning] = useState<TestCase | null>(null);
@@ -94,19 +94,7 @@ export function TestCasesScreen() {
           onAction={onAction}
         />
         <div className="min-h-0 overflow-y-auto">
-          {creatingIn !== undefined ? (
-            <CreateTestCaseForm
-              key={creatingIn ?? 'root'}
-              projectId={projectId}
-              folders={foldersOnly(tree)}
-              initialFolderId={creatingIn}
-              onCreated={(testCase) => {
-                setCreatingIn(undefined);
-                setSelected({ kind: 'testCase', id: testCase.id });
-              }}
-              onCancel={() => setCreatingIn(undefined)}
-            />
-          ) : selectedNode?.kind === 'folder' ? (
+          {selectedNode?.kind === 'folder' ? (
             <FolderSummary
               folder={selectedNode}
               path={breadcrumb(folders.data ?? [], selectedNode.id)}
@@ -131,6 +119,14 @@ export function TestCasesScreen() {
           )}
         </div>
       </div>
+      <CreateTestCaseDialog
+        projectId={projectId}
+        open={creatingIn !== undefined}
+        onOpenChange={(open) => !open && setCreatingIn(undefined)}
+        folders={foldersOnly(tree)}
+        initialFolderId={creatingIn}
+        onCreated={(testCase) => setSelected({ kind: 'testCase', id: testCase.id })}
+      />
       <TreeDialogs
         projectId={projectId}
         dialog={dialog}

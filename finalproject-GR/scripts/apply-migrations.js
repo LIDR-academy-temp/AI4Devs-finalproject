@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Client } = require('pg');
+const { installJobQueue } = require('./install-job-queue');
 
 async function main() {
   const dir = path.join(__dirname, '..', 'db', 'migrations');
@@ -18,6 +19,10 @@ async function main() {
     process.exitCode = 1;
     return;
   }
+
+  // The job queue's own schema comes first: 0014 grants on its objects (ADR 0018).
+  await installJobQueue(connectionString);
+  console.log('Installed the graphile_worker schema');
 
   const client = new Client({ connectionString });
   await client.connect();

@@ -41,6 +41,8 @@ export interface Execution {
   createdAt: string;
   updatedAt: string;
   counts: { total: number; done: number; pass: number; fail: number; needsReview: number };
+  /** Tags currently carried by the test cases of its runs; missing = none (older fixtures). */
+  tagIds?: string[];
   /** Server time when the response was built, for clock-skew correction. */
   now: string;
   /** Present on detail responses only. */

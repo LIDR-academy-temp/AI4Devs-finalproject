@@ -24,6 +24,7 @@ import { isUuid } from '../executions/execution-input';
 import { type ExecutionActor, loadActorDisplayName } from '../executions/execution-queries';
 import { type BugSeverity, type BugStatus, failedStepOf, parseBugCreate, parseBugUpdate } from './bug-rules';
 import { type BugResponse, listBugs, loadBug, loadStartedRun, logBugActivity } from './bug-queries';
+import { projectTags, setItemTags } from '../tags/tag-queries';
 
 /** Bugs (specs/bug-tracking). Auto-creation on Fail lives in ExecutionLifecycleController. */
 @Controller('projects/:projectId/bugs')
@@ -59,6 +60,8 @@ export class BugsController {
         }
       }
 
+      // Checked before the insert, so a bad tag leaves no bug behind.
+      const tags = await projectTags(tx, projectId, input.tagIds);
       const [bug] = await tx.$queryRaw<{ id: string; title: string }[]>`
         INSERT INTO bug (
           project_id, workspace_id, title, severity, description, steps_to_reproduce,
@@ -73,7 +76,11 @@ export class BugsController {
         )
         RETURNING id, title
       `;
-      await logBugActivity(tx, actor, 'bug.created', bug, run ? { testRunId: run.id } : undefined);
+      if (tags.length > 0) {
+        await setItemTags(tx, { item: 'bug', itemId: bug.id, workspaceId: actor.workspaceId, projectId, tagIds: input.tagIds });
+      }
+      const details = { ...(run ? { testRunId: run.id } : {}), ...(tags.length > 0 ? { tags: tags.map((t) => t.name) } : {}) };
+      await logBugActivity(tx, actor, 'bug.created', bug, Object.keys(details).length > 0 ? details : undefined);
       return loadBug(tx, projectId, bug.id);
     });
   }
@@ -163,11 +170,18 @@ export class BugsController {
         description: current.description,
         stepsToReproduce: current.steps_to_reproduce,
       };
-      const changes = Object.fromEntries(
-        Object.entries(input)
+      const { tagIds, ...fields } = input;
+      const changes: Record<string, unknown> = Object.fromEntries(
+        Object.entries(fields)
           .filter(([field, value]) => before[field] !== value)
           .map(([field, value]) => [field, { from: before[field], to: value }]),
       );
+      if (tagIds !== undefined) {
+        const tags = await setItemTags(tx, { item: 'bug', itemId: bugId, workspaceId: actor.workspaceId, projectId, tagIds });
+        if (tags.added.length > 0 || tags.removed.length > 0) {
+          changes.tags = tags;
+        }
+      }
       await logBugActivity(tx, actor, 'bug.updated', { id: bugId, title: input.title ?? current.title }, { changes });
 
       return loadBug(tx, projectId, bugId);

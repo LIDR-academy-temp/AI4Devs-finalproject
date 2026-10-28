@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSessionContext } from '../../lib/session-context';
 import { PageHeader } from '../page-header';
-import { canEditBug } from '../../lib/bug-permissions';
+import { canDeleteBug, canEditBug } from '../../lib/bug-permissions';
 import { BugList } from './bug-list';
 import { BugDetail } from './bug-detail';
 import { BugFormDialog } from './bug-form-dialog';
@@ -49,6 +49,7 @@ export function BugsScreen() {
           selectedId={selectedId}
           onSelect={select}
           canCreate={canEditBug(role)}
+          canDeleteTags={canDeleteBug(role)}
           onCreateClick={() => setCreating(true)}
         />
         <div className="min-h-0 overflow-y-auto">

@@ -13,13 +13,15 @@ export interface AuthenticatedRequest extends Request {
     clerkUserId: string;
     userId: string;
     workspaceId: string;
-    /** The workspace's one default project (frontend-bootstrap) — resolved/provisioned
-     * alongside the workspace itself, same as workspaceId. */
+    /** The user's active project (ADR 0017) — resolved on every request; workspaceId is
+     * that project's workspace. */
     projectId: string;
     /** Opportunistic only — not guaranteed present, and nothing consumes it yet. */
     emailVerified?: boolean;
     /** Set only by ProjectRoleGuard, on project-scoped routes. */
     projectRole?: ProjectRole;
+    /** Set only by WorkspaceOwnerGuard: the workspace the caller was proven to own. */
+    ownedWorkspaceId?: string;
   };
 }
 

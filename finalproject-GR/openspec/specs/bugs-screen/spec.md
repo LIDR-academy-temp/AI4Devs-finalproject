@@ -18,7 +18,7 @@ The Bugs screen SHALL list every non-deleted bug of the user's project, showing 
 - **THEN** an empty state is shown, with a way to file one if the user is a Contributor or above
 
 ### Requirement: The bug list can be sorted and filtered
-The Bugs screen SHALL let the user sort the list by last updated, creation date, status, or severity, ascending or descending, and filter it by title text, status, and severity. The default is last updated, newest first.
+The Bugs screen SHALL let the user sort the list by last updated, creation date, status, or severity, ascending or descending, and filter it by title text, status, severity, and tags (any of the picked tags). The default is last updated, newest first.
 
 #### Scenario: Sorting by severity
 - **WHEN** the user sorts by severity descending
@@ -27,6 +27,10 @@ The Bugs screen SHALL let the user sort the list by last updated, creation date,
 #### Scenario: Filtering by status
 - **WHEN** the user filters by status Open
 - **THEN** only Open bugs are listed
+
+#### Scenario: Filtering by tags
+- **WHEN** the user picks "checkout" and "payments" in the Tags filter
+- **THEN** only bugs carrying "checkout" or "payments" are listed
 
 ### Requirement: Selecting a bug shows its detail
 Selecting a bug SHALL show its title, status, severity, reporter, description, steps to reproduce, linked test run (execution name, run position, run outcome, with a link to the execution), linked test case (with a link to it), and its Gherkin snapshot with the failed step highlighted. Links to deleted items SHALL be shown as deleted instead of navigable.
@@ -55,11 +59,15 @@ For Contributors and Admins, the detail SHALL allow changing the title, status (
 - **THEN** no field can be edited
 
 ### Requirement: Contributors file bugs from the Bugs screen
-Contributors and Admins SHALL be able to file a bug from the Bugs screen with a title (required), severity (default Medium), description, and steps to reproduce. The new bug opens selected.
+Contributors and Admins SHALL be able to file a bug from the Bugs screen with a title (required), severity (default Medium), description, steps to reproduce, and tags picked or created with the tag picker. The new bug opens selected.
 
 #### Scenario: Filing from the Bugs screen
 - **WHEN** a Contributor files a bug with a title and severity High
 - **THEN** the new bug is selected, Open, and shown in the list
+
+#### Scenario: Filing with tags
+- **WHEN** a Contributor picks "checkout" and creates the new tag "payments" in the form, then files the bug
+- **THEN** the new bug carries both tags
 
 #### Scenario: Title is required
 - **WHEN** a Contributor saves the form without a title
@@ -71,3 +79,18 @@ Deleting SHALL be offered only to Admins, ask for confirmation, then remove the 
 #### Scenario: Deleting a bug
 - **WHEN** an Admin deletes a bug and confirms
 - **THEN** it disappears from the list and the detail panel is cleared
+
+### Requirement: The bug detail shows and edits its tags
+The bug detail SHALL show the bug's tags as coloured badges. For Contributors and Admins it SHALL offer the tag picker, which adds or removes a tag on selection and saves at once, and can create a tag from typed text. Viewers SHALL see the badges only. The Bugs list's Tags filter SHALL also offer Manage tags.
+
+#### Scenario: Tagging a bug
+- **WHEN** a Contributor opens a bug's tag picker and selects "regression"
+- **THEN** the "regression" badge appears on the bug and stays after a reload
+
+#### Scenario: Viewer sees badges only
+- **WHEN** a Viewer opens a bug that carries tags
+- **THEN** the badges are shown and no tag picker is offered
+
+#### Scenario: Managing tags from the Bugs screen
+- **WHEN** a Contributor chooses Manage tags in the Bugs list's Tags filter
+- **THEN** the Manage tags dialog opens

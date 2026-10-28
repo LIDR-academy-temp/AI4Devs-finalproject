@@ -29,13 +29,13 @@ Plataforma web colaborativa para equipos de QA que centraliza la definición, or
 
 > Puede ser pública o privada, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/).
 
-_Pendiente de despliegue — se añadirá la URL una vez completado el primer release (ver [ADR 0001](docs/adr/0001-tech-stack.md), sección de hosting)._
+_Aún sin desplegar: la elección de hosting (Postgres, cómputo, almacenamiento y región; preguntas abiertas E1–E4 en [docs/open-questions.md](docs/open-questions.md)) sigue pendiente. Por ahora la aplicación se ejecuta en local siguiendo la sección 1.4._
 
 ### 0.5. URL o archivo comprimido del repositorio
 
 > Puedes tenerlo alojado en público o en privado, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/). También puedes compartir por correo un archivo zip con el contenido
 
-_Pendiente — se añadirá la URL del repositorio una vez publicado en el hosting Git definitivo._
+[github.com/ibuprofano/AI4Devs-finalproject](https://github.com/ibuprofano/AI4Devs-finalproject): todo el proyecto vive en la carpeta `finalproject-GR/`, y cada entrega tiene su propia rama (`feature/entrega-1-gr`, `feature/entrega-2-gr`).
 
 ---
 
@@ -53,7 +53,7 @@ Está dirigido a equipos de QA (manuales y de automatización), líderes técnic
 
 ### **1.2. Características y funcionalidades principales:**
 
-- **Organización jerárquica de casos de prueba**: árbol de carpetas (hasta 3 niveles), etiquetas por proyecto, y casos de prueba en formato Gherkin (Given/When/Then) o descripción manual.
+- **Organización jerárquica de casos de prueba**: árbol de carpetas (hasta 4 niveles), etiquetas por proyecto, y casos de prueba en formato Gherkin (Given/When/Then) o descripción manual.
 - **Gestión de ejecuciones de test (Test Executions)**: agrupación de casos en una ejecución con ciclo de vida propio (Draft → Ready → In Progress → Paused → Completed → Done/Canceled), entorno, navegador, viewport, locale y timezone configurables.
 - **Ejecución manual y automatizada**: modo manual disponible desde el día uno; motor de ejecución automatizada basado en Playwright con mapeo de pasos asistido por IA en el roadmap (actualmente en reconstrucción).
 - **Gestión de defectos (Bugs)**: severidad, estado, adjuntos de imagen (hasta 5 por bug), y vínculo directo con el test run y caso de prueba que los originó — incluyendo creación automática de bugs al fallar un run.
@@ -63,31 +63,75 @@ Está dirigido a equipos de QA (manuales y de automatización), líderes técnic
 - **Auditoría**: registro de actividad inmutable por proyecto, filtrable por tipo de entidad.
 - **Roadmap de IA**: generación de casos de prueba desde fuentes externas, generación de código Playwright a partir de casos automatizados de alta confianza, y configuración de proveedor/modelo de IA por proyecto.
 
+**Estado de la implementación (entrega 2):** el MVP ([docs/roadmap-mvp.md](docs/roadmap-mvp.md), fases 0–9) está completo, y del roadmap completo ([docs/roadmap-full.md](docs/roadmap-full.md)) ya se han construido varios tramos.
+
+Ya funciona:
+- **Base multi-tenant:** aislamiento por tenant con RLS, alta de identidad al primer login, autorización por rol de proyecto, log de actividad en la misma transacción y credenciales de entorno cifradas con revelado auditado.
+- **Casos de prueba:** árbol de carpetas de 4 niveles con drag-and-drop, edición en Gherkin y etiquetas.
+- **Ejecuciones y bugs:** ciclo de vida de ejecuciones con runs manuales, temporizador con pausas y firma (sign-off); bugs con creación automática al fallar un run; filtros por etiqueta.
+- **Proyectos y workspace:** proyectos con selector, papelera y restauración, y renombrado del workspace.
+- **Jobs en segundo plano:** el worker de jobs (Graphile Worker) con la purga diaria de la papelera.
+- **Datos de demostración:** un seed con un proyecto de ejemplo completo.
+
+Pendiente: tiempo real por SSE (propuesto como el cambio `sse-live-updates`), invitaciones y miembros, adjuntos de imagen, dashboards, reportes, y el motor automatizado.
+
 ### **1.3. Diseño y experiencia de usuario:**
 
 > Proporciona imágenes y/o videotutorial mostrando la experiencia del usuario desde que aterriza en la aplicación, pasando por todas las funcionalidades principales.
 
-_Pendiente — se incorporarán capturas de pantalla y/o un video walkthrough de los flujos principales (alta de caso de prueba, creación y ejecución de una Test Execution, gestión de un bug, y Overview Dashboard) una vez exista una build navegable del frontend._
+La aplicación ya es navegable en local. Tiene una barra lateral colapsable, un selector de proyecto, y pantallas en vista dividida (lista y detalle) para Test Cases, Executions y Bugs, con tema claro y oscuro. Para recorrerla con datos realistas, ejecuta el seed de demostración (sección 1.4, paso 6). Llena tu proyecto con el conjunto de datos «ShopFlow»: árbol de carpetas, ejecuciones en todos los estados, bugs y compañeros de equipo.
+
+_Pendiente: capturas de pantalla y video walkthrough de los flujos principales (alta de caso de prueba, creación y ejecución de una Test Execution, gestión de un bug)._
 
 ### **1.4. Instrucciones de instalación:**
 
 > Documenta de manera precisa las instrucciones para instalar y poner en marcha el proyecto en local (librerías, backend, frontend, servidor, base de datos, migraciones y semillas de datos, etc.)
 
-_El proyecto aún no ha sido scaffoldeado (ver [ADR 0001](docs/adr/0001-tech-stack.md) y sus enmiendas); las instrucciones siguientes describen el proceso previsto y se actualizarán en cuanto exista una base de código ejecutable. Las decisiones todavía abiertas se listan en [docs/open-questions.md](docs/open-questions.md)._
+Todos los comandos se ejecutan desde la carpeta `finalproject-GR/`. [CLAUDE.md](CLAUDE.md) amplía cada variable de entorno y cada comando.
 
-**Requisitos previos (previstos):**
-- Node.js (LTS) y pnpm como gestor de paquetes (monorepo).
-- Docker, para levantar PostgreSQL en local. **Ya no se necesita Redis en v1**: la cola de jobs y las notificaciones en tiempo real usan PostgreSQL ([ADR 0005](docs/adr/0005-realtime-and-background-jobs-v1.md)).
-- Cuenta de Clerk (solo identidad: registro, inicio de sesión, verificación de email y recuperación de contraseña; [ADR 0002](docs/adr/0002-authentication-and-workspace-membership.md)).
-- Credenciales de un bucket S3 o Cloudflare R2 privado para adjuntos y reportes (proveedor pendiente de decidir).
-- Credenciales de un proveedor de email transaccional para invitaciones (proveedor pendiente de decidir).
+**Requisitos previos:**
+- **Node.js ≥ 22.18** y **npm**. El monorepo usa npm workspaces ([ADR 0010](docs/adr/0010-monorepo-layout.md)), y Graphile Worker exige Node 22.18.
+- **Docker**, para PostgreSQL 16. No hace falta Redis: la cola de jobs vive en PostgreSQL ([ADR 0005](docs/adr/0005-realtime-and-background-jobs-v1.md)).
+- **Una aplicación de Clerk** (basta una de desarrollo), que da la clave pública y la secreta. Clerk solo gestiona la identidad ([ADR 0002](docs/adr/0002-authentication-and-workspace-membership.md)).
+- Todavía no hacen falta almacenamiento S3/R2 ni proveedor de email: las funciones que los usan no se han construido.
 
-**Pasos previstos:**
-1. Clonar el repositorio e instalar dependencias (`pnpm install`).
-2. Levantar PostgreSQL local (`docker compose up -d`). El script de inicialización crea **dos roles**: uno privilegiado para migraciones y otro, sin capacidad de saltarse RLS, para la aplicación ([ADR 0003](docs/adr/0003-tenant-isolation.md)).
-3. Configurar variables de entorno (`.env`) para la API y el worker: conexión a base de datos (pool para peticiones y conexión directa para migraciones y `LISTEN/NOTIFY`), clave maestra de cifrado de secretos ([ADR 0004](docs/adr/0004-secrets-storage.md)), claves de Clerk, credenciales S3/R2 y del proveedor de email; y para el frontend, la URL de la API y la clave pública de Clerk.
-4. Ejecutar las migraciones con el rol privilegiado y el script de seed con datos de ejemplo (`prisma migrate dev`, `prisma db seed`; el ORM está sujeto a validación, ver preguntas abiertas B1).
-5. Levantar el backend (NestJS), el worker de jobs y el frontend (Next.js) en modo desarrollo (`pnpm dev` en cada app).
+**Pasos:**
+1. **Clonar e instalar:**
+   ```bash
+   git clone https://github.com/ibuprofano/AI4Devs-finalproject.git
+   cd AI4Devs-finalproject/finalproject-GR
+   npm install
+   ```
+2. **Levantar PostgreSQL:** `docker compose up -d`. Escucha en el puerto **5433** del host. En un volumen nuevo, `db/init/` crea los roles:
+   - `railgun_migrator`, dueño del esquema
+   - `railgun_app`, el rol de la API, sin bypass de RLS
+   - `railgun_worker`, el rol del worker
+   - `railgun_breakglass`, inactivo
+
+   Ver [ADR 0003](docs/adr/0003-tenant-isolation.md).
+3. **Aplicar las migraciones**, con el rol migrador:
+   ```bash
+   DATABASE_URL=postgresql://railgun_migrator:migrator_dev_password@localhost:5433/railgun npm run db:migrate
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5433/railgun npm run db:check-rls
+   ```
+   El primer comando instala el esquema de Graphile Worker y aplica `db/migrations/0001`–`0014`. El segundo comprueba que toda tabla con `workspace_id` tenga política RLS.
+4. **Configurar las variables de entorno:**
+   - **API:** copia `apps/api/.env.example` a `apps/api/.env` y rellena:
+     - `CLERK_SECRET_KEY`
+     - `SECRETS_MASTER_KEY`: 32 bytes en base64, por ejemplo `openssl rand -base64 32`. Consérvala, porque cifra las claves de cada workspace ([ADR 0004](docs/adr/0004-secrets-storage.md)).
+   - **Web:** crea `apps/web/.env.local` con `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` y la misma `CLERK_SECRET_KEY`.
+   - Las cadenas de conexión (`DATABASE_URL`, `WORKER_DATABASE_URL`), `NEXT_PUBLIC_API_URL` y `WEB_ORIGIN` son opcionales: por defecto apuntan al Postgres de docker-compose y a los puertos locales.
+5. **Arrancar todo:** `npm run dev` levanta la API (`localhost:3001`), la web (`localhost:3000`) y el worker en una sola terminal. Ctrl+C los detiene.
+6. **Registrarse y cargar datos de demostración:** crea una cuenta en `http://localhost:3000`. El primer login crea tu workspace y tu proyecto. Después ejecuta:
+   ```bash
+   npm run db:seed -w apps/api -- --email tu@email.com
+   ```
+   El seed es idempotente: volver a ejecutarlo no escribe nada.
+7. **Calidad:**
+   - `npm run lint` y `npm run typecheck`
+   - `npm test -w apps/api`, `npm test -w apps/worker` y `npm test -w apps/web`
+
+   Los tests de la API y del worker usan el Postgres de docker-compose.
 
 ---
 
@@ -97,7 +141,17 @@ _El proyecto aún no ha sido scaffoldeado (ver [ADR 0001](docs/adr/0001-tech-sta
 
 > Usa el formato que consideres más adecuado para representar los componentes principales de la aplicación y las tecnologías utilizadas. Explica si sigue algún patrón predefinido, justifica por qué se ha elegido esta arquitectura, y destaca los beneficios principales que aportan al proyecto y justifican su uso, así como sacrificios o déficits que implica.
 
-La arquitectura se documenta formalmente en [ADR 0001 — Initial Technology Stack](docs/adr/0001-tech-stack.md) y en las decisiones posteriores que la enmiendan: [0002](docs/adr/0002-authentication-and-workspace-membership.md) (identidad y membresías), [0003](docs/adr/0003-tenant-isolation.md) (aislamiento por tenant), [0004](docs/adr/0004-secrets-storage.md) (secretos), [0005](docs/adr/0005-realtime-and-background-jobs-v1.md) (tiempo real y jobs en v1), [0006](docs/adr/0006-report-generation.md) (reportes) y [0007](docs/adr/0007-activity-log-and-trash-purge.md) (log de actividad y papelera). Este apartado resume el estado actual.
+La arquitectura se documenta formalmente en [ADR 0001 — Initial Technology Stack](docs/adr/0001-tech-stack.md) y en las decisiones posteriores que la enmiendan: [0002](docs/adr/0002-authentication-and-workspace-membership.md) (identidad y membresías), [0003](docs/adr/0003-tenant-isolation.md) (aislamiento por tenant), [0004](docs/adr/0004-secrets-storage.md) (secretos), [0005](docs/adr/0005-realtime-and-background-jobs-v1.md) (tiempo real y jobs en v1), [0006](docs/adr/0006-report-generation.md) (reportes) y [0007](docs/adr/0007-activity-log-and-trash-purge.md) (log de actividad y papelera).
+
+Durante la implementación se añadieron:
+- [0008](docs/adr/0008-tenant-context-implementation.md): helper `withTenantContext`
+- [0009](docs/adr/0009-api-authentication-transport.md): bearer token de Clerk
+- [0010](docs/adr/0010-monorepo-layout.md): monorepo con npm workspaces
+- [0011](docs/adr/0011-frontend-ui-stack.md): Tailwind, shadcn/ui, TanStack Query y react-hook-form
+- [0012](docs/adr/0012-execution-completion-and-sign-off.md) a [0017](docs/adr/0017-active-project.md): reglas de dominio
+- [0018](docs/adr/0018-queue-library.md): Graphile Worker como cola
+
+Este apartado resume el estado actual.
 
 ```mermaid
 flowchart TB
@@ -144,7 +198,8 @@ flowchart TB
 - Las líneas continuas forman parte de v1; las discontinuas corresponden al motor de ejecución automatizada (deshabilitado en el PRD, §9) y a la clave maestra en KMS, que se adopta cuando se cumpla el disparador del ADR 0004.
 - **No hay Redis ni WebSockets en v1**: las notificaciones en tiempo real son *server-sent events* (una sola dirección, servidor → navegador) y la cola de jobs vive en PostgreSQL, con lo que un job se encola en la misma transacción que el cambio que lo origina. Redis (pub/sub) y la evaluación de Temporal vuelven cuando se retome el motor de automatización (ADR 0005).
 - Clerk solo gestiona **identidad**. Workspaces, membresías, roles e invitaciones viven en nuestra base de datos (ADR 0002).
-- Aún no está decidido si el navegador llama a la API directamente o a través del servidor de Next.js, ni cómo se autentican las peticiones y los streams (ver preguntas abiertas A2).
+- El navegador llama a la API directamente y envía el token de sesión de Clerk como `Authorization: Bearer`. El stream SSE usará el mismo token mediante un cliente basado en `fetch` ([ADR 0009](docs/adr/0009-api-authentication-transport.md)).
+- **Estado actual:** la web, la API, el worker y PostgreSQL ya existen y funcionan en local. Todavía no existen el almacenamiento de objetos, el email, KMS, el motor Playwright ni el hosting. Mientras no llega el tiempo real por SSE, la web refresca las ejecuciones en curso cada 5 s.
 
 **Patrón y justificación:** el backend sigue un patrón de **monolito modular** (NestJS, organizado por dominio: workspaces, proyectos, casos de prueba, ejecuciones, bugs, actividad) con un **worker desacoplado** que consume una cola en PostgreSQL para el trabajo asíncrono (emails, reportes, jobs programados). El frontend (Next.js) es un cliente independiente que consume la API por REST y SSE.
 
@@ -165,13 +220,13 @@ No se optó por microservicios: dado el estado inicial del producto y el tamaño
 
 | Componente | Tecnología | Responsabilidad |
 |---|---|---|
-| Frontend | Next.js (React, App Router) | UI de la aplicación: árbol de carpetas, ejecuciones, bugs, dashboards, selector de workspace e invitaciones pendientes |
+| Frontend | Next.js (React, App Router), Tailwind CSS v4 + shadcn/ui, TanStack Query, react-hook-form + zod, dnd-kit ([ADR 0011](docs/adr/0011-frontend-ui-stack.md), [ADR 0014](docs/adr/0014-drag-and-drop-and-ordering.md)) | UI de la aplicación: árbol de carpetas, ejecuciones, bugs, dashboards, selector de workspace e invitaciones pendientes |
 | API Backend | NestJS (Node/TypeScript) | Lógica de negocio, módulo único de políticas de autorización (RBAC), endpoints REST, streams SSE, capa de acceso a datos con contexto de tenant |
-| Base de datos | PostgreSQL + ORM (Prisma previsto, sujeto a validación) | Persistencia relacional, esquema compartido con `workspace_id` y RLS ([ADR 0003](docs/adr/0003-tenant-isolation.md)), log de actividad de solo inserción, tablas de la cola de jobs |
+| Base de datos | PostgreSQL 16 + Prisma 6 (cliente; las consultas son SQL parametrizado dentro de `withTenantContext`, [ADR 0008](docs/adr/0008-tenant-context-implementation.md)); migraciones SQL versionadas en `db/migrations` | Persistencia relacional, esquema compartido con `workspace_id` y RLS ([ADR 0003](docs/adr/0003-tenant-isolation.md)), log de actividad de solo inserción, tablas de la cola de jobs |
 | Identidad | Clerk | Registro, inicio de sesión, sesiones, recuperación de contraseña y verificación de email. **No** gestiona organizaciones ([ADR 0002](docs/adr/0002-authentication-and-workspace-membership.md)) |
 | Membresías e invitaciones | Módulo propio de NestJS sobre PostgreSQL | Workspaces, roles de workspace y de proyecto, invitaciones (aceptación explícita, 7 días de vigencia), transferencia de propiedad |
 | Tiempo real | Server-sent events (SSE) | Refresco de estadísticas y runs cuando otro tester actualiza una ejecución; notificación de invitaciones y de reportes listos. El temporizador de la ejecución se calcula en el navegador |
-| Cola / Jobs | Cola sobre PostgreSQL (pg-boss por defecto) en un proceso worker | Emails, generación de reportes, snapshot diario del Health Score, purga de la papelera a los 30 días, limpieza de adjuntos huérfanos ([ADR 0005](docs/adr/0005-realtime-and-background-jobs-v1.md)) |
+| Cola / Jobs | Cola sobre PostgreSQL (Graphile Worker) en un proceso worker; los jobs se encolan en la misma transacción que el cambio que los origina | Emails, generación de reportes, snapshot diario del Health Score, purga de la papelera a los 30 días, limpieza de adjuntos huérfanos ([ADR 0005](docs/adr/0005-realtime-and-background-jobs-v1.md), [ADR 0018](docs/adr/0018-queue-library.md)) |
 | Reportes | Plantilla HTML en servidor + biblioteca PDF (pdfmake por defecto, pendiente de spike) | Reportes HTML autocontenidos y PDF a partir de un único objeto de datos, con gráficos SVG dibujados una sola vez ([ADR 0006](docs/adr/0006-report-generation.md)) |
 | Secretos | Cifrado de sobre AES-256-GCM en la aplicación | Credenciales de entorno, tokens de integración y claves de IA; clave por workspace envuelta por una clave maestra ([ADR 0004](docs/adr/0004-secrets-storage.md)) |
 | Email transaccional | Proveedor pendiente de decidir | Invitaciones y recordatorios |
@@ -183,27 +238,44 @@ No se optó por microservicios: dado el estado inicial del producto y el tamaño
 
 > Representa la estructura del proyecto y explica brevemente el propósito de las carpetas principales, así como si obedece a algún patrón o arquitectura específica.
 
-_El repositorio aún no ha sido scaffoldeado. La estructura siguiente es la propuesta, organizada como monorepo (pnpm workspaces) para compartir tipos entre frontend y backend:_
+Monorepo con **npm workspaces** ([ADR 0010](docs/adr/0010-monorepo-layout.md)): `apps/` agrupa los procesos desplegables y `packages/` el código compartido no desplegable. Esta es la estructura real tras la entrega 2:
 
 ```
-railgun-qa-platform/
+finalproject-GR/
 ├── apps/
-│   ├── web/              # Next.js — frontend
-│   ├── api/               # NestJS — API REST + streams SSE
-│   └── worker/             # Worker de jobs (cola en PostgreSQL): emails, reportes, jobs programados; a futuro, worker de automatización (Playwright)
+│   ├── api/                  # NestJS — API REST
+│   │   ├── src/common/       # Guards (Clerk, rol de proyecto, owner), withTenantContext, ActivityLogger, cifrado de secretos
+│   │   ├── src/<dominio>/    # Un módulo por dominio: projects, folders, test-cases, tags, executions, bugs, environments, workspace, me
+│   │   ├── scripts/seed.ts   # Seed de demostración (ShopFlow)
+│   │   └── test/             # Tests e2e contra Postgres real, incluido el arnés de aislamiento entre tenants
+│   ├── web/                  # Next.js (App Router)
+│   │   ├── app/(app)/        # Rutas autenticadas: test-cases, executions, bugs, settings, workspace-settings
+│   │   ├── components/       # Pantallas y componentes (shadcn/ui en components/ui)
+│   │   └── lib/              # Cliente de API, query keys de TanStack Query, permisos por rol, utilidades
+│   └── worker/               # Graphile Worker: tareas (trash_purge), crontab y helper de contexto de tenant
 ├── packages/
-│   ├── shared-types/       # Tipos/DTOs compartidos entre apps (contrato de API pendiente, ver preguntas abiertas F5)
-│   ├── reporting/          # Especificaciones y dibujo SVG de gráficos, compartidos por el reporte HTML y los PDF
-│   └── config/             # Configuración compartida (eslint, tsconfig)
-├── prisma/
-│   ├── schema.prisma        # Esquema de base de datos (ver sección 3)
-│   └── seed.ts              # Datos de ejemplo para desarrollo local
+│   ├── config/               # tsconfig y ESLint compartidos
+│   ├── shared-types/         # Reservado para tipos compartidos (vacío por ahora)
+│   └── reporting/            # Reservado para gráficos y reportes (vacío por ahora)
+├── db/
+│   ├── init/                 # Roles de base de datos (superusuario, una vez)
+│   └── migrations/           # 0001–0014, cada una con .up.sql y .down.sql
+├── prisma/schema.prisma      # Solo datasource y generator; el esquema vive en db/migrations
+├── scripts/                  # Migraciones, instalación de la cola, chequeo de RLS, `npm run dev`
+├── openspec/
+│   ├── specs/                # Especificaciones vigentes por capacidad (25)
+│   └── changes/              # Cambios en curso y archivo de cambios completados
 ├── docs/
-│   ├── adr/                # Architecture Decision Records
-│   └── open-questions.md   # Decisiones aún abiertas
-├── PRD.md                  # Documento de producto
-└── readme.md
+│   ├── adr/                  # ADR 0001–0018
+│   ├── open-questions.md     # Decisiones aún abiertas
+│   ├── roadmap-mvp.md        # Orden de construcción del MVP (completado)
+│   └── roadmap-full.md       # Orden de construcción del producto completo
+├── CLAUDE.md                 # Guía para el asistente de código
+├── PRD.md                    # Documento de producto
+└── docker-compose.yml        # PostgreSQL 16 local
 ```
+
+**Desarrollo guiado por especificaciones:** cada funcionalidad se construye como un cambio de [OpenSpec](https://github.com/Fission-AI/OpenSpec) (`/opsx:propose` → `/opsx:apply` → `/opsx:archive`), con propuesta, especificación delta, diseño y tareas. Al archivarse, el cambio actualiza las especificaciones de `openspec/specs/`.
 
 Cada app dentro de `apps/` es desplegable de forma independiente. El worker comparte código de dominio con la API (mismo repositorio y mismas reglas de acceso a datos), pero se ejecuta como proceso separado para que la generación de reportes no compita con las peticiones de la API.
 
@@ -219,7 +291,16 @@ La infraestructura reutiliza el diagrama de la sección 2.1: **Vercel** aloja el
 3. El proveedor de contenedores reconstruye y despliega la API y el worker a partir de la misma rama. Las migraciones se ejecutan con un **rol privilegiado propio del pipeline**; la API y el worker corren siempre con un rol sin capacidad de saltarse RLS ni de modificar el log de actividad (ADR 0003 y 0007).
 4. Variables de entorno y secretos (claves de Clerk, credenciales S3/R2 y del proveedor de email, cadenas de conexión a base de datos y la clave maestra de cifrado) se gestionan en cada plataforma, nunca en el repositorio. La clave maestra no se guarda junto a las copias de seguridad de la base de datos (ADR 0004).
 
-_La definición exacta del pipeline de CI/CD (herramienta, gates de calidad, entornos de staging) sigue pendiente, junto con la observabilidad (logs, errores, trazas y monitorización de jobs); ver [docs/open-questions.md](docs/open-questions.md), apartado F._
+**Integración continua (ya en marcha):** GitHub Actions ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml), en la raíz del repositorio) se ejecuta en cada push o PR que toque `finalproject-GR/`. El workflow sigue estos pasos:
+1. Levanta un servicio PostgreSQL 16 y usa Node 22.
+2. Instala dependencias, y ejecuta `npm run lint` y `npm run typecheck` en todos los workspaces.
+3. Crea los roles de base de datos (`db/init`).
+4. Aplica todas las migraciones con el rol migrador, igual que el despliegue previsto.
+5. Ejecuta `npm run db:check-rls`, que falla si una tabla con `workspace_id` no tiene política RLS forzada (ADR 0003).
+
+Las suites de Jest y Vitest (sección 2.6) se ejecutan en local; incorporarlas al CI está pendiente.
+
+_El despliegue continuo, los entornos de staging y la observabilidad (logs, errores, trazas y monitorización de jobs) siguen pendientes junto con el hosting; ver [docs/open-questions.md](docs/open-questions.md), apartados E y F._
 
 ### **2.5. Seguridad**
 
@@ -233,9 +314,23 @@ _La definición exacta del pipeline de CI/CD (herramienta, gates de calidad, ent
 - **Log de auditoría inmutable** ([ADR 0007](docs/adr/0007-activity-log-and-trash-purge.md)): el rol de la aplicación solo puede insertar y leer, y un trigger rechaza cualquier `UPDATE` o `DELETE`. Sin claves foráneas, sobrevive a la purga de la papelera.
 - **Papelera con retención acotada**: lo eliminado se conserva 30 días y después se purga de forma definitiva, incluidos los archivos asociados del almacenamiento.
 - **URLs firmadas y de vida corta** sobre un bucket privado para adjuntos de bugs y reportes generados, evitando URLs públicas permanentes.
-- **Validación de entrada** en todos los endpoints mediante DTOs y `class-validator` en NestJS, incluyendo los límites del PRD (hasta 5 imágenes por bug, 5 MB por archivo, formatos JPEG/PNG/WebP/GIF). Como una URL prefirmada no puede imponer el número de imágenes ni el tipo, esa comprobación se hace en la aplicación.
+- **Validación de entrada** en todos los endpoints, con funciones de parseo propias por dominio (por ejemplo `execution-input.ts`) que rechazan con `400` cualquier campo desconocido o fuera de rango antes de abrir la transacción; todas las consultas son SQL parametrizado. Con los adjuntos se aplicarán también los límites del PRD (hasta 5 imágenes por bug, 5 MB por archivo, formatos JPEG/PNG/WebP/GIF). Como una URL prefirmada no puede imponer el número de imágenes ni el tipo, esa comprobación se hace en la aplicación.
 - **Reportes seguros por construcción**: el HTML escapa todo texto de usuario, la biblioteca PDF no interpreta marcado, y ambos se construyen desde un objeto de datos con lista blanca de campos que no incluye secretos ni elementos de la papelera ([ADR 0006](docs/adr/0006-report-generation.md)).
 - **HTTPS end-to-end** entre cliente, frontend y API, tanto en tráfico REST como en los streams SSE.
+
+**Implementado a la fecha de la entrega 2:**
+- **RBAC:** guards de rol de proyecto y de Owner de workspace.
+- **Aislamiento entre tenants:** RLS forzada en todas las tablas de tenant, con roles separados para la API, el worker y las migraciones.
+- **Autenticación:** verificación del JWT de Clerk en cada petición.
+- **Secretos:** cifrado de sobre con revelado auditado y limitado en frecuencia.
+- **Log de actividad:** inmutable.
+- **Papelera:** purga a los 30 días.
+
+**Pendiente, ligado a funciones aún no construidas:**
+- invitaciones
+- URLs firmadas (adjuntos)
+- reportes seguros
+- HTTPS, que llega con el hosting
 
 **Límites conocidos:** quien obtenga el entorno de la aplicación obtiene también la clave maestra (hasta adoptar KMS), un Contributor puede revelar contraseñas de entorno por diseño (por eso se auditan en lugar de impedirse), y un superusuario de la base de datos podría alterar el log de actividad.
 
@@ -243,13 +338,27 @@ _La definición exacta del pipeline de CI/CD (herramienta, gates de calidad, ent
 
 > Describe brevemente algunos de los tests realizados
 
-_Aún no se han implementado tests, dado que el proyecto se encuentra en fase de diseño de arquitectura. Estrategia prevista:_
+Cada cambio de OpenSpec incluye sus propios tests en sus tareas, y una tarea solo se marca como hecha cuando su verificación pasa. A la fecha de la entrega 2 hay unos 90 ficheros de test:
 
-- **Unit tests** (Jest) sobre servicios y guards de NestJS, con foco prioritario en la lógica de RBAC (matriz de roles de workspace/proyecto), en el flujo de invitaciones (aceptar, rechazar, revocar, caducar) y en las transiciones del ciclo de vida de una Test Execution (Draft → Ready → In Progress → Paused → Completed → Done/Canceled), modelado como máquina de estados.
-- **Tests de aislamiento entre tenants**: cada endpoint y cada job se ejecuta como workspace A contra datos del workspace B y se comprueba que no es visible nada; una comprobación en CI falla si una tabla con `workspace_id` no tiene política RLS (ADR 0003).
-- **Tests de integridad de datos y secretos**: el log de actividad rechaza `UPDATE`/`DELETE`; el valor almacenado de un secreto es texto cifrado; revelar un secreto escribe su entrada de auditoría; la purga de la papelera respeta el plazo de 30 días y no toca el log; el objeto de datos de un reporte no contiene secretos.
-- **Tests de componentes** (React Testing Library) sobre los flujos de UI más complejos: árbol de carpetas con drag-and-drop, panel de detalle de ejecución, y modales de creación (test case, execution, bug).
-- **Tests end-to-end**, previsiblemente con Playwright (reutilizando la misma herramienta que impulsará el motor de automatización del producto), cubriendo los recorridos críticos: sign up → onboarding, invitación y aceptación en otro workspace, creación y ejecución de una Test Execution en modo manual, y creación de un bug desde un run fallido.
+- **API: 41 ficheros, Jest + Supertest.** Se dividen en tests unitarios de reglas de dominio y tests e2e que levantan el `AppModule` real contra el PostgreSQL de docker-compose. Solo se simula la verificación del token de Clerk.
+  - **Unitarios:** la máquina de estados de ejecuciones, las reglas de bugs y de proyectos, el orden fraccionario, el cifrado y los guards.
+  - **Aislamiento entre tenants** (`tenant-isolation.e2e-spec.ts` y un arnés reutilizable): para cada tabla de tenant, las lecturas en el contexto del workspace A no ven datos del workspace B, una escritura cruzada se rechaza, y sin contexto de tenant se obtienen cero filas.
+  - **Integridad:** el log de actividad sobrevive al borrado de entidades. Los secretos se guardan solo cifrados, y cada revelado escribe su entrada de auditoría en la misma transacción.
+  - **Ciclo de vida:** las transiciones válidas e inválidas (`409`), los permisos por rol, el temporizador con pausas, los snapshots al iniciar, el cierre automático y el sign-off.
+- **Worker: 5 ficheros, Jest.** Cubren el contexto de tenant, el crontab, el cierre ordenado, el encolado transaccional por la lista blanca (`enqueue_job`) y la purga de la papelera: plazo de 30 días, orden de dependencias, entrada de actividad del sistema e idempotencia.
+- **Web: 43 ficheros, Vitest + React Testing Library.** Cubren:
+  - el árbol de carpetas con drag-and-drop
+  - el detalle de ejecución (temporizador, sondeo y acciones por rol)
+  - los modales de alta
+  - los filtros por etiqueta
+  - la protección de rutas
+  - las utilidades puras: parser Gherkin, tiempo transcurrido y vistas de lista
+- **Base de datos en CI:** se aplican todas las migraciones y se comprueba la cobertura de RLS (sección 2.4).
+
+Pendiente:
+- tests end-to-end de navegador con Playwright para los recorridos críticos
+- un test explícito de que el log de actividad rechaza `UPDATE` y `DELETE`
+- ejecutar las suites en CI
 
 ---
 
@@ -260,6 +369,19 @@ _Aún no se han implementado tests, dado que el proyecto se encuentra en fase de
 > Recomendamos usar mermaid para el modelo de datos, y utilizar todos los parámetros que permite la sintaxis para dar el máximo detalle, por ejemplo las claves primarias y foráneas.
 
 Este modelo refleja el [PRD v1.1](PRD.md) y los ADR [0002](docs/adr/0002-authentication-and-workspace-membership.md) (identidad y membresías), [0003](docs/adr/0003-tenant-isolation.md) (aislamiento por tenant), [0004](docs/adr/0004-secrets-storage.md) (secretos), [0006](docs/adr/0006-report-generation.md) (reportes) y [0007](docs/adr/0007-activity-log-and-trash-purge.md) (log de actividad y papelera). Toda tabla de tenant lleva `workspace_id` y las de papelera llevan `deleted_by`: ambas son claves foráneas (a `WORKSPACE` y a `USER`) que **no se dibujan como líneas** para no saturar el diagrama, pero sí figuran en cada entidad. `ACTIVITY_ENTRY` no tiene relaciones a propósito: no usa claves foráneas.
+
+> **Estado de la implementación (entrega 2):** el diagrama describe el modelo objetivo del producto completo. Las migraciones `0001`–`0014` ya crean:
+> - `workspace`, `user`, `workspace_membership`, `workspace_dek` (la `WORKSPACE_KEY` del diagrama) y `project`, con `user.last_project_id` para el proyecto activo ([ADR 0017](docs/adr/0017-active-project.md))
+> - `project_membership`, `folder`, `test_case`, `tag`, `test_case_tag` y `bug_tag`
+> - `environment`, `environment_credential`, `test_execution`, `test_run` y `bug`
+> - `activity_entries`
+>
+> Difieren del diagrama en tres puntos:
+> - El árbol de carpetas admite **4** niveles (enmienda del PRD §2.3).
+> - Un run guarda solo su resultado (`outcome`) y sus snapshots. Todavía no hay `TestRunAttempt` ni `TestRunStep`, y el paso fallido se guarda en el bug (`failed_step_snapshot`).
+> - El orden de carpetas y casos usa claves fraccionarias. Los runs usan una posición entera que se renumera al reordenar ([ADR 0014](docs/adr/0014-drag-and-drop-and-ordering.md)).
+>
+> Aún no existen `INVITATION`, `PROJECT_SETTINGS`, `BUG_IMAGE`, `HEALTH_SCORE_SNAPSHOT` ni `REPORT`.
 
 ```mermaid
 erDiagram
@@ -668,11 +790,18 @@ erDiagram
 
 **Convenciones comunes a los tres endpoints** (derivadas de los ADR [0002](docs/adr/0002-authentication-and-workspace-membership.md), [0003](docs/adr/0003-tenant-isolation.md) y [0007](docs/adr/0007-activity-log-and-trash-purge.md)):
 
-- **Autenticación:** token de sesión de Clerk en `Authorization: Bearer`. El mecanismo exacto (bearer frente a cookie) está pendiente de confirmar, ver [preguntas abiertas A2](docs/open-questions.md). Toda petición sin sesión válida responde `401`.
+- **Autenticación:** token de sesión de Clerk en `Authorization: Bearer`, verificado contra el JWKS de Clerk ([ADR 0009](docs/adr/0009-api-authentication-transport.md)). Toda petición sin sesión válida responde `401`.
 - **Autorización:** un único módulo de políticas evalúa el rol de workspace y el de proyecto. Un rol insuficiente responde `403`.
 - **Aislamiento entre tenants:** el workspace se deduce del recurso de la ruta (proyecto, ejecución…), nunca de un parámetro del cliente. Con RLS, un recurso de otro workspace es invisible, y uno en la papelera queda excluido de las lecturas; ambos responden **`404`**, no `403`, para no revelar su existencia.
 - **Efectos comunes de toda escritura:** se registra una entrada en el log de actividad **en la misma transacción** y se emite un evento SSE a los suscriptores afectados.
 - **Identificadores** UUID v7; `positionKey` es una clave de orden fraccionaria opaca (ver sección 3).
+
+> **Estado de la implementación (entrega 2):** los tres endpoints existen. Difieren de esta especificación inicial en tres puntos:
+> - **Rutas anidadas bajo el proyecto:** son `POST /projects/{projectId}/executions/{executionId}/run-all` y `POST /projects/{projectId}/bugs`, sin rutas por id suelto.
+> - **Eventos SSE:** las escrituras todavía no emiten eventos; llegan con el cambio `sse-live-updates`, y mientras tanto la web refresca por sondeo.
+> - **Modo Automated:** `run-all` solo acepta el modo `Manual` y rechaza `Automated` como no disponible (PRD §9).
+>
+> Las especificaciones vigentes, con todos sus escenarios, están en [`openspec/specs/`](openspec/specs/).
 
 ### 4.1. `POST /projects/{projectId}/test-cases` — Crear caso de prueba
 
@@ -992,6 +1121,12 @@ Los tres tickets forman un **corte vertical del ciclo de vida de una ejecución*
 
 **Definición de hecho común a los tres tickets:** el código pasa revisión; los tests indicados pasan en CI; no hay secretos ni datos personales en logs; y si cambia un contrato de la API, se actualiza la sección 4 de este documento.
 
+> **Estado de la implementación (entrega 2):** los tickets se implementaron como cambios de OpenSpec.
+> - **Tickets 1 y 2:** [`execution-lifecycle`](openspec/changes/archive/2026-10-25-execution-lifecycle/proposal.md).
+> - **Ticket 3:** [`executions-screen`](openspec/changes/archive/2026-10-25-executions-screen/proposal.md).
+>
+> Queda pendiente la parte de tiempo real: la suscripción SSE del Ticket 3 y el ticket previo RG-S. El cambio [`sse-live-updates`](openspec/changes/sse-live-updates/proposal.md) ya está propuesto. Hasta entonces, la pantalla refresca por sondeo cada 5 s.
+
 ---
 
 **Ticket 1 — Base de datos**
@@ -1161,9 +1296,56 @@ Los tres tickets forman un **corte vertical del ciclo de vida de una ejecución*
 
 > Documenta 3 de las Pull Requests realizadas durante la ejecución del proyecto
 
-**Pull Request 1**
+**Cómo se organiza el trabajo:**
+- **La unidad de trabajo es un cambio de [OpenSpec](https://github.com/Fission-AI/OpenSpec)**, no una PR. Cada uno tiene propuesta, especificación delta, diseño y tareas verificables, y se crea, implementa y archiva con `/opsx:propose`, `/opsx:apply` y `/opsx:archive`.
+- **Cada entrega se publica en el curso como una PR** desde su rama `feature/entrega-N-gr`.
+- **Los cambios archivados** (`openspec/changes/archive/`, 23 a la fecha) son el registro de lo construido, con el mismo nivel de detalle que una PR.
 
-**Pull Request 2**
+Estos son tres representativos, uno por capa:
 
-**Pull Request 3**
+**Pull Request 1 — `execution-lifecycle`: ciclo de vida de las ejecuciones (base de datos + backend)**
+
+- **Alcance:**
+  - Tablas `test_execution` y `test_run` (migración `0008`) con RLS, temporizador con pausas (`elapsed_ms_accumulated`, `last_resumed_at`) y snapshots del caso de prueba.
+  - Máquina de estados Draft → Ready → In Progress ⇄ Paused → Completed → Done.
+  - Resultados manuales de los runs.
+  - Log de actividad en la misma transacción.
+- **Decisiones clave:**
+  - Cada transición es un único `UPDATE` condicionado al estado esperado. De dos peticiones concurrentes en conflicto, una gana y la otra recibe `409`.
+  - La ejecución se completa automáticamente al dar resultado al último run pendiente, y el sign-off se rechaza mientras quede alguno en Needs Review. Este punto resolvía la pregunta abierta G6 y se registró en el [ADR 0012](docs/adr/0012-execution-completion-and-sign-off.md).
+- **Tests:** e2e contra Postgres real para cada transición válida e inválida, permisos por rol, snapshots y temporizador.
+- **Documentación:** [propuesta](openspec/changes/archive/2026-10-25-execution-lifecycle/proposal.md), [diseño](openspec/changes/archive/2026-10-25-execution-lifecycle/design.md) y [tareas](openspec/changes/archive/2026-10-25-execution-lifecycle/tasks.md).
+
+**Pull Request 2 — `executions-screen`: pantalla de ejecuciones (frontend)**
+
+- **Alcance:**
+  - Pantalla `/executions` en vista dividida: lista ordenable y filtrable, y detalle.
+  - **Detalle:**
+    - temporizador en vivo calculado en el navegador y corregido por el desfase de reloj con el servidor
+    - barra de estadísticas que filtra la tabla de runs
+    - acciones del ciclo de vida según el rol
+    - panel lateral del run para registrar resultados
+    - panel de entorno con revelado auditado de credenciales
+  - Modal de nueva y edición de ejecución (react-hook-form + zod).
+- **Decisiones clave:**
+  - Sondeo cada 5 s mientras la ejecución está en curso, en lugar de SSE, para no adelantar la infraestructura de tiempo real.
+  - El cliente de API muestra el motivo exacto con el que el servidor rechaza una acción, por ejemplo «resolve every Needs Review run…».
+  - Se dejaron registrados como diferidos el reordenado por drag-and-drop, Cancel y Try Again.
+- **Tests:** Vitest + React Testing Library para el temporizador, el sondeo, la visibilidad de acciones por rol y el modal.
+- **Documentación:** [propuesta](openspec/changes/archive/2026-10-25-executions-screen/proposal.md), [diseño](openspec/changes/archive/2026-10-25-executions-screen/design.md) y [tareas](openspec/changes/archive/2026-10-25-executions-screen/tasks.md).
+
+**Pull Request 3 — `background-jobs`: cola de jobs, worker y purga de la papelera (infraestructura)**
+
+- **Alcance:**
+  - Graphile Worker ([ADR 0018](docs/adr/0018-queue-library.md)) instalado por las migraciones.
+  - Rol `railgun_worker` de mínimo privilegio.
+  - Función `enqueue_job` (`SECURITY DEFINER`, con lista blanca de tareas) para encolar en la misma transacción que el cambio.
+  - Primer código del worker en `apps/worker`.
+  - Job diario `trash_purge`: elimina definitivamente lo que lleva más de 30 días en la papelera, en orden de dependencias, con una entrada de actividad del sistema por elemento ([ADR 0007](docs/adr/0007-activity-log-and-trash-purge.md)).
+- **Decisiones y hallazgos:**
+  - Graphile Worker en lugar de pg-boss: encola con una llamada SQL, sin adaptador para Prisma 6.
+  - Al arrancar el worker con su rol real se descubrió que Graphile activa RLS sin políticas en sus tablas privadas, algo que su documentación no menciona. Se añadieron políticas explícitas y quedó registrado en el ADR 0018.
+  - El CI pasó a Node 22.
+- **Tests:** Jest contra Postgres real para el plazo de 30 días, el orden de borrado, la idempotencia, el encolado por lista blanca y el cierre ordenado.
+- **Documentación:** [propuesta](openspec/changes/archive/2026-10-27-background-jobs/proposal.md), [diseño](openspec/changes/archive/2026-10-27-background-jobs/design.md) y [tareas](openspec/changes/archive/2026-10-27-background-jobs/tasks.md).
 

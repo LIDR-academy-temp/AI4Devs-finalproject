@@ -32,7 +32,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # graphile-worker (apps/worker, ADR 0018) requires Node 22.18+.
+          node-version: '22'
       - run: npm install
       # npm run lint / typecheck (not `--workspaces --if-present` directly) — the root
       # scripts already wrap that; running it bare fails hard on a workspace with no
@@ -40,9 +41,12 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - name: Set up database roles
-        run: node scripts/apply-sql.js db/init/01-roles.sql
+        run: |
+          node scripts/apply-sql.js db/init/01-roles.sql
+          node scripts/apply-sql.js db/init/02-worker-role.sql
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/railgun
+      # Installs the graphile_worker schema first, then every SQL migration (scripts/install-job-queue.js).
       - name: Apply migrations (as railgun_migrator)
         run: node scripts/apply-migrations.js
         env:

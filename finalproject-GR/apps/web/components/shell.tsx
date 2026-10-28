@@ -3,10 +3,11 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bug, FlaskConical, ListChecks, PlayCircle } from 'lucide-react';
+import { Bug, ListChecks, PlayCircle, Settings } from 'lucide-react';
 import { useSessionContext } from '../lib/session-context';
 import { UserMenu } from './user-menu';
 import { AccessDenied } from './access-denied';
+import { ProjectSwitcher } from './projects/project-switcher';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -32,6 +33,9 @@ const NAV_LINKS = [
   { href: '/bugs', label: 'Bugs', icon: Bug },
 ];
 
+/** Shown only to Project Admins (PRD §6.7). */
+const ADMIN_NAV_LINKS = [{ href: '/settings', label: 'Project Settings', icon: Settings }];
+
 export interface ShellProps {
   children: ReactNode;
   /** Sidebar expanded on first render; read from the sidebar_state cookie server-side. */
@@ -40,8 +44,8 @@ export interface ShellProps {
 
 /**
  * The signed-in app frame (web-app-shell): a collapsible icon sidebar — state kept in
- * the `sidebar_state` cookie by shadcn's SidebarProvider — with the project name, the
- * screens, and the user menu.
+ * the `sidebar_state` cookie by shadcn's SidebarProvider — with the project switcher,
+ * the screens, and the user menu.
  */
 export function Shell({ children, defaultOpen = true }: ShellProps) {
   const session = useSessionContext();
@@ -74,25 +78,18 @@ export function Shell({ children, defaultOpen = true }: ShellProps) {
     <SidebarProvider defaultOpen={defaultOpen}>
       <Sidebar collapsible="icon">
         <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton size="lg" tooltip={session.data.projectName} className="pointer-events-none">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <FlaskConical className="size-4" />
-                </span>
-                <span className="grid flex-1 text-left leading-tight">
-                  <span className="truncate text-sm font-semibold">{session.data.projectName}</span>
-                  <span className="truncate text-xs text-muted-foreground">QA Platform</span>
-                </span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+          <ProjectSwitcher
+            projectId={session.data.projectId}
+            projectName={session.data.projectName}
+            workspaceName={session.data.workspaceName}
+            isOwner={session.data.workspaceRole === 'Owner'}
+          />
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                {NAV_LINKS.map(({ href, label, icon: Icon }) => {
+                {[...NAV_LINKS, ...(session.data.role === 'Admin' ? ADMIN_NAV_LINKS : [])].map(({ href, label, icon: Icon }) => {
                   const current = pathname === href || pathname.startsWith(`${href}/`);
                   return (
                     <SidebarMenuItem key={href}>

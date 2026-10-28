@@ -98,6 +98,38 @@ describe('filterTree', () => {
     expect(filterTree(tree, {}).nodes).toBe(tree);
   });
 
+  describe('by tags', () => {
+    // Pay (in Checkout > Payments, Draft) carries smoke; Direct (in Checkout) regression; Login both.
+    const tagged = buildTree(
+      folders,
+      cases.map((c) => ({
+        ...c,
+        tagIds: { pay: ['smoke'], direct: ['regression'], login: ['smoke', 'regression'] }[c.id] ?? [],
+      })),
+    );
+    const visible = (filter: Parameters<typeof filterTree>[1]) => {
+      const { nodes, expand } = filterTree(tagged, filter);
+      return flattenVisible(nodes, expand).map((r) => r.node.name);
+    };
+
+    it('keeps test cases carrying any of the tags, inside their expanded folders', () => {
+      expect(visible({ tagIds: ['smoke'] })).toEqual(['Checkout', 'Payments', 'Pay', 'Login']);
+      expect(visible({ tagIds: ['smoke', 'regression'] })).toEqual(['Checkout', 'Payments', 'Pay', 'Direct', 'Login']);
+    });
+
+    it('combines with the status filter', () => {
+      expect(visible({ tagIds: ['smoke'], status: 'Ready' })).toEqual(['Login']);
+    });
+
+    it('does not keep a folder for its name alone while a tag filter applies', () => {
+      expect(visible({ tagIds: ['regression'], name: 'checkout' })).toEqual([]);
+    });
+
+    it('filters nothing with an empty tag list', () => {
+      expect(filterTree(tagged, { tagIds: [] }).nodes).toBe(tagged);
+    });
+  });
+
   it('drops folders with no matches', () => {
     expect(names(filterTree(tree, { name: 'login' }).nodes)).toEqual(['Login']);
   });

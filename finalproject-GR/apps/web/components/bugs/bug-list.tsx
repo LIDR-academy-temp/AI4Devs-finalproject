@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { listTags, tagKeys } from '../../lib/tags-api';
+import { ManageTagsDialog } from '../tags/manage-tags-dialog';
+import { TagFilter } from '../tags/tag-filter';
 import { useApiClient } from '../../lib/api-client';
 import { BUG_SEVERITIES, BUG_STATUSES, BUG_STATUS_LABELS, bugKeys, listBugs } from '../../lib/bugs-api';
 import { filterBugs, sortBugs, type BugFilters, type BugSortKey } from '../../lib/bug-list-view';
@@ -33,13 +36,16 @@ export interface BugListProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   canCreate: boolean;
+  /** Admins may delete tags from Manage tags. */
+  canDeleteTags?: boolean;
   onCreateClick: () => void;
 }
 
-export function BugList({ projectId, selectedId, onSelect, canCreate, onCreateClick }: BugListProps) {
+export function BugList({ projectId, selectedId, onSelect, canCreate, canDeleteTags = false, onCreateClick }: BugListProps) {
   const apiClient = useApiClient();
   const [sort, setSort] = useState<(typeof SORT_OPTIONS)[number]['value']>('updatedAt:desc');
   const [filters, setFilters] = useState<BugFilters>({});
+  const [managingTags, setManagingTags] = useState(false);
 
   const {
     data: bugs = [],
@@ -55,6 +61,8 @@ export function BugList({ projectId, selectedId, onSelect, canCreate, onCreateCl
     const [key, direction] = sort.split(':') as [BugSortKey, SortDirection];
     return sortBugs(filterBugs(bugs, filters), key, direction);
   }, [bugs, filters, sort]);
+
+  const { data: tags = [] } = useQuery({ queryKey: tagKeys.list(projectId), queryFn: () => listTags(apiClient, projectId) });
 
   const setFilter = <K extends keyof BugFilters>(key: K, value: string) =>
     setFilters((current) => ({ ...current, [key]: value === ALL ? undefined : value }));
@@ -104,6 +112,12 @@ export function BugList({ projectId, selectedId, onSelect, canCreate, onCreateCl
               ))}
             </SelectContent>
           </Select>
+          <TagFilter
+            tags={tags}
+            selectedIds={filters.tagIds ?? []}
+            onChange={(tagIds) => setFilters((current) => ({ ...current, tagIds }))}
+            onManage={() => setManagingTags(true)}
+          />
           <Select value={sort} onValueChange={(value) => setSort(value as typeof sort)}>
             <SelectTrigger aria-label="Sort" size="sm" className="col-span-2 w-full">
               <SelectValue />
@@ -161,6 +175,13 @@ export function BugList({ projectId, selectedId, onSelect, canCreate, onCreateCl
           </ul>
         )}
       </CardContent>
+      <ManageTagsDialog
+        projectId={projectId}
+        open={managingTags}
+        onOpenChange={setManagingTags}
+        canEdit={canCreate}
+        canDelete={canDeleteTags}
+      />
     </Card>
   );
 }

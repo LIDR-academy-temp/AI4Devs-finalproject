@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { listTags, tagKeys } from '../../lib/tags-api';
+import { TagFilter } from '../tags/tag-filter';
 import { useApiClient } from '../../lib/api-client';
 import { executionKeys, listExecutions, type Browser, type ExecutionStatus } from '../../lib/executions-api';
 import {
@@ -58,6 +60,9 @@ export function ExecutionList({ projectId, selectedId, onSelect, canCreate, onCr
     refetchInterval: (query) =>
       query.state.data?.some((e) => e.status === 'InProgress' || e.status === 'Paused') ? 10_000 : false,
   });
+
+  // Executions carry no tags themselves; they match on their test cases' tags (PRD §6.3.2).
+  const { data: tags = [] } = useQuery({ queryKey: tagKeys.list(projectId), queryFn: () => listTags(apiClient, projectId) });
 
   const environmentNames = useMemo(
     () => [...new Set(executions.map((e) => e.environmentName).filter((n): n is string => n !== null))].sort(),
@@ -129,6 +134,11 @@ export function ExecutionList({ projectId, selectedId, onSelect, canCreate, onCr
               ))}
             </SelectContent>
           </Select>
+          <TagFilter
+            tags={tags}
+            selectedIds={filters.tagIds ?? []}
+            onChange={(tagIds) => setFilters((current) => ({ ...current, tagIds }))}
+          />
           <Select value={sort} onValueChange={(value) => setSort(value as typeof sort)}>
             <SelectTrigger aria-label="Sort" size="sm" className="w-full">
               <SelectValue />

@@ -36,6 +36,12 @@ async function insertProjectMembership(
   );
 }
 
+async function setProjectDeleted(prisma: PrismaClient, workspaceId: string, projectId: string, deleted: boolean) {
+  await withTenantContext(prisma, workspaceId, (tx) =>
+    tx.$executeRaw`UPDATE project SET deleted_at = ${deleted ? new Date() : null} WHERE id = ${projectId}::uuid`,
+  );
+}
+
 describe('resolveEffectiveProjectRole (e2e)', () => {
   let prisma: PrismaClient;
 
@@ -66,6 +72,30 @@ describe('resolveEffectiveProjectRole (e2e)', () => {
     const role = await resolveEffectiveProjectRole(prisma, collaboratorId, fixture.projectId);
 
     expect(role).toBe('Contributor');
+  });
+
+  it('resolves an Owner to null on a project in the trash', async () => {
+    const fixture = await createWorkspaceWithProject(prisma, `Role-Trash-${randomUUID().slice(0, 8)}`);
+    const ownerId = await insertTestUser(prisma, `clerk-trash-${randomUUID()}`, 'Owner User');
+    await insertWorkspaceMembership(prisma, fixture.workspaceId, ownerId, 'Owner');
+    await setProjectDeleted(prisma, fixture.workspaceId, fixture.projectId, true);
+
+    const role = await resolveEffectiveProjectRole(prisma, ownerId, fixture.projectId);
+
+    expect(role).toBeNull();
+  });
+
+  it("gives a Collaborator their Contributor role back once the project is restored", async () => {
+    const fixture = await createWorkspaceWithProject(prisma, `Role-Restore-${randomUUID().slice(0, 8)}`);
+    const collaboratorId = await insertTestUser(prisma, `clerk-restore-${randomUUID()}`, 'Collaborator User');
+    await insertWorkspaceMembership(prisma, fixture.workspaceId, collaboratorId, 'Collaborator');
+    await insertProjectMembership(prisma, fixture.workspaceId, fixture.projectId, collaboratorId, 'Contributor');
+
+    await setProjectDeleted(prisma, fixture.workspaceId, fixture.projectId, true);
+    expect(await resolveEffectiveProjectRole(prisma, collaboratorId, fixture.projectId)).toBeNull();
+
+    await setProjectDeleted(prisma, fixture.workspaceId, fixture.projectId, false);
+    expect(await resolveEffectiveProjectRole(prisma, collaboratorId, fixture.projectId)).toBe('Contributor');
   });
 
   it('resolves a Collaborator with no project_membership row to null', async () => {

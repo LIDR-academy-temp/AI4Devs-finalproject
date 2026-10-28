@@ -28,6 +28,8 @@ export interface Bug {
     deleted: boolean;
   } | null;
   testCase: { id: string; deleted: boolean } | null;
+  /** Tags carried (ADR 0016), sorted by id; missing = none (older fixtures). */
+  tagIds?: string[];
 }
 
 export interface CreateBugInput {
@@ -37,6 +39,7 @@ export interface CreateBugInput {
   stepsToReproduce?: string | null;
   testRunId?: string;
   failedStep?: string;
+  tagIds?: string[];
 }
 
 export interface UpdateBugInput {
@@ -45,6 +48,8 @@ export interface UpdateBugInput {
   status?: BugStatus;
   description?: string | null;
   stepsToReproduce?: string | null;
+  /** The full set of tags the bug should carry. */
+  tagIds?: string[];
 }
 
 export const BUG_STATUSES: BugStatus[] = ['Open', 'InProgress', 'Resolved', 'Closed', 'WontFix'];

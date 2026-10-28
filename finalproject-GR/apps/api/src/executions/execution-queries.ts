@@ -20,7 +20,11 @@ const EXECUTION_COLUMNS = Prisma.sql`
   (SELECT COUNT(*) FROM test_run r WHERE r.execution_id = e.id AND r.outcome <> 'Pending') AS done_runs,
   (SELECT COUNT(*) FROM test_run r WHERE r.execution_id = e.id AND r.outcome = 'Pass') AS pass_runs,
   (SELECT COUNT(*) FROM test_run r WHERE r.execution_id = e.id AND r.outcome = 'Fail') AS fail_runs,
-  (SELECT COUNT(*) FROM test_run r WHERE r.execution_id = e.id AND r.outcome = 'NeedsReview') AS needs_review_runs
+  (SELECT COUNT(*) FROM test_run r WHERE r.execution_id = e.id AND r.outcome = 'NeedsReview') AS needs_review_runs,
+  -- Tags its test cases carry now (PRD §6.3.2's tag filter matches on these).
+  COALESCE((SELECT array_agg(DISTINCT tt.tag_id) FROM test_run r
+            JOIN test_case_tag tt ON tt.test_case_id = r.test_case_id
+            WHERE r.execution_id = e.id), '{}') AS tag_ids
 `;
 
 interface ExecutionRow {
@@ -49,6 +53,7 @@ interface ExecutionRow {
   pass_runs: bigint;
   fail_runs: bigint;
   needs_review_runs: bigint;
+  tag_ids: string[];
 }
 
 interface RunRow {
@@ -98,6 +103,8 @@ export interface ExecutionResponse {
   createdAt: string;
   updatedAt: string;
   counts: { total: number; done: number; pass: number; fail: number; needsReview: number };
+  /** Tags currently carried by the test cases of its runs (ADR 0016). */
+  tagIds: string[];
   /** Server time when this response was built, so a client can correct for clock skew. */
   now: string;
   runs?: RunResponse[];
@@ -134,6 +141,7 @@ function toResponse(row: ExecutionRow, now: Date, runs?: RunRow[]): ExecutionRes
       fail: Number(row.fail_runs),
       needsReview: Number(row.needs_review_runs),
     },
+    tagIds: row.tag_ids,
     now: now.toISOString(),
     runs: runs?.map((run) => ({
       id: run.id,

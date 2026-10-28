@@ -250,6 +250,64 @@ describe('bugs (e2e, specs/bug-tracking)', () => {
     });
   });
 
+  describe('tags (ADR 0016)', () => {
+    const tag = async (s: Setup, name: string): Promise<string> =>
+      (await api().post(`/projects/${s.projectId}/tags`).set(as(s.contributor)).send({ name })).body.id;
+    const entries = (s: Setup, bugId: string) =>
+      withTenantContext(prisma, s.workspaceId, (tx) =>
+        tx.$queryRaw<{ action_code: string; details: Record<string, unknown> | null }[]>`
+          SELECT action_code, details FROM activity_entries WHERE entity_id = ${bugId}::uuid ORDER BY created_at`,
+      );
+
+    it('filing with tags stores exactly them, names them in the log, and the list reports them', async () => {
+      const s = await setUp('Bug-Tags', { started: false });
+      const [checkout, regression] = [await tag(s, 'checkout'), await tag(s, 'regression')];
+
+      const tagged = await file(s, s.contributor, { title: 'Tagged', severity: 'High', tagIds: [regression, checkout] });
+      await file(s, s.contributor, { title: 'Plain', severity: 'Low' });
+      const list = await api().get(bugs(s)).set(as(s.viewer));
+
+      expect(tagged.status).toBe(201);
+      expect(tagged.body.tagIds).toEqual([checkout, regression].sort());
+      const byTitle = new Map((list.body as { title: string; tagIds: string[] }[]).map((b) => [b.title, b.tagIds]));
+      expect(byTitle.get('Plain')).toEqual([]);
+      expect((await entries(s, tagged.body.id))[0].details).toEqual({ tags: ['checkout', 'regression'] });
+    });
+
+    it('a foreign or unknown tag is refused (400) and no bug is filed', async () => {
+      const s = await setUp('Bug-TagsInvalid', { started: false });
+      const other = await setUp('Bug-TagsInvalid-Other', { started: false });
+      const foreign = await tag(other, 'foreign');
+
+      for (const tagIds of [[foreign], [randomUUID()]]) {
+        expect((await file(s, s.contributor, { title: 'Nope', severity: 'Low', tagIds })).status).toBe(400);
+      }
+      expect((await api().get(bugs(s)).set(as(s.viewer))).body).toEqual([]);
+    });
+
+    it('editing tags replaces the set and logs the names added and removed', async () => {
+      const s = await setUp('Bug-TagsEdit', { started: false });
+      const [checkout, legacy] = [await tag(s, 'checkout'), await tag(s, 'legacy')];
+      const bug = (await file(s, s.contributor, { title: 'Edit me', severity: 'Low', tagIds: [legacy] })).body;
+
+      const response = await api().patch(`${bugs(s)}/${bug.id}`).set(as(s.contributor)).send({ tagIds: [checkout] });
+
+      expect(response.status).toBe(200);
+      expect(response.body.tagIds).toEqual([checkout]);
+      const log = await entries(s, bug.id);
+      expect(log[log.length - 1].details).toEqual({ changes: { tags: { added: ['checkout'], removed: ['legacy'] } } });
+    });
+
+    it('an auto-created bug has no tags', async () => {
+      const s = await setUp('Bug-AutoTags', { autoCreateBug: true });
+
+      await setOutcome(s, s.runIds[0], 'Fail');
+
+      const list = await api().get(`${bugs(s)}?testRunId=${s.runIds[0]}`).set(as(s.viewer));
+      expect(list.body[0].tagIds).toEqual([]);
+    });
+  });
+
   describe('auto-create on failure (G8)', () => {
     it('setting Fail creates one Open, Medium bug titled with the test case, reported by the tester', async () => {
       const s = await setUp('Bug-Auto', { autoCreateBug: true });
