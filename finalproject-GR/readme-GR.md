@@ -35,7 +35,7 @@ _Aún sin desplegar: la elección de hosting (Postgres, cómputo, almacenamiento
 
 > Puedes tenerlo alojado en público o en privado, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/). También puedes compartir por correo un archivo zip con el contenido
 
-[github.com/ibuprofano/AI4Devs-finalproject](https://github.com/ibuprofano/AI4Devs-finalproject): todo el proyecto vive en la carpeta `finalproject-GR/`, y cada entrega tiene su propia rama (`feature/entrega-1-gr`, `feature/entrega-2-gr`).
+[github.com/ibuprofano/AI4Devs-finalproject-1](https://github.com/ibuprofano/AI4Devs-finalproject-1), un fork de [LIDR-academy-temp/AI4Devs-finalproject](https://github.com/LIDR-academy-temp/AI4Devs-finalproject). Todo el proyecto vive en la carpeta `finalproject-GR/`, y cada entrega tiene su propia rama; esta es `feature/entrega-2-gr`.
 
 ---
 
@@ -98,8 +98,8 @@ Todos los comandos se ejecutan desde la carpeta `finalproject-GR/`. [CLAUDE.md](
 **Pasos:**
 1. **Clonar e instalar:**
    ```bash
-   git clone https://github.com/ibuprofano/AI4Devs-finalproject.git
-   cd AI4Devs-finalproject/finalproject-GR
+   git clone -b feature/entrega-2-gr https://github.com/ibuprofano/AI4Devs-finalproject-1.git
+   cd AI4Devs-finalproject-1/finalproject-GR
    npm install
    ```
 2. **Levantar PostgreSQL:** `docker compose up -d`. Escucha en el puerto **5433** del host. En un volumen nuevo, `db/init/` crea los roles:
