@@ -26,6 +26,7 @@ Si falta cualquiera de los obligatorios → STOP. Solicitar faltantes. No asumir
 0. `/explorar` — (Opcional) Investigar viabilidad, comparar enfoques, analizar código existente.
 1. `/definir` — Gate de documentos de entrada → refinar requerimiento o user story. Lee `specs/` y `_graph.md` del repo contextos. Incluye pasada adversarial obligatoria (`/abogado-del-diablo`) sobre el spec.
 2. `/diseñar` — Crear propuesta técnica en `<RUTA_PLANNING>\`. Incluye pasada adversarial obligatoria (`/abogado-del-diablo`) sobre el design.
+2.1. `/test` — **Automático al final de `/diseñar`** (también manual: `/test tkt-<id>`). Materializa la matriz de pruebas de `design.md` en `*PruebasUnitarias.sql`, lo corre en `<MCP_TEST>` y nace en ROJO (TDD). Asertos congelados para `/ejecutar`.
 2.5. `/analizar` — (Opcional, recomendado en requerimientos medios/altos o con invariantes) Verificación cruzada spec↔design por un paso independiente del autor, antes de implementar.
 3. `/ejecutar` — Implementar cambios mínimos (con iteración fluida si el diseño necesita ajuste menor).
 4. `/revisar` — Verificar contra criterios de aceptación y auditorías.
@@ -82,8 +83,12 @@ Cada requerimiento vive en su propia carpeta con artefactos separados y links bi
 <RUTA_PLANNING>\tkt-<id>\
 ├── _index.md        ← hub: estado, graph links, metadata, log de estados, dominios, related tickets
 ├── spec.md          ← /definir: user story, objetivo, alcance, criterios
-├── design.md        ← /diseñar: estrategia técnica, impacto, orden
+├── design.md        ← /diseñar: estrategia técnica, impacto, orden, matriz de pruebas
+├── <yyyymmdd>_<TKT>_PruebasUnitarias.sql ← /test (auto tras /diseñar): suite en ROJO
 ├── impl.md          ← /ejecutar + /revisar: implementación, auditorías, verificación
+├── <TKT>_api_tests.http ← /test (si hay endpoints)
+├── TKT-<Numero>-APIS.md ← /revisar (auto, si hubo endpoints y LISTO PARA PR)
+├── _sellos.jsonl    ← sello.py: huellas de diseño / VERDE / revisión
 ├── delta.md         ← /completar: ADDED/MODIFIED/REMOVED del sistema
 └── release.md       ← bitácora de deploy
 ```
@@ -118,11 +123,12 @@ Cada requerimiento vive en su propia carpeta con artefactos separados y links bi
 | `/explorar` | (opcional: `_exploraciones/`) | `specs/`, `_graph.md`, código existente |
 | `/definir` | `_index.md` + `spec.md` | Docs de entrada (contexto requerimiento + técnico [+ mockup si UI]), `specs/`, `_graph.md` |
 | `/diseñar` | `design.md` + actualiza `_index.md` | `spec.md`, `specs/` |
+| `/test` | `*PruebasUnitarias.sql` (+ `.http`) + fila Test en `_index.md` | `spec.md` + `design.md` (Plan de pruebas) |
 | `/analizar` | (no crea; agrega entrada al Log de `_index.md`) | `spec.md`, `design.md` |
 | `/ejecutar` | `impl.md` + actualiza `_index.md` | `spec.md` + `design.md` |
-| `/revisar` | actualiza `impl.md` + `_index.md` | `spec.md` + `design.md` + `impl.md` |
+| `/revisar` | actualiza `impl.md` + `_index.md` + `TKT-<Numero>-APIS.md` (si hubo endpoints) | `spec.md` + `design.md` + `impl.md` |
 | `/completar` | `delta.md` + actualiza `_index.md` + merge a `specs/` + actualiza `_graph.md` + fila en `_sdd_evolution.md` + descripción PR | todos |
-| (deploy manual) | `release.md` ← bitácora de despliegue; creada por el equipo al hacer deploy, no por SDD | `delta.md` |
+| `/completar` + deploy | `release.md` ← esqueleto en `/completar` (piezas, rollback, canario); lo llena quien despliega | `delta.md` + `design.md` |
 | `/avance` | — | todos los `_index.md`, `_graph.md` |
 | `/retrospectiva` | actualiza sección `## Tendencias` de `_sdd_evolution.md` | `_sdd_evolution.md`, `_graph.md`, todos los `_index.md` |
 | `/sincronizar` | reporte de drift (BD, specs, API, graph) | MCP, `specs/`, `sdd.config.yaml`, `sdd-toolkit/tools/` |
@@ -136,13 +142,15 @@ Cada requerimiento vive en su propia carpeta con artefactos separados y links bi
 |--------|-------------------|--------|
 | (sin spec) | `/explorar` | Investigar antes de comprometerse |
 | (sin spec) | `/definir` | Con documentos de entrada listos (contexto requerimiento + técnico [+ mockup si UI]) |
-| `SPEC PENDIENTE` | `/diseñar` | Generar propuesta técnica |
+| `SPEC PENDIENTE` | `/diseñar` | Generar propuesta técnica (+ TEST automático) |
+| `DISEÑO PENDIENTE REVISIÓN` | (usuario) / `/test` | Revisar y confirmar el design → `LISTO PARA EJECUTAR` |
 | `LISTO PARA EJECUTAR` | `/ejecutar` | Implementar cambios (iteración fluida habilitada) |
 | `EN REVISIÓN` | `/revisar` | Verificar implementación |
 | `LISTO PARA PR` | `/completar` | Documentar Delta, archivar y preparar PR |
 | `REQUIERE CAMBIOS` | `/ejecutar` | Corregir hallazgos |
 | `REQUIERE DECISIÓN` | `/escalar` | Handoff manual al usuario |
 | (producción caída) | `/urgente` | Fix urgente con trazabilidad mínima |
+| `URGENTE EN CURSO` | `/urgente` → `/completar` | Terminar el hotfix y fundirlo al conocimiento |
 | `RIESGOSO` | `/escalar` | Revisión manual obligatoria |
 | `ARCHIVADO` | — | Sin acción pendiente |
 
@@ -174,6 +182,7 @@ tabla es el índice para no tener que abrir todas para saber qué existe.
 | 12 | `guard_evolucion` | Obliga invocar `meta-sdd` al completar requerimientos, mantiene el graph de aprendizaje |
 | 13 | `guard_fuente_objetos` | Prioridad de fuentes para resolver SPs/vistas (BD/MCP real, nunca memoria) |
 | 18 | `guard_tdd` | Guard TDD — Red phase, paridad CHAR-x, anti-sabotaje, mutation |
+| 19 | `guard_contenido_configurable` | Contenido configurable — textos de negocio, estatus, errores y umbrales desde catálogos y parámetros del back; no literales en SP ni solo en ARB (methodology.md regla 7) |
 
 ## Routing de agentes
 

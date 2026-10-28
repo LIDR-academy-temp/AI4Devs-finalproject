@@ -37,6 +37,10 @@ Convención REST real `/{DOMINIO}/{Controller}` (NO `/api/...`). Controllers rea
 
 Verbos concretos por controller `(asumido)`: GET (listar/detalle), POST (crear), PUT/PATCH (editar), DELETE (soft).
 
+## Frontend admin (SPA) — vigente
+
+- Ruta `/admin/juntas` ([[FE-CRUD-002]]): `AdminFilterableTable` + split panel (convocatoria / detalle y adjuntos según JNT API); `juntasTableFilter.ts`.
+
 ## Reutilización / objetos existentes (escalera)
 - **Reutiliza** el patrón Dapper + servicios C# + FluentValidation + `IDbTransaction` (sin SPs).
 - **Reutiliza** notificación: la publicación (HU-JNT-02) inserta en `ntf.Notificaciones` (tipo `JUNTA_CONVOCADA`, delta sembrado) y despacha por el notificador saliente → dominio Notificaciones.
@@ -47,6 +51,12 @@ Verbos concretos por controller `(asumido)`: GET (listar/detalle), POST (crear),
 - Tipo de notificación `JUNTA_CONVOCADA` sembrado en `ntf.TiposNotificacion` (delta) para la publicación de convocatorias.
 - Entrega por Telegram vía `ntf.NotificacionesEntrega` (delta) al publicar convocatoria.
 - No hay deltas de esquema propios de `jnt` en el rediseño (el modelo de juntas se conserva tal cual).
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-10-26 | [[FE-CRUD-002]] | Admin juntas: patrón CRUD admin (tabla filtrable + panel) |
 
 ## Notas
 - Sin stored procedures: acceso por Dapper + servicios.

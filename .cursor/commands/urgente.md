@@ -41,7 +41,13 @@ Genera: `_index.md` + `spec.md` (mínimo) + `impl.md` + `delta.md` — todo en u
 3. Crear `_index.md` con estado `URGENTE EN CURSO`.
 4. Crear `spec.md` mínimo (solo problema + fix esperado + criterio de éxito).
 5. Leer `specs/<dominio>.md` y `_graph.md` si existen (contexto rápido).
+5.5. **Caso ROJO mínimo** (antes del fix, el hook lo exige para SPs): crear
+   `<yyyymmdd>_<TKT>_PruebasUnitarias.sql` con 1 caso que reproduce el defecto (`[ROJO]`) +
+   1 negativo, correrlo en `<MCP_TEST>` y anotar `-- [OK] TESTS [..] -> 0 PASS / 1 ROJO esperado`.
+   Tras el fix debe quedar VERDE. Sin MCP → `[PENDIENTE]` y avisarlo.
 6. **Implementar el fix** — auditoría automática aplica igual.
+   **Regla de 3 intentos:** si 3 hipótesis de causa fallan → parar, no seguir parchando:
+   documentar lo descartado en `impl.md` y usar `/escalar` (posible problema de arquitectura).
 7. Crear `impl.md` con lo que se hizo.
 8. Crear `delta.md` con lo que cambió.
 9. Actualizar `_index.md` → estado `LISTO PARA PR`.

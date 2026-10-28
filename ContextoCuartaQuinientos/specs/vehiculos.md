@@ -33,11 +33,15 @@ Vista real:
 
 ## Endpoints (/{Dominio}/{Controller})
 Controllers reales USR (`/{DOMINIO}/{Controller}`):
-- `/USR/Automoviles` — CRUD de vehículos del residente.
+- `/USR/Automoviles` — CRUD de vehículos del residente (solo propietario JWT).
+- `/USR/Automoviles/padron` — **GET** listado completo para admin (`SoloAdministrador`).
+- `/USR/Automoviles/admin` — **POST** alta para `usuarioId` propietario (`SoloAdministrador`).
+- `/USR/Automoviles/{id}/admin` — **PUT** / **DELETE** sobre cualquier vehículo activo (`SoloAdministrador`).
+- `/USR/Automoviles/buscar?placas=` — búsqueda por placa (Admin/Guardia).
 - `/USR/Marcas` — catálogo de marcas.
 - `/USR/Modelos` — catálogo de modelos.
 
-Verbos concretos `(asumido)`: GET (mis vehículos/búsqueda por placa), POST (registrar), PUT/PATCH (editar), DELETE (soft).
+Verbos residente: GET (mis vehículos), POST (registrar), PUT (editar propio), DELETE (soft propio). Admin: ver tabla anterior; placas duplicadas → 409; `usuarioId` inválido/inactivo en alta admin → 422 `VEH_USUARIO_INVALIDO`.
 
 ## Reutilización / objetos existentes (escalera)
 - **Reutiliza** la vista `usr.vsAutomoviles` para lectura (patrón Dapper + vistas, sin SPs).
@@ -54,3 +58,10 @@ Verbos concretos `(asumido)`: GET (mis vehículos/búsqueda por placa), POST (re
 - Sin stored procedures.
 - Corrección de dominio: Vehículos = esquema `usr` (`usr.Automoviles`), NO `vts` (Visitas). Alucinación del borrador viejo.
 - Nombres reales del esquema español; soft delete `bEliminado`.
+- SPA admin: `AdminVehiculosPage` (`/admin/vehiculos`) — patrón FE-PAT-002; ver [[FE-CRUD-003]].
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-10-26 | [[FE-CRUD-003]] | Endpoints admin `padron` + `/admin` CRUD; UI admin CRUD completa |

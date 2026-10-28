@@ -48,11 +48,11 @@ DASH-BE-014: `GET /Dashboard/Resumen?mes=&anio=` devuelve `ResumenAdmin` o `Resu
 
 ## Criterios de aceptación
 
-- [ ] **CA-1 [M]**: payload `tipo=ADMIN` → solo tarjetas admin
-- [ ] **CA-2 [M]**: payload `tipo=RESIDENTE` → resumen personal + aviso vencida si `avisoVencida`
-- [ ] **CA-3 [M]**: badge muestra `totalNoLeidas`
-- [ ] **CA-4 [M]**: marcar leída reduce badge sin recargar página completa
-- [ ] **CA-5 [M]**: error API → UI error + reintentar
+- [x] **CA-1 [M]**: payload `tipo=ADMIN` → solo tarjetas admin
+- [x] **CA-2 [M]**: payload `tipo=RESIDENTE` → resumen personal + aviso vencida si `avisoVencida`
+- [x] **CA-3 [M]**: badge muestra `totalNoLeidas`
+- [x] **CA-4 [M]**: marcar leída reduce badge sin recargar página completa
+- [x] **CA-5 [M]**: error API → UI error + reintentar
 
 ## Reutilización
 

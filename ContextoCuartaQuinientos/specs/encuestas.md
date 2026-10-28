@@ -33,11 +33,29 @@ Dominio de encuestas estructuradas (esquema `enc`). El administrador crea encues
 - **HU-ENC-03 [S]** Ver resultados consolidados (Admin) — por opción: conteo y porcentaje por `OpcionPregunta`; por texto libre: listado de `RespuestaTexto`.
 - **HU-BOT-13 [S]** Responder encuestas en el chat — el bot presenta la encuesta activa pregunta por pregunta con botones (opción múltiple) y registra en `enc.Respuestas`.
 
-## Endpoints (/ENC/{Controller})
-- `/ENC/Encuestas` — CRUD estándar (incluye publicar via `bActivo`).
-- `/ENC/Preguntas`, `/ENC/OpcionesPregunta` — armado de la encuesta.
-- `/ENC/Respuestas` — registro de respuestas.
-- `/ENC/TiposPregunta` — catálogo de tipos.
+## Endpoints Cuarta (SPA + bot) — vigente post [[FE-MOD-ENC-001]]
+
+- `GET /ENC/Encuestas` — listado admin; `GET /ENC/Encuestas/activas` — residente.
+- `POST /ENC/Encuestas` — crear borrador (`preguntas` puede ir vacío).
+- `PUT /ENC/Encuestas/{id}` — metadatos solo si `bActivo=0`.
+- `DELETE /ENC/Encuestas/{id}` — borrador solo.
+- `PUT /ENC/Encuestas/{id}/publicar` — activa; 422 `SIN_PREGUNTAS` sin preguntas.
+- `GET /ENC/Encuestas/{id}` — detalle con preguntas/opciones.
+- `GET /ENC/Encuestas/{id}/resultados` — agregados admin.
+- `POST /ENC/Encuestas/{id}/respuestas` — residente (una vez, INV-3).
+- **Preguntas/opciones (admin, anidado):** `POST/PUT/DELETE` bajo `/ENC/Encuestas/.../preguntas` y `/ENC/Encuestas/opciones/{id}` (ver `TKT-FE-MOD-ENC-001-APIS.md`).
+- `GET /ENC/TiposPregunta` — catálogo admin (`tipoPreguntaId` + nombre).
+- Legacy `*/legacy` — no usar desde SPA Cuarta.
+
+## UI admin (React)
+
+- `/admin/encuestas` — bandeja + panel metadatos.
+- `/admin/encuestas/:id` — preguntas/opciones.
+- `/admin/encuestas/:id/resultados` — resultados.
+
+## UI residente
+
+- `/encuestas`, `/encuestas/:id` — sin cambio de contrato en FE-MOD-ENC-001.
 
 ## Reutilización / objetos existentes (escalera)
 - El modelo estructurado (Encuestas → Preguntas → OpcionesPregunta → Respuestas) ya permite consolidar por opción — NO añadir tabla Vote/Votación.
@@ -53,3 +71,10 @@ Dominio de encuestas estructuradas (esquema `enc`). El administrador crea encues
 - Sin stored procedures: Dapper + servicios C# + joins/agregaciones; validación con FluentValidation; transacciones vía `IDbTransaction`.
 - Nombres reales del esquema español (`enc`); soft delete con `bEliminado` (NO `IsActive`).
 - No hay vista `vs` propia de encuestas; las lecturas consolidadas se resuelven por joins.
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-10-26 | [[FE-MOD-ENC-001]] | Admin encuestas 3 superficies; CRUD JWT preguntas/opciones anidado; publicar con gate de preguntas; spec endpoints Cuarta actualizado. |
+| 2026-10-26 | [[FE-CRUD-002]] | Bandeja admin + `ResultadosEncuestaPage` al patrón CRUD admin; fix `apiGet`; publicar con `ConfirmDialog` (sin cambio API). |

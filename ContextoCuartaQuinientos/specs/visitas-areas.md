@@ -64,3 +64,12 @@ Verbos concretos `(asumido)`: GET (bitácora/áreas/reservas), POST (registrar v
 - Sin stored procedures.
 - Corrección de dominio: `VTS` = Visitas y Áreas Comunes, NO Vehículos (alucinación del borrador viejo).
 - Nombres reales del esquema español; soft delete `bEliminado`.
+- SPA admin: `AdminVisitasPage` (`/admin/visitas`) — split + `usuarioVisitadoId` en alta; salida sin `alert` ([[FE-CRUD-003]]).
+- SPA residente: `AreasYReservacionesPage` (`/areas-comunes`) — Zod + `FormModal`, `POST /VTS/ReservacionesArea`, hooks `useAreasComunes`/`useReservaciones` con `apiGet` desestructurado ([[FE-CRUD-004]]).
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-10-26 | [[FE-CRUD-003]] | UI admin visitas al patrón `cq-admin` (sin cambio de contrato API VTS) |
+| 2026-10-27 | [[FE-CRUD-004]] | Residente reservas: kit UI + fix contrato `apiGet` en hooks visitas |

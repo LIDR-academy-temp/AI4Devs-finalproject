@@ -1,6 +1,6 @@
 # FNZ-BE-010 — Consulta de estado de cuenta del residente
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: [[finanzas]] · [[usuarios]] (autorización por perfil)
 - Targets en scope: `database:CuartaQuinientos` (solo lectura) · `backend:cuartaquinientos-api`
@@ -14,3 +14,4 @@
 - 2026-09-24 — Revisión final de Entrega 1: estado corregido a BORRADOR; el contrato del ticket se actualizó en readme §6.
 - 2026-09-24 — spec completado con AC de readme Ticket 10 (`GET /FNZ/Cuotas/mis`, `esVencida`, zona `America/Mexico_City`). Estado: BORRADOR (design pendiente).
 - 2026-09-24 — normalizado a plantillas SDD del toolkit (spec: 11 CA, 5 INV; design: escalera, orden, plan de pruebas). Estado: LISTO PARA EJECUTAR.
+- 2026-10-16 — tests classifier + estado cuenta; `/completar` ARCHIVADO.

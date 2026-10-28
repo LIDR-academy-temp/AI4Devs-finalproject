@@ -2,7 +2,7 @@
 
 [← Fase 1](../FASE1_ROADMAP.md) | [spec](spec.md) | [design](design.md) | impl.md · delta.md · release.md
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: [[notificaciones]] · `ntf` — [specs/notificaciones.md](../../specs/notificaciones.md)
 - **Targets en scope:** database:CuartaQuinientos, backend:cuartaquinientos-api, integrations:cuartaquinientos-bot (solo contrato de outbox)

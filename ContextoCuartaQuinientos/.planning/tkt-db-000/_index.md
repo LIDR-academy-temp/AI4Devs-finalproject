@@ -1,6 +1,6 @@
 # DB-000 — Esquema base desplegable e idempotente (solo estructura)
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: [[base-datos]] (transversal · `sgr`, `tkt`, `fnz`, `ntf`, `usr`, `vts`, `enc`, `jnt`, `anm`, `arc`, `api`, `dbo`, `bot`, `ia`, `bi`, `wms`)
 - Targets en scope: `database:CuartaQuinientos`

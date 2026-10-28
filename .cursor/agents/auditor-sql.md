@@ -186,7 +186,16 @@ Cuando revises stored procedures:
 - Revisa cambios en result sets.
 - Revisa cambios en códigos de retorno.
 - Revisa cambios en mensajes de error.
+- **Contenido configurable** (`19_guard_contenido_configurable`): `CONTENIDO-HARDCODE` si el SP devuelve
+  literales de negocio o de error, decide por el texto de un catálogo o fija umbrales que negocio puede
+  cambiar; `CONTENIDO-TEXTO-NUMERO` si un texto escribe un número que existe como parámetro.
 - Revisa efectos secundarios.
+- **Valores nuevos (`VALOR-SIN-CONSUMIDOR`)**: si el cambio agrega un estado, tipo, OverrideID,
+  código o ID de catálogo, buscar sus valores hermanos en `sys.sql_modules` y confirmar que
+  cada CASE/IN consumidor lo maneja o está en la tabla «Valores nuevos y sus consumidores»
+  del design. Un consumidor no listado que cae en el ELSE/default = hallazgo Mayor.
+- **Contratos de escritura (`ESCRITURA-SIN-IDEM`)**: SP `prcSet*` sin `TC-IDEM` en su script de
+  pruebas, o cuyo único aserto es `ErrorID=0` sin verificar el efecto final = hallazgo Mayor.
 - Revisa si el SP es usado por jobs, APIs, webhooks o integraciones.
 - Valida que no se agreguen parámetros obligatorios sin default si hay callers existentes.
 - Valida que no se eliminen columnas esperadas por consumidores.

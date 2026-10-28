@@ -1,0 +1,53 @@
+@baseUrl = http://localhost:5180
+@tokenAdmin = {{loginAdmin.response.body.token}}
+@tokenResidente = {{loginResidente.response.body.token}}
+
+# @name loginAdmin
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "admin@local",
+  "password": "{{$dotenv FASE1_SMOKE_PASSWORD}}"
+}
+
+###
+
+# @name loginResidente
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "residente@local",
+  "password": "{{$dotenv FASE1_SMOKE_PASSWORD}}"
+}
+
+###
+
+GET {{baseUrl}}/ANM/TiposAnuncio
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+GET {{baseUrl}}/ANM/Anuncios
+Authorization: Bearer {{tokenResidente}}
+
+###
+
+POST {{baseUrl}}/ANM/Anuncios
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "titulo": "Prueba comunicado",
+  "contenido": "Cuerpo del aviso",
+  "tipoAnuncio": "General"
+}
+
+###
+
+PATCH {{baseUrl}}/ANM/Anuncios/1/visto
+Authorization: Bearer {{tokenResidente}}
+Content-Type: application/json
+
+{}

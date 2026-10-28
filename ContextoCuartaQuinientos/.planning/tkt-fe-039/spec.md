@@ -49,12 +49,12 @@ Backend: FNZ-BE-010 (`GET /FNZ/Cuotas?usuarioId=`), FNZ-BE-011 (`PATCH …/pago`
 
 ## Criterios de aceptación
 
-- [ ] **CA-1 [M]**: búsqueda residente muestra cuotas del API
-- [ ] **CA-2 [M]**: modal pago válido → 204 y tabla refresca
-- [ ] **CA-3 [M]**: modal pago cuota pagada → 409 y mensaje readme
-- [ ] **CA-4 [M]**: morosos vacíos → empty state texto exacto
-- [ ] **CA-5 [M]**: generar cuotas → resumen creadas/omitidas
-- [ ] **CA-6 [M]**: Zod rechaza referencia vacía antes de PATCH
+- [x] **CA-1 [M]**: búsqueda residente muestra cuotas del API
+- [x] **CA-2 [M]**: modal pago válido → 204 y tabla refresca
+- [x] **CA-3 [M]**: modal pago cuota pagada → 409 y mensaje readme
+- [x] **CA-4 [M]**: morosos vacíos → empty state texto exacto
+- [x] **CA-5 [M]**: generar cuotas → resumen creadas/omitidas
+- [x] **CA-6 [M]**: Zod rechaza referencia vacía antes de PATCH
 
 ## Reutilización
 

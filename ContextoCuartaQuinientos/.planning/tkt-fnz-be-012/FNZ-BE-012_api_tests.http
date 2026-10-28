@@ -1,0 +1,24 @@
+@baseUrl = http://localhost:5180
+@adminToken = {{loginAdmin.response.body.token}}
+
+### Login admin
+# @name loginAdmin
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "REEMPLAZAR",
+  "password": "REEMPLAZAR"
+}
+
+### Morosos (sin filtro)
+GET {{baseUrl}}/Reports/Reportes/Morosos
+Authorization: Bearer {{adminToken}}
+
+### Morosos por período
+GET {{baseUrl}}/Reports/Reportes/Morosos?mes=10&anio=2026
+Authorization: Bearer {{adminToken}}
+
+### Error: mes sin anio
+GET {{baseUrl}}/Reports/Reportes/Morosos?mes=9
+Authorization: Bearer {{adminToken}}

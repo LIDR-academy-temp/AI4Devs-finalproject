@@ -15,6 +15,7 @@
 | Encuestas | `enc` | database, backend, frontend | [[specs/encuestas]] |
 | Juntas | `jnt` | database, backend, frontend | [[specs/juntas]] |
 | Notificaciones | `ntf` | database, backend, integrations | [[specs/notificaciones]] |
+| Frontend (transversal) | — | frontend | [[specs/frontend]] |
 | Visitas y Áreas Comunes | `vts` | database, backend, frontend | [[specs/visitas-areas]] |
 | Mascotas | `usr` | database, backend, frontend | [[specs/mascotas]] |
 | Vehículos | `usr` | database, backend, frontend | [[specs/vehiculos]] |
@@ -61,9 +62,133 @@ anm.Anuncios / arc.Archivos con bitácora de visualización
 - INV-G4: el asistente IA nunca inventa — si la confianza es baja, escala (ticket/humano).
 - INV-G5: diseño API-first (REST `/{Dominio}/{Controller}` + GraphQL `/graphql`): un solo backend para web, bot y futuros clientes.
 
-## Requerimientos activos (planning)
+## Requerimientos (planning)
 
-| Fase | Hub | Tickets |
-|------|-----|---------|
-| Entrega 2 — Fase 1 (LISTO PARA EJECUTAR, 2026-09-24) | [.planning/FASE1_ROADMAP.md](.planning/FASE1_ROADMAP.md) | SETUP-000, DB-000/001/002, USR-BE-007/008/009/036, FE-030, NTF-BE-013, TKT-BE-001/002/015/016, FE-031/038, FNZ-BE-010/011/012/037, FE-032/039, DASH-BE-014, FE-040 |
+| Fase | Hub | Estado |
+|------|-----|--------|
+| Entrega 2 — **Fase 1** | [.planning/FASE1_ROADMAP.md](.planning/FASE1_ROADMAP.md) · [.planning/FASE1_CIERRE.md](.planning/FASE1_CIERRE.md) | **COMPLETADA 2026-10-16** — 24 tickets ARCHIVADO (filas 0–23) |
+| **Entrega módulos** (12 dom., sin BOT/IA/BI) | [.planning/ENTREGA_MODULOS.md](.planning/ENTREGA_MODULOS.md) | **EN CURSO** — SDD spec+design en `.planning/tkt-*` (ENC→WMS); ejecutar en orden del hub |
+| Fase 2+ (bot, encuestas, …) | [specs/_index.md](specs/_index.md) | Planificado tras ola USR/shell |
+
+Evolución SDD: [_sdd_evolution.md](_sdd_evolution.md)
+
+### [[FE-PAT-001]]: Patrones UI admin (kit + piloto Casas)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[ux]]
+- **Objetos clave**: `PageHeader`, `SectionHero`, `AlertBanner`, `FormModal`, `ConfirmDialog`, `AdminDataTable`, `EmptyState`, `AdminCasasPage`
+- **Patrones**: kit Tailwind en `shared/components/admin/`; sin `prompt`/`confirm` en piloto
+- **Relacionado con**: [[FE-PAT-002]], [[FE-CRUD-001]], [[FE-UX-001]]
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-fe-pat-001/spec.md) · [delta](.planning/tkt-fe-pat-001/delta.md)
+
+### [[SGR-FE-001]]: Sidebar dinámico + admin SGR (SPA)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[sgr]], [[usuarios]]
+- **Objetos clave**: `NavegacionProvider`, `useNavegacionMenus`, `NavMenuGuard`, `AppSidebar`, `AdminMenusPage`, `AdminPerfilesPage`
+- **Patrones**: menú API con fallback estático; guard 403 solo con árbol API activo; admin SGR vía BE-030
+- **Relacionado con**: [[SGR-BE-030]], [[FE-PAT-002]], [[DB-006]] (E2E CA-1/CA-2)
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-sgr-fe-001/spec.md) · [delta](.planning/tkt-sgr-fe-001/delta.md)
+
+### [[SGR-BE-030]]: API JWT menús y permisos
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[usuarios]], [[auth]], [[sgr]]
+- **Objetos clave**: `NavegacionController`, `CuartaNavegacionService`, `CuartaNavegacionRepository`, `MenuArbolBuilder`, regiones JWT en `MenusController`/`PerfilesController`
+- **Patrones**: Dapper + `SoloAdministrador`; dual-path legacy headers vs JWT; `SqlSchemaCompat.PerfilNombreColumn`
+- **Relacionado con**: [[SGR-FE-001]], [[DB-001]]
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-sgr-be-030/spec.md) · [delta](.planning/tkt-sgr-be-030/delta.md) · [APIs](.planning/tkt-sgr-be-030/TKT-SGR-BE-030-APIS.md)
+
+### [[FE-PAT-002]]: Paridad visual Casas + stack tabla filtrable
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[ux]]
+- **Objetos clave**: `AdminCasasPage`, `AdminListToolbar`, `AdminSplitLayout`, `AdminSidePanel`, `AdminFilterableTable`, `useClientTableFilter`, `casasTableFilter.ts`, `cq-admin.css`, `bootstrap-pantone.css`
+- **Patrones**: [PATRON_CRUD_ADMIN](.planning/PATRON_CRUD_ADMIN.md); Bootstrap 5 scoped `.cq-admin-page`
+- **Relacionado con**: [[FE-PAT-001]], [[FE-CRUD-001]], [[FE-CRUD-002]], [[FE-CRUD-003]]
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-fe-pat-002/spec.md) · [delta](.planning/tkt-fe-pat-002/delta.md)
+
+### [[FE-CRUD-001]]: Frontend — CRUD Gestión admin
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[usuarios]], [[tickets]], [[finanzas]]
+- **Objetos clave**: `AdminUsuariosPage`, `AdminTicketsPage`, `FinanzasAdminPage` (morosos), `usuariosAdminSchemas`, `*TableFilter.ts`
+- **Patrones**: [PATRON_CRUD_ADMIN](.planning/PATRON_CRUD_ADMIN.md) (toolbar + tabla filtrable + split panel)
+- **Relacionado con**: [[FE-PAT-002]], [[FE-CRUD-002]], [[FE-QA-001]]
+- **Fecha cierre**: 2026-10-23
+- **Hub**: [spec](.planning/tkt-fe-crud-001/spec.md) · [delta](.planning/tkt-fe-crud-001/delta.md)
+
+### [[FE-CRUD-003]]: Frontend — CRUD Registro admin
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[visitas-areas]], [[vehiculos]], [[mascotas]], [[almacen]], [[frontend]]
+- **Objetos clave**: `AutomovilesController` (rutas `/admin`), `CuartaAutomovilesService`, `AdminVisitasPage`, `AdminVehiculosPage`, `AdminMascotasPage`, `AdminAlmacenPage`, `vehiculosAdminSchemas`
+- **Patrones**: [PATRON_CRUD_ADMIN](.planning/PATRON_CRUD_ADMIN.md); dual-path API residente vs `…/admin` (vehículos)
+- **Relacionado con**: [[FE-PAT-002]], [[FE-CRUD-001]], [[FE-CRUD-002]]
+- **Fecha cierre**: 2026-10-26
+- **Hub**: [spec](.planning/tkt-fe-crud-003/spec.md) · [delta](.planning/tkt-fe-crud-003/delta.md) · [APIs](.planning/tkt-fe-crud-003/FE-CRUD-003-APIS.md)
+
+### [[FE-CRUD-002]]: Frontend — CRUD Comunidad admin
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[anuncios]], [[archivos]], [[juntas]], [[encuestas]]
+- **Objetos clave**: `AdminAnunciosPage`, `AdminArchivosPage`, `AdminJuntasPage`, `AdminEncuestasPage`, `ResultadosEncuestaPage`, `mapArchivoUploadHttpError`, `*TableFilter.ts` (comunidad)
+- **Patrones**: [PATRON_CRUD_ADMIN](.planning/PATRON_CRUD_ADMIN.md)
+- **Relacionado con**: [[FE-PAT-002]], [[FE-CRUD-001]], [[FE-MOD-ENC-001]], [[FE-043]]
+- **Fecha cierre**: 2026-10-26
+- **Hub**: [spec](.planning/tkt-fe-crud-002/spec.md) · [delta](.planning/tkt-fe-crud-002/delta.md)
+
+### [[FE-043]]: Frontend — Anuncios (Admin + Residente)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[anuncios]]
+- **Objetos clave**: `AnunciosPage`, `AdminAnunciosPage`, `useAnuncios`, rutas `/anuncios`, `/admin/anuncios`
+- **Patrones**: REST `apiClient` por dominio (sin Apollo); Vitest mock API para contrato CA Must
+- **Relacionado con**: [[ANM-BE-027]], [[FE-SHELL-001]]
+- **Fecha cierre**: 2026-10-19
+- **Hub**: [spec](.planning/tkt-fe-043/spec.md) · [delta](.planning/tkt-fe-043/delta.md)
+
+### [[FE-CRUD-004]]: Frontend — UX + CRUD residente
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[tickets]], [[visitas-areas]], [[vehiculos]], [[mascotas]], [[archivos]], [[anuncios]], [[encuestas]], [[juntas]], [[finanzas]], [[usuarios]]
+- **Objetos clave**: `downloadAuthenticated`, `useCrearTicket`, `AreasYReservacionesPage`, inventario M5 residente, `useAreasComunes`, `useReservaciones`
+- **Patrones**: kit admin sin Bootstrap en residente; REST ticket; `apiGet` desestructurado en hooks; descarga JWT
+- **Relacionado con**: [[FE-PAT-002]], [[FE-CRUD-002]], [[FE-CRUD-003]], [[SGR-FE-001]], [[FE-QA-001]]
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-fe-crud-004/spec.md) · [delta](.planning/tkt-fe-crud-004/delta.md)
+
+### [[FE-UX-002]]: Login premium + navegación sin solapamiento
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[ux]]
+- **Objetos clave**: `LoginPage`, `PasswordField`, `AppShell`, `AppSidebar`, `SidebarRailToggle`, `useSidebarCollapsed`, `UserMenu`, `login.css`, `app-shell.css`
+- **Patrones**: layout push sidebar (toggle + `localStorage`); split login hero+card (paridad `Web_diseño`); tooltips rail portal
+- **Relacionado con**: [[FE-UX-001]], [[FE-SHELL-001]], [[SGR-FE-001]], [[FE-QA-001]]
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-fe-ux-002/spec.md) · [delta](.planning/tkt-fe-ux-002/delta.md)
+
+### [[FE-QA-001]]: Calidad integración FE (apiClient + smoke E2E)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]]
+- **Objetos clave**: `apiClient.integration.test.ts`, `e2e/admin-casas.spec.ts`, `playwright.config.ts`
+- **Patrones**: contrato HTTP Vitest + E2E opt-in `E2E_SMOKE`; Vitest excluye `e2e/`
+- **Relacionado con**: [[FE-CRUD-001]], [[FE-CRUD-004]], [[FE-PAT-002]]
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-fe-qa-001/spec.md) · [delta](.planning/tkt-fe-qa-001/delta.md)
+
+### [[FE-MOD-ENC-001]]: Módulo encuestas admin (paridad Web_diseño)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[encuestas]]
+- **Objetos clave**: `CuartaEncuestasRepository`, `EncuestasController`, `AdminEncuestasPage`, `AdminEncuestaDetallePage`, `ResultadosEncuestaPage`, `TiposPreguntaController`
+- **Patrones**: [PATRON_CRUD_ADMIN](.planning/PATRON_CRUD_ADMIN.md) (bandeja + split); agregado REST anidado bajo `/ENC/Encuestas`; `tipoPreguntaId` desde catálogo
+- **Relacionado con**: [[ENC-BE-024]], [[FE-044]]
+- **Fecha cierre**: 2026-10-26
+- **Hub**: [spec](.planning/tkt-fe-mod-enc-001/spec.md) · [delta](.planning/tkt-fe-mod-enc-001/delta.md) · [APIs](.planning/tkt-fe-mod-enc-001/TKT-FE-MOD-ENC-001-APIS.md)
 

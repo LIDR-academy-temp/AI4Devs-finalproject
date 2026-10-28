@@ -1,0 +1,217 @@
+﻿---
+description: Arquitectura, reglas API C# y patrones <PROYECTO_API>
+globs: "**/*.cs"
+alwaysApply: false
+---
+
+# Architecture & API C# Rules
+
+## Arquitectura
+
+Flujo obligatorio: `DB -> API -> UI`. Nunca `UI -> DB`.
+
+- DB: tablas, índices, vistas, SPs, funciones.
+- API: endpoints, validaciones, DTOs, servicios, acceso a datos.
+- UI: presentación, interacción, consumo de API.
+
+Principios: simplicidad sobre complejidad, no duplicar lógica, no romper patrones actuales, resolver el problema real.
+
+## Header Obligatorio
+
+En todas las APIs nuevas (cada acción `Get`/`Post`/etc.), inicializar `headerValues` **exactamente** así (obligatorio; incluye `this.`):
+
+```csharp
+Microsoft.Extensions.Primitives.StringValues headerValues = this.Request.Headers[""];
+```
+
+No usar la forma antigua sin inicialización:
+
+```csharp
+Microsoft.Extensions.Primitives.StringValues headerValues;
+```
+
+No usar `Request.Headers[""]` sin `this.` salvo migración explícita del repo.
+
+Patrón completo:
+
+```csharp
+Microsoft.Extensions.Primitives.StringValues headerValues = this.Request.Headers[""];
+
+string actionName = this.ControllerContext.RouteData.Values["action"].ToString();
+
+<CLASE_HEADERS> cHttpHeader = new <CLASE_HEADERS>();
+cHttpHeader.GetHeaderValues(this.Request, headerValues);
+
+<CLASE_REQUEST> cApiRequest = new <CLASE_REQUEST>();
+cApiRequest.databaseName = Parameters.DB<proyecto>;
+cApiRequest.databaseEnvironment = cHttpHeader.Environment;
+cApiRequest.apiName = cHttpHeader.WindowName + "." + this.ControllerContext.RouteData.Values["controller"].ToString() + "/" + actionName;
+cApiRequest.actionVerb = actionName.ToUpper();
+cApiRequest.userID = cHttpHeader.UserID;
+cApiRequest.token = cHttpHeader.Authorization;
+```
+
+## Estructura
+
+- Namespace por defecto: `<PROYECTO_API>.Controllers.<Dominio>.<Entidad>`.
+- **Excepción acordada (Sales)**: controllers bajo `Controllers/Sales/` pueden usar namespace raíz `<PROYECTO_API>.Controllers` y el patrón de `<CTR_REFERENCIA>` (ver `.cursor/rules/02_tech_api_patrones.mdc` en este repo <REPO_SQL>).
+- DTOs en `<PROYECTO_API>.Clases.<Dominio>`.
+- No crear subcarpetas por entidad dentro de DTOs.
+- Base de datos: `Parameters.DB<proyecto>`.
+
+## GET
+
+SQL base:
+
+```sql
+SELECT columnas FROM [schema].[vsVista] WHERE 1=1
+```
+
+Reglas:
+
+- Usar `IF` por parámetro para filtros dinámicos.
+- Incrementar siempre `cApiRequest.totalParameters++;`.
+- No agregar filtros innecesarios.
+- No retornar campos de auditoría por default.
+- Fechas siempre como `StartDate` + `EndDate`.
+- Documentar endpoint con XML `<remarks>`.
+
+Filtros:
+
+```sql
+AND Campo = valor
+AND Campo = 'valor'
+AND Campo LIKE '%valor%'
+```
+
+Boolean a SQL:
+
+```csharp
+int nIsActive = Convert.ToBoolean(jParameters.IsActive.ToString()) ? 1 : 0;
+```
+
+## POST
+
+- Usar DTO tipado obligatorio.
+- No usar `dynamic` en request body.
+- Validar campos antes de ejecutar lógica.
+- **Validaciones en SQL embebido**: errores de negocio con **`ErrorID`** + **`ErrorMessage`** + **`GOTO FinalError`** (patrón `<CTR_ERROR_SQL>`), no `THROW` para esos casos; documentar `ErrorID` en XML. Ver `02_tech_api_patrones.mdc` en esta carpeta `.cursor/rules/`.
+- Usuario siempre desde header: `cHttpHeader.UserID`, `cHttpHeader.UserName`.
+- Retornar ID creado o actualizado.
+
+Patrón:
+
+```sql
+IF EXISTS
+    UPDATE
+        ModifiedBy,
+        ModifiedUserID,
+        ModifiedDate = GETDATE()
+ELSE
+    INSERT
+        CreatedBy,
+        CreatedUserID,
+        CreatedDate = GETDATE()
+```
+
+## POST con SP
+
+- Serializar DTO a JSON:
+
+```csharp
+string jsonStr = JsonConvert.SerializeObject(cModel);
+```
+
+- Agregar `UserID` desde header.
+- Ejecutar SP con parámetros nombrados.
+- Validar `ErrorID` en la respuesta del SP.
+
+## POST Masivo
+
+- Usar `List<T>`, nunca arrays.
+- No usar `Replace(')` para limpiar JSON.
+- No usar `?? new List<>()` como fallback silencioso.
+- Enviar JSON limpio.
+
+## DELETE
+
+Single:
+
+- Recibir ID en ruta.
+- Validar `ID != 0`.
+- Si existe, hacer `DELETE` y retornar ID.
+
+Masivo:
+
+- Usar `List<T>`.
+- Serializar igual que POST masivo.
+- Validar respuesta del SP si aplica.
+
+Namespace separado si aplica:
+
+`<PROYECTO_API>.Controllers.<Dominio>.<Entidad>.Delete`
+
+## Patrón Crítico SP Response
+
+Nunca retornar `executeRequest()` directo cuando el SP devuelve `ErrorID`.
+
+```csharp
+clApiResponse Result = cApiRequest.executeRequest();
+
+if (Result.success)
+{
+    var data = JsonConvert.SerializeObject(Result.data);
+    var obj = JsonConvert.DeserializeObject<dynamic>(data);
+
+    for (int i = 0; i < obj.Count; i++)
+    {
+        if (obj[i].ErrorID > 0)
+        {
+            Result.success = false;
+            Result.message = obj[i].ErrorMessage;
+            break;
+        }
+    }
+}
+
+return Content(JsonConvert.SerializeObject(Result), "application/json");
+```
+
+## Reglas Críticas
+
+- Siempre validar headers.
+- Siempre validar `ErrorID`.
+- Strings hacia SQL: reemplazar `'` por `''`.
+- Boolean hacia SQL: `Convert.ToBoolean(valor) ? 1 : 0`.
+- No poner lógica de negocio pesada en controllers; extraer a servicios si corresponde.
+
+## DTOs
+
+- Obligatorios y tipados.
+- Nombres claros.
+- Un DTO por propósito.
+- Ubicación: `Clases/<Dominio>/`.
+
+## Organización
+
+```text
+Controllers/
+  Dominio/
+    Entidad/
+```
+
+Agrupar endpoints por entidad y mantener `GET`, `POST`, `DELETE` juntos.
+
+## Testing
+
+- No testear controllers directamente si el patrón del proyecto no lo soporta.
+- Extraer lógica pura cuando sea testeable.
+- Crear proyecto separado `net8.0` si se requieren pruebas unitarias.
+
+## Errores Comunes
+
+- Usar `dynamic` en POST.
+- No validar headers.
+- No validar `ErrorID`.
+- No usar DTOs.
+- Usar arrays en lugar de `List<T>`.

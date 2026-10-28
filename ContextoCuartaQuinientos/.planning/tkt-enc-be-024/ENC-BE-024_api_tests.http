@@ -1,0 +1,109 @@
+@baseUrl = http://localhost:5180
+@tokenAdmin = {{loginAdmin.response.body.token}}
+@tokenResidente = {{loginResidente.response.body.token}}
+
+# @name loginAdmin
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "admin@local",
+  "password": "{{$dotenv FASE1_SMOKE_PASSWORD}}"
+}
+
+###
+
+# @name loginResidente
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "residente@local",
+  "password": "{{$dotenv FASE1_SMOKE_PASSWORD}}"
+}
+
+###
+
+GET {{baseUrl}}/ENC/TiposPregunta
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+GET {{baseUrl}}/ENC/Encuestas
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+GET {{baseUrl}}/ENC/Encuestas/activas
+Authorization: Bearer {{tokenResidente}}
+
+###
+
+# @name crearEncuesta
+POST {{baseUrl}}/ENC/Encuestas
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "titulo": "Encuesta prueba ENC-BE-024",
+  "descripcion": "Smoke",
+  "fechaInicio": "2026-10-19T00:00:00Z",
+  "fechaFin": "2026-12-31T23:59:59Z",
+  "preguntas": [
+    {
+      "texto": "¿Aprueba el aviso?",
+      "tipoPregunta": "Opción múltiple",
+      "orden": 1,
+      "requerida": true,
+      "opciones": [
+        { "texto": "Sí", "valor": "1", "orden": 1 },
+        { "texto": "No", "valor": "0", "orden": 2 }
+      ]
+    }
+  ]
+}
+
+###
+
+PUT {{baseUrl}}/ENC/Encuestas/{{crearEncuesta.response.body.encuestaId}}/publicar
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+GET {{baseUrl}}/ENC/Encuestas/{{crearEncuesta.response.body.encuestaId}}
+Authorization: Bearer {{tokenResidente}}
+
+###
+
+POST {{baseUrl}}/ENC/Encuestas/{{crearEncuesta.response.body.encuestaId}}/respuestas
+Authorization: Bearer {{tokenResidente}}
+Content-Type: application/json
+
+{
+  "respuestas": [
+    {
+      "preguntaId": 1,
+      "opcionPreguntaId": 1
+    }
+  ]
+}
+
+###
+
+POST {{baseUrl}}/ENC/Encuestas/{{crearEncuesta.response.body.encuestaId}}/respuestas
+Authorization: Bearer {{tokenResidente}}
+Content-Type: application/json
+
+{
+  "respuestas": [
+    {
+      "preguntaId": 1,
+      "opcionPreguntaId": 1
+    }
+  ]
+}
+
+###
+
+GET {{baseUrl}}/ENC/Encuestas/{{crearEncuesta.response.body.encuestaId}}/resultados
+Authorization: Bearer {{tokenAdmin}}

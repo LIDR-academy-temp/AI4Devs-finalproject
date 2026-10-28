@@ -51,3 +51,10 @@ Nota: en la referencia solo existe el stub `WMS/Inventory/InventoryDateControlle
 - Dominio modelado **de cero**: no existe en la referencia (solo un stub sin tablas). Marcar todo `wms.*` como (delta).
 - Sin stored procedures: Dapper + servicios C# + (a crear) vistas `vs*`.
 - Nombres en español, `bEliminado` para soft delete, siguiendo la convención real del proyecto aunque el esquema sea nuevo.
+- SPA admin: `AdminAlmacenPage` (`/admin/almacen`) — tabs Bootstrap + split + `ConfirmDialog`; tablas sin `AdminFilterableTable` en v1 ([[FE-CRUD-003]], deuda CA-1).
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-10-26 | [[FE-CRUD-003]] | UI admin almacén migrada desde modales Tailwind (parcial vs DoD tabla filtrable) |

@@ -85,17 +85,23 @@ Para Refactor de objeto legacy (ej. SP grande vivo):
 
 ## Gate de calidad automatizado (hook `check-tests-green`)
 
-Un hook `PreToolUse (Write|Edit)` **bloquea** en Cursor y Claude Code (doble dialecto):
+Un hook `PreToolUse (Write|Edit)` **bloquea en Claude Code** (cableado en `.claude/settings.json`).
+En Cursor no hay `hooks.json` instalado: ahí el gate lo aplican esta regla y los comandos
+(`/test`, `/ejecutar` paso 8, `/revisar` bloqueos duros).
 
 - **Anti-Test-Theater:** un `*Pruebas*.sql` sin ≥1 caso NEGATIVO/de error (código
-  `5xxxx`, `'Error'`, `actionable=0`, `[ROJO]`) se **rechaza**. El humano define el *qué*.
+  `5xxxx`, `N'Error'`, `actionable=0`, `TC-ERR`, `N'ROJO'` — en código, no en comentarios) se
+  **rechaza**. El humano define el *qué*.
+- **Contratos de escritura:** un `*Pruebas*.sql` que ejecuta un `prcSet*` sin `TC-IDEM` se **rechaza**
+  (escape: `-- TC-IDEM N/A: <motivo>` si el `prcSet*` es solo fixture).
 - **Evidencia de ejecución:** un `*Pruebas*.sql` sin anotación
-  `-- [OK] TESTS [<entorno>] → <N> PASS` se **rechaza** (suite no ejecutado).
-- **Shift-left:** implementar un `*_business_sps.sql` sin su `*Pruebas*.sql` hermano
-  en la misma carpeta se **rechaza**. El test se piensa ANTES de programar.
+  `-- [OK] TESTS [<entorno>] → <N> PASS / <M> ROJO esperado` (o `[PENDIENTE]` sin MCP, que no
+  habilita `/ejecutar`) se **rechaza**.
+- **Shift-left:** un `CREATE/ALTER PROCEDURE` sin un `*Pruebas*.sql` hermano o, en el proyecto,
+  uno que mencione el SP (la fase TEST lo deja en la carpeta del requerimiento) se **rechaza**.
 
 Andamiaje base: `sdd-toolkit/templates/pruebas.sql`. Fase: `rules/pipeline-test.md`
-(fase PROBAR de `methodology.md`). Paso adversarial en SP de negocio: skill
+(fase TEST de `methodology.md`, comando `/test`). Paso adversarial en SP de negocio: skill
 `abogado-del-diablo` sobre los propios tests.
 
 ## Checklist rápido (antes de marcar LISTO)

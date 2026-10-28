@@ -62,7 +62,7 @@ No es obligatorio seguir todos los pasos. Adaptar al tipo de exploración:
 
 1. Entender el problema o pregunta.
 2. **Leer contexto cross-requerimiento**:
-   - Buscar `<RUTA_CONTEXTOS>\specs\<dominio>.md` → estado actual del sistema en dominios relevantes.
+   - Buscar `<RUTA_SPECS>\<dominio>.md` → estado actual del sistema en dominios relevantes.
    - Buscar `<RUTA_GRAPH>` → requerimientos previos en el mismo dominio, patrones usados, conexiones.
    - Esto evita re-investigar cosas ya documentadas.
 3. Identificar código/objetos relacionados.

@@ -88,7 +88,23 @@ vite build       # cero errores de bundling — obligatorio
 | 7 | Correr `tsc --noEmit` + `vite build` — cero errores | Build limpio | 5 |
 | 8 | Ejecutar tests Vitest + Playwright para el flujo cubierto | Tests en verde | 5 |
 
+## Contenido configurable (web — aterriza methodology.md regla 7)
+
+> Estándar completo: `core/contenido-configurable.md`. Guard `19_guard_contenido_configurable`.
+
+- Aunque el deploy web es más rápido que una release móvil, el mismo contenido suele servir a la app: se
+  consume del mismo catálogo del back, no se duplica en `locales/*.json`.
+- En i18n de la web solo el **marco de UI**; contenido de negocio, estatus, errores y periodos se pintan tal
+  cual llegan del API (respaldo i18n solo mientras el back no lo manda, con pendiente).
+- Sin umbrales ni límites fijos en TS; color e ícono por código semántico con respaldo neutro; nunca decidir
+  por el texto.
+- Interruptores de campaña por feature flag del back.
+
 ## Learnings (acumulado)
+
+| FE-CRUD-004 | 2026-10-27 | Desestructurar siempre `apiGet`/`apiPost`; tests de hook para evitar asignar el objeto respuesta al estado. |
+| FE-CRUD-004 | 2026-10-27 | Descargas binarias: `downloadAuthenticated` + JWT; no `localStorage` para token. |
+| FE-CRUD-004 | 2026-10-27 | Split shells: residente = kit admin + Tailwind sin Bootstrap; admin = Bootstrap scoped. |
 
 <!-- tools.compound_loop agrega aquí -->
 

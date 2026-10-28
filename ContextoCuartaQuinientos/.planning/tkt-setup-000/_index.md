@@ -1,6 +1,6 @@
 # SETUP-000 — Scaffolds API + Web + CI
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: transversal (habilitador §5.0)
 - Targets en scope: `backend:cuartaquinientos-api`, `frontend:cuartaquinientos-web`, `integrations:github-actions`
@@ -15,3 +15,5 @@
 ## Log
 
 - 2026-09-24 — carpeta creada con plantillas SDD del toolkit; `/definir` + `/diseñar` (Entrega 1). Estado: LISTO PARA EJECUTAR.
+- 2026-10-15 — `/ejecutar` SETUP-000: `Web/` creado, CI, ajustes GraphApi (`Result`, políticas JWT, tests). Rama `feature/entrega-2-AFS`.
+- 2026-10-16 — /completar: `delta.md`, build/test verificados; ARCHIVADO.

@@ -28,7 +28,8 @@ Debe existir la carpeta del requerimiento con:
 <RUTA_PLANNING>\tkt-<id>\
 ├── _index.md    ← con estado LISTO PARA EJECUTAR
 ├── spec.md      ← especificación
-└── design.md    ← diseño técnico
+├── design.md    ← diseño técnico
+└── <yyyymmdd>_<TKT>_PruebasUnitarias.sql  ← fase TEST (nace en ROJO; asertos congelados)
 ```
 
 Leer `_index.md` → `spec.md` (criterios) → `design.md` (orden de implementación).
@@ -38,6 +39,10 @@ Leer `_index.md` → `spec.md` (criterios) → `design.md` (orden de implementac
 ## Flujo obligatorio
 
 1. Leer `_index.md` → validar estado `LISTO PARA EJECUTAR`.
+1.5. **Frescura del diseño:** `python sdd-toolkit/tools/sello.py verificar --tkt-dir <carpeta> --fase diseno`.
+   `VIEJO` → STOP. Si solo cambió el script de pruebas → `/test` (re-sella) + reconfirmación del
+   usuario. Si cambió `spec.md` → `/diseñar` en modo re-diseño. `SIN SELLO` (TKT anterior a v0.27)
+   → avisar y pedir confirmación. Evidencia `[PENDIENTE]` en el suite → correrlo primero.
 2. Leer `spec.md` → criterios de aceptación y alcance.
 3. Leer `design.md` → orden de implementación y archivos.
 4. **Validar dependencias**: si `_index.md` tiene "Depende de" con requerimientos listados → verificar que cada uno esté en estado `ARCHIVADO` o `LISTO PARA PR`. Si alguno está pendiente → alertar y pedir confirmación.
@@ -64,15 +69,21 @@ Leer `_index.md` → `spec.md` (criterios) → `design.md` (orden de implementac
    Al completar cada paso: actualizar su columna `Estado` en la tabla de `design.md`:
    - `✓ Hecho` — verificación pasó tal como estaba planeado
    - `⚠ Ajustado` — el paso cambió respecto al design original (documentar en `impl.md`)
-8. **FASE PROBAR — paso DURO, no se salta (Unidad 7, shift-left).** El test va
-   ANTES o junto a la implementación, nunca después "si da tiempo":
-   - **SP de negocio** (`CREATE OR ALTER PROCEDURE` de lógica: comisiones, pedidos,
-     inventario, afiliación, cálculos): generar PRIMERO el `<yyyymmdd>_<TKT>_Pruebas*.sql`
-     desde `sdd-toolkit/templates/pruebas.sql` con **≥1 caso NEGATIVO/de error
-     obligatorio** y characterization si es legacy. El hook `check-tests-green`
-     **bloquea** implementar el SP si no existe su `*Pruebas*.sql` hermano.
-   - Correr el suite en `<MCP_TEST>` (TRAN+ROLLBACK) y **anotar la evidencia**
-     `-- [OK] TESTS [<entorno>] → <N> PASS`. Sin esa anotación el hook rechaza el script.
+8. **FASE TEST → VERDE — paso DURO, no se salta (Unidad 7, shift-left).** El suite
+   ya viene escrito desde el SDD (fase TEST, `/test`), en ROJO. Aquí se **consume**:
+   - Si el `*PruebasUnitarias.sql` no está en la carpeta (requerimiento previo a la
+     fase TEST) → correr primero [`/test`](test.md); no implementar sin él. El hook
+     `check-tests-green` **bloquea** implementar un SP de negocio sin su `*Pruebas*.sql` hermano.
+   - Implementar hasta que los casos ROJO pasen a VERDE **cambiando el código, nunca
+     el `Expected`**. Si un aserto está mal de verdad → corregir la matriz de
+     `design.md` + el script y registrarlo en `impl.md` como `⚠ Ajustado` con justificación.
+   - Re-correr el suite en `<MCP_TEST>` (TRAN+ROLLBACK) y **actualizar la evidencia**
+     `-- [OK] TESTS [<entorno>] → <N> PASS` (0 ROJO).
+   - (El sello VERDE va al final, paso 11.5, después de auditorías y correcciones.)
+   - **Hash para el sello:** obtener por MCP el hash de cada SP/vista/función tocado
+     (`SELECT CONVERT(varchar(64), HASHBYTES('SHA2_256', OBJECT_DEFINITION(OBJECT_ID('<schema.objeto>'))), 2)`) y registrar
+     `python sdd-toolkit/tools/sello.py registrar --tkt-dir <carpeta> --fase verde --obj <schema.objeto>=<HASH> ...`.
+     Si después tocas el SP, el VERDE deja de valer: re-correr el suite y re-sellar.
    - **Mutation en paths críticos** (lógica de negocio/financiera/gates): 3 mutantes
      manuales T-SQL (WHERE, operador, umbral) / Stryker.NET kill-rate ≥ 80 % en C#.
      Si un mutante sobrevive → falta un test; agregarlo antes de avanzar.
@@ -82,6 +93,9 @@ Leer `_index.md` → `spec.md` (criterios) → `design.md` (orden de implementac
 9. Ejecutar auditorías obligatorias.
 10. Ejecutar `corrector-revision` si aplica.
 11. Reauditar.
+11.5. **Sello VERDE** (después de auditorías y correcciones): si `corrector-revision` tocó algún
+    objeto → re-correr el suite (0 ROJO). Luego obtener el hash de cada objeto y registrar
+    `python sdd-toolkit/tools/sello.py registrar --tkt-dir <carpeta> --fase verde --obj <schema.objeto>=<HASH> ...`.
 12. Actualizar documentación/contexto si aplica.
 13. Crear `impl.md` en la carpeta del requerimiento.
 14. Actualizar `_index.md`: estado → `EN REVISIÓN`, marcar Impl como Creado, agregar log.
@@ -98,7 +112,7 @@ Para el flujo completo si ocurre cualquiera de estas condiciones:
 4. El alcance creció >30% respecto al design durante la implementación → detener, cambiar estado a `REQUIERE DECISIÓN`, usar `/escalar`.
 5. Tras 3 ciclos de corrección persisten hallazgos Crítico/Mayor → estado `REQUIERE DECISIÓN`, escalar.
 6. La tabla "Orden de implementación" de `design.md` suma estimado >400 líneas de cambio y no hay excepción documentada → usar `/escalar` para partir el requerimiento antes de abrir ramas. Un requerimiento = un work unit ≤ 400 líneas.
-7. **Se intenta implementar un SP de negocio sin su `*Pruebas*.sql` (con caso negativo) en la carpeta** → el hook `check-tests-green` bloquea el Write. No es opcional: generar primero la fase PROBAR (paso 8). Nunca escribir la evidencia `-- [OK] TESTS` sin haber corrido el suite.
+7. **Se intenta implementar un SP de negocio sin su `*Pruebas*.sql` (con caso negativo) en la carpeta** → el hook `check-tests-green` bloquea el Write. No es opcional: correr primero `/test` (paso 8). Nunca escribir la evidencia `-- [OK] TESTS` sin haber corrido el suite.
 
 ## Agentes permitidos
 
@@ -210,7 +224,7 @@ Máximo 3 ciclos de corrección automática.
 - [ ] `auditor-sql` devolvió **APROBADO** (si hubo SQL).
 - [ ] `auditor-codigo` devolvió **APROBADO** (si hay C#/JS/Python).
 - [ ] `auditor-flutter` devolvió **APROBADO** (si hubo Dart/Flutter).
-- [ ] Fase PROBAR: `*Pruebas*.sql` con ≥1 caso negativo + evidencia `-- [OK] TESTS [..] → N PASS`.
+- [ ] Fase TEST en VERDE: `*Pruebas*.sql` con ≥1 caso negativo + evidencia `-- [OK] TESTS [..] → N PASS` (0 ROJO), `Expected` sin cambios no justificados.
 - [ ] Mutation en paths críticos: mutantes probados (T-SQL 3 / Stryker.NET ≥80%) o N/A justificado.
 - [ ] Scripts de prueba creados: T-SQL + `.http` si aplica.
 - [ ] Ningún hallazgo Crítico/Mayor pendiente sin resolución documentada.

@@ -34,7 +34,17 @@
 4. **TKT-BE-001**, **002**, **015**, **016** + **FE-031**, **FE-038**.
 5. **FNZ-BE-037** (generar cuotas), **FNZ-BE-010**, **011**, **012** + **FE-032**, **FE-039**.
 6. **DASH-BE-014** + **FE-040**.
-7. Fase 2: **BOT-BE-004**, **TKT-BOT-003** (`Bot/`), **IA-BE-005** (`scaffolds/api` → `Assistant` + `referencia/bot-ia-configuracion.md`).
+7. **v2 (fuera de entrega final):** bot Telegram, IA/RAG y BI — ver nota de alcance en `readme.md` §0.
+
+## Hosting producción (MonsterASP / runasp.net)
+
+| Recurso | URL / destino |
+|---------|----------------|
+| API | `https://apicuartaquinientos.runasp.net` |
+| Web | `https://cuartaquinientosresidencial.runasp.net` |
+| SQL Server | `db24572.public.databaseasp.net` → BD `db24572` |
+
+Secretos: panel del proveedor o variables del sitio API (`ConnectionStrings__DefaultConnection`, `Jwt__*`, `Cors__AllowedOrigins`). Plantillas sin contraseñas: `scaffolds/api/appsettings.Production.example.json`, `scaffolds/web/.env.production.example`. No versionar `*.publishSettings` ni `appsettings.Production.json`.
 
 ## C500 Asiste — no es “un chat”
 

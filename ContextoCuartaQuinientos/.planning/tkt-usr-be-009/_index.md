@@ -1,6 +1,6 @@
 # USR-BE-009 — Gestión de usuarios/residentes (Admin)
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: [[usuarios]] (`sgr`)
 - Targets en scope: `database:CuartaQuinientos` (DML, sin DDL), `backend:cuartaquinientos-api`

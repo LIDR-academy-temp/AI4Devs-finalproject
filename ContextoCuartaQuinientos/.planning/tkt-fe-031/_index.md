@@ -2,7 +2,7 @@
 
 [← Fase 1](../FASE1_ROADMAP.md) | [spec](spec.md) | [design](design.md)
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: [[tickets]] (consumo web del dominio `tkt`)
 - Targets en scope: `frontend:cuartaquinientos-web` (consume `backend:cuartaquinientos-api`, sin cambios en backend)

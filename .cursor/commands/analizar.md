@@ -50,6 +50,8 @@ como un paso explícito separado en el tiempo de la escritura.
    aceptación, Reutilización detectada).
 3. Leer `design.md` completo (Escalera de decisión, secciones por target,
    Plan de pruebas, Decisiones técnicas, Autoverificación).
+3.5. Si existe `*PruebasUnitarias.sql`: comparar sus IDs y `Expected` con la matriz «Plan de
+   pruebas» de `design.md` (fila sin bloque, bloque sin fila o `Expected` distinto = INCONSISTENTE).
 4. Ejecutar las 3 verificaciones obligatorias (ver abajo).
 5. Si todo pasa → reportar `CONSISTENTE`, no tocar el estado del requerimiento
    (sigue `LISTO PARA EJECUTAR`), sugerir `/ejecutar`.

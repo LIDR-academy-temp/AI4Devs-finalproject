@@ -44,6 +44,11 @@ Leer `_index.md` → `spec.md` (criterios) → `design.md` (plan de pruebas) →
 ## Flujo obligatorio
 
 1. Leer `_index.md` → validar estado `EN REVISIÓN`.
+1.5. **Frescura del VERDE:** obtener por MCP el hash actual de cada objeto del sello
+   (`SELECT CONVERT(varchar(64), HASHBYTES('SHA2_256', OBJECT_DEFINITION(OBJECT_ID('<schema.objeto>'))), 2)`) y correr
+   `python sdd-toolkit/tools/sello.py verificar --tkt-dir <carpeta> --fase verde --obj <schema.objeto>=<HASH> ...`.
+   `VIEJO` → el código cambió después de las pruebas: re-correr el suite antes de revisar
+   (nunca aprobar sobre un VERDE viejo). `SIN SELLO` → tratar como VERDE no verificado.
 2. Leer `spec.md` → criterios de aceptación y alcance.
 3. Leer `design.md` → plan técnico y plan de pruebas.
 4. Leer `impl.md` → implementación realizada y ajustes.
@@ -58,7 +63,7 @@ Leer `_index.md` → `spec.md` (criterios) → `design.md` (plan de pruebas) →
    **No ejecutar tests ni auditorías sobre un `impl.md` incompleto.**
 5. Comparar implementación vs spec + design.
 6. **Ejecutar ciclo de pruebas completo:**
-   a. Invocar `tester-sql` → generar y ejecutar pruebas T-SQL (si hay SQL).
+   a. Invocar `tester-sql` (modo EJECUTAR) → re-correr el suite de la fase TEST (si hay SQL).
    b. Ejecutar C# xUnit si hay artefactos DDL (`dotnet test <REPO_SQL>.Tests`).
    c. Invocar `api-tester` → generar/verificar `.http` y ejecutar pruebas de API (si hay endpoints).
 7. Ejecutar auditorías:
@@ -70,7 +75,28 @@ Leer `_index.md` → `spec.md` (criterios) → `design.md` (plan de pruebas) →
 9. Si hay hallazgos corregibles → `corrector-revision`.
 10. Reauditar si hubo correcciones.
 11. Actualizar `impl.md` con verificación final.
-12. Actualizar `_index.md` con nuevo estado y log.
+11.5. **Reporte de APIs para Front — AUTOMÁTICO (no se pide).** Si el requerimiento
+    creó o modificó endpoints (sección `backend:<instancia>` en `design.md`, o
+    `Controllers/` / DTOs en "Archivos modificados" de `impl.md`) **y** el resultado
+    es `LISTO PARA PR`, generar en el mismo turno `TKT-<Numero>-APIS.md` en
+    `<RUTA_PLANNING>\tkt-<id>\` desde `sdd-toolkit/templates/apis.md`:
+    - **Solo** APIs creadas o modificadas — no vistas, SPs ni objetos internos.
+    - Redactado para un Front sin contexto previo del proyecto ni del ticket.
+    - Por endpoint: descripción, método (GET/POST/DELETE), header `Parameters` /
+      body de ejemplo y **respuesta JSON real**: obtenerla ejecutando el SP/endpoint
+      en `<MCP_TEST>` (o del `.http` ya corrido en el paso 6c) — nunca inventada.
+      Si se modificó un endpoint existente, documentar el JSON vigente completo.
+    - Variante A (CRUD, varios verbos) / Variante B (acción única). Catálogos → valores
+      base. Respuesta atípica (FOR JSON anidado, paginación, doble parseo) →
+      `⚠️ Nota de consumo`. Tabla resumen de endpoints al final.
+    - Si ya existe `TKT-<Numero>-APIS.md` (re-revisión) → actualizarlo, no duplicar.
+    - Resultado `REQUIERE CAMBIOS`/`RIESGOSO` → no generarlo todavía (el contrato aún
+      puede cambiar); anotar en Pendientes "APIS.md se genera al aprobar".
+    - Sin endpoints en scope → no generar; anotar "APIS.md: No aplica (sin endpoints)".
+11.6. **Sello de revisión** (solo si `LISTO PARA PR`). Si los pasos 9–10 corrigieron código →
+    re-correr el suite (0 ROJO / 0 FAIL) y re-sellar `verde` antes. Luego registrar
+    `python sdd-toolkit/tools/sello.py registrar --tkt-dir <carpeta> --fase revisar --obj <schema.objeto>=<HASH> ...`.
+12. Actualizar `_index.md` con nuevo estado y log (fila `APIs Front` en la tabla Graph si se generó).
 
 ---
 
@@ -83,7 +109,7 @@ Para el flujo completo si ocurre cualquiera de estas condiciones:
 3. `tester-sql` devuelve `Failed > 0` en un TC-INV → bloqueo duro, no aprobar sin decisión explícita del usuario.
 4. `auditor-sql` o `auditor-codigo` devuelven **RIESGOSO** → bloqueo duro, estado `RIESGOSO` en `_index.md`.
 5. Criterios Must `[M]` sin cobertura de test verificada → no emitir `LISTO PARA PR`.
-6. `*Pruebas*.sql` sin caso negativo, sin evidencia de ejecución, o paths críticos sin mutation → bloqueo duro, no emitir `LISTO PARA PR` (ver Pruebas — Bloqueos duros).
+6. `*Pruebas*.sql` sin caso negativo, sin evidencia de ejecución, paths críticos sin mutation, o con `Expected` distinto a la matriz de `design.md` sin `⚠ Ajustado` justificado en `impl.md` → bloqueo duro, no emitir `LISTO PARA PR` (ver Pruebas — Bloqueos duros).
 
 ## Done-state
 
@@ -99,6 +125,9 @@ Para el flujo completo si ocurre cualquiera de estas condiciones:
 - [ ] `auditor-codigo`: **APROBADO** (si hay C#/JS/Python).
 - [ ] `auditor-flutter`: **APROBADO** — si hubo Dart/Flutter en scope.
 - [ ] `auditor-seguridad`: **APROBADO** (si hubo endpoints o SQL con input externo).
+- [ ] `Expected` del script = matriz de `design.md` (o `⚠ Ajustado` justificado en `impl.md`).
+- [ ] Sello `verde` FRESCO al iniciar y sello `revisar` registrado (si `LISTO PARA PR`).
+- [ ] `TKT-<Numero>-APIS.md` generado/actualizado con JSON real (si hubo endpoints y quedó `LISTO PARA PR`) — automático, paso 11.5.
 
 ## Agentes
 
@@ -120,7 +149,10 @@ Para el flujo completo si ocurre cualquiera de estas condiciones:
 
 ### 1. Pruebas unitarias T-SQL (`tester-sql`)
 
-Invocar al agente `tester-sql` con el TKT-ID. El agente:
+Invocar al agente `tester-sql` en **modo EJECUTAR** con el TKT-ID: re-corre el script de la fase
+TEST sin regenerarlo ni tocar `Expected` (si falta → `/test`, no inventarlo aquí). IDs de caso:
+`TC-INV`, `TC-ERR`, `TC-IDEM`, `TC-CHAR`, `[ROJO]` (los `TC-01` del patrón de abajo son ilustrativos).
+El agente:
 - Lee `spec.md` y `design.md` → extrae casos del plan de pruebas.
 - Genera o verifica el script `<yyyymmdd>_<TKT>_PruebasUnitarias.sql`.
 - El script usa el patrón `#TestResults`:
@@ -324,6 +356,7 @@ auditor-sql
 - No aprobar si hay endpoints críticos sin prueba `.http`.
 - No aprobar si criterios de aceptación sin cobertura de test.
 - **No aprobar si el `*Pruebas*.sql` no tiene ≥1 caso NEGATIVO/de error** (anti-Test-Theater) ni evidencia `-- [OK] TESTS [..] → N PASS`.
+- **No aprobar si un `Expected` del script difiere de la matriz "Plan de pruebas" de `design.md`** sin `⚠ Ajustado` justificado en `impl.md` (asertos congelados desde la fase TEST: el código se adapta al test, no al revés).
 - **No aprobar si hay paths críticos (lógica de negocio/financiera/gates) sin mutation** (3 mutantes T-SQL / Stryker.NET kill-rate ≥ 80 %) o justificación registrada.
 
 ---
@@ -404,6 +437,12 @@ Agregar al Log de estados:
 
 Cambiar estado al resultado de la verificación.
 
+Si se generó el reporte de APIs (paso 11.5), agregar a la tabla Graph:
+
+```md
+| APIs Front | [TKT-<Numero>-APIS.md](TKT-<Numero>-APIS.md) | /revisar | Creado |
+```
+
 ---
 
 ## Helpers de despliegue SQL (<REPO_SQL>)
@@ -456,6 +495,10 @@ Responder con:
 - auditor-sql: APROBADO / No aplica
 - auditor-codigo: APROBADO
 - auditor-seguridad: APROBADO / No aplica
+
+### APIs para Front
+
+- `TKT-<Numero>-APIS.md`: Generado (N endpoints) / Pendiente (se genera al aprobar) / No aplica (sin endpoints)
 
 ### Pendientes
 

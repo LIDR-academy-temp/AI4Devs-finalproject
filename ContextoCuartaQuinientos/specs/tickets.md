@@ -57,9 +57,9 @@ Toda transición notifica al solicitante con el tipo `TICKET_ESTADO` vía `INoti
 - **HU-BOT-11 [M]** Levantar un ticket en segundos — pide solo categoría (botones) + descripción (foto opcional); infiere unidad y solicitante del perfil.
 
 ## Endpoints (/TKT/{Controller})
-- `POST /TKT/Tickets` (Residente, bot; `201` + `Location`) — TKT-BE-001; web usa la mutation GraphQL `crearTicket` (TKT-BE-002), mismo `ITicketService`.
+- `POST /TKT/Tickets` (Residente, bot, SPA; `201` + `Location`) — TKT-BE-001; web residente usa `apiPost` vía `useCrearTicket` ([[FE-CRUD-004]]), mismo `ITicketService`.
 - `GET /TKT/Tickets/mis?estadoTicketId=&categoriaTicketId=&pagina=&tamano=` (residente, por `UsuarioSolicitanteID = sub`) — TKT-BE-015.
-- `GET /TKT/Tickets?estadoTicketId=&prioridadTicketId=&pagina=&tamano=` (Admin, filtra por `condominioId` vía `CasaID`) · `PATCH /TKT/Tickets/{ticketID}/estado/{estadoId}` (máquina de estados) · `POST /TKT/TicketsUsuariosAsignados` — TKT-BE-016.
+- `GET /TKT/Tickets/admin?estadoTicketId=&prioridadTicketId=&pagina=&tamano=` (Admin) · `PATCH /TKT/Tickets/{ticketID}/estado/{estadoId}` (máquina de estados) · `POST /TKT/TicketsUsuariosAsignados` — TKT-BE-016.
 - **Fase 2:** `POST /TKT/Tickets/{ticketId}/Documentos` (multipart, ≤ 5 MB), `GET /TKT/Tickets/asignados` (Trabajador, BOT-BE-021).
 - `/TKT/ComentariosTicket`, `/TKT/DocumentosTicket`, `/TKT/DocumentosComentarioTicket`.
 - `/TKT/EstadosTickets`, `/TKT/PrioridadesTicket`, `/TKT/CategoriasTicket`, `/TKT/CanalesTicket` — catálogos.
@@ -78,7 +78,22 @@ Toda transición notifica al solicitante con el tipo `TICKET_ESTADO` vía `INoti
 - **(delta)** `tkt.ComentariosTicket.EsInterno BIT` — comentario visible solo a Administrador.
 - **(delta)** Calificación de resolución (HU-TKT-05) — modelado nuevo por definir.
 
+## Frontend admin (SPA) — vigente
+
+- Ruta `/admin/tickets` ([[FE-CRUD-001]]): listado con `AdminFilterableTable`; detalle en panel lateral (transiciones de estado vía `PATCH /TKT/Tickets/{id}/estado/{estadoId}`, asignación vía `POST /TKT/TicketsUsuariosAsignados`).
+
+## Frontend residente (SPA) — vigente
+
+- Rutas `/tickets`, `/tickets/nuevo` ([[FE-CRUD-004]]): listado `useMisTickets` + creación `POST /TKT/Tickets` (Zod en formulario); sin GraphQL en creación.
+
 ## Notas
 - Sin stored procedures: Dapper + vistas `vs*` + servicios C#; validación con FluentValidation; transacciones vía `IDbTransaction`.
 - Autorización por perfil vía JWT en toda ruta; ej. `TicketService.CrearTicketAsync()` valida el perfil antes de tocar la BD.
 - Soft delete con `bEliminado` (NO `IsActive`). No existe tabla de auditoría dedicada (TicketAudit): la auditoría es por columnas.
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-10-23 | [[FE-CRUD-001]] | Admin tickets: tabla filtrable + panel detalle (patrón CRUD admin) |
+| 2026-10-27 | [[FE-CRUD-004]] | Residente: crear ticket vía REST `useCrearTicket`; eliminado `tickets.gql.ts` |

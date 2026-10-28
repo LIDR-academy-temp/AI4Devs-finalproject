@@ -21,6 +21,16 @@ Complementa (no reemplaza) a `desarrollador-sql`, `desarrollador-api` y `desarro
 | `design.md` indica ciclo TDD explícito | `/ejecutar` automático |
 | On-demand por el usuario | Manual |
 
+## Con suite de la fase TEST (caso normal desde v0.24)
+
+Si la carpeta del requerimiento ya trae `*PruebasUnitarias.sql` (fase TEST), **el RED ya existe**:
+- No escribir tests nuevos ni cambiar `Expected` (congelados); los casos `[ROJO]` son el rojo.
+- Characterization / `TC-INV` deben estar en PASS desde el inicio (si no, STOP: se rompió algo).
+- Por cada caso ROJO: GREEN mínimo → re-correr el suite completo → REFACTOR en verde.
+- Triangulación: usar los datasets que ya trae la matriz; si falta uno, se agrega en `design.md`
+  + `/test` (no en el script directamente).
+El ciclo de abajo aplica solo cuando NO hay suite (TKT anterior a v0.24 u on-demand).
+
 ## Ciclo obligatorio (por cada CA o CHAR-x)
 
 ### Fase RED — test que FALLA

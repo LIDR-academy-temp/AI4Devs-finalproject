@@ -47,6 +47,11 @@ Leer todos los artefactos para generar el cierre completo.
 ## Flujo obligatorio
 
 1. Leer `_index.md` → validar estado `LISTO PARA PR`.
+1.5. **Frescura de la revisión:** hash actual de cada objeto por MCP y
+   `python sdd-toolkit/tools/sello.py verificar --tkt-dir <carpeta> --fase revisar --obj <schema.objeto>=<HASH> ...`.
+   `VIEJO` → algo cambió después de aprobar: estado → `EN REVISIÓN` (log) y correr `/revisar`.
+   `SIN SELLO` → si `Tipo: URGENTE` (hotfix, no pasa por `/revisar`) continuar y anotarlo en el log;
+   si no, avisar y pedir confirmación explícita.
 2. Leer `spec.md` → criterios de aceptación.
 3. Leer `design.md` → plan técnico.
 4. Leer `impl.md` → implementación y verificación.
@@ -96,8 +101,12 @@ Leer todos los artefactos para generar el cierre completo.
       estructura usada (estándar/extendida).
 15. **Invocar `meta-sdd` obligatoriamente** → analizar si este requerimiento reveló patrones nuevos que requieran actualizar rules/comandos/agentes. Documentar resultado en `_index.md` (aunque no haya patrones nuevos: registrar "Sin patrones nuevos detectados").
 16. Preparar requerimiento para PR o archivo.
-17. **`release.md`** (opcional, solo si el deploy es un evento operativo separado):
-    Usar la plantilla `sdd-toolkit/templates/release.md`. Lo crea el equipo al momento del deploy, no SDD. Documenta: versión, fecha, objetos deployados, rollback plan y resultado del smoke post-deploy.
+16.5. **Canario:** si `design.md` declaró «Sondas canario», copiarlas a la sección
+    «Canario» del `release.md` (base / T+1h / T+1d / umbral / veredicto) para quien despliegue.
+17. **`release.md` (esqueleto)** — si hay piezas desplegables: generar el esqueleto desde
+    `sdd-toolkit/templates/release.md` en este mismo turno (piezas en orden, rollback ejecutable,
+    sección Canario del paso 16.5). Fechas, ambientes, smoke y mediciones canario los llena quien
+    despliega (regla `pipeline-release.md`). Sin piezas desplegables → no generarlo.
 
 ---
 
@@ -268,7 +277,7 @@ ARCHIVADO
 
 ## Merge a specs/ (Source of Truth)
 
-Ruta: `<RUTA_CONTEXTOS>\specs\` (`RUTA_SPECS` apunta a `.planning`, carpetas por ticket)
+Ruta: `<RUTA_SPECS>\`
 
 Para cada dominio tocado en `delta.md`:
 

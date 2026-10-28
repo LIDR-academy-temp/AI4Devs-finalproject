@@ -1,0 +1,30 @@
+name: Local AI
+version: 1.0.0
+schema: v1
+
+models:
+  - name: Qwen3 8B (Chat y Edición)
+    provider: ollama
+    model: qwen3:8b
+    roles:
+      - chat
+      - edit
+      - apply
+
+  - name: StarCoder2 3B Optimized (Autocompletado Rápido)
+    provider: ollama
+    model: novaforgeai/starcoder2:3b-optimized
+    roles:
+      - autocomplete
+
+  - name: Nomic Embed
+    provider: ollama
+    model: nomic-embed-text:latest
+    roles:
+      - embed
+
+tabAutocompleteOptions:
+  debounceDelay: 250
+  multilineCompletions: always
+
+allowAnonymousTelemetry: false

@@ -1,6 +1,6 @@
 # FE-030 — Frontend: login y sesión JWT
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: [[usuarios]] (USR / SGR · frontend)
 - Targets en scope: `frontend:cuartaquinientos-web`

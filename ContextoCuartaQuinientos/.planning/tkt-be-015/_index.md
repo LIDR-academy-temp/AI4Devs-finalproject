@@ -2,7 +2,7 @@
 
 [← Fase 1](../FASE1_ROADMAP.md) | [spec](spec.md) | [design](design.md)
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: [[tickets]] (esquema `tkt`)
 - Targets en scope: `database:CuartaQuinientos` (solo lectura), `backend:cuartaquinientos-api`

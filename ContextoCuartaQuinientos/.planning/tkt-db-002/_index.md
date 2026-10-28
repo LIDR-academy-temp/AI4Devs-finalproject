@@ -1,6 +1,6 @@
 # DB-002 — Catálogos y administrador inicial
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: [[base-datos]] (datos de referencia)
 - Targets en scope: `database:CuartaQuinientos`

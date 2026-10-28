@@ -1,6 +1,6 @@
 # DB-001 — Alinear esquema físico al modelo (ADR-008)
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: [[base-datos]] (transversal · ADR-008)
 - Targets en scope: `database:CuartaQuinientos`

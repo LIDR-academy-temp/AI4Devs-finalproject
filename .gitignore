@@ -8,8 +8,12 @@ Docs/
 .env
 *.env.local
 .env.*.local
+**/fase1-smoke.env
 appsettings.Development.json
+appsettings.Production.json
 appsettings.*.local.json
+*.publishSettings
+*WebDeploy*.publishSettings
 .claude/settings.json
 .claude/settings.local.json
 
@@ -19,6 +23,9 @@ obj/
 .vs/
 *.user
 TestResults/
+
+# --- Agent skills (instalar con npx skills@latest add …) ---
+.agents/
 
 # --- Node / Vite ---
 node_modules/

@@ -32,6 +32,9 @@ Antes de marcar una tarea como terminada, validar TODOS:
 ### 3. Pruebas
 
 - [ ] SQL: SELECT previo de validación + smoke ejecutado
+- [ ] SQL: `*PruebasUnitarias.sql` de la fase TEST en VERDE (`-- [OK] TESTS [..] -> N PASS`, 0 ROJO), con
+      ≥1 `TC-ERR`, `TC-IDEM` si hay `prcSet*`, y `Expected` iguales a la matriz de `design.md`
+- [ ] Sellos `verde`/`revisar` FRESCOS (`sdd-toolkit/tools/sello.py verificar`)
 - [ ] API: caso happy path + caso error + auth validada
 - [ ] API: **todo endpoint nuevo con body ejecutado al menos 1 vez contra el API levantado** — `dotnet build` + `.http` bien escrito NO sustituyen esto (el model binding falla en runtime, no en compilación); si el smoke se hizo llamando el SP por MCP, el endpoint sigue sin verificar
 - [ ] Frontend React: `tsc --noEmit` + `vite build` pasan

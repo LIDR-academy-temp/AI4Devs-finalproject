@@ -69,6 +69,21 @@ flutter test      # todos los tests pasan — obligatorio
 - `lib/models/`: verificar `fromJson()` antes de redefinir mapeo
 - `Docs/Context/` de `nice_app`: consultar para contexto funcional del dominio
 
+## Contenido configurable (app — aterriza methodology.md regla 7)
+
+> Estándar completo: `core/contenido-configurable.md`. Guard `19_guard_contenido_configurable`.
+
+- Publicar en iOS tarda hasta 5 días: en ARB solo el **marco de UI** (títulos, botones genéricos,
+  accesibilidad, respaldos genéricos de error).
+- Contenido de negocio (programa, campaña, rangos, estatus, mensajes, errores, periodos, país, etiqueta de ID)
+  se pinta **tal cual llega del API**. Si el back aún no lo manda: llave ARB solo como respaldo + pendiente del back.
+- Sin umbrales, límites, cupos ni ventanas fijos en Dart: llegan del API como dato o como bandera (`HasX`, `CanX`).
+- Color e ícono por código semántico (`ColorTone`, `IconCode`) con respaldo neutro para lo desconocido; nunca
+  decidir por el texto (`contains(...)`).
+- Interruptores de campaña por feature flag del back, no constantes compiladas.
+- No cachear textos de negocio más allá de la sesión (o invalidar al recargar) para que un cambio en el back
+  se vea sin release.
+
 ## Learnings (acumulado)
 
 <!-- tools.compound_loop agrega aquí -->

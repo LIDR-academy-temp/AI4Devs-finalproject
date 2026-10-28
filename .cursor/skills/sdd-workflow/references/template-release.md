@@ -24,6 +24,18 @@
 - [ ] Rollback ensayado en TEST (TC-RB del plan de pruebas pasó).
 - [ ] Sin errores en las primeras <N horas/días> (logs / monitoreo).
 
+## Canario (sondas de design.md)
+
+<!-- Quien despliega corre cada sonda por MCP de PROD (solo lectura).
+     Veredicto por sonda: SANO (dentro del umbral) · DEGRADADO (fuera del umbral en
+     2 mediciones consecutivas — una sola puede ser ruido) · ROLLBACK PENDIENTE
+     (DEGRADADO en sonda de dinero/inventario → ejecutar «Rollback ejecutable»).
+     Nunca inferir éxito porque el deploy terminó: el veredicto sale de las sondas.
+     «No aplica» si design.md no declaró sondas. -->
+| Sonda | Base (antes del deploy) | T+1h | T+1d | Umbral | Veredicto |
+|---|---|---|---|---|---|
+| <sonda> | | | | | SANO / DEGRADADO / ROLLBACK PENDIENTE |
+
 ## Rollback ejecutable
 
 <!-- Copiado de design.md y ajustado a lo realmente implementado.

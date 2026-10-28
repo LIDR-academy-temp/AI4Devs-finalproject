@@ -96,6 +96,21 @@ Pro_RESPALDO. El `Environment` del header sigue la convención 666=TEST / 1=PROD
 | 6 | Crear/actualizar archivo `.http` de prueba | Archivo `.http` con todos los headers | 4 |
 | 7 | Ejecutar prueba (api-tester o `.http`) | Respuesta 200 con `success: true` | 5–6 |
 
+## Contenido configurable (contrato API — aterriza methodology.md regla 7)
+
+> Estándar completo: `core/contenido-configurable.md`. Guard `19_guard_contenido_configurable`.
+
+- Toda escritura responde `ErrorCode` (UPPER_SNAKE, uno por significado) + `ErrorMessage` + `ErrorMessageEN`
+  desde catálogo; error inesperado → `UNEXPECTED_ERROR` sin detalle técnico.
+- Textos como par `X` / `XEN`, con el **mismo nombre de campo** para lo mismo en todos los endpoints; el
+  respaldo EN → ES lo hace el back, la app no cruza idiomas.
+- Lectura: la llave siempre viene; `null` = no se pinta; `0` se pinta; no se usa `""`. Escritura: una sola
+  regla para todo el API (p.ej. `null` conserva, `""` borra), documentada una vez.
+- Estatus con código + texto + `ColorTone` (e `IconCode` si aplica) desde su catálogo; nunca colores hex.
+- Fechas ISO 8601 uniformes en todos los endpoints.
+- Cada catálogo con `GET` + `POST` que escribe ES **y** EN; flags y versión mínima de app por plataforma en
+  el endpoint de configuración.
+
 ## Learnings (acumulado)
 
 > Append automático en Cierre ARCHIVADO (CLAUDE.md — Compound Loop).

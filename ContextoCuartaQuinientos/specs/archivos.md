@@ -36,6 +36,14 @@ Base `/ARC` (CRUD estándar; JWT + validación de perfil):
 
 Controllers backend reales: `ARC/Archivos`, `ARC/TiposArchivo`, `ARC/LogVisualizacionArchivos`.
 
+## Frontend admin (SPA) — vigente
+
+- Ruta `/admin/archivos` ([[FE-CRUD-002]]): `AdminListToolbar` + listado + panel de subida (`archivosAdminSchemas`, `getAccessToken`); error HTTP **413** con mensaje amigable (`mapArchivoUploadHttpError`).
+
+## Frontend residente (SPA) — vigente
+
+- Ruta `/archivos` ([[FE-CRUD-004]]): listado + descarga vía `downloadAuthenticated` (JWT, sin `localStorage`); errores con `problem.detail` en `AlertBanner`.
+
 ## Reutilización / objetos existentes (escalera)
 1. **Reutilizar**: tablas `arc.*` y vista `arc.vsArchivos` ya existen.
 2. Acceso a datos: Dapper + `arc.vsArchivos`; sin stored procedures.
@@ -45,6 +53,13 @@ Controllers backend reales: `ARC/Archivos`, `ARC/TiposArchivo`, `ARC/LogVisualiz
 ## Deltas del proyecto (nuevo)
 - (delta) Subida de evidencia de trabajador desde el bot «C500 Asiste» (foto de resolución de ticket) que aterriza en `arc.Archivos` y se liga vía `tkt.DocumentosTicket`.
 - (delta) Los reportes BI/RPT exportados (PDF/Excel) pueden opcionalmente archivarse en `arc.Archivos` `(asumido)`.
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-10-26 | [[FE-CRUD-002]] | Admin archivos: patrón CRUD admin + mapeo error 413 en upload |
+| 2026-10-27 | [[FE-CRUD-004]] | Residente: descarga autenticada `downloadAuthenticated` |
 
 ## Notas
 - Sin stored procedures: Dapper + vista `arc.vsArchivos` + servicios C#.

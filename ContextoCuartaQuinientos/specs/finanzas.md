@@ -39,6 +39,10 @@ Dominio financiero del fraccionamiento (esquema `fnz`). Cubre las cuotas del res
 - **HU-BOT-03 [M]** Consultar estado de cuenta desde Telegram — `/cuotas` responde últimas cuotas (período, monto, estado) y destaca el total adeudado.
 - **HU-BOT-07 [S]** (relacionada) Sugerencia proactiva de cobro — el bot avisa de cuotas vencidas con botón de acción (registro en `bot.Sugerencias`, ver dominio Bot).
 
+## UI web (admin / residente)
+- `/finanzas/cuenta` (residente, FE-032) — estado de cuenta propio.
+- `/admin/finanzas` (admin, FE-039) — búsqueda `usuarioId`, registrar pago, morosos, generar cuotas del período.
+
 ## Endpoints (/FNZ/{Controller})
 - `GET /FNZ/Cuotas/mis` (residente, `sub`) y `GET /FNZ/Cuotas?usuarioId={id}` (Admin) → `{ cuotas: [...], totalPendiente, totalVencido }` con `esVencida` — FNZ-BE-010.
 - `PATCH /FNZ/Cuotas/{cuotaId}/pago` (Admin, `SoloAdministrador`; `404`/`409`/`422`) — FNZ-BE-011.
@@ -60,7 +64,17 @@ Dominio financiero del fraccionamiento (esquema `fnz`). Cubre las cuotas del res
 - **(delta)** `fnz.Cuotas.CuentaID` + `MontoPagado` (DB-001).
 - Sin pasarela de pagos (Non-goal FNZ Fase 1, readme §5); el pago lo registra el Admin.
 
+## Frontend admin (SPA) — vigente
+
+- Ruta `/admin/finanzas` ([[FE-CRUD-001]]): shell `cq-admin`; tab **Morosos** con `AdminFilterableTable`; tab **Cuotas** aún con `CuotasTable` legacy; pagos en `RegistrarPagoModal`.
+
 ## Notas
 - Sin stored procedures: Dapper + vistas `vs*` + servicios C#; validación con FluentValidation; transacciones vía `IDbTransaction`.
 - Nombres reales del esquema español (`fnz`); soft delete con `bEliminado` (NO `IsActive`).
 - No existe tabla de auditoría dedicada; la auditoría es por columnas (Creado/Modificado/Usuario…/Fecha…).
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-10-23 | [[FE-CRUD-001]] | Finanzas admin: morosos con tabla filtrable; tabs Bootstrap |

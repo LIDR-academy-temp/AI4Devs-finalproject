@@ -41,11 +41,13 @@ Cada tarea pasa por especificación antes de tocar código.
 ```
 /iniciar         → Bootstrap de contexto inicial (una vez, post-instalación)
 /explorar        → Investigar código/arquitectura (opcional)
+/mockup-a-contexto → Mockup de UI → docs + mockup anotado + PNG (antes de /definir si hay UI)
 /definir         → Qué construir + sizing automático + criterios de éxito
 /diseñar         → Cómo construirlo (plan técnico + pruebas: matriz con caso negativo + mutation)
 /analizar        → Verificación cruzada spec↔design antes de implementar (opcional, recomendado en requerimientos M/L)
-/ejecutar        → FASE PROBAR (shift-left, paso DURO) → código → auditoría. El SP de negocio
-                   exige su *Pruebas*.sql con caso negativo ANTES de implementar (hook bloquea)
+/test            → (automático al cerrar /diseñar) script de pruebas desde la matriz, nace en ROJO;
+                   manual si cambias la matriz. Asertos congelados.
+/ejecutar        → implementa hasta llevar el suite a VERDE sin tocar asertos → auditoría → sello
 /revisar         → Tests + mutation en críticos + auditorías + QA + seguridad (bloqueos duros)
 /completar       → Cerrar: delta + merge a specs + _graph + métricas + descripción PR
 /avance          → Ver estado (uno o todos los requerimientos)
@@ -57,7 +59,7 @@ Cada tarea pasa por especificación antes de tocar código.
 /tutorial        → Este tutorial
 ```
 
-Flujo normal: `/definir → /diseñar → /ejecutar → /revisar → /completar`
+Flujo normal: `/definir → /diseñar (+ /test automático) → /ejecutar → /revisar → /completar`
 
 ### 3. Qué se genera
 
@@ -67,7 +69,8 @@ Cada requerimiento crea una carpeta con archivos separados:
 .planning/tkt-<id o Descripcion>/
 ├── _index.md    ← estado y links
 ├── spec.md      ← qué (user story, alcance)
-├── design.md    ← cómo (plan técnico)
+├── design.md    ← cómo (plan técnico + matriz de pruebas)
+├── <fecha>_<TKT>_PruebasUnitarias.sql ← fase TEST (nace en ROJO)
 ├── impl.md      ← qué se hizo
 └── delta.md     ← qué cambió en el sistema
 ```
@@ -80,6 +83,7 @@ Naming del requerimiento (título/branch/graph): `TKT-14818` (con número) o
 ```
 Tengo un requerimiento claro      → /definir
 Tengo una idea vaga         → /explorar
+Me llegó un mockup          → /mockup-a-contexto
 Quiero ver dónde voy        → /avance
 Se cayó producción          → /urgente
 ```
@@ -102,7 +106,7 @@ La auditoría, los agentes especializados y el knowledge graph funcionan solos. 
 ```md
 ### Tutorial SDD completado
 
-Comandos: `/iniciar` `/explorar` `/definir` `/diseñar` `/analizar` `/ejecutar` `/revisar` `/completar` `/avance` `/retrospectiva` `/escalar` `/urgente` `/sincronizar` `/normalizar-sql` `/tutorial`
+Comandos: `/iniciar` `/explorar` `/mockup-a-contexto` `/definir` `/diseñar` `/test` `/analizar` `/ejecutar` `/revisar` `/completar` `/avance` `/retrospectiva` `/escalar` `/urgente` `/sincronizar` `/normalizar-sql` `/tutorial`
 
 ¿Tienes un requerimiento o idea para empezar?
 ```

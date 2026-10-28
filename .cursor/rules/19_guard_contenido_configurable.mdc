@@ -1,0 +1,60 @@
+---
+description: Contenido configurable — textos de negocio, estatus, errores y umbrales salen de catálogos y parámetros del back, no de la app ni de literales en SPs
+alwaysApply: false
+globs: "**/*.{sql,cs,dart,ts,tsx,js,jsx,arb,resx,resw,xaml,cshtml},**/spec.md,**/design.md,!**/*.g.dart"
+---
+
+# Contenido configurable
+
+Estándar completo: `sdd-toolkit/core/contenido-configurable.md` (methodology.md regla 7).
+Publicar la app en iOS tarda hasta 5 días: **un cambio de texto, estatus, mensaje o umbral no debe
+requerir una release ni un ALTER de SP.** Aplica a todo requerimiento con UI o mensajes al usuario,
+con o sin mockup.
+
+## Clasificar antes de escribir
+
+| Clase | Dónde vive |
+|---|---|
+| Marco de UI (títulos de pantalla, botones genéricos, accesibilidad) | ARB / i18n de la app |
+| Contenido de negocio (programa, campaña, rangos, estatus, recompensas, hints, avisos, periodos, país, etiqueta de ID) | Catálogo de textos del back, con alcance programa → país → global |
+| Errores y validaciones | Catálogo de errores: código + texto ES/EN |
+| Reglas y números (días, máximos, cupos, metas, umbrales) | Parámetro por programa / país; el texto usa placeholder que resuelve el back |
+| Color / ícono por estado | Código semántico (`ColorTone`, `IconCode`) desde el catálogo; paleta cerrada en la app |
+| Mostrar / ocultar bloques de campaña | Feature flag del back |
+
+Si negocio lo ha pedido cambiar alguna vez, o es de campaña: **back**.
+
+## Prohibido
+
+- Literal de negocio o de error dentro de un SP (`CASE … THEN N'Texto'`, `SET @msg = N'…'`); va al catálogo y se resuelve con la función de textos.
+- Escribir en un texto un número que ya existe como parámetro («dos veces», «15 días»): va como `{Placeholder}`.
+- Umbral, límite o ventana fijo en el código (`@iGateRequired = 2`, `if (level < 2)`, `CASE CountryID WHEN 2 THEN 400`) cuando negocio puede cambiarlo: va a parámetro.
+- Agrupar o decidir por el **texto** de un catálogo (`[Rank] = N'Novato…'`, `contains('lider')`): se decide por ID, código o bandera.
+- Nombres de país, marca o etiqueta de ID escritos en el SP o la app (`'México'`, `'NB'`, `'DIN'`) sin catálogo.
+- Texto de negocio nuevo **solo** en el ARB. Si el back aún no lo manda: llave ARB como respaldo + pendiente del back.
+- Un mismo código numérico de error para varias causas; escrituras sin `ErrorCode` o sin `ErrorMessageEN`; texto técnico al usuario.
+- `FORMAT(fecha, 'MMMM', 'es')` para etiquetas visibles: el nombre del mes/periodo sale del catálogo.
+- Catálogo nuevo sin `POST` que escriba **ES y EN**, sin `IsActive` o sin auditoría.
+
+## Obligatorio en el contrato
+
+- Mismo nombre de campo para lo mismo en todos los endpoints; par `X` / `XEN`; el respaldo EN → ES lo hace el back.
+- Lectura: la llave siempre viene; `null` = no se pinta; `0` se pinta; no `""`. Escritura: una sola regla para todo el API.
+- Códigos de estatus, motivos y errores en UPPER_SNAKE inglés; IDs numéricos solo para relacionar.
+- Fechas ISO 8601 (`yyyy-MM-dd`, `yyyy-MM-ddTHH:mm:ss`).
+- Programa nuevo: se clona del anterior del mismo país (textos, reglas, parámetros) y pasa la revisión de completitud antes de activarse.
+- Scripts de carga idempotentes con guardas; nunca re-ejecutar un script viejo que revierte textos.
+
+## Checklist (design.md y auditoría)
+
+- [ ] Cada texto, estatus, color y número visible del requerimiento está clasificado (sección «Contenido configurable» de design.md).
+- [ ] Ningún contenido de negocio ni error queda como literal en SP ni solo en el ARB.
+- [ ] Ningún número de regla aparece escrito en un texto.
+- [ ] Los catálogos nuevos tienen alcance, ES/EN, `IsActive`, auditoría y escritura de ambos idiomas.
+- [ ] El contrato respeta nombres, nulos, códigos y fechas uniformes.
+- [ ] La app pinta lo que manda el back tal cual y tiene respaldo neutro para códigos o tonos desconocidos.
+
+Hallazgo de auditoría: `CONTENIDO-HARDCODE` (literal de negocio/error o umbral fijo), `CONTENIDO-TEXTO-NUMERO`
+(número de regla escrito en un texto), `CONTENIDO-SOLO-ARB` (contenido de negocio solo en la app),
+`CONTENIDO-CONTRATO` (nulos, códigos, nombres o fechas fuera del estándar). Severidad media por defecto;
+alta si obliga a release o a ALTER de SP para un cambio de texto previsible.

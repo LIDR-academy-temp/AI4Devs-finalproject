@@ -13,7 +13,10 @@
         ├── _index.md      # hub del requerimiento
         ├── spec.md
         ├── design.md
+        ├── <yyyymmdd>_<TKT>_PruebasUnitarias.sql   # fase TEST (+ <TKT>_api_tests.http)
         ├── impl.md        # lo produce el implementador
+        ├── TKT-<Numero>-APIS.md   # /revisar, si hubo endpoints
+        ├── _sellos.jsonl          # sellos de frescura (sello.py)
         ├── delta.md
         └── release.md     # bitácora de deploy
 ```
@@ -55,7 +58,7 @@ Fuente única del hub del requerimiento — las reglas del implementador la refe
 - Dominio: <dominio>
 - Targets en scope: <lista>
 - size: XS | S | M | L | XL
-- Links: spec.md · design.md · impl.md · delta.md · release.md
+- Links: spec.md · design.md · *PruebasUnitarias.sql · impl.md · TKT-<Numero>-APIS.md · delta.md · release.md
 ## Log
 - <fecha> — <evento> (registrar aquí los recortes de Should vía escalación al usuario)
 ```

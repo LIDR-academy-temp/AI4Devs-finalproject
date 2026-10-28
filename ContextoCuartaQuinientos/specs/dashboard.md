@@ -37,6 +37,9 @@ Base `/Dashboard`:
 
 Controller backend real: `Dashboard/Resumen` (`ResumenController`).
 
+## UI web
+- `/` (FE-040): tarjetas según `tipo` (`ADMIN` | `RESIDENTE`); aviso vencida enlaza a `/finanzas/cuenta`.
+
 ## Reutilización / objetos existentes (escalera)
 1. **Reutilizar al 100%**: no crea tablas; compone las vistas `vs*` existentes.
 2. Comparte la definición de morosidad con RPT/BI (no duplicar la regla).

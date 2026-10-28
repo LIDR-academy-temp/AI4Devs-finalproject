@@ -27,11 +27,13 @@ CuartaQuinientos es un sistema web de gestión condominial para el fraccionamien
 
 > **Nota de alcance (Entrega 1).** Documentación del **diseño** de la plataforma, antes de escribir código. Lo pendiente de definir se marca `(asumido)`. Telegram, IA, BI y almacén forman parte del diseño objetivo.
 
+> **Alcance entrega final (implementación).** Se implementan todos los dominios documentados en este repositorio **excepto** el bot de Telegram, el asistente con IA (RAG) y reportes/BI avanzados, reservados para **v2**. La API expone **REST y GraphQL** según §4.
+
 
 
 ### **0.4. URL del proyecto:**
 
-> **N/A — Entrega 1** (solo documentación). Aún no hay sitio de publicación: estamos evaluando el hosting donde montaremos la plataforma cuando esté terminada (**Entrega Final**). La arquitectura de despliegue propuesta está en §2.4.
+> **Entrega Final — URLs de hosting (MonsterASP / runasp.net):** API `https://apicuartaquinientos.runasp.net`, portal web `https://cuartaquinientosresidencial.runasp.net`. SQL Server gestionado en `db24572.public.databaseasp.net` (detalle §2.4). Secretos y cadenas de conexión solo en el panel del proveedor o variables de entorno, nunca en el repositorio.
 
 
 
@@ -606,42 +608,35 @@ ContextoCuartaQuinientos/            # Contexto SDD: specs por dominio, .plannin
 
 ### **2.4. Infraestructura y despliegue**
 
-> **Hosting por confirmar.** Railway y Vercel son la **propuesta** evaluada; el sitio definitivo se elegirá antes de la Entrega Final (criterios: soporte de SQL Server, costo y facilidad de despliegue).
+> **Hosting confirmado (Entrega Final).** [MonsterASP](https://www.monsterasp.net/) / **runasp.net**: API ASP.NET Core en un sitio, SPA React estática en otro, **SQL Server** en `*.databaseasp.net`. El bot de Telegram (**v2**) no se despliega en esta entrega. Perfiles Web Deploy locales (`*.publishSettings`) y contraseñas viven fuera del repositorio (ver `.gitignore`).
 
 ```mermaid
 graph LR
-    DEV["💻 Local"] -- git push --> GH["GitHub"]
-    GH -- "GitHub Actions" --> RAIL["🚂 Railway<br/>Backend .NET 9 + SQL Server"]
-    GH -- "GitHub Actions" --> VERC["▲ Vercel<br/>Frontend React (CDN)"]
-    GH -- "GitHub Actions" --> BOT_HOST["🤖 Railway / Fly.io<br/>Bot Telegram (webhook)"]
-    VERC -- "HTTPS GraphQL/REST" --> RAIL
-    BOT_HOST -- "HTTPS REST" --> RAIL
-    RAIL -- "sendMessage (HTTPS)" --> TGAPI["Telegram Bot API"]
-    TGAPI --> BOT_HOST
+    DEV["💻 Local"] -- "Web Deploy / build" --> API["🌐 apicuartaquinientos.runasp.net<br/>.NET 9 API"]
+    DEV -- "dist/ + Web Deploy" --> WEB["🌐 cuartaquinientosresidencial.runasp.net<br/>React SPA"]
+    API -- "TLS, Dapper" --> SQL["🗄️ db24572.public.databaseasp.net<br/>SQL Server"]
+    WEB -- "HTTPS REST / GraphQL" --> API
+    GH["GitHub"] -. "CI opcional: build + test" .-> DEV
 ```
 
+**Despliegue manual (fase inicial):** publicar la API con MSDeploy desde Visual Studio o `dotnet publish` + perfil del sitio `apicuartaquinientos`. Publicar la web con `npm run build` y subir el contenido de `dist/` al sitio `cuartaquinientosresidencial`. Aplicar scripts `SQL/DB-*.sql` en orden contra la BD del hosting (SSMS o administrador SQL del proveedor) **antes** de exponer endpoints que dependan del esquema.
 
+**Pipeline CI/CD (objetivo):** en cada Pull Request → `dotnet build` + `dotnet test`, `npm ci && npm test && npm run build`; el merge no sustituye la configuración de secretos en el panel. El despliegue a runasp puede automatizarse después con GitHub Actions + Web Deploy si se desea.
 
-**Railway** aloja el backend .NET 9 y SQL Server en contenedores. El bot puede desplegarse como segundo servicio del mismo proyecto, en modo webhook. **Vercel** sirve el frontend React con preview deployment por Pull Request. El **notificador saliente** vive dentro del backend (o como worker del mismo servicio) y habla con la Telegram Bot API por HTTPS.
-
-**Pipeline CI/CD (GitHub Actions):** en cada Pull Request → `dotnet build` + `dotnet test`, `npm ci && npm run lint && npm test && npm run build`, `pytest` del bot; un fallo bloquea el merge. En `main` → despliegue automático (Railway para API y bot, Vercel para la SPA). La BD se actualiza ejecutando los scripts `SQL/DB-*.sql` idempotentes como paso previo al despliegue de la API.
-
-**Configuración y secretos por entorno** (variables de entorno de cada plataforma; nunca en el repositorio):
+**Configuración y secretos por entorno** (panel MonsterASP / variables de entorno del sitio API; plantillas sin secretos en `scaffolds/api/appsettings.Production.example.json` y `scaffolds/web/.env.production.example`):
 
 
 | Variable                                                                                        | Servicio | Uso                                          |
 | ----------------------------------------------------------------------------------------------- | -------- | -------------------------------------------- |
-| `ConnectionStrings__DefaultConnection`                                                          | API      | Conexión a SQL Server                        |
+| `ConnectionStrings__DefaultConnection`                                                          | API      | SQL Server (`Encrypt=True`, `TrustServerCertificate=True`) |
 | `Jwt__SecretKey`, `Jwt__Issuer`, `Jwt__Audience`                                                | API      | Firma y validación del JWT                   |
-| `Cors__AllowedOrigins`                                                                          | API      | Dominio de Vercel (whitelist)                |
-| `Telegram__BotToken`, `Telegram__BotServiceSecret`                                              | API      | Notificador saliente y autenticación del bot |
-| `Assistant__Provider`, `Assistant__ApiKey`                                                      | API      | Proveedor LLM (Fase 3)                       |
+| `Cors__AllowedOrigins`                                                                          | API      | `https://cuartaquinientosresidencial.runasp.net` (+ localhost en dev) |
+| `Telegram__*`, `Assistant__*`                                                                   | API      | **v2** — no requeridos en esta entrega       |
 | `Storage__Provider`, `Storage__Bucket`                                                          | API      | Almacenamiento de archivos                   |
-| `TELEGRAM_TOKEN`, `API_BASE_URL`, `BOT_SERVICE_SECRET`, `BOT_WEBHOOK_URL`, `BOT_WEBHOOK_SECRET` | Bot      | Conectividad del bot                         |
-| `VITE_GRAPHQL_URL`, `VITE_API_URL`                                                              | Web      | Endpoints del API                            |
+| `VITE_GRAPHQL_URL`, `VITE_API_URL`                                                              | Web      | Base `https://apicuartaquinientos.runasp.net` (+ `/graphql`) |
 
 
-**Observabilidad mínima:** Serilog con `CorrelationId` por request, endpoint `/health` (API + conexión a BD) usado por Railway, y registro de fallos del notificador en `ntf.NotificacionesEntrega`.
+**Observabilidad mínima:** Serilog con `CorrelationId` por request, endpoint `/health` (API + conexión a BD) y registro de fallos del notificador en `ntf.NotificacionesEntrega` cuando el módulo esté implementado.
 
 ### **2.5. Seguridad**
 

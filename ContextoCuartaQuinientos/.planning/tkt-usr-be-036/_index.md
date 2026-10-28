@@ -1,6 +1,6 @@
 # USR-BE-036 — Cambio de contraseña (backend + frontend)
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: [[usuarios]] (`sgr`)
 - Targets en scope: `database:CuartaQuinientos` (DML en `sgr.Usuarios`, `sgr.RefreshTokens`), `backend:cuartaquinientos-api`, `frontend:cuartaquinientos-web`

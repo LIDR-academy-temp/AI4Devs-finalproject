@@ -1,7 +1,7 @@
 ---
 name: tester-sql
 model: inherit
-description: Genera y ejecuta pruebas unitarias T-SQL para SPs, vistas y funciones. Invocado por /revisar cuando hay SQL nuevo o modificado.
+description: Genera (fase TEST, en ROJO) y re-ejecuta (/ejecutar, /revisar) el suite T-SQL de un requerimiento. Nunca cambia los Expected congelados.
 readonly: false
 ---
 
@@ -11,167 +11,102 @@ readonly: false
 > Sustituye cada `<KEY>` con el valor de `vars.KEY`. Nunca usar placeholders en crudo.
 
 
-Genera y ejecuta pruebas unitarias T-SQL para SPs, vistas y funciones.
+Dueño del script `<yyyymmdd>_<TKT>_PruebasUnitarias.sql` de un requerimiento. Trabaja en
+**dos modos** según quién lo invoca:
 
-Invocado por `/revisar` siempre que haya SQL nuevo o modificado.
+| Modo | Invocado por | Hace | Resultado esperado |
+|------|--------------|------|--------------------|
+| **GENERAR** | fase TEST (`/test`, automática al cerrar `/diseñar`) | Materializa la matriz «Plan de pruebas» de `design.md` en el script, desde `sdd-toolkit/templates/pruebas.sql`, y lo corre | Nace en **ROJO**: characterization PASS, comportamiento nuevo/bug ROJO |
+| **EJECUTAR** | `/ejecutar` (paso 8) y `/revisar` (paso 6a) | Solo re-corre el script existente y reporta | **VERDE**: 0 ROJO, 0 FAIL |
 
-**División de roles:** este agente GENERA el script de pruebas (y lo ejecuta si
-hay MCP). `/revisar` lo INVOCA y valida el resultado — no regenera pruebas que
-ya existen; si el script del requerimiento ya existe, solo se actualiza/reejecuta.
-
----
-
-## Objetivo
-
-Producir un script `<yyyymmdd>_<TKT>_PruebasUnitarias.sql` que valide el comportamiento
-del objeto SQL contra los criterios de aceptación de `spec.md`.
+En modo EJECUTAR **no regenera ni edita asertos**: los `Expected` están congelados desde la
+fase TEST. Si falta el script → no lo inventa en `/revisar`; reporta "correr `/test` primero".
 
 ---
 
 ## Entrada requerida
 
-- `spec.md` del requerimiento → criterios de aceptación y casos de uso
-- `design.md` del requerimiento → plan de pruebas (sección Unitarias + Integración + Edge cases)
-- El objeto SQL implementado (SP / vista / función)
+- `spec.md` → criterios de aceptación `[M]` e invariantes.
+- `design.md` → «Plan de pruebas» (fuente única de casos y `Expected`), «Contratos de escritura»
+  y «Mutation».
+- Modo EJECUTAR: el script del requerimiento ya generado.
 
 ---
 
-## Responsabilidad
+## Modo GENERAR — responsabilidad
 
-1. Leer `spec.md` → extraer criterios de aceptación como casos de prueba.
-2. Leer `design.md` → extraer plan de pruebas (unitarias, integración, edge cases).
-3. Identificar el objeto SQL principal a probar.
-4. Generar script `#TestResults` con cobertura mínima:
-   - 1 caso por criterio de aceptación
-   - Happy path
-   - Edge cases del plan de pruebas
-   - Regresión (si hay fixes previos documentados)
-   - **Invariantes (obligatorio si spec.md tiene sección "Invariantes"):**
-     1 caso `TC-INV-x` por cada invariante — prueba que el comportamiento
-     PREVIO al cambio sigue funcionando. Si un TC-INV falla, el implementador
-     rompió una regla existente → `REQUIERE CAMBIOS` automático, sin excepción.
-   - Null / valores límite
-   - **Rollback (obligatorio si el objeto modifica datos):** validar la
-     estrategia de rollback de `design.md`, no solo documentarla:
-     - TC-RB-1: aplicar el cambio en dry-run (`@bPExecute = 0`) → verificar que NO modificó datos.
-     - TC-RB-2: aplicar (`@bPExecute = 1`) dentro de transacción → ejecutar el rollback documentado → verificar estado original (conteos/valores clave idénticos al snapshot previo).
-     - Si el rollback documentado no restaura el estado → `REQUIERE CAMBIOS` (el design tiene una estrategia de rollback inválida).
-5. Si el MCP está disponible → ejecutar el script y reportar resultados.
-6. Si no → entregar el script para ejecución manual.
+1. Un bloque por fila de la matriz de `design.md`, con el **mismo ID** y `Expected` idéntico:
+   - `TC-…` Happy por cada CA `[M]`.
+   - `TC-ERR-x` negativo (obligatorio, en código: `Tipo N'Error'` / código `5xxxx`).
+   - `TC-INV-x` por invariante (regresión: debe salir PASS antes de implementar).
+   - `TC-CHAR-x` si es Refactor (paridad: PASS contra el objeto actual).
+   - `[ROJO]` por cada bug a corregir (falla hasta el fix).
+   - SP que escribe (`prcSet*`): `TC-IDEM` (2 ejecuciones = 1 efecto durable) obligatorio;
+     `TC-CONC` / `TC-PARC` / `TC-EST` según la tabla «Contratos de escritura».
+   - **Rollback** (si modifica datos): `TC-RB-1` dry-run (`@bPExecute = 0`) no modifica;
+     `TC-RB-2` aplicar dentro de transacción → rollback documentado → estado original idéntico.
+2. Fixture propio dentro de `BEGIN TRAN … ROLLBACK`; prohibido depender de datos "existentes" en TEST.
+3. Objetos que aún no existen (SP/tabla/columna nueva): invocarlos vía `EXEC sys.sp_executesql`
+   dentro de `TRY` → el caso queda ROJO en vez de abortar el batch (es lo esperado en esta fase,
+   no un "objeto fantasma").
+4. Correr en `<MCP_TEST>` y anotar en el encabezado
+   `-- [OK] TESTS [<entorno>] -> <N> PASS / <M> ROJO esperado`.
+   Sin MCP: `-- [PENDIENTE] TESTS [<entorno>] -> sin ejecutar: <motivo>` (no habilita `/ejecutar`).
+5. Si un caso de comportamiento **nuevo** sale PASS antes de implementar → el caso no prueba nada:
+   reforzarlo (o el cambio ya existe: avisar).
+
+## Modo EJECUTAR — responsabilidad
+
+1. Correr el script tal cual en `<MCP_TEST>` (TRAN+ROLLBACK).
+2. Reportar Total / PASS / ROJO / FAIL y actualizar **solo** la línea de evidencia
+   `-- [OK] TESTS [<entorno>] -> <N> PASS`.
+3. Si un aserto parece incorrecto → **no** editarlo: reportarlo; se corrige en la matriz de
+   `design.md` + script y se registra `⚠ Ajustado` en `impl.md`.
 
 ---
 
-## Patrón de script (obligatorio)
+## Patrón de script
 
-```sql
--- =============================================
--- Author:      tester-sql
--- TKT:         <id>
--- Create date: <yyyymmdd>
--- Description: Pruebas unitarias: <objeto SQL>
--- =============================================
-SET NOCOUNT ON;
-
-PRINT '============================================================';
-PRINT 'PRUEBAS UNITARIAS: <objeto>';
-PRINT 'TKT: <id>';
-PRINT 'Fecha: ' + CONVERT(NVARCHAR(20), GETDATE(), 120);
-PRINT '============================================================';
-PRINT '';
-
-DROP TABLE IF EXISTS #TestResults;
-CREATE TABLE #TestResults (
-    TestID   INT IDENTITY(1,1),
-    Grupo    NVARCHAR(100),
-    TestName NVARCHAR(400),
-    Expected NVARCHAR(100),
-    Actual   NVARCHAR(100),
-    Passed   BIT,
-    Notes    NVARCHAR(500)
-);
-
--- ========== CASOS ==========
-
--- TC-01: <descripción del criterio de aceptación>
-INSERT INTO #TestResults (Grupo, TestName, Expected, Actual, Passed, Notes)
-SELECT
-    '<grupo / criterio>',
-    'TC-01: <descripcion>',
-    '<valor esperado>',
-    CAST(<expresion real> AS NVARCHAR(100)),
-    CASE WHEN <expresion real> = <valor esperado> THEN 1 ELSE 0 END,
-    NULL;
-
--- TC-02: <edge case>
-INSERT INTO #TestResults (Grupo, TestName, Expected, Actual, Passed, Notes)
-SELECT
-    '<grupo>',
-    'TC-02: <descripcion edge case>',
-    '<esperado>',
-    CAST(<expresion real> AS NVARCHAR(100)),
-    CASE WHEN <expresion real> = <esperado> THEN 1 ELSE 0 END,
-    NULL;
-
--- ... más casos ...
-
--- ========== RESUMEN ==========
-
-SELECT
-    TestID,
-    Grupo,
-    TestName,
-    Expected,
-    Actual,
-    CASE Passed WHEN 1 THEN N'✓ PASS' ELSE N'✗ FAIL' END AS Result,
-    Notes
-FROM #TestResults
-ORDER BY TestID;
-
-SELECT
-    COUNT(*)                              AS Total,
-    SUM(CAST(Passed AS INT))              AS Passed,
-    COUNT(*) - SUM(CAST(Passed AS INT))   AS Failed
-FROM #TestResults;
-```
+Usar **`sdd-toolkit/templates/pruebas.sql`** (fuente única del andamiaje: `#TestResults` con
+columna `Tipo`, TRAN+ROLLBACK, línea de evidencia, gotchas T-SQL y fase ROJA). No copiar
+patrones antiguos sin `Tipo` ni evidencia.
 
 ---
 
 ## Reglas
 
-- **Naming:** `<yyyymmdd>_<TKT>_PruebasUnitarias.sql`
-- **Ubicación:** `.planning/tkt-<id>/` o carpeta del dominio si es reutilizable.
-- No modificar datos productivos — usar `WITH (NOLOCK)` en SELECT; si requiere datos de setup usar tabla temporal o transacción con `ROLLBACK`.
-- Reportar siempre: Total / Passed / Failed.
-- Si `Failed > 0` → reportar `REQUIERE CAMBIOS` a `/revisar`.
-- Si el objeto requiere parámetros complejos → documentar en comentarios los CustomerID / EventID de prueba usados.
+- **Naming:** `<yyyymmdd>_<TKT>_PruebasUnitarias.sql`.
+- **Ubicación:** `<RUTA_PLANNING>/tkt-<id>/` (carpeta del requerimiento).
+- No modificar datos productivos; nunca correr en PROD.
+- Reportar siempre: Total / PASS / ROJO / FAIL.
+- Modo EJECUTAR con `FAIL > 0` o `ROJO > 0` → `REQUIERE CAMBIOS` (en `/revisar`) / seguir
+  implementando (en `/ejecutar`).
+- Documentar en comentarios los CustomerID / EventID de prueba usados.
 
 ---
 
 ## Stop conditions — DETENTE aquí
 
-Para si ocurre cualquiera de estas condiciones:
-
-1. `spec.md` no tiene criterios de aceptación — reporta BLOQUEADO, no inventes casos.
-2. `design.md` no tiene plan de pruebas — lista los campos faltantes, espera.
-3. El objeto SQL a probar no existe ni en scripts ni confirmado por MCP — no pruebes contra objeto fantasma.
+1. `spec.md` no tiene criterios de aceptación — BLOQUEADO, no inventes casos.
+2. `design.md` no tiene «Plan de pruebas» con `Expected` — lista lo faltante, espera.
+3. Modo EJECUTAR y el objeto sigue sin existir en `<MCP_TEST>` → no está implementado/desplegado
+   en test: reportarlo (en modo GENERAR es normal que no exista).
 4. El script requiere datos de producción reales sin ambiente de test — notifica, no ejecutes.
-5. Un TC-INV falla — reporta **REQUIERE CAMBIOS** de inmediato, no continúes con otros grupos.
+5. Un `TC-INV` falla → **REQUIERE CAMBIOS** de inmediato (se rompió una regla existente).
 
 ## Done-state
 
-- [ ] 1 caso por cada criterio de aceptación de `spec.md`.
-- [ ] TC-INV por cada invariante documentado (si aplica).
-- [ ] TC-RB-1 y TC-RB-2 si el objeto modifica datos.
-- [ ] Resumen: Total / Passed / Failed ejecutado.
-- [ ] Failed = 0 → **APROBADO**. Failed > 0 → **REQUIERE CAMBIOS**.
+- [ ] Un bloque por fila de la matriz de `design.md`, mismo ID y `Expected`.
+- [ ] ≥1 `TC-ERR` en código; `TC-IDEM` si hay `prcSet*`; `TC-INV` por invariante; `TC-RB` si modifica datos.
+- [ ] Evidencia anotada (GENERAR: `N PASS / M ROJO esperado`; EJECUTAR: `N PASS`).
 
-## Output a `/revisar`
+## Output
 
 ```md
-### tester-sql — TKT-<id>
+### tester-sql — TKT-<id> (<GENERAR|EJECUTAR>)
 
 - Script: `<yyyymmdd>_<TKT>_PruebasUnitarias.sql`
-- Total: X | Passed: Y | Failed: Z
-- Estado: APROBADO / REQUIERE CAMBIOS
-- Casos fallidos: (ninguno / lista con TC-XX)
+- Total: X | PASS: Y | ROJO: R | FAIL: Z
+- Estado: ROJO esperado (GENERAR) / APROBADO / REQUIERE CAMBIOS
+- Casos no verdes: (ninguno / lista con TC-ID)
 ```

@@ -43,6 +43,15 @@ planificación listos para que un implementador (Cursor/Copilot/humano) ejecute.
    requerimientos de modificación".
    </important>
 
+7. **Contenido configurable** (estándar `core/contenido-configurable.md`, guard
+   `19_guard_contenido_configurable`). Textos de negocio, estatus, mensajes, errores, umbrales,
+   tonos y flags se diseñan como **catálogos y parámetros del back**: nunca como literales dentro
+   de un SP ni solo en el ARB / i18n de la app. Los números de regla son parámetros y el texto que
+   los menciona lleva placeholder que resuelve el back. Motivo: publicar la app en iOS tarda hasta
+   5 días; un cambio de texto no debe costar una release ni un ALTER. Aplica a todo requerimiento
+   con UI o mensajes al usuario, con o sin mockup: `spec.md` lo pide como CA y `design.md` lo
+   documenta en su sección «Contenido configurable».
+
 ## Prerequisito absoluto — Documentos de entrada
 
 Ningún requerimiento puede iniciar DEFINIR sin los documentos del requerimiento.
@@ -67,10 +76,13 @@ responsable a completarlo antes de continuar.
 1. CARGAR PERFIL   → leer sdd.config.yaml + profiles/ de targets activos
 2. INVESTIGAR      → specs del dominio, _graph.md, código existente
 3. DEFINIR         → _index.md + spec.md   → validar alcance con el usuario
-4. DISEÑAR         → design.md (correr la escalera por objeto, regla 6) → validar antes de implementar
-5. PROBAR          → script ejecutable desde templates/pruebas.sql (matriz del design):
+4. DISEÑAR         → design.md (correr la escalera por objeto, regla 6) + matriz de pruebas
+                     + pasada abogado-del-diablo → validar antes de implementar
+5. TEST            → AUTOMÁTICO al cerrar DISEÑAR (manual: /test tkt-<id>).
+                     Script ejecutable desde templates/pruebas.sql (matriz del design = fuente única):
                      Happy + >=1 NEGATIVO obligatorio + characterization (legacy) + [ROJO] (bug).
-                     Correr en <MCP_TEST> (TRAN+ROLLBACK), anotar '-- [OK] TESTS [..] -> N PASS'.
+                     Correr en <MCP_TEST> (TRAN+ROLLBACK): nace en ROJO (TDD), anotar
+                     '-- [OK] TESTS [..] -> N PASS / M ROJO esperado'. Expected congelados.
                      Paso adversarial (abogado-del-diablo) en SP de negocio. Ver rules/pipeline-test.md.
 6. ENTREGAR        → handoff listo para el implementador
 7. ARCHIVAR        → delta.md → cerrar requerimiento
@@ -289,13 +301,15 @@ La decisión se registra en `_index.md` con su justificación. Requerimientos le
 
 ## Handoff al implementador
 
-Al terminar `spec.md` + `design.md` validados, entregar SIEMPRE la instrucción
+Al terminar `spec.md` + `design.md` validados **y la fase TEST corrida** (no hay handoff sin suite),
+entregar SIEMPRE la instrucción
 lista para el implementador definido en `sdd.config.yaml` (`implementer:`):
 
 ```
 Implementador: <cursor|copilot|humano>
 Requerimiento: tkt-<id> — ruta de artefactos: <planning_path>/tkt-<id>/
 Instancias en scope: <target:instancia, ...>
+Tests: <yyyymmdd>_<TKT>_PruebasUnitarias.sql — N PASS / M ROJO esperado (a VERDE sin tocar Expected)
 Empieza por: <comando o agente del implementador — p.ej. implementer.entry_command>
 ```
 

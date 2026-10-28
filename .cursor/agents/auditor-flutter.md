@@ -104,6 +104,9 @@ Antes de auditar, confirmar:
 ### Localización
 
 20. Strings visibles al usuario en ARB (`app_<lang>.arb`), no hardcodeados en Dart.
+21. Contenido de negocio (estatus, mensajes, errores, programa / campaña, periodos, país) **del API, tal
+    cual**; el ARB solo para marco de UI y respaldo. Sin umbrales fijos ni decisiones por texto
+    (`19_guard_contenido_configurable`, hallazgos `CONTENIDO-*`). iOS tarda hasta 5 días en publicar.
 
 ## Clasificación de severidad
 

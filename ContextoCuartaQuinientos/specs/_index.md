@@ -1,32 +1,24 @@
 # _index de specs — CuartaQuinientos (backlog de dominios SDD)
 
-> Índice de las *source of truth* por dominio (contexto pre-`/definir`, alineado a `SQL/cuartaquinientos_schema.sql` y readme).
-> En Entrega 2+, cada ticket de trabajo genera su carpeta `.planning/tkt-<id>/` con `spec.md` / `design.md`.
-> Estado inicial de todos: **SPEC PENDIENTE** (documentación de dominio lista; implementación por iniciar).
+> Índice de las *source of truth* por dominio. Grafo: [[../_graph]] · Fase 1 cerrada: [.planning/FASE1_CIERRE.md](../.planning/FASE1_CIERRE.md) · Entrega 12 módulos: [.planning/ENTREGA_MODULOS.md](../.planning/ENTREGA_MODULOS.md).
 
-| Dominio | Spec | Target(s) | Tamaño | Historias | Estado |
-|---|---|---|---|---|---|
-| Base de datos (transversal) | [[base-datos]] · [.planning/tkt-db-000](../.planning/tkt-db-000/_index.md) | database | M | habilitador núcleo §5.0 (DB-000, DB-001, DB-002) | DB-000 LISTO PARA EJECUTAR (revalidar) · DB-001/DB-002 PENDIENTE |
-| Usuarios/Identidad | [[usuarios]] | database, backend, frontend | M | HU-USR-01..04 | SPEC PENDIENTE |
-| Tickets | [[tickets]] | database, backend, frontend | L | HU-TKT-01..05 | SPEC PENDIENTE |
-| Finanzas | [[finanzas]] | database, backend, frontend | L | HU-FNZ-01..06 | SPEC PENDIENTE |
-| Encuestas | [[encuestas]] | database, backend, frontend | M | HU-ENC-01..03 | SPEC PENDIENTE |
-| Juntas | [[juntas]] | database, backend, frontend | S | HU-JNT-01..02 | SPEC PENDIENTE |
-| Notificaciones | [[notificaciones]] | database, backend, integrations | M | HU-NTF-01..03 | SPEC PENDIENTE |
-| Visitas y Áreas Comunes | [[visitas-areas]] | database, backend, frontend | M | HU-VTS-01..03 | SPEC PENDIENTE |
-| Mascotas | [[mascotas]] | database, backend, frontend | S | HU-MAS-01..02 | SPEC PENDIENTE |
-| Vehículos | [[vehiculos]] | database, backend, frontend | S | HU-VEH-01..02 | SPEC PENDIENTE |
-| Anuncios | [[anuncios]] | database, backend, frontend | S | HU-ANM-01..02 | SPEC PENDIENTE |
-| Archivos | [[archivos]] | database, backend, frontend | S | HU-ARC-01..02 | SPEC PENDIENTE |
-| Dashboard | [[dashboard]] | backend, frontend | M | HU-DASH-01..02 | SPEC PENDIENTE |
-| Reportes / BI | [[reportes-bi]] | database, backend, frontend | M | HU-RPT-01..02, HU-BI-01..03 | SPEC PENDIENTE |
-| Almacén (WMS) | [[almacen]] | database, backend, frontend | S | HU-WMS-01..03 | SPEC PENDIENTE |
-| BOT «C500 Asiste» / IA | [[bot-ia]] | integrations, backend, database | XL | HU-BOT-01..13 | SPEC PENDIENTE |
+| Dominio | Spec | Target(s) | Fase 1 (2026-10-16) |
+|---|---|---|---|
+| Frontend (transversal) | [[frontend]] | frontend | **PARCIAL** kit [[FE-PAT-001]] + stack CRUD [[FE-PAT-002]]; pantallas en [[FE-CRUD-*]] |
+| Base de datos | [[base-datos]] | database | **IMPLEMENTADO** DB-000..002 (scripts; ejecutar en servidor) |
+| Usuarios/Identidad | [[usuarios]] | database, backend, frontend | **PARCIAL** auth, perfil; API padrón sí — UI/ casas en [[FE-041]] / [[USR-BE-010]] |
+| Tickets | [[tickets]] | database, backend, frontend | **IMPLEMENTADO** crear/listar/gestionar + UI |
+| Finanzas | [[finanzas]] | database, backend, frontend | **IMPLEMENTADO** cuenta, admin, morosos, generar |
+| Notificaciones | [[notificaciones]] | database, backend, frontend | **IMPLEMENTADO** bandeja + aviso (outbox Fase 2 envío) |
+| Dashboard | [[dashboard]] | backend, frontend | **IMPLEMENTADO** `GET /Dashboard/Resumen` + Home |
+| Encuestas | [[encuestas]] | … | PENDIENTE Fase 2+ |
+| Juntas | [[juntas]] | … | PENDIENTE |
+| Visitas y Áreas | [[visitas-areas]] | … | PENDIENTE |
+| Mascotas / Vehículos / Anuncios / Archivos | varios | … | PENDIENTE |
+| Reportes / BI / WMS / BOT-IA | varios | … | PENDIENTE Fase 2+ |
 
-Grafo maestro: [[../_graph]] (`ContextoCuartaQuinientos/_graph.md`) · Config: `sdd.config.yaml` · Documento de entrega: `readme.md`.
+## Orden sugerido
 
-## Orden sugerido (fases del roadmap)
-
-1. **Fase 1 (núcleo):** usuarios, tickets, finanzas (incl. HU-FNZ-06 generar cuotas, `POST /FNZ/Cuotas/generar`), notificaciones, dashboard. Tickets y estado: [FASE1_ROADMAP](../.planning/FASE1_ROADMAP.md).
-2. **Fase 2 (canal + participación):** bot-ia (vinculación + tickets/cuotas/notif + sugerencias de cobro), encuestas, anuncios, archivos.
-3. **Fase 3 (operación + inteligencia):** juntas, visitas-areas, vehiculos, mascotas, reportes-bi, almacen, y las capacidades IA/RAG + BI del bot.
+1. **Fase 1** — completada → [FASE1_ROADMAP](../.planning/FASE1_ROADMAP.md)
+2. **Entrega módulos** — [ENTREGA_MODULOS](../.planning/ENTREGA_MODULOS.md) (sin BOT/IA/BI)
+3. **Fase 2+** — encuestas, anuncios, archivos, juntas, visitas, WMS, etc.

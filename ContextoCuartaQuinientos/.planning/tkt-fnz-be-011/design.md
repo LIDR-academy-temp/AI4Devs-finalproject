@@ -94,13 +94,13 @@ sequenceDiagram
 
 | # | Paso | Target:Instancia | Entregable | Dependencia | Verificación |
 |---|------|-------------------|------------|-------------|--------------|
-| 1 | Verificar columnas y catálogo: `fnz.Cuotas.MontoPagado/CuentaID`, "Pago de cuota" en `fnz.TiposMovimiento`, `PAGO_REGISTRADO` en `ntf.TiposNotificacion` | `database:CuartaQuinientos` | evidencia MCP en `impl.md` | DB-001, DB-002 | `SELECT` de catálogo vía MCP |
-| 2 | Confirmar firma de `INotificacionService.NotificarUsuarioAsync` implementada | `backend:cuartaquinientos-api` | firma estable | NTF-BE-013 | `dotnet build` |
-| 3 | `RegistrarPagoInput` + `RegistrarPagoValidator` + tests unitarios en rojo (monto 0, referencia vacía, fecha futura) | `backend:cuartaquinientos-api` | DTO + validador | — | tests rojo → verde |
-| 4 | Tests de integración en rojo (éxito, 404, 409, 422, concurrente, rollback por notificación) | `backend:cuartaquinientos-api` | tests en `GraphApi.Tests` | 3 | tests en rojo |
-| 5 | `FinanzasService.RegistrarPagoAsync` (transacción, locks, chequeos de filas) | `backend:cuartaquinientos-api` | método de servicio | 1, 2, 4 | tests del paso 4 en verde |
-| 6 | Acción `PATCH` en `CuotasController` + swagger | `backend:cuartaquinientos-api` | endpoint | 5 | `/swagger` con 204/400/401/403/404/409/422 |
-| 7 | `.http` de happy/error/auth (`api-tester`) + ejecución contra API levantada | `backend:cuartaquinientos-api` | `.http` | 6 | endpoint ejecutado al menos 1 vez (DoD rule 09) |
+| 1 | Verificar columnas y catálogo: `fnz.Cuotas.MontoPagado/CuentaID`, "Pago de cuota" en `fnz.TiposMovimiento`, `PAGO_REGISTRADO` en `ntf.TiposNotificacion` | `database:CuartaQuinientos` | evidencia MCP en `impl.md` | DB-001, DB-002 | `SELECT` de catálogo vía MCP | ⚠ Ajustado (CQ500 sin DB-001) |
+| 2 | Confirmar firma de `INotificacionService.NotificarUsuarioAsync` implementada | `backend:cuartaquinientos-api` | firma estable | NTF-BE-013 | `dotnet build` | ✓ Hecho |
+| 3 | `RegistrarPagoInput` + `RegistrarPagoValidator` + tests unitarios en rojo (monto 0, referencia vacía, fecha futura) | `backend:cuartaquinientos-api` | DTO + validador | — | tests rojo → verde | ✓ Hecho |
+| 4 | Tests de integración en rojo (éxito, 404, 409, 422, concurrente, rollback por notificación) | `backend:cuartaquinientos-api` | tests en `GraphApi.Tests` | 3 | tests en rojo | ⚠ Ajustado (servicio con mocks; BD/concurrencia pendiente `/revisar`) |
+| 5 | `FinanzasService.RegistrarPagoAsync` (transacción, locks, chequeos de filas) | `backend:cuartaquinientos-api` | método de servicio | 1, 2, 4 | tests del paso 4 en verde | ✓ Hecho |
+| 6 | Acción `PATCH` en `CuotasController` + swagger | `backend:cuartaquinientos-api` | endpoint | 5 | `/swagger` con 204/400/401/403/404/409/422 | ✓ Hecho |
+| 7 | `.http` de happy/error/auth (`api-tester`) + ejecución contra API levantada | `backend:cuartaquinientos-api` | `.http` | 6 | endpoint ejecutado al menos 1 vez (DoD rule 09) | ⚠ Ajustado (`.http` creado; ejecución manual pendiente secrets) |
 
 ## Plan de pruebas
 

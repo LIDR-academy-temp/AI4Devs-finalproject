@@ -100,6 +100,8 @@ Para todos los lenguajes, valida:
 12. Compatibilidad hacia atrás.
 13. Cobertura de pruebas.
 14. Cumplimiento del requerimiento original.
+15. Contenido configurable (`19_guard_contenido_configurable`): textos de negocio, errores y umbrales
+    desde catálogo o parámetro; contrato uniforme de códigos, nulos, nombres y fechas (hallazgos `CONTENIDO-*`).
 
 ## Revisión específica de SQL Server / T-SQL
 

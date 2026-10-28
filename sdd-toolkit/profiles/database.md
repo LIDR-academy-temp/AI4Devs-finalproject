@@ -115,6 +115,23 @@ Para requerimientos que crean o modifican objetos SQL. Ajustar según scope real
 | 6 | Crear/modificar vistas (`vs*`) o funciones (`fnc*`) si aplica | Objeto compilado | 4 |
 | 7 | Smoke test: ejecutar cada SP con datos reales vía MCP test | Resultado `-- ✓ MCP` anotado | 4–6 |
 
+## Contenido configurable (T-SQL — aterriza methodology.md regla 7)
+
+> Estándar completo: `core/contenido-configurable.md`. Guard `19_guard_contenido_configurable`.
+
+- Textos de negocio y errores salen de un **catálogo de textos con alcance** (programa → país → global) vía
+  una función de resolución; ningún `CASE … THEN N'texto'` ni `SET @msg = N'…'` de negocio dentro de un SP,
+  y nunca el mismo texto en dos bloques.
+- Catálogos nuevos: columnas ES/EN (o `LanguageCode` + texto), `IsActive`, campos de auditoría y columna de
+  alcance (`CountryID` / programa) aunque hoy se use global.
+- Números de regla (días, máximos, cupos, umbrales, ventanas) como **columnas de parámetro** del programa o
+  país; nunca constantes en el SP ni escritos dentro del texto. El texto usa `{Placeholder}` y el SP lo resuelve.
+- Decidir por ID, código o bandera; nunca por el texto de un catálogo (`[Rank] = N'…'`).
+- Etiquetas de mes o periodo desde el catálogo, no con `FORMAT(..., 'es')`.
+- Errores: un `ErrorCode` por significado (UPPER_SNAKE), con ES y EN desde el catálogo; el detalle técnico al log.
+- Scripts de carga de textos: idempotentes, con guarda del valor anterior; nunca re-ejecutar uno viejo que
+  revierte textos ya cambiados.
+
 ## Learnings (acumulado)
 
 > Append automático en Cierre ARCHIVADO (CLAUDE.md — Compound Loop).

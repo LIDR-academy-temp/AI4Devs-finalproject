@@ -50,7 +50,9 @@ Leer `_index.md` del requerimiento indicado como fuente primaria de estado.
 ## Flujo obligatorio
 
 1. Leer `_index.md` → estado actual y tabla Graph.
-2. Verificar existencia física de cada artefacto (spec.md, design.md, impl.md, delta.md).
+2. Verificar existencia física de cada artefacto (spec.md, design.md, `*PruebasUnitarias.sql`,
+   impl.md, `TKT-<Numero>-APIS.md` si hubo endpoints, delta.md, release.md) y el estado de los
+   sellos (`sdd-toolkit/tools/sello.py verificar`).
 3. Comparar estado declarado vs artefactos existentes.
 4. Revisar criterios de aceptación (si spec.md existe).
 5. Revisar implementación (si impl.md existe).

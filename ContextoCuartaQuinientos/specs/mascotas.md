@@ -54,3 +54,10 @@ Verbos concretos `(asumido)`: GET (mis mascotas/padrón), POST (registrar), PUT/
 - Sin stored procedures.
 - Corrección de dominio: Mascotas = esquema `usr`, NO `anm` (Anuncios). Alucinación del borrador viejo.
 - Nombres reales del esquema español; soft delete `bEliminado`.
+- SPA admin: `AdminMascotasPage` (`/admin/mascotas`) — padrón con `AdminFilterableTable` ([[FE-CRUD-003]]).
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-10-26 | [[FE-CRUD-003]] | UI admin padrón mascotas al patrón FE-PAT-002 |

@@ -35,6 +35,16 @@ Base `/ANM` (REST `/{Dominio}/{Controller}`, CRUD estándar: GET lista, GET `/{i
 
 Controllers backend reales: `ANM/Anuncios`, `ANM/TiposAnuncio`, `ANM/LogVisualizacionAnuncios`. Vistas compuestas del portal disponibles vía GraphQL (`/graphql`).
 
+## UI web (SPA React — post [[FE-043]])
+
+| Ruta | Rol | Comportamiento |
+|------|-----|----------------|
+| `/anuncios` | Residente (`PrivateRoute`) | Lista vigentes; badge «Nuevo» si `visto === false` |
+| `/anuncios/:id` | Residente | Detalle; al montar: `PATCH …/visto` |
+| `/admin/anuncios` | Administrador (`AdminRoute`) | [[FE-CRUD-002]]: `AdminFilterableTable` + panel lateral CRUD; `GET ?incluirNoVigentes=true` |
+
+Cliente: `Web/src/features/anuncios/useAnuncios.ts` + páginas en `Web/src/pages/*Anuncios*`. Contrato REST documentado en `.planning/tkt-anm-be-027/ANM-BE-027-APIS.md`.
+
 ## Reutilización / objetos existentes (escalera)
 1. **Reutilizar**: tablas `anm.*` y vista `anm.vsAnuncios` ya existen en la referencia.
 2. Acceso a datos: Dapper + `anm.vsAnuncios` para listados; sin stored procedures.
@@ -44,6 +54,17 @@ Controllers backend reales: `ANM/Anuncios`, `ANM/TiposAnuncio`, `ANM/LogVisualiz
 ## Deltas del proyecto (nuevo)
 - (delta) Entrega de anuncios como notificación por Telegram: se apoya en `ntf.*` + notificador saliente (no altera `anm.*`).
 - (delta) Publicación de anuncios desde el bot «C500 Asiste» por Administrador (reutiliza `/ANM/Anuncios`, no duplica lógica).
+- 2026-10-19 — Planning: [[ANM-BE-027]] API JWT Cuarta + [[FE-043]] UI `/anuncios` y `/admin/anuncios` (`.planning/tkt-anm-be-027`, `tkt-fe-043`).
+- 2026-10-19 — Design: seed `SQL/DB-003_anm_tipos_seed.sql` (General, Urgente, Mantenimiento).
+- 2026-10-19 — **[[FE-043]] ARCHIVADO**: rutas y hooks UI anuncios en SPA (ver sección UI web).
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-10-26 | [[FE-CRUD-002]] | Admin anuncios: patrón CRUD admin (tabla filtrable + split panel) |
+| 2026-10-19 | [[FE-043]] | UI `/anuncios`, `/anuncios/:id`, `/admin/anuncios`; nav Anuncios habilitado |
+| 2026-10-19 | [[ANM-BE-027]] | API JWT Cuarta `/ANM/*` (planning; ver delta backend) |
 
 ## Notas
 - Sin stored procedures: acceso Dapper sobre tablas + vista `anm.vsAnuncios` + servicios C#.

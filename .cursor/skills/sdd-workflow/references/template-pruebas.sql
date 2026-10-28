@@ -1,5 +1,5 @@
 ﻿-- ============================================================================
--- <yyyymmdd>_<TKT>_PruebasIntegracion.sql — Pruebas de comportamiento (Unidad 7)
+-- <yyyymmdd>_<TKT>_PruebasUnitarias.sql — Pruebas de comportamiento (fase TEST)
 -- Genera: agente tester-sql / api-tester. Endurece: skill abogado-del-diablo.
 -- NO ejecutar en PROD. Verificar en <MCP_TEST> (sdd.config.yaml -> vars.MCP_TEST).
 --
@@ -21,6 +21,17 @@
 --   - Aislar: BEGIN TRAN ... ROLLBACK al final (no ensucia datos).
 --   - Semilla determinista: preferir fixture creado/limpiado por el propio script
 --     (idempotente) antes que IDs acoplados a un fixture externo.
+--   - FASE ROJA (fase TEST, antes de implementar): TRY/CATCH NO atrapa
+--     "Invalid object name"/"Could not find stored procedure" al mismo nivel
+--     (aborta el batch). Invocar todo objeto NUEVO via
+--       BEGIN TRY EXEC sys.sp_executesql N'EXEC <schema>.<prcNuevo> ...'; END TRY
+--     para que el caso quede ROJO. (verificado en nesgotest 2026-10-08)
+--   - SP que escribe (prcSet*): TC-IDEM obligatorio = ejecutar 2 veces con la misma entrada
+--     y asertar 1 solo efecto durable (contar filas/montos), Tipo N'Idempotencia'.
+--     Si el prcSet* es solo fixture: '-- TC-IDEM N/A: <motivo>'.
+--   - Sin MCP: '-- [PENDIENTE] TESTS [<entorno>] -> sin ejecutar: <motivo>' (no habilita /ejecutar).
+--   - Expected CONGELADO: igual a la matriz "Plan de pruebas" de design.md.
+--     /ejecutar cambia el codigo, no el Expected; /revisar compara.
 -- ============================================================================
 -- [OK] TESTS [<entorno>] -> <N> PASS / <M> ROJO esperado    <-- anotar tras ejecutar
 SET NOCOUNT ON;
@@ -31,7 +42,7 @@ CREATE TABLE #TestResults
 (
     TestID INT IDENTITY(1,1), Grupo NVARCHAR(60), Caso NVARCHAR(40), TestName NVARCHAR(200),
     Expected NVARCHAR(200), Actual NVARCHAR(200), Passed BIT, Tipo NVARCHAR(20) DEFAULT N'Caracterizacion'
-    -- Tipo: Caracterizacion | ROJO | Happy | Borde | Error
+    -- Tipo: Caracterizacion | ROJO | Happy | Borde | Error | Idempotencia
 );
 
 -- ---------------------------------------------------------------------------

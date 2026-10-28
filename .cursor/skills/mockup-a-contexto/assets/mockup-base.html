@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup — <NOMBRE></title>
+<!-- Fuente del proyecto (leerla del código: pubspec.yaml / tailwind.config / CSS). Si no es de Google Fonts, quitar el link y dejar el fallback. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!--
+  PLANTILLA BASE — skill mockup-a-contexto (SDD-Nice). Contrato completo en references/mockup-html.md.
+  1. Reemplazar los tokens de :root con los del proyecto, citando archivo:línea de cada grupo.
+  2. Llenar CONFIG (nombre, marco, idiomas, reglas, cambios) y S (textos por idioma, espejo de las llaves i18n).
+  3. Escribir una función por pantalla y registrarla en SCREENS.
+  4. Recursos locales (banderas, logos): '__ASSET:<ruta relativa>__' → build_mockup.py los incrusta.
+  Parámetros: ?only=<id>  ?lang=<code>  ?ann=0|1  ?list=1  (render_screens.py usa only/lang/ann/list).
+-->
+<style>
+  :root{
+    /* ---- Tokens del proyecto (fuente: <archivo>:<línea>) ---- */
+    --text:#1E224F; --muted:#6A707C; --caption:#ACAEBE; --stroke:#E8ECF4;
+    --screen:#F7F8F9; --surface:#FFFFFF; --primary:#1E224F; --onPrimary:#FFFFFF; --primarySoft:#F1F4FD;
+    --success:#2FA84F; --successBg:#E9F7EE;
+    /* ---- Tokens nuevos que propone el mockup (documentar en 03) ---- */
+    --newAccent:#1D7A52; --newAccentBg:#E4F5EF;
+    /* ---- Solo del visor (no son de la app) ---- */
+    --ann:#D81B60; --keep:#455A64; --page:#E9EBF0;
+    --font:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);background:var(--page);color:var(--text);-webkit-font-smoothing:antialiased}
+  body.only{background:var(--screen)}
+  code{font-family:ui-monospace,Consolas,monospace;font-size:.92em;background:rgba(30,34,79,.06);padding:0 4px;border-radius:4px}
+
+  /* ---------- visor ---------- */
+  .top{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--stroke);padding:14px 24px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center}
+  .top h1{font-size:18px;font-weight:700}
+  .top .sub{font-size:12px;color:var(--muted);max-width:760px}
+  .seg{display:inline-flex;border:1px solid var(--stroke);border-radius:999px;overflow:hidden}
+  .seg button{font:600 12px var(--font);border:0;background:#fff;color:var(--muted);padding:8px 14px;cursor:pointer;min-height:36px}
+  .seg button.on{background:var(--primary);color:var(--onPrimary)}
+  .legend{max-width:1400px;margin:20px auto 0;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
+  .legend div{background:#fff;border-radius:12px;padding:10px 12px;font-size:12px;display:flex;gap:10px;align-items:flex-start;line-height:1.4}
+  .legend .rule{grid-column:1/-1;background:#FFF3E0;color:#6D4C00;font-weight:600}
+  .grid{max-width:1400px;margin:0 auto;padding:24px;display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+  .slot{display:flex;flex-direction:column;gap:10px}
+  .slot h2{font-size:14px;font-weight:700}
+  .slot .notes{font-size:12px;color:#3d4256;line-height:1.5;background:#fff;border-radius:12px;padding:10px 14px}
+  .slot .notes li{margin-left:16px}
+  body.only .top,body.only .legend,body.only .slot h2,body.only .slot .notes{display:none}
+  body.only .grid{padding:0;display:block}
+  body.only .slot{display:none}
+  body.only .slot.show{display:block}
+  body.only .frame{border-radius:0;box-shadow:none}
+
+  /* ---------- marcos ---------- */
+  .frame{background:var(--screen);border-radius:28px;overflow:hidden;box-shadow:0 10px 30px rgba(20,24,60,.18);position:relative}
+  .sbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:14px;font-weight:600;background:var(--surface);position:relative}
+  .appbar{background:var(--surface);height:64px;display:flex;align-items:center;position:relative;padding:0 16px}
+  .appbar .back{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .appbar .title{position:absolute;left:72px;right:72px;text-align:center;font-weight:600;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .frame.web{border-radius:12px}
+  .frame.desktop{border-radius:8px;border:1px solid #D0D4DC}
+  .tbar{height:32px;background:var(--surface);display:flex;align-items:center;justify-content:space-between;padding:0 0 0 12px;font-size:12px;border-bottom:1px solid var(--stroke)}
+  .tbar .caps{display:flex}.tbar .caps i{width:46px;height:32px;display:flex;align-items:center;justify-content:center;font-style:normal;color:var(--muted)}
+  .dnav{display:flex;min-height:560px}.dnav .rail{width:220px;background:var(--surface);border-right:1px solid var(--stroke);padding:12px 8px;font-size:13px}
+  .dnav .rail div{padding:8px 12px;border-radius:6px}.dnav .rail div.on{background:var(--primarySoft);font-weight:600}
+  .dnav .main{flex:1;padding:24px}
+  .wbar{height:40px;background:#DEE1E6;display:flex;align-items:center;gap:8px;padding:0 14px}
+  .wbar i{width:12px;height:12px;border-radius:50%;background:#fff;opacity:.7}
+  .wbar .url{flex:1;height:26px;border-radius:13px;background:#fff;font-size:12px;color:var(--muted);display:flex;align-items:center;padding:0 12px}
+  .whead{background:var(--surface);height:60px;display:flex;align-items:center;padding:0 24px;font-weight:700;border-bottom:1px solid var(--stroke);position:relative}
+  .body{padding:0 16px 24px}
+  .frame.web .body{padding:24px}
+
+  /* ---------- piezas reutilizables (ajustar al sistema del proyecto) ---------- */
+  .card{background:var(--surface);border-radius:16px;box-shadow:0 2px 10px rgba(30,34,79,.06);padding:16px;position:relative}
+  .btn{background:var(--primary);color:var(--onPrimary);border-radius:12px;height:48px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px}
+  .chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700}
+  .row{display:flex;align-items:center;gap:8px}
+  .between{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .muted{color:var(--muted)}
+  .t11{font-size:11px}.t12{font-size:12px}.t13{font-size:13px}.t14{font-size:14px}.t16{font-size:16px}.t20{font-size:20px}
+  .w6{font-weight:600}.w7{font-weight:700}
+  .mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+  .cmp{display:grid;grid-template-columns:160px 1fr 1fr;gap:14px 20px;align-items:center;background:#fff;border-radius:20px;padding:20px 24px}
+  .cmp .h{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+
+  /* ---------- anotaciones (nunca encima del contenido) ---------- */
+  .ann{display:inline-block;vertical-align:middle;margin-left:6px;height:18px;min-width:18px;line-height:18px;font:700 10px/18px var(--font);
+       border-radius:9px;padding:0 5px;background:var(--ann);color:#fff;text-align:center;white-space:nowrap}
+  .ann.keep{background:var(--keep)}
+  .ann.corner{position:absolute;right:-8px;top:-8px;margin:0;box-shadow:0 0 0 2px #fff;z-index:5}
+  .ann.center{position:absolute;left:50%;top:13px;transform:translateX(-50%);margin:0;z-index:5}
+  .hl{outline:2px dashed var(--ann);outline-offset:3px;border-radius:8px}
+  .hlT{background:rgba(216,27,96,.09);border-bottom:2px dashed var(--ann);border-radius:4px 4px 0 0}
+  body.noann .ann{display:none}
+  body.noann .hl{outline:none}
+  body.noann .hlT{background:none;border-bottom:0}
+</style>
+</head>
+<body>
+<div class="top">
+  <div><h1 id="pgTitle"></h1><div class="sub" id="pgSub"></div></div>
+  <div class="seg" id="langSeg"></div>
+  <div class="seg" id="annSeg"></div>
+</div>
+<div class="legend" id="legend"></div>
+<div class="grid" id="grid"></div>
+
+<script>
+/* ===================== CONFIG ===================== */
+const CONFIG = {
+  frame: 'phone',                 // 'phone' (390) | 'web' (1280) | 'desktop' (1280, WinUI / WPF)
+  widths: { phone: 390, web: 1280, desktop: 1280, wide: 820 },
+  nav: ['Inicio', 'Invitaciones', 'Equipos'],   // solo marco desktop: elementos del NavigationView
+  langs: [{ code: 'es', label: 'es-MX' }, { code: 'en', label: 'en-US' }],
+  title: { es: 'Mockup — <NOMBRE>', en: 'Mockup — <NAME>' },
+  subtitle: {
+    es: 'Estructura real de <PROYECTO>. Las cifras son de ejemplo.',
+    en: 'Real <PROJECT> structure. Figures are examples.',
+  },
+  // Reglas de oro ya decididas (van arriba de la leyenda).
+  rules: {
+    es: ['Regla de oro: <decisión que el mockup no respeta y la app sí>.'],
+    en: ['Golden rule: <decision>.'],
+  },
+  // Los números de cambio = columna # del README del contexto. Los badges usan el mismo número.
+  changes: {
+    es: ['<Cambio 1>', '<Cambio 2>'],
+    en: ['<Change 1>', '<Change 2>'],
+  },
+  ann: { on: { es: 'Con anotaciones', en: 'With notes' }, off: { es: 'Sin anotaciones', en: 'Clean' } },
+};
+
+/* ===================== TEXTOS (espejo de las llaves i18n) ===================== */
+const S = {
+  es: {
+    screenTitle: 'Mis pedidos',               // llave: <archivo i18n> → <key> (sin cambio)
+    newBlockTitle: 'Bloque nuevo',            // llave nueva: <key>
+    changedLabel: n => `Meta ${n}`,           // <key>: «Nivel {n}» → «Meta {n}»
+    appbarKeep: 'App bar sin cambio', exists: 'Ya existe',
+  },
+  en: {
+    screenTitle: 'My orders',
+    newBlockTitle: 'New block',
+    changedLabel: n => `Goal ${n}`,
+    appbarKeep: 'App bar unchanged', exists: 'Already exists',
+  },
+};
+
+/* ===================== RECURSOS LOCALES ===================== */
+// const FLAG = { MX: '__ASSET:<ruta>/MX.png__' };   // build_mockup.py los convierte en data URI
+
+/* ===================== MOTOR (no suele cambiar) ===================== */
+const qs = new URLSearchParams(location.search);
+const LANGS = CONFIG.langs.map(l => l.code);
+let LANG = LANGS.includes(qs.get('lang')) ? qs.get('lang') : LANGS[0];
+let ANN = qs.get('ann') !== '0';
+const ONLY = qs.get('only');
+const LIST = qs.get('list') === '1';
+const t = () => S[LANG];
+const L = obj => (obj && typeof obj === 'object' && !Array.isArray(obj)) ? (obj[LANG] ?? obj[LANGS[0]]) : obj;
+const fmt = n => n.toLocaleString(CONFIG.langs.find(l => l.code === LANG).label);
+
+// Anotaciones: a(n) = badge del cambio n · keep(txt) = gris "sin cambio" · hl / hlT = clases para resaltar
+const a = n => `<span class="ann">${n}</span>`;
+const aCorner = n => `<span class="ann corner">${n}</span>`;
+const keep = txt => `<span class="ann keep">${txt}</span>`;
+
+const IC = {
+  back: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+};
+
+function phone(title, body, opts = {}) {
+  const kb = ANN && !opts.noKeep ? `<span class="ann keep center">↓ ${t().appbarKeep}</span>` : '';
+  const ab = opts.noAppbar ? '' : `<div class="appbar"><div class="back">${IC.back}</div><div class="title">${title}</div></div>`;
+  return `<div class="frame phone" style="width:${CONFIG.widths.phone}px"><div class="sbar"><span>9:41</span>${kb}<span>●●●</span></div>${ab}<div class="body">${body}</div></div>`;
+}
+function web(url, header, body, opts = {}) {
+  const kb = ANN && !opts.noKeep ? `<span class="ann keep" style="margin-left:12px">${t().appbarKeep}</span>` : '';
+  return `<div class="frame web" style="width:${opts.w || CONFIG.widths.web}px"><div class="wbar"><i></i><i></i><i></i><div class="url">${url}</div></div>
+    <div class="whead">${header}${kb}</div><div class="body">${body}</div></div>`;
+}
+function desktop(title, body, opts = {}) {
+  const kb = ANN && !opts.noKeep ? `<span class="ann keep" style="margin-left:12px">${t().appbarKeep}</span>` : '';
+  const rail = (CONFIG.nav || []).map(n => `<div class="${n === opts.navOn ? 'on' : ''}">${n}</div>`).join('');
+  return `<div class="frame desktop" style="width:${opts.w || CONFIG.widths.desktop}px"><div class="tbar"><span>${title}${kb}</span><span class="caps"><i>—</i><i>▢</i><i>✕</i></span></div>
+    <div class="dnav"><div class="rail">${rail}</div><div class="main">${body}</div></div></div>`;
+}
+const frame = (title, body, opts) => CONFIG.frame === 'web' ? web(opts?.url || '/', title, body, opts)
+  : CONFIG.frame === 'desktop' ? desktop(title, body, opts) : phone(title, body, opts);
+
+/* ===================== PANTALLAS ===================== */
+function sEjemplo() {
+  return frame(t().screenTitle, `
+    <div class="card mt12 hl">${aCorner(1)}
+      <div class="t16 w7">${t().newBlockTitle}</div>
+      <div class="t12 muted mt4">Bloque que no existe en el código: va con <code>.hl</code> y su número de cambio.</div>
+    </div>
+    <div class="card mt12">
+      <div class="between"><span class="t14 w6"><span class="hlT">${t().changedLabel(1)}</span>${a(2)}</span>${keep(t().exists)}</div>
+      <div class="t12 muted mt4">Texto que cambia: <code>.hlT</code> + badge. Lo que ya existe y no cambia: badge gris.</div>
+    </div>`);
+}
+
+function sAntesDespues() {
+  return `<div class="cmp">
+    <span class="h">${LANG === 'en' ? 'Element' : 'Elemento'}</span><span class="h">${LANG === 'en' ? 'Today' : 'Hoy'}</span><span class="h">${LANG === 'en' ? 'New' : 'Nuevo'}${a(2)}</span>
+    <span class="t13 w6">Label</span><span class="chip" style="background:var(--primarySoft);color:var(--primary);justify-self:start">${LANG === 'en' ? 'Level 1' : 'Nivel 1'}</span>
+    <span class="chip" style="background:var(--newAccentBg);color:var(--newAccent);justify-self:start">${t().changedLabel(1)}</span>
+  </div>`;
+}
+
+// id: estable (sNN) · file: nombre del PNG · w: ancho de captura (opcional) · title/notes por idioma
+const SCREENS = [
+  { id: 's01', file: '01-ejemplo', render: sEjemplo,
+    title: { es: '01 · Pantalla de ejemplo', en: '01 · Sample screen' },
+    notes: { es: ['Archivo: <code>lib/…/screen.dart</code> · widget <code>FooScreen</code>.', 'Orden de bloques: … → <b>bloque nuevo</b> → …'],
+             en: ['File: <code>lib/…/screen.dart</code> · widget <code>FooScreen</code>.', 'Block order: … → <b>new block</b> → …'] } },
+  { id: 's02', file: '02-antes-despues', wide: true, render: sAntesDespues,
+    title: { es: '02 · Hoy vs nuevo', en: '02 · Today vs new' },
+    notes: { es: ['Mismos datos, mismo componente; solo cambian tokens y texto.'], en: ['Same data, same component; only tokens and copy change.'] } },
+];
+
+/* ===================== RENDER ===================== */
+const widthOf = sc => sc.w || (sc.wide ? CONFIG.widths.wide : CONFIG.widths[CONFIG.frame]);
+
+function render() {
+  if (LIST) {
+    document.title = 'SCREENS=' + JSON.stringify({ langs: LANGS, screens: SCREENS.map(sc => ({ id: sc.id, file: sc.file, w: widthOf(sc) })) });
+    return;
+  }
+  document.documentElement.lang = LANG;
+  document.body.classList.toggle('only', !!ONLY);
+  document.body.classList.toggle('noann', !ANN);
+  document.getElementById('pgTitle').textContent = L(CONFIG.title);
+  document.getElementById('pgSub').textContent = L(CONFIG.subtitle);
+  document.getElementById('langSeg').innerHTML = CONFIG.langs.map(l => `<button data-l="${l.code}" class="${l.code === LANG ? 'on' : ''}">${l.label}</button>`).join('');
+  document.getElementById('annSeg').innerHTML = `<button data-a="1" class="${ANN ? 'on' : ''}">${L(CONFIG.ann.on)}</button><button data-a="0" class="${ANN ? '' : 'on'}">${L(CONFIG.ann.off)}</button>`;
+  document.getElementById('legend').innerHTML =
+    L(CONFIG.rules).map(r => `<div class="rule">${r}</div>`).join('') +
+    L(CONFIG.changes).map((c, i) => `<div><span class="ann" style="margin:0;flex-shrink:0">${i + 1}</span><span>${c}</span></div>`).join('');
+  document.getElementById('grid').innerHTML = SCREENS.map(sc => `
+    <section class="slot ${ONLY === sc.id ? 'show' : ''}" id="${sc.id}" style="width:${widthOf(sc)}px">
+      <h2>${L(sc.title)}</h2>${sc.render()}
+      <ul class="notes">${(L(sc.notes) || []).map(n => `<li>${n}</li>`).join('')}</ul>
+    </section>`).join('');
+  if (ONLY) {
+    const el = document.getElementById(ONLY);
+    document.title = 'H=' + (el ? Math.ceil(el.getBoundingClientRect().height) : 0);
+  }
+}
+document.getElementById('langSeg').addEventListener('click', e => { if (e.target.dataset.l) { LANG = e.target.dataset.l; render(); } });
+document.getElementById('annSeg').addEventListener('click', e => { if (e.target.dataset.a) { ANN = e.target.dataset.a === '1'; render(); } });
+render();
+if (document.fonts) document.fonts.ready.then(render);
+</script>
+</body>
+</html>

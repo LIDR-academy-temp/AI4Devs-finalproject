@@ -40,6 +40,9 @@ Readme §6 NTF-BE-013:
 - `POST /NTF/Notificaciones/aviso` — aviso masivo (`bAdministrador=1`, tipo `AVISO_GENERAL`).
 - `/NTF/NotificacionesVisualizadas`, `/NTF/TiposNotificacion` — controladores del inventario §4 (verbos sin detallar en §6).
 
+## UI web
+- Campana en `AppShell` (FE-040): badge `totalNoLeidas`, dropdown con `PATCH …/leida`.
+
 ## Reutilización / objetos existentes (escalera)
 - **Reutiliza** `sgr.Usuarios` (destinatario, `bActivo`) y `sgr.Perfiles` (`bAdministrador` para aviso general).
 - **Reutilizada por** otros dominios vía `INotificacionService`: TKT (ticket nuevo/asignado/estado), FNZ (pago/cuota), ENC (encuesta publicada), JNT (junta convocada), VTS (reserva confirmada).

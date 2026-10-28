@@ -47,14 +47,19 @@ Leer `_index.md` primero para confirmar estado, luego `spec.md` para el detalle.
 3. Analizar arquitectura relacionada.
 4. Analizar impacto técnico.
 5. Detectar módulos afectados y dependencias.
+5.5. **Valores nuevos → consumidores** (si agrega/cambia un estado, tipo, OverrideID,
+   código, bandera o ID de catálogo): buscar los valores **hermanos** en
+   `sys.sql_modules` vía `<MCP_TEST>` y en el código de API/front; leer cada consumidor
+   (CASE / IN / listas) y llenar la sección «Valores nuevos y sus consumidores» con su
+   veredicto. Un consumidor que «cae en default» entra al alcance o se justifica fuera.
 6. Detectar riesgos.
 7. Definir estrategia de implementación.
 8. Definir estrategia de rollback si aplica.
 9. Definir pruebas necesarias (shift-left, Unidad 7): matriz con Happy + **≥1 caso
    NEGATIVO/de error obligatorio** (`TC-ERR-x`), characterization si es Refactor, y
    **mutation en paths críticos** (lógica de negocio/financiera/gates). El humano
-   define el *qué*; prohibido Test Theater. Esto se materializará en `/ejecutar`
-   (fase PROBAR) desde `sdd-toolkit/templates/pruebas.sql`.
+   define el *qué*; prohibido Test Theater. Esta matriz es la **fuente única** de
+   casos y valores esperados; la fase TEST (paso 11.6) la materializa en el script.
 10. Definir agentes requeridos.
 11. Crear `design.md` en la carpeta del requerimiento.
 11.5. **Pasada adversarial obligatoria** — invocar la skill `/abogado-del-diablo`
@@ -63,6 +68,25 @@ Leer `_index.md` primero para confirmar estado, luego `spec.md` para el detalle.
     llamadores fuera del análisis de impacto. Es un paso del proceso, no opcional:
     encuentra modos de falla fuera de la vista del autor. La profundidad escala con la
     talla; nunca se salta. Las objeciones se acogen o se rebaten.
+11.6. **Fase TEST — automática** (no se invoca): al cerrar la pasada adversarial,
+    ejecutar el flujo de [`/test`](test.md) sobre este requerimiento → genera
+    `<yyyymmdd>_<TKT>_PruebasUnitarias.sql` (+ `.http` si hay endpoints) desde la
+    matriz, lo corre en `<MCP_TEST>` y anota `-- [OK] TESTS [..] -> N PASS / M ROJO esperado`.
+    Nace en ROJO (TDD). Si se cambia la matriz después, re-correr `/test` a mano.
+11.7. **Lectura en frío — automática** (simula a Cursor llegando sin contexto):
+    lanzar un subagente/agente independiente que lea **solo** `spec.md`, `design.md` y el
+    script de pruebas (sin esta conversación), con este mandato:
+    «Eres el implementador. Califica 0-10 si puedes implementar sin adivinar. Devuelve
+    `SCORE: N` y `AMBIGÜEDADES:` (decisiones que te dejan a ti, nombres/parámetros sin
+    definir, pasos sin verificación, Expected que no sabrías reproducir)».
+    - `SCORE ≥ 7` → seguir. `< 7` → corregir las ambigüedades en el artefacto y repetir
+      (máx. 2 vueltas). Si sigue `< 7` → listar lo pendiente como `BLOQUEADO` en el design
+      y **no** entregar a Cursor.
+    - Si el subagente falla o no responde → cuenta como NO aprobado, nunca como PASS.
+    - Anotar en `_index.md` (log): `Lectura en frío: N/10`.
+    - Si al corregir cambió el «Plan de pruebas» o el spec → repetir 11.6 (fase TEST) antes de sellar.
+11.8. **Sello de diseño** — al cerrar: `python sdd-toolkit/tools/sello.py registrar --tkt-dir <carpeta> --fase diseno`
+    (huella de `spec.md` + script de pruebas). `/ejecutar` lo verifica.
 12. Actualizar `_index.md`: estado → `DISEÑO PENDIENTE REVISIÓN`, marcar design como Creado, agregar log.
     **El estado solo pasa a `LISTO PARA EJECUTAR` cuando el usuario revisa `design.md` y lo confirma explícitamente — el generador no hace esa transición automáticamente.**
 
@@ -73,6 +97,9 @@ Leer `_index.md` primero para confirmar estado, luego `spec.md` para el detalle.
 Para si ocurre cualquiera de estas condiciones:
 
 1. `_index.md` no tiene estado `SPEC PENDIENTE` → indicar estado actual, no diseñar.
+   **Excepción — re-diseño:** en `DISEÑO PENDIENTE REVISIÓN` o `LISTO PARA EJECUTAR` (p. ej. sello
+   `VIEJO` en `/ejecutar` o `INCONSISTENTE` en `/analizar`) se permite ajustar el design: registrar
+   el motivo en el log, re-correr 11.5 → 11.8 y dejar el estado en `DISEÑO PENDIENTE REVISIÓN`.
 2. `spec.md` no tiene criterios de aceptación verificables → devolver a `/definir`.
 3. Hay preguntas abiertas sobre Must `[M]` no resueltas → documentar en design como BLOQUEADO, no asumir respuesta.
 4. El alcance requiere coordinar >2 instancias sin `planificador-requerimiento` → escalar antes de generar design.
@@ -86,6 +113,10 @@ Para si ocurre cualquiera de estas condiciones:
 - [ ] Escalera de decisión definida por cada objeto SQL/API (peldaño 3/4/5).
 - [ ] Plan de pruebas definido (T-SQL unitarias + API `.http` + QA si aplica) con ≥1 caso negativo (`TC-ERR-x`) y mutation en paths críticos.
 - [ ] Pasada `/abogado-del-diablo` ejecutada; objeciones acogidas o rebatidas.
+- [ ] «Valores nuevos y sus consumidores» con veredicto por consumidor (o «No aplica»).
+- [ ] SP que escribe: «Contratos de escritura» completa (TC-IDEM obligatorio).
+- [ ] Lectura en frío `SCORE ≥ 7` y sello `diseno` registrado.
+- [ ] Fase TEST ejecutada: `*PruebasUnitarias.sql` en la carpeta, corrido en `<MCP_TEST>`, evidencia anotada (PASS + ROJO esperado).
 - [ ] Estrategia de rollback documentada (si el requerimiento modifica datos).
 - [ ] `_index.md` actualizado a `DISEÑO PENDIENTE REVISIÓN` con log de estado. (La transición a `LISTO PARA EJECUTAR` requiere confirmación explícita del usuario.)
 - [ ] Ninguna pregunta abierta sobre Must `[M]` sin respuesta.
@@ -98,6 +129,7 @@ Usar solo cuando aplique:
 - desarrollador-api
 - desarrollador-sql
 - desarrollador-flutter  ← si hay mobile en scope
+- tester-sql (modo GENERAR) / api-tester  ← fase TEST automática (paso 11.6)
 
 NO ejecutar todavía:
 
@@ -140,15 +172,15 @@ Actualizar la tabla Graph:
 Agregar al Log de estados:
 
 ```md
-| yyyy-mm-dd | SPEC PENDIENTE | LISTO PARA EJECUTAR | /diseñar | Design creado |
+| yyyy-mm-dd | SPEC PENDIENTE | DISEÑO PENDIENTE REVISIÓN | /diseñar | Design + TEST + lectura en frío N/10 |
 ```
 
-Cambiar estado a:
+Cambiar estado a (la transición a `LISTO PARA EJECUTAR` la hace el usuario al confirmar):
 
 ```md
 ## Estado
 
-LISTO PARA EJECUTAR
+DISEÑO PENDIENTE REVISIÓN
 ```
 
 ---
@@ -182,7 +214,7 @@ Responder con:
 
 - Carpeta: `.planning/tkt-<id>/`
 - Artefacto creado: `design.md`
-- Estado: `LISTO PARA EJECUTAR`
+- Estado: `DISEÑO PENDIENTE REVISIÓN` (confirmar design → `LISTO PARA EJECUTAR`)
 
 ### Impacto técnico
 
@@ -196,7 +228,11 @@ Responder con:
 
 - ...
 
+### Fase TEST (automática)
+
+- Script: `<yyyymmdd>_<TKT>_PruebasUnitarias.sql` — N PASS / M ROJO esperado [<entorno>]
+
 ### Siguiente comando
 
-`/ejecutar`
+Confirmar design → `/ejecutar` (manual: `/test` si cambias la matriz)
 ```

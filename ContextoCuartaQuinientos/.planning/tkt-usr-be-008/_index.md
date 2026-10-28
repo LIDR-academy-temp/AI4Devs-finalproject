@@ -1,6 +1,6 @@
 # USR-BE-008 — Ver y editar perfil (backend + frontend)
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: [[usuarios]] (`sgr`)
 - Targets en scope: `database:CuartaQuinientos` (lectura/escritura sin DDL), `backend:cuartaquinientos-api`, `frontend:cuartaquinientos-web`

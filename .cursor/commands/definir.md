@@ -68,7 +68,7 @@ Para si ocurre cualquiera de estas condiciones:
    |---|-----------|-----------|
    | 1 | **Contexto del Requerimiento** | Obligatorio siempre |
    | 2 | **Contexto Técnico** | Obligatorio siempre |
-   | 3 | **Mockup / Diseño Visual** | Obligatorio si el requerimiento toca UI (frontend / mobile / web-legacy). Opcional si no hay interfaz gráfica |
+   | 3 | **Mockup / Diseño Visual** | Obligatorio si el requerimiento toca UI (frontend / mobile / web-legacy). Opcional si no hay interfaz gráfica. Si llega en crudo (HTML, bundle, imágenes), correr antes `/mockup-a-contexto` |
 
    - Si falta **cualquiera** de los obligatorios → aplicar stop condition 0. Detener. Listar qué falta. No asumir.
    - Si el requerimiento toca UI y falta mockup → mismo STOP.
@@ -88,7 +88,7 @@ Para si ocurre cualquiera de estas condiciones:
    Si el requerimiento es claro (0–1 indicadores): continuar directo al paso 2.
 2. Detectar requerimiento ID si existe.
 3. **Leer contexto previo** (antes de crear artefactos):
-   - Buscar `<RUTA_CONTEXTOS>\specs\<dominio>.md` relevante → conocer estado actual del sistema en ese dominio.
+   - Buscar `<RUTA_SPECS>\<dominio>.md` relevante → conocer estado actual del sistema en ese dominio.
    - Buscar `<RUTA_GRAPH>` → identificar requerimientos relacionados, patrones aplicados, conexiones existentes.
    - Si hay requerimientos relacionados, leer sus `_index.md` para contexto (NO copiar su spec).
 3.5. **Clasificar talla del requerimiento** (sizing — antes de crear cualquier artefacto):
@@ -107,6 +107,14 @@ Para si ocurre cualquiera de estas condiciones:
    - Si el requerimiento es ambiguo, contar targets visibles y estimar conservadoramente.
    - Registrar la talla en `_index.md` → `## Metadata` como `size: XS|S|M|L|XL`.
    - L/XL → aplicar stop condition 4 antes de continuar.
+
+3.6. **Detector de hotspot** (antes de crear artefactos): contar en `<RUTA_GRAPH>` y
+   `_sdd_evolution.md` los requerimientos **Bug Fix** que tocaron los mismos objetos
+   (SP/tabla/endpoint) de este requerimiento. Con **≥ 3** en los últimos 6 meses:
+   - abrir `spec.md` con `> ⚠ HOTSPOT: <objeto> — N bugs (<TKT-a, TKT-b, …>)`;
+   - sugerir `/escalar` hacia **refactor con paridad** (characterization) en vez de otro
+     parche, y dejar la decisión al usuario (no se decide solo);
+   - registrar en `_index.md → Metadata`: `hotspot: <objeto> (N)`.
 
 4. Crear slug corto y descriptivo.
 5. Crear carpeta del requerimiento si no existe.
@@ -198,7 +206,9 @@ SPEC PENDIENTE
 |-----------|---------|---------|--------|
 | Spec | [spec.md](spec.md) | /definir | Creado |
 | Design | [design.md](design.md) | /diseñar | Pendiente |
+| Test | `<yyyymmdd>_<TKT>_PruebasUnitarias.sql` | /test (auto en /diseñar) | Pendiente |
 | Impl | [impl.md](impl.md) | /ejecutar | Pendiente |
+| APIs Front | `TKT-<Numero>-APIS.md` | /revisar (auto si hay endpoints) | Pendiente / No aplica |
 | Delta | [delta.md](delta.md) | /completar | Pendiente |
 
 ## Metadata

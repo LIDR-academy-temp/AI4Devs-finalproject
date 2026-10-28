@@ -39,7 +39,8 @@ Dominio de seguridad, identidad y configuración base del sistema (esquema `sgr`
 - `POST /SGR/AuthService/RefreshToken` (lee la cookie, rota el refresh token, devuelve nuevo access token) · `POST /SGR/AuthService/Logout` (revoca) · `POST /SGR/AuthService/CambiarPassword` (JWT, USR-BE-036).
 - `GET/PUT /SGR/Usuarios/{id}` (perfil propio; Admin cualquiera — USR-BE-008); `POST /SGR/Usuarios` (Admin, responde `{ usuarioId, passwordTemporal }`), `PATCH /SGR/Usuarios/{id}/desactivar|activar`, `DELETE /SGR/Usuarios/{id}` (`bEliminado = 1`) — USR-BE-009.
 - `/SGR/Perfiles`, `/SGR/Casas`, `/SGR/Condominios` — controladores del inventario §4 (verbos por ticket).
-- `/SGR/Menus`, `/SGR/MenusBotones`, `/SGR/PerfilMenus`, `/SGR/PerfilMenuBotones` — configuración de menús dinámicos.
+- `/SGR/Menus`, `/SGR/MenusBotones`, `/SGR/PerfilMenus`, `/SGR/PerfilMenuBotones` — configuración legacy (headers `UserID`/`WindowName`).
+- **[[SGR-BE-030]] (JWT, SPA):** `GET /SGR/Navegacion/menus` (árbol por claim `perfil`); `GET/POST/PUT/DELETE /SGR/Menus/admin` (solo `perfil=Administrador`); `GET/PUT /SGR/Perfiles/{id}/permisos-menus`. Errores REST: `ProblemDetails` + `code` (ej. `MENU_NO_ENCONTRADO`, `MENU_PADRE_INVALIDO`). Contrato front: [TKT-SGR-BE-030-APIS.md](.planning/tkt-sgr-be-030/TKT-SGR-BE-030-APIS.md).
 - `/SGR/RecuperacionPassword` — recuperación de contraseña.
 - Claims JWT (readme §2, HMAC-SHA256, 60 min): `sub` (= `UsuarioID`), `correo`, `nombre`, `perfil` (`RoleClaimType`), `bAdministrador`, `condominioId`, `exp`.
 
@@ -56,7 +57,18 @@ Dominio de seguridad, identidad y configuración base del sistema (esquema `sgr`
 - **(delta)** Perfiles sembrados por DB-002: Administrador/Residente/Guardia/Trabajador.
 - **(delta)** `sgr.Usuarios.Preferencias` (JSON) puede alojar el `TelegramChatID` (aunque la vinculación canónica del bot vive en `bot.CuentasTelegram`, ver dominio Bot/Telegram).
 
+## Frontend admin (SPA) — vigente
+
+- Ruta `/admin/usuarios` ([[FE-CRUD-001]]): `AdminListToolbar` + `AdminFilterableTable` + panel lateral (`AdminSidePanel`) con RHF/Zod (`usuariosAdminSchemas`); baja con `ConfirmDialog`; APIs `POST/PUT/PATCH/DELETE /SGR/Usuarios*`.
+
 ## Notas
 - Sin stored procedures: acceso con Dapper + vistas `vs*` + servicios C#; validación con FluentValidation; transacciones vía `IDbTransaction`.
 - Nombres reales del esquema español (`sgr`); soft delete con `bEliminado` (NO `IsActive`).
 - Frontend React 18 consume el backend con el access token JWT (`Authorization: Bearer`); el refresh token viaja solo en cookie `HttpOnly`.
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-10-23 | [[FE-CRUD-001]] | Admin usuarios migrado a patrón CRUD admin (panel lateral, sin prompt/confirm) |
+| 2026-10-27 | [[SGR-BE-030]] | API JWT navegación + admin menús/permisos-perfil (`NavegacionController`, `Menus/admin`, `Perfiles/permisos-menus`) |

@@ -2,7 +2,7 @@
 
 [← Fase 1](../FASE1_ROADMAP.md) | [spec](spec.md) | [design](design.md)
 
-- Estado: LISTO PARA EJECUTAR
+- Estado: ARCHIVADO
 - Estructura: estándar
 - Dominio: [[tickets]]
 - Targets en scope: `backend:cuartaquinientos-api` (sin cambios SQL)

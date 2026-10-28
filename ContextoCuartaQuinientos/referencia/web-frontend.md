@@ -43,6 +43,7 @@ src/
 
 ## Reglas de UI
 
+- Referencia visual y skills: [ui-referencia-visual.md](ui-referencia-visual.md).
 - Estados **vacío / carga / error** en cada vista con datos (Definition of Done, `readme.md` §5).
 - Estados de ticket y cuota con **color + etiqueta** (WCAG 2.1 AA), foco visible, tema claro/oscuro.
 - DTOs TypeScript con los mismos nombres de campo que el contrato §4 (`usuarioID`, `tituloTicket`, …).

@@ -17,6 +17,8 @@ vars:
   RUTA_PLANNING:    '<ruta-al-repo-de-contexto>/.planning'
   RUTA_SPECS:       '<ruta-al-repo-de-contexto>/.planning'
   RUTA_GRAPH:       '<ruta-al-repo-de-contexto>/_graph.md'
+  # RUTA_MOCKUPS:   '<ruta-a-mockups>'   # opcional — skill mockup-a-contexto guarda en <RUTA_MOCKUPS>/<TKT>/
+  #                                        (sin ella: <RUTA_SPECS>/<TKT>/mockup/)
   RUTA_REPO_API:    '<ruta-al-repo-de-api>'
 
   PROYECTO_API:     <NombreProyectoSolucion>
@@ -180,13 +182,16 @@ tools:
   # code_graph:     'python sdd-toolkit/tools/code_graph.py --query "{query}"'
   # impact_graph:   'python sdd-toolkit/tools/impact_graph.py --object "{object}" --format md'
   # enrich_graph:   'python sdd-toolkit/tools/enrich_graph.py'
+  # sello:          'python sdd-toolkit/tools/sello.py'   # frescura de aprobaciones (v0.27)
   # verify:         'mcp'   # o comando/runner de verificación del profile
 
 artifacts:
   - { name: _index.md,  generated_by: context-generator }
   - { name: spec.md,    generated_by: context-generator, template: ./sdd-toolkit/templates/spec.md }
   - { name: design.md,  generated_by: context-generator, template: ./sdd-toolkit/templates/design.md }
+  - { name: PruebasUnitarias.sql, generated_by: context-generator, template: ./sdd-toolkit/templates/pruebas.sql }
   - { name: impl.md,    generated_by: implementer,        template: ./sdd-toolkit/templates/impl.md }
+  - { name: APIS.md,    generated_by: implementer,        template: ./sdd-toolkit/templates/apis.md }
   - { name: delta.md,   generated_by: context-generator, template: ./sdd-toolkit/templates/delta.md }
   - { name: release.md, generated_by: context-generator, template: ./sdd-toolkit/templates/release.md }
 

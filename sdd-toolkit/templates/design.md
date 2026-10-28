@@ -60,6 +60,35 @@ hace el cambio auditable.>
 
 <!-- ================================================================== -->
 
+## Contenido configurable
+
+<!-- methodology.md regla 7 · core/contenido-configurable.md. Obligatorio si el requerimiento muestra
+     textos, estatus, mensajes, errores o números de negocio. Si no aplica: «No aplica — sin contenido
+     visible». Clases: marco de UI (ARB) · negocio (catálogo) · error (catálogo de errores) · regla
+     (parámetro + placeholder) · presentación (ColorTone / IconCode) · flag. -->
+
+| # | Contenido | Dónde se ve | Clase | Fuente (catálogo / parámetro / flag / ARB) | Llave / campo | Alcance | Placeholders | Respaldo en la app |
+|---|---|---|---|---|---|---|---|---|
+
+Catálogos / parámetros nuevos (con alcance, ES/EN, `IsActive`, auditoría, POST de ambos idiomas): —
+Errores nuevos (código UPPER_SNAKE · ES · EN): —
+
+## Valores nuevos y sus consumidores
+
+<!-- OBLIGATORIO si el requerimiento agrega o cambia un VALOR de dominio: estado, tipo,
+     OverrideID, código de error, bandera, rango, ID de catálogo, o amplía lo que acepta
+     un validador. Si no → «No aplica (sin valores nuevos)».
+     El análisis de impacto ve OBJETOS; esto ve VALORES: un valor nuevo cae en el
+     ELSE/default equivocado de un CASE o IN que nadie tocó.
+     Cómo: buscar los valores HERMANOS (los que ya existen) en todo el código —
+       SELECT OBJECT_SCHEMA_NAME(object_id)+'.'+OBJECT_NAME(object_id) AS Objeto
+       FROM sys.sql_modules WHERE definition LIKE '%<valor hermano>%';
+     y leer cada consumidor. Verificar con MCP y anotar -- ✓ MCP. -->
+
+| Valor nuevo | Hermanos buscados | Consumidor (`schema.objeto` / archivo) | Veredicto | Acción |
+|---|---|---|---|---|
+| `<OverrideID 215>` | `212, 214, 230` | `sls.prcX` (CASE en marcador `-- TKT-…`) | Lo maneja / **Cae en default** / Fuera de alcance | <cambio o N/A> |
+
 ## Diagrama de flujo (Mermaid, opcional)
 
 <!-- Incluir SOLO si el requerimiento toca >2 objetos/instancias o cruza la frontera
@@ -101,16 +130,34 @@ sequenceDiagram
      - El plan se materializa en un script ejecutable a partir de
        `sdd-toolkit/templates/pruebas.sql` (nombre `<yyyymmdd>_<TKT>_Pruebas*.sql`),
        corrido en `<MCP_TEST>` con TRAN+ROLLBACK y anotado
-       `-- [OK] TESTS [<entorno>] -> <N> PASS`. El hook `check-tests-green.ps1`
-       bloquea el script sin caso negativo o sin esa evidencia, y bloquea implementar
-       un `*_business_sps.sql` sin su `*Pruebas*.sql` hermano (shift-left).
+       `-- [OK] TESTS [<entorno>] -> <N> PASS / <M> ROJO esperado` (fase TEST, nace en ROJO).
+       El hook `check-tests-green.ps1` bloquea el script sin caso negativo, sin TC-IDEM si
+       ejecuta un prcSet*, o sin evidencia; y bloquea un CREATE/ALTER PROCEDURE sin un
+       `*Pruebas*.sql` que lo pruebe (shift-left).
      - Paso adversarial en SP de negocio o cambios difíciles de revertir: aplicar
        la skill `abogado-del-diablo` sobre los propios tests antes de darlos por buenos. -->
-| Prueba | Target | Tipo | Cubre CA |
-|---|---|---|---|
-| `TC-INV-1` | <instancia> | regresión | CA-R1 (invariante INV-1) |
-| `TC-ERR-1` | <instancia> | negativo | <entrada inválida → error esperado> |
-| `TC-RB` | <instancia> | rollback | estrategia de rollback |
+| Prueba | Target | Tipo | Cubre CA | Entrada | Expected |
+|---|---|---|---|---|---|
+| `TC-INV-1` | <instancia> | regresión | CA-R1 (invariante INV-1) | <fixture / parámetros> | <valor exacto> |
+| `TC-ERR-1` | <instancia> | negativo | <CA> | <entrada inválida> | <ErrorID 5xxxx / sin cambio de estado> |
+| `TC-RB` | <instancia> | rollback | estrategia de rollback | <cambio aplicado> | <estado original idéntico> |
+
+<!-- `Expected` es CONTRATO: la fase TEST lo copia idéntico al script y /revisar lo compara. -->
+
+### Contratos de escritura (SP `prcSet*` / procesos que escriben)
+
+<!-- OBLIGATORIO si el requerimiento crea o modifica un SP/endpoint que ESCRIBE
+     (prcSet*, procesos, POST/DELETE). Cada fila lleva su TC-ID o «N/A porque…».
+     Un 200/ErrorID=0 NO es completitud: se aserta el efecto de negocio final.
+     El hook check-tests-green exige TC-IDEM en el script si invoca un prcSet*. -->
+| Contrato | Qué se aserta | TC |
+|---|---|---|
+| Éxito con efecto final | el estado de negocio resultante (filas, montos), no solo ErrorID=0 | `TC-…` |
+| Entrada inválida | error esperado **y** ningún cambio de estado prohibido | `TC-ERR-…` |
+| Idempotencia / duplicado | ejecutar 2 veces = 1 solo efecto durable (contar filas) | `TC-IDEM-1` |
+| Concurrencia / orden | ambos órdenes (A→B y B→A) dan el mismo resultado | `TC-CONC-1` / N/A porque… |
+| Falla parcial | error a mitad → rollback completo, sin estado a medias | `TC-PARC-1` / N/A porque… |
+| Transición de estado | solo transiciones permitidas; la prohibida falla | `TC-EST-1` / N/A porque… |
 
 ### Ratio de pruebas (Testing Trophy)
 
@@ -150,6 +197,19 @@ sequenceDiagram
 
 <Cómo revertir cada cambio. Según el profile: script inverso, dry-run, feature flag, etc.>
 
+## Sondas canario (post-deploy)
+
+<!-- OBLIGATORIO si el requerimiento toca cálculos de negocio (comisiones, overrides,
+     precios, inventario, pedidos, puntos) o modifica datos; si no → «No aplica».
+     Consultas de SOLO LECTURA que miden la salud de negocio que este cambio puede
+     romper. release.md toma la línea base en PROD antes del deploy y compara a T+1h y
+     T+1d. Se alerta por CAMBIO contra la línea base, no por valor absoluto.
+     Verificar cada query en <MCP_TEST> y anotar -- ✓ MCP. -->
+
+| Sonda | Query (solo lectura) | Umbral de alerta |
+|---|---|---|
+| `<conteo overrides 214 del periodo>` | `SELECT COUNT(*) FROM … WHERE …` | `±10 % vs base` |
+
 ## Pre-mortem
 
 <!-- SOLO para requerimientos con riesgo alto, estado RIESGOSO o estructura extendida.
@@ -180,6 +240,12 @@ sequenceDiagram
       de spec.md (uno por invariante, ninguno huérfano ni faltante)
 
 **Calidad del artefacto:**
+- [ ] Contenido configurable (regla 7): ningún texto de negocio, error o número de regla como literal en
+      un SP ni solo en el ARB; la sección «Contenido configurable» está llena o dice «No aplica»
+- [ ] «Valores nuevos y sus consumidores» llena (cada consumidor con veredicto) o «No aplica»
+- [ ] SP que escribe: tabla «Contratos de escritura» con TC o «N/A porque…» en cada fila (TC-IDEM obligatorio)
+- [ ] «Sondas canario» llena si toca cálculos de negocio/datos, o «No aplica»
+- [ ] Lectura en frío ≥ 7/10 (paso 11.7 de /diseñar) y sello `diseno` registrado
 - [ ] Toda query/comando SQL verificado con MCP — anotado `-- ✓ MCP [<entorno>] → <resultado>`
 - [ ] Orden de implementación: cada paso tiene Entregable + Dependencia explícita
 - [ ] Sin falsa agencia: ningún "el sistema aplica" ni "el diseño propone" —
