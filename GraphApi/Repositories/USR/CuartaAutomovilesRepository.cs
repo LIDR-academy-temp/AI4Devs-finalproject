@@ -138,6 +138,92 @@ public sealed class CuartaAutomovilesRepository(IDbConnection db) : ICuartaAutom
         return result.AsList();
     }
 
+    public async Task<int> InsertMarcaAsync(string marca, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            INSERT INTO usr.Marcas
+                (Marca, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+            OUTPUT INSERTED.MarcaID
+            VALUES (@marca, @correo, @adminId, GETDATE(), 0);
+            """;
+        return await db.ExecuteScalarAsync<int>(sql, new { marca, correo, adminId }, tx);
+    }
+
+    public async Task<bool> UpdateMarcaAsync(int marcaId, string marca, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            UPDATE usr.Marcas SET
+                Marca = @marca,
+                Modificado = @correo,
+                UsuarioModificacionID = @adminId,
+                FechaModificacion = GETDATE()
+            WHERE MarcaID = @marcaId AND bEliminado = 0;
+            """;
+        var n = await db.ExecuteAsync(sql, new { marcaId, marca, correo, adminId }, tx);
+        return n > 0;
+    }
+
+    public async Task<bool> SoftDeleteMarcaAsync(int marcaId, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            UPDATE usr.Marcas SET
+                bEliminado = 1,
+                Modificado = @correo,
+                UsuarioModificacionID = @adminId,
+                FechaModificacion = GETDATE()
+            WHERE MarcaID = @marcaId AND bEliminado = 0;
+            """;
+        var n = await db.ExecuteAsync(sql, new { marcaId, correo, adminId }, tx);
+        return n > 0;
+    }
+
+    public async Task<bool> ExisteMarcaActivaAsync(int marcaId, CancellationToken ct = default)
+    {
+        const string sql = "SELECT COUNT(1) FROM usr.Marcas WHERE MarcaID = @marcaId AND bEliminado = 0;";
+        var n = await db.ExecuteScalarAsync<int>(sql, new { marcaId });
+        return n > 0;
+    }
+
+    public async Task<int> InsertModeloAsync(int marcaId, string modelo, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            INSERT INTO usr.Modelos
+                (MarcaID, Modelo, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+            OUTPUT INSERTED.ModeloID
+            VALUES (@marcaId, @modelo, @correo, @adminId, GETDATE(), 0);
+            """;
+        return await db.ExecuteScalarAsync<int>(sql, new { marcaId, modelo, correo, adminId }, tx);
+    }
+
+    public async Task<bool> UpdateModeloAsync(int modeloId, int marcaId, string modelo, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            UPDATE usr.Modelos SET
+                MarcaID = @marcaId,
+                Modelo = @modelo,
+                Modificado = @correo,
+                UsuarioModificacionID = @adminId,
+                FechaModificacion = GETDATE()
+            WHERE ModeloID = @modeloId AND bEliminado = 0;
+            """;
+        var n = await db.ExecuteAsync(sql, new { modeloId, marcaId, modelo, correo, adminId }, tx);
+        return n > 0;
+    }
+
+    public async Task<bool> SoftDeleteModeloAsync(int modeloId, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            UPDATE usr.Modelos SET
+                bEliminado = 1,
+                Modificado = @correo,
+                UsuarioModificacionID = @adminId,
+                FechaModificacion = GETDATE()
+            WHERE ModeloID = @modeloId AND bEliminado = 0;
+            """;
+        var n = await db.ExecuteAsync(sql, new { modeloId, correo, adminId }, tx);
+        return n > 0;
+    }
+
     private sealed class AutomovilListSql
     {
         public required string SelectFrom { get; init; }

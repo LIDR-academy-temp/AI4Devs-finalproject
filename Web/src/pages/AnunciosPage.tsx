@@ -1,15 +1,25 @@
 import { Link } from 'react-router-dom'
 import { useAnunciosResidente } from '../features/anuncios/useAnuncios'
-import { AlertBanner, EmptyState, PageHeader } from '../shared/components/admin'
+import { EmptyState, PageHeader } from '../shared/components/admin'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 
 export function AnunciosPage() {
-  const { data, loading, error } = useAnunciosResidente()
+  const { data, loading, error, refetch } = useAnunciosResidente()
+  useQueryErrorToast(error)
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6 md:px-8">
       <PageHeader title="Comunicados" description="Avisos y noticias del condominio." />
       {loading && <p className="text-neutral">Cargando…</p>}
-      {error && <AlertBanner variant="error">{error}</AlertBanner>}
+      {error && (
+        <button
+          type="button"
+          className="cursor-pointer text-sm text-primary underline"
+          onClick={() => void refetch()}
+        >
+          Reintentar
+        </button>
+      )}
       {!loading && !error && data.length === 0 && (
         <EmptyState title="No hay comunicados vigentes." />
       )}

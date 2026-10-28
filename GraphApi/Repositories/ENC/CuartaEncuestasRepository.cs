@@ -285,6 +285,18 @@ public sealed class CuartaEncuestasRepository : ICuartaEncuestasRepository
         return (row.Abierta == 1, true);
     }
 
+    public async Task<bool> EncuestaEstaPublicadaAsync(int encuestaId, CancellationToken ct = default)
+    {
+        const string sql = """
+            SELECT CASE WHEN bEliminado = 0 AND bActivo = 1 THEN 1 ELSE 0 END
+            FROM enc.Encuestas WITH (NOLOCK)
+            WHERE EncuestaID = @Id;
+            """;
+        var publicada = await _db.ExecuteScalarAsync<int?>(
+            new CommandDefinition(sql, new { Id = encuestaId }, cancellationToken: ct));
+        return publicada == 1;
+    }
+
     public async Task<bool> UsuarioYaParticipoAsync(int encuestaId, int usuarioId, IDbTransaction? tx = null)
     {
         const string sql = """

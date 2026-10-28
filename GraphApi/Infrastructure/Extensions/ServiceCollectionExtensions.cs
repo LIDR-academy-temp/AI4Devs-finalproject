@@ -34,6 +34,8 @@ using GraphApi.Models.NTF.Validators;
 using GraphApi.Models.TKT;
 using GraphApi.Models.TKT.Validators;
 using GraphApi.Models.TKT.Tickets;
+using GraphApi.Models.VTS.CuartaVisitas;
+using GraphApi.Models.VTS.Validators;
 using GraphApi.Repositories.NTF;
 using GraphApi.Repositories.TKT;
 using GraphApi.Services.NTF;
@@ -135,6 +137,10 @@ namespace GraphApi.Infrastructure.Extensions
                 options.AddPolicy("AdminOAsignado", p => p.RequireAssertion(ctx =>
                     ctx.User.HasClaim("perfil", "Administrador")
                     || ctx.User.HasClaim("perfil", "Trabajador")));
+
+                options.AddPolicy("AdminOGuardia", p => p.RequireAssertion(ctx =>
+                    ctx.User.HasClaim("perfil", "Administrador")
+                    || ctx.User.HasClaim("perfil", "Guardia")));
             });
 
             // — Conexiones y contexto de request compartido
@@ -216,7 +222,11 @@ namespace GraphApi.Infrastructure.Extensions
             services.AddScoped<IValidator<CambiarPasswordRequest>, CambiarPasswordRequestValidator>();
             services.AddScoped<IValidator<AvisoGeneralRequest>, AvisoGeneralRequestValidator>();
             services.AddScoped<IValidator<CrearTicketInput>, CrearTicketInputValidator>();
+            services.AddScoped<IValidator<CrearTicketAdminInput>, CrearTicketAdminInputValidator>();
+            services.AddScoped<IValidator<ActualizarTicketAdminInput>, ActualizarTicketAdminInputValidator>();
             services.AddScoped<IValidator<TicketFiltroDto>, TicketFiltroDtoValidator>();
+            services.AddScoped<IValidator<TicketAsignadosFiltroDto>, TicketAsignadosFiltroDtoValidator>();
+            services.AddScoped<IValidator<ReservacionAdminFiltroDto>, ReservacionAdminFiltroDtoValidator>();
             services.AddScoped<IValidator<ActualizarPerfilRequest>, ActualizarPerfilRequestValidator>();
             services.AddScoped<IValidator<CrearUsuarioAdminRequest>, CrearUsuarioAdminRequestValidator>();
 
@@ -229,6 +239,12 @@ namespace GraphApi.Infrastructure.Extensions
             services.AddScoped<ICuartaTicketQueryService, CuartaTicketQueryService>();
             services.AddScoped<ICuartaTicketAdminRepository, CuartaTicketAdminRepository>();
             services.AddScoped<ICuartaTicketAdminService, CuartaTicketAdminService>();
+            services.AddScoped<ICuartaTicketCatalogoAdminService, CuartaTicketCatalogoAdminService>();
+            services.AddScoped<IValidator<UpsertCategoriaTicketInput>, UpsertCategoriaTicketInputValidator>();
+            services.AddScoped<IValidator<UpsertPrioridadTicketInput>, UpsertPrioridadTicketInputValidator>();
+            services.AddScoped<ICuartaTicketDetalleRepository, CuartaTicketDetalleRepository>();
+            services.AddScoped<ICuartaTicketDetalleService, CuartaTicketDetalleService>();
+            services.AddScoped<IValidator<CrearComentarioTicketInput>, CrearComentarioTicketInputValidator>();
 
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IUsuarioPerfilRepository, UsuarioPerfilRepository>();
@@ -274,6 +290,8 @@ namespace GraphApi.Infrastructure.Extensions
             services.AddScoped<GraphApi.Services.USR.CuartaAutomoviles.ICuartaAutomovilesService, GraphApi.Services.USR.CuartaAutomoviles.CuartaAutomovilesService>();
             services.AddScoped<GraphApi.Repositories.VTS.ICuartaVisitasRepository, GraphApi.Repositories.VTS.CuartaVisitasRepository>();
             services.AddScoped<GraphApi.Services.VTS.CuartaVisitas.ICuartaVisitasService, GraphApi.Services.VTS.CuartaVisitas.CuartaVisitasService>();
+            services.AddScoped<GraphApi.Repositories.VTS.ICuartaVisitasGeneradasRepository, GraphApi.Repositories.VTS.CuartaVisitasGeneradasRepository>();
+            services.AddScoped<GraphApi.Services.VTS.CuartaVisitasGeneradas.ICuartaVisitasGeneradasService, GraphApi.Services.VTS.CuartaVisitasGeneradas.CuartaVisitasGeneradasService>();
             services.AddScoped<GraphApi.Repositories.JNT.ICuartaJuntasRepository, GraphApi.Repositories.JNT.CuartaJuntasRepository>();
             services.AddScoped<GraphApi.Services.JNT.CuartaJuntas.ICuartaJuntasService, GraphApi.Services.JNT.CuartaJuntas.CuartaJuntasService>();
             services.AddScoped<GraphApi.Repositories.USR.ICuartaMascotasRepository, GraphApi.Repositories.USR.CuartaMascotasRepository>();

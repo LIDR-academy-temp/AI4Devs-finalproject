@@ -6,6 +6,9 @@ public interface ICuartaAlmacenService
 {
     // ── Categorías ────────────────────────────────────────
     Task<IReadOnlyList<CategoriaDto>> ListarCategoriasAsync();
+    Task<(CategoriaDto? Data, string? Code, int Status, string? Detail)> CrearCategoriaAsync(string nombre, string correoUsuario, int usuarioId);
+    Task<(CategoriaDto? Data, string? Code, int Status, string? Detail)> ActualizarCategoriaAsync(int categoriaId, string nombre, string correoUsuario, int usuarioId);
+    Task<(bool Ok, string? Code, int Status, string? Detail)> EliminarCategoriaAsync(int categoriaId, string correoUsuario, int usuarioId);
 
     // ── Artículos ─────────────────────────────────────────
     Task<IReadOnlyList<ArticuloListItemDto>> ListarArticulosAsync();

@@ -18,14 +18,18 @@ import {
   CASAS_TABLE_COLUMNS,
   createCasasTableAccessors,
 } from '../features/admin/casas/casasTableFilter'
+import { CasaAdminMobileCard } from '../features/admin/casas/CasaAdminMobileCard'
 import {
   AdminFilterableTable,
   AdminListToolbar,
+  AdminMobileCardList,
   AdminSidePanel,
   AdminSplitLayout,
   ConfirmDialog,
 } from '../shared/components/admin'
 import { useClientTableFilter } from '../shared/hooks/useClientTableFilter'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { useToast } from '../shared/toast/ToastContext'
 import { apiDelete, apiPost, apiPut } from '../shared/lib/apiClient'
 import type { CasaAdminItem } from '../shared/types/casasAdmin'
 
@@ -40,7 +44,8 @@ export function AdminCasasPage() {
   const [deleteTarget, setDeleteTarget] = useState<CasaAdminItem | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
-  const [dismissedError, setDismissedError] = useState(false)
+  const toast = useToast()
+  useQueryErrorToast(error)
   const propietarios = useMemo(
     () => usuarios.filter((u) => u.bActivo),
     [usuarios],
@@ -145,6 +150,7 @@ export function AdminCasasPage() {
       return
     }
     closePanel()
+    toast.success('Casa creada')
     await refetch()
   })
 
@@ -161,6 +167,7 @@ export function AdminCasasPage() {
       return
     }
     closePanel()
+    toast.success('Casa actualizada')
     await refetch()
   })
 
@@ -173,16 +180,13 @@ export function AdminCasasPage() {
       return
     }
     setDeleteTarget(null)
+    toast.success('Casa eliminada')
     await refetch()
   }
 
   useEffect(() => {
     if (!deleteTarget) setDeleteError(null)
   }, [deleteTarget])
-
-  useEffect(() => {
-    if (error) setDismissedError(false)
-  }, [error])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -206,19 +210,6 @@ export function AdminCasasPage() {
 
   return (
     <div className="cq-admin-page container-fluid py-4">
-      {error && !dismissedError && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          <i className="mdi mdi-alert-circle me-1" />
-          {error}
-          <button
-            type="button"
-            className="btn-close"
-            aria-label="Cerrar"
-            onClick={() => setDismissedError(true)}
-          />
-        </div>
-      )}
-
       <AdminListToolbar
         title="Casas"
         metrics={heroStats}
@@ -266,6 +257,7 @@ export function AdminCasasPage() {
               )}
 
               {!loading && !error && casas.length > 0 && (
+                <>
                 <AdminFilterableTable
                   columns={CASAS_TABLE_COLUMNS}
                   columnFilters={columnFilters}
@@ -338,6 +330,23 @@ export function AdminCasasPage() {
                     })
                   )}
                 </AdminFilterableTable>
+                <AdminMobileCardList
+                  rows={filteredCasas}
+                  getRowKey={(c) => c.casaId}
+                  renderCard={(c) => (
+                    <CasaAdminMobileCard
+                      casa={c}
+                      active={editing?.casaId === c.casaId}
+                      correoPropietario={
+                        c.propietarioUsuarioId != null
+                          ? correoByUsuarioId.get(c.propietarioUsuarioId)
+                          : undefined
+                      }
+                      onEdit={openEdit}
+                    />
+                  )}
+                />
+                </>
               )}
             </div>
           </div>

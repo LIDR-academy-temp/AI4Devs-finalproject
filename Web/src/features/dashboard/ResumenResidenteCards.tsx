@@ -17,18 +17,18 @@ export function ResumenResidenteCards({ data }: Props) {
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)]">
+        <div className="rounded-lg border border-neutral-100 bg-surface-alt p-4 shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)]">
           <p className="text-xs font-medium uppercase tracking-wide text-neutral">Tickets activos</p>
           <p className="mt-1 text-xl font-semibold text-primary-dark">{data.ticketsActivos}</p>
         </div>
-        <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)]">
+        <div className="rounded-lg border border-neutral-100 bg-surface-alt p-4 shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)]">
           <p className="text-xs font-medium uppercase tracking-wide text-neutral">Notificaciones sin leer</p>
           <p className="mt-1 text-xl font-semibold text-primary-dark">{data.notificacionesNoLeidas}</p>
         </div>
       </div>
 
       {data.estadoCuotaMes ? (
-        <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)]">
+        <div className="rounded-lg border border-neutral-100 bg-surface-alt p-4 shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)]">
           <p className="text-xs font-medium uppercase tracking-wide text-neutral">Cuota del mes</p>
           <p className="mt-1 text-lg font-semibold text-primary-dark">
             {formatMxn(data.estadoCuotaMes.monto)} — {data.estadoCuotaMes.estado}

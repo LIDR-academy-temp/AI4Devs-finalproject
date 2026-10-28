@@ -5,6 +5,7 @@ import { Building2, Menu } from 'lucide-react'
 import { NotificationBell } from '../../features/notifications/NotificationBell'
 import { AppSidebar } from './AppSidebar'
 import { Breadcrumbs } from './Breadcrumbs'
+import { ModuleTitle } from './ModuleTitle'
 import { MobileDrawer } from './MobileDrawer'
 import { UserMenu } from './UserMenu'
 import '../../styles/app-shell.css'
@@ -48,7 +49,8 @@ export function AppShell() {
 
           <div className="hidden h-7 w-px shrink-0 bg-white/15 md:block" aria-hidden="true" />
 
-          <div className="hidden min-w-0 flex-1 md:block">
+          <div className="hidden min-w-0 flex-1 items-center gap-2 md:flex">
+            <ModuleTitle />
             <Breadcrumbs />
           </div>
 

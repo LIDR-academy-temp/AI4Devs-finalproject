@@ -1,5 +1,7 @@
 export type CatalogoItem = { id: number; nombre: string }
 
+export type PrioridadCatalogoItem = { id: number; nombre: string; orden?: number | null }
+
 export type MiTicketItem = {
   ticketId: number
   titulo: string
@@ -36,6 +38,30 @@ export type TicketCreated = {
   categoria?: string | null
   canal?: string | null
   fechaCreacion: string
+}
+
+export type TicketDetalle = {
+  ticketId: number
+  titulo: string
+  descripcion: string
+  estado: string
+  prioridad: string
+  categoria: string | null
+  fechaCreacion: string
+  fechaCierre: string | null
+}
+
+export type ComentarioTicket = {
+  comentarioTicketId: number
+  comentario: string
+  fechaComentario: string
+  autorNombre: string
+  esInterno: boolean
+}
+
+export type CrearComentarioInput = {
+  comentario: string
+  esInterno?: boolean
 }
 
 export type CrearTicketPayload = {

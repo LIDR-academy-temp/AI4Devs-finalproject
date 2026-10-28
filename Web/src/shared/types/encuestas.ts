@@ -53,6 +53,7 @@ export interface ResultadoPregunta {
   tipoPregunta: string
   opciones: ResultadoOpcion[]
   respuestasTexto: string[]
+  totalRespuestasTexto?: number
 }
 
 export interface EncuestaResultados {

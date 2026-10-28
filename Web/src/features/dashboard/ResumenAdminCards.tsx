@@ -20,7 +20,7 @@ export function ResumenAdminCards({ data }: Props) {
   return (
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {cards.map((c) => (
-        <div key={c.label} className="rounded-lg border border-neutral-200 bg-white p-4 shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)]">
+        <div key={c.label} className="rounded-lg border border-neutral-100 bg-surface-alt p-4 shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)]">
           <p className="text-xs font-medium uppercase tracking-wide text-neutral">{c.label}</p>
           <p className="mt-1 text-lg font-semibold text-primary-dark">{c.value}</p>
         </div>

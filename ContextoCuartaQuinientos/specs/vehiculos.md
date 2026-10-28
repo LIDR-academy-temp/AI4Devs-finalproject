@@ -38,8 +38,8 @@ Controllers reales USR (`/{DOMINIO}/{Controller}`):
 - `/USR/Automoviles/admin` — **POST** alta para `usuarioId` propietario (`SoloAdministrador`).
 - `/USR/Automoviles/{id}/admin` — **PUT** / **DELETE** sobre cualquier vehículo activo (`SoloAdministrador`).
 - `/USR/Automoviles/buscar?placas=` — búsqueda por placa (Admin/Guardia).
-- `/USR/Marcas` — catálogo de marcas.
-- `/USR/Modelos` — catálogo de modelos.
+- `/USR/Marcas` — catálogo de marcas (GET; **POST/PUT/DELETE** admin [[FE-ADMIN-CAT-001]]).
+- `/USR/Modelos` — catálogo de modelos (GET; **POST/PUT/DELETE** admin [[FE-ADMIN-CAT-001]]).
 
 Verbos residente: GET (mis vehículos), POST (registrar), PUT (editar propio), DELETE (soft propio). Admin: ver tabla anterior; placas duplicadas → 409; `usuarioId` inválido/inactivo en alta admin → 422 `VEH_USUARIO_INVALIDO`.
 
@@ -65,3 +65,4 @@ Verbos residente: GET (mis vehículos), POST (registrar), PUT (editar propio), D
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
 | 2026-10-26 | [[FE-CRUD-003]] | Endpoints admin `padron` + `/admin` CRUD; UI admin CRUD completa |
+| 2026-10-27 | [[FE-ADMIN-CAT-001]] | Pestañas Marcas/Modelos + CRUD catálogo en admin |

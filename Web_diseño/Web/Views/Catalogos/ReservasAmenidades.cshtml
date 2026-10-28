@@ -1,0 +1,561 @@
+@model ReservaAmenidadPageViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Reservas de amenidades";
+    var isEditing = Model.Form.ReservacionAreaID > 0;
+    var reservacionesJson = System.Text.Json.JsonSerializer.Serialize(Model.Items.Select(item => new
+    {
+        item.ReservacionAreaID,
+        item.AreasComunesID,
+        item.AreasComunes,
+        item.NombreUsuario,
+        item.ReservacionEstado,
+        FechaInicio = item.FechaInicio,
+        FechaFin = item.FechaFin
+    }));
+}
+
+<div class="container-fluid">
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-check-circle mr-1"></i>@Model.Message
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-alert-circle mr-1"></i>@Model.Error
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Warning))
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-alert mr-1"></i>@Model.Warning
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+
+    <div class="card cq-reserva-hero mb-4">
+        <div class="card-body d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            <div class="flex-grow-1">
+                <span class="badge badge-pill cq-reserva-pill">Amenidades con reserva</span>
+                <h3 class="mb-2 mt-2">Reserva horarios sin cruces y con lectura clara</h3>
+                <p class="mb-0">Define amenidad, responsable, estado y horario. La vista detecta cruces y avisa si faltan catálogos.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2 cq-reserva-stat-strip">
+                <div class="cq-reserva-stat">
+                    <span>Amenidades</span>
+                    <strong>@Model.TotalAmenidades</strong>
+                </div>
+                <div class="cq-reserva-stat">
+                    <span>Estados</span>
+                    <strong>@Model.TotalEstados</strong>
+                </div>
+                <div class="cq-reserva-stat">
+                    <span>Reservas</span>
+                    <strong>@Model.TotalReservas</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-5">
+            <div class="card cq-reserva-form-panel h-100">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+                        <div>
+                            <h4 class="card-title mb-1">@(isEditing ? "Editar reserva" : "Nueva reserva")</h4>
+                            <p class="text-muted mb-0">La fecha final se ajusta con accesos rápidos.</p>
+                        </div>
+                        <span class="badge badge-pill @(Model.PuedeGuardar ? "badge-success" : "badge-warning")">
+                            @(Model.PuedeGuardar ? "Listo para guardar" : "Configuración pendiente")
+                        </span>
+                    </div>
+
+                    <form asp-action="Save" method="post" class="cq-reserva-form">
+                        @Html.AntiForgeryToken()
+                        <input asp-for="Form.ReservacionAreaID" type="hidden" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label asp-for="Form.AreasComunesID"></label>
+                                <select asp-for="Form.AreasComunesID" asp-items="Model.AreasOptions" class="form-control cq-reserva-select">
+                                    <option value="">Selecciona una amenidad</option>
+                                </select>
+                                <span asp-validation-for="Form.AreasComunesID" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label asp-for="Form.UsuarioID"></label>
+                                <select asp-for="Form.UsuarioID" asp-items="Model.UsuarioOptions" class="form-control cq-reserva-select">
+                                    <option value="">Selecciona un usuario</option>
+                                </select>
+                                <span asp-validation-for="Form.UsuarioID" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label asp-for="Form.ReservacionEstadoID"></label>
+                                <select asp-for="Form.ReservacionEstadoID" asp-items="Model.EstadoOptions" class="form-control cq-reserva-select">
+                                    <option value="">Selecciona un estado</option>
+                                </select>
+                                <span asp-validation-for="Form.ReservacionEstadoID" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="reservationDurationButtons">Ajuste rápido</label>
+                                <div id="reservationDurationButtons" class="cq-reserva-duration-toolbar">
+                                    <button type="button" class="btn btn-outline-primary cq-reserva-duration-btn" data-minutes="30">30 min</button>
+                                    <button type="button" class="btn btn-outline-primary cq-reserva-duration-btn" data-minutes="60">1 hora</button>
+                                    <button type="button" class="btn btn-outline-primary cq-reserva-duration-btn" data-minutes="120">2 horas</button>
+                                    <button type="button" class="btn btn-outline-primary cq-reserva-duration-btn" data-minutes="240">4 horas</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label asp-for="Form.FechaInicio"></label>
+                                <input asp-for="Form.FechaInicio" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                                <span asp-validation-for="Form.FechaInicio" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label asp-for="Form.FechaFin"></label>
+                                <input asp-for="Form.FechaFin" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                                <span asp-validation-for="Form.FechaFin" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="cq-reserva-form-note">
+                            <i class="mdi mdi-calendar-range"></i>
+                            Ajusta inicio y duración. El panel derecho marca cruces automáticamente.
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <button type="submit" class="btn btn-info" @(Model.PuedeGuardar ? null : "disabled")>Guardar</button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">Nuevo</a>
+                            <a asp-controller="AreasComunes" asp-action="Index" class="btn btn-outline-primary">Ir a áreas comunes</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card cq-reserva-preview-panel h-100">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+                        <div>
+                            <h4 class="card-title mb-1">Resumen en vivo</h4>
+                            <p class="text-muted mb-0">Revisa el contexto antes de guardar.</p>
+                        </div>
+                        <span id="reservationTemporalState" class="badge @(Model.Form.EstadoTemporalClase)">@Model.Form.EstadoTemporal</span>
+                    </div>
+
+                    <div class="cq-reserva-preview-grid">
+                        <div class="cq-reserva-preview-item">
+                            <span>Amenidad</span>
+                            <strong id="previewAmenity">@(Model.Form.AreasComunes ?? "Selecciona una amenidad")</strong>
+                            <small id="previewAmenityMeta">@(Model.Form.Capacidad.HasValue ? $"Capacidad {Model.Form.Capacidad}" : "Sin capacidad definida")</small>
+                        </div>
+                        <div class="cq-reserva-preview-item">
+                            <span>Responsable</span>
+                            <strong id="previewUser">@(string.IsNullOrWhiteSpace(Model.Form.NombreUsuario) ? "Selecciona un usuario" : Model.Form.NombreUsuario)</strong>
+                            <small id="previewUserMeta">@(string.IsNullOrWhiteSpace(Model.Form.CorreoUsuario) ? "Sin correo registrado" : Model.Form.CorreoUsuario)</small>
+                        </div>
+                        <div class="cq-reserva-preview-item">
+                            <span>Estado catálogo</span>
+                            <strong id="previewCatalogState">@(string.IsNullOrWhiteSpace(Model.Form.ReservacionEstado) ? "Selecciona un estado" : Model.Form.ReservacionEstado)</strong>
+                            <small>Se guarda tal como lo elijas en el catálogo.</small>
+                        </div>
+                        <div class="cq-reserva-preview-item">
+                            <span>Ventana</span>
+                            <strong id="previewWindow">@(Model.Form.DuracionTexto ?? "Sin duración")</strong>
+                            <small id="previewTemporal">@(Model.Form.EstadoTemporal)</small>
+                        </div>
+                    </div>
+
+                    <div class="cq-reserva-preview-summary mt-3">
+                        <div>
+                            <span>Inicio</span>
+                            <strong id="previewStart">@Model.Form.FechaInicio.ToString("dd/MM/yyyy HH:mm")</strong>
+                        </div>
+                        <div>
+                            <span>Fin</span>
+                            <strong id="previewEnd">@Model.Form.FechaFin.ToString("dd/MM/yyyy HH:mm")</strong>
+                        </div>
+                        <div>
+                            <span>Duración</span>
+                            <strong id="previewDuration">@(Model.Form.DuracionTexto ?? "--")</strong>
+                        </div>
+                        <div>
+                            <span>Reserva requerida</span>
+                            <strong id="previewReservationFlag">@(Model.Form.RequiereReservacion == true ? "Sí" : "No")</strong>
+                        </div>
+                    </div>
+
+                    <div id="reservationConflictBox" class="alert alert-warning mt-3 @(Model.Form.TieneConflicto ? string.Empty : "d-none")">
+                        <strong>Atención.</strong>
+                        <span id="reservationConflictText">@(Model.Form.ConflictoTexto ?? "El horario seleccionado se cruza con otra reserva.")</span>
+                    </div>
+
+                    <div class="cq-reserva-empty mt-3 @(Model.PuedeGuardar ? "d-none" : string.Empty)">
+                        <div class="cq-reserva-empty-icon"><i class="mdi mdi-calendar-alert"></i></div>
+                        <h5 class="mb-2">Todavía no hay catálogos suficientes</h5>
+                        <p class="text-muted mb-3">Crea al menos una amenidad en Áreas comunes para guardar reservas reales.</p>
+                        <a asp-controller="AreasComunes" asp-action="Index" class="btn btn-info">Abrir áreas comunes</a>
+                    </div>
+
+                    <div class="cq-reserva-legend mt-3">
+                        <div class="cq-reserva-legend-item">
+                            <span class="cq-reserva-dot cq-reserva-dot--primary"></span>
+                            <span>La alerta aparece cuando el horario se cruza con otra reserva.</span>
+                        </div>
+                        <div class="cq-reserva-legend-item">
+                            <span class="cq-reserva-dot cq-reserva-dot--success"></span>
+                            <span>El estado temporal resume si la ventana está programada, en curso o cerrada.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card cq-reserva-list mt-4">
+        <div class="card-body">
+            <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-3">
+                <div>
+                    <h4 class="card-title mb-1">Historial visible</h4>
+                    <p class="text-muted mb-0">Consulta, corrige o elimina las reservas actuales.</p>
+                </div>
+                <span class="badge badge-pill cq-reserva-pill-alt">@Model.TotalReservas reservas</span>
+            </div>
+
+            <form method="get" asp-action="Index" asp-controller="ReservasAmenidades" class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" name="soloActivas" value="true"
+                           id="chkReservasActivas" @(Model.SoloActivas ? "checked" : "") onchange="this.form.submit()" />
+                    <label class="form-check-label" for="chkReservasActivas">Solo activas</label>
+                </div>
+                <select name="filtroAreaId" class="form-select form-select-sm" style="width:auto;"
+                        onchange="this.form.submit()" asp-items="Model.FiltroAreaOptions">
+                </select>
+                <small class="text-muted">@Model.Items.Count mostrada(s)</small>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle cq-reserva-table cq-filterable">
+                    <thead>
+                        <tr>
+                            <th data-type="text">Amenidad</th>
+                            <th data-type="text">Responsable</th>
+                            <th data-type="date">Horario</th>
+                            <th data-type="select">Estado</th>
+                            <th data-type="select">Señal</th>
+                            <th data-type="none" class="text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6">
+                                    <div class="cq-reserva-empty cq-reserva-empty--table">
+                                        <div class="cq-reserva-empty-icon"><i class="mdi mdi-calendar-clock"></i></div>
+                                        <h5 class="mb-2">No hay reservas todavía</h5>
+                                        <p class="text-muted mb-3">Cuando exista una amenidad reservable, aquí verás el histórico.</p>
+                                        <a asp-controller="AreasComunes" asp-action="Index" class="btn btn-outline-primary">Configurar amenidades</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@(string.IsNullOrWhiteSpace(item.AreasComunes) ? $"Amenidad {item.AreasComunesID}" : item.AreasComunes)</strong>
+                                        <div class="text-muted small">
+                                            @(item.Capacidad.HasValue ? $"Capacidad {item.Capacidad}" : "Sin capacidad")
+                                            @if (item.RequiereReservacion == true)
+                                            {
+                                                <span class="badge badge-pill badge-primary ml-2">Reserva requerida</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <strong>@(string.IsNullOrWhiteSpace(item.NombreUsuario) ? $"Usuario {item.UsuarioID}" : item.NombreUsuario)</strong>
+                                        <div class="text-muted small">@item.CorreoUsuario</div>
+                                    </td>
+                                    <td>
+                                        <div><strong>@item.FechaInicio.ToString("dd/MM/yyyy HH:mm")</strong> - <strong>@item.FechaFin.ToString("dd/MM/yyyy HH:mm")</strong></div>
+                                        <div class="text-muted small">@item.DuracionTexto</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(item.bEliminado == true ? "badge-secondary" : "badge-success")">
+                                            @(string.IsNullOrWhiteSpace(item.ReservacionEstado) ? "Sin estado" : item.ReservacionEstado)
+                                        </span>
+                                        <div class="text-muted small mt-1">@(item.ReservacionAreaID > 0 ? $"ID {item.ReservacionAreaID}" : string.Empty)</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(item.EstadoTemporalClase)">@item.EstadoTemporal</span>
+                                        @if (item.TieneConflicto)
+                                        {
+                                            <div class="badge badge-warning mt-2">Conflicto</div>
+                                        }
+                                    </td>
+                                    <td class="cq-actions text-right">
+                                        <div class="cq-actions-group justify-content-end">
+                                            <a cq-btn="edit" asp-action="Index" asp-route-editId="@item.ReservacionAreaID" asp-route-soloActivas="@Model.SoloActivas" asp-route-filtroAreaId="@Model.FiltroAreaId" title="Editar"></a>
+                                            <form asp-action="Delete" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="reservacionAreaId" value="@item.ReservacionAreaID" />
+                                                <button cq-btn="delete" type="submit" title="Eliminar" onclick="return confirm('Eliminar esta reserva?');"></button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const reservations = @Html.Raw(reservacionesJson);
+        const areaSelect = document.getElementById('Form_AreasComunesID');
+        const userSelect = document.getElementById('Form_UsuarioID');
+        const stateSelect = document.getElementById('Form_ReservacionEstadoID');
+        const startInput = document.getElementById('Form_FechaInicio');
+        const endInput = document.getElementById('Form_FechaFin');
+        const currentIdInput = document.getElementById('Form_ReservacionAreaID');
+        const conflictBox = document.getElementById('reservationConflictBox');
+        const conflictText = document.getElementById('reservationConflictText');
+        const temporalBadge = document.getElementById('reservationTemporalState');
+
+        const previewAmenity = document.getElementById('previewAmenity');
+        const previewAmenityMeta = document.getElementById('previewAmenityMeta');
+        const previewUser = document.getElementById('previewUser');
+        const previewUserMeta = document.getElementById('previewUserMeta');
+        const previewCatalogState = document.getElementById('previewCatalogState');
+        const previewWindow = document.getElementById('previewWindow');
+        const previewTemporal = document.getElementById('previewTemporal');
+        const previewStart = document.getElementById('previewStart');
+        const previewEnd = document.getElementById('previewEnd');
+        const previewDuration = document.getElementById('previewDuration');
+        const previewReservationFlag = document.getElementById('previewReservationFlag');
+
+        function parseLocalDateTime(value) {
+            if (!value) {
+                return null;
+            }
+
+            const [datePart, timePart] = value.split('T');
+            if (!datePart || !timePart) {
+                return null;
+            }
+
+            const [year, month, day] = datePart.split('-').map(Number);
+            const [hour, minute] = timePart.split(':').map(Number);
+            return new Date(year, month - 1, day, hour, minute, 0, 0);
+        }
+
+        function toLocalDateTimeValue(date) {
+            const offset = date.getTimezoneOffset() * 60000;
+            return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+        }
+
+        function formatDate(date) {
+            return new Intl.DateTimeFormat('es-MX', {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            }).format(date);
+        }
+
+        function formatDuration(startDate, endDate) {
+            const totalMinutes = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 60000));
+            if (totalMinutes % 60 === 0) {
+                const hours = totalMinutes / 60;
+                return hours === 1 ? '1 hora' : `${hours} horas`;
+            }
+
+            return `${totalMinutes} min`;
+        }
+
+        function overlaps(startA, endA, startB, endB) {
+            return startA < endB && endA > startB;
+        }
+
+        function getSelectedText(select) {
+            const option = select && select.options ? select.options[select.selectedIndex] : null;
+            return option && option.value ? option.text : '';
+        }
+
+        function updateEndFromStart(minutes) {
+            const startDate = parseLocalDateTime(startInput.value);
+            if (!startDate) {
+                return;
+            }
+
+            const endDate = new Date(startDate.getTime() + minutes * 60000);
+            endInput.value = toLocalDateTimeValue(endDate);
+        }
+
+        function updateTemporalBadge(startDate, endDate) {
+            const now = new Date();
+            let state = 'Programada';
+            let badgeClass = 'badge-info';
+
+            if (endDate < now) {
+                state = 'Finalizada';
+                badgeClass = 'badge-secondary';
+            } else if (startDate <= now && endDate >= now) {
+                state = 'En curso';
+                badgeClass = 'badge-success';
+            }
+
+            temporalBadge.textContent = state;
+            temporalBadge.className = `badge ${badgeClass}`;
+            previewTemporal.textContent = state;
+        }
+
+        function updateConflictState(areaId, startDate, endDate, currentId) {
+            if (!areaId || !startDate || !endDate) {
+                conflictBox.classList.add('d-none');
+                conflictText.textContent = 'El horario seleccionado se cruza con otra reserva.';
+                return;
+            }
+
+            const conflicts = reservations.filter(item => {
+                return item.AreasComunesID === areaId
+                    && item.ReservacionAreaID !== currentId
+                    && overlaps(startDate, endDate, new Date(item.FechaInicio), new Date(item.FechaFin));
+            });
+
+            if (conflicts.length === 0) {
+                conflictBox.classList.add('d-none');
+                conflictText.textContent = 'El horario seleccionado se cruza con otra reserva.';
+                return;
+            }
+
+            const firstConflict = conflicts[0];
+            conflictText.textContent = `Se cruza con ${conflicts.length} reserva(s) en ${firstConflict.AreasComunes || 'esta amenidad'}.`;
+            conflictBox.classList.remove('d-none');
+        }
+
+        function updatePreview() {
+            const areaId = parseInt(areaSelect && areaSelect.value ? areaSelect.value : '0', 10);
+            const userId = parseInt(userSelect && userSelect.value ? userSelect.value : '0', 10);
+            const stateId = parseInt(stateSelect && stateSelect.value ? stateSelect.value : '0', 10);
+            const startDate = parseLocalDateTime(startInput.value);
+            const endDate = parseLocalDateTime(endInput.value);
+            const currentId = parseInt(currentIdInput.value || '0', 10);
+
+            const areaText = getSelectedText(areaSelect) || 'Selecciona una amenidad';
+            const userText = getSelectedText(userSelect) || 'Selecciona un usuario';
+            const stateText = getSelectedText(stateSelect) || 'Selecciona un estado';
+
+            previewAmenity.textContent = areaText;
+            previewUser.textContent = userText;
+            previewCatalogState.textContent = stateText;
+
+            const selectedAreaOption = areaSelect && areaSelect.selectedIndex >= 0 ? areaSelect.options[areaSelect.selectedIndex] : null;
+            const selectedUserOption = userSelect && userSelect.selectedIndex >= 0 ? userSelect.options[userSelect.selectedIndex] : null;
+
+            previewAmenityMeta.textContent = selectedAreaOption && selectedAreaOption.value ? 'Revisa la capacidad y la disponibilidad visual' : 'Sin amenidad seleccionada';
+            previewUserMeta.textContent = selectedUserOption && selectedUserOption.value ? 'El usuario será responsable de la reserva' : 'Sin usuario seleccionado';
+
+            if (startDate && endDate) {
+                previewStart.textContent = formatDate(startDate);
+                previewEnd.textContent = formatDate(endDate);
+                previewDuration.textContent = formatDuration(startDate, endDate);
+                updateTemporalBadge(startDate, endDate);
+                updateConflictState(areaId, startDate, endDate, currentId);
+            } else {
+                previewStart.textContent = 'Selecciona una fecha';
+                previewEnd.textContent = 'Selecciona una fecha';
+                previewDuration.textContent = '--';
+                temporalBadge.textContent = 'Programada';
+                temporalBadge.className = 'badge badge-info';
+                previewTemporal.textContent = 'Programada';
+                conflictBox.classList.add('d-none');
+            }
+
+            const areaOption = areaSelect && areaSelect.selectedIndex >= 0 ? areaSelect.options[areaSelect.selectedIndex] : null;
+            previewReservationFlag.textContent = areaOption && areaOption.textContent.indexOf('Reserva requerida') >= 0 ? 'Sí' : 'No';
+        }
+
+        document.querySelectorAll('.cq-reserva-duration-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const minutes = parseInt(this.getAttribute('data-minutes') || '0', 10);
+                if (!minutes) {
+                    return;
+                }
+
+                if (!startInput.value) {
+                    startInput.value = toLocalDateTimeValue(new Date());
+                }
+
+                updateEndFromStart(minutes);
+                updatePreview();
+            });
+        });
+
+        [areaSelect, userSelect, stateSelect, startInput, endInput].forEach(element => {
+            if (!element) {
+                return;
+            }
+
+            element.addEventListener('change', function () {
+                if (this === startInput && endInput.value) {
+                    const startDate = parseLocalDateTime(startInput.value);
+                    const endDate = parseLocalDateTime(endInput.value);
+
+                    if (startDate && endDate && endDate > startDate) {
+                        const currentMinutes = Math.max(30, Math.round((endDate.getTime() - startDate.getTime()) / 60000));
+                        updateEndFromStart(currentMinutes);
+                    }
+                }
+
+                updatePreview();
+            });
+
+            element.addEventListener('input', updatePreview);
+        });
+
+        updatePreview();
+    })();
+</script>
+
+@section TopbarContent {
+    <div class="cq-topbar-inner">
+        <div class="cq-tb-left">
+            <div class="cq-tb-icon"><i class="mdi mdi-calendar-check"></i></div>
+            <div class="cq-tb-info">
+                <span class="cq-tb-title">Reservas de amenidades</span>
+                <div class="cq-tb-meta">
+                    <span class="cq-tb-badge"><i class="mdi mdi-calendar-check"></i><strong>@Model.TotalReservas</strong></span>
+                    <span class="cq-tb-dot"></span>
+                    <span class="cq-tb-badge cq-tb-green"><i class="mdi mdi-domain"></i><strong>@Model.TotalAmenidades</strong> amenidades</span>
+                </div>
+            </div>
+        </div>
+        <div class="cq-tb-right">
+            <div class="cq-tb-sep"></div>
+            <ol class="breadcrumb mb-0 cq-tb-breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                <li class="breadcrumb-item"><a asp-controller="AreasComunes" asp-action="Index">Áreas comunes</a></li>
+                <li class="breadcrumb-item active">Reservas</li>
+            </ol>
+        </div>
+    </div>
+}

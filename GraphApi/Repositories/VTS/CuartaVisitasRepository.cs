@@ -1,6 +1,7 @@
 using System.Data;
 using Dapper;
 using GraphApi.Infrastructure;
+using GraphApi.Models.TKT;
 using GraphApi.Models.VTS.CuartaVisitas;
 
 namespace GraphApi.Repositories.VTS;
@@ -42,6 +43,55 @@ public sealed class CuartaVisitasRepository(IDbConnection db) : ICuartaVisitasRe
     {
         const string sql = "SELECT TOP 1 TipoIdentificacionID FROM vts.TipoIdentificacion WHERE TipoIdentificacion = @v AND bEliminado = 0";
         return await db.ExecuteScalarAsync<int?>(sql, new { v = tipoIdentificacion }, tx);
+    }
+
+    public async Task<IReadOnlyList<TipoIdentificacionDto>> ListarTiposIdentificacionAsync(CancellationToken ct = default)
+    {
+        const string sql = """
+            SELECT TipoIdentificacionID AS TipoIdentificacionId, TipoIdentificacion
+            FROM vts.TipoIdentificacion
+            WHERE bEliminado = 0
+            ORDER BY TipoIdentificacion;
+            """;
+        var rows = await db.QueryAsync<TipoIdentificacionDto>(new CommandDefinition(sql, cancellationToken: ct));
+        return rows.AsList();
+    }
+
+    public async Task<int> InsertTipoIdentificacionAsync(string tipo, string correo, int userId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            INSERT INTO vts.TipoIdentificacion
+                (TipoIdentificacion, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+            OUTPUT INSERTED.TipoIdentificacionID
+            VALUES (@tipo, @correo, @userId, GETDATE(), 0);
+            """;
+        return await db.ExecuteScalarAsync<int>(sql, new { tipo, correo, userId }, tx);
+    }
+
+    public async Task<bool> UpdateTipoIdentificacionAsync(int tipoId, string tipo, string correo, int userId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            UPDATE vts.TipoIdentificacion SET
+                TipoIdentificacion = @tipo,
+                Modificado = @correo,
+                UsuarioModificacionID = @userId,
+                FechaModificacion = GETDATE()
+            WHERE TipoIdentificacionID = @tipoId AND bEliminado = 0;
+            """;
+        return await db.ExecuteAsync(sql, new { tipoId, tipo, correo, userId }, tx) > 0;
+    }
+
+    public async Task<bool> SoftDeleteTipoIdentificacionAsync(int tipoId, string correo, int userId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            UPDATE vts.TipoIdentificacion SET
+                bEliminado = 1,
+                Modificado = @correo,
+                UsuarioModificacionID = @userId,
+                FechaModificacion = GETDATE()
+            WHERE TipoIdentificacionID = @tipoId AND bEliminado = 0;
+            """;
+        return await db.ExecuteAsync(sql, new { tipoId, correo, userId }, tx) > 0;
     }
 
     public async Task<int> InsertVisitaAsync(
@@ -178,5 +228,84 @@ public sealed class CuartaVisitasRepository(IDbConnection db) : ICuartaVisitasRe
         var rows = await db.QueryAsync<ReservacionAreaDto>(
             new CommandDefinition(sql, new { UserId = userId }, cancellationToken: ct));
         return rows.AsList();
+    }
+
+    public async Task<IReadOnlyList<ReservacionCalendarioDto>> ListarReservacionesCalendarioAsync(
+        int areaComunId, DateTime desde, DateTime hasta, CancellationToken ct = default)
+    {
+        const string sql = """
+            SELECT r.ReservacionAreaID AS ReservacionAreaId,
+                   r.AreasComunesID   AS AreaComunId,
+                   r.FechaInicio,
+                   r.FechaFin,
+                   e.ReservacionEstado AS Estado,
+                   a.AreasComunes + N' (Reservado)' AS Etiqueta
+            FROM   vts.ReservacionesArea r
+            JOIN   vts.AreasComunes a ON a.AreasComunesID = r.AreasComunesID
+            JOIN   vts.ReservacionesEstados e ON e.ReservacionEstadoID = r.ReservacionEstadoID
+            WHERE  r.AreasComunesID = @AreaComunId
+              AND  r.bEliminado = 0
+              AND  e.ReservacionEstado NOT IN ('Cancelada')
+              AND  r.FechaFin    > @Desde
+              AND  r.FechaInicio < @Hasta
+            ORDER  BY r.FechaInicio
+            """;
+        var rows = await db.QueryAsync<ReservacionCalendarioDto>(
+            new CommandDefinition(sql, new { AreaComunId = areaComunId, Desde = desde, Hasta = hasta }, cancellationToken: ct));
+        return rows.AsList();
+    }
+
+    public async Task<PaginaDto<ReservacionAdminItemDto>> ListarReservacionesAdminAsync(
+        ReservacionAdminFiltroDto filtro, CancellationToken ct = default)
+    {
+        var offset = (filtro.Pagina - 1) * filtro.Tamano;
+        const string sql = """
+            SELECT COUNT(1)
+            FROM   vts.vsReservacionesArea v WITH (NOLOCK)
+            WHERE  v.bEliminado = 0
+              AND  (@AreaComunId IS NULL OR v.AreasComunesID = @AreaComunId)
+              AND  (@Desde IS NULL OR v.FechaFin > @Desde)
+              AND  (@Hasta IS NULL OR v.FechaInicio < @Hasta);
+
+            SELECT v.ReservacionAreaID AS ReservacionAreaId,
+                   v.AreasComunesID   AS AreaComunId,
+                   v.AreasComunes     AS AreaComun,
+                   v.UsuarioID        AS UsuarioId,
+                   v.NombreUsuario    AS UsuarioNombre,
+                   v.CorreoUsuario    AS UsuarioCorreo,
+                   v.FechaInicio,
+                   v.FechaFin,
+                   v.ReservacionEstado AS Estado
+            FROM   vts.vsReservacionesArea v WITH (NOLOCK)
+            WHERE  v.bEliminado = 0
+              AND  (@AreaComunId IS NULL OR v.AreasComunesID = @AreaComunId)
+              AND  (@Desde IS NULL OR v.FechaFin > @Desde)
+              AND  (@Hasta IS NULL OR v.FechaInicio < @Hasta)
+            ORDER  BY v.FechaInicio DESC, v.ReservacionAreaID DESC
+            OFFSET @Offset ROWS FETCH NEXT @Tamano ROWS ONLY;
+            """;
+
+        using var multi = await db.QueryMultipleAsync(
+            new CommandDefinition(
+                sql,
+                new
+                {
+                    filtro.AreaComunId,
+                    filtro.Desde,
+                    filtro.Hasta,
+                    Offset = offset,
+                    Tamano = filtro.Tamano,
+                },
+                cancellationToken: ct));
+
+        var total = await multi.ReadSingleAsync<int>();
+        var items = (await multi.ReadAsync<ReservacionAdminItemDto>()).ToList();
+
+        return new PaginaDto<ReservacionAdminItemDto>
+        {
+            Total = total,
+            Pagina = filtro.Pagina,
+            Items = items,
+        };
     }
 }

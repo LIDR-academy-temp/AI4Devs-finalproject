@@ -40,6 +40,24 @@ public class CuartaMascotasRepository(IDbConnection db) : ICuartaMascotasReposit
         return count > 0;
     }
 
+    public async Task<bool> ExisteMascotaActivaAsync(int mascotaId, CancellationToken ct = default)
+    {
+        const string sql = "SELECT COUNT(1) FROM usr.Mascotas WHERE MascotaID = @MascotaId AND bEliminado = 0;";
+        var count = await db.ExecuteScalarAsync<int>(sql, new { MascotaId = mascotaId });
+        return count > 0;
+    }
+
+    public async Task<bool> UsuarioActivoAsync(int usuarioId, CancellationToken ct = default)
+    {
+        var (_, _, activo) = SqlSchemaCompat.UsuarioColumns(db);
+        var sql = $"""
+            SELECT COUNT(1) FROM sgr.Usuarios
+            WHERE UsuarioID = @UsuarioId AND {activo} = 1 AND bEliminado = 0
+            """;
+        var count = await db.ExecuteScalarAsync<int>(sql, new { UsuarioId = usuarioId });
+        return count > 0;
+    }
+
     public async Task<int> InsertAsync(MascotaCrearRequest req, string correo, int usuarioId, IDbTransaction tx)
     {
         var nombreCol = SqlSchemaCompat.MascotaNombreColumnName(db);
@@ -123,16 +141,131 @@ public class CuartaMascotasRepository(IDbConnection db) : ICuartaMascotasReposit
 
     public async Task<IReadOnlyList<TipoMascotaDto>> ListarTiposAsync(CancellationToken ct = default)
     {
-        const string sql = "SELECT TipoMascotaID AS TipoMascotaId, TipoMascota FROM usr.TiposMascota (NOLOCK) ORDER BY TipoMascota;";
+        const string sql = """
+            SELECT TipoMascotaID AS TipoMascotaId, TipoMascota
+            FROM usr.TiposMascota (NOLOCK)
+            WHERE bEliminado = 0
+            ORDER BY TipoMascota;
+            """;
         var result = await db.QueryAsync<TipoMascotaDto>(sql);
         return result.ToList();
     }
 
     public async Task<IReadOnlyList<RazaMascotaDto>> ListarRazasAsync(CancellationToken ct = default)
     {
-        const string sql = "SELECT RazaMascotaID AS RazaMascotaId, RazaMascota, TipoMascotaID AS TipoMascotaId FROM usr.RazasMascota (NOLOCK) ORDER BY RazaMascota;";
+        const string sql = """
+            SELECT RazaMascotaID AS RazaMascotaId, RazaMascota, TipoMascotaID AS TipoMascotaId
+            FROM usr.RazasMascota (NOLOCK)
+            WHERE bEliminado = 0
+            ORDER BY RazaMascota;
+            """;
         var result = await db.QueryAsync<RazaMascotaDto>(sql);
         return result.ToList();
+    }
+
+    public async Task<int> InsertTipoAsync(string tipoMascota, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            INSERT INTO usr.TiposMascota
+                (TipoMascota, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+            OUTPUT INSERTED.TipoMascotaID
+            VALUES (@TipoMascota, @Correo, @AdminId, GETDATE(), 0);
+            """;
+        return await db.ExecuteScalarAsync<int>(sql,
+            new { TipoMascota = tipoMascota, Correo = correo, AdminId = adminId },
+            transaction: tx);
+    }
+
+    public async Task<bool> UpdateTipoAsync(int tipoMascotaId, string tipoMascota, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            UPDATE usr.TiposMascota
+            SET TipoMascota = @TipoMascota,
+                Modificado = @Correo,
+                UsuarioModificacionID = @AdminId,
+                FechaModificacion = GETDATE()
+            WHERE TipoMascotaID = @TipoMascotaId AND bEliminado = 0;
+            """;
+        var rows = await db.ExecuteAsync(sql,
+            new { TipoMascotaId = tipoMascotaId, TipoMascota = tipoMascota, Correo = correo, AdminId = adminId },
+            transaction: tx);
+        return rows > 0;
+    }
+
+    public async Task<bool> SoftDeleteTipoAsync(int tipoMascotaId, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            UPDATE usr.TiposMascota
+            SET bEliminado = 1,
+                Modificado = @Correo,
+                UsuarioModificacionID = @AdminId,
+                FechaModificacion = GETDATE()
+            WHERE TipoMascotaID = @TipoMascotaId AND bEliminado = 0;
+            """;
+        var rows = await db.ExecuteAsync(sql,
+            new { TipoMascotaId = tipoMascotaId, Correo = correo, AdminId = adminId },
+            transaction: tx);
+        return rows > 0;
+    }
+
+    public async Task<int> InsertRazaAsync(int tipoMascotaId, string razaMascota, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            INSERT INTO usr.RazasMascota
+                (TipoMascotaID, RazaMascota, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+            OUTPUT INSERTED.RazaMascotaID
+            VALUES (@TipoMascotaId, @RazaMascota, @Correo, @AdminId, GETDATE(), 0);
+            """;
+        return await db.ExecuteScalarAsync<int>(sql,
+            new { TipoMascotaId = tipoMascotaId, RazaMascota = razaMascota, Correo = correo, AdminId = adminId },
+            transaction: tx);
+    }
+
+    public async Task<bool> UpdateRazaAsync(int razaMascotaId, int tipoMascotaId, string razaMascota, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            UPDATE usr.RazasMascota
+            SET TipoMascotaID = @TipoMascotaId,
+                RazaMascota = @RazaMascota,
+                Modificado = @Correo,
+                UsuarioModificacionID = @AdminId,
+                FechaModificacion = GETDATE()
+            WHERE RazaMascotaID = @RazaMascotaId AND bEliminado = 0;
+            """;
+        var rows = await db.ExecuteAsync(sql,
+            new
+            {
+                RazaMascotaId = razaMascotaId,
+                TipoMascotaId = tipoMascotaId,
+                RazaMascota = razaMascota,
+                Correo = correo,
+                AdminId = adminId,
+            },
+            transaction: tx);
+        return rows > 0;
+    }
+
+    public async Task<bool> SoftDeleteRazaAsync(int razaMascotaId, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            UPDATE usr.RazasMascota
+            SET bEliminado = 1,
+                Modificado = @Correo,
+                UsuarioModificacionID = @AdminId,
+                FechaModificacion = GETDATE()
+            WHERE RazaMascotaID = @RazaMascotaId AND bEliminado = 0;
+            """;
+        var rows = await db.ExecuteAsync(sql,
+            new { RazaMascotaId = razaMascotaId, Correo = correo, AdminId = adminId },
+            transaction: tx);
+        return rows > 0;
+    }
+
+    public async Task<bool> ExisteTipoActivoAsync(int tipoMascotaId, CancellationToken ct = default)
+    {
+        const string sql = "SELECT COUNT(1) FROM usr.TiposMascota WHERE TipoMascotaID = @Id AND bEliminado = 0;";
+        var count = await db.ExecuteScalarAsync<int>(sql, new { Id = tipoMascotaId });
+        return count > 0;
     }
 
     private sealed class MascotaListSql

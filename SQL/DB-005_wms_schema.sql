@@ -100,6 +100,13 @@ BEGIN
 END
 GO
 
+IF OBJECT_ID(N'wms.Prestamos', N'U') IS NOT NULL
+   AND COL_LENGTH(N'wms.Prestamos', N'Notas') IS NULL
+BEGIN
+    ALTER TABLE wms.Prestamos ADD Notas NVARCHAR(500) NULL;
+END
+GO
+
 -- ══════════════════════════════════════════════════════════
 --  Vista wms.vsArticulos
 -- ══════════════════════════════════════════════════════════
@@ -131,6 +138,8 @@ GO
 IF OBJECT_ID(N'wms.vsPrestamos', N'V') IS NOT NULL
     DROP VIEW wms.vsPrestamos;
 GO
+IF COL_LENGTH(N'sgr.Usuarios', N'Nombre') IS NOT NULL
+    EXEC(N'
 CREATE VIEW wms.vsPrestamos AS
 SELECT
     p.PrestamoID,
@@ -152,6 +161,31 @@ SELECT
 FROM wms.Prestamos p
 INNER JOIN wms.Articulos a ON a.ArticuloID = p.ArticuloID
 INNER JOIN sgr.Usuarios u ON u.UsuarioID = p.UsuarioID;
+');
+ELSE
+    EXEC(N'
+CREATE VIEW wms.vsPrestamos AS
+SELECT
+    p.PrestamoID,
+    p.ArticuloID,
+    a.Nombre          AS NombreArticulo,
+    p.UsuarioID,
+    u.NombreUsuario   AS NombreUsuario,
+    u.CorreoUsuario   AS CorreoUsuario,
+    p.Cantidad,
+    p.FechaPrestamo,
+    p.FechaDevolucion,
+    p.Estado,
+    p.Notas,
+    p.Creado,
+    p.Modificado,
+    p.FechaCreacion,
+    p.FechaModificacion,
+    p.bEliminado
+FROM wms.Prestamos p
+INNER JOIN wms.Articulos a ON a.ArticuloID = p.ArticuloID
+INNER JOIN sgr.Usuarios u ON u.UsuarioID = p.UsuarioID;
+');
 GO
 
 -- ══════════════════════════════════════════════════════════
@@ -159,13 +193,32 @@ GO
 -- ══════════════════════════════════════════════════════════
 IF NOT EXISTS (SELECT 1 FROM wms.CategoriasArticulo WHERE bEliminado = 0)
 BEGIN
-    INSERT INTO wms.CategoriasArticulo (Nombre, FechaCreacion)
-    VALUES
-        (N'Herramienta', GETDATE()),
-        (N'Material', GETDATE()),
-        (N'Equipo', GETDATE()),
-        (N'Limpieza', GETDATE()),
-        (N'Otro', GETDATE());
+    IF COL_LENGTH(N'wms.CategoriasArticulo', N'Creado') IS NOT NULL
+       AND EXISTS (
+           SELECT 1
+           FROM sys.columns c
+           WHERE c.object_id = OBJECT_ID(N'wms.CategoriasArticulo')
+             AND c.name = N'Creado'
+             AND c.is_nullable = 0)
+    BEGIN
+        INSERT INTO wms.CategoriasArticulo (Nombre, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+        VALUES
+            (N'Herramienta', N'DB-005', 1, GETDATE(), 0),
+            (N'Material', N'DB-005', 1, GETDATE(), 0),
+            (N'Equipo', N'DB-005', 1, GETDATE(), 0),
+            (N'Limpieza', N'DB-005', 1, GETDATE(), 0),
+            (N'Otro', N'DB-005', 1, GETDATE(), 0);
+    END
+    ELSE
+    BEGIN
+        INSERT INTO wms.CategoriasArticulo (Nombre, FechaCreacion)
+        VALUES
+            (N'Herramienta', GETDATE()),
+            (N'Material', GETDATE()),
+            (N'Equipo', GETDATE()),
+            (N'Limpieza', GETDATE()),
+            (N'Otro', GETDATE());
+    END
 END
 GO
 

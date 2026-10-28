@@ -19,14 +19,18 @@ import {
   USUARIOS_TABLE_ACCESSORS,
   USUARIOS_TABLE_COLUMNS,
 } from '../features/admin/usuarios/usuariosTableFilter'
+import { UsuarioAdminMobileCard } from '../features/admin/usuarios/UsuarioAdminMobileCard'
 import {
   AdminFilterableTable,
   AdminListToolbar,
+  AdminMobileCardList,
   AdminSidePanel,
   AdminSplitLayout,
   ConfirmDialog,
 } from '../shared/components/admin'
 import { useClientTableFilter } from '../shared/hooks/useClientTableFilter'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { useToast } from '../shared/toast/ToastContext'
 import { apiDelete, apiPatch, apiPost, apiPut } from '../shared/lib/apiClient'
 import type { UsuarioCreado, UsuarioPadronItem } from '../shared/types/usuariosAdmin'
 
@@ -39,8 +43,8 @@ export function AdminUsuariosPage() {
   const [deleteTarget, setDeleteTarget] = useState<UsuarioPadronItem | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
-  const [dismissedError, setDismissedError] = useState(false)
-  const [actionError, setActionError] = useState<string | null>(null)
+  const toast = useToast()
+  useQueryErrorToast(error)
   const [tempPassword, setTempPassword] = useState<string | null>(null)
 
   const heroStats = useMemo(() => {
@@ -145,19 +149,20 @@ export function AdminUsuariosPage() {
       return
     }
     closePanel()
+    toast.success('Usuario actualizado')
     await refetch()
   })
 
   const toggleActivo = async (u: UsuarioPadronItem) => {
-    setActionError(null)
     const path = u.bActivo
       ? `/SGR/Usuarios/${u.usuarioId}/desactivar`
       : `/SGR/Usuarios/${u.usuarioId}/activar`
     const { problem, status } = await apiPatch(path, {})
     if (problem || (status !== 204 && status !== 200)) {
-      setActionError(problem?.detail ?? `Error ${status}`)
+      toast.error(problem?.detail ?? `Error ${status}`)
       return
     }
+    toast.success(u.bActivo ? 'Usuario desactivado' : 'Usuario activado')
     await refetch()
   }
 
@@ -171,16 +176,13 @@ export function AdminUsuariosPage() {
     }
     setDeleteTarget(null)
     if (editing?.usuarioId === deleteTarget.usuarioId) closePanel()
+    toast.success('Usuario eliminado')
     await refetch()
   }
 
   useEffect(() => {
     if (!deleteTarget) setDeleteError(null)
   }, [deleteTarget])
-
-  useEffect(() => {
-    if (error) setDismissedError(false)
-  }, [error])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -212,26 +214,6 @@ export function AdminUsuariosPage() {
 
   return (
     <div className="cq-admin-page container-fluid py-4">
-      {actionError && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          {actionError}
-          <button type="button" className="btn-close" aria-label="Cerrar" onClick={() => setActionError(null)} />
-        </div>
-      )}
-
-      {error && !dismissedError && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          <i className="mdi mdi-alert-circle mr-1" />
-          {error}
-          <button
-            type="button"
-            className="btn-close"
-            aria-label="Cerrar"
-            onClick={() => setDismissedError(true)}
-          />
-        </div>
-      )}
-
       <AdminListToolbar
         title="Residentes y usuarios"
         metrics={heroStats}
@@ -263,6 +245,7 @@ export function AdminUsuariosPage() {
               )}
 
               {!loading && !error && data.length > 0 && (
+                <>
                 <AdminFilterableTable
                   columns={USUARIOS_TABLE_COLUMNS}
                   columnFilters={columnFilters}
@@ -324,6 +307,18 @@ export function AdminUsuariosPage() {
                     })
                   )}
                 </AdminFilterableTable>
+                <AdminMobileCardList
+                  rows={filteredUsuarios}
+                  getRowKey={(u) => u.usuarioId}
+                  renderCard={(u) => (
+                    <UsuarioAdminMobileCard
+                      usuario={u}
+                      active={editing?.usuarioId === u.usuarioId}
+                      onEdit={openEdit}
+                    />
+                  )}
+                />
+                </>
               )}
             </div>
           </div>

@@ -2,6 +2,14 @@ using System.Text.Json.Serialization;
 
 namespace GraphApi.Models.TKT;
 
+public sealed class TicketAsignadosFiltroDto
+{
+    public bool? Terminado { get; set; }
+    public int? EstadoTicketId { get; set; }
+    public int Pagina { get; set; } = 1;
+    public int Tamano { get; set; } = 20;
+}
+
 public sealed class TicketFiltroDto
 {
     public int? EstadoTicketId { get; set; }

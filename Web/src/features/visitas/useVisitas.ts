@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiGet } from '../../shared/lib/apiClient'
 import type { VisitaListItem } from '../../shared/types/visitas'
+import { normalizeVisita } from './visitasMappers'
 
 interface UseVisitasParams {
   casaId?: number
@@ -27,7 +28,7 @@ export function useVisitas(params: UseVisitasParams = {}) {
       setError(problem?.detail ?? `Error ${status}`)
       setVisitas([])
     } else {
-      setVisitas(data)
+      setVisitas(data.map((row) => normalizeVisita(row)))
     }
     setLoading(false)
   }, [params.casaId, params.desde, params.hasta])

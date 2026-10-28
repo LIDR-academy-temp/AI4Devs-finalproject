@@ -14,28 +14,39 @@ import {
   type VehiculoCreateAdminForm,
   type VehiculoEditAdminForm,
 } from '../features/admin/vehiculos/vehiculosAdminSchemas'
+import { VehiculoAdminMobileCard } from '../features/admin/vehiculos/VehiculoAdminMobileCard'
 import {
   VEHICULOS_TABLE_ACCESSORS,
   VEHICULOS_TABLE_COLUMNS,
 } from '../features/admin/vehiculos/vehiculosTableFilter'
+import {
+  AdminMarcasVehiculoSection,
+  AdminModelosVehiculoSection,
+} from '../features/admin/vehiculos/AdminVehiculosCatalogSections'
 import { buscarVehiculosPorPlacas, useVehiculosPadron } from '../features/admin/vehiculos/useVehiculosAdmin'
-import { useMarcas, useModelos } from '../features/vehiculos/useVehiculos'
+import { useMarcasCatalog, useModelosCatalog } from '../features/admin/vehiculos/useVehiculosCatalog'
 import {
   AdminFilterableTable,
   AdminListToolbar,
+  AdminMobileCardList,
   AdminSidePanel,
   AdminSplitLayout,
   ConfirmDialog,
 } from '../shared/components/admin'
 import { useClientTableFilter } from '../shared/hooks/useClientTableFilter'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { useToast } from '../shared/toast/ToastContext'
 import { apiDelete, apiPost, apiPut } from '../shared/lib/apiClient'
 import type { AutomovilListItem } from '../shared/types/vehiculos'
 
+type VehiculosTab = 'padron' | 'marcas' | 'modelos'
+
 export function AdminVehiculosPage() {
+  const [tab, setTab] = useState<VehiculosTab>('padron')
   const { vehiculos, loading, error, refetch } = useVehiculosPadron()
   const { data: usuarios } = usePadronUsuarios(undefined, true)
-  const { marcas } = useMarcas()
-  const { modelos } = useModelos()
+  const { marcas, loading: marcasLoading, error: marcasError, reload: reloadMarcas } = useMarcasCatalog()
+  const { modelos, loading: modelosLoading, error: modelosError, reload: reloadModelos } = useModelosCatalog()
 
   const [rows, setRows] = useState<AutomovilListItem[]>([])
   const [busquedaPlacas, setBusquedaPlacas] = useState('')
@@ -46,7 +57,11 @@ export function AdminVehiculosPage() {
   const [deleteTarget, setDeleteTarget] = useState<AutomovilListItem | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
-  const [dismissedError, setDismissedError] = useState(false)
+  const toast = useToast()
+  useQueryErrorToast(error)
+  useQueryErrorToast(searchError)
+  useQueryErrorToast(tab === 'marcas' ? marcasError : null)
+  useQueryErrorToast(tab === 'modelos' ? modelosError : null)
 
   useEffect(() => {
     setRows(vehiculos)
@@ -101,8 +116,25 @@ export function AdminVehiculosPage() {
     ? modelos.filter((m) => String(m.marcaId) === marcaIdWatch)
     : modelos
 
+  const closePanel = () => {
+    setCreateOpen(false)
+    setEditing(null)
+    setFormError(null)
+  }
+
+  const refreshCatalogs = () => {
+    void reloadMarcas()
+    void reloadModelos()
+  }
+
+  const switchTab = (next: VehiculosTab) => {
+    closePanel()
+    setTab(next)
+  }
+
   const openCreate = () => {
     setFormError(null)
+    setTab('padron')
     createForm.reset({
       usuarioId: '',
       placas: '',
@@ -128,12 +160,6 @@ export function AdminVehiculosPage() {
     setEditing(v)
   }
 
-  const closePanel = () => {
-    setCreateOpen(false)
-    setEditing(null)
-    setFormError(null)
-  }
-
   const handleSaveCreate = createForm.handleSubmit(async (data) => {
     setFormError(null)
     const { problem, status } = await apiPost('/USR/Automoviles/admin', {
@@ -149,7 +175,9 @@ export function AdminVehiculosPage() {
       return
     }
     closePanel()
+    toast.success('Vehículo registrado')
     await refetch()
+    refreshCatalogs()
   })
 
   const handleSaveEdit = editForm.handleSubmit(async (data) => {
@@ -167,6 +195,7 @@ export function AdminVehiculosPage() {
       return
     }
     closePanel()
+    toast.success('Vehículo actualizado')
     await refetch()
   })
 
@@ -179,6 +208,7 @@ export function AdminVehiculosPage() {
       return
     }
     setDeleteTarget(null)
+    toast.success('Vehículo eliminado')
     await refetch()
   }
 
@@ -199,10 +229,6 @@ export function AdminVehiculosPage() {
     await refetch()
   }
 
-  useEffect(() => {
-    if (error) setDismissedError(false)
-  }, [error])
-
   const formFooter = (
     <>
       <button
@@ -219,15 +245,90 @@ export function AdminVehiculosPage() {
     </>
   )
 
+  const primaryAction =
+    tab === 'padron'
+      ? {
+          label: 'Nuevo vehículo',
+          iconClass: 'mdi mdi-plus',
+          onClick: openCreate,
+        }
+      : {
+          label: 'Actualizar',
+          iconClass: 'mdi mdi-refresh',
+          onClick: refreshCatalogs,
+        }
+
   return (
     <div className="cq-admin-page container-fluid py-4">
-      {(error || searchError) && !dismissedError && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          {error ?? searchError}
-          <button type="button" className="btn-close" aria-label="Cerrar" onClick={() => setDismissedError(true)} />
-        </div>
+      <ul className="nav nav-tabs mb-3 cq-admin-tabs">
+        <li className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${tab === 'padron' ? 'active' : ''}`}
+            onClick={() => switchTab('padron')}
+          >
+            Padrón
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${tab === 'marcas' ? 'active' : ''}`}
+            onClick={() => switchTab('marcas')}
+          >
+            Marcas
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${tab === 'modelos' ? 'active' : ''}`}
+            onClick={() => switchTab('modelos')}
+          >
+            Modelos
+          </button>
+        </li>
+      </ul>
+
+      {tab === 'marcas' && (
+        <>
+          <AdminListToolbar
+            title="Marcas"
+            metrics={[{ label: 'Marcas', value: marcas.length }]}
+            primaryAction={primaryAction}
+          />
+          <AdminMarcasVehiculoSection
+            marcas={marcas}
+            loading={marcasLoading}
+            onReload={async () => {
+              await reloadMarcas()
+              await reloadModelos()
+            }}
+          />
+        </>
       )}
 
+      {tab === 'modelos' && (
+        <>
+          <AdminListToolbar
+            title="Modelos"
+            metrics={[{ label: 'Modelos', value: modelos.length }]}
+            primaryAction={primaryAction}
+          />
+          <AdminModelosVehiculoSection
+            modelos={modelos}
+            marcas={marcas}
+            loading={modelosLoading}
+            onReload={async () => {
+              await reloadModelos()
+              await reloadMarcas()
+            }}
+          />
+        </>
+      )}
+
+      {tab === 'padron' && (
+      <>
       <AdminListToolbar
         title="Vehículos"
         metrics={heroStats}
@@ -248,11 +349,7 @@ export function AdminVehiculosPage() {
             </button>
           </div>
         }
-        primaryAction={{
-          label: 'Nuevo vehículo',
-          iconClass: 'mdi mdi-plus',
-          onClick: openCreate,
-        }}
+        primaryAction={primaryAction}
       />
 
       <AdminSplitLayout
@@ -273,6 +370,7 @@ export function AdminVehiculosPage() {
                 </div>
               )}
               {!loading && rows.length > 0 && (
+                <>
                 <AdminFilterableTable
                   columns={VEHICULOS_TABLE_COLUMNS}
                   columnFilters={columnFilters}
@@ -305,6 +403,18 @@ export function AdminVehiculosPage() {
                     </tr>
                   ))}
                 </AdminFilterableTable>
+                <AdminMobileCardList
+                  rows={filteredRows}
+                  getRowKey={(v) => v.automovilId}
+                  renderCard={(v) => (
+                    <VehiculoAdminMobileCard
+                      vehiculo={v}
+                      active={editing?.automovilId === v.automovilId}
+                      onEdit={openEdit}
+                    />
+                  )}
+                />
+                </>
               )}
             </div>
           </div>
@@ -399,6 +509,8 @@ export function AdminVehiculosPage() {
       />
       {deleteTarget && deleteError && (
         <div className="alert alert-danger mt-3" role="alert">{deleteError}</div>
+      )}
+      </>
       )}
     </div>
   )

@@ -20,7 +20,7 @@ export function NotificationDropdown({
   }
 
   if (error) {
-    return <p className="p-3 text-sm text-danger">{error}</p>
+    return <p className="p-3 text-sm text-neutral" role="status">No se pudieron cargar.</p>
   }
 
   if (items.length === 0) {

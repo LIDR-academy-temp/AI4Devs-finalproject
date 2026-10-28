@@ -1,4 +1,5 @@
 using GraphApi.Models.TKT;
+using GraphApi.Models.TKT.Tickets;
 
 namespace GraphApi.Services.TKT;
 
@@ -7,6 +8,25 @@ public interface ICuartaTicketAdminService
     Task<PaginaDto<AdminTicketItemDto>> ListarAsync(
         TicketFiltroDto filtro,
         int? prioridadTicketId,
+        CancellationToken ct = default);
+
+    Task<(clReadTickets? Ticket, string? Code, int Status, string? Detail)> CrearTicketAdminAsync(
+        CrearTicketAdminInput input,
+        int adminId,
+        string adminCorreo,
+        CancellationToken ct = default);
+
+    Task<(bool Ok, string? Code, int Status, string? Detail)> ActualizarMetadatosAsync(
+        int ticketId,
+        ActualizarTicketAdminInput input,
+        int adminId,
+        string adminCorreo,
+        CancellationToken ct = default);
+
+    Task<(bool Ok, string? Code, int Status, string? Detail)> SoftDeleteAsync(
+        int ticketId,
+        int adminId,
+        string adminCorreo,
         CancellationToken ct = default);
 
     Task<(bool Ok, string? Code, int Status, string? Detail)> CambiarEstadoAsync(

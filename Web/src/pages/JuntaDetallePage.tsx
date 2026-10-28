@@ -1,10 +1,12 @@
 import { Link, useParams } from 'react-router-dom'
 import { useJuntaDetalle } from '../features/juntas/useJuntaDetalle'
-import { AlertBanner, EmptyState, PageHeader } from '../shared/components/admin'
+import { EmptyState, PageHeader } from '../shared/components/admin'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 
 export function JuntaDetallePage() {
   const { id } = useParams<{ id: string }>()
   const { junta, loading, error } = useJuntaDetalle(Number(id))
+  useQueryErrorToast(error)
 
   if (loading) {
     return (
@@ -21,7 +23,8 @@ export function JuntaDetallePage() {
   if (error) {
     return (
       <main className="mx-auto max-w-3xl p-6">
-        <AlertBanner variant="error">{error}</AlertBanner>
+        <Link to="/juntas" className="text-sm text-primary hover:underline">← Juntas</Link>
+        <EmptyState title="No se pudo cargar la junta" description={error} />
       </main>
     )
   }
@@ -37,7 +40,7 @@ export function JuntaDetallePage() {
   return (
     <main className="mx-auto max-w-3xl space-y-4 p-6">
       <Link to="/juntas" className="text-sm text-primary hover:underline">← Juntas</Link>
-      <div className="rounded-xl border border-neutral-100 bg-white p-6 shadow-sm">
+      <div className="rounded-xl border border-neutral-100 bg-surface-alt p-6 shadow-sm">
         <PageHeader
           title={junta.titulo}
           actions={

@@ -30,7 +30,7 @@ Dominio de encuestas estructuradas (esquema `enc`). El administrador crea encues
 ## Historias del dominio
 - **HU-ENC-01 [S]** Participar en encuesta — con encuesta activa y vigente, el residente ve el aviso y responde cada pregunta; bloquea segunda participación y encuestas fuera de vigencia.
 - **HU-ENC-02 [S]** Crear y publicar encuesta (Admin) — crear con título, vigencia, preguntas tipadas y opciones (queda inactiva); publicar (`bActivo=1`) notifica a residentes activos (portal + Telegram).
-- **HU-ENC-03 [S]** Ver resultados consolidados (Admin) — por opción: conteo y porcentaje por `OpcionPregunta`; por texto libre: listado de `RespuestaTexto`.
+- **HU-ENC-03 [S]** Ver resultados consolidados — **Admin:** por opción conteo/%; texto libre con listado `RespuestaTexto`. **Residente (post [[FE-ENC-RES-001]]):** mismos agregados numéricos si participó o encuesta cerrada; texto libre solo conteo (`totalRespuestasTexto`), sin respuestas identificables.
 - **HU-BOT-13 [S]** Responder encuestas en el chat — el bot presenta la encuesta activa pregunta por pregunta con botones (opción múltiple) y registra en `enc.Respuestas`.
 
 ## Endpoints Cuarta (SPA + bot) — vigente post [[FE-MOD-ENC-001]]
@@ -41,7 +41,7 @@ Dominio de encuestas estructuradas (esquema `enc`). El administrador crea encues
 - `DELETE /ENC/Encuestas/{id}` — borrador solo.
 - `PUT /ENC/Encuestas/{id}/publicar` — activa; 422 `SIN_PREGUNTAS` sin preguntas.
 - `GET /ENC/Encuestas/{id}` — detalle con preguntas/opciones.
-- `GET /ENC/Encuestas/{id}/resultados` — agregados admin.
+- `GET /ENC/Encuestas/{id}/resultados` — agregados; **admin** siempre (textos libres completos); **residente** si participó o encuesta cerrada (`403` vigente sin votar; `404` borrador).
 - `POST /ENC/Encuestas/{id}/respuestas` — residente (una vez, INV-3).
 - **Preguntas/opciones (admin, anidado):** `POST/PUT/DELETE` bajo `/ENC/Encuestas/.../preguntas` y `/ENC/Encuestas/opciones/{id}` (ver `TKT-FE-MOD-ENC-001-APIS.md`).
 - `GET /ENC/TiposPregunta` — catálogo admin (`tipoPreguntaId` + nombre).
@@ -55,7 +55,8 @@ Dominio de encuestas estructuradas (esquema `enc`). El administrador crea encues
 
 ## UI residente
 
-- `/encuestas`, `/encuestas/:id` — sin cambio de contrato en FE-MOD-ENC-001.
+- `/encuestas`, `/encuestas/:id` — participar.
+- `/encuestas/:id/resultados` — resultados agregados (post [[FE-ENC-RES-001]]).
 
 ## Reutilización / objetos existentes (escalera)
 - El modelo estructurado (Encuestas → Preguntas → OpcionesPregunta → Respuestas) ya permite consolidar por opción — NO añadir tabla Vote/Votación.
@@ -76,5 +77,6 @@ Dominio de encuestas estructuradas (esquema `enc`). El administrador crea encues
 
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
+| 2026-10-28 | [[FE-ENC-RES-001]] | GET resultados autorizado residente (participó/cierre); DTO público sin textos libres crudos; UI `/encuestas/:id/resultados`. |
 | 2026-10-26 | [[FE-MOD-ENC-001]] | Admin encuestas 3 superficies; CRUD JWT preguntas/opciones anidado; publicar con gate de preguntas; spec endpoints Cuarta actualizado. |
 | 2026-10-26 | [[FE-CRUD-002]] | Bandeja admin + `ResultadosEncuestaPage` al patrón CRUD admin; fix `apiGet`; publicar con `ConfirmDialog` (sin cambio API). |

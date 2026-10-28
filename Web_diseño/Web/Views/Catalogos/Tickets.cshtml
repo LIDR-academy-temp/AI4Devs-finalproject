@@ -1,0 +1,816 @@
+@model Web.Models.Admin.TicketBoardPageViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Tickets";
+
+    var filter = Model.Filter ?? new Web.Models.Admin.TicketBoardFilterViewModel();
+    var selectedTicket = Model.SelectedTicket;
+    var selectedTicketId = selectedTicket?.TicketID ?? 0;
+    var visibleCount = Model.Items.Count;
+    var showWorkspace = Model.IsCreateMode || selectedTicket is not null;
+    var showTicketActions = selectedTicket is not null;
+    var listColumnClass = showWorkspace ? "col-xl-4" : "col-12";
+    var createFormColumnClass = showTicketActions ? "col-xl-7" : "col-12";
+    var selectedTicketText = selectedTicket is null
+        ? "Selecciona un ticket para ver su ciclo completo o abre uno nuevo desde el formulario."
+        : selectedTicket.TituloTicket;
+    var activeFilters = 0;
+    if (!string.IsNullOrWhiteSpace(filter.Search)) activeFilters++;
+    if (filter.EstadoTicketID.HasValue) activeFilters++;
+    if (filter.PrioridadTicketID.HasValue) activeFilters++;
+    if (filter.UsuarioAsignadoID.HasValue) activeFilters++;
+    if (filter.SoloAbiertos) activeFilters++;
+    if (filter.SoloMisTickets) activeFilters++;
+    var estadoFiltroTexto = Model.EstadoOptions.FirstOrDefault(item => item.Value == filter.EstadoTicketID?.ToString())?.Text;
+    var prioridadFiltroTexto = Model.PrioridadOptions.FirstOrDefault(item => item.Value == filter.PrioridadTicketID?.ToString())?.Text;
+    var usuarioFiltroTexto = Model.UsuarioOptions.FirstOrDefault(item => item.Value == filter.UsuarioAsignadoID?.ToString())?.Text;
+    var selectedResponsable = !string.IsNullOrWhiteSpace(selectedTicket?.UsuarioAsignado) ? selectedTicket.UsuarioAsignado : "Sin asignar";
+    var selectedDescripcion = !string.IsNullOrWhiteSpace(selectedTicket?.DescripcionTicket) ? selectedTicket.DescripcionTicket : "Todavía no hay una descripción detallada para este ticket.";
+    var selectedUltimaActividad = selectedTicket?.UltimaActividad ?? selectedTicket?.FechaCreacionTicket;
+    var panelContextText = Model.IsCreateMode
+        ? "Completa la ficha para abrir el caso."
+        : selectedTicket is null
+            ? "Elige un ticket o abre uno nuevo."
+            : $"{selectedResponsable} · {selectedTicket.EstadoTemporal}";
+}
+
+<div class="container-fluid cq-ticket-page">
+    <div class="card cq-ticket-hero mb-4">
+        <div class="card-body">
+            <div class="cq-ticket-hero-grid">
+                <div class="cq-ticket-hero-copy">
+                    <div class="cq-ticket-hero-headline">
+                        <span class="badge badge-pill badge-light text-uppercase">Mesa de ayuda</span>
+                        <span class="cq-ticket-hero-inline-meta">
+                            <i class="mdi mdi-tune-variant"></i>
+                            @(activeFilters == 0 ? "Bandeja general" : $"{activeFilters} filtros activos")
+                        </span>
+                    </div>
+                    <h3 class="mt-2 mb-1">Centro operativo de tickets</h3>
+                    <p class="mb-0">Filtra, abre y resuelve casos desde una sola bandeja.</p>
+
+                    <div class="cq-ticket-hero-pills mt-3">
+                        <span class="cq-ticket-hero-pill"><i class="mdi mdi-ticket-confirmation-outline"></i>@visibleCount visibles</span>
+                        <span class="cq-ticket-hero-pill"><i class="mdi mdi-folder-open-outline"></i>@Model.TotalAbiertos abiertos</span>
+                        <span class="cq-ticket-hero-pill"><i class="mdi mdi-progress-clock"></i>@Model.TotalEnSeguimiento en seguimiento</span>
+                        <span class="cq-ticket-hero-pill"><i class="mdi mdi-check-decagram-outline"></i>@Model.TotalResueltos resueltos</span>
+                    </div>
+                </div>
+
+                <div class="cq-ticket-hero-side">
+                    <div class="cq-ticket-hero-focus">
+                        <span class="cq-ticket-mini-label">Contexto actual</span>
+                        <strong>@(Model.IsCreateMode ? "Nuevo ticket" : selectedTicket?.TituloTicket ?? "Bandeja de tickets")</strong>
+                        <p class="mb-0">@panelContextText</p>
+                    </div>
+
+                    <div class="cq-ticket-hero-actions">
+                        <a asp-controller="Tickets" asp-action="Index" asp-route-newTicket="true" asp-route-focus="detail" class="btn btn-light">Abrir ticket</a>
+                        <a asp-controller="Tickets" asp-action="Index" class="btn btn-outline-secondary">Limpiar filtros</a>
+                        @if (selectedTicket is not null)
+                        {
+                            <a asp-controller="Tickets" asp-action="Index" asp-route-ticketId="@selectedTicket.TicketID" asp-route-focus="detail" class="btn btn-outline-secondary">Ir al detalle</a>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="cq-ticket-stats-grid mt-3">
+                <div class="cq-ticket-stat cq-ticket-stat--compact">
+                    <span class="cq-ticket-stat-label">Tickets</span>
+                    <strong>@Model.TotalTickets</strong>
+                    <small>en el conjunto visible</small>
+                </div>
+                <div class="cq-ticket-stat cq-ticket-stat--compact">
+                    <span class="cq-ticket-stat-label">Abiertos</span>
+                    <strong>@Model.TotalAbiertos</strong>
+                    <small>pendientes de atención</small>
+                </div>
+                <div class="cq-ticket-stat cq-ticket-stat--compact">
+                    <span class="cq-ticket-stat-label">En seguimiento</span>
+                    <strong>@Model.TotalEnSeguimiento</strong>
+                    <small>ya tienen interacción</small>
+                </div>
+                <div class="cq-ticket-stat cq-ticket-stat--compact">
+                    <span class="cq-ticket-stat-label">Resueltos</span>
+                    <strong>@Model.TotalResueltos</strong>
+                    <small>listos para cerrar</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert alert-success alert-dismissible fade show cq-ticket-alert" role="alert">
+            <i class="mdi mdi-check-circle mr-1"></i>@Model.Message
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.Warning))
+    {
+        <div class="alert alert-warning alert-dismissible fade show cq-ticket-alert" role="alert">
+            <i class="mdi mdi-alert mr-1"></i>@Model.Warning
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.Error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show cq-ticket-alert" role="alert">
+            <i class="mdi mdi-alert-circle mr-1"></i>@Model.Error
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+
+    <div class="card cq-ticket-filters mb-4">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-3 mb-3">
+                <div>
+                    <h4 class="card-title mb-1">Encuentra el caso correcto</h4>
+                    <p class="text-muted mb-0">Filtra por estado, prioridad o responsable antes de entrar al expediente.</p>
+                </div>
+                <div class="cq-ticket-filter-summary">
+                    <span class="cq-ticket-filter-chip @(activeFilters == 0 ? "is-neutral" : "is-active")">
+                        <i class="mdi mdi-tune-variant"></i>
+                        @(activeFilters == 0 ? "Sin filtros activos" : $"{activeFilters} filtro(s) activos")
+                    </span>
+                    @if (!string.IsNullOrWhiteSpace(estadoFiltroTexto))
+                    {
+                        <span class="cq-ticket-filter-chip is-soft"><i class="mdi mdi-flag-outline"></i>@estadoFiltroTexto</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(prioridadFiltroTexto))
+                    {
+                        <span class="cq-ticket-filter-chip is-soft"><i class="mdi mdi-alert-outline"></i>@prioridadFiltroTexto</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(usuarioFiltroTexto))
+                    {
+                        <span class="cq-ticket-filter-chip is-soft"><i class="mdi mdi-account-check-outline"></i>@usuarioFiltroTexto</span>
+                    }
+                    @if (filter.SoloAbiertos)
+                    {
+                        <span class="cq-ticket-filter-chip is-soft"><i class="mdi mdi-folder-open-outline"></i>Solo abiertos</span>
+                    }
+                    @if (filter.SoloMisTickets)
+                    {
+                        <span class="cq-ticket-filter-chip is-soft"><i class="mdi mdi-account-outline"></i>Solo mis tickets</span>
+                    }
+                </div>
+            </div>
+
+            <form asp-controller="Tickets" asp-action="Index" method="get" class="row align-items-end g-3">
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <label asp-for="Filter.Search" class="form-label"></label>
+                    <input asp-for="Filter.Search" class="form-control" placeholder="Busca por asunto, solicitante o descripción" />
+                </div>
+                <div class="col-lg-2 col-md-6 mb-3">
+                    <label asp-for="Filter.EstadoTicketID" class="form-label"></label>
+                    <select asp-for="Filter.EstadoTicketID" asp-items="Model.EstadoOptions" class="form-select">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-3">
+                    <label asp-for="Filter.PrioridadTicketID" class="form-label"></label>
+                    <select asp-for="Filter.PrioridadTicketID" asp-items="Model.PrioridadOptions" class="form-select">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-3">
+                    <label asp-for="Filter.UsuarioAsignadoID" class="form-label"></label>
+                    <select asp-for="Filter.UsuarioAsignadoID" asp-items="Model.UsuarioOptions" class="form-select">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-3 text-lg-end">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3 mb-lg-0">
+                    <div class="cq-ticket-checkchip">
+                        <input asp-for="Filter.SoloAbiertos" class="form-check-input mt-0" />
+                        <label asp-for="Filter.SoloAbiertos" class="form-check-label mb-0"></label>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3 mb-lg-0">
+                    <div class="cq-ticket-checkchip">
+                        <input asp-for="Filter.SoloMisTickets" class="form-check-input mt-0" />
+                        <label asp-for="Filter.SoloMisTickets" class="form-check-label mb-0"></label>
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12 mb-3 mb-lg-0">
+                    <div class="cq-ticket-filter-footnote">
+                        <i class="mdi mdi-information-outline"></i>
+                        <span>Filtra primero y entra al ticket correcto.</span>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row cq-ticket-board">
+        <div class="@listColumnClass mb-4 mb-xl-0">
+            <div class="card cq-ticket-list-card h-100">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3">
+                        <div>
+                            <h4 class="card-title mb-1">Bandeja</h4>
+                            <small class="text-muted">@(visibleCount == 1 ? "1 ticket visible" : $"{visibleCount} tickets visibles")</small>
+                        </div>
+                        <div class="cq-ticket-list-head-meta">
+                            <span class="cq-ticket-filter-chip is-soft"><i class="mdi mdi-archive-outline"></i>@Model.TotalCerrados cerrados</span>
+                            @if (selectedTicket is not null)
+                            {
+                                <span class="cq-ticket-filter-chip is-active"><i class="mdi mdi-cursor-default-click-outline"></i>Ticket #@selectedTicket.TicketID</span>
+                            }
+                        </div>
+                    </div>
+
+                    @if (Model.Items.Count == 0)
+                    {
+                        <div class="cq-ticket-empty text-center">
+                            <div class="cq-ticket-empty-icon">
+                                <i class="mdi mdi-ticket-outline"></i>
+                            </div>
+                            <h5 class="mt-3">No hay tickets con esos filtros</h5>
+                            <p class="text-muted mb-0">Quita filtros o abre un ticket nuevo.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        foreach (var item in Model.Items)
+                        {
+                            var itemRoute = new Dictionary<string, string>
+                            {
+                                ["ticketId"] = item.TicketID?.ToString() ?? string.Empty,
+                                ["newTicket"] = bool.FalseString,
+                                ["focus"] = "detail",
+                                ["search"] = filter.Search ?? string.Empty,
+                                ["estadoTicketID"] = filter.EstadoTicketID?.ToString() ?? string.Empty,
+                                ["prioridadTicketID"] = filter.PrioridadTicketID?.ToString() ?? string.Empty,
+                                ["usuarioSolicitanteID"] = filter.UsuarioSolicitanteID?.ToString() ?? string.Empty,
+                                ["usuarioAsignadoID"] = filter.UsuarioAsignadoID?.ToString() ?? string.Empty,
+                                ["soloAbiertos"] = filter.SoloAbiertos.ToString().ToLowerInvariant(),
+                                ["soloMisTickets"] = filter.SoloMisTickets.ToString().ToLowerInvariant()
+                            };
+
+                            var isSelected = selectedTicketId == item.TicketID;
+
+                            <div class="cq-ticket-item @(isSelected ? "is-selected" : string.Empty)">
+                                <div class="cq-ticket-item-body">
+                                    <div class="cq-ticket-item-top">
+                                        <div class="cq-ticket-item-top-main">
+                                        <div class="d-flex flex-wrap gap-2 mb-2">
+                                            <span class="badge @item.EstadoTemporalClase">@item.EstadoTemporal</span>
+                                            <span class="badge @item.PrioridadClase">@item.PrioridadTicket</span>
+                                            @if (!item.EsCerrado)
+                                            {
+                                                <span class="badge @item.AgeClase" title="Tiempo desde apertura"><i class="mdi mdi-clock-outline"></i> @item.AgeTexto</span>
+                                            }
+                                        </div>
+                                            <div class="cq-ticket-item-title-row">
+                                                <h5 class="mb-0">@item.TituloTicket</h5>
+                                                @if (item.TicketID.HasValue)
+                                                {
+                                                    <span class="cq-ticket-item-id">#@item.TicketID</span>
+                                                }
+                                            </div>
+                                            <p class="cq-ticket-item-summary mb-0">@item.Resumen</p>
+                                        </div>
+                                        <a asp-controller="Tickets" asp-action="Index" asp-all-route-data="itemRoute" class="btn btn-outline-primary btn-sm cq-ticket-item-action" aria-label="Ver ticket @(item.TicketID?.ToString() ?? string.Empty)">
+                                            <i class="mdi mdi-arrow-right"></i>
+                                        </a>
+                                    </div>
+
+                                    <div class="cq-ticket-item-meta-row">
+                                        <span class="cq-ticket-meta-pill"><i class="mdi mdi-account-outline"></i>@item.NombreSolicitante</span>
+                                        <span class="cq-ticket-meta-pill"><i class="mdi mdi-account-check-outline"></i>@(!string.IsNullOrWhiteSpace(item.UsuarioAsignado) ? item.UsuarioAsignado : "Sin asignar")</span>
+                                    </div>
+
+                                    <div class="cq-ticket-item-meta-row cq-ticket-item-meta-row--muted">
+                                        <span class="cq-ticket-meta-pill"><i class="mdi mdi-calendar-clock"></i>@item.FechaCreacionTicket.ToString("dd/MM/yyyy HH:mm")</span>
+                                        <span class="cq-ticket-meta-pill"><i class="mdi mdi-comment-text-outline"></i>@item.ComentariosCount comentario(s)</span>
+                                        <span class="cq-ticket-meta-pill"><i class="mdi mdi-account-multiple-outline"></i>@item.AsignacionesCount asignación(es)</span>
+                                        <span class="cq-ticket-meta-pill"><i class="mdi mdi-paperclip"></i>@item.AdjuntosCount adjunto(s)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (showWorkspace)
+        {
+        <div class="col-xl-8">
+            <div class="card cq-ticket-detail-card mb-4">
+                <div class="card-body">
+                    @if (Model.IsCreateMode && selectedTicket is null)
+                    {
+                        <div class="cq-ticket-empty cq-ticket-detail-empty text-center py-5">
+                            <div class="cq-ticket-empty-icon">
+                                <i class="mdi mdi-ticket-plus-outline"></i>
+                            </div>
+                            <h4 class="mt-3">Nuevo ticket</h4>
+                                <p class="text-muted mb-4">Captura el caso primero. Después podrás responder, asignar y adjuntar evidencia.</p>
+                            <a asp-controller="Tickets" asp-action="Index" class="btn btn-outline-secondary">Volver a la bandeja</a>
+                        </div>
+                    }
+                    else if (selectedTicket is not null)
+                    {
+                        <div class="cq-ticket-workspace-head mb-3">
+                            <div>
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    <span class="badge @selectedTicket.EstadoTemporalClase">@selectedTicket.EstadoTemporal</span>
+                                    <span class="badge @selectedTicket.PrioridadClase">@selectedTicket.PrioridadTicket</span>
+                                    <span class="badge badge-light">Ticket #@selectedTicket.TicketID</span>
+                                    @if (!selectedTicket.EsCerrado)
+                                    {
+                                        <span class="badge @selectedTicket.AgeClase" title="Tiempo abierto"><i class="mdi mdi-clock-alert-outline"></i> Abierto hace @selectedTicket.AgeTexto</span>
+                                    }
+                                </div>
+                                <h3 class="mb-1">@selectedTicket.TituloTicket</h3>
+                                <p class="text-muted mb-0">Resumen y contexto operativo del ticket.</p>
+                            </div>
+                            <div>
+                                <div class="cq-ticket-detail-quick">
+                                    <strong>@(selectedUltimaActividad?.ToString("dd/MM/yyyy HH:mm") ?? "Sin actividad")</strong>
+                                    <small class="d-block text-muted">Última actividad</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="cq-ticket-overview-grid">
+                            <div class="cq-ticket-overview-card">
+                                <span>Abrió</span>
+                                <strong>@selectedTicket.NombreSolicitante</strong>
+                                <small>@selectedTicket.FechaCreacionTicket.ToString("dd/MM/yyyy HH:mm")</small>
+                            </div>
+                            <div class="cq-ticket-overview-card">
+                                <span>Responsable actual</span>
+                                <strong>@selectedResponsable</strong>
+                                <small>@selectedTicket.ComentariosCount comentario(s) registrados</small>
+                            </div>
+                            <div class="cq-ticket-overview-card">
+                                <span>Adjuntos</span>
+                                <strong>@selectedTicket.AdjuntosCount</strong>
+                                <small>@Model.Attachments.Count archivo(s) vinculados</small>
+                            </div>
+                            <div class="cq-ticket-overview-card">
+                                <span>Asignaciones</span>
+                                <strong>@selectedTicket.AsignacionesCount</strong>
+                                <small>@Model.Timeline.Count evento(s) en la línea de tiempo</small>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-lg-7">
+                                <div class="cq-ticket-surface-panel h-100">
+                                    <span class="cq-ticket-mini-label">Descripción del caso</span>
+                                    <p class="mb-0">@selectedDescripcion</p>
+                                </div>
+                            </div>
+                            <div class="col-lg-5">
+                                <div class="cq-ticket-surface-panel h-100">
+                                    <span class="cq-ticket-mini-label">Estado operativo</span>
+                                    <div class="cq-ticket-fact-list">
+                                        <div class="cq-ticket-fact">
+                                            <span>Estado visible</span>
+                                            <strong>@selectedTicket.EstadoTemporal</strong>
+                                        </div>
+                                        <div class="cq-ticket-fact">
+                                            <span>Prioridad</span>
+                                            <strong>@selectedTicket.PrioridadTicket</strong>
+                                        </div>
+                                        <div class="cq-ticket-fact">
+                                            <span>Responsable</span>
+                                            <strong>@selectedResponsable</strong>
+                                        </div>
+                                        <div class="cq-ticket-fact">
+                                            <span>Última actividad</span>
+                                            <strong>@(selectedUltimaActividad?.ToString("dd/MM/yyyy HH:mm") ?? "Sin actividad")</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="cq-ticket-workspace-nav mt-4">
+                            <a href="#ticket-form" class="cq-ticket-workstep">
+                                <i class="mdi mdi-file-document-edit-outline"></i>
+                                <span>
+                                    <strong>Editar ficha</strong>
+                                    <small>Corrige asunto, descripción o catálogo</small>
+                                </span>
+                            </a>
+                            <a href="#ticket-reply" class="cq-ticket-workstep">
+                                <i class="mdi mdi-message-reply-text-outline"></i>
+                                <span>
+                                    <strong>Responder</strong>
+                                    <small>Documenta avance o resolución</small>
+                                </span>
+                            </a>
+                            <a href="#ticket-assignment" class="cq-ticket-workstep">
+                                <i class="mdi mdi-account-switch-outline"></i>
+                                <span>
+                                    <strong>Asignar</strong>
+                                    <small>Define quién toma el caso</small>
+                                </span>
+                            </a>
+                            <a href="#ticket-attachments" class="cq-ticket-workstep">
+                                <i class="mdi mdi-paperclip"></i>
+                                <span>
+                                    <strong>Adjuntar</strong>
+                                    <small>Agrega evidencia y documentos</small>
+                                </span>
+                            </a>
+                        </div>
+
+                        <div class="cq-ticket-thread mt-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h5 class="mb-0">Línea de tiempo</h5>
+                                <span class="badge badge-light">@Model.Timeline.Count evento(s)</span>
+                            </div>
+
+                            @if (Model.Timeline.Count == 0)
+                            {
+                                <div class="cq-ticket-empty cq-ticket-thread-empty text-center py-4">
+                                    <p class="text-muted mb-0">Aún no hay respuestas. El siguiente comentario iniciará el seguimiento.</p>
+                                </div>
+                            }
+                            else
+                            {
+                                foreach (var entry in Model.Timeline)
+                                {
+                                    <div class="cq-ticket-timeline-item">
+                                        <div class="cq-ticket-timeline-marker">
+                                            <span class="badge @entry.BadgeClase">
+                                                <i class="@entry.IconoClase"></i>
+                                            </span>
+                                        </div>
+                                        <div class="cq-ticket-timeline-card">
+                                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                                <div>
+                                                    <h6 class="mb-1">@entry.Titulo</h6>
+                                                    <small class="text-muted">@entry.Autor</small>
+                                                </div>
+                                                <small class="text-muted">@entry.FechaTexto</small>
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(entry.Descripcion))
+                                            {
+                                                <p class="mb-0">@entry.Descripcion</p>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="@createFormColumnClass">
+                    <div class="card cq-ticket-form-card h-100" id="ticket-form">
+                        <div class="card-body">
+                            <div class="cq-ticket-card-head">
+                                <div>
+                                    <h4 class="card-title mb-1">Abrir o editar ticket</h4>
+                                    <p class="text-muted mb-0">Crea un caso nuevo o corrige el ticket que ya tienes en foco.</p>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="cq-ticket-filter-chip @(Model.Form.TicketID.HasValue ? "is-active" : "is-neutral")">
+                                        <i class="mdi @(Model.Form.TicketID.HasValue ? "mdi-pencil-outline" : "mdi-plus-circle-outline")"></i>
+                                        @(Model.Form.TicketID.HasValue ? "Editando ticket actual" : "Nuevo ticket")
+                                    </span>
+                                    @if (Model.IsCreateMode)
+                                    {
+                                        <a asp-controller="Tickets" asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancelar</a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="Tickets" asp-action="Index" asp-route-newTicket="true" asp-route-focus="detail" class="btn btn-outline-primary btn-sm">Nuevo ticket</a>
+                                    }
+                                </div>
+                            </div>
+
+                            <form asp-controller="Tickets" asp-action="Guardar" method="post" class="cq-ticket-form">
+                                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                                <input type="hidden" name="newTicket" value="@(Model.IsCreateMode.ToString().ToLowerInvariant())" />
+                                <input type="hidden" name="focus" value="detail" />
+                                <input type="hidden" asp-for="Filter.Search" />
+                                <input type="hidden" asp-for="Filter.EstadoTicketID" />
+                                <input type="hidden" asp-for="Filter.PrioridadTicketID" />
+                                <input type="hidden" asp-for="Filter.UsuarioSolicitanteID" />
+                                <input type="hidden" asp-for="Filter.UsuarioAsignadoID" />
+                                <input type="hidden" asp-for="Filter.SoloAbiertos" />
+                                <input type="hidden" asp-for="Filter.SoloMisTickets" />
+                                <input type="hidden" asp-for="Form.TicketID" />
+                                <input type="hidden" asp-for="Form.FechaCreacionTicket" />
+                                <input type="hidden" asp-for="Form.FechaCierre" />
+                                <input type="hidden" asp-for="Form.bEliminado" />
+
+                                <div class="row g-3">
+                                    <div class="col-lg-8">
+                                        <label asp-for="Form.TituloTicket" class="form-label"></label>
+                                        <input asp-for="Form.TituloTicket" class="form-control" placeholder="Describe el problema en una línea" />
+                                        <span asp-validation-for="Form.TituloTicket" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <label class="form-label">Fecha de creación</label>
+                                        <div class="cq-ticket-readonly-value">@Model.Form.FechaCreacionTicket.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </div>
+                                    <div class="col-lg-12">
+                                        <label asp-for="Form.DescripcionTicket" class="form-label"></label>
+                                        <textarea asp-for="Form.DescripcionTicket" class="form-control" rows="5" placeholder="Explica el contexto, evidencia y cualquier detalle útil"></textarea>
+                                        <span asp-validation-for="Form.DescripcionTicket" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6">
+                                        <label asp-for="Form.UsuarioSolicitanteID" class="form-label"></label>
+                                        <select asp-for="Form.UsuarioSolicitanteID" asp-items="Model.UsuarioOptions" class="form-select">
+                                            <option value="">Selecciona un solicitante</option>
+                                        </select>
+                                        <span asp-validation-for="Form.UsuarioSolicitanteID" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6">
+                                        <label asp-for="Form.PrioridadTicketID" class="form-label"></label>
+                                        <select asp-for="Form.PrioridadTicketID" asp-items="Model.PrioridadOptions" class="form-select">
+                                            <option value="">Selecciona prioridad</option>
+                                        </select>
+                                        <span asp-validation-for="Form.PrioridadTicketID" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6">
+                                        <label asp-for="Form.EstadoTicketID" class="form-label"></label>
+                                        <select asp-for="Form.EstadoTicketID" asp-items="Model.EstadoOptions" class="form-select">
+                                            <option value="">Selecciona estado</option>
+                                        </select>
+                                        <span asp-validation-for="Form.EstadoTicketID" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-4">
+                                    <small class="text-muted">Sirve para crear o actualizar el ticket en foco.</small>
+                                    <button type="submit" class="btn btn-primary" @(Model.PuedeGuardar ? null : "disabled")>
+                                        @(Model.Form.TicketID.HasValue ? "Actualizar ticket" : "Crear ticket")
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                @if (showTicketActions)
+                {
+                <div class="col-12">
+                    <div class="card cq-ticket-form-card h-100" id="ticket-reply">
+                        <div class="card-body">
+                            <div class="cq-ticket-card-head">
+                                <div>
+                                    <h4 class="card-title mb-1">Responder y resolver</h4>
+                                    <p class="text-muted mb-0">Publica el siguiente avance, cambia el estado o ciérralo.</p>
+                                </div>
+                                <span class="cq-ticket-filter-chip @(Model.SelectedTicket is null ? "is-neutral" : "is-active")">
+                                    <i class="mdi mdi-message-reply-text-outline"></i>
+                                    @(Model.SelectedTicket is null ? "Selecciona un ticket" : "Respuesta lista")
+                                </span>
+                            </div>
+
+                            @if (Model.SelectedTicket is null)
+                            {
+                                <div class="cq-ticket-inline-note mb-3">
+                                    <i class="mdi mdi-information-outline"></i>
+                                    <span>Primero elige un ticket para registrar comentarios o resoluciones.</span>
+                                </div>
+                            }
+
+                            <form asp-controller="Tickets" asp-action="Responder" method="post" class="cq-ticket-form">
+                                <input type="hidden" name="newTicket" value="false" />
+                                <input type="hidden" name="focus" value="detail" />
+                                <input type="hidden" asp-for="Filter.Search" />
+                                <input type="hidden" asp-for="Filter.EstadoTicketID" />
+                                <input type="hidden" asp-for="Filter.PrioridadTicketID" />
+                                <input type="hidden" asp-for="Filter.UsuarioSolicitanteID" />
+                                <input type="hidden" asp-for="Filter.UsuarioAsignadoID" />
+                                <input type="hidden" asp-for="Filter.SoloAbiertos" />
+                                <input type="hidden" asp-for="Filter.SoloMisTickets" />
+                                <input type="hidden" asp-for="ReplyForm.TicketID" />
+                                <input type="hidden" asp-for="ReplyForm.UsuarioID" />
+                                <input type="hidden" asp-for="ReplyForm.bEliminado" />
+
+                                <div class="mb-3">
+                                    <label asp-for="ReplyForm.Comentario" class="form-label"></label>
+                                    <textarea asp-for="ReplyForm.Comentario" class="form-control" rows="5" placeholder="Escribe la respuesta, avance o resolución"></textarea>
+                                    <span asp-validation-for="ReplyForm.Comentario" class="text-danger"></span>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-lg-6">
+                                        <label asp-for="ReplyForm.NuevoEstadoTicketID" class="form-label"></label>
+                                        <select asp-for="ReplyForm.NuevoEstadoTicketID" asp-items="Model.EstadoOptions" class="form-select">
+                                            <option value="">Mantener estado actual</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="cq-ticket-checkchip cq-ticket-checkchip--strong h-100">
+                                            <input asp-for="ReplyForm.CerrarTicket" class="form-check-input" />
+                                            <label asp-for="ReplyForm.CerrarTicket" class="form-check-label mb-0"></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="cq-ticket-form-footer mt-4">
+                                    <small class="text-muted">Se publicará con el usuario indicado en el formulario.</small>
+                                    <button type="submit" class="btn btn-success" @(Model.SelectedTicket is null ? "disabled" : null)>Registrar respuesta</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card cq-ticket-form-card h-100" id="ticket-assignment">
+                        <div class="card-body">
+                            <div class="cq-ticket-card-head">
+                                <div>
+                                    <h4 class="card-title mb-1">Asignación</h4>
+                                    <p class="text-muted mb-0">Define quién atiende el caso y si la gestión ya terminó.</p>
+                                </div>
+                                <span class="cq-ticket-filter-chip @(Model.SelectedTicket is null ? "is-neutral" : "is-soft")">
+                                    <i class="mdi mdi-account-switch-outline"></i>
+                                    Asignación operativa
+                                </span>
+                            </div>
+
+                            @if (Model.SelectedTicket is null)
+                            {
+                                <div class="cq-ticket-inline-note mb-3">
+                                    <i class="mdi mdi-information-outline"></i>
+                                    <span>Selecciona un ticket para definir al responsable.</span>
+                                </div>
+                            }
+
+                            <form asp-controller="Tickets" asp-action="Asignar" method="post" class="cq-ticket-form">
+                                <input type="hidden" name="newTicket" value="false" />
+                                <input type="hidden" name="focus" value="detail" />
+                                <input type="hidden" asp-for="Filter.Search" />
+                                <input type="hidden" asp-for="Filter.EstadoTicketID" />
+                                <input type="hidden" asp-for="Filter.PrioridadTicketID" />
+                                <input type="hidden" asp-for="Filter.UsuarioSolicitanteID" />
+                                <input type="hidden" asp-for="Filter.UsuarioAsignadoID" />
+                                <input type="hidden" asp-for="Filter.SoloAbiertos" />
+                                <input type="hidden" asp-for="Filter.SoloMisTickets" />
+                                <input type="hidden" asp-for="AssignmentForm.TicketID" />
+                                <input type="hidden" asp-for="AssignmentForm.TicketsUsuariosAsignadosID" />
+                                <input type="hidden" asp-for="AssignmentForm.bEliminado" />
+
+                                <div class="row g-3">
+                                    <div class="col-lg-7">
+                                        <label asp-for="AssignmentForm.UsuarioID" class="form-label"></label>
+                                        <select asp-for="AssignmentForm.UsuarioID" asp-items="Model.UsuarioOptions" class="form-select">
+                                            <option value="">Selecciona un usuario</option>
+                                        </select>
+                                        <span asp-validation-for="AssignmentForm.UsuarioID" class="text-danger"></span>
+                                    </div>
+                                    <div class="col-lg-5">
+                                        <label class="form-label d-block">Estado de la asignación</label>
+                                        <div class="cq-ticket-checkchip cq-ticket-checkchip--strong h-100">
+                                            <input asp-for="AssignmentForm.Terminado" class="form-check-input" />
+                                            <label asp-for="AssignmentForm.Terminado" class="form-check-label mb-0"></label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="cq-ticket-form-footer mt-4">
+                                    <small class="text-muted">La asignación se guarda sobre el ticket actual.</small>
+                                    <button type="submit" class="btn btn-outline-primary" @(Model.SelectedTicket is null ? "disabled" : null)>Guardar asignación</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card cq-ticket-form-card h-100" id="ticket-attachments">
+                        <div class="card-body">
+                            <div class="cq-ticket-card-head">
+                                <div>
+                                    <h4 class="card-title mb-1">Adjuntos</h4>
+                                    <p class="text-muted mb-0">Sube comprobantes, fotos o documentos de respaldo.</p>
+                                </div>
+                                <span class="cq-ticket-filter-chip is-soft">
+                                    <i class="mdi mdi-paperclip"></i>
+                                    @Model.Attachments.Count archivo(s)
+                                </span>
+                            </div>
+
+                            @if (Model.SelectedTicket is null)
+                            {
+                                <div class="cq-ticket-inline-note mb-3">
+                                    <i class="mdi mdi-information-outline"></i>
+                                    <span>Selecciona un ticket antes de vincular archivos.</span>
+                                </div>
+                            }
+
+                            @if (Model.Attachments.Count == 0)
+                            {
+                                <div class="cq-ticket-empty cq-ticket-attachment-empty text-center py-4 mb-3">
+                                    <div class="cq-ticket-empty-icon">
+                                        <i class="mdi mdi-paperclip"></i>
+                                    </div>
+                                    <p class="text-muted mb-0">Aún no hay archivos en este ticket.</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="cq-ticket-attachment-list mb-3">
+                                    @foreach (var attachment in Model.Attachments)
+                                    {
+                                        <article class="cq-ticket-attachment-item">
+                                            <div class="cq-ticket-attachment-icon">
+                                                <i class="mdi mdi-file-document-outline"></i>
+                                            </div>
+                                            <div class="cq-ticket-attachment-content">
+                                                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                                    <strong>@attachment.NombreArchivo</strong>
+                                                    @if (!string.IsNullOrWhiteSpace(attachment.TipoArchivo))
+                                                    {
+                                                        <span class="badge badge-light">@attachment.TipoArchivo</span>
+                                                    }
+                                                </div>
+                                                <div class="cq-ticket-attachment-meta">
+                                                    <span><i class="mdi mdi-account-outline"></i> @(!string.IsNullOrWhiteSpace(attachment.CreadoPor) ? attachment.CreadoPor : "Sin usuario")</span>
+                                                    <span><i class="mdi mdi-calendar-clock"></i> @attachment.FechaTexto</span>
+                                                </div>
+                                            </div>
+                                            <div class="cq-ticket-attachment-actions">
+                                                @if (!string.IsNullOrWhiteSpace(attachment.UrlArchivo))
+                                                {
+                                                    <a href="@attachment.UrlArchivo" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">Abrir</a>
+                                                }
+                                            </div>
+                                        </article>
+                                    }
+                                </div>
+                            }
+
+                            <form asp-controller="Tickets" asp-action="Adjuntar" method="post" enctype="multipart/form-data" class="cq-ticket-form cq-ticket-attachment-form">
+                                <input type="hidden" name="newTicket" value="false" />
+                                <input type="hidden" name="focus" value="detail" />
+                                <input type="hidden" asp-for="Filter.Search" />
+                                <input type="hidden" asp-for="Filter.EstadoTicketID" />
+                                <input type="hidden" asp-for="Filter.PrioridadTicketID" />
+                                <input type="hidden" asp-for="Filter.UsuarioSolicitanteID" />
+                                <input type="hidden" asp-for="Filter.UsuarioAsignadoID" />
+                                <input type="hidden" asp-for="Filter.SoloAbiertos" />
+                                <input type="hidden" asp-for="Filter.SoloMisTickets" />
+                                <input type="hidden" asp-for="AttachmentForm.TicketID" />
+                                <input type="hidden" asp-for="AttachmentForm.bEliminado" />
+
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label asp-for="AttachmentForm.Archivo" class="form-label"></label>
+                                        <input asp-for="AttachmentForm.Archivo" type="file" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="cq-ticket-form-footer cq-ticket-form-footer--stack">
+                                            <small class="text-muted">Se permiten PDF, documentos de Office e imágenes de hasta 20 MB.</small>
+                                            <button type="submit" class="btn btn-outline-primary" @(selectedTicket is null ? "disabled" : null)>Adjuntar archivo</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+        }
+    </div>
+</div>
+
+@section TopbarContent {
+    <div class="cq-topbar-inner">
+        <div class="cq-tb-left">
+            <div class="cq-tb-icon"><i class="mdi mdi-ticket-outline"></i></div>
+            <div class="cq-tb-info">
+                <span class="cq-tb-title">Tickets</span>
+                <div class="cq-tb-meta">
+                    <span class="cq-tb-badge"><i class="mdi mdi-ticket-outline"></i><strong>@Model.TotalTickets</strong></span>
+                    <span class="cq-tb-dot"></span>
+                    <span class="cq-tb-badge" style="color:#d97706"><i class="mdi mdi-folder-open-outline"></i><strong>@Model.TotalAbiertos</strong> abiertos</span>
+                </div>
+            </div>
+        </div>
+        <div class="cq-tb-right">
+            <div class="cq-tb-sep"></div>
+            <ol class="breadcrumb mb-0 cq-tb-breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                <li class="breadcrumb-item active">Tickets</li>
+            </ol>
+            <a asp-controller="Tickets" asp-action="Index" asp-route-newTicket="true" asp-route-focus="detail"
+               class="btn btn-primary cq-tb-btn-new">
+                <i class="mdi mdi-plus"></i><span>Abrir ticket</span>
+            </a>
+        </div>
+    </div>
+}

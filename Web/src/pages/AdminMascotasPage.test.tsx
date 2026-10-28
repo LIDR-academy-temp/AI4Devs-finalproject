@@ -1,3 +1,4 @@
+import '../test/stubToast'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { AdminMascotasPage } from './AdminMascotasPage'
@@ -6,7 +7,17 @@ vi.mock('../features/mascotas/useMascotas', () => ({
   usePadronMascotas: vi.fn(),
 }))
 
+vi.mock('../features/admin/mascotas/useMascotasCatalog', () => ({
+  useTiposMascotaCatalog: vi.fn(),
+  useRazasMascotaCatalog: vi.fn(),
+}))
+
+vi.mock('../features/admin/usuarios/usePadronUsuarios', () => ({
+  usePadronUsuarios: vi.fn(() => ({ data: [] })),
+}))
+
 import { usePadronMascotas } from '../features/mascotas/useMascotas'
+import { useRazasMascotaCatalog, useTiposMascotaCatalog } from '../features/admin/mascotas/useMascotasCatalog'
 import type { MascotaListItem } from '../shared/types/mascotas'
 const mockUsePadron = usePadronMascotas as ReturnType<typeof vi.fn>
 
@@ -47,8 +58,23 @@ function mockPadron(overrides: Partial<ReturnType<typeof usePadronMascotas>> = {
   })
 }
 
+const mockUseTipos = useTiposMascotaCatalog as ReturnType<typeof vi.fn>
+const mockUseRazas = useRazasMascotaCatalog as ReturnType<typeof vi.fn>
+
 beforeEach(() => {
   vi.clearAllMocks()
+  mockUseTipos.mockReturnValue({
+    tipos: [],
+    loading: false,
+    error: null,
+    reload: vi.fn(),
+  })
+  mockUseRazas.mockReturnValue({
+    razas: [],
+    loading: false,
+    error: null,
+    reload: vi.fn(),
+  })
 })
 
 describe('AdminMascotasPage', () => {
@@ -73,9 +99,9 @@ describe('AdminMascotasPage', () => {
   it('renderiza filas del padrón', () => {
     mockPadron({ padron: sample })
     render(<AdminMascotasPage />)
-    expect(screen.getByText('Firulais')).toBeInTheDocument()
-    expect(screen.getByText('Michi')).toBeInTheDocument()
-    expect(screen.getByText('Ana García')).toBeInTheDocument()
+    expect(screen.getAllByText('Firulais').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Michi').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Ana García').length).toBeGreaterThanOrEqual(1)
   })
 
   it('badge vacunas al día', () => {
@@ -92,10 +118,18 @@ describe('AdminMascotasPage', () => {
     expect(badges.some((el) => el.classList.contains('badge'))).toBe(true)
   })
 
+  it('muestra error de carga vía toast', async () => {
+    const { useToast } = await import('../shared/toast/ToastContext')
+    const toast = useToast()
+    mockPadron({ error: 'Error al cargar mascotas' })
+    render(<AdminMascotasPage />)
+    expect(toast.error).toHaveBeenCalledWith('Error al cargar mascotas')
+  })
+
   it('muestra número de casa', () => {
     mockPadron({ padron: sample })
     render(<AdminMascotasPage />)
-    expect(screen.getByText('A-101')).toBeInTheDocument()
-    expect(screen.getByText('B-205')).toBeInTheDocument()
+    expect(screen.getAllByText('A-101').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('B-205').length).toBeGreaterThanOrEqual(1)
   })
 })

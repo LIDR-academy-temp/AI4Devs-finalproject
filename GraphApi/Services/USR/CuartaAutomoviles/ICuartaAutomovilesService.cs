@@ -18,4 +18,22 @@ public interface ICuartaAutomovilesService
         int automovilId, AutomovilActualizarRequest req, string correoAdmin, CancellationToken ct = default);
     Task<(bool Ok, string? Code, int Status, string? Detail)> EliminarComoAdminAsync(
         int automovilId, string correoAdmin, CancellationToken ct = default);
+
+    Task<(MarcaDto? Data, string? Code, int Status, string? Detail)> CrearMarcaAsync(
+        string marca, int adminId, string correo, CancellationToken ct = default);
+
+    Task<(MarcaDto? Data, string? Code, int Status, string? Detail)> ActualizarMarcaAsync(
+        int marcaId, string marca, int adminId, string correo, CancellationToken ct = default);
+
+    Task<(bool Ok, string? Code, int Status, string? Detail)> EliminarMarcaAsync(
+        int marcaId, int adminId, string correo, CancellationToken ct = default);
+
+    Task<(ModeloDto? Data, string? Code, int Status, string? Detail)> CrearModeloAsync(
+        int marcaId, string modelo, int adminId, string correo, CancellationToken ct = default);
+
+    Task<(ModeloDto? Data, string? Code, int Status, string? Detail)> ActualizarModeloAsync(
+        int modeloId, int marcaId, string modelo, int adminId, string correo, CancellationToken ct = default);
+
+    Task<(bool Ok, string? Code, int Status, string? Detail)> EliminarModeloAsync(
+        int modeloId, int adminId, string correo, CancellationToken ct = default);
 }

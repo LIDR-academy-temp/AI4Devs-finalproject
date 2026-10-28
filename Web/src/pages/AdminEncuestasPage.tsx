@@ -11,6 +11,7 @@ import {
   toDateInputValue,
   type EncuestaMetadataForm,
 } from '../features/admin/encuestas/encuestasAdminSchemas'
+import { EncuestaAdminMobileCard } from '../features/admin/encuestas/EncuestaAdminMobileCard'
 import {
   ENCUESTAS_TABLE_ACCESSORS,
   ENCUESTAS_TABLE_COLUMNS,
@@ -20,11 +21,14 @@ import { useEncuestasAdmin } from '../features/admin/encuestas/useEncuestasAdmin
 import {
   AdminFilterableTable,
   AdminListToolbar,
+  AdminMobileCardList,
   AdminSidePanel,
   AdminSplitLayout,
   ConfirmDialog,
 } from '../shared/components/admin'
 import { useClientTableFilter } from '../shared/hooks/useClientTableFilter'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { useToast } from '../shared/toast/ToastContext'
 import { apiDelete, apiPost, apiPut } from '../shared/lib/apiClient'
 import type { EncuestaDetalle, EncuestaListItem } from '../shared/types/encuestas'
 
@@ -42,7 +46,8 @@ export function AdminEncuestasPage() {
   const [publishError, setPublishError] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
-  const [dismissedError, setDismissedError] = useState(false)
+  const toast = useToast()
+  useQueryErrorToast(error)
 
   const visibleEncuestas = useMemo(
     () => (soloActivas ? encuestas.filter((e) => e.activa) : encuestas),
@@ -137,6 +142,7 @@ export function AdminEncuestasPage() {
         return
       }
       closePanel()
+      toast.success('Encuesta creada')
       const newId = created ? normalizeEncuestaDetalle(created).encuestaId : undefined
       if (!newId || newId <= 0) {
         setFormError('La encuesta se guardó pero no se recibió el identificador.')
@@ -162,6 +168,7 @@ export function AdminEncuestasPage() {
       return
     }
     closePanel()
+    toast.success('Encuesta actualizada')
     await refetch()
   })
 
@@ -174,6 +181,7 @@ export function AdminEncuestasPage() {
       return
     }
     setPublishTarget(null)
+    toast.success('Encuesta publicada')
     await refetch()
   }
 
@@ -186,16 +194,13 @@ export function AdminEncuestasPage() {
       return
     }
     setDeleteTarget(null)
+    toast.success('Encuesta eliminada')
     await refetch()
   }
 
   useEffect(() => {
     if (!publishTarget) setPublishError(null)
   }, [publishTarget])
-
-  useEffect(() => {
-    if (error) setDismissedError(false)
-  }, [error])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -238,13 +243,6 @@ export function AdminEncuestasPage() {
 
   return (
     <div className="cq-admin-page container-fluid py-4">
-      {error && !dismissedError && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          <i className="mdi mdi-alert-circle mr-1" />
-          {error}
-          <button type="button" className="btn-close" aria-label="Cerrar" onClick={() => setDismissedError(true)} />
-        </div>
-      )}
       {publishError && (
         <div className="alert alert-danger py-2 small" role="alert">{publishError}</div>
       )}
@@ -296,6 +294,7 @@ export function AdminEncuestasPage() {
               )}
 
               {!loading && !error && visibleEncuestas.length > 0 && (
+                <>
                 <AdminFilterableTable
                   columns={ENCUESTAS_TABLE_COLUMNS}
                   columnFilters={columnFilters}
@@ -375,6 +374,21 @@ export function AdminEncuestasPage() {
                     ))
                   )}
                 </AdminFilterableTable>
+                <AdminMobileCardList
+                  rows={filteredEncuestas}
+                  getRowKey={(e) => e.encuestaId}
+                  renderCard={(e) => (
+                    <EncuestaAdminMobileCard
+                      encuesta={e}
+                      active={editTarget?.encuestaId === e.encuestaId}
+                      onEdit={(item) => {
+                        if (!item.activa) openEdit(item)
+                        else navigate(`/admin/encuestas/${item.encuestaId}`)
+                      }}
+                    />
+                  )}
+                />
+                </>
               )}
             </div>
           </div>

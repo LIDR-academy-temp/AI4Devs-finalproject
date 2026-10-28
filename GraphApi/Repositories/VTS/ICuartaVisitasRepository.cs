@@ -1,4 +1,5 @@
 using System.Data;
+using GraphApi.Models.TKT;
 using GraphApi.Models.VTS.CuartaVisitas;
 
 namespace GraphApi.Repositories.VTS;
@@ -10,6 +11,10 @@ public interface ICuartaVisitasRepository
         int? casaId, DateTime? desde, DateTime? hasta, CancellationToken ct = default);
 
     Task<int?> ResolverTipoIdentificacionIdAsync(string tipoIdentificacion, IDbTransaction? tx = null);
+    Task<IReadOnlyList<TipoIdentificacionDto>> ListarTiposIdentificacionAsync(CancellationToken ct = default);
+    Task<int> InsertTipoIdentificacionAsync(string tipo, string correo, int userId, IDbTransaction? tx = null);
+    Task<bool> UpdateTipoIdentificacionAsync(int tipoId, string tipo, string correo, int userId, IDbTransaction? tx = null);
+    Task<bool> SoftDeleteTipoIdentificacionAsync(int tipoId, string correo, int userId, IDbTransaction? tx = null);
 
     Task<int> InsertVisitaAsync(
         RegistrarVisitaRequest request,
@@ -38,4 +43,10 @@ public interface ICuartaVisitasRepository
 
     Task<IReadOnlyList<ReservacionAreaDto>> ListarReservacionesMiasAsync(
         int userId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<ReservacionCalendarioDto>> ListarReservacionesCalendarioAsync(
+        int areaComunId, DateTime desde, DateTime hasta, CancellationToken ct = default);
+
+    Task<PaginaDto<ReservacionAdminItemDto>> ListarReservacionesAdminAsync(
+        ReservacionAdminFiltroDto filtro, CancellationToken ct = default);
 }

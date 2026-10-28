@@ -82,6 +82,13 @@ Evolución SDD: [_sdd_evolution.md](_sdd_evolution.md)
 - **Fecha cierre**: 2026-10-27
 - **Hub**: [spec](.planning/tkt-fe-pat-001/spec.md) · [delta](.planning/tkt-fe-pat-001/delta.md)
 
+### [[NAV-ROOT-001]]: Catálogo navegación + paridad 15 módulos (epic completo)
+
+- **Estado**: LISTO PARA TEST
+- **Dominios**: [[frontend]], [[sgr]], [[usuarios]], [[visitas-areas]], [[tickets]], [[notificaciones]], [[reportes-bi]], [[bot-ia]], [[dashboard]]
+- **Objetos clave**: `navCatalog.manifest.ts`, `DB-008`, fases A–G (RPT/BI/BOT web incluidos)
+- **Hub**: [spec](.planning/tkt-nav-root-001/spec.md) · [design](.planning/tkt-nav-root-001/design.md) · [matriz](.planning/tkt-nav-root-001/MATRIZ_MODULOS.md)
+
 ### [[SGR-FE-001]]: Sidebar dinámico + admin SGR (SPA)
 
 - **Estado**: ARCHIVADO
@@ -162,6 +169,66 @@ Evolución SDD: [_sdd_evolution.md](_sdd_evolution.md)
 - **Fecha cierre**: 2026-10-27
 - **Hub**: [spec](.planning/tkt-fe-crud-004/spec.md) · [delta](.planning/tkt-fe-crud-004/delta.md)
 
+### [[FE-UX-001]]: Rediseño UX integral (navegación, home, menú usuario)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[ux]]
+- **Objetos clave**: `AppShell`, `AppSidebar`, `SidebarGroup`, `UserMenu`, `MobileDrawer`, `Breadcrumbs`, `HomePage`, `QuickAccessCard`, `appNavigation`
+- **Patrones**: grupos + Lucide; drawer móvil; home con quick access; breadcrumbs `md+`; implementación repartida con [[SGR-FE-001]], [[FE-CRUD-004]], [[FE-UX-002]]
+- **Relacionado con**: [[FE-SHELL-001]], [[FE-DS-001]], [[FE-UX-002]], [[SGR-FE-001]]
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-fe-ux-001/spec.md) · [delta](.planning/tkt-fe-ux-001/delta.md)
+
+### [[FE-UX-005]]: Rollout admin móvil (9 listados)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[ux]]
+- **Objetos clave**: 9× `*AdminMobileCard`, 9× `Admin*Page` (rollout), `useTiposArchivo.error`, `stubToast.ts`
+- **Patrones**: dual render tabla+cards (completa cobertura `AdminFilterableTable` Must); toast listado deduplicado
+- **Relacionado con**: [[FE-UX-004]], [[FE-UX-003]], [[FE-UX-006]] (follow-up B/C fuera de delta 005)
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-fe-ux-005/spec.md) · [delta](.planning/tkt-fe-ux-005/delta.md)
+
+### [[FE-ADMIN-CAT-001]]: CRUD catálogos admin (mascotas, almacén, visitas, vehículos)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[mascotas]], [[almacen]], [[visitas-areas]], [[vehiculos]]
+- **Objetos clave**: pestañas catálogo en `AdminMascotasPage`, `AdminAlmacenPage`, `AdminVisitasPage`, `AdminVehiculosPage`; controllers `TiposMascota`, `RazasMascota`, `TiposIdentificacion`, `Marcas`/`Modelos` admin; `WMS/Articulos/categorias`
+- **Patrones**: hooks `*Catalog` + `reload`; mappers PascalCase; SDD ligero post-código
+- **Relacionado con**: [[FE-CRUD-003]], [[FE-PAT-002]], [[FE-UX-006]] (misma rama de trabajo)
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-fe-admin-cat-001/spec.md) · [delta](.planning/tkt-fe-admin-cat-001/delta.md)
+
+### [[FE-UX-006]]: Residente (toasts) + modo oscuro + onboarding
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[ux]]
+- **Objetos clave**: `ThemeProvider`, `themePreference`, `OnboardingWelcome`, `useQueryErrorToast` (residente/detalle), overrides `html.dark` (shell + `cq-admin-page`)
+- **Patrones**: no reabrir delta de [[FE-UX-005]]; shell con gradientes fijos; dropdown con tokens de superficie
+- **Relacionado con**: [[FE-UX-001]], [[FE-UX-003]], [[FE-UX-005]]
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-fe-ux-006/spec.md) · [delta](.planning/tkt-fe-ux-006/delta.md)
+
+### [[FE-UX-004]]: Admin móvil (cards + toasts pilotos)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[ux]]
+- **Objetos clave**: `AdminMobileCard`, `AdminMobileCardList`, `useQueryErrorToast`, `AdminCasasPage`, `AdminUsuariosPage`, `AdminTicketsPage`
+- **Patrones**: dual render tabla+cards mismo `filteredRows`; error listado vía toast deduplicado
+- **Relacionado con**: [[FE-UX-001]], [[FE-UX-003]], [[FE-PAT-002]]
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-fe-ux-004/spec.md) · [delta](.planning/tkt-fe-ux-004/delta.md)
+
+### [[FE-UX-003]]: Polish UX (toasts, contexto, sidebar)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[ux]]
+- **Objetos clave**: `ToastProvider`, `useToast`, `routeCrumbs`, `useRouteCrumbs`, `ModuleTitle`, `SidebarGroup` (acordeón)
+- **Patrones**: toast global sin lib externa; crumbs con fallback SGR → `APP_NAV`
+- **Relacionado con**: [[FE-UX-001]], [[FE-UX-002]], [[SGR-FE-001]]
+- **Fecha cierre**: 2026-10-27
+- **Hub**: [spec](.planning/tkt-fe-ux-003/spec.md) · [delta](.planning/tkt-fe-ux-003/delta.md)
+
 ### [[FE-UX-002]]: Login premium + navegación sin solapamiento
 
 - **Estado**: ARCHIVADO
@@ -192,3 +259,46 @@ Evolución SDD: [_sdd_evolution.md](_sdd_evolution.md)
 - **Fecha cierre**: 2026-10-26
 - **Hub**: [spec](.planning/tkt-fe-mod-enc-001/spec.md) · [delta](.planning/tkt-fe-mod-enc-001/delta.md) · [APIs](.planning/tkt-fe-mod-enc-001/TKT-FE-MOD-ENC-001-APIS.md)
 
+## Lote Gaps MVP (2026-10-28)
+
+Hub: [GAPS_MVP_ROADMAP](.planning/GAPS_MVP_ROADMAP.md)
+
+### [[FE-TKT-DET-001]] — Administración tickets (detalle, CRUD, catálogos)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[tickets]], [[frontend]], [[backend]]
+- **Objetos clave**: `CuartaTicketDetalleService`, `CuartaTicketAdminService`, `CuartaTicketCatalogoAdminService`, `TicketDetallePage`, `AdminTicketsPage`, `AdminTicketCatalogosPage`, `ticketEstadoDisplay`
+- **Patrones**: REST JWT Cuarta; CRUD admin split panel; catálogo admin tipo `TiposArchivo`; EST-2 solo UI admin
+- **Relacionado con**: [[FE-CRUD-001]], [[FE-CRUD-004]], [[TKT-BE-015]], [[TKT-BE-016]]
+- **Fecha cierre**: 2026-10-28
+- **Hub**: [spec](.planning/tkt-fe-tkt-det-001/spec.md) · [delta](.planning/tkt-fe-tkt-det-001/delta.md) · [APIs](.planning/tkt-fe-tkt-det-001/TKT-FE-TKT-DET-001-APIS.md)
+
+### [[FE-VTS-PASE-001]] — Pase visita QR + WhatsApp + validación
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[visitas-areas]], [[frontend]], [[backend]]
+- **Objetos clave**: `CuartaVisitasGeneradasService`, `vts.VisitasGeneradas`, `vts.vsVisitasGeneradas`, `/visitas/pases`, `/guardia/validar-pase`
+- **Patrones**: REST JWT Cuarta; Dapper + vista; policy `AdminOGuardia`; QR 128-bit hex
+- **Relacionado con**: [[VTS-BE-026]], [[FE-047]], [[GAPS_MVP_ROADMAP]]
+- **Fecha cierre**: 2026-10-28
+- **Hub**: [spec](.planning/tkt-fe-vts-pase-001/spec.md) · [delta](.planning/tkt-fe-vts-pase-001/delta.md) · [APIs](.planning/tkt-fe-vts-pase-001/TKT-FE-VTS-PASE-001-APIS.md)
+
+### [[FE-VTS-CAL-001]] — Calendario comunitario reservas
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[visitas-areas]], [[frontend]], [[backend]]
+- **Objetos clave**: `ListarReservacionesCalendarioAsync`, `GET /VTS/ReservacionesArea/calendario`, `ReservasCalendarioSemanal`, `AreasYReservacionesPage`
+- **Patrones**: Dapper lectura acotada; grid CSS semanal (sin lib calendario); JWT residente
+- **Relacionado con**: [[FE-047]], [[FE-CRUD-004]], [[GAPS_MVP_ROADMAP]]
+- **Fecha cierre**: 2026-10-28
+- **Hub**: [spec](.planning/tkt-fe-vts-cal-001/spec.md) · [delta](.planning/tkt-fe-vts-cal-001/delta.md) · [APIs](.planning/tkt-fe-vts-cal-001/FE-VTS-CAL-001-APIS.md)
+
+### [[FE-ENC-RES-001]]: Resultados encuesta para residentes
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[encuestas]], [[frontend]], [[backend]]
+- **Objetos clave**: `ObtenerResultadosParaUsuarioAsync`, `EncuestaEstaPublicadaAsync`, `GET /ENC/Encuestas/{id}/resultados`, `/encuestas/:id/resultados`, `ResultadosEncuestaPage` (variant)
+- **Patrones**: auth en servicio (no solo policy controller); sanitización DTO por rol; página compartida admin|residente
+- **Relacionado con**: [[FE-MOD-ENC-001]], [[GAPS_MVP_ROADMAP]]
+- **Fecha cierre**: 2026-10-28
+- **Hub**: [spec](.planning/tkt-fe-enc-res-001/spec.md) · [delta](.planning/tkt-fe-enc-res-001/delta.md) · [APIs](.planning/tkt-fe-enc-res-001/TKT-FE-ENC-RES-001-APIS.md)

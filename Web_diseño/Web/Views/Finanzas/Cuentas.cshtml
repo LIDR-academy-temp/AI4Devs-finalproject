@@ -1,0 +1,219 @@
+﻿@model Web.Models.Admin.CuentasPageViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Cuentas";
+    bool isEditing = Model.Form.CuentaID.HasValue && Model.Form.CuentaID > 0;
+    var totalConResponsable = Model.Items.Count(item => !string.IsNullOrWhiteSpace(item.NombreResponsable));
+}
+
+<div class="container-fluid">
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-check-circle mr-1"></i>@Model.Message
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-alert-circle mr-1"></i>@Model.Error
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+
+    <div class="card cq-reserva-hero mb-4">
+        <div class="card-body d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            <div class="flex-grow-1">
+                <span class="badge badge-pill cq-reserva-pill">Cuentas base</span>
+                <h3 class="mb-2 mt-2">Ordena cuentas con lectura rápida</h3>
+                <p class="mb-0">Consulta saldo, responsable y estado antes de abrir movimientos o editar una cuenta.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2 cq-reserva-stat-strip">
+                <div class="cq-reserva-stat"><span>Cuentas</span><strong>@Model.Items.Count</strong></div>
+                <div class="cq-reserva-stat"><span>Activas</span><strong>@Model.TotalActivas</strong></div>
+                <div class="cq-reserva-stat"><span>Con responsable</span><strong>@totalConResponsable</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cq-split @(isEditing ? "panel-open" : "")" id="cqSplit">
+        <div class="cq-table-pane">
+            <div class="card"><div class="card-body">
+                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-2 mb-3">
+                    <div>
+                        <h4 class="card-title mb-1">Listado de cuentas</h4>
+                        <p class="text-muted mb-0">Abre la cuenta correcta o salta a sus movimientos desde este tablero.</p>
+                    </div>
+                    <span class="badge badge-light">@Model.Items.Count registro(s)</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle cq-filterable">
+                        <thead>
+                            <tr>
+                                <th data-type="text">Cuenta</th>
+                                <th data-type="select">Tipo</th>
+                                <th data-type="number">Saldo</th>
+                                <th data-type="text">Responsable</th>
+                                <th data-type="select">Estado</th>
+                                <th data-type="none">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Items.Any())
+                            {
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="cq-reserva-empty cq-reserva-empty--table">
+                                            <div class="cq-reserva-empty-icon"><i class="mdi mdi-bank-outline"></i></div>
+                                            <h5 class="mb-2">Sin cuentas visibles</h5>
+                                            <p class="text-muted mb-0">Crea la primera cuenta para habilitar cargos, abonos y conciliación.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Model.Items)
+                                {
+                                    var rowActive = isEditing && Model.Form.CuentaID == item.CuentaID;
+                                    <tr class="@(rowActive ? "cq-row-active" : "")">
+                                        <td>@item.Cuenta</td>
+                                        <td>@item.Tipo</td>
+                                        <td class="text-end">$@item.Saldo.ToString("N2")</td>
+                                        <td>@(item.NombreResponsable ?? "—")</td>
+                                        <td>
+                                            <span class="badge @(item.bEliminado ? "badge-secondary" : "badge-success")">
+                                                @(item.bEliminado ? "Eliminada" : "Activa")
+                                            </span>
+                                        </td>
+                                        <td class="cq-actions">
+                                            <div class="cq-actions-group">
+                                                <a cq-btn="edit" asp-action="Index" asp-route-editId="@item.CuentaID" asp-route-soloActivas="@Model.SoloActivas" title="Editar"></a>
+                                                <a cq-btn="view" asp-controller="TransaccionesFin" asp-action="Index" asp-route-filtroCuentaId="@item.CuentaID" title="Ver movimientos"></a>
+                                                <form asp-action="Delete" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="cuentaId" value="@item.CuentaID" />
+                                                    <button cq-btn="delete" type="submit" onclick="return confirm('Eliminar cuenta?');"></button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div></div>
+        </div>
+
+        <div class="cq-form-pane" id="cqFormPane">
+            <div class="card @(isEditing ? "cq-card-editing" : "")">
+                <div class="cq-panel-header">
+                    <div class="cq-panel-icon"><i class="mdi @(isEditing ? "mdi-pencil" : "mdi-plus")"></i></div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h5 class="mb-0">@(isEditing ? "Editar cuenta" : "Nueva cuenta")</h5>
+                        <small class="text-muted">Captura o corrige la cuenta sin salir del catálogo.</small>
+                    </div>
+                    <button type="button" class="cq-close-btn" id="btnCerrarPanel"><i class="mdi mdi-close"></i></button>
+                </div>
+                <div class="card-body pt-3">
+                    <form asp-action="Save" method="post" class="m-t-20">
+                        @Html.AntiForgeryToken()
+                        <input asp-for="Form.CuentaID" type="hidden" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <div class="form-group">
+                            <label asp-for="Form.Cuenta"></label>
+                            <input asp-for="Form.Cuenta" class="form-control" />
+                            <span asp-validation-for="Form.Cuenta" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Form.Tipo"></label>
+                            <input asp-for="Form.Tipo" class="form-control" placeholder="Ej. Banco, Efectivo, CXC" />
+                            <span asp-validation-for="Form.Tipo" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Form.Saldo"></label>
+                            <input asp-for="Form.Saldo" type="number" step="0.01" class="form-control" />
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Form.ResponsableUsuarioID"></label>
+                            <select asp-for="Form.ResponsableUsuarioID" asp-items="Model.ResponsableOptions" class="form-control"></select>
+                        </div>
+                        <div class="form-group form-check">
+                            <input asp-for="Form.bEliminado" class="form-check-input" />
+                            <label asp-for="Form.bEliminado" class="form-check-label">Eliminado</label>
+                        </div>
+
+                        <div class="cq-form-actions">
+                            <button type="submit" class="btn btn-primary flex-grow-1"><i class="mdi mdi-content-save mr-1"></i>Guardar</button>
+                            <a asp-action="Index" asp-route-soloActivas="@Model.SoloActivas" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        var split     = document.getElementById('cqSplit');
+        var btnNuevo  = document.getElementById('btnNuevaCuenta');
+        var btnCerrar = document.getElementById('btnCerrarPanel');
+        var isEditing = @(isEditing ? "true" : "false");
+        var cancelUrl = '@Html.Raw(Url.Action("Index", "CuentasFin", new { soloActivas = Model.SoloActivas }))';
+        function openPanel()  { split.classList.add('panel-open'); }
+        function closePanel() {
+            if (isEditing) { window.location.href = cancelUrl; }
+            else { split.classList.remove('panel-open'); }
+        }
+        if (btnNuevo)  btnNuevo.addEventListener('click', openPanel);
+        if (btnCerrar) btnCerrar.addEventListener('click', closePanel);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && split.classList.contains('panel-open')) closePanel();
+        });
+    }());
+    </script>
+
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}
+
+@section TopbarContent {
+    <div class="cq-topbar-inner">
+        <div class="cq-tb-left">
+            <div class="cq-tb-icon"><i class="mdi mdi-bank"></i></div>
+            <div class="cq-tb-info">
+                <span class="cq-tb-title">Cuentas</span>
+                <div class="cq-tb-meta">
+                    <span class="cq-tb-badge"><i class="mdi mdi-bank"></i><strong>@Model.Items.Count</strong></span>
+                    <span class="cq-tb-dot"></span>
+                    <span class="cq-tb-badge" style="color:#16a34a"><i class="mdi mdi-check-circle-outline"></i><strong>@Model.TotalActivas</strong> activa(s)</span>
+                </div>
+            </div>
+        </div>
+        <div class="cq-tb-right">
+            <form method="get" asp-action="Index" asp-controller="CuentasFin"
+                  class="cq-tb-filters d-inline-flex align-items-center gap-2" id="frmFiltrosTop">
+                <input type="hidden" name="editId" value="" />
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" name="soloActivas" value="true"
+                           id="chkActivasTop" @(Model.SoloActivas ? "checked" : "") onchange="this.form.submit()" />
+                    <label class="form-check-label" for="chkActivasTop">Solo activas</label>
+                </div>
+            </form>
+            <div class="cq-tb-sep"></div>
+            <ol class="breadcrumb mb-0 cq-tb-breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                <li class="breadcrumb-item active">Cuentas</li>
+            </ol>
+            <button type="button" class="btn btn-primary cq-tb-btn-new" id="btnNuevaCuenta">
+                <i class="mdi mdi-plus"></i><span>Nuevo</span>
+            </button>
+        </div>
+    </div>
+}

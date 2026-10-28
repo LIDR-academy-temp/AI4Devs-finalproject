@@ -6,13 +6,17 @@ import '@mdi/font/css/materialdesignicons.min.css'
 import '../styles/bootstrap-pantone.css'
 import '../styles/cq-admin.css'
 import { usePadronUsuarios } from '../features/admin/usuarios/usePadronUsuarios'
+import { AdminTiposIdentificacionSection } from '../features/admin/visitas/AdminTiposIdentificacionSection'
+import { formatCasaLabel } from '../features/admin/visitas/casaLabel'
 import {
   casaIdFromForm,
-  TIPOS_IDENTIFICACION,
   usuarioVisitadoIdFromForm,
   visitaEntradaSchema,
   type VisitaEntradaForm,
 } from '../features/admin/visitas/visitasAdminSchemas'
+import { useTiposIdentificacionVisitas } from '../features/admin/visitas/useTiposIdentificacionVisitas'
+import { useCasasSelect } from '../features/admin/usuarios/useCasasSelect'
+import { VisitaAdminMobileCard } from '../features/admin/visitas/VisitaAdminMobileCard'
 import {
   VISITAS_TABLE_ACCESSORS,
   VISITAS_TABLE_COLUMNS,
@@ -21,31 +25,42 @@ import { useVisitas } from '../features/visitas/useVisitas'
 import {
   AdminFilterableTable,
   AdminListToolbar,
+  AdminMobileCardList,
   AdminSidePanel,
   AdminSplitLayout,
   ConfirmDialog,
 } from '../shared/components/admin'
 import { useClientTableFilter } from '../shared/hooks/useClientTableFilter'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { useToast } from '../shared/toast/ToastContext'
 import { apiPatch, apiPost } from '../shared/lib/apiClient'
 import type { VisitaListItem } from '../shared/types/visitas'
 
+type AdminVisitasTab = 'visitas' | 'tipos'
+
 export function AdminVisitasPage() {
-  const [filtroCasa, setFiltroCasa] = useState('')
+  const [tab, setTab] = useState<AdminVisitasTab>('visitas')
+  const [filtroCasaId, setFiltroCasaId] = useState('')
   const [filtroDesde, setFiltroDesde] = useState('')
   const [filtroHasta, setFiltroHasta] = useState('')
-  const casaId = filtroCasa ? Number(filtroCasa) : undefined
+  const casaId = filtroCasaId ? Number(filtroCasaId) : undefined
   const { visitas, loading, error, refetch } = useVisitas({
     casaId: casaId && casaId > 0 ? casaId : undefined,
     desde: filtroDesde || undefined,
     hasta: filtroHasta || undefined,
   })
   const { data: usuarios } = usePadronUsuarios(undefined, true)
+  const { casas, loading: casasLoading } = useCasasSelect()
+  const { tipos, loading: tiposLoading, error: tiposError, recargar: recargarTipos } =
+    useTiposIdentificacionVisitas()
 
   const [createOpen, setCreateOpen] = useState(false)
   const [salidaTarget, setSalidaTarget] = useState<VisitaListItem | null>(null)
   const [salidaError, setSalidaError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
-  const [dismissedError, setDismissedError] = useState(false)
+  const toast = useToast()
+  useQueryErrorToast(error)
+  useQueryErrorToast(tab === 'tipos' ? tiposError : null)
 
   const heroStats = useMemo(() => {
     const enVisita = visitas.filter((v) => !v.fechaSalida).length
@@ -70,7 +85,7 @@ export function AdminVisitasPage() {
     resolver: zodResolver(visitaEntradaSchema),
     defaultValues: {
       visitanteNombre: '',
-      tipoIdentificacion: 'INE',
+      tipoIdentificacion: '',
       numeroIdentificacion: '',
       usuarioVisitadoId: '',
       casaId: '',
@@ -82,9 +97,10 @@ export function AdminVisitasPage() {
 
   const openCreate = () => {
     setFormError(null)
+    setTab('visitas')
     reset({
       visitanteNombre: '',
-      tipoIdentificacion: 'INE',
+      tipoIdentificacion: tipos[0]?.tipoIdentificacion ?? '',
       numeroIdentificacion: '',
       usuarioVisitadoId: '',
       casaId: '',
@@ -112,6 +128,7 @@ export function AdminVisitasPage() {
       return
     }
     closePanel()
+    toast.success('Entrada registrada')
     await refetch()
   })
 
@@ -124,12 +141,9 @@ export function AdminVisitasPage() {
       return
     }
     setSalidaTarget(null)
+    toast.success('Salida registrada')
     await refetch()
   }
-
-  useEffect(() => {
-    if (error) setDismissedError(false)
-  }, [error])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -151,29 +165,81 @@ export function AdminVisitasPage() {
     </>
   )
 
+  const primaryAction =
+    tab === 'visitas'
+      ? {
+          label: 'Registrar entrada',
+          iconClass: 'mdi mdi-plus',
+          onClick: openCreate,
+        }
+      : {
+          label: 'Actualizar',
+          iconClass: 'mdi mdi-refresh',
+          onClick: () => void recargarTipos(),
+        }
+
   return (
     <div className="cq-admin-page container-fluid py-4">
-      {error && !dismissedError && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          <i className="mdi mdi-alert-circle mr-1" />
-          {error}
-          <button type="button" className="btn-close" aria-label="Cerrar" onClick={() => setDismissedError(true)} />
-        </div>
+      <ul className="nav nav-tabs mb-3 cq-admin-tabs">
+        <li className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${tab === 'visitas' ? 'active' : ''}`}
+            onClick={() => setTab('visitas')}
+          >
+            Registro
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${tab === 'tipos' ? 'active' : ''}`}
+            onClick={() => {
+              closePanel()
+              setTab('tipos')
+            }}
+          >
+            Tipos de ID
+          </button>
+        </li>
+      </ul>
+
+      {tab === 'tipos' && (
+        <>
+          <AdminListToolbar
+            title="Tipos de identificación"
+            metrics={[{ label: 'Tipos', value: tipos.length }]}
+            primaryAction={primaryAction}
+          />
+          <AdminTiposIdentificacionSection
+            tipos={tipos}
+            loading={tiposLoading}
+            onReload={recargarTipos}
+          />
+        </>
       )}
 
+      {tab === 'visitas' && (
+      <>
       <AdminListToolbar
         title="Visitas"
         metrics={heroStats}
         filterSlot={
           <div className="d-flex flex-wrap gap-2">
-            <input
-              type="number"
+            <select
               className="form-control form-control-sm"
-              placeholder="Casa ID"
-              value={filtroCasa}
-              onChange={(e) => setFiltroCasa(e.target.value)}
+              value={filtroCasaId}
+              onChange={(e) => setFiltroCasaId(e.target.value)}
               aria-label="Filtrar por casa"
-            />
+              disabled={casasLoading}
+            >
+              <option value="">Todas las casas</option>
+              {casas.map((c) => (
+                <option key={c.casaId} value={String(c.casaId)}>
+                  {formatCasaLabel(c)}
+                </option>
+              ))}
+            </select>
             <input
               type="date"
               className="form-control form-control-sm"
@@ -190,11 +256,7 @@ export function AdminVisitasPage() {
             />
           </div>
         }
-        primaryAction={{
-          label: 'Registrar entrada',
-          iconClass: 'mdi mdi-plus',
-          onClick: openCreate,
-        }}
+        primaryAction={primaryAction}
       />
 
       <AdminSplitLayout
@@ -218,6 +280,7 @@ export function AdminVisitasPage() {
               )}
 
               {!loading && !error && visitas.length > 0 && (
+                <>
                 <AdminFilterableTable
                   columns={VISITAS_TABLE_COLUMNS}
                   columnFilters={columnFilters}
@@ -264,6 +327,14 @@ export function AdminVisitasPage() {
                     ))
                   )}
                 </AdminFilterableTable>
+                <AdminMobileCardList
+                  rows={filteredVisitas}
+                  getRowKey={(v) => v.visitaId}
+                  renderCard={(v) => (
+                    <VisitaAdminMobileCard visita={v} onSalida={(item) => setSalidaTarget(item)} />
+                  )}
+                />
+                </>
               )}
             </div>
           </div>
@@ -313,11 +384,25 @@ export function AdminVisitasPage() {
                 <i className="mdi mdi-card-account-details" />
                 Tipo ID <span className="text-danger">*</span>
               </label>
-              <select id="visita-tipo-id" className="form-control" {...register('tipoIdentificacion')}>
-                {TIPOS_IDENTIFICACION.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
+              <select
+                id="visita-tipo-id"
+                className="form-control"
+                {...register('tipoIdentificacion')}
+                disabled={tiposLoading || tipos.length === 0}
+              >
+                {tipos.length === 0 ? (
+                  <option value="">Sin tipos — créalos en la pestaña Tipos de ID</option>
+                ) : (
+                  tipos.map((t) => (
+                    <option key={t.tipoIdentificacionId} value={t.tipoIdentificacion}>
+                      {t.tipoIdentificacion}
+                    </option>
+                  ))
+                )}
               </select>
+              {errors.tipoIdentificacion && (
+                <span className="text-danger small d-block">{errors.tipoIdentificacion.message}</span>
+              )}
             </div>
             <div className="form-group mb-3">
               <label className="cq-label" htmlFor="visita-num-id">
@@ -332,9 +417,21 @@ export function AdminVisitasPage() {
             <div className="form-group mb-0">
               <label className="cq-label" htmlFor="visita-casa">
                 <i className="mdi mdi-home" />
-                Casa ID (opcional)
+                Casa (opcional)
               </label>
-              <input id="visita-casa" type="number" className="form-control" {...register('casaId')} />
+              <select
+                id="visita-casa"
+                className="form-control"
+                {...register('casaId')}
+                disabled={casasLoading}
+              >
+                <option value="">Sin asignar</option>
+                {casas.map((c) => (
+                  <option key={c.casaId} value={String(c.casaId)}>
+                    {formatCasaLabel(c)}
+                  </option>
+                ))}
+              </select>
             </div>
           </AdminSidePanel>
         }
@@ -357,6 +454,8 @@ export function AdminVisitasPage() {
       />
       {salidaTarget && salidaError && (
         <div className="alert alert-danger mt-3" role="alert">{salidaError}</div>
+      )}
+      </>
       )}
     </div>
   )

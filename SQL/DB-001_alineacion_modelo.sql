@@ -141,6 +141,30 @@ IF COL_LENGTH(N'usr.Mascotas', N'NombreMascota') IS NOT NULL
     EXEC sp_rename N'usr.Mascotas.NombreMascota', N'Nombre', N'COLUMN';
 GO
 
+IF COL_LENGTH(N'usr.Mascotas', N'Nombre') IS NOT NULL
+BEGIN
+    EXEC(N'
+CREATE OR ALTER VIEW usr.vsMascotas AS
+SELECT M.MascotaID,
+       M.UsuarioID,
+       U.Nombre AS NombreUsuario,
+       U.Correo AS CorreoUsuario,
+       M.Nombre AS NombreMascota,
+       M.TipoMascotaID,
+       TM.TipoMascota,
+       M.RazaMascotaID,
+       M.RazaLibre,
+       COALESCE(M.RazaLibre, RM.RazaMascota) AS RazaMascota,
+       M.FechaNacimiento,
+       M.bEliminado
+FROM usr.Mascotas M (NOLOCK)
+LEFT JOIN sgr.Usuarios U (NOLOCK) ON U.UsuarioID = M.UsuarioID
+LEFT JOIN usr.TiposMascota TM (NOLOCK) ON TM.TipoMascotaID = M.TipoMascotaID
+LEFT JOIN usr.RazasMascota RM (NOLOCK) ON RM.RazaMascotaID = M.RazaMascotaID;
+');
+END
+GO
+
 -- vts.AreasComunes
 IF COL_LENGTH(N'vts.AreasComunes', N'AreasComunesID') IS NOT NULL
     EXEC sp_rename N'vts.AreasComunes.AreasComunesID', N'AreaID', N'COLUMN';

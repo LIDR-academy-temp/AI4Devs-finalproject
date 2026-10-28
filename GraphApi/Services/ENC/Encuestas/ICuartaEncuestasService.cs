@@ -31,6 +31,12 @@ public interface ICuartaEncuestasService
 
     Task<EncuestaResultadosDto?> ObtenerResultadosAsync(int encuestaId, CancellationToken ct = default);
 
+    Task<(EncuestaResultadosDto? Data, string? Code, int Status, string? Detail)> ObtenerResultadosParaUsuarioAsync(
+        int encuestaId,
+        int usuarioId,
+        bool esAdmin,
+        CancellationToken ct = default);
+
     Task<IReadOnlyList<TipoPreguntaItemDto>> ListarTiposPreguntaAsync(CancellationToken ct = default);
 
     Task<(bool Ok, string? Code, int Status, string? Detail)> ActualizarAsync(

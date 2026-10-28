@@ -16,7 +16,11 @@ import {
 import type { GenerarCuotasForm as GenerarForm } from '../features/admin/finanzas/finanzasAdminSchemas'
 import type { RegistrarPagoForm } from '../features/admin/finanzas/finanzasAdminSchemas'
 import { useAuth } from '../features/auth/AuthContext'
+import { CuotaAdminMobileCard } from '../features/admin/finanzas/CuotaAdminMobileCard'
 import { CuotasTable } from '../features/finanzas/CuotasTable'
+import { AdminMobileCardList } from '../shared/components/admin'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { useToast } from '../shared/toast/ToastContext'
 import type { CuotaEstado } from '../shared/types/finanzas'
 import type { Moroso } from '../shared/types/finanzasAdmin'
 
@@ -24,6 +28,7 @@ type Tab = 'cuotas' | 'morosos' | 'generar'
 
 export function FinanzasAdminPage() {
   const { session } = useAuth()
+  const toast = useToast()
   const [tab, setTab] = useState<Tab>('cuotas')
   const [usuarioId, setUsuarioId] = useState('')
   const [cuotas, setCuotas] = useState<CuotaEstado[]>([])
@@ -40,6 +45,8 @@ export function FinanzasAdminPage() {
   const [genResult, setGenResult] = useState<{ creadas: number; omitidas: number } | null>(null)
   const [genError, setGenError] = useState<string | null>(null)
   const [genSaving, setGenSaving] = useState(false)
+
+  useQueryErrorToast(cuotasError)
 
   const loadCuotas = useCallback(async () => {
     const id = Number(usuarioId)
@@ -89,6 +96,7 @@ export function FinanzasAdminPage() {
     setPagoSaving(false)
     if (status === 204) {
       setPagoCuota(null)
+      toast.success('Pago registrado')
       await loadCuotas()
       return
     }
@@ -115,6 +123,7 @@ export function FinanzasAdminPage() {
     setGenSaving(false)
     if (status === 200 && data) {
       setGenResult(data)
+      toast.success(`Cuotas generadas: ${data.creadas}`)
     } else {
       setGenError(problem?.detail ?? 'No se pudieron generar las cuotas')
     }
@@ -188,14 +197,28 @@ export function FinanzasAdminPage() {
             </button>
           </div>
           {cuotasLoading && <p className="text-neutral">Cargando…</p>}
-          {cuotasError && <p className="text-danger">{cuotasError}</p>}
           {!cuotasLoading && !cuotasError && cuotas.length === 0 && usuarioId && (
             <p className="text-neutral">Sin cuotas para este residente.</p>
           )}
           {cuotas.length > 0 && (
             <>
-              <CuotasTable cuotas={cuotas} />
-              <ul className="space-y-1 text-sm">
+              <div className="cq-admin-table-pane">
+                <CuotasTable cuotas={cuotas} />
+              </div>
+              <AdminMobileCardList
+                rows={cuotas}
+                getRowKey={(c) => c.cuotaId}
+                renderCard={(c) => (
+                  <CuotaAdminMobileCard
+                    cuota={c}
+                    onRegistrarPago={(cuota) => {
+                      setPagoError(null)
+                      setPagoCuota(cuota)
+                    }}
+                  />
+                )}
+              />
+              <ul className="d-none d-md-block space-y-1 text-sm mt-2">
                 {cuotas
                   .filter((c) => c.estado !== 'Pagada')
                   .map((c) => (

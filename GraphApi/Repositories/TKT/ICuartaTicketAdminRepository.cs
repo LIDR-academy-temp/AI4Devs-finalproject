@@ -37,5 +37,19 @@ public interface ICuartaTicketAdminRepository
 
     Task<bool> IsTrabajadorActivoAsync(int usuarioId, IDbTransaction tx);
 
+    Task<bool> IsResidenteActivoAsync(int usuarioId, IDbTransaction tx);
+
+    Task<int> UpdateMetadatosAsync(
+        int ticketId,
+        string titulo,
+        string descripcion,
+        int prioridadTicketId,
+        int categoriaTicketId,
+        string modificadoCorreo,
+        int modificadoPorId,
+        IDbTransaction tx);
+
+    Task<int> SoftDeleteAsync(int ticketId, string modificadoCorreo, int modificadoPorId, IDbTransaction tx);
+
     Task<IReadOnlyList<TrabajadorItemDto>> ListarTrabajadoresAsync(CancellationToken ct = default);
 }

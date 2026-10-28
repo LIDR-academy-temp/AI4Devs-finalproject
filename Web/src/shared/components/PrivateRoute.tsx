@@ -18,6 +18,14 @@ export function PrivateRoute() {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
+  if (session.perfil === 'Trabajador') {
+    return <Navigate to="/trabajador/tickets" replace />
+  }
+
+  if (session.perfil === 'Guardia') {
+    return <Navigate to="/guardia/validar-pase" replace />
+  }
+
   if (session.requiereCambioPassword) {
     return <Navigate to="/cambiar-password" replace />
   }

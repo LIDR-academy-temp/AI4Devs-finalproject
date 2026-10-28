@@ -57,3 +57,14 @@ public sealed class AutomovilActualizarRequest
     public string? Placas { get; init; }
     public string? Color { get; init; }
 }
+
+public sealed class MarcaUpsertRequest
+{
+    public string Marca { get; set; } = "";
+}
+
+public sealed class ModeloUpsertRequest
+{
+    public int MarcaId { get; set; }
+    public string Modelo { get; set; } = "";
+}

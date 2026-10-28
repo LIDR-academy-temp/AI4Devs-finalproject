@@ -32,7 +32,7 @@ export function SidebarItem({ item, active, collapsed }: SidebarItemProps) {
     'cq-nav-icon flex shrink-0 items-center justify-center rounded-md transition-colors',
     active
       ? 'bg-primary text-white'
-      : 'bg-white/5 text-primary-light group-hover:bg-white/10 group-hover:text-white',
+      : 'bg-white/5 text-[var(--cq-nav-fg-icon)] group-hover:bg-white/10 group-hover:text-white',
   ].join(' ')
 
   if (!item.implemented) {

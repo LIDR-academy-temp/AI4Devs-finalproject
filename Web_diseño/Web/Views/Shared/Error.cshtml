@@ -1,0 +1,45 @@
+﻿@model ErrorViewModel
+@{
+    ViewData["Title"] = "Error";
+}
+
+<div class="container-fluid cq-dashboard">
+    <div class="card cq-reserva-hero mb-4 border-danger">
+        <div class="card-body">
+            <span class="badge badge-pill badge-danger">Error del sistema</span>
+            <h3 class="mb-2 mt-2">Algo salió mal</h3>
+            <p class="mb-0">Ocurrió un problema al procesar tu solicitud. Intenta de nuevo o regresa al inicio.</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <div class="cq-reserva-empty-icon mx-auto mb-3" style="width:72px;height:72px;border-radius:50%;background:var(--cq-surface-alt);display:flex;align-items:center;justify-content:center;">
+                        <i class="mdi mdi-alert-circle-outline" style="font-size:2.5rem;color:var(--cq-danger);"></i>
+                    </div>
+                    <h4 class="mb-2">No pudimos completar la operación</h4>
+                    <p class="text-muted mb-4">Si el problema continúa, contacta al administrador del portal.</p>
+
+                    @if (Model.ShowRequestId)
+                    {
+                        <p class="mb-4">
+                            <span class="text-muted">Referencia:</span>
+                            <code>@Model.RequestId</code>
+                        </p>
+                    }
+
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">
+                            <i class="mdi mdi-home-outline mr-1"></i>Ir al inicio
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                            <i class="mdi mdi-arrow-left mr-1"></i>Volver
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

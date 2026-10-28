@@ -6,6 +6,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import '@mdi/font/css/materialdesignicons.min.css'
 import '../styles/bootstrap-pantone.css'
 import '../styles/cq-admin.css'
+import { ArchivoAdminMobileCard } from '../features/admin/archivos/ArchivoAdminMobileCard'
 import {
   ARCHIVOS_TABLE_ACCESSORS,
   ARCHIVOS_TABLE_COLUMNS,
@@ -23,11 +24,14 @@ import { useArchivos } from '../features/archivos/useArchivos'
 import {
   AdminFilterableTable,
   AdminListToolbar,
+  AdminMobileCardList,
   AdminSidePanel,
   AdminSplitLayout,
   ConfirmDialog,
 } from '../shared/components/admin'
 import { useClientTableFilter } from '../shared/hooks/useClientTableFilter'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { useToast } from '../shared/toast/ToastContext'
 import { apiPut } from '../shared/lib/apiClient'
 import { getAccessToken } from '../shared/lib/accessTokenStore'
 import type { ArchivoListItem } from '../shared/types/archivos'
@@ -50,8 +54,9 @@ export function AdminArchivosPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ArchivoListItem | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-  const [dismissedError, setDismissedError] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const toast = useToast()
+  useQueryErrorToast(error)
 
   const heroStats = useMemo(() => {
     const privados = archivos.filter((a) => a.esPrivado).length
@@ -152,6 +157,7 @@ export function AdminArchivosPage() {
         return
       }
       closePanel()
+      toast.success('Archivo subido')
       await refetch()
     } catch {
       setFormError('Error al subir el archivo.')
@@ -178,6 +184,7 @@ export function AdminArchivosPage() {
       return
     }
     closePanel()
+    toast.success('Archivo actualizado')
     await refetch()
   })
 
@@ -209,16 +216,13 @@ export function AdminArchivosPage() {
       return
     }
     setDeleteTarget(null)
+    toast.success('Archivo eliminado')
     await refetch()
   }
 
   useEffect(() => {
     if (!deleteTarget) setDeleteError(null)
   }, [deleteTarget])
-
-  useEffect(() => {
-    if (error) setDismissedError(false)
-  }, [error])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -263,14 +267,6 @@ export function AdminArchivosPage() {
 
   return (
     <div className="cq-admin-page container-fluid py-4">
-      {error && !dismissedError && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          <i className="mdi mdi-alert-circle mr-1" />
-          {error}
-          <button type="button" className="btn-close" aria-label="Cerrar" onClick={() => setDismissedError(true)} />
-        </div>
-      )}
-
       <AdminListToolbar
         title="Archivos"
         metrics={heroStats}
@@ -308,6 +304,7 @@ export function AdminArchivosPage() {
               )}
 
               {!loading && !error && archivos.length > 0 && (
+                <>
                 <AdminFilterableTable
                   columns={ARCHIVOS_TABLE_COLUMNS}
                   columnFilters={columnFilters}
@@ -366,6 +363,18 @@ export function AdminArchivosPage() {
                     ))
                   )}
                 </AdminFilterableTable>
+                <AdminMobileCardList
+                  rows={filteredArchivos}
+                  getRowKey={(a) => a.archivoId}
+                  renderCard={(a) => (
+                    <ArchivoAdminMobileCard
+                      archivo={a}
+                      active={editingArchivo?.archivoId === a.archivoId}
+                      onEdit={openEdit}
+                    />
+                  )}
+                />
+                </>
               )}
             </div>
           </div>

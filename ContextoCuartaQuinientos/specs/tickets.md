@@ -59,7 +59,12 @@ Toda transición notifica al solicitante con el tipo `TICKET_ESTADO` vía `INoti
 ## Endpoints (/TKT/{Controller})
 - `POST /TKT/Tickets` (Residente, bot, SPA; `201` + `Location`) — TKT-BE-001; web residente usa `apiPost` vía `useCrearTicket` ([[FE-CRUD-004]]), mismo `ITicketService`.
 - `GET /TKT/Tickets/mis?estadoTicketId=&categoriaTicketId=&pagina=&tamano=` (residente, por `UsuarioSolicitanteID = sub`) — TKT-BE-015.
+- `GET /TKT/Tickets/{ticketId}` (JWT: solicitante, admin o trabajador asignado) — detalle; sin acceso → `404 NOT_FOUND`.
+- `GET|POST /TKT/Tickets/{ticketId}/comentarios` — hilo; POST max 2000 chars; `esInterno` solo admin en efecto (INV-6).
 - `GET /TKT/Tickets/admin?estadoTicketId=&prioridadTicketId=&pagina=&tamano=` (Admin) · `PATCH /TKT/Tickets/{ticketID}/estado/{estadoId}` (máquina de estados) · `POST /TKT/TicketsUsuariosAsignados` — TKT-BE-016.
+- `POST /TKT/Tickets/admin` · `PATCH /TKT/Tickets/{ticketId}/admin` · `DELETE /TKT/Tickets/{ticketId}/admin` — metadatos admin (`SoloAdministrador`); PATCH bloqueado si **Cerrado**; DELETE soft (`bEliminado`).
+- `GET /TKT/PrioridadesTicket` (JWT) — lista `{ id, nombre, orden? }`.
+- `POST|PUT|DELETE /TKT/CategoriasTicket/.../admin` · `POST|PUT|DELETE /TKT/PrioridadesTicket/.../admin` — CRUD catálogo admin; delete en uso → `409 CATALOG_IN_USE`; duplicado → `CATALOG_DUPLICADO`.
 - **Fase 2:** `POST /TKT/Tickets/{ticketId}/Documentos` (multipart, ≤ 5 MB), `GET /TKT/Tickets/asignados` (Trabajador, BOT-BE-021).
 - `/TKT/ComentariosTicket`, `/TKT/DocumentosTicket`, `/TKT/DocumentosComentarioTicket`.
 - `/TKT/EstadosTickets`, `/TKT/PrioridadesTicket`, `/TKT/CategoriasTicket`, `/TKT/CanalesTicket` — catálogos.
@@ -80,11 +85,13 @@ Toda transición notifica al solicitante con el tipo `TICKET_ESTADO` vía `INoti
 
 ## Frontend admin (SPA) — vigente
 
-- Ruta `/admin/tickets` ([[FE-CRUD-001]]): listado con `AdminFilterableTable`; detalle en panel lateral (transiciones de estado vía `PATCH /TKT/Tickets/{id}/estado/{estadoId}`, asignación vía `POST /TKT/TicketsUsuariosAsignados`).
+- Ruta `/admin/tickets` ([[FE-CRUD-001]], [[FE-TKT-DET-001]]): listado filtrable; panel lateral view/create/edit; detalle + comentarios (internos admin); transiciones estado y asignación; soft delete con confirmación; enlace **Catálogos** → `/admin/tickets/catalogos`.
+- Ruta `/admin/tickets/catalogos`: CRUD categorías y prioridades; tab **Estados** solo lectura (matriz INV-10). Etiquetas admin EST-2 (Abierto / En trabajo / …) con tooltip del catálogo en listado y acciones de estado.
+- Prioridades en forms admin y residente: opciones desde `GET /TKT/PrioridadesTicket` (no hardcode FE).
 
 ## Frontend residente (SPA) — vigente
 
-- Rutas `/tickets`, `/tickets/nuevo` ([[FE-CRUD-004]]): listado `useMisTickets` + creación `POST /TKT/Tickets` (Zod en formulario); sin GraphQL en creación.
+- Rutas `/tickets`, `/tickets/nuevo`, `/tickets/:ticketId` ([[FE-CRUD-004]], [[FE-TKT-DET-001]]): listado `useMisTickets`; creación `POST /TKT/Tickets`; detalle + comentarios públicos vía REST.
 
 ## Notas
 - Sin stored procedures: Dapper + vistas `vs*` + servicios C#; validación con FluentValidation; transacciones vía `IDbTransaction`.
@@ -97,3 +104,4 @@ Toda transición notifica al solicitante con el tipo `TICKET_ESTADO` vía `INoti
 |-------|---------------|--------|
 | 2026-10-23 | [[FE-CRUD-001]] | Admin tickets: tabla filtrable + panel detalle (patrón CRUD admin) |
 | 2026-10-27 | [[FE-CRUD-004]] | Residente: crear ticket vía REST `useCrearTicket`; eliminado `tickets.gql.ts` |
+| 2026-10-28 | [[FE-TKT-DET-001]] | Detalle/comentarios JWT; CRUD admin ticket; CRUD catálogos CAT/PRI; EST-2 admin; `/admin/tickets/catalogos` |

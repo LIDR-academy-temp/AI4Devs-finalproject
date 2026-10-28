@@ -81,12 +81,25 @@ public class EncuestasController : Controller
     }
 
     [HttpGet("{id:int}/resultados")]
-    [Authorize(Policy = "SoloAdministrador")]
     [ProducesResponseType(typeof(EncuestaResultadosDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Resultados(int id, CancellationToken ct)
     {
-        var data = await _cuarta.ObtenerResultadosAsync(id, ct);
-        return data is null ? NotFound() : Ok(data);
+        if (!JwtUserContext.TryGetUsuarioId(User, out var usuarioId))
+        {
+            return Unauthorized();
+        }
+
+        var esAdmin = User.IsInRole("Administrador");
+        var (data, code, status, detail) =
+            await _cuarta.ObtenerResultadosParaUsuarioAsync(id, usuarioId, esAdmin, ct);
+        if (data is null)
+        {
+            return Problem(detail: detail, statusCode: status, title: code,
+                extensions: code is null ? null : new Dictionary<string, object?> { ["code"] = code });
+        }
+
+        return Ok(data);
     }
 
     [HttpPost]

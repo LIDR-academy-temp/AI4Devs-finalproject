@@ -1,38 +1,83 @@
-# TKT-FE-UX-001 — Rediseño UX Integral: Navegación, Responsividad y Sección de Usuario
+# FE-UX-001 — Rediseño UX Integral: Navegación, Responsividad y Sección de Usuario
 
-| Campo     | Valor           |
-|-----------|-----------------|
-| Estado    | 📋 spec-ready / design-validated |
-| Creado    | 2026-10-23      |
-| Autor     | afonseca@nice.com.mx |
-| Prerreqs  | FE-DS-001 ✅, FE-SHELL-001 ✅ |
-| Rama      | (pendiente) feature/tkt-fe-ux-001-redesign-ux |
+## Estado
 
-## Documentos
+**ARCHIVADO**
 
-| Documento | Estado |
-|-----------|--------|
-| [spec.md](spec.md) | ✅ Completo |
-| [design.md](design.md) | ✅ Completo |
+fecha_spec: 2026-10-23 · fecha_cierre: 2026-10-27
 
-## Resumen
+## Graph
 
-Rediseño UX integral del portal CuartaQuinientos sobre la base del Design System Pantone (FE-DS-001) y el Shell (FE-SHELL-001). Incluye:
+| Artefacto | Archivo | Comando | Estado |
+|-----------|---------|---------|--------|
+| Spec | [spec.md](spec.md) | /definir | ✅ |
+| Design | [design.md](design.md) | /diseñar | ✅ |
+| Impl | [impl.md](impl.md) | /ejecutar + /revisar | ✅ |
+| Delta | [delta.md](delta.md) | /completar | ✅ |
 
-- **Sidebar con íconos y agrupación lógica** por categoría (Mi Cuenta, Mi Comunidad, Mis Registros / Gestión, Comunidad, Registro).
-- **Sidebar colapsable** a solo-íconos con toggle en desktop.
-- **Navegación responsive** con drawer overlay en móvil (< 768px).
-- **Menú de usuario** en header con dropdown (perfil, password, logout, badge de rol).
-- **HomePage mejorada** con saludo personalizado, cards con íconos, loading skeletons y accesos rápidos por perfil.
-- **Microinteracciones CSS** (hover cards, button feedback, drawer transitions, toast animations).
-- **Responsive global** para todas las páginas (tablas → cards en móvil).
-- **Breadcrumbs contextuales** (should).
-- **Login con branding visual** mejorado (should).
+## Metadata
 
-## Dependencia única nueva
+| Campo | Valor |
+|-------|--------|
+| requerimiento | FE-UX-001 |
+| slug | redesign-ux |
+| size | L |
+| Autor | afonseca@nice.com.mx |
+| Prerrequisitos | FE-DS-001 ✅, FE-SHELL-001 ✅ |
+| Entregas relacionadas | [[SGR-FE-001]], [[FE-CRUD-004]], [[FE-UX-002]] |
 
-`lucide-react` — iconografía tree-shakeable (~7.5KB gzip total estimado).
+## Depende de
 
-## Estimación
+- [[FE-DS-001]] · [[FE-SHELL-001]]
 
-3-5 días · ~500-700 líneas nuevas · 8 componentes nuevos · 5 modificados
+## Dominios
+
+[[frontend]] · [[ux]]
+
+## Related
+
+- [specs/frontend.md](../../specs/frontend.md)
+- [_graph.md](../../_graph.md)
+
+## Log
+
+| Fecha | De | A | Comando | Nota |
+|-------|----|---|---------|------|
+| 2026-10-23 | — | spec-ready | /definir + /diseñar | Spec + design |
+| 2026-10-27 | spec-ready | LISTO PARA PR | /completar (prep) | impl + delta; implementación vía tickets hermanos |
+| 2026-10-27 | LISTO PARA PR | ARCHIVADO | /completar | specs + graph + métricas |
+
+## Resumen final
+
+### Objetivo cumplido
+
+- Navegación agrupada con íconos, shell responsive, menú usuario, home enriquecida y breadcrumbs (desktop); login/sidebar push en [[FE-UX-002]].
+
+### Archivos modificados (referencia — ver impl)
+
+- `AppShell`, `AppSidebar`, `Sidebar*`, `UserMenu`, `MobileDrawer`, `Breadcrumbs`, `HomePage`, `QuickAccessCard`, `SkeletonCard`, `appNavigation`, navegación SGR.
+
+### Auditorías finales
+
+- auditor-sql: N/A
+- auditor-codigo: APROBADO (consolidado + Vitest verde)
+
+### Pruebas ejecutadas
+
+- Vitest: 205 passed (2026-10-27)
+- T-SQL / API: N/A
+
+### Riesgos residuales
+
+- AC12 WCAG manual; S2 y breadcrumbs móvil diferidos; toasts globales no unificados.
+
+### meta-sdd (2026-10-27)
+
+- **Sin patrones nuevos** que justifiquen rule/agente adicional.
+- **Observación:** `fe-ux-split-tickets` — cerrar hub padre cuando hijos (FE-UX-002, SGR-FE-001) cubren Must; documentar diferidos en delta.
+- **Observación:** `fe-wcag-manual-should` — mismo cluster que FE-UX-002 (opcional gate en frontend-tester).
+
+### Documentación actualizada
+
+- [specs/frontend.md](../../specs/frontend.md)
+- [_graph.md](../../_graph.md)

@@ -27,6 +27,8 @@ public record ArticuloDetalleDto(
 
 public record CategoriaDto(int CategoriaId, string Nombre);
 
+public record CategoriaUpsertRequest(string Nombre);
+
 public record ArticuloCrearRequest(
     string Nombre,
     int? CategoriaId,

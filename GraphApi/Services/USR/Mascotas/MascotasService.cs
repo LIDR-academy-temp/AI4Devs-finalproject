@@ -3,6 +3,7 @@ using System.Text;
 using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using GraphApi.Infrastructure;
 using GraphApi.Models.USR.Mascotas;
 
 namespace GraphApi.Services.USR.Mascotas
@@ -97,10 +98,11 @@ namespace GraphApi.Services.USR.Mascotas
 
         public async Task<clReadMascotas> CreateMascotas(clCreateMascotas objInput, int userId, string windowName)
         {
+            var nombreCol = SqlSchemaCompat.MascotaNombreColumnName(_objDbDefault);
             string sInsertSql = $@"
                 --WindowName:{windowName},UserID:{userId}
                 INSERT INTO usr.Mascotas
-                (UsuarioID, NombreMascota, TipoMascotaID, RazaMascotaID, RazaLibre, FechaNacimiento, bEliminado, Creado, UsuarioCreacionID, FechaCreacion)
+                (UsuarioID, {nombreCol}, TipoMascotaID, RazaMascotaID, RazaLibre, FechaNacimiento, bEliminado, Creado, UsuarioCreacionID, FechaCreacion)
                 VALUES (@UsuarioID, @NombreMascota, @TipoMascotaID, @RazaMascotaID, @RazaLibre, @FechaNacimiento, @bEliminado, @Creado, @UsuarioCreacionID, GETDATE());
                 SELECT CAST(SCOPE_IDENTITY() AS INT);
             ";
@@ -128,12 +130,14 @@ namespace GraphApi.Services.USR.Mascotas
                 // Fallback: la vista usr.vsMascotas puede excluir filas cuando algunos FK son NULL
                 // (p.ej. TipoMascotaID o RazaMascotaID). Intentamos leer directamente desde la tabla
                 // con LEFT JOINs para no depender de la vista.
-                const string sFallback = @"
+                var (nombreUsuario, correoUsuario, _) = SqlSchemaCompat.UsuarioColumns(_objDbDefault, "U");
+                var mascotaNombre = SqlSchemaCompat.MascotaNombreColumn(_objDbDefault, "M");
+                var sFallback = $@"
                     SELECT M.MascotaID,
                            M.UsuarioID,
-                           U.NombreUsuario,
-                           U.CorreoUsuario,
-                           M.NombreMascota,
+                           {nombreUsuario} AS NombreUsuario,
+                           {correoUsuario} AS CorreoUsuario,
+                           {mascotaNombre} AS NombreMascota,
                            M.TipoMascotaID,
                            TM.TipoMascota,
                            M.RazaMascotaID,
@@ -167,7 +171,8 @@ namespace GraphApi.Services.USR.Mascotas
             }
             if (objInput.NombreMascota is not null)
             {
-                vSets.Add("NombreMascota = @NombreMascota");
+                var nombreCol = SqlSchemaCompat.MascotaNombreColumnName(_objDbDefault);
+                vSets.Add($"{nombreCol} = @NombreMascota");
                 vParameters.Add("NombreMascota", objInput.NombreMascota);
             }
             if (objInput.TipoMascotaID != null)

@@ -35,28 +35,41 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
         LEFT JOIN wms.CategoriasArticulo c ON c.CategoriaID = a.CategoriaID AND c.bEliminado = 0
         """;
 
-    private const string PrestamosListSql = """
-        SELECT p.PrestamoID AS PrestamoId,
-               p.ArticuloID AS ArticuloId,
-               a.Nombre AS NombreArticulo,
-               p.UsuarioID AS UsuarioId,
-               u.Nombre AS NombreUsuario,
-               u.Correo AS CorreoUsuario,
-               p.Cantidad,
-               p.FechaPrestamo,
-               p.FechaDevolucion,
-               p.Estado,
-               p.Notas
-        FROM wms.Prestamos p
-        INNER JOIN wms.Articulos a ON a.ArticuloID = p.ArticuloID
-        INNER JOIN sgr.Usuarios u ON u.UsuarioID = p.UsuarioID
-        """;
+    private string PrestamosListSql()
+    {
+        var (nombre, correo, _) = SqlSchemaCompat.UsuarioColumns(db, "u");
+        var notas = SqlSchemaCompat.PrestamosNotasSelect(db, "p");
+        return $"""
+            SELECT p.PrestamoID AS PrestamoId,
+                   p.ArticuloID AS ArticuloId,
+                   a.Nombre AS NombreArticulo,
+                   p.UsuarioID AS UsuarioId,
+                   {nombre} AS NombreUsuario,
+                   {correo} AS CorreoUsuario,
+                   p.Cantidad,
+                   p.FechaPrestamo,
+                   p.FechaDevolucion,
+                   p.Estado,
+                   {notas}
+            FROM wms.Prestamos p
+            INNER JOIN wms.Articulos a ON a.ArticuloID = p.ArticuloID
+            INNER JOIN sgr.Usuarios u ON u.UsuarioID = p.UsuarioID
+            """;
+    }
 
     private static void EnsureWms(IDbConnection connection)
     {
         if (!SqlSchemaCompat.WmsDisponible(connection))
             throw new InvalidOperationException(
                 "El esquema WMS no está desplegado. Ejecute SQL/DB-005_wms_schema.sql en la base CuartaQuinientos.");
+    }
+
+    private static void EnsureWmsPrestamos(IDbConnection connection)
+    {
+        EnsureWms(connection);
+        if (!SqlSchemaCompat.WmsPrestamosDisponible(connection))
+            throw new InvalidOperationException(
+                "La tabla wms.Prestamos no existe. Ejecute SQL/DB-005_wms_schema.sql o SQL/DB-005_wms_prestamos_notas.sql.");
     }
 
     // ── Categorías ────────────────────────────────────────
@@ -73,6 +86,57 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
             """;
         var rows = await db.QueryAsync<CategoriaDto>(sql);
         return rows.AsList();
+    }
+
+    public async Task<int> InsertCategoriaAsync(string nombre, string correoUsuario, int usuarioId, IDbTransaction? tx = null)
+    {
+        EnsureWms(db);
+        const string sql = """
+            INSERT INTO wms.CategoriasArticulo
+                (Nombre, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+            OUTPUT INSERTED.CategoriaID
+            VALUES (@nombre, @correoUsuario, @usuarioId, GETDATE(), 0);
+            """;
+        return await db.ExecuteScalarAsync<int>(sql, new { nombre, correoUsuario, usuarioId }, tx);
+    }
+
+    public async Task<bool> UpdateCategoriaAsync(int categoriaId, string nombre, string correoUsuario, int usuarioId, IDbTransaction? tx = null)
+    {
+        EnsureWms(db);
+        const string sql = """
+            UPDATE wms.CategoriasArticulo SET
+                Nombre = @nombre,
+                Modificado = @correoUsuario,
+                UsuarioModificacionID = @usuarioId,
+                FechaModificacion = GETDATE()
+            WHERE CategoriaID = @categoriaId AND bEliminado = 0;
+            """;
+        var n = await db.ExecuteAsync(sql, new { categoriaId, nombre, correoUsuario, usuarioId }, tx);
+        return n > 0;
+    }
+
+    public async Task<bool> SoftDeleteCategoriaAsync(int categoriaId, string correoUsuario, int usuarioId, IDbTransaction? tx = null)
+    {
+        EnsureWms(db);
+        const string sql = """
+            UPDATE wms.CategoriasArticulo SET
+                bEliminado = 1,
+                Modificado = @correoUsuario,
+                UsuarioModificacionID = @usuarioId,
+                FechaModificacion = GETDATE()
+            WHERE CategoriaID = @categoriaId AND bEliminado = 0;
+            """;
+        var n = await db.ExecuteAsync(sql, new { categoriaId, correoUsuario, usuarioId }, tx);
+        return n > 0;
+    }
+
+    public async Task<bool> ExisteCategoriaActivaAsync(int categoriaId, CancellationToken ct = default)
+    {
+        if (!SqlSchemaCompat.WmsDisponible(db))
+            return false;
+        const string sql = "SELECT COUNT(1) FROM wms.CategoriasArticulo WHERE CategoriaID = @categoriaId AND bEliminado = 0;";
+        var n = await db.ExecuteScalarAsync<int>(sql, new { categoriaId });
+        return n > 0;
     }
 
     // ── Artículos ─────────────────────────────────────────
@@ -177,26 +241,26 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
     // ── Préstamos ─────────────────────────────────────────
     public async Task<IReadOnlyList<PrestamoListItemDto>> ListarPrestamosAsync()
     {
-        if (!SqlSchemaCompat.WmsDisponible(db))
+        if (!SqlSchemaCompat.WmsDisponible(db) || !SqlSchemaCompat.WmsPrestamosDisponible(db))
             return [];
 
-        var sql = PrestamosListSql + " WHERE p.bEliminado = 0 ORDER BY p.FechaPrestamo DESC";
+        var sql = PrestamosListSql() + " WHERE p.bEliminado = 0 ORDER BY p.FechaPrestamo DESC";
         var rows = await db.QueryAsync<PrestamoListItemDto>(sql);
         return rows.AsList();
     }
 
     public async Task<PrestamoListItemDto?> ObtenerPrestamoAsync(int prestamoId)
     {
-        if (!SqlSchemaCompat.WmsDisponible(db))
+        if (!SqlSchemaCompat.WmsDisponible(db) || !SqlSchemaCompat.WmsPrestamosDisponible(db))
             return null;
 
-        var sql = PrestamosListSql + " WHERE p.PrestamoID = @prestamoId AND p.bEliminado = 0";
+        var sql = PrestamosListSql() + " WHERE p.PrestamoID = @prestamoId AND p.bEliminado = 0";
         return await db.QueryFirstOrDefaultAsync<PrestamoListItemDto>(sql, new { prestamoId });
     }
 
     public async Task<bool> EsPrestamoActivoAsync(int prestamoId, IDbTransaction? tx = null)
     {
-        EnsureWms(db);
+        EnsureWmsPrestamos(db);
         const string sql = """
             SELECT COUNT(1) FROM wms.Prestamos
             WHERE  PrestamoID = @prestamoId AND Estado = N'PRESTADO' AND bEliminado = 0
@@ -207,23 +271,33 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
 
     public async Task<int> InsertPrestamoAsync(PrestamoCrearRequest req, string correoUsuario, int usuarioId, IDbTransaction tx)
     {
-        EnsureWms(db);
-        const string sql = """
-            INSERT INTO wms.Prestamos
-                (ArticuloID, UsuarioID, Cantidad, FechaPrestamo, Estado, Notas,
-                 Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
-            OUTPUT INSERTED.PrestamoID
-            VALUES
-                (@ArticuloId, @UsuarioId, @Cantidad, GETDATE(), N'PRESTADO', @Notas,
-                 @correoUsuario, @usuarioId, GETDATE(), 0)
-            """;
+        EnsureWmsPrestamos(db);
+        var sql = SqlSchemaCompat.WmsPrestamosTieneNotas(db)
+            ? """
+              INSERT INTO wms.Prestamos
+                  (ArticuloID, UsuarioID, Cantidad, FechaPrestamo, Estado, Notas,
+                   Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+              OUTPUT INSERTED.PrestamoID
+              VALUES
+                  (@ArticuloId, @UsuarioId, @Cantidad, GETDATE(), N'PRESTADO', @Notas,
+                   @correoUsuario, @usuarioId, GETDATE(), 0)
+              """
+            : """
+              INSERT INTO wms.Prestamos
+                  (ArticuloID, UsuarioID, Cantidad, FechaPrestamo, Estado,
+                   Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+              OUTPUT INSERTED.PrestamoID
+              VALUES
+                  (@ArticuloId, @UsuarioId, @Cantidad, GETDATE(), N'PRESTADO',
+                   @correoUsuario, @usuarioId, GETDATE(), 0)
+              """;
         return await db.ExecuteScalarAsync<int>(sql,
             new { req.ArticuloId, req.UsuarioId, req.Cantidad, req.Notas, correoUsuario, usuarioId }, tx);
     }
 
     public async Task DevolverPrestamoAsync(int prestamoId, string correoUsuario, int usuarioId, IDbTransaction tx)
     {
-        EnsureWms(db);
+        EnsureWmsPrestamos(db);
         const string sql = """
             UPDATE wms.Prestamos SET
                 Estado              = N'DEVUELTO',
@@ -238,7 +312,7 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
 
     public async Task<int> ObtenerCantidadPrestamoAsync(int prestamoId, IDbTransaction tx)
     {
-        EnsureWms(db);
+        EnsureWmsPrestamos(db);
         const string sql = "SELECT Cantidad FROM wms.Prestamos WHERE PrestamoID = @prestamoId";
         return await db.ExecuteScalarAsync<int>(sql, new { prestamoId }, tx);
     }

@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using GraphApi.Models.USR.CuartaMascotas;
 using GraphApi.Services.USR.CuartaMascotas;
 using GraphApi.Services.USR.TiposMascota;
@@ -12,10 +13,47 @@ namespace GraphApi.Controllers.USR.TiposMascota;
 [Produces("application/json")]
 public class TiposMascotaController(ICuartaMascotasService cuarta, ITiposMascotaService legacy) : ControllerBase
 {
+    private int AdminId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private string AdminEmail => User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue(ClaimTypes.Name) ?? "sistema";
+
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<TipoMascotaDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Get(CancellationToken ct)
         => Ok(await cuarta.ListarTiposAsync(ct));
+
+    [HttpPost]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(TipoMascotaDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Post([FromBody] TipoMascotaUpsertRequest body, CancellationToken ct)
+    {
+        var (data, code, status, detail) = await cuarta.CrearTipoAsync(body.TipoMascota, AdminId, AdminEmail, ct);
+        if (data is null) return StatusCode(status, new { code, detail });
+        return StatusCode(201, data);
+    }
+
+    [HttpPut("{id:int}")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(TipoMascotaDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Put(int id, [FromBody] TipoMascotaUpsertRequest body, CancellationToken ct)
+    {
+        var (data, code, status, detail) = await cuarta.ActualizarTipoAsync(id, body.TipoMascota, AdminId, AdminEmail, ct);
+        if (data is null) return StatusCode(status, new { code, detail });
+        return Ok(data);
+    }
+
+    [HttpDelete("{id:int}")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
+    {
+        var (ok, code, status, detail) = await cuarta.EliminarTipoAsync(id, AdminId, AdminEmail, ct);
+        if (!ok) return StatusCode(status, new { code, detail });
+        return NoContent();
+    }
 
     // Legacy
     [HttpGet("legacy")]

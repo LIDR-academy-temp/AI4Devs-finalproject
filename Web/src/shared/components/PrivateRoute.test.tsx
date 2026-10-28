@@ -61,6 +61,42 @@ describe('PrivateRoute', () => {
     expect(screen.getByText('Privado')).toBeInTheDocument()
   })
 
+  it('redirige Trabajador al shell de tickets asignados', async () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AuthProvider initialSession={{ ...session, perfil: 'Trabajador' }}>
+          <Routes>
+            <Route element={<PrivateRoute />}>
+              <Route path="/" element={<p>Privado</p>} />
+            </Route>
+            <Route path="/trabajador/tickets" element={<p>Trabajador</p>} />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>,
+    )
+    await waitFor(() => {
+      expect(screen.getByText('Trabajador')).toBeInTheDocument()
+    })
+  })
+
+  it('redirige Guardia a validar pase', async () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AuthProvider initialSession={{ ...session, perfil: 'Guardia' }}>
+          <Routes>
+            <Route element={<PrivateRoute />}>
+              <Route path="/" element={<p>Privado</p>} />
+            </Route>
+            <Route path="/guardia/validar-pase" element={<p>Guardia</p>} />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>,
+    )
+    await waitFor(() => {
+      expect(screen.getByText('Guardia')).toBeInTheDocument()
+    })
+  })
+
   it('redirige a cambiar-password si requiereCambioPassword', () => {
     render(
       <MemoryRouter initialEntries={['/']}>

@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react'
+import '../test/stubToast'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
@@ -37,5 +38,23 @@ describe('LoginPage', () => {
     await user.type(screen.getByLabelText('Contraseña'), 'secret')
     await user.click(screen.getByRole('button', { name: 'Entrar' }))
     expect(loginMock).toHaveBeenCalledWith('admin@local', 'secret')
+  })
+
+  it('muestra error de login vía toast', async () => {
+    const { useToast } = await import('../shared/toast/ToastContext')
+    const toast = useToast()
+    loginMock.mockResolvedValue({ ok: false, error: 'Credenciales inválidas' })
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>,
+    )
+    await user.type(screen.getByLabelText('Correo'), 'x@y.com')
+    await user.type(screen.getByLabelText('Contraseña'), 'bad')
+    await user.click(screen.getByRole('button', { name: 'Entrar' }))
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Credenciales inválidas')
+    })
   })
 })

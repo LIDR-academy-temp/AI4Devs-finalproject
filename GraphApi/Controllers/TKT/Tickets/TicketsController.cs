@@ -29,26 +29,41 @@ namespace GraphApi.Controllers.TKT.Tickets
 
         private readonly ICuartaTicketQueryService _ticketQuery;
         private readonly ICuartaTicketAdminService _ticketAdmin;
+        private readonly ICuartaTicketDetalleService _ticketDetalle;
         private readonly IValidator<TicketFiltroDto> _filtroValidator;
+        private readonly IValidator<TicketAsignadosFiltroDto> _asignadosFiltroValidator;
+        private readonly IValidator<CrearComentarioTicketInput> _comentarioValidator;
+        private readonly IValidator<CrearTicketAdminInput> _crearTicketAdminValidator;
+        private readonly IValidator<ActualizarTicketAdminInput> _actualizarTicketAdminValidator;
 
         public TicketsController(
             ITicketsService objService,
             ICuartaTicketService cuartaTickets,
             ICuartaTicketQueryService ticketQuery,
             ICuartaTicketAdminService ticketAdmin,
+            ICuartaTicketDetalleService ticketDetalle,
             IValidator<clCreateTickets> createValidator,
             IValidator<CrearTicketInput> crearTicketValidator,
             IValidator<TicketFiltroDto> filtroValidator,
-            IValidator<clUpdateTickets> updateValidator)
+            IValidator<TicketAsignadosFiltroDto> asignadosFiltroValidator,
+            IValidator<clUpdateTickets> updateValidator,
+            IValidator<CrearComentarioTicketInput> comentarioValidator,
+            IValidator<CrearTicketAdminInput> crearTicketAdminValidator,
+            IValidator<ActualizarTicketAdminInput> actualizarTicketAdminValidator)
         {
             _objService = objService;
             _cuartaTickets = cuartaTickets;
             _ticketQuery = ticketQuery;
             _ticketAdmin = ticketAdmin;
+            _ticketDetalle = ticketDetalle;
             _createValidator = createValidator;
             _crearTicketValidator = crearTicketValidator;
             _filtroValidator = filtroValidator;
+            _asignadosFiltroValidator = asignadosFiltroValidator;
             _updateValidator = updateValidator;
+            _comentarioValidator = comentarioValidator;
+            _crearTicketAdminValidator = crearTicketAdminValidator;
+            _actualizarTicketAdminValidator = actualizarTicketAdminValidator;
         }
 
         [HttpGet("mis")]
@@ -87,6 +102,54 @@ namespace GraphApi.Controllers.TKT.Tickets
             return Ok(page);
         }
 
+        [HttpGet("asignados")]
+        [SwaggerOperation(Summary = "Tickets asignados al trabajador (JWT sub)")]
+        [ProducesResponseType(typeof(PaginaDto<MiTicketItemDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetTicketsAsignados(
+            [FromQuery] bool? terminado,
+            [FromQuery] int? estadoTicketId,
+            [FromQuery] int pagina = 1,
+            [FromQuery] int tamano = 20,
+            CancellationToken ct = default)
+        {
+            if (!JwtUserContext.TryGetUsuarioId(User, out var usuarioId))
+            {
+                return Unauthorized();
+            }
+
+            var perfil = JwtUserContext.GetPerfil(User) ?? string.Empty;
+            if (!string.Equals(perfil, "Trabajador", StringComparison.OrdinalIgnoreCase))
+            {
+                return Problem(
+                    detail: "Solo el perfil Trabajador puede listar tickets asignados.",
+                    statusCode: StatusCodes.Status403Forbidden,
+                    title: "FORBIDDEN",
+                    extensions: new Dictionary<string, object?> { ["code"] = "FORBIDDEN" });
+            }
+
+            var filtro = new TicketAsignadosFiltroDto
+            {
+                Terminado = terminado,
+                EstadoTicketId = estadoTicketId,
+                Pagina = pagina,
+                Tamano = tamano,
+            };
+
+            var validation = await _asignadosFiltroValidator.ValidateAsync(filtro, ct);
+            if (!validation.IsValid)
+            {
+                return Problem(
+                    detail: string.Join("; ", validation.Errors.Select(e => e.ErrorMessage)),
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "VALIDATION_ERROR",
+                    extensions: new Dictionary<string, object?> { ["code"] = "VALIDATION_ERROR" });
+            }
+
+            var page = await _ticketQuery.GetTicketsAsignadosAsync(usuarioId, filtro, ct);
+            return Ok(page);
+        }
+
         [HttpGet("admin")]
         [Authorize(Policy = "SoloAdministrador")]
         [ProducesResponseType(typeof(PaginaDto<AdminTicketItemDto>), StatusCodes.Status200OK)]
@@ -116,6 +179,204 @@ namespace GraphApi.Controllers.TKT.Tickets
 
             var page = await _ticketAdmin.ListarAsync(filtro, prioridadTicketId, ct);
             return Ok(page);
+        }
+
+        [HttpPost("admin")]
+        [Authorize(Policy = "SoloAdministrador")]
+        [SwaggerOperation(Summary = "Crear ticket en nombre de un residente (admin)")]
+        [ProducesResponseType(typeof(clReadTickets), StatusCodes.Status201Created)]
+        public async Task<IActionResult> CreateAdmin([FromBody] CrearTicketAdminInput input, CancellationToken ct)
+        {
+            var validation = await _crearTicketAdminValidator.ValidateAsync(input, ct);
+            if (!validation.IsValid)
+            {
+                return Problem(
+                    detail: string.Join("; ", validation.Errors.Select(e => e.ErrorMessage)),
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "VALIDATION_ERROR",
+                    extensions: new Dictionary<string, object?> { ["code"] = "VALIDATION_ERROR" });
+            }
+
+            if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+            {
+                return Unauthorized();
+            }
+
+            var correo = JwtUserContext.GetCorreo(User) ?? "admin";
+
+            var (ticket, code, status, detail) = await _ticketAdmin.CrearTicketAdminAsync(
+                input, adminId, correo, ct);
+
+            if (ticket is null)
+            {
+                return Problem(
+                    detail: detail ?? "No se pudo crear el ticket",
+                    statusCode: status,
+                    title: code,
+                    extensions: new Dictionary<string, object?> { ["code"] = code });
+            }
+
+            return Created($"/TKT/Tickets/{ticket.TicketID}", ticket);
+        }
+
+        [HttpPatch("{ticketId:int}/admin")]
+        [Authorize(Policy = "SoloAdministrador")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> PatchAdmin(
+            int ticketId,
+            [FromBody] ActualizarTicketAdminInput input,
+            CancellationToken ct)
+        {
+            var validation = await _actualizarTicketAdminValidator.ValidateAsync(input, ct);
+            if (!validation.IsValid)
+            {
+                return Problem(
+                    detail: string.Join("; ", validation.Errors.Select(e => e.ErrorMessage)),
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "VALIDATION_ERROR",
+                    extensions: new Dictionary<string, object?> { ["code"] = "VALIDATION_ERROR" });
+            }
+
+            if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+            {
+                return Unauthorized();
+            }
+
+            var correo = JwtUserContext.GetCorreo(User) ?? "admin";
+
+            var (ok, code, status, detail) = await _ticketAdmin.ActualizarMetadatosAsync(
+                ticketId, input, adminId, correo, ct);
+
+            if (!ok)
+            {
+                return Problem(
+                    detail: detail ?? "No se pudo actualizar el ticket",
+                    statusCode: status,
+                    title: code,
+                    extensions: new Dictionary<string, object?> { ["code"] = code });
+            }
+
+            return NoContent();
+        }
+
+        [HttpDelete("{ticketId:int}/admin")]
+        [Authorize(Policy = "SoloAdministrador")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteAdmin(int ticketId, CancellationToken ct)
+        {
+            if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+            {
+                return Unauthorized();
+            }
+
+            var correo = JwtUserContext.GetCorreo(User) ?? "admin";
+
+            var (ok, code, status, detail) = await _ticketAdmin.SoftDeleteAsync(ticketId, adminId, correo, ct);
+
+            if (!ok)
+            {
+                return Problem(
+                    detail: detail ?? "No se pudo eliminar el ticket",
+                    statusCode: status,
+                    title: code,
+                    extensions: new Dictionary<string, object?> { ["code"] = code });
+            }
+
+            return NoContent();
+        }
+
+        [HttpGet("{ticketId:int}")]
+        [SwaggerOperation(Summary = "Detalle de ticket (JWT)")]
+        [ProducesResponseType(typeof(TicketDetalleDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetDetalle(int ticketId, CancellationToken ct)
+        {
+            if (!JwtUserContext.TryGetUsuarioId(User, out var usuarioId))
+            {
+                return Unauthorized();
+            }
+
+            var perfil = JwtUserContext.GetPerfil(User) ?? string.Empty;
+            var (detalle, code, status, detail) = await _ticketDetalle.GetDetalleAsync(
+                ticketId, usuarioId, perfil, ct);
+
+            if (detalle is null)
+            {
+                return Problem(
+                    detail: detail ?? "Ticket no encontrado",
+                    statusCode: status,
+                    title: code,
+                    extensions: new Dictionary<string, object?> { ["code"] = code });
+            }
+
+            return Ok(detalle);
+        }
+
+        [HttpGet("{ticketId:int}/comentarios")]
+        [SwaggerOperation(Summary = "Listar comentarios de ticket (JWT)")]
+        [ProducesResponseType(typeof(IReadOnlyList<ComentarioTicketDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetComentarios(int ticketId, CancellationToken ct)
+        {
+            if (!JwtUserContext.TryGetUsuarioId(User, out var usuarioId))
+            {
+                return Unauthorized();
+            }
+
+            var perfil = JwtUserContext.GetPerfil(User) ?? string.Empty;
+            var (items, code, status, detail) = await _ticketDetalle.ListComentariosAsync(
+                ticketId, usuarioId, perfil, ct);
+
+            if (items is null)
+            {
+                return Problem(
+                    detail: detail ?? "Ticket no encontrado",
+                    statusCode: status,
+                    title: code,
+                    extensions: new Dictionary<string, object?> { ["code"] = code });
+            }
+
+            return Ok(items);
+        }
+
+        [HttpPost("{ticketId:int}/comentarios")]
+        [SwaggerOperation(Summary = "Agregar comentario a ticket (JWT)")]
+        [ProducesResponseType(typeof(ComentarioTicketDto), StatusCodes.Status201Created)]
+        public async Task<IActionResult> PostComentario(
+            int ticketId,
+            [FromBody] CrearComentarioTicketInput input,
+            CancellationToken ct)
+        {
+            if (!JwtUserContext.TryGetUsuarioId(User, out var usuarioId))
+            {
+                return Unauthorized();
+            }
+
+            var validation = await _comentarioValidator.ValidateAsync(input, ct);
+            if (!validation.IsValid)
+            {
+                return Problem(
+                    detail: string.Join("; ", validation.Errors.Select(e => e.ErrorMessage)),
+                    statusCode: StatusCodes.Status400BadRequest,
+                    title: "VALIDATION_ERROR",
+                    extensions: new Dictionary<string, object?> { ["code"] = "VALIDATION_ERROR" });
+            }
+
+            var correo = JwtUserContext.GetCorreo(User) ?? "usuario";
+            var perfil = JwtUserContext.GetPerfil(User) ?? string.Empty;
+
+            var (item, code, status, detail) = await _ticketDetalle.AgregarComentarioAsync(
+                ticketId, input, usuarioId, correo, perfil, ct);
+
+            if (item is null)
+            {
+                return Problem(
+                    detail: detail ?? "No se pudo publicar el comentario",
+                    statusCode: status,
+                    title: code,
+                    extensions: new Dictionary<string, object?> { ["code"] = code });
+            }
+
+            return Created($"/TKT/Tickets/{ticketId}/comentarios/{item.ComentarioTicketId}", item);
         }
 
         [HttpPatch("{ticketId:int}/estado/{estadoId:int}")]

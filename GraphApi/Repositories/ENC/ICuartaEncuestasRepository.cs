@@ -25,6 +25,8 @@ public interface ICuartaEncuestasRepository
 
     Task<(bool Abierta, bool Existe)> EstadoEncuestaAsync(int encuestaId, IDbTransaction? tx = null);
 
+    Task<bool> EncuestaEstaPublicadaAsync(int encuestaId, CancellationToken ct = default);
+
     Task<bool> UsuarioYaParticipoAsync(int encuestaId, int usuarioId, IDbTransaction? tx = null);
 
     Task InsertRespuestasAsync(

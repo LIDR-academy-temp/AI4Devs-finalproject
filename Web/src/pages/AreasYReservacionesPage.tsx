@@ -1,10 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useAreasComunes } from '../features/visitas/useAreasComunes'
 import { useReservaciones } from '../features/visitas/useReservaciones'
+import { useReservacionesCalendario } from '../features/visitas/useReservacionesCalendario'
+import { ReservasCalendarioSemanal } from '../features/visitas/ReservasCalendarioSemanal'
+import { startOfWeekMonday } from '../features/visitas/reservasCalendarioUtils'
 import { reservaFormSchema, type ReservaFormValues } from '../features/visitas/reservasSchemas'
-import { AlertBanner, FormModal, PageHeader } from '../shared/components/admin'
+import { FormModal, PageHeader } from '../shared/components/admin'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { useToast } from '../shared/toast/ToastContext'
 import { apiPost } from '../shared/lib/apiClient'
 import type { CrearReservacionRequest, ReservacionArea } from '../shared/types/visitas'
 
@@ -27,10 +32,33 @@ export function AreasYReservacionesPage() {
   const { areas, loading: loadingAreas, error: areasError } = useAreasComunes()
   const { reservaciones, loading: loadingRes, error: resError, refetch } = useReservaciones()
 
+  const areasReservables = useMemo(
+    () => areas.filter((a) => a.requiereReservacion),
+    [areas],
+  )
+
+  const [tab, setTab] = useState<'calendario' | 'mias'>('calendario')
+  const [areaCalendarioId, setAreaCalendarioId] = useState<number | null>(null)
+  const [weekStart, setWeekStart] = useState(() => startOfWeekMonday(new Date()))
+
+  const areaCalendarioEfectiva =
+    areaCalendarioId ?? areasReservables[0]?.areaComunId ?? null
+
+  const {
+    eventos: eventosCalendario,
+    loading: loadingCalendario,
+    error: calendarioError,
+    refetch: refetchCalendario,
+  } = useReservacionesCalendario(areaCalendarioEfectiva, weekStart)
+
   const [modalArea, setModalArea] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const toast = useToast()
+  useQueryErrorToast(areasError)
+  useQueryErrorToast(resError)
+  useQueryErrorToast(calendarioError, tab === 'calendario')
+  useQueryErrorToast(formError, modalArea !== null)
 
   const {
     register,
@@ -52,7 +80,6 @@ export function AreasYReservacionesPage() {
     if (modalArea === null) return
     setSaving(true)
     setFormError(null)
-    setSuccessMsg(null)
 
     const body: CrearReservacionRequest = {
       areaComunId: modalArea,
@@ -66,8 +93,9 @@ export function AreasYReservacionesPage() {
 
     if (status === 201 && data) {
       closeModal()
-      setSuccessMsg('Reservación registrada correctamente.')
+      toast.success('Reservación registrada correctamente.')
       refetch()
+      void refetchCalendario()
       return
     }
 
@@ -81,15 +109,11 @@ export function AreasYReservacionesPage() {
         description="Reserva amenidades y consulta tus reservaciones activas."
       />
 
-      {successMsg && (
-        <AlertBanner variant="success" onDismiss={() => setSuccessMsg(null)}>
-          {successMsg}
-        </AlertBanner>
-      )}
-
       <section>
         <h2 className="text-lg font-semibold text-neutral-700 mb-3">Áreas disponibles</h2>
-        {areasError && <AlertBanner variant="error">{areasError}</AlertBanner>}
+        {areasError && (
+          <p className="text-sm text-neutral" role="status">No se pudieron cargar las áreas.</p>
+        )}
         {loadingAreas ? (
           <div className="space-y-3" aria-label="Cargando áreas">
             {[1, 2, 3].map((i) => (
@@ -101,7 +125,7 @@ export function AreasYReservacionesPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {areas.map((area) => (
-              <div key={area.areaComunId} className="border rounded-lg p-4 bg-white shadow-sm">
+              <div key={area.areaComunId} className="rounded-lg border border-neutral-100 bg-surface-alt p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-neutral-900">{area.nombre}</h3>
@@ -131,8 +155,75 @@ export function AreasYReservacionesPage() {
       </section>
 
       <section>
+        <div className="mb-4 flex gap-2 border-b border-neutral-100" role="tablist" aria-label="Vista de reservaciones">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'calendario'}
+            className={`cursor-pointer px-3 py-2 text-sm font-medium border-b-2 -mb-px ${
+              tab === 'calendario' ? 'border-primary text-primary' : 'border-transparent text-neutral-600'
+            }`}
+            onClick={() => setTab('calendario')}
+          >
+            Calendario
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'mias'}
+            className={`cursor-pointer px-3 py-2 text-sm font-medium border-b-2 -mb-px ${
+              tab === 'mias' ? 'border-primary text-primary' : 'border-transparent text-neutral-600'
+            }`}
+            onClick={() => setTab('mias')}
+          >
+            Mis reservas
+          </button>
+        </div>
+
+        {tab === 'calendario' ? (
+          <div className="space-y-4">
+            {areasReservables.length === 0 ? (
+              <p className="text-neutral">No hay áreas reservables para mostrar en el calendario.</p>
+            ) : (
+              <>
+                <label className="block text-sm font-medium text-neutral-700">
+                  Área
+                  <select
+                    className="mt-1 w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    value={areaCalendarioEfectiva ?? ''}
+                    onChange={(e) => setAreaCalendarioId(Number(e.target.value))}
+                  >
+                    {areasReservables.map((a) => (
+                      <option key={a.areaComunId} value={a.areaComunId}>
+                        {a.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {areaCalendarioEfectiva !== null && (
+                  <ReservasCalendarioSemanal
+                    areaComunId={areaCalendarioEfectiva}
+                    weekStart={weekStart}
+                    onWeekChange={setWeekStart}
+                    eventos={eventosCalendario}
+                    loading={loadingCalendario}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          <>
         <h2 className="text-lg font-semibold text-neutral-700 mb-3">Mis reservaciones</h2>
-        {resError && <AlertBanner variant="error">{resError}</AlertBanner>}
+        {resError && (
+          <button
+            type="button"
+            className="mb-2 cursor-pointer text-sm text-primary underline"
+            onClick={() => void refetch()}
+          >
+            Reintentar carga de reservaciones
+          </button>
+        )}
         {loadingRes ? (
           <div className="space-y-2" aria-label="Cargando reservaciones">
             {[1, 2].map((i) => <div key={i} className="h-14 bg-neutral-100 rounded animate-pulse" />)}
@@ -162,6 +253,8 @@ export function AreasYReservacionesPage() {
               </tbody>
             </table>
           </div>
+        )}
+          </>
         )}
       </section>
 
@@ -195,7 +288,6 @@ export function AreasYReservacionesPage() {
               <p className="mt-1 text-sm text-danger-600">{errors.fechaFin.message}</p>
             )}
           </div>
-          {formError && <AlertBanner variant="error">{formError}</AlertBanner>}
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"

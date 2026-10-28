@@ -38,6 +38,18 @@ vi.mock('../shared/lib/apiClient', () => ({
   apiDelete: (...args: unknown[]) => apiDelete(...args),
 }))
 
+const mockToastError = vi.fn()
+const mockToastSuccess = vi.fn()
+
+vi.mock('../shared/toast/ToastContext', () => ({
+  useToast: () => ({
+    show: vi.fn(),
+    success: mockToastSuccess,
+    error: mockToastError,
+    dismiss: vi.fn(),
+  }),
+}))
+
 function setupApiGet(casas = casasMock, casasError = false) {
   apiGet.mockImplementation(async (path: string) => {
     if (path === '/SGR/Casas/condominios') {
@@ -59,6 +71,8 @@ function setupApiGet(casas = casasMock, casasError = false) {
 describe('AdminCasasPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockToastError.mockClear()
+    mockToastSuccess.mockClear()
     setupApiGet()
     apiPost.mockResolvedValue({ status: 201 })
     apiPut.mockResolvedValue({ status: 200 })
@@ -73,7 +87,7 @@ describe('AdminCasasPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Interior 3')).toBeInTheDocument()
+      expect(screen.getAllByText('Interior 3').length).toBeGreaterThanOrEqual(1)
     })
     expect(screen.getByRole('heading', { name: 'Casas' })).toBeInTheDocument()
     expect(screen.getByText('Con propietario')).toBeInTheDocument()
@@ -103,8 +117,22 @@ describe('AdminCasasPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Error de servidor')).toBeInTheDocument()
+      expect(mockToastError).toHaveBeenCalledWith('Error de servidor')
     })
+    expect(screen.queryByText('Error de servidor')).not.toBeInTheDocument()
+  })
+
+  it('expone cards móviles con la misma data que la tabla', async () => {
+    render(
+      <MemoryRouter>
+        <AdminCasasPage />
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: /editar casa 12/i }).length).toBeGreaterThanOrEqual(1)
+    })
+    expect(screen.getAllByText('Interior 3').length).toBeGreaterThanOrEqual(1)
   })
 
   it('alta casa abre panel lateral y llama POST', async () => {
@@ -151,11 +179,11 @@ describe('AdminCasasPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Interior 3')).toBeInTheDocument()
+      expect(screen.getAllByText('Interior 3').length).toBeGreaterThanOrEqual(1)
     })
 
     await user.type(screen.getByLabelText(/buscar en tabla/i), 'Interior')
-    expect(screen.getByText('Interior 3')).toBeInTheDocument()
+    expect(screen.getAllByText('Interior 3').length).toBeGreaterThanOrEqual(1)
     expect(screen.queryByText('cada 55')).not.toBeInTheDocument()
     expect(screen.getByText('1 de 2')).toBeInTheDocument()
   })
@@ -169,13 +197,13 @@ describe('AdminCasasPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Interior 3')).toBeInTheDocument()
+      expect(screen.getAllByText('Interior 3').length).toBeGreaterThanOrEqual(1)
     })
 
     const direccionFilter = screen.getByLabelText(/filtrar dirección/i)
     await user.type(direccionFilter, 'Interior')
 
-    expect(screen.getByText('Interior 3')).toBeInTheDocument()
+    expect(screen.getAllByText('Interior 3').length).toBeGreaterThanOrEqual(1)
     expect(screen.queryByText('cada 55')).not.toBeInTheDocument()
   })
 
@@ -189,10 +217,10 @@ describe('AdminCasasPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/editar casa 12/i)).toBeInTheDocument()
+      expect(screen.getAllByLabelText(/editar casa 12/i).length).toBeGreaterThanOrEqual(1)
     })
 
-    await user.click(screen.getByLabelText(/editar casa 12/i))
+    await user.click(screen.getAllByLabelText(/editar casa 12/i)[0])
     const panel = screen.getByRole('region')
     const numeroInput = within(panel).getByLabelText(/número exterior/i)
     await user.clear(numeroInput)
@@ -217,10 +245,10 @@ describe('AdminCasasPage', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/editar casa 12/i)).toBeInTheDocument()
+      expect(screen.getAllByLabelText(/editar casa 12/i).length).toBeGreaterThanOrEqual(1)
     })
 
-    await user.click(screen.getByLabelText(/editar casa 12/i))
+    await user.click(screen.getAllByLabelText(/editar casa 12/i)[0])
     expect(container.querySelector('.cq-row-active')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Editar casa' })).toBeInTheDocument()
   })

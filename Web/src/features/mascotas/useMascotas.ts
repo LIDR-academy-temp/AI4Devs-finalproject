@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { apiGet } from '../../shared/lib/apiClient'
 import type { MascotaListItem, TipoMascotaDto, RazaMascotaDto } from '../../shared/types/mascotas'
+import {
+  normalizeMascotaListItem,
+  normalizeRazaMascota,
+  normalizeTipoMascota,
+  type MascotaListItemApiRow,
+  type RazaMascotaApiRow,
+  type TipoMascotaApiRow,
+} from './mascotaMappers'
 
 export function useMascotas() {
   const [mascotas, setMascotas] = useState<MascotaListItem[]>([])
@@ -9,12 +17,12 @@ export function useMascotas() {
 
   const reload = useCallback(async () => {
     setLoading(true)
-    const { data, problem, status } = await apiGet<MascotaListItem[]>('/USR/Mascotas')
+    const { data, problem, status } = await apiGet<MascotaListItemApiRow[]>('/USR/Mascotas')
     if (!data || status !== 200) {
       setError(problem?.detail ?? 'Error al cargar mascotas')
       setMascotas([])
     } else {
-      setMascotas(data)
+      setMascotas(data.map(normalizeMascotaListItem))
       setError(null)
     }
     setLoading(false)
@@ -28,7 +36,9 @@ export function useMascotas() {
 export function useTiposMascota() {
   const [tipos, setTipos] = useState<TipoMascotaDto[]>([])
   useEffect(() => {
-    apiGet<TipoMascotaDto[]>('/USR/TiposMascota').then((r) => setTipos(r.data ?? []))
+    apiGet<TipoMascotaApiRow[]>('/USR/TiposMascota').then((r) =>
+      setTipos((r.data ?? []).map(normalizeTipoMascota)),
+    )
   }, [])
   return tipos
 }
@@ -36,7 +46,9 @@ export function useTiposMascota() {
 export function useRazasMascota() {
   const [razas, setRazas] = useState<RazaMascotaDto[]>([])
   useEffect(() => {
-    apiGet<RazaMascotaDto[]>('/USR/RazasMascota').then((r) => setRazas(r.data ?? []))
+    apiGet<RazaMascotaApiRow[]>('/USR/RazasMascota').then((r) =>
+      setRazas((r.data ?? []).map(normalizeRazaMascota)),
+    )
   }, [])
   return razas
 }
@@ -49,12 +61,12 @@ export function usePadronMascotas() {
   const reload = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const { data, problem, status } = await apiGet<MascotaListItem[]>('/USR/Mascotas/padron')
+    const { data, problem, status } = await apiGet<MascotaListItemApiRow[]>('/USR/Mascotas/padron')
     if (!data) {
       setError(problem?.detail ?? `Error ${status}`)
       setPadron([])
     } else {
-      setPadron(data)
+      setPadron(data.map(normalizeMascotaListItem))
     }
     setLoading(false)
   }, [])

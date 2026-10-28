@@ -1,0 +1,127 @@
+@model Web.Models.Residente.ResidentNotificationInboxViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Notificaciones";
+    var context = Model.Context;
+    var tabLabel = Model.Tab == "unread" ? "No leídas" : "Todas";
+}
+
+<div class="container-fluid cq-resident-page">
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-check-circle mr-1"></i>@Model.Message
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.Error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-alert-circle mr-1"></i>@Model.Error
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+
+    <div class="card cq-resident-hero mb-4">
+        <div class="card-body">
+            <div class="cq-resident-hero-grid">
+                <div>
+                    <span class="badge badge-pill badge-light text-uppercase">Notificaciones</span>
+                    <h3 class="mt-3 mb-2">Avisos de tu vivienda</h3>
+                    <p class="mb-0">Revisa solo lo que importa para tu contexto activo.</p>
+
+                    <div class="cq-resident-hero-pills mt-3">
+                        <span class="cq-ticket-hero-pill"><i class="mdi mdi-home-city-outline"></i>@context.SelectedPropertyDisplay</span>
+                        <span class="cq-ticket-hero-pill"><i class="mdi mdi-bell-ring-outline"></i>@Model.TotalUnread sin leer</span>
+                        <span class="cq-ticket-hero-pill"><i class="mdi mdi-filter-outline"></i>@tabLabel</span>
+                    </div>
+                </div>
+                <div class="cq-resident-focus-card">
+                    <span class="cq-resident-mini-label">Bandeja</span>
+                    <strong>@tabLabel</strong>
+                    <div class="cq-resident-metric-strip">
+                        <span class="cq-resident-metric-pill"><i class="mdi mdi-bell-outline"></i>@Model.Items.Count aviso(s)</span>
+                        <span class="cq-resident-metric-pill"><i class="mdi mdi-bell-badge-outline"></i>@Model.TotalUnread sin leer</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cq-resident-tab-row mb-4">
+        <a href="/Residente/Notificaciones?tab=unread" class="cq-resident-tab @(Model.Tab == "unread" ? "is-active" : string.Empty)">
+            No leídas
+            <strong>@Model.TotalUnread</strong>
+        </a>
+        <a href="/Residente/Notificaciones?tab=all" class="cq-resident-tab @(Model.Tab == "all" ? "is-active" : string.Empty)">
+            Todas
+            <strong>@Model.Items.Count</strong>
+        </a>
+    </div>
+
+    @if (!Model.Items.Any())
+    {
+        <div class="card">
+            <div class="card-body cq-reserva-empty cq-reserva-empty--table py-5">
+                <div class="cq-reserva-empty-icon"><i class="mdi mdi-bell-off-outline"></i></div>
+                <h5 class="mb-2">Sin notificaciones</h5>
+                <p class="text-muted mb-0">No hay avisos en esta vista.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="cq-resident-inbox-list">
+            @foreach (var item in Model.Items)
+            {
+                var preview = string.IsNullOrWhiteSpace(item.Mensaje)
+                    ? "Sin detalle adicional."
+                    : item.Mensaje.Length > 96
+                        ? item.Mensaje[..96] + "..."
+                        : item.Mensaje;
+                var isGlobal = !item.UsuarioID.HasValue || item.UsuarioID.Value <= 0;
+
+                <a href="/Residente/Notificaciones/@item.NotificacionID?tab=@Model.Tab" class="cq-resident-message-card @(!item.Leido ? "is-unread" : string.Empty)">
+                    <div class="d-flex align-items-start justify-content-between gap-3 mb-2">
+                        <div>
+                            <strong>@item.Titulo</strong>
+                            <div class="cq-resident-message-meta">
+                                <span class="badge badge-light border">@(isGlobal ? "Comunitaria" : "Personal")</span>
+                                @if (!item.Leido)
+                                {
+                                    <span class="badge badge-warning">Nueva</span>
+                                }
+                            </div>
+                        </div>
+                        <small class="text-muted">@(item.FechaCreacionNotificacion?.ToString("dd/MM/yyyy") ?? "Sin fecha")</small>
+                    </div>
+                    <p class="text-muted mb-0">@preview</p>
+                </a>
+            }
+        </div>
+    }
+</div>
+
+@section TopbarContent {
+    <div class="cq-topbar-inner">
+        <div class="cq-tb-left">
+            <div class="cq-tb-icon"><i class="mdi mdi-bell-outline"></i></div>
+            <div class="cq-tb-info">
+                <span class="cq-tb-title">Notificaciones</span>
+                <div class="cq-tb-meta">
+                    <span class="cq-tb-badge"><i class="mdi mdi-map-marker-radius-outline"></i>@context.SelectedPropertyDisplay</span>
+                    <span class="cq-tb-badge">@Model.TotalUnread sin leer · @Model.Items.Count en bandeja</span>
+                </div>
+            </div>
+        </div>
+        <div class="cq-tb-right">
+            <div class="cq-tb-sep"></div>
+            <ol class="breadcrumb mb-0 cq-tb-breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="/Residente/Inicio">Portal residente</a></li>
+                <li class="breadcrumb-item active">Notificaciones</li>
+            </ol>
+        </div>
+    </div>
+}

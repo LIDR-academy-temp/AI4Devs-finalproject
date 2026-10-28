@@ -6,6 +6,7 @@ import { LOGIN_HERO } from '../features/auth/loginCopy'
 import { useAuth } from '../features/auth/AuthContext'
 import { loginSchema, type LoginForm } from '../features/auth/loginSchema'
 import { PasswordField } from '../shared/components/PasswordField'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 import '../styles/login.css'
 
 export function LoginPage() {
@@ -15,6 +16,7 @@ export function LoginPage() {
   const passwordChanged = (location.state as { passwordChanged?: boolean } | null)
     ?.passwordChanged
   const [serverError, setServerError] = useState<string | null>(null)
+  useQueryErrorToast(serverError)
 
   const {
     register,
@@ -89,12 +91,6 @@ export function LoginPage() {
               error={errors.password?.message}
               registration={register('password')}
             />
-
-            {serverError && (
-              <p className="rounded-lg bg-danger-light px-3 py-2 text-sm text-danger" role="alert">
-                {serverError}
-              </p>
-            )}
 
             <button type="submit" disabled={isSubmitting} className="cq-login-submit">
               {isSubmitting ? 'Entrando…' : 'Entrar'}

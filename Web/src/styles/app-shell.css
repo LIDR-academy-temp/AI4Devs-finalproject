@@ -1,0 +1,166 @@
+/* App shell — header + sidebar (FE-UX) */
+
+.cq-app-header {
+  background: linear-gradient(180deg, #274c77 0%, #223f5c 100%);
+}
+
+.cq-app-brand {
+  text-decoration: none;
+  color: inherit;
+}
+
+.cq-app-brand:hover .cq-app-brand-mark {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.cq-app-brand-mark {
+  transition: background var(--transition-fast);
+}
+
+.cq-app-sidebar {
+  --cq-nav-icon-size: 1.75rem;
+  --cq-nav-icon-svg: 0.9375rem;
+  --cq-nav-fg-muted: rgba(255, 255, 255, 0.82);
+  --cq-nav-fg-icon: #b8d9f0;
+  background: linear-gradient(180deg, #223f5c 0%, #274c77 42%, #1a3349 100%);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.cq-nav-icon {
+  width: var(--cq-nav-icon-size);
+  height: var(--cq-nav-icon-size);
+}
+
+.cq-nav-icon-svg {
+  width: var(--cq-nav-icon-svg);
+  height: var(--cq-nav-icon-svg);
+}
+
+.cq-nav-label {
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+
+.cq-nav-group-label {
+  margin: 0.5rem 0 0.15rem;
+  padding: 0 0.375rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.cq-nav-group-label:first-child {
+  margin-top: 0.15rem;
+}
+
+.cq-nav-group--active .cq-nav-group-toggle {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.cq-nav-group-divider {
+  margin: 0.35rem 0.5rem;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cq-nav-scroll {
+  gap: 0.125rem;
+}
+
+.cq-nav-sidebar-toolbar {
+  flex-shrink: 0;
+}
+
+.cq-app-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cq-app-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+}
+
+.cq-app-sidebar-slot {
+  position: relative;
+  z-index: 10;
+  overflow: visible;
+  background: linear-gradient(180deg, #223f5c 0%, #274c77 42%, #1a3349 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cq-app-sidebar-slot .cq-app-sidebar {
+  background: transparent;
+  border-right: none;
+}
+
+/* Ítem activo: barra lateral + sin subrayado de enlace */
+.cq-nav-item {
+  text-decoration: none;
+}
+
+.cq-nav-item--active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cq-nav-item--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: 1.125rem;
+  border-radius: 0 3px 3px 0;
+  background: #a3cef1;
+  transform: translateY(-50%);
+}
+
+.cq-nav-item:not(.cq-nav-item--active) .cq-nav-icon {
+  color: var(--cq-nav-fg-icon);
+}
+
+.cq-nav-group-label {
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.cq-nav-item--active:not(.justify-center) {
+  padding-left: calc(0.375rem + 2px);
+}
+
+/* Tooltip rail colapsado (portal en body — no se recorta por overflow) */
+.cq-nav-hint-fixed {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  white-space: nowrap;
+  border-radius: var(--radius-md);
+  background: #1a3349;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #fff;
+  box-shadow:
+    0 8px 24px rgba(12, 28, 44, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  animation: cq-nav-hint-in 120ms ease-out;
+}
+
+@keyframes cq-nav-hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cq-app-sidebar-slot,
+  .cq-nav-hint-fixed {
+    animation: none !important;
+  }
+}

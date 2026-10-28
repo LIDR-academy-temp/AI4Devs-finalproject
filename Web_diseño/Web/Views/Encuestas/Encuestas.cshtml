@@ -1,0 +1,221 @@
+@model EncuestasPageViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Encuestas";
+    var isEditing = Model.Form.EncuestaID.HasValue && Model.Form.EncuestaID.Value > 0;
+    var totalConFechas = Model.Items.Count(item => item.FechaInicio.HasValue || item.FechaFin.HasValue);
+}
+
+<div class="container-fluid">
+
+                        <div class="cq-reserva-empty">
+                            <div class="cq-reserva-empty-icon"><i class="mdi mdi-poll"></i></div>
+                            <h5 class="mb-2">Sin encuestas registradas</h5>
+                            <p class="text-muted mb-0">Crea la primera encuesta para empezar a medir participación y resultados.</p>
+                        </div>
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-check-circle mr-1"></i>@Model.Message
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-alert-circle mr-1"></i>@Model.Error
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+
+    <div class="card cq-reserva-hero mb-4">
+        <div class="card-body d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            <div class="flex-grow-1">
+                <span class="badge badge-pill cq-reserva-pill">Participación</span>
+                <h3 class="mb-2 mt-2">Gestiona encuestas con lectura directa</h3>
+                <p class="mb-0">Consulta vigencia, estado y accesos a detalle o resultados desde una sola bandeja.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2 cq-reserva-stat-strip">
+                <div class="cq-reserva-stat"><span>Encuestas</span><strong>@Model.Items.Count</strong></div>
+                <div class="cq-reserva-stat"><span>Activas</span><strong>@Model.TotalActivas</strong></div>
+                <div class="cq-reserva-stat"><span>Con fechas</span><strong>@totalConFechas</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cq-split @(isEditing ? "panel-open" : "")" id="cqSplit">
+        <div class="cq-table-pane">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-2 mb-3">
+                        <div>
+                            <h4 class="card-title mb-1">Encuestas registradas</h4>
+                            <p class="text-muted mb-0">Filtra las activas, abre preguntas o revisa resultados desde el mismo tablero.</p>
+                        </div>
+                        <span class="badge badge-light">@Model.Items.Count registro(s)</span>
+                    </div>
+                    <form asp-controller="Encuestas" asp-action="Index" method="get" class="form-inline mb-3">
+                        <div class="form-check mr-3">
+                            <input class="form-check-input" type="checkbox" id="soloActivas" name="soloActivas" value="true"
+                                   @(Model.SoloActivas ? "checked" : "") onchange="this.form.submit()" />
+                            <label class="form-check-label" for="soloActivas">
+                                Solo activas <span class="badge badge-success">@Model.TotalActivas</span>
+                            </label>
+                        </div>
+                    </form>
+                    @if (!Model.Items.Any())
+                    {
+                        <p class="text-muted">No hay encuestas registradas.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle cq-filterable">
+                                <thead>
+                                    <tr>
+                                        <th data-type="text">Título</th>
+                                        <th data-type="date">Inicio</th>
+                                        <th data-type="date">Fin</th>
+                                        <th data-type="bool">Estado</th>
+                                        <th data-type="none">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Items)
+                                    {
+                                        var rowActive = isEditing && Model.Form.EncuestaID.HasValue && Model.Form.EncuestaID == item.EncuestaID;
+                                        <tr class="@(rowActive ? "cq-row-active" : "")">
+                                            <td>@item.Titulo</td>
+                                            <td>@(item.FechaInicio?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                            <td>@(item.FechaFin?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                            <td>
+                                                @if (item.bActivo)
+                                                {
+                                                    <span class="badge badge-success">Activa</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge badge-secondary">Inactiva</span>
+                                                }
+                                            </td>
+                                            <td class="cq-actions">
+                                                <div class="cq-actions-group">
+                                                    <a cq-btn="list" asp-controller="Encuestas" asp-action="Detalle"
+                                                       asp-route-encuestaId="@item.EncuestaID" title="Ver preguntas"></a>
+                                                    <a cq-btn="chart" asp-controller="Encuestas" asp-action="Resultados"
+                                                       asp-route-encuestaId="@item.EncuestaID" title="Ver resultados"></a>
+                                                    <a cq-btn="edit" asp-controller="Encuestas" asp-action="Index"
+                                                       asp-route-editId="@item.EncuestaID"
+                                                       asp-route-soloActivas="@Model.SoloActivas" title="Editar"></a>
+                                                    <form asp-controller="Encuestas" asp-action="Delete" method="post" class="d-inline"
+                                                          onsubmit="return confirm('¿Eliminar esta encuesta?')">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="encuestaId" value="@item.EncuestaID" />
+                                                        <input type="hidden" name="soloActivas" value="@Model.SoloActivas.ToString().ToLower()" />
+                                                        <button cq-btn="delete" type="submit" title="Eliminar"></button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="cq-form-pane" id="cqFormPane">
+            <div class="card @(isEditing ? "cq-card-editing" : "")">
+                <div class="cq-panel-header">
+                    <div class="cq-panel-icon"><i class="mdi @(isEditing ? "mdi-pencil" : "mdi-plus")"></i></div>
+                    <div class="flex-grow-1 min-width-0">
+                        <h5 class="mb-0">@(isEditing ? "Editar encuesta" : "Nueva encuesta")</h5>
+                        <small class="text-muted">Captura la encuesta y ajústala sin salir del tablero.</small>
+                    </div>
+                    <button type="button" class="cq-close-btn" id="btnCerrarPanel"><i class="mdi mdi-close"></i></button>
+                </div>
+                <div class="card-body pt-3">
+                    <form asp-controller="Encuestas" asp-action="Save" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="EncuestaID" value="@Model.Form.EncuestaID" />
+                        <input type="hidden" name="soloActivas" value="@Model.SoloActivas.ToString().ToLower()" />
+
+                        <div class="form-group">
+                            <label>Título <span class="text-danger">*</span></label>
+                            <input class="form-control" type="text" name="Titulo" value="@Model.Form.Titulo" required maxlength="200" />
+                        </div>
+                        <div class="form-group">
+                            <label>Descripción</label>
+                            <textarea class="form-control" name="Descripcion" rows="3" maxlength="1000">@Model.Form.Descripcion</textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Fecha inicio</label>
+                                    <input class="form-control" type="date" name="FechaInicio"
+                                           value="@(Model.Form.FechaInicio?.ToString("yyyy-MM-dd"))" />
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group">
+                                    <label>Fecha fin</label>
+                                    <input class="form-control" type="date" name="FechaFin"
+                                           value="@(Model.Form.FechaFin?.ToString("yyyy-MM-dd"))" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="chkActivo" name="bActivo" value="true"
+                                       @(Model.Form.bActivo ? "checked" : "") />
+                                <label class="custom-control-label" for="chkActivo">Activa</label>
+                            </div>
+                        </div>
+                        <div class="cq-form-actions">
+                            <button type="submit" class="btn btn-primary flex-grow-1"><i class="mdi mdi-content-save mr-1"></i>@(isEditing ? "Actualizar" : "Crear")</button>
+                            <a asp-controller="Encuestas" asp-action="Index" asp-route-soloActivas="@Model.SoloActivas" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var split=document.getElementById('cqSplit'),btnNuevo=document.getElementById('btnNuevaEncuesta'),btnCerrar=document.getElementById('btnCerrarPanel');
+    var isEditing=@(isEditing ? "true" : "false");
+    var cancelUrl='@Html.Raw(Url.Action("Index","Encuestas", new { soloActivas = Model.SoloActivas }))';
+    function openPanel(){split.classList.add('panel-open');}
+    function closePanel(){if(isEditing){window.location.href=cancelUrl;}else{split.classList.remove('panel-open');}}
+    if(btnNuevo)btnNuevo.addEventListener('click',openPanel);
+    if(btnCerrar)btnCerrar.addEventListener('click',closePanel);
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&split.classList.contains('panel-open'))closePanel();});
+}());
+</script>
+
+@section TopbarContent {
+    <div class="cq-topbar-inner">
+        <div class="cq-tb-left">
+            <div class="cq-tb-icon"><i class="mdi mdi-poll"></i></div>
+            <div class="cq-tb-info">
+                <span class="cq-tb-title">Encuestas</span>
+                <div class="cq-tb-meta">
+                    <span class="cq-tb-badge"><i class="mdi mdi-poll"></i><strong>@Model.Items.Count</strong></span>
+                </div>
+            </div>
+        </div>
+        <div class="cq-tb-right">
+            <div class="cq-tb-sep"></div>
+            <ol class="breadcrumb mb-0 cq-tb-breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                <li class="breadcrumb-item active">Encuestas</li>
+            </ol>
+            <button type="button" class="btn btn-primary cq-tb-btn-new" id="btnNuevaEncuesta">
+                <i class="mdi mdi-plus"></i><span>Nuevo</span>
+            </button>
+        </div>
+    </div>
+}

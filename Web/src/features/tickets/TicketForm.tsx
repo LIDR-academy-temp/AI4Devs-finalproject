@@ -1,15 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import type { CatalogoItem } from '../../shared/types/tickets'
+import type { CatalogoItem, PrioridadCatalogoItem } from '../../shared/types/tickets'
 import { ticketFormSchema, type TicketFormValues } from './ticketFormSchema'
 import { useCrearTicket } from './useCrearTicket'
 
 type Props = {
   categorias: CatalogoItem[]
+  prioridades: PrioridadCatalogoItem[]
 }
 
-export function TicketForm({ categorias }: Props) {
+export function TicketForm({ categorias, prioridades }: Props) {
   const { crear, loading } = useCrearTicket()
   const [rootError, setRootError] = useState<string | null>(null)
 
@@ -69,11 +70,12 @@ export function TicketForm({ categorias }: Props) {
       <label className="flex flex-col gap-1 text-sm">
         Prioridad (opcional)
         <select className="rounded border border-neutral-200 px-3 py-2" {...register('prioridad')}>
-          <option value="">Media (por defecto)</option>
-          <option value="Baja">Baja</option>
-          <option value="Media">Media</option>
-          <option value="Alta">Alta</option>
-          <option value="Crítica">Crítica</option>
+          <option value="">Por defecto (sin especificar)</option>
+          {prioridades.map((p) => (
+            <option key={p.id} value={p.nombre}>
+              {p.nombre}
+            </option>
+          ))}
         </select>
       </label>
       {rootError && <p className="text-sm text-danger" role="alert">{rootError}</p>}

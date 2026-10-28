@@ -7,11 +7,15 @@ import {
   cambiarPasswordSchema,
   type CambiarPasswordForm,
 } from '../features/auth/cambiarPasswordSchema'
+import { PasswordField } from '../shared/components/PasswordField'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import '../styles/login.css'
 
 export function CambiarPasswordPage() {
   const { cambiarPassword } = useAuth()
   const navigate = useNavigate()
   const [serverError, setServerError] = useState<string | null>(null)
+  useQueryErrorToast(serverError)
 
   const {
     register,
@@ -33,48 +37,32 @@ export function CambiarPasswordPage() {
   })
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 md:p-8 p-8">
-      <h1 className="text-xl font-semibold text-primary-dark">Cambiar contraseña</h1>
-      <p className="text-sm text-neutral">
-        Debes actualizar tu contraseña antes de continuar. Al guardar se cerrarán las demás
-        sesiones.
-      </p>
-      <form className="flex flex-col gap-3" onSubmit={onSubmit} noValidate>
-        <label className="flex flex-col gap-1 text-sm">
-          Contraseña actual
-          <input
-            type="password"
+    <main className="cq-login-page flex min-h-screen items-center justify-center p-4">
+      <section className="cq-login-card w-full max-w-md" aria-label="Cambiar contraseña">
+        <h1 className="text-xl font-semibold">Cambiar contraseña</h1>
+        <p className="cq-login-card-sub">
+          Debes actualizar tu contraseña antes de continuar. Al guardar se cerrarán las demás sesiones.
+        </p>
+        <form className="flex flex-col gap-4" onSubmit={onSubmit} noValidate>
+          <PasswordField
+            id="password-actual"
+            label="Contraseña actual"
             autoComplete="current-password"
-            className="rounded border border-neutral-200 px-3 py-2"
-            {...register('passwordActual')}
+            error={errors.passwordActual?.message}
+            registration={register('passwordActual')}
           />
-          {errors.passwordActual && (
-            <span className="text-danger">{errors.passwordActual.message}</span>
-          )}
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Contraseña nueva
-          <input
-            type="password"
+          <PasswordField
+            id="password-nueva"
+            label="Contraseña nueva"
             autoComplete="new-password"
-            className="rounded border border-neutral-200 px-3 py-2"
-            {...register('passwordNueva')}
+            error={errors.passwordNueva?.message}
+            registration={register('passwordNueva')}
           />
-          {errors.passwordNueva && (
-            <span className="text-danger">{errors.passwordNueva.message}</span>
-          )}
-        </label>
-        {serverError && (
-          <p className="text-sm text-danger" role="alert">{serverError}</p>
-        )}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
-        >
-          {isSubmitting ? 'Guardando…' : 'Guardar contraseña'}
-        </button>
-      </form>
+          <button type="submit" disabled={isSubmitting} className="cq-login-submit">
+            {isSubmitting ? 'Guardando…' : 'Guardar contraseña'}
+          </button>
+        </form>
+      </section>
     </main>
   )
 }

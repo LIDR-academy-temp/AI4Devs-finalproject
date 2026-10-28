@@ -1,3 +1,4 @@
+import '../test/stubToast'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -49,13 +50,15 @@ describe('AdminEncuestasPage', () => {
     expect(container.querySelector('.placeholder-glow')).toBeTruthy()
   })
 
-  it('muestra mensaje de error', () => {
+  it('muestra error de carga vía toast', async () => {
+    const { useToast } = await import('../shared/toast/ToastContext')
+    const toast = useToast()
     mockUseEncuestasAdmin.mockReturnValue({
       ...defaultHookValue,
       error: 'Error al cargar encuestas',
     })
     renderPage()
-    expect(screen.getByText(/error al cargar encuestas/i)).toBeInTheDocument()
+    expect(toast.error).toHaveBeenCalledWith('Error al cargar encuestas')
   })
 
   it('muestra mensaje cuando no hay encuestas', () => {
@@ -79,7 +82,7 @@ describe('AdminEncuestasPage', () => {
       ],
     })
     renderPage()
-    expect(screen.getByText('Encuesta Test')).toBeInTheDocument()
+    expect(screen.getAllByText('Encuesta Test').length).toBeGreaterThanOrEqual(1)
   })
 
   it('filtra solo activas', async () => {
@@ -104,10 +107,10 @@ describe('AdminEncuestasPage', () => {
       ],
     })
     renderPage()
-    expect(screen.getByText('Encuesta borrador')).toBeInTheDocument()
+    expect(screen.getAllByText('Encuesta borrador').length).toBeGreaterThanOrEqual(1)
     await user.click(screen.getByLabelText(/solo activas/i))
-    expect(screen.queryByText('Encuesta borrador')).not.toBeInTheDocument()
-    expect(screen.getByText('Encuesta activa')).toBeInTheDocument()
+    expect(screen.queryAllByText('Encuesta borrador')).toHaveLength(0)
+    expect(screen.getAllByText('Encuesta activa').length).toBeGreaterThanOrEqual(1)
   })
 
   it('abre panel al hacer clic en Nueva encuesta', async () => {

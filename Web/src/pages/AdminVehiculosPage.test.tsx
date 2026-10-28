@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import '../test/stubToast'
 import { render, screen, waitFor } from '@testing-library/react'
 import { AdminVehiculosPage } from './AdminVehiculosPage'
 
@@ -9,9 +10,19 @@ vi.mock('../features/admin/vehiculos/useVehiculosAdmin', () => ({
 vi.mock('../features/admin/usuarios/usePadronUsuarios', () => ({
   usePadronUsuarios: () => ({ data: [], loading: false, error: null, refetch: vi.fn() }),
 }))
-vi.mock('../features/vehiculos/useVehiculos', () => ({
-  useMarcas: () => ({ marcas: [] }),
-  useModelos: () => ({ modelos: [] }),
+vi.mock('../features/admin/vehiculos/useVehiculosCatalog', () => ({
+  useMarcasCatalog: () => ({
+    marcas: [],
+    loading: false,
+    error: null,
+    reload: vi.fn(),
+  }),
+  useModelosCatalog: () => ({
+    modelos: [],
+    loading: false,
+    error: null,
+    reload: vi.fn(),
+  }),
 }))
 
 import { useVehiculosPadron } from '../features/admin/vehiculos/useVehiculosAdmin'
@@ -41,11 +52,24 @@ beforeEach(() => {
 })
 
 describe('AdminVehiculosPage', () => {
+  it('muestra error de carga vía toast', async () => {
+    const { useToast } = await import('../shared/toast/ToastContext')
+    const toast = useToast()
+    mockPadron.mockReturnValue({
+      vehiculos: [],
+      loading: false,
+      error: 'Error al cargar vehículos',
+      refetch: vi.fn(),
+    })
+    render(<AdminVehiculosPage />)
+    expect(toast.error).toHaveBeenCalledWith('Error al cargar vehículos')
+  })
+
   it('renderiza toolbar y placas del padrón', async () => {
     render(<AdminVehiculosPage />)
     await waitFor(() => {
-      expect(screen.getByText('ABC-123')).toBeTruthy()
-      expect(screen.getByText('Ana López')).toBeTruthy()
+      expect(screen.getAllByText('ABC-123').length).toBeGreaterThanOrEqual(1)
+      expect(screen.getAllByText('Ana López').length).toBeGreaterThanOrEqual(1)
     })
   })
 

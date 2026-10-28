@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useJuntas } from '../features/juntas/useJuntas'
-import { AlertBanner, EmptyState, PageHeader } from '../shared/components/admin'
+import { EmptyState, PageHeader } from '../shared/components/admin'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 
 export function JuntasPage() {
-  const { juntas, loading, error } = useJuntas()
+  const { juntas, loading, error, refetch } = useJuntas()
+  useQueryErrorToast(error)
 
   return (
     <main className="mx-auto max-w-3xl space-y-4 px-4 py-6">
@@ -15,7 +17,15 @@ export function JuntasPage() {
           ))}
         </div>
       )}
-      {error && <AlertBanner variant="error">{error}</AlertBanner>}
+      {error && (
+        <button
+          type="button"
+          className="cursor-pointer text-sm text-primary underline"
+          onClick={() => void refetch()}
+        >
+          Reintentar
+        </button>
+      )}
       {!loading && !error && juntas.length === 0 && (
         <EmptyState title="Sin juntas publicadas." />
       )}
@@ -25,7 +35,7 @@ export function JuntasPage() {
             <li key={j.juntaId}>
               <Link
                 to={`/juntas/${j.juntaId}`}
-                className="block bg-white rounded-xl shadow-sm border border-neutral-100 p-5 hover:shadow-md transition-shadow"
+                className="block rounded-xl border border-neutral-100 bg-surface-alt p-5 shadow-sm transition-shadow hover:shadow-md"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">

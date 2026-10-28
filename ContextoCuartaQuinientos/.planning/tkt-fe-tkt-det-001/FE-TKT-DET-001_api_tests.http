@@ -1,0 +1,113 @@
+@baseUrl = http://localhost:5000
+@token = {{login.response.body.token}}
+
+### Login (ajustar credenciales de prueba)
+# @name login
+POST {{baseUrl}}/SGR/Auth/login
+Content-Type: application/json
+
+{
+  "correo": "residente@example.com",
+  "password": "ChangeMe!"
+}
+
+### GET detalle ticket propio
+GET {{baseUrl}}/TKT/Tickets/1
+Authorization: Bearer {{token}}
+
+### GET comentarios (filtrados por rol)
+GET {{baseUrl}}/TKT/Tickets/1/comentarios
+Authorization: Bearer {{token}}
+
+### POST comentario público
+POST {{baseUrl}}/TKT/Tickets/1/comentarios
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "comentario": "Seguimiento desde prueba HTTP",
+  "esInterno": false
+}
+
+### POST comentario interno (solo admin — usar token admin)
+POST {{baseUrl}}/TKT/Tickets/1/comentarios
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "comentario": "Nota interna admin",
+  "esInterno": true
+}
+
+### GET ticket ajeno (esperado 404 NOT_FOUND)
+GET {{baseUrl}}/TKT/Tickets/99999
+Authorization: Bearer {{token}}
+
+### --- Admin CRUD (token administrador) ---
+
+### POST crear ticket en nombre de residente
+POST {{baseUrl}}/TKT/Tickets/admin
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "usuarioSolicitanteId": 2,
+  "titulo": "Alta admin HTTP",
+  "descripcion": "Creado desde prueba",
+  "categoria": "Plomería",
+  "prioridad": "Media"
+}
+
+### PATCH metadatos admin
+PATCH {{baseUrl}}/TKT/Tickets/1/admin
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "titulo": "Título editado",
+  "descripcion": "Descripción editada",
+  "categoria": "Plomería",
+  "prioridad": "Alta"
+}
+
+### DELETE soft delete admin
+DELETE {{baseUrl}}/TKT/Tickets/1/admin
+Authorization: Bearer {{token}}
+
+### --- Catálogos admin ---
+
+### GET prioridades
+GET {{baseUrl}}/TKT/PrioridadesTicket
+Authorization: Bearer {{token}}
+
+### POST categoría admin
+POST {{baseUrl}}/TKT/CategoriasTicket/admin
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Electricidad"
+}
+
+### PUT categoría admin
+PUT {{baseUrl}}/TKT/CategoriasTicket/1/admin
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Plomería actualizada"
+}
+
+### DELETE categoría admin (409 si hay tickets)
+DELETE {{baseUrl}}/TKT/CategoriasTicket/99/admin
+Authorization: Bearer {{token}}
+
+### POST prioridad admin
+POST {{baseUrl}}/TKT/PrioridadesTicket/admin
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Urgente",
+  "orden": 1
+}

@@ -27,6 +27,7 @@ function renderHome() {
 describe('HomePage', () => {
   beforeEach(() => {
     mockUseDashboardResumen.mockReset()
+    localStorage.setItem('cq-onboarding-v1', '1')
   })
 
   it('CA-1: muestra tarjetas admin cuando tipo ADMIN', () => {

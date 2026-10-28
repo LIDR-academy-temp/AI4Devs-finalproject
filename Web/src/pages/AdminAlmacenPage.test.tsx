@@ -1,3 +1,4 @@
+import '../test/stubToast'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -63,6 +64,9 @@ beforeEach(() => {
   })
   mockUseCategorias.mockReturnValue({
     categorias: [{ categoriaId: 1, nombre: 'Herramienta' }],
+    loading: false,
+    error: null,
+    recargar: vi.fn(),
   })
   mockUsePrestamos.mockReturnValue({
     prestamos: mockPrestamos,
@@ -83,13 +87,14 @@ describe('AdminAlmacenPage', () => {
     render(<AdminAlmacenPage />)
     expect(screen.getByRole('tab', { name: 'Inventario' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Préstamos' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Categorías' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Inventario' })).toBeInTheDocument()
   })
 
   it('muestra artículos en la tabla de inventario', () => {
     render(<AdminAlmacenPage />)
-    expect(screen.getByText('Martillo')).toBeInTheDocument()
-    expect(screen.getByText('Pala')).toBeInTheDocument()
+    expect(screen.getAllByText('Martillo').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Pala').length).toBeGreaterThanOrEqual(1)
   })
 
   it('muestra badge Bajo mínimo para artículo con stock < mínimo', () => {
@@ -106,8 +111,8 @@ describe('AdminAlmacenPage', () => {
   it('tab Préstamos muestra lista de préstamos', async () => {
     render(<AdminAlmacenPage />)
     fireEvent.click(screen.getByRole('tab', { name: 'Préstamos' }))
-    await waitFor(() => expect(screen.getByText('Juan López')).toBeInTheDocument())
-    expect(screen.getByText('PRESTADO')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getAllByText('Juan López').length).toBeGreaterThanOrEqual(1))
+    expect(screen.getAllByText('PRESTADO').length).toBeGreaterThanOrEqual(1)
   })
 
   it('devolver préstamo usa ConfirmDialog y apiPatch', async () => {
@@ -115,7 +120,7 @@ describe('AdminAlmacenPage', () => {
     vi.mocked(apiClient.apiPatch).mockResolvedValue({ status: 204 })
     render(<AdminAlmacenPage />)
     fireEvent.click(screen.getByRole('tab', { name: 'Préstamos' }))
-    await user.click(screen.getByLabelText(/Devolver préstamo de Martillo/i))
+    await user.click(screen.getAllByLabelText(/Devolver préstamo de Martillo/i)[0])
     const dialog = await screen.findByRole('dialog')
     await user.click(within(dialog).getByRole('button', { name: 'Devolver' }))
     await waitFor(() => {
@@ -128,5 +133,18 @@ describe('AdminAlmacenPage', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Préstamos' }))
     fireEvent.click(screen.getByRole('button', { name: /Registrar préstamo/i }))
     expect(screen.getByRole('heading', { name: 'Registrar préstamo' })).toBeInTheDocument()
+  })
+
+  it('muestra error de inventario vía toast', async () => {
+    const { useToast } = await import('../shared/toast/ToastContext')
+    const toast = useToast()
+    mockUseArticulos.mockReturnValue({
+      articulos: [],
+      loading: false,
+      error: 'No se pudo cargar el inventario',
+      recargar: vi.fn(),
+    })
+    render(<AdminAlmacenPage />)
+    expect(toast.error).toHaveBeenCalledWith('No se pudo cargar el inventario')
   })
 })

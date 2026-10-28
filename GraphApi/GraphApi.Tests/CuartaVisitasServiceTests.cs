@@ -205,4 +205,86 @@ public class CuartaVisitasServiceTests
         Assert.Equal(201, status);
         _txMock.Verify(t => t.Commit(), Times.Once);
     }
+
+    // ── Calendario reservaciones ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task TC_VTS_C_1_ListarCalendario_RangoValido_DelegaAlRepositorio()
+    {
+        var desde = new DateTime(2026, 10, 27, 0, 0, 0, DateTimeKind.Utc);
+        var hasta = new DateTime(2026, 11, 3, 0, 0, 0, DateTimeKind.Utc);
+        var esperados = new List<ReservacionCalendarioDto>
+        {
+            new()
+            {
+                ReservacionAreaId = 1,
+                AreaComunId = 5,
+                FechaInicio = desde.AddHours(10),
+                FechaFin = desde.AddHours(12),
+                Estado = "Confirmada",
+                Etiqueta = "Terraza (Reservado)",
+            },
+        };
+        _repoMock.Setup(r => r.ListarReservacionesCalendarioAsync(5, desde, hasta, It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(esperados);
+
+        var (eventos, code, status, _) =
+            await _sut.ListarReservacionesCalendarioAsync(5, desde, hasta);
+
+        Assert.Null(code);
+        Assert.Equal(200, status);
+        Assert.Single(eventos!);
+        Assert.Equal("Terraza (Reservado)", eventos![0].Etiqueta);
+    }
+
+    [Fact]
+    public async Task TC_VTS_C_2_ListarCalendario_ExcluyeCanceladasEnProyeccion()
+    {
+        var desde = new DateTime(2026, 10, 27, 0, 0, 0, DateTimeKind.Utc);
+        var hasta = new DateTime(2026, 11, 3, 0, 0, 0, DateTimeKind.Utc);
+        _repoMock.Setup(r => r.ListarReservacionesCalendarioAsync(5, desde, hasta, It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(new List<ReservacionCalendarioDto>
+                 {
+                     new()
+                     {
+                         ReservacionAreaId = 1,
+                         AreaComunId = 5,
+                         FechaInicio = desde.AddHours(10),
+                         FechaFin = desde.AddHours(12),
+                         Estado = "Confirmada",
+                         Etiqueta = "Terraza (Reservado)",
+                     },
+                 });
+
+        var (eventos, code, status, _) =
+            await _sut.ListarReservacionesCalendarioAsync(5, desde, hasta);
+
+        Assert.Null(code);
+        Assert.Equal(200, status);
+        Assert.All(eventos!, e => Assert.NotEqual("Cancelada", e.Estado));
+        Assert.Empty(eventos!.Where(e => e.Estado == "Cancelada"));
+    }
+
+    [Fact]
+    public async Task ListarCalendario_AreaInvalida_Retorna422()
+    {
+        var (eventos, code, status, _) =
+            await _sut.ListarReservacionesCalendarioAsync(0, DateTime.UtcNow, DateTime.UtcNow.AddDays(7));
+
+        Assert.Null(eventos);
+        Assert.Equal("VTS_AREA_INVALIDA", code);
+        Assert.Equal(422, status);
+    }
+
+    [Fact]
+    public async Task ListarCalendario_RangoExcesivo_Retorna422()
+    {
+        var desde = DateTime.UtcNow;
+        var (eventos, code, status, _) =
+            await _sut.ListarReservacionesCalendarioAsync(1, desde, desde.AddDays(63));
+
+        Assert.Null(eventos);
+        Assert.Equal("VTS_RANGO_EXCESIVO", code);
+        Assert.Equal(422, status);
+    }
 }

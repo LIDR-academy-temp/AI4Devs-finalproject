@@ -1,0 +1,235 @@
+@using System.Text.Json
+@model CalendarioViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = Model.PageTitle;
+    var isResidentView = Model.HomeHref?.StartsWith("/Residente", StringComparison.OrdinalIgnoreCase) == true;
+
+    var reservaEvents = Model.Reservas.Select(r => new {
+        id        = "r-" + r.ReservacionAreaID,
+        title     = (r.AreasComunes ?? "Reserva") + (r.NombreUsuario != null ? " · " + r.NombreUsuario : ""),
+        start     = r.FechaInicio.ToString("yyyy-MM-dd'T'HH:mm:ss"),
+        end       = r.FechaFin.ToString("yyyy-MM-dd'T'HH:mm:ss"),
+        color     = r.ReservacionEstado switch { "Confirmada" => "#16a34a", "Cancelada" => "#dc2626", _ => "#1976d2" },
+        textColor = "#ffffff",
+        extendedProps = new {
+            tipo = "reserva", icono = "mdi-calendar-check",
+            area = r.AreasComunes ?? "—", usuario = r.NombreUsuario ?? "—",
+            estado = r.ReservacionEstado ?? "Programada", descripcion = ""
+        }
+    });
+    var juntaEvents = Model.Juntas.Where(j => j.FechaProgramada.HasValue).Select(j => new {
+        id        = "j-" + j.JuntaID,
+        title     = j.Titulo,
+        start     = j.FechaProgramada!.Value.ToString("yyyy-MM-dd'T'HH:mm:ss"),
+        end       = (string?)null,
+        color     = j.bActivo ? "#d97706" : "#6b7280",
+        textColor = "#ffffff",
+        extendedProps = new {
+            tipo = "junta", icono = "mdi-account-group",
+            area = j.Ubicacion ?? "—", usuario = (string?)null,
+            estado = j.bActivo ? "Activa" : "Inactiva", descripcion = j.Descripcion ?? ""
+        }
+    });
+    var eventsJson = JsonSerializer.Serialize(reservaEvents.Cast<object>().Concat(juntaEvents.Cast<object>()));
+    int totalReservas = Model.Reservas.Count;
+    int totalJuntas   = Model.Juntas.Count;
+    int confirmadas   = Model.Reservas.Count(r => r.ReservacionEstado == "Confirmada");
+    int juntasActivas = Model.Juntas.Count(j => j.bActivo);
+}
+<div class="container-fluid @(isResidentView ? "cq-resident-page" : string.Empty)">
+
+    @if (isResidentView)
+    {
+        <div class="card cq-resident-hero mb-4">
+            <div class="card-body">
+                <div class="cq-resident-hero-grid">
+                    <div>
+                        <span class="badge badge-pill badge-light text-uppercase">Mi calendario</span>
+                        <h3 class="mt-3 mb-2">Tu agenda residente</h3>
+                        <p class="mb-0">Reservas y juntas en una sola vista para decidir más rápido.</p>
+
+                        <div class="cq-resident-hero-pills mt-3">
+                            <span class="cq-ticket-hero-pill"><i class="mdi mdi-calendar-check"></i>@totalReservas reserva(s)</span>
+                            <span class="cq-ticket-hero-pill"><i class="mdi mdi-check-circle"></i>@confirmadas confirmada(s)</span>
+                            <span class="cq-ticket-hero-pill"><i class="mdi mdi-account-group"></i>@totalJuntas junta(s)</span>
+                        </div>
+                    </div>
+
+                    <div class="cq-resident-focus-card">
+                        <span class="cq-resident-mini-label">Resumen</span>
+                        <strong>@(juntasActivas > 0 ? $"{juntasActivas} junta(s) activa(s)" : "Sin juntas activas")</strong>
+                        <div class="cq-resident-metric-strip">
+                            <span class="cq-resident-metric-pill"><i class="mdi mdi-calendar-star"></i>@(totalReservas > 0 ? "Agenda con actividad" : "Sin reservas")</span>
+                            <span class="cq-resident-metric-pill"><i class="mdi mdi-view-list"></i>Mes, semana o lista</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Stat cards *@
+    <div class="d-flex flex-wrap gap-3 mb-4">
+        <div class="cq-cal-stat" role="region" aria-label="Total reservas">
+            <div class="cq-cal-stat__icon" style="background:rgba(25,118,210,.12);color:#1976d2;">
+                <i class="mdi mdi-calendar-check" aria-hidden="true"></i>
+            </div>
+            <div>
+                <div class="cq-cal-stat__num">@totalReservas</div>
+                <div class="cq-cal-stat__lbl">Reservas</div>
+            </div>
+        </div>
+        <div class="cq-cal-stat" role="region" aria-label="Reservas confirmadas">
+            <div class="cq-cal-stat__icon" style="background:rgba(22,163,74,.12);color:#16a34a;">
+                <i class="mdi mdi-check-circle" aria-hidden="true"></i>
+            </div>
+            <div>
+                <div class="cq-cal-stat__num">@confirmadas</div>
+                <div class="cq-cal-stat__lbl">Confirmadas</div>
+            </div>
+        </div>
+        <div class="cq-cal-stat" role="region" aria-label="Total juntas">
+            <div class="cq-cal-stat__icon" style="background:rgba(217,119,6,.12);color:#d97706;">
+                <i class="mdi mdi-account-group" aria-hidden="true"></i>
+            </div>
+            <div>
+                <div class="cq-cal-stat__num">@totalJuntas</div>
+                <div class="cq-cal-stat__lbl">Juntas</div>
+            </div>
+        </div>
+        <div class="cq-cal-stat" role="region" aria-label="Juntas activas">
+            <div class="cq-cal-stat__icon" style="background:rgba(25,118,210,.07);color:var(--cq-muted);">
+                <i class="mdi mdi-calendar-star" aria-hidden="true"></i>
+            </div>
+            <div>
+                <div class="cq-cal-stat__num">@juntasActivas</div>
+                <div class="cq-cal-stat__lbl">Juntas activas</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-3 p-md-4">
+
+            @if (isResidentView)
+            {
+                <div class="cq-resident-section-head mb-3">
+                    <div>
+                        <span class="cq-resident-kicker">Agenda</span>
+                        <h4 class="card-title mb-1">Consulta tu actividad</h4>
+                        <p class="text-muted mb-0">Cambia entre mes, semana y lista según lo que necesites revisar.</p>
+                    </div>
+                </div>
+            }
+
+            @* Leyenda *@
+            <div class="cq-cal-legend" aria-label="Leyenda del calendario" role="note">
+                <span class="cq-cal-legend__item"><span class="cq-cal-legend__dot" style="background:#1976d2;"></span>Reserva programada</span>
+                <span class="cq-cal-legend__item"><span class="cq-cal-legend__dot" style="background:#16a34a;"></span>Reserva confirmada</span>
+                <span class="cq-cal-legend__item"><span class="cq-cal-legend__dot" style="background:#dc2626;"></span>Reserva cancelada</span>
+                <span class="cq-cal-legend__item"><span class="cq-cal-legend__dot" style="background:#d97706;"></span>Junta activa</span>
+                <span class="cq-cal-legend__item"><span class="cq-cal-legend__dot" style="background:#6b7280;"></span>Junta inactiva</span>
+            </div>
+
+            <div class="cq-cal-wrap">
+                <div id="calendario-general"
+                     role="application"
+                     aria-label="Calendario de reservas y juntas del condominio"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Modal *@
+<div class="modal fade cq-cal-modal" id="calModal" tabindex="-1"
+     aria-labelledby="calModalLabel" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="cq-cal-modal-icon" id="cal-modal-icon" aria-hidden="true"></div>
+                    <div>
+                        <h5 class="modal-title mb-0" id="calModalLabel" style="font-size:.96rem;font-weight:700;"></h5>
+                        <p class="mb-0 mt-1" id="cal-modal-fecha" style="font-size:.74rem;color:var(--cq-muted);font-weight:500;"></p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body pt-3" id="cal-modal-body"></div>
+        </div>
+    </div>
+</div>
+
+@section TopbarContent {
+    <div class="cq-topbar-inner">
+        <div class="cq-tb-left">
+            <div class="cq-tb-icon"><i class="mdi mdi-calendar-month"></i></div>
+            <div class="cq-tb-info">
+                <span class="cq-tb-title">@Model.PageTitle</span>
+                <div class="cq-tb-meta">
+                    <span class="cq-tb-badge"><i class="mdi mdi-calendar-check"></i><strong>@totalReservas</strong> reservas</span>
+                    <span class="cq-tb-dot"></span>
+                    <span class="cq-tb-badge"><i class="mdi mdi-account-group"></i><strong>@totalJuntas</strong> juntas</span>
+                </div>
+            </div>
+        </div>
+        <div class="cq-tb-right">
+            <div class="cq-tb-sep"></div>
+            <ol class="breadcrumb mb-0 cq-tb-breadcrumb">
+                <li class="breadcrumb-item"><a href="@Model.HomeHref">@Model.HomeLabel</a></li>
+                <li class="breadcrumb-item active">@Model.PageTitle</li>
+            </ol>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@@fullcalendar/core@6.1.14/locales/es.global.min.js"></script>
+<script>
+(function(){
+'use strict';
+function fmtDate(d){if(!d)return'';return d.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
+function fmtTime(d){if(!d)return'';return d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});}
+function row(lbl,val){
+  if(!val||val==='—')return'';
+  return '<div class="cq-cal-detail-row"><span class="cq-cal-detail-label">'+lbl+'</span><span class="cq-cal-detail-val">'+val+'</span></div>';
+}
+function estadoBadge(est,color){
+  return '<span class="cq-cal-estado-badge" style="background:'+color+'22;color:'+color+';">'+est+'</span>';
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  var events = @Html.Raw(eventsJson);
+  var cal = new FullCalendar.Calendar(document.getElementById('calendario-general'),{
+    initialView: window.innerWidth<640?'listMonth':'dayGridMonth',
+    locale:'es', height:'auto', firstDay:1,
+    headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek,listMonth'},
+    buttonText:{today:'Hoy',month:'Mes',week:'Semana',list:'Lista'},
+    eventTimeFormat:{hour:'2-digit',minute:'2-digit',hour12:false},
+    dayMaxEvents:3,
+    moreLinkText:function(n){return'+'+n+' más';},
+    events:events,
+    eventDidMount:function(i){i.el.setAttribute('title',i.event.title);i.el.setAttribute('aria-label',i.event.title);},
+    eventClick:function(info){
+      var e=info.event, p=e.extendedProps, bg=e.backgroundColor;
+      var iconEl=document.getElementById('cal-modal-icon');
+      iconEl.style.background=bg+'22'; iconEl.style.color=bg;
+      iconEl.innerHTML='<i class="mdi '+(p.tipo==='reserva'?'mdi-calendar-check':'mdi-account-group')+'"></i>';
+      document.getElementById('calModalLabel').textContent=e.title;
+      var f=fmtDate(e.start)+(e.start?' '+fmtTime(e.start):'')+(e.end?' → '+fmtTime(e.end):'');
+      document.getElementById('cal-modal-fecha').textContent=f;
+      var body=row('Estado',estadoBadge(p.estado,bg));
+      if(p.tipo==='reserva'){body+=row('Área',p.area);body+=row('Residente',p.usuario);}
+      else{body+=row('Ubicación',p.area);if(p.descripcion)body+=row('Descripción',p.descripcion);}
+      document.getElementById('cal-modal-body').innerHTML=body;
+      new bootstrap.Modal(document.getElementById('calModal')).show();
+    },
+    windowResize:function(){if(window.innerWidth<640&&cal.view.type!=='listMonth')cal.changeView('listMonth');}
+  });
+  cal.render();
+});
+}());
+</script>
+}

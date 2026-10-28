@@ -1,8 +1,9 @@
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { PrivateRoute } from './shared/components/PrivateRoute'
 import { NavMenuGuard } from './shared/components/NavMenuGuard'
 import { HomePage } from './pages/HomePage'
 import { NuevoTicketPage } from './pages/NuevoTicketPage'
+import { TicketDetallePage } from './pages/TicketDetallePage'
 import { TicketsPage } from './pages/TicketsPage'
 import { LoginPage } from './pages/LoginPage'
 import { CambiarPasswordPage } from './pages/CambiarPasswordPage'
@@ -10,6 +11,7 @@ import { RequireSessionRoute } from './shared/components/RequireSessionRoute'
 import { AdminRoute } from './shared/components/AdminRoute'
 import { ForbiddenPage } from './pages/ForbiddenPage'
 import { AdminTicketsPage } from './pages/AdminTicketsPage'
+import { AdminTicketCatalogosPage } from './pages/AdminTicketCatalogosPage'
 import { FinanzasAdminPage } from './pages/FinanzasAdminPage'
 import { PerfilPage } from './pages/PerfilPage'
 import { EstadoCuentaPage } from './pages/EstadoCuentaPage'
@@ -30,6 +32,12 @@ import { JuntasPage } from './pages/JuntasPage'
 import { JuntaDetallePage } from './pages/JuntaDetallePage'
 import { AdminJuntasPage } from './pages/AdminJuntasPage'
 import { AreasYReservacionesPage } from './pages/AreasYReservacionesPage'
+import { MisPasesVisitaPage } from './pages/MisPasesVisitaPage'
+import { ValidarPasePage } from './pages/ValidarPasePage'
+import { GuardiaRoute } from './shared/components/GuardiaRoute'
+import { TrabajadorRoute } from './shared/components/TrabajadorRoute'
+import { TrabajadorTicketsPage } from './pages/TrabajadorTicketsPage'
+import { TrabajadorTicketDetallePage } from './pages/TrabajadorTicketDetallePage'
 import { AdminVisitasPage } from './pages/AdminVisitasPage'
 import { MisVehiculosPage } from './pages/MisVehiculosPage'
 import { AdminVehiculosPage } from './pages/AdminVehiculosPage'
@@ -39,6 +47,8 @@ import { AdminAlmacenPage } from './pages/AdminAlmacenPage'
 import { AdminMenusPage } from './pages/AdminMenusPage'
 import { AdminPerfilesPage } from './pages/AdminPerfilesPage'
 import { AdminPerfilPermisosPage } from './pages/AdminPerfilPermisosPage'
+import { NotificacionesPage } from './pages/NotificacionesPage'
+import { AdminAreasReservasPage } from './pages/AdminAreasReservasPage'
 
 export default function App() {
   return (
@@ -49,28 +59,57 @@ export default function App() {
       </Route>
       <Route element={<PrivateRoute />}>
         <Route path="/403" element={<ForbiddenPage />} />
+        <Route path="/perfil" element={<PerfilPage />} />
         <Route element={<NavMenuGuard />}>
+          <Route path="/notificaciones" element={<NotificacionesPage />} />
           <Route path="/" element={<HomePage />} />
           <Route path="/tickets" element={<TicketsPage />} />
+          <Route path="/tickets/:ticketId" element={<TicketDetallePage />} />
           <Route path="/tickets/nuevo" element={<NuevoTicketPage />} />
-          <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/finanzas/cuenta" element={<EstadoCuentaPage />} />
           <Route path="/anuncios" element={<AnunciosPage />} />
           <Route path="/anuncios/:id" element={<AnuncioDetallePage />} />
           <Route path="/encuestas" element={<EncuestasPage />} />
           <Route path="/encuestas/:id" element={<EncuestaDetallePage />} />
+          <Route
+            path="/encuestas/:id/resultados"
+            element={<ResultadosEncuestaPage variant="residente" />}
+          />
           <Route path="/archivos" element={<ArchivosPage />} />
           <Route path="/juntas" element={<JuntasPage />} />
           <Route path="/juntas/:id" element={<JuntaDetallePage />} />
           <Route path="/areas-comunes" element={<AreasYReservacionesPage />} />
+          <Route path="/visitas/pases" element={<MisPasesVisitaPage />} />
           <Route path="/mis-vehiculos" element={<MisVehiculosPage />} />
           <Route path="/mis-mascotas" element={<MisMascotasPage />} />
         </Route>
       </Route>
+      <Route element={<GuardiaRoute />}>
+        <Route path="/403" element={<ForbiddenPage />} />
+        <Route path="/perfil" element={<PerfilPage />} />
+        <Route element={<NavMenuGuard />}>
+          <Route path="/" element={<Navigate to="/guardia/validar-pase" replace />} />
+          <Route path="/notificaciones" element={<NotificacionesPage />} />
+          <Route path="/guardia/validar-pase" element={<ValidarPasePage />} />
+        </Route>
+      </Route>
+      <Route element={<TrabajadorRoute />}>
+        <Route path="/403" element={<ForbiddenPage />} />
+        <Route path="/perfil" element={<PerfilPage />} />
+        <Route element={<NavMenuGuard />}>
+          <Route path="/" element={<Navigate to="/trabajador/tickets" replace />} />
+          <Route path="/notificaciones" element={<NotificacionesPage />} />
+          <Route path="/trabajador/tickets" element={<TrabajadorTicketsPage />} />
+          <Route path="/trabajador/tickets/:ticketId" element={<TrabajadorTicketDetallePage />} />
+        </Route>
+      </Route>
       <Route element={<AdminRoute />}>
         <Route path="/403" element={<ForbiddenPage />} />
+        <Route path="/perfil" element={<PerfilPage />} />
         <Route element={<NavMenuGuard />}>
+          <Route path="/notificaciones" element={<NotificacionesPage />} />
           <Route path="/admin/tickets" element={<AdminTicketsPage />} />
+          <Route path="/admin/tickets/catalogos" element={<AdminTicketCatalogosPage />} />
           <Route path="/admin/finanzas" element={<FinanzasAdminPage />} />
           <Route path="/admin/usuarios" element={<AdminUsuariosPage />} />
           <Route path="/admin/casas" element={<AdminCasasPage />} />
@@ -82,6 +121,8 @@ export default function App() {
           <Route path="/admin/archivos" element={<AdminArchivosPage />} />
           <Route path="/admin/juntas" element={<AdminJuntasPage />} />
           <Route path="/admin/visitas" element={<AdminVisitasPage />} />
+          <Route path="/admin/areas-reservas" element={<AdminAreasReservasPage />} />
+          <Route path="/guardia/validar-pase" element={<ValidarPasePage />} />
           <Route path="/admin/vehiculos" element={<AdminVehiculosPage />} />
           <Route path="/admin/mascotas" element={<AdminMascotasPage />} />
           <Route path="/admin/almacen" element={<AdminAlmacenPage />} />

@@ -20,9 +20,18 @@ public sealed class CuartaTicketQueryService : ICuartaTicketQueryService
         CancellationToken ct = default) =>
         _query.GetMisTicketsAsync(usuarioId, filtro, ct);
 
+    public Task<PaginaDto<MiTicketItemDto>> GetTicketsAsignadosAsync(
+        int usuarioId,
+        TicketAsignadosFiltroDto filtro,
+        CancellationToken ct = default) =>
+        _query.GetTicketsAsignadosAsync(usuarioId, filtro, ct);
+
     public Task<IReadOnlyList<CatalogoItemDto>> ListarCategoriasAsync(CancellationToken ct = default) =>
         _catalogos.ListarCategoriasAsync(ct);
 
     public Task<IReadOnlyList<CatalogoItemDto>> ListarEstadosAsync(CancellationToken ct = default) =>
         _catalogos.ListarEstadosAsync(ct);
+
+    public Task<IReadOnlyList<PrioridadCatalogoItemDto>> ListarPrioridadesAsync(CancellationToken ct = default) =>
+        _catalogos.ListarPrioridadesAsync(ct);
 }

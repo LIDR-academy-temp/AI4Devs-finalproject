@@ -1,0 +1,259 @@
+@model Web.Models.Residente.ResidentReservationPageViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Reservas";
+    var context = Model.Context;
+    var reservacionesJson = System.Text.Json.JsonSerializer.Serialize(Model.Items.Select(item => new
+    {
+        item.ReservacionAreaID,
+        item.AreasComunesID,
+        item.AreasComunes,
+        item.ReservacionEstado,
+        FechaInicio = item.FechaInicio,
+        FechaFin = item.FechaFin
+    }));
+}
+
+<div class="container-fluid cq-resident-page">
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-check-circle mr-1"></i>@Model.Message
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-alert-circle mr-1"></i>@Model.Error
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Warning))
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-alert mr-1"></i>@Model.Warning
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+
+    <div class="card cq-reserva-hero mb-4">
+        <div class="card-body d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            <div class="flex-grow-1">
+                <span class="badge badge-pill cq-reserva-pill">Reservas</span>
+                <h3 class="mb-2 mt-2">Reserva amenidades con menos pasos</h3>
+                <p class="mb-0">Crea solicitudes y revisa cruces desde tu vivienda activa <strong>@context.SelectedPropertyDisplay</strong>.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2 cq-reserva-stat-strip">
+                <div class="cq-reserva-stat"><span>Amenidades</span><strong>@Model.TotalAmenidades</strong></div>
+                <div class="cq-reserva-stat"><span>Reservas</span><strong>@Model.TotalReservas</strong></div>
+                <div class="cq-reserva-stat"><span>Próximas</span><strong>@Model.TotalProximas</strong></div>
+                <div class="cq-reserva-stat"><span>En curso</span><strong>@Model.TotalEnCurso</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-5 mb-4 mb-lg-0">
+            <div class="card cq-reserva-form-panel h-100">
+                <div class="card-body">
+                    <div class="cq-resident-section-head mb-3">
+                        <div>
+                            <span class="cq-resident-kicker">Nueva reserva</span>
+                            <h4 class="card-title mb-1">Captura rápida</h4>
+                            <p class="text-muted mb-0">El responsable se toma de tu sesión actual.</p>
+                        </div>
+                        <span class="badge badge-pill @(Model.PuedeGuardar ? "badge-success" : "badge-warning")">
+                            @(Model.PuedeGuardar ? "Listo para reservar" : "Configuración pendiente")
+                        </span>
+                    </div>
+
+                    <form action="/Residente/Reservas/Guardar" method="post" class="cq-reserva-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="soloProximas" value="@Model.SoloProximas.ToString().ToLowerInvariant()" />
+                        <input asp-for="Form.ReservacionAreaID" type="hidden" />
+                        <input asp-for="Form.UsuarioID" type="hidden" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="form-group">
+                            <label asp-for="Form.AreasComunesID"></label>
+                            <select asp-for="Form.AreasComunesID" asp-items="Model.AreasOptions" class="form-control cq-reserva-select">
+                                <option value="">Selecciona una amenidad</option>
+                            </select>
+                            <span asp-validation-for="Form.AreasComunesID" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label asp-for="Form.ReservacionEstadoID"></label>
+                                <select asp-for="Form.ReservacionEstadoID" asp-items="Model.EstadoOptions" class="form-control cq-reserva-select">
+                                    <option value="">Selecciona un estado</option>
+                                </select>
+                                <span asp-validation-for="Form.ReservacionEstadoID" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="residentReservationDurationButtons">Ajuste rápido</label>
+                                <div id="residentReservationDurationButtons" class="cq-reserva-duration-toolbar">
+                                    <button type="button" class="btn btn-outline-primary cq-reserva-duration-btn" data-minutes="30">30 min</button>
+                                    <button type="button" class="btn btn-outline-primary cq-reserva-duration-btn" data-minutes="60">1 hora</button>
+                                    <button type="button" class="btn btn-outline-primary cq-reserva-duration-btn" data-minutes="120">2 horas</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label asp-for="Form.FechaInicio"></label>
+                                <input asp-for="Form.FechaInicio" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                                <span asp-validation-for="Form.FechaInicio" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label asp-for="Form.FechaFin"></label>
+                                <input asp-for="Form.FechaFin" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" />
+                                <span asp-validation-for="Form.FechaFin" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="cq-reserva-form-note">
+                            <i class="mdi mdi-calendar-range"></i>
+                            El resumen calcula la duración y avisa si existe cruce con otra reserva.
+                        </div>
+
+                        <div id="residentReservationConflictBox" class="alert alert-warning mt-3 @(Model.Form.TieneConflicto ? string.Empty : "d-none")">
+                            <strong>Atención.</strong>
+                            <span id="residentReservationConflictText">@(Model.Form.ConflictoTexto ?? "El horario seleccionado se cruza con otra reserva.")</span>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <button type="submit" class="btn btn-info" @(Model.PuedeGuardar ? null : "disabled")>Reservar</button>
+                            <a href="/Residente/Reservas" class="btn btn-outline-secondary">Limpiar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card cq-reserva-preview-panel h-100">
+                <div class="card-body">
+                    <div class="cq-resident-section-head mb-3">
+                        <div>
+                            <span class="cq-resident-kicker">Tus reservas</span>
+                            <h4 class="card-title mb-1">Agenda visible</h4>
+                            <p class="text-muted mb-0">Solo ves tus reservas y próximas ventanas.</p>
+                        </div>
+                        <form method="get" action="/Residente/Reservas" class="d-flex align-items-center gap-2">
+                            <label class="cq-tb-toggle @(Model.SoloProximas ? "active" : string.Empty)">
+                                <input type="checkbox" name="soloProximas" value="true" @(Model.SoloProximas ? "checked" : string.Empty) onchange="this.form.submit()" />
+                                <i class="mdi mdi-calendar-clock"></i> Solo próximas
+                            </label>
+                        </form>
+                    </div>
+
+                    @if (!Model.Items.Any())
+                    {
+                        <div class="cq-reserva-empty mt-3">
+                            <div class="cq-reserva-empty-icon"><i class="mdi mdi-calendar-blank-outline"></i></div>
+                            <h5 class="mb-2">Sin reservas visibles</h5>
+                            <p class="text-muted mb-0">No hay reservas para el filtro actual.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="cq-resident-actions-grid">
+                            @foreach (var item in Model.Items)
+                            {
+                                <article class="cq-resident-action-card">
+                                    <span class="cq-resident-action-icon"><i class="mdi mdi-calendar-star"></i></span>
+                                    <strong>@(string.IsNullOrWhiteSpace(item.AreasComunes) ? "Amenidad" : item.AreasComunes)</strong>
+                                    <p>
+                                        @(item.FechaInicio.ToString("dd/MM/yyyy HH:mm")) - @(item.FechaFin.ToString("HH:mm"))
+                                        <br />
+                                        Estado: @(string.IsNullOrWhiteSpace(item.ReservacionEstado) ? "Sin estado" : item.ReservacionEstado)
+                                    </p>
+                                    <span class="badge @item.EstadoTemporalClase mb-2">@item.EstadoTemporal</span>
+                                    @if (item.TieneConflicto)
+                                    {
+                                        <small class="text-warning d-block mb-2">@item.ConflictoTexto</small>
+                                    }
+                                    <div class="d-flex flex-wrap gap-2 mt-auto">
+                                        <span class="cq-resident-action-cta">@item.DuracionTexto</span>
+                                        @if (item.FechaFin >= DateTime.Now)
+                                        {
+                                            <form action="/Residente/Reservas/Cancelar" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="reservacionAreaId" value="@item.ReservacionAreaID" />
+                                                <input type="hidden" name="soloProximas" value="@Model.SoloProximas.ToString().ToLowerInvariant()" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Cancelar esta reserva?');">Cancelar</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var durationButtons = document.querySelectorAll('#residentReservationDurationButtons .cq-reserva-duration-btn');
+    var startInput = document.getElementById('Form_FechaInicio');
+    var endInput = document.getElementById('Form_FechaFin');
+
+    if (!startInput || !endInput) {
+        return;
+    }
+
+    durationButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            if (!startInput.value) {
+                return;
+            }
+
+            var start = new Date(startInput.value);
+            if (Number.isNaN(start.getTime())) {
+                return;
+            }
+
+            var minutes = parseInt(button.getAttribute('data-minutes') || '0', 10);
+            if (!minutes) {
+                return;
+            }
+
+            start.setMinutes(start.getMinutes() + minutes);
+            var isoValue = new Date(start.getTime() - (start.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+            endInput.value = isoValue;
+        });
+    });
+}());
+</script>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}
+
+@section TopbarContent {
+    <div class="cq-topbar-inner">
+        <div class="cq-tb-left">
+            <div class="cq-tb-icon"><i class="mdi mdi-calendar-star"></i></div>
+            <div class="cq-tb-info">
+                <span class="cq-tb-title">Reservas</span>
+                <div class="cq-tb-meta">
+                    <span class="cq-tb-badge"><i class="mdi mdi-map-marker-radius-outline"></i>@context.SelectedPropertyDisplay</span>
+                </div>
+            </div>
+        </div>
+        <div class="cq-tb-right">
+            <div class="cq-tb-sep"></div>
+            <ol class="breadcrumb mb-0 cq-tb-breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="/Residente/Inicio">Portal residente</a></li>
+                <li class="breadcrumb-item active">Reservas</li>
+            </ol>
+        </div>
+    </div>
+}

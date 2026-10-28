@@ -2,14 +2,17 @@ import { useState } from 'react'
 import { formatArchivoFecha } from '../features/archivos/archivoMappers'
 import { useArchivos } from '../features/archivos/useArchivos'
 import { useTiposArchivo } from '../features/admin/archivos/useTiposArchivo'
-import { AlertBanner, EmptyState, PageHeader } from '../shared/components/admin'
+import { EmptyState, PageHeader } from '../shared/components/admin'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 import { downloadAuthenticated } from '../shared/lib/downloadAuthenticated'
 
 export function ArchivosPage() {
   const { tipos } = useTiposArchivo()
   const [filtro, setFiltro] = useState('')
-  const { archivos, loading, error } = useArchivos(filtro || undefined)
+  const { archivos, loading, error, refetch } = useArchivos(filtro || undefined)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  useQueryErrorToast(error)
+  useQueryErrorToast(downloadError)
 
   async function handleDescargar(archivoId: number, nombre: string) {
     setDownloadError(null)
@@ -38,7 +41,7 @@ export function ArchivosPage() {
           id="filtro-tipo-archivo"
           value={filtro}
           onChange={(e) => setFiltro(e.target.value)}
-          className="rounded border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-600"
+          className="rounded border border-neutral-200 bg-surface-alt px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="">Todos los tipos</option>
           {tipos.map((t) => (
@@ -49,18 +52,18 @@ export function ArchivosPage() {
         </select>
       </div>
 
-      {downloadError && (
-        <AlertBanner variant="error" onDismiss={() => setDownloadError(null)}>
-          {downloadError}
-        </AlertBanner>
-      )}
-
       {loading && (
         <p className="text-neutral" aria-live="polite">Cargando documentos…</p>
       )}
 
       {!loading && error && (
-        <AlertBanner variant="error">{error}</AlertBanner>
+        <button
+          type="button"
+          className="cursor-pointer text-sm text-primary underline"
+          onClick={() => void refetch()}
+        >
+          Reintentar
+        </button>
       )}
 
       {!loading && !error && archivos.length === 0 && (
@@ -68,11 +71,11 @@ export function ArchivosPage() {
       )}
 
       {!loading && !error && archivos.length > 0 && (
-        <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+        <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-100 bg-surface-alt">
           {archivos.map((a) => (
             <li key={a.archivoId} className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="min-w-0">
-                <p className="truncate font-medium text-slate-800">{a.nombre}</p>
+                <p className="truncate font-medium text-neutral-900">{a.nombre}</p>
                 <p className="text-xs text-neutral">
                   {a.tipoArchivo} · {formatArchivoFecha(a.fechaCreacion)}
                 </p>

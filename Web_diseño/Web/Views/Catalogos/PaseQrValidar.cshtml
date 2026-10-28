@@ -1,0 +1,193 @@
+@model Web.Models.Admin.PaseQrValidationViewModel
+@{
+    Layout = null;
+    var statusTitle = string.IsNullOrWhiteSpace(Model.StatusTitulo) ? "Valida un pase QR" : Model.StatusTitulo;
+    var statusTone = string.IsNullOrWhiteSpace(Model.StatusClase) ? "cq-qr-public--neutral" : Model.StatusClase;
+    var validationBaseUrl = Url.Content("~/Gestion/Pase-QR/Validar");
+    var hasCode = !string.IsNullOrWhiteSpace(Model.Codigo);
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cuarta Quinientos Residencial - Validar QR</title>
+
+    <link rel="icon" type="image/png" sizes="16x16" href="~/assets/images/favicon.png" />
+    @await Html.PartialAsync("_SiteThemeHead")
+    @await Html.PartialAsync("_SiteStyles")
+    <script src="~/js/pase-qr-validar.js" asp-append-version="true" defer></script>
+</head>
+<body class="card-no-border cq-qr-public">
+    <a class="cq-skip-link" href="#qr-main">Saltar al contenido</a>
+    <main id="qr-main" class="cq-qr-public-shell" data-pase-qr-validator data-validation-base="@validationBaseUrl">
+        <section class="cq-qr-public-hero @statusTone" aria-label="Resultado de validación">
+            <div class="cq-qr-public-brand">
+                <img src="~/assets/images/logo-icon.png" alt="Cuarta Quinientos Residencial" />
+                <span>Cuarta Quinientos Residencial</span>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 cq-qr-public-badges">
+                <span class="badge badge-pill">Validación pública</span>
+                <span class="badge badge-pill">Cámara + código manual</span>
+                @if (hasCode)
+                {
+                    <span class="badge badge-pill">Código detectado</span>
+                }
+            </div>
+            <h1>@statusTitle</h1>
+            <p>@Model.StatusMensaje</p>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Codigo))
+            {
+                <div class="cq-qr-public-code">
+                    Código revisado: <strong>@Model.Codigo</strong>
+                </div>
+            }
+
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <a asp-action="Validar" asp-controller="PaseQr" class="btn btn-light">Revisar otro código</a>
+                <a asp-action="Login" asp-controller="Login" class="btn btn-outline-secondary">Entrar al portal</a>
+            </div>
+        </section>
+
+        <section class="cq-qr-public-card card" aria-label="Lector y detalle del pase">
+            <div class="card-body">
+                <div class="cq-qr-public-head">
+                    <h2>Escanea el pase</h2>
+                    <p>Apunta la cámara al QR. Si el navegador no tiene acceso a cámara o la lectura falla, pega el código o la URL completa para validar el pase manualmente.</p>
+                </div>
+
+                <div class="cq-qr-public-scanner">
+                    <div class="cq-qr-public-camera">
+                        <div class="cq-qr-public-camera-frame">
+                            <video class="cq-qr-public-video" data-qr-video autoplay muted playsinline></video>
+                            <div class="cq-qr-public-camera-overlay" aria-hidden="true">
+                                <span></span>
+                            </div>
+                        </div>
+
+                        <div class="cq-qr-public-scanner-status" data-qr-status role="status" aria-live="polite">
+                            @(hasCode ? "Código cargado. Puedes iniciar la cámara para leer otro pase." : "La cámara está lista. Inicia la lectura para validar un pase.")
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <button type="button" class="btn btn-primary" data-qr-start>Iniciar cámara</button>
+                            <button type="button" class="btn btn-outline-secondary" data-qr-stop disabled>Detener cámara</button>
+                        </div>
+
+                        <div class="cq-qr-public-tip-list mt-3">
+                            <div class="cq-qr-public-tip">
+                                <div class="cq-qr-public-tip-icon"><i class="mdi mdi-camera"></i></div>
+                                <div>
+                                    <strong>Usa la cámara trasera</strong>
+                                    <p class="mb-0">Apunta al QR con buena luz y mantén el código centrado unos segundos.</p>
+                                </div>
+                            </div>
+                            <div class="cq-qr-public-tip">
+                                <div class="cq-qr-public-tip-icon"><i class="mdi mdi-shield-check"></i></div>
+                                <div>
+                                    <strong>Validación inmediata</strong>
+                                    <p class="mb-0">Cuando se detecte el QR, el sistema abrirá la validación y mostrará si el pase sigue vigente.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cq-qr-public-manual">
+                        <form asp-action="Validar" asp-controller="PaseQr" method="get" class="cq-qr-public-form" data-qr-form>
+                            <div class="form-group mb-0">
+                                <label for="codigo">Código o URL del pase</label>
+                                <input id="codigo" name="codigo" value="@Model.Codigo" class="form-control" placeholder="Escanea el QR, pega el código o la URL completa" autocomplete="off" />
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                <button type="submit" class="btn btn-primary">Validar manualmente</button>
+                                <a href="@validationBaseUrl" class="btn btn-outline-secondary">Limpiar</a>
+                            </div>
+                        </form>
+
+                        <div class="cq-qr-public-summary mt-3">
+                            <div class="cq-qr-public-summary-item">
+                                <span>Estado actual</span>
+                                <strong>@statusTitle</strong>
+                            </div>
+                            <div class="cq-qr-public-summary-item">
+                                <span>Código revisado</span>
+                                <strong>@(hasCode ? Model.Codigo : "Sin lectura")</strong>
+                            </div>
+                            <div class="cq-qr-public-summary-item">
+                                <span>Ruta pública</span>
+                                <strong>/Gestion/Pase-QR/Validar</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cq-qr-public-result mt-4">
+                    @if (Model.Pase is not null)
+                    {
+                        <div class="cq-qr-public-detail @Model.StatusClase">
+                            <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                                <div>
+                                    <span class="badge @Model.Pase.EstadoClase">@Model.Pase.EstadoTexto</span>
+                                    <h3 class="mt-2 mb-1">@Model.Pase.NombreVisitante</h3>
+                                    <p class="text-muted mb-0">@Model.Pase.NombreVisitado</p>
+                                </div>
+                                <span class="badge badge-pill">@Model.Pase.CodigoQR</span>
+                            </div>
+
+                            <div class="row mt-4 cq-qr-public-meta">
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">Casa</small>
+                                    <strong>@(string.IsNullOrWhiteSpace(Model.Pase.DireccionCasa) ? "Sin asignar" : $"{Model.Pase.DireccionCasa} {Model.Pase.NumeroExtCasa}".Trim())</strong>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">Identificación</small>
+                                    <strong>@Model.Pase.TipoIdentificacion - @Model.Pase.NumeroIdentificacion</strong>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">Emitido</small>
+                                    <strong>@(Model.Pase.FechaEmision.HasValue ? Model.Pase.FechaEmision.Value.ToString("dd/MM/yyyy HH:mm") : "Sin fecha")</strong>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <small class="text-muted d-block">Expira</small>
+                                    <strong>@(Model.Pase.FechaExpira.HasValue ? Model.Pase.FechaExpira.Value.ToString("dd/MM/yyyy HH:mm") : "Sin fecha")</strong>
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                @if (!string.IsNullOrWhiteSpace(Model.ValidationUrl))
+                                {
+                                    <a href="@Model.ValidationUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary">Abrir enlace</a>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(Model.WhatsAppUrl))
+                                {
+                                    <a href="@Model.WhatsAppUrl" target="_blank" rel="noopener noreferrer" class="btn btn-success">Compartir por WhatsApp</a>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else if (Model.NotFound)
+                    {
+                        <div class="cq-qr-public-empty cq-qr-public-empty--invalid">
+                            <div class="cq-qr-public-icon"><i class="mdi mdi-alert-circle-outline"></i></div>
+                            <h4>QR no válido</h4>
+                            <p class="mb-0">El código no existe o ya no está disponible. Revisa el enlace o genera uno nuevo desde el portal.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="cq-qr-public-empty">
+                            <div class="cq-qr-public-icon"><i class="mdi mdi-qrcode-scan"></i></div>
+                            <h4>Listo para revisar</h4>
+                            <p class="mb-0">Usa la cámara o escribe el código del pase para revisar su estado.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

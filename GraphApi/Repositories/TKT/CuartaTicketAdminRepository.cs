@@ -8,10 +8,12 @@ public sealed class CuartaTicketAdminRepository : ICuartaTicketAdminRepository
 {
     private readonly IDbConnection _db;
     private readonly bool _hasEsInterno;
+    private readonly bool _hasExtendedColumns;
 
     public CuartaTicketAdminRepository(IDbConnection db)
     {
         _db = db;
+        _hasExtendedColumns = ColumnExists("tkt", "Tickets", "CategoriaTicketID");
         _hasEsInterno = _db.QuerySingleOrDefault<int?>(
             """
             SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
@@ -209,6 +211,100 @@ public sealed class CuartaTicketAdminRepository : ICuartaTicketAdminRepository
         return v is 1;
     }
 
+    public async Task<bool> IsResidenteActivoAsync(int usuarioId, IDbTransaction tx)
+    {
+        var v = await _db.ExecuteScalarAsync<int>(
+            """
+            SELECT CASE WHEN EXISTS (
+                SELECT 1 FROM sgr.Usuarios u
+                INNER JOIN sgr.Perfiles p ON p.PerfilID = u.PerfilID
+                WHERE u.UsuarioID = @UsuarioId AND u.bActivoUsuario = 1 AND u.bEliminado = 0
+                  AND p.Perfil = N'Residente') THEN 1 ELSE 0 END;
+            """,
+            new { UsuarioId = usuarioId },
+            tx);
+        return v is 1;
+    }
+
+    public async Task<int> UpdateMetadatosAsync(
+        int ticketId,
+        string titulo,
+        string descripcion,
+        int prioridadTicketId,
+        int categoriaTicketId,
+        string modificadoCorreo,
+        int modificadoPorId,
+        IDbTransaction tx)
+    {
+        if (_hasExtendedColumns)
+        {
+            const string sqlExt = """
+                UPDATE tkt.Tickets
+                   SET TituloTicket = @Titulo,
+                       DescripcionTicket = @Descripcion,
+                       PrioridadTicketID = @PrioridadTicketId,
+                       CategoriaTicketID = @CategoriaTicketId,
+                       Modificado = @Correo,
+                       UsuarioModificacionID = @UsuarioId,
+                       FechaModificacion = SYSUTCDATETIME()
+                 WHERE TicketID = @TicketId
+                   AND bEliminado = 0;
+                """;
+
+            return await _db.ExecuteAsync(sqlExt, new
+            {
+                TicketId = ticketId,
+                Titulo = titulo,
+                Descripcion = descripcion,
+                PrioridadTicketId = prioridadTicketId,
+                CategoriaTicketId = categoriaTicketId,
+                Correo = modificadoCorreo,
+                UsuarioId = modificadoPorId,
+            }, tx);
+        }
+
+        const string sql = """
+            UPDATE tkt.Tickets
+               SET TituloTicket = @Titulo,
+                   DescripcionTicket = @Descripcion,
+                   PrioridadTicketID = @PrioridadTicketId,
+                   Modificado = @Correo,
+                   UsuarioModificacionID = @UsuarioId,
+                   FechaModificacion = SYSUTCDATETIME()
+             WHERE TicketID = @TicketId
+               AND bEliminado = 0;
+            """;
+
+        return await _db.ExecuteAsync(sql, new
+        {
+            TicketId = ticketId,
+            Titulo = titulo,
+            Descripcion = descripcion,
+            PrioridadTicketId = prioridadTicketId,
+            Correo = modificadoCorreo,
+            UsuarioId = modificadoPorId,
+        }, tx);
+    }
+
+    public Task<int> SoftDeleteAsync(int ticketId, string modificadoCorreo, int modificadoPorId, IDbTransaction tx) =>
+        _db.ExecuteAsync(
+            """
+            UPDATE tkt.Tickets
+               SET bEliminado = 1,
+                   Modificado = @Correo,
+                   UsuarioModificacionID = @UsuarioId,
+                   FechaModificacion = SYSUTCDATETIME()
+             WHERE TicketID = @TicketId
+               AND bEliminado = 0;
+            """,
+            new
+            {
+                TicketId = ticketId,
+                Correo = modificadoCorreo,
+                UsuarioId = modificadoPorId,
+            },
+            tx);
+
     public async Task<IReadOnlyList<TrabajadorItemDto>> ListarTrabajadoresAsync(CancellationToken ct = default)
     {
         const string sql = """
@@ -221,5 +317,16 @@ public sealed class CuartaTicketAdminRepository : ICuartaTicketAdminRepository
 
         return (await _db.QueryAsync<TrabajadorItemDto>(
             new CommandDefinition(sql, cancellationToken: ct))).ToList();
+    }
+
+    private bool ColumnExists(string schema, string table, string column)
+    {
+        const string sql = """
+            SELECT 1
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = @Schema AND TABLE_NAME = @Table AND COLUMN_NAME = @Column;
+            """;
+
+        return _db.QuerySingleOrDefault<int?>(sql, new { Schema = schema, Table = table, Column = column }) == 1;
     }
 }

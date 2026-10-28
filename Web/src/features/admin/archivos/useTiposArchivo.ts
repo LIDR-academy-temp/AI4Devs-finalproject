@@ -17,17 +17,22 @@ function normalizeTipo(row: TipoArchivoApiRow): TipoArchivoItem {
 export function useTiposArchivo() {
   const [tipos, setTipos] = useState<TipoArchivoItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const refetch = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
       const { data, problem, status } = await apiGet<TipoArchivoApiRow[]>('/ARC/TiposArchivo')
       if (data) {
         setTipos(data.map(normalizeTipo))
       } else {
-        console.warn('TiposArchivo:', problem?.detail ?? status)
         setTipos([])
+        setError(problem?.detail ?? `Error ${status}`)
       }
+    } catch {
+      setTipos([])
+      setError('No se pudieron cargar los tipos de documento')
     } finally {
       setLoading(false)
     }
@@ -35,5 +40,5 @@ export function useTiposArchivo() {
 
   useEffect(() => { void refetch() }, [refetch])
 
-  return { tipos, loading, refetch }
+  return { tipos, loading, error, refetch }
 }

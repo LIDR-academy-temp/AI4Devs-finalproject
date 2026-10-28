@@ -1,3 +1,4 @@
+import '../test/stubToast'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { AdminVisitasPage } from './AdminVisitasPage'
@@ -5,13 +6,19 @@ import * as apiClient from '../shared/lib/apiClient'
 
 vi.mock('../features/visitas/useVisitas')
 vi.mock('../features/admin/usuarios/usePadronUsuarios')
+vi.mock('../features/admin/usuarios/useCasasSelect')
+vi.mock('../features/admin/visitas/useTiposIdentificacionVisitas')
 vi.mock('../shared/lib/apiClient')
 
 import { useVisitas } from '../features/visitas/useVisitas'
 import { usePadronUsuarios } from '../features/admin/usuarios/usePadronUsuarios'
+import { useCasasSelect } from '../features/admin/usuarios/useCasasSelect'
+import { useTiposIdentificacionVisitas } from '../features/admin/visitas/useTiposIdentificacionVisitas'
 
 const mockUseVisitas = vi.mocked(useVisitas)
 const mockPadron = vi.mocked(usePadronUsuarios)
+const mockCasas = vi.mocked(useCasasSelect)
+const mockTipos = vi.mocked(useTiposIdentificacionVisitas)
 
 const mockVisitas = [
   {
@@ -41,6 +48,17 @@ beforeEach(() => {
     error: null,
     refetch: vi.fn(),
   })
+  mockCasas.mockReturnValue({
+    casas: [{ casaId: 1, condominioId: 1, numero: 'A-101', condominioNombre: 'Principal' }],
+    loading: false,
+    error: null,
+  })
+  mockTipos.mockReturnValue({
+    tipos: [{ tipoIdentificacionId: 1, tipoIdentificacion: 'INE' }],
+    loading: false,
+    error: null,
+    recargar: vi.fn(),
+  })
 })
 
 describe('AdminVisitasPage', () => {
@@ -50,9 +68,22 @@ describe('AdminVisitasPage', () => {
     expect(screen.getByLabelText('Cargando visitas')).toBeTruthy()
   })
 
+  it('muestra error de carga vía toast', async () => {
+    const { useToast } = await import('../shared/toast/ToastContext')
+    const toast = useToast()
+    mockUseVisitas.mockReturnValue({
+      visitas: [],
+      loading: false,
+      error: 'Error al cargar visitas',
+      refetch: vi.fn(),
+    })
+    render(<AdminVisitasPage />)
+    expect(toast.error).toHaveBeenCalledWith('Error al cargar visitas')
+  })
+
   it('muestra la tabla con visitas', () => {
     render(<AdminVisitasPage />)
-    expect(screen.getByText('Juan Pérez')).toBeTruthy()
+    expect(screen.getAllByText('Juan Pérez').length).toBeGreaterThanOrEqual(1)
   })
 
   it('abre panel al registrar entrada', () => {

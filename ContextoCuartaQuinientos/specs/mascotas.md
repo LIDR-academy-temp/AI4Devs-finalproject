@@ -34,10 +34,11 @@ Vista real:
 ## Endpoints (/{Dominio}/{Controller})
 Controllers reales USR (`/{DOMINIO}/{Controller}`):
 - `/USR/Mascotas` — CRUD de mascotas del residente.
-- `/USR/TiposMascota` — catálogo de tipos.
-- `/USR/RazasMascota` — catálogo de razas.
+- `/USR/TiposMascota` — catálogo de tipos (GET; **POST/PUT/DELETE** admin [[FE-ADMIN-CAT-001]]).
+- `/USR/RazasMascota` — catálogo de razas (GET; **POST/PUT/DELETE** admin [[FE-ADMIN-CAT-001]]).
+- `/USR/Mascotas/admin`, `/USR/Mascotas/{id}/admin` — CRUD padrón admin ([[FE-ADMIN-CAT-001]]).
 
-Verbos concretos `(asumido)`: GET (mis mascotas/padrón), POST (registrar), PUT/PATCH (editar/actualizar vacunas), DELETE (soft).
+Verbos residente: GET (mis mascotas), POST (registrar), PUT (editar), DELETE (soft). Admin padrón y catálogos: ver rutas anteriores.
 
 ## Reutilización / objetos existentes (escalera)
 - **Reutiliza** la vista `usr.vsMascotas` para lectura (patrón Dapper + vistas, sin SPs).
@@ -61,3 +62,4 @@ Verbos concretos `(asumido)`: GET (mis mascotas/padrón), POST (registrar), PUT/
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
 | 2026-10-26 | [[FE-CRUD-003]] | UI admin padrón mascotas al patrón FE-PAT-002 |
+| 2026-10-27 | [[FE-ADMIN-CAT-001]] | Pestañas Tipos/Razas + CRUD admin padrón y catálogos |

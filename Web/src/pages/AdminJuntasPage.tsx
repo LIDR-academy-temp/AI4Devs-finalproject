@@ -12,6 +12,7 @@ import {
   type JuntaEditForm,
 } from '../features/admin/juntas/juntasAdminSchemas'
 import { normalizeJuntaDetalle, type JuntaDetalleApiRow } from '../features/juntas/juntaMappers'
+import { JuntaAdminMobileCard } from '../features/admin/juntas/JuntaAdminMobileCard'
 import {
   JUNTAS_TABLE_ACCESSORS,
   JUNTAS_TABLE_COLUMNS,
@@ -20,11 +21,14 @@ import { useJuntas } from '../features/juntas/useJuntas'
 import {
   AdminFilterableTable,
   AdminListToolbar,
+  AdminMobileCardList,
   AdminSidePanel,
   AdminSplitLayout,
   ConfirmDialog,
 } from '../shared/components/admin'
 import { useClientTableFilter } from '../shared/hooks/useClientTableFilter'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { useToast } from '../shared/toast/ToastContext'
 import { apiDelete, apiGet, apiPost, apiPut } from '../shared/lib/apiClient'
 import type { JuntaListItem } from '../shared/types/juntas'
 
@@ -46,7 +50,8 @@ export function AdminJuntasPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [toggleError, setToggleError] = useState<string | null>(null)
-  const [dismissedError, setDismissedError] = useState(false)
+  const toast = useToast()
+  useQueryErrorToast(error)
 
   const heroStats = useMemo(() => {
     const activas = juntas.filter((j) => j.activa).length
@@ -157,6 +162,7 @@ export function AdminJuntasPage() {
       return
     }
     closePanel()
+    toast.success('Junta creada')
     await refetch()
   })
 
@@ -179,16 +185,19 @@ export function AdminJuntasPage() {
       return
     }
     closePanel()
+    toast.success('Junta actualizada')
     await refetch()
   })
 
   const handleToggleActiva = async (j: JuntaListItem) => {
     setToggleError(null)
-    const { problem, status } = await apiPut(`/JNT/Juntas/${j.juntaId}`, { activa: !j.activa })
+    const nextActiva = !j.activa
+    const { problem, status } = await apiPut(`/JNT/Juntas/${j.juntaId}`, { activa: nextActiva })
     if (problem) {
       setToggleError(problem.detail ?? `Error ${status}`)
       return
     }
+    toast.success(nextActiva ? 'Junta activada' : 'Junta cerrada')
     await refetch()
   }
 
@@ -201,16 +210,13 @@ export function AdminJuntasPage() {
       return
     }
     setDeleteTarget(null)
+    toast.success('Junta eliminada')
     await refetch()
   }
 
   useEffect(() => {
     if (!deleteTarget) setDeleteError(null)
   }, [deleteTarget])
-
-  useEffect(() => {
-    if (error) setDismissedError(false)
-  }, [error])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -250,13 +256,6 @@ export function AdminJuntasPage() {
 
   return (
     <div className="cq-admin-page container-fluid py-4">
-      {error && !dismissedError && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          <i className="mdi mdi-alert-circle mr-1" />
-          {error}
-          <button type="button" className="btn-close" aria-label="Cerrar" onClick={() => setDismissedError(true)} />
-        </div>
-      )}
       {toggleError && (
         <div className="alert alert-danger py-2 small" role="alert">{toggleError}</div>
       )}
@@ -292,6 +291,7 @@ export function AdminJuntasPage() {
               )}
 
               {!loading && !error && juntas.length > 0 && (
+                <>
                 <AdminFilterableTable
                   columns={JUNTAS_TABLE_COLUMNS}
                   columnFilters={columnFilters}
@@ -351,6 +351,18 @@ export function AdminJuntasPage() {
                     ))
                   )}
                 </AdminFilterableTable>
+                <AdminMobileCardList
+                  rows={filteredJuntas}
+                  getRowKey={(j) => j.juntaId}
+                  renderCard={(j) => (
+                    <JuntaAdminMobileCard
+                      junta={j}
+                      active={editingJunta?.juntaId === j.juntaId}
+                      onEdit={(item) => void openEdit(item)}
+                    />
+                  )}
+                />
+                </>
               )}
             </div>
           </div>

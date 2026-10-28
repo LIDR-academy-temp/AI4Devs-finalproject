@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { AlertBanner, PageHeader } from '../shared/components/admin'
+import { EmptyState, PageHeader } from '../shared/components/admin'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 import { apiGet, apiPost } from '../shared/lib/apiClient'
 import type { EncuestaDetalle, RespuestaItem } from '../shared/types/encuestas'
 
@@ -14,6 +15,8 @@ export function EncuestaDetallePage() {
   const [enviando, setEnviando] = useState(false)
   const [enviado, setEnviado] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  useQueryErrorToast(error)
+  useQueryErrorToast(sendError)
 
   useEffect(() => {
     if (!id) return
@@ -64,14 +67,18 @@ export function EncuestaDetallePage() {
   if (loading) {
     return (
       <main className="mx-auto max-w-2xl p-8">
-        <p className="text-neutral">Cargando…</p>
+        <p className="text-neutral-700">Cargando…</p>
       </main>
     )
   }
   if (error) {
     return (
       <main className="mx-auto max-w-2xl p-8">
-        <AlertBanner variant="error">{error}</AlertBanner>
+        <Link to="/encuestas" className="text-sm text-primary hover:underline">← Encuestas</Link>
+        <EmptyState
+          title="No se pudo cargar la encuesta"
+          description="Revisa tu conexión o vuelve al listado."
+        />
       </main>
     )
   }
@@ -83,11 +90,17 @@ export function EncuestaDetallePage() {
         <svg className="h-12 w-12 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
-        <h1 className="text-xl font-semibold text-neutral-700">¡Gracias por tu participación!</h1>
-        <p className="text-neutral">Tu respuesta ha sido registrada.</p>
+        <h1 className="text-xl font-semibold text-neutral-900">¡Gracias por tu participación!</h1>
+        <p className="text-neutral-700">Tu respuesta ha sido registrada.</p>
+        <Link
+          to={`/encuestas/${id}/resultados`}
+          className="cursor-pointer rounded bg-primary px-4 py-2 text-sm text-white hover:bg-primary-dark"
+        >
+          Ver resultados
+        </Link>
         <button
           type="button"
-          className="rounded bg-primary px-4 py-2 text-sm text-white hover:bg-primary-dark"
+          className="rounded border border-neutral-200 bg-surface px-4 py-2 text-sm text-neutral-900 hover:bg-surface-alt"
           onClick={() => navigate('/encuestas')}
         >
           Volver a encuestas
@@ -111,15 +124,18 @@ export function EncuestaDetallePage() {
         {encuesta.preguntas
           .sort((a, b) => a.orden - b.orden)
           .map((p) => (
-            <fieldset key={p.preguntaId} className="rounded border p-4">
-              <legend className="mb-2 font-medium text-neutral-700">
+            <fieldset
+              key={p.preguntaId}
+              className="rounded-lg border border-neutral-200 bg-surface-alt p-4 text-neutral-900"
+            >
+              <legend className="mb-2 px-1 font-medium text-neutral-900">
                 {p.texto}
                 {p.requerida && <span className="ml-1 text-danger">*</span>}
               </legend>
 
               {p.tipoPregunta === 'Texto' ? (
                 <textarea
-                  className="w-full rounded border px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-neutral-200 bg-surface px-3 py-2 text-sm text-neutral-900"
                   rows={3}
                   required={p.requerida}
                   value={respuestas[p.preguntaId]?.respuestaTexto ?? ''}
@@ -130,7 +146,7 @@ export function EncuestaDetallePage() {
                   {p.opciones
                     .sort((a, b) => a.orden - b.orden)
                     .map((o) => (
-                      <label key={o.opcionPreguntaId} className="flex items-center gap-2 text-sm">
+                      <label key={o.opcionPreguntaId} className="flex items-center gap-2 text-sm text-neutral-800">
                         <input
                           type={p.tipoPregunta === 'Multiple' ? 'checkbox' : 'radio'}
                           name={`p-${p.preguntaId}`}
@@ -148,12 +164,10 @@ export function EncuestaDetallePage() {
             </fieldset>
           ))}
 
-        {sendError && <AlertBanner variant="error">{sendError}</AlertBanner>}
-
         <div className="flex gap-3">
           <button
             type="button"
-            className="rounded border px-4 py-2 text-sm"
+            className="rounded-lg border border-neutral-200 bg-surface px-4 py-2 text-sm text-neutral-900 hover:bg-surface-alt"
             onClick={() => navigate('/encuestas')}
           >
             Cancelar

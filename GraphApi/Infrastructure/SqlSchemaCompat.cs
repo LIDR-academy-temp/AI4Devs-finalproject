@@ -41,7 +41,13 @@ public static class SqlSchemaCompat
     }
 
     public static string MascotaNombreColumnName(IDbConnection db)
-        => HasColumn(db, "usr", "Mascotas", "Nombre") ? "Nombre" : "NombreMascota";
+    {
+        if (HasColumn(db, "usr", "Mascotas", "Nombre"))
+            return "Nombre";
+        if (HasColumn(db, "usr", "Mascotas", "NombreMascota"))
+            return "NombreMascota";
+        return "Nombre";
+    }
 
     /// <summary>Columnas vacunas en listado (delta opcional en BD).</summary>
     public static string MascotaVacunasSelect(IDbConnection db)
@@ -56,6 +62,18 @@ public static class SqlSchemaCompat
 
     public static bool WmsDisponible(IDbConnection db)
         => HasTable(db, "wms", "Articulos");
+
+    public static bool WmsPrestamosDisponible(IDbConnection db)
+        => HasTable(db, "wms", "Prestamos");
+
+    public static bool WmsPrestamosTieneNotas(IDbConnection db)
+        => HasColumn(db, "wms", "Prestamos", "Notas");
+
+    /// <summary>Notas en listado de préstamos (post DB-005; legado sin columna).</summary>
+    public static string PrestamosNotasSelect(IDbConnection db, string alias = "p")
+        => WmsPrestamosTieneNotas(db)
+            ? $"{alias}.Notas"
+            : "CAST(NULL AS NVARCHAR(500)) AS Notas";
 
     public static bool HasView(IDbConnection db, string schema, string viewName)
     {
@@ -105,6 +123,21 @@ public static class SqlSchemaCompat
             return ($"{alias}.Nombre", $"{alias}.Correo", $"{alias}.bActivo");
         return ($"{alias}.NombreUsuario", $"{alias}.CorreoUsuario", $"{alias}.bActivoUsuario");
     }
+
+    public static string UsuarioTelefonoColumn(IDbConnection db, string alias = "u")
+        => HasColumn(db, "sgr", "Usuarios", "Telefono")
+            ? $"{alias}.Telefono"
+            : $"{alias}.TelefonoUsuario";
+
+    public static string CondominioNombreColumn(IDbConnection db, string alias = "cond")
+        => HasColumn(db, "sgr", "Condominios", "Nombre")
+            ? $"{alias}.Nombre"
+            : $"{alias}.NombreCondominio";
+
+    public static string CasaDireccionColumn(IDbConnection db, string casaAlias = "ca")
+        => HasColumn(db, "sgr", "Casas", "Direccion")
+            ? $"{casaAlias}.Direccion"
+            : $"{casaAlias}.DireccionCasa";
 
     /// <summary>Expresión SELECT para número de casa (Numero vs NumeroExtCasa).</summary>
     public static string CasaNumeroSelect(IDbConnection db, string casaAlias = "ca")

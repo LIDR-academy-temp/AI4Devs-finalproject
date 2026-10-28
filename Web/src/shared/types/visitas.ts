@@ -10,6 +10,11 @@ export interface VisitaListItem {
   autorizado: boolean
 }
 
+export interface TipoIdentificacionDto {
+  tipoIdentificacionId: number
+  tipoIdentificacion: string
+}
+
 export interface AreaComun {
   areaComunId: number
   nombre: string
@@ -21,23 +26,42 @@ export interface AreaComun {
 export interface ReservacionArea {
   reservacionAreaId: number
   areaComunId: number
-  areaComun?: string
+  areaComun: string
   fechaInicio: string
   fechaFin: string
   estado: string
   fechaCreacion: string
 }
 
-export interface RegistrarVisitaRequest {
-  visitanteNombre: string
-  usuarioVisitadoId?: number
-  casaId?: number
-  tipoIdentificacion: string
-  numeroIdentificacion: string
-}
-
 export interface CrearReservacionRequest {
   areaComunId: number
   fechaInicio: string
   fechaFin: string
+}
+
+export interface ReservacionCalendarioEvento {
+  reservacionAreaId: number
+  areaComunId: number
+  fechaInicio: string
+  fechaFin: string
+  estado: string
+  etiqueta: string
+}
+
+export interface ReservacionAdminItem {
+  reservacionAreaId: number
+  areaComunId: number
+  areaComun: string
+  usuarioId: number
+  usuarioNombre: string
+  usuarioCorreo: string
+  fechaInicio: string
+  fechaFin: string
+  estado: string
+}
+
+export type PaginaReservacionesAdmin = {
+  total: number
+  pagina: number
+  items: ReservacionAdminItem[]
 }

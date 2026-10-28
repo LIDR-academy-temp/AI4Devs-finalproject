@@ -10,6 +10,7 @@ import {
   vigenteHastaToIso,
   type AnuncioForm,
 } from '../features/admin/anuncios/anunciosAdminSchemas'
+import { AnuncioAdminMobileCard } from '../features/admin/anuncios/AnuncioAdminMobileCard'
 import {
   ANUNCIOS_TABLE_ACCESSORS,
   ANUNCIOS_TABLE_COLUMNS,
@@ -24,11 +25,14 @@ import {
 import {
   AdminFilterableTable,
   AdminListToolbar,
+  AdminMobileCardList,
   AdminSidePanel,
   AdminSplitLayout,
   ConfirmDialog,
 } from '../shared/components/admin'
 import { useClientTableFilter } from '../shared/hooks/useClientTableFilter'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { useToast } from '../shared/toast/ToastContext'
 import type { AnuncioItem } from '../shared/types/anuncios'
 
 function formatVigencia(iso: string | null | undefined) {
@@ -44,7 +48,8 @@ export function AdminAnunciosPage() {
   const [deleteTarget, setDeleteTarget] = useState<AnuncioItem | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
-  const [dismissedError, setDismissedError] = useState(false)
+  const toast = useToast()
+  useQueryErrorToast(error)
 
   const heroStats = useMemo(
     () => [
@@ -128,6 +133,7 @@ export function AdminAnunciosPage() {
       return
     }
     closePanel()
+    toast.success(isEdit ? 'Anuncio actualizado' : 'Anuncio publicado')
     await refetch()
   })
 
@@ -141,16 +147,13 @@ export function AdminAnunciosPage() {
     }
     setDeleteTarget(null)
     if (editing?.anuncioId === deleteTarget.anuncioId) closePanel()
+    toast.success('Anuncio eliminado')
     await refetch()
   }
 
   useEffect(() => {
     if (!deleteTarget) setDeleteError(null)
   }, [deleteTarget])
-
-  useEffect(() => {
-    if (error) setDismissedError(false)
-  }, [error])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -174,14 +177,6 @@ export function AdminAnunciosPage() {
 
   return (
     <div className="cq-admin-page container-fluid py-4">
-      {error && !dismissedError && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          <i className="mdi mdi-alert-circle mr-1" />
-          {error}
-          <button type="button" className="btn-close" aria-label="Cerrar" onClick={() => setDismissedError(true)} />
-        </div>
-      )}
-
       {tipos.length === 0 && (
         <div className="alert alert-warning py-2 small" role="status">
           Sin tipos en catálogo (ejecuta DB-003).
@@ -220,6 +215,7 @@ export function AdminAnunciosPage() {
               )}
 
               {!loading && !error && data.length > 0 && (
+                <>
                 <AdminFilterableTable
                   columns={ANUNCIOS_TABLE_COLUMNS}
                   columnFilters={columnFilters}
@@ -266,6 +262,18 @@ export function AdminAnunciosPage() {
                     ))
                   )}
                 </AdminFilterableTable>
+                <AdminMobileCardList
+                  rows={filteredAnuncios}
+                  getRowKey={(a) => a.anuncioId}
+                  renderCard={(a) => (
+                    <AnuncioAdminMobileCard
+                      anuncio={a}
+                      active={editing?.anuncioId === a.anuncioId}
+                      onEdit={openEdit}
+                    />
+                  )}
+                />
+                </>
               )}
             </div>
           </div>

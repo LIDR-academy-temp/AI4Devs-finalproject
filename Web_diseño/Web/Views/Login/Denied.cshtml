@@ -1,0 +1,39 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Acceso restringido</title>
+    @await Html.PartialAsync("_SiteThemeHead")
+    @await Html.PartialAsync("_SiteStyles")
+</head>
+<body class="card-no-border cq-login">
+    <a class="cq-skip-link" href="#login-main">Saltar al contenido</a>
+    <main class="cq-login-shell" id="login-main">
+        <section class="cq-login-hero" aria-label="Acceso restringido">
+            <div class="cq-login-brand">
+                <img src="~/assets/images/logo-icon.png" alt="Cuarta Quinientos Residencial" />
+                <span>Cuarta Quinientos Residencial</span>
+            </div>
+            <h1>Acceso restringido</h1>
+            <p>Esta cuenta no puede abrir esta sección. Entra con un perfil autorizado.</p>
+            <ul class="cq-login-points">
+                <li>La cuenta actual no tiene este permiso.</li>
+                <li>Vuelve al acceso para cambiar de usuario.</li>
+                <li>Si persiste, revisa el perfil asignado.</li>
+            </ul>
+        </section>
+
+        <section class="cq-login-card card" aria-label="Acción de retorno">
+            <div class="card-body text-center">
+                <h2>Entra con otra cuenta</h2>
+                <p class="text-muted">La sesión actual no tiene acceso a esta vista.</p>
+                <a class="btn btn-info btn-lg btn-block" asp-controller="Login" asp-action="Login">Volver al acceso</a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

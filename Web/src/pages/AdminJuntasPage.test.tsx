@@ -1,3 +1,4 @@
+import '../test/stubToast'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -78,8 +79,8 @@ describe('AdminJuntasPage', () => {
 
   it('lista las juntas en la tabla', () => {
     render(<AdminJuntasPage />)
-    expect(screen.getByText('Junta Ordinaria Q1')).toBeInTheDocument()
-    expect(screen.getByText('Asamblea Extraordinaria')).toBeInTheDocument()
+    expect(screen.getAllByText('Junta Ordinaria Q1').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Asamblea Extraordinaria').length).toBeGreaterThanOrEqual(1)
   })
 
   it('abre panel al pulsar Nueva junta', async () => {
@@ -108,7 +109,7 @@ describe('AdminJuntasPage', () => {
   it('abre edición y llama apiPut al guardar', async () => {
     const user = userEvent.setup()
     render(<AdminJuntasPage />)
-    await user.click(screen.getByLabelText(/editar junta ordinaria q1/i))
+    await user.click(screen.getAllByLabelText(/editar junta ordinaria q1/i)[0])
     const panel = await screen.findByRole('region')
     await user.clear(within(panel).getByLabelText(/^título/i))
     await user.type(within(panel).getByLabelText(/^título/i), 'Junta actualizada')
@@ -128,6 +129,29 @@ describe('AdminJuntasPage', () => {
     const dialog = await screen.findByRole('dialog')
     await user.click(within(dialog).getByRole('button', { name: 'Eliminar' }))
     await waitFor(() => expect(mockApiDelete).toHaveBeenCalledWith('/JNT/Juntas/1'))
+  })
+
+  it('muestra toast al activar o cerrar junta', async () => {
+    const { useToast } = await import('../shared/toast/ToastContext')
+    const toast = useToast()
+    const user = userEvent.setup()
+    render(<AdminJuntasPage />)
+    await user.click(screen.getAllByRole('button', { name: 'Cerrada' })[0])
+    await waitFor(() => expect(mockApiPut).toHaveBeenCalledWith('/JNT/Juntas/2', { activa: true }))
+    expect(toast.success).toHaveBeenCalledWith('Junta activada')
+  })
+
+  it('muestra error de carga vía toast', async () => {
+    const { useToast } = await import('../shared/toast/ToastContext')
+    const toast = useToast()
+    mockUseJuntas.mockReturnValue({
+      juntas: [],
+      loading: false,
+      error: 'Error al cargar juntas',
+      refetch: mockRefetch,
+    })
+    render(<AdminJuntasPage />)
+    expect(toast.error).toHaveBeenCalledWith('Error al cargar juntas')
   })
 
   it('muestra estado vacío cuando no hay juntas', async () => {

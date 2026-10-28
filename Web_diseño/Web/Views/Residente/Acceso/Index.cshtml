@@ -1,0 +1,149 @@
+@model Web.Models.Residente.ResidentAccessPageViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Acceso residente";
+    var context = Model.Context;
+    var propertyCount = context.Properties.Count;
+}
+
+<div class="container-fluid cq-resident-page">
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-check-circle mr-1"></i>@Model.Message
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.Error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-alert-circle mr-1"></i>@Model.Error
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+    }
+
+    <div class="card cq-resident-hero mb-4">
+        <div class="card-body">
+            <div class="cq-resident-hero-grid">
+                <div>
+                    <span class="badge badge-pill badge-light text-uppercase">Mi acceso</span>
+                    <h3 class="mt-3 mb-2">Elige tu vivienda activa</h3>
+                    <p class="mb-0">Selecciona el contexto con el que vas a entrar al portal.</p>
+                </div>
+                <div class="cq-resident-focus-card">
+                    <span class="cq-resident-mini-label">Estado</span>
+                    <strong>@(context.StatusTitle ?? (context.HasAssignedProperties ? "Viviendas disponibles" : "Sin vivienda vinculada"))</strong>
+                    <p class="mb-0">@(context.StatusMessage ?? "Selecciona una vivienda para entrar al portal residente.")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!context.HasAssignedProperties)
+    {
+        <div class="card">
+            <div class="card-body cq-empty-state">
+                <i class="mdi mdi-home-off-outline cq-empty-icon"></i>
+                <div class="cq-empty-title">Sin vivienda asignada</div>
+                <p class="text-muted mb-3">Tu cuenta aún no tiene una vivienda vinculada. Pide a administración asignarla.</p>
+                <a href="/Residente/Perfil" class="btn btn-outline-primary">Ir a mi perfil</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row mb-3">
+            <div class="col-12 col-lg-8">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="cq-resident-section-head mb-3">
+                            <div>
+                                <span class="cq-resident-kicker">Viviendas</span>
+                                <h4 class="card-title mb-1">Tus viviendas disponibles</h4>
+                                <p class="text-muted mb-0">Elige una y entra. Después podrás cambiarla desde el menú.</p>
+                            </div>
+                            <span class="cq-stat-badge"><i class="mdi mdi-home-city-outline"></i><strong>@propertyCount</strong> vivienda(s)</span>
+                        </div>
+
+                        <div class="cq-resident-property-grid">
+                            @foreach (var property in context.Properties)
+                            {
+                                <form asp-controller="Contexto" asp-action="SeleccionarVivienda" method="post" class="cq-resident-property-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="casaId" value="@property.CasaId" />
+                                    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+                                    <button type="submit" class="cq-resident-property-card text-left">
+                                        <span class="cq-resident-property-icon"><i class="mdi mdi-home-city-outline"></i></span>
+                                        <span class="cq-resident-property-body">
+                                            <strong>@property.CondominioName</strong>
+                                            <span>@property.CasaLabel</span>
+                                            @if (!string.IsNullOrWhiteSpace(property.CondominioAddress))
+                                            {
+                                                <small>@property.CondominioAddress</small>
+                                            }
+                                        </span>
+                                        <span class="cq-resident-property-cta"><i class="mdi mdi-arrow-right"></i></span>
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-4 mt-3 mt-lg-0">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h4 class="card-title mb-3">Al entrar verás</h4>
+                        <div class="cq-resident-info-list">
+                            <div class="cq-resident-info-item">
+                                <i class="mdi mdi-file-document-outline"></i>
+                                <div>
+                                    <strong>Documentos y avisos</strong>
+                                    <span>Solo de la vivienda activa.</span>
+                                </div>
+                            </div>
+                            <div class="cq-resident-info-item">
+                                <i class="mdi mdi-lifebuoy"></i>
+                                <div>
+                                    <strong>Tickets y pendientes</strong>
+                                    <span>Solo lo que corresponde a ese contexto.</span>
+                                </div>
+                            </div>
+                            <div class="cq-resident-info-item">
+                                <i class="mdi mdi-cash-clock"></i>
+                                <div>
+                                    <strong>Cuenta y vencimientos</strong>
+                                    <span>Ligados a la vivienda elegida.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section TopbarContent {
+    <div class="cq-topbar-inner">
+        <div class="cq-tb-left">
+            <div class="cq-tb-icon"><i class="mdi mdi-home-switch-outline"></i></div>
+            <div class="cq-tb-info">
+                <span class="cq-tb-title">Acceso residente</span>
+                <div class="cq-tb-meta">
+                    <span class="cq-tb-badge"><i class="mdi mdi-home-city-outline"></i><strong>@propertyCount</strong> vivienda(s)</span>
+                </div>
+            </div>
+        </div>
+        <div class="cq-tb-right">
+            <div class="cq-tb-sep"></div>
+            <ol class="breadcrumb mb-0 cq-tb-breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                <li class="breadcrumb-item active">Acceso residente</li>
+            </ol>
+        </div>
+    </div>
+}

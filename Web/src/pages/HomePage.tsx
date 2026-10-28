@@ -3,8 +3,10 @@ import { useAuth } from '../features/auth/AuthContext'
 import { ResumenAdminCards } from '../features/dashboard/ResumenAdminCards'
 import { ResumenResidenteCards } from '../features/dashboard/ResumenResidenteCards'
 import { useDashboardResumen } from '../features/dashboard/useDashboardResumen'
+import { OnboardingWelcome } from '../shared/components/OnboardingWelcome'
 import { QuickAccessCard } from '../shared/components/QuickAccessCard'
 import { SkeletonCard } from '../shared/components/SkeletonCard'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 
 function getGreeting(): string {
   const hour = new Date().getHours()
@@ -30,6 +32,7 @@ const QUICK_ACCESS_ADMIN = [
 export function HomePage() {
   const { session } = useAuth()
   const { data, loading, error, refetch } = useDashboardResumen()
+  useQueryErrorToast(error)
 
   const isAdmin = session?.perfil === 'Administrador'
   const greeting = getGreeting()
@@ -38,6 +41,7 @@ export function HomePage() {
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-6 p-4 md:p-8">
+      <OnboardingWelcome />
       {/* Saludo personalizado */}
       <div>
         <h1 className="text-2xl font-semibold text-primary-dark">
@@ -58,16 +62,13 @@ export function HomePage() {
       )}
 
       {error && (
-        <div className="space-y-2">
-          <p className="text-danger">{error}</p>
-          <button
-            type="button"
-            className="cursor-pointer rounded border px-3 py-1 text-sm hover:bg-white"
-            onClick={() => void refetch()}
-          >
-            Reintentar
-          </button>
-        </div>
+        <button
+          type="button"
+          className="cursor-pointer rounded border border-neutral-200 bg-surface-alt px-3 py-1 text-sm hover:bg-surface"
+          onClick={() => void refetch()}
+        >
+          Reintentar carga del resumen
+        </button>
       )}
 
       {!loading && !error && data?.tipo === 'ADMIN' && <ResumenAdminCards data={data} />}

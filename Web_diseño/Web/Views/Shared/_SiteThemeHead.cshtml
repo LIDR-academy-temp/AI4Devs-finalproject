@@ -1,0 +1,24 @@
+@inject Web.Services.ISiteThemeService SiteTheme
+@{
+    var themeConfig = SiteTheme.GetConfig();
+    var defaultThemeId = SiteTheme.GetDefaultThemeId();
+    var metaColor = SiteTheme.GetMetaThemeColor(defaultThemeId);
+    var fontsUrl = themeConfig.Fonts.GoogleFontsUrl;
+}
+
+<meta name="cq-theme-default" content="@defaultThemeId" />
+<meta name="theme-color" content="@metaColor" />
+
+@if (!string.IsNullOrWhiteSpace(fontsUrl))
+{
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="@fontsUrl" rel="stylesheet" />
+}
+
+<link href="~/css/cq-theme-engine.css" rel="stylesheet" asp-append-version="true" />
+
+<script>
+    window.__CQ_SITE_THEME__ = @Html.Raw(SiteTheme.GetClientJson());
+</script>
+<script src="~/js/cq-theme-engine.js" asp-append-version="true"></script>

@@ -134,4 +134,133 @@ public class CuartaEncuestasServiceTests
         Assert.Equal(StatusCodes.Status204NoContent, status);
         ntf.Verify(n => n.AvisoGeneralAsync("Enc", It.IsAny<string>(), It.IsAny<NotificacionAutor>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    private static CuartaEncuestasService CreateSut(Mock<ICuartaEncuestasRepository> repo) =>
+        new(
+            repo.Object,
+            Mock.Of<IUnitOfWork>(),
+            Mock.Of<INotificacionService>(),
+            NullLogger<CuartaEncuestasService>.Instance);
+
+    private static EncuestaResultadosDto SampleResultados() =>
+        new()
+        {
+            EncuestaId = 1,
+            Titulo = "Enc",
+            TotalParticipantes = 2,
+            Preguntas = new List<ResultadoPreguntaDto>(),
+        };
+
+    [Fact]
+    public async Task ObtenerResultadosParaUsuarioAsync_admin_siempre_200()
+    {
+        var repo = new Mock<ICuartaEncuestasRepository>();
+        repo.Setup(r => r.EstadoEncuestaAsync(1, null)).ReturnsAsync((true, true));
+        repo.Setup(r => r.ObtenerResultadosAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(SampleResultados());
+
+        var sut = CreateSut(repo);
+        var (data, code, status, _) = await sut.ObtenerResultadosParaUsuarioAsync(1, 2, esAdmin: true);
+
+        Assert.NotNull(data);
+        Assert.Null(code);
+        Assert.Equal(StatusCodes.Status200OK, status);
+    }
+
+    [Fact]
+    public async Task ObtenerResultadosParaUsuarioAsync_participo_vigente_200()
+    {
+        var repo = new Mock<ICuartaEncuestasRepository>();
+        repo.Setup(r => r.EstadoEncuestaAsync(1, null)).ReturnsAsync((true, true));
+        repo.Setup(r => r.EncuestaEstaPublicadaAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        repo.Setup(r => r.UsuarioYaParticipoAsync(1, 2, null)).ReturnsAsync(true);
+        repo.Setup(r => r.ObtenerResultadosAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(SampleResultados());
+
+        var sut = CreateSut(repo);
+        var (data, code, status, _) = await sut.ObtenerResultadosParaUsuarioAsync(1, 2, esAdmin: false);
+
+        Assert.NotNull(data);
+        Assert.Null(code);
+        Assert.Equal(StatusCodes.Status200OK, status);
+    }
+
+    [Fact]
+    public async Task ObtenerResultadosParaUsuarioAsync_no_participo_vigente_403()
+    {
+        var repo = new Mock<ICuartaEncuestasRepository>();
+        repo.Setup(r => r.EstadoEncuestaAsync(1, null)).ReturnsAsync((true, true));
+        repo.Setup(r => r.EncuestaEstaPublicadaAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        repo.Setup(r => r.UsuarioYaParticipoAsync(1, 2, null)).ReturnsAsync(false);
+
+        var sut = CreateSut(repo);
+        var (data, code, status, _) = await sut.ObtenerResultadosParaUsuarioAsync(1, 2, esAdmin: false);
+
+        Assert.Null(data);
+        Assert.Equal("ENCUESTA_RESULTADOS_BLOQUEADOS", code);
+        Assert.Equal(StatusCodes.Status403Forbidden, status);
+    }
+
+    [Fact]
+    public async Task ObtenerResultadosParaUsuarioAsync_cerrada_sin_participar_200()
+    {
+        var repo = new Mock<ICuartaEncuestasRepository>();
+        repo.Setup(r => r.EstadoEncuestaAsync(1, null)).ReturnsAsync((false, true));
+        repo.Setup(r => r.EncuestaEstaPublicadaAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        repo.Setup(r => r.UsuarioYaParticipoAsync(1, 2, null)).ReturnsAsync(false);
+        repo.Setup(r => r.ObtenerResultadosAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(SampleResultados());
+
+        var sut = CreateSut(repo);
+        var (data, code, status, _) = await sut.ObtenerResultadosParaUsuarioAsync(1, 2, esAdmin: false);
+
+        Assert.NotNull(data);
+        Assert.Null(code);
+        Assert.Equal(StatusCodes.Status200OK, status);
+    }
+
+    [Fact]
+    public async Task ObtenerResultadosParaUsuarioAsync_no_publicada_residente_404()
+    {
+        var repo = new Mock<ICuartaEncuestasRepository>();
+        repo.Setup(r => r.EstadoEncuestaAsync(1, null)).ReturnsAsync((false, true));
+        repo.Setup(r => r.EncuestaEstaPublicadaAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        var sut = CreateSut(repo);
+        var (data, code, status, _) = await sut.ObtenerResultadosParaUsuarioAsync(1, 2, esAdmin: false);
+
+        Assert.Null(data);
+        Assert.Equal("NOT_FOUND", code);
+        Assert.Equal(StatusCodes.Status404NotFound, status);
+    }
+
+    [Fact]
+    public async Task ObtenerResultadosParaUsuarioAsync_residente_omite_textos_libres()
+    {
+        var repo = new Mock<ICuartaEncuestasRepository>();
+        repo.Setup(r => r.EstadoEncuestaAsync(1, null)).ReturnsAsync((false, true));
+        repo.Setup(r => r.EncuestaEstaPublicadaAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        repo.Setup(r => r.UsuarioYaParticipoAsync(1, 2, null)).ReturnsAsync(false);
+        repo.Setup(r => r.ObtenerResultadosAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EncuestaResultadosDto
+            {
+                EncuestaId = 1,
+                Titulo = "Enc",
+                Preguntas = new List<ResultadoPreguntaDto>
+                {
+                    new()
+                    {
+                        PreguntaId = 1,
+                        Texto = "Comentario",
+                        TipoPregunta = "Texto",
+                        RespuestasTexto = new List<string> { "secreto", "otro" },
+                    },
+                },
+            });
+
+        var sut = CreateSut(repo);
+        var (data, _, status, _) = await sut.ObtenerResultadosParaUsuarioAsync(1, 2, esAdmin: false);
+
+        Assert.Equal(StatusCodes.Status200OK, status);
+        Assert.NotNull(data);
+        Assert.Empty(data!.Preguntas[0].RespuestasTexto);
+        Assert.Equal(2, data.Preguntas[0].TotalRespuestasTexto);
+    }
 }

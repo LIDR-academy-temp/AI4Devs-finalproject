@@ -12,7 +12,7 @@ export function QuickAccessCard({ to, icon: Icon, label }: QuickAccessCardProps)
   return (
     <Link
       to={to}
-      className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 text-sm font-medium text-primary-dark shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)] active:scale-[0.98]"
+      className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-surface-alt px-4 py-3 text-sm font-medium text-primary-dark shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)] active:scale-[0.98]"
     >
       <Icon className="h-5 w-5 shrink-0 text-primary" />
       <span className="flex-1">{label}</span>

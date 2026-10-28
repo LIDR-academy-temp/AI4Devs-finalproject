@@ -37,6 +37,44 @@ public class MascotasController(ICuartaMascotasService cuarta, IMascotasService 
         return Ok(items);
     }
 
+    /// <summary>Registra una mascota para un residente (admin).</summary>
+    [HttpPost("admin")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(MascotaListItemDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> CrearAdmin([FromBody] MascotaCrearAdminRequest body, CancellationToken ct)
+    {
+        var adminId = UserId;
+        var (mascota, code, status, detail) = await cuarta.CrearParaUsuarioAsync(body, UserEmail, adminId, ct);
+        if (mascota is null)
+            return StatusCode(status, new { code, detail });
+        return StatusCode(201, mascota);
+    }
+
+    /// <summary>Actualiza una mascota (admin).</summary>
+    [HttpPut("{id:int}/admin")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ActualizarAdmin(int id, [FromBody] MascotaActualizarRequest body, CancellationToken ct)
+    {
+        var (ok, code, status, detail) = await cuarta.ActualizarComoAdminAsync(id, body, UserEmail, ct);
+        if (!ok) return StatusCode(status, new { code, detail });
+        return NoContent();
+    }
+
+    /// <summary>Elimina una mascota (admin).</summary>
+    [HttpDelete("{id:int}/admin")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> EliminarAdmin(int id, CancellationToken ct)
+    {
+        var (ok, code, status, detail) = await cuarta.EliminarComoAdminAsync(id, UserEmail, ct);
+        if (!ok) return StatusCode(status, new { code, detail });
+        return NoContent();
+    }
+
     /// <summary>Registra una nueva mascota para el residente autenticado.</summary>
     [HttpPost]
     [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]

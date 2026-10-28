@@ -1,3 +1,4 @@
+import '../test/stubToast'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MisMascotasPage } from './MisMascotasPage'
@@ -69,6 +70,23 @@ describe('MisMascotasPage', () => {
     fireEvent.submit(screen.getByRole('button', { name: /guardar/i }).closest('form')!)
     await waitFor(() => {
       expect(apiPost).toHaveBeenCalledWith('/USR/Mascotas', expect.objectContaining({ nombreMascota: 'Max' }))
+    })
+  })
+
+  it('muestra error de guardado vía toast', async () => {
+    const { useToast } = await import('../shared/toast/ToastContext')
+    const toast = useToast()
+    const { apiPost } = await import('../shared/lib/apiClient')
+    vi.mocked(apiPost).mockResolvedValue({
+      problem: { detail: 'Nombre duplicado' },
+      status: 400,
+    })
+    render(<MisMascotasPage />)
+    fireEvent.click(screen.getByText(/\+ nueva mascota/i))
+    fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: 'Max' } })
+    fireEvent.submit(screen.getByRole('button', { name: /guardar/i }).closest('form')!)
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Nombre duplicado')
     })
   })
 })

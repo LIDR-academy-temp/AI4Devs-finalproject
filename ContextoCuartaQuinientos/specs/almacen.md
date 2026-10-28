@@ -32,6 +32,7 @@ Esquema **nuevo `wms` (delta completo)**:
 ## Endpoints (/{Dominio}/{Controller})
 Base `/WMS` (nuevo; CRUD estándar; JWT + validación de perfil):
 - `/WMS/Articulos` — inventario (GET lista, GET `/{id}`, POST alta, PUT ajuste, DELETE lógico).
+- `/WMS/Articulos/categorias` — **POST/PUT/DELETE** catálogo categorías (admin [[FE-ADMIN-CAT-001]]).
 - `/WMS/Prestamos` — préstamos (POST prestar, PUT/PATCH devolver, GET lista/`{id}`).
 
 Nota: en la referencia solo existe el stub `WMS/Inventory/InventoryDateController` (sin tablas); los controllers `Articulos`/`Prestamos` son delta a construir.
@@ -58,3 +59,4 @@ Nota: en la referencia solo existe el stub `WMS/Inventory/InventoryDateControlle
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
 | 2026-10-26 | [[FE-CRUD-003]] | UI admin almacén migrada desde modales Tailwind (parcial vs DoD tabla filtrable) |
+| 2026-10-27 | [[FE-ADMIN-CAT-001]] | Tab Categorías + CRUD API; mappers front para combo categorías |

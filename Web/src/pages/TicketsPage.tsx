@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom'
 import { TicketsList } from '../features/tickets/TicketsList'
 import { useCatalogosTicket } from '../features/tickets/useCatalogosTicket'
 import { useMisTickets } from '../features/tickets/useMisTickets'
-import { AlertBanner, EmptyState, PageHeader } from '../shared/components/admin'
+import { EmptyState, PageHeader } from '../shared/components/admin'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 
 export function TicketsPage() {
   const [estadoId, setEstadoId] = useState<number | undefined>()
   const { estados } = useCatalogosTicket()
   const { data, loading, error, refetch } = useMisTickets({ estadoTicketId: estadoId })
+  useQueryErrorToast(error)
 
   return (
     <main className="mx-auto max-w-3xl space-y-4 px-4 py-6">
@@ -41,12 +43,13 @@ export function TicketsPage() {
 
       {loading && <p className="text-neutral">Cargando…</p>}
       {error && (
-        <AlertBanner variant="error">
-          <span>{error}</span>
-          <button type="button" className="ml-2 text-sm underline" onClick={() => void refetch()}>
-            Reintentar
-          </button>
-        </AlertBanner>
+        <button
+          type="button"
+          className="cursor-pointer text-sm text-primary underline"
+          onClick={() => void refetch()}
+        >
+          Reintentar
+        </button>
       )}
       {!loading && !error && data?.items.length === 0 && (
         <EmptyState title="No has reportado incidencias aún." />

@@ -2,6 +2,7 @@ import { Bell } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { fetchNotificaciones, marcarNotificacionLeida } from './notifications.api'
+import { useQueryErrorToast } from '../../shared/hooks/useQueryErrorToast'
 import { NotificationDropdown } from './NotificationDropdown'
 import type { NotificacionItem } from '../../shared/types/notifications'
 
@@ -14,6 +15,7 @@ export function NotificationBell() {
   const [error, setError] = useState<string | null>(null)
   const [markingId, setMarkingId] = useState<number | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  useQueryErrorToast(error)
 
   const load = useCallback(async () => {
     if (!session?.token) return
@@ -80,8 +82,8 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-1 w-80 rounded-lg border border-neutral-200 bg-white shadow-xl">
-          <p className="border-b border-neutral-200 px-3 py-2 text-sm font-semibold text-primary-dark">Notificaciones</p>
+        <div className="absolute right-0 z-50 mt-1 w-80 rounded-lg border border-neutral-100 bg-surface-alt shadow-xl">
+          <p className="border-b border-neutral-100 px-3 py-2 text-sm font-semibold text-neutral-900">Notificaciones</p>
           <NotificationDropdown
             items={items}
             loading={loading}

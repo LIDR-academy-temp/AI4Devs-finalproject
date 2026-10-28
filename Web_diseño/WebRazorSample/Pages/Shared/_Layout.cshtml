@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - WebRazorSample</title>
+    <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="/">WebRazorSample</a>
+        <nav>
+            <a href="/">Inicio</a>
+            <a href="/Privacy">Privacidad</a>
+        </nav>
+    </header>
+    <main role="main" class="main">
+        @RenderBody()
+    </main>
+    <footer class="footer">
+        <span>&copy; @DateTime.UtcNow.Year - WebRazorSample</span>
+    </footer>
+</body>
+</html>

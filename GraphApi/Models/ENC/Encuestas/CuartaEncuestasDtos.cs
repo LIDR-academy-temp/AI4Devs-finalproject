@@ -100,6 +100,7 @@ public sealed class ResultadoPreguntaDto
     public string TipoPregunta { get; set; } = "";
     public IReadOnlyList<ResultadoOpcionDto> Opciones { get; set; } = Array.Empty<ResultadoOpcionDto>();
     public IReadOnlyList<string> RespuestasTexto { get; set; } = Array.Empty<string>();
+    public int TotalRespuestasTexto { get; set; }
 }
 
 public sealed class EncuestaResultadosDto

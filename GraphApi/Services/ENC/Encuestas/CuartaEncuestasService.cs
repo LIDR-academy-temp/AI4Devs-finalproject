@@ -234,6 +234,77 @@ public sealed class CuartaEncuestasService : ICuartaEncuestasService
     public Task<EncuestaResultadosDto?> ObtenerResultadosAsync(int encuestaId, CancellationToken ct = default) =>
         _repo.ObtenerResultadosAsync(encuestaId, ct);
 
+    public async Task<(EncuestaResultadosDto? Data, string? Code, int Status, string? Detail)> ObtenerResultadosParaUsuarioAsync(
+        int encuestaId,
+        int usuarioId,
+        bool esAdmin,
+        CancellationToken ct = default)
+    {
+        var (abierta, existe) = await _repo.EstadoEncuestaAsync(encuestaId);
+        if (!existe)
+        {
+            return (null, "NOT_FOUND", StatusCodes.Status404NotFound, "Encuesta no encontrada");
+        }
+
+        if (!esAdmin)
+        {
+            if (!await _repo.EncuestaEstaPublicadaAsync(encuestaId, ct))
+            {
+                return (null, "NOT_FOUND", StatusCodes.Status404NotFound, "Encuesta no encontrada");
+            }
+
+            var yaParticipo = await _repo.UsuarioYaParticipoAsync(encuestaId, usuarioId);
+            if (abierta && !yaParticipo)
+            {
+                return (null, "ENCUESTA_RESULTADOS_BLOQUEADOS", StatusCodes.Status403Forbidden,
+                    "Debes participar para ver los resultados mientras la encuesta esté vigente.");
+            }
+        }
+
+        var data = await _repo.ObtenerResultadosAsync(encuestaId, ct);
+        if (data is null)
+        {
+            return (null, "NOT_FOUND", StatusCodes.Status404NotFound, "Encuesta no encontrada");
+        }
+
+        if (!esAdmin)
+        {
+            data = SanitizarResultadosPublicos(data);
+        }
+
+        return (data, null, StatusCodes.Status200OK, null);
+    }
+
+    private static EncuestaResultadosDto SanitizarResultadosPublicos(EncuestaResultadosDto data)
+    {
+        var preguntas = data.Preguntas.Select(p =>
+        {
+            if (!p.TipoPregunta.Contains("texto", StringComparison.OrdinalIgnoreCase))
+            {
+                return p;
+            }
+
+            var count = p.RespuestasTexto.Count;
+            return new ResultadoPreguntaDto
+            {
+                PreguntaId = p.PreguntaId,
+                Texto = p.Texto,
+                TipoPregunta = p.TipoPregunta,
+                Opciones = p.Opciones,
+                RespuestasTexto = Array.Empty<string>(),
+                TotalRespuestasTexto = count,
+            };
+        }).ToList();
+
+        return new EncuestaResultadosDto
+        {
+            EncuestaId = data.EncuestaId,
+            Titulo = data.Titulo,
+            TotalParticipantes = data.TotalParticipantes,
+            Preguntas = preguntas,
+        };
+    }
+
     public Task<IReadOnlyList<TipoPreguntaItemDto>> ListarTiposPreguntaAsync(CancellationToken ct = default) =>
         _repo.ListarTiposPreguntaAsync(ct);
 

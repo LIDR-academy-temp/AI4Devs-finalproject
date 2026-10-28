@@ -1,3 +1,4 @@
+import '../test/stubToast'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -88,8 +89,8 @@ describe('AdminArchivosPage', () => {
 
   it('lista los archivos en la tabla', () => {
     renderPage()
-    expect(screen.getByText('Reglamento 2024.pdf')).toBeInTheDocument()
-    expect(screen.getByText('Contrato privado.docx')).toBeInTheDocument()
+    expect(screen.getAllByText('Reglamento 2024.pdf').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Contrato privado.docx').length).toBeGreaterThanOrEqual(1)
   })
 
   it('abre panel al pulsar Subir archivo', async () => {
@@ -111,6 +112,19 @@ describe('AdminArchivosPage', () => {
         expect.objectContaining({ method: 'DELETE' }),
       )
     })
+  })
+
+  it('muestra error de carga vía toast', async () => {
+    const { useToast } = await import('../shared/toast/ToastContext')
+    const toast = useToast()
+    mockUseArchivos.mockReturnValue({
+      archivos: [],
+      loading: false,
+      error: 'Error al cargar archivos',
+      refetch: mockRefetch,
+    })
+    renderPage()
+    expect(toast.error).toHaveBeenCalledWith('Error al cargar archivos')
   })
 
   it('muestra estado vacío cuando no hay archivos', async () => {

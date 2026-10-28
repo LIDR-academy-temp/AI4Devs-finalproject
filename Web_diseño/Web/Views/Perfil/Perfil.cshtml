@@ -1,0 +1,331 @@
+@model PerfilViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Mi Perfil";
+    var mascotas = ViewData["ResidentMascotas"] as IReadOnlyList<Web.Models.Residente.MascotaFormViewModel>
+        ?? Array.Empty<Web.Models.Residente.MascotaFormViewModel>();
+    var automoviles = ViewData["ResidentAutomoviles"] as IReadOnlyList<Web.Models.Residente.AutomovilFormViewModel>
+        ?? Array.Empty<Web.Models.Residente.AutomovilFormViewModel>();
+    var displayName = Model.NombreUsuario ?? User.Identity?.Name ?? "Usuario";
+    var displayEmail = !string.IsNullOrWhiteSpace(Model.CorreoUsuario) ? Model.CorreoUsuario : (User.Identity?.Name ?? "");
+}
+
+<div class="container-fluid">
+
+    @if (!string.IsNullOrWhiteSpace(Model.Message))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+            @Model.Message
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Error))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+            @Model.Error
+        </div>
+    }
+
+    <div class="card cq-reserva-hero mb-4">
+        <div class="card-body d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            <div class="flex-grow-1">
+                <span class="badge badge-pill cq-reserva-pill">Mi perfil</span>
+                <h3 class="mb-2 mt-2">@displayName</h3>
+                <p class="mb-0">Actualiza tus datos, contraseña, mascotas y vehículos desde un solo lugar.</p>
+                @if (!string.IsNullOrWhiteSpace(displayEmail))
+                {
+                    <div class="cq-ticket-hero-pills mt-3">
+                        <span class="cq-ticket-hero-pill"><i class="mdi mdi-email-outline"></i>@displayEmail</span>
+                    </div>
+                }
+            </div>
+            <div class="d-flex flex-wrap gap-2 cq-reserva-stat-strip">
+                <div class="cq-reserva-stat"><span>Mascotas</span><strong>@mascotas.Count</strong></div>
+                <div class="cq-reserva-stat"><span>Automóviles</span><strong>@automoviles.Count</strong></div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.MustChangePassword)
+    {
+        <div class="alert alert-warning" role="alert" style="border-left:4px solid #f59e0b;background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(245,158,11,.04))">
+            <div class="d-flex align-items-center gap-2">
+                <i class="mdi mdi-lock-reset" style="font-size:1.8rem;color:#f59e0b"></i>
+                <div>
+                    <strong style="color:#92400e">Debes cambiar tu contraseña antes de continuar</strong>
+                    <p class="mb-0 text-muted small">Tu cuenta fue creada con una contraseña temporal. Usa el formulario de abajo para establecer una contraseña definitiva.</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row">
+        <!-- Datos personales -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header"><h4 class="card-title">Datos personales</h4></div>
+                <div class="card-body">
+                    <form asp-controller="Perfil" asp-action="ActualizarPerfil" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="UsuarioID" value="@Model.UsuarioID" />
+                        <div class="form-group">
+                            <label>Correo electrónico</label>
+                            <input class="form-control" type="email" name="CorreoUsuario" value="@Model.CorreoUsuario" required maxlength="200" />
+                            <small class="form-text text-muted">Debe ser único. Lo usarás para iniciar sesión.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <input class="form-control" type="text" name="NombreUsuario" value="@Model.NombreUsuario" required maxlength="100" />
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input class="form-control" type="tel" name="TelefonoUsuario" value="@Model.TelefonoUsuario" maxlength="30" />
+                        </div>
+                        <div class="form-group">
+                            <label>URL de foto</label>
+                            <input class="form-control" type="url" name="FotoUrlUsuario" value="@Model.FotoUrlUsuario" maxlength="500" />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cambiar contraseña -->
+        <div class="col-lg-6">
+            <div class="card @(Model.MustChangePassword ? "border border-warning" : "")">
+                <div class="card-header @(Model.MustChangePassword ? "bg-warning text-dark" : "")">
+                    <h4 class="card-title mb-0">
+                        @if (Model.MustChangePassword)
+                        {
+                            <i class="mdi mdi-lock-alert mr-1"></i>
+                        }
+                        Cambiar contraseña
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-controller="Perfil" asp-action="CambiarPassword" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="usuarioId" value="@Model.UsuarioID" />
+                        <div class="form-group">
+                            <label>Nueva contraseña</label>
+                            <input class="form-control" type="password" name="PasswordNuevo" required minlength="6" autocomplete="new-password" />
+                        </div>
+                        <div class="form-group">
+                            <label>Confirmar contraseña</label>
+                            <input class="form-control" type="password" name="PasswordConfirmar" required minlength="6" autocomplete="new-password" />
+                        </div>
+                        <button type="submit" class="btn btn-warning">Cambiar contraseña</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header"><h4 class="card-title mb-0">Mascotas</h4></div>
+                <div class="card-body">
+                    <form action="/Gestion/Perfil/CrearMascota" method="post" id="formCrearMascota">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="MascotaID" name="MascotaID" value="" />
+                        <input type="hidden" name="UsuarioID" value="@(Model.UsuarioID ?? 0)" />
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <input id="Nombre" class="form-control" type="text" name="Nombre" required maxlength="100" />
+                            <div class="text-danger small mt-1" id="errorMascotaNombre" aria-live="polite"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Raza</label>
+                            <input id="RazaLibre" class="form-control" type="text" name="RazaLibre" maxlength="200" />
+                            <div class="text-danger small mt-1" id="errorMascotaRaza" aria-live="polite"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Agregar mascota</button>
+                        <button type="button" id="cancelEditMascota" class="btn btn-sm btn-secondary ml-2 d-none">Cancelar</button>
+                    </form>
+
+                    <hr />
+                    <h6>Mis mascotas</h6>
+                    <ul class="list-group">
+                        @foreach (var m in mascotas)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center" data-mascota-id="@m.MascotaID" data-mascota-nombre="@m.Nombre" data-mascota-raza="@m.RazaLibre">
+                                <span>@m.Nombre @(!string.IsNullOrWhiteSpace(m.RazaLibre) ? $"— {m.RazaLibre}" : "")</span>
+                                <div class="d-flex align-items-center">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary mr-2 btn-edit-mascota">Editar</button>
+                                    <form action="/Gestion/Perfil/EliminarMascota" method="post" style="margin:0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="mascotaId" value="@m.MascotaID" />
+                                        <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header"><h4 class="card-title mb-0">Automóviles</h4></div>
+                <div class="card-body">
+                    <form action="/Gestion/Perfil/CrearAutomovil" method="post" id="formCrearAutomovil">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="AutomovilID" name="AutomovilID" value="" />
+                        <input type="hidden" name="UsuarioID" value="@(Model.UsuarioID ?? 0)" />
+                        <div class="form-group">
+                            <label>Modelo</label>
+                            <input id="ModeloLibre" class="form-control" type="text" name="ModeloLibre" maxlength="200" />
+                            <div class="text-danger small mt-1" id="errorAutomovilModelo" aria-live="polite"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Placas</label>
+                            <input id="Placas" class="form-control" type="text" name="Placas" required maxlength="50" />
+                            <div class="text-danger small mt-1" id="errorAutomovilPlacas" aria-live="polite"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Agregar automóvil</button>
+                        <button type="button" id="cancelEditAutomovil" class="btn btn-sm btn-secondary ml-2 d-none">Cancelar</button>
+                    </form>
+
+                    <hr />
+                    <h6>Mis automóviles</h6>
+                    <ul class="list-group">
+                        @foreach (var a in automoviles)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center" data-automovil-id="@a.AutomovilID" data-automovil-modelo="@a.ModeloLibre" data-automovil-placas="@a.Placas">
+                                <span>@a.ModeloLibre @(!string.IsNullOrWhiteSpace(a.Placas) ? $"— {a.Placas}" : "")</span>
+                                <div class="d-flex align-items-center">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary mr-2 btn-edit-automovil">Editar</button>
+                                    <form action="/Gestion/Perfil/EliminarAutomovil" method="post" style="margin:0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="automovilId" value="@a.AutomovilID" />
+                                        <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section TopbarContent {
+    <div class="cq-topbar-inner">
+        <div class="cq-tb-left">
+            <div class="cq-tb-icon"><i class="mdi mdi-account-circle"></i></div>
+            <div class="cq-tb-info">
+                <span class="cq-tb-title">Mi Perfil</span>
+                <div class="cq-tb-meta">
+                    <span class="cq-tb-badge">@(User.Identity?.Name ?? "")</span>
+                </div>
+            </div>
+        </div>
+        <div class="cq-tb-right">
+            <div class="cq-tb-sep"></div>
+            <ol class="breadcrumb mb-0 cq-tb-breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                <li class="breadcrumb-item active">Perfil</li>
+            </ol>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (function(){
+            function setText(id,msg){ var el=document.getElementById(id); if(el) el.textContent = msg || ''; }
+
+            var masc = document.getElementById('formCrearMascota');
+            if(masc){
+                masc.addEventListener('submit', function(e){
+                    setText('errorMascotaNombre','');
+                    var nombre = (masc.querySelector('[name="Nombre"]')||{}).value?.trim() || '';
+                    // Evitar \p{L} (Unicode property escapes) por compatibilidad de navegadores
+                    var nombreOk = nombre.length>0 && nombre.length<=100 && (/^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ0-9 \.,\-']+$/).test(nombre);
+                    if(!nombreOk){ e.preventDefault(); setText('errorMascotaNombre','Nombre inválido.'); return false; }
+                });
+
+                // Edit helpers for mascotas
+                var mascSubmit = masc.querySelector('button[type="submit"]');
+                var mascCancel = document.getElementById('cancelEditMascota');
+                var originalMascText = mascSubmit ? mascSubmit.textContent : 'Agregar mascota';
+                document.querySelectorAll('.btn-edit-mascota').forEach(function(btn){
+                    btn.addEventListener('click', function(){
+                        var li = btn.closest('li');
+                        if(!li) return;
+                        var id = li.getAttribute('data-mascota-id');
+                        var nombre = li.getAttribute('data-mascota-nombre') || '';
+                        var raza = li.getAttribute('data-mascota-raza') || '';
+                        var hid = document.getElementById('MascotaID');
+                        if(hid) hid.value = id || '';
+                        (masc.querySelector('[name="Nombre"]')||{}).value = nombre;
+                        (masc.querySelector('[name="RazaLibre"]')||{}).value = raza;
+                        if(mascSubmit) mascSubmit.textContent = 'Actualizar mascota';
+                        if(mascCancel) mascCancel.classList.remove('d-none');
+                        (masc.querySelector('[name="Nombre"]')||{}).focus();
+                    });
+                });
+
+                if(mascCancel){
+                    mascCancel.addEventListener('click', function(){
+                        var hid = document.getElementById('MascotaID'); if(hid) hid.value = '';
+                        (masc.querySelector('[name="Nombre"]')||{}).value = '';
+                        (masc.querySelector('[name="RazaLibre"]')||{}).value = '';
+                        if(mascSubmit) mascSubmit.textContent = originalMascText;
+                        mascCancel.classList.add('d-none');
+                    });
+                }
+            }
+
+            var auto = document.getElementById('formCrearAutomovil');
+            if(auto){
+                auto.addEventListener('submit', function(e){
+                    setText('errorAutomovilPlacas','');
+                    var placas = (auto.querySelector('[name="Placas"]')||{}).value?.trim() || '';
+                    var placasOk = placas.length>=4 && placas.length<=10 && (/^[A-Za-z0-9\- ]+$/).test(placas);
+                    if(!placasOk){ e.preventDefault(); setText('errorAutomovilPlacas','Placas inválidas.'); return false; }
+                });
+
+                // Edit helpers for automoviles
+                var autoSubmit = auto.querySelector('button[type="submit"]');
+                var autoCancel = document.getElementById('cancelEditAutomovil');
+                var originalAutoText = autoSubmit ? autoSubmit.textContent : 'Agregar automóvil';
+                document.querySelectorAll('.btn-edit-automovil').forEach(function(btn){
+                    btn.addEventListener('click', function(){
+                        var li = btn.closest('li');
+                        if(!li) return;
+                        var id = li.getAttribute('data-automovil-id');
+                        var modelo = li.getAttribute('data-automovil-modelo') || '';
+                        var placas = li.getAttribute('data-automovil-placas') || '';
+                        var hid = document.getElementById('AutomovilID');
+                        if(hid) hid.value = id || '';
+                        (auto.querySelector('[name="ModeloLibre"]')||{}).value = modelo;
+                        (auto.querySelector('[name="Placas"]')||{}).value = placas;
+                        // ensure form posts to the explicit edit endpoint when updating
+                        try{ auto.action = '/Gestion/Perfil/EditarAutomovil'; }catch(e){}
+                        if(autoSubmit) autoSubmit.textContent = 'Actualizar automóvil';
+                        if(autoCancel) autoCancel.classList.remove('d-none');
+                        (auto.querySelector('[name="Placas"]')||{}).focus();
+                    });
+                });
+
+                if(autoCancel){
+                    autoCancel.addEventListener('click', function(){
+                        var hid = document.getElementById('AutomovilID'); if(hid) hid.value = '';
+                        (auto.querySelector('[name="ModeloLibre"]')||{}).value = '';
+                        (auto.querySelector('[name="Placas"]')||{}).value = '';
+                        if(autoSubmit) autoSubmit.textContent = originalAutoText;
+                        // revert to create route
+                        try{ auto.action = '/Gestion/Perfil/CrearAutomovil'; }catch(e){}
+                        autoCancel.classList.add('d-none');
+                    });
+                }
+            }
+        })();
+    </script>
+}

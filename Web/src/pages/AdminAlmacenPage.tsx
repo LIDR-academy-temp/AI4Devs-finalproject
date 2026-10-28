@@ -3,14 +3,20 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import '@mdi/font/css/materialdesignicons.min.css'
 import '../styles/bootstrap-pantone.css'
 import '../styles/cq-admin.css'
+import { AdminCategoriasAlmacenSection } from '../features/admin/almacen/AdminCategoriasAlmacenSection'
+import { ArticuloAdminMobileCard } from '../features/admin/almacen/ArticuloAdminMobileCard'
+import { PrestamoAdminMobileCard } from '../features/admin/almacen/PrestamoAdminMobileCard'
 import { useArticulos, useCategorias, usePrestamos } from '../features/almacen/useAlmacen'
 import { usePadronUsuarios } from '../features/admin/usuarios/usePadronUsuarios'
 import {
   AdminListToolbar,
+  AdminMobileCardList,
   AdminSidePanel,
   AdminSplitLayout,
   ConfirmDialog,
 } from '../shared/components/admin'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { useToast } from '../shared/toast/ToastContext'
 import { apiDelete, apiPatch, apiPost, apiPut } from '../shared/lib/apiClient'
 import type {
   ArticuloActualizarRequest,
@@ -20,7 +26,7 @@ import type {
   PrestamoListItem,
 } from '../shared/types/almacen'
 
-type Tab = 'inventario' | 'prestamos'
+type Tab = 'inventario' | 'prestamos' | 'categorias'
 
 const emptyArticulo: ArticuloCrearRequest = {
   nombre: '',
@@ -39,13 +45,18 @@ const emptyPrestamo: PrestamoCrearRequest = {
 
 export function AdminAlmacenPage() {
   const [tab, setTab] = useState<Tab>('inventario')
-  const [dismissedInventarioError, setDismissedInventarioError] = useState(false)
-  const [dismissedPrestamosError, setDismissedPrestamosError] = useState(false)
 
   const { articulos, loading: loadingArt, error: errArt, recargar: recargarArt } = useArticulos()
-  const { categorias } = useCategorias()
-  const { prestamos, loading: loadingPre, error: errPre, recargar: recargarPre } = usePrestamos()
+  const { categorias, loading: loadingCat, error: errCat, recargar: recargarCat } = useCategorias()
+  const prestamosTabActiva = tab === 'prestamos'
+  const { prestamos, loading: loadingPre, error: errPre, recargar: recargarPre } =
+    usePrestamos(prestamosTabActiva)
   const { data: usuarios } = usePadronUsuarios(undefined, true)
+
+  const toast = useToast()
+  useQueryErrorToast(errArt)
+  useQueryErrorToast(prestamosTabActiva ? errPre : null)
+  useQueryErrorToast(tab === 'categorias' ? errCat : null)
 
   const [createArtOpen, setCreateArtOpen] = useState(false)
   const [editingArt, setEditingArt] = useState<ArticuloListItem | null>(null)
@@ -156,6 +167,7 @@ export function AdminAlmacenPage() {
         }
       }
       closeInventarioPanel()
+      toast.success(isEditArt ? 'Artículo actualizado' : 'Artículo creado')
       await recargarArt()
     } finally {
       setArtSaving(false)
@@ -172,6 +184,7 @@ export function AdminAlmacenPage() {
     }
     if (editingArt?.articuloId === deleteArtTarget.articuloId) closeInventarioPanel()
     setDeleteArtTarget(null)
+    toast.success('Artículo eliminado')
     await recargarArt()
   }
 
@@ -195,6 +208,7 @@ export function AdminAlmacenPage() {
         return
       }
       closePrestamoPanel()
+      toast.success('Préstamo registrado')
       await Promise.all([recargarArt(), recargarPre()])
     } finally {
       setPreSaving(false)
@@ -212,19 +226,12 @@ export function AdminAlmacenPage() {
         return
       }
       setDevolverTarget(null)
+      toast.success('Préstamo devuelto')
       await Promise.all([recargarArt(), recargarPre()])
     } finally {
       setDevolviendo(false)
     }
   }
-
-  useEffect(() => {
-    if (errArt) setDismissedInventarioError(false)
-  }, [errArt])
-
-  useEffect(() => {
-    if (errPre) setDismissedPrestamosError(false)
-  }, [errPre])
 
   useEffect(() => {
     if (!deleteArtTarget) setDeleteArtError(null)
@@ -307,23 +314,23 @@ export function AdminAlmacenPage() {
             Préstamos
           </button>
         </li>
+        <li className="nav-item" role="presentation">
+          <button
+            type="button"
+            role="tab"
+            className={`nav-link cursor-pointer ${tab === 'categorias' ? 'active' : ''}`}
+            aria-selected={tab === 'categorias'}
+            aria-controls="almacen-tab-categorias"
+            id="almacen-tab-categorias-btn"
+            onClick={() => switchTab('categorias')}
+          >
+            Categorías
+          </button>
+        </li>
       </ul>
 
       {tab === 'inventario' && (
         <div id="almacen-tab-inventario" role="tabpanel" tabIndex={0} aria-labelledby="almacen-tab-inventario-btn">
-          {errArt && !dismissedInventarioError && (
-            <div className="alert alert-danger alert-dismissible fade show" role="alert">
-              <i className="mdi mdi-alert-circle mr-1" />
-              {errArt}
-              <button
-                type="button"
-                className="btn-close"
-                aria-label="Cerrar"
-                onClick={() => setDismissedInventarioError(true)}
-              />
-            </div>
-          )}
-
           <AdminListToolbar
             title="Inventario"
             metrics={inventarioStats}
@@ -355,7 +362,8 @@ export function AdminAlmacenPage() {
                   )}
 
                   {!loadingArt && !errArt && articulos.length > 0 && (
-                    <div className="table-responsive">
+                    <>
+                    <div className="table-responsive cq-admin-table-pane">
                       <table className="table table-hover mb-0">
                         <thead>
                           <tr>
@@ -411,6 +419,18 @@ export function AdminAlmacenPage() {
                         </tbody>
                       </table>
                     </div>
+                    <AdminMobileCardList
+                      rows={articulos}
+                      getRowKey={(a) => a.articuloId}
+                      renderCard={(a) => (
+                        <ArticuloAdminMobileCard
+                          articulo={a}
+                          active={editingArt?.articuloId === a.articuloId}
+                          onEdit={openEditArticulo}
+                        />
+                      )}
+                    />
+                    </>
                   )}
                 </div>
               </div>
@@ -539,21 +559,27 @@ export function AdminAlmacenPage() {
         </div>
       )}
 
+      {tab === 'categorias' && (
+        <div id="almacen-tab-categorias" role="tabpanel" tabIndex={0} aria-labelledby="almacen-tab-categorias-btn">
+          <AdminListToolbar
+            title="Categorías"
+            metrics={[{ label: 'Categorías', value: categorias.length }]}
+            primaryAction={{
+              label: 'Actualizar',
+              iconClass: 'mdi mdi-refresh',
+              onClick: () => void recargarCat(),
+            }}
+          />
+          <AdminCategoriasAlmacenSection
+            categorias={categorias}
+            loading={loadingCat}
+            onReload={recargarCat}
+          />
+        </div>
+      )}
+
       {tab === 'prestamos' && (
         <div id="almacen-tab-prestamos" role="tabpanel" tabIndex={0} aria-labelledby="almacen-tab-prestamos-btn">
-          {errPre && !dismissedPrestamosError && (
-            <div className="alert alert-danger alert-dismissible fade show" role="alert">
-              <i className="mdi mdi-alert-circle mr-1" />
-              {errPre}
-              <button
-                type="button"
-                className="btn-close"
-                aria-label="Cerrar"
-                onClick={() => setDismissedPrestamosError(true)}
-              />
-            </div>
-          )}
-
           <AdminListToolbar
             title="Préstamos"
             metrics={prestamosStats}
@@ -592,7 +618,8 @@ export function AdminAlmacenPage() {
                   )}
 
                   {!loadingPre && !errPre && prestamos.length > 0 && (
-                    <div className="table-responsive">
+                    <>
+                    <div className="table-responsive cq-admin-table-pane">
                       <table className="table table-hover mb-0">
                         <thead>
                           <tr>
@@ -647,6 +674,18 @@ export function AdminAlmacenPage() {
                         </tbody>
                       </table>
                     </div>
+                    <AdminMobileCardList
+                      rows={prestamos}
+                      getRowKey={(p) => p.prestamoId}
+                      renderCard={(p) => (
+                        <PrestamoAdminMobileCard
+                          prestamo={p}
+                          devolviendo={devolviendo}
+                          onDevolver={setDevolverTarget}
+                        />
+                      )}
+                    />
+                    </>
                   )}
                 </div>
               </div>

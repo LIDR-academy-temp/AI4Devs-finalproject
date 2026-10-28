@@ -1,13 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { mascotaResidenteSchema } from '../features/mascotas/mascotaResidenteSchemas'
 import { useMascotas, useTiposMascota, useRazasMascota } from '../features/mascotas/useMascotas'
-import {
-  AlertBanner,
-  ConfirmDialog,
-  EmptyState,
-  FormModal,
-  PageHeader,
-} from '../shared/components/admin'
+import { ConfirmDialog, EmptyState, FormModal, PageHeader } from '../shared/components/admin'
+import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 import { apiPost, apiPut, apiDelete } from '../shared/lib/apiClient'
 import type { MascotaListItem, MascotaCrearRequest } from '../shared/types/mascotas'
 
@@ -31,7 +26,7 @@ function MascotaCard({
   onDelete: (id: number) => void
 }) {
   return (
-    <div className="flex items-start gap-4 rounded-xl border border-neutral-200 bg-white p-4">
+    <div className="flex items-start gap-4 rounded-xl border border-neutral-200 bg-surface-alt p-4">
       <div className="select-none text-4xl">🐾</div>
       <div className="flex-1">
         <p className="font-semibold text-neutral-900">{m.nombreMascota}</p>
@@ -77,6 +72,9 @@ export function MisMascotasPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  useQueryErrorToast(error)
+  useQueryErrorToast(deleteError)
+  useQueryErrorToast(formError, modalOpen)
 
   const filteredRazas = form.tipoMascotaId
     ? razas.filter((r) => r.tipoMascotaId === form.tipoMascotaId)
@@ -132,7 +130,7 @@ export function MisMascotasPage() {
         ? await apiPost('/USR/Mascotas', payload)
         : await apiPut(`/USR/Mascotas/${editId}`, payload)
     setSaving(false)
-    if (result.problem || (editId === null ? result.status !== 201 : result.status !== 200)) {
+    if (result.problem || (editId === null ? result.status !== 201 : result.status !== 204)) {
       setFormError(result.problem?.detail ?? 'Error al guardar.')
       return
     }
@@ -156,11 +154,14 @@ export function MisMascotasPage() {
         }
       />
 
-      {error && <AlertBanner variant="error">{error}</AlertBanner>}
-      {deleteError && (
-        <AlertBanner variant="error" onDismiss={() => setDeleteError(null)}>
-          {deleteError}
-        </AlertBanner>
+      {error && (
+        <button
+          type="button"
+          className="cursor-pointer text-sm text-primary underline"
+          onClick={() => void reload()}
+        >
+          Reintentar
+        </button>
       )}
 
       {loading && <p className="text-sm text-neutral">Cargando…</p>}
@@ -269,7 +270,6 @@ export function MisMascotasPage() {
             />
             <label htmlFor="vacunas" className="text-sm text-neutral-700">Vacunas al día</label>
           </div>
-          {formError && <AlertBanner variant="error">{formError}</AlertBanner>}
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"

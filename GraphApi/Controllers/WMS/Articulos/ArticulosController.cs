@@ -46,6 +46,39 @@ public class ArticulosController(ICuartaAlmacenService cuarta) : ControllerBase
         return Ok(cats);
     }
 
+    /// <summary>Crear categoría de artículo.</summary>
+    [HttpPost("categorias")]
+    [ProducesResponseType(typeof(CategoriaDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CrearCategoria([FromBody] CategoriaUpsertRequest body)
+    {
+        var (data, code, status, detail) = await cuarta.CrearCategoriaAsync(body.Nombre, UserEmail, UserId);
+        if (data is null) return StatusCode(status, new { code, detail });
+        return StatusCode(201, data);
+    }
+
+    /// <summary>Actualizar categoría de artículo.</summary>
+    [HttpPut("categorias/{categoriaId:int}")]
+    [ProducesResponseType(typeof(CategoriaDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ActualizarCategoria(int categoriaId, [FromBody] CategoriaUpsertRequest body)
+    {
+        var (data, code, status, detail) = await cuarta.ActualizarCategoriaAsync(categoriaId, body.Nombre, UserEmail, UserId);
+        if (data is null) return StatusCode(status, new { code, detail });
+        return Ok(data);
+    }
+
+    /// <summary>Eliminar categoría de artículo.</summary>
+    [HttpDelete("categorias/{categoriaId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> EliminarCategoria(int categoriaId)
+    {
+        var (ok, code, status, detail) = await cuarta.EliminarCategoriaAsync(categoriaId, UserEmail, UserId);
+        if (!ok) return StatusCode(status, new { code, detail });
+        return NoContent();
+    }
+
     /// <summary>Crear un nuevo artículo en el inventario.</summary>
     [HttpPost]
     [ProducesResponseType(typeof(object), StatusCodes.Status201Created)]

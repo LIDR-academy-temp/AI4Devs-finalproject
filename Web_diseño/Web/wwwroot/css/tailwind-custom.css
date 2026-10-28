@@ -1,0 +1,365 @@
+/* ============================================
+   ESTILOS PERSONALIZADOS - CUARTA QUINIENTOS
+   3 Paletas: OCEAN | NEUTRAL | MINIMAL
+   ============================================ */
+
+/* Tokens de color: definidos en wwwroot/config/cq-site-theme.json */
+
+/* ============================================
+   COLORES DINÁMICOS SEGÚN TEMA
+   ============================================ */
+
+.text-cq-primary { color: var(--color-primary) !important; }
+.text-cq-accent { color: var(--color-accent) !important; }
+.text-cq-secondary { color: var(--color-secondary) !important; }
+.bg-cq-primary { background-color: var(--color-primary) !important; }
+.bg-cq-accent { background-color: var(--color-accent) !important; }
+.bg-cq-secondary { background-color: var(--color-secondary) !important; }
+.hover-bg-cq-primary:hover { background-color: var(--color-primary-hover) !important; }
+.hover-bg-cq-accent:hover { background-color: var(--color-accent-hover) !important; }
+.border-cq-primary { border-color: var(--color-primary) !important; }
+.border-cq-accent { border-color: var(--color-accent) !important; }
+
+/* Bordes redondeados */
+.rounded-cq { border-radius: 12px; }
+.rounded-cq-sm { border-radius: 8px; }
+
+/* Sombras suaves */
+.shadow-cq { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.shadow-cq-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+
+/* Fondo suave */
+.bg-soft { background-color: var(--color-background); }
+
+/* ============================================
+   KPI CARDS - MEJORAS VISUALES
+   ============================================ */
+
+.kpi-card,
+.card {
+  border-radius: 12px !important;
+  border: 1px solid var(--color-border) !important;
+  transition: box-shadow 0.2s ease, transform 0.2s ease !important;
+}
+
+.kpi-card:hover,
+.card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Colores de borde izquierdo para KPIs por tipo */
+.kpi-cuotas,
+body.cq-theme .kpi-cuotas,
+.cq-theme .kpi-cuotas { border-left: 4px solid var(--color-accent) !important; }
+
+.kpi-tickets,
+body.cq-theme .kpi-tickets,
+.cq-theme .kpi-tickets { border-left: 4px solid #f59e0b !important; }
+
+.kpi-visitas,
+body.cq-theme .kpi-visitas,
+.cq-theme .kpi-visitas { border-left: 4px solid var(--color-secondary) !important; }
+
+.kpi-pases,
+body.cq-theme .kpi-pases,
+.cq-theme .kpi-pases { border-left: 4px solid #3b82f6 !important; }
+
+.kpi-condominios,
+body.cq-theme .kpi-condominios,
+.cq-theme .kpi-condominios { border-left: 4px solid #10b981 !important; }
+
+.kpi-casas,
+body.cq-theme .kpi-casas,
+.cq-theme .kpi-casas { border-left: 4px solid #8b5cf6 !important; }
+
+.kpi-reservas,
+body.cq-theme .kpi-reservas,
+.cq-theme .kpi-reservas { border-left: 4px solid #ec4899 !important; }
+
+.kpi-encuestas,
+body.cq-theme .kpi-encuestas,
+.cq-theme .kpi-encuestas { border-left: 4px solid #06b6d4 !important; }
+
+/* ============================================
+   BOTONES - SOBREESCRIBIR SITE-REDESIGN
+   ============================================ */
+
+/* btn-primary a color acento */
+body.cq-theme .btn.btn-primary,
+body.cq-theme .btn-info,
+body.cq-theme .btn-primary {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover)) !important;
+  border-color: var(--color-accent-hover) !important;
+  color: #ffffff !important;
+}
+
+body.cq-theme .btn.btn-primary:hover,
+body.cq-theme .btn-info:hover,
+body.cq-theme .btn-primary:hover {
+  background: linear-gradient(135deg, var(--color-accent-hover), #c53030) !important;
+  border-color: #c53030 !important;
+}
+
+/* btn-outline-primary a color acento */
+body.cq-theme .btn.btn-outline-primary {
+  color: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
+  background: transparent !important;
+}
+
+body.cq-theme .btn.btn-outline-primary:hover {
+  background: var(--color-accent) !important;
+  color: #ffffff !important;
+}
+
+/* btn-outline-secondary a color secundario */
+body.cq-theme .btn.btn-outline-secondary {
+  color: var(--color-secondary) !important;
+  border-color: var(--color-secondary) !important;
+}
+
+body.cq-theme .btn.btn-outline-secondary:hover {
+  background: var(--color-secondary) !important;
+  color: #ffffff !important;
+}
+
+/* btn-success */
+body.cq-theme .btn-success {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  border-color: #059669 !important;
+}
+
+/* btn-warning */
+body.cq-theme .btn-warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  border-color: #d97706 !important;
+}
+
+/* btn-danger */
+body.cq-theme .btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  border-color: #dc2626 !important;
+}
+
+/* btn-secondary */
+body.cq-theme .btn-secondary {
+  background: linear-gradient(135deg, #64748b, #475569) !important;
+  border-color: #475569 !important;
+}
+
+/* ============================================
+   BADGES DE ESTADO
+   ============================================ */
+
+.badge-success,
+body.cq-theme .badge-success,
+.cq-theme .badge-success {
+  background-color: #10b981 !important;
+  color: white !important;
+}
+
+.badge-warning,
+body.cq-theme .badge-warning,
+.cq-theme .badge-warning {
+  background-color: #f59e0b !important;
+  color: white !important;
+}
+
+.badge-danger,
+body.cq-theme .badge-danger,
+.cq-theme .badge-danger {
+  background-color: #ef4444 !important;
+  color: white !important;
+}
+
+.badge-info,
+body.cq-theme .badge-info,
+.cq-theme .badge-info {
+  background-color: var(--color-secondary) !important;
+  color: white !important;
+}
+
+/* ============================================
+   TABLAS - MEJORAS
+   ============================================ */
+
+.table thead th,
+body.cq-theme .table thead th,
+.cq-theme .table thead th {
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  color: var(--color-text-secondary) !important;
+  background-color: var(--color-background) !important;
+  border-bottom: 2px solid var(--color-border) !important;
+}
+
+.table tbody tr:hover,
+body.cq-theme .table tbody tr:hover,
+.cq-theme .table tbody tr:hover {
+  background-color: var(--color-background) !important;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.footer,
+body.cq-theme .footer,
+.cq-theme .footer {
+  background-color: var(--color-surface) !important;
+  border-top: 1px solid var(--color-border) !important;
+  color: var(--color-text-secondary) !important;
+  font-size: 13px !important;
+}
+
+/* ============================================
+   LINKS CON COLOR PRIMARIO
+   ============================================ */
+
+a.text-cq-primary:hover,
+body.cq-theme a.text-cq-primary:hover,
+.cq-theme a.text-cq-primary:hover {
+  color: var(--color-primary-hover) !important;
+}
+
+/* ============================================
+   FUENTE INTER
+   ============================================ */
+
+.font-inter,
+body.cq-theme .font-inter,
+.cq-theme .font-inter {
+  font-family: var(--cq-font-body) !important;
+}
+
+/* ============================================
+   LOGIN - ESTILOS ADICIONALES
+   ============================================ */
+
+body.cq-login {
+  font-family: var(--cq-font-body) !important;
+}
+
+body.cq-login .cq-login-card {
+  border-radius: var(--radius-xl) !important;
+}
+
+body.cq-login .btn {
+  border-radius: var(--radius-md) !important;
+}
+
+/* ============================================
+   FORMULARIOS
+   ============================================ */
+
+body.cq-theme .form-control,
+body.cq-theme .form-select,
+body.cq-theme select.form-control {
+  border-radius: var(--radius-md) !important;
+  border-color: var(--color-border) !important;
+}
+
+body.cq-theme .form-control:focus,
+body.cq-theme .form-select:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px var(--color-primary-light) !important;
+}
+
+/* ============================================
+   SCROLLBAR PERSONALIZADA
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* ============================================
+   ANIMACIONES SUAVES
+   ============================================ */
+
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+}
+
+/* ============================================
+   UTILIDADES ADICIONALES
+   ============================================ */
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+}
+
+.bg-gradient-accent {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Focus rings */
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+/* Status indicators */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.active { background-color: #10b981; }
+.status-dot.pending { background-color: #f59e0b; }
+.status-dot.inactive { background-color: #ef4444; }

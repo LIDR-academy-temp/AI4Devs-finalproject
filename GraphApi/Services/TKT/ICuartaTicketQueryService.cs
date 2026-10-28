@@ -9,7 +9,14 @@ public interface ICuartaTicketQueryService
         TicketFiltroDto filtro,
         CancellationToken ct = default);
 
+    Task<PaginaDto<MiTicketItemDto>> GetTicketsAsignadosAsync(
+        int usuarioId,
+        TicketAsignadosFiltroDto filtro,
+        CancellationToken ct = default);
+
     Task<IReadOnlyList<CatalogoItemDto>> ListarCategoriasAsync(CancellationToken ct = default);
 
     Task<IReadOnlyList<CatalogoItemDto>> ListarEstadosAsync(CancellationToken ct = default);
+
+    Task<IReadOnlyList<PrioridadCatalogoItemDto>> ListarPrioridadesAsync(CancellationToken ct = default);
 }

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown, KeyRound, LogOut, User, Bell } from 'lucide-react'
+import { Bell, ChevronDown, KeyRound, LogOut, Moon, Sun, User } from 'lucide-react'
 import { useAuth } from '../../features/auth/AuthContext'
+import { useTheme } from '../../features/theme/ThemeContext'
 
 type UserMenuProps = {
   variant?: 'header' | 'default'
@@ -9,6 +10,7 @@ type UserMenuProps = {
 
 export function UserMenu({ variant = 'default' }: UserMenuProps) {
   const { session, logout } = useAuth()
+  const { mode, toggleMode } = useTheme()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -84,7 +86,7 @@ export function UserMenu({ variant = 'default' }: UserMenuProps) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-40 mt-2 w-52 overflow-hidden rounded-xl bg-white shadow-[var(--shadow-dropdown)]"
+          className="absolute right-0 z-40 mt-2 w-52 overflow-hidden rounded-xl border border-neutral-100 bg-surface-alt shadow-[var(--shadow-dropdown)]"
           style={{ animation: 'slideInDown 150ms ease-out' }}
         >
           {/* Cabecera del menú */}
@@ -100,28 +102,43 @@ export function UserMenu({ variant = 'default' }: UserMenuProps) {
               role="menuitem"
               type="button"
               onClick={() => go('/perfil')}
-              className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-primary-50"
+              className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-900 hover:bg-primary-50"
             >
-              <User className="h-4 w-4 text-neutral" />
+              <User className="h-4 w-4 text-neutral-700" />
               Mi Perfil
             </button>
             <button
               role="menuitem"
               type="button"
               onClick={() => go('/cambiar-password')}
-              className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-primary-50"
+              className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-900 hover:bg-primary-50"
             >
-              <KeyRound className="h-4 w-4 text-neutral" />
+              <KeyRound className="h-4 w-4 text-neutral-700" />
               Cambiar contraseña
             </button>
             <button
               role="menuitem"
               type="button"
               onClick={() => go('/notificaciones')}
-              className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-primary-50"
+              className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-900 hover:bg-primary-50"
             >
-              <Bell className="h-4 w-4 text-neutral" />
+              <Bell className="h-4 w-4 text-neutral-700" />
               Notificaciones
+            </button>
+            <button
+              role="menuitem"
+              type="button"
+              onClick={() => {
+                toggleMode()
+              }}
+              className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-900 hover:bg-primary-50"
+            >
+              {mode === 'dark' ? (
+                <Sun className="h-4 w-4 text-neutral-700" aria-hidden="true" />
+              ) : (
+                <Moon className="h-4 w-4 text-neutral-700" aria-hidden="true" />
+              )}
+              {mode === 'dark' ? 'Modo claro' : 'Modo oscuro'}
             </button>
           </div>
 

@@ -7,6 +7,10 @@ public interface ICuartaAlmacenRepository
 {
     // ── Categorías ────────────────────────────────────────
     Task<IReadOnlyList<CategoriaDto>> ListarCategoriasAsync();
+    Task<int> InsertCategoriaAsync(string nombre, string correoUsuario, int usuarioId, IDbTransaction? tx = null);
+    Task<bool> UpdateCategoriaAsync(int categoriaId, string nombre, string correoUsuario, int usuarioId, IDbTransaction? tx = null);
+    Task<bool> SoftDeleteCategoriaAsync(int categoriaId, string correoUsuario, int usuarioId, IDbTransaction? tx = null);
+    Task<bool> ExisteCategoriaActivaAsync(int categoriaId, CancellationToken ct = default);
 
     // ── Artículos ─────────────────────────────────────────
     Task<IReadOnlyList<ArticuloListItemDto>> ListarArticulosAsync();

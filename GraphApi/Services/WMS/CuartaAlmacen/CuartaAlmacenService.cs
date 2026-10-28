@@ -1,6 +1,7 @@
 using System.Data;
 using GraphApi.Models.WMS.CuartaAlmacen;
 using GraphApi.Repositories.WMS;
+using Microsoft.AspNetCore.Http;
 
 namespace GraphApi.Services.WMS.CuartaAlmacen;
 
@@ -9,6 +10,39 @@ public class CuartaAlmacenService(ICuartaAlmacenRepository repo, IDbConnection d
     // ── Categorías ────────────────────────────────────────
     public Task<IReadOnlyList<CategoriaDto>> ListarCategoriasAsync() =>
         repo.ListarCategoriasAsync();
+
+    public async Task<(CategoriaDto? Data, string? Code, int Status, string? Detail)> CrearCategoriaAsync(
+        string nombre, string correoUsuario, int usuarioId)
+    {
+        var limpio = nombre.Trim();
+        if (string.IsNullOrEmpty(limpio))
+            return (null, "CAT_REQUERIDA", StatusCodes.Status400BadRequest, "El nombre de la categoría es requerido.");
+
+        var id = await repo.InsertCategoriaAsync(limpio, correoUsuario, usuarioId);
+        return (new CategoriaDto(id, limpio), null, StatusCodes.Status201Created, null);
+    }
+
+    public async Task<(CategoriaDto? Data, string? Code, int Status, string? Detail)> ActualizarCategoriaAsync(
+        int categoriaId, string nombre, string correoUsuario, int usuarioId)
+    {
+        var limpio = nombre.Trim();
+        if (string.IsNullOrEmpty(limpio))
+            return (null, "CAT_REQUERIDA", StatusCodes.Status400BadRequest, "El nombre de la categoría es requerido.");
+
+        var ok = await repo.UpdateCategoriaAsync(categoriaId, limpio, correoUsuario, usuarioId);
+        if (!ok)
+            return (null, "CAT_NO_ENCONTRADA", StatusCodes.Status404NotFound, "Categoría no encontrada.");
+        return (new CategoriaDto(categoriaId, limpio), null, StatusCodes.Status200OK, null);
+    }
+
+    public async Task<(bool Ok, string? Code, int Status, string? Detail)> EliminarCategoriaAsync(
+        int categoriaId, string correoUsuario, int usuarioId)
+    {
+        var ok = await repo.SoftDeleteCategoriaAsync(categoriaId, correoUsuario, usuarioId);
+        if (!ok)
+            return (false, "CAT_NO_ENCONTRADA", StatusCodes.Status404NotFound, "Categoría no encontrada.");
+        return (true, null, StatusCodes.Status204NoContent, null);
+    }
 
     // ── Artículos ─────────────────────────────────────────
     public Task<IReadOnlyList<ArticuloListItemDto>> ListarArticulosAsync() =>
