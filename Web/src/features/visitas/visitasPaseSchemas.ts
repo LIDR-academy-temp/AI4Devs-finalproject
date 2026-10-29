@@ -22,6 +22,7 @@ export const paseFormSchema = z
   })
 
 export type PaseFormValues = z.infer<typeof paseFormSchema>
+export type PaseFormInput = z.input<typeof paseFormSchema>
 
 export function buildCrearPaseBody(values: PaseFormValues) {
   const todoElDia = values.modoVigencia === 'dia'

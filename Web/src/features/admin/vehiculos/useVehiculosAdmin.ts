@@ -31,8 +31,5 @@ export function useVehiculosPadron() {
 export async function buscarVehiculosPorPlacas(placas: string) {
   const q = encodeURIComponent(placas.trim().toUpperCase())
   const res = await apiGet<AutomovilListItemApiRow[]>(`/USR/Automoviles/buscar?placas=${q}`)
-  if (res.data) {
-    return { ...res, data: res.data.map(normalizeAutomovilListItem) }
-  }
-  return res
+  return { ...res, data: res.data?.map(normalizeAutomovilListItem) }
 }

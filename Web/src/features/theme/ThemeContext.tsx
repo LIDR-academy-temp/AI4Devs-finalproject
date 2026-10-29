@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 import {
-  applyTheme,
   persistTheme,
   readStoredTheme,
   type ThemeMode,

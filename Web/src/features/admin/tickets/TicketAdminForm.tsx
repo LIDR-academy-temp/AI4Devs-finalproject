@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { useForm, type UseFormRegister } from 'react-hook-form'
 import type { CatalogoItem, PrioridadCatalogoItem } from '../../../shared/types/tickets'
 import type { UsuarioPadronItem } from '../../../shared/types/usuariosAdmin'
 import {
@@ -81,7 +81,7 @@ function TicketAdminCreateForm({
         )}
       </div>
       <TicketFields
-        register={register}
+        register={register as unknown as UseFormRegister<TicketAdminEditForm>}
         errors={errors}
         categorias={categorias}
         prioridades={prioridades}
@@ -133,7 +133,8 @@ function TicketFields({
   prioridades,
   disabled,
 }: {
-  register: ReturnType<typeof useForm<TicketAdminCreateForm>>['register']
+  // Campos comunes a alta y edición; el alta los registra sobre su form ampliado.
+  register: UseFormRegister<TicketAdminEditForm>
   errors: Record<string, { message?: string } | undefined>
   categorias: CatalogoItem[]
   prioridades: PrioridadCatalogoItem[]

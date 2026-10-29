@@ -3,7 +3,6 @@ import { useNavegacion } from '../../features/navegacion/NavegacionContext'
 import {
   isPathAllowedByMenu,
   isSelfServicePath,
-  normalizePath,
 } from '../../features/navegacion/menuToNav'
 
 export function NavMenuGuard() {

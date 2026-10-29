@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type UseFormReturn } from 'react-hook-form'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import '@mdi/font/css/materialdesignicons.min.css'
 import '../styles/bootstrap-pantone.css'
@@ -226,7 +226,8 @@ export function AdminMascotasPage() {
     </>
   )
 
-  const mascotaFormFields = (form: typeof createForm | typeof editForm, showOwner: boolean) => (
+  // Campos comunes; el form de alta (superset con usuarioId) se pasa como form de edición.
+  const mascotaFormFields = (form: UseFormReturn<MascotaEditAdminForm>, showOwner: boolean) => (
     <>
       {showOwner && (
         <div className="form-group mb-3">
@@ -431,7 +432,7 @@ export function AdminMascotasPage() {
               {formError && <div className="alert alert-danger py-2 small" role="alert">{formError}</div>}
               {isEdit
                 ? mascotaFormFields(editForm, false)
-                : mascotaFormFields(createForm, true)}
+                : mascotaFormFields(createForm as unknown as UseFormReturn<MascotaEditAdminForm>, true)}
             </AdminSidePanel>
           }
         />

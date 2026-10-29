@@ -22,6 +22,7 @@ import {
   prioridadTicketUpsertSchema,
   type CategoriaTicketUpsertForm,
   type PrioridadTicketUpsertForm,
+  type PrioridadTicketUpsertInput,
 } from '../features/admin/tickets/catalogos/ticketCatalogosAdminSchemas'
 import { useTicketCatalogosAdmin } from '../features/admin/tickets/catalogos/useTicketCatalogosAdmin'
 import {
@@ -75,7 +76,7 @@ export function AdminTicketCatalogosPage() {
     defaultValues: { nombre: '' },
   })
 
-  const prioridadForm = useForm<PrioridadTicketUpsertForm>({
+  const prioridadForm = useForm<PrioridadTicketUpsertInput, unknown, PrioridadTicketUpsertForm>({
     resolver: zodResolver(prioridadTicketUpsertSchema),
     defaultValues: { nombre: '', orden: '' },
   })
@@ -331,6 +332,7 @@ export function AdminTicketCatalogosPage() {
               visible={panelOpen}
               title={panelTitle}
               iconClass="mdi mdi-tag"
+              subtitle="Clasifica los tickets que levantan los residentes."
               editing={panelEditing}
               onClose={closePanel}
               footer={
@@ -426,6 +428,7 @@ export function AdminTicketCatalogosPage() {
               visible={panelOpen}
               title={panelTitle}
               iconClass="mdi mdi-flag"
+              subtitle="Define el orden de atención de los tickets."
               editing={panelEditing}
               onClose={closePanel}
               footer={

@@ -5,7 +5,7 @@ import { AdminMobileCardList } from './AdminMobileCardList'
 describe('AdminMobileCardList', () => {
   it('muestra mensaje vacío sin filas', () => {
     render(
-      <AdminMobileCardList
+      <AdminMobileCardList<{ id: number; name: string }>
         rows={[]}
         getRowKey={(r) => r.id}
         renderCard={(r) => <span>{r.name}</span>}

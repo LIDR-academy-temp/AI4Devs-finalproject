@@ -1,7 +1,7 @@
 import type { AutomovilListItem, MarcaDto, ModeloDto } from '../../shared/types/vehiculos'
 
 /** Fila REST USR: camelCase o PascalCase (API GraphApi PropertyNamingPolicy = null). */
-export type AutomovilListItemApiRow = AutomovilListItem & {
+export type AutomovilListItemApiRow = Partial<AutomovilListItem> & {
   AutomovilId?: number
   UsuarioId?: number
   NombreUsuario?: string

@@ -14,6 +14,7 @@ export const prioridadTicketUpsertSchema = z.object({
 })
 
 export type PrioridadTicketUpsertForm = z.infer<typeof prioridadTicketUpsertSchema>
+export type PrioridadTicketUpsertInput = z.input<typeof prioridadTicketUpsertSchema>
 
 export function ordenPrioridadToApi(value: PrioridadTicketUpsertForm['orden']): number | undefined {
   if (value === '' || value === undefined || Number.isNaN(value)) {

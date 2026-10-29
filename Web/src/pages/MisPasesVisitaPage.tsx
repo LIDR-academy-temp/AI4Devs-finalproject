@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { PaseQrCard } from '../features/visitas/PaseQrCard'
-import { buildCrearPaseBody, paseFormSchema, type PaseFormValues } from '../features/visitas/visitasPaseSchemas'
+import { buildCrearPaseBody, paseFormSchema, type PaseFormInput, type PaseFormValues } from '../features/visitas/visitasPaseSchemas'
 import { crearPase, useMisPases } from '../features/visitas/useVisitasPase'
 import { PageHeader } from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
@@ -51,7 +51,7 @@ export function MisPasesVisitaPage() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<PaseFormValues>({
+  } = useForm<PaseFormInput, unknown, PaseFormValues>({
     resolver: zodResolver(paseFormSchema),
     defaultValues: {
       nombreVisitante: '',
