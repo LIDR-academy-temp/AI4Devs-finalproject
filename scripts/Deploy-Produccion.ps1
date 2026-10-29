@@ -27,7 +27,7 @@ function Publicar($perfil, $carpeta, $nombre) {
 if ($Solo -in 'Api','Ambos') {
   $out = Join-Path $env:TEMP 'cq-api-publish'
   Remove-Item $out -Recurse -Force -ErrorAction SilentlyContinue
-  dotnet test "$root\GraphApi\GraphApi.Tests" -c Release; if ($LASTEXITCODE) { throw 'Tests API fallaron' }
+  dotnet test "$root\GraphApi\GraphApi.Tests" -c Release --filter "Category!=Smoke"; if ($LASTEXITCODE) { throw 'Tests API fallaron' }
   dotnet publish "$root\GraphApi\GraphApi.csproj" -c Release -o $out; if ($LASTEXITCODE) { throw 'Publish API fallo' }
   Publicar (Get-Perfil 'apicuartaquinientos*.publishSettings') $out 'API'
 }

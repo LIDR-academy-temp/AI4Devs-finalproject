@@ -88,6 +88,41 @@ public class CuartaTicketAdminServiceTests
     }
 
     [Fact]
+    public async Task CrearTicketAdmin_prioridad_fuera_de_catalogo_returns_400()
+    {
+        var repo = new Mock<ICuartaTicketAdminRepository>();
+        repo.Setup(r => r.IsResidenteActivoAsync(5, It.IsAny<IDbTransaction>())).ReturnsAsync(true);
+
+        var catalogos = new Mock<ITicketCatalogoRepository>();
+        catalogos.Setup(c => c.ResolveEstadoIdAsync("Nuevo", It.IsAny<IDbTransaction>())).ReturnsAsync(1);
+        catalogos.Setup(c => c.ResolvePrioridadIdAsync("Urgente", It.IsAny<IDbTransaction>()))
+            .ReturnsAsync((int?)null);
+
+        var uow = new Mock<IUnitOfWork>();
+        uow.Setup(u => u.BeginTransaction()).Returns(Mock.Of<IDbTransaction>());
+
+        var sut = CreateSut(repo.Object, catalogos.Object, Mock.Of<ICuartaTicketRepository>(),
+            Mock.Of<INotificacionService>(), uow.Object);
+
+        var (ticket, code, status, _) = await sut.CrearTicketAdminAsync(
+            new CrearTicketAdminInput
+            {
+                UsuarioSolicitanteId = 5,
+                Titulo = "T",
+                Descripcion = "D",
+                Categoria = "Agua",
+                Prioridad = "Urgente",
+            },
+            1,
+            "admin@test.com");
+
+        Assert.Null(ticket);
+        Assert.Equal("VALIDATION_ERROR", code);
+        Assert.Equal(400, status);
+        uow.Verify(u => u.Rollback(), Times.Once);
+    }
+
+    [Fact]
     public async Task CrearTicketAdmin_valido_returns_201()
     {
         var repo = new Mock<ICuartaTicketAdminRepository>();

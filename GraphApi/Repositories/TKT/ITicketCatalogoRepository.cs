@@ -7,7 +7,7 @@ public interface ITicketCatalogoRepository
 {
     Task<int> ResolveEstadoIdAsync(string estado, IDbTransaction tx);
 
-    Task<int> ResolvePrioridadIdAsync(string prioridad, IDbTransaction tx);
+    Task<int?> ResolvePrioridadIdAsync(string prioridad, IDbTransaction tx);
 
     Task<int?> ResolveCategoriaIdAsync(string categoria, IDbTransaction tx);
 

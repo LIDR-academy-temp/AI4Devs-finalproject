@@ -56,6 +56,11 @@ public sealed class CuartaTicketAdminService : ICuartaTicketAdminService
 
             var estadoId = await _catalogos.ResolveEstadoIdAsync("Nuevo", tx);
             var prioridadId = await _catalogos.ResolvePrioridadIdAsync(prioridad, tx);
+            if (prioridadId is null)
+            {
+                _uow.Rollback();
+                return (null, "VALIDATION_ERROR", StatusCodes.Status400BadRequest, "Prioridad inválida");
+            }
             var categoriaId = await _catalogos.ResolveCategoriaIdAsync(input.Categoria, tx);
             if (categoriaId is null)
             {
@@ -79,7 +84,7 @@ public sealed class CuartaTicketAdminService : ICuartaTicketAdminService
                 Titulo = input.Titulo.Trim(),
                 Descripcion = input.Descripcion.Trim(),
                 UsuarioSolicitanteId = input.UsuarioSolicitanteId,
-                PrioridadTicketId = prioridadId,
+                PrioridadTicketId = prioridadId.Value,
                 EstadoTicketId = estadoId,
                 CategoriaTicketId = categoriaId,
                 CanalId = canalId,
@@ -133,6 +138,11 @@ public sealed class CuartaTicketAdminService : ICuartaTicketAdminService
             }
 
             var prioridadId = await _catalogos.ResolvePrioridadIdAsync(prioridad, tx);
+            if (prioridadId is null)
+            {
+                _uow.Rollback();
+                return (false, "VALIDATION_ERROR", StatusCodes.Status400BadRequest, "Prioridad inválida");
+            }
             var categoriaId = await _catalogos.ResolveCategoriaIdAsync(input.Categoria, tx);
             if (categoriaId is null)
             {
@@ -144,7 +154,7 @@ public sealed class CuartaTicketAdminService : ICuartaTicketAdminService
                 ticketId,
                 input.Titulo.Trim(),
                 input.Descripcion.Trim(),
-                prioridadId,
+                prioridadId.Value,
                 categoriaId.Value,
                 adminCorreo,
                 adminId,

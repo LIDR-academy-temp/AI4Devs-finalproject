@@ -46,6 +46,11 @@ public sealed class CuartaTicketService : ICuartaTicketService
         {
             var estadoId = await _catalogos.ResolveEstadoIdAsync("Nuevo", tx);
             var prioridadId = await _catalogos.ResolvePrioridadIdAsync(prioridad, tx);
+            if (prioridadId is null)
+            {
+                _uow.Rollback();
+                return (null, "VALIDATION_ERROR", StatusCodes.Status400BadRequest, "Prioridad inválida");
+            }
             var categoriaId = await _catalogos.ResolveCategoriaIdAsync(input.Categoria, tx);
             if (categoriaId is null)
             {
@@ -69,7 +74,7 @@ public sealed class CuartaTicketService : ICuartaTicketService
                 Titulo = input.Titulo.Trim(),
                 Descripcion = input.Descripcion.Trim(),
                 UsuarioSolicitanteId = usuarioId,
-                PrioridadTicketId = prioridadId,
+                PrioridadTicketId = prioridadId.Value,
                 EstadoTicketId = estadoId,
                 CategoriaTicketId = categoriaId,
                 CanalId = canalId,

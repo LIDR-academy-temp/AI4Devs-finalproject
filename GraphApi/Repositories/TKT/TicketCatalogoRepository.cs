@@ -38,18 +38,16 @@ public sealed class TicketCatalogoRepository : ITicketCatalogoRepository
         return id ?? throw new InvalidOperationException($"Estado de ticket desconocido: {estado}");
     }
 
-    public async Task<int> ResolvePrioridadIdAsync(string prioridad, IDbTransaction tx)
+    public Task<int?> ResolvePrioridadIdAsync(string prioridad, IDbTransaction tx)
     {
         var sql = $"""
             SELECT PrioridadTicketID FROM {_prioridadTable}
             WHERE PrioridadTicket = @Nombre AND bEliminado = 0;
             """;
-        var id = await _db.QuerySingleOrDefaultAsync<int?>(
+        return _db.QuerySingleOrDefaultAsync<int?>(
             sql,
             new { Nombre = prioridad },
             tx);
-
-        return id ?? throw new InvalidOperationException($"Prioridad desconocida: {prioridad}");
     }
 
     public Task<int?> ResolveCategoriaIdAsync(string categoria, IDbTransaction tx)
