@@ -317,14 +317,18 @@ namespace GraphApi.Infrastructure.Extensions
 
             services.AddRateLimiter(options =>
             {
-                // Login endpoint: 5 attempts per minute per IP
-                options.AddFixedWindowLimiter("login", o =>
-                {
-                    o.Window = rateLimitingSettings.Window;
-                    o.PermitLimit = rateLimitingSettings.LoginPermitLimit;
-                    o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                    o.QueueLimit = rateLimitingSettings.QueueLimit;
-                });
+                // Login endpoint: N intentos por ventana POR IP. AddFixedWindowLimiter sin
+                // partición compartía el cupo entre todos los usuarios (429 para todo el condominio).
+                options.AddPolicy("login", ctx =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            Window = rateLimitingSettings.Window,
+                            PermitLimit = rateLimitingSettings.LoginPermitLimit,
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            QueueLimit = rateLimitingSettings.QueueLimit
+                        }));
 
                 // In local development the Web app proxies all GraphQL traffic from loopback,
                 // so grouping every request only by IP causes false 429s during normal portal use.
