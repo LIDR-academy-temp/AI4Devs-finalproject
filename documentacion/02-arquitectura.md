@@ -355,7 +355,7 @@ public async Task CrearTicket_PerfilNoResidente_RetornaForbidden_YNoInserta()
 
 ### **2.7. Metodología de construcción**
 
-La **Entrega 1** concentra el diseño en este `readme.md`. La **Entrega 2+** implementa por fases ([roadmap por fases, §5](#roadmap-por-fases-alcance-completo-secuenciado)) con apoyo de IA en codificación, pruebas y revisión adversarial (poke-holes, §5.0.1).
+La **Entrega 1** concentra el diseño en este `readme.md`. La **Entrega 2+** implementa por fases ([roadmap por fases, §5](05-historias-usuario.md#roadmap-por-fases-alcance-completo-secuenciado)) con apoyo de IA en codificación, pruebas y revisión adversarial (poke-holes, §5.0.1).
 
 - **Backlog:** historias §5 (INVEST, Given/When/Then, MoSCoW) y tickets técnicos §6.
 - **Convenciones:** Dapper + vistas `vs`* (sin SPs de negocio), `bEliminado`, catálogos, perfiles por catálogo, rutas `/{Dominio}/{Controller}`, JWT.
