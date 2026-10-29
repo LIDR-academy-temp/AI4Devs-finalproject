@@ -45,3 +45,6 @@ venv/
 *.log
 .DS_Store
 Thumbs.db
+
+# Prototipo de diseño, no forma parte de la entrega
+Web_diseño/
