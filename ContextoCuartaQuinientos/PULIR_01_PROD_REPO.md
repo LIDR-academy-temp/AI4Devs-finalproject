@@ -1,6 +1,6 @@
-# Pulir Entrega 2 — Punto 1: operación prod = repo
+# Entrega 2 — operación prod = repo
 
-Hub de cierre operativo. Un sub-paso a la vez; marcar `[x]` al terminar.
+Checklist académico: [PULIR_ENTREGA_2.md](PULIR_ENTREGA_2.md)
 
 **BD producción (API):** `db24572` · SmarterASP  
 **URLs:** API `https://apicuartaquinientos.runasp.net` · Web `https://cuartaquinientosresidencial.runasp.net`

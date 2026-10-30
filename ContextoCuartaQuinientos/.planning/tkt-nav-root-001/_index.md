@@ -2,12 +2,12 @@
 
 ## Estado
 
-**LISTO PARA PR (fases A+B+C+D)** — epic **E→G** pendiente
+**CERRADO ENTREGA 2 (fases A–D en prod)** — fases **E→G** diferidas a **v2** ([[FE-NAV-ENT1-001]] ARCHIVADO; no reactivar en entrega académica)
 
 | Campo | Valor |
 |-------|-------|
-| Talla | **XL** (epic; ejecutar A→G en orden; PRs por fase recomendado) |
-| Rama | `feature/nav-root-001-nav-catalogo-producto` |
+| Talla | **XL** (epic; A–D entregadas; E–G backlog v2) |
+| Rama trabajo real | `feature/entrega-2-AFS` (A–D mergeadas en producto) |
 | Entrada | [ENTRADA.md](ENTRADA.md) |
 | Matriz | [MATRIZ_MODULOS.md](MATRIZ_MODULOS.md) |
 
@@ -47,7 +47,7 @@
 | **F** | NAV-ROOT-001-F | Integración BOT en web (`/admin/integraciones/bot`) + manifest |
 | **G** | NAV-ROOT-001-G | NTF aviso admin, cierre matriz 15/15, docs + inventario deploy |
 
-> **Entrega 1:** E/F/G ocultos en producto — [[FE-NAV-ENT1-001]] (`implemented: false` + filtro Web + SQL PerfilMenus). Reactivar en entrega 2 al cerrar fases E→G.
+> **Entrega 2 académica:** E/F/G siguen ocultos — [[FE-NAV-ENT1-001]]. Implementar E→G solo en v2 (bot / BI / aviso masivo), no en el cierre Typeform actual.
 
 ## TKTs relacionados
 
@@ -64,3 +64,4 @@
 | 2026-10-28 | EN REVISIÓN (fase A) | LISTO PARA PR (fase A) | /revisar: SQL 6/6 · Vitest TC-NAV-01/02 · auditorías APROBADO |
 | 2026-10-28 | LISTO PARA PR (fase A) | EN REVISIÓN (fase B) | /ejecutar fase B: NotificacionesPage + rutas /notificaciones |
 | 2026-10-28 | EN REVISIÓN (fase D) | LISTO PARA PR (fases A+B+C+D) | /revisar fase D: SQL 6/6 · xUnit 4/4 · APIS.md +1 endpoint · auditorías APROBADO |
+| 2026-10-30 | LISTO PARA PR (A–D) | **CERRADO E2 (A–D)** | Alcance académico · [PULIR_ENTREGA_2.md](../../PULIR_ENTREGA_2.md) |

@@ -10,6 +10,8 @@ Docs/
 .env.*.local
 **/fase1-smoke.env
 test.txt
+# Typeform E2 con contraseñas — solo local; no commitear
+ContextoCuartaQuinientos/PULIR_ENTREGA_2_TYPEFORM.md
 **/credenciales.local.*
 appsettings.Development.json
 appsettings.Production.json

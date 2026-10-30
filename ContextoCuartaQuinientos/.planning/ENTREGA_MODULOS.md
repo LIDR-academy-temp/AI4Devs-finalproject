@@ -35,18 +35,23 @@ Demostrable en **SPA React**: los **12 dominios operativos** del readme (15 mód
 5. **VTS-BE-026** → **FE-047**
 6. **VEH-BE-018** → **FE-048** · **MAS-BE-017** → **FE-049** (paralelo posible)
 7. **WMS-BE-029** (+ `SQL/DB-005_wms_schema.sql`) → **FE-050**
-8. Cerrar **FE-042** si falta delta/tests
+8. ~~Cerrar **FE-042**~~ — **ARCHIVADO** (2026-10-22)
 
-## Scripts SQL de diseño (pendientes de crear en `/ejecutar`)
+## Scripts SQL de diseño
 
-| Script | Módulo |
-|--------|--------|
-| DB-003 | ANM tipos *(hecho)* |
-| DB-004 | ENC/ARC/VTS seeds |
-| DB-005 | WMS schema |
+| Script | Módulo | Estado |
+|--------|--------|--------|
+| DB-003 | ANM tipos | Hecho |
+| DB-004 | ENC/ARC/VTS seeds | Hecho |
+| DB-005 | WMS schema | Hecho |
+| DB-007 | Menús SGR SPA | Hecho — ver [tkt-db-006-sgr-menus](tkt-db-006-sgr-menus/_index.md) |
 
 ## Criterios transversales
 
-- [x] Sidebar con placeholders → ir activando `implemented: true` por FE.
-- [ ] Ninguna pantalla nueva usa `*/legacy`.
-- [ ] Smoke por módulo tras cada par BE+FE.
+- [x] Sidebar con placeholders → `implemented: true` por FE (manifest + catálogo).
+- [x] Ninguna pantalla nueva usa rutas `*/legacy` (grep `Web/src` 2026-10-30; solo redirecciones compat documentadas).
+- [x] Smoke por módulo — suite xUnit/Vitest + smoke prod admin/residente ([PULIR_01](../PULIR_01_PROD_REPO.md) §1.5, 2026-10-30).
+
+## Cierre entrega 2 (académica)
+
+**2026-10-30:** catálogo 12 dominios + Fase 1 **ARCHIVADO**; nav E/F/G fuera. Pendiente: Typeform — ver [PULIR_ENTREGA_2.md](../PULIR_ENTREGA_2.md).

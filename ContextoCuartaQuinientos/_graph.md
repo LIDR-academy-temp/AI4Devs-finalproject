@@ -67,7 +67,7 @@ anm.Anuncios / arc.Archivos con bitácora de visualización
 | Fase | Hub | Estado |
 |------|-----|--------|
 | Entrega 2 — **Fase 1** | [.planning/FASE1_ROADMAP.md](.planning/FASE1_ROADMAP.md) · [.planning/FASE1_CIERRE.md](.planning/FASE1_CIERRE.md) | **COMPLETADA 2026-10-16** — 24 tickets ARCHIVADO (filas 0–23) |
-| **Entrega módulos** (12 dom., sin BOT/IA/BI) | [.planning/ENTREGA_MODULOS.md](.planning/ENTREGA_MODULOS.md) | **Implementado** — smoke prod 2026-10-30 ([PULIR_01_PROD_REPO.md](PULIR_01_PROD_REPO.md)) |
+| **Entrega módulos** (12 dom., sin BOT/IA/BI) | [.planning/ENTREGA_MODULOS.md](.planning/ENTREGA_MODULOS.md) | **Cierre 2026-10-30** — [PULIR_ENTREGA_2.md](PULIR_ENTREGA_2.md) |
 | Fase 2+ (bot, encuestas, …) | [specs/_index.md](specs/_index.md) | Planificado tras ola USR/shell |
 
 Evolución SDD: [_sdd_evolution.md](_sdd_evolution.md)
