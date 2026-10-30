@@ -7,6 +7,10 @@ public sealed class CuotaGeneracionRepository : ICuotaGeneracionRepository
 {
     private readonly IDbConnection _db;
     private readonly bool _hasCuentaId;
+    private string? _colCuentaNombreResolved;
+
+    private string ColCuentaNombre => _colCuentaNombreResolved ??=
+        ColumnExists("fnz", "Cuentas", "Nombre") ? "Nombre" : "Cuenta";
 
     public CuotaGeneracionRepository(IDbConnection db)
     {
@@ -28,18 +32,23 @@ public sealed class CuotaGeneracionRepository : ICuotaGeneracionRepository
         if (TableExists("sgr", "CasaOcupantes"))
         {
             const string sqlCo = """
-                SELECT c.CasaID AS CasaId, resp.UsuarioID AS UsuarioId
+                SELECT c.CasaID AS CasaId, resp.UsuarioId
                 FROM sgr.Casas c WITH (NOLOCK)
                 CROSS APPLY (
-                    SELECT TOP (1) co.UsuarioID
-                    FROM sgr.CasaOcupantes co WITH (NOLOCK)
-                    WHERE co.CasaID = c.CasaID
-                      AND co.Vigente = 1
-                      AND co.bEliminado = 0
-                    ORDER BY CASE WHEN co.TipoResidencia = N'Propietario' THEN 0 ELSE 1 END,
-                             co.CasaOcupanteID
+                    SELECT COALESCE(
+                        (
+                            SELECT TOP (1) co.UsuarioID
+                            FROM sgr.CasaOcupantes co WITH (NOLOCK)
+                            WHERE co.CasaID = c.CasaID
+                              AND co.Vigente = 1
+                              AND co.bEliminado = 0
+                            ORDER BY CASE WHEN co.TipoResidencia = N'Propietario' THEN 0 ELSE 1 END,
+                                     co.CasaOcupanteID
+                        ),
+                        c.PropietarioUsuarioID
+                    ) AS UsuarioId
                 ) resp
-                WHERE c.bEliminado = 0;
+                WHERE c.bEliminado = 0 AND resp.UsuarioId IS NOT NULL;
                 """;
             var list = await _db.QueryAsync<CasaCuotaElegible>(
                 new CommandDefinition(sqlCo, cancellationToken: ct));
@@ -79,6 +88,125 @@ public sealed class CuotaGeneracionRepository : ICuotaGeneracionRepository
         var v = await _db.ExecuteScalarAsync<int>(
             new CommandDefinition(sql, new { CuentaId = cuentaId }, cancellationToken: ct));
         return v is 1;
+    }
+
+    public async Task<IReadOnlyList<CuentaFnzCatalogoRow>> ListarCuentasActivasAsync(CancellationToken ct = default)
+    {
+        var sql = $"""
+            SELECT CuentaID AS CuentaId, {ColCuentaNombre} AS Nombre
+            FROM fnz.Cuentas WITH (NOLOCK)
+            WHERE bEliminado = 0
+            ORDER BY {ColCuentaNombre};
+            """;
+        var rows = await _db.QueryAsync<CuentaFnzCatalogoRow>(
+            new CommandDefinition(sql, cancellationToken: ct));
+        return rows.ToList();
+    }
+
+    public async Task<IReadOnlyList<CuentaFnzAdminRow>> ListarCuentasAdminAsync(CancellationToken ct = default)
+    {
+        var sql = $"""
+            SELECT CuentaID AS CuentaId,
+                   {ColCuentaNombre} AS Nombre,
+                   Tipo,
+                   Saldo,
+                   ResponsableUsuarioID AS ResponsableUsuarioId
+            FROM fnz.Cuentas WITH (NOLOCK)
+            WHERE bEliminado = 0
+            ORDER BY {ColCuentaNombre};
+            """;
+        var rows = await _db.QueryAsync<CuentaFnzAdminRow>(
+            new CommandDefinition(sql, cancellationToken: ct));
+        return rows.ToList();
+    }
+
+    public async Task<CuentaFnzAdminRow?> ObtenerCuentaAsync(int cuentaId, CancellationToken ct = default)
+    {
+        var sql = $"""
+            SELECT CuentaID AS CuentaId,
+                   {ColCuentaNombre} AS Nombre,
+                   Tipo,
+                   Saldo,
+                   ResponsableUsuarioID AS ResponsableUsuarioId
+            FROM fnz.Cuentas WITH (NOLOCK)
+            WHERE CuentaID = @CuentaId AND bEliminado = 0;
+            """;
+        return await _db.QuerySingleOrDefaultAsync<CuentaFnzAdminRow>(
+            new CommandDefinition(sql, new { CuentaId = cuentaId }, cancellationToken: ct));
+    }
+
+    public async Task<int> InsertarCuentaAsync(
+        string nombre, string tipo, decimal saldo, int? responsableUsuarioId, string correo, int userId, CancellationToken ct = default)
+    {
+        var sql = $"""
+            INSERT INTO fnz.Cuentas
+                ({ColCuentaNombre}, Tipo, Saldo, ResponsableUsuarioID, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+            VALUES
+                (@Nombre, @Tipo, @Saldo, @ResponsableUsuarioId, @Correo, @UserId, GETDATE(), 0);
+            SELECT CAST(SCOPE_IDENTITY() AS int);
+            """;
+        return await _db.ExecuteScalarAsync<int>(
+            new CommandDefinition(
+                sql,
+                new { Nombre = nombre, Tipo = tipo, Saldo = saldo, ResponsableUsuarioId = responsableUsuarioId, Correo = correo, UserId = userId },
+                cancellationToken: ct));
+    }
+
+    public async Task<bool> ActualizarCuentaAsync(
+        int cuentaId, string nombre, string tipo, decimal saldo, int? responsableUsuarioId, string correo, int userId, CancellationToken ct = default)
+    {
+        var sql = $"""
+            UPDATE fnz.Cuentas SET
+                {ColCuentaNombre} = @Nombre,
+                Tipo = @Tipo,
+                Saldo = @Saldo,
+                ResponsableUsuarioID = @ResponsableUsuarioId,
+                Modificado = @Correo,
+                UsuarioModificacionID = @UserId,
+                FechaModificacion = GETDATE()
+            WHERE CuentaID = @CuentaId AND bEliminado = 0;
+            """;
+        var n = await _db.ExecuteAsync(
+            new CommandDefinition(
+                sql,
+                new
+                {
+                    CuentaId = cuentaId,
+                    Nombre = nombre,
+                    Tipo = tipo,
+                    Saldo = saldo,
+                    ResponsableUsuarioId = responsableUsuarioId,
+                    Correo = correo,
+                    UserId = userId,
+                },
+                cancellationToken: ct));
+        return n > 0;
+    }
+
+    public async Task<bool> SoftDeleteCuentaAsync(int cuentaId, string correo, int userId, CancellationToken ct = default)
+    {
+        const string sql = """
+            UPDATE fnz.Cuentas SET
+                bEliminado = 1,
+                Modificado = @Correo,
+                UsuarioModificacionID = @UserId,
+                FechaModificacion = GETDATE()
+            WHERE CuentaID = @CuentaId AND bEliminado = 0;
+            """;
+        var n = await _db.ExecuteAsync(
+            new CommandDefinition(sql, new { CuentaId = cuentaId, Correo = correo, UserId = userId }, cancellationToken: ct));
+        return n > 0;
+    }
+
+    public async Task<int> ContarCuentasPorTipoAsync(string tipo, CancellationToken ct = default)
+    {
+        const string sql = """
+            SELECT COUNT(1)
+            FROM fnz.Cuentas WITH (NOLOCK)
+            WHERE Tipo = @Tipo AND bEliminado = 0;
+            """;
+        return await _db.ExecuteScalarAsync<int>(
+            new CommandDefinition(sql, new { Tipo = tipo }, cancellationToken: ct));
     }
 
     public async Task<bool> InsertarCuotaAsync(

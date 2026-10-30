@@ -1,4 +1,6 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using GraphApi.Infrastructure.Security;
 using GraphApi.Models.VTS.CuartaVisitasGeneradas;
 using GraphApi.Models.VTS.VisitasGeneradas;
 using GraphApi.Services.VTS.CuartaVisitasGeneradas;
@@ -37,12 +39,77 @@ public class VisitasGeneradasController(
     [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> CrearPase([FromBody] CrearPaseRequest request, CancellationToken ct)
     {
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
         var (pase, code, status, detail) = await cuarta.CrearPaseAsync(request, userId, correo, ct);
         if (pase is null) return Problem(detail: detail, statusCode: status, title: code);
         return StatusCode(StatusCodes.Status201Created, pase);
+    }
+
+    /// <summary>Admin crea pase QR a nombre de un residente visitado.</summary>
+    [HttpPost("admin")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(PaseVisitaDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> CrearPaseAdmin([FromBody] CrearPaseAdminRequest request, CancellationToken ct)
+    {
+        if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+        {
+            return Unauthorized();
+        }
+
+        var correo = JwtUserContext.GetCorreo(User) ?? "admin";
+        var (pase, code, status, detail) = await cuarta.CrearPaseAdminAsync(request, adminId, correo, ct);
+        if (pase is null) return Problem(detail: detail, statusCode: status, title: code);
+        return StatusCode(StatusCodes.Status201Created, pase);
+    }
+
+    /// <summary>Listado de pases QR (admin).</summary>
+    [HttpGet("admin")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(IReadOnlyList<PaseVisitaDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarAdmin(
+        [FromQuery] int? casaId,
+        [FromQuery] DateTime? desde,
+        [FromQuery] DateTime? hasta,
+        CancellationToken ct)
+    {
+        var list = await cuarta.ListAdminAsync(casaId, desde, hasta, ct);
+        return Ok(list);
+    }
+
+    /// <summary>Admin actualiza un pase vigente (no usado / no expirado).</summary>
+    [HttpPut("admin/{id:int}")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(PaseVisitaDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ActualizarPaseAdmin(int id, [FromBody] CrearPaseAdminRequest request, CancellationToken ct)
+    {
+        if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+            return Unauthorized();
+
+        var correo = JwtUserContext.GetCorreo(User) ?? "admin";
+        var (pase, code, status, detail) = await cuarta.ActualizarPaseAdminAsync(id, request, adminId, correo, ct);
+        if (pase is null) return Problem(detail: detail, statusCode: status, title: code);
+        return Ok(pase);
+    }
+
+    /// <summary>Admin cancela (soft delete) un pase QR.</summary>
+    [HttpDelete("admin/{id:int}")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CancelarPaseAdmin(int id, CancellationToken ct)
+    {
+        if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+            return Unauthorized();
+
+        var correo = JwtUserContext.GetCorreo(User) ?? "admin";
+        var (ok, code, status, detail) = await cuarta.CancelarPaseAdminAsync(id, adminId, correo, ct);
+        if (!ok) return Problem(detail: detail, statusCode: status, title: code);
+        return NoContent();
     }
 
     /// <summary>Valida un código QR (guardia o administrador).</summary>
@@ -63,7 +130,7 @@ public class VisitasGeneradasController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Usar(int id, CancellationToken ct)
     {
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
         var (response, code, status, detail) = await cuarta.UsarAsync(id, correo, userId, ct);

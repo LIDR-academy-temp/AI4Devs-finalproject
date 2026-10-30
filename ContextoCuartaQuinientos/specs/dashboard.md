@@ -48,9 +48,15 @@ Controller backend real: `Dashboard/Resumen` (`ResumenController`).
 
 ## Deltas del proyecto (nuevo)
 - (delta) KPI `ticketsPorCanal { web, telegram }` sobre la columna `tkt.Tickets.CanalID` (FK → `tkt.CanalesTicket`).
-- (delta) `ocupacion` depende de `sgr.CasaOcupantes`.
+- (delta) `ocupacion` depende de `sgr.CasaOcupantes` vigente; **no** basta `sgr.Casas.PropietarioUsuarioID` ([[PROD-UX-001]]).
 - (delta) Adopción del bot como métrica del panel (relacionado con BI; ver reportes-bi.md).
 
 ## Notas
 - Sin tablas ni stored procedures propios: Dapper sobre vistas `vs*` + servicios C#.
 - Los KPIs con **tendencia** (comparativa entre períodos) pertenecen al módulo BI (`bi.KpiSnapshots`), no al Dashboard operativo; ver reportes-bi.md.
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-10-30 | [[PROD-UX-001]] | Documentada operación ocupación vs propietario en Casas |

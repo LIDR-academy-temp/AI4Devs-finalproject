@@ -47,10 +47,14 @@ Controllers reales VTS (`/{DOMINIO}/{Controller}`):
 - `/VTS/TiposIdentificacion` — catálogo tipos ID (GET; **POST/PUT/DELETE** admin [[FE-ADMIN-CAT-001]]; ruta REST plural en API).
 - `/VTS/LogUsoVisitas`
 
-**Reservas Cuarta (JWT — [[FE-047]], [[FE-CRUD-004]]):**
+**Reservas Cuarta (JWT — [[FE-047]], [[FE-CRUD-004]], [[VTS-AREAS-CRUD-001]]):**
+- `GET /VTS/AreasComunes` — listado (JWT).
+- `POST /VTS/AreasComunes` · `PUT /VTS/AreasComunes/{id}` · `DELETE /VTS/AreasComunes/{id}` — CRUD admin.
 - `GET /VTS/ReservacionesArea/mias` — reservas del `sub`.
-- `POST /VTS/ReservacionesArea` — crear reserva (anti-solape en servicio).
+- `POST /VTS/ReservacionesArea` — crear reserva (anti-solape; INV-2 `RequiereReservacion`).
 - `GET /VTS/ReservacionesArea/calendario` — ocupación comunitaria por `areaComunId` + rango `desde`/`hasta` (sin PII; excluye estado Cancelada por nombre) [[FE-VTS-CAL-001]].
+- `GET /VTS/ReservacionesArea/admin` — listado paginado admin.
+- `PATCH /VTS/ReservacionesArea/{id}/cancelar` — cancelación admin.
 
 **Pase QR (JWT Cuarta — [[FE-VTS-PASE-001]]):**
 - `GET /VTS/VisitasGeneradas/mias` — pases del `sub` (residente).
@@ -78,12 +82,15 @@ Verbos concretos `(asumido)`: GET (bitácora/áreas/reservas), POST (registrar v
 - Corrección de dominio: `VTS` = Visitas y Áreas Comunes, NO Vehículos (alucinación del borrador viejo).
 - Nombres reales del esquema español; soft delete `bEliminado`.
 - SPA admin: `AdminVisitasPage` (`/admin/visitas`) — split + `usuarioVisitadoId` en alta; salida sin `alert` ([[FE-CRUD-003]]).
-- SPA residente: `AreasYReservacionesPage` (`/areas-comunes`) — Zod + `FormModal`, `POST /VTS/ReservacionesArea`, hooks `useAreasComunes`/`useReservaciones` con `apiGet` desestructurado ([[FE-CRUD-004]]); tab **Calendario** con `useReservacionesCalendario` + `ReservasCalendarioSemanal` ([[FE-VTS-CAL-001]]).
+- SPA residente: `AreasYReservacionesPage` (`/areas-comunes`) — Zod + `FormModal`, `POST /VTS/ReservacionesArea`, hooks `useAreasComunes`/`useReservaciones` ([[FE-CRUD-004]]); calendario [[FE-VTS-CAL-001]].
+- SPA admin: `AdminAreasReservasPage` (`/admin/areas-reservas`) — pestañas Áreas (CRUD) · Calendario · Listado (+ cancelar reserva) [[VTS-AREAS-CRUD-001]].
 
 ## Changelog
 
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
+| 2026-10-30 | [[PROD-UX-001]] | Admin pases QR (badge vigente, panel CRUD); `bUnaOcasion`; usar → bitácora |
+| 2026-10-29 | [[VTS-AREAS-CRUD-001]] | CRUD admin áreas REST + UI admin + cancelar reserva; contrato camelCase |
 | 2026-10-28 | [[FE-VTS-CAL-001]] | GET calendario comunitario + UI semanal en `/areas-comunes` |
 | 2026-10-26 | [[FE-CRUD-003]] | UI admin visitas al patrón `cq-admin` (sin cambio de contrato API VTS) |
 | 2026-10-27 | [[FE-CRUD-004]] | Residente reservas: kit UI + fix contrato `apiGet` en hooks visitas |

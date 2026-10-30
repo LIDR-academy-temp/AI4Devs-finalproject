@@ -77,4 +77,5 @@ Dominio financiero del fraccionamiento (esquema `fnz`). Cubre las cuotas del res
 
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
+| 2026-10-30 | [[PROD-UX-001]] | Morosos: columna moras, aplicar/condonar lote; `MontoMora` + endpoints batch |
 | 2026-10-23 | [[FE-CRUD-001]] | Finanzas admin: morosos con tabla filtrable; tabs Bootstrap |

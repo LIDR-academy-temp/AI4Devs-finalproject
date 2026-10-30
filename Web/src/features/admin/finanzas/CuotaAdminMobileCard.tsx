@@ -1,5 +1,6 @@
 import { formatFecha, formatMxn, formatPeriodo } from '../../finanzas/format'
 import { AdminMobileCard } from '../../../shared/components/admin/AdminMobileCard'
+import { cuotaMontoTotal } from './cuotaMontoUtils'
 import type { CuotaEstado } from '../../../shared/types/finanzas'
 
 const estadoClass: Record<string, string> = {
@@ -20,7 +21,7 @@ export function CuotaAdminMobileCard({ cuota, onRegistrarPago }: Props) {
     <div className="cq-admin-mobile-card-wrap mb-2">
       <AdminMobileCard
         title={formatPeriodo(cuota.periodoInicio)}
-        subtitle={formatMxn(cuota.monto)}
+        subtitle={formatMxn(cuotaMontoTotal(cuota))}
         badges={
           <span className={`badge ${estadoClass[cuota.estado] ?? 'bg-secondary'}`}>
             {cuota.estado}

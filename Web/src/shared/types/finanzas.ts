@@ -6,6 +6,7 @@ export type CuotaEstado = {
   cuentaId?: number | null
   cuenta?: string | null
   monto: number
+  montoMora?: number
   montoPagado: number
   periodoInicio: string
   periodoFin: string

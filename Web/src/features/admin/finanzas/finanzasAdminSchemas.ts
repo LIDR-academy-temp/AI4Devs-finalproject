@@ -9,12 +9,21 @@ export const registrarPagoSchema = z.object({
 
 export type RegistrarPagoForm = z.infer<typeof registrarPagoSchema>
 
-export const generarCuotasSchema = z.object({
-  mes: z.number().int().min(1).max(12),
-  anio: z.number().int().min(2024).max(2100),
-  monto: z.number().positive('Monto debe ser mayor a cero'),
-  fechaVencimiento: z.string().min(1, 'Vencimiento requerido'),
-  cuentaId: z.number().int().positive().optional(),
-})
+export const generarCuotasSchema = z
+  .object({
+    mes: z.number().int().min(1).max(12),
+    anio: z.number().int().min(2024).max(2100),
+    monto: z.number().positive('Monto debe ser mayor a cero'),
+    fechaVencimiento: z.string().min(1, 'Vencimiento requerido'),
+    cuentaId: z.string().optional(),
+  })
+  .transform((data) => ({
+    mes: data.mes,
+    anio: data.anio,
+    monto: data.monto,
+    fechaVencimiento: data.fechaVencimiento,
+    cuentaId: data.cuentaId?.trim() ? Number(data.cuentaId) : undefined,
+  }))
 
-export type GenerarCuotasForm = z.infer<typeof generarCuotasSchema>
+export type GenerarCuotasFormInput = z.input<typeof generarCuotasSchema>
+export type GenerarCuotasForm = z.output<typeof generarCuotasSchema>

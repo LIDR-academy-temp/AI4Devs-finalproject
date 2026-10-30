@@ -27,6 +27,15 @@ public interface ICuartaVisitasRepository
 
     // Áreas comunes
     Task<IReadOnlyList<AreaComunDto>> ListarAreasAsync(CancellationToken ct = default);
+    Task<AreaComunDto?> ObtenerAreaAsync(int areaComunId, CancellationToken ct = default);
+    Task<int> InsertAreaComunAsync(AreaComunUpsertRequest request, string correo, int userId, IDbTransaction? tx = null);
+    Task<bool> UpdateAreaComunAsync(int areaComunId, AreaComunUpsertRequest request, string correo, int userId, IDbTransaction? tx = null);
+    Task<bool> SoftDeleteAreaComunAsync(int areaComunId, string correo, int userId, IDbTransaction? tx = null);
+
+    Task<bool> CancelarReservacionAsync(int reservacionAreaId, string correo, int userId, IDbTransaction? tx = null);
+
+    Task<bool> ActualizarEstadoReservacionAsync(
+        int reservacionAreaId, string estadoNombre, string correo, int userId, IDbTransaction? tx = null);
 
     // Reservaciones
     Task<bool> HaySolapamientoAsync(
@@ -37,15 +46,18 @@ public interface ICuartaVisitasRepository
     Task<int> InsertReservacionAsync(
         CrearReservacionRequest request,
         int estadoId,
-        string correo,
-        int userId,
+        string correoActor,
+        int residentUserId,
+        int actorUserId,
         IDbTransaction tx);
+
+    Task<ReservacionAreaDto?> ObtenerReservacionAsync(int reservacionAreaId, CancellationToken ct = default);
 
     Task<IReadOnlyList<ReservacionAreaDto>> ListarReservacionesMiasAsync(
         int userId, CancellationToken ct = default);
 
     Task<IReadOnlyList<ReservacionCalendarioDto>> ListarReservacionesCalendarioAsync(
-        int areaComunId, DateTime desde, DateTime hasta, CancellationToken ct = default);
+        int? areaComunId, DateTime desde, DateTime hasta, CancellationToken ct = default);
 
     Task<PaginaDto<ReservacionAdminItemDto>> ListarReservacionesAdminAsync(
         ReservacionAdminFiltroDto filtro, CancellationToken ct = default);

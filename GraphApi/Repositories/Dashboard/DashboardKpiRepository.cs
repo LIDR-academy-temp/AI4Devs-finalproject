@@ -26,7 +26,7 @@ public sealed class DashboardKpiRepository : IDashboardKpiRepository
             SELECT COUNT(DISTINCT UsuarioID) FROM fnz.Cuotas WITH (NOLOCK)
              WHERE Pagado = 0 AND FechaVencimiento < @Hoy AND bEliminado = 0;
 
-            SELECT ISNULL(SUM(CASE WHEN Pagado = 1 THEN MontoPagado END), 0) AS MontoCobrado,
+            SELECT ISNULL(SUM(CASE WHEN Pagado = 1 THEN Monto END), 0) AS MontoCobrado,
                    ISNULL(SUM(CASE WHEN Pagado = 0 THEN Monto END), 0) AS MontoPendiente
               FROM fnz.Cuotas WITH (NOLOCK)
              WHERE PeriodoInicio >= @Inicio AND PeriodoInicio < @Fin AND bEliminado = 0;
@@ -41,10 +41,10 @@ public sealed class DashboardKpiRepository : IDashboardKpiRepository
               ) o ON o.CasaID = c.CasaID
              WHERE c.CondominioID = @CondominioID AND c.bEliminado = 0;
 
-            SELECT Canal, COUNT(*) AS Total
-              FROM tkt.vsTickets WITH (NOLOCK)
-             WHERE FechaCreacionTicket >= @Inicio AND FechaCreacionTicket < @Fin
-             GROUP BY Canal;
+            SELECT N'Otro' AS Canal, COUNT(*) AS Total
+              FROM tkt.Tickets t WITH (NOLOCK)
+             WHERE t.FechaCreacionTicket >= @Inicio AND t.FechaCreacionTicket < @Fin
+               AND t.bEliminado = 0;
             """;
 
         await using var grid = await _db.QueryMultipleAsync(

@@ -36,6 +36,9 @@ public class FinanzasServiceMorososTests
         var sut = new FinanzasService(
             new Mock<ICuotaEstadoCuentaRepository>().Object,
             new Mock<ICuotaGeneracionRepository>().Object,
+            new Mock<ITiposCuentaFnzRepository>().Object,
+            new Mock<ITiposMovimientoFnzRepository>().Object,
+            new Mock<ITransaccionesFnzRepository>().Object,
             new Mock<ICuotaPagoRepository>().Object,
             morosos.Object,
             new Mock<INotificacionService>().Object,

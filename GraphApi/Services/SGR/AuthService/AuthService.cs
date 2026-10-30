@@ -5,6 +5,7 @@ using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using GraphApi.Infrastructure;
 using GraphApi.Models.Security.AuthService;
 using BC = BCrypt.Net.BCrypt;
 
@@ -16,6 +17,10 @@ namespace GraphApi.Services.Security.AuthService
         private readonly IDbConnection _objDb;
         private readonly ILogger<AuthService> _logger;
 
+        private readonly string _colCorreo;
+        private readonly string _colActivo;
+        private readonly string _colPassword;
+
         public AuthService(
             IOptions<clJwtSettings> objJwtOptions,
             IDbConnection objDbConnection,
@@ -24,16 +29,22 @@ namespace GraphApi.Services.Security.AuthService
             _objJwtSettings = objJwtOptions.Value;
             _objDb = objDbConnection;
             _logger = logger;
+            // ADR-008: detectar schema pre/post DB-001 en construcción.
+            var (_, correo, activo) = SqlSchemaCompat.UsuarioColumns(objDbConnection, "u");
+            _colCorreo  = correo.Replace("u.", "");
+            _colActivo  = activo.Replace("u.", "");
+            _colPassword = SqlSchemaCompat.HasColumn(objDbConnection, "sgr", "Usuarios", "Password")
+                ? "Password" : "PasswordUsuario";
         }
 
         public async Task<clAuthServiceResponse> Authenticate(clAuthServiceRequest objAuthServiceRequest)
         {
-            // 1) Buscar usuario activo por correo en sgr.Usuarios
-            const string sSql = @"
-                SELECT CorreoUsuario AS NombreUsuario, PasswordUsuario AS Password
+            // 1) Buscar usuario activo por correo en sgr.Usuarios (ADR-008: columnas dinámicas).
+            var sSql = $@"
+                SELECT {_colCorreo} AS NombreUsuario, {_colPassword} AS Password
                 FROM sgr.Usuarios (NOLOCK)
-                WHERE CorreoUsuario = @NombreUsuario
-                  AND bActivoUsuario = 1
+                WHERE {_colCorreo} = @NombreUsuario
+                  AND {_colActivo} = 1
                   AND bEliminado = 0;
             ";
 

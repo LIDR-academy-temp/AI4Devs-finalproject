@@ -38,18 +38,15 @@ export function AreasYReservacionesPage() {
   )
 
   const [tab, setTab] = useState<'calendario' | 'mias'>('calendario')
-  const [areaCalendarioId, setAreaCalendarioId] = useState<number | null>(null)
+  const [areaCalendarioFiltro, setAreaCalendarioFiltro] = useState<number | null>(null)
   const [weekStart, setWeekStart] = useState(() => startOfWeekMonday(new Date()))
-
-  const areaCalendarioEfectiva =
-    areaCalendarioId ?? areasReservables[0]?.areaComunId ?? null
 
   const {
     eventos: eventosCalendario,
     loading: loadingCalendario,
     error: calendarioError,
     refetch: refetchCalendario,
-  } = useReservacionesCalendario(areaCalendarioEfectiva, weekStart)
+  } = useReservacionesCalendario(areaCalendarioFiltro, weekStart)
 
   const [modalArea, setModalArea] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
@@ -190,9 +187,13 @@ export function AreasYReservacionesPage() {
                   Área
                   <select
                     className="mt-1 w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    value={areaCalendarioEfectiva ?? ''}
-                    onChange={(e) => setAreaCalendarioId(Number(e.target.value))}
+                    value={areaCalendarioFiltro ?? ''}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      setAreaCalendarioFiltro(v === '' ? null : Number(v))
+                    }}
                   >
+                    <option value="">Todas las áreas</option>
                     {areasReservables.map((a) => (
                       <option key={a.areaComunId} value={a.areaComunId}>
                         {a.nombre}
@@ -200,15 +201,13 @@ export function AreasYReservacionesPage() {
                     ))}
                   </select>
                 </label>
-                {areaCalendarioEfectiva !== null && (
-                  <ReservasCalendarioSemanal
-                    areaComunId={areaCalendarioEfectiva}
-                    weekStart={weekStart}
-                    onWeekChange={setWeekStart}
-                    eventos={eventosCalendario}
-                    loading={loadingCalendario}
-                  />
-                )}
+                <ReservasCalendarioSemanal
+                  areaComunId={areaCalendarioFiltro}
+                  weekStart={weekStart}
+                  onWeekChange={setWeekStart}
+                  eventos={eventosCalendario}
+                  loading={loadingCalendario}
+                />
               </>
             )}
           </div>

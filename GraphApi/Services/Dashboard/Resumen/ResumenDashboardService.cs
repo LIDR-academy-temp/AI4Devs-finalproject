@@ -18,12 +18,18 @@ namespace GraphApi.Services.Dashboard.Resumen
         {
             using var db = _connectionFactory.Create(ctx.EnvironmentKey);
 
-            const string sql = @"
+            // ADR-008: detectar schema pre/post DB-001 en tiempo de ejecución.
+            var (_, _, activo) = SqlSchemaCompat.UsuarioColumns(db, "u");
+            // bAdministrador vive en sgr.Perfiles (post-migración), no en sgr.Usuarios.
+            // Usamos JOIN para compatibilidad con ambos schemas.
+            var sql = $@"
 SELECT
     (SELECT COUNT(*) FROM sgr.Condominios WITH (NOLOCK) WHERE bEliminado = 0) AS TotalCondominios,
     (SELECT COUNT(*) FROM sgr.Casas WITH (NOLOCK) WHERE bEliminado = 0) AS TotalCasas,
-    (SELECT COUNT(*) FROM sgr.Usuarios WITH (NOLOCK) WHERE bEliminado = 0 AND bActivoUsuario = 1) AS UsuariosActivos,
-    (SELECT COUNT(*) FROM sgr.Usuarios WITH (NOLOCK) WHERE bEliminado = 0 AND bAdministrador = 1) AS Administradores,
+    (SELECT COUNT(*) FROM sgr.Usuarios u WITH (NOLOCK) WHERE u.bEliminado = 0 AND {activo} = 1) AS UsuariosActivos,
+    (SELECT COUNT(*) FROM sgr.Usuarios u WITH (NOLOCK)
+      INNER JOIN sgr.Perfiles p WITH (NOLOCK) ON p.PerfilID = u.PerfilID
+      WHERE u.bEliminado = 0 AND p.bAdministrador = 1) AS Administradores,
     (SELECT COUNT(*) FROM vts.Visitas WITH (NOLOCK) WHERE bEliminado = 0 AND CAST(FechaEntrada AS date) = CAST(GETDATE() AS date)) AS VisitasHoy,
     (SELECT COUNT(*) FROM vts.Visitas WITH (NOLOCK) WHERE bEliminado = 0 AND FechaSalida IS NULL) AS VisitasAbiertas,
     (SELECT COUNT(*) FROM vts.ReservacionesArea ra WITH (NOLOCK)

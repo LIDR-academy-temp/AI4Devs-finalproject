@@ -37,6 +37,9 @@ public sealed class CuotaEstadoDto
     [JsonPropertyName("monto")]
     public decimal Monto { get; set; }
 
+    [JsonPropertyName("montoMora")]
+    public decimal MontoMora { get; set; }
+
     [JsonPropertyName("montoPagado")]
     public decimal MontoPagado { get; set; }
 

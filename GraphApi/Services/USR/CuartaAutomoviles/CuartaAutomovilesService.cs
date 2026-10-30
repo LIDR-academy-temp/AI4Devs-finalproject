@@ -31,6 +31,7 @@ public sealed class CuartaAutomovilesService(
             return (null, "VEH_PLACAS_REQUERIDAS", 422, "Las placas son obligatorias.");
 
         if (db.State != ConnectionState.Open) db.Open();
+        int id;
         using var tx = db.BeginTransaction();
         try
         {
@@ -49,18 +50,23 @@ public sealed class CuartaAutomovilesService(
                 Placas = req.Placas.Trim().ToUpperInvariant(),
                 Color = req.Color,
             };
-            var id = await repo.InsertAsync(crear, correo, usuarioId, tx);
+            id = await repo.InsertAsync(crear, correo, usuarioId, tx);
             tx.Commit();
-
-            var lista = await repo.ListarMisAsync(usuarioId, ct);
-            var nuevo = lista.FirstOrDefault(a => a.AutomovilId == id);
-            return (nuevo, null, 201, null);
+        }
+        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 547)
+        {
+            tx.Rollback();
+            return (null, "VEH_REFERENCIA_INVALIDA", 422, "Marca, modelo o propietario no válido.");
         }
         catch
         {
             tx.Rollback();
             throw;
         }
+
+        var lista = await repo.ListarMisAsync(usuarioId, ct);
+        var nuevo = lista.FirstOrDefault(a => a.AutomovilId == id);
+        return (nuevo, null, 201, null);
     }
 
     public async Task<(bool Ok, string? Code, int Status, string? Detail)> ActualizarAsync(
@@ -145,6 +151,7 @@ public sealed class CuartaAutomovilesService(
             return (null, "VEH_PLACAS_REQUERIDAS", 422, "Las placas son obligatorias.");
 
         if (db.State != ConnectionState.Open) db.Open();
+        int id;
         using var tx = db.BeginTransaction();
         try
         {
@@ -164,18 +171,23 @@ public sealed class CuartaAutomovilesService(
                 Placas = placas,
                 Color = req.Color,
             };
-            var id = await repo.InsertAsync(crear, correoAdmin, req.UsuarioId, tx);
+            id = await repo.InsertAsync(crear, correoAdmin, req.UsuarioId, tx);
             tx.Commit();
-
-            var padron = await repo.ListarPadronAsync(ct);
-            var nuevo = padron.FirstOrDefault(a => a.AutomovilId == id);
-            return (nuevo, null, 201, null);
+        }
+        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 547)
+        {
+            tx.Rollback();
+            return (null, "VEH_REFERENCIA_INVALIDA", 422, "Marca, modelo o propietario no válido.");
         }
         catch
         {
             tx.Rollback();
             throw;
         }
+
+        var padron = await repo.ListarPadronAsync(ct);
+        var nuevo = padron.FirstOrDefault(a => a.AutomovilId == id);
+        return (nuevo, null, 201, null);
     }
 
     public async Task<(bool Ok, string? Code, int Status, string? Detail)> ActualizarComoAdminAsync(

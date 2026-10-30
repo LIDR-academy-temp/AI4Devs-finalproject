@@ -3,6 +3,7 @@ using System.Text;
 using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using GraphApi.Infrastructure;
 using GraphApi.Models.USR.Automoviles;
 using Serilog;
 
@@ -12,11 +13,16 @@ namespace GraphApi.Services.USR.Automoviles
     {
         private readonly IDbConnection   _objDbDefault;
         private readonly IConfiguration  _objConfig;
+        // ADR-008: columnas detectadas en constructor según schema pre/post DB-001.
+        private readonly string _colNombre;
+        private readonly string _colCorreo;
 
         public AutomovilesService(IDbConnection objDbDefault, IConfiguration objConfig)
         {
             _objDbDefault = objDbDefault;
             _objConfig    = objConfig;
+            // ADR-008: detectar schema en tiempo de construcción.
+            (_colNombre, _colCorreo, _) = SqlSchemaCompat.UsuarioColumns(objDbDefault, "U");
         }
 
         public async Task<IEnumerable<clReadAutomoviles>> GetAutomoviles(
@@ -29,8 +35,8 @@ namespace GraphApi.Services.USR.Automoviles
                 --WindowName:{windowName},UserID:{userId}
                 SELECT A.AutomovilID,
                        A.UsuarioID,
-                       U.NombreUsuario,
-                       U.CorreoUsuario,
+                       {_colNombre} AS NombreUsuario,
+                       {_colCorreo} AS CorreoUsuario,
                        A.MarcaID,
                        M.Marca,
                        A.ModeloID,
@@ -150,11 +156,11 @@ namespace GraphApi.Services.USR.Automoviles
                 // Fallback: la vista `usr.vsAutomoviles` puede excluir filas cuando algunos FK son NULL
                 // (p.ej. MarcaID o ModeloID). Intentamos leer directamente desde la tabla con LEFT JOINs
                 // para no depender de la vista.
-                const string sFallback = @"
+                var sFallback = $@"
                     SELECT A.AutomovilID,
                            A.UsuarioID,
-                           U.NombreUsuario,
-                           U.CorreoUsuario,
+                           {_colNombre} AS NombreUsuario,
+                           {_colCorreo} AS CorreoUsuario,
                            A.MarcaID,
                            M.Marca,
                            A.ModeloID,
@@ -257,11 +263,11 @@ namespace GraphApi.Services.USR.Automoviles
             // Fallback: la vista `usr.vsAutomoviles` puede excluir filas cuando algunos FK son NULL
             // (p.ej. MarcaID o ModeloID). Intentamos leer directamente desde la tabla con LEFT JOINs
             // para no depender de la vista y devolver el registro actualizado.
-            const string sFallback = @"
+            var sFallback = $@"
                 SELECT A.AutomovilID,
                        A.UsuarioID,
-                       U.NombreUsuario,
-                       U.CorreoUsuario,
+                       {_colNombre} AS NombreUsuario,
+                       {_colCorreo} AS CorreoUsuario,
                        A.MarcaID,
                        M.Marca,
                        A.ModeloID,

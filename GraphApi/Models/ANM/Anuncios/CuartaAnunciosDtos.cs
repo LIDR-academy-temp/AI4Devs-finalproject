@@ -68,3 +68,9 @@ public sealed class TipoAnuncioItemDto
     [JsonPropertyName("tipoAnuncio")]
     public string TipoAnuncio { get; set; } = string.Empty;
 }
+
+public sealed class TipoAnuncioUpsertRequest
+{
+    [JsonPropertyName("tipoAnuncio")]
+    public string TipoAnuncio { get; set; } = string.Empty;
+}

@@ -36,7 +36,11 @@ const anuncio = {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockUseTiposAnuncio.mockReturnValue(tipos)
+  mockUseTiposAnuncio.mockReturnValue({
+    tipos,
+    loading: false,
+    reload: vi.fn(),
+  })
   mockUseAnunciosAdmin.mockReturnValue({
     data: [],
     loading: false,
@@ -79,7 +83,11 @@ describe('AdminAnunciosPage', () => {
   })
 
   it('avisa si no hay tipos en catálogo', () => {
-    mockUseTiposAnuncio.mockReturnValue([])
+    mockUseTiposAnuncio.mockReturnValue({
+      tipos: [],
+      loading: false,
+      reload: vi.fn(),
+    })
     render(<AdminAnunciosPage />)
     expect(screen.getByText(/Sin tipos en catálogo/i)).toBeInTheDocument()
   })

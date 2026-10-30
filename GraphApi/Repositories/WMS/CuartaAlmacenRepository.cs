@@ -37,8 +37,49 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
 
     private string PrestamosListSql()
     {
-        var (nombre, correo, _) = SqlSchemaCompat.UsuarioColumns(db, "u");
         var notas = SqlSchemaCompat.PrestamosNotasSelect(db, "p");
+        if (SqlSchemaCompat.HasView(db, "sgr", "vsUsuarios"))
+        {
+            var legacyAliases = SqlSchemaCompat.ViewHasColumn(db, "sgr", "vsUsuarios", "NombreUsuario");
+            if (legacyAliases)
+            {
+                return $"""
+                    SELECT p.PrestamoID AS PrestamoId,
+                           p.ArticuloID AS ArticuloId,
+                           a.Nombre AS NombreArticulo,
+                           p.UsuarioID AS UsuarioId,
+                           u.NombreUsuario AS NombreUsuario,
+                           u.CorreoUsuario AS CorreoUsuario,
+                           p.Cantidad,
+                           p.FechaPrestamo,
+                           p.FechaDevolucion,
+                           p.Estado,
+                           {notas}
+                    FROM wms.Prestamos p
+                    INNER JOIN wms.Articulos a ON a.ArticuloID = p.ArticuloID
+                    INNER JOIN sgr.vsUsuarios u ON u.UsuarioID = p.UsuarioID
+                    """;
+            }
+
+            return $"""
+                SELECT p.PrestamoID AS PrestamoId,
+                       p.ArticuloID AS ArticuloId,
+                       a.Nombre AS NombreArticulo,
+                       p.UsuarioID AS UsuarioId,
+                       u.Nombre AS NombreUsuario,
+                       u.Correo AS CorreoUsuario,
+                       p.Cantidad,
+                       p.FechaPrestamo,
+                       p.FechaDevolucion,
+                       p.Estado,
+                       {notas}
+                FROM wms.Prestamos p
+                INNER JOIN wms.Articulos a ON a.ArticuloID = p.ArticuloID
+                INNER JOIN sgr.vsUsuarios u ON u.UsuarioID = p.UsuarioID
+                """;
+        }
+
+        var (nombre, correo, _) = SqlSchemaCompat.UsuarioColumns(db, "u");
         return $"""
             SELECT p.PrestamoID AS PrestamoId,
                    p.ArticuloID AS ArticuloId,
@@ -57,20 +98,16 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
             """;
     }
 
-    private static void EnsureWms(IDbConnection connection)
-    {
-        if (!SqlSchemaCompat.WmsDisponible(connection))
-            throw new InvalidOperationException(
-                "El esquema WMS no está desplegado. Ejecute SQL/DB-005_wms_schema.sql en la base CuartaQuinientos.");
-    }
-
     private static void EnsureWmsPrestamos(IDbConnection connection)
     {
-        EnsureWms(connection);
+        SqlSchemaCompat.EnsureWmsOrThrow(connection);
         if (!SqlSchemaCompat.WmsPrestamosDisponible(connection))
             throw new InvalidOperationException(
                 "La tabla wms.Prestamos no existe. Ejecute SQL/DB-005_wms_schema.sql o SQL/DB-005_wms_prestamos_notas.sql.");
     }
+
+    private IDbConnection ConnectionFor(IDbTransaction? tx)
+        => tx?.Connection ?? db;
 
     // ── Categorías ────────────────────────────────────────
     public async Task<IReadOnlyList<CategoriaDto>> ListarCategoriasAsync()
@@ -90,19 +127,21 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
 
     public async Task<int> InsertCategoriaAsync(string nombre, string correoUsuario, int usuarioId, IDbTransaction? tx = null)
     {
-        EnsureWms(db);
+        SqlSchemaCompat.EnsureWmsOrThrow(db);
+        var conn = ConnectionFor(tx);
         const string sql = """
             INSERT INTO wms.CategoriasArticulo
                 (Nombre, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
             OUTPUT INSERTED.CategoriaID
             VALUES (@nombre, @correoUsuario, @usuarioId, GETDATE(), 0);
             """;
-        return await db.ExecuteScalarAsync<int>(sql, new { nombre, correoUsuario, usuarioId }, tx);
+        return await conn.ExecuteScalarAsync<int>(sql, new { nombre, correoUsuario, usuarioId }, tx);
     }
 
     public async Task<bool> UpdateCategoriaAsync(int categoriaId, string nombre, string correoUsuario, int usuarioId, IDbTransaction? tx = null)
     {
-        EnsureWms(db);
+        SqlSchemaCompat.EnsureWmsOrThrow(db);
+        var conn = ConnectionFor(tx);
         const string sql = """
             UPDATE wms.CategoriasArticulo SET
                 Nombre = @nombre,
@@ -111,13 +150,14 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
                 FechaModificacion = GETDATE()
             WHERE CategoriaID = @categoriaId AND bEliminado = 0;
             """;
-        var n = await db.ExecuteAsync(sql, new { categoriaId, nombre, correoUsuario, usuarioId }, tx);
+        var n = await conn.ExecuteAsync(sql, new { categoriaId, nombre, correoUsuario, usuarioId }, tx);
         return n > 0;
     }
 
     public async Task<bool> SoftDeleteCategoriaAsync(int categoriaId, string correoUsuario, int usuarioId, IDbTransaction? tx = null)
     {
-        EnsureWms(db);
+        SqlSchemaCompat.EnsureWmsOrThrow(db);
+        var conn = ConnectionFor(tx);
         const string sql = """
             UPDATE wms.CategoriasArticulo SET
                 bEliminado = 1,
@@ -126,7 +166,7 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
                 FechaModificacion = GETDATE()
             WHERE CategoriaID = @categoriaId AND bEliminado = 0;
             """;
-        var n = await db.ExecuteAsync(sql, new { categoriaId, correoUsuario, usuarioId }, tx);
+        var n = await conn.ExecuteAsync(sql, new { categoriaId, correoUsuario, usuarioId }, tx);
         return n > 0;
     }
 
@@ -135,8 +175,8 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
         if (!SqlSchemaCompat.WmsDisponible(db))
             return false;
         const string sql = "SELECT COUNT(1) FROM wms.CategoriasArticulo WHERE CategoriaID = @categoriaId AND bEliminado = 0;";
-        var n = await db.ExecuteScalarAsync<int>(sql, new { categoriaId });
-        return n > 0;
+        var n = await db.ExecuteScalarAsync(sql, new { categoriaId });
+        return SqlSchemaCompat.ScalarToInt32(n) > 0;
     }
 
     // ── Artículos ─────────────────────────────────────────
@@ -161,15 +201,15 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
 
     public async Task<bool> ExisteArticuloAsync(int articuloId, IDbTransaction? tx = null)
     {
-        EnsureWms(db);
+        var conn = ConnectionFor(tx);
         const string sql = "SELECT COUNT(1) FROM wms.Articulos WHERE ArticuloID = @articuloId AND bEliminado = 0";
-        var n = await db.ExecuteScalarAsync<int>(sql, new { articuloId }, tx);
-        return n > 0;
+        var n = await conn.ExecuteScalarAsync(sql, new { articuloId }, tx);
+        return SqlSchemaCompat.ScalarToInt32(n) > 0;
     }
 
     public async Task<int> InsertArticuloAsync(ArticuloCrearRequest req, string correoUsuario, int usuarioId, IDbTransaction tx)
     {
-        EnsureWms(db);
+        var conn = ConnectionFor(tx);
         const string sql = """
             INSERT INTO wms.Articulos
                 (Nombre, CategoriaID, Stock, StockMinimo, Ubicacion,
@@ -179,13 +219,13 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
                 (@Nombre, @CategoriaId, @Stock, @StockMinimo, @Ubicacion,
                  @correoUsuario, @usuarioId, GETDATE(), 0)
             """;
-        return await db.ExecuteScalarAsync<int>(sql,
+        return await conn.ExecuteScalarAsync<int>(sql,
             new { req.Nombre, req.CategoriaId, req.Stock, req.StockMinimo, req.Ubicacion, correoUsuario, usuarioId }, tx);
     }
 
     public async Task ActualizarArticuloAsync(int articuloId, ArticuloActualizarRequest req, string correoUsuario, int usuarioId, IDbTransaction tx)
     {
-        EnsureWms(db);
+        var conn = ConnectionFor(tx);
         const string sql = """
             UPDATE wms.Articulos SET
                 Nombre              = COALESCE(@Nombre, Nombre),
@@ -198,13 +238,13 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
                 FechaModificacion   = GETDATE()
             WHERE ArticuloID = @articuloId AND bEliminado = 0
             """;
-        await db.ExecuteAsync(sql,
+        await conn.ExecuteAsync(sql,
             new { req.Nombre, req.CategoriaId, req.Stock, req.StockMinimo, req.Ubicacion, correoUsuario, usuarioId, articuloId }, tx);
     }
 
     public async Task SoftDeleteArticuloAsync(int articuloId, string correoUsuario, int usuarioId, IDbTransaction tx)
     {
-        EnsureWms(db);
+        var conn = ConnectionFor(tx);
         const string sql = """
             UPDATE wms.Articulos SET
                 bEliminado          = 1,
@@ -213,20 +253,20 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
                 FechaModificacion   = GETDATE()
             WHERE ArticuloID = @articuloId
             """;
-        await db.ExecuteAsync(sql, new { articuloId, correoUsuario, usuarioId }, tx);
+        await conn.ExecuteAsync(sql, new { articuloId, correoUsuario, usuarioId }, tx);
     }
 
     // ── Stock ─────────────────────────────────────────────
     public async Task<int> ObtenerStockAsync(int articuloId, IDbTransaction tx)
     {
-        EnsureWms(db);
+        var conn = ConnectionFor(tx);
         const string sql = "SELECT Stock FROM wms.Articulos WHERE ArticuloID = @articuloId AND bEliminado = 0";
-        return await db.ExecuteScalarAsync<int>(sql, new { articuloId }, tx);
+        return SqlSchemaCompat.ScalarToInt32(await conn.ExecuteScalarAsync(sql, new { articuloId }, tx));
     }
 
     public async Task AjustarStockAsync(int articuloId, int delta, string correoUsuario, int usuarioId, IDbTransaction tx)
     {
-        EnsureWms(db);
+        var conn = ConnectionFor(tx);
         const string sql = """
             UPDATE wms.Articulos SET
                 Stock               = Stock + @delta,
@@ -235,7 +275,7 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
                 FechaModificacion   = GETDATE()
             WHERE ArticuloID = @articuloId AND bEliminado = 0
             """;
-        await db.ExecuteAsync(sql, new { articuloId, delta, correoUsuario, usuarioId }, tx);
+        await conn.ExecuteAsync(sql, new { articuloId, delta, correoUsuario, usuarioId }, tx);
     }
 
     // ── Préstamos ─────────────────────────────────────────
@@ -260,44 +300,56 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
 
     public async Task<bool> EsPrestamoActivoAsync(int prestamoId, IDbTransaction? tx = null)
     {
-        EnsureWmsPrestamos(db);
+        var conn = ConnectionFor(tx);
         const string sql = """
             SELECT COUNT(1) FROM wms.Prestamos
             WHERE  PrestamoID = @prestamoId AND Estado = N'PRESTADO' AND bEliminado = 0
             """;
-        var n = await db.ExecuteScalarAsync<int>(sql, new { prestamoId }, tx);
-        return n > 0;
+        var n = await conn.ExecuteScalarAsync(sql, new { prestamoId }, tx);
+        return SqlSchemaCompat.ScalarToInt32(n) > 0;
     }
 
     public async Task<int> InsertPrestamoAsync(PrestamoCrearRequest req, string correoUsuario, int usuarioId, IDbTransaction tx)
     {
-        EnsureWmsPrestamos(db);
-        var sql = SqlSchemaCompat.WmsPrestamosTieneNotas(db)
-            ? """
-              INSERT INTO wms.Prestamos
-                  (ArticuloID, UsuarioID, Cantidad, FechaPrestamo, Estado, Notas,
-                   Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
-              OUTPUT INSERTED.PrestamoID
-              VALUES
-                  (@ArticuloId, @UsuarioId, @Cantidad, GETDATE(), N'PRESTADO', @Notas,
-                   @correoUsuario, @usuarioId, GETDATE(), 0)
-              """
-            : """
-              INSERT INTO wms.Prestamos
-                  (ArticuloID, UsuarioID, Cantidad, FechaPrestamo, Estado,
-                   Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
-              OUTPUT INSERTED.PrestamoID
-              VALUES
-                  (@ArticuloId, @UsuarioId, @Cantidad, GETDATE(), N'PRESTADO',
-                   @correoUsuario, @usuarioId, GETDATE(), 0)
-              """;
-        return await db.ExecuteScalarAsync<int>(sql,
-            new { req.ArticuloId, req.UsuarioId, req.Cantidad, req.Notas, correoUsuario, usuarioId }, tx);
+        var conn = ConnectionFor(tx);
+
+        // La caché de schema debe estar pre-calentada antes de iniciar la tx
+        // (ver PrestarAsync en el servicio). Aquí solo se consume el valor cacheado.
+        var tieneNotas = SqlSchemaCompat.WmsPrestamosTieneNotas(db);
+
+        if (tieneNotas)
+        {
+            const string sql = """
+                INSERT INTO wms.Prestamos
+                    (ArticuloID, UsuarioID, Cantidad, FechaPrestamo, Estado, Notas,
+                     Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+                OUTPUT INSERTED.PrestamoID
+                VALUES
+                    (@ArticuloId, @PrestamoUsuarioId, @Cantidad, GETDATE(), N'PRESTADO', @Notas,
+                     @correoUsuario, @adminUsuarioId, GETDATE(), 0)
+                """;
+            var raw = await conn.ExecuteScalarAsync(sql,
+                new { req.ArticuloId, PrestamoUsuarioId = req.UsuarioId, req.Cantidad, req.Notas, correoUsuario, adminUsuarioId = usuarioId }, tx);
+            return SqlSchemaCompat.ScalarToInt32(raw);
+        }
+
+        const string sqlSinNotas = """
+            INSERT INTO wms.Prestamos
+                (ArticuloID, UsuarioID, Cantidad, FechaPrestamo, Estado,
+                 Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+            OUTPUT INSERTED.PrestamoID
+            VALUES
+                (@ArticuloId, @PrestamoUsuarioId, @Cantidad, GETDATE(), N'PRESTADO',
+                 @correoUsuario, @adminUsuarioId, GETDATE(), 0)
+            """;
+        var id = await conn.ExecuteScalarAsync(sqlSinNotas,
+            new { req.ArticuloId, PrestamoUsuarioId = req.UsuarioId, req.Cantidad, correoUsuario, adminUsuarioId = usuarioId }, tx);
+        return SqlSchemaCompat.ScalarToInt32(id);
     }
 
     public async Task DevolverPrestamoAsync(int prestamoId, string correoUsuario, int usuarioId, IDbTransaction tx)
     {
-        EnsureWmsPrestamos(db);
+        var conn = ConnectionFor(tx);
         const string sql = """
             UPDATE wms.Prestamos SET
                 Estado              = N'DEVUELTO',
@@ -307,13 +359,13 @@ public class CuartaAlmacenRepository(IDbConnection db) : ICuartaAlmacenRepositor
                 FechaModificacion   = GETDATE()
             WHERE PrestamoID = @prestamoId
             """;
-        await db.ExecuteAsync(sql, new { prestamoId, correoUsuario, usuarioId }, tx);
+        await conn.ExecuteAsync(sql, new { prestamoId, correoUsuario, usuarioId }, tx);
     }
 
     public async Task<int> ObtenerCantidadPrestamoAsync(int prestamoId, IDbTransaction tx)
     {
-        EnsureWmsPrestamos(db);
+        var conn = ConnectionFor(tx);
         const string sql = "SELECT Cantidad FROM wms.Prestamos WHERE PrestamoID = @prestamoId";
-        return await db.ExecuteScalarAsync<int>(sql, new { prestamoId }, tx);
+        return SqlSchemaCompat.ScalarToInt32(await conn.ExecuteScalarAsync(sql, new { prestamoId }, tx));
     }
 }

@@ -5,7 +5,9 @@ using GraphApi.Services.JNT.CuartaJuntas;
 // Legacy
 using GraphApi.Services.JNT.Juntas;
 using Swashbuckle.AspNetCore.Annotations;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using GraphApi.Infrastructure.Security;
 
 namespace GraphApi.Controllers.JNT.Juntas;
 
@@ -46,7 +48,7 @@ public class JuntasController(
     [ProducesResponseType(422)]
     public async Task<IActionResult> Crear([FromBody] JuntaCrearRequest request, CancellationToken ct)
     {
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
         var (junta, code, status, detail) = await cuarta.CrearAsync(request, correo, adminId, ct);
@@ -63,7 +65,7 @@ public class JuntasController(
     [ProducesResponseType(404)]
     public async Task<IActionResult> Actualizar(int id, [FromBody] JuntaActualizarRequest request, CancellationToken ct)
     {
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
         var (ok, code, status, detail) = await cuarta.ActualizarAsync(id, request, correo, adminId, ct);
@@ -78,7 +80,7 @@ public class JuntasController(
     [ProducesResponseType(404)]
     public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
     {
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
         var (ok, code, status, detail) = await cuarta.EliminarAsync(id, correo, adminId, ct);

@@ -11,6 +11,7 @@ public sealed class TicketCatalogoRepository : ITicketCatalogoRepository
     private readonly string _prioridadTable;
     private readonly string _categoriaNameCol;
     private readonly bool _prioridadHasOrden;
+    private readonly bool _categoriasExiste;
 
     public TicketCatalogoRepository(IDbConnection db)
     {
@@ -23,6 +24,7 @@ public sealed class TicketCatalogoRepository : ITicketCatalogoRepository
             : "CategoriaTicket";
         _prioridadHasOrden = SqlSchemaCompat.HasColumn(db, "tkt", "PrioridadesTicket", "Orden")
             || SqlSchemaCompat.HasColumn(db, "tkt", "PrioridadEstickets", "Orden");
+        _categoriasExiste = SqlSchemaCompat.HasTable(db, "tkt", "CategoriasTicket");
     }
 
     public async Task<int> ResolveEstadoIdAsync(string estado, IDbTransaction tx)
@@ -59,21 +61,15 @@ public sealed class TicketCatalogoRepository : ITicketCatalogoRepository
         return _db.QuerySingleOrDefaultAsync<int?>(sql, new { Nombre = categoria }, tx);
     }
 
-    public async Task<int> ResolveCanalIdAsync(string canal, IDbTransaction tx)
-    {
-        var id = await _db.QuerySingleOrDefaultAsync<int?>(
-            """
-            SELECT CanalID FROM tkt.CanalesTicket
-            WHERE Canal = @Nombre AND bEliminado = 0;
-            """,
-            new { Nombre = canal },
-            tx);
-
-        return id ?? throw new InvalidOperationException($"Canal desconocido: {canal}");
-    }
+    public Task<int> ResolveCanalIdAsync(string canal, IDbTransaction tx)
+        // tkt.CanalesTicket no existe en producción — función de canales no disponible.
+        => throw new NotSupportedException("Canales de ticket no disponibles en este ambiente.");
 
     public async Task<IReadOnlyList<CatalogoItemDto>> ListarCategoriasAsync(CancellationToken ct = default)
     {
+        if (!_categoriasExiste)
+            return [];   // tkt.CategoriasTicket no existe en este ambiente
+
         var sql = $"""
             SELECT CategoriaTicketID AS Id, {_categoriaNameCol} AS Nombre
             FROM tkt.CategoriasTicket WITH (NOLOCK)
@@ -118,6 +114,9 @@ public sealed class TicketCatalogoRepository : ITicketCatalogoRepository
 
     public async Task<int> InsertCategoriaAsync(string nombre, string correo, int adminId, IDbTransaction? tx = null)
     {
+        if (!_categoriasExiste)
+            throw new InvalidOperationException("La tabla tkt.CategoriasTicket no existe en este ambiente.");
+
         var sql = $"""
             INSERT INTO tkt.CategoriasTicket
                 ({_categoriaNameCol}, Creado, Modificado, UsuarioCreacionID, UsuarioModificacionID,
@@ -133,6 +132,9 @@ public sealed class TicketCatalogoRepository : ITicketCatalogoRepository
 
     public async Task<bool> UpdateCategoriaAsync(int id, string nombre, string correo, int adminId, IDbTransaction? tx = null)
     {
+        if (!_categoriasExiste)
+            throw new InvalidOperationException("La tabla tkt.CategoriasTicket no existe en este ambiente.");
+
         var sql = $"""
             UPDATE tkt.CategoriasTicket
                SET {_categoriaNameCol} = @Nombre,
@@ -148,6 +150,9 @@ public sealed class TicketCatalogoRepository : ITicketCatalogoRepository
 
     public async Task<bool> SoftDeleteCategoriaAsync(int id, string correo, int adminId, IDbTransaction? tx = null)
     {
+        if (!_categoriasExiste)
+            throw new InvalidOperationException("La tabla tkt.CategoriasTicket no existe en este ambiente.");
+
         const string sql = """
             UPDATE tkt.CategoriasTicket
                SET bEliminado = 1,

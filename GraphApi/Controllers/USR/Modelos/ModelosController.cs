@@ -1,4 +1,6 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using GraphApi.Infrastructure.Security;
 using GraphApi.Models.USR.CuartaAutomoviles;
 using GraphApi.Models.USR.Modelos;
 using GraphApi.Services.USR.CuartaAutomoviles;
@@ -16,8 +18,8 @@ public class ModelosController(
     ICuartaAutomovilesService cuarta,
     IModelosService legacy) : ControllerBase
 {
-    private int AdminId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    private string AdminEmail => User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue(ClaimTypes.Name) ?? "sistema";
+    private int AdminId => JwtUserContext.TryGetUsuarioId(User, out var aid) ? aid : 0;
+    private string AdminEmail => JwtUserContext.GetCorreo(User) ?? "sistema";
 
     // ── Cuarta ───────────────────────────────────────────────────────────────
 

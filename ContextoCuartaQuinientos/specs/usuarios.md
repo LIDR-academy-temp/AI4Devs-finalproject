@@ -70,5 +70,6 @@ Dominio de seguridad, identidad y configuración base del sistema (esquema `sgr`
 
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
+| 2026-10-30 | [[PROD-UX-001]] | Edición admin: perfil + vincular casa (ocupante); fix PUT transacción; multi-casa vía Casas + ocupantes |
 | 2026-10-23 | [[FE-CRUD-001]] | Admin usuarios migrado a patrón CRUD admin (panel lateral, sin prompt/confirm) |
 | 2026-10-27 | [[SGR-BE-030]] | API JWT navegación + admin menús/permisos-perfil (`NavegacionController`, `Menus/admin`, `Perfiles/permisos-menus`) |

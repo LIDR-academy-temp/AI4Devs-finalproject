@@ -10,6 +10,7 @@ const ESTADO_UI: Record<string, { label: string; className: string }> = {
   Expirado: { label: 'Expirado', className: 'bg-warning-light text-warning' },
   Usado: { label: 'Ya usado', className: 'bg-neutral-200 text-neutral-700' },
   NoEncontrado: { label: 'No encontrado', className: 'bg-danger-light text-danger' },
+  NoVigente: { label: 'Aún no vigente', className: 'bg-info-light text-info' },
 }
 
 export function ValidarPasePage() {
@@ -40,9 +41,25 @@ export function ValidarPasePage() {
       toast.error(problem?.detail ?? `Error ${status}`)
       return
     }
-    toast.success(data.yaUsado ? 'El pase ya estaba marcado como usado.' : 'Entrada registrada.')
+    toast.success(
+      data.yaUsado
+        ? 'El pase ya estaba marcado como usado.'
+        : data.visitaId
+          ? `Entrada registrada en bitácora (visita #${data.visitaId}).`
+          : pase.unaOcasion === false
+            ? 'Entrada registrada. El pase sigue vigente en el rango.'
+            : 'Entrada registrada.',
+    )
     if (data.pase) {
-      setResultado({ estado: 'Usado', detalle: 'Este pase ya fue utilizado.', pase: data.pase })
+      if (data.yaUsado || data.pase.unaOcasion !== false) {
+        setResultado({ estado: 'Usado', detalle: 'Este pase ya fue utilizado.', pase: data.pase })
+      } else {
+        setResultado({
+          estado: 'Valido',
+          detalle: 'Entrada registrada. El pase sigue vigente en el rango de fechas.',
+          pase: data.pase,
+        })
+      }
     }
   }
 

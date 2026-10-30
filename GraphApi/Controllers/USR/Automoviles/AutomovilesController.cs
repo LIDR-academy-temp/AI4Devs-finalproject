@@ -1,4 +1,6 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using GraphApi.Infrastructure.Security;
 using GraphApi.Models.USR.Automoviles;
 using GraphApi.Models.USR.CuartaAutomoviles;
 using GraphApi.Services.USR.Automoviles;
@@ -23,7 +25,7 @@ public class AutomovilesController(
     [ProducesResponseType(typeof(IReadOnlyList<AutomovilListItemDto>), 200)]
     public async Task<IActionResult> GetMis(CancellationToken ct)
     {
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        JwtUserContext.TryGetUsuarioId(User, out var userId);
         var lista  = await cuarta.ListarMisAsync(userId, ct);
         return Ok(lista);
     }
@@ -55,8 +57,8 @@ public class AutomovilesController(
     [ProducesResponseType(422)]
     public async Task<IActionResult> CrearAdmin([FromBody] AutomovilCrearAdminRequest body, CancellationToken ct)
     {
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        JwtUserContext.TryGetUsuarioId(User, out var userId);
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var (auto, code, status, detail) = await cuarta.CrearParaUsuarioAsync(body, correo, userId, ct);
         if (auto is null)
             return StatusCode(status, new { code, detail });
@@ -71,7 +73,7 @@ public class AutomovilesController(
     [ProducesResponseType(409)]
     public async Task<IActionResult> ActualizarAdmin(int id, [FromBody] AutomovilActualizarRequest body, CancellationToken ct)
     {
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var (ok, code, status, detail) = await cuarta.ActualizarComoAdminAsync(id, body, correo, ct);
         if (!ok) return StatusCode(status, new { code, detail });
         return NoContent();
@@ -84,7 +86,7 @@ public class AutomovilesController(
     [ProducesResponseType(404)]
     public async Task<IActionResult> EliminarAdmin(int id, CancellationToken ct)
     {
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var (ok, code, status, detail) = await cuarta.EliminarComoAdminAsync(id, correo, ct);
         if (!ok) return StatusCode(status, new { code, detail });
         return NoContent();
@@ -97,8 +99,8 @@ public class AutomovilesController(
     [ProducesResponseType(422)]
     public async Task<IActionResult> Crear([FromBody] AutomovilCrearRequest body, CancellationToken ct)
     {
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        JwtUserContext.TryGetUsuarioId(User, out var userId);
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var (auto, code, status, detail) = await cuarta.CrearAsync(body, correo, userId, ct);
         if (auto is null)
             return StatusCode(status, new { code, detail });
@@ -112,8 +114,8 @@ public class AutomovilesController(
     [ProducesResponseType(409)]
     public async Task<IActionResult> Actualizar(int id, [FromBody] AutomovilActualizarRequest body, CancellationToken ct)
     {
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        JwtUserContext.TryGetUsuarioId(User, out var userId);
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var (ok, code, status, detail) = await cuarta.ActualizarAsync(id, body, correo, userId, ct);
         if (!ok) return StatusCode(status, new { code, detail });
         return NoContent();
@@ -125,8 +127,8 @@ public class AutomovilesController(
     [ProducesResponseType(404)]
     public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
     {
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        JwtUserContext.TryGetUsuarioId(User, out var userId);
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var (ok, code, status, detail) = await cuarta.EliminarAsync(id, correo, userId, ct);
         if (!ok) return StatusCode(status, new { code, detail });
         return NoContent();

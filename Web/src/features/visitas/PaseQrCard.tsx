@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
-import { Copy, MessageCircle } from 'lucide-react'
+import { Copy, Mail, MessageCircle } from 'lucide-react'
 import type { PaseVisita } from '../../shared/types/visitasPase'
-import { whatsAppShareHref } from './visitasPaseSchemas'
+import { mailShareHref, vigenciaPaseTexto, whatsAppShareHref } from './visitasPaseSchemas'
 
 interface PaseQrCardProps {
   pase: PaseVisita
@@ -22,7 +22,8 @@ export function PaseQrCard({ pase }: PaseQrCardProps) {
     }
   }, [pase.codigoQr])
 
-  const waHref = whatsAppShareHref(pase.codigoQr, pase.fechaExpira)
+  const waHref = whatsAppShareHref(pase.codigoQr, pase)
+  const emailHref = mailShareHref(pase.codigoQr, pase)
 
   const copyCode = async () => {
     try {
@@ -48,12 +49,7 @@ export function PaseQrCard({ pase }: PaseQrCardProps) {
         <div className="min-w-0 flex-1 space-y-3">
           <div>
             <h3 className="truncate text-lg font-semibold text-neutral-800">{pase.nombreVisitante}</h3>
-            <p className="text-sm text-neutral-600">
-              Válido hasta{' '}
-              <time dateTime={pase.fechaExpira ?? undefined} className="tabular-nums">
-                {pase.fechaExpira ? new Date(pase.fechaExpira).toLocaleString() : '—'}
-              </time>
-            </p>
+            <p className="text-sm text-neutral-600">{vigenciaPaseTexto(pase)}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <a
@@ -65,6 +61,14 @@ export function PaseQrCard({ pase }: PaseQrCardProps) {
             >
               <MessageCircle className="h-4 w-4" aria-hidden />
               Compartir WhatsApp
+            </a>
+            <a
+              href={emailHref}
+              data-testid="email-share"
+              className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-surface-alt"
+            >
+              <Mail className="h-4 w-4" aria-hidden />
+              Enviar por correo
             </a>
             <button
               type="button"

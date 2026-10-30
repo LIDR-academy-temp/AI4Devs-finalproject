@@ -10,11 +10,32 @@ public sealed class UsuarioPerfilRepository : IUsuarioPerfilRepository
 {
     private readonly IDbConnection _db;
 
+    // Column names are detected once (before any transaction is active) and cached
+    // to avoid SqlException when HasColumn runs on a connection with an open transaction.
+    private string? _cachedCorreoName;
+    private string? _cachedNombreName;
+    private string? _cachedTelefonoName;
+
     public UsuarioPerfilRepository(IDbConnection db) => _db = db;
+
+    /// <summary>
+    /// Resolves and caches column names using schema detection.
+    /// Must be called while no transaction is active on <see cref="_db"/>.
+    /// </summary>
+    private void EnsureColumnNames()
+    {
+        if (_cachedCorreoName is not null) return;
+        var (nombreCol, correoCol, _) = SqlSchemaCompat.UsuarioColumns(_db);
+        _cachedCorreoName = ColumnNameOnly(correoCol);
+        _cachedNombreName = ColumnNameOnly(nombreCol);
+        _cachedTelefonoName = ColumnNameOnly(SqlSchemaCompat.UsuarioTelefonoColumn(_db));
+    }
 
     public async Task<PerfilDto?> ObtenerAsync(int usuarioId, CancellationToken ct = default)
     {
         var (nombreCol, correoCol, _) = SqlSchemaCompat.UsuarioColumns(_db);
+        // Populate cache while we are outside any transaction
+        EnsureColumnNames();
         var telefonoCol = SqlSchemaCompat.UsuarioTelefonoColumn(_db);
         var perfilCol = SqlSchemaCompat.PerfilNombreColumn(_db);
         var condoNombre = SqlSchemaCompat.CondominioNombreColumn(_db);
@@ -52,8 +73,8 @@ public sealed class UsuarioPerfilRepository : IUsuarioPerfilRepository
         var (_, correoCol, _) = SqlSchemaCompat.UsuarioColumns(_db);
         var sql = $"""
             SELECT CASE WHEN EXISTS (
-                SELECT 1 FROM sgr.Usuarios WITH (NOLOCK)
-                WHERE {correoCol} = @Correo AND UsuarioID <> @UsuarioId AND bEliminado = 0
+                SELECT 1 FROM sgr.Usuarios u WITH (NOLOCK)
+                WHERE {correoCol} = @Correo AND u.UsuarioID <> @UsuarioId AND u.bEliminado = 0
             ) THEN 1 ELSE 0 END;
             """;
 
@@ -71,10 +92,13 @@ public sealed class UsuarioPerfilRepository : IUsuarioPerfilRepository
         int modificadoPorId,
         IDbTransaction tx)
     {
-        var (nombreCol, correoCol, _) = SqlSchemaCompat.UsuarioColumns(_db);
-        var correoName = ColumnNameOnly(correoCol);
-        var nombreName = ColumnNameOnly(nombreCol);
-        var telefonoName = ColumnNameOnly(SqlSchemaCompat.UsuarioTelefonoColumn(_db));
+        // Use pre-cached column names — never call HasColumn while a transaction is active
+        // on _db, because HasColumn runs schema queries without the transaction and SQL Server
+        // throws, causing HasColumn to silently return false and produce wrong column names.
+        EnsureColumnNames();
+        var correoName = _cachedCorreoName!;
+        var nombreName = _cachedNombreName!;
+        var telefonoName = _cachedTelefonoName!;
 
         var sql = $"""
             UPDATE sgr.Usuarios

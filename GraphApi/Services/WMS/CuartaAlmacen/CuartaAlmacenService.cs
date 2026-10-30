@@ -1,4 +1,5 @@
 using System.Data;
+using GraphApi.Infrastructure;
 using GraphApi.Models.WMS.CuartaAlmacen;
 using GraphApi.Repositories.WMS;
 using Microsoft.AspNetCore.Http;
@@ -63,7 +64,7 @@ public class CuartaAlmacenService(ICuartaAlmacenRepository repo, IDbConnection d
         if (req.StockMinimo < 0)
             return (422, null, "El stock mínimo no puede ser negativo.");
 
-        db.Open();
+        if (db.State != ConnectionState.Open) db.Open();
         using var tx = db.BeginTransaction();
         try
         {
@@ -81,7 +82,7 @@ public class CuartaAlmacenService(ICuartaAlmacenRepository repo, IDbConnection d
     public async Task<(int statusCode, string? error)> ActualizarArticuloAsync(
         int articuloId, ArticuloActualizarRequest req, string correoUsuario, int usuarioId)
     {
-        db.Open();
+        if (db.State != ConnectionState.Open) db.Open();
         using var tx = db.BeginTransaction();
         try
         {
@@ -111,7 +112,7 @@ public class CuartaAlmacenService(ICuartaAlmacenRepository repo, IDbConnection d
     public async Task<(int statusCode, string? error)> EliminarArticuloAsync(
         int articuloId, string correoUsuario, int usuarioId)
     {
-        db.Open();
+        if (db.State != ConnectionState.Open) db.Open();
         using var tx = db.BeginTransaction();
         try
         {
@@ -145,7 +146,10 @@ public class CuartaAlmacenService(ICuartaAlmacenRepository repo, IDbConnection d
         if (req.Cantidad <= 0)
             return (422, null, "La cantidad debe ser mayor a cero.");
 
-        db.Open();
+        // Pre-calentar caché de schema antes de iniciar la transacción,
+        // ya que HasColumn no puede ejecutar queries con una tx activa.
+        if (db.State != ConnectionState.Open) db.Open();
+        SqlSchemaCompat.WmsPrestamosTieneNotas(db);
         using var tx = db.BeginTransaction();
         try
         {
@@ -185,7 +189,7 @@ public class CuartaAlmacenService(ICuartaAlmacenRepository repo, IDbConnection d
         if (prestamo is null || prestamo.Estado != "PRESTADO")
             return (404, "Préstamo no encontrado o ya devuelto.");
 
-        db.Open();
+        if (db.State != ConnectionState.Open) db.Open();
         using var tx = db.BeginTransaction();
         try
         {

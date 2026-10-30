@@ -11,10 +11,11 @@ public class CuartaVisitasGeneradasServiceTests
 {
     private static CuartaVisitasGeneradasService CreateSut(Mock<ICuartaVisitasGeneradasRepository> repo)
     {
+        var visitasRepo = new Mock<ICuartaVisitasRepository>();
         var db = new Mock<IDbConnection>();
         db.Setup(d => d.State).Returns(ConnectionState.Open);
         db.Setup(d => d.BeginTransaction()).Returns(Mock.Of<IDbTransaction>());
-        return new CuartaVisitasGeneradasService(repo.Object, db.Object);
+        return new CuartaVisitasGeneradasService(repo.Object, visitasRepo.Object, db.Object);
     }
 
     [Fact]
@@ -81,6 +82,32 @@ public class CuartaVisitasGeneradasServiceTests
         Assert.Null(pase);
         Assert.Equal("PASE_NOMBRE_REQUERIDO", code);
         Assert.Equal(StatusCodes.Status422UnprocessableEntity, status);
+    }
+
+    [Fact]
+    public void ResolverEstadoValidacion_no_vigente_before_start()
+    {
+        var pase = new PaseVisitaDto
+        {
+            BUsado = false,
+            UnaOcasion = true,
+            FechaEmision = DateTime.UtcNow.AddHours(2),
+            FechaExpira = DateTime.UtcNow.AddHours(5),
+        };
+        Assert.Equal("NoVigente", CuartaVisitasGeneradasService.ResolverEstadoValidacion(pase));
+    }
+
+    [Fact]
+    public void ResolverEstadoValidacion_rango_not_usado_when_bUsado()
+    {
+        var pase = new PaseVisitaDto
+        {
+            BUsado = true,
+            UnaOcasion = false,
+            FechaEmision = DateTime.UtcNow.AddHours(-1),
+            FechaExpira = DateTime.UtcNow.AddDays(2),
+        };
+        Assert.Equal("Valido", CuartaVisitasGeneradasService.ResolverEstadoValidacion(pase));
     }
 
     [Fact]

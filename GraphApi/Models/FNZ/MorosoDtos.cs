@@ -13,8 +13,17 @@ public sealed class MorosoDto
     [JsonPropertyName("casa")]
     public string? Casa { get; set; }
 
+    [JsonPropertyName("casaId")]
+    public int? CasaId { get; set; }
+
     [JsonPropertyName("cuotasVencidas")]
     public int CuotasVencidas { get; set; }
+
+    [JsonPropertyName("morasAplicadas")]
+    public int MorasAplicadas { get; set; }
+
+    [JsonPropertyName("totalMora")]
+    public decimal TotalMora { get; set; }
 
     [JsonPropertyName("totalAdeudado")]
     public decimal TotalAdeudado { get; set; }

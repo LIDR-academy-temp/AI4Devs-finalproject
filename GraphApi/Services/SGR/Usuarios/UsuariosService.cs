@@ -3,6 +3,7 @@ using System.Text;
 using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using GraphApi.Infrastructure;
 using GraphApi.Models.SGR.Usuarios;
 using BC = BCrypt.Net.BCrypt;
 
@@ -13,10 +14,28 @@ namespace GraphApi.Services.SGR.Usuarios
         private readonly IDbConnection   _objDbDefault;
         private readonly IConfiguration  _objConfig;
 
+        // ADR-008: columnas detectadas una vez en construcción.
+        private readonly string _colNombre;
+        private readonly string _colCorreo;
+        private readonly string _colActivo;
+        private readonly string _colTelefono;
+        private readonly string _colFotoUrl;
+        private readonly string _colPassword;
+
         public UsuariosService(IDbConnection objDbDefault, IConfiguration objConfig)
         {
             _objDbDefault = objDbDefault;
             _objConfig    = objConfig;
+            var (nombre, correo, activo) = SqlSchemaCompat.UsuarioColumns(objDbDefault, "u");
+            _colNombre   = nombre.Replace("u.", "");
+            _colCorreo   = correo.Replace("u.", "");
+            _colActivo   = activo.Replace("u.", "");
+            _colTelefono = SqlSchemaCompat.HasColumn(objDbDefault, "sgr", "Usuarios", "Telefono")
+                ? "Telefono" : "TelefonoUsuario";
+            _colFotoUrl  = SqlSchemaCompat.HasColumn(objDbDefault, "sgr", "Usuarios", "FotoUrl")
+                ? "FotoUrl" : "FotoUrlUsuario";
+            _colPassword = SqlSchemaCompat.HasColumn(objDbDefault, "sgr", "Usuarios", "Password")
+                ? "Password" : "PasswordUsuario";
         }
 
         public async Task<IEnumerable<clReadUsuarios>> GetUsuarios(
@@ -120,21 +139,21 @@ namespace GraphApi.Services.SGR.Usuarios
             string sInsertSql = $@"
                 --WindowName:{windowName},UserID:{userId}
                 INSERT INTO sgr.Usuarios
-                (CorreoUsuario, PerfilID, PasswordUsuario, NombreUsuario, bActivoUsuario, TelefonoUsuario, FotoUrlUsuario, bEliminado, bActualizarPassword, Creado, UsuarioCreacionID, FechaCreacion)
+                ({_colCorreo}, PerfilID, {_colPassword}, {_colNombre}, {_colActivo}, {_colTelefono}, {_colFotoUrl}, bEliminado, bActualizarPassword, Creado, UsuarioCreacionID, FechaCreacion)
                 VALUES (@CorreoUsuario, @PerfilID, @PasswordUsuario, @NombreUsuario, @bActivoUsuario, @TelefonoUsuario, @FotoUrlUsuario, @bEliminado, @bActualizarPassword, @Creado, @UsuarioCreacionID, GETDATE());
                 SELECT CAST(SCOPE_IDENTITY() AS INT);
             ";
             var vInsertParams = new
             {
-                objInput.CorreoUsuario,
+                CorreoUsuario = objInput.CorreoUsuario,
                 objInput.PerfilID,
                 PasswordUsuario = hashedPassword,
-                objInput.NombreUsuario,
-                objInput.bActivoUsuario,
-                objInput.TelefonoUsuario,
-                objInput.FotoUrlUsuario,
-                objInput.bEliminado,
-                objInput.bActualizarPassword,
+                NombreUsuario = objInput.NombreUsuario,
+                bActivoUsuario = objInput.bActivoUsuario,
+                TelefonoUsuario = objInput.TelefonoUsuario,
+                FotoUrlUsuario = objInput.FotoUrlUsuario,
+                bEliminado = objInput.bEliminado,
+                bActualizarPassword = objInput.bActualizarPassword,
                 Creado     = windowName,
                 UsuarioCreacionID = userId
             };
@@ -156,7 +175,7 @@ namespace GraphApi.Services.SGR.Usuarios
             vParameters.Add("UsuarioID", objInput.UsuarioID);
             if (objInput.CorreoUsuario is not null)
             {
-                vSets.Add("CorreoUsuario = @CorreoUsuario");
+                vSets.Add($"{_colCorreo} = @CorreoUsuario");
                 vParameters.Add("CorreoUsuario", objInput.CorreoUsuario);
             }
             if (objInput.PerfilID != null)
@@ -172,22 +191,22 @@ namespace GraphApi.Services.SGR.Usuarios
             }
             if (objInput.NombreUsuario is not null)
             {
-                vSets.Add("NombreUsuario = @NombreUsuario");
+                vSets.Add($"{_colNombre} = @NombreUsuario");
                 vParameters.Add("NombreUsuario", objInput.NombreUsuario);
             }
             if (objInput.bActivoUsuario != null)
             {
-                vSets.Add("bActivoUsuario = @bActivoUsuario");
+                vSets.Add($"{_colActivo} = @bActivoUsuario");
                 vParameters.Add("bActivoUsuario", objInput.bActivoUsuario);
             }
             if (objInput.TelefonoUsuario is not null)
             {
-                vSets.Add("TelefonoUsuario = @TelefonoUsuario");
+                vSets.Add($"{_colTelefono} = @TelefonoUsuario");
                 vParameters.Add("TelefonoUsuario", objInput.TelefonoUsuario);
             }
             if (objInput.FotoUrlUsuario is not null)
             {
-                vSets.Add("FotoUrlUsuario = @FotoUrlUsuario");
+                vSets.Add($"{_colFotoUrl} = @FotoUrlUsuario");
                 vParameters.Add("FotoUrlUsuario", objInput.FotoUrlUsuario);
             }
             if (objInput.bEliminado != null)

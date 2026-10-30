@@ -36,14 +36,14 @@ public class CuartaMascotasRepository(IDbConnection db) : ICuartaMascotasReposit
             SELECT COUNT(1) FROM usr.Mascotas
             WHERE MascotaID = @MascotaId AND UsuarioID = @UsuarioId AND bEliminado = 0;
             """;
-        var count = await db.ExecuteScalarAsync<int>(sql, new { MascotaId = mascotaId, UsuarioId = usuarioId });
+        var count = SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql, new { MascotaId = mascotaId, UsuarioId = usuarioId }));
         return count > 0;
     }
 
     public async Task<bool> ExisteMascotaActivaAsync(int mascotaId, CancellationToken ct = default)
     {
         const string sql = "SELECT COUNT(1) FROM usr.Mascotas WHERE MascotaID = @MascotaId AND bEliminado = 0;";
-        var count = await db.ExecuteScalarAsync<int>(sql, new { MascotaId = mascotaId });
+        var count = SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql, new { MascotaId = mascotaId }));
         return count > 0;
     }
 
@@ -51,10 +51,10 @@ public class CuartaMascotasRepository(IDbConnection db) : ICuartaMascotasReposit
     {
         var (_, _, activo) = SqlSchemaCompat.UsuarioColumns(db);
         var sql = $"""
-            SELECT COUNT(1) FROM sgr.Usuarios
+            SELECT COUNT(1) FROM sgr.Usuarios u
             WHERE UsuarioID = @UsuarioId AND {activo} = 1 AND bEliminado = 0
             """;
-        var count = await db.ExecuteScalarAsync<int>(sql, new { UsuarioId = usuarioId });
+        var count = SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql, new { UsuarioId = usuarioId }));
         return count > 0;
     }
 
@@ -78,7 +78,7 @@ public class CuartaMascotasRepository(IDbConnection db) : ICuartaMascotasReposit
                  @Correo, @UsuarioId, GETDATE(), 0);
             SELECT CAST(SCOPE_IDENTITY() AS INT);
             """;
-        return await db.ExecuteScalarAsync<int>(sql, new
+        return SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql, new
         {
             UsuarioId = usuarioId,
             req.NombreMascota,
@@ -89,7 +89,7 @@ public class CuartaMascotasRepository(IDbConnection db) : ICuartaMascotasReposit
             req.FechaUltimaVacuna,
             req.FechaNacimiento,
             Correo = correo
-        }, transaction: tx);
+        }, transaction: tx));
     }
 
     public async Task<bool> ActualizarAsync(int mascotaId, MascotaActualizarRequest req, string correo, IDbTransaction tx)
@@ -171,9 +171,9 @@ public class CuartaMascotasRepository(IDbConnection db) : ICuartaMascotasReposit
             OUTPUT INSERTED.TipoMascotaID
             VALUES (@TipoMascota, @Correo, @AdminId, GETDATE(), 0);
             """;
-        return await db.ExecuteScalarAsync<int>(sql,
+        return SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql,
             new { TipoMascota = tipoMascota, Correo = correo, AdminId = adminId },
-            transaction: tx);
+            transaction: tx));
     }
 
     public async Task<bool> UpdateTipoAsync(int tipoMascotaId, string tipoMascota, string correo, int adminId, IDbTransaction? tx = null)
@@ -216,9 +216,9 @@ public class CuartaMascotasRepository(IDbConnection db) : ICuartaMascotasReposit
             OUTPUT INSERTED.RazaMascotaID
             VALUES (@TipoMascotaId, @RazaMascota, @Correo, @AdminId, GETDATE(), 0);
             """;
-        return await db.ExecuteScalarAsync<int>(sql,
+        return SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql,
             new { TipoMascotaId = tipoMascotaId, RazaMascota = razaMascota, Correo = correo, AdminId = adminId },
-            transaction: tx);
+            transaction: tx));
     }
 
     public async Task<bool> UpdateRazaAsync(int razaMascotaId, int tipoMascotaId, string razaMascota, string correo, int adminId, IDbTransaction? tx = null)
@@ -264,7 +264,7 @@ public class CuartaMascotasRepository(IDbConnection db) : ICuartaMascotasReposit
     public async Task<bool> ExisteTipoActivoAsync(int tipoMascotaId, CancellationToken ct = default)
     {
         const string sql = "SELECT COUNT(1) FROM usr.TiposMascota WHERE TipoMascotaID = @Id AND bEliminado = 0;";
-        var count = await db.ExecuteScalarAsync<int>(sql, new { Id = tipoMascotaId });
+        var count = SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql, new { Id = tipoMascotaId }));
         return count > 0;
     }
 

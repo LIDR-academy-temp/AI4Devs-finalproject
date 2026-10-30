@@ -14,7 +14,16 @@ export function MorosoAdminMobileCard({ moroso }: Props) {
       badges={
         <span className="badge bg-danger tabular-nums">{moroso.cuotasVencidas} vencidas</span>
       }
-      meta={[{ label: 'Adeudo', value: formatMxn(moroso.totalAdeudado) }]}
+      meta={[
+        { label: 'Adeudo', value: formatMxn(moroso.totalAdeudado) },
+        {
+          label: 'Moras',
+          value:
+            (moroso.morasAplicadas ?? 0) > 0
+              ? `${moroso.morasAplicadas} aplicada(s) · ${formatMxn(moroso.totalMora ?? 0)}`
+              : 'Sin mora',
+        },
+      ]}
     />
   )
 }

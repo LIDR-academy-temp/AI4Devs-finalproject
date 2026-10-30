@@ -185,4 +185,60 @@ public sealed class CuartaAnunciosRepository : ICuartaAnunciosRepository
         var list = await _db.QueryAsync<TipoAnuncioItemDto>(new CommandDefinition(sql, cancellationToken: ct));
         return list.ToList();
     }
+
+    public async Task<int> InsertTipoAsync(string tipoAnuncio, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            INSERT INTO anm.TiposAnuncio
+                (TipoAnuncio, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+            OUTPUT INSERTED.TipoAnuncioID
+            VALUES
+                (@TipoAnuncio, @Correo, @AdminId, SYSUTCDATETIME(), 0);
+            """;
+        return await _db.ExecuteScalarAsync<int>(
+            new CommandDefinition(sql, new { TipoAnuncio = tipoAnuncio, Correo = correo, AdminId = adminId }, transaction: tx));
+    }
+
+    public async Task<bool> UpdateTipoAsync(int tipoAnuncioId, string tipoAnuncio, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            UPDATE anm.TiposAnuncio
+            SET TipoAnuncio = @TipoAnuncio,
+                Modificado = @Correo,
+                UsuarioModificacionID = @AdminId,
+                FechaModificacion = SYSUTCDATETIME()
+            WHERE TipoAnuncioID = @Id AND bEliminado = 0;
+            """;
+        var n = await _db.ExecuteAsync(
+            new CommandDefinition(sql,
+                new { Id = tipoAnuncioId, TipoAnuncio = tipoAnuncio, Correo = correo, AdminId = adminId },
+                transaction: tx));
+        return n > 0;
+    }
+
+    public async Task<bool> SoftDeleteTipoAsync(int tipoAnuncioId, string correo, int adminId, IDbTransaction? tx = null)
+    {
+        const string sql = """
+            UPDATE anm.TiposAnuncio
+            SET bEliminado = 1,
+                Modificado = @Correo,
+                UsuarioModificacionID = @AdminId,
+                FechaModificacion = SYSUTCDATETIME()
+            WHERE TipoAnuncioID = @Id AND bEliminado = 0;
+            """;
+        var n = await _db.ExecuteAsync(
+            new CommandDefinition(sql, new { Id = tipoAnuncioId, Correo = correo, AdminId = adminId }, transaction: tx));
+        return n > 0;
+    }
+
+    public async Task<int> ContarAnunciosPorTipoIdAsync(int tipoAnuncioId, CancellationToken ct = default)
+    {
+        const string sql = """
+            SELECT COUNT(1)
+            FROM anm.Anuncios WITH (NOLOCK)
+            WHERE TipoAnuncioID = @Id AND bEliminado = 0;
+            """;
+        return await _db.ExecuteScalarAsync<int>(
+            new CommandDefinition(sql, new { Id = tipoAnuncioId }, cancellationToken: ct));
+    }
 }

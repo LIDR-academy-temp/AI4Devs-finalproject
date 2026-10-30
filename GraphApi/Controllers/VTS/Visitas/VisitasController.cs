@@ -4,7 +4,9 @@ using GraphApi.Models.VTS.CuartaVisitas;
 using GraphApi.Services.VTS.CuartaVisitas;
 using GraphApi.Services.VTS.Visitas;
 using Swashbuckle.AspNetCore.Annotations;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using GraphApi.Infrastructure.Security;
 
 namespace GraphApi.Controllers.VTS.Visitas;
 
@@ -39,7 +41,7 @@ public class VisitasController(
     [ProducesResponseType(422)]
     public async Task<IActionResult> RegistrarEntrada([FromBody] RegistrarVisitaRequest request, CancellationToken ct)
     {
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
         var (visita, code, status, detail) = await cuarta.RegistrarEntradaAsync(request, correo, userId, ct);
@@ -54,7 +56,7 @@ public class VisitasController(
     [ProducesResponseType(404)]
     public async Task<IActionResult> RegistrarSalida(int id, CancellationToken ct)
     {
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
         var (ok, code, status, detail) = await cuarta.RegistrarSalidaAsync(id, correo, userId, ct);

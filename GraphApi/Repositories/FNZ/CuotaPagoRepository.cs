@@ -8,12 +8,14 @@ public sealed class CuotaPagoRepository : ICuotaPagoRepository
     private readonly IDbConnection _db;
     private readonly bool _hasCuentaId;
     private readonly bool _hasMontoPagado;
+    private readonly bool _hasMontoMora;
 
     public CuotaPagoRepository(IDbConnection db)
     {
         _db = db;
         _hasCuentaId = ColumnExists("fnz", "Cuotas", "CuentaID");
         _hasMontoPagado = ColumnExists("fnz", "Cuotas", "MontoPagado");
+        _hasMontoMora = ColumnExists("fnz", "Cuotas", "MontoMora");
     }
 
     public bool TieneColumnaCuentaId => _hasCuentaId;
@@ -21,12 +23,14 @@ public sealed class CuotaPagoRepository : ICuotaPagoRepository
     public async Task<CuotaPagoRow?> ObtenerConBloqueoAsync(int cuotaId, IDbTransaction tx)
     {
         var cuentaSelect = _hasCuentaId ? "c.CuentaID AS CuentaId," : "CAST(NULL AS INT) AS CuentaId,";
+        var moraSelect = _hasMontoMora ? "c.MontoMora AS MontoMora," : "CAST(0 AS DECIMAL(18,2)) AS MontoMora,";
 
         var sql = $"""
             SELECT c.CuotaID AS CuotaId,
                    c.UsuarioID AS UsuarioId,
                    {cuentaSelect}
                    c.Monto AS Monto,
+                   {moraSelect}
                    c.Pagado AS Pagado,
                    c.PeriodoInicio AS PeriodoInicio
             FROM fnz.Cuotas c WITH (UPDLOCK, ROWLOCK)
@@ -131,14 +135,31 @@ public sealed class CuotaPagoRepository : ICuotaPagoRepository
         }, tx);
     }
 
-    public async Task<int?> ObtenerPrimeraCuentaIdAsync(CancellationToken ct = default)
+    public async Task<int?> ObtenerPrimeraCuentaIdAsync(CancellationToken ct = default, IDbTransaction? tx = null)
     {
         const string sql = """
             SELECT TOP (1) CuentaID FROM fnz.Cuentas WITH (NOLOCK)
             WHERE bEliminado = 0 ORDER BY CuentaID;
             """;
-        return await _db.QuerySingleOrDefaultAsync<int?>(
-            new CommandDefinition(sql, cancellationToken: ct));
+        if (tx is null)
+        {
+            return await _db.QuerySingleOrDefaultAsync<int?>(
+                new CommandDefinition(sql, cancellationToken: ct));
+        }
+
+        return await _db.QuerySingleOrDefaultAsync<int?>(sql, transaction: tx);
+    }
+
+    public async Task<int> AsignarCuentaCuotaAsync(int cuotaId, int cuentaId, IDbTransaction tx)
+    {
+        if (!_hasCuentaId)
+            return 0;
+
+        const string sql = """
+            UPDATE fnz.Cuotas SET CuentaID = @CuentaId
+            WHERE CuotaID = @CuotaId AND bEliminado = 0 AND CuentaID IS NULL;
+            """;
+        return await _db.ExecuteAsync(sql, new { CuotaId = cuotaId, CuentaId = cuentaId }, tx);
     }
 
     private bool ColumnExists(string schema, string table, string column)

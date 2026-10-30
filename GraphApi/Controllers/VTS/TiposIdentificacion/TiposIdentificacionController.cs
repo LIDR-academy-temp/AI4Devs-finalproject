@@ -1,4 +1,6 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using GraphApi.Infrastructure.Security;
 using GraphApi.Models.VTS.CuartaVisitas;
 using GraphApi.Services.VTS.CuartaVisitas;
 using Microsoft.AspNetCore.Authorization;
@@ -13,8 +15,8 @@ namespace GraphApi.Controllers.VTS.TiposIdentificacion;
 [Produces("application/json")]
 public class TiposIdentificacionController(ICuartaVisitasService cuarta) : ControllerBase
 {
-    private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    private string UserEmail => User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue(ClaimTypes.Name) ?? "sistema";
+    private int UserId => JwtUserContext.TryGetUsuarioId(User, out var uid) ? uid : 0;
+    private string UserEmail => JwtUserContext.GetCorreo(User) ?? "sistema";
 
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<TipoIdentificacionDto>), StatusCodes.Status200OK)]

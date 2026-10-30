@@ -29,6 +29,11 @@ public sealed class CuotaEstadoCuentaRepository : ICuotaEstadoCuentaRepository
             ? "c.MontoPagado AS MontoPagado,"
             : "CASE WHEN c.Pagado = 1 THEN c.Monto ELSE CAST(0 AS DECIMAL(18,2)) END AS MontoPagado,";
 
+        var hasMontoMora = ColumnExists("fnz", "Cuotas", "MontoMora");
+        var montoMoraSelect = hasMontoMora
+            ? "c.MontoMora AS MontoMora,"
+            : "CAST(0 AS DECIMAL(18,2)) AS MontoMora,";
+
         _sql = $"""
             SELECT c.CuotaID AS CuotaId,
                    c.CasaID AS CasaId,
@@ -36,6 +41,7 @@ public sealed class CuotaEstadoCuentaRepository : ICuotaEstadoCuentaRepository
                    {casaNumero} AS Numero,
                    {cuentaSelect}
                    c.Monto AS Monto,
+                   {montoMoraSelect}
                    {montoPagadoSelect}
                    c.PeriodoInicio AS PeriodoInicio,
                    c.PeriodoFin AS PeriodoFin,

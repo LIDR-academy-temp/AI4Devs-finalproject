@@ -1,3 +1,4 @@
+using GraphApi.Infrastructure.Security;
 using GraphApi.Models.ANM.Anuncios;
 using GraphApi.Models.ANM.TiposAnuncio;
 using GraphApi.Services.ANM.Anuncios;
@@ -30,6 +31,72 @@ public class TiposAnuncioController : Controller
     {
         var list = await _cuarta.ListarTiposAsync(ct);
         return Ok(list);
+    }
+
+    [HttpPost]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(TipoAnuncioItemDto), StatusCodes.Status201Created)]
+    public async Task<IActionResult> Crear([FromBody] TipoAnuncioUpsertRequest request, CancellationToken ct)
+    {
+        if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+            return Unauthorized();
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
+
+        var (data, code, status, detail) = await _cuarta.CrearTipoAsync(request.TipoAnuncio, adminId, correo, ct);
+        if (data is null)
+        {
+            return Problem(
+                title: "Error al crear tipo",
+                detail: detail,
+                statusCode: status,
+                extensions: code is null ? null : new Dictionary<string, object?> { ["code"] = code });
+        }
+
+        return StatusCode(status, data);
+    }
+
+    [HttpPut("{id:int}")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(TipoAnuncioItemDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Actualizar(int id, [FromBody] TipoAnuncioUpsertRequest request, CancellationToken ct)
+    {
+        if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+            return Unauthorized();
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
+
+        var (data, code, status, detail) = await _cuarta.ActualizarTipoAsync(id, request.TipoAnuncio, adminId, correo, ct);
+        if (data is null)
+        {
+            return Problem(
+                title: "Error al actualizar tipo",
+                detail: detail,
+                statusCode: status,
+                extensions: code is null ? null : new Dictionary<string, object?> { ["code"] = code });
+        }
+
+        return Ok(data);
+    }
+
+    [HttpDelete("{id:int}")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
+    {
+        if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+            return Unauthorized();
+        var correo = JwtUserContext.GetCorreo(User) ?? "";
+
+        var (ok, code, status, detail) = await _cuarta.EliminarTipoAsync(id, adminId, correo, ct);
+        if (!ok)
+        {
+            return Problem(
+                title: "Error al eliminar tipo",
+                detail: detail,
+                statusCode: status,
+                extensions: code is null ? null : new Dictionary<string, object?> { ["code"] = code });
+        }
+
+        return NoContent();
     }
 
     [HttpGet("legacy")]

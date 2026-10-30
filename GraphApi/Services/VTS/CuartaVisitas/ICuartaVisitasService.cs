@@ -16,15 +16,33 @@ public interface ICuartaVisitasService
 
     Task<IReadOnlyList<AreaComunDto>> ListarAreasAsync(CancellationToken ct = default);
 
+    Task<(AreaComunDto? Data, string? Code, int Status, string? Detail)> CrearAreaComunAsync(
+        AreaComunUpsertRequest request, string correo, int userId, CancellationToken ct = default);
+
+    Task<(AreaComunDto? Data, string? Code, int Status, string? Detail)> ActualizarAreaComunAsync(
+        int areaComunId, AreaComunUpsertRequest request, string correo, int userId, CancellationToken ct = default);
+
+    Task<(bool Ok, string? Code, int Status, string? Detail)> EliminarAreaComunAsync(
+        int areaComunId, string correo, int userId, CancellationToken ct = default);
+
+    Task<(bool Ok, string? Code, int Status, string? Detail)> CancelarReservacionAdminAsync(
+        int reservacionAreaId, string correo, int userId, CancellationToken ct = default);
+
+    Task<(bool Ok, string? Code, int Status, string? Detail)> ActualizarEstadoReservacionAdminAsync(
+        int reservacionAreaId, string estado, string correo, int userId, CancellationToken ct = default);
+
     Task<(ReservacionAreaDto? Reservacion, string? Code, int Status, string? Detail)> CrearReservacionAsync(
         CrearReservacionRequest request, string correo, int userId, CancellationToken ct = default);
+
+    Task<(ReservacionAreaDto? Reservacion, string? Code, int Status, string? Detail)> CrearReservacionAdminAsync(
+        CrearReservacionAdminRequest request, string correoAdmin, int adminUserId, CancellationToken ct = default);
 
     Task<IReadOnlyList<ReservacionAreaDto>> ListarReservacionesMiasAsync(
         int userId, CancellationToken ct = default);
 
     Task<(IReadOnlyList<ReservacionCalendarioDto>? Eventos, string? Code, int Status, string? Detail)>
         ListarReservacionesCalendarioAsync(
-            int areaComunId, DateTime desde, DateTime hasta, CancellationToken ct = default);
+            int? areaComunId, DateTime desde, DateTime hasta, CancellationToken ct = default);
 
     Task<PaginaDto<ReservacionAdminItemDto>> ListarReservacionesAdminAsync(
         ReservacionAdminFiltroDto filtro, CancellationToken ct = default);

@@ -34,4 +34,13 @@ public interface ICuartaAnunciosService
         CancellationToken ct = default);
 
     Task<IReadOnlyList<TipoAnuncioItemDto>> ListarTiposAsync(CancellationToken ct = default);
+
+    Task<(TipoAnuncioItemDto? Data, string? Code, int Status, string? Detail)> CrearTipoAsync(
+        string tipoAnuncio, int adminId, string correo, CancellationToken ct = default);
+
+    Task<(TipoAnuncioItemDto? Data, string? Code, int Status, string? Detail)> ActualizarTipoAsync(
+        int tipoAnuncioId, string tipoAnuncio, int adminId, string correo, CancellationToken ct = default);
+
+    Task<(bool Ok, string? Code, int Status, string? Detail)> EliminarTipoAsync(
+        int tipoAnuncioId, int adminId, string correo, CancellationToken ct = default);
 }

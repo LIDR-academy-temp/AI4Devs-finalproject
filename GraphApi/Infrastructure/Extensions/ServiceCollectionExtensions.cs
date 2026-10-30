@@ -253,11 +253,16 @@ namespace GraphApi.Infrastructure.Extensions
             services.AddSingleton<IPasswordGenerator, SecurePasswordGenerator>();
             services.AddScoped<ICuotaEstadoCuentaRepository, CuotaEstadoCuentaRepository>();
             services.AddScoped<ICuotaGeneracionRepository, CuotaGeneracionRepository>();
+            services.AddScoped<ITiposCuentaFnzRepository, TiposCuentaFnzRepository>();
+            services.AddScoped<ITiposMovimientoFnzRepository, TiposMovimientoFnzRepository>();
+            services.AddScoped<ITransaccionesFnzRepository, TransaccionesFnzRepository>();
             services.AddScoped<ICuotaPagoRepository, CuotaPagoRepository>();
             services.AddScoped<IMorososRepository, MorososRepository>();
             services.AddScoped<IValidator<GenerarCuotasRequest>, GenerarCuotasRequestValidator>();
             services.AddScoped<IValidator<RegistrarPagoRequest>, RegistrarPagoRequestValidator>();
             services.AddScoped<IValidator<MorososQuery>, MorososQueryValidator>();
+            services.AddScoped<IValidator<AplicarMorasRequest>, AplicarMorasRequestValidator>();
+            services.AddScoped<IValidator<CondonarMorasRequest>, CondonarMorasRequestValidator>();
             services.AddScoped<IValidator<ResumenPeriodoQuery>, ResumenPeriodoQueryValidator>();
             services.AddScoped<IDashboardKpiRepository, DashboardKpiRepository>();
             services.AddScoped<IFinanzasService, FinanzasService>();

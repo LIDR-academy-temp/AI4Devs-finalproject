@@ -18,8 +18,37 @@ export function endOfWeekExclusive(weekStartMonday: Date): Date {
 }
 
 export function isDiaCompleto(fechaInicio: string, fechaFin: string): boolean {
-  const ms = new Date(fechaFin).getTime() - new Date(fechaInicio).getTime()
+  const start = new Date(fechaInicio)
+  const end = new Date(fechaFin)
+  if (start.getHours() !== 0 || start.getMinutes() !== 0 || start.getSeconds() !== 0) {
+    return false
+  }
+  const ms = end.getTime() - start.getTime()
   return ms / 3_600_000 >= 23
+}
+
+/** Rango horario visible en la grilla (local), ampliado según eventos con hora. */
+export function hourBoundsForCalendario(
+  eventos: { fechaInicio: string; fechaFin: string }[],
+  defaultStart = 8,
+  defaultEndExclusive = 22,
+): { hourStart: number; hourEndExclusive: number } {
+  let hourStart = defaultStart
+  let hourEndExclusive = defaultEndExclusive
+
+  for (const e of eventos) {
+    if (isDiaCompleto(e.fechaInicio, e.fechaFin)) continue
+    const s = new Date(e.fechaInicio)
+    const f = new Date(e.fechaFin)
+    hourStart = Math.min(hourStart, s.getHours())
+    const endSlot =
+      f.getMinutes() > 0 || f.getSeconds() > 0 || f.getMilliseconds() > 0 ? f.getHours() + 1 : f.getHours()
+    hourEndExclusive = Math.max(hourEndExclusive, endSlot)
+  }
+
+  hourStart = Math.max(0, hourStart)
+  hourEndExclusive = Math.min(24, Math.max(hourEndExclusive, hourStart + 1))
+  return { hourStart, hourEndExclusive }
 }
 
 export function dayIndexInWeek(weekStartMonday: Date, instant: Date): number {

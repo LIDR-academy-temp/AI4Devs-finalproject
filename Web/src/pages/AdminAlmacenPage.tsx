@@ -51,10 +51,11 @@ export function AdminAlmacenPage() {
   const prestamosTabActiva = tab === 'prestamos'
   const { prestamos, loading: loadingPre, error: errPre, recargar: recargarPre } =
     usePrestamos(prestamosTabActiva)
-  const { data: usuarios } = usePadronUsuarios(undefined, true)
+  const { data: usuarios, error: errUsuarios } = usePadronUsuarios(undefined, true)
 
   const toast = useToast()
   useQueryErrorToast(errArt)
+  useQueryErrorToast(errUsuarios)
   useQueryErrorToast(prestamosTabActiva ? errPre : null)
   useQueryErrorToast(tab === 'categorias' ? errCat : null)
 

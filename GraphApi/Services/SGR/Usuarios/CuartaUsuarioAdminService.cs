@@ -203,18 +203,21 @@ public sealed class CuartaUsuarioAdminService : ICuartaUsuarioAdminService
             return (true, null, StatusCodes.Status200OK, null);
         }
 
+        int? perfilId = null;
+        if (!string.IsNullOrWhiteSpace(perfil))
+        {
+            perfilId = await _repo.ResolverPerfilIdAsync(perfil.Trim(), ct);
+            if (perfilId is null)
+            {
+                return (false, "VALIDATION_ERROR", StatusCodes.Status400BadRequest, "Perfil no válido");
+            }
+        }
+
         var tx = _uow.BeginTransaction();
         try
         {
-            if (!string.IsNullOrWhiteSpace(perfil))
+            if (perfilId is not null)
             {
-                var perfilId = await _repo.ResolverPerfilIdAsync(perfil.Trim(), ct);
-                if (perfilId is null)
-                {
-                    _uow.Rollback();
-                    return (false, "VALIDATION_ERROR", StatusCodes.Status400BadRequest, "Perfil no válido");
-                }
-
                 var okPerfil = await _repo.ActualizarPerfilIdAsync(
                     usuarioId, perfilId.Value, adminCorreo, adminId, tx);
                 if (!okPerfil)
@@ -237,7 +240,10 @@ public sealed class CuartaUsuarioAdminService : ICuartaUsuarioAdminService
 
                 if (await _repo.CasaOcupantesDisponibleAsync(tx))
                 {
-                    await _repo.InsertCasaOcupanteAsync(casaId.Value, usuarioId, tipo, adminCorreo, adminId, tx);
+                    if (!await _repo.TieneCasaOcupanteVigenteAsync(casaId.Value, usuarioId, tx))
+                    {
+                        await _repo.InsertCasaOcupanteAsync(casaId.Value, usuarioId, tipo, adminCorreo, adminId, tx);
+                    }
                 }
 
                 if (tipo == "Propietario")

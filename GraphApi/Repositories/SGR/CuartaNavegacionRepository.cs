@@ -331,4 +331,74 @@ public sealed class CuartaNavegacionRepository : ICuartaNavegacionRepository
             }, tx);
         }
     }
+
+    public async Task<int> InsertPerfilAsync(
+        string nombre,
+        string? descripcion,
+        bool bAdministrador,
+        string correo,
+        int adminId,
+        IDbTransaction tx)
+    {
+        var nombreCol = SqlSchemaCompat.PerfilNombreColumn(_db).Split('.')[1];
+        var sql = $"""
+            INSERT INTO sgr.Perfiles
+                ([{nombreCol}], Descripcion, bAdministrador, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+            OUTPUT INSERTED.PerfilID
+            VALUES
+                (@Nombre, @Descripcion, @BAdministrador, @Correo, @AdminId, SYSUTCDATETIME(), 0);
+            """;
+        return await _db.ExecuteScalarAsync<int>(sql,
+            new { Nombre = nombre, Descripcion = descripcion, BAdministrador = bAdministrador, Correo = correo, AdminId = adminId }, tx);
+    }
+
+    public async Task<bool> UpdatePerfilAsync(
+        int perfilId,
+        string nombre,
+        string? descripcion,
+        bool bAdministrador,
+        string correo,
+        int adminId,
+        IDbTransaction tx)
+    {
+        var nombreCol = SqlSchemaCompat.PerfilNombreColumn(_db).Split('.')[1];
+        var sql = $"""
+            UPDATE sgr.Perfiles
+            SET [{nombreCol}] = @Nombre,
+                Descripcion = @Descripcion,
+                bAdministrador = @BAdministrador,
+                Modificado = @Correo,
+                UsuarioModificacionID = @AdminId,
+                FechaModificacion = SYSUTCDATETIME()
+            WHERE PerfilID = @PerfilId AND bEliminado = 0;
+            """;
+        var n = await _db.ExecuteAsync(sql,
+            new { PerfilId = perfilId, Nombre = nombre, Descripcion = descripcion, BAdministrador = bAdministrador, Correo = correo, AdminId = adminId }, tx);
+        return n > 0;
+    }
+
+    public async Task<bool> SoftDeletePerfilAsync(int perfilId, string correo, int adminId, IDbTransaction tx)
+    {
+        const string sql = """
+            UPDATE sgr.Perfiles
+            SET bEliminado = 1,
+                Modificado = @Correo,
+                UsuarioModificacionID = @AdminId,
+                FechaModificacion = SYSUTCDATETIME()
+            WHERE PerfilID = @PerfilId AND bEliminado = 0;
+            """;
+        var n = await _db.ExecuteAsync(sql, new { PerfilId = perfilId, Correo = correo, AdminId = adminId }, tx);
+        return n > 0;
+    }
+
+    public async Task<int> ContarUsuariosConPerfilAsync(int perfilId, CancellationToken ct = default)
+    {
+        const string sql = """
+            SELECT COUNT(1)
+            FROM sgr.Usuarios WITH (NOLOCK)
+            WHERE PerfilID = @PerfilId AND bEliminado = 0;
+            """;
+        return await _db.ExecuteScalarAsync<int>(
+            new CommandDefinition(sql, new { PerfilId = perfilId }, cancellationToken: ct));
+    }
 }

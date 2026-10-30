@@ -37,6 +37,63 @@ public class PerfilesController : Controller
         return Ok(list);
     }
 
+    [HttpPost("admin")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(PerfilAdminListItemDto), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CrearPerfilAdmin([FromBody] PerfilAdminUpsertRequest request, CancellationToken ct)
+    {
+        if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+            return Unauthorized();
+
+        var correo = JwtUserContext.GetCorreo(User) ?? "admin";
+        var (data, code, status, detail) = await _cuarta.CrearPerfilAdminAsync(request, adminId, correo, ct);
+        if (data is null)
+        {
+            return Problem(detail: detail, statusCode: status, title: code,
+                extensions: code is null ? null : new Dictionary<string, object?> { ["code"] = code });
+        }
+
+        return StatusCode(status, data);
+    }
+
+    [HttpPut("{id:int}/admin")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(PerfilAdminListItemDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ActualizarPerfilAdmin(int id, [FromBody] PerfilAdminUpsertRequest request, CancellationToken ct)
+    {
+        if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+            return Unauthorized();
+
+        var correo = JwtUserContext.GetCorreo(User) ?? "admin";
+        var (data, code, status, detail) = await _cuarta.ActualizarPerfilAdminAsync(id, request, adminId, correo, ct);
+        if (data is null)
+        {
+            return Problem(detail: detail, statusCode: status, title: code,
+                extensions: code is null ? null : new Dictionary<string, object?> { ["code"] = code });
+        }
+
+        return Ok(data);
+    }
+
+    [HttpDelete("{id:int}/admin")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> EliminarPerfilAdmin(int id, CancellationToken ct)
+    {
+        if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+            return Unauthorized();
+
+        var correo = JwtUserContext.GetCorreo(User) ?? "admin";
+        var (ok, code, status, detail) = await _cuarta.EliminarPerfilAdminAsync(id, adminId, correo, ct);
+        if (!ok)
+        {
+            return Problem(detail: detail, statusCode: status, title: code,
+                extensions: code is null ? null : new Dictionary<string, object?> { ["code"] = code });
+        }
+
+        return NoContent();
+    }
+
     [HttpGet("{id:int}/permisos-menus")]
     [Authorize(Policy = "SoloAdministrador")]
     [ProducesResponseType(typeof(IReadOnlyList<PerfilMenuPermisoDto>), StatusCodes.Status200OK)]

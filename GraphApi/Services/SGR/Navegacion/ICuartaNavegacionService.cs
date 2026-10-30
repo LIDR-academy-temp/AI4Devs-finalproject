@@ -43,4 +43,23 @@ public interface ICuartaNavegacionService
         int adminId,
         string adminCorreo,
         CancellationToken ct = default);
+
+    Task<(PerfilAdminListItemDto? Data, string? Code, int Status, string? Detail)> CrearPerfilAdminAsync(
+        PerfilAdminUpsertRequest request,
+        int adminId,
+        string adminCorreo,
+        CancellationToken ct = default);
+
+    Task<(PerfilAdminListItemDto? Data, string? Code, int Status, string? Detail)> ActualizarPerfilAdminAsync(
+        int perfilId,
+        PerfilAdminUpsertRequest request,
+        int adminId,
+        string adminCorreo,
+        CancellationToken ct = default);
+
+    Task<(bool Ok, string? Code, int Status, string? Detail)> EliminarPerfilAdminAsync(
+        int perfilId,
+        int adminId,
+        string adminCorreo,
+        CancellationToken ct = default);
 }

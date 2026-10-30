@@ -6,7 +6,7 @@ using GraphApi.Models.VTS.CuartaVisitas;
 using GraphApi.Services.VTS.CuartaVisitas;
 using GraphApi.Services.VTS.ReservacionesArea;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Security.Claims;
+using GraphApi.Infrastructure.Security;
 
 namespace GraphApi.Controllers.VTS.ReservacionesArea;
 
@@ -20,6 +20,9 @@ public class ReservacionesAreaController(
     IReservacionesAreaService legacy,
     IValidator<ReservacionAdminFiltroDto> adminFiltroValidator) : ControllerBase
 {
+    private int UserId => JwtUserContext.TryGetUsuarioId(User, out var uid) ? uid : 0;
+    private string UserEmail => JwtUserContext.GetCorreo(User) ?? "sistema";
+
     /// <summary>Crea una reservación de área común para el residente autenticado.</summary>
     [HttpPost]
     [ProducesResponseType(typeof(ReservacionAreaDto), 201)]
@@ -27,12 +30,26 @@ public class ReservacionesAreaController(
     [ProducesResponseType(422)]
     public async Task<IActionResult> Crear([FromBody] CrearReservacionRequest request, CancellationToken ct)
     {
-        var correo = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("correo") ?? "";
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+        var correo = UserEmail;
+        var userId = UserId;
 
         var (reservacion, code, status, detail) = await cuarta.CrearReservacionAsync(request, correo, userId, ct);
         if (reservacion is null) return Problem(detail: detail, statusCode: status, title: code);
         return StatusCode(201, reservacion);
+    }
+
+    /// <summary>Crea una reservación a nombre de un residente (admin).</summary>
+    [HttpPost("admin")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(ReservacionAreaDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> CrearAdmin([FromBody] CrearReservacionAdminRequest request, CancellationToken ct)
+    {
+        var (reservacion, code, status, detail) =
+            await cuarta.CrearReservacionAdminAsync(request, UserEmail, UserId, ct);
+        if (reservacion is null) return Problem(detail: detail, statusCode: status, title: code);
+        return StatusCode(StatusCodes.Status201Created, reservacion);
     }
 
     /// <summary>Lista las reservaciones del residente autenticado.</summary>
@@ -40,7 +57,7 @@ public class ReservacionesAreaController(
     [ProducesResponseType(typeof(IReadOnlyList<ReservacionAreaDto>), 200)]
     public async Task<IActionResult> Mias(CancellationToken ct)
     {
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+        var userId = UserId;
         var list = await cuarta.ListarReservacionesMiasAsync(userId, ct);
         return Ok(list);
     }
@@ -50,7 +67,7 @@ public class ReservacionesAreaController(
     [ProducesResponseType(typeof(IReadOnlyList<ReservacionCalendarioDto>), 200)]
     [ProducesResponseType(422)]
     public async Task<IActionResult> Calendario(
-        [FromQuery] int areaComunId,
+        [FromQuery] int? areaComunId,
         [FromQuery] DateTime desde,
         [FromQuery] DateTime hasta,
         CancellationToken ct)
@@ -95,6 +112,33 @@ public class ReservacionesAreaController(
 
         var page = await cuarta.ListarReservacionesAdminAsync(filtro, ct);
         return Ok(page);
+    }
+
+    /// <summary>Cancela una reservación (admin).</summary>
+    [HttpPatch("{id:int}/cancelar")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CancelarAdmin(int id, CancellationToken ct)
+    {
+        var (ok, code, status, detail) = await cuarta.CancelarReservacionAdminAsync(id, UserEmail, UserId, ct);
+        if (!ok) return StatusCode(status, new { code, detail });
+        return NoContent();
+    }
+
+    /// <summary>Cambia el estado de una reservación a Pendiente o Confirmada (admin).</summary>
+    [HttpPatch("{id:int}/estado")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> ActualizarEstadoAdmin(
+        int id, [FromBody] ActualizarEstadoReservacionRequest request, CancellationToken ct)
+    {
+        var (ok, code, status, detail) =
+            await cuarta.ActualizarEstadoReservacionAdminAsync(id, request.Estado, UserEmail, UserId, ct);
+        if (!ok) return StatusCode(status, new { code, detail });
+        return NoContent();
     }
 
     // Legacy

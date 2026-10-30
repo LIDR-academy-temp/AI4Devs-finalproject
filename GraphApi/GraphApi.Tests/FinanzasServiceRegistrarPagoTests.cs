@@ -27,10 +27,17 @@ public class FinanzasServiceRegistrarPagoTests
         var cuotas = new Mock<ICuotaEstadoCuentaRepository>();
         var generacion = new Mock<ICuotaGeneracionRepository>();
         var morosos = new Mock<IMorososRepository>();
+        var transacciones = new Mock<ITransaccionesFnzRepository>();
+        transacciones
+            .Setup(t => t.AjustarSaldoCuentaAsync(It.IsAny<int>(), It.IsAny<decimal>(), It.IsAny<IDbTransaction>()))
+            .ReturnsAsync(true);
 
         return new FinanzasService(
             cuotas.Object,
             generacion.Object,
+            new Mock<ITiposCuentaFnzRepository>().Object,
+            new Mock<ITiposMovimientoFnzRepository>().Object,
+            transacciones.Object,
             pago.Object,
             morosos.Object,
             notificaciones.Object,

@@ -1,8 +1,9 @@
-import { addDays, dayIndexInWeek, isDiaCompleto, startOfWeekMonday } from './reservasCalendarioUtils'
+import { useMemo } from 'react'
+import { addDays, dayIndexInWeek, hourBoundsForCalendario, isDiaCompleto, startOfWeekMonday } from './reservasCalendarioUtils'
 import type { ReservacionCalendarioEvento } from '../../shared/types/visitas'
 
-const HOUR_START = 8
-const HOUR_END = 22
+const DEFAULT_HOUR_START = 8
+const DEFAULT_HOUR_END_EXCLUSIVE = 22
 
 const LEGEND = {
   pendiente: 'Pendiente',
@@ -22,7 +23,8 @@ function formatWeekLabel(weekStart: Date): string {
 }
 
 export interface ReservasCalendarioSemanalProps {
-  areaComunId: number
+  /** null = vista agregada (todas las áreas) */
+  areaComunId: number | null
   weekStart: Date
   onWeekChange: (next: Date) => void
   eventos: ReservacionCalendarioEvento[]
@@ -37,6 +39,7 @@ export function ReservasCalendarioSemanal({
   loading,
 }: ReservasCalendarioSemanalProps) {
   const weekStartNorm = startOfWeekMonday(weekStart)
+  const mostrarNombreArea = areaComunId === null
   const dayLabels = Array.from({ length: 7 }, (_, i) => {
     const d = addDays(weekStartNorm, i)
     return d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' })
@@ -44,6 +47,11 @@ export function ReservasCalendarioSemanal({
 
   const allDay = eventos.filter((e) => isDiaCompleto(e.fechaInicio, e.fechaFin))
   const timed = eventos.filter((e) => !isDiaCompleto(e.fechaInicio, e.fechaFin))
+  const { hourStart, hourEndExclusive } = useMemo(
+    () => hourBoundsForCalendario(timed, DEFAULT_HOUR_START, DEFAULT_HOUR_END_EXCLUSIVE),
+    [timed],
+  )
+  const hourRowCount = hourEndExclusive - hourStart
 
   return (
     <div className="space-y-3" aria-labelledby="calendario-reservas-titulo">
@@ -112,8 +120,8 @@ export function ReservasCalendarioSemanal({
               </div>
             ))}
 
-            {Array.from({ length: HOUR_END - HOUR_START }, (_, row) => {
-              const hour = HOUR_START + row
+            {Array.from({ length: hourRowCount }, (_, row) => {
+              const hour = hourStart + row
               return (
                 <div key={`row-${hour}`} className="contents">
                   <div className="border-b p-1 text-[10px] text-neutral-400 tabular-nums">{hour}:00</div>
@@ -137,10 +145,15 @@ export function ReservasCalendarioSemanal({
                             className={`rounded border px-1 text-[10px] leading-tight ${estadoBlockClass(e.estado)}`}
                             title={`${e.etiqueta} · ${new Date(e.fechaInicio).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`}
                           >
-                            {new Date(e.fechaInicio).toLocaleTimeString('es-MX', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
+                            {mostrarNombreArea
+                              ? `${new Date(e.fechaInicio).toLocaleTimeString('es-MX', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })} · ${e.etiqueta}`
+                              : new Date(e.fechaInicio).toLocaleTimeString('es-MX', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
                           </div>
                         ))}
                     </div>
@@ -151,7 +164,9 @@ export function ReservasCalendarioSemanal({
           </div>
         </div>
       )}
-      <p className="sr-only">Área seleccionada {areaComunId}</p>
+      <p className="sr-only">
+        {areaComunId === null ? 'Todas las áreas reservables' : `Área seleccionada ${areaComunId}`}
+      </p>
     </div>
   )
 }

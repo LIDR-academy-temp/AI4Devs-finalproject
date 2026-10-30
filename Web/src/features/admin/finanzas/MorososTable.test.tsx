@@ -1,11 +1,16 @@
-import '../../../test/stubToast'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
 import { MorososTable } from './MorososTable'
+
+const selectionProps = {
+  selectedKeys: new Set<string>(),
+  onToggleRow: vi.fn(),
+  onToggleAllVisible: vi.fn(),
+}
 
 describe('MorososTable', () => {
   it('shows empty state copy', () => {
-    render(<MorososTable morosos={[]} loading={false} error={null} />)
+    render(<MorososTable morosos={[]} loading={false} error={null} {...selectionProps} />)
     expect(screen.getByText(/sin morosos/i)).toBeInTheDocument()
     expect(screen.getByText(/período seleccionado/i)).toBeInTheDocument()
   })
@@ -20,20 +25,24 @@ describe('MorososTable', () => {
             nombre: longName,
             casa: 'C-99',
             cuotasVencidas: 3,
+            morasAplicadas: 2,
+            totalMora: 200,
             totalAdeudado: 999999.99,
           },
         ]}
         loading={false}
         error={null}
+        {...selectionProps}
       />,
     )
     expect(screen.getAllByTitle(longName).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText(/tienes 2 moras aplicadas/i)).toBeInTheDocument()
   })
 
   it('notifica error de carga vía toast', async () => {
     const { useToast } = await import('../../../shared/toast/ToastContext')
     const toast = useToast()
-    render(<MorososTable morosos={[]} loading={false} error="Fallo morosos" />)
+    render(<MorososTable morosos={[]} loading={false} error="Fallo morosos" {...selectionProps} />)
     expect(toast.error).toHaveBeenCalledWith('Fallo morosos')
   })
 })

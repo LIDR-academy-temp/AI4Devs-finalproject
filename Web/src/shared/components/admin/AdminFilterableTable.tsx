@@ -17,6 +17,8 @@ export type AdminFilterableTableProps = {
   globalSearchPlaceholder?: string
   emptyFilterMessage?: string
   showGlobalSearch?: boolean
+  /** Columna vacía al inicio (p. ej. checkboxes en tbody) */
+  showLeadingColumn?: boolean
 }
 
 export function AdminFilterableTable({
@@ -31,6 +33,7 @@ export function AdminFilterableTable({
   tableClassName = 'table table-striped table-hover align-middle cq-filterable',
   globalSearchPlaceholder = 'Buscar en tabla…',
   showGlobalSearch = true,
+  showLeadingColumn = false,
 }: AdminFilterableTableProps) {
   const countLabel =
     filteredCount === totalCount
@@ -65,11 +68,15 @@ export function AdminFilterableTable({
         <table className={tableClassName}>
           <thead>
             <tr>
+              {showLeadingColumn && (
+                <th scope="col" className="cq-tf-sel-col" aria-label="Seleccionar" />
+              )}
               {columns.map((col) => (
                 <th key={col.key} scope="col">{col.header}</th>
               ))}
             </tr>
             <tr className="cq-tf-filter-row">
+              {showLeadingColumn && <th scope="col" className="cq-tf-sel-col" />}
               {columns.map((col) => (
                 <th key={`${col.key}-filter`} className="cq-tf-col-cell" scope="col">
                   {col.filterType === 'none' ? null : col.filterType === 'select' ? (

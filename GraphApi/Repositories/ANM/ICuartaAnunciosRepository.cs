@@ -45,4 +45,12 @@ public interface ICuartaAnunciosRepository
     Task MarcarVistoAsync(int anuncioId, int usuarioId, string correo, IDbTransaction tx);
 
     Task<IReadOnlyList<TipoAnuncioItemDto>> ListarTiposAsync(CancellationToken ct = default);
+
+    Task<int> InsertTipoAsync(string tipoAnuncio, string correo, int adminId, IDbTransaction? tx = null);
+
+    Task<bool> UpdateTipoAsync(int tipoAnuncioId, string tipoAnuncio, string correo, int adminId, IDbTransaction? tx = null);
+
+    Task<bool> SoftDeleteTipoAsync(int tipoAnuncioId, string correo, int adminId, IDbTransaction? tx = null);
+
+    Task<int> ContarAnunciosPorTipoIdAsync(int tipoAnuncioId, CancellationToken ct = default);
 }

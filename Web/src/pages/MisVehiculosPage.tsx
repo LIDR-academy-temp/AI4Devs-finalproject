@@ -89,11 +89,11 @@ export function MisVehiculosPage() {
   const openEdit = (v: AutomovilListItem) => {
     setEditId(v.automovilId)
     setForm({
-      marcaId: v.marcaId,
-      modeloId: v.modeloId,
-      modeloLibre: v.modeloLibre,
+      marcaId: v.marcaId ?? undefined,
+      modeloId: v.modeloId ?? undefined,
+      modeloLibre: v.modeloLibre ?? undefined,
       placas: v.placas ?? '',
-      color: v.color,
+      color: v.color ?? undefined,
     })
     setFormError(null)
     setModalOpen(true)
@@ -127,7 +127,7 @@ export function MisVehiculosPage() {
       : await apiPost<AutomovilListItem>('/USR/Automoviles', payload)
 
     setSaving(false)
-    if (result.problem || (editId ? result.status !== 200 : result.status !== 201)) {
+    if (result.problem || (editId ? result.status !== 204 : result.status !== 201)) {
       setFormError(result.problem?.detail ?? 'Error al guardar.')
       return
     }

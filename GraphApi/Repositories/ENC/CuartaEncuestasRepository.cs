@@ -1,5 +1,6 @@
 using System.Data;
 using Dapper;
+using GraphApi.Infrastructure;
 using GraphApi.Models.ENC.Encuestas;
 
 namespace GraphApi.Repositories.ENC;
@@ -7,8 +8,17 @@ namespace GraphApi.Repositories.ENC;
 public sealed class CuartaEncuestasRepository : ICuartaEncuestasRepository
 {
     private readonly IDbConnection _db;
+    private readonly bool _respuestasTieneEncuestaId;
+    private readonly bool _preguntasTieneRequerida;
+    private readonly bool _opcionesTieneOrden;
 
-    public CuartaEncuestasRepository(IDbConnection db) => _db = db;
+    public CuartaEncuestasRepository(IDbConnection db)
+    {
+        _db = db;
+        _respuestasTieneEncuestaId = SqlSchemaCompat.HasColumn(db, "enc", "Respuestas", "EncuestaID");
+        _preguntasTieneRequerida = SqlSchemaCompat.HasColumn(db, "enc", "Preguntas", "Requerida");
+        _opcionesTieneOrden = SqlSchemaCompat.HasColumn(db, "enc", "OpcionesPregunta", "Orden");
+    }
 
     private const string VigenteSql = """
         e.bActivo = 1
@@ -299,13 +309,24 @@ public sealed class CuartaEncuestasRepository : ICuartaEncuestasRepository
 
     public async Task<bool> UsuarioYaParticipoAsync(int encuestaId, int usuarioId, IDbTransaction? tx = null)
     {
-        const string sql = """
-            SELECT CASE WHEN EXISTS (
-                SELECT 1 FROM enc.Respuestas WITH (NOLOCK)
-                WHERE EncuestaID = @EncuestaId AND UsuarioID = @UsuarioId AND bEliminado = 0
-            ) THEN 1 ELSE 0 END;
-            """;
-        return await _db.ExecuteScalarAsync<int>(sql, new { EncuestaId = encuestaId, UsuarioId = usuarioId }, tx) == 1;
+        var sql = _respuestasTieneEncuestaId
+            ? """
+              SELECT CASE WHEN EXISTS (
+                  SELECT 1 FROM enc.Respuestas WITH (NOLOCK)
+                  WHERE EncuestaID = @EncuestaId AND UsuarioID = @UsuarioId AND bEliminado = 0
+              ) THEN 1 ELSE 0 END;
+              """
+            : """
+              SELECT CASE WHEN EXISTS (
+                  SELECT 1
+                  FROM enc.Respuestas r WITH (NOLOCK)
+                  INNER JOIN enc.Preguntas p WITH (NOLOCK) ON p.PreguntaID = r.PreguntaID
+                  WHERE p.EncuestaID = @EncuestaId AND r.UsuarioID = @UsuarioId
+                    AND r.bEliminado = 0 AND p.bEliminado = 0
+              ) THEN 1 ELSE 0 END;
+              """;
+        return SqlSchemaCompat.ScalarToInt32(
+            await _db.ExecuteScalarAsync(sql, new { EncuestaId = encuestaId, UsuarioId = usuarioId }, tx)) == 1;
     }
 
     public async Task InsertRespuestasAsync(
@@ -338,8 +359,9 @@ public sealed class CuartaEncuestasRepository : ICuartaEncuestasRepository
 
     public async Task<IReadOnlyList<PreguntaMetaRow>> ObtenerPreguntasMetaAsync(int encuestaId, IDbTransaction? tx = null)
     {
-        const string sql = """
-            SELECT p.PreguntaID AS PreguntaId, tp.TipoPregunta, p.Requerida
+        var requeridaExpr = _preguntasTieneRequerida ? "p.Requerida" : "CAST(1 AS bit)";
+        var sql = $"""
+            SELECT p.PreguntaID AS PreguntaId, tp.TipoPregunta, {requeridaExpr} AS Requerida
             FROM enc.Preguntas p WITH (NOLOCK)
             INNER JOIN enc.TiposPregunta tp WITH (NOLOCK) ON tp.TipoPreguntaID = p.TipoPreguntaID
             WHERE p.EncuestaID = @EncuestaId AND p.bEliminado = 0;
@@ -362,13 +384,21 @@ public sealed class CuartaEncuestasRepository : ICuartaEncuestasRepository
             return null;
         }
 
-        const string participantesSql = """
-            SELECT COUNT(DISTINCT UsuarioID)
-            FROM enc.Respuestas WITH (NOLOCK)
-            WHERE EncuestaID = @Id AND bEliminado = 0;
-            """;
-        header.TotalParticipantes = await _db.ExecuteScalarAsync<int>(
+        var participantesSql = _respuestasTieneEncuestaId
+            ? """
+              SELECT COUNT(DISTINCT UsuarioID)
+              FROM enc.Respuestas WITH (NOLOCK)
+              WHERE EncuestaID = @Id AND bEliminado = 0;
+              """
+            : """
+              SELECT COUNT(DISTINCT r.UsuarioID)
+              FROM enc.Respuestas r WITH (NOLOCK)
+              INNER JOIN enc.Preguntas p WITH (NOLOCK) ON p.PreguntaID = r.PreguntaID
+              WHERE p.EncuestaID = @Id AND r.bEliminado = 0 AND p.bEliminado = 0;
+              """;
+        var participantesRaw = await _db.ExecuteScalarAsync(
             new CommandDefinition(participantesSql, new { Id = encuestaId }, cancellationToken: ct));
+        header.TotalParticipantes = SqlSchemaCompat.ScalarToInt32(participantesRaw);
 
         var preguntas = (await ObtenerPreguntasMetaAsync(encuestaId)).ToList();
         var resultadoPreguntas = new List<ResultadoPreguntaDto>();
@@ -396,7 +426,8 @@ public sealed class CuartaEncuestasRepository : ICuartaEncuestasRepository
             }
             else
             {
-                const string aggSql = """
+                var orderBy = _opcionesTieneOrden ? "o.Orden" : "o.OpcionPreguntaID";
+                var aggSql = $"""
                     SELECT o.OpcionPreguntaID AS OpcionPreguntaId,
                            o.Texto,
                            COUNT(r.RespuestaID) AS Conteo
@@ -405,15 +436,15 @@ public sealed class CuartaEncuestasRepository : ICuartaEncuestasRepository
                         ON r.OpcionPreguntaID = o.OpcionPreguntaID AND r.bEliminado = 0
                     WHERE o.PreguntaID = @PreguntaId AND o.bEliminado = 0
                     GROUP BY o.OpcionPreguntaID, o.Texto
-                    ORDER BY o.Orden;
+                    ORDER BY {orderBy};
                     """;
-                var rows = await _db.QueryAsync(
+                var rows = await _db.QueryAsync<ResultadoOpcionAggRow>(
                     new CommandDefinition(aggSql, new { PreguntaId = p.PreguntaId }, cancellationToken: ct));
                 var opciones = rows.Select(r => new
                 {
-                    Id = (int)r.OpcionPreguntaId,
-                    Texto = (string)r.Texto,
-                    Conteo = (int)r.Conteo,
+                    Id = r.OpcionPreguntaId,
+                    Texto = r.Texto ?? string.Empty,
+                    Conteo = SqlSchemaCompat.ScalarToInt32(r.Conteo),
                 }).ToList();
                 var total = opciones.Sum(x => x.Conteo);
                 detalle.Opciones = opciones.Select(r => new ResultadoOpcionDto
@@ -750,5 +781,12 @@ public sealed class CuartaEncuestasRepository : ICuartaEncuestasRepository
             """;
         var n = await _db.ExecuteAsync(sql, new { Id = opcionPreguntaId, Correo = correo, AdminId = adminId }, tx);
         return n > 0;
+    }
+
+    private sealed class ResultadoOpcionAggRow
+    {
+        public int OpcionPreguntaId { get; init; }
+        public string? Texto { get; init; }
+        public long Conteo { get; init; }
     }
 }

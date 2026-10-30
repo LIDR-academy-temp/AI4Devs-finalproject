@@ -6,6 +6,7 @@ import '@mdi/font/css/materialdesignicons.min.css'
 import '../styles/bootstrap-pantone.css'
 import '../styles/cq-admin.css'
 import { usePadronUsuarios } from '../features/admin/usuarios/usePadronUsuarios'
+import { AdminGenerarPaseQrSection } from '../features/admin/visitas/AdminGenerarPaseQrSection'
 import { AdminTiposIdentificacionSection } from '../features/admin/visitas/AdminTiposIdentificacionSection'
 import { formatCasaLabel } from '../features/admin/visitas/casaLabel'
 import {
@@ -36,7 +37,7 @@ import { useToast } from '../shared/toast/ToastContext'
 import { apiPatch, apiPost } from '../shared/lib/apiClient'
 import type { VisitaListItem } from '../shared/types/visitas'
 
-type AdminVisitasTab = 'visitas' | 'tipos'
+type AdminVisitasTab = 'visitas' | 'pases' | 'tipos'
 
 export function AdminVisitasPage() {
   const [tab, setTab] = useState<AdminVisitasTab>('visitas')
@@ -193,6 +194,18 @@ export function AdminVisitasPage() {
         <li className="nav-item">
           <button
             type="button"
+            className={`nav-link ${tab === 'pases' ? 'active' : ''}`}
+            onClick={() => {
+              closePanel()
+              setTab('pases')
+            }}
+          >
+            Pases QR
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            type="button"
             className={`nav-link ${tab === 'tipos' ? 'active' : ''}`}
             onClick={() => {
               closePanel()
@@ -203,6 +216,16 @@ export function AdminVisitasPage() {
           </button>
         </li>
       </ul>
+
+      {tab === 'pases' && (
+        <AdminGenerarPaseQrSection
+          usuarios={usuarios ?? []}
+          casas={casas}
+          casasLoading={casasLoading}
+          tipos={tipos}
+          tiposLoading={tiposLoading}
+        />
+      )}
 
       {tab === 'tipos' && (
         <>

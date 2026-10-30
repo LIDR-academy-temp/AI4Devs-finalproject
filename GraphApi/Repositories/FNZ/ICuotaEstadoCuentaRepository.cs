@@ -9,6 +9,7 @@ public sealed class CuotaEstadoCuentaRow
     public int? CuentaId { get; set; }
     public string? Cuenta { get; set; }
     public decimal Monto { get; set; }
+    public decimal MontoMora { get; set; }
     public decimal MontoPagado { get; set; }
     public DateTime PeriodoInicio { get; set; }
     public DateTime PeriodoFin { get; set; }

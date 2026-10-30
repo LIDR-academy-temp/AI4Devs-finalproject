@@ -44,7 +44,7 @@ public sealed class CuartaTicketRepository : ICuartaTicketRepository
 
         const string sql = """
             INSERT INTO tkt.Tickets
-                (TituloTicket, DescripcionTicket, UsuarioSolicitanteID, PrioridadTicketID, EstadoTicketID,
+                (Titulo, Descripcion, UsuarioSolicitanteID, PrioridadTicketID, EstadoTicketID,
                  FechaCreacionTicket, bEliminado, Creado, UsuarioCreacionID, FechaCreacion)
             VALUES
                 (@Titulo, @Descripcion, @UsuarioSolicitanteID, @PrioridadTicketID, @EstadoTicketID,

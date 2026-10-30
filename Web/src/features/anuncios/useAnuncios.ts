@@ -85,13 +85,20 @@ export function useAnunciosAdmin() {
 
 export function useTiposAnuncio() {
   const [tipos, setTipos] = useState<TipoAnuncioItem[]>([])
-  useEffect(() => {
-    void (async () => {
-      const { data } = await apiGet<TipoAnuncioItem[]>('/ANM/TiposAnuncio')
-      if (data) setTipos(data)
-    })()
+  const [loading, setLoading] = useState(true)
+
+  const reload = useCallback(async () => {
+    setLoading(true)
+    const { data } = await apiGet<TipoAnuncioItem[]>('/ANM/TiposAnuncio')
+    if (data) setTipos(data)
+    setLoading(false)
   }, [])
-  return tipos
+
+  useEffect(() => {
+    void reload()
+  }, [reload])
+
+  return { tipos, loading, reload }
 }
 
 export async function crearAnuncio(body: {

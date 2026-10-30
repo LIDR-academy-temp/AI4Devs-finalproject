@@ -49,7 +49,7 @@ public sealed class CuartaAutomovilesRepository(IDbConnection db) : ICuartaAutom
             WHERE Placas = @Placas AND bEliminado = 0
               AND (@ExcludeId IS NULL OR AutomovilID <> @ExcludeId)
             """;
-        var count = await db.ExecuteScalarAsync<int>(sql, new { Placas = placas, ExcludeId = excludeId }, tx);
+        var count = SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql, new { Placas = placas, ExcludeId = excludeId }, tx));
         return count > 0;
     }
 
@@ -64,8 +64,8 @@ public sealed class CuartaAutomovilesRepository(IDbConnection db) : ICuartaAutom
                  @Correo, @UsuarioId, GETUTCDATE(), 0);
             SELECT CAST(SCOPE_IDENTITY() AS INT);
             """;
-        return await db.ExecuteScalarAsync<int>(sql,
-            new { UsuarioId = usuarioId, req.MarcaId, req.ModeloId, req.ModeloLibre, req.Placas, req.Color, Correo = correo }, tx);
+        return SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql,
+            new { UsuarioId = usuarioId, req.MarcaId, req.ModeloId, req.ModeloLibre, req.Placas, req.Color, Correo = correo }, tx));
     }
 
     public async Task<bool> ActualizarAsync(int automovilId, AutomovilActualizarRequest req, string correo, IDbTransaction tx)
@@ -102,26 +102,23 @@ public sealed class CuartaAutomovilesRepository(IDbConnection db) : ICuartaAutom
     public async Task<bool> EsDuenioAsync(int automovilId, int usuarioId)
     {
         const string sql = "SELECT COUNT(1) FROM usr.Automoviles WHERE AutomovilID = @AutomovilId AND UsuarioID = @UsuarioId AND bEliminado = 0";
-        var count = await db.ExecuteScalarAsync<int>(sql, new { AutomovilId = automovilId, UsuarioId = usuarioId });
-        return count > 0;
+        return SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql, new { AutomovilId = automovilId, UsuarioId = usuarioId })) > 0;
     }
 
     public async Task<bool> ExisteActivoAsync(int automovilId, CancellationToken ct = default)
     {
         const string sql = "SELECT COUNT(1) FROM usr.Automoviles WHERE AutomovilID = @AutomovilId AND bEliminado = 0";
-        var count = await db.ExecuteScalarAsync<int>(sql, new { AutomovilId = automovilId });
-        return count > 0;
+        return SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql, new { AutomovilId = automovilId })) > 0;
     }
 
     public async Task<bool> UsuarioActivoAsync(int usuarioId, CancellationToken ct = default)
     {
         var (_, _, activo) = SqlSchemaCompat.UsuarioColumns(db);
         var sql = $"""
-            SELECT COUNT(1) FROM sgr.Usuarios
+            SELECT COUNT(1) FROM sgr.Usuarios u
             WHERE UsuarioID = @UsuarioId AND {activo} = 1 AND bEliminado = 0
             """;
-        var count = await db.ExecuteScalarAsync<int>(sql, new { UsuarioId = usuarioId });
-        return count > 0;
+        return SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql, new { UsuarioId = usuarioId })) > 0;
     }
 
     public async Task<IReadOnlyList<MarcaDto>> ListarMarcasAsync(CancellationToken ct = default)
@@ -146,7 +143,7 @@ public sealed class CuartaAutomovilesRepository(IDbConnection db) : ICuartaAutom
             OUTPUT INSERTED.MarcaID
             VALUES (@marca, @correo, @adminId, GETDATE(), 0);
             """;
-        return await db.ExecuteScalarAsync<int>(sql, new { marca, correo, adminId }, tx);
+        return SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql, new { marca, correo, adminId }, tx));
     }
 
     public async Task<bool> UpdateMarcaAsync(int marcaId, string marca, string correo, int adminId, IDbTransaction? tx = null)
@@ -180,8 +177,7 @@ public sealed class CuartaAutomovilesRepository(IDbConnection db) : ICuartaAutom
     public async Task<bool> ExisteMarcaActivaAsync(int marcaId, CancellationToken ct = default)
     {
         const string sql = "SELECT COUNT(1) FROM usr.Marcas WHERE MarcaID = @marcaId AND bEliminado = 0;";
-        var n = await db.ExecuteScalarAsync<int>(sql, new { marcaId });
-        return n > 0;
+        return SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql, new { marcaId })) > 0;
     }
 
     public async Task<int> InsertModeloAsync(int marcaId, string modelo, string correo, int adminId, IDbTransaction? tx = null)
@@ -192,7 +188,7 @@ public sealed class CuartaAutomovilesRepository(IDbConnection db) : ICuartaAutom
             OUTPUT INSERTED.ModeloID
             VALUES (@marcaId, @modelo, @correo, @adminId, GETDATE(), 0);
             """;
-        return await db.ExecuteScalarAsync<int>(sql, new { marcaId, modelo, correo, adminId }, tx);
+        return SqlSchemaCompat.ScalarToInt32(await db.ExecuteScalarAsync(sql, new { marcaId, modelo, correo, adminId }, tx));
     }
 
     public async Task<bool> UpdateModeloAsync(int modeloId, int marcaId, string modelo, string correo, int adminId, IDbTransaction? tx = null)

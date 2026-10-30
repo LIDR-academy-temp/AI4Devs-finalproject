@@ -150,6 +150,8 @@ public class CuartaVisitasServiceTests
     public async Task CrearReservacion_Solapamiento_Retorna409()
     {
         var ahora = DateTime.UtcNow;
+        _repoMock.Setup(r => r.ObtenerAreaAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AreaComunDto { AreaComunId = 1, Nombre = "Salon", RequiereReservacion = true });
         _repoMock.Setup(r => r.HaySolapamientoAsync(1, It.IsAny<DateTime>(), It.IsAny<DateTime>(),
                          null, _txMock.Object))
                  .ReturnsAsync(true);
@@ -171,25 +173,24 @@ public class CuartaVisitasServiceTests
     public async Task CrearReservacion_Valido_InsertaYRetorna201()
     {
         var ahora = DateTime.UtcNow;
+        _repoMock.Setup(r => r.ObtenerAreaAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AreaComunDto { AreaComunId = 1, Nombre = "Salon", RequiereReservacion = true });
         _repoMock.Setup(r => r.HaySolapamientoAsync(1, It.IsAny<DateTime>(), It.IsAny<DateTime>(),
                          null, _txMock.Object))
                  .ReturnsAsync(false);
         _repoMock.Setup(r => r.ResolverEstadoReservacionIdAsync("Pendiente", _txMock.Object))
                  .ReturnsAsync(3);
         _repoMock.Setup(r => r.InsertReservacionAsync(It.IsAny<CrearReservacionRequest>(), 3,
-                         "usr@test.com", 2, _txMock.Object))
+                         It.IsAny<string>(), 2, 2, _txMock.Object))
                  .ReturnsAsync(10);
-        _repoMock.Setup(r => r.ListarReservacionesMiasAsync(2, It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<ReservacionAreaDto>
+        _repoMock.Setup(r => r.ObtenerReservacionAsync(10, It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(new ReservacionAreaDto
                  {
-                     new()
-                     {
-                         ReservacionAreaId = 10,
-                         AreaComunId       = 1,
-                         FechaInicio       = ahora.AddHours(1),
-                         FechaFin          = ahora.AddHours(3),
-                         Estado            = "Pendiente",
-                     }
+                     ReservacionAreaId = 10,
+                     AreaComunId       = 1,
+                     FechaInicio       = ahora.AddHours(1),
+                     FechaFin          = ahora.AddHours(3),
+                     Estado            = "Pendiente",
                  });
 
         var req = new CrearReservacionRequest
@@ -269,7 +270,7 @@ public class CuartaVisitasServiceTests
     public async Task ListarCalendario_AreaInvalida_Retorna422()
     {
         var (eventos, code, status, _) =
-            await _sut.ListarReservacionesCalendarioAsync(0, DateTime.UtcNow, DateTime.UtcNow.AddDays(7));
+            await _sut.ListarReservacionesCalendarioAsync(-1, DateTime.UtcNow, DateTime.UtcNow.AddDays(7));
 
         Assert.Null(eventos);
         Assert.Equal("VTS_AREA_INVALIDA", code);
@@ -286,5 +287,68 @@ public class CuartaVisitasServiceTests
         Assert.Null(eventos);
         Assert.Equal("VTS_RANGO_EXCESIVO", code);
         Assert.Equal(422, status);
+    }
+
+    [Fact]
+    public async Task ActualizarEstadoReserva_EstadoInvalido_Retorna422()
+    {
+        var (ok, code, status, _) =
+            await _sut.ActualizarEstadoReservacionAdminAsync(1, "Cancelada", "admin@local", 1);
+
+        Assert.False(ok);
+        Assert.Equal("VTS_ESTADO_INVALIDO", code);
+        Assert.Equal(422, status);
+    }
+
+    [Fact]
+    public async Task ActualizarEstadoReserva_DelegaAlRepositorio()
+    {
+        _repoMock.Setup(r => r.ActualizarEstadoReservacionAsync(7, "Confirmada", "admin@local", 2, It.IsAny<IDbTransaction?>()))
+                 .ReturnsAsync(true);
+
+        var (ok, code, status, _) =
+            await _sut.ActualizarEstadoReservacionAdminAsync(7, "Confirmada", "admin@local", 2);
+
+        Assert.True(ok);
+        Assert.Null(code);
+        Assert.Equal(204, status);
+    }
+
+    [Fact]
+    public async Task CrearReservacion_AreaNoReservable_Retorna422()
+    {
+        _repoMock.Setup(r => r.ObtenerAreaAsync(2, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AreaComunDto { AreaComunId = 2, Nombre = "Jardin", RequiereReservacion = false });
+        var req = new CrearReservacionRequest
+        {
+            AreaComunId = 2,
+            FechaInicio = DateTime.UtcNow.AddHours(1),
+            FechaFin = DateTime.UtcNow.AddHours(2),
+        };
+        var (res, code, status, _) = await _sut.CrearReservacionAsync(req, "u@t.com", 1);
+        Assert.Null(res);
+        Assert.Equal("VTS_AREA_NO_RESERVABLE", code);
+        Assert.Equal(422, status);
+    }
+
+    [Fact]
+    public async Task CrearAreaComun_NombreVacio_Retorna400()
+    {
+        var (data, code, status, _) = await _sut.CrearAreaComunAsync(
+            new AreaComunUpsertRequest { Nombre = "  " }, "admin@t.com", 1);
+        Assert.Null(data);
+        Assert.Equal("VTS_AREA_NOMBRE_REQUERIDO", code);
+        Assert.Equal(400, status);
+    }
+
+    [Fact]
+    public async Task CancelarReservacionAdmin_NoEncontrada_Retorna404()
+    {
+        _repoMock.Setup(r => r.CancelarReservacionAsync(99, It.IsAny<string>(), It.IsAny<int>(), null))
+            .ReturnsAsync(false);
+        var (ok, code, status, _) = await _sut.CancelarReservacionAdminAsync(99, "admin@t.com", 1);
+        Assert.False(ok);
+        Assert.Equal("VTS_RESERVA_NO_ENCONTRADA", code);
+        Assert.Equal(404, status);
     }
 }

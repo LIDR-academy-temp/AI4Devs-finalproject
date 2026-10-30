@@ -10,6 +10,8 @@ import { usePadronUsuarios } from '../features/admin/usuarios/usePadronUsuarios'
 import {
   PERFILES_USUARIO,
   casaIdFromForm,
+  casaIdFromUnidad,
+  perfilFromPadron,
   usuarioCreateSchema,
   usuarioEditSchema,
   type UsuarioCreateForm,
@@ -31,7 +33,7 @@ import {
 import { useClientTableFilter } from '../shared/hooks/useClientTableFilter'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 import { useToast } from '../shared/toast/ToastContext'
-import { apiDelete, apiPatch, apiPost, apiPut } from '../shared/lib/apiClient'
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '../shared/lib/apiClient'
 import type { UsuarioCreado, UsuarioPadronItem } from '../shared/types/usuariosAdmin'
 
 export function AdminUsuariosPage() {
@@ -46,6 +48,7 @@ export function AdminUsuariosPage() {
   const toast = useToast()
   useQueryErrorToast(error)
   const [tempPassword, setTempPassword] = useState<string | null>(null)
+  const [editingUnidad, setEditingUnidad] = useState<string | null>(null)
 
   const heroStats = useMemo(() => {
     const activos = data.filter((u) => u.bActivo).length
@@ -79,7 +82,7 @@ export function AdminUsuariosPage() {
 
   const editForm = useForm<UsuarioEditForm>({
     resolver: zodResolver(usuarioEditSchema),
-    defaultValues: { nombre: '', correo: '', telefono: '' },
+    defaultValues: { nombre: '', correo: '', telefono: '', perfil: 'Residente', casaId: '' },
   })
 
   const panelOpen = createOpen || editing !== null
@@ -100,14 +103,32 @@ export function AdminUsuariosPage() {
     setEditing(null)
   }
 
-  const openEdit = (u: UsuarioPadronItem) => {
+  const openEdit = async (u: UsuarioPadronItem) => {
     setFormError(null)
     setTempPassword(null)
     setCreateOpen(false)
+    setEditingUnidad(null)
+
+    let perfil = perfilFromPadron(u.perfil)
+    let casaId = ''
+
+    const { data: perfilDto } = await apiGet<{ perfil?: string; unidad?: string | null }>(
+      `/SGR/Usuarios/${u.usuarioId}`,
+    )
+    if (perfilDto?.perfil) {
+      perfil = perfilFromPadron(perfilDto.perfil)
+    }
+    if (perfilDto?.unidad) {
+      setEditingUnidad(perfilDto.unidad)
+      casaId = casaIdFromUnidad(casas, perfilDto.unidad)
+    }
+
     editForm.reset({
       nombre: u.nombre,
       correo: u.correo,
       telefono: u.telefono ?? '',
+      perfil,
+      casaId,
     })
     setEditing(u)
   }
@@ -115,6 +136,7 @@ export function AdminUsuariosPage() {
   const closePanel = () => {
     setCreateOpen(false)
     setEditing(null)
+    setEditingUnidad(null)
     setFormError(null)
     setTempPassword(null)
   }
@@ -143,6 +165,8 @@ export function AdminUsuariosPage() {
       nombre: formData.nombre,
       correo: formData.correo,
       telefono: formData.telefono.trim() || '',
+      perfil: formData.perfil,
+      casaId: casaIdFromForm(formData.casaId),
     })
     if (problem) {
       setFormError(problem.detail ?? `Error ${status}`)
@@ -280,7 +304,7 @@ export function AdminUsuariosPage() {
                             <button
                               type="button"
                               className="btn btn-link btn-sm"
-                              onClick={() => openEdit(u)}
+                              onClick={() => void openEdit(u)}
                               aria-label={`Editar ${u.correo}`}
                             >
                               <i className="mdi mdi-pencil" />
@@ -314,7 +338,7 @@ export function AdminUsuariosPage() {
                     <UsuarioAdminMobileCard
                       usuario={u}
                       active={editing?.usuarioId === u.usuarioId}
-                      onEdit={openEdit}
+                      onEdit={(u) => void openEdit(u)}
                     />
                   )}
                 />
@@ -366,12 +390,66 @@ export function AdminUsuariosPage() {
                     <span className="text-danger small d-block">{errors.correo.message}</span>
                   )}
                 </div>
-                <div className="form-group mb-0">
+                <div className="form-group mb-3">
                   <label className="cq-label" htmlFor="edit-telefono">
                     <i className="mdi mdi-phone" />
                     Teléfono
                   </label>
                   <input id="edit-telefono" className="form-control" {...editForm.register('telefono')} />
+                </div>
+                <div className="form-group mb-3">
+                  <label className="cq-label" htmlFor="edit-perfil">
+                    <i className="mdi mdi-shield-account" />
+                    Perfil
+                  </label>
+                  <select id="edit-perfil" className="form-control" {...editForm.register('perfil')}>
+                    {PERFILES_USUARIO.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group mb-3">
+                  <label className="cq-label" htmlFor="edit-casa">
+                    <i className="mdi mdi-home" />
+                    Vincular casa (ocupante)
+                  </label>
+                  <select
+                    id="edit-casa"
+                    className="form-control"
+                    {...editForm.register('casaId')}
+                    disabled={casasLoading}
+                  >
+                    <option value="">Sin cambio</option>
+                    {casas.map((c) => (
+                      <option key={c.casaId} value={String(c.casaId)}>
+                        {c.numero ?? c.casaId} — {c.condominioNombre ?? ''}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-muted small d-block mt-1">
+                    Añade ocupante vigente en esa unidad; no quita otras casas. Un mismo dueño puede tener
+                    varias casas en <strong>Casas</strong> (propietario por fila).
+                  </span>
+                  {editingUnidad && !editForm.watch('casaId') && (
+                    <span className="text-muted small d-block mt-1">
+                      Casa principal en perfil: {editingUnidad}
+                    </span>
+                  )}
+                  {casasError && <span className="text-danger small d-block">{casasError}</span>}
+                </div>
+                <div className="form-group mb-0">
+                  <label className="cq-label">
+                    <i className="mdi mdi-check-circle-outline" />
+                    Activo
+                  </label>
+                  <div>
+                    <span className={`badge ${editing?.bActivo ? 'bg-success' : 'bg-secondary'}`}>
+                      {editing?.bActivo ? 'Sí' : 'No'}
+                    </span>
+                    <span className="text-muted small d-block mt-1">
+                      Activa o desactiva desde el icono de persona en la tabla.
+                    </span>
+                  </div>
                 </div>
               </>
             ) : (
@@ -417,7 +495,7 @@ export function AdminUsuariosPage() {
                 <div className="form-group mb-0">
                   <label className="cq-label" htmlFor="create-casa">
                     <i className="mdi mdi-home" />
-                    Casa
+                    Vincular casa (opcional)
                   </label>
                   <select
                     id="create-casa"
@@ -425,13 +503,17 @@ export function AdminUsuariosPage() {
                     {...createForm.register('casaId')}
                     disabled={casasLoading}
                   >
-                    <option value="">Sin asignar</option>
+                    <option value="">Sin vincular aquí</option>
                     {casas.map((c) => (
                       <option key={c.casaId} value={String(c.casaId)}>
                         {c.numero ?? c.casaId} — {c.condominioNombre ?? ''}
                       </option>
                     ))}
                   </select>
+                  <span className="text-muted small d-block mt-1">
+                    Para varias propiedades del mismo dueño, asigna propietario en cada casa en{' '}
+                    <strong>Casas</strong>.
+                  </span>
                   {casasError && <span className="text-danger small d-block">{casasError}</span>}
                 </div>
               </>

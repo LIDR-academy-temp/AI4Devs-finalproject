@@ -39,39 +39,113 @@ public sealed class TipoIdentificacionUpsertRequest
 // ── Áreas comunes ────────────────────────────────────────────────────────────
 public sealed class AreaComunDto
 {
+    [JsonPropertyName("areaComunId")]
     public int AreaComunId { get; set; }
+
+    [JsonPropertyName("nombre")]
     public string Nombre { get; set; } = "";
+
+    [JsonPropertyName("descripcion")]
     public string? Descripcion { get; set; }
+
+    [JsonPropertyName("capacidad")]
     public int? Capacidad { get; set; }
+
+    [JsonPropertyName("requiereReservacion")]
     public bool RequiereReservacion { get; set; }
 }
 
 // ── Reservaciones ────────────────────────────────────────────────────────────
 public sealed class ReservacionAreaDto
 {
+    [JsonPropertyName("reservacionAreaId")]
     public int ReservacionAreaId { get; set; }
+
+    [JsonPropertyName("areaComunId")]
     public int AreaComunId { get; set; }
+
+    [JsonPropertyName("areaComun")]
     public string AreaComun { get; set; } = "";
+
+    [JsonPropertyName("fechaInicio")]
     public DateTime FechaInicio { get; set; }
+
+    [JsonPropertyName("fechaFin")]
     public DateTime FechaFin { get; set; }
+
+    [JsonPropertyName("estado")]
     public string Estado { get; set; } = "";
+
+    [JsonPropertyName("fechaCreacion")]
     public DateTime FechaCreacion { get; set; }
+}
+
+public sealed class AreaComunUpsertRequest
+{
+    [JsonPropertyName("nombre")]
+    public string Nombre { get; set; } = "";
+
+    [JsonPropertyName("descripcion")]
+    public string? Descripcion { get; set; }
+
+    [JsonPropertyName("capacidad")]
+    public int? Capacidad { get; set; }
+
+    [JsonPropertyName("requiereReservacion")]
+    public bool RequiereReservacion { get; set; } = true;
 }
 
 public sealed class CrearReservacionRequest
 {
+    [JsonPropertyName("areaComunId")]
     public int AreaComunId { get; set; }
+
+    [JsonPropertyName("fechaInicio")]
     public DateTime FechaInicio { get; set; }
+
+    [JsonPropertyName("fechaFin")]
     public DateTime FechaFin { get; set; }
+}
+
+public sealed class CrearReservacionAdminRequest
+{
+    [JsonPropertyName("usuarioId")]
+    public int UsuarioId { get; set; }
+
+    [JsonPropertyName("areaComunId")]
+    public int AreaComunId { get; set; }
+
+    [JsonPropertyName("fechaInicio")]
+    public DateTime FechaInicio { get; set; }
+
+    [JsonPropertyName("fechaFin")]
+    public DateTime FechaFin { get; set; }
+}
+
+public sealed class ActualizarEstadoReservacionRequest
+{
+    [JsonPropertyName("estado")]
+    public string Estado { get; set; } = "";
 }
 
 public sealed class ReservacionCalendarioDto
 {
+    [JsonPropertyName("reservacionAreaId")]
     public int ReservacionAreaId { get; set; }
+
+    [JsonPropertyName("areaComunId")]
     public int AreaComunId { get; set; }
+
+    [JsonPropertyName("fechaInicio")]
     public DateTime FechaInicio { get; set; }
+
+    [JsonPropertyName("fechaFin")]
     public DateTime FechaFin { get; set; }
+
+    [JsonPropertyName("estado")]
     public string Estado { get; set; } = "";
+
+    [JsonPropertyName("etiqueta")]
     public string Etiqueta { get; set; } = "";
 }
 

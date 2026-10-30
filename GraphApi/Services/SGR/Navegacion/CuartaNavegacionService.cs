@@ -199,4 +199,109 @@ public sealed class CuartaNavegacionService : ICuartaNavegacionService
             throw;
         }
     }
+
+    public async Task<(PerfilAdminListItemDto? Data, string? Code, int Status, string? Detail)> CrearPerfilAdminAsync(
+        PerfilAdminUpsertRequest request,
+        int adminId,
+        string adminCorreo,
+        CancellationToken ct = default)
+    {
+        var nombre = request.Nombre.Trim();
+        if (string.IsNullOrEmpty(nombre))
+            return (null, "PERFIL_NOMBRE_REQUERIDO", StatusCodes.Status400BadRequest, "El nombre del perfil es requerido.");
+
+        var tx = _uow.BeginTransaction();
+        try
+        {
+            var id = await _repo.InsertPerfilAsync(nombre, request.Descripcion?.Trim(), request.BAdministrador, adminCorreo, adminId, tx);
+            _uow.Commit();
+            var list = await _repo.ListarPerfilesAdminAsync(ct);
+            var item = list.FirstOrDefault(p => p.PerfilId == id);
+            return (item, null, StatusCodes.Status201Created, null);
+        }
+        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is 2627 or 2601)
+        {
+            _uow.Rollback();
+            return (null, "PERFIL_DUPLICADO", StatusCodes.Status409Conflict, "Ya existe un perfil con ese nombre.");
+        }
+        catch
+        {
+            _uow.Rollback();
+            throw;
+        }
+    }
+
+    public async Task<(PerfilAdminListItemDto? Data, string? Code, int Status, string? Detail)> ActualizarPerfilAdminAsync(
+        int perfilId,
+        PerfilAdminUpsertRequest request,
+        int adminId,
+        string adminCorreo,
+        CancellationToken ct = default)
+    {
+        var nombre = request.Nombre.Trim();
+        if (string.IsNullOrEmpty(nombre))
+            return (null, "PERFIL_NOMBRE_REQUERIDO", StatusCodes.Status400BadRequest, "El nombre del perfil es requerido.");
+
+        if (!await _repo.PerfilExisteAsync(perfilId, ct))
+            return (null, "NOT_FOUND", StatusCodes.Status404NotFound, "Perfil no encontrado.");
+
+        var tx = _uow.BeginTransaction();
+        try
+        {
+            var ok = await _repo.UpdatePerfilAsync(perfilId, nombre, request.Descripcion?.Trim(), request.BAdministrador, adminCorreo, adminId, tx);
+            if (!ok)
+            {
+                _uow.Rollback();
+                return (null, "NOT_FOUND", StatusCodes.Status404NotFound, "Perfil no encontrado.");
+            }
+
+            _uow.Commit();
+            var list = await _repo.ListarPerfilesAdminAsync(ct);
+            var item = list.FirstOrDefault(p => p.PerfilId == perfilId);
+            return (item, null, StatusCodes.Status200OK, null);
+        }
+        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number is 2627 or 2601)
+        {
+            _uow.Rollback();
+            return (null, "PERFIL_DUPLICADO", StatusCodes.Status409Conflict, "Ya existe un perfil con ese nombre.");
+        }
+        catch
+        {
+            _uow.Rollback();
+            throw;
+        }
+    }
+
+    public async Task<(bool Ok, string? Code, int Status, string? Detail)> EliminarPerfilAdminAsync(
+        int perfilId,
+        int adminId,
+        string adminCorreo,
+        CancellationToken ct = default)
+    {
+        if (!await _repo.PerfilExisteAsync(perfilId, ct))
+            return (false, "NOT_FOUND", StatusCodes.Status404NotFound, "Perfil no encontrado.");
+
+        var usuarios = await _repo.ContarUsuariosConPerfilAsync(perfilId, ct);
+        if (usuarios > 0)
+            return (false, "PERFIL_EN_USO", StatusCodes.Status409Conflict, "No se puede eliminar: hay usuarios asignados a este perfil.");
+
+        var tx = _uow.BeginTransaction();
+        try
+        {
+            var ok = await _repo.SoftDeletePerfilAsync(perfilId, adminCorreo, adminId, tx);
+            if (!ok)
+            {
+                _uow.Rollback();
+                return (false, "NOT_FOUND", StatusCodes.Status404NotFound, "Perfil no encontrado.");
+            }
+
+            _uow.Commit();
+            return (true, null, StatusCodes.Status204NoContent, null);
+        }
+        catch
+        {
+            _uow.Rollback();
+            throw;
+        }
+    }
 }

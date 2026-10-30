@@ -23,6 +23,8 @@ public interface IUsuarioAdminRepository
 
     Task<bool> TienePropietarioVigenteAsync(int casaId, IDbTransaction tx);
 
+    Task<bool> TieneCasaOcupanteVigenteAsync(int casaId, int usuarioId, IDbTransaction tx);
+
     Task InsertCasaOcupanteAsync(
         int casaId,
         int usuarioId,

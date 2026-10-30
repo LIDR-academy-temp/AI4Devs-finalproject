@@ -1,4 +1,6 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using GraphApi.Infrastructure.Security;
 using GraphApi.Models.WMS.CuartaAlmacen;
 using GraphApi.Services.WMS.CuartaAlmacen;
 using Microsoft.AspNetCore.Authorization;
@@ -15,8 +17,8 @@ namespace GraphApi.Controllers.WMS.Articulos;
 [Produces("application/json")]
 public class ArticulosController(ICuartaAlmacenService cuarta) : ControllerBase
 {
-    private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    private string UserEmail => User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+    private int UserId => JwtUserContext.TryGetUsuarioId(User, out var uid) ? uid : 0;
+    private string UserEmail => JwtUserContext.GetCorreo(User) ?? "sistema";
 
     /// <summary>Listar todos los artículos del inventario.</summary>
     [HttpGet]

@@ -1,5 +1,6 @@
 using System.Data;
 using Dapper;
+using GraphApi.Infrastructure;
 using GraphApi.Models.TKT;
 
 namespace GraphApi.Repositories.TKT;
@@ -35,7 +36,7 @@ public sealed class CuartaTicketAdminRepository : ICuartaTicketAdminRepository
               AND (@PrioridadTicketId IS NULL OR PrioridadTicketID = @PrioridadTicketId);
 
             SELECT TicketID AS TicketId,
-                   Titulo,
+                   TituloTicket AS Titulo,
                    EstadoTicket AS Estado,
                    PrioridadTicket AS Prioridad,
                    CAST(NULL AS NVARCHAR(100)) AS Categoria,
@@ -71,7 +72,7 @@ public sealed class CuartaTicketAdminRepository : ICuartaTicketAdminRepository
         IDbTransaction tx)
     {
         const string sql = """
-            SELECT t.TicketID, t.EstadoTicketID, e.EstadoTicket, t.UsuarioSolicitanteID, t.Titulo
+            SELECT t.TicketID, t.EstadoTicketID, e.EstadoTicket, t.UsuarioSolicitanteID, t.Titulo AS Titulo
             FROM tkt.Tickets t
             INNER JOIN tkt.EstadosTickets e ON e.EstadoTicketID = t.EstadoTicketID
             WHERE t.TicketID = @TicketId AND t.bEliminado = 0;
@@ -198,31 +199,31 @@ public sealed class CuartaTicketAdminRepository : ICuartaTicketAdminRepository
 
     public async Task<bool> IsTrabajadorActivoAsync(int usuarioId, IDbTransaction tx)
     {
-        var v = await _db.ExecuteScalarAsync<int>(
-            """
+        var (_, _, activo) = SqlSchemaCompat.UsuarioColumns(_db, "u");
+        var perfilCol = SqlSchemaCompat.PerfilNombreColumn(_db, "p");
+        var sql = $"""
             SELECT CASE WHEN EXISTS (
                 SELECT 1 FROM sgr.Usuarios u
                 INNER JOIN sgr.Perfiles p ON p.PerfilID = u.PerfilID
-                WHERE u.UsuarioID = @UsuarioId AND u.bActivoUsuario = 1 AND u.bEliminado = 0
-                  AND p.Perfil = N'Trabajador') THEN 1 ELSE 0 END;
-            """,
-            new { UsuarioId = usuarioId },
-            tx);
+                WHERE u.UsuarioID = @UsuarioId AND {activo} = 1 AND u.bEliminado = 0
+                  AND {perfilCol} = N'Trabajador') THEN 1 ELSE 0 END;
+            """;
+        var v = await _db.ExecuteScalarAsync<int>(sql, new { UsuarioId = usuarioId }, tx);
         return v is 1;
     }
 
     public async Task<bool> IsResidenteActivoAsync(int usuarioId, IDbTransaction tx)
     {
-        var v = await _db.ExecuteScalarAsync<int>(
-            """
+        var (_, _, activo) = SqlSchemaCompat.UsuarioColumns(_db, "u");
+        var perfilCol = SqlSchemaCompat.PerfilNombreColumn(_db, "p");
+        var sql = $"""
             SELECT CASE WHEN EXISTS (
                 SELECT 1 FROM sgr.Usuarios u
                 INNER JOIN sgr.Perfiles p ON p.PerfilID = u.PerfilID
-                WHERE u.UsuarioID = @UsuarioId AND u.bActivoUsuario = 1 AND u.bEliminado = 0
-                  AND p.Perfil = N'Residente') THEN 1 ELSE 0 END;
-            """,
-            new { UsuarioId = usuarioId },
-            tx);
+                WHERE u.UsuarioID = @UsuarioId AND {activo} = 1 AND u.bEliminado = 0
+                  AND {perfilCol} = N'Residente') THEN 1 ELSE 0 END;
+            """;
+        var v = await _db.ExecuteScalarAsync<int>(sql, new { UsuarioId = usuarioId }, tx);
         return v is 1;
     }
 
@@ -240,8 +241,8 @@ public sealed class CuartaTicketAdminRepository : ICuartaTicketAdminRepository
         {
             const string sqlExt = """
                 UPDATE tkt.Tickets
-                   SET TituloTicket = @Titulo,
-                       DescripcionTicket = @Descripcion,
+                   SET Titulo = @Titulo,
+                       Descripcion = @Descripcion,
                        PrioridadTicketID = @PrioridadTicketId,
                        CategoriaTicketID = @CategoriaTicketId,
                        Modificado = @Correo,
@@ -265,8 +266,8 @@ public sealed class CuartaTicketAdminRepository : ICuartaTicketAdminRepository
 
         const string sql = """
             UPDATE tkt.Tickets
-               SET TituloTicket = @Titulo,
-                   DescripcionTicket = @Descripcion,
+               SET Titulo = @Titulo,
+                   Descripcion = @Descripcion,
                    PrioridadTicketID = @PrioridadTicketId,
                    Modificado = @Correo,
                    UsuarioModificacionID = @UsuarioId,
@@ -307,12 +308,14 @@ public sealed class CuartaTicketAdminRepository : ICuartaTicketAdminRepository
 
     public async Task<IReadOnlyList<TrabajadorItemDto>> ListarTrabajadoresAsync(CancellationToken ct = default)
     {
-        const string sql = """
-            SELECT u.UsuarioID AS Id, u.NombreUsuario AS Nombre
+        var (nombre, _, activo) = SqlSchemaCompat.UsuarioColumns(_db, "u");
+        var perfilCol = SqlSchemaCompat.PerfilNombreColumn(_db, "p");
+        var sql = $"""
+            SELECT u.UsuarioID AS Id, {nombre} AS Nombre
             FROM sgr.Usuarios u WITH (NOLOCK)
             INNER JOIN sgr.Perfiles p WITH (NOLOCK) ON p.PerfilID = u.PerfilID
-            WHERE p.Perfil = N'Trabajador' AND u.bActivoUsuario = 1 AND u.bEliminado = 0
-            ORDER BY u.NombreUsuario;
+            WHERE {perfilCol} = N'Trabajador' AND {activo} = 1 AND u.bEliminado = 0
+            ORDER BY {nombre};
             """;
 
         return (await _db.QueryAsync<TrabajadorItemDto>(

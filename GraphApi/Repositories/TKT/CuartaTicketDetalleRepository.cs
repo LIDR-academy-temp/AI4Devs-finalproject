@@ -1,5 +1,6 @@
 using System.Data;
 using Dapper;
+using GraphApi.Infrastructure;
 using GraphApi.Models.TKT;
 
 namespace GraphApi.Repositories.TKT;
@@ -33,8 +34,8 @@ public sealed class CuartaTicketDetalleRepository : ICuartaTicketDetalleReposito
     {
         var sql = $"""
             SELECT TicketID AS TicketId,
-                   Titulo,
-                   Descripcion,
+                   TituloTicket AS Titulo,
+                   DescripcionTicket AS Descripcion,
                    EstadoTicket AS Estado,
                    PrioridadTicket AS Prioridad,
                    {(_hasCategoria ? "Categoria," : "CAST(NULL AS NVARCHAR(100)) AS Categoria,")}
@@ -76,11 +77,13 @@ public sealed class CuartaTicketDetalleRepository : ICuartaTicketDetalleReposito
         var internoFilter = _hasEsInterno && !includeInternos ? "AND c.EsInterno = 0" : string.Empty;
         var esInternoSelect = _hasEsInterno ? "c.EsInterno" : "CAST(0 AS BIT) AS EsInterno";
 
+        // ADR-008: detectar nombre de columna según schema pre/post DB-001.
+        var (nombreCol, _, _) = SqlSchemaCompat.UsuarioColumns(_db, "u");
         var sql = $"""
             SELECT c.ComentarioTicketID AS ComentarioTicketId,
                    c.Comentario,
                    c.FechaComentario,
-                   u.Nombre AS AutorNombre,
+                   {nombreCol} AS AutorNombre,
                    {esInternoSelect}
             FROM tkt.ComentariosTicket c WITH (NOLOCK)
             INNER JOIN sgr.Usuarios u WITH (NOLOCK) ON u.UsuarioID = c.UsuarioID

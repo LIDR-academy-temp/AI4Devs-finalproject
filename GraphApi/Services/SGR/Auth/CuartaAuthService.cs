@@ -52,11 +52,23 @@ public sealed class CuartaAuthService : ICuartaAuthService
         var refreshPlain = CreateRefreshPlainToken();
         var refreshHash = HashRefreshToken(refreshPlain);
 
-        await _refreshTokens.InsertAsync(
-            user.UsuarioID,
-            refreshHash,
-            DateTime.UtcNow.AddDays(RefreshDays),
-            user.Correo);
+        try
+        {
+            await _refreshTokens.InsertAsync(
+                user.UsuarioID,
+                refreshHash,
+                DateTime.UtcNow.AddDays(RefreshDays),
+                user.Correo);
+        }
+        catch (Exception exRefresh)
+        {
+            // sgr.RefreshTokens puede no existir aún en producción (DB-009).
+            // El login sigue siendo válido aunque no podamos guardar el refresh token.
+            _logger.LogWarning(exRefresh,
+                "No se pudo guardar el refresh token para UsuarioID={UsuarioId}. " +
+                "Verifique que la tabla sgr.RefreshTokens exista (migración DB-009).",
+                user.UsuarioID);
+        }
 
         _logger.LogInformation("Login exitoso UsuarioID={UsuarioId} Perfil={Perfil} Ip={Ip}",
             user.UsuarioID, user.Perfil, clientIp);

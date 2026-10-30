@@ -8,6 +8,7 @@ public sealed class CuotaPagoRow
     public int UsuarioId { get; set; }
     public int? CuentaId { get; set; }
     public decimal Monto { get; set; }
+    public decimal MontoMora { get; set; }
     public bool Pagado { get; set; }
     public DateTime PeriodoInicio { get; set; }
 }
@@ -37,5 +38,7 @@ public interface ICuotaPagoRepository
         int creadoPorId,
         IDbTransaction tx);
 
-    Task<int?> ObtenerPrimeraCuentaIdAsync(CancellationToken ct = default);
+    Task<int?> ObtenerPrimeraCuentaIdAsync(CancellationToken ct = default, IDbTransaction? tx = null);
+
+    Task<int> AsignarCuentaCuotaAsync(int cuotaId, int cuentaId, IDbTransaction tx);
 }

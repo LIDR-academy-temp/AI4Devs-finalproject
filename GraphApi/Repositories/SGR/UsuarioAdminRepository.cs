@@ -1,5 +1,6 @@
 using System.Data;
 using Dapper;
+using GraphApi.Infrastructure;
 using GraphApi.Models.SGR.Usuarios;
 
 namespace GraphApi.Repositories.SGR;
@@ -8,14 +9,32 @@ public sealed class UsuarioAdminRepository : IUsuarioAdminRepository
 {
     private readonly IDbConnection _db;
 
-    public UsuarioAdminRepository(IDbConnection db) => _db = db;
+    // ADR-008: nombres de columnas detectados una vez en construcción.
+    private readonly string _colNombre;    // Nombre | NombreUsuario
+    private readonly string _colCorreo;   // Correo | CorreoUsuario
+    private readonly string _colActivo;   // bActivo | bActivoUsuario
+    private readonly string _colTelefono; // Telefono | TelefonoUsuario
+    private readonly string _colPerfil;   // Nombre | Perfil  (en sgr.Perfiles)
+
+    public UsuarioAdminRepository(IDbConnection db)
+    {
+        _db = db;
+        var (nombre, correo, activo) = SqlSchemaCompat.UsuarioColumns(db, "u");
+        // Quitar alias "u." para nombres de columna solos
+        _colNombre  = nombre.Replace("u.", "");
+        _colCorreo  = correo.Replace("u.", "");
+        _colActivo  = activo.Replace("u.", "");
+        _colTelefono = SqlSchemaCompat.HasColumn(db, "sgr", "Usuarios", "Telefono")
+            ? "Telefono" : "TelefonoUsuario";
+        _colPerfil   = SqlSchemaCompat.PerfilNombreColumn(db, "p").Replace("p.", "");
+    }
 
     public async Task<bool> ExisteCorreoAsync(string correo, CancellationToken ct = default)
     {
-        const string sql = """
+        var sql = $"""
             SELECT CASE WHEN EXISTS (
                 SELECT 1 FROM sgr.Usuarios WITH (NOLOCK)
-                WHERE Correo = @Correo AND bEliminado = 0) THEN 1 ELSE 0 END;
+                WHERE {_colCorreo} = @Correo AND bEliminado = 0) THEN 1 ELSE 0 END;
             """;
         var v = await _db.ExecuteScalarAsync<int>(
             new CommandDefinition(sql, new { Correo = correo }, cancellationToken: ct));
@@ -24,9 +43,9 @@ public sealed class UsuarioAdminRepository : IUsuarioAdminRepository
 
     public async Task<int?> ResolverPerfilIdAsync(string perfil, CancellationToken ct = default)
     {
-        const string sql = """
+        var sql = $"""
             SELECT TOP (1) PerfilID FROM sgr.Perfiles WITH (NOLOCK)
-            WHERE Nombre = @Perfil AND bEliminado = 0;
+            WHERE {_colPerfil} = @Perfil AND bEliminado = 0;
             """;
         return await _db.QuerySingleOrDefaultAsync<int?>(
             new CommandDefinition(sql, new { Perfil = perfil }, cancellationToken: ct));
@@ -42,10 +61,10 @@ public sealed class UsuarioAdminRepository : IUsuarioAdminRepository
         int creadoPorId,
         IDbTransaction tx)
     {
-        const string sql = """
+        var sql = $"""
             INSERT INTO sgr.Usuarios
-                (Correo, PerfilID, PasswordHash, Nombre, bActivo,
-                 Telefono, Creado, UsuarioCreacionID, FechaCreacion, bEliminado, bActualizarPassword)
+                ({_colCorreo}, PerfilID, PasswordHash, {_colNombre}, {_colActivo},
+                 {_colTelefono}, Creado, UsuarioCreacionID, FechaCreacion, bEliminado, bActualizarPassword)
             VALUES
                 (@Correo, @PerfilId, @Hash, @Nombre, 1,
                  @Telefono, @Creado, @CreadoPorId, SYSUTCDATETIME(), 0, 1);
@@ -95,6 +114,18 @@ public sealed class UsuarioAdminRepository : IUsuarioAdminRepository
                 WHERE CasaID = @CasaId AND PropietarioUsuarioID IS NOT NULL AND bEliminado = 0) THEN 1 ELSE 0 END;
             """;
         var v = await _db.ExecuteScalarAsync<int>(sql, new { CasaId = casaId }, tx);
+        return v is 1;
+    }
+
+    public async Task<bool> TieneCasaOcupanteVigenteAsync(int casaId, int usuarioId, IDbTransaction tx)
+    {
+        const string sql = """
+            SELECT CASE WHEN EXISTS (
+                SELECT 1 FROM sgr.CasaOcupantes WITH (NOLOCK)
+                WHERE CasaID = @CasaId AND UsuarioID = @UsuarioId
+                  AND Vigente = 1 AND bEliminado = 0) THEN 1 ELSE 0 END;
+            """;
+        var v = await _db.ExecuteScalarAsync<int>(sql, new { CasaId = casaId, UsuarioId = usuarioId }, tx);
         return v is 1;
     }
 
@@ -163,13 +194,18 @@ public sealed class UsuarioAdminRepository : IUsuarioAdminRepository
         bool incluirEliminados,
         CancellationToken ct = default)
     {
-        var sql = """
+        if (SqlSchemaCompat.HasView(_db, "sgr", "vsUsuarios"))
+        {
+            return await ListarPadronFromViewAsync(perfil, bActivo, incluirEliminados, ct);
+        }
+
+        var sql = $"""
             SELECT u.UsuarioID AS UsuarioId,
-                   u.Nombre AS Nombre,
-                   u.Correo AS Correo,
-                   u.Telefono AS Telefono,
-                   p.Nombre AS Perfil,
-                   u.bActivo AS BActivo
+                   u.{_colNombre} AS Nombre,
+                   u.{_colCorreo} AS Correo,
+                   u.{_colTelefono} AS Telefono,
+                   p.{_colPerfil} AS Perfil,
+                   u.{_colActivo} AS BActivo
             FROM sgr.Usuarios u WITH (NOLOCK)
             INNER JOIN sgr.Perfiles p WITH (NOLOCK) ON p.PerfilID = u.PerfilID
             WHERE 1 = 1
@@ -182,15 +218,70 @@ public sealed class UsuarioAdminRepository : IUsuarioAdminRepository
 
         if (!string.IsNullOrWhiteSpace(perfil))
         {
-            sql += " AND p.Nombre = @Perfil";
+            sql += $" AND p.{_colPerfil} = @Perfil";
         }
 
         if (bActivo.HasValue)
         {
-            sql += " AND u.bActivo = @BActivo";
+            sql += $" AND u.{_colActivo} = @BActivo";
         }
 
-        sql += " ORDER BY u.Nombre;";
+        sql += $" ORDER BY u.{_colNombre};";
+
+        var list = await _db.QueryAsync<UsuarioPadronItemDto>(
+            new CommandDefinition(sql, new { Perfil = perfil, BActivo = bActivo }, cancellationToken: ct));
+        return list.ToList();
+    }
+
+    private async Task<IReadOnlyList<UsuarioPadronItemDto>> ListarPadronFromViewAsync(
+        string? perfil,
+        bool? bActivo,
+        bool incluirEliminados,
+        CancellationToken ct)
+    {
+        var legacyAliases = SqlSchemaCompat.ViewHasColumn(_db, "sgr", "vsUsuarios", "NombreUsuario");
+        var sql = legacyAliases
+            ? """
+                SELECT u.UsuarioID AS UsuarioId,
+                       u.NombreUsuario AS Nombre,
+                       u.CorreoUsuario AS Correo,
+                       u.TelefonoUsuario AS Telefono,
+                       u.Perfil AS Perfil,
+                       u.bActivoUsuario AS BActivo
+                FROM sgr.vsUsuarios u WITH (NOLOCK)
+                WHERE 1 = 1
+                """
+            : """
+                SELECT u.UsuarioID AS UsuarioId,
+                       u.Nombre AS Nombre,
+                       u.Correo AS Correo,
+                       u.Telefono AS Telefono,
+                       u.Perfil AS Perfil,
+                       u.bActivo AS BActivo
+                FROM sgr.vsUsuarios u WITH (NOLOCK)
+                WHERE 1 = 1
+                """;
+
+        if (!incluirEliminados)
+        {
+            sql += " AND u.bEliminado = 0";
+        }
+
+        if (!string.IsNullOrWhiteSpace(perfil))
+        {
+            sql += " AND u.Perfil = @Perfil";
+        }
+
+        if (bActivo.HasValue)
+        {
+            sql += legacyAliases
+                ? " AND u.bActivoUsuario = @BActivo"
+                : " AND u.bActivo = @BActivo";
+        }
+
+        sql += legacyAliases
+            ? " ORDER BY u.NombreUsuario;"
+            : " ORDER BY u.Nombre;";
 
         var list = await _db.QueryAsync<UsuarioPadronItemDto>(
             new CommandDefinition(sql, new { Perfil = perfil, BActivo = bActivo }, cancellationToken: ct));
@@ -204,9 +295,9 @@ public sealed class UsuarioAdminRepository : IUsuarioAdminRepository
         int modificadoPorId,
         IDbTransaction tx)
     {
-        const string sql = """
+        var sql = $"""
             UPDATE sgr.Usuarios
-               SET bActivo = @Activo,
+               SET {_colActivo} = @Activo,
                    Modificado = @Modificado,
                    UsuarioModificacionID = @ModificadoPorId,
                    FechaModificacion = SYSUTCDATETIME()
@@ -230,10 +321,10 @@ public sealed class UsuarioAdminRepository : IUsuarioAdminRepository
         int modificadoPorId,
         IDbTransaction tx)
     {
-        const string sql = """
+        var sql = $"""
             UPDATE sgr.Usuarios
                SET bEliminado = 1,
-                   bActivo = 0,
+                   {_colActivo} = 0,
                    Modificado = @Modificado,
                    UsuarioModificacionID = @ModificadoPorId,
                    FechaModificacion = SYSUTCDATETIME()

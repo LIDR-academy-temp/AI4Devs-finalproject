@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import type { CuotaEstado } from '../../../shared/types/finanzas'
+import { cuotaMontoTotal } from './cuotaMontoUtils'
 import { registrarPagoSchema, type RegistrarPagoForm } from './finanzasAdminSchemas'
 
 type Props = {
@@ -20,7 +21,7 @@ export function RegistrarPagoModal({ cuota, open, saving, error, onClose, onSubm
   } = useForm<RegistrarPagoForm>({
     resolver: zodResolver(registrarPagoSchema),
     defaultValues: {
-      montoPagado: cuota.monto,
+      montoPagado: cuotaMontoTotal(cuota),
       fechaPago: new Date().toISOString().slice(0, 10),
       metodoPago: 'Transferencia',
       referenciaPago: '',

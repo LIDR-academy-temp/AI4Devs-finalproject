@@ -1,5 +1,6 @@
 using System.Data;
 using Dapper;
+using GraphApi.Infrastructure;
 using GraphApi.Models.SGR.Casas;
 
 namespace GraphApi.Repositories.SGR;
@@ -8,7 +9,21 @@ public sealed class CasasCuartaRepository : ICasasCuartaRepository
 {
     private readonly IDbConnection _db;
 
-    public CasasCuartaRepository(IDbConnection db) => _db = db;
+    // ADR-008: columnas detectadas una vez en construcción.
+    private readonly string _colNombreUsr;   // Nombre | NombreUsuario
+    private readonly string _colDireccion;   // Direccion | DireccionCasa
+    private readonly string _colNumero;      // Numero | NumeroExtCasa
+
+    public CasasCuartaRepository(IDbConnection db)
+    {
+        _db = db;
+        var (nombre, _, _) = SqlSchemaCompat.UsuarioColumns(db, "u");
+        _colNombreUsr  = nombre.Replace("u.", "");
+        _colDireccion  = SqlSchemaCompat.HasColumn(db, "sgr", "Casas", "Direccion")
+            ? "Direccion" : "DireccionCasa";
+        _colNumero     = SqlSchemaCompat.HasColumn(db, "sgr", "Casas", "Numero")
+            ? "Numero" : "NumeroExtCasa";
+    }
 
     public async Task<IReadOnlyList<CondominioItemDto>> ListarCondominiosAsync(CancellationToken ct = default)
     {
@@ -28,14 +43,14 @@ public sealed class CasasCuartaRepository : ICasasCuartaRepository
         bool incluirEliminados,
         CancellationToken ct = default)
     {
-        var sql = """
+        var sql = $"""
             SELECT c.CasaID AS CasaId,
                    c.CondominioID AS CondominioId,
                    cond.Nombre AS CondominioNombre,
-                   c.Direccion,
-                   c.Numero,
+                   c.{_colDireccion} AS Direccion,
+                   c.{_colNumero} AS Numero,
                    c.PropietarioUsuarioID AS PropietarioUsuarioId,
-                   u.Nombre AS PropietarioNombre
+                   u.{_colNombreUsr} AS PropietarioNombre
             FROM sgr.Casas c WITH (NOLOCK)
             INNER JOIN sgr.Condominios cond WITH (NOLOCK) ON cond.CondominioID = c.CondominioID
             LEFT JOIN sgr.Usuarios u WITH (NOLOCK) ON u.UsuarioID = c.PropietarioUsuarioID AND u.bEliminado = 0
@@ -54,10 +69,10 @@ public sealed class CasasCuartaRepository : ICasasCuartaRepository
 
         if (!string.IsNullOrWhiteSpace(numero))
         {
-            sql += " AND c.Numero LIKE @Numero";
+            sql += $" AND c.{_colNumero} LIKE @Numero";
         }
 
-        sql += " ORDER BY c.Numero;";
+        sql += $" ORDER BY c.{_colNumero};";
 
         var list = await _db.QueryAsync<CasaListItemDto>(
             new CommandDefinition(
@@ -75,14 +90,14 @@ public sealed class CasasCuartaRepository : ICasasCuartaRepository
         IDbTransaction? tx,
         CancellationToken ct = default)
     {
-        const string sql = """
+        var sql = $"""
             SELECT c.CasaID AS CasaId,
                    c.CondominioID AS CondominioId,
                    cond.Nombre AS CondominioNombre,
-                   c.Direccion,
-                   c.Numero,
+                   c.{_colDireccion} AS Direccion,
+                   c.{_colNumero} AS Numero,
                    c.PropietarioUsuarioID AS PropietarioUsuarioId,
-                   u.Nombre AS PropietarioNombre
+                   u.{_colNombreUsr} AS PropietarioNombre
             FROM sgr.Casas c WITH (NOLOCK)
             INNER JOIN sgr.Condominios cond WITH (NOLOCK) ON cond.CondominioID = c.CondominioID
             LEFT JOIN sgr.Usuarios u WITH (NOLOCK) ON u.UsuarioID = c.PropietarioUsuarioID AND u.bEliminado = 0
@@ -122,9 +137,9 @@ public sealed class CasasCuartaRepository : ICasasCuartaRepository
         int creadoPorId,
         IDbTransaction tx)
     {
-        const string sql = """
+        var sql = $"""
             INSERT INTO sgr.Casas
-                (CondominioID, Direccion, Numero, PropietarioUsuarioID,
+                (CondominioID, {_colDireccion}, {_colNumero}, PropietarioUsuarioID,
                  Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
             VALUES
                 (@CondominioId, @Direccion, @Numero, @PropietarioId,
@@ -152,10 +167,10 @@ public sealed class CasasCuartaRepository : ICasasCuartaRepository
         int modificadoPorId,
         IDbTransaction tx)
     {
-        const string sql = """
+        var sql = $"""
             UPDATE sgr.Casas
-               SET Direccion = COALESCE(@Direccion, Direccion),
-                   Numero = COALESCE(@Numero, Numero),
+               SET {_colDireccion} = COALESCE(@Direccion, {_colDireccion}),
+                   {_colNumero} = COALESCE(@Numero, {_colNumero}),
                    PropietarioUsuarioID = COALESCE(@PropietarioId, PropietarioUsuarioID),
                    Modificado = @Modificado,
                    UsuarioModificacionID = @ModificadoPorId,

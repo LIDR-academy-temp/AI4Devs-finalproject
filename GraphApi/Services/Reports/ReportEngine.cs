@@ -245,8 +245,8 @@ ORDER BY FechaVencimiento DESC",
 SELECT
     (SELECT COUNT(*) FROM sgr.Condominios WITH (NOLOCK) WHERE bEliminado = 0) AS TotalCondominios,
     (SELECT COUNT(*) FROM sgr.Casas WITH (NOLOCK) WHERE bEliminado = 0) AS TotalCasas,
-    (SELECT COUNT(*) FROM sgr.Usuarios WITH (NOLOCK) WHERE bEliminado = 0 AND bActivoUsuario = 1) AS UsuariosActivos,
-    (SELECT COUNT(*) FROM sgr.Usuarios WITH (NOLOCK) WHERE bEliminado = 0 AND bAdministrador = 1) AS Administradores,
+    (SELECT COUNT(*) FROM sgr.vsUsuarios WITH (NOLOCK) WHERE bEliminado = 0 AND bActivoUsuario = 1) AS UsuariosActivos,
+    (SELECT COUNT(*) FROM sgr.Usuarios u WITH (NOLOCK) INNER JOIN sgr.Perfiles p WITH (NOLOCK) ON p.PerfilID = u.PerfilID WHERE u.bEliminado = 0 AND p.bAdministrador = 1) AS Administradores,
     (SELECT COUNT(*) FROM vts.Visitas WITH (NOLOCK) WHERE bEliminado = 0 AND CAST(FechaEntrada AS date) = CAST(GETDATE() AS date)) AS VisitasHoy,
     (SELECT COUNT(*) FROM vts.Visitas WITH (NOLOCK) WHERE bEliminado = 0 AND FechaSalida IS NULL) AS VisitasAbiertas,
     (SELECT COUNT(*) FROM vts.ReservacionesArea ra WITH (NOLOCK)

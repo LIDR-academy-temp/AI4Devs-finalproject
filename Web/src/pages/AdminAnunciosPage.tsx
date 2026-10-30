@@ -22,6 +22,7 @@ import {
   useAnunciosAdmin,
   useTiposAnuncio,
 } from '../features/anuncios/useAnuncios'
+import { AdminTiposAnuncioSection } from '../features/admin/anuncios/AdminTiposAnuncioSection'
 import {
   AdminFilterableTable,
   AdminListToolbar,
@@ -41,7 +42,8 @@ function formatVigencia(iso: string | null | undefined) {
 
 export function AdminAnunciosPage() {
   const { data, loading, error, refetch } = useAnunciosAdmin()
-  const tipos = useTiposAnuncio()
+  const { tipos, loading: tiposLoading, reload: reloadTipos } = useTiposAnuncio()
+  const [tab, setTab] = useState<'anuncios' | 'tipos'>('anuncios')
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editing, setEditing] = useState<AnuncioItem | null>(null)
@@ -177,6 +179,45 @@ export function AdminAnunciosPage() {
 
   return (
     <div className="cq-admin-page container-fluid py-4">
+      <ul className="nav nav-tabs mb-3 cq-admin-tabs">
+        <li className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${tab === 'anuncios' ? 'active' : ''}`}
+            onClick={() => {
+              closePanel()
+              setTab('anuncios')
+            }}
+          >
+            Anuncios
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${tab === 'tipos' ? 'active' : ''}`}
+            onClick={() => {
+              closePanel()
+              setTab('tipos')
+            }}
+          >
+            Tipos de anuncio
+          </button>
+        </li>
+      </ul>
+
+      {tab === 'tipos' && (
+        <>
+          <AdminListToolbar
+            title="Tipos de anuncio"
+            metrics={[{ label: 'Tipos', value: tipos.length }]}
+          />
+          <AdminTiposAnuncioSection tipos={tipos} loading={tiposLoading} onReload={reloadTipos} />
+        </>
+      )}
+
+      {tab === 'anuncios' && (
+      <>
       {tipos.length === 0 && (
         <div className="alert alert-warning py-2 small" role="status">
           Sin tipos en catálogo (ejecuta DB-003).
@@ -349,6 +390,8 @@ export function AdminAnunciosPage() {
       />
       {deleteTarget && deleteError && (
         <div className="alert alert-danger mt-3" role="alert">{deleteError}</div>
+      )}
+      </>
       )}
     </div>
   )

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import '@mdi/font/css/materialdesignicons.min.css'
@@ -12,6 +12,7 @@ import {
   ARCHIVOS_TABLE_COLUMNS,
 } from '../features/admin/archivos/archivosTableFilter'
 import { mapArchivoUploadHttpError } from '../features/admin/archivos/archivoUploadErrors'
+import { AdminTiposArchivoSection } from '../features/admin/archivos/AdminTiposArchivoSection'
 import {
   archivoEditSchema,
   archivoUploadSchema,
@@ -44,8 +45,11 @@ function authHeaders(): Record<string, string> {
 }
 
 export function AdminArchivosPage() {
+  const [searchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab') === 'tipos' ? 'tipos' : 'archivos'
+  const [tab, setTab] = useState<'archivos' | 'tipos'>(initialTab)
   const { archivos, loading, error, refetch } = useArchivos()
-  const { tipos } = useTiposArchivo()
+  const { tipos, loading: tiposLoading, refetch: refetchTipos } = useTiposArchivo()
 
   type PanelMode = 'closed' | 'upload' | 'edit'
   const [panelMode, setPanelMode] = useState<PanelMode>('closed')
@@ -267,15 +271,55 @@ export function AdminArchivosPage() {
 
   return (
     <div className="cq-admin-page container-fluid py-4">
+      <ul className="nav nav-tabs mb-3 cq-admin-tabs">
+        <li className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${tab === 'archivos' ? 'active' : ''}`}
+            onClick={() => {
+              closePanel()
+              setTab('archivos')
+            }}
+          >
+            Archivos
+          </button>
+        </li>
+        <li className="nav-item">
+          <button
+            type="button"
+            className={`nav-link ${tab === 'tipos' ? 'active' : ''}`}
+            onClick={() => {
+              closePanel()
+              setTab('tipos')
+            }}
+          >
+            Tipos de documento
+          </button>
+        </li>
+      </ul>
+
+      {tab === 'tipos' && (
+        <>
+          <AdminListToolbar
+            title="Tipos de documento"
+            metrics={[{ label: 'Tipos', value: tipos.length }]}
+          />
+          <AdminTiposArchivoSection
+            tipos={tipos}
+            loading={tiposLoading}
+            onReload={async () => {
+              await refetchTipos()
+              await refetch()
+            }}
+          />
+        </>
+      )}
+
+      {tab === 'archivos' && (
+      <>
       <AdminListToolbar
         title="Archivos"
         metrics={heroStats}
-        filterSlot={
-          <Link to="/admin/archivos/tipos" className="btn btn-outline-secondary btn-sm">
-            <i className="mdi mdi-tag-multiple mr-1" />
-            Tipos de documento
-          </Link>
-        }
         primaryAction={{
           label: 'Subir archivo',
           iconClass: 'mdi mdi-upload',
@@ -482,7 +526,9 @@ export function AdminArchivosPage() {
                   {tipos.length === 0 && (
                     <p className="text-muted small mt-1 mb-0">
                       No hay tipos.{' '}
-                      <Link to="/admin/archivos/tipos">Crear tipos de documento</Link>
+                      <button type="button" className="btn btn-link btn-sm p-0 align-baseline" onClick={() => setTab('tipos')}>
+                        Crear tipos de documento
+                      </button>
                     </p>
                   )}
                   {uploadErrors.tipoArchivo && (
@@ -524,6 +570,8 @@ export function AdminArchivosPage() {
       />
       {deleteTarget && deleteError && (
         <div className="alert alert-danger mt-3" role="alert">{deleteError}</div>
+      )}
+      </>
       )}
     </div>
   )

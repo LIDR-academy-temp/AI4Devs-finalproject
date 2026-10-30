@@ -121,14 +121,8 @@ public sealed class NotificacionRepository : INotificacionRepository
     }
 
     public Task<int?> ResolveCanalTelegramIdAsync(IDbTransaction? tx = null) =>
-        _db.QuerySingleOrDefaultAsync<int?>(
-            """
-            SELECT CanalID
-            FROM tkt.CanalesTicket WITH (NOLOCK)
-            WHERE Canal = N'TELEGRAM' AND bEliminado = 0;
-            """,
-            null,
-            tx);
+        // tkt.CanalesTicket no existe en producción — Telegram no configurado.
+        Task.FromResult<int?>(null);
 
     public async Task<int> NotificarUsuarioAsync(
         IDbTransaction tx,
@@ -173,9 +167,12 @@ public sealed class NotificacionRepository : INotificacionRepository
         string mensaje,
         NotificacionAutor autor)
     {
+        // ADR-008: detectar columnas según schema pre/post DB-001.
+        var (_, _, activoCol) = SqlSchemaCompat.UsuarioColumns(_db, "u");
+        var perfilNomCol = SqlSchemaCompat.PerfilNombreColumn(_db, "p");
         var filtro = soloAdministradores
             ? "p.bAdministrador = 1"
-            : "p.Perfil = @Perfil";
+            : $"{perfilNomCol} = @Perfil";
 
         var sql = $"""
             DECLARE @nuevas TABLE (NotificacionID INT, UsuarioID INT);
@@ -188,23 +185,10 @@ public sealed class NotificacionRepository : INotificacionRepository
             FROM sgr.Usuarios AS u WITH (NOLOCK)
             INNER JOIN sgr.Perfiles AS p WITH (NOLOCK) ON p.PerfilID = u.PerfilID
             WHERE u.bEliminado = 0
-              AND u.bActivoUsuario = 1
+              AND {activoCol} = 1
               AND p.bEliminado = 0
               AND {filtro};
 
-            IF OBJECT_ID(N'ntf.NotificacionesEntrega', N'U') IS NOT NULL
-               AND OBJECT_ID(N'bot.CuentasTelegram', N'U') IS NOT NULL
-            BEGIN
-                DECLARE @CanalId INT = (
-                    SELECT TOP (1) CanalID FROM tkt.CanalesTicket
-                    WHERE Canal = N'TELEGRAM' AND bEliminado = 0);
-                IF @CanalId IS NOT NULL
-                INSERT INTO ntf.NotificacionesEntrega
-                    (NotificacionID, CanalID, Estado, Reintentos, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
-                SELECT x.NotificacionID, @CanalId, N'PENDIENTE', 0, @Correo, @AutorId, SYSUTCDATETIME(), 0
-                FROM @nuevas AS x
-                INNER JOIN bot.CuentasTelegram AS c ON c.UsuarioID = x.UsuarioID AND c.Activo = 1;
-            END
 
             SELECT COUNT(*) FROM @nuevas;
             """;
@@ -220,33 +204,8 @@ public sealed class NotificacionRepository : INotificacionRepository
         }, tx);
     }
 
-    private async Task EnqueueTelegramAsync(IDbTransaction tx, int notificacionId, int usuarioId, NotificacionAutor autor)
-    {
-        const string sql = """
-            IF OBJECT_ID(N'ntf.NotificacionesEntrega', N'U') IS NOT NULL
-               AND OBJECT_ID(N'bot.CuentasTelegram', N'U') IS NOT NULL
-            BEGIN
-                DECLARE @CanalId INT = (
-                    SELECT TOP (1) CanalID FROM tkt.CanalesTicket
-                    WHERE Canal = N'TELEGRAM' AND bEliminado = 0);
-                IF @CanalId IS NOT NULL
-                AND EXISTS (
-                    SELECT 1 FROM bot.CuentasTelegram
-                    WHERE UsuarioID = @UsuarioID AND Activo = 1)
-                INSERT INTO ntf.NotificacionesEntrega
-                    (NotificacionID, CanalID, Estado, Reintentos, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
-                VALUES
-                    (@NotificacionID, @CanalId, N'PENDIENTE', 0, @Correo, @AutorId, SYSUTCDATETIME(), 0);
-            END
-            """;
-
-        await _db.ExecuteAsync(sql, new
-        {
-            NotificacionID = notificacionId,
-            UsuarioID = usuarioId,
-            Correo = autor.Correo,
-            AutorId = autor.UsuarioId,
-        }, tx);
-    }
+    private Task EnqueueTelegramAsync(IDbTransaction tx, int notificacionId, int usuarioId, NotificacionAutor autor)
+        // tkt.CanalesTicket no existe en producción; notificación Telegram no disponible.
+        => Task.CompletedTask;
 
 }

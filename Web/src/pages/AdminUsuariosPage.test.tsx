@@ -10,6 +10,7 @@ vi.mock('../features/admin/usuarios/useCasasSelect', () => ({
   useCasasSelect: vi.fn(),
 }))
 vi.mock('../shared/lib/apiClient', () => ({
+  apiGet: vi.fn(),
   apiPost: vi.fn(),
   apiPatch: vi.fn(),
   apiPut: vi.fn(),
@@ -29,10 +30,11 @@ vi.mock('../shared/toast/ToastContext', () => ({
 
 import { usePadronUsuarios } from '../features/admin/usuarios/usePadronUsuarios'
 import { useCasasSelect } from '../features/admin/usuarios/useCasasSelect'
-import { apiDelete, apiPost, apiPut } from '../shared/lib/apiClient'
+import { apiDelete, apiGet, apiPost, apiPut } from '../shared/lib/apiClient'
 
 const mockUsePadron = usePadronUsuarios as ReturnType<typeof vi.fn>
 const mockUseCasas = useCasasSelect as ReturnType<typeof vi.fn>
+const mockApiGet = apiGet as ReturnType<typeof vi.fn>
 const mockApiPost = apiPost as ReturnType<typeof vi.fn>
 const mockApiPut = apiPut as ReturnType<typeof vi.fn>
 const mockApiDelete = apiDelete as ReturnType<typeof vi.fn>
@@ -56,6 +58,7 @@ beforeEach(() => {
     error: null,
     refetch: vi.fn(),
   })
+  mockApiGet.mockResolvedValue({ data: { perfil: 'Residente', unidad: null }, status: 200 })
   mockApiPost.mockResolvedValue({ data: { usuarioId: 2, passwordTemporal: 'temp-123' }, status: 201 })
   mockApiPut.mockResolvedValue({ status: 200 })
   mockApiDelete.mockResolvedValue({ status: 204 })
@@ -168,6 +171,8 @@ describe('AdminUsuariosPage', () => {
         nombre: 'María Actualizada',
         correo: 'maria@test.com',
         telefono: '',
+        perfil: 'Residente',
+        casaId: null,
       })
     })
   })

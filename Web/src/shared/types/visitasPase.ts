@@ -1,4 +1,4 @@
-export type PaseVisitaEstadoLista = 'vigente' | 'expirado' | 'usado'
+export type PaseVisitaEstadoLista = 'vigente' | 'expirado' | 'usado' | 'pendiente'
 
 export type PaseVisita = {
   visitaGeneradaId: number
@@ -7,11 +7,14 @@ export type PaseVisita = {
   fechaEmision: string
   fechaExpira: string | null
   bUsado: boolean
+  unaOcasion?: boolean
   estadoLista: PaseVisitaEstadoLista
   casaId?: number | null
   direccionCasa?: string | null
   tipoIdentificacion?: string | null
   numeroIdentificacion?: string | null
+  usuarioVisitadoId?: number
+  nombreVisitado?: string | null
 }
 
 export type CrearPaseRequest = {
@@ -21,6 +24,12 @@ export type CrearPaseRequest = {
   fechaInicio: string
   fechaFin: string
   todoElDia: boolean
+  unaOcasion: boolean
+}
+
+export type CrearPaseAdminRequest = CrearPaseRequest & {
+  usuarioVisitadoId: number
+  casaId?: number | null
 }
 
 export type ValidarPaseResponse = {
@@ -33,4 +42,5 @@ export type UsarPaseResponse = {
   ok: boolean
   yaUsado: boolean
   pase?: PaseVisita | null
+  visitaId?: number | null
 }

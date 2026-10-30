@@ -177,6 +177,10 @@ IF COL_LENGTH(N'vts.ReservacionesArea', N'AreasComunesID') IS NOT NULL
 GO
 
 -- Vistas ampliadas (tickets / usuarios)
+IF OBJECT_ID(N'tkt.CategoriasTicket', N'U') IS NOT NULL
+   AND OBJECT_ID(N'tkt.CanalesTicket', N'U') IS NOT NULL
+BEGIN
+    EXEC(N'
 CREATE OR ALTER VIEW tkt.vsTickets AS
 SELECT T.TicketID,
        T.Titulo,
@@ -201,6 +205,40 @@ INNER JOIN tkt.PrioridadesTicket P WITH (NOLOCK) ON P.PrioridadTicketID = T.Prio
 INNER JOIN tkt.EstadosTickets E WITH (NOLOCK) ON E.EstadoTicketID = T.EstadoTicketID
 LEFT JOIN tkt.CategoriasTicket C WITH (NOLOCK) ON C.CategoriaTicketID = T.CategoriaTicketID
 LEFT JOIN tkt.CanalesTicket CT WITH (NOLOCK) ON CT.CanalID = T.CanalID;
+');
+    PRINT N'tkt.vsTickets (modelo extendido con categoría/canal).';
+END
+ELSE
+BEGIN
+    DECLARE @tituloExpr nvarchar(200) =
+        CASE WHEN COL_LENGTH(N'tkt.Tickets', N'Titulo') IS NOT NULL
+             THEN N'T.Titulo AS TituloTicket'
+             ELSE N'T.TituloTicket AS TituloTicket' END;
+    DECLARE @descExpr nvarchar(200) =
+        CASE WHEN COL_LENGTH(N'tkt.Tickets', N'Descripcion') IS NOT NULL
+             THEN N'T.Descripcion AS DescripcionTicket'
+             ELSE N'T.DescripcionTicket AS DescripcionTicket' END;
+    DECLARE @sqlLegacy nvarchar(max) = N'
+CREATE OR ALTER VIEW tkt.vsTickets AS
+SELECT T.TicketID,
+       ' + @tituloExpr + N',
+       ' + @descExpr + N',
+       T.UsuarioSolicitanteID,
+       USol.Nombre AS NombreSolicitante,
+       T.PrioridadTicketID,
+       P.PrioridadTicket,
+       T.EstadoTicketID,
+       E.EstadoTicket,
+       T.FechaCreacionTicket,
+       T.FechaCierre,
+       T.bEliminado
+FROM tkt.Tickets T WITH (NOLOCK)
+INNER JOIN sgr.Usuarios USol WITH (NOLOCK) ON USol.UsuarioID = T.UsuarioSolicitanteID
+INNER JOIN tkt.PrioridadesTicket P WITH (NOLOCK) ON P.PrioridadTicketID = T.PrioridadTicketID
+INNER JOIN tkt.EstadosTickets E WITH (NOLOCK) ON E.EstadoTicketID = T.EstadoTicketID;';
+    EXEC sp_executesql @sqlLegacy;
+    PRINT N'tkt.vsTickets (legacy sin tkt.CategoriasTicket — omitiendo JOIN catálogo).';
+END
 GO
 
 CREATE OR ALTER VIEW sgr.vsUsuarios AS
@@ -229,19 +267,34 @@ LEFT JOIN sgr.Casas ca WITH (NOLOCK) ON ca.CasaID = co.CasaID AND ca.bEliminado 
 LEFT JOIN sgr.Condominios cond WITH (NOLOCK) ON cond.CondominioID = ca.CondominioID AND cond.bEliminado = 0;
 GO
 
+IF COL_LENGTH(N'tkt.Tickets', N'CategoriaTicketID') IS NOT NULL
+BEGIN
+    DECLARE @tituloAsign nvarchar(200) =
+        CASE WHEN COL_LENGTH(N'tkt.Tickets', N'Titulo') IS NOT NULL
+             THEN N'T.Titulo'
+             ELSE N'T.TituloTicket AS Titulo' END;
+    DECLARE @catCol nvarchar(200) =
+        N'T.CategoriaTicketID,';
+    DECLARE @casaCol nvarchar(200) = N'';
+    IF COL_LENGTH(N'tkt.Tickets', N'CasaID') IS NOT NULL
+        SET @casaCol = N'T.CasaID,';
+    DECLARE @ordenCol nvarchar(200) = N'';
+    IF COL_LENGTH(N'tkt.PrioridadesTicket', N'Orden') IS NOT NULL
+        SET @ordenCol = N'P.Orden AS OrdenPrioridad,';
+    DECLARE @sqlAsignExt nvarchar(max) = N'
 CREATE OR ALTER VIEW tkt.vsTicketsUsuariosAsignados AS
 SELECT TUA.TicketsUsuariosAsignadosID,
        TUA.TicketID,
-       T.Titulo,
+       ' + @tituloAsign + N',
        TUA.UsuarioID,
        U.Nombre AS UsuarioAsignado,
        T.PrioridadTicketID,
        P.PrioridadTicket,
-       P.Orden AS OrdenPrioridad,
+       ' + @ordenCol + N'
        T.EstadoTicketID,
        E.EstadoTicket,
-       T.CategoriaTicketID,
-       T.CasaID,
+       ' + @catCol + N'
+       ' + @casaCol + N'
        T.FechaCreacionTicket,
        TUA.Terminado,
        TUA.bEliminado
@@ -249,7 +302,31 @@ FROM tkt.TicketsUsuariosAsignados TUA WITH (NOLOCK)
 INNER JOIN tkt.Tickets T WITH (NOLOCK) ON T.TicketID = TUA.TicketID
 INNER JOIN sgr.Usuarios U WITH (NOLOCK) ON U.UsuarioID = TUA.UsuarioID
 INNER JOIN tkt.PrioridadesTicket P WITH (NOLOCK) ON P.PrioridadTicketID = T.PrioridadTicketID
-INNER JOIN tkt.EstadosTickets E WITH (NOLOCK) ON E.EstadoTicketID = T.EstadoTicketID;
+INNER JOIN tkt.EstadosTickets E WITH (NOLOCK) ON E.EstadoTicketID = T.EstadoTicketID;';
+    EXEC sp_executesql @sqlAsignExt;
+    PRINT N'tkt.vsTicketsUsuariosAsignados (extendido).';
+END
+ELSE
+BEGIN
+    DECLARE @tituloAsignLegacy nvarchar(200) =
+        CASE WHEN COL_LENGTH(N'tkt.Tickets', N'Titulo') IS NOT NULL
+             THEN N'T.Titulo AS TituloTicket'
+             ELSE N'T.TituloTicket AS TituloTicket' END;
+    DECLARE @sqlAsignLegacy nvarchar(max) = N'
+CREATE OR ALTER VIEW tkt.vsTicketsUsuariosAsignados AS
+SELECT TUA.TicketsUsuariosAsignadosID,
+       TUA.TicketID,
+       ' + @tituloAsignLegacy + N',
+       TUA.UsuarioID,
+       U.Nombre AS UsuarioAsignado,
+       TUA.Terminado,
+       TUA.bEliminado
+FROM tkt.TicketsUsuariosAsignados TUA WITH (NOLOCK)
+INNER JOIN tkt.Tickets T WITH (NOLOCK) ON T.TicketID = TUA.TicketID
+INNER JOIN sgr.Usuarios U WITH (NOLOCK) ON U.UsuarioID = TUA.UsuarioID;';
+    EXEC sp_executesql @sqlAsignLegacy;
+    PRINT N'tkt.vsTicketsUsuariosAsignados (legacy sin CategoriaTicketID).';
+END
 GO
 
 PRINT N'DB-001 completado.';

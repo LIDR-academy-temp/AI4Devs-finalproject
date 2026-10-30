@@ -11,6 +11,22 @@ public sealed class CuartaVisitasRepository(IDbConnection db) : ICuartaVisitasRe
     private string? _numeroCasaSelect;
     private string NumeroCasaSelect => _numeroCasaSelect ??= SqlSchemaCompat.CasaNumeroSelect(db, "c");
 
+    // ── Detección de esquema lazy (ADR-008): no en field init — la conexión puede no estar lista al crear el repo ──
+    private string? _colAreaIdResolved;
+    private string ColAreaId => _colAreaIdResolved ??= SqlSchemaCompat.HasColumn(db, "vts", "AreasComunes", "AreasComunesID")
+        ? "AreasComunesID"
+        : "AreaID";
+
+    private string? _colAreaNombreResolved;
+    private string ColAreaNombre => _colAreaNombreResolved ??= SqlSchemaCompat.HasColumn(db, "vts", "AreasComunes", "AreasComunes")
+        ? "AreasComunes"
+        : "Nombre";
+
+    private string? _colReservAreaIdResolved;
+    private string ColReservAreaId => _colReservAreaIdResolved ??= SqlSchemaCompat.HasColumn(db, "vts", "ReservacionesArea", "AreasComunesID")
+        ? "AreasComunesID"
+        : "AreaID";
+
     // ── Visitas ──────────────────────────────────────────────────────────────
     public async Task<IReadOnlyList<VisitaListItemDto>> ListarVisitasAsync(
         int? casaId, DateTime? desde, DateTime? hasta, CancellationToken ct = default)
@@ -142,9 +158,9 @@ public sealed class CuartaVisitasRepository(IDbConnection db) : ICuartaVisitasRe
     // ── Áreas comunes ────────────────────────────────────────────────────────
     public async Task<IReadOnlyList<AreaComunDto>> ListarAreasAsync(CancellationToken ct = default)
     {
-        const string sql = """
-            SELECT AreasComunesID    AS AreaComunId,
-                   AreasComunes     AS Nombre,
+        var sql = $"""
+            SELECT {ColAreaId}    AS AreaComunId,
+                   {ColAreaNombre}     AS Nombre,
                    DescripcionAreasComunes AS Descripcion,
                    Capacidad,
                    RequiereReservacion
@@ -156,14 +172,144 @@ public sealed class CuartaVisitasRepository(IDbConnection db) : ICuartaVisitasRe
         return rows.AsList();
     }
 
+    public async Task<AreaComunDto?> ObtenerAreaAsync(int areaComunId, CancellationToken ct = default)
+    {
+        var sql = $"""
+            SELECT {ColAreaId}    AS AreaComunId,
+                   {ColAreaNombre}     AS Nombre,
+                   DescripcionAreasComunes AS Descripcion,
+                   Capacidad,
+                   RequiereReservacion
+            FROM   vts.AreasComunes
+            WHERE  {ColAreaId} = @AreaComunId AND bEliminado = 0
+            """;
+        return await db.QueryFirstOrDefaultAsync<AreaComunDto>(
+            new CommandDefinition(sql, new { AreaComunId = areaComunId }, cancellationToken: ct));
+    }
+
+    public async Task<int> InsertAreaComunAsync(
+        AreaComunUpsertRequest request, string correo, int userId, IDbTransaction? tx = null)
+    {
+        var sql = $"""
+            INSERT INTO vts.AreasComunes
+                ({ColAreaNombre}, DescripcionAreasComunes, Capacidad, RequiereReservacion,
+                 Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+            VALUES
+                (@Nombre, @Descripcion, @Capacidad, @RequiereReservacion,
+                 @Correo, @UserId, GETDATE(), 0);
+            SELECT CAST(SCOPE_IDENTITY() AS int);
+            """;
+        return await db.ExecuteScalarAsync<int>(sql, new
+        {
+            Nombre = request.Nombre.Trim(),
+            request.Descripcion,
+            request.Capacidad,
+            request.RequiereReservacion,
+            Correo = correo,
+            UserId = userId,
+        }, tx);
+    }
+
+    public async Task<bool> UpdateAreaComunAsync(
+        int areaComunId, AreaComunUpsertRequest request, string correo, int userId, IDbTransaction? tx = null)
+    {
+        var sql = $"""
+            UPDATE vts.AreasComunes SET
+                {ColAreaNombre} = @Nombre,
+                DescripcionAreasComunes = @Descripcion,
+                Capacidad = @Capacidad,
+                RequiereReservacion = @RequiereReservacion,
+                Modificado = @Correo,
+                UsuarioModificacionID = @UserId,
+                FechaModificacion = GETDATE()
+            WHERE {ColAreaId} = @AreaComunId AND bEliminado = 0;
+            """;
+        return await db.ExecuteAsync(sql, new
+        {
+            AreaComunId = areaComunId,
+            Nombre = request.Nombre.Trim(),
+            request.Descripcion,
+            request.Capacidad,
+            request.RequiereReservacion,
+            Correo = correo,
+            UserId = userId,
+        }, tx) > 0;
+    }
+
+    public async Task<bool> SoftDeleteAreaComunAsync(
+        int areaComunId, string correo, int userId, IDbTransaction? tx = null)
+    {
+        var sql = $"""
+            UPDATE vts.AreasComunes SET
+                bEliminado = 1,
+                Modificado = @Correo,
+                UsuarioModificacionID = @UserId,
+                FechaModificacion = GETDATE()
+            WHERE {ColAreaId} = @AreaComunId AND bEliminado = 0;
+            """;
+        return await db.ExecuteAsync(sql, new { AreaComunId = areaComunId, Correo = correo, UserId = userId }, tx) > 0;
+    }
+
+    public async Task<bool> CancelarReservacionAsync(
+        int reservacionAreaId, string correo, int userId, IDbTransaction? tx = null)
+    {
+        var estadoId = await ResolverEstadoReservacionIdAsync("Cancelada", tx);
+        if (estadoId is null)
+            return false;
+
+        const string sql = """
+            UPDATE vts.ReservacionesArea SET
+                ReservacionEstadoID = @EstadoId,
+                Modificado = @Correo,
+                UsuarioModificacionID = @UserId,
+                FechaModificacion = GETDATE()
+            WHERE ReservacionAreaID = @ReservacionAreaId AND bEliminado = 0;
+            """;
+        return await db.ExecuteAsync(sql, new
+        {
+            ReservacionAreaId = reservacionAreaId,
+            EstadoId = estadoId.Value,
+            Correo = correo,
+            UserId = userId,
+        }, tx) > 0;
+    }
+
+    public async Task<bool> ActualizarEstadoReservacionAsync(
+        int reservacionAreaId, string estadoNombre, string correo, int userId, IDbTransaction? tx = null)
+    {
+        var estadoId = await ResolverEstadoReservacionIdAsync(estadoNombre, tx);
+        if (estadoId is null)
+            return false;
+
+        const string sql = """
+            UPDATE r SET
+                ReservacionEstadoID = @EstadoId,
+                Modificado = @Correo,
+                UsuarioModificacionID = @UserId,
+                FechaModificacion = GETDATE()
+            FROM vts.ReservacionesArea r
+            INNER JOIN vts.ReservacionesEstados e ON e.ReservacionEstadoID = r.ReservacionEstadoID
+            WHERE r.ReservacionAreaID = @ReservacionAreaId
+              AND r.bEliminado = 0
+              AND e.ReservacionEstado <> 'Cancelada';
+            """;
+        return await db.ExecuteAsync(sql, new
+        {
+            ReservacionAreaId = reservacionAreaId,
+            EstadoId = estadoId.Value,
+            Correo = correo,
+            UserId = userId,
+        }, tx) > 0;
+    }
+
     // ── Reservaciones ────────────────────────────────────────────────────────
     public async Task<bool> HaySolapamientoAsync(
         int areaComunId, DateTime inicio, DateTime fin, int? excluirId = null, IDbTransaction? tx = null)
     {
-        const string sql = """
+        var sql = $"""
             SELECT COUNT(1) FROM vts.ReservacionesArea r
             JOIN   vts.ReservacionesEstados e ON e.ReservacionEstadoID = r.ReservacionEstadoID
-            WHERE  r.AreasComunesID = @AreaComunId
+            WHERE  r.{ColReservAreaId} = @AreaComunId
               AND  r.bEliminado    = 0
               AND  e.ReservacionEstado NOT IN ('Cancelada')
               AND  (@ExcluirId IS NULL OR r.ReservacionAreaID <> @ExcluirId)
@@ -183,43 +329,64 @@ public sealed class CuartaVisitasRepository(IDbConnection db) : ICuartaVisitasRe
     public async Task<int> InsertReservacionAsync(
         CrearReservacionRequest request,
         int estadoId,
-        string correo,
-        int userId,
+        string correoActor,
+        int residentUserId,
+        int actorUserId,
         IDbTransaction tx)
     {
-        const string sql = """
+        var sql = $"""
             INSERT INTO vts.ReservacionesArea
-                (AreasComunesID, UsuarioID, FechaInicio, FechaFin,
+                ({ColReservAreaId}, UsuarioID, FechaInicio, FechaFin,
                  ReservacionEstadoID, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
             VALUES
-                (@AreaComunId, @UserId, @FechaInicio, @FechaFin,
-                 @EstadoId, @Correo, @UserId, GETDATE(), 0);
+                (@AreaComunId, @ResidentUserId, @FechaInicio, @FechaFin,
+                 @EstadoId, @Correo, @ActorUserId, GETDATE(), 0);
             SELECT CAST(SCOPE_IDENTITY() AS int);
             """;
         return await db.ExecuteScalarAsync<int>(sql, new
         {
             AreaComunId = request.AreaComunId,
-            UserId = userId,
+            ResidentUserId = residentUserId,
             request.FechaInicio,
             request.FechaFin,
             EstadoId = estadoId,
-            Correo = correo,
+            Correo = correoActor,
+            ActorUserId = actorUserId,
         }, tx);
     }
 
-    public async Task<IReadOnlyList<ReservacionAreaDto>> ListarReservacionesMiasAsync(
-        int userId, CancellationToken ct = default)
+    public async Task<ReservacionAreaDto?> ObtenerReservacionAsync(int reservacionAreaId, CancellationToken ct = default)
     {
-        const string sql = """
+        var sql = $"""
             SELECT r.ReservacionAreaID AS ReservacionAreaId,
-                   r.AreasComunesID   AS AreaComunId,
-                   a.AreasComunes     AS AreaComun,
+                   r.{ColReservAreaId}   AS AreaComunId,
+                   a.{ColAreaNombre}     AS AreaComun,
                    r.FechaInicio,
                    r.FechaFin,
                    e.ReservacionEstado AS Estado,
                    r.FechaCreacion
             FROM   vts.ReservacionesArea r
-            JOIN   vts.AreasComunes a ON a.AreasComunesID = r.AreasComunesID
+            JOIN   vts.AreasComunes a ON a.{ColAreaId} = r.{ColReservAreaId}
+            JOIN   vts.ReservacionesEstados e ON e.ReservacionEstadoID = r.ReservacionEstadoID
+            WHERE  r.ReservacionAreaID = @ReservacionAreaId AND r.bEliminado = 0
+            """;
+        return await db.QueryFirstOrDefaultAsync<ReservacionAreaDto>(
+            new CommandDefinition(sql, new { ReservacionAreaId = reservacionAreaId }, cancellationToken: ct));
+    }
+
+    public async Task<IReadOnlyList<ReservacionAreaDto>> ListarReservacionesMiasAsync(
+        int userId, CancellationToken ct = default)
+    {
+        var sql = $"""
+            SELECT r.ReservacionAreaID AS ReservacionAreaId,
+                   r.{ColReservAreaId}   AS AreaComunId,
+                   a.{ColAreaNombre}     AS AreaComun,
+                   r.FechaInicio,
+                   r.FechaFin,
+                   e.ReservacionEstado AS Estado,
+                   r.FechaCreacion
+            FROM   vts.ReservacionesArea r
+            JOIN   vts.AreasComunes a ON a.{ColAreaId} = r.{ColReservAreaId}
             JOIN   vts.ReservacionesEstados e ON e.ReservacionEstadoID = r.ReservacionEstadoID
             WHERE  r.UsuarioID   = @UserId
               AND  r.bEliminado  = 0
@@ -231,23 +398,25 @@ public sealed class CuartaVisitasRepository(IDbConnection db) : ICuartaVisitasRe
     }
 
     public async Task<IReadOnlyList<ReservacionCalendarioDto>> ListarReservacionesCalendarioAsync(
-        int areaComunId, DateTime desde, DateTime hasta, CancellationToken ct = default)
+        int? areaComunId, DateTime desde, DateTime hasta, CancellationToken ct = default)
     {
-        const string sql = """
+        var sql = $"""
             SELECT r.ReservacionAreaID AS ReservacionAreaId,
-                   r.AreasComunesID   AS AreaComunId,
+                   r.{ColReservAreaId}   AS AreaComunId,
                    r.FechaInicio,
                    r.FechaFin,
                    e.ReservacionEstado AS Estado,
-                   a.AreasComunes + N' (Reservado)' AS Etiqueta
+                   a.{ColAreaNombre} + N' (Reservado)' AS Etiqueta
             FROM   vts.ReservacionesArea r
-            JOIN   vts.AreasComunes a ON a.AreasComunesID = r.AreasComunesID
+            JOIN   vts.AreasComunes a ON a.{ColAreaId} = r.{ColReservAreaId}
             JOIN   vts.ReservacionesEstados e ON e.ReservacionEstadoID = r.ReservacionEstadoID
-            WHERE  r.AreasComunesID = @AreaComunId
-              AND  r.bEliminado = 0
+            WHERE  r.bEliminado = 0
+              AND  a.bEliminado = 0
               AND  e.ReservacionEstado NOT IN ('Cancelada')
               AND  r.FechaFin    > @Desde
               AND  r.FechaInicio < @Hasta
+              AND  (@AreaComunId IS NULL OR r.{ColReservAreaId} = @AreaComunId)
+              AND  (@AreaComunId IS NOT NULL OR a.RequiereReservacion = 1)
             ORDER  BY r.FechaInicio
             """;
         var rows = await db.QueryAsync<ReservacionCalendarioDto>(

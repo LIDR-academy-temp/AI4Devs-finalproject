@@ -73,6 +73,10 @@ public sealed class CuartaTicketAdminService : ICuartaTicketAdminService
             {
                 canalId = await _catalogos.ResolveCanalIdAsync(canal, tx);
             }
+            catch (NotSupportedException)
+            {
+                // Canales no disponibles en este ambiente — continuar sin canal
+            }
             catch (InvalidOperationException)
             {
                 _uow.Rollback();

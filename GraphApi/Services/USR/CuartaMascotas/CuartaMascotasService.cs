@@ -27,6 +27,11 @@ public class CuartaMascotasService(ICuartaMascotasRepository repo, IDbConnection
             tx.Commit();
             return (201, id, null);
         }
+        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 547)
+        {
+            tx.Rollback();
+            return (422, null, "Tipo, raza o propietario no válido.");
+        }
         catch
         {
             tx.Rollback();
@@ -111,6 +116,11 @@ public class CuartaMascotasService(ICuartaMascotasRepository repo, IDbConnection
             var padron = await repo.ListarPadronAsync(ct);
             var nuevo = padron.FirstOrDefault(m => m.MascotaId == id);
             return (nuevo, null, StatusCodes.Status201Created, null);
+        }
+        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 547)
+        {
+            tx.Rollback();
+            return (null, "MAS_REFERENCIA_INVALIDA", StatusCodes.Status422UnprocessableEntity, "Tipo, raza o propietario no válido.");
         }
         catch
         {

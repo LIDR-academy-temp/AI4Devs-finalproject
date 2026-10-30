@@ -129,6 +129,18 @@ public sealed class PerfilAdminListItemDto
     public bool BAdministrador { get; set; }
 }
 
+public sealed class PerfilAdminUpsertRequest
+{
+    [JsonPropertyName("nombre")]
+    public string Nombre { get; set; } = string.Empty;
+
+    [JsonPropertyName("descripcion")]
+    public string? Descripcion { get; set; }
+
+    [JsonPropertyName("bAdministrador")]
+    public bool BAdministrador { get; set; }
+}
+
 public sealed class MenuPerfilRow
 {
     public int MenuId { get; set; }

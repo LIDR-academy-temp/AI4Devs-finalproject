@@ -279,9 +279,19 @@ Hub: [GAPS_MVP_ROADMAP](.planning/GAPS_MVP_ROADMAP.md)
 - **Dominios**: [[visitas-areas]], [[frontend]], [[backend]]
 - **Objetos clave**: `CuartaVisitasGeneradasService`, `vts.VisitasGeneradas`, `vts.vsVisitasGeneradas`, `/visitas/pases`, `/guardia/validar-pase`
 - **Patrones**: REST JWT Cuarta; Dapper + vista; policy `AdminOGuardia`; QR 128-bit hex
-- **Relacionado con**: [[VTS-BE-026]], [[FE-047]], [[GAPS_MVP_ROADMAP]]
+- **Relacionado con**: [[VTS-BE-026]], [[FE-047]], [[GAPS_MVP_ROADMAP]], [[PROD-UX-001]] (admin UX prod)
 - **Fecha cierre**: 2026-10-28
 - **Hub**: [spec](.planning/tkt-fe-vts-pase-001/spec.md) · [delta](.planning/tkt-fe-vts-pase-001/delta.md) · [APIs](.planning/tkt-fe-vts-pase-001/TKT-FE-VTS-PASE-001-APIS.md)
+
+### [[PROD-UX-001]] — Cierre UX prod (pases QR, residentes, moras)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[visitas-areas]], [[usuarios]], [[finanzas]], [[dashboard]], [[frontend]]
+- **Objetos clave**: `AdminPasesQrTable`, `PaseEstadoBadge`, `AdminUsuariosPage`, `CuartaUsuarioAdminService`, `MorososTable`, `FinanzasService` moras lote
+- **Patrones**: retro-SDD post operación publicada; fix transacción Dapper en PUT usuario
+- **Relacionado con**: [[FE-VTS-PASE-001]], [[FE-041]], [[FE-CRUD-001]], [[DASH-BE-014]]
+- **Fecha cierre**: 2026-10-30
+- **Hub**: [spec](.planning/tkt-prod-ux-001/spec.md) · [delta](.planning/tkt-prod-ux-001/delta.md) · [inventario SQL](../SQL/20261030_PROD-UX-001_INVENTARIO_CAMBIOS.md)
 
 ### [[FE-VTS-CAL-001]] — Calendario comunitario reservas
 

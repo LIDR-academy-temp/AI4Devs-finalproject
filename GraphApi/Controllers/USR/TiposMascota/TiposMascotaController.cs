@@ -1,4 +1,6 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using GraphApi.Infrastructure.Security;
 using GraphApi.Models.USR.CuartaMascotas;
 using GraphApi.Services.USR.CuartaMascotas;
 using GraphApi.Services.USR.TiposMascota;
@@ -13,8 +15,8 @@ namespace GraphApi.Controllers.USR.TiposMascota;
 [Produces("application/json")]
 public class TiposMascotaController(ICuartaMascotasService cuarta, ITiposMascotaService legacy) : ControllerBase
 {
-    private int AdminId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    private string AdminEmail => User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue(ClaimTypes.Name) ?? "sistema";
+    private int AdminId => JwtUserContext.TryGetUsuarioId(User, out var aid) ? aid : 0;
+    private string AdminEmail => JwtUserContext.GetCorreo(User) ?? "sistema";
 
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<TipoMascotaDto>), StatusCodes.Status200OK)]

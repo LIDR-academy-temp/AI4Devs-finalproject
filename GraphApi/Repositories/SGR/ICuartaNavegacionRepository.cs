@@ -46,4 +46,25 @@ public interface ICuartaNavegacionRepository
         string correo,
         int usuarioId,
         IDbTransaction tx);
+
+    Task<int> InsertPerfilAsync(
+        string nombre,
+        string? descripcion,
+        bool bAdministrador,
+        string correo,
+        int adminId,
+        IDbTransaction tx);
+
+    Task<bool> UpdatePerfilAsync(
+        int perfilId,
+        string nombre,
+        string? descripcion,
+        bool bAdministrador,
+        string correo,
+        int adminId,
+        IDbTransaction tx);
+
+    Task<bool> SoftDeletePerfilAsync(int perfilId, string correo, int adminId, IDbTransaction tx);
+
+    Task<int> ContarUsuariosConPerfilAsync(int perfilId, CancellationToken ct = default);
 }

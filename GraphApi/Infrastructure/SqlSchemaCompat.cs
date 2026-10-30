@@ -1,11 +1,18 @@
+using System.Collections.Concurrent;
 using System.Data;
 using Dapper;
+using Microsoft.Data.SqlClient;
 
 namespace GraphApi.Infrastructure;
 
 /// <summary>Detección ligera de columnas/tablas según ADR-008 (pre/post DB-001).</summary>
 public static class SqlSchemaCompat
 {
+    private static readonly ConcurrentDictionary<string, bool> SchemaCache = new(StringComparer.OrdinalIgnoreCase);
+
+    private static string CacheKey(string connectionString, string kind, string schema, string objectName, string? column = null)
+        => $"{connectionString}|{kind}|{schema}|{objectName}|{column ?? ""}";
+
     public static void EnsureOpen(IDbConnection db)
     {
         if (db.State != ConnectionState.Open)
@@ -16,8 +23,49 @@ public static class SqlSchemaCompat
     {
         try
         {
+            // Usar la conexión existente para poblar el caché (evita fallo silencioso de nueva conexión)
+            var cs = (db as SqlConnection)?.ConnectionString ?? "";
+            if (cs.Length > 0)
+            {
+                var key = CacheKey(cs, "col", schema, table, column);
+                if (SchemaCache.TryGetValue(key, out var cached))
+                    return cached;
+                EnsureOpen(db);
+                var result = db.ExecuteScalar<int>(
+                    """
+                    SELECT COUNT(*) FROM sys.columns c
+                    INNER JOIN sys.tables t ON t.object_id = c.object_id
+                    INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
+                    WHERE s.name = @Schema AND t.name = @Table AND c.name = @Column;
+                    """,
+                    new { Schema = schema, Table = table, Column = column }) == 1;
+                SchemaCache.TryAdd(key, result);
+                return result;
+            }
+
             EnsureOpen(db);
             return db.ExecuteScalar<int>(
+                """
+                SELECT COUNT(*) FROM sys.columns c
+                INNER JOIN sys.tables t ON t.object_id = c.object_id
+                INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
+                WHERE s.name = @Schema AND t.name = @Table AND c.name = @Column;
+                """,
+                new { Schema = schema, Table = table, Column = column }) == 1;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool HasColumnOnConnectionString(string connectionString, string schema, string table, string column)
+    {
+        try
+        {
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            return conn.ExecuteScalar<int>(
                 """
                 SELECT COUNT(*) FROM sys.columns c
                 INNER JOIN sys.tables t ON t.object_id = c.object_id
@@ -60,8 +108,63 @@ public static class SqlSchemaCompat
     public static bool MascotasTieneVacunas(IDbConnection db)
         => HasColumn(db, "usr", "Mascotas", "VacunasAlDia");
 
+    /// <summary>WMS listo si existen tablas mínimas (sin depender de SELECT sobre datos).</summary>
     public static bool WmsDisponible(IDbConnection db)
-        => HasTable(db, "wms", "Articulos");
+        => HasTable(db, "wms", "Articulos")
+           && HasTable(db, "wms", "CategoriasArticulo");
+
+    /// <summary>Valida WMS en conexión sin transacción de negocio abierta (llamar antes de BeginTransaction).</summary>
+    public static void EnsureWmsOrThrow(IDbConnection db)
+    {
+        if (WmsDisponible(db))
+            return;
+
+        var dbName = CurrentDatabaseName(db);
+        var art = HasTable(db, "wms", "Articulos");
+        var cat = HasTable(db, "wms", "CategoriasArticulo");
+        throw new InvalidOperationException(
+            $"El esquema WMS no está desplegado en la base [{dbName}] " +
+            $"(wms.Articulos={(art ? "sí" : "no")}, wms.CategoriasArticulo={(cat ? "sí" : "no")}). " +
+            "Ejecute SQL/DB-005_wms_schema.sql o SQL/20261029_PROD-ADMIN-001_APLICAR_FALTANTES.sql en esa misma base " +
+            "y confirme que ConnectionStrings:Default en runasp.net apunta a esa base (no otra en cfg.Conexion).");
+    }
+
+    /// <summary>Catálogo de la conexión actual (sin depender solo de Dapper + DB_NAME).</summary>
+    public static string CurrentDatabaseName(IDbConnection db)
+    {
+        if (db is SqlConnection sql)
+        {
+            if (!string.IsNullOrWhiteSpace(sql.Database))
+                return sql.Database.Trim();
+
+            try
+            {
+                var csb = new SqlConnectionStringBuilder(sql.ConnectionString);
+                if (!string.IsNullOrWhiteSpace(csb.InitialCatalog))
+                    return csb.InitialCatalog.Trim();
+            }
+            catch
+            {
+                // ignore parse errors
+            }
+        }
+
+        try
+        {
+            EnsureOpen(db);
+            if (db is SqlConnection opened && !string.IsNullOrWhiteSpace(opened.Database))
+                return opened.Database.Trim();
+
+            var raw = db.ExecuteScalar("SELECT DB_NAME()");
+            if (raw is null or DBNull)
+                return "?";
+            return Convert.ToString(raw, System.Globalization.CultureInfo.InvariantCulture)?.Trim() ?? "?";
+        }
+        catch
+        {
+            return "?";
+        }
+    }
 
     public static bool WmsPrestamosDisponible(IDbConnection db)
         => HasTable(db, "wms", "Prestamos");
@@ -90,18 +193,38 @@ public static class SqlSchemaCompat
         }
     }
 
-    public static bool HasTable(IDbConnection db, string schema, string table)
+    public static bool ViewHasColumn(IDbConnection db, string schema, string viewName, string column)
     {
         try
         {
+            var cs = (db as SqlConnection)?.ConnectionString ?? "";
+            if (cs.Length > 0)
+            {
+                var key = CacheKey(cs, "vcol", schema, viewName, column);
+                if (SchemaCache.TryGetValue(key, out var cached))
+                    return cached;
+                EnsureOpen(db);
+                var result = db.ExecuteScalar<int>(
+                    """
+                    SELECT COUNT(*) FROM sys.columns c
+                    INNER JOIN sys.views v ON v.object_id = c.object_id
+                    INNER JOIN sys.schemas s ON s.schema_id = v.schema_id
+                    WHERE s.name = @Schema AND v.name = @View AND c.name = @Column;
+                    """,
+                    new { Schema = schema, View = viewName, Column = column }) == 1;
+                SchemaCache.TryAdd(key, result);
+                return result;
+            }
+
             EnsureOpen(db);
             return db.ExecuteScalar<int>(
                 """
-                SELECT COUNT(*) FROM sys.tables t
-                INNER JOIN sys.schemas s ON s.schema_id = t.schema_id
-                WHERE s.name = @Schema AND t.name = @Table;
+                SELECT COUNT(*) FROM sys.columns c
+                INNER JOIN sys.views v ON v.object_id = c.object_id
+                INNER JOIN sys.schemas s ON s.schema_id = v.schema_id
+                WHERE s.name = @Schema AND v.name = @View AND c.name = @Column;
                 """,
-                new { Schema = schema, Table = table }) == 1;
+                new { Schema = schema, View = viewName, Column = column }) == 1;
         }
         catch
         {
@@ -109,11 +232,82 @@ public static class SqlSchemaCompat
         }
     }
 
-    /// <summary>Nombre lógico del perfil en sgr.Perfiles (post DB-001: Perfil; legado lógico: Nombre).</summary>
+    private static bool ViewHasColumnOnConnectionString(
+        string connectionString, string schema, string viewName, string column)
+    {
+        try
+        {
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            return conn.ExecuteScalar<int>(
+                """
+                SELECT COUNT(*) FROM sys.columns c
+                INNER JOIN sys.views v ON v.object_id = c.object_id
+                INNER JOIN sys.schemas s ON s.schema_id = v.schema_id
+                WHERE s.name = @Schema AND v.name = @View AND c.name = @Column;
+                """,
+                new { Schema = schema, View = viewName, Column = column }) == 1;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static bool HasTable(IDbConnection db, string schema, string table)
+    {
+        try
+        {
+            var cs = (db as SqlConnection)?.ConnectionString ?? "";
+            if (cs.Length > 0)
+            {
+                var key = CacheKey(cs, "tbl", schema, table);
+                if (SchemaCache.TryGetValue(key, out var cached))
+                    return cached;
+                EnsureOpen(db);
+                var result = db.ExecuteScalar<int?>(
+                    "SELECT OBJECT_ID(QUOTENAME(@Schema) + '.' + QUOTENAME(@Table), 'U')",
+                    new { Schema = schema, Table = table }) is not null;
+                SchemaCache.TryAdd(key, result);
+                return result;
+            }
+
+            EnsureOpen(db);
+            return db.ExecuteScalar<int?>(
+                "SELECT OBJECT_ID(QUOTENAME(@Schema) + '.' + QUOTENAME(@Table), 'U')",
+                new { Schema = schema, Table = table }) is not null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool HasTableOnConnectionString(string connectionString, string schema, string table)
+    {
+        try
+        {
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            return conn.ExecuteScalar<int?>(
+                "SELECT OBJECT_ID(QUOTENAME(@Schema) + '.' + QUOTENAME(@Table), 'U')",
+                new { Schema = schema, Table = table }) is not null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Nombre del rol en sgr.Perfiles (prod/DB-009: Nombre; legado previo a DB-001: Perfil).</summary>
     public static string PerfilNombreColumn(IDbConnection db, string alias = "p")
-        => HasColumn(db, "sgr", "Perfiles", "Perfil")
-            ? $"{alias}.Perfil"
-            : $"{alias}.Nombre";
+    {
+        if (HasColumn(db, "sgr", "Perfiles", "Nombre"))
+            return $"{alias}.Nombre";
+        if (HasColumn(db, "sgr", "Perfiles", "Perfil"))
+            return $"{alias}.Perfil";
+        return $"{alias}.Nombre";
+    }
 
     /// <summary>Columnas de sgr.Usuarios (pre/post DB-001).</summary>
     public static (string Nombre, string Correo, string Activo) UsuarioColumns(
@@ -168,4 +362,8 @@ public static class SqlSchemaCompat
             LEFT JOIN sgr.Casas ca WITH (NOLOCK) ON ca.PropietarioUsuarioID = {usuarioFkSql} AND ca.bEliminado = 0
             """;
     }
+
+    /// <summary>COUNT(*) y agregados SQL Server devuelven bigint; Dapper no castea a int.</summary>
+    public static int ScalarToInt32(object? value)
+        => value is null or DBNull ? 0 : Convert.ToInt32(value);
 }

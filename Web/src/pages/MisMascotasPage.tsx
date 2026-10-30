@@ -91,10 +91,10 @@ export function MisMascotasPage() {
     setEditId(m.mascotaId)
     setForm({
       nombreMascota: m.nombreMascota,
-      tipoMascotaId: m.tipoMascotaId,
-      razaMascotaId: m.razaMascotaId,
+      tipoMascotaId: m.tipoMascotaId ?? undefined,
+      razaMascotaId: m.razaMascotaId ?? undefined,
       razaLibre: m.razaLibre ?? '',
-      vacunasAlDia: m.vacunasAlDia,
+      vacunasAlDia: m.vacunasAlDia ?? undefined,
       fechaUltimaVacuna: m.fechaUltimaVacuna?.slice(0, 10) ?? '',
       fechaNacimiento: m.fechaNacimiento?.slice(0, 10) ?? '',
     })

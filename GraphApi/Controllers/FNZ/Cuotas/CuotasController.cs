@@ -68,6 +68,15 @@ public class CuotasController : Controller
         return Ok(data);
     }
 
+    [HttpGet("generaciones/admin")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(IReadOnlyList<PeriodoCuotasGeneradoDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarGeneraciones(CancellationToken ct)
+    {
+        var list = await _finanzas.ListarPeriodosGeneradosAdminAsync(ct);
+        return Ok(list);
+    }
+
     [HttpPatch("{cuotaId:int}/pago")]
     [Authorize(Policy = "SoloAdministrador")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -141,6 +150,15 @@ public class CuotasController : Controller
 
         var estado = await _finanzas.ObtenerEstadoCuentaAsync(usuarioId.Value, ct);
         return Ok(estado);
+    }
+
+    [HttpGet("cuentas")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(IReadOnlyList<CuentaFnzCatalogoDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarCuentas(CancellationToken ct)
+    {
+        var list = await _finanzas.ListarCuentasCatalogoAsync(ct);
+        return Ok(list);
     }
 
     /// <summary>
