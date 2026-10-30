@@ -89,7 +89,10 @@ Verbos concretos `(asumido)`: GET (bitácora/áreas/reservas), POST (registrar v
 
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
+| 2026-10-30 | [[PROD-RES-001]] | Menú residente `/visitas/pases` (SQL + nav supplement); combo Tipo ID en `MisPasesVisitaPage`. |
 | 2026-10-30 | [[PROD-UX-001]] | Admin pases QR (badge vigente, panel CRUD); `bUnaOcasion`; usar → bitácora |
+| 2026-10-30 | [[PROD-ADMIN-001]] | Cierre retro-SDD admin prod (SQL WMS/ARC, CRUD ANM/SGR, UI tabs); ARCHIVADO |
+| 2026-10-30 | [[VTS-AREAS-CRUD-001]] | ARCHIVADO; smoke prod OK |
 | 2026-10-29 | [[VTS-AREAS-CRUD-001]] | CRUD admin áreas REST + UI admin + cancelar reserva; contrato camelCase |
 | 2026-10-28 | [[FE-VTS-CAL-001]] | GET calendario comunitario + UI semanal en `/areas-comunes` |
 | 2026-10-26 | [[FE-CRUD-003]] | UI admin visitas al patrón `cq-admin` (sin cambio de contrato API VTS) |

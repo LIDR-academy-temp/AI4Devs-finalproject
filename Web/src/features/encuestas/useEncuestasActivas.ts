@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { normalizeEncuestaListItem } from '../admin/encuestas/encuestaMappers'
 import { apiGet } from '../../shared/lib/apiClient'
 import type { EncuestaListItem } from '../../shared/types/encuestas'
 
@@ -15,7 +16,7 @@ export function useEncuestasActivas() {
       setError(res.problem?.detail ?? `Error ${res.status}`)
       setEncuestas([])
     } else {
-      setEncuestas(res.data)
+      setEncuestas(res.data.map((item) => normalizeEncuestaListItem(item)))
     }
     setLoading(false)
   }, [])

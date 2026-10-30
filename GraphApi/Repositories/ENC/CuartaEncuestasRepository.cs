@@ -426,6 +426,9 @@ public sealed class CuartaEncuestasRepository : ICuartaEncuestasRepository
             }
             else
             {
+                var groupBy = _opcionesTieneOrden
+                    ? "o.OpcionPreguntaID, o.Texto, o.Orden"
+                    : "o.OpcionPreguntaID, o.Texto";
                 var orderBy = _opcionesTieneOrden ? "o.Orden" : "o.OpcionPreguntaID";
                 var aggSql = $"""
                     SELECT o.OpcionPreguntaID AS OpcionPreguntaId,
@@ -435,7 +438,7 @@ public sealed class CuartaEncuestasRepository : ICuartaEncuestasRepository
                     LEFT JOIN enc.Respuestas r WITH (NOLOCK)
                         ON r.OpcionPreguntaID = o.OpcionPreguntaID AND r.bEliminado = 0
                     WHERE o.PreguntaID = @PreguntaId AND o.bEliminado = 0
-                    GROUP BY o.OpcionPreguntaID, o.Texto
+                    GROUP BY {groupBy}
                     ORDER BY {orderBy};
                     """;
                 var rows = await _db.QueryAsync<ResultadoOpcionAggRow>(

@@ -2,11 +2,15 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { EmptyState, PageHeader } from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { esPreguntaSeleccionMultiple, esPreguntaTextoLibre } from '../features/encuestas/encuestaQuestionTypes'
+import { normalizeEncuestaDetalle } from '../features/admin/encuestas/encuestaMappers'
+import { parseEncuestaId } from '../features/encuestas/parseEncuestaId'
 import { apiGet, apiPost } from '../shared/lib/apiClient'
 import type { EncuestaDetalle, RespuestaItem } from '../shared/types/encuestas'
 
 export function EncuestaDetallePage() {
-  const { id } = useParams<{ id: string }>()
+  const { id: idParam } = useParams<{ id: string }>()
+  const encuestaId = parseEncuestaId(idParam)
   const navigate = useNavigate()
   const [encuesta, setEncuesta] = useState<EncuestaDetalle | null>(null)
   const [loading, setLoading] = useState(true)
@@ -19,12 +23,18 @@ export function EncuestaDetallePage() {
   useQueryErrorToast(sendError)
 
   useEffect(() => {
-    if (!id) return
+    if (!encuestaId) {
+      setEncuesta(null)
+      setError('Identificador de encuesta no válido.')
+      setLoading(false)
+      return
+    }
     setLoading(true)
-    apiGet<EncuestaDetalle>(`/ENC/Encuestas/${id}`)
+    setError(null)
+    apiGet<EncuestaDetalle>(`/ENC/Encuestas/${encuestaId}`)
       .then((res) => {
         if (res.data) {
-          setEncuesta(res.data)
+          setEncuesta(normalizeEncuestaDetalle(res.data))
         } else {
           setError(res.problem?.detail ?? `Error ${res.status}`)
         }
@@ -34,7 +44,7 @@ export function EncuestaDetallePage() {
         setError('No se pudo cargar la encuesta.')
         setLoading(false)
       })
-  }, [id])
+  }, [encuestaId])
 
   const setOpcion = (preguntaId: number, opcionPreguntaId: number) => {
     setRespuestas((prev) => ({
@@ -51,11 +61,11 @@ export function EncuestaDetallePage() {
   }
 
   const handleSubmit = async () => {
-    if (!encuesta || !id) return
+    if (!encuesta || !encuestaId) return
     setSendError(null)
     setEnviando(true)
     const body = { respuestas: Object.values(respuestas) }
-    const { problem, status } = await apiPost(`/ENC/Encuestas/${id}/respuestas`, body)
+    const { problem, status } = await apiPost(`/ENC/Encuestas/${encuestaId}/respuestas`, body)
     setEnviando(false)
     if (problem) {
       setSendError(problem.detail ?? `Error ${status}`)
@@ -93,7 +103,7 @@ export function EncuestaDetallePage() {
         <h1 className="text-xl font-semibold text-neutral-900">¡Gracias por tu participación!</h1>
         <p className="text-neutral-700">Tu respuesta ha sido registrada.</p>
         <Link
-          to={`/encuestas/${id}/resultados`}
+          to={`/encuestas/${encuestaId}/resultados`}
           className="cursor-pointer rounded bg-primary px-4 py-2 text-sm text-white hover:bg-primary-dark"
         >
           Ver resultados
@@ -133,7 +143,7 @@ export function EncuestaDetallePage() {
                 {p.requerida && <span className="ml-1 text-danger">*</span>}
               </legend>
 
-              {p.tipoPregunta === 'Texto' ? (
+              {esPreguntaTextoLibre(p.tipoPregunta) ? (
                 <textarea
                   className="w-full rounded-lg border border-neutral-200 bg-surface px-3 py-2 text-sm text-neutral-900"
                   rows={3}
@@ -148,7 +158,7 @@ export function EncuestaDetallePage() {
                     .map((o) => (
                       <label key={o.opcionPreguntaId} className="flex items-center gap-2 text-sm text-neutral-800">
                         <input
-                          type={p.tipoPregunta === 'Multiple' ? 'checkbox' : 'radio'}
+                          type={esPreguntaSeleccionMultiple(p.tipoPregunta) ? 'checkbox' : 'radio'}
                           name={`p-${p.preguntaId}`}
                           checked={
                             respuestas[p.preguntaId]?.opcionPreguntaId === o.opcionPreguntaId

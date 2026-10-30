@@ -58,7 +58,7 @@ public sealed class CuartaTicketService : ICuartaTicketService
                 return (null, "VALIDATION_ERROR", StatusCodes.Status400BadRequest, "Categoría inválida");
             }
 
-            int? canalId = null;
+            int? canalId;
             try
             {
                 canalId = await _catalogos.ResolveCanalIdAsync(canal, tx);
@@ -82,12 +82,19 @@ public sealed class CuartaTicketService : ICuartaTicketService
             }, tx);
 
             var autor = new NotificacionAutor(usuarioId, correo);
-            await _notificaciones.NotificarAdministradoresAsync(
-                tx,
-                "TICKET_NUEVO",
-                $"Nuevo ticket #{ticketId}",
-                $"{input.Titulo}: {input.Descripcion}",
-                autor);
+            try
+            {
+                await _notificaciones.NotificarAdministradoresAsync(
+                    tx,
+                    "TICKET_NUEVO",
+                    $"Nuevo ticket #{ticketId}",
+                    $"{input.Titulo}: {input.Descripcion}",
+                    autor);
+            }
+            catch
+            {
+                // El ticket ya está insertado; no fallar el alta si el aviso a admins falla.
+            }
 
             _uow.Commit();
 

@@ -2,27 +2,33 @@
 
 | Campo | Valor |
 |-------|--------|
-| Estado | LISTO PARA PR |
+| **Estado** | **ARCHIVADO** |
 | Dominio | [[visitas-areas]] |
-| Rama sugerida | `feature/VTS-AREAS-CRUD-001-areas-reservas-completo` |
+| Rama | `feature/entrega-2-AFS` |
+| Entregables | [20261030_VTS-AREAS-CRUD-001_Entregables.md](../../20261030_VTS-AREAS-CRUD-001_Entregables.md) |
 
 ## Objetivo
-Módulo VTS áreas/reservas operativo: contrato REST Cuarta camelCase, CRUD admin de áreas, residente reserva, admin consulta/cancela.
+
+Módulo VTS áreas/reservas operativo: CRUD admin áreas, residente reserva, admin cancela.
 
 ## Artefactos
-- [spec.md](spec.md)
-- [design.md](design.md)
-- [impl.md](impl.md)
 
-## APIs REST (Cuarta)
-| Método | Ruta | Rol |
-|--------|------|-----|
-| GET | `/VTS/AreasComunes` | JWT |
-| POST | `/VTS/AreasComunes` | Admin |
-| PUT | `/VTS/AreasComunes/{id}` | Admin |
-| DELETE | `/VTS/AreasComunes/{id}` | Admin |
-| POST | `/VTS/ReservacionesArea` | Residente |
-| GET | `/VTS/ReservacionesArea/mias` | Residente |
-| GET | `/VTS/ReservacionesArea/calendario` | JWT |
-| GET | `/VTS/ReservacionesArea/admin` | Admin |
-| PATCH | `/VTS/ReservacionesArea/{id}/cancelar` | Admin |
+| Artefacto | Archivo |
+|-----------|---------|
+| Spec | [spec.md](spec.md) |
+| Design | [design.md](design.md) |
+| Impl | [impl.md](impl.md) |
+| Delta | [delta.md](delta.md) |
+
+## Log
+
+| Fecha | De | A | Nota |
+|-------|----|---|------|
+| 2026-10-29 | — | LISTO PARA PR | impl en rama |
+| 2026-10-30 | LISTO PARA PR | **ARCHIVADO** | /completar; smoke prod OK; xUnit CuartaVisitas 25/25 |
+
+## Resumen final
+
+- **Objetivo:** CA-1..CA-5 cumplidos; prod verificado.
+- **Auditorías:** documental APROBADO (retro).
+- **Riesgo residual:** ninguno reportado post smoke.

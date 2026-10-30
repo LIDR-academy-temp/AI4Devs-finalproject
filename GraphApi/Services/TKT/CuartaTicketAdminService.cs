@@ -68,14 +68,10 @@ public sealed class CuartaTicketAdminService : ICuartaTicketAdminService
                 return (null, "VALIDATION_ERROR", StatusCodes.Status400BadRequest, "Categoría inválida");
             }
 
-            int? canalId = null;
+            int? canalId;
             try
             {
                 canalId = await _catalogos.ResolveCanalIdAsync(canal, tx);
-            }
-            catch (NotSupportedException)
-            {
-                // Canales no disponibles en este ambiente — continuar sin canal
             }
             catch (InvalidOperationException)
             {

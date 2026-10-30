@@ -67,7 +67,7 @@ anm.Anuncios / arc.Archivos con bitácora de visualización
 | Fase | Hub | Estado |
 |------|-----|--------|
 | Entrega 2 — **Fase 1** | [.planning/FASE1_ROADMAP.md](.planning/FASE1_ROADMAP.md) · [.planning/FASE1_CIERRE.md](.planning/FASE1_CIERRE.md) | **COMPLETADA 2026-10-16** — 24 tickets ARCHIVADO (filas 0–23) |
-| **Entrega módulos** (12 dom., sin BOT/IA/BI) | [.planning/ENTREGA_MODULOS.md](.planning/ENTREGA_MODULOS.md) | **EN CURSO** — SDD spec+design en `.planning/tkt-*` (ENC→WMS); ejecutar en orden del hub |
+| **Entrega módulos** (12 dom., sin BOT/IA/BI) | [.planning/ENTREGA_MODULOS.md](.planning/ENTREGA_MODULOS.md) | **Implementado** — smoke prod 2026-10-30 ([PULIR_01_PROD_REPO.md](PULIR_01_PROD_REPO.md)) |
 | Fase 2+ (bot, encuestas, …) | [specs/_index.md](specs/_index.md) | Planificado tras ola USR/shell |
 
 Evolución SDD: [_sdd_evolution.md](_sdd_evolution.md)
@@ -88,6 +88,16 @@ Evolución SDD: [_sdd_evolution.md](_sdd_evolution.md)
 - **Dominios**: [[frontend]], [[sgr]], [[usuarios]], [[visitas-areas]], [[tickets]], [[notificaciones]], [[reportes-bi]], [[bot-ia]], [[dashboard]]
 - **Objetos clave**: `navCatalog.manifest.ts`, `DB-008`, fases A–G (RPT/BI/BOT web incluidos)
 - **Hub**: [spec](.planning/tkt-nav-root-001/spec.md) · [design](.planning/tkt-nav-root-001/design.md) · [matriz](.planning/tkt-nav-root-001/MATRIZ_MODULOS.md)
+- **Entrega 1**: fases E/F/G ocultas en UI vía [[FE-NAV-ENT1-001]] (manifest + filtro Web); epic E→G sigue pendiente.
+
+### [[FE-NAV-ENT1-001]]: Ocultar menús NAV E/F/G (entrega 1)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[frontend]], [[sgr]]
+- **Objetos clave**: `navCatalog.manifest.ts` (`implemented: false`), `filterNavItemsByManifest`, `20261030_sgr_menus_entrega1_off_nav_efg.sql`
+- **Relacionado con**: [[NAV-ROOT-001]], [[PROD-RES-001]], [[ENTREGA_MODULOS]]
+- **Fecha cierre**: 2026-10-30
+- **Hub**: [spec](.planning/tkt-fe-nav-ent1-001/spec.md) · [delta](.planning/tkt-fe-nav-ent1-001/delta.md)
 
 ### [[SGR-FE-001]]: Sidebar dinámico + admin SGR (SPA)
 
@@ -292,6 +302,32 @@ Hub: [GAPS_MVP_ROADMAP](.planning/GAPS_MVP_ROADMAP.md)
 - **Relacionado con**: [[FE-VTS-PASE-001]], [[FE-041]], [[FE-CRUD-001]], [[DASH-BE-014]]
 - **Fecha cierre**: 2026-10-30
 - **Hub**: [spec](.planning/tkt-prod-ux-001/spec.md) · [delta](.planning/tkt-prod-ux-001/delta.md) · [inventario SQL](../SQL/20261030_PROD-UX-001_INVENTARIO_CAMBIOS.md)
+
+### [[PROD-RES-001]] — Fixes prod perfil Residente
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[encuestas]], [[tickets]], [[visitas-areas]], [[frontend]], [[backend]]
+- **Objetos clave**: `CuartaEncuestasRepository`, `CuartaTicketService`, `supplementApiNavWithManifest`, `MisPasesVisitaPage`, `20261030_sgr_visitas_pases_menu_residente.sql`
+- **Patrones**: retro-SDD sesión prod; PascalCase FE; SGR menú supplement; canal TKT legacy-tolerante
+- **Relacionado con**: [[PROD-UX-001]], [[FE-ENC-RES-001]], [[FE-VTS-PASE-001]], [[NAV-ROOT-001]]
+- **Fecha cierre**: 2026-10-30
+- **Hub**: [spec](.planning/tkt-prod-res-001/spec.md) · [delta](.planning/tkt-prod-res-001/delta.md) · [inventario SQL](../SQL/20261030_PROD-RES-001_INVENTARIO_CAMBIOS.md)
+
+### [[VTS-AREAS-CRUD-001]] — CRUD áreas comunes + cancelar reserva admin
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[visitas-areas]], [[backend]], [[frontend]]
+- **Objetos clave**: `AreasComunesController` CRUD, `PATCH .../cancelar`, `AdminAreasComunesSection`
+- **Fecha cierre**: 2026-10-30
+- **Hub**: [spec](.planning/tkt-vts-areas-crud-001/spec.md) · [delta](.planning/tkt-vts-areas-crud-001/delta.md) · [entregables](20261030_VTS-AREAS-CRUD-001_Entregables.md)
+
+### [[PROD-ADMIN-001]] — Cierre huecos admin prod
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[anuncios]], [[archivos]], [[encuestas]], [[usuarios]], [[almacen]], [[frontend]]
+- **Objetos clave**: `TiposAnuncioController` CRUD, `PerfilesController` admin CRUD, `AdminArchivosPage` tabs, `APLICAR_FALTANTES.sql`
+- **Fecha cierre**: 2026-10-30
+- **Hub**: [spec](.planning/tkt-prod-admin-001/spec.md) · [delta](.planning/tkt-prod-admin-001/delta.md) · [inventario SQL](../SQL/20261029_PROD-ADMIN-001_INVENTARIO_CAMBIOS.md)
 
 ### [[FE-VTS-CAL-001]] — Calendario comunitario reservas
 

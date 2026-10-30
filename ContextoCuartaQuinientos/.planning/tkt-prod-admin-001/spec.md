@@ -84,29 +84,29 @@ Tras publicar API + SPA en SmarterASP, la prueba funcional reveló:
 
 ### Despliegue BD
 
-- [ ] **CA-1 [M] BD-ARC** — **Dado** prod sin `FechaCreacion` en `arc.vsArchivos` **Cuando** se ejecuta `DB-006` **Entonces** `COL_LENGTH('arc.vsArchivos','FechaCreacion')` IS NOT NULL.
-- [ ] **CA-2 [M] BD-WMS** — **Dado** prod sin `wms.Articulos` **Cuando** se ejecuta `DB-005_wms_schema.sql` **Entonces** `OBJECT_ID('wms.Articulos')` IS NOT NULL.
-- [ ] **CA-3 [M] BD-USR** — **Dado** prod con vistas usr desalineadas **Cuando** se ejecuta `DB-009_fix_views_y_tablas.sql` **Entonces** `SELECT TOP 1 1 FROM usr.vsMascotas` no error.
+- [x] **CA-1 [M] BD-ARC** — **Dado** prod sin `FechaCreacion` en `arc.vsArchivos` **Cuando** se ejecuta `DB-006` **Entonces** `COL_LENGTH('arc.vsArchivos','FechaCreacion')` IS NOT NULL.
+- [x] **CA-2 [M] BD-WMS** — **Dado** prod sin `wms.Articulos` **Cuando** se ejecuta `DB-005_wms_schema.sql` **Entonces** `OBJECT_ID('wms.Articulos')` IS NOT NULL.
+- [x] **CA-3 [M] BD-USR** — **Dado** prod con vistas usr desalineadas **Cuando** se ejecuta `DB-009_fix_views_y_tablas.sql` **Entonces** `SELECT TOP 1 1 FROM usr.vsMascotas` no error.
 
 ### API
 
-- [ ] **CA-4 [M] ENC** — **Dado** encuesta id=1 con preguntas y al menos una respuesta opción **Cuando** `GET /ENC/Encuestas/1/resultados` con JWT admin **Entonces** HTTP 200 y JSON con `preguntas[].opciones[].conteo` numérico.
-- [ ] **CA-5 [M] ARC** — **Dado** BD post CA-1 **Cuando** `GET /ARC/Archivos` JWT admin **Entonces** HTTP 200 (array, puede vacío).
-- [ ] **CA-6 [M] WMS** — **Dado** BD post CA-2 **Cuando** `POST /WMS/Articulos` body válido **Entonces** HTTP 201 (no 400 WMS_SCHEMA_MISSING).
-- [ ] **CA-7 [M] ANM tipos** — **Cuando** `POST /ANM/TiposAnuncio` nombre nuevo **Entonces** 201; duplicado → 409 `TIPO_DUPLICADO`; `PUT`/`DELETE` soft delete coherentes.
-- [ ] **CA-8 [M] SGR perfiles** — **Cuando** `POST /SGR/Perfiles/admin` perfil nuevo **Entonces** 201; `PUT`/`DELETE` admin; perfil con usuarios asignados → delete 409 `PERFIL_EN_USO`.
-- [ ] **CA-9 [M] USR admin** — **Cuando** `POST /USR/Automoviles/admin` con `marcaId` inexistente **Entonces** HTTP 422 `VEH_MARCA_INVALIDA` (no 500). Análogo mascotas `MAS_TIPO_INVALIDO`.
+- [x] **CA-4 [M] ENC** — **Dado** encuesta id=1 con preguntas y al menos una respuesta opción **Cuando** `GET /ENC/Encuestas/1/resultados` con JWT admin **Entonces** HTTP 200 y JSON con `preguntas[].opciones[].conteo` numérico.
+- [x] **CA-5 [M] ARC** — **Dado** BD post CA-1 **Cuando** `GET /ARC/Archivos` JWT admin **Entonces** HTTP 200 (array, puede vacío).
+- [x] **CA-6 [M] WMS** — **Dado** BD post CA-2 **Cuando** `POST /WMS/Articulos` body válido **Entonces** HTTP 201 (no 400 WMS_SCHEMA_MISSING).
+- [x] **CA-7 [M] ANM tipos** — **Cuando** `POST /ANM/TiposAnuncio` nombre nuevo **Entonces** 201; duplicado → 409 `TIPO_DUPLICADO`; `PUT`/`DELETE` soft delete coherentes.
+- [x] **CA-8 [M] SGR perfiles** — **Cuando** `POST /SGR/Perfiles/admin` perfil nuevo **Entonces** 201; `PUT`/`DELETE` admin; perfil con usuarios asignados → delete 409 `PERFIL_EN_USO`.
+- [x] **CA-9 [M] USR admin** — **Cuando** `POST /USR/Automoviles/admin` con `marcaId` inexistente **Entonces** HTTP 422 `VEH_MARCA_INVALIDA` (no 500). Análogo mascotas `MAS_TIPO_INVALIDO`.
 
 ### Frontend
 
-- [ ] **CA-10 [M] UI archivos** — **Dado** admin en `/admin/archivos` **Entonces** pestañas visibles Archivos | Tipos de documento; CRUD tipos sin navegar a otra ruta.
-- [ ] **CA-11 [M] UI anuncios** — **Entonces** pestaña Tipos de anuncio con CRUD; combo de nuevo anuncio recarga tras alta de tipo.
-- [ ] **CA-12 [M] UI perfiles** — **Entonces** botón Nuevo perfil, editar, eliminar (confirmación), columna acciones; enlace Permisos menú se mantiene.
+- [x] **CA-10 [M] UI archivos** — **Dado** admin en `/admin/archivos` **Entonces** pestañas visibles Archivos | Tipos de documento; CRUD tipos sin navegar a otra ruta.
+- [x] **CA-11 [M] UI anuncios** — **Entonces** pestaña Tipos de anuncio con CRUD; combo de nuevo anuncio recarga tras alta de tipo.
+- [x] **CA-12 [M] UI perfiles** — **Entonces** botón Nuevo perfil, editar, eliminar (confirmación), columna acciones; enlace Permisos menú se mantiene.
 
 ### Regresión
 
-- [ ] **CA-R1 [M]** — **Dado** residente **Cuando** `GET /ANM/TiposAnuncio` **Entonces** sigue 200 (solo lectura).
-- [ ] **CA-R2 [M]** — **Dado** admin **Cuando** `PUT /SGR/Perfiles/{id}/permisos-menus` **Entonces** comportamiento idéntico a hoy (INV permisos).
+- [x] **CA-R1 [M]** — **Dado** residente **Cuando** `GET /ANM/TiposAnuncio` **Entonces** sigue 200 (solo lectura).
+- [x] **CA-R2 [M]** — **Dado** admin **Cuando** `PUT /SGR/Perfiles/{id}/permisos-menus` **Entonces** comportamiento idéntico a hoy (INV permisos).
 
 ## Reutilización detectada
 
@@ -123,7 +123,7 @@ Tras publicar API + SPA en SmarterASP, la prueba funcional reveló:
 - [x] Entradas obligatorias en carpeta ticket
 - [x] Must con CA Given/When/Then
 - [x] Causas RC-1..RC-6 con evidencia
-- [ ] Usuario confirma Must MoSCoW (**pendiente revisión design**)
+- [x] Usuario confirma Must MoSCoW (smoke prod 2026-10-30)
 - [x] Instancias scope identificadas
 - [x] Reutilización documentada
 

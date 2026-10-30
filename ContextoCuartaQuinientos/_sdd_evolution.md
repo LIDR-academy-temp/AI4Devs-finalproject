@@ -27,6 +27,8 @@
 | 2026-10-28 | FE-VTS-CAL-001 | visitas-areas, frontend, backend | M | 0 | backend, frontend | No (1 ciclo auditoría en ejecutar) | 1 | N/A | estándar |
 | 2026-10-28 | FE-ENC-RES-001 | encuestas, frontend, backend | S | 0 | backend, frontend | Sí | 0 | N/A | estándar |
 | 2026-10-28 | FE-ENC-RES-001 | encuestas, frontend, backend | S | 0 | backend, frontend | Sí (APROBADO 1ª en revisar) | 0 | N/A | estándar |
+| 2026-10-30 | PROD-RES-001 | encuestas, tickets, visitas-areas, frontend, backend | M | 0 | backend, frontend, database | Sí (retro impl.md) | 0 | N/A | estándar (retro-SDD) |
+| 2026-10-30 | FE-NAV-ENT1-001 | frontend, sgr | S | 0 | frontend, database | Sí (retro impl.md) | 0 | N/A | estándar (retro-SDD) |
 
 ## 2026-10-16 — Fase 1 núcleo cerrada
 
@@ -98,6 +100,26 @@
 - **Tema:** `fe-http-smoke-pre-merge` — cluster **≥3** (FE-VTS-CAL-001, FE-TKT-DET-001, FE-ENC-RES-001): `.http` + credencial smoke residente 401 y GET 500 local; xUnit cubrió contrato — **PROPUESTA** (prioridad media): checklist en `design.md` + credenciales seed documentadas en `.http` / `api-tester`, no rule nueva.
 - **Tema:** `contenido-configurable` — mensaje 403 hardcodeado alineado con deuda ENC existente (`19_guard_contenido_configurable`); sin propuesta nueva.
 - Sin rule/agente nueva obligatoria para auth relajada / sanitización DTO / variant residente (patrones acotados a ENC; escalera design reuso OK).
+
+### prod-retro-sdd. Retro-SDD fixes operación publicada
+
+- Tipo: patrón
+- Fecha: 2026-10-30
+- Tickets: [[PROD-UX-001]], [[PROD-RES-001]]
+- Tema: `sdd-prod-hotfix-retro`
+- Descripción: Sesiones de fixes en prod (residente + admin) sin ticket previo; cierre con carpeta `tkt-prod-*` (spec/design/impl/delta/release + inventario SQL + entregables) en lugar de dejar solo commits.
+- Acción propuesta: Tras hotfix prod multi-dominio, abrir ticket `PROD-*` retro antes de merge (plantilla = PROD-RES-001 / PROD-UX-001).
+- Estado: PATRÓN
+
+### nav-supplement-vs-sgr-hide. Ocultar menú en BD no basta con supplement Web
+
+- Tipo: observación
+- Fecha: 2026-10-30
+- Tickets: [[FE-NAV-ENT1-001]], [[PROD-RES-001]]
+- Tema: `nav-supplement-manifest`
+- Descripción: `supplementApiNavWithManifest` re-añade ítems `implemented:true` ausentes en árbol SGR; `bVisible=0` en PerfilMenus no oculta sidebar hasta manifest `implemented:false` + filtro.
+- Acción propuesta: Documentar en design NAV: toda exclusión de producto requiere manifest + Web; SQL PerfilMenus es alineación opcional.
+- Estado: OBSERVACIÓN
 
 ## Tendencias
 

@@ -6,6 +6,8 @@ import '../styles/bootstrap-pantone.css'
 import '../styles/cq-admin.css'
 import { PageHeader } from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
+import { normalizeEncuestaResultados } from '../features/admin/encuestas/encuestaMappers'
+import { parseEncuestaId } from '../features/encuestas/parseEncuestaId'
 import { apiGet } from '../shared/lib/apiClient'
 import type { EncuestaResultados } from '../shared/types/encuestas'
 
@@ -95,7 +97,8 @@ function ResultadosPreguntas({
 }
 
 export function ResultadosEncuestaPage({ variant = 'admin' }: Props) {
-  const { id } = useParams<{ id: string }>()
+  const { id: idParam } = useParams<{ id: string }>()
+  const encuestaId = parseEncuestaId(idParam)
   const [resultados, setResultados] = useState<EncuestaResultados | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -103,21 +106,30 @@ export function ResultadosEncuestaPage({ variant = 'admin' }: Props) {
 
   const listPath = variant === 'admin' ? '/admin/encuestas' : '/encuestas'
   const detallePath =
-    variant === 'admin' ? `/admin/encuestas/${id}` : `/encuestas/${id}`
+    variant === 'admin'
+      ? `/admin/encuestas/${encuestaId ?? ''}`
+      : `/encuestas/${encuestaId ?? ''}`
 
   const cargar = useCallback(async () => {
-    if (!id) return
+    if (!encuestaId) {
+      setError('Identificador de encuesta no válido.')
+      setResultados(null)
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError(null)
-    const { data, problem, status } = await apiGet<EncuestaResultados>(`/ENC/Encuestas/${id}/resultados`)
+    const { data, problem, status } = await apiGet<EncuestaResultados>(
+      `/ENC/Encuestas/${encuestaId}/resultados`,
+    )
     if (!data) {
       setError(problem?.detail ?? `Error ${status}`)
       setResultados(null)
     } else {
-      setResultados(data)
+      setResultados(normalizeEncuestaResultados(data))
     }
     setLoading(false)
-  }, [id])
+  }, [encuestaId])
 
   useEffect(() => {
     void cargar()

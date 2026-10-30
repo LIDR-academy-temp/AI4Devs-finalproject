@@ -17,6 +17,41 @@ export function collectRutasFromTree(roots: MenuNodoDto[]): string[] {
   return paths
 }
 
+/** Ítems del manifest implementados que falten en el árbol SGR (p. ej. DB-008 no corrido en prod). */
+export function supplementApiNavWithManifest(
+  apiNav: { groups: NavGroup[]; items: ApiNavItem[] },
+  staticItems: NavItem[],
+  staticGroups: NavGroup[],
+): { groups: NavGroup[]; items: ApiNavItem[] } {
+  const apiPaths = new Set(apiNav.items.map((i) => i.path))
+  const missing = staticItems.filter((i) => i.implemented && !apiPaths.has(i.path))
+  if (missing.length === 0) return apiNav
+
+  const resolveGroupKey = (manifestItem: NavItem): string => {
+    const sibling = staticItems.find(
+      (s) => s.group === manifestItem.group && s.implemented && apiPaths.has(s.path),
+    )
+    if (sibling) {
+      const apiSibling = apiNav.items.find((i) => i.path === sibling.path)
+      if (apiSibling) return apiSibling.group
+    }
+    const staticGroup = staticGroups.find((g) => g.key === manifestItem.group)
+    if (staticGroup) {
+      const apiGroup = apiNav.groups.find((g) => g.label === staticGroup.label)
+      if (apiGroup) return apiGroup.key
+    }
+    return manifestItem.group
+  }
+
+  const items: ApiNavItem[] = [...apiNav.items]
+  for (const m of missing) {
+    items.push({ ...m, group: resolveGroupKey(m) })
+    apiPaths.add(m.path)
+  }
+  items.sort((a, b) => a.order - b.order)
+  return { groups: apiNav.groups, items }
+}
+
 export function menuTreeToNav(roots: MenuNodoDto[]): { groups: NavGroup[]; items: ApiNavItem[] } {
   const groups: NavGroup[] = [{ key: 'principal', label: '' }]
   const items: ApiNavItem[] = []

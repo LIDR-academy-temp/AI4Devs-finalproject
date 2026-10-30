@@ -47,6 +47,8 @@
 | **F** | NAV-ROOT-001-F | Integración BOT en web (`/admin/integraciones/bot`) + manifest |
 | **G** | NAV-ROOT-001-G | NTF aviso admin, cierre matriz 15/15, docs + inventario deploy |
 
+> **Entrega 1:** E/F/G ocultos en producto — [[FE-NAV-ENT1-001]] (`implemented: false` + filtro Web + SQL PerfilMenus). Reactivar en entrega 2 al cerrar fases E→G.
+
 ## TKTs relacionados
 
 [[SGR-FE-001]] · [[SGR-BE-030]] · DB-007 · [[FE-VTS-CAL-001]] · [[FE-TKT-DET-001]] · [[FE-040]] (NTF campana)

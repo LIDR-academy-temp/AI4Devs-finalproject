@@ -106,6 +106,21 @@ export const APP_NAV: NavItem[] = NAV_CATALOG_NODES.filter(
   implemented: n.implemented,
 }))
 
+const MANIFEST_HIDDEN_PATHS = new Set(
+  NAV_CATALOG_NODES.filter((n) => !n.implemented && n.path).map((n) => n.path as string),
+)
+
+/** Oculta rutas con implemented:false aunque SGR o supplement las devuelvan. */
+export function filterNavItemsByManifest(items: NavItem[]): NavItem[] {
+  if (MANIFEST_HIDDEN_PATHS.size === 0) return items
+  return items.filter((i) => !MANIFEST_HIDDEN_PATHS.has(i.path))
+}
+
+export function filterNavGroupsForItems(groups: NavGroup[], items: NavItem[]): NavGroup[] {
+  const used = new Set(items.map((i) => i.group))
+  return groups.filter((g) => used.has(g.key))
+}
+
 function pathsForPerfil(perfil: NavProfile): Set<string> {
   return new Set(
     NAV_CATALOG_NODES.filter(

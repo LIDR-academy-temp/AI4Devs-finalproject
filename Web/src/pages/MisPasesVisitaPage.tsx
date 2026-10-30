@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { PaseQrCard } from '../features/visitas/PaseQrCard'
 import { buildCrearPaseBody, paseFormSchema, type PaseFormInput, type PaseFormValues } from '../features/visitas/visitasPaseSchemas'
 import { PaseVigenciaFields } from '../features/visitas/PaseVigenciaFields'
+import { useTiposIdentificacionVisitas } from '../features/admin/visitas/useTiposIdentificacionVisitas'
 import { crearPase, useMisPases } from '../features/visitas/useVisitasPase'
 import { PageHeader } from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
@@ -32,6 +33,7 @@ function estadoBadge(estado: string) {
 
 export function MisPasesVisitaPage() {
   const { pases, loading, error, refetch } = useMisPases()
+  const { tipos, loading: tiposLoading } = useTiposIdentificacionVisitas()
   const [ultimoPase, setUltimoPase] = useState<PaseVisita | null>(null)
   const [selectedPase, setSelectedPase] = useState<PaseVisita | null>(null)
   const [saving, setSaving] = useState(false)
@@ -111,13 +113,19 @@ export function MisPasesVisitaPage() {
               <label className="mb-1 block text-sm font-medium text-neutral-700" htmlFor="tipoIdentificacionId">
                 Tipo ID (opcional)
               </label>
-              <input
+              <select
                 id="tipoIdentificacionId"
-                type="number"
-                min={1}
                 className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-                {...register('tipoIdentificacionId')}
-              />
+                {...register('tipoIdentificacionId', { valueAsNumber: true })}
+                disabled={tiposLoading || tipos.length === 0}
+              >
+                <option value="">Sin especificar</option>
+                {tipos.map((t) => (
+                  <option key={t.tipoIdentificacionId} value={t.tipoIdentificacionId}>
+                    {t.tipoIdentificacion}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-neutral-700" htmlFor="numeroIdentificacion">

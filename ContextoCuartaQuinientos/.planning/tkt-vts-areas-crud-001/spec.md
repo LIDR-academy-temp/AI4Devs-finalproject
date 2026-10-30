@@ -17,8 +17,8 @@ Como **residente**, reservo amenidades desde `/areas-comunes`.
 - Confirmar reserva (solo cancelar admin en este ticket).
 
 ## Criterios de aceptación
-- [ ] CA-1 GET áreas devuelve array camelCase; residente ve áreas reservables.
-- [ ] CA-2 Admin CRUD áreas persiste en `vts.AreasComunes` (soft delete).
-- [ ] CA-3 POST reserva 201 o 409 solape; 422 si área no reservable.
-- [ ] CA-4 Admin listado + calendario + cancelar en UI.
-- [ ] CA-5 Tests API/unit en verde.
+- [x] CA-1 GET áreas devuelve array camelCase; residente ve áreas reservables.
+- [x] CA-2 Admin CRUD áreas persiste en `vts.AreasComunes` (soft delete).
+- [x] CA-3 POST reserva 201 o 409 solape; 422 si área no reservable.
+- [x] CA-4 Admin listado + calendario + cancelar en UI.
+- [x] CA-5 Tests API/unit en verde.

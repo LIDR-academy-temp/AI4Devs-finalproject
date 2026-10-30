@@ -1,13 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { apiGet } from '../../../shared/lib/apiClient'
 import type { EncuestaDetalle } from '../../../shared/types/encuestas'
+import { parseEncuestaId } from '../../encuestas/parseEncuestaId'
 import { normalizeEncuestaDetalle } from './encuestaMappers'
-
-function parseEncuestaId(raw: string | undefined): number | undefined {
-  if (!raw) return undefined
-  const n = Number.parseInt(raw, 10)
-  return Number.isFinite(n) && n > 0 ? n : undefined
-}
 
 export function useEncuestaDetalle(encuestaIdParam: string | undefined) {
   const encuestaId = parseEncuestaId(encuestaIdParam)

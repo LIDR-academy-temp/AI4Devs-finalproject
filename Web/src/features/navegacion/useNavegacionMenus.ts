@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import {
+  filterNavGroupsForItems,
+  filterNavItemsByManifest,
   navGroupsForPerfil,
   navItemsForPerfil,
   type NavGroup,
   type NavItem,
 } from '../../shared/navigation/appNavigation'
-import { collectRutasFromTree, menuTreeToNav } from './menuToNav'
+import { menuTreeToNav, supplementApiNavWithManifest } from './menuToNav'
 import { fetchMenusNavegacion } from './navegacion.api'
 import type { MenuNodoDto } from './types'
 
@@ -35,10 +37,6 @@ export function useNavegacionMenus(): NavegacionState {
 
   const staticGroups = useMemo(() => navGroupsForPerfil(perfil), [perfil])
   const staticItems = useMemo(() => navItemsForPerfil(perfil), [perfil])
-  const staticPaths = useMemo(
-    () => staticItems.filter((i) => i.implemented).map((i) => i.path),
-    [staticItems],
-  )
 
   const refetch = useCallback(async () => {
     if (!session?.token) {
@@ -78,10 +76,31 @@ export function useNavegacionMenus(): NavegacionState {
 
   const apiNav = useMemo(() => (tree.length ? menuTreeToNav(tree) : null), [tree])
 
-  const groups = source === 'api' && apiNav ? apiNav.groups : staticGroups
-  const items = source === 'api' && apiNav ? apiNav.items : staticItems
-  const allowedPaths =
-    source === 'api' && tree.length > 0 ? collectRutasFromTree(tree) : staticPaths
+  const supplementedApiNav = useMemo(() => {
+    if (source !== 'api' || !apiNav) return null
+    return supplementApiNavWithManifest(apiNav, staticItems, staticGroups)
+  }, [source, apiNav, staticItems, staticGroups])
+
+  const rawGroups = useMemo(
+    () => (source === 'api' && supplementedApiNav ? supplementedApiNav.groups : staticGroups),
+    [source, supplementedApiNav, staticGroups],
+  )
+  const rawItems = useMemo(
+    () => (source === 'api' && supplementedApiNav ? supplementedApiNav.items : staticItems),
+    [source, supplementedApiNav, staticItems],
+  )
+  const items = useMemo(
+    () => filterNavItemsByManifest(rawItems),
+    [rawItems],
+  )
+  const groups = useMemo(
+    () => filterNavGroupsForItems(rawGroups, items),
+    [rawGroups, items],
+  )
+  const allowedPaths = useMemo(
+    () => items.filter((i) => i.implemented).map((i) => i.path),
+    [items],
+  )
 
   return {
     loading,

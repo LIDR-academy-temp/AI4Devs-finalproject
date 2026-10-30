@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { collectRutasFromTree, isPathAllowedByMenu, menuTreeToNav } from './menuToNav'
+import {
+  collectRutasFromTree,
+  isPathAllowedByMenu,
+  menuTreeToNav,
+  supplementApiNavWithManifest,
+} from './menuToNav'
+import type { NavGroup, NavItem } from '../../shared/navigation/appNavigation'
 import type { MenuNodoDto } from './types'
 
 const sampleTree: MenuNodoDto[] = [
@@ -42,5 +48,51 @@ describe('menuToNav', () => {
 
   it('permite /perfil aunque no este en el menu JWT (cuenta propia)', () => {
     expect(isPathAllowedByMenu('/perfil', ['/admin/casas'])).toBe(true)
+  })
+
+  it('supplementApiNavWithManifest agrega rutas faltantes bajo el grupo API del manifest', () => {
+    const comunidadTree: MenuNodoDto[] = [
+      {
+        menuId: 53,
+        titulo: 'Mi Comunidad',
+        ruta: null,
+        icono: null,
+        orden: 19,
+        hijos: [
+          {
+            menuId: 90,
+            titulo: 'Áreas Comunes',
+            ruta: '/areas-comunes',
+            icono: 'tree',
+            orden: 24,
+            hijos: [],
+          },
+        ],
+      },
+    ]
+    const apiNav = menuTreeToNav(comunidadTree)
+    const staticGroups: NavGroup[] = [{ key: 'comunidad', label: 'Mi Comunidad' }]
+    const staticItems: NavItem[] = [
+      {
+        path: '/areas-comunes',
+        label: 'Áreas Comunes',
+        icon: apiNav.items[0].icon,
+        group: 'comunidad',
+        order: 24,
+        implemented: true,
+      },
+      {
+        path: '/visitas/pases',
+        label: 'Pases QR',
+        icon: apiNav.items[0].icon,
+        group: 'comunidad',
+        order: 25,
+        implemented: true,
+      },
+    ]
+    const merged = supplementApiNavWithManifest(apiNav, staticItems, staticGroups)
+    const visitas = merged.items.find((i) => i.path === '/visitas/pases')
+    expect(visitas).toBeDefined()
+    expect(visitas!.group).toBe('menu-53')
   })
 })

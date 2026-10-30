@@ -24,6 +24,7 @@ Demostrable en **SPA React**: los **12 dominios operativos** del readme (15 mód
 | 7b | MAS | [MAS-BE-017](tkt-mas-be-017/_index.md) | [FE-049](tkt-fe-049/_index.md) | **ARCHIVADO** ✓ |
 | 8 | WMS | [WMS-BE-029](tkt-wms-be-029/_index.md) | [FE-050](tkt-fe-050/_index.md) | **ARCHIVADO** ✓ |
 | — | TKT, FNZ, NTF, Dashboard | Fase 1 | Fase 1 | Mantener |
+| — | Nav E/F/G off | — | [FE-NAV-ENT1-001](tkt-fe-nav-ent1-001/_index.md) | **ARCHIVADO** ✓ |
 
 ## Orden recomendado de `/ejecutar`
 

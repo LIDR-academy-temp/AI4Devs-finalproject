@@ -9,6 +9,8 @@ Docs/
 *.env.local
 .env.*.local
 **/fase1-smoke.env
+test.txt
+**/credenciales.local.*
 appsettings.Development.json
 appsettings.Production.json
 appsettings.*.local.json
@@ -22,6 +24,7 @@ bin/
 obj/
 .vs/
 *.user
+*.bak
 TestResults/
 
 # --- Agent skills (instalar con npx skills@latest add …) ---

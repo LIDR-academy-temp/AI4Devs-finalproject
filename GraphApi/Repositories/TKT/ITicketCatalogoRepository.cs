@@ -11,7 +11,7 @@ public interface ITicketCatalogoRepository
 
     Task<int?> ResolveCategoriaIdAsync(string categoria, IDbTransaction tx);
 
-    Task<int> ResolveCanalIdAsync(string canal, IDbTransaction tx);
+    Task<int?> ResolveCanalIdAsync(string canal, IDbTransaction tx);
 
     Task<IReadOnlyList<CatalogoItemDto>> ListarCategoriasAsync(CancellationToken ct = default);
 

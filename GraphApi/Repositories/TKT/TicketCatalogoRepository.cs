@@ -61,9 +61,28 @@ public sealed class TicketCatalogoRepository : ITicketCatalogoRepository
         return _db.QuerySingleOrDefaultAsync<int?>(sql, new { Nombre = categoria }, tx);
     }
 
-    public Task<int> ResolveCanalIdAsync(string canal, IDbTransaction tx)
-        // tkt.CanalesTicket no existe en producción — función de canales no disponible.
-        => throw new NotSupportedException("Canales de ticket no disponibles en este ambiente.");
+    public async Task<int?> ResolveCanalIdAsync(string canal, IDbTransaction tx)
+    {
+        if (!SqlSchemaCompat.HasTable(_db, "tkt", "CanalesTicket"))
+        {
+            return null;
+        }
+
+        var id = await _db.QuerySingleOrDefaultAsync<int?>(
+            """
+            SELECT CanalID FROM tkt.CanalesTicket
+            WHERE Canal = @Nombre AND bEliminado = 0;
+            """,
+            new { Nombre = canal },
+            tx);
+
+        if (id is null && !string.IsNullOrWhiteSpace(canal))
+        {
+            throw new InvalidOperationException($"Canal de ticket desconocido: {canal}");
+        }
+
+        return id;
+    }
 
     public async Task<IReadOnlyList<CatalogoItemDto>> ListarCategoriasAsync(CancellationToken ct = default)
     {

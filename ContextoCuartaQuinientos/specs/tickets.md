@@ -102,6 +102,7 @@ Toda transición notifica al solicitante con el tipo `TICKET_ESTADO` vía `INoti
 
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
+| 2026-10-30 | [[PROD-RES-001]] | `POST /TKT/Tickets` tolera ausencia de `tkt.CanalesTicket`; notificación admins no revierte alta. |
 | 2026-10-23 | [[FE-CRUD-001]] | Admin tickets: tabla filtrable + panel detalle (patrón CRUD admin) |
 | 2026-10-27 | [[FE-CRUD-004]] | Residente: crear ticket vía REST `useCrearTicket`; eliminado `tickets.gql.ts` |
 | 2026-10-28 | [[FE-TKT-DET-001]] | Detalle/comentarios JWT; CRUD admin ticket; CRUD catálogos CAT/PRI; EST-2 admin; `/admin/tickets/catalogos` |

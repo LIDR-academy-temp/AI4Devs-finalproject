@@ -20,4 +20,4 @@
 2. Publicar GraphApi + Web.
 
 ## Estado
-LISTO PARA PR (pendiente deploy runasp + smoke manual).
+**ARCHIVADO** — smoke prod 2026-10-30; `dotnet test` CuartaVisitas 25/25.

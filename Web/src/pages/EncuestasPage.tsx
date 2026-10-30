@@ -42,15 +42,17 @@ export function EncuestasPage() {
                   <span className="shrink-0 rounded bg-surface-alt px-2 py-1 text-xs text-neutral">
                     Ya respondiste
                   </span>
-                ) : (
+                ) : e.encuestaId > 0 ? (
                   <Link
                     to={`/encuestas/${e.encuestaId}`}
                     className="shrink-0 cursor-pointer rounded bg-primary px-3 py-1 text-sm text-white hover:bg-primary-dark"
                   >
                     Responder
                   </Link>
+                ) : (
+                  <span className="shrink-0 text-xs text-neutral">Encuesta no disponible</span>
                 )}
-                {puedeVerResultadosEncuesta(e) && (
+                {e.encuestaId > 0 && puedeVerResultadosEncuesta(e) && (
                   <Link
                     to={`/encuestas/${e.encuestaId}/resultados`}
                     className="cursor-pointer text-sm text-primary hover:underline"

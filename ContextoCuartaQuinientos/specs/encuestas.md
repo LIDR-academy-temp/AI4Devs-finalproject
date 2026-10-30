@@ -77,6 +77,7 @@ Dominio de encuestas estructuradas (esquema `enc`). El administrador crea encues
 
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
+| 2026-10-30 | [[PROD-RES-001]] | FE residente normaliza PascalCase; «Texto libre» en envío; API fix GROUP BY resultados opciones. |
 | 2026-10-28 | [[FE-ENC-RES-001]] | GET resultados autorizado residente (participó/cierre); DTO público sin textos libres crudos; UI `/encuestas/:id/resultados`. |
 | 2026-10-26 | [[FE-MOD-ENC-001]] | Admin encuestas 3 superficies; CRUD JWT preguntas/opciones anidado; publicar con gate de preguntas; spec endpoints Cuarta actualizado. |
 | 2026-10-26 | [[FE-CRUD-002]] | Bandeja admin + `ResultadosEncuestaPage` al patrón CRUD admin; fix `apiGet`; publicar con `ConfirmDialog` (sin cambio API). |
