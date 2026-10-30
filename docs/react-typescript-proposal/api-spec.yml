@@ -1,0 +1,935 @@
+openapi: 3.0.3
+
+info:
+  title: VES Documents API
+  version: 0.1.0
+  description: |
+    Contrato HTTP para la modernización incremental del módulo documental de VES.
+
+    La API actúa como límite entre el frontend React + TypeScript y la
+    infraestructura legacy. El frontend no debe conocer DataSet, servicios SOAP,
+    procedimientos almacenados ni nombres de esquemas SQL.
+
+    La seguridad real queda fuera del alcance de este proyecto. Durante el MVP
+    se utilizará un mock de seguridad que proporcione una identidad y permisos
+    simulados para validar los flujos funcionales. No se implementará inicio de
+    sesión real, validación de tokens, proveedor de identidad ni integración con
+    SeguridadVES.
+
+    Las respuestas 401 y 403 representan escenarios funcionales simulados:
+    ausencia de identidad y usuario sin el permiso requerido, respectivamente.
+    Por esta razón el contrato no define un securityScheme productivo.
+
+tags:
+  - name: Document Types
+    description: Catálogo de tipos documentales.
+  - name: Documents
+    description: Consulta y mantenimiento de metadatos documentales.
+  - name: Document Files
+    description: Carga y descarga del archivo asociado a un documento.
+  - name: Comments
+    description: Comentarios, respuestas, estados e historial de comentarios.
+
+paths:
+  /api/document-types:
+    get:
+      tags: [Document Types]
+      summary: Lista los tipos documentales activos
+      description: |
+        Devuelve el catálogo de tipos documentales disponibles para clasificar
+        documentos. Los tipos inactivos no deben ofrecerse para crear nuevos
+        documentos.
+      responses:
+        '200':
+          description: Catálogo de tipos documentales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentType'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/documents:
+    get:
+      tags: [Documents]
+      summary: Lista documentos con paginación y filtros
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: documentTypeId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: search
+          in: query
+          description: Texto de búsqueda según las reglas del módulo documental.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Resultado paginado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedDocuments'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Documents]
+      summary: Crea los metadatos de un documento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDocumentRequest'
+      responses:
+        '201':
+          description: Documento creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/documents/{id}:
+    parameters:
+      - $ref: '#/components/parameters/DocumentId'
+
+    get:
+      tags: [Documents]
+      summary: Obtiene el detalle de un documento
+      responses:
+        '200':
+          description: Detalle del documento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags: [Documents]
+      summary: Actualiza los metadatos de un documento
+      description: |
+        Actualiza los metadatos permitidos del documento.
+
+        Reglas de ciclo de vida acordadas para el MVP:
+        - un documento publicado no puede volver a borrador;
+        - un documento público representa una versión definitiva publicada;
+        - un documento que deba retirarse conservando trazabilidad pasa a estado INACTIVE.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDocumentRequest'
+      responses:
+        '200':
+          description: Documento actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            La actualización viola una regla de estado del documento,
+            por ejemplo intentar volver de PUBLISHED a DRAFT.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Documents]
+      summary: Elimina físicamente un documento cuando cumple las reglas del MVP
+      description: |
+        La eliminación física solo puede realizarla el mismo usuario que creó el
+        documento y únicamente cuando no existe trazabilidad posterior a la
+        operación inicial.
+
+        La creación y la carga inicial forman parte de la operación inicial.
+        La eliminación física no procede si:
+        - otro usuario ya consultó o descargó el documento;
+        - el creador realizó cambios posteriores;
+        - existen comentarios, respuestas u otra actividad posterior.
+
+        Si no procede la eliminación física, el documento debe conservarse y
+        retirarse mediante desactivación, no mediante borrado.
+      responses:
+        '204':
+          description: Documento eliminado físicamente
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: El documento posee trazabilidad o no cumple las condiciones para eliminación física
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/documents/{id}/file:
+    parameters:
+      - $ref: '#/components/parameters/DocumentId'
+
+    post:
+      tags: [Document Files]
+      summary: Carga el archivo asociado a un documento
+      description: |
+        La carga utiliza multipart/form-data.
+
+        Formatos permitidos inicialmente:
+        - PDF: .pdf
+        - Microsoft Word: .doc, .docx
+        - Microsoft Excel: .xls, .xlsx
+        - Microsoft PowerPoint: .pptx
+
+        Tamaño máximo inicial por archivo: 25 MB (26,214,400 bytes).
+
+        El backend debe validar tamaño y tipo de archivo aunque el frontend
+        aplique las mismas restricciones.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Archivo PDF, DOC, DOCX, XLS, XLSX o PPTX de hasta 25 MB.
+                  x-allowed-extensions:
+                    - .pdf
+                    - .doc
+                    - .docx
+                    - .xls
+                    - .xlsx
+                    - .pptx
+                  x-max-size-bytes: 26214400
+            encoding:
+              file:
+                contentType: >-
+                  application/pdf,
+                  application/msword,
+                  application/vnd.openxmlformats-officedocument.wordprocessingml.document,
+                  application/vnd.ms-excel,
+                  application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,
+                  application/vnd.openxmlformats-officedocument.presentationml.presentation
+      responses:
+        '200':
+          description: Archivo asociado correctamente al documento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentFileMetadata'
+        '400':
+          description: Solicitud inválida, archivo ausente o archivo vacío
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          description: El archivo supera el tamaño máximo permitido de 25 MB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '415':
+          description: La extensión o el tipo MIME del archivo no está permitido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags: [Document Files]
+      summary: Descarga el archivo asociado a un documento
+      description: |
+        La descarga debe conservar el nombre del archivo y devolver el Content-Type
+        correspondiente al archivo almacenado. La API valida el permiso antes de
+        entregar el binario.
+      responses:
+        '200':
+          description: Archivo del documento
+          content:
+            application/pdf:
+              schema: {type: string, format: binary}
+            application/msword:
+              schema: {type: string, format: binary}
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema: {type: string, format: binary}
+            application/vnd.ms-excel:
+              schema: {type: string, format: binary}
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: {type: string, format: binary}
+            application/vnd.openxmlformats-officedocument.presentationml.presentation:
+              schema: {type: string, format: binary}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Documento inexistente o sin archivo asociado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/documents/{documentId}/comments:
+    parameters:
+      - $ref: '#/components/parameters/DocumentIdForComments'
+
+    get:
+      tags: [Comments]
+      summary: Consulta los comentarios de un documento
+      description: Devuelve los comentarios organizados en hilos con sus respuestas.
+      responses:
+        '200':
+          description: Comentarios del documento
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Comments]
+      summary: Crea un comentario raíz en un documento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Comentario creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/documents/{documentId}/comments/{commentId}/replies:
+    parameters:
+      - $ref: '#/components/parameters/DocumentIdForComments'
+      - $ref: '#/components/parameters/CommentId'
+
+    post:
+      tags: [Comments]
+      summary: Responde a un comentario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Respuesta creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/documents/{documentId}/comments/{commentId}:
+    parameters:
+      - $ref: '#/components/parameters/DocumentIdForComments'
+      - $ref: '#/components/parameters/CommentId'
+
+    put:
+      tags: [Comments]
+      summary: Edita un comentario
+      description: El autor puede editar su comentario mientras esté abierto, sujeto a la política de seguridad.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCommentRequest'
+      responses:
+        '200':
+          description: Comentario actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Comments]
+      summary: Archiva o da de baja lógica un comentario
+      description: |
+        La eliminación no borra físicamente el historial. Debe representar
+        archivado o baja lógica salvo autorización explícita para otro comportamiento.
+      responses:
+        '204':
+          description: Comentario archivado o dado de baja lógica
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/documents/{documentId}/comments/{commentId}/status:
+    parameters:
+      - $ref: '#/components/parameters/DocumentIdForComments'
+      - $ref: '#/components/parameters/CommentId'
+
+    patch:
+      tags: [Comments]
+      summary: Cambia el estado de un comentario
+      description: |
+        Cada cambio de estado debe guardar quién lo realizó y cuándo.
+        El historial de transiciones es append-only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeCommentStatusRequest'
+      responses:
+        '200':
+          description: Estado actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/documents/{documentId}/comments/history:
+    parameters:
+      - $ref: '#/components/parameters/DocumentIdForComments'
+
+    get:
+      tags: [Comments]
+      summary: Consulta el historial de cambios de estado de los comentarios
+      description: |
+        Devuelve las transiciones de estado almacenadas de forma append-only para
+        reconstruir cambios como Resuelto -> Reabierto -> Archivado.
+      responses:
+        '200':
+          description: Historial de estados de los comentarios
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CommentStatusHistory'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  parameters:
+    DocumentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+
+    DocumentIdForComments:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+
+    CommentId:
+      name: commentId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+
+  responses:
+    BadRequest:
+      description: Datos o parámetros inválidos
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    Unauthorized:
+      description: No existe una identidad simulada en el contexto de la solicitud
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    Forbidden:
+      description: La identidad simulada no posee el permiso funcional requerido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    Conflict:
+      description: Conflicto con el estado actual del recurso o una regla de negocio
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    InternalError:
+      description: Error interno controlado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+  schemas:
+    DocumentType:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        status:
+          type: string
+          description: Estado del tipo documental según el catálogo de VES.
+
+    DocumentStatus:
+      type: string
+      description: |
+        Estado funcional definido para el MVP.
+        PUBLISHED no puede volver a DRAFT.
+      enum:
+        - DRAFT
+        - PUBLISHED
+        - INACTIVE
+
+    CommentStatus:
+      type: string
+      description: |
+        Valores del contrato API para los estados funcionales de comentarios:
+        Abierto (open), En revisión (in_review), Resuelto (resolved),
+        Reabierto (reopened) y Archivado (archived).
+      enum:
+        - open
+        - in_review
+        - resolved
+        - reopened
+        - archived
+
+    Document:
+      type: object
+      required:
+        - id
+        - documentTypeId
+        - title
+        - isPublic
+        - status
+      properties:
+        id:
+          type: integer
+          format: int64
+        documentTypeId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        summary:
+          type: string
+          nullable: true
+        isPublic:
+          type: boolean
+          description: |
+            Indica que el documento es una versión definitiva publicada válida
+            para consulta por entes externos. Solo debe ser true cuando el estado
+            del documento sea PUBLISHED.
+        status:
+          $ref: '#/components/schemas/DocumentStatus'
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        publishedBy:
+          type: string
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        fileName:
+          type: string
+          nullable: true
+
+    DocumentSummary:
+      allOf:
+        - $ref: '#/components/schemas/Document'
+
+    CreateDocumentRequest:
+      type: object
+      required:
+        - documentTypeId
+        - title
+      properties:
+        documentTypeId:
+          type: integer
+          format: int64
+        title:
+          type: string
+          minLength: 1
+        summary:
+          type: string
+          nullable: true
+        isPublic:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/DocumentStatus'
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+      additionalProperties: false
+
+    UpdateDocumentRequest:
+      type: object
+      minProperties: 1
+      properties:
+        documentTypeId:
+          type: integer
+          format: int64
+        title:
+          type: string
+          minLength: 1
+        summary:
+          type: string
+          nullable: true
+        isPublic:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/DocumentStatus'
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+      additionalProperties: false
+
+    PagedDocuments:
+      type: object
+      required:
+        - items
+        - page
+        - pageSize
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentSummary'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+
+    DocumentFileMetadata:
+      type: object
+      required:
+        - fileName
+        - contentType
+        - fileSize
+      properties:
+        fileName:
+          type: string
+        contentType:
+          type: string
+          description: MIME type almacenado para el archivo.
+        fileSize:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 26214400
+
+    Comment:
+      type: object
+      required:
+        - id
+        - documentId
+        - text
+        - status
+        - author
+        - createdAt
+        - updatedAt
+        - replies
+      properties:
+        id:
+          type: integer
+          format: int64
+        documentId:
+          type: integer
+          format: int64
+        parentCommentId:
+          type: integer
+          format: int64
+          nullable: true
+        text:
+          type: string
+          minLength: 1
+        status:
+          $ref: '#/components/schemas/CommentStatus'
+        author:
+          type: object
+          required: [login]
+          properties:
+            login:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resolvedBy:
+          type: string
+          nullable: true
+        documentVersion:
+          type: string
+          nullable: true
+        replies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+
+    CreateCommentRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+      additionalProperties: false
+
+    UpdateCommentRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+      additionalProperties: false
+
+    ChangeCommentStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/CommentStatus'
+      additionalProperties: false
+
+    CommentStatusHistory:
+      type: object
+      description: |
+        Registro append-only de una transición de estado de un comentario.
+        Los registros históricos no se actualizan ni eliminan cuando el comentario
+        vuelve a cambiar de estado.
+      required:
+        - id
+        - commentId
+        - newStatus
+        - changedBy
+        - changedAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        commentId:
+          type: integer
+          format: int64
+        previousStatus:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/CommentStatus'
+        newStatus:
+          $ref: '#/components/schemas/CommentStatus'
+        changedBy:
+          type: string
+          description: Login del usuario que realizó la transición.
+        changedAt:
+          type: string
+          format: date-time
+
+    ApiError:
+      type: object
+      description: |
+        Formato JSON común para errores. La documentación exige consistencia,
+        pero no fija todavía un catálogo definitivo de códigos de error.
+      required:
+        - message
+      properties:
+        code:
+          type: string
+          nullable: true
+        message:
+          type: string
+        details:
+          type: array
+          nullable: true
+          items:
+            type: string

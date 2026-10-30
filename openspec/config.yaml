@@ -1,0 +1,138 @@
+schema: spec-driven
+githubCopilot:
+  cloudAgent: true
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+context: |
+  Tech stack (VES): three separate components under VES/ —
+  Bccr.Supen.Ves.UI (React 19, JavaScript/JSX, Vite, Vitest + React Testing Library, Material UI v7),
+  Bccr.Supen.Ves.Api (.NET 8 / ASP.NET Core, MSTest/xUnit),
+  Bccr.Supen.Ves.Mapi (.NET 8 / ASP.NET Core, EF Core 8, SQL Server + stored procedures owned by DBA, MSTest).
+  Architecture (VES): UI -> API -> MAPI -> SQL Server. API: API Controller -> SI.SG -> IRequestsHandler -> MAPI over HTTP.
+  MAPI: MAPI Controller -> BW (business) -> DA (data access) -> EF Core / stored procedures -> SQL Server.
+  The UI only calls the API (never MAPI or SQL Server). The two Bccr.Supen.Ves.Abstracciones trees (API and MAPI) are separate, not a shared library.
+  Domain (VES): BCCR SUPEN VES — STI and SEC users; current planned change: original Documentos module (see openspec/changes/add-ves-documentos-module when present). Do not make this a universal requirement for unrelated changes.
+  Language (VES): code, routes, DTO properties, stored procedure names, comments and documentation follow the existing Spanish conventions of each component; keep real identifiers unchanged.
+
+  Project documentation (authoritative within its verified scope): All artifact creation and implementation MUST follow the project's technical context in docs/ (ai-specs/ holds agents and skills only). Read and apply these when creating or implementing:
+  - docs/base-standards.md — core principles, source-of-truth hierarchy, language standards, links to backend/frontend/docs standards (replaces ai-specs/specs/base-standards.mdc)
+  - docs/backend-standards.md — API and MAPI: architecture, data access, testing, security (backend changes) (replaces ai-specs/specs/backend-standards.mdc)
+  - docs/frontend-standards.md — React 19/Vite UI, UI/UX (frontend changes) (replaces ai-specs/specs/frontend-standards.mdc)
+  - docs/api-spec.yml — API contracts and endpoint definitions (replaces ai-specs/specs/api-spec.yml)
+  - docs/data-model.md — data contracts (DTOs of Abstracciones); the SQL schema is documented in MAPI Documentacion/SCHEMA.md and owned by DBA (replaces ai-specs/specs/data-model.md)
+  - docs/documentation-standards.md — docs structure and maintenance (replaces ai-specs/specs/documentation-standards.mdc)
+  - docs/development_guide.md — how to configure, run and test MAPI, API and UI
+  - docs/openspec-tasks-mandatory-steps.md — mandatory steps for every tasks.md
+  - Component-specific README.md, AGENT.md and SPEC.md under VES/Bccr.Supen.Ves.* take precedence where they differ
+  For implementation: adopt the relevant agent from ai-specs/agents/ (e.g. backend-developer.md for API/MAPI, frontend-developer.md for UI) when the referenced agent file exists; otherwise use the applicable VES docs and the available OpenSpec opsx workflow commands/skills.
+
+  Verification policy for OpenSpec documentation (VES):
+  - Read docs/VERIFICACIONES_PENDIENTES.md, docs/VERIFICACIONES_PENDIENTES_FRONTEND.md, docs/VERIFICACIONES_PENDIENTES_MODELOS.md and docs/VERIFICACIONES_PENDIENTES_TRANSVERSALES.md when a change touches their topics. These files were present in the consolidated documentation package.
+  - Distinguish approved requirements, code-observed behavior, deployment-specific observations, historical references and unresolved verification items (CR/V/V-DAT/V-T). Do not silently promote an unresolved claim to a verified contract.
+  - docs/api-spec.yml is a representative API reference, not an exhaustive runtime inventory; compare affected routes, DTOs, authentication and response behavior against the relevant implementation and approved specs before asserting compatibility.
+  - For documentation-only requests, edit only explicitly authorized documentation (Markdown/YAML); do not modify application code, tests, project dependencies, environment configuration, SQL, Azure DevOps, or release infrastructure. Validate the documentation changes and record what could not be checked.
+  - For authorized implementation requests, preserve the original mandatory test execution, report generation and documentation update rules below; do not claim a test passed if it was not executed. Request approval before external, mutating or privileged operations.
+  - The agent and code paths mentioned here were not present in the supplied documentation-only snapshot; confirm their actual names and presence in the working repository before following them. Never invent replacements.
+
+  Global rules (original _global, preserved):
+  - Before creating any artifact, read and apply docs/base-standards.md
+  - For backend-related artifacts (API and/or MAPI), read docs/backend-standards.md and adopt guidelines from ai-specs/agents/backend-developer.md
+  - For frontend-related artifacts (UI), read docs/frontend-standards.md and adopt guidelines from ai-specs/agents/frontend-developer.md
+  - Use docs/api-spec.yml and docs/data-model.md for API and data consistency in specs and tasks
+  - Before creating tasks.md, read docs/openspec-tasks-mandatory-steps.md and the README.md, AGENT.md and SPEC.md of each affected component
+  - Identify the affected component(s) (UI, API, MAPI) in every artifact; the UI must never call MAPI or SQL Server directly
+
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+rules:
+  # The original _global rules are preserved in context because _global is not a spec-driven artifact.
+  # Rules for backend-related changes
+  tasks:
+    - For documentation-only changes, include documentary validation and traceability tasks only; do not require software build, test execution, branches or deployments unless separately authorized.
+    - For authorized implementation changes, preserve all mandatory testing and documentation steps below; distinguish blocked tests from passing tests.
+    - Break tasks into chunks of max 2 hours
+    - For backend changes, follow the backend implementation plan structure
+    - "All backend tasks must include mandatory steps: Create Feature Branch, Review/Update Tests, Run Tests, Manual Testing, Documentation Update"
+    - For UI changes or UI-API integration also include E2E Testing with Playwright MCP (the agent must execute it)
+    - Report path for verification reports - openspec/changes/<change-name>/specs/<capability>/reports/YYYY-MM-DD-step-N+1-unit-test-and-db-verification.md
+  # Backend-specific implementation rules (original backend section; preserved as tasks guidance)
+    - |
+      Adopt backend-developer role; clean architecture
+      layers [VES: respect the existing API Controller -> SI.SG -> IRequestsHandler and MAPI Controller -> BW -> DA layers];
+      all implementation follows TDD [VES: test-first when it adds value; tests are mandatory by risk and behavior].
+      Branch naming: VES: feature/[ticket-id] or feature/[change-name], no -backend suffix;
+      base branch dev for UI and MAPI, main for API, per each repository README/AGENT.md].
+    - |
+      MANDATORY steps in backend implementation plans —
+      Step 0: Create Feature Branch (FIRST).
+      Step N: Review and update existing unit tests (MSTest/xUnit; do not introduce Jest or other frameworks).
+      Step N+1: Run unit tests and verify database state (with report artifact; database baseline only when the run can touch a real SQL Server).
+      Step N+2: Manual endpoint testing with curl (agent must execute; API end to end, MAPI directly when its contract changes).
+      Step N+3: Update technical documentation (per docs/documentation-standards.md).
+      [VES: E2E Testing with Playwright MCP is Step N+3 and documentation is Step N+4, as defined in docs/openspec-tasks-mandatory-steps.md]
+    - |
+      Common implementation order — validation function, service method,
+      controller method, route, then unit tests (success, validation errors, 404,
+      reference validation, server errors, edge cases).
+      [VES: MAPI — DA (stored procedure mapping) -> BW (rules/validation) -> MAPI controller; API — DTOs/contracts in Abstracciones
+      -> SI.SG gateway -> API controller (route, [Authorize], api-version); then unit tests per layer. SQL schema/stored procedure changes go through DBA.]
+    - |
+      Testing — review/update all impacted tests; new tests passing; full suite green;
+      restore database after tests; manual curl on new endpoints;
+      CREATE/UPDATE/DELETE tests restore DB; cover validation and 404 errors.
+      [VES: dotnet build + dotnet test of each affected solution; unit tests must not need SQL Server; restore test data
+      through application operations or the DBA; never alter schema/stored procedures or generate EF migrations.]
+    - |
+      Documentation — data-model changes → VES: docs/data-model.md and MAPI Documentacion/SCHEMA.md;
+      API changes → docs/api-spec.yml and the API endpoint guide;
+      standards changes → relevant docs/*-standards.md]; VES: Spanish, preserving real identifiers.
+    - Error responses must specify JSON bodies and HTTP status mapping.
+    - Verification checklist covers code quality, functionality, testing, integration, documentation updates.
+  # Frontend-specific implementation rules (original frontend section; preserved as tasks guidance)
+    - |
+      Adopt frontend-developer role; React 19 + JavaScript/JSX + Vite (no TypeScript, no Create React App); Material UI v7 for new visual code;
+      branch feature/[ticket-id] or feature/[change-name] from dev.
+    - |
+      Testing — Vitest + React Testing Library (no Jest, no Cypress); from Bccr.Supen.Ves.UI/Codigo run npm run lint, npm test and npm run build:local
+      (never build:pruebas or build:produccion as local validation, they increment the package.json version).
+    - UI changes that affect user workflows require E2E Testing with Playwright MCP executed by the agent against the running UI -> API -> MAPI stack.
+    - The UI consumes only Bccr.Supen.Ves.Api through infraestructura/httpCliente.js and Constantes.js/configuration; never hard-code environment URLs or secrets.
+
+  # Rules for backend implementation plans and specs (original spec section; mapped to design for implementation plans)
+  design:
+    - When creating backend implementation plans or specs, follow the Backend Implementation Plan Template Structure
+    - |
+      All backend plans must include these MANDATORY sections:
+      1. Header with ticket ID and feature name
+      2. VES does not require DDD; describe the API/SI.SG/MAPI/BW/DA responsibilities instead
+      3. Architecture Context (Domain, Application, Presentation layers) [adapt to VES: API Controller -> SI.SG -> IRequestsHandler -> MAPI; MAPI Controller -> BW -> DA -> SQL Server]
+      4. Implementation Steps (must start with Step 0: Create Feature Branch)
+      5. Implementation Order (numbered list)
+      6. Testing Checklist with mandatory validations
+      7. Error Response Format
+      8. Dependencies
+      9. Notes
+      10. Next Steps After Implementation
+      11. Implementation Verification
+    - Apply the implementation-plan sections above when the design concerns a backend implementation; behavior requirements belong in the specs artifact.
+
+  # Specifications describe behavior and evidence, not a mandatory internal class-by-class implementation plan.
+  specs:
+    - Define observable requirements, scenarios, acceptance criteria and applicable API/data contracts; use docs/api-spec.yml and docs/data-model.md only within their documented and verified scope.
+    - Label unresolved CR/V/V-DAT/V-T evidence explicitly rather than inventing behavior or altering the implementation.
+
+  # Proposal-specific documentation and approval safeguards.
+  proposal:
+    - Identify affected UI, API and/or MAPI components, documentation owners, approvals required and unresolved verification items before proposing work.
+    - Distinguish documentation-only changes from software implementation; do not infer permission to implement from permission to update documentation.
+
+# Apply guidance is advisory and does not grant permission to execute changes.
+operations:
+  apply:
+    guidance:
+      - For authorized implementation, execute applicable unit, manual and E2E tests as required by docs/openspec-tasks-mandatory-steps.md; generate verification reports and update affected technical documentation before marking tasks complete.
+      - If a test or infrastructure check cannot be run with available authorized access, record the block and keep the corresponding task unverified rather than asserting a pass.
+      - For documentation-only apply work, preserve the scope restriction and verify YAML, links, references and diffs without touching software or databases.

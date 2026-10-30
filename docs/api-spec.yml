@@ -1,0 +1,483 @@
+openapi: 3.0.3
+info:
+  title: Bccr.Supen.Ves.Api
+  description: |
+    Especificación de referencia para el API REST de orquestación de VES
+    (Valores de Entidades Supervisadas), desarrollado con .NET 8 y
+    ASP.NET Core.
+
+    Esta es la API que consume la UI. No es la API MAPI: los controladores
+    de este componente delegan en `SI.SG`, que realiza llamadas HTTP al MAPI
+    mediante `IRequestsHandler`. MAPI contiene sus propias capas
+    Controller → BW → DA y acceso a SQL Server.
+
+    La especificación documenta un conjunto representativo de operaciones,
+    no un inventario exhaustivo. Las rutas y contratos completos se definen
+    por los atributos de los controladores y los DTOs de
+    `Bccr.Supen.Ves.Api/Codigo`. Las rutas versionadas usan el parámetro
+    `api-version=1.0`.
+  version: 1.0.0
+  x-documentation-review:
+    reviewDate: '2026-10-28'
+    status: 'Referencia parcial de VES; contratos y comportamiento por ambiente pendientes de verificar contra el código y pruebas de integración.'
+    scope: 'API de orquestación, no MAPI; las operaciones descritas son representativas, no exhaustivas.'
+    documentationLinks:
+      - './data-model.md'
+      - '../VES/Bccr.Supen.Ves.Api/SPEC.md'
+      - '../VES/Bccr.Supen.Ves.Mapi/Documentacion/SCHEMA.md'
+    warning: 'No promover ejemplos ni x-verification-status del archivo a evidencia independiente del runtime.'
+
+
+servers:
+  - url: https://localhost:44366
+    description: API local mediante IIS Express (perfil IIS-development)
+  - url: http://localhost:62525
+    description: API local mediante Kestrel
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Health
+    description: Verificación del estado del API y sus dependencias.
+  - name: Usuario
+    description: Operaciones de identidad y opciones de usuario.
+  - name: Fondos
+    description: Consultas de fondos disponibles para una entidad.
+  - name: Documentos
+    description: Consultas de tipos y documentos STI; operaciones de solo lectura.
+
+paths:
+  /healthcheckVES:
+    get:
+      operationId: healthcheckVES
+      summary: Verificar el estado del entorno VES
+      description: |
+        Ejecuta las comprobaciones configuradas para el entorno, incluyendo
+        dependencias como MAPI y configuración crítica. Es anónimo y devuelve
+        503 si alguna dependencia marcada como crítica está no saludable.
+      tags:
+        - Health
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/apiVersion'
+      responses:
+        '200':
+          description: El API y las dependencias verificadas están saludables o degradadas.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Informe producido por la librería Bccr.WebApi.HealthChecks.
+                additionalProperties: true
+        '503':
+          description: Al menos una dependencia crítica no está disponible.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Informe de estado con el detalle de las comprobaciones.
+                additionalProperties: true
+
+  /Usuario/Modulos/ObtengaLasOpcionesDelMenuParaElUsuarioAsync:
+    get:
+      operationId: obtenerOpcionesMenuUsuario
+      summary: Obtener las opciones de menú de un usuario
+      description: Corresponde a la acción de UsuarioController y delega la consulta al MAPI mediante SI.SG.
+      tags:
+        - Usuario
+      parameters:
+        - $ref: '#/components/parameters/apiVersion'
+        - name: loginUsuario
+          in: query
+          required: true
+          description: Login del usuario VES.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Opciones de menú del usuario.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OpcionMenu'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /Usuario/Usuario/ObtengaElUsuarioPorTokenGaudiAsync:
+    get:
+      operationId: obtenerUsuarioPorTokenGaudi
+      summary: Resolver el usuario VES a partir del id_token de GAUDI
+      description: |
+        Operación anónima que extrae la identificación del claim `sub` del
+        id_token y obtiene el login VES correspondiente. Las validaciones del
+        token se configuran por ambiente. El token se recibe como parámetro
+        de consulta para reflejar el controlador actual; los clientes y
+        sistemas de observabilidad deben evitar registrar la URL completa.
+      tags:
+        - Usuario
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/apiVersion'
+        - name: idToken
+          in: query
+          required: true
+          description: id_token emitido por GAUDI.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Login VES asociado a la identificación del token.
+          content:
+            application/json:
+              schema:
+                type: string
+        '400':
+          description: El parámetro idToken está vacío o falta.
+        '401':
+          description: El token no es válido, está vencido o no contiene un claim sub utilizable.
+        '404':
+          description: No se encontró un usuario VES para la identificación del token.
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /Fondo/Busqueda/ObtengaLosFondosDeUnaEntidadAsync:
+    get:
+      operationId: obtenerFondosDeEntidad
+      summary: Obtener los fondos de una entidad
+      description: Operación autenticada del API que delega la consulta al MAPI.
+      tags:
+        - Fondos
+      parameters:
+        - $ref: '#/components/parameters/apiVersion'
+        - name: elCodigoEntidad
+          in: query
+          required: true
+          description: Código de la entidad supervisada.
+          schema:
+            type: integer
+            format: int32
+        - name: seAplicaElFiltro
+          in: query
+          required: true
+          description: Indica si se debe aplicar el filtro definido por el servicio.
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Fondos asociados a la entidad.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fondo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /Documentos/Tipos:
+    get:
+      operationId: obtenerTiposDocumentos
+      summary: Consultar los tipos activos de documentos STI
+      description: |
+        Operación de solo lectura protegida con `[Authorize]`. El controlador
+        API delega la consulta al MAPI por `SI.SG` e `IRequestsHandler`.
+        Implementación y contrato confirmados en código y pruebas unitarias;
+        la verificación manual contra un ambiente no productivo está pendiente.
+      x-verification-status: implemented-unit-tested-integration-pending
+      tags:
+        - Documentos
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/apiVersion'
+      responses:
+        '200':
+          description: Tipos STI activos, con código y nombre.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TipoDocumentoConsulta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: La identidad autenticada no está autorizada por la configuración VES.
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /Documentos:
+    get:
+      operationId: obtenerDocumentosPorTipo
+      summary: Consultar documentos STI filtrados por tipo
+      description: |
+        Operación de solo lectura protegida con `[Authorize]`. `codigoTipo=-1`
+        representa **Todos**; un código positivo filtra por el tipo indicado.
+        El gateway usa `GET /Documentos?codigoTipo={codigoTipo}&api-version=1.0`
+        en MAPI. Implementación y contrato confirmados en código y pruebas
+        unitarias; la verificación manual contra un ambiente no productivo está
+        pendiente.
+      x-verification-status: implemented-unit-tested-integration-pending
+      tags:
+        - Documentos
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/apiVersion'
+        - name: codigoTipo
+          in: query
+          required: true
+          description: Código positivo de tipo o `-1` para **Todos**.
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Documentos elegibles ordenados por fecha de publicación descendente; puede ser una lista vacía.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentoConsulta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: La identidad autenticada no está autorizada por la configuración VES.
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /Documentos/{codigoDocumento}:
+    get:
+      operationId: obtenerDocumento
+      summary: Consultar los datos de un documento STI (sin binario)
+      description: |
+        Protegido con `[Authorize]`. Devuelve el 404 cuando el documento no
+        existe. Los documentos con `FechaCaduca` vencida se pueden abrir.
+        Implementado y probado con pruebas
+        unitarias; la verificación contra la BD real está pendiente.
+      x-verification-status: implemented-unit-tested-integration-pending
+      tags:
+        - Documentos
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/apiVersion'
+        - name: codigoDocumento
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+      responses:
+        '200':
+          description: Metadatos del documento.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentoDetalle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: El documento no existe.
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /Documentos/{codigoDocumento}/Archivo:
+    get:
+      operationId: obtenerArchivoDocumento
+      summary: Obtener el archivo de un documento para previsualización
+      description: |
+        Protegido con `[Authorize]`. Solo extensiones .pdf, .doc, .docx, .ppt y
+        .pptx; se entrega `inline` con `X-Content-Type-Options: nosniff`, nombre
+        de archivo saneado y un máximo de 10 MB.
+      x-verification-status: implemented-unit-tested-integration-pending
+      tags:
+        - Documentos
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/apiVersion'
+        - name: codigoDocumento
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+      responses:
+        '200':
+          description: Contenido binario del archivo.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: El documento o su archivo no existe.
+        '413':
+          description: El archivo excede 10 MB.
+        '415':
+          description: Formato de archivo no permitido.
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Credencial JWT enviada en el encabezado Authorization. La política
+        efectiva depende del ambiente y de la configuración de autenticación
+        del API; los endpoints de salud y de resolución de usuario GAUDI son
+        explícitamente anónimos.
+
+  parameters:
+    apiVersion:
+      name: api-version
+      in: query
+      required: true
+      description: Versión del contrato de API declarada por los controladores.
+      schema:
+        type: string
+        enum:
+          - '1.0'
+        default: '1.0'
+
+  responses:
+    BadRequest:
+      description: Solicitud no válida o parámetros que no se pudieron enlazar.
+    Unauthorized:
+      description: Falta una credencial aceptada por la configuración del ambiente.
+    UnexpectedError:
+      description: Error no previsto. El formato concreto lo determina el middleware institucional de manejo de excepciones.
+
+  schemas:
+    OpcionMenu:
+      type: object
+      properties:
+        codigoModulo:
+          type: integer
+          format: int32
+        nombreModulo:
+          type: string
+          nullable: true
+        codigoOpcion:
+          type: integer
+          format: int32
+        nombreOpcion:
+          type: string
+          nullable: true
+        nombreFisico:
+          type: string
+          nullable: true
+        rutaImagen:
+          type: string
+          nullable: true
+        orden:
+          type: integer
+          format: int32
+        nombreComponente:
+          type: string
+          nullable: true
+      description: DTO OpcionMenu del proyecto de abstracciones de la API.
+
+    Fondo:
+      type: object
+      properties:
+        codigoFondo:
+          type: integer
+          format: int32
+        codigoSupen:
+          type: string
+          nullable: true
+        nombre:
+          type: string
+          nullable: true
+        ley:
+          type: string
+          nullable: true
+        codigoMoneda:
+          type: integer
+          format: int32
+        codigoRegimen:
+          type: integer
+          format: int32
+        descripcion:
+          type: string
+          nullable: true
+      description: DTO Fondo del proyecto de abstracciones de la API.
+
+    TipoDocumentoConsulta:
+      type: object
+      required:
+        - codigoTipoDoc
+        - nombre
+      properties:
+        codigoTipoDoc:
+          type: integer
+          format: int32
+        nombre:
+          type: string
+      description: Tipo de documento STI activo.
+
+    DocumentoDetalle:
+      type: object
+      properties:
+        codigoDocumento: { type: integer, format: int32 }
+        codigoTipoDoc: { type: integer, format: int32 }
+        titulo: { type: string }
+        resumen: { type: string, nullable: true, description: Texto descriptivo del documento (hasta 255 caracteres; puede ser vacío). }
+        nombreArchivo: { type: string, nullable: true }
+        fechaPublicacion: { type: string, format: date-time }
+        usuarioPublica: { type: string, nullable: true, description: Usuario que publicó el documento. }
+        archivoDisponible: { type: boolean, description: Verdadero cuando el nombre de archivo no está vacío. }
+        fechaCaduca: { type: string, format: date-time, nullable: true, description: Nulo significa vigencia indefinida. }
+
+    DocumentoConsulta:
+      type: object
+      required:
+        - codigo
+        - nombreArchivo
+        - tipo
+        - titulo
+        - fechaPublicacion
+      properties:
+        codigo:
+          type: integer
+          format: int32
+        nombreArchivo:
+          type: string
+        tipo:
+          type: string
+        titulo:
+          type: string
+        fechaPublicacion:
+          type: string
+          format: date
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+      description: Resultado de consulta STI sin contenido binario.
