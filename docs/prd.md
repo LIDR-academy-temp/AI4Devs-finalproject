@@ -75,7 +75,8 @@ Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 | RF-01 | El usuario pega el texto de una oferta y, opcionalmente, su URL de origen. | M |
 | RF-02 | La IA extrae los campos estructurados de la oferta: título, empresa, ubicación, modalidad (`remote`, `hybrid`, `onsite`), salario (mínimo, máximo, moneda, periodo), seniority, habilidades requeridas y deseables, y años de experiencia pedidos. Los campos ausentes quedan como desconocidos; nunca se inventan. | M |
 | RF-03 | El usuario revisa y corrige los campos extraídos antes de guardar. | M |
-| RF-04 | El usuario importa ofertas desde una fuente pública de EE. UU. La fuente se decide en la arquitectura (job boards de Greenhouse/Lever o Adzuna). | M |
+| RF-04 | El usuario importa las ofertas de sus empresas objetivo desde la API pública de su plataforma de empleo. La importación usa una interfaz común de adaptadores; el MVP implementa solo el adaptador de Greenhouse. | M |
+| RF-09 | El usuario gestiona su lista de empresas objetivo: nombre, tipo (`big` o `mid`), plataforma de empleo y, si la plataforma tiene API, el identificador de su job board. Las empresas sin API se registran igual y sus ofertas se agregan pegando el texto. | M |
 | RF-05 | El sistema evita duplicados por fuente e identificador externo, o por URL. | M |
 | RF-06 | El usuario ve la lista de ofertas con su estado de filtro y su puntaje, y la ordena por puntaje o fecha. | M |
 | RF-07 | El usuario archiva una oferta que no le interesa. | S |
@@ -191,6 +192,7 @@ Vista conceptual; el modelo de datos detallado se define en la arquitectura. Los
 | `User` | El único usuario del sistema. |
 | `Resume` | Versión del currículum: archivo, texto extraído y perfil estructurado. |
 | `JobPreferences` | Filtros duros y preferencias del usuario. |
+| `TargetCompany` | Empresa objetivo: nombre, tipo, plataforma de empleo e identificador del job board. |
 | `JobPosting` | Oferta con sus campos estructurados, fuente y texto original. |
 | `FilterResult` | Resultado de los filtros duros para una oferta. |
 | `MatchAnalysis` | Puntaje, etiqueta, fortalezas, brechas y evidencia; con modelo y versión del prompt. |
@@ -202,7 +204,7 @@ Vista conceptual; el modelo de datos detallado se define en la arquitectura. Los
 | Dependencia | Uso | Riesgo |
 | --- | --- | --- |
 | Claude API | Extracción de ofertas y currículum, puntaje de encaje, clasificación de correos | Costo y latencia; se mitigan con RNF-07 y RNF-09 |
-| Fuente pública de ofertas | Importación (RF-04) | Cobertura y límites de uso; se valida con un spike |
+| Greenhouse Job Board API (pública, sin clave) | Importación (RF-04) | Solo cubre empresas que usan Greenhouse; la mayoría de las empresas grandes de la lista no lo usan |
 | Railway | Despliegue de la aplicación y la base de datos | Límites del plan gratuito |
 
 ## 10.1 Decisiones confirmadas (2026-11-04)
@@ -212,6 +214,8 @@ Vista conceptual; el modelo de datos detallado se define en la arquitectura. Los
 - Se agrega el estado `withdrawn` al pipeline (RF-31).
 - Orden de construcción: HU2 → HU1 (pegar texto) → HU3 → HU4 → RF-04 (sección 11).
 - Las metas de costo (RNF-07) y de tiempo de respuesta (RNF-06) se aceptan como objetivos.
+- Empresas objetivo: grandes (Meta, Apple, Amazon, Netflix, Google, Microsoft, Nvidia, OpenAI, Anthropic, Walmart, ServiceNow, PayPal/Venmo, eBay) y medianas aún sin definir.
+- La importación usa adaptadores por plataforma de empleo; el MVP implementa Greenhouse (RF-04). Las ofertas de empresas sin API se agregan pegando el texto (RF-01).
 
 ## 11. Riesgos y mitigaciones
 
@@ -225,7 +229,7 @@ Ver `docs/vision.md`, sección 8. Riesgo adicional del PRD:
 
 | Decisión | Se resuelve en |
 | --- | --- |
-| Fuente pública de ofertas del MVP | Arquitectura (spike de cobertura) |
+| Diseño de la interfaz de adaptadores y validación con Greenhouse | Arquitectura (ADR y spike) |
 | Modelo de Claude para extracción y para el puntaje | Arquitectura (ADR) |
 | Fórmula del puntaje: peso de habilidades, experiencia y preferencias | Cambio de OpenSpec de HU3 |
 | Versión de AdonisJS | Arquitectura (ADR) |

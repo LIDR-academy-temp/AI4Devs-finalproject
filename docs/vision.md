@@ -78,7 +78,12 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 | Capacidad | Etapa |
 | --- | --- |
 | Registrar ofertas pegando el texto o la URL; la IA extrae los campos estructurados | `MVP` |
-| Importar ofertas desde una fuente pública de EE. UU. (job boards de Greenhouse/Lever o Adzuna; se decide en la arquitectura) | `MVP` |
+| Lista de empresas objetivo (grandes y medianas) con su plataforma de empleo | `MVP` |
+| Importar ofertas de las empresas objetivo mediante adaptadores; primer adaptador: Greenhouse | `MVP` |
+| Adaptadores para Ashby, Lever y SmartRecruiters | `v1.1` |
+| Convertir los correos de alertas de empleo de los portales en ofertas | `v1.1` |
+| Adaptador para Workday (endpoint no documentado; requiere revisar sus términos de uso) | `futuro` |
+| Descubrir empresas medianas nuevas según el perfil | `futuro` |
 | Cargar un currículum en PDF; la IA lo convierte en un perfil estructurado | `MVP` |
 | Configurar filtros duros: modalidad, ubicación, salario mínimo y seniority | `MVP` |
 | Calcular un puntaje de encaje (0-100) con fortalezas, brechas y evidencia | `MVP` |
@@ -130,7 +135,7 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 
 ## 9. Preguntas abiertas para las siguientes fases
 
-- ¿Qué fuente de ofertas entra al MVP: job boards de Greenhouse/Lever (empresas objetivo) o Adzuna (búsqueda amplia)?
+- ~~¿Qué fuente de ofertas entra al MVP?~~ Resuelta: adaptadores por plataforma de empleo, con Greenhouse en el MVP (ver `docs/prd.md`, RF-04 y RF-09).
 - ¿Qué modelo de Claude se usa para extracción y cuál para el puntaje (costo frente a calidad)?
 - ¿Cuántos días sin actividad disparan una alerta de seguimiento?
 - ¿Cómo se ponderan habilidades, experiencia y preferencias blandas (por ejemplo, la preferencia por híbrido) dentro del puntaje?

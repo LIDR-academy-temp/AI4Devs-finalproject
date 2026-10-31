@@ -111,3 +111,55 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con `docs/vision.md`, `docs/prd.md` y `docs/ai-log.md`.
+
+### Prompt 9
+
+- **Categoría:** `🔍 Investigación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code (WebSearch)
+- **Prompt:**
+
+  ```markdown
+  Empresas FAANG/MANGO.
+  ```
+
+- **Resultado:** Investigación de qué plataformas de empleo usan las empresas objetivo y de las condiciones de la API de Adzuna. Conclusión: la mayoría usa portales propios sin API pública, lo que cambia la estrategia de importación de ofertas (RF-04). Respuesta en el chat. Corrección de la entrada 8: el commit `8a5ad6e` incluyó solo `docs/prd.md` y `docs/ai-log.md`; `docs/vision.md` ya estaba en commits anteriores.
+
+### Prompt 10
+
+- **Categoría:** `🔍 Investigación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code (WebSearch)
+- **Prompt:**
+
+  ```markdown
+  Me faltó mencionar Walmart, ServiceNow, PayPal, eBay, Venmo pero también me interesan medianas empresas.
+  ```
+
+- **Resultado:** Investigación de las plataformas de empleo de las empresas adicionales y de la Posting API pública de SmartRecruiters. Propuesta de importación por conectores (un adaptador por plataforma) con una lista de empresas objetivo; ofertas de empresas grandes por texto pegado y alertas por correo. Respuesta en el chat.
+
+### Prompt 11
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code (WebFetch)
+- **Prompt:**
+
+  ```markdown
+  Sí, acepto Greenhouse; no tengo empresas medianas concretas
+  ```
+
+- **Resultado:** Se verificó que la Greenhouse Job Board API de Anthropic responde sin clave. Se actualizaron `docs/prd.md` (RF-04 con adaptadores, nuevo RF-09 de empresas objetivo, entidad `TargetCompany`, dependencias y decisiones) y `docs/vision.md` (alcance de adaptadores, alertas por correo y Workday; pregunta abierta de la fuente resuelta).
+
+### Prompt 12
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Sí, haz commit solamente
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con los cambios de `docs/prd.md`, `docs/vision.md` y `docs/ai-log.md` (empresas objetivo e importación por adaptadores).
