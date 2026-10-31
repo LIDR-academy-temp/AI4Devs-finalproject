@@ -81,3 +81,33 @@
   ```
 
 - **Resultado:** Se actualizó `docs/vision.md` (correos, alertas y traducción al español como `should-have`; interfaz en inglés) y se creó `docs/prd.md` (borrador v0.1) con objetivos, flujo principal, 4 historias must-have y 2 should-have, requisitos funcionales y no funcionales, criterios de aceptación de alto nivel, entidades del dominio y decisiones pendientes.
+
+### Prompt 7
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  1. Está bien
+  2. Sí
+  3. Sí
+  4. Está bien
+  5. Eso sería lo ideal
+  ```
+
+- **Resultado:** Se actualizó `docs/prd.md`: estado `withdrawn` en el pipeline (RF-31), metas de costo y tiempo aceptadas como objetivos, y nueva sección 10.1 con las decisiones confirmadas.
+
+### Prompt 8
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  commit cambios
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con `docs/vision.md`, `docs/prd.md` y `docs/ai-log.md`.
