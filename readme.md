@@ -66,8 +66,8 @@ https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp
 | F2 | Estación | Selección entre las estaciones asignadas al usuario. |
 | F3 | Condiciones actuales | Una tarjeta por sensor con valor, unidad, calidad del dato y antigüedad. |
 | F4 | Recomendación | Estado de aplicación, índice TIS (Índice de Inversión Térmica), diferencia térmica y motivos. |
-| F5 | Históricos | Serie por sensor de hasta 31 días, con resumen estadístico. |
-| F6 | Ingesta automática | Proceso programado que cada 10 minutos obtiene datos, los normaliza, los guarda y calcula la recomendación. |
+| F5 | Históricos | Serie por sensor de los últimos 7 o 31 días, con resumen estadístico. |
+| F6 | Ingesta automática | Carga inicial de los últimos 31 días y proceso programado que cada 10 minutos obtiene datos, los normaliza, los guarda y calcula la recomendación. |
 
 #### Reglas de la recomendación
 
@@ -100,7 +100,7 @@ Las siguientes reglas se aplican en este orden sobre el estado base:
 | R3 | ΔT > 0 | Nunca `APTO`: como mínimo `PRECAUCION`, con motivo `INVERSION_DETECTADA` |
 | R4 | Alguna lectura es sospechosa (por ejemplo, más de 25 puntos de diferencia de humedad entre 2 m y 10 m) | Nunca `APTO`: como mínimo `PRECAUCION`, con motivo `DATO_SOSPECHOSO` |
 
-La recomendación es **orientativa** y la pantalla lo indica siempre. Los pesos y umbrales provienen del prototipo y su validación agronómica está prevista para la Entrega 2. No reemplaza el criterio de un profesional ni la etiqueta del producto.
+La recomendación es **orientativa** y la pantalla lo indica siempre. Los pesos y umbrales provienen del prototipo y su validación agronómica está prevista para la Entrega 3. No reemplaza el criterio de un profesional ni la etiqueta del producto.
 
 ### **1.3. Diseño y experiencia de usuario:**
 
@@ -154,6 +154,7 @@ Existe una aplicación en R Shiny, en un repositorio privado, creada para probar
 - Niveles de uso diferenciados con roles: público general, sector productivo e investigación.
 - Más índices: Delta T psicrométrico, déficit de presión de vapor, evapotranspiración de referencia, grados-día, horas de mojado foliar, heladas y acumulados.
 - Predicción a corto y mediano plazo, y seguimiento de fenómenos macroclimáticos como El Niño.
+- Carga de toda la historia disponible en SAT2 y rango manual de fechas en históricos.
 - Humedad de suelos, que requiere una fuente de datos adicional.
 - Agentes de IA dentro del producto para ingesta y análisis.
 - Migración a un repositorio y una operación de producción empresarial. Este repositorio es académico y esa migración no forma parte de este trabajo.
@@ -174,6 +175,8 @@ Los prompts reales están en [prompts.md](prompts.md).
 ## 2. Arquitectura del Sistema
 
 ### **2.1. Diagrama de arquitectura:**
+
+La decisión y sus alternativas están en el [ADR-0001](docs/decisions/0001-arquitectura-destino-weather-track.md), y las actividades y plazos hasta el 19 de noviembre, en el [plan de implementación de la Entrega 2](docs/plan/plan-implementacion-entrega-2.md).
 
 ```mermaid
 flowchart LR
@@ -196,7 +199,7 @@ flowchart LR
 | Históricos rápidos y sin consultas repetidas a un tercero | Datos normalizados en PostgreSQL |
 | Regla de seguridad del TIS fácil de probar | Motor de cálculo como función pura, sin dependencias de red ni de base de datos |
 
-**Beneficios.** Se puede construir en 20 días por una sola persona, el despliegue es simple y cada capa se prueba por separado.
+**Beneficios.** Una sola persona con asistencia de IA puede construirla antes del 19 de noviembre, según el [plan](docs/plan/plan-implementacion-entrega-2.md); el despliegue es simple y cada capa se prueba por separado.
 
 **Sacrificios.**
 - Si SAT2 no responde, no hay datos nuevos. La regla R2 evita que se muestre una recomendación vieja como vigente.
@@ -214,7 +217,7 @@ flowchart LR
 | API | Python, FastAPI, Pydantic, SQLAlchemy | Autenticación, control de acceso por estación y lectura de datos. Aplica la regla R2 al responder. |
 | Worker de ingesta | Python, APScheduler, httpx | Sincroniza el catálogo, obtiene lecturas, normaliza, marca la calidad y dispara el cálculo. Registra cada ejecución. |
 | Motor de recomendación | Python, sin dependencias externas | Función pura que recibe lecturas y devuelve índice, estado y motivos. Lo usa el worker. |
-| Base de datos | PostgreSQL 16, Alembic | Usuarios, estaciones, sensores, observaciones, recomendaciones e historial de ingesta. |
+| Base de datos | PostgreSQL 18, Alembic | Usuarios, estaciones, sensores, observaciones, recomendaciones e historial de ingesta. |
 | Proxy inverso | Caddy | HTTPS, entrega de estáticos y enrutamiento hacia la API. |
 
 ```mermaid
@@ -267,7 +270,7 @@ El backend sigue una arquitectura en capas: `api` y `ingesta` dependen de `domin
 
 ### **2.4. Infraestructura y despliegue**
 
-> **Planificado.** Se implementa en la Entrega 2. El proveedor concreto del servidor se elegirá entonces.
+> **Planificado.** La Entrega 2 incluye un despliegue mínimo y el proveedor del servidor se elegirá entonces. Este esquema es preliminar: las etapas y herramientas del pipeline se evaluarán en el proceso final.
 
 ```mermaid
 flowchart LR
@@ -906,7 +909,7 @@ Como productor o aplicador, quiero consultar la evolución de un sensor en un pe
 ```gherkin
 Escenario: Consulta de un período válido
   Dado que estoy en el detalle de un sensor
-  Cuando elijo un rango de hasta 31 días
+  Cuando elijo los últimos 7 o 31 días
   Entonces veo un gráfico de la serie
   Y veo máximo, mínimo, promedio y cantidad de registros
 
@@ -915,11 +918,6 @@ Escenario: Huecos en la serie
   Cuando veo el gráfico
   Entonces la línea se interrumpe en el hueco, sin interpolar
   Y las lecturas faltantes no entran en el resumen
-
-Escenario: Rango inválido
-  Dado que estoy en el detalle de un sensor
-  Cuando elijo más de 31 días o una fecha final anterior a la inicial
-  Entonces veo un mensaje que explica el error y no se ejecuta la consulta
 ```
 
 ---

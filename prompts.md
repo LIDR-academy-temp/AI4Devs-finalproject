@@ -107,6 +107,12 @@ Apruebo las 6
 Empecemos con el trabajo propuesto
 ```
 
+**Prompt 3:** generó el [ADR-0001](docs/decisions/0001-arquitectura-destino-weather-track.md) y el [plan de implementación de la Entrega 2](docs/plan/plan-implementacion-entrega-2.md).
+
+```text
+Ahora hay que crear la arquitectura nueva a donde migrar el proyecto actual. Generar un ADR para preparar la entrega #2. No tenemos que evaluar las partes del pipeline aún, eso será tema del proceso final. Nuestro Lead Time es el 19 de Noviembre por lo que generemos un diagrama de procesos de implementación de actividades para llegar. Documéntalo en un archivo como parte del material a entregar y que utilice un flujograma o alguna herramienta como pert/gant en contexto de Devops. Si es necesario un Plugin, MCP, conector idóneo, etc. de Claude, me lo indicas y lo enchufamos. Investiga los mejores estándares de la industria para realizar esto porque estamos generando material profesional que puede mostrarse a futuros clientes del mercado.
+```
+
 ### **2.2. Descripción de componentes principales:**
 
 Se generó con los prompts de la sección 2.1.
