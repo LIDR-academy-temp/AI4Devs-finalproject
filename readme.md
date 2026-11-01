@@ -306,7 +306,7 @@ flowchart LR
 | Secretos fuera del código | Variables de entorno y `.env.example` sin valores reales. Escaneo con Gitleaks en cada pull request. |
 | Credenciales de terceros aisladas | La cuenta de servicio de SAT2 solo existe en el worker. Nunca llega al navegador ni a la API de lectura. |
 | Contraseñas | Solo se guarda un hash con Argon2id; la contraseña nunca se conserva en memoria de sesión. |
-| Sesión | Token firmado de corta duración en cookie `HttpOnly`, `Secure` y `SameSite`. |
+| Sesión | Identificador opaco en cookie `HttpOnly`, `Secure` y `SameSite`, con vencimiento a las 8 horas e invalidación inmediata al salir. |
 | Autorización | Todas las rutas se protegen en el servidor. Un usuario solo accede a sus estaciones; de lo contrario recibe 403. |
 | Abuso | Límite de intentos de inicio de sesión. |
 | Transporte | HTTPS obligatorio y CORS restringido al dominio de la aplicación. |
@@ -389,6 +389,7 @@ erDiagram
         timestamptz medido_en PK
         numeric valor
         varchar calidad "NOT NULL"
+        boolean alarma
         varchar origen "NOT NULL"
         timestamptz recibido_en "NOT NULL"
     }
@@ -407,6 +408,9 @@ erDiagram
     EJECUCION_INGESTA {
         bigint id PK
         bigint estacion_id FK "NOT NULL"
+        varchar tipo "NOT NULL"
+        timestamptz ventana_desde
+        timestamptz ventana_hasta
         timestamptz iniciada_en "NOT NULL"
         timestamptz finalizada_en
         varchar resultado "NOT NULL"
@@ -418,6 +422,8 @@ erDiagram
 ### **3.2. Descripción de entidades principales:**
 
 > Se guarda en UTC. La interfaz muestra la hora de Argentina (`America/Argentina/Buenos_Aires`).
+>
+> Las tablas de soporte `SESION` e `INTENTO_ACCESO` se detallan en el [diseño del cambio](openspec/changes/weather-track-mvp-nucleo/design.md).
 
 **USUARIO.** Persona con acceso al sistema.
 
@@ -470,6 +476,7 @@ erDiagram
 | `medido_en` | `timestamptz` | PK | Instante de medición |
 | `valor` | `numeric(12,4)` | NULL solo si `calidad = FALTANTE` | Valor normalizado |
 | `calidad` | `varchar(12)` | NOT NULL, CHECK | `OK`, `FALTANTE` o `SOSPECHOSO` |
+| `alarma` | `boolean` | | Alarma informada por SAT2; nula si la fuente no la informa |
 | `origen` | `varchar(12)` | NOT NULL, CHECK | `INSTANTANEO` o `HISTORICO` |
 | `recibido_en` | `timestamptz` | NOT NULL | Instante de obtención |
 
@@ -494,8 +501,11 @@ erDiagram
 |---|---|---|---|
 | `id` | `bigint` | PK | Identificador |
 | `estacion_id` | `bigint` | FK a `ESTACION.id`, NOT NULL | Estación |
-| `iniciada_en` | `timestamptz` | NOT NULL | Inicio del ciclo |
-| `finalizada_en` | `timestamptz` | | Fin del ciclo |
+| `tipo` | `varchar(14)` | NOT NULL, CHECK | `CICLO` o `CARGA_INICIAL` |
+| `ventana_desde` | `timestamptz` | | Inicio de la ventana, solo en cargas |
+| `ventana_hasta` | `timestamptz` | | Fin de la ventana, solo en cargas |
+| `iniciada_en` | `timestamptz` | NOT NULL | Inicio de la ejecución |
+| `finalizada_en` | `timestamptz` | | Fin de la ejecución |
 | `resultado` | `varchar(12)` | NOT NULL, CHECK | `EN_CURSO`, `EXITO`, `PARCIAL` o `ERROR` |
 | `lecturas_guardadas` | `integer` | NOT NULL, DEFAULT 0 | Cantidad de lecturas guardadas |
 | `detalle` | `text` | | Descripción del error, sin datos sensibles |
@@ -545,6 +555,7 @@ paths:
                     valor: 21.3
                     unidad: °C
                     calidad: OK
+                    alarma: false
         '401':
           $ref: '#/components/responses/NoAutenticado'
         '403':
@@ -690,6 +701,7 @@ components:
           type: string
           enum:
             - SIN_INVERSION
+            - INDICE_ELEVADO
             - INVERSION_DETECTADA
             - DATO_FALTANTE
             - DATO_SOSPECHOSO
@@ -718,6 +730,9 @@ components:
           type: string
         calidad:
           $ref: '#/components/schemas/Calidad'
+        alarma:
+          type: boolean
+          nullable: true
     CondicionesActuales:
       type: object
       required: [estacion_id, estacion_nombre, estado_datos, sensores]

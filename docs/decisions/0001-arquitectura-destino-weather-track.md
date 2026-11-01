@@ -249,9 +249,9 @@ La implementación cumple esta decisión si:
 ## Acciones
 
 1. [x] Aprobar este ADR y cambiar su estado a `accepted`.
-2. [ ] Crear las specs de OpenSpec del MVP a partir de esta decisión (A01).
+2. [x] Crear las specs de OpenSpec del MVP a partir de esta decisión: cambio `weather-track-mvp-nucleo`.
 3. [ ] Medir los límites de rango y antigüedad de SAT2 y consultarlos con TECMES. Las credenciales ya están disponibles (A02).
-4. [ ] Definir si la alarma que informa SAT2 por sensor se guarda en `OBSERVACION`. El modelo de la Entrega 1 no la incluye y el prototipo sí la usa (A01).
+4. [x] Definir si la alarma que informa SAT2 por sensor se guarda en `OBSERVACION`: se guarda y se muestra, sin afectar la recomendación.
 5. [ ] Elegir el proveedor del servidor antes de iniciar A13.
 6. [ ] Abrir un ADR propio para el pipeline en el proceso final.
 
