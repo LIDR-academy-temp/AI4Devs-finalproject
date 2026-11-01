@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10", "uv>=0.8,<1"]
+dev = ["pytest>=8,<10", "pytest-cov>=6,<8", "uv>=0.8,<1"]
 
 [tool.setuptools.packages.find]
 include = ["app*", "herramientas*"]

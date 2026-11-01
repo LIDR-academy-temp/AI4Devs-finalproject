@@ -24,9 +24,9 @@ Los grupos siguen las actividades del [plan de implementación](../../../docs/pl
 
 ## 4. Motor de recomendación (A05, WT-BE-01)
 
-- [ ] 4.1 Implementar los factores y el índice como funciones puras, y verificar los índices de los casos de la sección 2.6 del README
-- [ ] 4.2 Implementar el estado base con sus límites exactos y las reglas R1, R3 y R4 con sus motivos, y verificar todos los escenarios de `application-recommendation` que no dependen de la hora
-- [ ] 4.3 Medir la cobertura del motor y verificar que alcanza al menos 90 %
+- [x] 4.1 Implementar los factores y el índice como funciones puras, y verificar los índices de los casos de la sección 2.6 del README
+- [x] 4.2 Implementar el estado base con sus límites exactos y las reglas R1, R3 y R4 con sus motivos, y verificar todos los escenarios de `application-recommendation` que no dependen de la hora
+- [x] 4.3 Medir la cobertura del motor y verificar que alcanza al menos 90 %
 
 ## 5. Ingesta (A06, WT-BE-03)
 
