@@ -1,0 +1,77 @@
+name: weather-track
+
+x-url-base-de-datos: &url-base-de-datos postgresql+psycopg://weather_track:${POSTGRES_PASSWORD:-solo_desarrollo}@db:5432/weather_track
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: weather_track
+      POSTGRES_USER: weather_track
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-solo_desarrollo}
+    volumes:
+      - datos_db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U weather_track -d weather_track"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./backend
+    command: uvicorn app.api.principal:app --host 0.0.0.0 --port 8000
+    # La API nunca recibe las credenciales de SAT2.
+    environment:
+      DATABASE_URL: *url-base-de-datos
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request as u; u.urlopen('http://localhost:8000/api/v1/salud', timeout=3)"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  worker:
+    build: ./backend
+    command: python -m app.ingesta.worker
+    # Debe correr en una sola instancia: el planificador no se comparte entre procesos.
+    env_file:
+      - path: .env
+        required: false
+        format: raw
+    environment:
+      DATABASE_URL: *url-base-de-datos
+      SAT2_MODO: ${SAT2_MODO:-simulado}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from app.ingesta.worker import latido_vigente; raise SystemExit(0 if latido_vigente() else 1)"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  proxy:
+    build: ./frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  datos_db:

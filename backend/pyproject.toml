@@ -5,12 +5,22 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "weather-track-backend"
 version = "0.1.0"
-description = "Backend y worker de Weather Track"
-requires-python = ">=3.12"
-dependencies = ["httpx>=0.28,<1", "tzdata; sys_platform == 'win32'"]
+description = "API y worker de Weather Track"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.16,<2",
+    "apscheduler>=3.11,<4",
+    "argon2-cffi>=25,<26",
+    "fastapi>=0.115,<1",
+    "httpx>=0.28,<1",
+    "psycopg[binary]>=3.2,<4",
+    "sqlalchemy>=2,<3",
+    "tzdata>=2025.1",
+    "uvicorn>=0.34,<1",
+]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10"]
+dev = ["pytest>=8,<10", "uv>=0.8,<1"]
 
 [tool.setuptools.packages.find]
 include = ["app*", "herramientas*"]

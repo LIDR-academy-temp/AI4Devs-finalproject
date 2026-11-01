@@ -12,9 +12,9 @@ Los grupos siguen las actividades del [plan de implementación](../../../docs/pl
 
 ## 2. Repositorio y contenedores (A03)
 
-- [ ] 2.1 Crear la estructura `backend/` y `frontend/` del README y fijar dependencias con archivos de bloqueo, y verificar que ambas instalaciones funcionan desde cero
-- [ ] 2.2 Crear `docker-compose.yml` con proxy, API, worker y PostgreSQL 18, y verificar que `docker compose up` deja los servicios saludables en modo simulado
-- [ ] 2.3 Agregar una prueba de arquitectura que falle si `dominio` importa `api`, `ingesta` o `datos`, y verificar que falla con una importación de ejemplo
+- [x] 2.1 Crear la estructura `backend/` y `frontend/` del README y fijar dependencias con archivos de bloqueo, y verificar que ambas instalaciones funcionan desde cero
+- [x] 2.2 Crear `docker-compose.yml` con proxy, API, worker y PostgreSQL 18, y verificar que `docker compose up` deja los servicios saludables en modo simulado
+- [x] 2.3 Agregar una prueba de arquitectura que falle si `dominio` importa `api`, `ingesta` o `datos`, y verificar que falla con una importación de ejemplo
 
 ## 3. Base de datos (A04, WT-DB-01)
 
