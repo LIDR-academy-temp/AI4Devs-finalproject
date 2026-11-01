@@ -18,9 +18,9 @@ Los grupos siguen las actividades del [plan de implementación](../../../docs/pl
 
 ## 3. Base de datos (A04, WT-DB-01)
 
-- [ ] 3.1 Configurar las migraciones y crear las tablas de la sección 3 del README, más `SESION` e `INTENTO_ACCESO`, y verificar que `upgrade` y `downgrade` funcionan sobre una base vacía
-- [ ] 3.2 Agregar restricciones `UNIQUE`, `CHECK` e índices, y verificar con pruebas de integración los criterios de aceptación de WT-DB-01
-- [ ] 3.3 Crear semillas idempotentes con estación, sensores y usuario ficticios, y verificar que ejecutarlas dos veces no duplica datos
+- [x] 3.1 Configurar las migraciones y crear las tablas de la sección 3 del README, más `SESION` e `INTENTO_ACCESO`, y verificar que `upgrade` y `downgrade` funcionan sobre una base vacía
+- [x] 3.2 Agregar restricciones `UNIQUE`, `CHECK` e índices, y verificar con pruebas de integración los criterios de aceptación de WT-DB-01
+- [x] 3.3 Crear semillas idempotentes con estación, sensores y usuario ficticios, y verificar que ejecutarlas dos veces no duplica datos
 
 ## 4. Motor de recomendación (A05, WT-BE-01)
 

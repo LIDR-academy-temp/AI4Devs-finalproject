@@ -12,6 +12,8 @@ RUN pip install --no-cache-dir "uv==0.13.6" \
 
 COPY app ./app
 COPY herramientas ./herramientas
+COPY migraciones ./migraciones
+COPY alembic.ini ./
 RUN uv sync --frozen --no-dev --no-editable \
     && useradd --system --no-create-home weathertrack
 

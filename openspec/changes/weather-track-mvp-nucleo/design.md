@@ -90,6 +90,8 @@ La cookie es `HttpOnly`, `Secure` y `SameSite=Lax`, y dura 8 horas. El servidor 
 
 - **Por qué:** la especificación exige invalidar la sesión de inmediato al salir, algo que un token firmado sin estado no permite sin una lista de revocación.
 - **Límite de intentos:** los fallos se guardan en `INTENTO_ACCESO`, otra tabla nueva, para que el límite sobreviva a un reinicio de la API.
+- **Columnas de `SESION`:** `id`, `usuario_id` (FK con borrado en cascada), `hash_identificador` (único), `creada_en` y `vence_en`.
+- **Columnas de `INTENTO_ACCESO`:** `id`, `email` y `ocurrido_en`, con un índice por correo y fecha. Solo guarda fallos; un ingreso correcto borra los del correo.
 
 ### D9. Actualización por consulta periódica
 
