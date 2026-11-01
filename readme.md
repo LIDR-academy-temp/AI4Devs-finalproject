@@ -9,7 +9,7 @@
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
 
-> **Estado de este documento (Entrega 1):** describe el diseño del MVP que se construirá para la Entrega 2. Todavía no hay código del MVP en este repositorio, por lo que la instalación, el despliegue, los tests y las pull requests figuran como planificados.
+> **Estado de este documento (Entrega 1):** describe el diseño del MVP que se construirá para la Entrega 2. Todavía no hay código del MVP en este repositorio, por lo que la instalación, el despliegue y los tests figuran como planificados.
 
 ---
 
@@ -1026,10 +1026,8 @@ Escenario: Rango inválido
 
 ## 7. Pull Requests
 
-> **Planificado.** Todavía no hay pull requests en este repositorio. Esta sección se completará con las reales a medida que se abran.
+**Pull Request 1:** [documentación y diseño del MVP (Entrega 1)](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/12). Agrega el problema, el alcance, la arquitectura, el modelo de datos, la API, las historias, los tickets y los prompts.
 
-**Pull Request 1:** documentación y diseño del MVP (Entrega 1).
+**Pull Request 2 (planificada):** esquema de base de datos y motor de recomendación (WT-DB-01 y WT-BE-01).
 
-**Pull Request 2:** esquema de base de datos y motor de recomendación (WT-DB-01 y WT-BE-01).
-
-**Pull Request 3:** pantalla de decisión (WT-FE-01).
+**Pull Request 3 (planificada):** pantalla de decisión (WT-FE-01).

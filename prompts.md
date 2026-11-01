@@ -155,4 +155,16 @@ Se generó con los prompts de la sección 2.1.
 
 ## 7. Pull Requests
 
-Todavía no hay pull requests. Los prompts se agregarán cuando se abran.
+**Prompt 1:**
+
+```text
+el PR hay que hacerlo contra este repo: https://github.com/LIDR-academy-temp/AI4Devs-finalproject/
+```
+
+**Prompt 2:**
+
+```text
+Sí, crea fork y PR
+```
+
+Los prompts de las próximas pull requests se agregarán cuando se abran.
