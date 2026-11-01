@@ -107,9 +107,30 @@ El cliente real y el simulado cumplen la misma interfaz, y se eligen con `SAT2_M
 
 - **Por qué:** permite probar la ingesta sin red, evaluar el sistema sin credenciales y avanzar aunque SAT2 no esté disponible.
 
+### D12. Ventana inicial de 365 días para cargas largas
+
+La carga empieza con ventanas de 365 días como máximo, y las reduce si fallan. La carga de 31 días del alcance núcleo usa una sola ventana por sensor.
+
+- **Por qué:** SAT2 aceptó una consulta de 4 años, pero tardó 51 segundos. Partirla reduce el riesgo de agotar el tiempo de espera, permite reanudar por tramos y es más prudente con el proveedor.
+- **Alternativa descartada:** pedir toda la historia en una sola consulta, que es más simple pero pierde todo el avance ante un fallo.
+
+## Límites medidos de SAT2
+
+| Medición | Resultado | Fuente |
+|---|---|---|
+| Rango por consulta | Al menos 4 años: del 1/1/2022 al 1/1/2026 respondió bien | Prueba manual del responsable, 1/11/2026 |
+| Tiempo y tamaño con 4 años | 51 segundos y 6 MB para un sensor | Prueba manual del responsable |
+| Ventanas de 1 a 365 días | Todas completas, sin recorte y en orden descendente | Script, modo real, 1/11/2026 |
+| Tiempo con 365 días | 13,25 segundos | Script, modo real |
+| Tiempo con 31 días | 1,65 segundos | Script, modo real |
+| Datos más antiguos | Hay datos el 21/09/2022, la fecha de alta | Script, modo real |
+| Completitud | 52.283 de 52.560 registros esperados en 365 días (99,5 %) | Script, modo real |
+
+Las mediciones corresponden a un solo sensor, de temperatura a 2 m. Los registros faltantes confirman que hay huecos reales, así que la serie nunca debe interpolarse.
+
 ## Risks / Trade-offs
 
-- [Los límites reales de SAT2 son menores a los esperados] → Ventana adaptable hasta un día, y prueba de límites en A02.
+- [Los límites reales de SAT2 cambian o son menores en otros sensores] → Ventana adaptable hasta un día.
 - [Una consulta instantánea no trae todos los sensores] → Los ausentes quedan como `FALTANTE` y R1 impide la recomendación.
 - [El sensor de humedad a 2 m sigue dando lecturas anómalas] → R4 limita el estado a `PRECAUCION`. La estación nunca daría `APTO` mientras dure el problema, y por eso conviene revisarlo en campo.
 - [Los rangos físicos descartan un valor real extremo] → Son configurables y el valor original queda en el registro.
@@ -122,6 +143,6 @@ No hay datos que migrar: el prototipo no persiste nada y la carga inicial recons
 
 ## Open Questions
 
-- Rango máximo por consulta y antigüedad guardada en SAT2. Se miden en A02 y solo cambian un parámetro, gracias a la ventana adaptable.
+- Si SAT2 limita la frecuencia de consultas. Las pausas y la detención ante errores cubren ese caso.
 - Condición que activa la alarma de SAT2. Se consulta a TECMES; hoy solo se muestra.
 - Proveedor del servidor. Se decide antes de A13 y no afecta a estas specs.

@@ -9,14 +9,14 @@
 | **Capacidad** | 5 horas por día, de lunes a domingo: 90 horas en 18 días |
 | **Arquitectura** | [ADR-0001](../decisions/0001-arquitectura-destino-weather-track.md), aceptado |
 | **Responsable** | Pablo Guillermo Di Nanno |
-| **Versión** | 1.1, 1 de noviembre de 2026 |
+| **Versión** | 1.3, 1 de noviembre de 2026 |
 
 ## 1. Resumen ejecutivo
 
 - **Se compromete un alcance núcleo.** El alcance completo requiere unas 119 horas y hay 90 disponibles. El alcance núcleo requiere unas 96,5 horas y conserva acceso, ingesta, recomendación, reglas R1 a R4, históricos y despliegue.
 - **Sigue haciendo falta trabajar en paralelo.** Ni siquiera el alcance núcleo entra en serie. Con 1,5 frentes, es decir, dos líneas de trabajo con sesiones de IA y supervisión humana, tiene 94 % de probabilidad de llegar, o 61 % si todas las estimaciones se desvían a la vez.
 - **El resto se agrega solo si sobra tiempo.** Las extensiones se deciden el 10 de noviembre, según la reserva disponible.
-- **La ruta crítica pasa por SAT2 y la ingesta.** Son A01, A02, A05, A06, A11, A13 y A15. Las credenciales ya están disponibles, pero aún se desconocen los límites de la API para la carga histórica.
+- **La ruta crítica pasa por SAT2 y la ingesta.** Son A01, A02, A05, A06, A11, A13 y A15. Las credenciales ya están disponibles y las pruebas contra la API real confirmaron consultas de hasta 4 años y datos desde el alta de la estación, lo que reduce el riesgo de la carga histórica.
 
 > **Nota sobre "lead time".** En este plan, la fecha objetivo es el plazo total del proyecto. Es distinto del *change lead time* de DORA, que mide cuánto tarda un cambio desde el commit hasta producción. Esa métrica se tratará junto con el pipeline, en el proceso final.
 
@@ -78,35 +78,27 @@ flowchart TB
 
 La base se construye con dos procesos. La **carga inicial** usa el endpoint de históricos por sensor para traer el pasado. El **ciclo de 10 minutos** usa las lecturas instantáneas, que entregan todos los sensores en una consulta y con una misma hora de medición, lo que necesita el índice TIS. Los históricos también sirven para rellenar huecos.
 
-### Qué se sabe y qué no
+### Límites medidos
 
-| Tema | Estado | Evidencia |
+Se midieron el 1 de noviembre de 2026 contra la API real, sobre el sensor de temperatura a 2 m, con una consulta por vez. Las credenciales se leyeron del entorno y no aparecen en ningún resultado.
+
+| Tema | Resultado | Fuente |
 |---|---|---|
-| Fecha de alta de la estación | Conocido | El catálogo informa 21/09/2022, que es el límite inferior posible |
-| Historia de al menos 10 meses | Conocido | Una captura del 1/1/2026 trajo 144 registros |
-| Rango máximo por consulta | **Desconocido** | La parte legible del manual no lo menciona; el prototipo usa hasta 31 días sin límite propio en el rango manual |
-| Antigüedad máxima guardada | **Desconocido** | No está documentada en la parte legible del manual |
-| Límite de consultas o tamaño de respuesta | **Desconocido** | No está documentado en la parte legible del manual |
-| Vida de la sesión | Conocido | Token de 300 segundos, según capturas reales |
+| Rango por consulta | Al menos 4 años, con 51 segundos y 6 MB | Prueba manual |
+| Ventana de 365 días | Completa, en 13,25 segundos | Script de la tarea 1.3 |
+| Ventana de 31 días | Completa, en 1,65 segundos | Script de la tarea 1.3 |
+| Datos más antiguos | Hay datos el 21/09/2022, la fecha de alta | Script de la tarea 1.3 |
+| Completitud | 99,5 %: 52.283 de 52.560 registros en 365 días | Script de la tarea 1.3 |
+| Límite de consultas | **Desconocido**: no está en la parte legible del manual | |
+| Vida de la sesión | Token de 300 segundos | Capturas reales |
 
-**Volumen máximo si existe toda la historia:** 1.503 días, 11 sensores y 144 registros diarios por sensor dan unos **2,38 millones de filas**. Son 539 consultas con ventanas de 31 días, o 16.533 con ventanas de un día. PostgreSQL maneja ese volumen sin extensiones especiales.
+**Volumen máximo de toda la historia:** 1.503 días, 11 sensores y 144 registros diarios por sensor dan unos **2,38 millones de filas**, un máximo teórico porque hay huecos. Con ventanas de 365 días son unas 55 consultas y, extrapolando estas mediciones, unos 15 minutos de carga. PostgreSQL maneja ese volumen sin extensiones especiales.
 
-### Prueba de límites (parte de A02)
-
-Se ejecuta una sola vez, sobre un sensor y con una consulta por vez. Las credenciales se leen del entorno y nunca se imprimen.
-
-1. **Rango máximo:** pedir ventanas de 1, 7, 31, 62, 93, 184 y 365 días, y detenerse en el primer fallo.
-2. **Truncado silencioso:** en cada respuesta, comparar la primera y la última fecha con las pedidas, y la cantidad de registros con los 144 diarios esperados.
-3. **Antigüedad máxima:** buscar por bisección, con consultas de un día, la fecha más antigua con datos entre el 21/09/2022 y hoy.
-4. **Resultado:** registrar en la spec de ingesta el rango seguro, la antigüedad y los tiempos de respuesta.
-
-En paralelo, conviene preguntarle a TECMES por estos límites. La respuesta sirve para confirmar el resultado, pero el plan no depende de ella.
-
-### Diseño de la carga, que funciona sin conocer los límites
+### Diseño de la carga
 
 | Propiedad | Cómo se logra |
 |---|---|
-| Ventana adaptable | Empieza con el rango seguro medido; si falla, la reduce a la mitad hasta llegar a un día |
+| Ventana adaptable | Empieza con 365 días como máximo, aunque la fuente acepte más; si falla, la reduce a la mitad hasta llegar a un día |
 | Reanudable | Avanza del presente al pasado, sensor por sensor, y registra el progreso; retoma donde quedó |
 | Idempotente | Repetir una ventana no duplica datos, gracias a la clave `(sensor_id, medido_en)` |
 | Prudente con el proveedor | Una consulta por vez, con pausa entre consultas, y detención ante errores repetidos |
@@ -122,7 +114,7 @@ Valores en días ideales del alcance núcleo. *Ruta crítica* significa holgura 
 | ID | Fase | Actividad | Depende de | O | M | P | E | σ | Holgura | Ruta crítica |
 |---|---|---|---|---|---|---|---|---|---|---|
 | A01 | Plan | Specs de OpenSpec del MVP | Ninguna | 0,5 | 1 | 1,5 | 1,00 | 0,17 | 0,00 | Sí |
-| A02 | Plan | Prueba de límites de SAT2, datos de prueba sin credenciales y modo simulado | A01 | 0,5 | 1 | 2 | 1,08 | 0,25 | 0,00 | Sí |
+| A02 | Plan | Límites de SAT2 (medidos), datos de prueba sin credenciales y modo simulado | A01 | 0,5 | 1 | 2 | 1,08 | 0,25 | 0,00 | Sí |
 | A03 | Code | Estructura del repositorio, Docker Compose y configuración | A01 | 0,25 | 0,5 | 1 | 0,54 | 0,12 | 0,54 | |
 | A04 | Code | WT-DB-01: esquema y migraciones | A03 | 0,5 | 1 | 1,5 | 1,00 | 0,17 | 0,54 | |
 | A05 | Code | WT-BE-01: motor de recomendación TIS | A02 | 0,5 | 1 | 1,5 | 1,00 | 0,17 | 0,00 | Sí |
@@ -262,7 +254,7 @@ Resultado de 20.000 simulaciones contra los 15 días ideales disponibles. Se com
 
 | ID | Riesgo | Prob. | Impacto | Respuesta | Disparador |
 |---|---|---|---|---|---|
-| R1 | SAT2 limita el rango o la frecuencia más de lo previsto | Media | Medio | Carga con ventana adaptable y prueba de límites en A02 | Errores o datos truncados en A02 |
+| R1 | SAT2 limita la frecuencia de consultas o responde peor a otros sensores | Baja | Medio | Carga con ventana adaptable, una consulta por vez y pausas | Errores o datos truncados |
 | R2 | El contrato real de SAT2 difiere de su documentación | Alta | Medio | Normalización aislada y pruebas con datos de prueba | Fallas de lectura en A06 |
 | R3 | Falta capacidad para sostener dos frentes con 5 horas diarias | Alta | Alto | Sesiones de IA en ramas separadas y contingencia | Atraso en G2 o G3 |
 | R4 | Filtración de credenciales en el repositorio público | Baja | Alto | Nunca copiar `docs/` del prototipo; credenciales solo en el entorno; revisión en A14 | Cualquier hallazgo |

@@ -5,10 +5,10 @@ Los grupos siguen las actividades del [plan de implementación](../../../docs/pl
 ## 1. Contrato con SAT2 (A02)
 
 - [x] 1.1 Crear `.env.example` sin valores reales y agregar `.env` a `.gitignore`, y verificar que `git check-ignore .env` lo ignora
-- [ ] 1.2 Escribir la prueba de límites, leyendo las credenciales del entorno y con una consulta por vez, y verificar con un cliente simulado que nunca imprime credenciales ni tokens
-- [ ] 1.3 Ejecutar la prueba de límites contra SAT2 y registrar en `design.md` el rango seguro, la antigüedad y los tiempos, y verificar que el registro no contiene credenciales
-- [ ] 1.4 Crear datos de prueba ficticios para catálogo, instantáneos e históricos, con coma decimal, centinela, orden descendente y lecturas ausentes, y verificar que una búsqueda de tokens en esa carpeta no da resultados
-- [ ] 1.5 Definir la interfaz del cliente de SAT2 y el cliente simulado, y verificar con pruebas que devuelve los datos de prueba sin acceder a la red
+- [x] 1.2 Escribir la prueba de límites, leyendo las credenciales del entorno y con una consulta por vez, y verificar con un cliente simulado que nunca imprime credenciales ni tokens
+- [x] 1.3 Ejecutar la prueba de límites contra SAT2 y registrar en `design.md` el rango seguro, la antigüedad y los tiempos, y verificar que el registro no contiene credenciales
+- [x] 1.4 Crear datos de prueba ficticios para catálogo, instantáneos e históricos, con coma decimal, centinela, orden descendente y lecturas ausentes, y verificar que una búsqueda de tokens en esa carpeta no da resultados
+- [x] 1.5 Definir la interfaz del cliente de SAT2 y el cliente simulado, y verificar con pruebas que devuelve los datos de prueba sin acceder a la red
 
 ## 2. Repositorio y contenedores (A03)
 

@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "weather-track-backend"
+version = "0.1.0"
+description = "Backend y worker de Weather Track"
+requires-python = ">=3.12"
+dependencies = ["httpx>=0.28,<1", "tzdata; sys_platform == 'win32'"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[tool.setuptools.packages.find]
+include = ["app*", "herramientas*"]
+
+[tool.setuptools.package-data]
+"app.ingesta" = ["datos_simulados/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
