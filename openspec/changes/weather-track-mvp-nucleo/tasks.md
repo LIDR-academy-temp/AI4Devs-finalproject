@@ -84,8 +84,8 @@ Los grupos siguen las actividades del [plan de implementación](../../../docs/pl
 
 ## 13. Cierre (A15)
 
-- [ ] 13.1 Actualizar el README y `prompts.md` con lo implementado, y verificar que nada planificado figura como hecho ni al revés
-- [ ] 13.2 Preparar la demostración del flujo principal, y verificar que se puede ejecutar de principio a fin sobre el despliegue
+- [x] 13.1 Actualizar el README y `prompts.md` con lo implementado, y verificar que nada planificado figura como hecho ni al revés
+- [x] 13.2 Preparar la demostración del flujo principal, y verificar que se puede ejecutar de principio a fin sobre la instalación local (el despliegue en la nube está pospuesto)
 - [ ] 13.3 Abrir el PR de la Entrega 2 contra el repositorio de LIDR, y verificar que contiene solo los archivos esperados (punto de control G5)
 
 ## Workflow follow-up

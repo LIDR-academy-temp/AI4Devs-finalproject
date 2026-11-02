@@ -57,6 +57,18 @@ def test_no_carga_datos_ficticios_en_modo_real(monkeypatch, capsys):
     assert "modo simulado" in capsys.readouterr().err
 
 
+def test_con_escenarios_asigna_todas_las_estaciones_menos_la_ajena(sesion):
+    assert semillas.cargar_semillas_de_escenarios(sesion)
+    sesion.flush()
+    asignadas = sesion.scalars(
+        select(Estacion.nombre).join(UsuarioEstacion, UsuarioEstacion.estacion_id == Estacion.id)
+    ).all()
+    assert len(asignadas) == contar(sesion, Estacion) - 1 == 9
+    assert semillas.ESTACION_AJENA not in asignadas
+
+    assert semillas.cargar_semillas_de_escenarios(sesion) is None
+
+
 @pytest.mark.parametrize(
     ("nombre", "clave"),
     [

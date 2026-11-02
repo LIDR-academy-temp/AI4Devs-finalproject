@@ -9,7 +9,7 @@
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
 
-> **Estado de este documento (Entrega 1):** describe el diseño del MVP que se construirá para la Entrega 2. Todavía no hay código del MVP en este repositorio, por lo que la instalación, el despliegue y los tests figuran como planificados.
+> **Estado de este documento (Entrega 2):** describe el MVP implementado, que se instala y se prueba desde este repositorio. Lo que todavía no existe se indica como pendiente: el despliegue público, el pipeline de entrega continua y la validación agronómica del índice.
 
 ---
 
@@ -29,7 +29,7 @@ Aplicación web adaptable a escritorio y móvil que transforma los datos de una 
 
 ### **0.4. URL del proyecto:**
 
-El MVP todavía no está desplegado; su URL se publicará con la Entrega 2. El acceso al prototipo de validación se comparte por un canal privado cuando se solicita.
+El MVP se ejecuta en la computadora de quien lo instala, en `http://localhost:8080`: ver la [instalación](#14-instrucciones-de-instalación). Todavía no hay una URL pública, porque el despliegue en internet quedó pospuesto hasta después de esta entrega ([ADR-0002](docs/decisions/0002-proveedor-del-servidor.md)). El acceso al prototipo de validación se comparte por un canal privado cuando se solicita.
 
 ### **0.5. URL o archivo comprimido del repositorio**
 
@@ -120,6 +120,8 @@ Las siguientes reglas se aplican en este orden sobre el estado base:
 
 La recomendación es **orientativa** y la pantalla lo indica siempre. Los pesos y umbrales provienen del prototipo: la bibliografía respalda las variables, pero no sus valores, como detalla el [contraste bibliográfico](docs/tis/contraste-bibliografico.md). Su validación agronómica está prevista para la Entrega 3. No reemplaza el criterio de un profesional ni la etiqueta del producto.
 
+**Situación actual de la estación real.** Desde el 30 de octubre de 2026, el sensor de humedad a 2 m de la estación informa 0 %, tras semanas de valores en baja. Mientras no se revise en el campo, la regla R4 impide que esa estación llegue a `APTO`. Es el comportamiento esperado ante un dato dudoso.
+
 ### **1.3. Diseño y experiencia de usuario:**
 
 ```mermaid
@@ -133,15 +135,18 @@ flowchart LR
 
 La **pantalla de decisión** es el centro de la experiencia. Muestra primero el estado de aplicación con su color, debajo los motivos y el aviso de que es orientativa, y al final las tarjetas de sensores. Se actualiza sola cada 60 segundos. Si los datos no son vigentes, el estado pasa a `DATOS_INSUFICIENTES` y explica por qué.
 
-Las siguientes capturas son del **prototipo de validación**, no del MVP. Sirven como referencia de la interfaz y conservan el nombre anterior de la app. En particular, el MVP cambia la lógica de la pantalla del índice según las reglas R1 a R4.
+Capturas del MVP, con datos ficticios:
 
 | Pantalla | Captura |
 |---|---|
-| Acceso | ![Pantalla de acceso del prototipo](docs/prototipo/01-acceso.png) |
-| Panel de sensores | ![Panel de sensores del prototipo](docs/prototipo/02-panel.png) |
-| Detalle de un sensor | ![Detalle de sensor del prototipo](docs/prototipo/03-detalle-sensor.png) |
-| Históricos | ![Históricos del prototipo](docs/prototipo/04-historicos.png) |
-| Índice de Inversión Térmica | ![Índice TIS del prototipo](docs/prototipo/05-indice-tis.png) |
+| Acceso | ![Pantalla de acceso](docs/capturas/acceso.png) |
+| Decisión: apto | ![Estado apto para aplicar](docs/capturas/decision-apto.png) |
+| Decisión: no aplicar | ![Estado no aplicar por inversión con poco viento](docs/capturas/decision-no-aplicar.png) |
+| Decisión: datos insuficientes | ![Estado datos insuficientes por una lectura faltante](docs/capturas/decision-datos-insuficientes.png) |
+| Detalle e históricos | ![Detalle de un sensor con su gráfico y resumen](docs/capturas/detalle-sensor.png) |
+| Móvil, a 360 píxeles | ![Pantalla de decisión en un celular](docs/capturas/decision-movil.png) |
+
+En `docs/prototipo/` quedan las capturas del prototipo de validación, que sirvió de referencia. No son del MVP.
 
 ### **1.4. Instrucciones de instalación:**
 
@@ -158,6 +163,7 @@ docker compose exec api python -m app.semillas
 El último comando muestra el usuario de demostración y su clave, que aparece una sola vez. La aplicación queda en `http://localhost:8080`.
 
 - **[Guía de instalación local](docs/despliegue/instalacion-local.md):** paso a paso desde cero, uso con datos reales de SAT2, actualización, desinstalación y problemas frecuentes.
+- **[Guion de la demostración](docs/demo/guion-demo.md):** recorre los cinco estados y las reglas en unos 7 minutos, con el modo `escenarios`.
 - **[Despliegue en Google Cloud](docs/despliegue/despliegue-gcp.md) (pospuesto):** guía preparada para publicar en internet con HTTPS y dominio propio. Todavía no se ejecutó.
 - Las cuentas se administran con `docker compose exec api python -m app.administracion`, con los comandos `crear-usuario`, `asignar-estacion`, `restablecer-clave` y `desactivar-usuario`.
 - Para detenerla sin perder datos, usar `docker compose stop`. `docker compose down -v` borra la base.
@@ -194,8 +200,10 @@ Existe una aplicación en R Shiny, en un repositorio privado, creada para probar
 |---|---|---|
 | Análisis | Ingeniería inversa del prototipo con OpenSpec y Claude Code, y contraste entre la documentación de la API y sus respuestas reales | Realizado |
 | Diseño | Definición del MVP, arquitectura, modelo de datos, API, historias y tickets de este documento con Claude Code, con revisión y decisión humana | Realizado |
-| Implementación | Desarrollo guiado por especificaciones con OpenSpec y Claude Code | Planificado (Entrega 2) |
-| Pruebas | Generación de tests a partir de los criterios de aceptación y de la tabla de la sección 2.6, con revisión humana | Planificado (Entrega 2) |
+| Implementación | Desarrollo guiado por especificaciones con OpenSpec y Claude Code, actividad por actividad, con aprobación humana de cada paso | Realizado |
+| Pruebas | Generación de tests a partir de los criterios de aceptación y de la tabla de la sección 2.6, con revisión humana | Realizado |
+| Despliegue | Configuración de producción e instalación local, probadas en copias limpias y en un clon real | Parcial: el despliegue público está pospuesto |
+| Mantenimiento y seguridad | Revisión de seguridad con pruebas negativas, y corrección de los hallazgos | Realizado para esta entrega ([informe](docs/seguridad/revision-entrega-2.md)) |
 
 Los prompts reales están en [prompts.md](prompts.md).
 
@@ -216,6 +224,8 @@ flowchart LR
     W["Worker de ingesta<br/>cada 10 minutos"] -->|"guarda observaciones y recomendaciones"| D
     W -->|"cuenta de servicio"| S["API SAT2<br/>TECMES"]
 ```
+
+En el servidor el acceso es por HTTPS. En la instalación local es por HTTP, solo desde la misma computadora.
 
 **Patrón.** Monolito modular con arquitectura en capas y un worker separado, ambos sobre el mismo código de dominio. El usuario nunca consulta SAT2 de forma directa: lee lo que el worker ya guardó y validó.
 
@@ -269,27 +279,39 @@ sequenceDiagram
 
 ### **2.3. Descripción de alto nivel del proyecto y estructura de ficheros**
 
-> **Planificado.** Hoy el repositorio solo contiene la documentación y `docs/prototipo/`.
-
 ```text
 AI4Devs-finalproject-temp/
 ├── backend/
 │   ├── app/
-│   │   ├── api/          # Rutas HTTP y esquemas de entrada y salida
-│   │   ├── dominio/      # Motor de recomendación y reglas de calidad
-│   │   ├── ingesta/      # Cliente SAT2, normalización y tareas programadas
-│   │   ├── datos/        # Modelos y repositorios de base de datos
-│   │   └── semillas.py   # Datos de demostración
-│   ├── migraciones/      # Migraciones de Alembic
+│   │   ├── api/             # Rutas HTTP, sesión, autorización y errores
+│   │   ├── dominio/         # Motor de recomendación, normalización y vigencia
+│   │   ├── ingesta/         # Cliente SAT2, modos simulados, ciclo, carga y worker
+│   │   ├── datos/           # Modelos y conexión a la base de datos
+│   │   ├── administracion.py  # Comandos para administrar cuentas
+│   │   ├── seguridad.py     # Contraseñas e identificadores de sesión
+│   │   └── semillas.py      # Datos de demostración
+│   ├── herramientas/        # Prueba de límites de SAT2, contrato y pruebas negativas
+│   ├── migraciones/         # Migraciones de Alembic
 │   └── tests/
 ├── frontend/
+│   ├── e2e/                 # Pruebas de extremo a extremo con Playwright
 │   └── src/
-│       ├── pantallas/    # Acceso, decisión, detalle e históricos
-│       ├── componentes/  # Tarjetas, estado y gráficos
-│       └── servicios/    # Cliente de la API
-├── openspec/             # Especificaciones vivas y cambios
-├── docs/                 # Capturas y documentación pública
-├── docker-compose.yml
+│       ├── pantallas/       # Acceso, estaciones, decisión y detalle
+│       ├── componentes/     # Estado, tarjetas y gráfico
+│       ├── servicios/       # Cliente de la API, sesión y actualización periódica
+│       └── pruebas/         # Pruebas con Vitest
+├── openspec/                # Especificaciones y cambios
+├── docs/
+│   ├── capturas/            # Capturas del MVP
+│   ├── decisions/           # ADR-0001 y ADR-0002
+│   ├── demo/                # Guion de la demostración
+│   ├── despliegue/          # Instalación local y despliegue en Google Cloud
+│   ├── plan/                # Plan de implementación
+│   ├── prototipo/           # Capturas del prototipo
+│   ├── seguridad/           # Informe de la revisión de seguridad
+│   └── tis/                 # Contraste bibliográfico del índice
+├── docker-compose.yml       # Pila local
+├── docker-compose.prod.yml  # Ajustes para el servidor
 ├── .env.example
 ├── prompts.md
 └── readme.md
@@ -299,7 +321,15 @@ El backend sigue una arquitectura en capas: `api` y `ingesta` dependen de `domin
 
 ### **2.4. Infraestructura y despliegue**
 
-> **Parcialmente implementado.** El despliegue mínimo de la Entrega 2 es manual, con Docker Compose en un servidor: ver la [guía de despliegue en Google Cloud](docs/despliegue/despliegue-gcp.md) y el [ADR-0002](docs/decisions/0002-proveedor-del-servidor.md). El esquema siguiente, con imágenes publicadas por un pipeline, es preliminar: sus etapas y herramientas se evaluarán en el proceso final.
+**Implementado.** Toda la pila corre con Docker Compose, en cinco servicios: `db`, `migraciones` (se ejecuta una vez y termina), `api`, `worker` y `proxy`.
+
+| Modo | Cómo se usa | Estado |
+|---|---|---|
+| Local | [Instalación local](docs/despliegue/instalacion-local.md), por HTTP y solo desde la misma computadora | Probado con un clon real desde GitHub, en Windows 11 |
+| Servidor | `docker-compose.prod.yml` agrega HTTPS con Caddy, exige las variables críticas y publica solo los puertos 80 y 443 | Probado en local, con certificado interno |
+| Google Cloud | [Guía de despliegue](docs/despliegue/despliegue-gcp.md) y [ADR-0002](docs/decisions/0002-proveedor-del-servidor.md) | **Pospuesto.** La guía no se ejecutó en la nube |
+
+**Pendiente: pipeline.** Este esquema es preliminar y no está implementado. Sus etapas y herramientas se evaluarán en el proceso final, en otro ADR.
 
 ```mermaid
 flowchart LR
@@ -318,42 +348,36 @@ flowchart LR
     end
 ```
 
-**Proceso de despliegue:**
-
-1. Toda pull request ejecuta tests, lint y escaneo de secretos.
-2. Al fusionar en `main` se construyen las imágenes con la etiqueta del commit.
-3. El servidor descarga esas imágenes, aplica las migraciones y reinicia los servicios.
-4. Para revertir, se vuelve a desplegar la etiqueta anterior.
-5. La base de datos tiene una copia de seguridad diaria.
-
 ### **2.5. Seguridad**
 
-> **Planificado.** Prácticas que se incorporarán al MVP.
+Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-entrega-2.md), que también detalla los hallazgos corregidos y los riesgos aceptados.
 
 | Práctica | Aplicación |
 |---|---|
-| Secretos fuera del código | Variables de entorno y `.env.example` sin valores reales. Escaneo con Gitleaks en cada pull request. |
+| Secretos fuera del código | Variables de entorno y `.env.example` sin valores reales. El historial se revisó con Gitleaks; el escaneo en cada pull request queda para el pipeline. |
 | Credenciales de terceros aisladas | La cuenta de servicio de SAT2 solo existe en el worker. Nunca llega al navegador ni a la API de lectura. |
-| Contraseñas | Solo se guarda un hash con Argon2id; la contraseña nunca se conserva en memoria de sesión. |
-| Sesión | Identificador opaco en cookie `HttpOnly`, `Secure` y `SameSite`, con vencimiento a las 8 horas e invalidación inmediata al salir. |
+| Contraseñas | Solo se guarda un hash con Argon2id, con un tope de cálculos simultáneos para que una ráfaga no agote la memoria. |
+| Sesión | Identificador opaco en cookie `HttpOnly` y `SameSite`, y `Secure` en el servidor. Vence a las 8 horas y se invalida al salir. |
 | Autorización | Todas las rutas se protegen en el servidor. Un usuario solo accede a sus estaciones; de lo contrario recibe 403. |
-| Abuso | Límite de intentos de inicio de sesión. |
-| Transporte | HTTPS obligatorio y CORS restringido al dominio de la aplicación. |
-| Entrada | Validación con Pydantic y consultas parametrizadas por el ORM. |
+| Abuso | Bloqueo por cuenta tras 5 intentos fallidos. Aún no hay límite por dirección IP. |
+| Transporte | HTTPS en el servidor. En local, HTTP solo desde la misma computadora. El navegador y la API comparten dominio, así que CORS no está habilitado. |
+| Cabeceras | HSTS, política de contenido, `nosniff`, protección contra marcos y sin cabecera `Server`. |
+| Entrada | Validación con Pydantic, consultas parametrizadas por el ORM y límite de 64 KB en el cuerpo. |
 | Registros | Sin contraseñas ni tokens en los logs. |
 | Datos de prueba | Datos de ejemplo y de prueba ficticios, sin copias de respuestas con credenciales. |
 
 ### **2.6. Tests**
 
-> **Planificado.** Todavía no se ejecutó ninguno, porque el código no existe.
+Resultado de la última ejecución, el 2 de noviembre de 2026: todas pasan.
 
-| Nivel | Herramienta | Qué cubre |
-|---|---|---|
-| Unitario | pytest | Motor de recomendación, normalización y reglas de calidad |
-| Integración | pytest, httpx, PostgreSQL de prueba | Rutas de la API, permisos y restricciones de la base |
-| Ingesta | pytest con SAT2 simulado | Respuestas válidas, errores, datos faltantes y token vencido |
-| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión |
-| Extremo a extremo | Playwright | Flujo completo de las historias de usuario |
+| Nivel | Herramienta | Qué cubre | Pruebas |
+|---|---|---|---|
+| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, permisos, restricciones de la base, ingesta y errores de SAT2 | 355 |
+| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión y flujos de acceso e históricos | 46 |
+| Extremo a extremo | Playwright, contra la pila completa en contenedores | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 | 14 |
+| Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras y carga | 77 |
+
+Además, la ingesta se probó una vez contra SAT2 real, durante 38 minutos y con 48.427 lecturas. Los comandos están en la [sección 1.4](#14-instrucciones-de-instalación).
 
 **Casos de referencia del motor de recomendación:**
 
@@ -543,6 +567,8 @@ erDiagram
 ---
 
 ## 4. Especificación de la API
+
+Esta sección muestra los tres endpoints principales. El contrato completo, que incluye acceso, lista de estaciones y salud, se genera desde el código: está en [`frontend/openapi.json`](frontend/openapi.json) y en `/api/docs`. Una prueba falla si difiere de la API.
 
 Todas las rutas usan la sesión del usuario y comprueban que tenga acceso a la estación. Los valores de los ejemplos son ficticios.
 
@@ -1064,15 +1090,18 @@ Escenario: Huecos en la serie
 | HU2 | F3, F4, F6 | `recomendacion`, `condiciones-actuales` | `OBSERVACION`, `RECOMENDACION`, `EJECUCION_INGESTA` | WT-DB-01, WT-BE-01 a WT-BE-03, WT-FE-01 |
 | HU3 | F5 | `historico` | `SENSOR`, `OBSERVACION` | WT-DB-01, WT-BE-02 a WT-BE-04, WT-FE-02 |
 
-**Resto del trabajo hasta la Entrega 2**
+**Estado de los tickets**
 
-| Ticket | Descripción |
-|---|---|
-| WT-BE-02 | Endpoints de condiciones actuales e históricos |
-| WT-BE-03 | Worker de ingesta, normalización, reglas de calidad y modo simulado |
-| WT-BE-04 | Autenticación, sesiones y autorización por estación |
-| WT-FE-02 | Pantallas de acceso, detalle de sensor e históricos |
-| WT-OPS-01 | Docker Compose, integración continua, despliegue y escaneo de secretos |
+| Ticket | Descripción | Estado |
+|---|---|---|
+| WT-DB-01 | Esquema inicial de la base de datos | Hecho |
+| WT-BE-01 | Motor y endpoint de recomendación | Hecho |
+| WT-FE-01 | Pantalla de decisión | Hecho |
+| WT-BE-02 | Endpoints de condiciones actuales e históricos | Hecho |
+| WT-BE-03 | Worker de ingesta, normalización, reglas de calidad y modo simulado | Hecho |
+| WT-BE-04 | Autenticación, sesiones y autorización por estación | Hecho |
+| WT-FE-02 | Pantallas de acceso, detalle de sensor e históricos | Hecho |
+| WT-OPS-01 | Docker Compose, integración continua, despliegue y escaneo de secretos | Parcial: Docker Compose, configuración de producción e instalación local hechos, y escaneo manual del historial. La integración continua y el despliegue público quedan pendientes |
 
 ---
 
@@ -1080,6 +1109,4 @@ Escenario: Huecos en la serie
 
 **Pull Request 1:** [documentación y diseño del MVP (Entrega 1)](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/12). Agrega el problema, el alcance, la arquitectura, el modelo de datos, la API, las historias, los tickets y los prompts.
 
-**Pull Request 2 (planificada):** esquema de base de datos y motor de recomendación (WT-DB-01 y WT-BE-01).
-
-**Pull Request 3 (planificada):** pantalla de decisión (WT-FE-01).
+**Pull Request 2:** implementación del MVP (Entrega 2), desde la rama `feature/entrega-2-PDN`. Unifica las dos pull requests que se habían planificado por separado, para el esquema y el motor y para la pantalla de decisión, y agrega el resto del alcance núcleo.

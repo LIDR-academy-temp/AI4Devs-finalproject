@@ -1,6 +1,6 @@
 Los siguientes son prompts reales, copiados tal como se escribieron. Las respuestas se revisaron y las decisiones de producto y arquitectura las tomó el autor.
 
-Las fases de implementación y pruebas todavía no comenzaron. Sus prompts se agregarán a medida que se usen, a partir de la Entrega 2.
+Las secciones 0 a 7 corresponden a la Entrega 1. La implementación y las pruebas de la Entrega 2 están en la [sección 8](#8-implementación-y-pruebas-entrega-2).
 
 ## Índice
 
@@ -12,6 +12,7 @@ Las fases de implementación y pruebas todavía no comenzaron. Sus prompts se ag
 5. [Historias de usuario](#5-historias-de-usuario)
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
+8. [Implementación y pruebas (Entrega 2)](#8-implementación-y-pruebas-entrega-2)
 
 ---
 
@@ -131,7 +132,7 @@ Se generó con los prompts de la sección 2.1.
 
 ### **2.6. Tests**
 
-Se generó con los prompts de la sección 2.1. Es un plan: los prompts de pruebas se registrarán en la Entrega 2.
+El plan se generó con los prompts de la sección 2.1. La implementación de las pruebas está en la [sección 8](#8-implementación-y-pruebas-entrega-2).
 
 ---
 
@@ -173,4 +174,104 @@ el PR hay que hacerlo contra este repo: https://github.com/LIDR-academy-temp/AI4
 Sí, crea fork y PR
 ```
 
-Los prompts de las próximas pull requests se agregarán cuando se abran.
+Los prompts de la pull request de la Entrega 2 están en la [sección 8.6](#86-cierre).
+
+---
+
+## 8. Implementación y pruebas (Entrega 2)
+
+Herramientas: Claude Code con Claude Opus 5.5, OpenSpec y las skills `engineering:architecture`, `opsx:propose`, `opsx:apply` y `postman:api-engineer`.
+
+**Cómo se trabajó.** Muchos prompts son breves porque el detalle ya estaba escrito: cada actividad tenía su especificación en OpenSpec, sus tareas verificables y su lugar en el plan. El asistente implementaba y verificaba una actividad, informaba el resultado y esperaba la aprobación humana antes de hacer el commit y de empezar la siguiente. Las decisiones de producto, arquitectura, proveedor y alcance fueron del autor. Se omite un prompt que describía el contenido del archivo `.env`.
+
+### 8.1. Arquitectura y plan
+
+**Prompt 1:**
+
+```text
+/engineering:architecture Ahora hay que crear la arquitectura nueva a donde migrar el proyecto actual. Generar un ADR para preparar la entrega #2. No tenemos que evaluar las partes del pipeline aún, eso será tema del proceso final. Nuestro Lead Time es el 19 de Noviembre por lo que generemos un diagrama de procesos de implementación de actividades para llegar. Documéntalo en un archivo como parte del material a entregar y que utilice un flujograma o alguna herramienta como pert/gant en contexto de Devops. Si es necesario un Plugin, MCP, conector idóneo, etc. de Claude, me lo indicas y lo enchufamos. Investiga los mejores estándares de la industria para realizar esto porque estamos generando material profesional que puede mostrarse a futuros clientes del mercado.
+```
+
+**Prompt 2:**
+
+```text
+La disponibilidad será de lunes a lunes y podemos un promedio de 5 hs día. Las credenciales de acceso a Tecmes ya están y son de 7/24. El acceso a la ingesta para generar la BD se logra con la API "instantaneoEquipoPorSensor" pero desconozco el rango máximo que guarda TECMES y el rango máximo que podemos pedir por sesión. Aprobado el ADR-00001
+```
+
+### 8.2. Especificación e ingesta
+
+Invocaciones de skills que hizo el asistente, con estos argumentos:
+
+```text
+/opsx:propose weather-track-mvp-nucleo: alcance núcleo del MVP de Weather Track definido en readme.md, docs/decisions/0001-arquitectura-destino-weather-track.md y docs/plan/plan-implementacion-entrega-2.md (actividad A01, punto de control G1)
+```
+
+```text
+/opsx:apply weather-track-mvp-nucleo, solo el grupo 1 (A02): tareas 1.2 a 1.5
+```
+
+**Medición de los límites de SAT2 (A02):**
+
+```text
+Si ya está. El test de RecuperarHistoricosEquiposPorSensor positivo desde 1/1/2022 al 1/1/2026 con 51 segundos de demora y 6Mb de tamaño en solo un sensor, como es de esperar según la API.
+```
+
+**Índice TIS y unidades (A06):**
+
+```text
+En esta carpeta "C:\Dev\SAT2Dashboard\docs" se encuentran archivos en formato pdf en los cuales se validan y/o basan los cálculos del índice TIS, están dentro de tu entorno. Si no puedes leerlos dime qué necesitas para lograrlo. Sigamos con A06 hasta que se me consuma la ventana de créditos de uso
+```
+
+```text
+Si haz el commit y el push. Verificar el sistema de medidas para que se tenga en cuenta de velocidad en Km/h, medidas en el sistema MKS adaptado porque veo Mph y quiero aclararlo. Ya está corriendo docker compose sin errores, aunque no se como detenerlo. Te lo dejo a vos y verifica lo que necesites d él aunque no hicimos el commit y push antes
+```
+
+### 8.3. Acceso, API y frontend
+
+Cada actividad, de A03 a A10, se inició y se cerró con prompts de este tipo:
+
+```text
+Sí, empieza A07
+```
+
+```text
+Sí, commit y push
+```
+
+Para los endpoints de A08, el asistente invocó esta skill:
+
+```text
+/postman:api-engineer Implementar tres endpoints de lectura ya especificados en la sección 4 del README (OpenAPI 3.0.3) del proyecto Weather Track, con FastAPI. Sin credenciales reales en la nube de Postman.
+```
+
+### 8.4. Pruebas y revisión manual
+
+Para las pruebas de extremo a extremo (A11):
+
+```text
+Listo podemos continuar
+```
+
+Para las pruebas manuales del autor sobre A10:
+
+```text
+Si haz el commit y push. Dame las indicaciones para ver las pantallas por mi cuenta, si eso no es posible sin un gran despliegue, déjalo y espero el momento.
+```
+
+### 8.5. Despliegue
+
+```text
+Tenemos dos situaciones que abordar con respecto al despliegue. Una es generar la aplicación y la documentación asociada para que un usuario pueda hacerlo desde la clonación de un repo en GitHub hasta su PC local. Esto debe ser también parte de la entrega final. Por otro lado y que puede ser parte de una segunda opción plus y es que hagamos el proceso para desplegar en Google Cloud Plataform, también documenta como se logró y desplegarlo real para que lo "visiten" desde internet con mi dominio ya establecido
+```
+
+```text
+Haz el commit y el push para continuar con la vía normal. El plan del Plus por GCP no vamos a hacerlo aún. Tengo más datos para incluir y que van materializar ese punto más adelante. Nos concentramos en el tema de la entrega 2 y luego veremos. Continuemos por acá
+```
+
+### 8.6. Cierre
+
+```text
+Sí, empieza A15
+```
+
+La revisión de seguridad (A14) se inició dentro del prompt "Continuemos por acá" de la sección 8.5.

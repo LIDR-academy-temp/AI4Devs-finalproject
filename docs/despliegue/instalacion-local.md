@@ -52,6 +52,8 @@ La aplicación solo responde en tu computadora: no queda expuesta a otros equipo
 
 Los históricos ficticios se cargan en segundo plano y pueden tardar un par de minutos en aparecer completos. La documentación de la API está en <http://localhost:8080/api/docs>.
 
+Con estos datos la estación siempre da "Apto". Para ver todos los estados, seguí el [guion de la demostración](../demo/guion-demo.md).
+
 ## 3. Detener, encender y actualizar
 
 Detener, conservando los datos:
@@ -140,6 +142,7 @@ Después podés borrar la carpeta `weather-track`.
 | Perdiste la clave de la demostración | `docker compose exec api python -m app.administracion restablecer-clave --email demo@weathertrack.example` |
 | Demasiados intentos al ingresar | Tras 5 errores el acceso se bloquea 15 minutos. Hay que esperar |
 | "Datos insuficientes" al usar datos reales | Es esperable hasta el primer ciclo. Si sigue, mirá `docker compose logs worker --tail 30`: los registros nunca muestran la clave |
+| El comando de las semillas termina con un error justo después de levantar | El sistema todavía estaba creando las estaciones. Repetilo: no duplica nada |
 | Un servicio no arranca | Revisá `docker compose ps` y `docker compose logs --tail 50` |
 
 ## Probado en
