@@ -1,23 +1,47 @@
-import { useEffect, useState } from 'react'
+import { Link, Navigate, Outlet, Route, Routes } from 'react-router'
+import { Acceso } from './pantallas/Acceso'
+import { DetalleSensor } from './pantallas/DetalleSensor'
+import { Estacion } from './pantallas/Estacion'
+import { Estaciones } from './pantallas/Estaciones'
+import { useSesion } from './servicios/sesion'
 
-type EstadoApi = 'consultando' | 'disponible' | 'sin conexión'
+function Protegida() {
+  const { estado, salir } = useSesion()
+
+  if (estado === 'verificando') {
+    return <p role="status">Verificando la sesión…</p>
+  }
+  if (estado === 'sin_sesion') {
+    return <Navigate to="/acceso" replace />
+  }
+  return (
+    <>
+      <header className="encabezado">
+        <Link to="/" className="marca">
+          Weather Track
+        </Link>
+        <button type="button" className="secundario-boton" onClick={() => void salir()}>
+          Salir
+        </button>
+      </header>
+      <main className="contenido">
+        <Outlet />
+      </main>
+    </>
+  )
+}
 
 function App() {
-  const [estadoApi, setEstadoApi] = useState<EstadoApi>('consultando')
-
-  useEffect(() => {
-    fetch('/api/v1/salud')
-      .then((respuesta) =>
-        setEstadoApi(respuesta.ok ? 'disponible' : 'sin conexión'),
-      )
-      .catch(() => setEstadoApi('sin conexión'))
-  }, [])
-
   return (
-    <main>
-      <h1>Weather Track</h1>
-      <p>API: {estadoApi}</p>
-    </main>
+    <Routes>
+      <Route path="/acceso" element={<Acceso />} />
+      <Route element={<Protegida />}>
+        <Route path="/" element={<Estaciones />} />
+        <Route path="/estaciones/:estacionId" element={<Estacion />} />
+        <Route path="/estaciones/:estacionId/sensores/:sensorId" element={<DetalleSensor />} />
+        <Route path="*" element={<p role="status">Esta página no existe.</p>} />
+      </Route>
+    </Routes>
   )
 }
 

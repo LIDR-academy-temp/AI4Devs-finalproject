@@ -54,10 +54,10 @@ Los grupos siguen las actividades del [plan de implementación](../../../docs/pl
 
 ## 8. Frontend base (A09, WT-FE-02)
 
-- [ ] 8.1 Crear el cliente de la API con tipos derivados del OpenAPI, y verificar que la compilación falla si cambia un campo usado
-- [ ] 8.2 Construir la pantalla de acceso y el manejo de sesión vencida, y verificar con pruebas de componentes el error genérico y la redirección
-- [ ] 8.3 Construir la selección de estación y el detalle de sensor, y verificar los escenarios de una, varias y ninguna estación
-- [ ] 8.4 Construir los históricos de 7 y 31 días, y verificar el resumen, los huecos sin interpolar y el aviso de falta de datos
+- [x] 8.1 Crear el cliente de la API con tipos derivados del OpenAPI, y verificar que la compilación falla si cambia un campo usado
+- [x] 8.2 Construir la pantalla de acceso y el manejo de sesión vencida, y verificar con pruebas de componentes el error genérico y la redirección
+- [x] 8.3 Construir la selección de estación y el detalle de sensor, y verificar los escenarios de una, varias y ninguna estación
+- [x] 8.4 Construir los históricos de 7 y 31 días, y verificar el resumen, los huecos sin interpolar y el aviso de falta de datos
 
 ## 9. Pantalla de decisión (A10, WT-FE-01)
 

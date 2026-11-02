@@ -1,0 +1,913 @@
+{
+  "components": {
+    "schemas": {
+      "CondicionesActuales": {
+        "properties": {
+          "antiguedad_segundos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Antiguedad Segundos"
+          },
+          "estacion_id": {
+            "title": "Estacion Id",
+            "type": "integer"
+          },
+          "estacion_nombre": {
+            "title": "Estacion Nombre",
+            "type": "string"
+          },
+          "estado_datos": {
+            "enum": [
+              "VIGENTE",
+              "DESACTUALIZADO",
+              "SIN_DATOS"
+            ],
+            "title": "Estado Datos",
+            "type": "string"
+          },
+          "medido_en": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medido En"
+          },
+          "sensores": {
+            "items": {
+              "$ref": "#/components/schemas/LecturaSensor"
+            },
+            "title": "Sensores",
+            "type": "array"
+          },
+          "ultima_ingesta_con_error": {
+            "title": "Ultima Ingesta Con Error",
+            "type": "boolean"
+          },
+          "ultima_ingesta_exitosa_en": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ultima Ingesta Exitosa En"
+          }
+        },
+        "required": [
+          "estacion_id",
+          "estacion_nombre",
+          "medido_en",
+          "antiguedad_segundos",
+          "estado_datos",
+          "ultima_ingesta_exitosa_en",
+          "ultima_ingesta_con_error",
+          "sensores"
+        ],
+        "title": "CondicionesActuales",
+        "type": "object"
+      },
+      "EstacionResumen": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "latitud": {
+            "title": "Latitud",
+            "type": "string"
+          },
+          "longitud": {
+            "title": "Longitud",
+            "type": "string"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "latitud",
+          "longitud"
+        ],
+        "title": "EstacionResumen",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Historico": {
+        "properties": {
+          "desde": {
+            "format": "date-time",
+            "title": "Desde",
+            "type": "string"
+          },
+          "hasta": {
+            "format": "date-time",
+            "title": "Hasta",
+            "type": "string"
+          },
+          "puntos": {
+            "items": {
+              "$ref": "#/components/schemas/Punto"
+            },
+            "title": "Puntos",
+            "type": "array"
+          },
+          "resumen": {
+            "$ref": "#/components/schemas/Resumen"
+          },
+          "sensor_id": {
+            "title": "Sensor Id",
+            "type": "integer"
+          },
+          "unidad": {
+            "title": "Unidad",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sensor_id",
+          "unidad",
+          "desde",
+          "hasta",
+          "resumen",
+          "puntos"
+        ],
+        "title": "Historico",
+        "type": "object"
+      },
+      "LecturaSensor": {
+        "properties": {
+          "alarma": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alarma"
+          },
+          "altura_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altura M"
+          },
+          "calidad": {
+            "enum": [
+              "OK",
+              "FALTANTE",
+              "SOSPECHOSO"
+            ],
+            "title": "Calidad",
+            "type": "string"
+          },
+          "magnitud": {
+            "title": "Magnitud",
+            "type": "string"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          },
+          "sensor_id": {
+            "title": "Sensor Id",
+            "type": "integer"
+          },
+          "unidad": {
+            "title": "Unidad",
+            "type": "string"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          }
+        },
+        "required": [
+          "sensor_id",
+          "nombre",
+          "magnitud",
+          "altura_m",
+          "valor",
+          "unidad",
+          "calidad",
+          "alarma"
+        ],
+        "title": "LecturaSensor",
+        "type": "object"
+      },
+      "Motivo": {
+        "properties": {
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "detalle": {
+            "title": "Detalle",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo",
+          "detalle"
+        ],
+        "title": "Motivo",
+        "type": "object"
+      },
+      "Punto": {
+        "properties": {
+          "calidad": {
+            "enum": [
+              "OK",
+              "FALTANTE",
+              "SOSPECHOSO"
+            ],
+            "title": "Calidad",
+            "type": "string"
+          },
+          "medido_en": {
+            "format": "date-time",
+            "title": "Medido En",
+            "type": "string"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          }
+        },
+        "required": [
+          "medido_en",
+          "valor",
+          "calidad"
+        ],
+        "title": "Punto",
+        "type": "object"
+      },
+      "Recomendacion": {
+        "properties": {
+          "antiguedad_segundos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Antiguedad Segundos"
+          },
+          "aviso": {
+            "title": "Aviso",
+            "type": "string"
+          },
+          "delta_t_c": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta T C"
+          },
+          "estacion_id": {
+            "title": "Estacion Id",
+            "type": "integer"
+          },
+          "estado": {
+            "title": "Estado",
+            "type": "string"
+          },
+          "indice": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indice"
+          },
+          "inversion_detectada": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inversion Detectada"
+          },
+          "medido_en": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medido En"
+          },
+          "motivos": {
+            "items": {
+              "$ref": "#/components/schemas/Motivo"
+            },
+            "title": "Motivos",
+            "type": "array"
+          },
+          "version_metodo": {
+            "title": "Version Metodo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estacion_id",
+          "estado",
+          "indice",
+          "delta_t_c",
+          "inversion_detectada",
+          "motivos",
+          "medido_en",
+          "antiguedad_segundos",
+          "version_metodo",
+          "aviso"
+        ],
+        "title": "Recomendacion",
+        "type": "object"
+      },
+      "Resumen": {
+        "properties": {
+          "cantidad": {
+            "title": "Cantidad",
+            "type": "integer"
+          },
+          "maximo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximo"
+          },
+          "minimo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimo"
+          },
+          "promedio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promedio"
+          }
+        },
+        "required": [
+          "maximo",
+          "minimo",
+          "promedio",
+          "cantidad"
+        ],
+        "title": "Resumen",
+        "type": "object"
+      },
+      "SolicitudInicio": {
+        "properties": {
+          "contrasena": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Contrasena",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 254,
+            "minLength": 1,
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "contrasena"
+        ],
+        "title": "SolicitudInicio",
+        "type": "object"
+      },
+      "UsuarioPublico": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "nombre"
+        ],
+        "title": "UsuarioPublico",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Weather Track API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "iniciar_sesion_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudInicio"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioPublico"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Iniciar Sesion",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "cerrar_sesion_api_v1_auth_logout_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cerrar Sesion",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/estaciones": {
+      "get": {
+        "operationId": "listar_estaciones_api_v1_estaciones_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EstacionResumen"
+                  },
+                  "title": "Response Listar Estaciones Api V1 Estaciones Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Listar Estaciones",
+        "tags": [
+          "estaciones"
+        ]
+      }
+    },
+    "/api/v1/estaciones/{estacionId}/condiciones-actuales": {
+      "get": {
+        "operationId": "obtenerCondicionesActuales",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "estacionId",
+            "required": true,
+            "schema": {
+              "title": "Estacionid",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CondicionesActuales"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sesión ausente o vencida"
+          },
+          "403": {
+            "description": "El usuario no tiene acceso a esta estación"
+          },
+          "404": {
+            "description": "La estación o el sensor no existen"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obtener Condiciones Actuales",
+        "tags": [
+          "lecturas"
+        ]
+      }
+    },
+    "/api/v1/estaciones/{estacionId}/recomendacion": {
+      "get": {
+        "operationId": "obtenerRecomendacion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "estacionId",
+            "required": true,
+            "schema": {
+              "title": "Estacionid",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recomendacion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sesión ausente o vencida"
+          },
+          "403": {
+            "description": "El usuario no tiene acceso a esta estación"
+          },
+          "404": {
+            "description": "La estación o el sensor no existen"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obtener Recomendacion",
+        "tags": [
+          "lecturas"
+        ]
+      }
+    },
+    "/api/v1/estaciones/{estacionId}/sensores/{sensorId}/historico": {
+      "get": {
+        "operationId": "obtenerHistorico",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sensorId",
+            "required": true,
+            "schema": {
+              "title": "Sensorid",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "estacionId",
+            "required": true,
+            "schema": {
+              "title": "Estacionid",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "desde",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Desde",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hasta",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Hasta",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Historico"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sesión ausente o vencida"
+          },
+          "403": {
+            "description": "El usuario no tiene acceso a esta estación"
+          },
+          "404": {
+            "description": "La estación o el sensor no existen"
+          },
+          "422": {
+            "description": "Rango de fechas inválido o mayor a 31 días"
+          }
+        },
+        "summary": "Obtener Historico",
+        "tags": [
+          "lecturas"
+        ]
+      }
+    },
+    "/api/v1/salud": {
+      "get": {
+        "operationId": "salud_api_v1_salud_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Salud Api V1 Salud Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Salud",
+        "tags": [
+          "operación"
+        ]
+      }
+    }
+  }
+}
