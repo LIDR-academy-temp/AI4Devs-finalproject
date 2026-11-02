@@ -69,6 +69,23 @@ https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp
 | F5 | Históricos | Serie por sensor de los últimos 7 o 31 días, con resumen estadístico. |
 | F6 | Ingesta automática | Carga inicial de los últimos 31 días y proceso programado que cada 10 minutos obtiene datos, los normaliza, los guarda y calcula la recomendación. |
 
+#### Sistema de unidades
+
+Todo el sistema usa unidades métricas: las medidas se guardan, calculan y muestran así. Las referencias en mph o °F solo aparecen al citar una fuente en el [contraste bibliográfico](docs/tis/contraste-bibliografico.md).
+
+| Magnitud | Unidad |
+|---|---|
+| Temperatura | °C |
+| Velocidad del viento | km/h |
+| Dirección del viento | grados |
+| Radiación solar | W/m² |
+| Humedad relativa | % |
+| Presión | hPa |
+| Lluvia | mm |
+| Altura de medición | m |
+
+Si un sensor usado por el índice informara otra unidad, sus lecturas no se usan y la recomendación pasa a `DATOS_INSUFICIENTES`.
+
 #### Reglas de la recomendación
 
 El índice TIS va de 0 a 100 y combina cuatro factores:
@@ -98,7 +115,7 @@ Las siguientes reglas se aplican en este orden sobre el estado base:
 | R1 | Falta o es inválida alguna de las seis lecturas (T2m, T10m, HR2m, HR10m, viento o radiación) | `DATOS_INSUFICIENTES`, sin índice |
 | R2 | La medición tiene más de 30 minutos de antigüedad al consultarla | `DATOS_INSUFICIENTES`, con motivo `DATOS_DESACTUALIZADOS` |
 | R3 | ΔT > 0 | Nunca `APTO`: como mínimo `PRECAUCION`, con motivo `INVERSION_DETECTADA` |
-| R3b | ΔT > 0 y viento de 6,4 km/h (4 mph) o menos | `NO_APLICAR`, con motivo `INVERSION_DETECTADA` |
+| R3b | ΔT > 0 y viento de 6,4 km/h o menos | `NO_APLICAR`, con motivo `INVERSION_DETECTADA` |
 | R4 | Alguna lectura es sospechosa (por ejemplo, más de 25 puntos de diferencia de humedad entre 2 m y 10 m) | Nunca `APTO`: como mínimo `PRECAUCION`, con motivo `DATO_SOSPECHOSO` |
 
 La recomendación es **orientativa** y la pantalla lo indica siempre. Los pesos y umbrales provienen del prototipo: la bibliografía respalda las variables, pero no sus valores, como detalla el [contraste bibliográfico](docs/tis/contraste-bibliografico.md). Su validación agronómica está prevista para la Entrega 3. No reemplaza el criterio de un profesional ni la etiqueta del producto.

@@ -67,7 +67,7 @@ def _armar_filas(
         if cruda is None:
             valor, calidad, alarma = None, CALIDAD_FALTANTE, None
         else:
-            valor, calidad = clasificar_lectura(sensor.magnitud, cruda.get("valor"))
+            valor, calidad = clasificar_lectura(sensor.magnitud, cruda.get("valor"), sensor.unidad)
             alarma = cruda.get("alarma") if isinstance(cruda.get("alarma"), bool) else None
         filas[sensor.id] = {
             "sensor_id": sensor.id,

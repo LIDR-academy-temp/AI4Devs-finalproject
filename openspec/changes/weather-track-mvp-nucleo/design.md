@@ -116,6 +116,13 @@ La carga empieza con ventanas de 365 días como máximo, y las reduce si fallan.
 - **Por qué:** SAT2 aceptó una consulta de 4 años, pero tardó 51 segundos. Partirla reduce el riesgo de agotar el tiempo de espera, permite reanudar por tramos y es más prudente con el proveedor.
 - **Alternativa descartada:** pedir toda la historia en una sola consulta, que es más simple pero pierde todo el avance ante un fallo.
 
+### D13. Una sola unidad por magnitud, sin conversión automática
+
+El sistema usa °C, km/h, W/m², %, hPa y mm. Las variantes de escritura de la fuente se unifican, pero un sensor del índice en otra unidad deja sus lecturas como `FALTANTE`.
+
+- **Por qué:** los umbrales del índice suponen esas unidades. Un viento en mph tomado como km/h parecería menor de lo que es y cambiaría el estado sin que nadie lo note.
+- **Alternativa descartada:** convertir automáticamente. Hoy SAT2 informa `km/H` y ninguna estación necesita conversión, así que sería código sin uso y sin probar con datos reales.
+
 ## Límites medidos de SAT2
 
 | Medición | Resultado | Fuente |
@@ -129,6 +136,17 @@ La carga empieza con ventanas de 365 días como máximo, y las reduce si fallan.
 | Completitud | 52.283 de 52.560 registros esperados en 365 días (99,5 %) | Script, modo real |
 
 Las mediciones corresponden a un solo sensor, de temperatura a 2 m. Los registros faltantes confirman que hay huecos reales, así que la serie nunca debe interpolarse.
+
+## Prueba del worker contra SAT2
+
+El 1 de noviembre de 2026, el worker corrió 38 minutos en modo real, ejecutado por el responsable: una carga inicial con 48.427 lecturas y cuatro ciclos, todos exitosos, sin credenciales en los registros. Usó una imagen anterior a la regla R3b, por lo que las recomendaciones quedaron como `TIS-1.0`.
+
+Hallazgos en los datos reales:
+
+- **Unidades del catálogo:** `km/H`, `ºC`, `W/m2`, `%`, `hPa`, `mm`, `V` y `grados`.
+- **Humedad de hoja:** se informa en `%`, no como `si/no`.
+- **Completitud en 31 días:** entre 96,8 % y 99,6 % según el sensor.
+- **Humedad a 2 m:** se degrada, con promedio semanal de 40,7 %, 30,8 %, 22,3 %, 16,8 % y 5,7 %, y sin valores distintos de 0 desde el 30/10/2026 a las 05:10. El 97 % de los instantes quedó como `SOSPECHOSO`. Mientras dure, R4 impide el estado `APTO` en esta estación.
 
 ## Risks / Trade-offs
 

@@ -156,6 +156,20 @@ El sistema SHALL clasificar cada lectura como `OK`, `FALTANTE` o `SOSPECHOSO`. U
 - **WHEN** en un mismo instante la humedad relativa a 2 m y a 10 m difiere en más de 25 puntos
 - **THEN** ambas lecturas quedan como `SOSPECHOSO` y conservan su valor
 
+### Requirement: Sistema de unidades
+
+El sistema SHALL guardar y mostrar temperatura en °C, viento en km/h, radiación en W/m², humedad en %, presión en hPa y lluvia en mm. Una lectura de temperatura, humedad, viento o radiación en otra unidad MUST quedar como `FALTANTE`, sin convertirse.
+
+#### Scenario: Variantes de escritura de la fuente
+
+- **WHEN** el catálogo informa `km/H`, `ºC` o `W/m2`
+- **THEN** el sistema guarda `km/h`, `°C` y `W/m²`
+
+#### Scenario: Viento en otra unidad
+
+- **WHEN** el catálogo informa el viento en `mph`
+- **THEN** sus lecturas quedan como `FALTANTE`, se registra un aviso y la recomendación es `DATOS_INSUFICIENTES`
+
 ### Requirement: Conservación de la alarma de la fuente
 
 El sistema SHALL guardar la alarma que SAT2 informa por lectura, o dejarla sin valor cuando la fuente no la informa.

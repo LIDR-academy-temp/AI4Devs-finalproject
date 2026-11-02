@@ -9,7 +9,7 @@
 | **Capacidad** | 5 horas por día, de lunes a domingo: 90 horas en 18 días |
 | **Arquitectura** | [ADR-0001](../decisions/0001-arquitectura-destino-weather-track.md), aceptado |
 | **Responsable** | Pablo Guillermo Di Nanno |
-| **Versión** | 1.3, 1 de noviembre de 2026 |
+| **Versión** | 1.4, 1 de noviembre de 2026 |
 
 ## 1. Resumen ejecutivo
 
@@ -260,6 +260,7 @@ Resultado de 20.000 simulaciones contra los 15 días ideales disponibles. Se com
 | R4 | Filtración de credenciales en el repositorio público | Baja | Alto | Nunca copiar `docs/` del prototipo; credenciales solo en el entorno; revisión en A14 | Cualquier hallazgo |
 | R5 | La carga histórica afecta al servicio del proveedor | Baja | Alto | Una consulta por vez, con pausas y detención ante errores | Errores repetidos o respuestas lentas |
 | R6 | La supervisión de código generado por IA se vuelve un cuello de botella | Media | Medio | Cambios pequeños, pruebas primero y revisión por ticket | PR sin revisar por más de un día |
+| R8 | El sensor de humedad a 2 m sigue dando valores anómalos: promedio semanal en baja y 0 % desde el 30/10/2026 | Alta | Alto | Revisarlo en campo. Hasta entonces, la regla R4 impide `APTO`, y la demo debe explicarlo | Sensor sin reparar en G4 |
 | R7 | Crece el alcance durante el desarrollo | Media | Alto | Lo que no esté en el núcleo pasa a extensiones o a "Evolución futura" | Pedido nuevo sin ticket |
 
 ## 11. Definición de terminado

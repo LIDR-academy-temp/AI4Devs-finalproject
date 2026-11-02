@@ -23,6 +23,36 @@ _MAGNITUD_POR_PREFIJO = (
 )
 
 
+# Unidades de Weather Track para las magnitudes que usa el índice. Sus umbrales las
+# suponen, así que un valor en otra unidad no se puede usar.
+UNIDADES_DEL_INDICE = {
+    "TEMPERATURA": "°C",
+    "HUMEDAD_RELATIVA": "%",
+    "VIENTO_VELOCIDAD": "km/h",
+    "RADIACION": "W/m²",
+}
+
+_UNIDAD_CANONICA = {
+    "ºc": "°C",
+    "°c": "°C",
+    "km/h": "km/h",
+    "kmh": "km/h",
+    "w/m2": "W/m²",
+    "w/m²": "W/m²",
+}
+
+
+def normalizar_unidad(unidad: str) -> str:
+    """Unifica las variantes de la fuente, como `km/H` o `ºC`. No convierte valores."""
+    limpia = unidad.strip()
+    return _UNIDAD_CANONICA.get(limpia.lower(), limpia)
+
+
+def unidad_admitida(magnitud: str, unidad: str) -> bool:
+    esperada = UNIDADES_DEL_INDICE.get(magnitud)
+    return esperada is None or normalizar_unidad(unidad) == esperada
+
+
 def normalizar_nombre(nombre: str) -> str:
     """Minúsculas, sin tildes y con espacios y puntos colapsados."""
     sin_tildes = "".join(

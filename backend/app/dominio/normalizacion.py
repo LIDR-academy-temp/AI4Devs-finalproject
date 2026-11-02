@@ -5,6 +5,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from app.dominio.catalogo import unidad_admitida
 from app.dominio.motor_tis import CALIDAD_FALTANTE, CALIDAD_OK, CALIDAD_SOSPECHOSO
 
 ZONA_ARGENTINA = ZoneInfo("America/Argentina/Buenos_Aires")
@@ -53,8 +54,16 @@ def parsear_fecha(texto: Any) -> datetime | None:
     return None
 
 
-def clasificar_lectura(magnitud: str, valor_crudo: Any) -> tuple[Decimal | None, str]:
-    """Devuelve el valor normalizado y su calidad, antes de las reglas entre sensores."""
+def clasificar_lectura(
+    magnitud: str, valor_crudo: Any, unidad: str | None = None
+) -> tuple[Decimal | None, str]:
+    """Devuelve el valor normalizado y su calidad, antes de las reglas entre sensores.
+
+    Un valor en una unidad que el índice no admite queda faltante: usarlo daría un
+    cálculo equivocado sin que nadie lo note.
+    """
+    if unidad is not None and not unidad_admitida(magnitud, unidad):
+        return None, CALIDAD_FALTANTE
     valor = parsear_numero(valor_crudo)
     if valor is None or valor == VALOR_CENTINELA:
         return None, CALIDAD_FALTANTE

@@ -12,6 +12,8 @@ from app.dominio.catalogo import (
     clasificar_magnitud,
     leer_altura_m,
     normalizar_nombre,
+    normalizar_unidad,
+    unidad_admitida,
 )
 from app.ingesta.cliente_sat2 import ClienteSat2
 
@@ -38,7 +40,10 @@ def _sincronizar_sensor(sesion: Session, estacion: Estacion, datos: dict) -> Non
     sensor.clave_normalizada = normalizar_nombre(datos["nombre"])
     sensor.magnitud = magnitud
     sensor.altura_m = leer_altura_m(datos["nombre"])
-    sensor.unidad = datos.get("unidad") or ""
+    sensor.unidad = normalizar_unidad(datos.get("unidad") or "")
+    if not unidad_admitida(magnitud, sensor.unidad):
+        # Sus lecturas quedarán faltantes y el índice informará datos insuficientes.
+        registro.warning("Unidad no admitida en %s: %s", datos["nombre"], sensor.unidad)
 
 
 def sincronizar_catalogo(sesion: Session, cliente: ClienteSat2) -> list[Estacion]:

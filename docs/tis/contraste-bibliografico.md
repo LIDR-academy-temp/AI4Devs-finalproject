@@ -6,6 +6,8 @@
 | **Fecha** | 1 de noviembre de 2026 |
 | **Alcance** | Lectura de los cuatro documentos citados por el prototipo. No reemplaza una validación agronómica ni una comparación con datos de campo. |
 
+> **Unidades.** Weather Track usa km/h y °C en todo el sistema. Este documento menciona mph y °F solo para citar lo que publica cada fuente, siempre con su equivalente.
+
 ## Conclusión
 
 **El TIS es un índice propio, no un método publicado.** La bibliografía respalda las variables que usa y la regla de fondo, que es evitar aplicar durante una inversión. En cambio, **ningún documento contiene sus pesos (50/25/15/10), sus escalas ni sus cortes de 20, 40 y 60.** Por eso debe presentarse como un criterio operativo inspirado en la literatura, y su carácter orientativo es obligatorio.
@@ -26,7 +28,7 @@
 | ΔT > 0 como inversión | Existe inversión si el aire de abajo está más frío; a mayor diferencia, más intensa (Nowatzki) | **Respaldado** |
 | ΔT ≥ 3 °C como máximo | Solo aparece "0,5 grados, preocuparse; 1,0 o más, muy serio", sin unidad y en otro contexto (Thostenson, p. 50). Las estaciones de NDSU informan en °F y miden entre 1 y 3 m | **Sin respaldo; parece permisivo** |
 | Mayor riesgo con menos viento | Coincide con todas las fuentes | **Respaldado** |
-| Escala del viento | Referencias: 3 mph (4,8 km/h), 4 mph (6,4 km/h), 5 mph (8 km/h) y 2 m/s (7,2 km/h). Hay inversiones significativas aun con 6 mph (9,7 km/h) | **Forma compatible; valores sin respaldo directo** |
+| Escala del viento | Referencias: 4,8 km/h, 6,4 km/h, 7,2 km/h y 8 km/h (publicadas como 3, 4 y 5 mph y 2 m/s). Hay inversiones significativas aun con 9,7 km/h (6 mph) | **Forma compatible; valores sin respaldo directo** |
 | Mayor riesgo con menos radiación | Las inversiones se forman al enfriarse la superficie, con cielo despejado. Pero un día nublado también tiene poca radiación y **reduce** la inversión | **Parcial: es un indicador indirecto** |
 | Mayor riesgo con más humedad | Con **poca** humedad la inversión se forma más rápido y es más intensa (Thostenson, p. 23 y 26). La humedad muy alta o la niebla son señal de alerta e impiden evaporar (Nowatzki) | **Respaldo débil y dirección discutible** |
 | Pesos y cortes | No aparecen en ningún documento | **Sin respaldo** |
@@ -36,14 +38,14 @@
 
 ### 1. `PRECAUCION` puede quedarse corto con inversión y poco viento
 
-Huang et al. (tabla 2) solo admiten aplicar con una inversión muy leve si el viento supera 4 mph, y si no lo supera indican no aplicar. Con `TIS-1.0` esta situación no llega a `NO_APLICAR`:
+Huang et al. (tabla 2) solo admiten aplicar con una inversión muy leve si el viento supera 6,4 km/h (publicado como 4 mph), y si no lo supera indican no aplicar. Con `TIS-1.0` esta situación no llega a `NO_APLICAR`:
 
 | ΔT | Viento | Radiación | Humedad | Índice | Estado actual | Según Huang et al. |
 |---|---|---|---|---|---|---|
 | +0,5 °C | 2 km/h | 600 W/m² | 50 % | 32,83 | `PRECAUCION` | No aplicar |
 | +1,0 °C | 3 km/h | 600 W/m² | 50 % | 41,17 | `RIESGO_DERIVA` | No aplicar |
 
-**Decisión:** se incorporó la regla R3b en `TIS-1.1`: si ΔT > 0 y el viento es de 6,4 km/h (4 mph) o menos, el estado es `NO_APLICAR`. El responsable la aprobó el 1 de noviembre de 2026. Como la cifra se publicó con mediciones a otras alturas, también debe revisarse en la validación agronómica.
+**Decisión:** se incorporó la regla R3b en `TIS-1.1`: si ΔT > 0 y el viento es de 6,4 km/h o menos, el estado es `NO_APLICAR`. El responsable la aprobó el 1 de noviembre de 2026. Como la cifra se publicó con mediciones a otras alturas, también debe revisarse en la validación agronómica.
 
 ### 2. El horario no se considera
 

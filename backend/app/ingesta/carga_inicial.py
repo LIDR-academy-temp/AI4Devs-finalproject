@@ -85,7 +85,7 @@ def _guardar(
             continue
         dia = medido_en.astimezone(ZONA_ARGENTINA).date()
         mas_antiguo = dia if mas_antiguo is None else min(mas_antiguo, dia)
-        valor, calidad = clasificar_lectura(sensor.magnitud, crudo.get("valor"))
+        valor, calidad = clasificar_lectura(sensor.magnitud, crudo.get("valor"), sensor.unidad)
         filas.append(
             {
                 "sensor_id": sensor.id,

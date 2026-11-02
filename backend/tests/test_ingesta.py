@@ -115,6 +115,42 @@ def test_sincronizar_dos_veces_no_duplica_y_actualiza(sesion, cliente):
     assert sesion.scalar(select(Estacion)).nombre == "Estación de ejemplo"
 
 
+def test_guarda_las_unidades_en_el_sistema_de_weather_track(sesion, cliente):
+    sincronizar_catalogo(sesion, cliente)
+    unidades = {nombre: unidad for nombre, unidad in sesion.execute(select(Sensor.nombre, Sensor.unidad))}
+    assert unidades["Anemómetro"] == "km/h"
+    assert unidades["Temp Amb. a 2 Mts"] == "°C"
+    assert unidades["Rad Solar"] == "W/m²"
+
+
+class VientoEnMillas(Cliente):
+    def recuperar_equipos(self):
+        equipos = super().recuperar_equipos()
+        for sensor in equipos[0]["sensores"]:
+            if sensor["nombre"] == "Anemómetro":
+                sensor["unidad"] = "mph"
+        return equipos
+
+
+def test_avisa_si_un_sensor_del_indice_usa_otra_unidad(sesion, caplog):
+    with caplog.at_level(logging.WARNING):
+        sincronizar_catalogo(sesion, VientoEnMillas())
+    assert "Unidad no admitida en Anemómetro: mph" in caplog.text
+
+
+def test_viento_en_millas_no_se_usa_en_el_indice(sesion):
+    cliente = VientoEnMillas()
+    estacion = sincronizar_catalogo(sesion, cliente)[0]
+    sesion.commit()
+
+    ejecutar_ciclo(sesion, cliente, estacion, AHORA)
+
+    assert observacion_de(sesion, "Anemómetro").calidad == "FALTANTE"
+    recomendacion = sesion.scalar(select(Recomendacion))
+    assert recomendacion.estado == "DATOS_INSUFICIENTES"
+    assert "Anemómetro" in recomendacion.motivos[0]["detalle"]
+
+
 def test_un_sensor_no_clasificable_no_detiene_el_catalogo(sesion, caplog):
     class ConSensorRaro(Cliente):
         def recuperar_equipos(self):

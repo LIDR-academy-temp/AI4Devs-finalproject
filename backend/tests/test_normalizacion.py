@@ -3,6 +3,7 @@ from decimal import Decimal as D
 
 import pytest
 
+from app.dominio.catalogo import normalizar_unidad
 from app.dominio.normalizacion import (
     clasificar_lectura,
     humedad_incoherente,
@@ -79,3 +80,48 @@ def test_humedad_incoherente():
     assert humedad_incoherente(D("16"), D("66"))
     assert not humedad_incoherente(D("35"), D("60"))
     assert not humedad_incoherente(None, D("60"))
+
+
+@pytest.mark.parametrize(
+    ("cruda", "canonica"),
+    [
+        ("km/H", "km/h"),
+        ("KM/H", "km/h"),
+        ("ºC", "°C"),
+        ("°C", "°C"),
+        ("W/m2", "W/m²"),
+        (" hPa ", "hPa"),
+        ("mph", "mph"),
+    ],
+)
+def test_normaliza_las_unidades_de_la_fuente(cruda, canonica):
+    assert normalizar_unidad(cruda) == canonica
+
+
+@pytest.mark.parametrize(
+    ("magnitud", "unidad"),
+    [
+        ("VIENTO_VELOCIDAD", "mph"),
+        ("VIENTO_VELOCIDAD", "m/s"),
+        ("TEMPERATURA", "°F"),
+        ("RADIACION", "kW/m2"),
+        ("HUMEDAD_RELATIVA", "g/m3"),
+    ],
+)
+def test_una_unidad_no_admitida_deja_la_lectura_faltante(magnitud, unidad):
+    assert clasificar_lectura(magnitud, "10", unidad) == (None, "FALTANTE")
+
+
+@pytest.mark.parametrize(
+    ("magnitud", "unidad"),
+    [
+        ("VIENTO_VELOCIDAD", "km/H"),
+        ("TEMPERATURA", "ºC"),
+        ("RADIACION", "W/m2"),
+        ("HUMEDAD_RELATIVA", "%"),
+        ("PRESION", "hPa"),
+        ("VIENTO_DIRECCION", "grados"),
+    ],
+)
+def test_las_unidades_reales_de_la_fuente_se_admiten(magnitud, unidad):
+    assert clasificar_lectura(magnitud, "10", unidad) == (D("10"), "OK")

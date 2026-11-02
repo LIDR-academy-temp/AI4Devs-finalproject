@@ -39,8 +39,9 @@ LIMITE_APTO = Decimal("20")
 LIMITE_PRECAUCION = Decimal("40")
 LIMITE_RIESGO_DERIVA = Decimal("60")
 
-# R3b: 4 mph. Huang et al. (2019, tabla 2) solo admiten aplicar con una inversión muy
-# leve si el viento supera ese valor. Ver docs/tis/contraste-bibliografico.md.
+# R3b, en km/h como todo el sistema. Huang et al. (2019, tabla 2) solo admiten aplicar
+# con una inversión muy leve si el viento supera ese valor, que publican como 4 mph.
+# Ver docs/tis/contraste-bibliografico.md.
 VIENTO_MINIMO_CON_INVERSION_KMH = Decimal("6.4")
 
 # (valor máximo inclusivo, factor); por encima del último límite el factor es 0.

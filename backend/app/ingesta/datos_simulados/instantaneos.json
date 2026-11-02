@@ -11,6 +11,6 @@
     { "nombreSensor": "Veleta", "valor": "83", "unidad": "grados", "alarma": false, "Icono": 0 },
     { "nombreSensor": "Anemómetro", "valor": "9", "unidad": "km/H", "alarma": false, "Icono": 0 },
     { "nombreSensor": "Pluviometro", "valor": "0,00", "unidad": "mm", "alarma": true, "Icono": 0 },
-    { "nombreSensor": "Humedad de Hoja", "valor": "[]", "unidad": "si/no", "alarma": false, "Icono": 0 }
+    { "nombreSensor": "Humedad de Hoja", "valor": "[]", "unidad": "%", "alarma": false, "Icono": 0 }
   ]
 }
