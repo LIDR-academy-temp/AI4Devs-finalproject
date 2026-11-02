@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal
 from enum import IntEnum
 
-VERSION_METODO = "TIS-1.0"
+VERSION_METODO = "TIS-1.1"
 
 CALIDAD_OK = "OK"
 CALIDAD_FALTANTE = "FALTANTE"
@@ -38,6 +38,10 @@ DELTA_T_MAXIMO = Decimal("3")
 LIMITE_APTO = Decimal("20")
 LIMITE_PRECAUCION = Decimal("40")
 LIMITE_RIESGO_DERIVA = Decimal("60")
+
+# R3b: 4 mph. Huang et al. (2019, tabla 2) solo admiten aplicar con una inversión muy
+# leve si el viento supera ese valor. Ver docs/tis/contraste-bibliografico.md.
+VIENTO_MINIMO_CON_INVERSION_KMH = Decimal("6.4")
 
 # (valor máximo inclusivo, factor); por encima del último límite el factor es 0.
 _ESCALA_VIENTO = (
@@ -215,13 +219,15 @@ def evaluar(lecturas: LecturasTis) -> ResultadoTis:
     # R3: una inversión nunca es apta.
     if inversion:
         estado = _como_minimo_precaucion(estado)
-        motivos.append(
-            Motivo(
-                MOTIVO_INVERSION_DETECTADA,
-                "La temperatura a 10 m supera a la de 2 m en "
-                f"{_texto_decimal(delta_t)} °C.",
+        detalle = f"La temperatura a 10 m supera a la de 2 m en {_texto_decimal(delta_t)} °C."
+        # R3b: con inversión y poco viento no hay mezcla de aire suficiente.
+        if lecturas.viento.valor <= VIENTO_MINIMO_CON_INVERSION_KMH:
+            estado = NO_APLICAR
+            detalle += (
+                f" El viento de {_texto_decimal(lecturas.viento.valor)} km/h no supera "
+                f"el mínimo de {_texto_decimal(VIENTO_MINIMO_CON_INVERSION_KMH)} km/h."
             )
-        )
+        motivos.append(Motivo(MOTIVO_INVERSION_DETECTADA, detalle))
 
     # R4: una lectura sospechosa nunca es apta.
     sospechosas = [lectura for lectura in lecturas.todas() if lectura.es_sospechosa]

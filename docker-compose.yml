@@ -35,6 +35,16 @@ services:
       timeout: 3s
       retries: 30
 
+  # Corre una vez y termina: la API y el worker nunca arrancan sin el esquema.
+  migraciones:
+    build: ./backend
+    command: alembic upgrade head
+    environment:
+      DATABASE_URL: *url-base-de-datos
+    depends_on:
+      db:
+        condition: service_healthy
+
   api:
     build: ./backend
     command: uvicorn app.api.principal:app --host 0.0.0.0 --port 8000
@@ -43,8 +53,8 @@ services:
       DATABASE_URL: *url-base-de-datos
       SAT2_MODO: ${SAT2_MODO:-simulado}
     depends_on:
-      db:
-        condition: service_healthy
+      migraciones:
+        condition: service_completed_successfully
     healthcheck:
       test:
         - CMD
@@ -67,8 +77,8 @@ services:
       DATABASE_URL: *url-base-de-datos
       SAT2_MODO: ${SAT2_MODO:-simulado}
     depends_on:
-      db:
-        condition: service_healthy
+      migraciones:
+        condition: service_completed_successfully
     healthcheck:
       test:
         - CMD

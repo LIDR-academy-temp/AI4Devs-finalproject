@@ -6,56 +6,18 @@ Solo funciona en modo simulado, para no mezclar datos ficticios con los reales.
 import os
 import secrets
 import sys
-from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.datos.conexion import obtener_motor
-from app.datos.modelos import Estacion, Sensor, Usuario, UsuarioEstacion
-from app.dominio.catalogo import clasificar_magnitud, leer_altura_m, normalizar_nombre
+from app.datos.modelos import Estacion, Usuario, UsuarioEstacion
+from app.ingesta.catalogo import sincronizar_catalogo
 from app.ingesta.cliente_simulado import ClienteSat2Simulado
 from app.seguridad import calcular_hash_contrasena
 
 EMAIL_DEMO = "demo@weathertrack.example"
 NOMBRE_DEMO = "Usuario de demostración"
-
-
-def _asegurar_estacion(sesion: Session, equipo: dict) -> Estacion:
-    estacion = sesion.scalar(
-        select(Estacion).where(Estacion.id_equipo_sat2 == equipo["idEquipo"])
-    )
-    if estacion is None:
-        estacion = Estacion(
-            id_equipo_sat2=equipo["idEquipo"],
-            nombre=equipo["descripcion"],
-            nro_serie=equipo["NroSerie"],
-            latitud=Decimal(str(equipo["lat"])),
-            longitud=Decimal(str(equipo["lng"])),
-        )
-        sesion.add(estacion)
-        sesion.flush()
-    return estacion
-
-
-def _asegurar_sensores(sesion: Session, estacion: Estacion, sensores: list[dict]) -> None:
-    existentes = set(
-        sesion.scalars(select(Sensor.id_sensor_sat2).where(Sensor.estacion_id == estacion.id))
-    )
-    for sensor in sensores:
-        if sensor["idSensor"] in existentes:
-            continue
-        sesion.add(
-            Sensor(
-                estacion_id=estacion.id,
-                id_sensor_sat2=sensor["idSensor"],
-                nombre=sensor["nombre"],
-                clave_normalizada=normalizar_nombre(sensor["nombre"]),
-                magnitud=clasificar_magnitud(sensor["nombre"]),
-                altura_m=leer_altura_m(sensor["nombre"]),
-                unidad=sensor["unidad"],
-            )
-        )
 
 
 def _asegurar_usuario(sesion: Session, estacion: Estacion) -> str | None:
@@ -77,9 +39,7 @@ def _asegurar_usuario(sesion: Session, estacion: Estacion) -> str | None:
 
 
 def cargar_semillas(sesion: Session) -> str | None:
-    equipo = ClienteSat2Simulado().recuperar_equipos()[0]
-    estacion = _asegurar_estacion(sesion, equipo)
-    _asegurar_sensores(sesion, estacion, equipo["sensores"])
+    estacion = sincronizar_catalogo(sesion, ClienteSat2Simulado())[0]
     return _asegurar_usuario(sesion, estacion)
 
 

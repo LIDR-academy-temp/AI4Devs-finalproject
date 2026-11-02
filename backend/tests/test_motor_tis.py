@@ -59,6 +59,7 @@ def codigos(resultado) -> list[str]:
         ("0.9", "13", "300", "50", "55", "20", PRECAUCION),
         ("1.5", "9", "0", "60", "60", "50", RIESGO_DERIVA),
         ("3.0", "1", "0", "95", "95", "100", NO_APLICAR),
+        ("0.5", "2", "600", "50", "50", "32.83", NO_APLICAR),
     ],
 )
 def test_casos_de_referencia(delta_t, viento, radiacion, hr2m, hr10m, indice, estado):
@@ -242,6 +243,36 @@ def test_inversion_con_indice_alto_conserva_el_estado_y_suma_motivos():
     assert codigos(resultado) == ["INVERSION_DETECTADA", "INDICE_ELEVADO"]
 
 
+@pytest.mark.parametrize(
+    ("viento", "estado"),
+    [("0", NO_APLICAR), ("6.4", NO_APLICAR), ("6.5", PRECAUCION), ("9", PRECAUCION)],
+)
+def test_inversion_con_poco_viento_no_se_aplica(viento, estado):
+    resultado = evaluar(lecturas("0.5", viento, "600", "50", "50"))
+    assert resultado.estado == estado
+
+
+def test_inversion_con_poco_viento_explica_el_motivo():
+    resultado = evaluar(lecturas("0.5", "2", "600", "50", "50"))
+    assert codigos(resultado) == ["INVERSION_DETECTADA", "INDICE_ELEVADO"]
+    assert "viento de 2 km/h" in resultado.motivos[0].detalle
+    assert "6,4 km/h" in resultado.motivos[0].detalle
+
+
+def test_poco_viento_sin_inversion_no_activa_la_regla():
+    resultado = evaluar(lecturas("-0.5", "2", "600", "50", "50"))
+    assert resultado.estado == PRECAUCION
+    assert resultado.inversion_detectada is False
+
+
+def test_con_datos_faltantes_prevalece_datos_insuficientes():
+    resultado = evaluar(
+        lecturas("0.5", "2", reemplazos={"hr2m": Lectura("Hum 2 m", None, CALIDAD_FALTANTE)})
+    )
+    assert resultado.estado == DATOS_INSUFICIENTES
+    assert resultado.inversion_detectada is True
+
+
 def test_delta_t_cero_no_es_inversion():
     resultado = evaluar(lecturas("0"))
     assert resultado.inversion_detectada is False
@@ -276,7 +307,7 @@ def test_indice_alto_sin_inversion_explica_el_motivo():
 
 
 def test_informa_la_version_del_metodo():
-    assert evaluar(lecturas()).version_metodo == "TIS-1.0"
+    assert evaluar(lecturas()).version_metodo == "TIS-1.1"
 
 
 def test_sin_red(monkeypatch):
@@ -313,6 +344,8 @@ def test_invariantes_en_toda_la_grilla_de_valores():
         assert D("0") <= resultado.indice <= D("100")
         if resultado.inversion_detectada or calidad == CALIDAD_SOSPECHOSO:
             assert resultado.estado != APTO
+        if resultado.inversion_detectada and D(viento) <= D("6.4"):
+            assert resultado.estado == NO_APLICAR
         if resultado.estado == APTO:
             assert resultado.inversion_detectada is False
             assert "SIN_INVERSION" in codigos(resultado)

@@ -3,11 +3,22 @@
 import logging
 import os
 import sys
+import threading
 import time
+from collections.abc import Callable
+from datetime import UTC, date, datetime
 from pathlib import Path
+from typing import Any
 
 from apscheduler.schedulers.blocking import BlockingScheduler
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session, sessionmaker
 
+from app.datos.conexion import obtener_motor
+from app.datos.modelos import EjecucionIngesta, Estacion, IntentoAcceso, Sesion
+from app.ingesta.carga_inicial import ejecutar_carga_inicial
+from app.ingesta.catalogo import sincronizar_catalogo
+from app.ingesta.ciclo import ejecutar_ciclo
 from app.ingesta.cliente_sat2 import ClienteSat2, ClienteSat2Http
 from app.ingesta.cliente_simulado import ClienteSat2Simulado
 from app.ingesta.configuracion import ConfiguracionIncompleta, cargar_configuracion
@@ -15,11 +26,41 @@ from app.ingesta.configuracion import ConfiguracionIncompleta, cargar_configurac
 MODO_SIMULADO = "simulado"
 MODO_REAL = "real"
 INTERVALO_LATIDO_SEGUNDOS = 30
+INTERVALO_CICLO_MINUTOS = 10
+INTERVALO_CATALOGO_HORAS = 24
+INTERVALO_CARGA_MINUTOS = 60
 ANTIGUEDAD_MAXIMA_LATIDO_SEGUNDOS = 120
+ANTIGUEDAD_INTENTOS_HORAS = 24
 RUTA_LATIDO = Path(os.environ.get("WORKER_RUTA_LATIDO", "/tmp/weather-track-latido"))
 RUTA_ENV = Path(os.environ.get("WORKER_RUTA_ENV", ".env"))
 
 registro = logging.getLogger("weather_track.worker")
+
+
+class ClienteSerializado:
+    """Garantiza una sola consulta a SAT2 por vez entre el ciclo y la carga.
+
+    El bloqueo se toma por consulta: el ciclo espera como máximo una consulta en curso
+    y nunca a toda la carga.
+    """
+
+    def __init__(self, cliente: ClienteSat2) -> None:
+        self._cliente = cliente
+        self._bloqueo = threading.Lock()
+
+    def recuperar_equipos(self) -> list[dict[str, Any]]:
+        with self._bloqueo:
+            return self._cliente.recuperar_equipos()
+
+    def recuperar_instantaneos(self, id_equipo: int) -> dict[str, Any]:
+        with self._bloqueo:
+            return self._cliente.recuperar_instantaneos(id_equipo)
+
+    def recuperar_historicos(
+        self, id_equipo: int, id_sensor: int, desde: date, hasta: date
+    ) -> list[dict[str, Any]]:
+        with self._bloqueo:
+            return self._cliente.recuperar_historicos(id_equipo, id_sensor, desde, hasta)
 
 
 def crear_cliente(modo: str) -> ClienteSat2:
@@ -42,11 +83,91 @@ def latido_vigente(ruta: Path = RUTA_LATIDO, ahora: float | None = None) -> bool
     return momento - ruta.stat().st_mtime <= ANTIGUEDAD_MAXIMA_LATIDO_SEGUNDOS
 
 
+def _ahora() -> datetime:
+    return datetime.now(UTC)
+
+
+def _estaciones_activas(sesion: Session) -> list[Estacion]:
+    return list(sesion.scalars(select(Estacion).where(Estacion.activa)))
+
+
+def tarea_catalogo(fabrica: Callable[[], Session], cliente: ClienteSat2) -> None:
+    with fabrica() as sesion:
+        sincronizar_catalogo(sesion, cliente)
+        sesion.commit()
+
+
+def tarea_ciclo(
+    fabrica: Callable[[], Session],
+    cliente: ClienteSat2,
+    reloj: Callable[[], datetime] = _ahora,
+) -> None:
+    with fabrica() as sesion:
+        estaciones = _estaciones_activas(sesion)
+        if not estaciones:
+            sincronizar_catalogo(sesion, cliente)
+            sesion.commit()
+            estaciones = _estaciones_activas(sesion)
+        for estacion in estaciones:
+            ejecutar_ciclo(sesion, cliente, estacion, reloj())
+        _limpiar_vencidos(sesion, reloj())
+
+
+def _limpiar_vencidos(sesion: Session, ahora: datetime) -> None:
+    """D8 del diseño: evita que sesiones e intentos crezcan sin límite."""
+    sesion.execute(delete(Sesion).where(Sesion.vence_en < ahora))
+    limite = ahora.timestamp() - ANTIGUEDAD_INTENTOS_HORAS * 3600
+    sesion.execute(
+        delete(IntentoAcceso).where(
+            IntentoAcceso.ocurrido_en < datetime.fromtimestamp(limite, UTC)
+        )
+    )
+    sesion.commit()
+
+
+def tarea_carga(
+    fabrica: Callable[[], Session],
+    cliente: ClienteSat2,
+    reloj: Callable[[], datetime] = _ahora,
+    pausa_segundos: float | None = None,
+    dormir: Callable[[float], None] = time.sleep,
+) -> None:
+    pausa = (
+        float(os.environ.get("CARGA_PAUSA_SEGUNDOS", "2"))
+        if pausa_segundos is None
+        else pausa_segundos
+    )
+    with fabrica() as sesion:
+        for estacion in _estaciones_activas(sesion):
+            ya_cargada = sesion.scalar(
+                select(EjecucionIngesta.id)
+                .where(
+                    EjecucionIngesta.estacion_id == estacion.id,
+                    EjecucionIngesta.tipo == "CARGA_INICIAL",
+                    EjecucionIngesta.resultado == "EXITO",
+                )
+                .limit(1)
+            )
+            if ya_cargada is None:
+                ejecutar_carga_inicial(
+                    sesion, cliente, estacion, reloj(), pausa_segundos=pausa, dormir=dormir
+                )
+
+
+def protegida(nombre: str, tarea: Callable[..., None], *argumentos: Any) -> None:
+    """Una falla no debe detener el planificador. Solo se registra el tipo de error."""
+    try:
+        tarea(*argumentos)
+    except Exception as error:  # noqa: BLE001
+        registro.error("La tarea %s falló: %s", nombre, type(error).__name__)
+
+
 def principal() -> int:
     logging.basicConfig(level=logging.INFO)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     modo = os.environ.get("SAT2_MODO", MODO_SIMULADO)
     try:
-        crear_cliente(modo)
+        cliente = ClienteSerializado(crear_cliente(modo))
     except ConfiguracionIncompleta as error:
         # El mensaje solo nombra variables, nunca sus valores.
         registro.error("Configuración incompleta: %s", error)
@@ -54,8 +175,35 @@ def principal() -> int:
 
     registro.info("Worker iniciado en modo %s", modo)
     registrar_latido()
-    planificador = BlockingScheduler(timezone="UTC")
+    fabrica = sessionmaker(obtener_motor())
+    # Antes de planificar: si corriera junto al ciclo, ambos crearían las mismas estaciones.
+    protegida("catálogo", tarea_catalogo, fabrica, cliente)
+    ahora = _ahora()
+    planificador = BlockingScheduler(
+        timezone="UTC",
+        job_defaults={"coalesce": True, "max_instances": 1, "misfire_grace_time": 300},
+    )
     planificador.add_job(registrar_latido, "interval", seconds=INTERVALO_LATIDO_SEGUNDOS)
+    planificador.add_job(
+        protegida,
+        "interval",
+        hours=INTERVALO_CATALOGO_HORAS,
+        args=["catálogo", tarea_catalogo, fabrica, cliente],
+    )
+    planificador.add_job(
+        protegida,
+        "interval",
+        minutes=INTERVALO_CICLO_MINUTOS,
+        args=["ciclo", tarea_ciclo, fabrica, cliente],
+        next_run_time=ahora,
+    )
+    planificador.add_job(
+        protegida,
+        "interval",
+        minutes=INTERVALO_CARGA_MINUTOS,
+        args=["carga inicial", tarea_carga, fabrica, cliente],
+        next_run_time=ahora,
+    )
     planificador.start()
     return 0
 

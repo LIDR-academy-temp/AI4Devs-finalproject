@@ -44,10 +44,10 @@ El worker guarda la recomendación tal como se calculó y la API aplica R2 al re
 
 ### D3. Motor como función pura
 
-Recibe seis lecturas con su calidad y devuelve índice, estado, ΔT y motivos. Aplica R1, R3 y R4, y no conoce la hora actual.
+Recibe seis lecturas con su calidad y devuelve índice, estado, ΔT y motivos. Aplica R1, R3, R3b y R4, y no conoce la hora actual.
 
 - **Por qué:** los casos de referencia del README se prueban sin infraestructura y el ADR lo exige como confirmación.
-- **Versionado:** cada recomendación guarda `TIS-1.0`, de modo que un cambio de pesos no reescribe el pasado.
+- **Versionado:** cada recomendación guarda `TIS-1.1`, de modo que un cambio de pesos no reescribe el pasado.
 
 ### D4. Valores fuera de rango físico tratados como faltantes
 

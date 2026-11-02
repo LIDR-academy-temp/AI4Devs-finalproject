@@ -76,6 +76,30 @@ El sistema MUST asignar como mínimo `PRECAUCION`, con motivo `INVERSION_DETECTA
 - **WHEN** ΔT es mayor que cero y el estado base es `NO_APLICAR`
 - **THEN** el estado sigue siendo `NO_APLICAR` e incluye el motivo `INVERSION_DETECTADA`
 
+### Requirement: Con inversión y poco viento no se aplica (R3b)
+
+El sistema MUST asignar `NO_APLICAR`, con motivo `INVERSION_DETECTADA`, cuando ΔT es mayor que cero y el viento es de 6,4 km/h o menos, cualquiera sea el índice.
+
+#### Scenario: Inversión con poco viento
+
+- **WHEN** ΔT es +0,5 °C, el viento 2 km/h, la radiación 600 W/m² y la humedad 50 % en ambas alturas
+- **THEN** el índice es 32,83, el estado es `NO_APLICAR` y el motivo informa el viento
+
+#### Scenario: Viento en el límite
+
+- **WHEN** ΔT es mayor que cero y el viento es exactamente 6,4 km/h
+- **THEN** el estado es `NO_APLICAR`
+
+#### Scenario: Viento apenas superior
+
+- **WHEN** ΔT es +0,5 °C, el viento 6,5 km/h, la radiación 600 W/m² y la humedad 50 % en ambas alturas
+- **THEN** el estado se determina por el índice y la regla R3, sin aplicar esta regla
+
+#### Scenario: Poco viento sin inversión
+
+- **WHEN** ΔT es 0 o menor y el viento es de 2 km/h
+- **THEN** esta regla no se aplica
+
 ### Requirement: Una lectura sospechosa nunca es apta (R4)
 
 El sistema MUST asignar como mínimo `PRECAUCION`, con motivo `DATO_SOSPECHOSO`, cuando alguna de las seis lecturas está como `SOSPECHOSO`.

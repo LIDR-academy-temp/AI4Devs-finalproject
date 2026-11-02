@@ -98,9 +98,10 @@ Las siguientes reglas se aplican en este orden sobre el estado base:
 | R1 | Falta o es inválida alguna de las seis lecturas (T2m, T10m, HR2m, HR10m, viento o radiación) | `DATOS_INSUFICIENTES`, sin índice |
 | R2 | La medición tiene más de 30 minutos de antigüedad al consultarla | `DATOS_INSUFICIENTES`, con motivo `DATOS_DESACTUALIZADOS` |
 | R3 | ΔT > 0 | Nunca `APTO`: como mínimo `PRECAUCION`, con motivo `INVERSION_DETECTADA` |
+| R3b | ΔT > 0 y viento de 6,4 km/h (4 mph) o menos | `NO_APLICAR`, con motivo `INVERSION_DETECTADA` |
 | R4 | Alguna lectura es sospechosa (por ejemplo, más de 25 puntos de diferencia de humedad entre 2 m y 10 m) | Nunca `APTO`: como mínimo `PRECAUCION`, con motivo `DATO_SOSPECHOSO` |
 
-La recomendación es **orientativa** y la pantalla lo indica siempre. Los pesos y umbrales provienen del prototipo y su validación agronómica está prevista para la Entrega 3. No reemplaza el criterio de un profesional ni la etiqueta del producto.
+La recomendación es **orientativa** y la pantalla lo indica siempre. Los pesos y umbrales provienen del prototipo: la bibliografía respalda las variables, pero no sus valores, como detalla el [contraste bibliográfico](docs/tis/contraste-bibliografico.md). Su validación agronómica está prevista para la Entrega 3. No reemplaza el criterio de un profesional ni la etiqueta del producto.
 
 ### **1.3. Diseño y experiencia de usuario:**
 
@@ -136,7 +137,6 @@ git clone https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp.git
 cd AI4Devs-finalproject-temp
 cp .env.example .env
 docker compose up --build -d
-docker compose exec api alembic upgrade head
 docker compose exec api python -m app.semillas
 ```
 
@@ -332,6 +332,7 @@ flowchart LR
 |---|---|---|---|---|---|---|---|
 | Condiciones favorables | −0,1 | 9 | 1056 | 55 / 60 | 7 | `APTO` | Base |
 | Inversión con índice bajo | +0,9 | 13 | 300 | 50 / 55 | 20 | `PRECAUCION` | R3 |
+| Inversión con poco viento | +0,5 | 2 | 600 | 50 / 50 | 32,83 | `NO_APLICAR` | R3b |
 | Riesgo intermedio | +1,5 | 9 | 0 | 60 / 60 | 50 | `RIESGO_DERIVA` | Base |
 | Máximo riesgo | +3,0 | 1 | 0 | 95 / 95 | 100 | `NO_APLICAR` | Base |
 | Lectura sospechosa | −0,1 | 9 | 1056 | 0 / 61 | 7 | `PRECAUCION` | R4 |
@@ -488,7 +489,7 @@ erDiagram
 | `estacion_id` | `bigint` | FK a `ESTACION.id`, NOT NULL | Estación |
 | `medido_en` | `timestamptz` | NOT NULL | Instante de los datos usados |
 | `calculado_en` | `timestamptz` | NOT NULL | Instante del cálculo |
-| `version_metodo` | `varchar(20)` | NOT NULL | Versión de la fórmula, por ejemplo `TIS-1.0` |
+| `version_metodo` | `varchar(20)` | NOT NULL | Versión de la fórmula, por ejemplo `TIS-1.1` |
 | `estado` | `varchar(24)` | NOT NULL, CHECK | `APTO`, `PRECAUCION`, `RIESGO_DERIVA`, `NO_APLICAR` o `DATOS_INSUFICIENTES` |
 | `indice` | `numeric(5,2)` | Entre 0 y 100; NULL solo con `DATOS_INSUFICIENTES` | Índice TIS |
 | `delta_t_c` | `numeric(5,2)` | | `T10m − T2m` en °C |
@@ -590,7 +591,7 @@ paths:
                     detalle: La temperatura a 10 m supera a la de 2 m en 0,9 °C.
                 medido_en: '2026-11-01T06:40:00-03:00'
                 antiguedad_segundos: 240
-                version_metodo: TIS-1.0
+                version_metodo: TIS-1.1
                 aviso: Recomendación orientativa. No reemplaza el criterio profesional ni la etiqueta del producto.
         '401':
           $ref: '#/components/responses/NoAutenticado'
@@ -897,6 +898,12 @@ Escenario: Inversión térmica con índice bajo
   Entonces el estado nunca es "Apto"
   Y veo como mínimo "Precaución" con el motivo "Inversión detectada" y el valor de la diferencia térmica
 
+Escenario: Inversión térmica con poco viento
+  Dado que la temperatura a 10 m supera a la de 2 m
+  Y el viento es de 6,4 km/h o menos
+  Cuando abro la pantalla de decisión
+  Entonces veo "No aplicar" con el motivo y el valor del viento
+
 Escenario: Falta una lectura necesaria
   Dado que no hay dato válido de alguna de las seis lecturas del índice
   Cuando abro la pantalla de decisión
@@ -977,14 +984,14 @@ Escenario: Huecos en la serie
 
 *Tareas:*
 1. Implementar en `dominio` una función pura que reciba las seis lecturas y su calidad, y devuelva índice, estado, ΔT y motivos.
-2. Aplicar R1, R3 y R4 en el cálculo; versionarlo como `TIS-1.0`.
+2. Aplicar R1, R3, R3b y R4 en el cálculo; versionarlo como `TIS-1.1`.
 3. Invocar el motor desde el worker después de guardar las observaciones, y persistir el resultado en `RECOMENDACION`.
 4. Implementar el endpoint con la autorización por estación y el esquema de la sección 4.
 5. Aplicar R2 al responder: con más de 30 minutos, devolver `DATOS_INSUFICIENTES`, sin índice, y motivo `DATOS_DESACTUALIZADOS`.
 6. Si la estación aún no tiene recomendaciones, devolver `DATOS_INSUFICIENTES` con motivo `SIN_MEDICIONES`.
 
 *Criterios de aceptación:*
-- Los siete casos de la tabla de la sección 2.6 pasan como tests unitarios o de integración.
+- Los ocho casos de la tabla de la sección 2.6 pasan como tests unitarios o de integración.
 - Ningún test llega a la red: SAT2 se simula.
 - El endpoint devuelve 401 sin sesión, 403 sin acceso y 404 si la estación no existe.
 - La respuesta valida contra el esquema OpenAPI y siempre incluye `aviso`.

@@ -25,17 +25,17 @@ Los grupos siguen las actividades del [plan de implementación](../../../docs/pl
 ## 4. Motor de recomendación (A05, WT-BE-01)
 
 - [x] 4.1 Implementar los factores y el índice como funciones puras, y verificar los índices de los casos de la sección 2.6 del README
-- [x] 4.2 Implementar el estado base con sus límites exactos y las reglas R1, R3 y R4 con sus motivos, y verificar todos los escenarios de `application-recommendation` que no dependen de la hora
+- [x] 4.2 Implementar el estado base con sus límites exactos y las reglas R1, R3, R3b y R4 con sus motivos, y verificar todos los escenarios de `application-recommendation` que no dependen de la hora
 - [x] 4.3 Medir la cobertura del motor y verificar que alcanza al menos 90 %
 
 ## 5. Ingesta (A06, WT-BE-03)
 
-- [ ] 5.1 Implementar la normalización de números, fechas y nombres, y verificar los escenarios de normalización con los datos de prueba
-- [ ] 5.2 Implementar la clasificación de calidad con su tabla de rangos, y verificar los escenarios de centinela, fuera de rango y humedad incoherente
-- [ ] 5.3 Implementar la sincronización del catálogo, y verificar con el cliente simulado los escenarios de altura, acentuación y sensor desconocido
-- [ ] 5.4 Implementar el ciclo de 10 minutos con la renovación de sesión y el registro de ejecuciones, y verificar con el cliente simulado que no duplica mediciones y que un error de la fuente queda registrado
-- [ ] 5.5 Invocar el motor después de guardar las lecturas y persistir la recomendación, y verificar que queda una por medición y versión
-- [ ] 5.6 Implementar la carga inicial de 31 días, con ventana adaptable, pausa, reanudación y detención, y verificar sus escenarios, incluidos la respuesta recortada y la prioridad del ciclo
+- [x] 5.1 Implementar la normalización de números, fechas y nombres, y verificar los escenarios de normalización con los datos de prueba
+- [x] 5.2 Implementar la clasificación de calidad con su tabla de rangos, y verificar los escenarios de centinela, fuera de rango y humedad incoherente
+- [x] 5.3 Implementar la sincronización del catálogo, y verificar con el cliente simulado los escenarios de altura, acentuación y sensor desconocido
+- [x] 5.4 Implementar el ciclo de 10 minutos con la renovación de sesión y el registro de ejecuciones, y verificar con el cliente simulado que no duplica mediciones y que un error de la fuente queda registrado
+- [x] 5.5 Invocar el motor después de guardar las lecturas y persistir la recomendación, y verificar que queda una por medición y versión
+- [x] 5.6 Implementar la carga inicial de 31 días, con ventana adaptable, pausa, reanudación y detención, y verificar sus escenarios, incluidos la respuesta recortada y la prioridad del ciclo
 - [ ] 5.7 Ejecutar el worker contra SAT2 durante al menos tres ciclos, y verificar que hay 31 días y mediciones nuevas guardadas, y que los registros no contienen credenciales (punto de control G3)
 
 ## 6. Acceso (A07, WT-BE-04)
