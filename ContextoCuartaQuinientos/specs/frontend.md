@@ -123,10 +123,10 @@ Inventario M5 (loading/error/empty + kit): `/tickets`, `/areas-comunes`, `/mis-v
 |------|-----------|--------|
 | Contrato HTTP | `shared/lib/apiClient.integration.test.ts` | Cambios en `apiClient.ts` |
 | Unit/UI dominio | `*.test.tsx` con mocks en borde | Pantallas y hooks |
-| Smoke E2E | `Web/e2e/admin-casas.spec.ts` | Local/QA con `E2E_SMOKE=1` |
+| Smoke E2E | `Web/e2e/*.spec.ts` (4 specs) | Local/QA con `E2E_SMOKE=1` |
 
 - Vitest **no** incluye `e2e/` (`vite.config.ts` → `test.exclude`).
-- Variables E2E: `E2E_BASE_URL`, `E2E_ADMIN_CORREO`, `FASE1_SMOKE_PASSWORD` / `E2E_ADMIN_PASSWORD`.
+- Variables E2E: `E2E_BASE_URL`, `E2E_ADMIN_CORREO`, `E2E_RESIDENT_CORREO`, `FASE1_SMOKE_PASSWORD` / `E2E_ADMIN_PASSWORD` / `E2E_RESIDENT_PASSWORD`.
 - Pre-release: checklist en [.planning/tkt-fe-qa-001/impl.md](../.planning/tkt-fe-qa-001/impl.md).
 
 ## Piloto de referencia

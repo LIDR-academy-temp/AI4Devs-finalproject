@@ -13,6 +13,8 @@
 - [E. Capas de documentación ↔ artefactos](#e-capas-de-documentación--artefactos)
 - [F. Nota sobre respuestas registradas](#f-nota-sobre-respuestas-registradas)
 - [G. Configuración de contexto: reglas, subagentes, comandos, skills y hooks](#g-configuración-de-contexto-reglas-subagentes-comandos-skills-y-hooks)
+- [Entrega 2 — Implementación con IA (octubre 2026)](#entrega-2--flujo-de-implementación-con-ia-octubre-2026)
+- [Entrega 3 — Cierre, tests E2E y entrega final (noviembre 2026)](#entrega-3--cierre-tests-e2e-y-entrega-final-noviembre-2026)
 - [Herramientas y modelos utilizados](#herramientas-y-modelos-utilizados)
 1. [Descripción general del producto](#p1-producto)
 2. [Arquitectura del sistema](#p2-arquitectura)
@@ -1346,3 +1348,107 @@ Pre-mortem registrado: *«API antigua sin reiniciar → 404 en `/visto`»*. F1 e
 - **API:** 45 archivos de test xUnit + Moq con **159 casos** `[Fact]`/`[Theory]` en `GraphApi/GraphApi.Tests/`.
 - **Web:** 83 archivos de test Vitest + Testing Library; última corrida registrada **Vitest 226/226** (`tkt-fe-ux-005/_index.md`).
 - Tickets aprobados en la 1ª auditoría sin ciclo REQUIERE CAMBIOS: FE-CRUD-003, FE-QA-001, FE-UX-001..004 (según `_sdd_evolution.md`).
+
+---
+
+# Entrega 3 — Cierre, tests E2E y entrega final (noviembre 2026)
+
+> Eje de evaluación: **IA en la fase de consolidación** — auditar gaps del checklist académico, ampliar pruebas E2E de flujos críticos, congelar la rama de entrega y documentar el criterio humano antes del Typeform.
+
+## Herramientas y modelos — Entrega 3
+
+| Herramienta | Uso en cierre |
+|-------------|----------------|
+| **Cursor (Composer / Agent)** | Gap analysis vs Lección 3, generación de specs Playwright, ampliación de `prompts.md`, push de rama `final-project-AFS` |
+| **Claude (chat / revisión)** | Segunda opinión sobre alcance (bot v2 fuera de repo), priorización rama → E2E → formulario |
+| **Playwright** | Smoke E2E opt-in (`E2E_SMOKE=1`) contra Web + API locales |
+| **dotnet test / Vitest** | Regresión antes de congelar la rama final |
+
+**Contexto activo:** checklist Lección 3 (`final-project-[INICIALES]`, suite unit+integración+E2E, `prompts.md` por fases), `README.md` §alcance (bot/IA v2 documentado), `ContextoCuartaQuinientos/specs/frontend.md` §Calidad.
+
+---
+
+## Flujo 1 — Auditoría de gaps vs checklist de entrega final
+
+**Prompt representativo (Cursor Agent):**
+
+```markdown
+## Rol
+Revisor de entrega académica AI4Devs.
+
+## Contexto
+Repo CuartaQuinientos en `feature/entrega-2-AFS`. Checklist: rama `final-project-AFS`, E2E mínimos (login, ticket, estado de cuenta), `prompts.md` Entrega 2/3, Typeform con URL de rama.
+
+## Objetivo
+Listar qué falta, qué ya cumple (unitarios API/Web, integración) y orden de ejecución.
+
+## Restricciones
+No asumir bot en alcance si README dice v2. Verificar con `git branch` y conteo de `Web/e2e/*.spec.ts`.
+
+## Criterio de calidad
+Tabla verificable archivo por archivo; prioridad: rama administrativa → E2E → prompts → Typeform humano.
+```
+
+**Respuesta útil de la IA:** confirmó rama inexistente, un solo spec E2E previo, tests xUnit/Vitest amplios, bot sin carpeta `Bot/` coherente con README, falta bloque Entrega 3 en `prompts.md`.
+
+**Criterio humano:** dejar **bot fuera de tests** mientras el README mantenga v2 explícito.
+
+---
+
+## Flujo 2 — Ampliación E2E (Playwright) con gate opt-in
+
+**Objetivo dado a la IA:** tres flujos residente además de admin casas, reutilizando credenciales de smoke (`FASE1_SMOKE_PASSWORD`, `E2E_*_CORREO`).
+
+**Artefactos:**
+
+| Spec | Flujo |
+|------|--------|
+| `Web/e2e/login-residente.spec.ts` | Login → saludo en inicio |
+| `Web/e2e/crear-ticket.spec.ts` | Nuevo ticket → listado |
+| `Web/e2e/estado-cuenta.spec.ts` | Estado de cuenta → KPIs o vacío |
+| `Web/e2e/helpers/auth.ts` | Login compartido + credenciales |
+
+**Patrón FE-QA-001:** skip global salvo `E2E_SMOKE=1`; Vitest excluye `e2e/`.
+
+**Ejecución local:**
+
+```powershell
+$env:E2E_SMOKE='1'
+$env:FASE1_SMOKE_PASSWORD='<seed local>'
+cd Web
+npm run test:e2e
+```
+
+**Criterio humano:** no exigir Playwright en CI sin API+Web; basta specs en repo + opt-in documentado.
+
+---
+
+## Flujo 3 — Rama de entrega y Typeform
+
+1. **IA:** rama `final-project-AFS`, commit E2E + `prompts.md`, `git push -u origin final-project-AFS`.
+2. **Humano:** [Typeform](https://lidr.typeform.com/proyectoai4devs) con URL a la rama y correo del calendario.
+
+**Non-goals:** PR de entrega final (curso: rama + formulario).
+
+---
+
+## Flujo 4 — Registro Entrega 3 en prompts.md
+
+Documentar workflows de cierre (gap analysis, E2E, rama, Typeform) con herramientas y criterio humano — esta sección.
+
+---
+
+## Criterio humano — Entrega 3
+
+| Decisión | Motivo |
+|----------|--------|
+| Rama `final-project-AFS` | Requisito nominal del curso |
+| 4 specs E2E | Login, ticket, finanzas residente + admin casas |
+| Bot sin tests | v2 fuera de alcance en README |
+| Typeform manual | Activa revisión; solo el humano envía |
+
+## Métricas de cierre (noviembre 2026)
+
+- **Rama:** `final-project-AFS`.
+- **E2E:** 4 archivos en `Web/e2e/` (`E2E_SMOKE=1`).
+- **Pendiente humano:** Typeform con link al remoto.
