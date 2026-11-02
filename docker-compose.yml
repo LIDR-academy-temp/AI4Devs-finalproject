@@ -52,6 +52,8 @@ services:
     environment:
       DATABASE_URL: *url-base-de-datos
       SAT2_MODO: ${SAT2_MODO:-simulado}
+      # false solo para el desarrollo local por HTTP; el despliegue usa HTTPS.
+      COOKIE_SEGURA: ${COOKIE_SEGURA:-false}
     depends_on:
       migraciones:
         condition: service_completed_successfully

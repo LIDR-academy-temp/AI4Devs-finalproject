@@ -158,7 +158,8 @@ docker compose exec api python -m app.semillas
 ```
 
 - `.env` contendrá la conexión a la base, el secreto de sesión y la cuenta de servicio de SAT2. Nunca se versiona.
-- Las semillas crearán una estación y un usuario de demostración con datos ficticios.
+- Las semillas crearán una estación y un usuario de demostración con datos ficticios. Su clave se genera al crearlo y se muestra una sola vez.
+- Las cuentas se administran con `docker compose exec api python -m app.administracion`, con los comandos `crear-usuario`, `asignar-estacion`, `restablecer-clave` y `desactivar-usuario`.
 - El modo `SAT2_MODO=simulado` permitirá probar el sistema sin credenciales reales.
 - La aplicación quedará disponible en `http://localhost:8080` y la documentación de la API en `http://localhost:8080/api/docs`.
 

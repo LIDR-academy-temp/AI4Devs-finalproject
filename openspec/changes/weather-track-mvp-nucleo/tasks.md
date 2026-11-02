@@ -40,10 +40,10 @@ Los grupos siguen las actividades del [plan de implementación](../../../docs/pl
 
 ## 6. Acceso (A07, WT-BE-04)
 
-- [ ] 6.1 Implementar el hash de contraseñas y el comando de alta de cuentas y estaciones, y verificar que la base no contiene contraseñas en texto plano
-- [ ] 6.2 Implementar inicio y cierre de sesión, y verificar los escenarios de `account-access`, incluidos la cuenta desactivada, la sesión vencida y el mensaje genérico
-- [ ] 6.3 Implementar el límite de intentos, y verificar el estado 429 y el fin de la espera con un reloj simulado
-- [ ] 6.4 Implementar la autorización por estación y `GET /estaciones`, y verificar los estados 401 y 403 y el listado filtrado
+- [x] 6.1 Implementar el hash de contraseñas y el comando de alta de cuentas y estaciones, y verificar que la base no contiene contraseñas en texto plano
+- [x] 6.2 Implementar inicio y cierre de sesión, y verificar los escenarios de `account-access`, incluidos la cuenta desactivada, la sesión vencida y el mensaje genérico
+- [x] 6.3 Implementar el límite de intentos, y verificar el estado 429 y el fin de la espera con un reloj simulado
+- [x] 6.4 Implementar la autorización por estación y `GET /estaciones`, y verificar los estados 401 y 403 y el listado filtrado
 
 ## 7. Endpoints de lectura (A08, WT-BE-01 y WT-BE-02)
 
