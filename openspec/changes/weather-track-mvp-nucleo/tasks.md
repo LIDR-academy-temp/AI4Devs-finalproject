@@ -68,8 +68,8 @@ Los grupos siguen las actividades del [plan de implementación](../../../docs/pl
 
 ## 10. Integración (A11)
 
-- [ ] 10.1 Escribir las pruebas E2E de HU1 y HU2 en modo simulado, y verificar que pasan con la pila completa en contenedores
-- [ ] 10.2 Escribir la prueba básica de HU3, y verificar que muestra el gráfico y el resumen (punto de control G4)
+- [x] 10.1 Escribir las pruebas E2E de HU1 y HU2 en modo simulado, y verificar que pasan con la pila completa en contenedores
+- [x] 10.2 Escribir la prueba básica de HU3, y verificar que muestra el gráfico y el resumen (punto de control G4)
 
 ## 11. Despliegue (A13, WT-OPS-01)
 

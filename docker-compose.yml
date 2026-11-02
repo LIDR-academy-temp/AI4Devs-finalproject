@@ -78,6 +78,7 @@ services:
     environment:
       DATABASE_URL: *url-base-de-datos
       SAT2_MODO: ${SAT2_MODO:-simulado}
+      CARGA_PAUSA_SEGUNDOS: ${CARGA_PAUSA_SEGUNDOS:-2}
     depends_on:
       migraciones:
         condition: service_completed_successfully
@@ -94,7 +95,7 @@ services:
   proxy:
     build: ./frontend
     ports:
-      - "8080:8080"
+      - "${PUERTO_WEB:-8080}:8080"
     depends_on:
       api:
         condition: service_healthy

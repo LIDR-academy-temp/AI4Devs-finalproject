@@ -40,8 +40,10 @@ class ClienteSat2Simulado:
 
     def recuperar_instantaneos(self, id_equipo: int) -> dict[str, Any]:
         self._exigir_equipo(id_equipo)
+        return self._instantaneos_en(self._reloj())
+
+    def _instantaneos_en(self, ahora: datetime) -> dict[str, Any]:
         instantaneos = self._leer("instantaneos.json")
-        ahora = self._reloj()
         medicion = ahora.replace(
             minute=ahora.minute - ahora.minute % 10, second=0, microsecond=0
         )
@@ -93,3 +95,43 @@ class ClienteSat2Simulado:
     @staticmethod
     def _leer(nombre: str) -> Any:
         return json.loads((CARPETA_DATOS / nombre).read_text(encoding="utf-8"))
+
+
+class ClienteSat2Escenarios(ClienteSat2Simulado):
+    """Una estación ficticia por cada caso de las historias de usuario, para las pruebas E2E.
+
+    Solo cambia lo que entrega la fuente: el estado lo calculan el ciclo y el motor reales.
+    """
+
+    def __init__(self, reloj: Callable[[], datetime] = _ahora_argentina) -> None:
+        super().__init__(reloj)
+        self._escenarios = {e["idEquipo"]: e for e in self._leer("escenarios.json")}
+
+    def recuperar_equipos(self) -> list[dict[str, Any]]:
+        plantilla = self._leer("catalogo.json")[0]
+        return [
+            {**plantilla, "idEquipo": id_equipo, "descripcion": escenario["descripcion"]}
+            for id_equipo, escenario in self._escenarios.items()
+        ]
+
+    def recuperar_instantaneos(self, id_equipo: int) -> dict[str, Any]:
+        self._exigir_equipo(id_equipo)
+        escenario = self._escenarios[id_equipo]
+        if escenario.get("fuenteCaida"):
+            raise ErrorSat2("Fuente simulada caída")
+        atraso = timedelta(minutes=escenario.get("atrasoMinutos", 0))
+        instantaneos = self._instantaneos_en(self._reloj() - atraso)
+        for lectura in instantaneos["datosSensores"]:
+            if lectura["nombreSensor"] in escenario["lecturas"]:
+                lectura["valor"] = escenario["lecturas"][lectura["nombreSensor"]]
+        return instantaneos
+
+    def recuperar_historicos(
+        self, id_equipo: int, id_sensor: int, desde: date, hasta: date
+    ) -> list[dict[str, Any]]:
+        self._exigir_equipo(id_equipo)
+        # Una sola estación con históricos: en las demás, una lectura histórica podría
+        # ganarle a la del ciclo y cambiar el caso que se quiere probar.
+        if not self._escenarios[id_equipo].get("conHistoricos"):
+            return []
+        return super().recuperar_historicos(id_equipo, id_sensor, desde, hasta)

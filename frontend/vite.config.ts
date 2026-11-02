@@ -9,6 +9,8 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // e2e/ corre con Playwright, contra la pila completa.
+    include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: './src/pruebas/preparacion.ts',
   },
 })

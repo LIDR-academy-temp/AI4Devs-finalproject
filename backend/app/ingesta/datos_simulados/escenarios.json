@@ -1,0 +1,60 @@
+[
+  {
+    "idEquipo": 101,
+    "descripcion": "Condiciones favorables",
+    "lecturas": {}
+  },
+  {
+    "idEquipo": 102,
+    "descripcion": "Índice elevado",
+    "lecturas": {
+      "Anemómetro": "1",
+      "Rad Solar": "0",
+      "Hum Amb. a 2 Mts": "95",
+      "Hum Amb. a 10 Mts": "95"
+    }
+  },
+  {
+    "idEquipo": 103,
+    "descripcion": "Inversión con índice bajo",
+    "lecturas": { "Temp Amb. a 10 Mts": "20,60" }
+  },
+  {
+    "idEquipo": 104,
+    "descripcion": "Inversión con poco viento",
+    "lecturas": { "Temp Amb. a 10 Mts": "22,30", "Anemómetro": "4" }
+  },
+  {
+    "idEquipo": 105,
+    "descripcion": "Lectura faltante",
+    "lecturas": { "Temp Amb. a 10 Mts": "[]" }
+  },
+  {
+    "idEquipo": 106,
+    "descripcion": "Datos desactualizados",
+    "lecturas": {},
+    "atrasoMinutos": 120
+  },
+  {
+    "idEquipo": 107,
+    "descripcion": "Lectura sospechosa",
+    "lecturas": { "Hum Amb. a 2 Mts": "20", "Hum Amb. a 10 Mts": "60" }
+  },
+  {
+    "idEquipo": 108,
+    "descripcion": "Fuente caída",
+    "lecturas": {},
+    "fuenteCaida": true
+  },
+  {
+    "idEquipo": 109,
+    "descripcion": "Con históricos",
+    "lecturas": {},
+    "conHistoricos": true
+  },
+  {
+    "idEquipo": 110,
+    "descripcion": "Estación ajena",
+    "lecturas": {}
+  }
+]
