@@ -9,7 +9,8 @@
 | **Capacidad** | 5 horas por día, de lunes a domingo: 90 horas en 18 días |
 | **Arquitectura** | [ADR-0001](../decisions/0001-arquitectura-destino-weather-track.md), aceptado |
 | **Responsable** | Pablo Guillermo Di Nanno |
-| **Versión** | 1.5, 2 de noviembre de 2026 |
+| **Presentación** | Anticipada: [pull request](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14) abierta el 2 de noviembre de 2026 |
+| **Versión** | 1.6, 2 de noviembre de 2026 |
 
 ## 1. Resumen ejecutivo
 

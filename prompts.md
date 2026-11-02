@@ -275,3 +275,9 @@ Sí, empieza A15
 ```
 
 La revisión de seguridad (A14) se inició dentro del prompt "Continuemos por acá" de la sección 8.5.
+
+**Prompt de la pull request:**
+
+```text
+Hagamos el PR de la entrega 2 y deja las fechas como están, solo actualiza la entrega anticipada de de la 2 y continuamos profesionalizando el trabajo para el final para que sea super profesional.
+```

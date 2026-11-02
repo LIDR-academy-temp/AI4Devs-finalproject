@@ -9,7 +9,7 @@
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
 
-> **Estado de este documento (Entrega 2):** describe el MVP implementado, que se instala y se prueba desde este repositorio. Lo que todavía no existe se indica como pendiente: el despliegue público, el pipeline de entrega continua y la validación agronómica del índice.
+> **Estado de este documento (Entrega 2, [presentada de forma anticipada](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14)):** describe el MVP implementado, que se instala y se prueba desde este repositorio. Lo que todavía no existe se indica como pendiente: el despliegue público, el pipeline de entrega continua y la validación agronómica del índice.
 
 ---
 
@@ -1109,4 +1109,4 @@ Escenario: Huecos en la serie
 
 **Pull Request 1:** [documentación y diseño del MVP (Entrega 1)](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/12). Agrega el problema, el alcance, la arquitectura, el modelo de datos, la API, las historias, los tickets y los prompts.
 
-**Pull Request 2:** implementación del MVP (Entrega 2), desde la rama `feature/entrega-2-PDN`. Unifica las dos pull requests que se habían planificado por separado, para el esquema y el motor y para la pantalla de decisión, y agrega el resto del alcance núcleo.
+**Pull Request 2:** [implementación del MVP (Entrega 2)](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14), presentada de forma anticipada desde la rama `feature/entrega-2-PDN`. Unifica las dos pull requests que se habían planificado por separado, para el esquema y el motor y para la pantalla de decisión, y agrega el resto del alcance núcleo.
