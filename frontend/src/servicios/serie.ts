@@ -39,6 +39,15 @@ export function armarSerie(puntos: Punto[]): Serie {
   return serie
 }
 
+export function formatearHoraDeArgentina(momento: Date): string {
+  return new Intl.DateTimeFormat('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(momento)
+}
+
 export function rangoDeDias(dias: number, ahora: Date): { desde: Date; hasta: Date } {
   return { desde: new Date(ahora.getTime() - dias * 24 * 60 * 60 * 1000), hasta: ahora }
 }

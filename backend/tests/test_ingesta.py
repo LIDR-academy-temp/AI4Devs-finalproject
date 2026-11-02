@@ -223,6 +223,31 @@ def test_conserva_la_alarma(sesion, cliente, estacion):
     assert observacion_de(sesion, "Bateria").alarma is False
 
 
+def test_el_ciclo_agrega_la_alarma_a_una_lectura_historica_del_mismo_instante(
+    sesion, cliente, estacion
+):
+    pluviometro = sesion.scalar(select(Sensor).where(Sensor.nombre == "Pluviometro"))
+    sesion.add(
+        Observacion(
+            sensor_id=pluviometro.id,
+            medido_en=MEDICION,
+            valor=D("5"),
+            calidad="OK",
+            alarma=None,
+            origen="HISTORICO",
+        )
+    )
+    sesion.commit()
+
+    ejecutar_ciclo(sesion, cliente, estacion, AHORA)
+
+    sesion.expire_all()
+    lectura = observacion_de(sesion, "Pluviometro")
+    assert lectura.alarma is True
+    assert lectura.valor == D("5.0000")
+    assert lectura.origen == "HISTORICO"
+
+
 def test_sensor_ausente_queda_faltante_e_impide_el_indice(sesion, cliente, estacion):
     cliente.quitar = {"Temp Amb. a 10 Mts"}
     ejecutar_ciclo(sesion, cliente, estacion, AHORA)

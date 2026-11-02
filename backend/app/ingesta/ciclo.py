@@ -5,7 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import and_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -160,12 +160,18 @@ def ejecutar_ciclo(
         filas, desconocidos = _armar_filas(sensores, lecturas_crudas, medido_en, ahora)
         guardadas = 0
         if filas:
+            insercion = insert(Observacion).values(filas)
             guardadas = len(
                 sesion.execute(
-                    insert(Observacion)
-                    .values(filas)
-                    .on_conflict_do_nothing()
-                    .returning(Observacion.sensor_id)
+                    # Si la carga histórica guardó antes ese instante, solo falta la alarma.
+                    insercion.on_conflict_do_update(
+                        index_elements=["sensor_id", "medido_en"],
+                        set_={"alarma": insercion.excluded.alarma},
+                        where=and_(
+                            Observacion.alarma.is_(None),
+                            insercion.excluded.alarma.is_not(None),
+                        ),
+                    ).returning(Observacion.sensor_id)
                 ).all()
             )
         _guardar_recomendacion(sesion, estacion, sensores, medido_en, ahora)

@@ -1,9 +1,16 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
-import App from '../App'
-import { ProveedorDeSesion } from '../servicios/sesion'
+import {
+  CONDICIONES,
+  ESTACION,
+  NO_AUTENTICADO,
+  OTRA,
+  RECOMENDACION,
+  abrir,
+  simularApi,
+} from './ayudantes'
+import type { Simulada } from './ayudantes'
 
 vi.mock('../componentes/GraficoSerie', () => ({
   GraficoSerie: ({ puntos, titulo }: { puntos: unknown[]; titulo: string }) => (
@@ -12,52 +19,6 @@ vi.mock('../componentes/GraficoSerie', () => ({
     </div>
   ),
 }))
-
-interface Simulada {
-  estado?: number
-  cuerpo?: unknown
-}
-
-type Rutas = Record<string, Simulada | (() => Simulada | Promise<Simulada>)>
-
-const ESTACION = { id: 1, nombre: 'Estación Norte', latitud: '-34', longitud: '-60' }
-const OTRA = { id: 2, nombre: 'Estación Sur', latitud: '-35', longitud: '-61' }
-const NO_AUTENTICADO = {
-  estado: 401,
-  cuerpo: { codigo: 'NO_AUTENTICADO', mensaje: 'Sesión ausente o vencida.' },
-}
-
-const CONDICIONES = {
-  estacion_id: 1,
-  estacion_nombre: 'Estación Norte',
-  medido_en: '2026-11-01T22:40:00-03:00',
-  antiguedad_segundos: 120,
-  estado_datos: 'VIGENTE',
-  ultima_ingesta_exitosa_en: '2026-11-01T22:41:00-03:00',
-  ultima_ingesta_con_error: false,
-  sensores: [
-    {
-      sensor_id: 6,
-      nombre: 'Temp Amb. a 2 Mts',
-      magnitud: 'TEMPERATURA',
-      altura_m: 2,
-      valor: 20.3,
-      unidad: '°C',
-      calidad: 'OK',
-      alarma: false,
-    },
-    {
-      sensor_id: 9,
-      nombre: 'Anemómetro',
-      magnitud: 'VIENTO_VELOCIDAD',
-      altura_m: null,
-      valor: null,
-      unidad: 'km/h',
-      calidad: 'FALTANTE',
-      alarma: null,
-    },
-  ],
-}
 
 function historico(cantidad: number) {
   return {
@@ -71,34 +32,6 @@ function historico(cantidad: number) {
         : { maximo: null, minimo: null, promedio: null, cantidad: 0 },
     puntos: cantidad > 0 ? [{ medido_en: '2026-10-25T00:00:00-03:00', valor: 20, calidad: 'OK' }] : [],
   }
-}
-
-function simularApi(rutas: Rutas) {
-  const llamadas: string[] = []
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (url: string, opciones?: RequestInit) => {
-      const clave = `${opciones?.method ?? 'GET'} ${url.split('?')[0].replace('/api/v1', '')}`
-      llamadas.push(`${clave}${url.includes('?') ? `?${url.split('?')[1]}` : ''}`)
-      const entrada = rutas[clave]
-      if (!entrada) {
-        throw new TypeError(`Sin respuesta simulada: ${clave}`)
-      }
-      const { estado = 200, cuerpo } = typeof entrada === 'function' ? await entrada() : entrada
-      return new Response(estado === 204 ? null : JSON.stringify(cuerpo), { status: estado })
-    }),
-  )
-  return llamadas
-}
-
-function abrir(ruta = '/') {
-  return render(
-    <MemoryRouter initialEntries={[ruta]}>
-      <ProveedorDeSesion>
-        <App />
-      </ProveedorDeSesion>
-    </MemoryRouter>,
-  )
 }
 
 async function completarAcceso(contrasena = 'clave') {
@@ -188,6 +121,7 @@ describe('acceso', () => {
     let vencida = false
     simularApi({
       'GET /estaciones': () => (vencida ? NO_AUTENTICADO : { cuerpo: [ESTACION, OTRA] }),
+      'GET /estaciones/1/recomendacion': NO_AUTENTICADO,
       'GET /estaciones/1/condiciones-actuales': () => {
         vencida = true
         return NO_AUTENTICADO
@@ -218,6 +152,7 @@ describe('selección de estación', () => {
   it('con una sola estación la abre directamente', async () => {
     simularApi({
       'GET /estaciones': { cuerpo: [ESTACION] },
+      'GET /estaciones/1/recomendacion': { cuerpo: RECOMENDACION },
       'GET /estaciones/1/condiciones-actuales': { cuerpo: CONDICIONES },
     })
     abrir()
@@ -228,6 +163,7 @@ describe('selección de estación', () => {
   it('con varias estaciones permite elegir', async () => {
     simularApi({
       'GET /estaciones': { cuerpo: [ESTACION, OTRA] },
+      'GET /estaciones/2/recomendacion': { cuerpo: { ...RECOMENDACION, estacion_id: 2 } },
       'GET /estaciones/2/condiciones-actuales': {
         cuerpo: { ...CONDICIONES, estacion_id: 2, estacion_nombre: 'Estación Sur' },
       },
@@ -249,6 +185,10 @@ describe('selección de estación', () => {
   it('una estación ajena muestra el mensaje de la API y ningún dato', async () => {
     simularApi({
       'GET /estaciones': { cuerpo: [ESTACION] },
+      'GET /estaciones/7/recomendacion': {
+        estado: 403,
+        cuerpo: { codigo: 'SIN_ACCESO', mensaje: 'No tiene acceso a esta estación.' },
+      },
       'GET /estaciones/7/condiciones-actuales': {
         estado: 403,
         cuerpo: { codigo: 'SIN_ACCESO', mensaje: 'No tiene acceso a esta estación.' },
@@ -262,6 +202,7 @@ describe('selección de estación', () => {
   it('muestra los sensores con valor y unidad, y raya si falta el dato', async () => {
     simularApi({
       'GET /estaciones': { cuerpo: [ESTACION] },
+      'GET /estaciones/1/recomendacion': { cuerpo: RECOMENDACION },
       'GET /estaciones/1/condiciones-actuales': { cuerpo: CONDICIONES },
     })
     abrir('/estaciones/1')

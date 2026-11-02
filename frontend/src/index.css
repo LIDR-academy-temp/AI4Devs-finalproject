@@ -10,6 +10,16 @@
   --error: #b42318;
   --aviso-fondo: #fff4ce;
   --aviso-texto: #6b5200;
+  --apto-fondo: #e3f4e6;
+  --apto-texto: #145c2a;
+  --precaucion-fondo: #fff4ce;
+  --precaucion-texto: #6b5200;
+  --riesgo-fondo: #ffe5cf;
+  --riesgo-texto: #8a3b00;
+  --no-aplicar-fondo: #fde2e1;
+  --no-aplicar-texto: #8e1c13;
+  --neutro-fondo: #e6eaee;
+  --neutro-texto: #36434f;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   line-height: 1.45;
 }
@@ -26,6 +36,16 @@
     --error: #ff8a80;
     --aviso-fondo: #3d3200;
     --aviso-texto: #ffe08a;
+    --apto-fondo: #123a1f;
+    --apto-texto: #a5e7b5;
+    --precaucion-fondo: #3d3200;
+    --precaucion-texto: #ffe08a;
+    --riesgo-fondo: #47260a;
+    --riesgo-texto: #ffc48a;
+    --no-aplicar-fondo: #4a1512;
+    --no-aplicar-texto: #ffb3ad;
+    --neutro-fondo: #2a343e;
+    --neutro-texto: #d3dbe2;
   }
 }
 
@@ -240,4 +260,131 @@ button:disabled {
   background: var(--superficie);
   border: 1px solid var(--borde);
   border-radius: 0.5rem;
+}
+
+.decision h2 {
+  margin-bottom: 0.75rem;
+}
+
+.bloque-estado {
+  padding: 1rem;
+  border: 1px solid currentcolor;
+  border-radius: 0.5rem;
+}
+
+.estado-apto {
+  color: var(--apto-texto);
+  background: var(--apto-fondo);
+}
+
+.estado-precaucion {
+  color: var(--precaucion-texto);
+  background: var(--precaucion-fondo);
+}
+
+.estado-riesgo {
+  color: var(--riesgo-texto);
+  background: var(--riesgo-fondo);
+}
+
+.estado-no-aplicar {
+  color: var(--no-aplicar-texto);
+  background: var(--no-aplicar-fondo);
+}
+
+.estado-neutro {
+  color: var(--neutro-texto);
+  background: var(--neutro-fondo);
+}
+
+.estado-principal {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.estado-icono {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 1.25rem;
+  border: 2px solid currentcolor;
+  border-radius: 50%;
+}
+
+.estado-explicacion {
+  margin: 0.75rem 0 0;
+}
+
+.estado-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 0.75rem 0 0;
+}
+
+.estado-datos dt {
+  font-size: 0.8125rem;
+}
+
+.estado-datos dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.motivos {
+  padding-left: 1.25rem;
+  margin: 0.75rem 0 0;
+}
+
+.aviso-orientativo {
+  padding-top: 0.6rem;
+  margin: 0.75rem 0 0;
+  font-size: 0.875rem;
+  border-top: 1px solid currentcolor;
+}
+
+.metodo {
+  white-space: nowrap;
+}
+
+.decision > .aviso {
+  margin: 0.75rem 0 0;
+}
+
+.tarjeta-sensor {
+  height: 100%;
+}
+
+.tarjeta-sospechosa {
+  border-color: var(--precaucion-texto);
+  border-width: 2px;
+}
+
+.tarjeta-faltante {
+  border-style: dashed;
+}
+
+.tarjeta-alarma {
+  border-color: var(--no-aplicar-texto);
+  border-width: 2px;
+}
+
+.marca-dato {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.actualizado {
+  margin-top: 1rem;
+  font-size: 0.8125rem;
 }

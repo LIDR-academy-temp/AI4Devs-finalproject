@@ -61,10 +61,10 @@ Los grupos siguen las actividades del [plan de implementación](../../../docs/pl
 
 ## 9. Pantalla de decisión (A10, WT-FE-01)
 
-- [ ] 9.1 Construir el bloque de estado con texto, color, ícono, índice, hora, motivos y aviso, y verificar cada uno de los cinco estados con una prueba
-- [ ] 9.2 Construir las tarjetas con calidad y alarma, y verificar los casos `FALTANTE`, `SOSPECHOSO` y en alarma
-- [ ] 9.3 Implementar la actualización cada 60 segundos y los avisos de falta de conexión con la API y con la fuente, y verificar que tras un error el estado anterior no queda como vigente
-- [ ] 9.4 Revisar la pantalla con un ancho de 360 píxeles, y verificar que no hay desplazamiento horizontal
+- [x] 9.1 Construir el bloque de estado con texto, color, ícono, índice, hora, motivos y aviso, y verificar cada uno de los cinco estados con una prueba
+- [x] 9.2 Construir las tarjetas con calidad y alarma, y verificar los casos `FALTANTE`, `SOSPECHOSO` y en alarma
+- [x] 9.3 Implementar la actualización cada 60 segundos y los avisos de falta de conexión con la API y con la fuente, y verificar que tras un error el estado anterior no queda como vigente
+- [x] 9.4 Revisar la pantalla con un ancho de 360 píxeles, y verificar que no hay desplazamiento horizontal
 
 ## 10. Integración (A11)
 
