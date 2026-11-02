@@ -73,9 +73,9 @@ Los grupos siguen las actividades del [plan de implementación](../../../docs/pl
 
 ## 11. Despliegue (A13, WT-OPS-01)
 
-- [ ] 11.1 Elegir el proveedor del servidor y registrar la decisión, y verificar que cubre contenedores, HTTPS y volumen persistente
-- [ ] 11.2 Desplegar la pila con credenciales solo en el entorno del servidor, y verificar por HTTPS el acceso, la recomendación y un ciclo real del worker
-- [ ] 11.3 Documentar en el README la instalación local real, y verificar que los comandos funcionan en un clon limpio en modo simulado
+- [x] 11.1 Elegir el proveedor del servidor y registrar la decisión (ADR-0002: Google Cloud), y verificar que cubre contenedores, HTTPS y volumen persistente
+- [ ] 11.2 (Opción plus, pospuesta hasta después de la Entrega 2) Desplegar la pila en Google Cloud con el dominio propio y credenciales solo en el entorno del servidor, y verificar por HTTPS el acceso, la recomendación y un ciclo real del worker
+- [ ] 11.3 Documentar la instalación local real, desde la clonación del repositorio en GitHub, y verificar que los comandos funcionan en un clon limpio en modo simulado
 
 ## 12. Revisión de seguridad (A14)
 

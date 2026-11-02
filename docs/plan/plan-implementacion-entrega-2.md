@@ -9,7 +9,7 @@
 | **Capacidad** | 5 horas por día, de lunes a domingo: 90 horas en 18 días |
 | **Arquitectura** | [ADR-0001](../decisions/0001-arquitectura-destino-weather-track.md), aceptado |
 | **Responsable** | Pablo Guillermo Di Nanno |
-| **Versión** | 1.4, 1 de noviembre de 2026 |
+| **Versión** | 1.5, 2 de noviembre de 2026 |
 
 ## 1. Resumen ejecutivo
 
@@ -35,6 +35,7 @@
 - Un día ideal son 6 horas efectivas con asistencia de IA. Con 5 horas diarias, los 18 días equivalen a **15 días ideales**. Las estimaciones son juicio experto; todavía no hay datos históricos del proyecto.
 - No se consideran feriados, porque se trabaja de lunes a domingo.
 - La evaluación del pipeline queda fuera de este plan. A13 es un despliegue mínimo y se automatiza más adelante.
+- Desde la versión 1.5, A13 tiene dos partes ([ADR-0002](../decisions/0002-proveedor-del-servidor.md)). La **instalación local desde GitHub**, con su documentación, es obligatoria para la entrega. El **despliegue real en Google Cloud** con dominio propio es una opción plus, **pospuesta por el responsable** hasta después de la Entrega 2.
 - Las etapas Operate y Monitor corresponden a la Entrega 3.
 
 ## 3. Flujo del proceso
@@ -124,7 +125,7 @@ Valores en días ideales del alcance núcleo. *Ruta crítica* significa holgura 
 | A09 | Code | WT-FE-02: base, acceso, detalle e históricos de 7 y 31 días | A03 | 0,75 | 1,25 | 2,5 | 1,38 | 0,29 | 1,17 | |
 | A10 | Code | WT-FE-01: pantalla de decisión | A09 | 1 | 1,5 | 2,5 | 1,58 | 0,25 | 1,17 | |
 | A11 | Test | Integración, E2E de HU1 y HU2, y prueba básica de HU3 | A06, A08, A10 | 0,5 | 1 | 2 | 1,08 | 0,25 | 0,00 | Sí |
-| A13 | Deploy | WT-OPS-01: despliegue mínimo del MVP | A11 | 0,5 | 1 | 2,5 | 1,17 | 0,33 | 0,00 | Sí |
+| A13 | Deploy | WT-OPS-01: instalación local desde GitHub (el despliegue en Google Cloud queda pospuesto) | A11 | 0,5 | 1 | 2,5 | 1,17 | 0,33 | 0,00 | Sí |
 | A14 | Release | Revisión corta de seguridad: secretos, autorización y sesión | A11 | 0,25 | 0,5 | 1 | 0,54 | 0,12 | 0,62 | |
 | A15 | Release | Documentación, demo y PR de la Entrega 2 | A13, A14 | 0,5 | 1 | 1,5 | 1,00 | 0,17 | 0,00 | Sí |
 | | | **Total de esfuerzo** | | | | | **16,08** | | | |

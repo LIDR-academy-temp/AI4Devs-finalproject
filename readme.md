@@ -145,23 +145,34 @@ Las siguientes capturas son del **prototipo de validación**, no del MVP. Sirven
 
 ### **1.4. Instrucciones de instalación:**
 
-> **Planificado.** Estos pasos describen la instalación prevista para la Entrega 2. Todavía no se pueden ejecutar, porque el código del MVP no existe en este repositorio.
-
-Requisitos previstos: Git y Docker con Docker Compose.
+Requisitos: Git y Docker con Docker Compose. Estos pasos usan datos ficticios y no necesitan credenciales.
 
 ```bash
-git clone https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp.git
-cd AI4Devs-finalproject-temp
+git clone -b feature/entrega-2-PDN https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp.git weather-track
+cd weather-track
 cp .env.example .env
-docker compose up --build -d
+docker compose up --build -d --wait
 docker compose exec api python -m app.semillas
 ```
 
-- `.env` contendrá la conexión a la base, el secreto de sesión y la cuenta de servicio de SAT2. Nunca se versiona.
-- Las semillas crearán una estación y un usuario de demostración con datos ficticios. Su clave se genera al crearlo y se muestra una sola vez.
+El último comando muestra el usuario de demostración y su clave, que aparece una sola vez. La aplicación queda en `http://localhost:8080`.
+
+- **[Guía de instalación local](docs/despliegue/instalacion-local.md):** paso a paso desde cero, uso con datos reales de SAT2, actualización, desinstalación y problemas frecuentes.
+- **[Despliegue en Google Cloud](docs/despliegue/despliegue-gcp.md) (pospuesto):** guía preparada para publicar en internet con HTTPS y dominio propio. Todavía no se ejecutó.
 - Las cuentas se administran con `docker compose exec api python -m app.administracion`, con los comandos `crear-usuario`, `asignar-estacion`, `restablecer-clave` y `desactivar-usuario`.
-- El modo `SAT2_MODO=simulado` permitirá probar el sistema sin credenciales reales.
-- La aplicación quedará disponible en `http://localhost:8080` y la documentación de la API en `http://localhost:8080/api/docs`.
+- Para detenerla sin perder datos, usar `docker compose stop`. `docker compose down -v` borra la base.
+- La documentación de la API está en `http://localhost:8080/api/docs`.
+
+**Pruebas** (además requieren uv y Node.js):
+
+```bash
+docker compose up -d --wait db_pruebas
+cd backend && uv run pytest
+cd ../frontend && npm ci && npm test
+npx playwright install chromium && npm run e2e
+```
+
+`npm run e2e` levanta la pila completa en un proyecto propio, `wt-e2e`, recorre las historias de usuario en un navegador y borra esa base al terminar. No toca los datos de la instalación principal.
 
 ### **1.5. Prototipo de validación**
 
@@ -288,7 +299,7 @@ El backend sigue una arquitectura en capas: `api` y `ingesta` dependen de `domin
 
 ### **2.4. Infraestructura y despliegue**
 
-> **Planificado.** La Entrega 2 incluye un despliegue mínimo y el proveedor del servidor se elegirá entonces. Este esquema es preliminar: las etapas y herramientas del pipeline se evaluarán en el proceso final.
+> **Parcialmente implementado.** El despliegue mínimo de la Entrega 2 es manual, con Docker Compose en un servidor: ver la [guía de despliegue en Google Cloud](docs/despliegue/despliegue-gcp.md) y el [ADR-0002](docs/decisions/0002-proveedor-del-servidor.md). El esquema siguiente, con imágenes publicadas por un pipeline, es preliminar: sus etapas y herramientas se evaluarán en el proceso final.
 
 ```mermaid
 flowchart LR

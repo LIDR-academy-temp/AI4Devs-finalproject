@@ -168,7 +168,7 @@ Se aplica un **reemplazo por capacidades en paralelo**, inspirado en el patrón 
 **Decisiones que habrá que revisar:**
 
 - Pipeline de entrega continua y su herramienta: proceso final.
-- Proveedor del servidor: antes de iniciar la actividad A13 del plan.
+- Proveedor del servidor: tratado en el [ADR-0002](0002-proveedor-del-servidor.md).
 - Extracción de servicios o base de series temporales: solo si crecen las estaciones o el equipo.
 
 ## Confirmación
@@ -252,7 +252,7 @@ La implementación cumple esta decisión si:
 2. [x] Crear las specs de OpenSpec del MVP a partir de esta decisión: cambio `weather-track-mvp-nucleo`.
 3. [ ] Medir los límites de rango y antigüedad de SAT2 y consultarlos con TECMES. Las credenciales ya están disponibles (A02).
 4. [x] Definir si la alarma que informa SAT2 por sensor se guarda en `OBSERVACION`: se guarda y se muestra, sin afectar la recomendación.
-5. [ ] Elegir el proveedor del servidor antes de iniciar A13.
+5. [x] Elegir el proveedor del servidor antes de iniciar A13: ver el [ADR-0002](0002-proveedor-del-servidor.md).
 6. [ ] Abrir un ADR propio para el pipeline en el proceso final.
 
 ## Más información

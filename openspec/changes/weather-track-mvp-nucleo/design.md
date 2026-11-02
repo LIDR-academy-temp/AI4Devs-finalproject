@@ -165,4 +165,4 @@ No hay datos que migrar: el prototipo no persiste nada y la carga inicial recons
 
 - Si SAT2 limita la frecuencia de consultas. Las pausas y la detención ante errores cubren ese caso.
 - Condición que activa la alarma de SAT2. Se consulta a TECMES; hoy solo se muestra.
-- Proveedor del servidor. Se decide antes de A13 y no afecta a estas specs.
+- Proveedor del servidor. Tratado en el ADR-0002 (Google Cloud como opción plus), sin efecto en estas specs.
