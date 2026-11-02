@@ -1,15 +1,15 @@
 """Endpoints de lectura de la sección 4 del README."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Path, Query, status
+from fastapi import APIRouter, Query, status
 from pydantic import AwareDatetime, BaseModel
 from sqlalchemy import desc, lateral, select, true
 from sqlalchemy.orm import Session
 
-from app.api.dependencias import Ahora, EstacionAutorizada, SesionBd
+from app.api.dependencias import Ahora, EstacionAutorizada, IdEnRuta, SesionBd
 from app.api.errores import ErrorApi
 from app.datos.modelos import EjecucionIngesta, Estacion, Observacion, Recomendacion as Fila
 from app.datos.modelos import Sensor
@@ -30,6 +30,9 @@ from app.dominio.vigencia import (
 )
 
 RANGO_MAXIMO = timedelta(days=31)
+# Fuera de estos años no hay datos, y convertir fechas extremas a otra zona desborda.
+FECHA_MINIMA = datetime(2000, 1, 1, tzinfo=UTC)
+FECHA_MAXIMA = datetime(2100, 1, 1, tzinfo=UTC)
 
 Calidad = Literal["OK", "FALTANTE", "SOSPECHOSO"]
 
@@ -269,7 +272,7 @@ def obtener_condiciones_actuales(
 )
 def obtener_historico(
     estacion: EstacionAutorizada,
-    sensorId: Annotated[int, Path()],  # noqa: N803
+    sensorId: IdEnRuta,  # noqa: N803
     desde: Annotated[AwareDatetime, Query()],
     hasta: Annotated[AwareDatetime, Query()],
     sesion: SesionBd,
@@ -279,7 +282,12 @@ def obtener_historico(
     )
     if sensor is None:
         raise ErrorApi(status.HTTP_404_NOT_FOUND, "NO_ENCONTRADO", "El sensor no existe.")
-    if hasta <= desde or hasta - desde > RANGO_MAXIMO:
+    if (
+        desde < FECHA_MINIMA
+        or hasta > FECHA_MAXIMA
+        or hasta <= desde
+        or hasta - desde > RANGO_MAXIMO
+    ):
         raise ErrorApi(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
             "RANGO_INVALIDO",

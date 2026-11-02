@@ -392,6 +392,36 @@ def test_rango_invalido(cliente, estacion, sensor, desde, hasta):
     assert respuesta.json()["codigo"] == "RANGO_INVALIDO"
 
 
+@pytest.mark.parametrize(
+    ("desde", "hasta"),
+    [
+        ("0001-01-01T00:00:00+00:00", "0001-01-02T00:00:00+00:00"),
+        ("0001-01-01T00:00:00+14:00", "0001-01-02T00:00:00+14:00"),
+        ("9999-12-30T00:00:00-14:00", "9999-12-31T23:59:59-14:00"),
+    ],
+)
+def test_una_fecha_extrema_no_causa_un_error_interno(cliente, estacion, sensor, desde, hasta):
+    respuesta = cliente.get(
+        ruta(estacion, f"sensores/{sensor.id}/historico"),
+        params={"desde": desde, "hasta": hasta},
+    )
+    assert respuesta.status_code == 422
+    assert respuesta.json()["codigo"] == "RANGO_INVALIDO"
+
+
+@pytest.mark.parametrize("identificador", [2**63, 10**30, 0, -1])
+def test_un_id_fuera_de_rango_no_causa_un_error_interno(
+    cliente, estacion, sensor, identificador
+):
+    consulta = {"desde": "2026-11-01T00:00:00+00:00", "hasta": "2026-11-02T00:00:00+00:00"}
+    assert cliente.get(f"/api/v1/estaciones/{identificador}/recomendacion").status_code == 422
+    respuesta = cliente.get(
+        ruta(estacion, f"sensores/{identificador}/historico"), params=consulta
+    )
+    assert respuesta.status_code == 422
+    assert respuesta.json()["codigo"] == "SOLICITUD_INVALIDA"
+
+
 def test_fecha_sin_zona_horaria_se_rechaza(cliente, estacion, sensor):
     respuesta = cliente.get(
         ruta(estacion, f"sensores/{sensor.id}/historico"),

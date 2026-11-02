@@ -1,14 +1,18 @@
 """Escenarios de `account-access`, contra la API y PostgreSQL."""
 
 import logging
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
-from app import administracion
+from app import administracion, seguridad
 from app.administracion import ErrorAdministracion
 from app.api import autenticacion
 from app.api.dependencias import (
@@ -425,3 +429,39 @@ def test_el_comando_informa_errores_sin_traza(capsys, monkeypatch):
     assert codigo == 2
     assert "Ya existe" in capsys.readouterr().err
 
+
+
+@pytest.mark.parametrize("email", ["n\u0000ul@ejemplo.example", "a\nb@ejemplo.example", "x\x7f@ejemplo.example"])
+def test_un_correo_con_caracteres_de_control_se_rechaza_sin_error_interno(cliente, email):
+    respuesta = cliente.post(LOGIN, json={"email": email, "contrasena": CLAVE})
+    assert respuesta.status_code == 422
+    assert respuesta.json()["codigo"] == "SOLICITUD_INVALIDA"
+
+
+def test_los_calculos_de_contrasena_simultaneos_tienen_un_tope(monkeypatch):
+    activos = []
+    pico = []
+    candado = threading.Lock()
+    original = seguridad._hasher.verify
+
+    def verificar(hash_guardado, contrasena):
+        with candado:
+            activos.append(1)
+            pico.append(len(activos))
+        try:
+            time.sleep(0.02)
+            return original(hash_guardado, contrasena)
+        finally:
+            with candado:
+                activos.pop()
+
+    hasher = SimpleNamespace(verify=verificar)
+    monkeypatch.setattr(seguridad, "_hasher", hasher)
+    valor = original.__self__.hash(CLAVE)
+    with ThreadPoolExecutor(seguridad.MAX_CALCULOS_SIMULTANEOS * 4) as grupo:
+        resultados = list(
+            grupo.map(lambda _: verificar_contrasena(valor, CLAVE), range(16))
+        )
+
+    assert all(resultados)
+    assert max(pico) <= seguridad.MAX_CALCULOS_SIMULTANEOS

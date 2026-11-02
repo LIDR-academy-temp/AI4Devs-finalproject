@@ -95,7 +95,8 @@ services:
   proxy:
     build: ./frontend
     ports:
-      - "${PUERTO_WEB:-8080}:8080"
+      # Solo esta computadora: en local no hay HTTPS, y la sesión viajaría sin cifrar por la red.
+      - "127.0.0.1:${PUERTO_WEB:-8080}:8080"
     depends_on:
       api:
         condition: service_healthy

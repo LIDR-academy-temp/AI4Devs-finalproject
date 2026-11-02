@@ -33,7 +33,8 @@ router = APIRouter(prefix="/api/v1/auth", tags=["acceso"])
 
 
 class SolicitudInicio(BaseModel):
-    email: str = Field(min_length=1, max_length=254)
+    # Sin caracteres de control: PostgreSQL rechaza el carácter nulo en un texto.
+    email: str = Field(min_length=1, max_length=254, pattern=r"^[^\x00-\x1f\x7f]+$")
     # El tope evita gastar CPU calculando el hash de textos enormes.
     contrasena: str = Field(min_length=1, max_length=1024)
 

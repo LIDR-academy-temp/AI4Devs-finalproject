@@ -45,6 +45,8 @@ Ese comando muestra el correo y la clave. **La clave aparece una sola vez:** cop
 
 Abrí <http://localhost:8080> e ingresá con esos datos.
 
+La aplicación solo responde en tu computadora: no queda expuesta a otros equipos de tu red, porque en local no usa HTTPS.
+
 1. **Decisión:** el estado de aplicación, sus motivos y las condiciones actuales. Se actualiza sola cada minuto.
 2. **Detalle de sensor:** tocá una tarjeta para ver el gráfico y el resumen de 7 o 31 días.
 

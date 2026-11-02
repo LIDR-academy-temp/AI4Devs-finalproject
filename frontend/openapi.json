@@ -448,6 +448,7 @@
           "email": {
             "maxLength": 254,
             "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
             "title": "Email",
             "type": "string"
           }
@@ -670,6 +671,8 @@
             "name": "estacionId",
             "required": true,
             "schema": {
+              "maximum": 9223372036854775807,
+              "minimum": 1,
               "title": "Estacionid",
               "type": "integer"
             }
@@ -737,6 +740,8 @@
             "name": "estacionId",
             "required": true,
             "schema": {
+              "maximum": 9223372036854775807,
+              "minimum": 1,
               "title": "Estacionid",
               "type": "integer"
             }
@@ -804,6 +809,8 @@
             "name": "sensorId",
             "required": true,
             "schema": {
+              "maximum": 9223372036854775807,
+              "minimum": 1,
               "title": "Sensorid",
               "type": "integer"
             }
@@ -813,6 +820,8 @@
             "name": "estacionId",
             "required": true,
             "schema": {
+              "maximum": 9223372036854775807,
+              "minimum": 1,
               "title": "Estacionid",
               "type": "integer"
             }

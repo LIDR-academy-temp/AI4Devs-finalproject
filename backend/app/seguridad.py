@@ -2,6 +2,7 @@
 
 import hashlib
 import secrets
+import threading
 from functools import lru_cache
 
 from argon2 import PasswordHasher
@@ -9,14 +10,20 @@ from argon2.exceptions import InvalidHashError, VerificationError
 
 _hasher = PasswordHasher()
 
+# Cada cálculo reserva unos 64 MiB: sin este tope, una ráfaga de ingresos llenaba la memoria.
+MAX_CALCULOS_SIMULTANEOS = 4
+_calculos = threading.BoundedSemaphore(MAX_CALCULOS_SIMULTANEOS)
+
 
 def calcular_hash_contrasena(contrasena: str) -> str:
-    return _hasher.hash(contrasena)
+    with _calculos:
+        return _hasher.hash(contrasena)
 
 
 def verificar_contrasena(hash_guardado: str, contrasena: str) -> bool:
     try:
-        return _hasher.verify(hash_guardado, contrasena)
+        with _calculos:
+            return _hasher.verify(hash_guardado, contrasena)
     except (VerificationError, InvalidHashError):
         return False
 

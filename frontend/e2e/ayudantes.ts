@@ -31,6 +31,17 @@ export function tarjeta(page: Page, sensor: string): Locator {
   return page.getByRole('link', { name: new RegExp(`^${sensor}`) })
 }
 
+/** Devuelve la lista, que debe quedar vacía, de lo que la política de contenido bloqueó. */
+export function vigilarPoliticaDeContenido(page: Page): string[] {
+  const bloqueos: string[] = []
+  page.on('console', (mensaje) => {
+    if (/Content Security Policy/i.test(mensaje.text())) {
+      bloqueos.push(mensaje.text())
+    }
+  })
+  return bloqueos
+}
+
 export async function exigirSinDesplazamientoHorizontal(page: Page) {
   const { ancho, contenido } = await page.evaluate(() => ({
     ancho: window.innerWidth,

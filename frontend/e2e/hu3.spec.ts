@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { abrirEstacion, exigirSinDesplazamientoHorizontal, tarjeta } from './ayudantes.ts'
+import {
+  abrirEstacion,
+  exigirSinDesplazamientoHorizontal,
+  tarjeta,
+  vigilarPoliticaDeContenido,
+} from './ayudantes.ts'
 
 async function abrirDetalle(page: Page) {
   await abrirEstacion(page, 'Con históricos')
@@ -15,6 +20,7 @@ async function registros(page: Page): Promise<number> {
 
 test.describe('HU3: revisar el comportamiento histórico', () => {
   test('consulta de 7 y 31 días con gráfico y resumen', async ({ page }) => {
+    const bloqueos = vigilarPoliticaDeContenido(page)
     await abrirDetalle(page)
 
     const grafico = page.getByRole('img', { name: /Temp Amb. a 2 Mts: últimos 7 días/ })
@@ -32,6 +38,7 @@ test.describe('HU3: revisar el comportamiento histórico', () => {
 
     await expect(page.getByRole('img', { name: /últimos 31 días/ })).toBeVisible()
     await expect.poll(() => registros(page)).toBeGreaterThan(deSieteDias)
+    expect(bloqueos).toEqual([])
   })
 
   test.describe('a 360 píxeles', () => {

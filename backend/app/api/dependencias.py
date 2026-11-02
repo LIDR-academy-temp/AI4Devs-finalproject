@@ -16,6 +16,9 @@ from app.seguridad import hash_de_identificador
 
 NOMBRE_COOKIE = "wt_sesion"
 
+# Un número mayor no cabe en BIGINT, y PostgreSQL lo rechazaría con un error interno.
+IdEnRuta = Annotated[int, Path(ge=1, le=2**63 - 1)]
+
 
 def cookie_segura() -> bool:
     """Solo se desactiva para el desarrollo local por HTTP."""
@@ -66,7 +69,7 @@ UsuarioActual = Annotated[Usuario, Depends(obtener_usuario_actual)]
 
 
 def obtener_estacion_autorizada(
-    estacionId: Annotated[int, Path()],  # noqa: N803
+    estacionId: IdEnRuta,  # noqa: N803
     sesion: SesionBd,
     usuario: UsuarioActual,
 ) -> Estacion:
