@@ -566,6 +566,7 @@ paths:
                 antiguedad_segundos: 180
                 estado_datos: VIGENTE
                 ultima_ingesta_exitosa_en: '2026-11-01T14:41:02-03:00'
+                ultima_ingesta_con_error: false
                 sensores:
                   - sensor_id: 10
                     nombre: Temp Amb. a 2 Mts
@@ -754,7 +755,7 @@ components:
           nullable: true
     CondicionesActuales:
       type: object
-      required: [estacion_id, estacion_nombre, estado_datos, sensores]
+      required: [estacion_id, estacion_nombre, estado_datos, ultima_ingesta_con_error, sensores]
       properties:
         estacion_id:
           type: integer
@@ -775,6 +776,8 @@ components:
           type: string
           format: date-time
           nullable: true
+        ultima_ingesta_con_error:
+          type: boolean
         sensores:
           type: array
           items:

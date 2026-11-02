@@ -47,10 +47,10 @@ Los grupos siguen las actividades del [plan de implementación](../../../docs/pl
 
 ## 7. Endpoints de lectura (A08, WT-BE-01 y WT-BE-02)
 
-- [ ] 7.1 Implementar `GET /estaciones/{estacionId}/recomendacion` con la regla R2, el aviso y la versión del método, y verificar con un reloj simulado los límites de 30 y 31 minutos y el motivo `SIN_MEDICIONES`
-- [ ] 7.2 Implementar `GET /estaciones/{estacionId}/condiciones-actuales`, y verificar los estados de vigencia, la alarma y la última ingesta exitosa
-- [ ] 7.3 Implementar `GET /estaciones/{estacionId}/sensores/{sensorId}/historico`, y verificar el orden, el rango inválido, el sensor ajeno y el resumen que excluye faltantes
-- [ ] 7.4 Comparar el OpenAPI generado con la sección 4 del README, y verificar que las respuestas validan contra el esquema
+- [x] 7.1 Implementar `GET /estaciones/{estacionId}/recomendacion` con la regla R2, el aviso y la versión del método, y verificar con un reloj simulado los límites de 30 y 31 minutos y el motivo `SIN_MEDICIONES`
+- [x] 7.2 Implementar `GET /estaciones/{estacionId}/condiciones-actuales`, y verificar los estados de vigencia, la alarma y la última ingesta exitosa
+- [x] 7.3 Implementar `GET /estaciones/{estacionId}/sensores/{sensorId}/historico`, y verificar el orden, el rango inválido, el sensor ajeno y el resumen que excluye faltantes
+- [x] 7.4 Comparar el OpenAPI generado con la sección 4 del README, y verificar que las respuestas validan contra el esquema
 
 ## 8. Frontend base (A09, WT-FE-02)
 

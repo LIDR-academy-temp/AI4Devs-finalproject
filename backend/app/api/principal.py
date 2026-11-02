@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI, Response, status
 
-from app.api import autenticacion, estaciones
+from app.api import autenticacion, estaciones, lecturas
 from app.api.errores import registrar_manejadores
 from app.datos.conexion import verificar_conexion
 
@@ -16,6 +16,7 @@ app = FastAPI(
 registrar_manejadores(app)
 app.include_router(autenticacion.router)
 app.include_router(estaciones.router)
+app.include_router(lecturas.router)
 
 
 @app.get("/api/v1/salud", tags=["operación"])
