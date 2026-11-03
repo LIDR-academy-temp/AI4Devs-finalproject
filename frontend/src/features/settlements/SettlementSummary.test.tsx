@@ -65,6 +65,17 @@ describe('Settlement Summary: header grid of the attempt (spec "estado y cabecer
     expect(grid()).toContainEqual(['Settlement date', 'Not set'])
   })
 
+  // An exception to design D15 (no tests of classes): at 1024 px the status Badge ran under Processed by, and jsdom
+  // has no layout to show it. The Badge may wrap and no item of the grid may be wider than its column.
+  it('the status Badge wraps instead of running into the next item of the grid', async () => {
+    await openSummary()
+
+    const badge = header().getByText('Processed · pending payment')
+    expect(badge).toHaveClass('whitespace-normal', 'h-auto')
+    expect(badge).not.toHaveClass('whitespace-nowrap')
+    for (const term of header().getAllByRole('term')) expect(term.parentElement).toHaveClass('min-w-0')
+  })
+
   it('the header has no table of date ranges: they are in Totals by type', async () => {
     await openSummary()
 
