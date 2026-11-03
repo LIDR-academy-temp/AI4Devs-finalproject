@@ -64,7 +64,7 @@ backend/src/modules/fees/
   domain/fee-validity.ts       pure: status, overlap, previous day, closing against the last applied event
   domain/fee-patch.ts          pure: classifies the PATCH (correct | change), editable fields by use; before/after rows
   domain/fee-snapshot.ts       pure: row ⇄ FeeSnapshot; reads the legacy history with JSON numbers
-  application/errors.ts        FeeOverlapError, FeeInUseError, FeeRuleError (400 with details.field)
+  domain/errors.ts             FeeOverlapError, FeeInUseError, FeeRuleError (400 with details.field), thrown by the pure rules
   application/fee-admin-service.ts   create, patch, list, history
   application/ports.ts         + FeeAdminRepository
   infrastructure/prisma-fee-admin-repository.ts   transaction + account lock + usage + history + audit
@@ -283,6 +283,8 @@ La secuencia acumula filas en la base local; se limpian con `pnpm db:seed`.
 
 - **[Carrera con el procesado]** `settlement-process` lee los fees sin bloquear la cuenta. Un `PATCH` que corrija en el sitio un fee sin uso mientras un settlement lo está aplicando dejaría un desglose con la configuración anterior (el snapshot guarda la correcta) y un historial `updated` posterior.
   → Riesgo aceptado: el importe procesado es correcto gracias al snapshot y la ventana es de milisegundos en un uso administrativo. Se anota en #67; el settlement no se toca en este change.
+- **[Uso sin índice por `feeId`]** `SettlementTransactionFee` solo tiene índice por `settlementTxnId`, así que el `GROUP BY feeId` de D5 recorre la tabla. Le pasa a cada `GET /accounts/{id}/fees` (Settlement Review incluido), a cada página de `GET /fees` y a cada escritura.
+  → Sin migración en este change. El tiempo medido sobre el seed queda en la descripción del PR, y el índice `(feeId) INCLUDE (eventDate)` es una casilla de #67.
 - **[`undone` cuenta como uso]** Un fee aplicado solo en un intento deshecho no se puede corregir en el sitio.
   → Se cambia desde una fecha, o se cierra con `endDate` ≥ su evento. Es la opción conservadora.
 - **[Historial del seed con números]** El lector es tolerante, pero un número con muchos decimales podría redondear al normalizarse.
