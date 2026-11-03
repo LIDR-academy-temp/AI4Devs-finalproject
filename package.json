@@ -26,6 +26,7 @@
     "screenshots:web-settlement": "pnpm --filter @recon/e2e screenshots:web-settlement",
     "screenshots:settlements-browse": "pnpm --filter @recon/e2e screenshots:settlements-browse",
     "screenshots:settlement-lifecycle": "pnpm --filter @recon/e2e screenshots:settlement-lifecycle",
+    "screenshots:web-admin-fees": "pnpm --filter @recon/e2e screenshots:web-admin-fees",
     "openapi:export": "pnpm --filter @recon/backend openapi:export",
     "openapi:check": "pnpm openapi:export && pnpm --filter @recon/frontend api:generate && git diff --exit-code -- docs/openapi.yaml frontend/src/lib/api/schema.gen.ts",
     "samples:plan": "tsx data/samples/plan.ts > data/samples/plan.json",

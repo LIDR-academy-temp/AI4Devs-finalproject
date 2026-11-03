@@ -1,13 +1,13 @@
 import { Link } from '@tanstack/react-router'
 import { createColumnHelper, rowPaginationFeature, tableFeatures, useTable } from '@tanstack/react-table'
 import { Fragment, type ReactNode } from 'react'
+import { Pager, useLastPageLimit } from '@/components/Pager'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatAuditDateTime, formatBusinessDate, formatDecimal } from '@/lib/format'
 import { requestListFocus } from '@/lib/list-focus'
 import { SETTLED_STATUS_TONE, toneOf } from '@/lib/status-tone'
 import type { AccountSettlement, AccountSettlementsPage } from './contract'
-import { Pager, useLastPageLimit } from './Pager'
 import { strings } from './strings'
 
 const s = strings.list

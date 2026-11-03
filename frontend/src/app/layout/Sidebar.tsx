@@ -29,13 +29,13 @@ function Entry({ item, inGroup }: { item: NavItem; inGroup: boolean }) {
       </span>
     )
   }
-  const activeUnder = item.activeUnder !== undefined && pathname.startsWith(item.activeUnder)
+  const activeElsewhere = item.activeWhen?.(pathname) ?? false
   return (
     <Link
       to={item.to}
       activeOptions={{ exact: true, includeSearch: false }}
-      className={`${itemClass} ${indent} hover:bg-accent ${activeUnder ? activeClass : ''}`}
-      aria-current={activeUnder ? 'page' : undefined}
+      className={`${itemClass} ${indent} hover:bg-accent ${activeElsewhere ? activeClass : ''}`}
+      aria-current={activeElsewhere ? 'page' : undefined}
       activeProps={{ className: activeClass }}
     >
       {item.label}

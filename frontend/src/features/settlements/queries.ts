@@ -6,7 +6,6 @@ import {
   type Cycle,
   getAccountFees,
   getAccountSettlements,
-  getFeeTypes,
   getImportSettlements,
   getNextBatchNumber,
   getSettlement,
@@ -27,9 +26,6 @@ export const accountFeesQuery = (accountId: string, asOf: string | null) =>
     enabled: asOf !== null,
     staleTime: CATALOG_STALE_MS,
   })
-
-export const feeTypesQuery = () =>
-  queryOptions({ queryKey: ['fee-types'] as const, queryFn: getFeeTypes, staleTime: CATALOG_STALE_MS })
 
 export const settlementKey = (batchId: string) => ['settlements', batchId] as const
 

@@ -101,6 +101,40 @@ describe('the actions by user and status', () => {
   })
 })
 
+// Spec settlement "Pantalla Settlement Summary: espera del pago para quien no paga" (web-admin-fees design D10).
+describe('waiting for the payment, for whoever cannot pay', () => {
+  const WAITING = 'Waiting for a user with payment permission to mark it as paid.'
+
+  it.each<[UserName, boolean]>([
+    ['analyst', true],
+    ['viewer', true],
+    ['payments', false],
+    ['admin', false],
+  ])('on a processed attempt, %s sees the line: %s', async (as, sees) => {
+    await open(as)
+
+    expect(screen.queryByText(WAITING) !== null).toBe(sees)
+  })
+
+  it('the Movements tab has it too: it is in the header', async () => {
+    const { importId } = validatedImport()
+    const view = seedSettlement(importId, { batchNo: 123 })
+    renderApp(`/settlements/${view.batchId}?tab=movements`, { as: 'viewer' })
+    expect(await screen.findByText(WAITING, undefined, OPENING)).toBeInTheDocument()
+  })
+
+  it.each<[string, Partial<SettlementView>, UserName]>([
+    ['paid', PAID, 'analyst'],
+    ['paid', PAID, 'viewer'],
+    ['undone', UNDONE, 'analyst'],
+    ['undone', UNDONE, 'viewer'],
+  ])('on a %s attempt, %s does not see it', async (_status, overrides, as) => {
+    await open(as, overrides)
+
+    expect(screen.queryByText(WAITING)).not.toBeInTheDocument()
+  })
+})
+
 describe('Mark as paid', () => {
   it('sends one POST on a double click and paints the answer without reading the attempt again', async () => {
     const { user } = await open('payments')

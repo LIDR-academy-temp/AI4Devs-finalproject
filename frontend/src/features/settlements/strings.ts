@@ -1,15 +1,11 @@
 // Texts of Settlement Review, Settlement Summary and Settlement List (web-shell "Textos de interfaz en inglés y
 // centralizados"). Those fixed by the specs of web-settlement and settlements-browse are literal.
 import type { ImportStatus } from '@recon/shared'
+import { strings as shared } from '@/components/strings'
 import type { Category, PayableLineCode, SettlementWarning, Skipped } from './contract'
 
-/** Previous / Next of the paginated tables, with the reason a button is disabled. */
-const PAGER = {
-  previous: 'Previous',
-  next: 'Next',
-  firstPage: 'This is the first page.',
-  lastPage: 'This is the last page.',
-}
+/** Previous / Next of the paginated tables, the texts of the shared Pager. */
+const PAGER = shared.pager
 
 export const strings = {
   batch: {
@@ -182,9 +178,11 @@ export const strings = {
       undoReason: 'Reason',
     },
     batchAttempt: (batchNo: number, attemptNo: number) => `${batchNo} · attempt ${attemptNo}`,
-    byAt: (userName: string, at: string) => `${userName} · ${at}`,
+    /** The first piece of who and when; the date and the time follow as their own pieces. */
+    byUser: (userName: string) => `${userName} ·`,
     notSet: 'Not set',
     notSettled: 'Movements are not Settled yet: that happens when the batch is marked as paid.',
+    waitingForPayment: 'Waiting for a user with payment permission to mark it as paid.',
     goToAnalysis: 'Go to Analysis & Validations',
     attempts: {
       title: 'Attempts of this import',
@@ -331,8 +329,6 @@ export const strings = {
     loading: 'Loading the movements…',
     loadError: 'The movements could not be loaded.',
   },
-
-  pager: PAGER,
 
   retry: 'Retry',
 

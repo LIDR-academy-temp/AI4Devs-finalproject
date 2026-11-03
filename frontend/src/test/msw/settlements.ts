@@ -14,22 +14,14 @@
 // only paginates them and records the query, never filtering by status or days nor sorting. Pay, unpay and undo
 // (settlement-lifecycle) change the stored attempt, its row in the list and the settled flag of its movements; undo
 // also takes the import back to analyzed and supersedes its run. The 409 of each follows from the stored status.
-import {
-  Cycle,
-  ExportQuery,
-  ReasonRequest,
-  SettlementRequest as SettlementRequestSchema,
-  TRANSACTION_STATUSES,
-} from '@recon/shared'
+import { Cycle, ExportQuery, ReasonRequest, SettlementRequest as SettlementRequestSchema } from '@recon/shared'
 import { HttpResponse, http, type PathParams } from 'msw'
 import type {
-  AccountFee,
   AccountSettlement,
   BatchFeeInput,
   BatchFeeView,
   ChannelToAssign,
   Cycle as CycleCode,
-  FeeTypeView,
   ImportSettlementAttempt,
   ImportSettlements,
   NextBatchNumber,
@@ -41,6 +33,7 @@ import type {
   ValidationSummary,
 } from '@/features/settlements/contract'
 import { auditInstant, businessDate } from '@/lib/format'
+import { feeTypeOf } from './fee-fixtures'
 import { ACCOUNT_IDS, ACCOUNTS, PROVIDERS, USERS, type UserName } from './fixtures'
 import type { AccountName } from './import-fixtures'
 import { type FakeImport, importRecord, visibleImport } from './imports'
@@ -50,93 +43,8 @@ const API = '*/api/v1'
 
 // --- Fixtures -------------------------------------------------------------------------------------------------------
 
-const statusId = (name: string) => TRANSACTION_STATUSES.find((s) => s.name === name)?.statusId ?? null
-
-/** The fee types of the seed (backend/prisma/synthetic.ts): transactional 1–6 and non-transactional 101–121. */
-export const FEE_TYPE_VIEWS: FeeTypeView[] = [
-  [1, 'MDR', 'MDR', 'Successful'],
-  [2, 'TRX Fee - Deposit', 'Deposit per txn fee', 'Successful'],
-  [3, 'TRX Fee - Decline', 'Decline fee', 'Declined'],
-  [4, 'Chargeback', 'Chargeback per txn fee', 'Chargeback'],
-  [5, 'Refund', 'Refund per txn fee', 'Refund'],
-  [6, 'RDR', 'RDR per txn fee', 'RDR'],
-]
-  .map(([feeTypeId, code, title, status]) => ({
-    feeTypeId: feeTypeId as number,
-    code: code as string,
-    title: title as string,
-    isTransactional: true,
-    appliesToStatusId: statusId(status as string),
-    allowsFreeAmount: false,
-  }))
-  .concat(
-    (
-      [
-        ['Annual Fee', false],
-        ['Bram Fine', true],
-        ['Chargeback Assessment Fee', false],
-        ['Chargeback Order Deduction', false],
-        ['Chargeback over 1%', true],
-        ['Chargeback over 2%', true],
-        ['Chargeback over 3%', true],
-        ['Chargeback Reversed', true],
-        ['Cross Border Fee', false],
-        ['Customer Service Fee', false],
-        ['Monthly Fee', false],
-        ['Rebate 2%', true],
-        ['Rebate 3%', true],
-        ['Release of Frozen Funds', true],
-        ['Remittance Charges', false],
-        ['Service Fee', false],
-        ['Settlement Fee', false],
-        ['Setup Fee', false],
-        ['Special Adjustment', true],
-        ['Special Deduction', true],
-        ['Wire Fee', false],
-      ] as const
-    ).map(([code, free], i) => ({
-      feeTypeId: 101 + i,
-      code,
-      title: code,
-      isTransactional: false,
-      appliesToStatusId: null,
-      allowsFreeAmount: free,
-    })),
-  )
-
-const feeType = (feeTypeId: number) => FEE_TYPE_VIEWS.find((t) => t.feeTypeId === feeTypeId)
-
-const preset = (feeId: string, feeTypeId: number, fixedAmount: string | null, percentage: string | null) => ({
-  feeId,
-  feeTypeId,
-  code: feeType(feeTypeId)!.code,
-  title: feeType(feeTypeId)!.title,
-  isTransactional: false,
-  fixedAmount,
-  percentage,
-  conditionalPercentage: null,
-  conditionThresholdAmt: null,
-  brandFixedAmount: null,
-  brandPercentage: null,
-  startDate: null,
-  endDate: null,
-  description: null,
-  status: 'active' as const,
-  inUse: true,
-  lastAppliedEventDate: '2026-10-15',
-  createdBy: { userId: 1, userName: 'admin' },
-  createdAt: '2026-10-01T12:00:00.000Z',
-  updatedAt: '2026-10-01T12:00:00.000Z',
-})
-
-/** The non-transactional fees of each account in the seed (ACCOUNT_FEES of synthetic.ts). */
-export const ACCOUNT_FEES: Record<AccountName, AccountFee[]> = {
-  'ProviderA-USD': [preset('f0000000-0000-4000-8000-000000000105', 105, null, '0.010000')],
-  'ProviderA-EUR': [preset('f0000000-0000-4000-8000-000000000205', 105, null, '0.010000')],
-  'ProviderB-Main': [preset('f0000000-0000-4000-8000-000000000311', 111, '250.0000', null)],
-  'ProviderC-USD': [],
-  'ProviderC-Alt': [],
-}
+// The fee types and the presets of the accounts live in fee-fixtures (shared with the fee administration fake).
+export { ACCOUNT_FEES, FEE_TYPE_VIEWS } from './fee-fixtures'
 
 /** The proposed batch number of each account (`proposedBatchNo` of the samples' expected.json where there is one). */
 const NEXT_BATCH_NO: Record<AccountName, number> = {
@@ -407,7 +315,7 @@ function money4(amount: string): string {
 /** The batch fees of the body as the API shows them: a copy field by field, with the title of the fee type. */
 function feeViews(fees: BatchFeeInput[] | undefined, enteredBy: UserName | null): BatchFeeView[] {
   return (fees ?? []).map((fee) => {
-    const type = feeType(fee.feeTypeId)
+    const type = feeTypeOf(fee.feeTypeId)
     if (enteredBy) state.seq += 1
     return {
       batchFeeId: enteredBy ? state.seq : null,
@@ -733,7 +641,7 @@ interface RouteArgs {
 }
 
 /** A route of the fake: logs the request and honours the holds, failures and scripted answers of the tests. */
-function route(
+export function route(
   name: SettlementRoute,
   resolve: (args: RouteArgs) => Response | Promise<Response>,
   caller: (request: Request) => UserName | null,
@@ -865,27 +773,6 @@ export function createSettlementHandlers(caller: (request: Request) => UserName 
         },
         caller,
       ),
-    ),
-
-    http.get(
-      `${API}/accounts/:accountId/fees`,
-      route(
-        'fees',
-        ({ request, params, user }) => {
-          if (!USERS[user].permissions.includes('fee.view')) return forbidden()
-          const accountId = String(params.accountId)
-          const name = accountNameOf(accountId)
-          if (!name || !canSeeAccount(user, accountId)) return notFound('Account')
-          const transactional = new URL(request.url).searchParams.get('transactional')
-          return HttpResponse.json(transactional === 'true' ? [] : ACCOUNT_FEES[name])
-        },
-        caller,
-      ),
-    ),
-
-    http.get(
-      `${API}/fee-types`,
-      route('feeTypes', () => HttpResponse.json(FEE_TYPE_VIEWS), caller),
     ),
 
     http.post(
