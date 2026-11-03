@@ -76,6 +76,17 @@ describe('Settlement Summary: header grid of the attempt (spec "estado y cabecer
     for (const term of header().getAllByRole('term')) expect(term.parentElement).toHaveClass('min-w-0')
   })
 
+  // The rule of settlements-browse D11 for a date and a time: whole pieces, a line may break only between them.
+  it('who and when breaks only between the user, the date and the time, never inside them', async () => {
+    await openSummary()
+
+    const processedBy = header().getByText('Processed by')
+    const pieces = [...(processedBy.nextElementSibling?.children ?? [])]
+    expect(pieces.map((piece) => piece.textContent)).toEqual(['analyst ·', '2026-10-19', '11:40 ET'])
+    for (const piece of pieces) expect(piece).toHaveClass('whitespace-nowrap')
+    expect(grid()).toContainEqual(['Processed by', 'analyst · 2026-10-19 11:40 ET'])
+  })
+
   it('the header has no table of date ranges: they are in Totals by type', async () => {
     await openSummary()
 
