@@ -18,7 +18,7 @@ El grupo 1 es el contrato del que parte `web-admin-fees`. Al terminarlo se hace 
 - [x] 1.5 Declarar en `http/fee-admin-routes.ts` las rutas `POST /accounts/:accountId/fees`, `PATCH /fees/:feeId`, `GET /fees` y `GET /fees/:feeId/history`, cada una con su esquema y su `preHandler` de permiso. Los handlers provisionales responden `501 not_implemented` (D11). Registrar las rutas en `fees-module.ts`. Verificar con un test de rutas que cubra `401`, `403` antes que el alcance y `400` de esquema.
 - [x] 1.6 Ejecutar `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`, y ampliar `app.test.ts` con las rutas nuevas y añadir los campos nuevos al fixture `preset` de `frontend/src/test/msw/settlements.ts` (contrato de la API falsa). Verificar con `pnpm openapi:check`, `pnpm lint` y `pnpm typecheck`.
 - [x] 1.7 Commit: feat(fees): contrato de la administración de fees y export de OpenAPI
-- [ ] 1.8 Hacer `git push` de `feat/admin-fees` y avisar a la persona de que el contrato está publicado, porque `web-admin-fees` parte de aquí. No seguir hasta su confirmación.
+- [x] 1.8 Hacer `git push` de `feat/admin-fees` y avisar a la persona de que el contrato está publicado, porque `web-admin-fees` parte de aquí. No seguir hasta su confirmación.
 
 ## 2. Dominio de vigencias, solapes y edición (TDD)
 
