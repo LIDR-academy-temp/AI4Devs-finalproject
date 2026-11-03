@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { NotFoundError } from '../../../shared/errors.js'
 import type { Scope } from '../domain/scope.js'
-import { ACCOUNT_IDS, InMemoryCatalogRepository, LAST_BATCH_IDS, LEGACY_RULE_SET_ID } from './__fakes__/in-memory.js'
+import {
+  ACCOUNT_IDS,
+  InMemoryCatalogRepository,
+  LAST_BATCH_IDS,
+  LAST_BATCH_NOS,
+  LEGACY_RULE_SET_ID,
+} from './__fakes__/in-memory.js'
 import { CatalogService } from './catalog-service.js'
 
 // Scopes as the auth module resolves them: admin (all), viewer (merchant 1), a user of merchant 2 only, no merchants.
@@ -132,9 +138,45 @@ describe('getAccount', () => {
 
     expect(outside.message).toBe(unknown.message)
   })
+
+  it('says who created the account and when it last changed (scenario "Quién creó la cuenta")', async () => {
+    const account = await service.getAccount(VIEWER, ACCOUNT_IDS['ProviderA-USD'])
+
+    expect(account.createdBy).toEqual({ userId: 1, userName: 'admin' })
+    expect(account.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T.*Z$/)
+  })
 })
 
 describe('listChannels', () => {
+  it('gives each channel its primary account, or null when it has none ("Cuenta principal de cada canal")', async () => {
+    const channels = await service.listChannels(VIEWER, {})
+    const primary = (id: number) => channels.find((c) => c.channelId === id)?.primaryAccount
+
+    expect(primary(1001)).toEqual({ accountId: ACCOUNT_IDS['ProviderA-USD'], name: 'ProviderA-USD' })
+    expect(primary(1003)).toEqual({ accountId: ACCOUNT_IDS['ProviderA-EUR'], name: 'ProviderA-EUR' })
+    expect(primary(1007)).toBeNull()
+  })
+
+  it('hides a primary account of a merchant outside the scope ("Principal de otro merchant oculta")', async () => {
+    // RAM-01 (merchant 1) moves its primary to ProviderC-USD (merchant 2): the schema does not forbid it (#24).
+    const row = catalog.fixture.accountChannels.find((r) => r.channelId === 1001 && r.isPrimary)!
+    row.isPrimary = false
+    catalog.addAccountChannel({
+      accountId: ACCOUNT_IDS['ProviderC-USD'],
+      channelId: 1001,
+      isPrimary: true,
+      assignedAt: '2026-10-13T00:00:00.000Z',
+      assignedInBatchId: null,
+      assignedInBatchNo: null,
+    })
+
+    const forViewer = await service.listChannels(VIEWER, {})
+    const forAdmin = await service.listChannels(ALL, {})
+
+    expect(forViewer.find((c) => c.channelId === 1001)?.primaryAccount).toBeNull()
+    expect(forAdmin.find((c) => c.channelId === 1001)?.primaryAccount?.name).toBe('ProviderC-USD')
+  })
+
   it('with unassigned=true returns the channels with transactions and no account', async () => {
     const channels = await service.listChannels(ALL, { unassigned: true })
 
@@ -161,6 +203,7 @@ describe('listAccountChannels', () => {
       expect(channel).toMatchObject({
         isPrimary: true,
         assignedInBatchId: LAST_BATCH_IDS['ProviderA-USD'],
+        assignedInBatchNo: LAST_BATCH_NOS['ProviderA-USD'],
         primaryAccount: { accountId: ACCOUNT_IDS['ProviderA-USD'], name: 'ProviderA-USD' },
       })
     }
@@ -173,6 +216,7 @@ describe('listAccountChannels', () => {
       isPrimary: false,
       assignedAt: '2026-10-13T00:00:00.000Z',
       assignedInBatchId: null,
+      assignedInBatchNo: null,
     })
 
     const channels = await service.listAccountChannels(ALL, ACCOUNT_IDS['ProviderA-EUR'])
@@ -180,6 +224,8 @@ describe('listAccountChannels', () => {
     expect(channels.map((c) => c.name)).toEqual(['RAM-03', 'RAM-01'])
     expect(channels[0]).toMatchObject({ isPrimary: true, primaryAccount: { name: 'ProviderA-EUR' } })
     expect(channels[1]).toMatchObject({ isPrimary: false, primaryAccount: { name: 'ProviderA-USD' } })
+    // Scenario "Asociación sin batch".
+    expect(channels[1]).toMatchObject({ assignedInBatchId: null, assignedInBatchNo: null })
   })
 
   it('answers not found for an account outside the scope', async () => {
@@ -195,6 +241,7 @@ describe('listChannelAccounts', () => {
       isPrimary: false,
       assignedAt: '2026-10-13T00:00:00.000Z',
       assignedInBatchId: null,
+      assignedInBatchNo: null,
     })
 
     const accounts = await service.listChannelAccounts(ALL, 1001)
@@ -203,6 +250,12 @@ describe('listChannelAccounts', () => {
       ['ProviderA-USD', true],
       ['ProviderA-EUR', false],
     ])
+    // Scenario "Número de batch de la asociación".
+    expect(accounts[0]).toMatchObject({
+      assignedInBatchId: LAST_BATCH_IDS['ProviderA-USD'],
+      assignedInBatchNo: LAST_BATCH_NOS['ProviderA-USD'],
+    })
+    expect(accounts[1]).toMatchObject({ assignedInBatchNo: null })
   })
 
   it('returns an empty list for a channel that is not assigned yet', async () => {

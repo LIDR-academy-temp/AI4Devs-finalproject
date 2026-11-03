@@ -204,6 +204,64 @@ describe('GET /accounts/{id}/channels (issue #2, criterion 3)', () => {
   it('GET /channels/1007/accounts is empty for a channel that is not assigned yet', async () => {
     expect(await json(`/channels/${RAM_07}/accounts`, 'admin')).toEqual([])
   })
+
+  it('carries the batchNo of the assigning batch, and null for an association without batch', async () => {
+    const accountId = accountIds['ProviderA-USD']!
+    const lastPaid = await ctx.prisma.settlementBatch.findFirstOrThrow({
+      where: { accountId, status: 'paid' },
+      orderBy: { processedAt: 'desc' },
+    })
+
+    const usdChannels = await json<{ assignedInBatchNo: number | null }[]>(`/accounts/${accountId}/channels`, 'viewer')
+    const eurChannels = await json<{ name: string; assignedInBatchNo: number | null }[]>(
+      `/accounts/${accountIds['ProviderA-EUR']}/channels`,
+      'admin',
+    )
+    const ram01Accounts = await json<{ name: string; assignedInBatchNo: number | null }[]>(
+      `/channels/${RAM_01}/accounts`,
+      'admin',
+    )
+
+    // Scenarios "Canales principales de ProviderA-USD", "Asociación sin batch" and "Número de batch de la asociación".
+    expect(usdChannels.map((c) => c.assignedInBatchNo)).toEqual([lastPaid.batchNo, lastPaid.batchNo])
+    expect(eurChannels.find((c) => c.name === 'RAM-01')?.assignedInBatchNo).toBeNull()
+    expect(ram01Accounts.map((a) => [a.name, a.assignedInBatchNo])).toEqual([
+      ['ProviderA-USD', lastPaid.batchNo],
+      ['ProviderA-EUR', null],
+    ])
+  })
+})
+
+describe('GET /channels with the primary account of each channel', () => {
+  type Row = { channelId: number; primaryAccount: { accountId: string; name: string } | null }
+  const primaryOf = (rows: Row[], channelId: number) => rows.find((c) => c.channelId === channelId)?.primaryAccount
+
+  it('gives RAM-01 and RAM-03 their primary account and RAM-07 none ("Cuenta principal de cada canal")', async () => {
+    const channels = await json<Row[]>('/channels', 'viewer')
+
+    expect(primaryOf(channels, RAM_01)?.name).toBe('ProviderA-USD')
+    expect(primaryOf(channels, 1003)?.name).toBe('ProviderA-EUR')
+    expect(primaryOf(channels, RAM_07)).toBeNull()
+    expect((await json<Row[]>('/channels?unassigned=true', 'admin')).every((c) => c.primaryAccount === null)).toBe(true)
+  })
+
+  it('hides a primary account of a merchant outside the scope ("Principal de otro merchant oculta")', async () => {
+    const { prisma } = ctx
+    const usd = { accountId: accountIds['ProviderA-USD']!, channelId: RAM_01 }
+    const foreign = { accountId: accountIds['ProviderC-USD']!, channelId: RAM_01 }
+    // The schema does not force account and channel onto the same provider (#24): move RAM-01's primary to
+    // ProviderC-USD (merchant 2) for this test and put it back afterwards.
+    await prisma.accountChannel.update({ where: { accountId_channelId: usd }, data: { isPrimary: false } })
+    try {
+      await prisma.accountChannel.create({ data: { ...foreign, isPrimary: true, assignedAt: HISTORY_ASSIGNED_AT } })
+
+      expect(primaryOf(await json<Row[]>('/channels', 'viewer'), RAM_01)).toBeNull()
+      expect(primaryOf(await json<Row[]>('/channels', 'admin'), RAM_01)?.name).toBe('ProviderC-USD')
+    } finally {
+      await prisma.accountChannel.deleteMany({ where: foreign })
+      await prisma.accountChannel.update({ where: { accountId_channelId: usd }, data: { isPrimary: true } })
+    }
+  })
 })
 
 describe('account and provider detail', () => {
@@ -239,6 +297,13 @@ describe('account and provider detail', () => {
     ])
     expect(new Set(accounts.map((a) => a.name)).size).toBe(5)
     expect(accounts.every((a) => a.isActive)).toBe(true)
+  })
+
+  it('says that admin created ProviderA-USD and when it last changed ("Quién creó la cuenta")', async () => {
+    const account = await json<Record<string, unknown>>(`/accounts/${accountIds['ProviderA-USD']}`, 'viewer')
+
+    expect(account.createdBy).toMatchObject({ userName: 'admin' })
+    expect(account.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
   })
 
   it('ProviderA-USD has neither a reserve cap nor a rule set', async () => {

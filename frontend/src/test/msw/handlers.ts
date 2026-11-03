@@ -3,6 +3,7 @@
 import { HttpResponse, http, type PathParams } from 'msw'
 import {
   ACCOUNT_CHANNELS,
+  ACCOUNT_CREATOR,
   ACCOUNTS,
   type AccountChannelRow,
   CHANNELS,
@@ -155,6 +156,8 @@ export const handlers = [
         ...acc,
         provider,
         merchant: { merchantId: merchant.merchantId, name: merchant.name },
+        createdBy: ACCOUNT_CREATOR,
+        updatedAt: acc.createdAt,
       })
     }),
   ),
@@ -174,14 +177,20 @@ export const handlers = [
     protectedRoute(({ user, request }) => {
       const unassigned = new URL(request.url).searchParams.get('unassigned') === 'true'
       const visible = CHANNELS.filter((c) => visibleProvider(user, c.providerId))
+      const listed = unassigned
+        ? visible.filter(
+            (c) =>
+              CHANNELS_WITH_TRANSACTIONS.has(c.channelId) &&
+              !db.accountChannels.some((r) => r.channelId === c.channelId),
+          )
+        : visible
       return HttpResponse.json(
-        unassigned
-          ? visible.filter(
-              (c) =>
-                CHANNELS_WITH_TRANSACTIONS.has(c.channelId) &&
-                !db.accountChannels.some((r) => r.channelId === c.channelId),
-            )
-          : visible,
+        listed.map((c) => {
+          const primaryRow = db.accountChannels.find((r) => r.channelId === c.channelId && r.isPrimary)
+          const primary = primaryRow && db.accounts.find((a) => a.accountId === primaryRow.accountId)
+          const seen = primary && visibleProvider(user, primary.providerId)
+          return { ...c, primaryAccount: seen ? { accountId: primary.accountId, name: primary.name } : null }
+        }),
       )
     }),
   ),

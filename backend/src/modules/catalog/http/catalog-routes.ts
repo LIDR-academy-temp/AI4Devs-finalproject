@@ -3,6 +3,7 @@ import {
   AccountDetail,
   AccountSummary,
   ChannelAccountItem,
+  ChannelListItem,
   ChannelSummary,
   ChannelsQuery,
   ErrorResponse,
@@ -134,8 +135,9 @@ export const catalogRoutes: FastifyPluginAsyncZod<CatalogRoutesOptions> = async 
       schema: {
         ...catalog,
         summary: 'Channels in scope; unassigned=true keeps only those with transactions and no account',
+        description: 'Each channel with its primary account, null when it has none or it is outside your scope.',
         querystring: ChannelsQuery,
-        response: { 200: z.array(ChannelSummary), 400: ErrorResponse, 401: ErrorResponse },
+        response: { 200: z.array(ChannelListItem), 400: ErrorResponse, 401: ErrorResponse },
       },
     },
     async (request) => service.listChannels(scopeOf(request.auth), { unassigned: request.query.unassigned }),

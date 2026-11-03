@@ -3,6 +3,7 @@ import {
   AccountDetail,
   AccountSummary,
   ChannelAccountItem,
+  ChannelListItem,
   ChannelSummary,
   MerchantSummary,
   ProviderDetail,
@@ -132,7 +133,7 @@ describe('response shapes match @recon/shared', () => {
     { url: '/providers/101/accounts', schema: z.array(AccountSummary) },
     { url: `/accounts/${ACCOUNT_IDS['ProviderA-EUR']}`, schema: AccountDetail },
     { url: `/accounts/${ACCOUNT_IDS['ProviderA-USD']}/channels`, schema: z.array(AccountChannelItem) },
-    { url: '/channels', schema: z.array(ChannelSummary) },
+    { url: '/channels', schema: z.array(ChannelListItem) },
     { url: '/channels/1001/accounts', schema: z.array(ChannelAccountItem) },
   ])('$url', async ({ url, schema }) => {
     const res = await get(url, 'admin')
@@ -157,5 +158,17 @@ describe('response shapes match @recon/shared', () => {
     for (const item of res.json()) {
       expect(item).toMatchObject({ isPrimary: true, primaryAccount: { name: 'ProviderA-USD' } })
     }
+  })
+
+  it('serializes the new read fields: createdBy, updatedAt, assignedInBatchNo and primaryAccount', async () => {
+    const account = (await get(`/accounts/${ACCOUNT_IDS['ProviderA-USD']}`, 'viewer')).json()
+    const accountChannels = (await get(`/accounts/${ACCOUNT_IDS['ProviderA-USD']}/channels`, 'viewer')).json()
+    const channels = (await get('/channels', 'viewer')).json()
+
+    expect(account.createdBy).toEqual({ userId: 1, userName: 'admin' })
+    expect(typeof account.updatedAt).toBe('string')
+    expect(accountChannels[0].assignedInBatchNo).toBe(123)
+    expect(channels.find((c: { name: string }) => c.name === 'RAM-07').primaryAccount).toBeNull()
+    expect(channels.find((c: { name: string }) => c.name === 'RAM-01').primaryAccount.name).toBe('ProviderA-USD')
   })
 })

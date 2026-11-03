@@ -9,6 +9,7 @@ import {
 } from 'fastify-type-provider-zod'
 import type { Env } from './config/env.js'
 import type { PrismaClient } from './generated/prisma/client.js'
+import { accountsModule } from './modules/accounts/accounts-module.js'
 import type { AuthService } from './modules/auth/application/auth-service.js'
 import { authModule } from './modules/auth/auth-module.js'
 import type { CatalogService } from './modules/catalog/application/catalog-service.js'
@@ -20,6 +21,7 @@ import { feesModule } from './modules/fees/fees-module.js'
 import type { ImportService } from './modules/imports/application/import-service.js'
 import type { FileStore } from './modules/imports/application/ports.js'
 import { importsModule } from './modules/imports/imports-module.js'
+import { matchingModule } from './modules/matching/matching-module.js'
 import type { SettlementLifecycleService } from './modules/settlement/application/settlement-lifecycle-service.js'
 import type { SettlementReadService } from './modules/settlement/application/settlement-read-service.js'
 import type { SettlementService } from './modules/settlement/application/settlement-service.js'
@@ -130,6 +132,8 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     adminService: options.fees?.adminService,
     queryService: options.fees?.queryService,
   })
+  await app.register(accountsModule, { routePrefix: API_PREFIX })
+  await app.register(matchingModule, { routePrefix: API_PREFIX })
   await app.register(settlementModule, {
     routePrefix: API_PREFIX,
     service: options.settlement?.service,

@@ -8,6 +8,7 @@ import type {
   CatalogRepository,
   ChannelAccountItem,
   ChannelFilter,
+  ChannelListItem,
   ChannelSummary,
   MerchantSummary,
   ProviderSummary,
@@ -47,10 +48,30 @@ const assignmentSelect = {
   isPrimary: true,
   assignedAt: true,
   assignedInBatchId: true,
+  assignedInBatch: { select: { batchNo: true } },
 } satisfies Prisma.AccountChannelSelect
 
 type ChannelRow = Prisma.ChannelGetPayload<{ select: typeof channelSelect }>
 type AccountRow = Prisma.AccountGetPayload<{ select: typeof accountSelect }>
+type AssignmentRow = Prisma.AccountChannelGetPayload<{ select: typeof assignmentSelect }>
+
+/** The assignment fields of an account–channel row in API form. */
+function toAssignment(row: AssignmentRow) {
+  return {
+    isPrimary: row.isPrimary,
+    assignedAt: row.assignedAt.toISOString(),
+    assignedInBatchId: row.assignedInBatchId,
+    assignedInBatchNo: row.assignedInBatch?.batchNo ?? null,
+  }
+}
+
+/** The channel's current primary account, whichever account it belongs to, if the caller sees it. */
+function primaryAccountSelect(scope: Scope) {
+  return {
+    where: { isPrimary: true, account: { provider: { merchantId: visibleMerchant(scope) } } },
+    select: { account: { select: { accountId: true, name: true } } },
+  } satisfies Prisma.Channel$accountChannelsArgs
+}
 
 function toChannel(row: ChannelRow): ChannelSummary {
   return { ...row, rollingReservePct: toPercentage(row.rollingReservePct) }
@@ -128,13 +149,21 @@ export class PrismaCatalogRepository implements CatalogRepository {
       where: { accountId, provider: { merchantId: visibleMerchant(scope) } },
       select: {
         ...accountSelect,
+        updatedAt: true,
+        createdBy: { select: { userId: true, userName: true } },
         provider: { select: { ...providerSelect, merchant: { select: merchantRefSelect } } },
       },
     })
     if (!row) return null
-    const { provider, ...account } = row
+    const { provider, createdBy, updatedAt, ...account } = row
     const { merchant, ...providerSummary } = provider
-    return { ...toAccount(account), provider: providerSummary, merchant }
+    return {
+      ...toAccount(account),
+      provider: providerSummary,
+      merchant,
+      createdBy,
+      updatedAt: updatedAt.toISOString(),
+    }
   }
 
   async listAccountChannels(scope: Scope, accountId: string): Promise<AccountChannelItem[]> {
@@ -147,16 +176,7 @@ export class PrismaCatalogRepository implements CatalogRepository {
       },
       select: {
         ...assignmentSelect,
-        channel: {
-          select: {
-            ...channelSelect,
-            // The channel's current primary account, whichever account it belongs to, if the caller sees it.
-            accountChannels: {
-              where: { isPrimary: true, account: { provider: { merchantId: visibleMerchant(scope) } } },
-              select: { account: { select: { accountId: true, name: true } } },
-            },
-          },
-        },
+        channel: { select: { ...channelSelect, accountChannels: primaryAccountSelect(scope) } },
       },
       orderBy: [{ assignedAt: 'asc' }, { channelId: 'asc' }],
     })
@@ -164,25 +184,26 @@ export class PrismaCatalogRepository implements CatalogRepository {
       const { accountChannels, ...channelRow } = channel
       return {
         ...toChannel(channelRow),
-        isPrimary: assignment.isPrimary,
-        assignedAt: assignment.assignedAt.toISOString(),
-        assignedInBatchId: assignment.assignedInBatchId,
+        ...toAssignment(assignment),
         primaryAccount: accountChannels[0]?.account ?? null,
       }
     })
   }
 
-  async listChannels(scope: Scope, filter: ChannelFilter): Promise<ChannelSummary[]> {
+  async listChannels(scope: Scope, filter: ChannelFilter): Promise<ChannelListItem[]> {
     const rows = await this.prisma.channel.findMany({
       where: {
         provider: { merchantId: visibleMerchant(scope) },
         // "Not assigned yet" (README §3.2): transactions exist and no AccountChannel row does.
         ...(filter.unassigned ? { accountChannels: { none: {} }, transactions: { some: {} } } : {}),
       },
-      select: channelSelect,
+      select: { ...channelSelect, accountChannels: primaryAccountSelect(scope) },
       orderBy: { channelId: 'asc' },
     })
-    return rows.map(toChannel)
+    return rows.map(({ accountChannels, ...channelRow }) => ({
+      ...toChannel(channelRow),
+      primaryAccount: accountChannels[0]?.account ?? null,
+    }))
   }
 
   async findChannel(scope: Scope, channelId: number): Promise<ChannelSummary | null> {
@@ -206,11 +227,6 @@ export class PrismaCatalogRepository implements CatalogRepository {
       },
       orderBy: [{ assignedAt: 'asc' }, { account: { name: 'asc' } }],
     })
-    return rows.map(({ account, ...assignment }) => ({
-      ...account,
-      isPrimary: assignment.isPrimary,
-      assignedAt: assignment.assignedAt.toISOString(),
-      assignedInBatchId: assignment.assignedInBatchId,
-    }))
+    return rows.map(({ account, ...assignment }) => ({ ...account, ...toAssignment(assignment) }))
   }
 }

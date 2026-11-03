@@ -1,6 +1,6 @@
-// Response and query schemas of the read-only catalog API (README §3.2, §4.4).
+// Schemas of the catalog API (README §3.2, §4.4): the read-only hierarchy and the account administration.
 import { z } from 'zod'
-import { MerchantRef } from './auth.js'
+import { MerchantRef, UserRef } from './auth.js'
 import { ChargebackReservePolicy, Money, Percentage } from './vocabulary.js'
 
 export const MerchantSummary = z.object({
@@ -54,6 +54,8 @@ export type ProviderDetail = z.infer<typeof ProviderDetail>
 export const AccountDetail = AccountSummary.extend({
   provider: ProviderSummary,
   merchant: MerchantRef,
+  createdBy: UserRef,
+  updatedAt: z.iso.datetime(),
 })
 export type AccountDetail = z.infer<typeof AccountDetail>
 
@@ -63,11 +65,17 @@ export const AccountRef = z.object({
 })
 export type AccountRef = z.infer<typeof AccountRef>
 
-/** A channel associated to an account (primary or historical) and the channel's current primary account. */
-export const AccountChannelItem = ChannelSummary.extend({
+/** The batch whose processing created an account–channel association; both null when none did. */
+const assignment = {
   isPrimary: z.boolean(),
   assignedAt: z.iso.datetime(),
   assignedInBatchId: z.uuid().nullable(),
+  assignedInBatchNo: z.number().int().nullable(),
+}
+
+/** A channel associated to an account (primary or historical) and the channel's current primary account. */
+export const AccountChannelItem = ChannelSummary.extend({
+  ...assignment,
   /** null if the channel has no primary account or the caller cannot see it. */
   primaryAccount: AccountRef.nullable(),
 })
@@ -79,11 +87,61 @@ export const ChannelAccountItem = z.object({
   name: z.string(),
   providerId: z.number().int(),
   isActive: z.boolean(),
-  isPrimary: z.boolean(),
-  assignedAt: z.iso.datetime(),
-  assignedInBatchId: z.uuid().nullable(),
+  ...assignment,
 })
 export type ChannelAccountItem = z.infer<typeof ChannelAccountItem>
+
+/** A row of `GET /channels`: the channel and its primary account (null if none or outside the caller's scope). */
+export const ChannelListItem = ChannelSummary.extend({
+  primaryAccount: AccountRef.nullable(),
+})
+export type ChannelListItem = z.infer<typeof ChannelListItem>
+
+/** `GET /providers/{id}/matching-rule-sets`: a rule set of the provider and the accounts linked to it. */
+export const MatchingRuleSetSummary = z.object({
+  ruleSetId: z.number().int(),
+  providerId: z.number().int(),
+  name: z.string(),
+  isActive: z.boolean(),
+  accounts: z.array(AccountRef.extend({ isActive: z.boolean() })),
+})
+export type MatchingRuleSetSummary = z.infer<typeof MatchingRuleSetSummary>
+
+// ───────────────────────── Account administration ─────────────────────────
+
+const AccountName = z.string().trim().min(1).max(50)
+const RuleSetId = z.number().int().positive()
+
+/**
+ * Body of POST /providers/{id}/accounts. A negative cap, a rule set of another provider and a fee source outside
+ * the provider are domain rules answered as 400 validation_error with details.field, not schema rules.
+ */
+export const AccountCreate = z.strictObject({
+  name: AccountName,
+  chargebackReservePolicy: ChargebackReservePolicy,
+  /** null or omitted: no cap. */
+  rollingReserveCapAmt: Money.nullable().optional(),
+  /** null or omitted: global rules only. */
+  matchingRuleSetId: RuleSetId.nullable().optional(),
+  /** null or omitted: the account starts without fees. */
+  copyFeesFromAccountId: z.uuid().nullable().optional(),
+})
+export type AccountCreate = z.infer<typeof AccountCreate>
+
+/** Body of PATCH /accounts/{id}: any subset of the editable fields; providerId is not editable. */
+export const AccountPatch = z
+  .strictObject({
+    name: AccountName.optional(),
+    chargebackReservePolicy: ChargebackReservePolicy.optional(),
+    rollingReserveCapAmt: Money.nullable().optional(),
+    matchingRuleSetId: RuleSetId.nullable().optional(),
+    /** false closes the account, true reopens it. */
+    isActive: z.boolean().optional(),
+    /** Optional reason kept in the audit log. */
+    reason: z.string().trim().min(1).max(500).optional(),
+  })
+  .refine((b) => Object.keys(b).some((k) => k !== 'reason'), 'at least one field to change is required')
+export type AccountPatch = z.infer<typeof AccountPatch>
 
 /**
  * `GET /channels?unassigned=true` lists the "not assigned yet" channels only.
