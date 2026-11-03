@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from '@tanstack/react-router'
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -10,6 +10,7 @@ import { AccountFeesTable, type FeeAction } from './AccountFeesTable'
 import { CloseFeeDialog } from './CloseFeeDialog'
 import type { AccountFee } from './contract'
 import { FeeFormSheet, type FeeFormTarget } from './FeeFormSheet'
+import { focusAfterWrite } from './fee-focus'
 import { useCanManageFees } from './permissions'
 import { accountFeesQuery, feeTypesQuery } from './queries'
 import { strings } from './strings'
@@ -31,6 +32,19 @@ export function AccountFeesPage() {
 
   const [form, setForm] = useState<FeeFormTarget | null>(null)
   const [closing, setClosing] = useState<AccountFee | null>(null)
+  // The fee just written: once its panel or dialog is gone, the focus goes to its History button.
+  const [written, setWritten] = useState<string | null>(null)
+  const heading = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    if (written === null || form || closing) return
+    focusAfterWrite(written, heading.current)
+    setWritten(null)
+  }, [written, form, closing])
+  const onSaved = (feeId: string) => {
+    setForm(null)
+    setClosing(null)
+    setWritten(feeId)
+  }
   const onAction = (action: FeeAction, fee: AccountFee) => {
     if (action === 'close') setClosing(fee)
     else setForm({ mode: action === 'edit' ? 'correct' : 'change', fee })
@@ -93,7 +107,9 @@ export function AccountFeesPage() {
       </div>
       <Card>
         <CardContent className="flex flex-col gap-4">
-          <h2 className="font-medium">{s.heading}</h2>
+          <h2 ref={heading} tabIndex={-1} className="font-medium focus-visible:outline-none">
+            {s.heading}
+          </h2>
           {body}
         </CardContent>
       </Card>
@@ -106,10 +122,17 @@ export function AccountFeesPage() {
           accountId={accountId}
           feeTypes={feeTypes.data}
           onDone={() => setForm(null)}
+          onSaved={onSaved}
         />
       )}
       {canManage && closing && (
-        <CloseFeeDialog key={closing.feeId} fee={closing} accountId={accountId} onDone={() => setClosing(null)} />
+        <CloseFeeDialog
+          key={closing.feeId}
+          fee={closing}
+          accountId={accountId}
+          onDone={() => setClosing(null)}
+          onSaved={onSaved}
+        />
       )}
     </section>
   )

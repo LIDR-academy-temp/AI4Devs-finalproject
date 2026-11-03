@@ -59,6 +59,8 @@ export function FeeHistorySheet({ fee }: { fee: AccountFee }) {
           size="sm"
           className="h-auto px-1"
           aria-label={strings.account.actionNames.history(strings.account.feeName(fee.title, fee.startDate))}
+          // HISTORY_ATTRIBUTE of fee-focus: the focus comes back here after a write of this fee.
+          data-fee-history={fee.feeId}
         >
           {strings.account.actions.history}
         </Button>

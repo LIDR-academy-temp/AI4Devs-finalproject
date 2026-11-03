@@ -24,7 +24,19 @@ const MAX_REASON = 500
  * Close… (spec fees "Pantalla Account Fees: cierre de la vigencia"): the last day the fee applies, today in New York
  * by default, never before its last applied event. Both are only the screen's help: the API sets the limit.
  */
-export function CloseFeeDialog({ fee, accountId, onDone }: { fee: AccountFee; accountId: string; onDone: () => void }) {
+export function CloseFeeDialog({
+  fee,
+  accountId,
+  onDone,
+  onSaved,
+}: {
+  fee: AccountFee
+  accountId: string
+  /** Cancelled: the focus goes back to Close…. */
+  onDone: () => void
+  /** Closed by the API: the page decides where the focus goes. */
+  onSaved: (feeId: string) => void
+}) {
   const minimum = fee.lastAppliedEventDate
   const today = newYorkToday()
   const [endDate, setEndDate] = useState(minimum && minimum > today ? minimum : today)
@@ -50,7 +62,7 @@ export function CloseFeeDialog({ fee, accountId, onDone }: { fee: AccountFee; ac
         feeId: fee.feeId,
         body: trimmed ? { endDate, reason: trimmed } : { endDate },
       })
-      onDone()
+      onSaved(fee.feeId)
     } catch (error) {
       const problem = feeProblemOf(error, fee.title)
       setFailure(Object.values(problem.fields)[0] ?? problem.general)

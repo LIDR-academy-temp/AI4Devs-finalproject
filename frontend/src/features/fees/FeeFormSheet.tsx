@@ -28,6 +28,18 @@ interface Shown {
 
 const NOTHING: Shown = { fields: {}, general: null, conflicts: [] }
 
+/** The fields in the order the form shows them: a local error puts the focus on the first one that has one. */
+const FIELD_ORDER: FeeFormField[] = [
+  'feeTypeId',
+  'effectiveFrom',
+  'fixedAmount',
+  'percent',
+  'startDate',
+  'endDate',
+  'description',
+  'reason',
+]
+
 type FeeTypeOption = FeeTypeInfo & { title: string }
 
 /**
@@ -39,11 +51,15 @@ export function FeeFormSheet({
   accountId,
   feeTypes,
   onDone,
+  onSaved,
 }: {
   target: FeeFormTarget
   accountId: string
   feeTypes: readonly FeeTypeOption[] | undefined
+  /** Closed without writing: the focus goes back to the button that opened it. */
   onDone: () => void
+  /** The API accepted the write of this fee: the page decides where the focus goes. */
+  onSaved: (feeId: string) => void
 }) {
   const { mode, fee } = target
   const ids = {
@@ -59,7 +75,9 @@ export function FeeFormSheet({
     effective: useId(),
     notice: useId(),
   }
-  const { register, handleSubmit, watch } = useForm<FeeFormValues>({ defaultValues: initialFeeValues(mode, fee) })
+  const { register, handleSubmit, watch, setFocus } = useForm<FeeFormValues>({
+    defaultValues: initialFeeValues(mode, fee),
+  })
   const write = useFeeWrite(accountId)
   const refresh = useRefreshAccountFees(accountId)
   const [shown, setShown] = useState<Shown>(NOTHING)
@@ -78,17 +96,19 @@ export function FeeFormSheet({
     const result = feeFormBody(mode, values, fee)
     if (!result.ok) {
       setShown({ fields: result.errors, general: result.general, conflicts: [] })
+      const first = FIELD_ORDER.find((field) => result.errors[field])
+      if (first) setFocus(first)
       return
     }
     setShown(NOTHING)
     sending.current = true
     try {
-      await write.mutateAsync(
+      const [written] = await write.mutateAsync(
         mode === 'create'
           ? { kind: 'create', body: result.body as FeeCreateBody }
           : { kind: 'patch', feeId: fee!.feeId, body: result.body },
       )
-      onDone()
+      onSaved(written?.feeId ?? fee!.feeId)
     } catch (error) {
       const problem = feeProblemOf(error, typeTitle)
       setShown({ fields: problem.fields, general: problem.general, conflicts: problem.conflicts })
