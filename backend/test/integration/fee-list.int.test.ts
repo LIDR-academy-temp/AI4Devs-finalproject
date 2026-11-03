@@ -1,6 +1,14 @@
-import { FeePage } from '@recon/shared'
+import { type FeeListItem, FeePage } from '@recon/shared'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { createTestApp, fixtureIds, SEED_PASSWORD } from './helpers.js'
+import {
+  applyFeeUsage,
+  createTestApp,
+  type FeeUsageFixture,
+  fixtureIds,
+  lastAppliedOf,
+  removeFeeUsage,
+  SEED_PASSWORD,
+} from './helpers.js'
 
 // Spec fees (admin-fees): "Vista global de fees", "Orden de la vista global", "Filtros de la vista global", "Estado de
 // un fee", "Campos ampliados de un fee de la cuenta". Against the seed; fees created here are removed after each test.
@@ -9,6 +17,8 @@ const tokens: Record<string, string> = {}
 const accounts: Record<string, { accountId: string; providerId: number; merchantId: number }> = {}
 const feeTypeIds: Record<string, number> = {}
 let created: string[] = []
+/** Fixture usages (removed after each test, before the fees they reference). */
+const usages: FeeUsageFixture[] = []
 
 beforeAll(async () => {
   ctx = await createTestApp()
@@ -29,6 +39,8 @@ beforeAll(async () => {
 })
 
 afterEach(async () => {
+  await removeFeeUsage(ctx.prisma, usages)
+  usages.length = 0
   const ids = fixtureIds(created, 'created fees')
   await ctx.prisma.auditLog.deleteMany({
     where: { entityType: 'Fee', entityId: { in: ids.map((id) => id.toLowerCase()) } },
@@ -181,22 +193,89 @@ describe('GET /fees', () => {
     expect((await page(`/fees?accountId=${account}&pageSize=500`)).total).toBe(active.length + 2)
   })
 
-  it('carries the usage of the fees of the page', async () => {
+  it('carries the usage of the fees of the page, breakdowns and batch fees alike', async () => {
     const mdr = await ctx.prisma.fee.findFirstOrThrow({
       where: { accountId: accounts['ProviderA-USD']!.accountId, feeType: { code: 'MDR' } },
     })
-    const latest = await ctx.prisma.settlementTransactionFee.aggregate({
-      where: { feeId: mdr.feeId },
-      _max: { eventDate: true },
-    })
+    const usage = await applyFeeUsage(ctx.prisma, mdr.feeId, { days: ['2020-01-15'], batchFee: {} })
+    usages.push(usage)
+    // Oracle from the tables, SettlementBatchFee included: the batch date beats the fixture breakdown of 2020.
+    const expected = await lastAppliedOf(ctx.prisma, mdr.feeId)
+    expect(expected! >= usage.batch!.settlementDate).toBe(true)
 
     const result = await page(`/fees?accountId=${accounts['ProviderA-USD']!.accountId}&q=MDR`)
 
     const item = result.items.find((i) => i.feeId.toLowerCase() === mdr.feeId.toLowerCase())
-    expect(item).toMatchObject(
-      latest._max.eventDate === null
-        ? { inUse: false, lastAppliedEventDate: null }
-        : { inUse: true, lastAppliedEventDate: latest._max.eventDate.toISOString().slice(0, 10) },
-    )
+    expect(item).toMatchObject({ inUse: true, lastAppliedEventDate: expected })
+  })
+
+  it('orders every item by merchant › provider › account › type title › startDate (NULL first) › feeId', async () => {
+    await createFee('ProviderA-USD', { feeTypeId: feeTypeIds['Annual Fee'], fixedAmount: '500', endDate: '2026-12-31' })
+    await createFee('ProviderA-USD', {
+      feeTypeId: feeTypeIds['Annual Fee'],
+      fixedAmount: '550',
+      startDate: '2027-01-01',
+    })
+
+    const { items, total } = await page('/fees?pageSize=500', 'analyst')
+    expect(items).toHaveLength(total)
+
+    const keys = items.map(orderKey)
+    for (let n = 1; n < keys.length; n++)
+      expect(compareKeys(keys[n - 1]!, keys[n]!), `${items[n - 1]!.feeId} before ${items[n]!.feeId}`).toBeLessThan(0)
+  })
+
+  it('q is literal text: % and _ are not wildcards, [ is not a set', async () => {
+    const odd = await createFee('ProviderA-USD', {
+      feeTypeId: feeTypeIds['Annual Fee'],
+      fixedAmount: '500',
+      startDate: '2099-01-01',
+      description: '50% off_[promo]',
+    })
+
+    const search = async (q: string) => (await page(`/fees?q=${encodeURIComponent(q)}&pageSize=500`)).items
+    const all = (await page('/fees?pageSize=500')).total
+    const text = (i: FeeListItem) => `${i.account.name} ${i.code} ${i.title} ${i.description ?? ''}`.toLowerCase()
+
+    // As a wildcard, % or _ would match every fee; as text, only the ones that contain it (Chargeback over 1% too).
+    for (const q of ['%', '_']) {
+      const items = await search(q)
+      expect(
+        items.map((i) => i.feeId),
+        q,
+      ).toContain(odd.feeId)
+      expect(items.length, q).toBeLessThan(all)
+      for (const i of items) expect(text(i), q).toContain(q)
+    }
+    expect((await search('% off_[pro')).map((i) => i.feeId)).toEqual([odd.feeId])
+    expect(await search('[a-z]')).toEqual([])
   })
 })
+
+// The order of design D8 as SQL Server applies it: names compare without case (the collation of the database is
+// case-insensitive) and a NULL startDate comes first. feeId is the last tie-break and SQL Server orders a
+// uniqueidentifier by its bytes, last group first, not as text; the key follows the groups in that order. It never
+// decides in practice: equal previous keys mean the same type from the same start, which the overlap rule forbids.
+type OrderKey = [string, string, string, string, string, string]
+
+const orderKey = (i: FeeListItem): OrderKey => [
+  i.merchant.name.toLowerCase(),
+  i.provider.name.toLowerCase(),
+  i.account.name.toLowerCase(),
+  i.title.toLowerCase(),
+  i.startDate ?? '',
+  guidSortKey(i.feeId),
+]
+
+function guidSortKey(feeId: string): string {
+  const [g1, g2, g3, g4, g5] = feeId.toLowerCase().split('-') as [string, string, string, string, string]
+  return `${g5}${g4}${g3}${g2}${g1}`
+}
+
+function compareKeys(a: OrderKey, b: OrderKey): number {
+  for (let n = 0; n < a.length; n++) {
+    if (a[n]! < b[n]!) return -1
+    if (a[n]! > b[n]!) return 1
+  }
+  return 0
+}

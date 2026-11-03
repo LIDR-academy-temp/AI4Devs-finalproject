@@ -45,6 +45,12 @@ describe('previousDay', () => {
     expect(previousDay('2027-01-01')).toBe('2026-12-31')
     expect(previousDay('2026-11-15')).toBe('2026-11-14')
   })
+
+  it('keeps years 0001–0099 as they are, never as 19xx', () => {
+    expect(previousDay('0050-06-01')).toBe('0050-05-31')
+    expect(previousDay('0001-01-02')).toBe('0001-01-01')
+    expect(previousDay('0100-01-01')).toBe('0099-12-31')
+  })
 })
 
 // Spec fees "Estado de un fee" (admin-fees design D7).

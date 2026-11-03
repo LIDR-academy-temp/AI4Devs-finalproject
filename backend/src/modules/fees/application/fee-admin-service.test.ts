@@ -199,6 +199,39 @@ describe('FeeAdminService.patch', () => {
     ])
   })
 
+  it('does not open a successor of a type that is no longer active (details.field = feeTypeId)', async () => {
+    repo.seed('ProviderA-USD', { feeId: 'mdr', feeTypeId: MDR, percentage: '0.100000' }, USED)
+    repo.inactiveTypes.add(MDR)
+
+    const error = await service
+      .patch(ALL, ADMIN, 'mdr', { effectiveFrom: '2026-11-01', percentage: '0.095' })
+      .catch((e) => e)
+
+    expect(error).toBeInstanceOf(FeeRuleError)
+    expect(error.details).toEqual({ field: 'feeTypeId' })
+    expect(repo.feeOf('mdr')?.endDate).toBeNull()
+    expect(repo.store.rows).toHaveLength(1)
+    expect(repo.store.history).toEqual([])
+  })
+
+  it('reads today once per request, for every fee it answers', async () => {
+    let calls = 0
+    const counted = new FeeAdminService(
+      repo,
+      () => {
+        calls++
+        return '2026-11-03'
+      },
+      () => 'successor',
+    )
+    repo.seed('ProviderA-USD', { feeId: 'mdr', feeTypeId: MDR, percentage: '0.100000' }, USED)
+
+    await counted.patch(ALL, ADMIN, 'mdr', { effectiveFrom: '2026-11-01', percentage: '0.095' })
+    expect(calls).toBe(1)
+    await counted.create(ALL, ADMIN, ACCOUNT, { feeTypeId: WIRE, fixedAmount: '1', startDate: null, endDate: null })
+    expect(calls).toBe(2)
+  })
+
   it('rejects a correction that overlaps another fee of the type', async () => {
     repo.seed('ProviderA-USD', { feeId: 'r1', feeTypeId: 5, fixedAmount: '5.0000', endDate: '2026-12-31' })
     repo.seed('ProviderA-USD', { feeId: 'r2', feeTypeId: 5, fixedAmount: '6.0000', startDate: '2027-01-01' })

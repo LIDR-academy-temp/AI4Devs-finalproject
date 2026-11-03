@@ -136,6 +136,21 @@ export async function applyFeeUsage(
   return fixture
 }
 
+/**
+ * Oracle of a fee's last applied event day, straight from the tables (spec fees "Uso de un fee"): the latest of the
+ * event days of its breakdowns and of the settlement dates of the batches that charged it as a batch fee.
+ */
+export async function lastAppliedOf(prisma: PrismaClient, feeId: string): Promise<string | null> {
+  const [breakdowns, batchFees] = await Promise.all([
+    prisma.settlementTransactionFee.aggregate({ where: { feeId }, _max: { eventDate: true } }),
+    prisma.settlementBatchFee.findMany({ where: { feeId }, select: { batch: { select: { settlementDate: true } } } }),
+  ])
+  const days = [breakdowns._max.eventDate, ...batchFees.map((b) => b.batch.settlementDate)].flatMap((d) =>
+    d === null ? [] : [d.toISOString().slice(0, 10)],
+  )
+  return days.length === 0 ? null : days.reduce((a, b) => (a > b ? a : b))
+}
+
 /** Removes what applyFeeUsage wrote and gives the seeded batch back its paid state. */
 export async function removeFeeUsage(prisma: PrismaClient, fixtures: readonly FeeUsageFixture[]) {
   for (const fixture of fixtures) {

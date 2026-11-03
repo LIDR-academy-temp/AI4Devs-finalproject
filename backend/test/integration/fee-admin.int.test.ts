@@ -1,12 +1,18 @@
 import { AccountFee, FeeHistoryEntry, FeeUpdateResult } from '@recon/shared'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { PrismaFeeAdminRepository } from '../../src/modules/fees/infrastructure/prisma-fee-admin-repository.js'
+import { Prisma } from '../../src/generated/prisma/client.js'
+import { FeeOverlapError } from '../../src/modules/fees/domain/errors.js'
+import {
+  isFeeOverlapTrigger,
+  PrismaFeeAdminRepository,
+} from '../../src/modules/fees/infrastructure/prisma-fee-admin-repository.js'
 import {
   applyFeeUsage,
   createTestApp,
   type FeeUsageFixture,
   fixtureIds,
+  lastAppliedOf,
   removeFeeUsage,
   SEED_PASSWORD,
 } from './helpers.js'
@@ -93,13 +99,10 @@ async function feeInUse(code: string) {
     where: { accountId: accountIds['ProviderA-USD'], feeType: { code } },
   })
   usages.push(await applyFeeUsage(ctx.prisma, fee.feeId, { days: ['2026-09-14', '2026-10-02'] }))
-  const latest = await ctx.prisma.settlementTransactionFee.aggregate({
-    where: { feeId: fee.feeId },
-    _max: { eventDate: true },
-  })
   const { feeId, fixedAmount, percentage, startDate, endDate, description } = fee
   touched.push({ feeId, row: { fixedAmount, percentage, startDate, endDate, description } })
-  return { fee, lastAppliedEventDate: latest._max.eventDate!.toISOString().slice(0, 10) }
+  // Breakdowns and batch fees alike: an earlier run of the Bruno collection may have charged it as a batch fee.
+  return { fee, lastAppliedEventDate: (await lastAppliedOf(ctx.prisma, fee.feeId))! }
 }
 
 const historyOf = (feeId: string) =>
@@ -490,44 +493,71 @@ describe('usage of a fee through batch fees', () => {
 })
 
 describe('atomicity and the trigger backstop', () => {
-  it('a failure in the middle of the unit of work leaves no fee, history or audit', async () => {
+  const ALL = { merchantIds: [1, 2] }
+  /** A fee state as the use case would write it, without any check before. */
+  const state = (feeId: string, feeTypeId: number, values: { fixedAmount?: string; percentage?: string }) => ({
+    feeId,
+    feeTypeId,
+    fixedAmount: values.fixedAmount ?? null,
+    percentage: values.percentage ?? null,
+    conditionalPercentage: null,
+    conditionThresholdAmt: null,
+    brandFixedAmount: null,
+    brandPercentage: null,
+    startDate: null,
+    endDate: null,
+    description: null,
+  })
+
+  // Spec fees "Auditoría de los cambios de fees", scenario "Fallo a mitad": the AuditLog write itself fails (a user
+  // that does not exist breaks its foreign key) after the Fee and FeeHistory writes of the same unit of work.
+  it('a failing AuditLog write leaves no fee, no history and no audit', async () => {
     begin()
     const repo = new PrismaFeeAdminRepository(ctx.prisma)
     const feeId = '0f0f0f0f-0000-4000-8000-00000000abcd'
     const admin = await ctx.prisma.user.findUniqueOrThrow({ where: { userName: 'admin' } })
-    const fee = {
-      feeId,
-      feeTypeId: feeTypeIds['Wire Fee']!,
-      fixedAmount: '15.0000',
-      percentage: null,
-      conditionalPercentage: null,
-      conditionThresholdAmt: null,
-      brandFixedAmount: null,
-      brandPercentage: null,
-      startDate: null,
-      endDate: null,
-      description: null,
-    }
+    const fee = state(feeId, feeTypeIds['Wire Fee']!, { fixedAmount: '15.0000' })
 
     await expect(
-      repo.inAccount({ merchantIds: [1, 2] }, accountIds['ProviderA-USD']!, async (unit) => {
+      repo.inAccount(ALL, accountIds['ProviderA-USD']!, async (unit) => {
         await unit.insert(accountIds['ProviderA-USD']!, fee, admin.userId)
         await unit.history({ feeId, action: 'created', before: null, after: fee, reason: null, userId: admin.userId })
-        throw new Error('failure after the writes')
+        await unit.audit({ action: 'fee.create', feeId, detail: {}, userId: 2_000_000_000 })
       }),
-    ).rejects.toThrow('failure after the writes')
+    ).rejects.toThrow()
 
     expect(await ctx.prisma.fee.count({ where: { feeId } })).toBe(0)
     expect(await ctx.prisma.feeHistory.count({ where: { feeId } })).toBe(0)
+    expect(await ctx.prisma.auditLog.count({ where: { entityType: 'Fee', entityId: feeId } })).toBe(0)
   })
 
-  it('the trigger rejects a direct write that overlaps a fee of the same type and account', async () => {
+  // Design D6: a write that skips the use case's overlap check reaches TR_Fee_NoOverlap; the repository answers it as
+  // 409 fee_overlap with no conflicts to list.
+  it('an insert without the overlap check answers 409 fee_overlap with conflicts: [] and writes nothing', async () => {
+    const repo = new PrismaFeeAdminRepository(ctx.prisma)
+    const mdr = await ctx.prisma.fee.findFirstOrThrow({
+      where: { accountId: accountIds['ProviderA-USD'], feeType: { code: 'MDR' } },
+    })
+    const feeId = '0f0f0f0f-0000-4000-8000-00000000abcf'
+
+    const error = await repo
+      .inAccount(ALL, mdr.accountId, (unit) =>
+        unit.insert(mdr.accountId, state(feeId, mdr.feeTypeId, { percentage: '0.050000' }), mdr.createdByUserId),
+      )
+      .catch((e) => e)
+
+    expect(error).toBeInstanceOf(FeeOverlapError)
+    expect(error).toMatchObject({ status: 409, code: 'fee_overlap', details: { conflicts: [] } })
+    expect(await ctx.prisma.fee.count({ where: { feeId } })).toBe(0)
+  })
+
+  it('the trigger rejects a direct write that overlaps a fee of the same type and account, as THROW 50001', async () => {
     const mdr = await ctx.prisma.fee.findFirstOrThrow({
       where: { accountId: accountIds['ProviderA-USD'], feeType: { code: 'MDR' } },
     })
 
-    await expect(
-      ctx.prisma.fee.create({
+    const error = await ctx.prisma.fee
+      .create({
         data: {
           feeId: '0f0f0f0f-0000-4000-8000-00000000abce',
           accountId: mdr.accountId,
@@ -536,7 +566,15 @@ describe('atomicity and the trigger backstop', () => {
           startDate: new Date('2027-01-01T00:00:00Z'),
           createdByUserId: mdr.createdByUserId,
         },
-      }),
-    ).rejects.toThrow()
+      })
+      .catch((e) => e)
+
+    expect(error).toBeInstanceOf(Prisma.PrismaClientKnownRequestError)
+    expect(error.meta?.driverAdapterError?.cause).toMatchObject({
+      kind: 'mssql',
+      code: 50001,
+      message: expect.stringContaining('Fee validity overlaps an existing fee'),
+    })
+    expect(isFeeOverlapTrigger(error)).toBe(true)
   })
 })
