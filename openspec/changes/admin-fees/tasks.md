@@ -6,18 +6,18 @@ El grupo 1 es el contrato del que parte `web-admin-fees`. Al terminarlo se hace 
 
 ## 1. Contrato en `@recon/shared` y export de OpenAPI
 
-- [ ] 1.1 Escribir `packages/shared/src/fees.test.ts` con los esquemas de D2 y comprobar que falla porque los exports no existen. Debe cubrir:
+- [x] 1.1 Escribir `packages/shared/src/fees.test.ts` con los esquemas de D2 y comprobar que falla porque los exports no existen. Debe cubrir:
   - `AccountFee` ampliada, con `lastAppliedEventDate` nullable;
   - `FeeCreate`: rechaza un número JSON en `fixedAmount`, `percentage` con 7 decimales, una fecha no ISO y una clave desconocida;
   - `FeePatch` en sus dos formas: rechaza cuerpo vacío, `effectiveFrom` sin valores, `effectiveFrom` con `startDate` o `endDate`, `feeTypeId`, y `reason` vacío, de solo espacios o de 501 caracteres;
   - `FeesQuery`: rechaza `pageSize` 0 y 501, usa 50 por defecto y rechaza `status=withdrawn`;
   - `FeeHistoryEntry`, `FeePage` y `FeeUpdateResult`.
-- [ ] 1.2 Commit: test(shared): contrato de la administración de fees
-- [ ] 1.3 Implementar los esquemas en `packages/shared/src/fees.ts` y exportarlos desde `index.ts`. Verificar con `pnpm --filter @recon/shared test` y `pnpm typecheck`.
-- [ ] 1.4 Ampliar `toStoredFee` y `feeSelect` del repositorio de lectura con los campos nuevos de `AccountFee`: variantes, `status` (con reloj inyectado, D7), `inUse` y `lastAppliedEventDate` (D5), `createdBy`, `createdAt` y `updatedAt`. Ajustar `fee-read-service.test.ts`, `fee-routes.test.ts` y `test/integration/fees.int.test.ts`, añadiendo los escenarios "Campos ampliados" y "Fee del seed con settlements procesados". Verificar que siguen en verde.
-- [ ] 1.5 Declarar en `http/fee-admin-routes.ts` las rutas `POST /accounts/:accountId/fees`, `PATCH /fees/:feeId`, `GET /fees` y `GET /fees/:feeId/history`, cada una con su esquema y su `preHandler` de permiso. Los handlers provisionales responden `501 not_implemented` (D11). Registrar las rutas en `fees-module.ts`. Verificar con un test de rutas que cubra `401`, `403` antes que el alcance y `400` de esquema.
-- [ ] 1.6 Ejecutar `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`, y ampliar `app.test.ts` con las rutas nuevas. Verificar con `pnpm openapi:check`, `pnpm lint` y `pnpm typecheck`.
-- [ ] 1.7 Commit: feat(fees): contrato de la administración de fees y export de OpenAPI
+- [x] 1.2 Commit: test(shared): contrato de la administración de fees
+- [x] 1.3 Implementar los esquemas en `packages/shared/src/fees.ts` y exportarlos desde `index.ts`. Verificar con `pnpm --filter @recon/shared test` y `pnpm typecheck`.
+- [x] 1.4 Ampliar `toStoredFee` y `feeSelect` del repositorio de lectura con los campos nuevos de `AccountFee`: variantes, `status` (con reloj inyectado, D7), `inUse` y `lastAppliedEventDate` (D5), `createdBy`, `createdAt` y `updatedAt`. Ajustar `fee-read-service.test.ts`, `fee-routes.test.ts` y `test/integration/fees.int.test.ts`, añadiendo los escenarios "Campos ampliados" y "Fee del seed con settlements procesados". Verificar que siguen en verde. `statusOf` y `newYorkDay` se adelantan aquí, en `domain/fee-validity.ts` con su test; la 2.1 añade el resto.
+- [x] 1.5 Declarar en `http/fee-admin-routes.ts` las rutas `POST /accounts/:accountId/fees`, `PATCH /fees/:feeId`, `GET /fees` y `GET /fees/:feeId/history`, cada una con su esquema y su `preHandler` de permiso. Los handlers provisionales responden `501 not_implemented` (D11). Registrar las rutas en `fees-module.ts`. Verificar con un test de rutas que cubra `401`, `403` antes que el alcance y `400` de esquema.
+- [x] 1.6 Ejecutar `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`, y ampliar `app.test.ts` con las rutas nuevas y añadir los campos nuevos al fixture `preset` de `frontend/src/test/msw/settlements.ts` (contrato de la API falsa). Verificar con `pnpm openapi:check`, `pnpm lint` y `pnpm typecheck`.
+- [x] 1.7 Commit: feat(fees): contrato de la administración de fees y export de OpenAPI
 - [ ] 1.8 Hacer `git push` de `feat/admin-fees` y avisar a la persona de que el contrato está publicado, porque `web-admin-fees` parte de aquí. No seguir hasta su confirmación.
 
 ## 2. Dominio de vigencias, solapes y edición (TDD)

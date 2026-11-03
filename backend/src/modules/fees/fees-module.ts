@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 import { FeeReadService } from './application/fee-read-service.js'
+import { feeAdminRoutes } from './http/fee-admin-routes.js'
 import { feeRoutes } from './http/fee-routes.js'
 import { PrismaFeeRepository } from './infrastructure/prisma-fee-repository.js'
 
@@ -16,6 +17,7 @@ export const feesModule = fp(
   async (app: FastifyInstance, options: FeesModuleOptions) => {
     const service = options.service ?? new FeeReadService(new PrismaFeeRepository(app.prisma))
     await app.register(feeRoutes, { prefix: options.routePrefix, service })
+    await app.register(feeAdminRoutes, { prefix: options.routePrefix })
   },
   { name: 'fees-module', dependencies: ['prisma', 'auth'] },
 )

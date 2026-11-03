@@ -114,9 +114,19 @@ const preset = (feeId: string, feeTypeId: number, fixedAmount: string | null, pe
   isTransactional: false,
   fixedAmount,
   percentage,
+  conditionalPercentage: null,
+  conditionThresholdAmt: null,
+  brandFixedAmount: null,
+  brandPercentage: null,
   startDate: null,
   endDate: null,
   description: null,
+  status: 'active' as const,
+  inUse: true,
+  lastAppliedEventDate: '2026-10-15',
+  createdBy: { userId: 1, userName: 'admin' },
+  createdAt: '2026-10-01T12:00:00.000Z',
+  updatedAt: '2026-10-01T12:00:00.000Z',
 })
 
 /** The non-transactional fees of each account in the seed (ACCOUNT_FEES of synthetic.ts). */

@@ -275,7 +275,7 @@ Esto vale para `GET /accounts/{id}/fees`, para la vista global (calculado solo p
 
 #### Scenario: Campos ampliados
 - WHEN `analyst` pide los fees de ProviderA-USD
-- THEN cada fee trae `status`, `inUse`, `lastAppliedEventDate`, `createdBy.userName = "admin"`, y el `Chargeback over 1 %` trae `conditionalPercentage = "0.020000"`
+- THEN cada fee trae `status`, `inUse`, `lastAppliedEventDate`, `createdBy.userName = "admin"`, y el `Chargeback over 1%` trae `conditionalPercentage = "0.020000"`
 
 ## MODIFIED Requirements
 

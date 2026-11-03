@@ -57,6 +57,37 @@ describe('GET /accounts/{id}/fees against the seed', () => {
     expect(fees.find((f) => f.code === 'MDR')).toMatchObject({ percentage: '0.100000', fixedAmount: null })
   })
 
+  // admin-fees: spec fees "Campos ampliados de un fee de la cuenta", "Fee del seed con settlements procesados".
+  it('every fee carries status, usage and authorship; Chargeback over 1% its conditional percentage', async () => {
+    const fees = z.array(AccountFee).parse((await get(`/accounts/${accountIds['ProviderA-USD']}/fees`)).json())
+
+    for (const f of fees) {
+      expect(f.status).toBe('active')
+      expect(f.createdBy.userName).toBe('admin')
+    }
+    expect(fees.find((f) => f.code === 'Chargeback over 1%')).toMatchObject({ conditionalPercentage: '0.020000' })
+  })
+
+  it('a fee applied by seeded batches is in use, with its last applied event day', async () => {
+    const applied = await ctx.prisma.settlementTransactionFee.findFirst({
+      // The viewer sees merchant 1 only; a transactional fee is never a batch fee, so only breakdowns date it.
+      where: { eventDate: { not: null }, fee: { account: { provider: { merchantId: 1 } } } },
+      select: { feeId: true, fee: { select: { accountId: true } } },
+    })
+    expect(applied, 'the seed processes batches with transactional fees').not.toBeNull()
+    const latest = await ctx.prisma.settlementTransactionFee.aggregate({
+      where: { feeId: applied!.feeId },
+      _max: { eventDate: true },
+    })
+
+    const fees = z.array(AccountFee).parse((await get(`/accounts/${applied!.fee.accountId}/fees`)).json())
+
+    expect(fees.find((f) => f.feeId.toLowerCase() === applied!.feeId.toLowerCase())).toMatchObject({
+      inUse: true,
+      lastAppliedEventDate: latest._max.eventDate!.toISOString().slice(0, 10),
+    })
+  })
+
   it('ProviderC-Alt is outside the viewer scope: the same 404 as an unknown account', async () => {
     const outside = await get(`/accounts/${accountIds['ProviderC-Alt']}/fees`)
     const unknown = await get('/accounts/00000000-0000-4000-8000-00000000ffff/fees')

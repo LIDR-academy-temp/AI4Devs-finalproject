@@ -72,6 +72,43 @@ describe('FeeReadService.accountFees', () => {
     ])
   })
 
+  // admin-fees: spec fees "Campos ampliados de un fee de la cuenta", "Estado de un fee".
+  it('derives the status of each fee from today in New York', async () => {
+    const repo = new InMemoryFeeRepository()
+    repo.add('ProviderC-USD', { feeTypeId: 121, fixed: 30, endDate: '2026-11-02' })
+    repo.add('ProviderC-USD', { feeTypeId: 121, fixed: 35, startDate: '2026-11-04' })
+    repo.add('ProviderC-USD', { feeTypeId: 101, fixed: 500, endDate: '2026-11-03' })
+    const service = new FeeReadService(repo, () => '2026-11-03')
+
+    const fees = await service.accountFees(ALL, ACCOUNT_IDS['ProviderC-USD'], { transactional: false })
+
+    expect(fees.map((f) => [f.title, f.fixedAmount, f.status])).toEqual([
+      ['Annual Fee', '500.0000', 'active'],
+      ['Wire Fee', '30.0000', 'closed'],
+      ['Wire Fee', '35.0000', 'scheduled'],
+    ])
+  })
+
+  it('carries the variants, the usage and who created the fee', async () => {
+    const repo = new InMemoryFeeRepository()
+    repo.add('ProviderC-USD', { feeTypeId: 121, fixed: 30, lastAppliedEventDate: '2026-10-15' })
+    const service = new FeeReadService(repo, () => '2026-11-03')
+
+    const [chargebackOver1] = await service.accountFees(ALL, ACCOUNT_IDS['ProviderA-USD'], { transactional: false })
+    const [wire] = await service.accountFees(ALL, ACCOUNT_IDS['ProviderC-USD'], { transactional: false })
+
+    expect(chargebackOver1).toMatchObject({
+      conditionalPercentage: '0.020000',
+      conditionThresholdAmt: '0.0100',
+      brandFixedAmount: null,
+      inUse: false,
+      lastAppliedEventDate: null,
+      createdBy: { userName: 'admin' },
+    })
+    expect(wire).toMatchObject({ inUse: true, lastAppliedEventDate: '2026-10-15' })
+    expect(AccountFee.safeParse(wire).success).toBe(true)
+  })
+
   it('throws NotFoundError for an account outside the scope, as for an unknown one', async () => {
     const service = new FeeReadService(new InMemoryFeeRepository())
 
