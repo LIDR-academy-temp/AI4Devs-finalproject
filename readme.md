@@ -569,9 +569,11 @@ erDiagram
 
 ## 4. Especificación de la API
 
-Esta sección muestra los tres endpoints principales. El contrato completo, que incluye acceso, lista de estaciones y salud, se genera desde el código: está en [`frontend/openapi.json`](frontend/openapi.json) y en `/api/docs`. Una prueba falla si difiere de la API.
+Esta sección muestra el acceso, la lista de estaciones y los tres endpoints de lectura. El contrato completo, que suma la ruta de salud, se genera desde el código: está en [`frontend/openapi.json`](frontend/openapi.json) y en `/api/docs`. Una prueba falla si difiere de la API.
 
-Todas las rutas usan la sesión del usuario y comprueban que tenga acceso a la estación. Los valores de los ejemplos son ficticios.
+Salvo el inicio y el cierre de sesión, todas las rutas exigen la sesión del usuario, y las de una estación comprueban que tenga acceso a ella. Los valores de los ejemplos son ficticios.
+
+Es el contrato vigente de la Entrega 2. Los cambios aprobados [`weather-track-registro-cuentas`](openspec/changes/weather-track-registro-cuentas/proposal.md) y [`weather-track-estaciones`](openspec/changes/weather-track-estaciones/proposal.md) lo amplían con registro, recupero y estado de los equipos.
 
 ```yaml
 openapi: 3.0.3
@@ -584,6 +586,98 @@ servers:
 security:
   - sesion: []
 paths:
+  /auth/login:
+    post:
+      summary: Inicia la sesión con correo y contraseña
+      description: >-
+        Si las credenciales son válidas, crea la sesión y la devuelve en la
+        cookie wt_sesion (HttpOnly, SameSite=Lax, Secure en el servidor), que
+        vence a las 8 horas. Un correo inexistente, una contraseña incorrecta y
+        una cuenta desactivada reciben la misma respuesta.
+      operationId: iniciarSesion
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudInicio'
+            example:
+              email: persona@ejemplo.com
+              contrasena: una-clave-de-ejemplo
+      responses:
+        '200':
+          description: Sesión iniciada
+          headers:
+            Set-Cookie:
+              description: Identificador de sesión en la cookie wt_sesion
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioPublico'
+              example:
+                email: persona@ejemplo.com
+                nombre: Persona de Ejemplo
+        '401':
+          description: Correo o contraseña incorrectos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                codigo: CREDENCIALES_INVALIDAS
+                mensaje: Correo o contraseña incorrectos.
+        '422':
+          $ref: '#/components/responses/SolicitudInvalida'
+        '429':
+          description: >-
+            Cinco intentos fallidos para el mismo correo en 15 minutos. No se
+            evalúa la contraseña.
+          headers:
+            Retry-After:
+              description: Segundos que faltan para volver a intentar
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                codigo: DEMASIADOS_INTENTOS
+                mensaje: Demasiados intentos. Vuelva a probar más tarde.
+  /auth/logout:
+    post:
+      summary: Cierra la sesión
+      description: >-
+        Invalida la sesión en el servidor y borra la cookie. Responde igual
+        aunque no haya sesión.
+      operationId: cerrarSesion
+      security: []
+      responses:
+        '204':
+          description: Sesión cerrada
+  /estaciones:
+    get:
+      summary: Lista las estaciones a las que accede el usuario
+      operationId: listarEstaciones
+      responses:
+        '200':
+          description: Estaciones activas del usuario, ordenadas por nombre
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EstacionResumen'
+              example:
+                - id: 1
+                  nombre: Estación de ejemplo
+                  latitud: '-34.000000'
+                  longitud: '-60.000000'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
   /estaciones/{estacionId}/condiciones-actuales:
     get:
       summary: Obtiene la última lectura de cada sensor y su vigencia
@@ -747,7 +841,54 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    SolicitudInvalida:
+      description: El cuerpo o los parámetros no cumplen el contrato
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            codigo: SOLICITUD_INVALIDA
+            mensaje: La solicitud no es válida.
   schemas:
+    SolicitudInicio:
+      type: object
+      required: [email, contrasena]
+      properties:
+        email:
+          type: string
+          minLength: 1
+          maxLength: 254
+          description: Se compara sin distinguir mayúsculas. No admite caracteres de control.
+        contrasena:
+          type: string
+          minLength: 1
+          maxLength: 1024
+    UsuarioPublico:
+      type: object
+      required: [email, nombre]
+      properties:
+        email:
+          type: string
+        nombre:
+          type: string
+    EstacionResumen:
+      type: object
+      required: [id, nombre, latitud, longitud]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        latitud:
+          type: string
+          format: decimal
+          description: Grados decimales, como texto para no perder precisión
+        longitud:
+          type: string
+          format: decimal
+          description: Grados decimales, como texto para no perder precisión
     Calidad:
       type: string
       enum: [OK, FALTANTE, SOSPECHOSO]
@@ -914,8 +1055,6 @@ components:
           type: string
 ```
 
-Otros endpoints del MVP, sin detalle aquí: `POST /auth/login`, `POST /auth/logout` y `GET /estaciones`, que lista las estaciones del usuario.
-
 ---
 
 ## 5. Historias de Usuario
@@ -1030,31 +1169,28 @@ Escenario: Huecos en la serie
 - Insertar una observación con `valor` nulo y `calidad = OK` falla.
 - Las semillas se pueden ejecutar dos veces sin duplicar datos.
 
-**Ticket 2: WT-BE-01. Implementar el motor de recomendación y su endpoint**
+**Ticket 2: WT-BE-01. Implementar el motor de recomendación**
 
 | Campo | Detalle |
 |---|---|
 | Tipo | Backend |
-| Prioridad y estimación | Alta, 2 días |
+| Prioridad y estimación | Alta, 1 día |
 | Historias | HU1 y HU2 |
-| Dependencias | WT-DB-01 |
+| Dependencias | Ninguna: es una función pura, sin red ni base de datos |
 
-*Objetivo.* Calcular la recomendación según la sección 1.2 y exponerla en `GET /estaciones/{estacionId}/recomendacion`.
+*Objetivo.* Calcular la recomendación según la sección 1.2, como una función del dominio que se cierra sola con sus tests.
 
 *Tareas:*
-1. Implementar en `dominio` una función pura que reciba las seis lecturas y su calidad, y devuelva índice, estado, ΔT y motivos.
-2. Aplicar R1, R3, R3b y R4 en el cálculo; versionarlo como `TIS-1.1`.
-3. Invocar el motor desde el worker después de guardar las observaciones, y persistir el resultado en `RECOMENDACION`.
-4. Implementar el endpoint con la autorización por estación y el esquema de la sección 4.
-5. Aplicar R2 al responder: con más de 30 minutos, devolver `DATOS_INSUFICIENTES`, sin índice, y motivo `DATOS_DESACTUALIZADOS`.
-6. Si la estación aún no tiene recomendaciones, devolver `DATOS_INSUFICIENTES` con motivo `SIN_MEDICIONES`.
+1. Escribir primero los tests parametrizados con los casos de referencia de la sección 2.6, cuidando los límites "menor o igual" y "mayor que".
+2. Implementar en `dominio` una función pura que reciba las seis lecturas y su calidad, y devuelva índice, estado, ΔT y motivos.
+3. Aplicar R1, R3, R3b y R4 en el cálculo; versionarlo como `TIS-1.1`.
 
 *Criterios de aceptación:*
-- Los ocho casos de la tabla de la sección 2.6 pasan como tests unitarios o de integración.
-- Ningún test llega a la red: SAT2 se simula.
-- El endpoint devuelve 401 sin sesión, 403 sin acceso y 404 si la estación no existe.
-- La respuesta valida contra el esquema OpenAPI y siempre incluye `aviso`.
+- Los casos de la tabla de la sección 2.6 que no dependen de la hora pasan como tests unitarios. El caso de R2 se verifica en WT-BE-02, porque se aplica al leer.
+- El módulo no importa nada de `api`, `ingesta` ni `datos`, y una prueba de arquitectura lo verifica.
 - La cobertura de pruebas del motor es de al menos 90 %.
+
+El cálculo desde el worker, después de guardar las observaciones, es parte de WT-BE-03. El endpoint `GET /estaciones/{estacionId}/recomendacion` es parte de WT-BE-02, después de la autenticación (WT-BE-04). Así lo recomendó la revisión de la Entrega 1, y así se implementó.
 
 **Ticket 3: WT-FE-01. Construir la pantalla de decisión**
 
@@ -1063,7 +1199,7 @@ Escenario: Huecos en la serie
 | Tipo | Frontend |
 | Prioridad y estimación | Alta, 2 días |
 | Historias | HU1 y HU2 |
-| Dependencias | WT-BE-01 y el endpoint de condiciones actuales |
+| Dependencias | WT-FE-02 (base y acceso) y el contrato de WT-BE-02 (recomendación y condiciones actuales) |
 
 *Objetivo.* Mostrar en una sola pantalla adaptable el estado de aplicación, sus motivos y las condiciones actuales.
 
@@ -1091,18 +1227,22 @@ Escenario: Huecos en la serie
 | HU2 | F3, F4, F6 | `recomendacion`, `condiciones-actuales` | `OBSERVACION`, `RECOMENDACION`, `EJECUCION_INGESTA` | WT-DB-01, WT-BE-01 a WT-BE-03, WT-FE-01 |
 | HU3 | F5 | `historico` | `SENSOR`, `OBSERVACION` | WT-DB-01, WT-BE-02 a WT-BE-04, WT-FE-02 |
 
-**Estado de los tickets**
+**Orden, dependencias y estado de los tickets**
 
-| Ticket | Descripción | Estado |
-|---|---|---|
-| WT-DB-01 | Esquema inicial de la base de datos | Hecho |
-| WT-BE-01 | Motor y endpoint de recomendación | Hecho |
-| WT-FE-01 | Pantalla de decisión | Hecho |
-| WT-BE-02 | Endpoints de condiciones actuales e históricos | Hecho |
-| WT-BE-03 | Worker de ingesta, normalización, reglas de calidad y modo simulado | Hecho |
-| WT-BE-04 | Autenticación, sesiones y autorización por estación | Hecho |
-| WT-FE-02 | Pantallas de acceso, detalle de sensor e históricos | Hecho |
-| WT-OPS-01 | Docker Compose, integración continua, despliegue y escaneo de secretos | Parcial: Docker Compose, configuración de producción e instalación local hechos, y escaneo manual del historial. La integración continua y el despliegue público quedan pendientes |
+Cada ticket se cierra solo: depende únicamente de tickets anteriores de la tabla. Las estimaciones son el tiempo esperado PERT, en días ideales, del [plan de implementación](docs/plan/plan-implementacion-entrega-2.md#5-actividades-y-estimaciones).
+
+| Orden | Ticket | Descripción | Depende de | Estimación | Estado |
+|---|---|---|---|---|---|
+| 1 | WT-DB-01 | Esquema inicial de la base de datos | Ninguno | 1,00 | Hecho |
+| 2 | WT-BE-01 | Motor de recomendación, función pura | Ninguno | 1,00 | Hecho |
+| 3 | WT-BE-03 | Worker de ingesta contra SAT2: carga inicial de 31 días, ciclo de 10 minutos, normalización, reglas de calidad, cálculo de la recomendación y modo simulado | WT-DB-01, WT-BE-01 | 2,58 | Hecho |
+| 4 | WT-BE-04 | Autenticación, sesiones y autorización por estación | WT-DB-01 | 1,08 | Hecho |
+| 5 | WT-BE-02 | Endpoints de lectura: recomendación (con R2 al responder), condiciones actuales e históricos | WT-BE-01, WT-BE-04 | 1,04 | Hecho |
+| 6 | WT-FE-02 | Base del frontend, acceso, detalle de sensor e históricos | Contratos de WT-BE-04 y WT-BE-02 | 1,38 | Hecho |
+| 7 | WT-FE-01 | Pantalla de decisión | WT-FE-02 y contrato de WT-BE-02 | 1,58 | Hecho |
+| 8 | WT-OPS-01 | Docker Compose, integración continua, despliegue y escaneo de secretos | Todos los anteriores | 1,17 | Parcial: Docker Compose, configuración de producción e instalación local hechos, y escaneo manual del historial. La integración continua y el despliegue público quedan pendientes |
+
+El worker contra SAT2 (WT-BE-03) era la parte con más incertidumbre. Se redujo midiendo antes los límites de la API real, en la actividad A02 del plan, y es el ticket con la estimación más alta.
 
 ---
 
