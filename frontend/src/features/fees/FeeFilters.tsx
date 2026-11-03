@@ -67,6 +67,13 @@ export function FeeFilters({
 }) {
   const ids = { merchant: useId(), provider: useId(), account: useId(), kind: useId(), status: useId(), q: useId() }
   const [text, setText] = useState(search.q ?? '')
+  // Back, Forward or a link change q in the address: the field follows it, unless it already says the same (the
+  // address only caught up with what was typed). The debounced text then catches up too, so nothing is written back.
+  const [shownQ, setShownQ] = useState(search.q)
+  if (search.q !== shownQ) {
+    setShownQ(search.q)
+    if ((search.q ?? '') !== text.trim()) setText(search.q ?? '')
+  }
   const typed = useDebouncedValue(text.trim(), SEARCH_DEBOUNCE_MS)
   const writeQ = useEffectEvent((q: string) => {
     if (q !== (search.q ?? '')) onChange({ q: q || undefined })
