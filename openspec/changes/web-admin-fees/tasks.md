@@ -66,9 +66,10 @@ Rama `feat/web-admin-fees`, rebasada sobre `origin/feat/admin-fees`. El PR va ha
 
 Requiere que `admin-fees` haya terminado sus grupos 4 y 5 (rutas sin `501`).
 
-- [ ] 10.1 `git fetch` y rebasar sobre `origin/feat/admin-fees`; `pnpm typecheck` y `pnpm test` en verde. Si cambió algún esquema, ajustar el front y el fake en el mismo commit.
-- [ ] 10.2 Con la base local, ejecutado por la persona con `! pnpm db:seed` dentro de la sesión, y `pnpm dev` levantado: escribir `e2e/screenshots/web-admin-fees.ts` (design D11) y generar las capturas en `docs/wireframes/web-admin-fees/`. Verificar abriéndolas: vista global a 1280 y 1024, cuenta como `admin` y como `analyst`, `409 fee_overlap`, **Close…** con el mínimo e historial.
-- [ ] 10.3 Commit: docs(web): capturas de las pantallas de fees
+- [x] 10.1 `git fetch` y rebasar sobre `origin/feat/admin-fees`; `pnpm typecheck` y `pnpm test` en verde. Si cambió algún esquema, ajustar el front y el fake en el mismo commit.
+- [x] 10.2 Con la base local, ejecutado por la persona con `! pnpm db:seed` dentro de la sesión, y `pnpm dev` levantado: escribir `e2e/screenshots/web-admin-fees.ts` (design D11) y generar las capturas en `docs/wireframes/web-admin-fees/`. Verificar abriéndolas: vista global a 1280 y 1024, cuenta como `admin` y como `analyst`, `409 fee_overlap`, **Close…** con el mínimo e historial.
+- [x] 10.3 Commit: docs(web): capturas de las pantallas de fees
+- [x] 10.4 Lo que encontraron las medidas a 1024 px, arreglado antes de versionar: las celdas de shadcn no parten el texto, así que las dos tablas se salían de su tarjeta. En la de la cuenta parten el tipo y las acciones; en la vista global el merchant y el proveedor pasan bajo la cuenta (decidido con la persona) y solo se parte el tipo. El seed no deja ningún fee en uso (su historial no referencia fees), por eso el script procesa `batch-clean` primero.
 
 ## Workflow follow-up
 
