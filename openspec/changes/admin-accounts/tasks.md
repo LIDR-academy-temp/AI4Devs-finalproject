@@ -4,11 +4,11 @@ Rama `feat/admin-accounts`. Las decisiones D1–D10 están en `design.md`; los e
 
 ## 1. Contrato en `@recon/shared` y export de OpenAPI
 
-- [ ] 1.1 Escribir en `packages/shared/src/catalog.test.ts` los esquemas de D2 y comprobar que falla porque los exports no existen. Debe cubrir:
+- [x] 1.1 Escribir en `packages/shared/src/catalog.test.ts` los esquemas de D2 y comprobar que falla porque los exports no existen. Debe cubrir:
   - `AccountCreate`: nombre con espacios de borde recortado; vacío tras recortar o de 51 caracteres, rechazado; política desconocida, rechazada; tope como string, `null` u omitido; tope numérico (`25000`), rechazado; campo desconocido (`color`), rechazado.
   - `AccountPatch`: cualquier subconjunto; `{}` y `{ reason }` solos, rechazados; `providerId` y `copyFeesFromAccountId`, rechazados; `reason` recortado, 1–500.
   - `AccountDetail` con `createdBy` y `updatedAt`; `assignedInBatchNo` entero o `null` en `AccountChannelItem` y `ChannelAccountItem`; `ChannelListItem` con `primaryAccount` `AccountRef` o `null`; `MatchingRuleSetSummary`.
-- [ ] 1.2 Commit: test(shared): contrato de la administración de cuentas
+- [x] 1.2 Commit: test(shared): contrato de la administración de cuentas
 - [ ] 1.3 Implementar los esquemas en `packages/shared/src/catalog.ts` (y `MatchingRuleSetSummary` donde vivan los tipos de pareo) y exportarlos desde `index.ts`. Verificar con `pnpm --filter @recon/shared test` y `pnpm typecheck`.
 - [ ] 1.4 Ampliar las lecturas ya existentes para que cumplan el contrato nuevo (D8): `createdBy` y `updatedAt` en `findAccount`; `assignedInBatchNo` en `listAccountChannels` y `listChannelAccounts`; `primaryAccount` en `listChannels` (oculto fuera del alcance); el doble en memoria `catalog/application/__fakes__/in-memory.ts` igual. Cambiar la respuesta de `GET /channels` a `z.array(ChannelListItem)`. Verificar con `catalog-service.test.ts`, `catalog-routes.test.ts` y `test/integration/catalog.int.test.ts`, añadiendo los escenarios MODIFIED de la delta de `accounts` ("Quién creó la cuenta", "Cuenta principal de cada canal", "Principal de otro merchant oculta", "Asociación sin batch", "Número de batch de la asociación").
 - [ ] 1.5 Crear el módulo `backend/src/modules/accounts` (D1) con `accounts-module.ts` y `http/account-admin-routes.ts` declarando `POST /providers/:providerId/accounts` y `PATCH /accounts/:accountId` (D10), y el módulo `matching-module.ts` con `GET /providers/:providerId/matching-rule-sets` (D8). Registrar los dos en `app.ts`. Los handlers provisionales responden `501 not_implemented`. Verificar con un test de rutas que cubra `401`, `403` de `analyst` antes que el alcance y `400` de esquema (`providerId` en el `PATCH`, nombre vacío).
