@@ -58,9 +58,9 @@ Rama `feat/web-admin-fees`, rebasada sobre `origin/feat/admin-fees`. El PR va ha
 
 ## 9. Documentación y revisión
 
-- [ ] 9.1 Actualizar README §1.3 (filas **Fees**: filtros con estado activo por defecto, paginación en servidor y merchant / proveedor como columnas; **Account Fees / Fee History**: se llega también desde Accounts, sin retirada ni simulate) y `docs/wireframes/README.md` con la carpeta `web-admin-fees/`. Verificar releyendo que README y delta specs dicen lo mismo.
-- [ ] 9.2 Pasar la skill `review-diff` sobre el diff de la rama y resolver lo que encuentre. Verificar con `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 9.3 Commit: docs(web): pantallas de fees en el mapa de pantallas
+- [x] 9.1 Actualizar README §1.3 (filas **Fees**: filtros con estado activo por defecto, paginación en servidor y merchant / proveedor como columnas; **Account Fees / Fee History**: se llega también desde Accounts, sin retirada ni simulate) y `docs/wireframes/README.md` con la carpeta `web-admin-fees/`. Verificar releyendo que README y delta specs dicen lo mismo.
+- [x] 9.2 Pasar la skill `review-diff` sobre el diff de la rama y resolver lo que encuentre. Verificar con `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
+- [x] 9.3 Commit: docs(web): pantallas de fees en el mapa de pantallas
 
 ## 10. Capturas contra el backend real
 
