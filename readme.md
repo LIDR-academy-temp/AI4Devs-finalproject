@@ -966,13 +966,35 @@ Los escalones 1 a 3 son la novedad: **la extraprima se negocia normalmente con e
 
 ## 4. Especificación de la API
 
-Los tres endpoints principales de registro y consulta de campañas:
+AdOps360 expone **24 operaciones**. Todas, salvo `GET /api/health`, exigen un token de Cognito y un rol (`operations`, `business` o `finance`). Los importes viajan como **cadenas decimales**, nunca como números de coma flotante.
+
+| Método y ruta | Rol | Para qué | Respuestas |
+|---|---|---|---|
+| `GET /api/health` | ninguno | Salud del servicio | 200 |
+| `GET /api/masters/*` (8 catálogos) | `operations`; dos de ellos también `business` | Desplegables: agencias, anunciantes, tipos de campaña, sectores, comerciales, DSP, canales y formatos | 200 |
+| `POST /api/campaigns` · [§4.1](#41-post-apicampaigns--registrar-campaña) | `operations` | Registrar una campaña con sus líneas y flights | 201, 409, 422 |
+| `GET /api/campaigns` · [§4.2](#42-get-apicampaigns--listar-campañas) | `operations`, `business` | Listar campañas | 200 |
+| `POST /api/flights/preview` · §4.4 | `operations` | Calcular el reparto mensual antes de registrar | 200, 422 |
+| `GET /api/campaign-status` · §4.5 | `operations`, `business` | Estado diario de entrega por flight | 200 |
+| `GET /api/ingestion-exceptions` · §4.6 | `operations` | Cola de excepciones de la ingesta | 200, 422 |
+| `POST /api/ingestion-exceptions/{id}/resolve` · §4.6 | `operations` | Resolver una excepción con una nota | 200, 422 |
+| `POST /api/ingestion-exceptions/{id}/link` · §4.6 | `operations` | Vincular una excepción a una línea | 200, 422 |
+| `GET /api/dsp-catalog` · §4.7 | `operations` | Catálogo de líneas que Adform ha entregado | 200, 422 |
+| `GET /api/campaign-lines/unmapped` · §4.7 | `operations` | Líneas de AdOps360 sin mapeo | 200 |
+| `POST` y `DELETE /api/campaign-lines/{id}/dsp-mappings` · §4.7 | `operations` | Crear o quitar el mapeo de una línea | 201 / 200, 422 |
+| `GET /api/margin` · §4.8 | `finance` | Margen por campaña, línea y flight | 200, 422 |
+| `POST /api/margin/closings` · §4.8 | `finance` | Cerrar un mes | 200, 409, 422 |
+| `POST /api/margin/rebate-schedules` · §4.9 | `finance` | Crear una escala de extraprima | 201, 409, 422 |
+| `POST /api/margin/platform-rates` · §4.9 | `finance` | Fijar una tarifa de plataforma | 201, 422 |
+
+Los ejemplos de §4.4 a §4.8 salen de la **base de demostración** (`seed_margin_demo`, `seed_exceptions_demo`): son datos sintéticos, sin ninguna campaña ni importe real.
+
 
 ### **4.1. POST /api/campaigns — Registrar campaña**
 
 **Rol requerido:** `operations`
 
-**Descripción:** Registra una nueva campaña desde una orden de compra. Valida todas las referencias a maestros (agencia, anunciante, DSP, etc.), expande automáticamente los períodos mensuales y crea las líneas de campaña.
+**Descripción:** Registra una campaña con sus líneas desde una orden de compra. Valida las referencias a maestros, crea los **periodos mensuales** (calendario) y reparte el volumen de cada línea en **flights**, uno por mes natural que toca, en proporción a los días o con los volúmenes que fije el usuario. Cada línea puede tener **fechas propias** dentro de las de la campaña.
 
 **Petición:**
 
@@ -981,17 +1003,17 @@ curl -X POST http://localhost/api/campaigns \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "ACME_may26_adform",
-    "display_name": "ACME Mayo 2026 Adform",
+    "name": "ACME_nov26_adform",
+    "display_name": "ACME Noviembre 2026 Adform",
     "agency_id": 1,
     "advertiser_id": 2,
     "campaign_type_id": 1,
     "sector_id": 3,
     "sales_rep_id": 1,
-    "start_date": "2026-05-01",
-    "end_date": "2026-05-31",
+    "start_date": "2026-11-01",
+    "end_date": "2026-12-31",
     "order_reference": "PO-2026-001",
-    "order_received_on": "2026-04-28",
+    "order_received_on": "2026-10-28",
     "lines": [
       {
         "dsp_id": 1,
@@ -999,64 +1021,66 @@ curl -X POST http://localhost/api/campaigns \
         "format_id": 1,
         "scope": "national",
         "market_description": "Nacional (Madrid)",
-        "contracted_impressions": 500000,
+        "contracted_impressions": 6100000,
         "sale_cpm": "5.50"
       }
     ]
   }'
 ```
 
+Cada línea admite además `start_date` y `end_date` (por defecto, las de la campaña) y `monthly_volumes`, que fija el volumen de cada mes en lugar del reparto proporcional y debe sumar `contracted_impressions`.
+
 **Respuesta exitosa (201 Created):**
 
 ```json
 {
   "id": 42,
-  "name": "ACME_may26_adform",
-  "display_name": "ACME Mayo 2026 Adform",
+  "name": "ACME_nov26_adform",
+  "display_name": "ACME Noviembre 2026 Adform",
   "agency_id": 1,
   "advertiser_id": 2,
   "campaign_type_id": 1,
   "sector_id": 3,
   "sales_rep_id": 1,
   "purchase_order_id": 15,
-  "start_date": "2026-05-01",
-  "end_date": "2026-05-31",
+  "start_date": "2026-11-01",
+  "end_date": "2026-12-31",
   "status": "active",
   "periods": [
-    {
-      "id": 127,
-      "campaign_id": 42,
-      "period_year": 2026,
-      "period_month": 5,
-      "period_start": "2026-05-01",
-      "period_end": "2026-05-31",
-      "status": "open"
-    }
+    { "id": 127, "campaign_id": 42, "period_year": 2026, "period_month": 11, "period_start": "2026-11-01", "period_end": "2026-11-30", "status": "open" },
+    { "id": 128, "campaign_id": 42, "period_year": 2026, "period_month": 12, "period_start": "2026-12-01", "period_end": "2026-12-31", "status": "open" }
   ],
   "lines": [
     {
       "id": 301,
-      "campaign_period_id": 127,
+      "line_number": 1,
+      "start_date": "2026-11-01",
+      "end_date": "2026-12-31",
       "dsp_id": 1,
       "channel_id": 1,
       "format_id": 1,
       "scope": "national",
       "market_description": "Nacional (Madrid)",
-      "contracted_impressions": 500000,
+      "contracted_impressions": 6100000,
       "sale_cpm": "5.50",
-      "currency": "EUR"
+      "currency": "EUR",
+      "flights": [
+        { "campaign_period_id": 127, "period_year": 2026, "period_month": 11, "flight_start": "2026-11-01", "flight_end": "2026-11-30", "contracted_impressions": 3000000 },
+        { "campaign_period_id": 128, "period_year": 2026, "period_month": 12, "flight_start": "2026-12-01", "flight_end": "2026-12-31", "contracted_impressions": 3100000 }
+      ]
     }
   ]
 }
 ```
 
+**Reglas del precio y del volumen:** `contracted_impressions` debe ser **mayor que 0**; `sale_cpm` puede ser **0,00** (excepción de precio: el margen la marca «Sin venta») pero **nunca negativo**.
+
 **Errores:**
 
-- **401 Unauthenticated:** Token ausente, inválido, expirado o con signature incorrecta.
-- **403 Forbidden:** Token válido pero usuario sin rol `operations`. Código: `{"code": "missing_role", "message": "User lacks the required role"}`.
-- **409 Conflict:** Orden de compra duplicada. Código: `{"code": "duplicate_order_reference", "message": "A purchase order with this reference already exists"}`.
-- **409 Conflict:** Nombre de campaña duplicado. `{"code": "duplicate_campaign_name", "message": "A campaign with this name already exists"}`.
-- **422 Validation Error:** Campo requerido ausente o malformado. Ejemplo con `lines: []`: `{"detail": [{"type": "too_short", "loc": ["body", "lines"], "msg": "List should have at least 1 item after validation, not 0", "input": [], "ctx": {"field_type": "List", "min_length": 1, "actual_length": 0}}]}`.
+- **401 Unauthenticated:** Token ausente, inválido o expirado.
+- **403 Forbidden:** Usuario sin rol `operations`. `{"code": "missing_role", "message": "User lacks the required role"}`.
+- **409 Conflict:** Orden de compra duplicada (`duplicate_order_reference`) o nombre de campaña duplicado (`duplicate_campaign_name`).
+- **422 Validation Error:** Campo ausente o malformado, CPM negativo, volumen 0, fechas de línea fuera de las de la campaña o un reparto manual que no suma el total. Ejemplo con `lines: []`: `{"detail": [{"type": "too_short", "loc": ["body", "lines"], "msg": "List should have at least 1 item after validation, not 0", "input": [], "ctx": {"field_type": "List", "min_length": 1, "actual_length": 0}}]}`.
 
 ---
 
@@ -1110,7 +1134,7 @@ curl -X GET http://localhost/api/campaigns \
 
 ### **4.3. GET /api/masters/agencies — Obtener lista de agencias**
 
-**Rol requerido:** Cualquier usuario autenticado
+**Rol requerido:** `operations` (y también `business` en dos de los ocho catálogos `masters`)
 
 **Descripción:** Obtiene el catálogo de agencias para usar en selectores de formulario. Solo devuelve agencias activas.
 
@@ -1151,15 +1175,241 @@ curl -X GET http://localhost/api/masters/agencies \
 
 ---
 
+### **4.4. POST /api/flights/preview — Calcular el reparto mensual**
+
+**Rol requerido:** `operations`
+
+**Descripción:** Calcula, **sin guardar nada**, cómo se repartiría el volumen de una línea entre los meses naturales que toca. Es lo que alimenta el botón «Calcular reparto» del formulario. Si no se indican `start_date` y `end_date`, se usan las de la campaña.
+
+```bash
+curl -X POST http://localhost/api/flights/preview \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{ "campaign_start_date": "2026-11-01", "campaign_end_date": "2026-12-31", "contracted_impressions": 6100000 }'
+```
+
+```json
+{
+  "start_date": "2026-11-01",
+  "end_date": "2026-12-31",
+  "flights": [
+    { "period_year": 2026, "period_month": 11, "flight_start": "2026-11-01", "flight_end": "2026-11-30", "contracted_impressions": 3000000 },
+    { "period_year": 2026, "period_month": 12, "flight_start": "2026-12-01", "flight_end": "2026-12-31", "contracted_impressions": 3100000 }
+  ]
+}
+```
+
+**Errores:** 422 con `volume_too_small_for_flights` si el volumen no alcanza para dar al menos una impresión a cada mes.
+
+---
+
+### **4.5. GET /api/campaign-status — Estado diario de entrega**
+
+**Rol requerido:** `operations` o `business`
+
+**Descripción:** Una fila por **flight en curso**, con lo contratado, lo entregado y el ritmo. Se alimenta de la ingesta nocturna de Adform y no muestra ningún coste. Dos avisos independientes: `pacing_flag` (el ritmo se desvía de lo esperado) y `missing_data_flag` (no hay entrega donde debería haberla).
+
+```json
+[
+  {
+    "campaign": { "id": 5, "name": "DEMO-EXC-CAMPANA" },
+    "agency": { "id": 2, "name": "DEMO Agency" },
+    "line_number": 1,
+    "flight": { "campaign_period_id": 9, "year": 2026, "month": 11, "start": "2026-11-01", "end": "2026-11-20" },
+    "contracted_impressions": 487805,
+    "delivered_impressions": 0,
+    "delivery_ratio": 0.0,
+    "pacing": { "expected_impressions": 48780.5, "deviation": -1.0, "days_remaining": 18, "status": "under_delivering" },
+    "pacing_flag": true,
+    "missing_data_flag": true
+  }
+]
+```
+
+---
+
+### **4.6. Cola de excepciones de la ingesta**
+
+**Rol requerido:** `operations`
+
+**`GET /api/ingestion-exceptions?status=open|resolved`** lista las excepciones. Hay dos tipos: `unmatched_delivery` (Adform entrega una línea que AdOps360 no conoce) y `missing_delivery` (una línea mapeada no recibe entrega en un periodo terminado).
+
+```json
+[
+  {
+    "id": 5,
+    "exception_type": "missing_delivery",
+    "status": "open",
+    "ingestion_batch_id": 2,
+    "dsp_id": null,
+    "external_campaign_id": null,
+    "external_line_item_id": null,
+    "campaign_line_id": 6,
+    "campaign_period_id": 10,
+    "first_date": null,
+    "last_date": null,
+    "days": 0,
+    "impressions_total": 0,
+    "clicks_total": 0,
+    "resolved_at": null,
+    "resolved_by": null,
+    "note": null,
+    "campaign_name": null,
+    "line_item_name": null
+  }
+]
+```
+
+**`POST /api/ingestion-exceptions/{id}/resolve`** la cierra con una nota opcional (`{"note": "..."}`) y devuelve la excepción resuelta, con quién y cuándo. **`POST /api/ingestion-exceptions/{id}/link`** con `{"campaign_line_id": 6}` la vincula a una línea de AdOps360: crea el mapeo, resuelve la excepción y devuelve `{"mapping": {...}, "exception": {...}, "needs_history_load": true|false}`. `needs_history_load` avisa de que la línea empezó antes de la ventana que descarga la ingesta (siete días), así que hay un histórico que no se ha cargado.
+
+**Errores:** 401, 403 y los errores de negocio con su código (por ejemplo, una excepción que ya estaba resuelta), que la pantalla muestra en español.
+
+---
+
+### **4.7. Catálogo de Adform y mapeos de línea**
+
+**Rol requerido:** `operations`
+
+**`GET /api/dsp-catalog`** pagina las líneas que Adform ha entregado. Parámetros: `dsp_id`, `q` (busca en los **nombres** de campaña y de línea, no en los identificadores), `mapped` (`true` o `false`), `active_since`, `limit` (por defecto 50, máximo 200) y `offset`.
+
+```json
+{
+  "items": [
+    {
+      "dsp_id": 4,
+      "external_campaign_id": "991000001",
+      "external_line_item_id": "992000001",
+      "campaign_name": "DEMO Catálogo Campaña 1",
+      "line_item_name": "DEMO Catálogo Línea 1",
+      "line_start_date": null,
+      "line_end_date": null,
+      "first_seen_date": "2026-10-26",
+      "last_seen_date": "2026-10-30",
+      "last_impressions_date": "2026-10-30",
+      "mapped_line_id": null
+    }
+  ],
+  "total": 5,
+  "limit": 1,
+  "offset": 0
+}
+```
+
+**`GET /api/campaign-lines/unmapped`** devuelve las líneas de AdOps360 sin mapeo:
+
+```json
+[ { "id": 1, "campaign_name": "DEMO-MARGEN-CERRADO", "line_number": 1, "start_date": "2026-09-01", "end_date": "2026-09-30", "dsp_id": 4, "dsp_name": "DEMO DSP" } ]
+```
+
+**`POST /api/campaign-lines/{id}/dsp-mappings`** (201) enlaza la línea con una pareja externa, `{"external_campaign_id": "...", "external_line_item_id": "..."}`, tras validarla contra Adform; devuelve el mapeo, el resultado de la validación y `needs_history_load`. **`DELETE`** sobre la misma ruta (200) quita el mapeo y devuelve `{"campaign_line_id": 1, "removed_delivery_days": 7}`, los días de entrega que se retiran con él.
+
+---
+
+### **4.8. Margen y cierre de mes**
+
+**Rol requerido:** `finance`
+
+**`GET /api/margin?year=2026&month=11&campaign_id=5`** (los tres parámetros son opcionales). Devuelve el margen por campaña, línea y flight, con totales en cada nivel que son la **suma exacta** del nivel inferior. Cada flight lleva su `state`: `running` (en curso: el ingreso y el rebate se devengan por los días transcurridos hasta `as_of`, que es el día anterior), `pending_close` (terminado y sin cerrar) o `closed` (con las tasas **congeladas**). `provisional` es verdadero mientras el flight no está cerrado. `contracted_revenue` es la venta de la orden de compra completa; `revenue`, la devengada. `below_cost` marca un margen final negativo, `zero_sale` un CPM de venta 0, y `margin_pct` es `null` cuando no hay ingreso.
+
+```json
+{
+  "as_of": "2026-11-02",
+  "campaigns": [
+    {
+      "campaign_id": 5,
+      "name": "DEMO-EXC-CAMPANA",
+      "status": "active",
+      "zero_sale": false,
+      "lines": [
+        {
+          "campaign_line_id": 5,
+          "line_number": 1,
+          "channel": "DEMO Channel",
+          "scope": "national",
+          "zero_sale": false,
+          "flights": [
+            {
+              "flight_id": 9,
+              "period_year": 2026,
+              "period_month": 11,
+              "flight_start": "2026-11-01",
+              "flight_end": "2026-11-20",
+              "state": "running",
+              "provisional": true,
+              "below_cost": false,
+              "zero_sale": false,
+              "revenue": "243.90",
+              "contracted_revenue": "2439.03",
+              "accrued_days": 2,
+              "window_days": 20,
+              "delivered_impressions": 0,
+              "contracted_impressions": 487805,
+              "media_cost": "0.00",
+              "rebate": "24.39",
+              "platform_cost": "0.00",
+              "margin": "219.51",
+              "margin_pct": "90.00",
+              "rates": {
+                "platform_rate": "1.000000",
+                "effective_rebate_rate": "0.1000000000000000000000",
+                "rebate_step": 6,
+                "agency_exception": false,
+                "zero_reason": null,
+                "source_year": 2026
+              }
+            }
+          ],
+          "totals": { "revenue": "243.90", "contracted_revenue": "2439.03", "delivered_impressions": 0, "contracted_impressions": 487805, "media_cost": "0.00", "rebate": "24.39", "platform_cost": "0.00", "margin": "219.51", "provisional": true, "flights_counted": 1, "below_cost_count": 0, "zero_sale_count": 0, "margin_pct": "90.00" }
+        }
+      ],
+      "totals": { … }
+    }
+  ],
+  "totals": { … }
+}
+```
+
+**`POST /api/margin/closings`** con `{"year": 2026, "month": 10}` cierra un mes: congela, para cada flight terminado, la tasa de extraprima y la de plataforma, con su procedencia (`applied_rates`). Es **idempotente**: repetirlo no cambia nada. Responde `{"year": 2026, "month": 10, "closed": 3, "already_closed": 0}` (ejemplo). Si un mes **anterior del mismo año** tiene flights terminados sin cerrar, responde **409** con `{"code": "previous_month_open", "message": "…"}` y el mes que bloquea.
+
+---
+
+### **4.9. Maestros del margen**
+
+**Rol requerido:** `finance`
+
+**`POST /api/margin/rebate-schedules`** (201) crea una escala de extraprima. Los tramos deben empezar en 0, ser contiguos y el último debe ser abierto, y dos escalas de la misma clave no pueden solaparse en el tiempo. Ejemplo (valores ficticios):
+
+```json
+{
+  "holding_group_id": 1,
+  "agency_id": null,
+  "channel_id": 2,
+  "scope": "national",
+  "valid_from": "2026-01-01",
+  "valid_to": null,
+  "brackets": [
+    { "lower": "0", "upper": "100000", "rate": "0.05" },
+    { "lower": "100000", "upper": null, "rate": "0.08" }
+  ]
+}
+```
+
+**`POST /api/margin/platform-rates`** (201) fija la tarifa de infraestructura por mil impresiones en un nivel (`system`, `agency`, `campaign_type` o `line`); gana el más específico. Ejemplo: `{"level": "campaign_type", "campaign_type_id": 2, "rate_per_thousand": "1.25"}`.
+
+**Errores** (`{"code": ..., "message": ...}`, 422, o 409 si la escala se solapa con otra): `bracket_table_empty`, `bracket_table_must_start_at_zero`, `bracket_table_not_contiguous`, `last_bracket_must_be_open`, `validity_ends_before_it_starts`, `schedule_overlaps_existing` o `reference_not_found`.
+
+---
+
 ### **Nota: Formatos de error**
 
 El API utiliza tres formatos de error según el tipo:
 
-1. **Errores de negocio (40x):** Devuelven `{"code": "<error_code>", "message": "<human_readable_message>"}`. Códigos: `missing_role`, `duplicate_order_reference`, `duplicate_campaign_name`.
+1. **Errores de negocio y de validación de las rutas del margen:** `{"code": "<error_code>", "message": "<mensaje>"}`. Códigos: `validation_error` (422, campos inválidos), `previous_month_open` (409), los de las reglas de extraprima de §4.9 y `internal_error` (500, con un mensaje genérico: el detalle queda en el registro del servidor).
 
-2. **Errores de validación (422):** Devuelven `{"detail": [...]}` con array de detalles por campo. Formato: `{"detail": [{"loc": ["body", "field_name"], "msg": "error message", "type": "error_type"}]}`.
+2. **Errores de negocio de las rutas anteriores al margen:** `{"code": "<error_code>", "message": "<mensaje>"}` en los 40x (`missing_role`, `duplicate_order_reference`, `duplicate_campaign_name`…), y **`{"detail": [...]}`** de FastAPI en los 422 de validación, con un elemento por campo: `{"detail": [{"loc": ["body", "field_name"], "msg": "error message", "type": "error_type"}]}`.
 
-3. **Errores de maestros inexistentes (400):** Devuelven `{"detail": "Agency with id 999 not found"}`.
+3. **Errores de maestros inexistentes (400):** `{"detail": "Agency with id 999 not found"}`.
+
+La tabla completa de códigos y estados vive en `backend/app/presentation/errors.py`.
 
 ---
 
@@ -1529,6 +1779,80 @@ Este change cubre **1 de 3 historias** de usuario: el alta de campaña desde la 
 
 **Pull Request 3**
 
-> **Pendiente — se documentará en la Entrega Final, al incluir código funcional.**
->
-> Recogerá la ingesta de entrega y el cálculo de márgenes, sobre los changes `daily-campaign-delivery-status` y `campaign-margin-and-rebate-accrual`. No se documenta ahora por la misma razón.
+<!-- pr3:start (generado por readme_patch_s4s7.py: vuelve a ejecutarlo tras marcar tareas) -->
+
+**Título:** `feat(entrega-final): estado diario de entrega y margen con devengo de extraprima — ingesta de Adform, vistas, E2E e imágenes de producción`
+
+**Descripción**
+
+Implementa las historias de usuario **2** (estado diario de entrega de campañas) y **3** (margen y devengo de extraprima), sobre los changes `daily-campaign-delivery-status` y `campaign-margin-and-rebate-accrual`. Con la del alta de campaña (PR 2) quedan las tres historias.
+
+- **Ingesta nocturna de Adform** (API de reporting, solo lectura, en una sola petición por ejecución sobre la ventana de los últimos siete días): idempotente, con bloqueo, códigos de salida y cuota compartida de la agencia.
+- **Estado diario** por flight, con ritmo, entrega esperada y avisos; **cola de excepciones** (entrega sin casar y línea sin entrega), **catálogo de líneas de Adform**, mapeo y desvinculación de líneas.
+- **Corrección de modelo** del propietario del producto: la campaña tiene **líneas con fechas propias** y cada línea se reparte en **flights** mensuales (§3).
+- **Margen por flight** (ingreso, coste de medios, rebate y coste de plataforma), provisional en el mes en curso, con **cierre de mes** explícito, idempotente y ordenado, que congela las tasas; **motor de extraprima** con tramos marginales, contador anual y escalera de seis pasos.
+- **Verificado con dos meses reales de Finanzas** (uno cerrado y otro en curso), anonimizados y fuera del repositorio: el dominio reproduce importes y porcentajes con tolerancia de céntimos y las diferencias con la hoja de origen están explicadas (sección «Estado del proyecto»).
+- **Interfaz**: estado diario, excepciones, catálogo, margen y alta de campaña, con diálogos nativos, nombres accesibles en el formulario y etiquetas «Margen negativo» y «Sin venta».
+- **Pruebas de extremo a extremo** con Playwright (35 casos, 34 ejecutados) sobre la aplicación real, con datos de demostración.
+- **Producción**: imágenes de backend y frontend sin dependencias de desarrollo, `docker-compose.prod.yml`, nginx con HTTPS, `docs/deploy.md`, carga de maestros desde un JSON fuera del repositorio y verificación automática de las imágenes.
+
+**Tamaño** (respecto a la PR 2, a 3 de noviembre de 2026): 274 commits.
+
+| Área | Ficheros | Líneas |
+|---|---:|---:|
+| `backend/` | 269 | +25.344 −215 |
+| `frontend/` | 95 | +9.745 −288 |
+| `e2e/` | 25 | +2.350 |
+| `openspec/` | 17 | +2.092 −321 |
+| `docs/` | 8 | +776 |
+| `prompts.md` | 1 | +980 −5 |
+| Raíz, `scripts/`, `nginx/`, `deploy/` | 7 | +385 |
+
+**Estado de tareas**
+
+Los recuentos se calculan de los `tasks.md` de cada change:
+
+| Change | Hechas | Aplazadas con su motivo | Abiertas |
+|---|---:|---:|---:|
+| **`daily-campaign-delivery-status`** | **126** de 161 | **9** | **26** |
+| **`campaign-margin-and-rebate-accrual`** | **91** de 155 | **23** | **41** |
+
+- ⏸️ **Aplazadas, margen:** 1.3, 2A.5, 3.5–3.6, 4.4–4.10, 6.6, 6.9, 7.4, 7.7, 7.10–7.12, 7A.4, 8.1, 8.3–8.5. Reexpresión de contadores, repetición cronológica y reajustes de extraprima, `rebate_accruals`, exportaciones, agregados por agencia y anunciante, edición de tarifas en pantalla, campañas sin volumen contratado y reconciliación con Qlik sobre todos los meses cerrados. Cada una consta con su motivo en `tasks.md`.
+- ⏸️ **Aplazadas, estado diario:** 1.6, 5.1–5.5, 6.6, 7.2, 8.6. Prueba de carga con un millón de filas, subida manual de ficheros (el formato de la exportación de Adform queda documentado en `design.md`) y los casos de visibilidad de costes y de última carga, con su motivo en `tasks.md`.
+- 📋 **Abiertas, margen:** 0.2, 9.1–9.3, 10.1–10.6, 11.1–11.8, 12.1–12.6, 12A.2, 12A.4–12A.8, 12B.1–12B.7, 13.1–13.4.
+- 📋 **Abiertas, estado diario:** 9.1–9.2, 10.1–10.6, 11.1–11.8, 12.1–12.6, 13.1–13.4.
+
+**Pruebas ejecutadas**
+
+- Backend: **1.886 pasados**, 1 saltado y 1 excluido (`pytest`, dos pasadas con resultado idéntico). Incluyen las pruebas de aceptación contra los dos meses reales, que se **saltan** si faltan los ficheros privados.
+- Frontend: **546 tests en 54 ficheros** (Vitest y Testing Library), dos pasadas idénticas.
+- E2E: **34 pasados y 1 saltado** (el inicio de sesión real con Cognito, que necesita credenciales), contra el stack levantado con datos de demostración.
+- Scripts de apoyo: 56 de 56 (`node --test`, para el token, el reinicio de datos y la comprobación del stack).
+- `openspec validate` de los dos changes: válidos.
+- `scripts/verify_prod_images.sh`: imágenes de producción construidas, `/api/health` 200 sobre HTTPS, puerto 80 redirigido, sin `pytest`, `tests/` ni semillas de desarrollo.
+- Modelo de datos: **29 tablas** más `alembic_version`, migración `439b6b8481f8` (cadena de 12 revisiones aplicada desde una base vacía).
+
+**Cómo revisarlo**
+
+1. **Stack y datos de demostración:** §1.4, y después `docker compose exec backend alembic upgrade head` y `python -m scripts.seed_dev_data`, `scripts.seed_margin_demo` y `scripts.seed_exceptions_demo`. El primero da a tu usuario los roles `operations` y `finance`.
+2. **Interfaz:** «Estado», «Excepciones» (resolver y vincular), «Catálogo», «Margen» (abrir campaña y línea; «Cerrar mes» con el aviso previo) y «Nueva campaña» (reparto mensual, fechas propias y CPM 0).
+3. **Pruebas unitarias e integración:**
+   ```bash
+   docker compose exec backend python -m pytest -q
+   cd frontend && npm test
+   ```
+4. **E2E:** `bash e2e/scripts/reset-data.sh`, `bash e2e/scripts/get-token.sh` (pide la contraseña sin eco) y `cd e2e && npx playwright test`.
+5. **API con `curl`:** los ejemplos de §4 con un token válido.
+6. **Esquema:** `docker compose exec db sh -c 'psql -U "$POSTGRES_USER" "$POSTGRES_DB" -c "\dt"'` debe listar 29 tablas más `alembic_version`.
+7. **Imágenes de producción:** `bash scripts/verify_prod_images.sh`.
+
+**Limitaciones conocidas**
+
+- **El despliegue en una instancia real queda pendiente**: las imágenes de producción, el proxy HTTPS y la guía (`docs/deploy.md`) están verificados con `scripts/verify_prod_images.sh`, pero todavía no se ha creado la instancia de AWS (necesita un subdominio, DNS y las URL de retorno de Cognito en HTTPS).
+- **Adform:** la cuota (10 peticiones por minuto y 500 al día) es compartida por toda la agencia. La ingesta descarga solo los últimos siete días: lo anterior exige una carga histórica explícita, y la vinculación avisa con `needs_history_load`.
+- **Margen:** las campañas **sin volumen contratado** no entran; el ingreso es el importe de la orden de compra y **no refleja los ajustes de facturación de fin de mes**; y un mes cerrado no se actualiza si Adform corrige cifras semanas después. El detalle está en «Estado del proyecto» y en §3.3.
+- **Formulario de campaña:** con el formulario vacío, «Agencia» y «DSP» no muestran un error propio (el esquema de validación no los marca); los identificadores de línea se generan con la hora, y dos líneas añadidas en el mismo milisegundo colisionarían.
+- **Pruebas:** las de aceptación necesitan ficheros privados; la **imagen de desarrollo los lleva dentro y no debe publicarse** en ningún registro. Los E2E parten de una base recién sembrada porque el cierre de mes es irreversible.
+- **Sin endpoint de borrado ni de lectura por identificador** de campañas: lo guardado se comprueba contra la respuesta del alta y contra la lista.
+
+<!-- pr3:end -->
