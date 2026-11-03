@@ -51,6 +51,11 @@ La pantalla SHALL filtrar por merchant, proveedor y cuenta (en cascada, solo los
 - **WHEN** se recarga
 - **THEN** los filtros muestran esos valores y se pide esa misma consulta
 
+#### Scenario: Atrás y adelante con la búsqueda
+- **GIVEN** la búsqueda `monthly` ya escrita en la dirección
+- **WHEN** vuelve atrás y luego adelante
+- **THEN** el campo de búsqueda queda vacío y luego vuelve a `monthly`, igual que la dirección, y el texto anterior no se vuelve a escribir en ella
+
 #### Scenario: Valor inválido en la dirección
 - **WHEN** se abre `/fees?status=withdrawn&kind=other`
 - **THEN** se ignoran los dos valores y se piden los fees activos de todos los tipos

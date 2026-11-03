@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { feeFixture, feeRequests, respondNextFee, seedAccountFees } from '@/test/msw/fees'
 import { ACCOUNT_IDS, type UserName } from '@/test/msw/fixtures'
@@ -152,6 +152,25 @@ describe('Fees: filters in the address', () => {
     await waitFor(() => expect(router.state.location.search).toMatchObject({ q: 'chargeback' }))
     await waitFor(() => expect(lastQuery()).toEqual({ q: 'chargeback', page: '1' }))
     expect(feeRequests('list').filter((r) => r.url.includes('q=')).length).toBe(1)
+  })
+
+  it('Back and Forward bring the search field along with the address, without writing it again', async () => {
+    const { user, router } = await openFees('status=all')
+    const field = screen.getByLabelText(s.filters.search)
+
+    await user.type(field, 'monthly')
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ q: 'monthly' }))
+
+    router.history.back()
+    await waitFor(() => expect(router.state.location.search).not.toHaveProperty('q'))
+    expect(field).toHaveValue('')
+    // Past the pause of the search, the old text must not come back to the address.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 400)))
+    expect(router.state.location.search).not.toHaveProperty('q')
+
+    router.history.forward()
+    await waitFor(() => expect(field).toHaveValue('monthly'))
+    expect(router.state.location.search).toMatchObject({ q: 'monthly' })
   })
 
   it('reloading with filters shows them and asks the same query', async () => {
