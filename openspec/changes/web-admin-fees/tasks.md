@@ -4,7 +4,7 @@ Rama `feat/web-admin-fees`, rebasada sobre `origin/feat/admin-fees`. El PR va ha
 
 ## 1. Base
 
-- [ ] 1.1 `git fetch` y comprobar que `feat/web-admin-fees` está sobre `origin/feat/admin-fees` (`git merge-base --is-ancestor origin/feat/admin-fees HEAD`); si `admin-fees` subió commits nuevos, rebasar. Verificar con `pnpm typecheck`, `pnpm lint` y `pnpm --filter @recon/frontend test` en verde antes de tocar nada.
+- [x] 1.1 `git fetch` y comprobar que `feat/web-admin-fees` está sobre `origin/feat/admin-fees` (`git merge-base --is-ancestor origin/feat/admin-fees HEAD`); si `admin-fees` subió commits nuevos, rebasar. Verificar con `pnpm typecheck`, `pnpm lint` y `pnpm --filter @recon/frontend test` en verde antes de tocar nada.
 
 ## 2. Utilidades de fechas y porcentajes (test-first)
 
