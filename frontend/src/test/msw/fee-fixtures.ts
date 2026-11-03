@@ -107,6 +107,11 @@ export function feeFixture(
 }
 
 /** admin-fees design D7: scheduled if it starts after today, closed if it ended before today, active otherwise. */
+/**
+ * The status the API derives, against a fixed day (FIXTURE_TODAY) and not the clock: the fixtures and the tests that
+ * fake the clock (Close… in New York) must not change status with the day they run. A deliberate simplification of
+ * the fake; the real API uses today in New York.
+ */
 export function feeStatus(startDate: string | null, endDate: string | null, today: string): AccountFee['status'] {
   if (startDate !== null && startDate > today) return 'scheduled'
   if (endDate !== null && endDate < today) return 'closed'

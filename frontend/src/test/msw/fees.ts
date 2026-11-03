@@ -1,11 +1,12 @@
 // In-memory stand-in for the fee administration API of admin-fees (web-admin-fees design D8). Queries and bodies are
-// checked with the schemas of @recon/shared (FeesQuery, FeeCreate, FeePatch, FeeHistoryQuery); permission is checked
+// checked with the schemas of @recon/shared (FeesQuery, AccountFeesQuery, FeeCreate, FeePatch, FeeHistoryQuery); permission is checked
 // before scope, and anything outside the scope answers the same 404 as a missing id. The fake models what changes
 // between requests: the fees a write creates or patches and their history rows. It does NOT decide business rules:
 // overlaps, use and the limits of a closing are scripted by each test (respondNextFee). GET /accounts/{id}/fees and
 // GET /fee-types are shared with Settlement Review, whose tests read them in the settlement request log: those two
 // routes go through the settlement route wrapper under their old names.
 import {
+  AccountFeesQuery,
   FeeCreate,
   type FeeHistoryEntry,
   FeeHistoryQuery,
@@ -416,6 +417,9 @@ function patchFee(user: UserName, feeId: string, body: unknown): Response {
 
   const { reason: _reason, ...changes } = input
   const next = withValues(fee, changes)
+  // The action of the history row, a deliberate simplification of the fake: `closed` when the body only gives an end
+  // to an open fee, `updated` for anything else. Enough for the screens, which only show the action the API sends;
+  // which action the real API writes is decided and tested in admin-fees.
   const onlyCloses = Object.keys(changes).length === 1 && 'endDate' in changes && fee.endDate === null
   state.patched.set(fee.feeId, next)
   writeHistory(next, onlyCloses && next.endDate !== null ? 'closed' : 'updated', user, fee, reason)
@@ -442,8 +446,15 @@ function accountFees(user: UserName, accountId: string, searchParams: URLSearchP
   if (!can(user, 'fee.view')) return forbidden()
   const account = accountNameOf(accountId)
   if (!account || !canSeeAccount(user, account)) return notFound('Account')
-  const transactional = searchParams.get('transactional')
-  const fees = feesOf(account).filter((f) => transactional === null || f.isTransactional === (transactional === 'true'))
+  const parsed = AccountFeesQuery.safeParse(Object.fromEntries(searchParams))
+  if (!parsed.success) return invalid(parsed.error.issues)
+  const { transactional, asOf } = parsed.data
+  // asOf: in force on that business day, both ends included (null = since forever / no end).
+  const inForce = (f: AccountFee) =>
+    asOf === undefined || ((f.startDate === null || f.startDate <= asOf) && (f.endDate === null || f.endDate >= asOf))
+  const fees = feesOf(account).filter(
+    (f) => (transactional === undefined || f.isTransactional === transactional) && inForce(f),
+  )
   return HttpResponse.json(fees)
 }
 
