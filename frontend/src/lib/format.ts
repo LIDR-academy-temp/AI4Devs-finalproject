@@ -93,8 +93,11 @@ export function percentError(value: string): PercentError | null {
   if (!match) return 'invalid'
   const [, integer = '', fraction = ''] = match
   if (fraction.length > 4) return 'too_precise'
+  // Compared as text: without leading zeros, a longer integer part is larger, and two of the same length compare
+  // digit by digit.
   const whole = integer.replace(/^0+(?=\d)/, '')
-  if (whole.length > 3 || Number(whole) > 100 || (whole === '100' && /[1-9]/.test(fraction))) return 'out_of_range'
+  const above100 = whole.length > 3 || (whole.length === 3 && whole > '100')
+  if (above100 || (whole === '100' && /[1-9]/.test(fraction))) return 'out_of_range'
   return null
 }
 

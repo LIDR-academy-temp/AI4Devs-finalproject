@@ -116,7 +116,7 @@ describe('rateToPercent', () => {
 })
 
 describe('percentError', () => {
-  it.each(['0', '2.75', '100', '100.0000', '0.0001'])('accepts %s', (value) => {
+  it.each(['0', '2.75', '100', '100.0000', '0.0001', '0100', '099.9999', '00'])('accepts %s', (value) => {
     expect(percentError(value)).toBeNull()
   })
 
@@ -124,7 +124,7 @@ describe('percentError', () => {
     expect(percentError(value)).toBe('too_precise')
   })
 
-  it.each(['100.0001', '101', '250'])('refuses %s: above 100 %%', (value) => {
+  it.each(['100.0001', '101', '250', '0101', '1000', '999.9'])('refuses %s: above 100 %%', (value) => {
     expect(percentError(value)).toBe('out_of_range')
   })
 
