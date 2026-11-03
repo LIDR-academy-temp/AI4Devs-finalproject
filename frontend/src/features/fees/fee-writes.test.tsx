@@ -1,7 +1,9 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { HttpResponse, http } from 'msw'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { feeFixture, feeRequests, respondNextFee, seedAccountFees } from '@/test/msw/fees'
 import { ACCOUNT_IDS } from '@/test/msw/fixtures'
+import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 import { OPENING } from '@/test/validation-screens'
 import { strings } from './strings'
@@ -206,8 +208,9 @@ describe('Account fees: change from a date', () => {
 })
 
 describe('Account fees: close the validity', () => {
-  it('the end date starts at today in New York, not in UTC', async () => {
+  it('at 22:30 in New York the end date starts at that day, not at the next one of UTC', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
+    // 2026-11-03 22:30 in New York (EST, UTC−5 since 1 November) is already 2026-11-04 03:30 in UTC.
     vi.setSystemTime(new Date('2026-11-04T03:30:00.000Z'))
     seedOne()
     const { user } = await openAccount()
@@ -311,6 +314,42 @@ describe('Account fees: errors of the API', () => {
     expect(await form.findByText(f.errors.inUseFields(['Percentage']))).toBeInTheDocument()
     await waitFor(() => expect(feeRequests('accountFees').length).toBeGreaterThan(reads))
     await waitFor(() => expect(rowOf('MDR', 'always').getByText(s.inUse)).toBeInTheDocument())
+  })
+
+  async function correctPercent() {
+    seedOne()
+    const rendered = await openAccount()
+    await rendered.user.click(rowOf('MDR', 'always').getByRole('button', { name: 'Edit MDR, always' }))
+    const form = within(await screen.findByRole('dialog', { name: f.titles.correct('MDR') }))
+    await rendered.user.clear(form.getByLabelText(f.labels.percent))
+    await rendered.user.type(form.getByLabelText(f.labels.percent), '2.75')
+    await rendered.user.type(form.getByLabelText(f.labels.reason), 'typo')
+    return { ...rendered, form }
+  }
+
+  it('a 403 says so and keeps the form open with what was written', async () => {
+    const { user, form } = await correctPercent()
+    respondNextFee('patch', { status: 403, code: 'forbidden', message: 'Missing permission fee.manage' })
+
+    await user.click(form.getByRole('button', { name: f.save }))
+
+    expect(await form.findByRole('alert')).toHaveTextContent(f.errors.forbidden)
+    expect(screen.getByRole('dialog', { name: f.titles.correct('MDR') })).toBeInTheDocument()
+    expect(form.getByLabelText(f.labels.percent)).toHaveValue('2.75')
+    expect(form.getByLabelText(f.labels.reason)).toHaveValue('typo')
+  })
+
+  it('a network failure says so and keeps the form open with what was written', async () => {
+    const { user, form } = await correctPercent()
+    server.use(http.patch('*/api/v1/fees/:feeId', () => HttpResponse.error(), { once: true }))
+
+    await user.click(form.getByRole('button', { name: f.save }))
+
+    expect(await form.findByRole('alert')).toHaveTextContent(f.errors.unknown)
+    expect(screen.getByRole('dialog', { name: f.titles.correct('MDR') })).toBeInTheDocument()
+    expect(form.getByLabelText(f.labels.percent)).toHaveValue('2.75')
+    expect(form.getByLabelText(f.labels.reason)).toHaveValue('typo')
+    expect(form.getByRole('button', { name: f.save })).toBeEnabled()
   })
 
   async function openClose() {
@@ -422,5 +461,36 @@ describe('Account fees: focus after a write and on a local error', () => {
 
     expect(form.getByLabelText(f.labels.percent)).toHaveFocus()
     expect(feeRequests('create')).toHaveLength(0)
+  })
+})
+
+// Spec fees "Pantalla Account Fees: historial": after a write the history shows it, not the copy read before.
+describe('Account fees: history after a write', () => {
+  it('the history read before a correction shows the correction afterwards', async () => {
+    seedOne()
+    const { user } = await openAccount()
+    const history = () => rowOf('MDR', 'always').getByRole('button', { name: 'History of MDR, always' })
+
+    await user.click(history())
+    const before = within(await screen.findByRole('dialog', { name: 'History · MDR' }))
+    const headings = (await before.findAllByRole('listitem')).map((e) => within(e).getByRole('heading').textContent)
+    expect(headings).not.toContain('Updated')
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+    await user.click(rowOf('MDR', 'always').getByRole('button', { name: 'Edit MDR, always' }))
+    const form = within(await screen.findByRole('dialog', { name: f.titles.correct('MDR') }))
+    await user.clear(form.getByLabelText(f.labels.percent))
+    await user.type(form.getByLabelText(f.labels.percent), '2.75')
+    await user.type(form.getByLabelText(f.labels.reason), 'typo')
+    await user.click(form.getByRole('button', { name: f.save }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+    await user.click(history())
+    const after = within(await screen.findByRole('dialog', { name: 'History · MDR' }))
+    const [updated] = await after.findAllByRole('listitem')
+    expect(within(updated!).getByRole('heading')).toHaveTextContent('Updated')
+    expect(updated).toHaveTextContent('typo')
+    expect(updated).toHaveTextContent('Percentage: 2.500 % → 2.750 %')
   })
 })

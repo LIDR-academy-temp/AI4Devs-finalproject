@@ -214,6 +214,17 @@ describe('Fees: paging, loading and errors', () => {
     expect(lastQuery()).toMatchObject({ page: '2' })
   })
 
+  it('reloading on page=2 asks for page 2 and shows where it is', async () => {
+    seedAccountFees('ProviderA-USD', manyFees(60))
+    await openFees(`${USD_FILTERS}&page=2`)
+
+    expect(await screen.findByText('Page 2 of 2 · 60 fees')).toBeInTheDocument()
+    expect(lastQuery()).toMatchObject({ page: '2' })
+    expect(bodyRows()).toHaveLength(10)
+    expect(screen.getByRole('button', { name: 'Previous' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+  })
+
   it('a page that no longer exists goes to the last one without a new history entry', async () => {
     seedAccountFees('ProviderA-USD', manyFees(60))
     const { router } = renderApp(`/fees?${USD_FILTERS}&page=9`, { as: 'analyst' })
