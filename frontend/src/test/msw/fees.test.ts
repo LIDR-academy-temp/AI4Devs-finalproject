@@ -127,6 +127,28 @@ describe('fake fee API: GET /accounts/{id}/fees', () => {
     expect(perMovement.every((f) => f.isTransactional)).toBe(true)
   })
 
+  it('asOf keeps only the fees in force on that day, both ends included', async () => {
+    const inForce = async (asOf: string) =>
+      z
+        .array(AccountFee)
+        .parse((await call('analyst', 'GET', `/accounts/${USD}/fees?transactional=true&asOf=${asOf}`)).body)
+        .filter((f) => f.feeTypeId === 1 || f.feeTypeId === 5)
+        .map((f) => [f.title, f.startDate, f.endDate])
+
+    expect(await inForce('2025-12-31')).toEqual([['MDR', null, '2025-12-31']])
+    expect(await inForce('2026-01-01')).toEqual([['MDR', '2026-01-01', null]])
+    expect(await inForce('2027-01-01')).toEqual([
+      ['MDR', '2026-01-01', null],
+      ['Refund per txn fee', '2027-01-01', null],
+    ])
+  })
+
+  it('an asOf that is not a day is a 400', async () => {
+    const { status, body } = await call('analyst', 'GET', `/accounts/${USD}/fees?asOf=15/10/2026`)
+    expect(status).toBe(400)
+    expect(body).toMatchObject({ code: 'validation_error' })
+  })
+
   it('answers the fees a test seeds for the account', async () => {
     seedAccountFees('ProviderA-USD', [feeFixture({ feeTypeId: 1, percentage: '0.029000' })])
     const fees = z.array(AccountFee).parse((await call('analyst', 'GET', `/accounts/${USD}/fees`)).body)
