@@ -580,7 +580,7 @@ flowchart LR
 
 ### 2.5. Seguridad
 
-> **Estado en la Entrega 2.** Implementados y probados: login con Argon2, JWT de acceso y refresh con rotación, permisos por acción, alcance por merchant aplicado en la consulta (lo ajeno responde `404`), validación de entrada con Zod y límites del lector `.xlsx`, auditoría de las acciones del flujo, usuario de base `recon_app` con permisos mínimos y gitleaks en la CI. La administración de usuarios llega con la Entrega 3. Lo que depende del despliegue (HTTPS en el túnel, red interna) ya está en marcha y se describe en [2.4](#24-infraestructura-y-despliegue).
+> **Estado.** Implementados y probados: login con Argon2, JWT de acceso y refresh con rotación, permisos por acción, alcance por merchant aplicado en la consulta (lo ajeno responde `404`), validación de entrada con Zod y límites del lector `.xlsx`, auditoría de las acciones del flujo, usuario de base `recon_app` con permisos mínimos y gitleaks en la CI. La administración de usuarios llega con la Entrega 3. Lo que depende del despliegue (HTTPS en el túnel, red interna) ya está en marcha y se describe en [2.4](#24-infraestructura-y-despliegue).
 
 **Perfiles y permisos.** Cada perfil agrupa acciones autorizadas. Se separan consulta y exports (`reports.view`), reconciliación y deshacer (`settlement.process`), registro y retiro de pago (`payment.process`), cuentas y reglas (`account.manage`), consulta y edición de fees (`fee.view`, `fee.manage`) y administración de usuarios, perfiles y asignaciones (`user.manage`). Administrar cuentas no concede administración de usuarios.
 
@@ -2061,7 +2061,7 @@ Tres tickets representativos del backlog, uno por capa; no representan todo el t
 
 ## 7. Pull Requests
 
-Las pull requests de la Entrega 2 van de una rama por change (`feat/<módulo>-<tema>`) a `feature/entrega-2-MVP`, con la plantilla del repositorio y la CI en verde. Cada change pasa dos revisiones de IA antes del merge:
+Las pull requests van de una rama por change (`feat/<módulo>-<tema>`) a la rama de la entrega en curso (`feature/entrega-2-MVP` en la Entrega 2, `feature/entrega-3-MVP` en la Entrega 3), con la plantilla del repositorio y la CI en verde. Cada change pasa dos revisiones de IA antes del merge:
 
 - **`/opsx:verify`** contrasta el código con la spec, el design y las tareas del change de OpenSpec (completitud, escenarios sin test, desfases con el README).
 - **`review-diff`**, en una sesión independiente de la que escribió el código, revisa el diff con los cinco focos del módulo de backend (correctitud, seguridad, rendimiento, legibilidad y tests), concretados para este proyecto en la skill [`review-diff`](.claude/skills/review-diff/SKILL.md): fidelidad al README y al vocabulario fijo, dinero y fechas, pruebas reales, seguridad y datos sintéticos, y arquitectura hexagonal. Los hallazgos se clasifican HIGH / MEDIUM / LOW; cada uno se reproduce antes de corregirlo y se cierra con una pareja de commits test/fix o pasa a un issue tras el triaje humano.

@@ -1,3 +1,5 @@
+// Must stay first: Zod reads this config when the first schema is built.
+import './zod-config'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './app/App'
