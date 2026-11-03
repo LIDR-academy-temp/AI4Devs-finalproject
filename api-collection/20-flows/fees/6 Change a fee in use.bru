@@ -1,0 +1,49 @@
+meta {
+  name: 6 Change a fee in use
+  type: http
+  seq: 6
+  tags: [
+    flow
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/fees/:feeId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  feeId: {{inUseFeeId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "fixedAmount": "999.0000"
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:pre-request {
+  if (!bru.getVar('inUseFeeId')) {
+    await bru.runRequest('10-smoke/Fees');
+  }
+  if (!bru.getVar('inUseFeeId')) {
+    throw new Error('no fee in use in the seed: the seeded batches should have applied fees');
+  }
+}
+
+tests {
+  test('the values of a fee in use do not change in place: 409 fee_in_use naming the field', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('fee_in_use');
+    expect(res.body.details.fields).to.deep.equal(['fixedAmount']);
+  });
+}

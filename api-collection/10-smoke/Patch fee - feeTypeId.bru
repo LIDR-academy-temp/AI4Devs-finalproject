@@ -1,0 +1,39 @@
+meta {
+  name: Patch fee - feeTypeId
+  type: http
+  seq: 84
+  tags: [
+    smoke
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/fees/:feeId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  feeId: {{$randomUUID}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "feeTypeId": 2
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+tests {
+  test('the type of a fee never changes: 400 validation_error', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}

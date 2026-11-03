@@ -1,0 +1,25 @@
+meta {
+  name: Fees - bad page size
+  type: http
+  seq: 88
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/fees?pageSize=0
+  body: none
+  auth: inherit
+}
+
+params:query {
+  pageSize: 0
+}
+
+tests {
+  test('pageSize out of 1..500: 400 validation_error', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}

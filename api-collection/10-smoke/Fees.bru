@@ -1,0 +1,54 @@
+meta {
+  name: Fees
+  type: http
+  seq: 85
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/fees?merchantId=1&status=active&pageSize=500
+  body: none
+  auth: bearer
+}
+
+params:query {
+  merchantId: 1
+  status: active
+  pageSize: 500
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+script:post-response {
+  // A fee of the seed for the history requests.
+  const fee = res.status === 200 && res.body.items.find((f) => f.account.name === 'ProviderA-USD' && f.code === 'MDR');
+  if (fee) {
+    bru.setVar('providerAUsdMdrFeeId', fee.feeId);
+  }
+  // A fee already applied by processed batches, for the fee_in_use negative of the fees flow.
+  const used = res.status === 200 && res.body.items.find((f) => f.inUse);
+  if (used) {
+    bru.setVar('inUseFeeId', used.feeId);
+  }
+}
+
+tests {
+  test('the active fees of merchant 1, paginated, money as text', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.page).to.equal(1);
+    expect(res.body.pageSize).to.equal(500);
+    expect(res.body.total).to.equal(res.body.items.length);
+    expect(res.body.items.every((f) => f.merchant.id === 1 && f.status === 'active')).to.equal(true);
+    const mdr = res.body.items.find((f) => f.account.name === 'ProviderA-USD' && f.code === 'MDR');
+    expect(mdr.percentage).to.equal('0.100000');
+    expect(mdr.inUse).to.be.a('boolean');
+  });
+}

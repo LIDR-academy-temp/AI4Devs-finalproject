@@ -79,19 +79,19 @@ El grupo 1 es el contrato del que parte `web-admin-fees`. Al terminarlo se hace 
 
 ## 5. Colección Bruno
 
-- [ ] 5.1 Añadir:
+- [x] 5.1 Añadir:
   - `00-auth/Login as admin`, que guarda `{{adminToken}}`;
   - `SEED_ADMIN_USER` en `api-collection/.env.example` (la persona lo copia a su `.env`, que no se lee ni se versiona);
   - `as: admin` en el comentario de `collection.bru`.
-- [ ] 5.2 Añadir a `10-smoke` los negativos y los casos felices de lectura de D12.
-- [ ] 5.3 Añadir `20-flows/fees/` con la secuencia de D12, en fechas futuras derivadas de la ejecución.
+- [x] 5.2 Añadir a `10-smoke` los negativos y los casos felices de lectura de D12.
+- [x] 5.3 Añadir `20-flows/fees/` con la secuencia de D12, en fechas futuras derivadas de la ejecución.
 - [ ] 5.4 La persona ejecuta `! pnpm test:api` con `pnpm dev` levantado. Verificar que pasa dos veces seguidas sin `db:seed` entre medias.
-- [ ] 5.5 Commit: test(api): colección Bruno de la administración de fees
+- [x] 5.5 Commit: test(api): colección Bruno de la administración de fees
 
 ## 6. Documentación
 
 - [ ] 6.1 Actualizar el README según D13 (§1.2 con las limitaciones y #109, §1.5, §3.2, §4.1 y §4.4). Verificar con `grep` que no queda `FEE_OVERLAP` y que `POST /accounts/{id}/fees` sigue marcado con ✅.
-- [ ] 6.2 Actualizar la sección Bruno de `CLAUDE.md`: los casos felices de `POST`/`PATCH` de fees usan `admin` (`as: admin`, `{{adminToken}}`), porque solo `admin` tiene `fee.manage`.
+- [x] 6.2 Actualizar la sección Bruno de `CLAUDE.md`: los casos felices de `POST`/`PATCH` de fees usan `admin` (`as: admin`, `{{adminToken}}`), porque solo `admin` tiene `fee.manage`.
 - [ ] 6.3 Verificar con `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check` y `openspec validate admin-fees --strict`.
 - [ ] 6.4 Commit: docs(fees): README, CLAUDE.md y OpenAPI de la administración de fees
 

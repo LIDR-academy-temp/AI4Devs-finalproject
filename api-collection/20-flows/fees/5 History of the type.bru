@@ -1,0 +1,39 @@
+meta {
+  name: 5 History of the type
+  type: http
+  seq: 5
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/fees/:feeId/history?scope=type
+  body: none
+  auth: inherit
+}
+
+params:query {
+  scope: type
+}
+
+params:path {
+  feeId: {{flowSuccessorFeeId}}
+}
+
+tests {
+  test('the chain of the type, newest first: successor created, original closed, updated and created', () => {
+    expect(res.status).to.equal(200);
+    const original = bru.getVar('flowFeeId').toLowerCase();
+    const successor = bru.getVar('flowSuccessorFeeId').toLowerCase();
+    // Earlier runs of the flow leave fees of their own: they come after these four rows.
+    expect(res.body.slice(0, 4).map((r) => [r.feeId.toLowerCase(), r.action])).to.deep.equal([
+      [successor, 'created'],
+      [original, 'closed'],
+      [original, 'updated'],
+      [original, 'created'],
+    ]);
+    expect(res.body[2].reason).to.equal('typo');
+    expect(res.body[0].after.fixedAmount).to.equal('16.0000');
+  });
+}
