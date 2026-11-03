@@ -1,6 +1,6 @@
 Los siguientes son prompts reales, copiados tal como se escribieron. Las respuestas se revisaron y las decisiones de producto y arquitectura las tomó el autor.
 
-Las secciones 0 a 7 corresponden a la Entrega 1. La implementación y las pruebas de la Entrega 2 están en la [sección 8](#8-implementación-y-pruebas-entrega-2).
+Las secciones 0 a 7 corresponden a la Entrega 1. La implementación y las pruebas de la Entrega 2 están en la [sección 8](#8-implementación-y-pruebas-entrega-2), y el trabajo hacia la entrega final, en la [sección 9](#9-hacia-la-entrega-final).
 
 ## Índice
 
@@ -13,6 +13,7 @@ Las secciones 0 a 7 corresponden a la Entrega 1. La implementación y las prueba
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
 8. [Implementación y pruebas (Entrega 2)](#8-implementación-y-pruebas-entrega-2)
+9. [Hacia la entrega final](#9-hacia-la-entrega-final)
 
 ---
 
@@ -67,7 +68,13 @@ Te paso más datos para que revises y luego continuamos para ver si algunas se r
 Luego de esto, revisa tus comentarios anteriores, evaluaciones, preguntas, etc. y sigamos sin tocar nada hasta que quede claro todo lo que me planteaste junto con mis respuestas a tus preguntas
 ```
 
-**Prompt 3:**
+**Prompt 3:** respuesta a la pregunta del asistente de si contestaba primero sus dudas.
+
+```text
+Sí, respondo esas
+```
+
+**Prompt 4:**
 
 ```text
 1. De acuerdo siempre y cuando no quede confuso porque luego deberemos tomar una dirección limpia
@@ -88,17 +95,32 @@ En cuanto terminemos de trazar esta ruta de inicio de la primara entrega, lo hac
 
 ## 2. Arquitectura del Sistema
 
-Las secciones 2 a 7 del README se redactaron en una misma sesión de Claude Code. Partieron de los prompts de la sección 1 y de seis decisiones que el asistente propuso y el autor aprobó: caso de uso, alcance del MVP, arquitectura destino, agentes de IA, reglas del índice TIS e IA en el ciclo de vida. No hubo un prompt independiente por apartado, por lo que aquí se registra solo el prompt que inició el trabajo.
+Las secciones 2 a 7 del README se redactaron en una misma sesión de Claude Code, a partir de los prompts de la sección 1. No hubo un prompt por apartado: el asistente hizo dos propuestas, el autor las aprobó o las respondió, y el asistente redactó todo el documento siguiendo lo aprobado. Abajo están las dos propuestas, resumidas sin cambiar su contenido, y en cada apartado se indica qué decisión y qué paso lo originaron.
+
+**Propuesta 1 del asistente: seis decisiones para aprobar.**
+
+| # | Decisión | Propuesta |
+|---|---|---|
+| 1 | Problema y caso de uso | "¿Puedo aplicar fitosanitarios ahora en esta estación sin riesgo de deriva?" El productor o aplicador elige la estación y recibe condiciones actuales, índice TIS, recomendación con su motivo e históricos |
+| 2 | Alcance del MVP | Acceso, estación, tarjetas, TIS e históricos. Pasan a "Evolución futura" los niveles 2 y 3 completos, la predicción, ENO, humedad de suelos y los demás índices |
+| 3 | Arquitectura destino | Frontend web adaptable (React), API en FastAPI y PostgreSQL, más un proceso que cada 10 minutos trae datos de SAT2 y calcula el TIS. Corrige tres fallos del prototipo: contraseña en memoria, datos sin refrescar y falta de persistencia |
+| 4 | Agentes de IA | Salen del MVP: la ingesta y el cálculo son procesos normales, porque el criterio pide IA en el ciclo de desarrollo, no dentro del producto |
+| 5 | Reglas del TIS | ΔT > 0 nunca da "APTO", un dato faltante da "datos insuficientes", los datos viejos anulan la recomendación y el índice se presenta como orientativo mientras no esté validado |
+| 6 | IA en el ciclo de vida | Documentar análisis, diseño, implementación y pruebas, con prompts reales en `prompts.md` y sin inventarlos |
+
+**Propuesta 2 del asistente: orden de trabajo en 10 pasos.** 1, limpieza de la plantilla. 2, ficha, problema y alcance. 3, historias de usuario. 4, arquitectura, componentes, estructura, despliegue, seguridad y plan de tests. 5, modelo de datos, partiendo del modelo `observacion` del sandbox de OpenSpec. 6, tres endpoints en OpenAPI. 7, tres tickets ligados a historia, endpoint y entidad. 8, prototipo, instalación prevista y pull request. 9, `prompts.md`. 10, trazabilidad y control contra los cuatro criterios. Cerraba con tres preguntas sobre la lista de obligatorios, los permisos para publicar el caso y el retiro de la bitácora; el prompt 2 las responde.
 
 ### **2.1. Diagrama de arquitectura:**
 
-**Prompt 1:**
+Paso 4, a partir de la decisión 3.
+
+**Prompt 1:** aprueba la propuesta 1.
 
 ```text
 Apruebo las 6
 ```
 
-**Prompt 2:**
+**Prompt 2:** responde las preguntas de la propuesta 2.
 
 ```text
 1. Lo obligatorio es todo lo que podamos tener al momento y restringido a lo que se pide en la entrega, el resto es nuestro. Podemos hacer un comentario en lo que se denomina TypeForm
@@ -116,62 +138,74 @@ Ahora hay que crear la arquitectura nueva a donde migrar el proyecto actual. Gen
 
 ### **2.2. Descripción de componentes principales:**
 
-Se generó con los prompts de la sección 2.1.
+Paso 4, a partir de la decisión 3, con los prompts 1 y 2 de la sección 2.1. En la Entrega 2 se ajustó a lo construido según el ADR-0001 (prompt 3 de la sección 2.1).
 
 ### **2.3. Descripción de alto nivel del proyecto y estructura de ficheros**
 
-Se generó con los prompts de la sección 2.1.
+Paso 4, con los prompts 1 y 2 de la sección 2.1. La estructura real se documentó al cerrar la Entrega 2 ([sección 8.6](#86-cierre)), y `CLAUDE.md` se sumó en la entrega final ([sección 9](#9-hacia-la-entrega-final)).
 
 ### **2.4. Infraestructura y despliegue**
 
-Se generó con los prompts de la sección 2.1.
+Paso 4, con los prompts 1 y 2 de la sección 2.1. La instalación local y la configuración de producción salen de los prompts de la [sección 8.5](#85-despliegue).
 
 ### **2.5. Seguridad**
 
-Se generó con los prompts de la sección 2.1.
+Paso 4, a partir de la decisión 3, que corrige la contraseña en memoria del prototipo. La revisión con pruebas negativas se hizo en la Entrega 2 ([sección 8.6](#86-cierre)).
 
 ### **2.6. Tests**
 
-El plan se generó con los prompts de la sección 2.1. La implementación de las pruebas está en la [sección 8](#8-implementación-y-pruebas-entrega-2).
+Paso 4. La tabla de casos de referencia sale de la decisión 5, y el asistente recalculó cada caso con un script. La implementación de las pruebas está en la [sección 8](#8-implementación-y-pruebas-entrega-2).
 
 ---
 
 ## 3. Modelo de Datos
 
-Se generó con los prompts de la sección 2.1.
+Paso 5, con los prompts 1 y 2 de la sección 2.1. Parte del modelo `observacion` del sandbox de OpenSpec que se analizó en la [sección 0](#0-análisis-previo-ingeniería-inversa), y suma las restricciones que impiden guardar un "APTO" con inversión y lecturas duplicadas, que vienen de la decisión 5.
 
 ---
 
 ## 4. Especificación de la API
 
-Se generó con los prompts de la sección 2.1.
+Paso 6: los tres endpoints de lectura en OpenAPI, con valores de ejemplo inventados, con los prompts 1 y 2 de la sección 2.1. En la entrega final se sumaron los contratos de acceso y de estaciones que pidió la revisión de la Entrega 1 (pendiente D2, [sección 9](#9-hacia-la-entrega-final)).
 
 ---
 
 ## 5. Historias de Usuario
 
-Se generó con los prompts de la sección 2.1.
+Paso 3, a partir de las decisiones 1 y 5, con los prompts 1 y 2 de la sección 2.1: ver si se puede aplicar, entender el motivo sin confiar en datos dudosos y consultar el histórico de un sensor.
 
 ---
 
 ## 6. Tickets de Trabajo
 
-Se generó con los prompts de la sección 2.1.
+Pasos 7 y 10, con los prompts 1 y 2 de la sección 2.1: tres tickets de base de datos, backend y frontend, y la tabla de trazabilidad. En la entrega final se reordenaron las dependencias, como pidió la revisión de la Entrega 1 (pendiente D2, [sección 9](#9-hacia-la-entrega-final)).
 
 ---
 
 ## 7. Pull Requests
 
-**Prompt 1:**
+**Prompt 1:** publica la rama de la Entrega 1 después de revisarla.
 
 ```text
-el PR hay que hacerlo contra este repo: https://github.com/LIDR-academy-temp/AI4Devs-finalproject/
+Sí, commit y push
 ```
 
 **Prompt 2:**
 
 ```text
+el PR hay que hacerlo contra este repo: https://github.com/LIDR-academy-temp/AI4Devs-finalproject/
+```
+
+**Prompt 3:**
+
+```text
 Sí, crea fork y PR
+```
+
+**Prompt 4:** cierra una pull request duplicada que se había abierto en el repositorio anterior.
+
+```text
+Sí, ciérralo
 ```
 
 Los prompts de la pull request de la Entrega 2 están en la [sección 8.6](#86-cierre).
@@ -280,4 +314,93 @@ La revisión de seguridad (A14) se inició dentro del prompt "Continuemos por ac
 
 ```text
 Hagamos el PR de la entrega 2 y deja las fechas como están, solo actualiza la entrega anticipada de de la 2 y continuamos profesionalizando el trabajo para el final para que sea super profesional.
+```
+
+---
+
+## 9. Hacia la entrega final
+
+Herramientas: Claude Code con Claude Opus 5.5, OpenSpec y la skill `opsx:propose`. El seguimiento está en la [hoja de ruta](docs/plan/hoja-de-ruta-entrega-final.md). Se omiten dos prompts que aportaban datos de un sistema privado del autor, ajeno a este repositorio.
+
+### 9.1. Hoja de ruta y cuentas
+
+**Prompt 1:** generó la hoja de ruta.
+
+```text
+Dejemos todo este proceso documentado para no perder el hilo.
+
+1. Deja asentado el curso de pasos a revisar, hacer e inventariar y dejemos en pausa.
+2. volvamos al estado hasta que verifique que la aplicación a desplegar en local, esté como quiero.
+3. Para el punto 2 vamos a aislar las credenciales SAT2 de un registro de usuario en el sitio
+4. El login que tenemos lo definiremos con un ingreso, registro y recupero de usuario y/o contraseña
+5. dado el punto 4 obtendremos una base de clientes para futuro
+```
+
+**Prompt 2:** respuesta a las preguntas del asistente. Generó el cambio [`weather-track-registro-cuentas`](openspec/changes/weather-track-registro-cuentas/proposal.md).
+
+```text
+Si, solo servidor porque el contrato con SAT2 es privado nuestro y nosotros damos prestación de los datos cosechados. Definir los accesos como se exige en la industria de software. El ingreso público queda en base local y pueden administrar la inscripción o recupero. Luego del registro Reciben correo de confirmación con leyenda para desuscribirse. si no confirman o se desuscriben, se borran de la base. Luego ingresan a la aplicación funcional. Por ahora no hay criterio de niveles o clasificación de usuario
+```
+
+Invocación de skill que hizo el asistente:
+
+```text
+/opsx:propose weather-track-registro-cuentas: registro público con confirmación por correo, ingreso, recupero de contraseña, baja y autogestión de la cuenta, purga de cuentas sin confirmar o dadas de baja, base de clientes, credenciales SAT2 solo en el servidor, sin niveles de usuario. Fuentes: docs/plan/hoja-de-ruta-entrega-final.md y las respuestas del responsable del 3 nov 2026.
+```
+
+### 9.2. Estaciones
+
+**Prompt 1:** pidió revisar la interfaz sin tocar nada.
+
+```text
+Hago referencia a "Estaciones" porque son solo centrales meteorológicas que se reciben de SAT2. Estas son las que las especificaciones denominan como "equipos". No son instancias de una misma central ni tampoco son las opciones de visibilidad de servicios. Por ahora solo hay una, INTA Pergamino, en el futuro pueden haber más por lo que debe haber un selector y que hoy solo despliega una, la obtenida como Equipo 1 en la API recuperarEquipo. Si hay alguna duda de esto me preguntas antes de tocar nada. Revisa la lógica de la UI para revisar este tema y si hay inconsistencias, repito, me preguntas y lo vamos resolviendo juntos
+```
+
+**Prompt 2:** respuesta a las cinco inconsistencias que encontró el asistente.
+
+```text
+A. Podemos generar 2 casos de prueba para recrear el selector "caso de prueba - x" y solo el primero ingesta de la BD, el resto no
+B. Confirmado
+C. Sigue visible, no renderiza tablero instantáneos, muestra leyenda "equipo inactivo - solo históricos"
+D. La llamamos como la real
+```
+
+Como la respuesta A admitía más de una lectura, el asistente preguntó antes de seguir. El autor eligió: "Caso 1 con datos reales", "Siempre visible" para el selector y "Lista de sensores" para llegar a los históricos de un equipo inactivo.
+
+**Prompt 3:** aprobó pasar la resolución al cambio [`weather-track-estaciones`](openspec/changes/weather-track-estaciones/proposal.md).
+
+```text
+Sí, pásala
+```
+
+### 9.3. Devolución de la Entrega 1
+
+**Prompt 1:**
+
+```text
+Apruebo los cambios y luego lee el pdf dentro de feedback. Lo vas a necesitar para que veas lo que la academia dictaminó sobre la 1ra entrega. No redefinas nada todavía, saquemos conclusiones y de ser necesario hacemos un balance de valuaciones, requisitos, etc.
+```
+
+**Prompt 2:** sumó los pendientes D1 a D7 a la hoja de ruta.
+
+```text
+Sí, súmalos
+```
+
+**Prompts 3 a 6:** D1 ([`CLAUDE.md`](CLAUDE.md)), su commit, D2 (contratos de la API y orden de los tickets en el README) y D3 (esta misma actualización de `prompts.md`).
+
+```text
+Sí, empieza D1
+```
+
+```text
+Sí, commit y push
+```
+
+```text
+Sí, sigue con D2
+```
+
+```text
+Sí, sigue con D3
 ```

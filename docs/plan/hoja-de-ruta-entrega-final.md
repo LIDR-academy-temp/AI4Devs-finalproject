@@ -126,8 +126,8 @@ LIDR revisó la Entrega 1 el 2 de noviembre de 2026 con el resultado **"Luz verd
 | # | Pendiente | Esfuerzo | Fase de IA que refuerza |
 |---|---|---|---|
 | D1 | **Hecho el 3 de noviembre de 2026.** [`CLAUDE.md`](../../CLAUDE.md) con el stack, la regla de que el dominio no depende de otras capas, los comandos de test y la norma de trabajar un ticket por vez. Fue el segundo de los tres pasos que pidió LIDR | Bajo | Implementación |
-| D2 | Alinear el README: dependencias de los tickets (sección 6) según el orden real, es decir motor puro, acceso y endpoints, y contratos de inicio de sesión, cierre de sesión y estaciones en la API (sección 4) | Bajo | Diseño |
-| D3 | Completar en `prompts.md` las secciones que solo remiten a la 2.1, con las propuestas aprobadas y no solo el prompt inicial | Bajo | Diseño |
+| D2 | **Hecho el 3 de noviembre de 2026.** Alinear el README: dependencias de los tickets (sección 6) según el orden real, es decir motor puro, acceso y endpoints, y contratos de inicio de sesión, cierre de sesión y estaciones en la API (sección 4) | Bajo | Diseño |
+| D3 | **Hecho el 3 de noviembre de 2026.** Completar en `prompts.md` las secciones que solo remiten a la 2.1, con las propuestas aprobadas y no solo el prompt inicial | Bajo | Diseño |
 | D4 | Pipeline de GitHub Actions redactado con IA y revisado por el responsable (línea C) | Medio | Despliegue |
 | D5 | Revisión de pull requests asistida por IA y documentación viva a partir de las specs de OpenSpec (línea C) | Medio | Mantenimiento |
 | D6 | Opcional: tests basados en propiedades con Hypothesis. Con cualquier combinación de lecturas, nunca "apto" con inversión o lectura sospechosa, y una mayor diferencia térmica nunca baja el índice | Medio | Pruebas |
