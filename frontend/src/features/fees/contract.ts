@@ -37,3 +37,6 @@ export const patchFee = (feeId: string, body: FeePatchBody) =>
 
 export const getFeeHistory = (feeId: string, scope: FeeHistoryScope) =>
   unwrap(api.GET('/api/v1/fees/{feeId}/history', { params: { path: { feeId }, query: { scope } } }))
+
+/** The active fee types, the catalog of the fee screens and of Settlement Review. */
+export const getFeeTypes = () => unwrap(api.GET('/api/v1/fee-types'))

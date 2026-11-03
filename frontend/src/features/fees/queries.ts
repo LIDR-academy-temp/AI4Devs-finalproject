@@ -1,7 +1,14 @@
 // Reads of the fee screens (web-admin-fees design D9). The fees of an account share the prefix of the key Settlement
 // Review uses, so a write refreshes both.
 import { keepPreviousData, queryOptions } from '@tanstack/react-query'
-import { type FeesQuery, getAllAccountFees, getFeeHistory, getFees } from './contract'
+import { type FeesQuery, getAllAccountFees, getFeeHistory, getFees, getFeeTypes } from './contract'
+
+/** The catalog does not change while a screen is open. */
+const CATALOG_STALE_MS = 5 * 60_000
+
+/** The active fee types; Settlement Review reads them from here too. */
+export const feeTypesQuery = () =>
+  queryOptions({ queryKey: ['fee-types'] as const, queryFn: getFeeTypes, staleTime: CATALOG_STALE_MS })
 
 /** Prefix of every read of GET /fees and of the histories. */
 export const FEES_KEY = ['fees'] as const

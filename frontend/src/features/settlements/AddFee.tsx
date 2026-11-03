@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { type Ref, useId } from 'react'
+import { feeTypesQuery } from '@/features/fees/queries'
 import { formatBusinessDate } from '@/lib/format'
 import type { AccountFee, FeeTypeView } from './contract'
 import { selectClass } from './FeeRow'
-import { accountFeesQuery, feeTypesQuery } from './queries'
+import { accountFeesQuery } from './queries'
 import { strings } from './strings'
 
 const s = strings.fees

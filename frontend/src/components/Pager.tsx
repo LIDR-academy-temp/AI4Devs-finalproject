@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useId } from 'react'
+import { strings } from '@/components/strings'
 import { Button } from '@/components/ui/button'
-import { strings } from './strings'
 
 const s = strings.pager
 

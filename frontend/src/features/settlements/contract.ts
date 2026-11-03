@@ -141,8 +141,6 @@ export const getAccountFees = (accountId: string, query: { transactional: boolea
     }),
   ) as Promise<AccountFee[]>
 
-export const getFeeTypes = () => unwrap(api.GET('/api/v1/fee-types'))
-
 export const previewSettlement = (importId: string, body: SettlementRequest, signal?: AbortSignal) =>
   unwrap(
     api.POST('/api/v1/imports/{importId}/settlements/preview', { params: { path: { importId } }, body, signal }),

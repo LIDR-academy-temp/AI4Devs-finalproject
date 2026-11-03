@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
+import { Pager, useLastPageLimit } from '@/components/Pager'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Pager, useLastPageLimit } from '@/features/settlements/Pager'
 import { auditInstant, formatAuditDate } from '@/lib/format'
 import { requestListFocus } from '@/lib/list-focus'
 import { FEE_STATUS_TONE, toneOf } from '@/lib/status-tone'
