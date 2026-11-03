@@ -17,6 +17,8 @@ import {
 } from '../modules/auth/application/__fakes__/in-memory.js'
 import { AuthService } from '../modules/auth/application/auth-service.js'
 import type { CatalogService } from '../modules/catalog/application/catalog-service.js'
+import type { FeeAdminService } from '../modules/fees/application/fee-admin-service.js'
+import type { FeeQueryService } from '../modules/fees/application/fee-query-service.js'
 import type { FeeReadService } from '../modules/fees/application/fee-read-service.js'
 import type { ImportService } from '../modules/imports/application/import-service.js'
 import type { FileStore } from '../modules/imports/application/ports.js'
@@ -36,7 +38,7 @@ export interface TestAppOptions {
   /** Validation service over in-memory doubles; without it the validation routes hit the fake Prisma client. */
   validation?: { service: ValidationService }
   /** Fee read service over an in-memory repository; without it the fee routes hit the fake Prisma client. */
-  fees?: { service: FeeReadService }
+  fees?: { service?: FeeReadService; adminService?: FeeAdminService; queryService?: FeeQueryService }
   /** Settlement services over in-memory doubles; without them the settlement routes hit the fake Prisma client. */
   settlement?: { service: SettlementService; reads?: SettlementReadService; lifecycle?: SettlementLifecycleService }
 }

@@ -197,6 +197,30 @@ describe('buildApp', () => {
     await app.close()
   })
 
+  it('publishes the fee administration routes with bearer security, 403 and 404 (admin-fees)', async () => {
+    const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
+
+    const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json()
+
+    const operations: [string, 'get' | 'post' | 'patch'][] = [
+      ['/api/v1/accounts/{accountId}/fees', 'post'],
+      ['/api/v1/fees/{feeId}', 'patch'],
+      ['/api/v1/fees', 'get'],
+      ['/api/v1/fees/{feeId}/history', 'get'],
+    ]
+    for (const [path, method] of operations) {
+      const operation = doc.paths[path]?.[method]
+      expect(operation, `${method} ${path}`).toBeDefined()
+      expect(operation.tags, path).toEqual(['fees'])
+      expect(operation.security, path).toEqual([{ bearerAuth: [] }])
+      for (const status of ['400', '401', '403', '404']) expect(operation.responses, path).toHaveProperty(status)
+    }
+    expect(doc.paths['/api/v1/accounts/{accountId}/fees'].post.responses).toHaveProperty('201')
+    expect(doc.paths['/api/v1/accounts/{accountId}/fees'].post.responses).toHaveProperty('409')
+    expect(doc.paths['/api/v1/fees/{feeId}'].patch.responses).toHaveProperty('409')
+    await app.close()
+  })
+
   it('publishes the four reads of an attempt, the export as text/csv with 403 and 500 (summary-exports)', async () => {
     const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
 

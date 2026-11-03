@@ -4617,10 +4617,553 @@ export interface paths {
                             isTransactional: boolean;
                             fixedAmount: string | null;
                             percentage: string | null;
+                            conditionalPercentage: string | null;
+                            conditionThresholdAmt: string | null;
+                            brandFixedAmount: string | null;
+                            brandPercentage: string | null;
                             startDate: string | null;
                             endDate: string | null;
                             description: string | null;
+                            /** @enum {string} */
+                            status: "active" | "scheduled" | "closed";
+                            inUse: boolean;
+                            lastAppliedEventDate: string | null;
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
                         }[];
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Create a fee of the account
+         * @description Money and percentages as decimal strings; startDate/endDate null mean since forever / no end. 400 validation_error (details.field: fixedAmount, endDate, feeTypeId), 409 fee_overlap (details.conflicts).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    accountId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        feeTypeId: number;
+                        fixedAmount?: string | null;
+                        percentage?: string | null;
+                        conditionalPercentage?: string | null;
+                        conditionThresholdAmt?: string | null;
+                        brandFixedAmount?: string | null;
+                        brandPercentage?: string | null;
+                        description?: string | null;
+                        /** @default null */
+                        startDate?: string | null;
+                        /** @default null */
+                        endDate?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            feeId: string;
+                            feeTypeId: number;
+                            code: string;
+                            title: string;
+                            isTransactional: boolean;
+                            fixedAmount: string | null;
+                            percentage: string | null;
+                            conditionalPercentage: string | null;
+                            conditionThresholdAmt: string | null;
+                            brandFixedAmount: string | null;
+                            brandPercentage: string | null;
+                            startDate: string | null;
+                            endDate: string | null;
+                            description: string | null;
+                            /** @enum {string} */
+                            status: "active" | "scheduled" | "closed";
+                            inUse: boolean;
+                            lastAppliedEventDate: string | null;
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fee-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fee type catalog (transactional, free amount) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            feeTypeId: number;
+                            code: string;
+                            title: string;
+                            isTransactional: boolean;
+                            appliesToStatusId: number | null;
+                            allowsFreeAmount: boolean;
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fees/{feeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Correct a fee in place, close it, or change it from a date
+         * @description Without effectiveFrom: in-place correction (a fee in use takes only description and endDate). With effectiveFrom: closes the fee on effectiveFrom − 1 day and opens a successor with the new values. 409 fee_in_use (details.fields or details.lastAppliedEventDate), 409 fee_overlap.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    feeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        effectiveFrom: string;
+                        fixedAmount?: string | null;
+                        percentage?: string | null;
+                        conditionalPercentage?: string | null;
+                        conditionThresholdAmt?: string | null;
+                        brandFixedAmount?: string | null;
+                        brandPercentage?: string | null;
+                        description?: string | null;
+                        reason?: string;
+                    } | {
+                        fixedAmount?: string | null;
+                        percentage?: string | null;
+                        conditionalPercentage?: string | null;
+                        conditionThresholdAmt?: string | null;
+                        brandFixedAmount?: string | null;
+                        brandPercentage?: string | null;
+                        description?: string | null;
+                        startDate?: string | null;
+                        endDate?: string | null;
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            fee: {
+                                /** Format: uuid */
+                                feeId: string;
+                                feeTypeId: number;
+                                code: string;
+                                title: string;
+                                isTransactional: boolean;
+                                fixedAmount: string | null;
+                                percentage: string | null;
+                                conditionalPercentage: string | null;
+                                conditionThresholdAmt: string | null;
+                                brandFixedAmount: string | null;
+                                brandPercentage: string | null;
+                                startDate: string | null;
+                                endDate: string | null;
+                                description: string | null;
+                                /** @enum {string} */
+                                status: "active" | "scheduled" | "closed";
+                                inUse: boolean;
+                                lastAppliedEventDate: string | null;
+                                createdBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                createdAt: string;
+                                /** Format: date-time */
+                                updatedAt: string;
+                            };
+                            successor: {
+                                /** Format: uuid */
+                                feeId: string;
+                                feeTypeId: number;
+                                code: string;
+                                title: string;
+                                isTransactional: boolean;
+                                fixedAmount: string | null;
+                                percentage: string | null;
+                                conditionalPercentage: string | null;
+                                conditionThresholdAmt: string | null;
+                                brandFixedAmount: string | null;
+                                brandPercentage: string | null;
+                                startDate: string | null;
+                                endDate: string | null;
+                                description: string | null;
+                                /** @enum {string} */
+                                status: "active" | "scheduled" | "closed";
+                                inUse: boolean;
+                                lastAppliedEventDate: string | null;
+                                createdBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                createdAt: string;
+                                /** Format: date-time */
+                                updatedAt: string;
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/fees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fees of every account in scope, paginated, with filters
+         * @description Ordered by merchant, provider, account, fee type title, startDate (nulls first) and feeId. status is against today in New York. 404 for a merchantId, providerId or accountId outside the scope.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    merchantId?: string;
+                    providerId?: string;
+                    accountId?: string;
+                    kind?: "transactional" | "preset" | "free_amount";
+                    status?: "active" | "scheduled" | "closed";
+                    q?: string;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: {
+                                /** Format: uuid */
+                                feeId: string;
+                                feeTypeId: number;
+                                code: string;
+                                title: string;
+                                isTransactional: boolean;
+                                fixedAmount: string | null;
+                                percentage: string | null;
+                                conditionalPercentage: string | null;
+                                conditionThresholdAmt: string | null;
+                                brandFixedAmount: string | null;
+                                brandPercentage: string | null;
+                                startDate: string | null;
+                                endDate: string | null;
+                                description: string | null;
+                                /** @enum {string} */
+                                status: "active" | "scheduled" | "closed";
+                                inUse: boolean;
+                                lastAppliedEventDate: string | null;
+                                createdBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                createdAt: string;
+                                /** Format: date-time */
+                                updatedAt: string;
+                                merchant: {
+                                    id: number;
+                                    name: string;
+                                };
+                                provider: {
+                                    id: number;
+                                    name: string;
+                                };
+                                account: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    name: string;
+                                };
+                            }[];
+                            page: number;
+                            pageSize: number;
+                            total: number;
+                        };
                     };
                 };
                 /** @description Default Response */
@@ -4685,19 +5228,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/fee-types": {
+    "/api/v1/fees/{feeId}/history": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Fee type catalog (transactional, free amount) */
+        /**
+         * Change history of a fee, or of every fee of its type in its account
+         * @description Newest first; before and after in API form (money as text, dates YYYY-MM-DD).
+         */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    scope?: "fee" | "type";
+                };
                 header?: never;
-                path?: never;
+                path: {
+                    feeId: string;
+                };
                 cookie?: never;
             };
             requestBody?: never;
@@ -4709,17 +5259,86 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            feeTypeId: number;
-                            code: string;
-                            title: string;
-                            isTransactional: boolean;
-                            appliesToStatusId: number | null;
-                            allowsFreeAmount: boolean;
+                            feeHistoryId: number;
+                            /** Format: uuid */
+                            feeId: string;
+                            /** @enum {string} */
+                            action: "created" | "updated" | "closed" | "copied";
+                            /** Format: date-time */
+                            changedAt: string;
+                            changedBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            reason: string | null;
+                            before: {
+                                feeTypeId: number;
+                                fixedAmount: string | null;
+                                percentage: string | null;
+                                conditionalPercentage: string | null;
+                                conditionThresholdAmt: string | null;
+                                brandFixedAmount: string | null;
+                                brandPercentage: string | null;
+                                startDate: string | null;
+                                endDate: string | null;
+                                description: string | null;
+                            } | null;
+                            after: {
+                                feeTypeId: number;
+                                fixedAmount: string | null;
+                                percentage: string | null;
+                                conditionalPercentage: string | null;
+                                conditionThresholdAmt: string | null;
+                                brandFixedAmount: string | null;
+                                brandPercentage: string | null;
+                                startDate: string | null;
+                                endDate: string | null;
+                                description: string | null;
+                            };
                         }[];
                     };
                 };
                 /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
                 401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };

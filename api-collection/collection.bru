@@ -14,7 +14,7 @@ script:pre-request {
   // Logs in on demand so any folder or single request can run on its own (design D3).
   // Requests that log in themselves or need no session (logins, flows, anonymous negatives) set `selfAuth: true`.
   // Requests that must run as the viewer set the request var `as: viewer` and use {{viewerToken}};
-  // those of pay and unpay, `as: payments` and {{paymentsToken}}.
+  // those of pay and unpay, `as: payments` and {{paymentsToken}}; the fee writes, `as: admin` and {{adminToken}}.
   if (bru.getRequestVar('selfAuth') === 'true') {
     return;
   }
@@ -26,5 +26,8 @@ script:pre-request {
   }
   if (bru.getRequestVar('as') === 'payments' && !bru.getVar('paymentsToken')) {
     await bru.runRequest('00-auth/Login as payments');
+  }
+  if (bru.getRequestVar('as') === 'admin' && !bru.getVar('adminToken')) {
+    await bru.runRequest('00-auth/Login as admin');
   }
 }

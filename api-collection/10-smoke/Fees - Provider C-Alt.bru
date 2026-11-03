@@ -1,0 +1,33 @@
+meta {
+  name: Fees - Provider C-Alt
+  type: http
+  seq: 91
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/fees?merchantId=2&q=ProviderC-Alt
+  body: none
+  auth: inherit
+}
+
+params:query {
+  merchantId: 2
+  q: ProviderC-Alt
+}
+
+script:post-response {
+  const fee = res.status === 200 && res.body.items.find((f) => f.account.name === 'ProviderC-Alt');
+  if (fee) {
+    bru.setVar('providerCAltFeeId', fee.feeId);
+  }
+}
+
+tests {
+  test('analyst finds the only fee of ProviderC-Alt, the Chargeback one, by the account name', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.items.map((f) => [f.account.name, f.code])).to.deep.equal([['ProviderC-Alt', 'Chargeback']]);
+  });
+}

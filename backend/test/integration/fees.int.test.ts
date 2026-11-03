@@ -1,7 +1,7 @@
 import { AccountFee, FeeTypeView } from '@recon/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { createTestApp, SEED_PASSWORD } from './helpers.js'
+import { applyFeeUsage, createTestApp, removeFeeUsage, SEED_PASSWORD } from './helpers.js'
 
 // Seed oracle (backend/prisma/synthetic.ts): ACCOUNT_FEES (all NULL…NULL) and the 27 FEE_TYPES. Spec fees
 // "Fees de la cuenta vigentes a una fecha" and "Catálogo de tipos de fee" (settlement-process).
@@ -55,6 +55,40 @@ describe('GET /accounts/{id}/fees against the seed', () => {
 
     expect(fees).toHaveLength(6)
     expect(fees.find((f) => f.code === 'MDR')).toMatchObject({ percentage: '0.100000', fixedAmount: null })
+  })
+
+  // admin-fees: spec fees "Campos ampliados de un fee de la cuenta", "Fee aplicado por settlements procesados".
+  it('every fee carries status, usage and authorship; Chargeback over 1% its conditional percentage', async () => {
+    const fees = z.array(AccountFee).parse((await get(`/accounts/${accountIds['ProviderA-USD']}/fees`)).json())
+
+    for (const f of fees) {
+      expect(f.status).toBe('active')
+      expect(f.createdBy.userName).toBe('admin')
+    }
+    expect(fees.find((f) => f.code === 'Chargeback over 1%')).toMatchObject({ conditionalPercentage: '0.020000' })
+  })
+
+  it('a fee applied by processed movements is in use, with its last applied event day', async () => {
+    // The seed processes batches without fee breakdowns: the usage is a fixture, removed after the test.
+    const fee = await ctx.prisma.fee.findFirstOrThrow({
+      where: { accountId: accountIds['ProviderA-USD'], feeType: { code: 'TRX Fee - Deposit' } },
+    })
+    const usage = await applyFeeUsage(ctx.prisma, fee.feeId, { days: ['2026-09-14', '2026-10-02'] })
+    try {
+      const latest = await ctx.prisma.settlementTransactionFee.aggregate({
+        where: { feeId: fee.feeId },
+        _max: { eventDate: true },
+      })
+
+      const fees = z.array(AccountFee).parse((await get(`/accounts/${accountIds['ProviderA-USD']}/fees`)).json())
+
+      expect(fees.find((f) => f.feeId.toLowerCase() === fee.feeId.toLowerCase())).toMatchObject({
+        inUse: true,
+        lastAppliedEventDate: latest._max.eventDate!.toISOString().slice(0, 10),
+      })
+    } finally {
+      await removeFeeUsage(ctx.prisma, [usage])
+    }
   })
 
   it('ProviderC-Alt is outside the viewer scope: the same 404 as an unknown account', async () => {

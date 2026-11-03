@@ -14,6 +14,10 @@ const merchantOf = (name: AccountName) => {
 
 const text = (value: number | undefined, decimals: number) => (value === undefined ? null : value.toFixed(decimals))
 
+/** The seed creates every fee as admin. */
+const SEED_ADMIN = { userId: 1, userName: 'admin' }
+const CREATED_AT = '2026-10-01T12:00:00.000Z'
+
 export class InMemoryFeeRepository implements FeeReadRepository {
   readonly fees: (StoredFee & { accountId: string })[] = []
   private readonly feeTypes: StoredFeeType[] = FEE_TYPES.map((t) => ({ ...t }))
@@ -21,13 +25,29 @@ export class InMemoryFeeRepository implements FeeReadRepository {
 
   constructor() {
     for (const name of Object.keys(ACCOUNT_IDS) as AccountName[])
-      for (const f of ACCOUNT_FEES[name] ?? []) this.add(name, { feeTypeId: f.feeTypeId, fixed: f.fixed, pct: f.pct })
+      for (const f of ACCOUNT_FEES[name] ?? [])
+        this.add(name, {
+          feeTypeId: f.feeTypeId,
+          fixed: f.fixed,
+          pct: f.pct,
+          condPct: f.condPct,
+          threshold: f.threshold,
+        })
   }
 
-  /** A fee of an account; validity NULL…NULL unless given. */
+  /** A fee of an account; validity NULL…NULL and not in use unless given. */
   add(
     name: AccountName,
-    fee: { feeTypeId: number; fixed?: number; pct?: number; startDate?: string; endDate?: string },
+    fee: {
+      feeTypeId: number
+      fixed?: number
+      pct?: number
+      condPct?: number
+      threshold?: number
+      startDate?: string
+      endDate?: string
+      lastAppliedEventDate?: string
+    },
   ): StoredFee {
     const type = this.feeTypes.find((t) => t.feeTypeId === fee.feeTypeId)!
     const stored = {
@@ -39,9 +59,18 @@ export class InMemoryFeeRepository implements FeeReadRepository {
       isTransactional: type.isTransactional,
       fixedAmount: text(fee.fixed, 4),
       percentage: text(fee.pct, 6),
+      conditionalPercentage: text(fee.condPct, 6),
+      conditionThresholdAmt: text(fee.threshold, 4),
+      brandFixedAmount: null,
+      brandPercentage: null,
       startDate: fee.startDate ?? null,
       endDate: fee.endDate ?? null,
       description: null,
+      inUse: fee.lastAppliedEventDate !== undefined,
+      lastAppliedEventDate: fee.lastAppliedEventDate ?? null,
+      createdBy: SEED_ADMIN,
+      createdAt: CREATED_AT,
+      updatedAt: CREATED_AT,
     }
     this.fees.push(stored)
     return stored

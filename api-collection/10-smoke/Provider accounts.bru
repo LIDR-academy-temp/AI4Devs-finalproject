@@ -27,6 +27,11 @@ script:post-response {
     bru.deleteVar('providerAUsdAccountId');
     bru.setVar('providerAUsdLookupError', `ProviderA-USD not found in GET /providers/101/accounts (status ${res.status})`);
   }
+  // ProviderA-EUR hosts the fees flow (20-flows/fees), whose fees stay until the next seed.
+  const eur = res.status === 200 && Array.isArray(res.body) ? res.body.find((a) => a.name === 'ProviderA-EUR') : undefined;
+  if (eur) {
+    bru.setVar('providerAEurAccountId', eur.accountId);
+  }
 }
 
 tests {
