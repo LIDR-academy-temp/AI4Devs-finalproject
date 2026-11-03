@@ -149,7 +149,7 @@ Debe responder `{"status":"ok","db":"ok"}`. Después abre la URL en un navegador
 
 ## 10. Proteger la entrada (obligatorio)
 
-**Sin estos dos pasos la URL no se da por publicada.**
+**Sin estos tres pasos la URL no se da por publicada.**
 
 ### Forzar HTTPS
 
@@ -167,6 +167,16 @@ Comprueba que funciona. La primera orden debe mostrar una redirección `301` o `
 curl -sI http://recon.example.com | grep -iE '^(HTTP|location)'
 curl -sI https://recon.example.com | grep -i '^strict-transport-security'
 ```
+
+### Desactivar Real User Measurements
+
+Si está activo, Cloudflare inserta en la página un script externo de medición, y la política de seguridad de la aplicación lo bloquea. El navegador lo muestra como una violación de CSP.
+
+1. Entra en [dash.cloudflare.com](https://dash.cloudflare.com) y abre tu dominio.
+2. Abre **Speed** → **Real user monitoring**.
+3. Elige **Disable**. La pantalla debe decir `RUM is currently disabled for this zone`.
+
+Comprueba que funciona. Abre la URL en una ventana de incógnito con las herramientas de desarrollo (`F12`): ni **Console** ni **Issues** deben mostrar avisos de Content Security Policy.
 
 ### Limitar los intentos de login
 

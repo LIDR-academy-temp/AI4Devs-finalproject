@@ -60,6 +60,15 @@ Orden: primero las imágenes, que se prueban en local con Docker Desktop. Lo que
 - [x] 7.4 Verificar en verde `pnpm lint`, `pnpm typecheck`, `pnpm test` y `git status` sin `.env.deploy`
 - [x] 7.5 Commit: `chore(infra): ajustes de la prueba integrada del despliegue` (solo si la prueba deja cambios)
 
+## 8. Ajustes tras el despliegue real
+
+Por la URL pública, Chrome mostró dos violaciones de CSP que la prueba local no detectó: el script de Real User Measurements que inyecta Cloudflare y la comprobación con `new Function` que hace Zod 4 al construir el primer esquema de objeto.
+
+- [x] 8.1 Activar `jitless` de Zod en el frontend antes de construir cualquier esquema (design D3). Verificar: un test comprueba que construir y validar un esquema de objeto no llama a `Function`, y falla si se quita la opción; `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde
+- [x] 8.2 En `docs/deploy.md`, sección 10, añadir como paso obligatorio dejar desactivado Real User Measurements. Verificar por lectura
+- [x] 8.3 README: §2.5 sin el rótulo "Estado en la Entrega 2" y §7 con la rama de PR de la Entrega 3. Verificar con una búsqueda
+- [x] 8.4 Commit: `fix(web): evitar la violación de CSP de Zod y documentar RUM`
+
 ## Workflow follow-up
 
 Pasos manuales, fuera de este change, que completan la definición de hecho del issue #97:

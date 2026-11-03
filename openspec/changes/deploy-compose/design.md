@@ -54,6 +54,8 @@ No root y escucha en `8080`. `location /api/` usa `resolver 127.0.0.11` con una 
 - `assets/` con caché inmutable e `index.html` sin caché.
 - Las cabeceras se definen en un fragmento que se incluye en cada `location`, porque un `add_header` en un bloque anula los heredados.
 - La CSP permite `style-src 'unsafe-inline'`, porque los componentes de Radix usan estilos en línea. Se ajusta probando en el navegador.
+- La CSP no permite `'unsafe-eval'`. Zod 4 prueba `new Function` al construir el primer esquema de objeto y, aunque captura el error, el navegador lo registra como violación. El frontend activa `z.config({ jitless: true })` antes de cargar ningún esquema. Solo cambia la velocidad de validación, que con este volumen no se nota.
+- Real User Measurements de Cloudflare inyecta un script externo que la CSP bloquea. `docs/deploy.md` pide desactivarlo; no se amplía la CSP.
 - HSTS lo gestiona Cloudflare, no Nginx: `docs/deploy.md` lo incluye, junto con Always Use HTTPS, como paso obligatorio.
 
 `/docs` (Swagger) no se reenvía: solo se expone `/api`.
