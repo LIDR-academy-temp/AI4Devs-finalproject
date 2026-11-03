@@ -33,7 +33,7 @@ vars:pre-request {
 
 script:pre-request {
   if (!bru.getVar('inUseFeeId')) {
-    throw new Error('no applied fee: 13 Transactions I saves the first fee of the batch breakdowns');
+    throw new Error('no applied fee: 13 Transactions I or 10-smoke/Fees saves one');
   }
 }
 
