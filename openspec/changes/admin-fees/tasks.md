@@ -90,10 +90,10 @@ El grupo 1 es el contrato del que parte `web-admin-fees`. Al terminarlo se hace 
 
 ## 6. Documentación
 
-- [ ] 6.1 Actualizar el README según D13 (§1.2 con las limitaciones y #109, §1.5, §3.2, §4.1 y §4.4). Verificar con `grep` que no queda `FEE_OVERLAP` y que `POST /accounts/{id}/fees` sigue marcado con ✅.
+- [x] 6.1 Actualizar el README según D13 (§1.2 con las limitaciones y #109, §1.5, §3.2, §4.1 y §4.4). Verificar con `grep` que no queda `FEE_OVERLAP` y que `POST /accounts/{id}/fees` sigue marcado con ✅.
 - [x] 6.2 Actualizar la sección Bruno de `CLAUDE.md`: los casos felices de `POST`/`PATCH` de fees usan `admin` (`as: admin`, `{{adminToken}}`), porque solo `admin` tiene `fee.manage`.
-- [ ] 6.3 Verificar con `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check` y `openspec validate admin-fees --strict`.
-- [ ] 6.4 Commit: docs(fees): README, CLAUDE.md y OpenAPI de la administración de fees
+- [x] 6.3 Verificar con `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check` y `openspec validate admin-fees --strict`.
+- [x] 6.4 Commit: docs(fees): README, CLAUDE.md y OpenAPI de la administración de fees
 
 ## Workflow follow-up
 

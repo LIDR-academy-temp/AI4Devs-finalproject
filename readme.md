@@ -97,7 +97,7 @@ El producto se construye como MVP alrededor del flujo principal de reconciliaci�
 
 **Catálogo de merchants, proveedores, cuentas y canales.** Jerarquía merchant → proveedor → cuenta → canal. Merchants, proveedores (asociados a un merchant), canales y transacciones vienen suministrados por los gateways y son de solo lectura en la aplicación; es en esa información donde se detecta un proveedor o un canal nuevo. La **cuenta** es la entidad propia del Recon Tool: una agrupación lógica de canales de un proveedor para llevar contabilidades separadas. Se crea y edita desde la aplicación (hoy, por consulta directa), admite canales de varios gateways, administra sus fees y su política de reserva ante chargeback, y se enlaza a un conjunto de reglas de pareo del proveedor. Al crearla se indica si parte sin fees o copia los de otra cuenta del proveedor, y a qué conjunto de reglas se enlaza (o ninguno). El settlement term, el porcentaje de reserva y el plazo de liberación se reciben de los gateways como configuración del canal; el porcentaje efectivamente aplicado viene guardado en cada transacción. Un canal no viene asociado a ninguna cuenta: aparece como *not assigned yet* mientras tenga transacciones sin ningún batch procesado, y se asocia a una cuenta al procesar el primer settlement que lo incluye, con aviso previo al analista. Un canal puede tener historial en más de una cuenta, pero una sola es su **cuenta principal** —la última que procesó un settlement con ese canal— y los pendientes del canal se reportan solo en ella. Un merchant no ve los proveedores de otro merchant, aunque compartan proveedor. Los canales pueden quedar inactivos; no se borran.
 
-**Administración de fees por cuenta, con historial.** Creación y edición de fees por cuenta: tipo, monto fijo o porcentaje, valor y vigencia (rango de fechas, con inicio o fin abiertos: "always"). El motor calcula automáticamente solo los **fees por transacción** (aprobadas, declinadas, chargebacks, refunds, RDR, MDR…). Los fees **no transaccionales** —por batch, setup, anuales— se mantienen en el mismo módulo como referencia con su monto preestablecido, pero los indica el proveedor batch a batch, así que llegan en la hoja `Other Fees` de la plantilla y se revisan (prellenados, con importe ajustable) al procesar el batch; además existen categorías de importe libre (ajustes por corrección de batches anteriores, ajustes por duplicados, penalizaciones). Los fees no se eliminan: quedan asociados a la cuenta aunque el canal pase a inactivo, porque el fee aplicado se guarda por movimiento. Regla de negocio: no pueden coexistir dos fees del mismo tipo con vigencias que se solapen en la misma cuenta. Cada cambio queda registrado con quién, cuándo y qué cambió, y al editar un fee el sistema permite simular el efecto del cambio antes de aplicarlo.
+**Administración de fees por cuenta, con historial.** Creación y edición de fees por cuenta: tipo, monto fijo o porcentaje, valor y vigencia (rango de fechas, con inicio o fin abiertos: "always"). El motor calcula automáticamente solo los **fees por transacción** (aprobadas, declinadas, chargebacks, refunds, RDR, MDR…). Los fees **no transaccionales** —por batch, setup, anuales— se mantienen en el mismo módulo como referencia con su monto preestablecido, pero los indica el proveedor batch a batch, así que llegan en la hoja `Other Fees` de la plantilla y se revisan (prellenados, con importe ajustable) al procesar el batch; además existen categorías de importe libre (ajustes por corrección de batches anteriores, ajustes por duplicados, penalizaciones). Los fees no se eliminan: quedan asociados a la cuenta aunque el canal pase a inactivo, porque el fee aplicado se guarda por movimiento. Regla de negocio: no pueden coexistir dos fees del mismo tipo con vigencias que se solapen en la misma cuenta. Cada cambio queda registrado con quién, cuándo y qué cambió. Un fee que ya se aplicó en algún settlement (de cualquier intento, también deshecho) no se reescribe: solo admite cambiar su descripción o cerrarlo sin dejar fuera su último evento aplicado; sus valores nuevos se dan **desde una fecha**, lo que cierra el vigente el día anterior y abre un sucesor. Simular el efecto de un cambio antes de aplicarlo queda en el roadmap.
 
 **Importación de archivos con pareo revisado.** Se suben uno o varios archivos `.xlsx` de settlement de una cuenta (en el MVP, la plantilla estandarizada que el equipo ya utiliza; en la versión actual solo se podía procesar un archivo por batch, aquí uno o varios archivos de plantilla forman un mismo batch: hojas `APP`, `DEC`, `CHB`, `REF`, `RDR` y `RR` con columnas `ID`, `Amount`, `Currency`; hoja `Other Fees` con los fees del batch (`Type of Fee`, `Amount`, `Currency`); hojas `Duplicate Corrections` y `CHB Alerts` fuera del MVP; hoja oculta `Settings` con los catálogos de las listas desplegables; varios archivos forman un mismo batch). La hoja `Other Fees` se lee en la importación y sus filas aparecen prellenadas como fees por batch propuestos en Settlement Review, donde el analista los confirma, ajusta o quita; un tipo que no exista en el catálogo se marca como advertencia y queda como importe libre con su texto. El sistema propone el pareo de hojas y columnas a partir de las reglas configuradas para la cuenta: qué hoja corresponde a qué estado (estado fijo por hoja), qué columna es el Transaction ID, qué columna aporta el estado y cómo se traducen sus valores al catálogo interno (alias), opcionalmente qué columna indica el gateway (para cuentas con varios gateways del mismo formato de ID), y qué filas se ignoran (totales, cabeceras repetidas). El analista revisa la propuesta, la ajusta si hace falta y la confirma antes de analizar. El resto de las columnas se conserva como fila original de referencia. Para analizar debe estar identificado el Transaction ID y confirmada la forma de obtener el estado, por hoja o por columna. Opcionalmente se parean monto, moneda y fecha para compararlos como advertencia.
 
@@ -132,13 +132,16 @@ La vista previa mostraría el resultado de la interpretación y las reglas aplic
 - **Entidad Pago separada del settlement:** registrar el dinero que llega del proveedor y aplicarlo a uno o varios settlements, con pagos parciales y montos sin aplicar.
 - **Reportería avanzada** inspirada en el sistema de reconciliación de un merchant: Aged Receivables (settlements en tránsito envejecidos a 30/60/90 días, reconciliado no procesado, reservas por vencer), forecast de settlements esperados, cortes contables y fees por rango.
 - **Ingreso automático de batches históricos** y archivado del archivo procesado.
+- **Simular un cambio de fee** (`POST /fees/{id}/simulate`): el efecto de un cambio sobre los settlements afectados, sin aplicarlo. Los settlements ya procesados no cambian con un fee nuevo, porque cada movimiento guarda el fee que se le aplicó.
 
 La integración con el Back-Office del gateway se mantiene como hoy, mediante los CSV exportados: es una herramienta de terceros sobre la que no se pueden hacer cambios.
 
 #### Limitaciones conocidas
 
 - Un import cuyas filas no coinciden con la cuenta (p. ej., de otro merchant) puede procesarse como un batch solo de fees, sin aviso específico. Arreglo previsto en la Entrega 3 ([#92](https://github.com/kajirioji/AI4Devs-finalproject/issues/92)).
-- Lo recortado de la Entrega 2 (administración de cuentas y fees, entre otros) está en [1.5](#15-plan-de-recorte-de-la-entrega-2).
+- Las variantes de un fee (`conditionalPercentage`, `conditionThresholdAmt`, `brandFixedAmount`, `brandPercentage`) se aceptan, se guardan y salen en la API, pero el motor de settlement todavía no las aplica: calcula con `fixedAmount` y `percentage`.
+- Un fee programado y sin uso no se puede retirar (anular sin que llegue a regir); se corrige en el sitio, fechas y valores incluidos. La retirada está en el roadmap ([#109](https://github.com/kajirioji/AI4Devs-finalproject/issues/109)).
+- Lo recortado de la Entrega 2 (administración de cuentas y reglas de pareo, entre otros) está en [1.5](#15-plan-de-recorte-de-la-entrega-2).
 
 ### 1.3. Diseño y experiencia de usuario
 
@@ -352,7 +355,7 @@ La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al
 
 | Qué queda fuera | Por qué | Issue |
 |---|---|---|
-| Administración de cuentas, canales, fees y reglas de pareo (`POST /accounts/{id}/fees`, sección 4.1) | El seed crea cuentas, fees y reglas de pareo; el flujo solo necesita leerlos | [#80](https://github.com/kajirioji/AI4Devs-finalproject/issues/80) |
+| Administración de cuentas, canales y reglas de pareo | El seed crea cuentas y reglas de pareo; el flujo solo necesita leerlas | [#80](https://github.com/kajirioji/AI4Devs-finalproject/issues/80) |
 | Reserva ante chargeback por política de la cuenta (`release_on_chargeback`) | Recortable previsto en el design de `settlement-process`: el núcleo de HU3 no depende de ella | [#62](https://github.com/kajirioji/AI4Devs-finalproject/issues/62) |
 | Resolver filas ambiguas desde la interfaz y lista *In Progress* para retomar imports | El endpoint de resolución ya existe (`PATCH` de la fila); la pantalla solo las muestra | [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38) |
 | Suite E2E completa y job E2E en CI | Entra solo el smoke de importación, en local; la integración y la colección Bruno cubren el resto del API | [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38), [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40) |
@@ -366,7 +369,7 @@ La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al
 | Aviso cuando ninguna fila del import coincide con la cuenta | Hoy puede procesarse como un batch solo de fees (ver "Limitaciones conocidas" en 1.2) | [#92](https://github.com/kajirioji/AI4Devs-finalproject/issues/92) |
 | Vídeo de la demo | El tiempo de la Entrega 2 fue al flujo y a la revisión con usuarios | [#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96) |
 
-**Lo que entró al final.** La lista de Settlements de una cuenta y la pestaña Movements del Summary, que estaban recortadas, entraron con `settlements-browse` ([#64](https://github.com/kajirioji/AI4Devs-finalproject/issues/64), PR [#88](https://github.com/kajirioji/AI4Devs-finalproject/pull/88)).
+**Lo que entró al final.** La lista de Settlements de una cuenta y la pestaña Movements del Summary, que estaban recortadas, entraron con `settlements-browse` ([#64](https://github.com/kajirioji/AI4Devs-finalproject/issues/64), PR [#88](https://github.com/kajirioji/AI4Devs-finalproject/pull/88)). La administración de fees (crear, corregir, cerrar, cambiar desde una fecha, vista global e historial) entró en el API con `admin-fees` ([#80](https://github.com/kajirioji/AI4Devs-finalproject/issues/80), parte 1).
 
 **Revisión con usuarios.** El 20 de octubre, el líder del equipo revisó con el analista del proyecto la interfaz del recorrido de la demo (Files → Mapping → Analysis → Settlement Review → Summary, y Settlement List) sobre el mundo sintético ([`docs/uat/`](docs/uat/), notas en [`2026-10-20-revision-interfaz.md`](docs/uat/2026-10-20-revision-interfaz.md)). La valoración general del progreso y del resultado fue buena; las observaciones fueron de legibilidad de la interfaz, ninguna de reglas ni cifras. Doce entraron en la Entrega 2 con `ui-polish` (PR [#91](https://github.com/kajirioji/AI4Devs-finalproject/pull/91)) y el resto pasó a issues:
 
@@ -466,7 +469,7 @@ Las razones son de este proyecto, no genéricas:
 
 ### 2.2. Descripción de componentes principales
 
-> Describe el diseño completo del MVP. En la Entrega 2 está implementado lo que necesita el flujo principal; lo recortado (administración de cuentas y fees, simulación de fees, entre otros) está en [1.5](#15-plan-de-recorte-de-la-entrega-2).
+> Describe el diseño completo del MVP. En la Entrega 2 está implementado lo que necesita el flujo principal; lo recortado (administración de cuentas y reglas de pareo, entre otros) está en [1.5](#15-plan-de-recorte-de-la-entrega-2).
 
 **Frontend (React 19, TypeScript, Vite).** SPA con enrutado por pantalla (login, dashboard, flujo de reconciliación en seis pasos, settlements, pagos, búsqueda, administración). Estado de servidor con TanStack Query (caché, reintentos, invalidación tras cada acción); componentes de UI con shadcn/ui sobre Tailwind; formularios con React Hook Form y los mismos esquemas Zod que valida el backend. Tabla de datos virtualizada para las vistas de filas, hallazgos y apariciones.
 
@@ -474,7 +477,7 @@ Las razones son de este proyecto, no genéricas:
 
 **Módulo de catálogo.** Merchants, proveedores y canales de solo lectura (alimentados por el seed en el MVP y por un job desde los gateways en producción); cuentas con creación (sin fees o copiando los de otra cuenta del proveedor; enlace opcional a un conjunto de reglas) y edición, política de reserva ante chargeback, canales asociados y cuenta principal por canal; conjuntos de reglas de pareo por proveedor.
 
-**Módulo de fees.** Fees por cuenta con tipo, monto fijo o porcentaje, valor y vigencia; regla de no solapamiento; historial de cambios; simulación del efecto de una edición.
+**Módulo de fees.** Fees por cuenta con tipo, monto fijo o porcentaje, valor y vigencia; regla de no solapamiento; corrección en el sitio (completa mientras no tiene uso; con uso, solo descripción y cierre) y cambio desde una fecha; historial de cambios y auditoría. La simulación del efecto de una edición queda en el roadmap.
 
 **Módulo de importación.** Recibe uno o varios `.xlsx` por cuenta, los lee hoja a hoja con un lector OOXML propio que devuelve todas las celdas como texto ([ADR-008](docs/adr/008-lector-xlsx-propio.md)), aplica el conjunto de reglas de pareo enlazado a la cuenta (o las globales) para proponer el mapeo, guarda cada fila con su identificador de origen, estado y el resto de columnas como JSON de referencia, y ejecuta el cruce por identidad externa contra la tabla de transacciones propias.
 
@@ -1228,7 +1231,9 @@ Reglas: la asociación se crea al procesar el primer batch de la cuenta que incl
 
 Restricciones: `CHECK (fixedAmount IS NOT NULL OR percentage IS NOT NULL)`; `CHECK (startDate IS NULL OR endDate IS NULL OR endDate >= startDate)`; **no solapamiento**: para una misma (`accountId`, `feeTypeId`) no pueden existir dos filas cuyas vigencias se intersequen, evaluando los NULL como centinelas: dos fees A y B se solapan si `COALESCE(A.startDate,'0001-01-01') <= COALESCE(B.endDate,'9999-12-31') AND COALESCE(B.startDate,'0001-01-01') <= COALESCE(A.endDate,'9999-12-31')` (dos fees `NULL…NULL` del mismo tipo se solapan). SQL Server no lo expresa como constraint declarativa; se implementa en el caso de uso (transacción con bloqueo por cuenta) y se respalda con un trigger `AFTER INSERT, UPDATE` que rechaza la operación. Sustituye al `UNIQUE (feeTypeId, accountId)` del sistema actual. Selección del fee vigente para un movimiento con fecha de evento `d`: `(startDate IS NULL OR startDate <= d) AND (endDate IS NULL OR endDate >= d)`. Los NULL se guardan como tales (no como fechas centinela) para no contaminar informes y exports. Los fees no se eliminan: para retirar uno se le pone `endDate`; cambiar un fee cierra el vigente con `endDate = nuevo startDate − 1 día` y abre el nuevo, y el primero de la cadena puede tener `startDate NULL`. Un ajuste sin fecha de evento (`eventDate NULL`, advertencia `undated_adjustment`) no tiene día con que elegir: recibe el fee de su tipo solo si el único fee de ese tipo en la cuenta es `NULL…NULL`; si no, se queda sin fee de ese tipo y la advertencia lleva `feeSkipped: true` (decisión P6b del gate de `settlement-process`). Si la cuenta no tiene ningún fee del tipo, `feeSkipped` es `false`: no hay fee que saltar.
 
-**FeeHistory** — una fila por cambio: `feeId`, `changedByUserId`, `changedAt`, `action` (`created` / `updated` / `closed`), `beforeJson` y `afterJson` con la fila completa antes y después, `reason`. Permite auditar un summary contra el fee vigente a la fecha del evento. **FeeType** — catálogo conservado (`feeTypeId`, `code`, `title`, `isTransactional`, `appliesToStatusId`) más `allowsFreeAmount` para las categorías de importe libre e `isActive`; `GET /fee-types` devuelve solo los tipos activos. El catálogo no transaccional se siembra con los 21 valores de la lista `Non-Transactional Fees` de la plantilla (Annual Fee, Bram Fine, Chargeback Assessment Fee, Chargeback Order Deduction, Chargeback over 1 %/2 %/3 %, Chargeback Reversed, Cross Border Fee, Customer Service Fee, Monthly Fee, Rebate 2 %/3 %, Release of Frozen Funds, Remittance Charges, Service Fee, Settlement Fee, Setup Fee, Special Adjustment, Special Deduction, Wire Fee).
+**FeeHistory** — una fila por cambio: `feeId`, `changedByUserId`, `changedAt`, `action` (`created` / `updated` / `closed` / `copied`, esta última para la copia al crear una cuenta), `beforeJson` (NULL en `created`) y `afterJson` con la configuración completa antes y después en la forma del API (importes y porcentajes como strings decimales, fechas `YYYY-MM-DD`), y `reason` opcional de hasta 500 caracteres. Un cambio desde una fecha deja dos filas: `closed` en el original y `created` en el sucesor. Cada escritura deja además su entrada en `AuditLog` (`fee.create`, `fee.update`, `fee.close`, `fee.change`) en la misma transacción. Permite auditar un summary contra el fee vigente a la fecha del evento.
+
+**Uso de un fee** (derivado, no se guarda). Un fee está **en uso** si algún movimiento (`SettlementTransactionFee`) o algún fee por batch (`SettlementBatchFee`) de cualquier intento, también deshecho, lo referencia. `lastAppliedEventDate` es el mayor día entre la fecha de evento de esos movimientos y la `settlementDate` de esos batches: la fecha mínima a la que se puede cerrar el fee. Un fee en uso solo admite cambiar `description` y `endDate` (`≥ lastAppliedEventDate`); para cambiar sus valores se cambia desde una fecha posterior a ese día. **FeeType** — catálogo conservado (`feeTypeId`, `code`, `title`, `isTransactional`, `appliesToStatusId`) más `allowsFreeAmount` para las categorías de importe libre e `isActive`; `GET /fee-types` devuelve solo los tipos activos. El catálogo no transaccional se siembra con los 21 valores de la lista `Non-Transactional Fees` de la plantilla (Annual Fee, Bram Fine, Chargeback Assessment Fee, Chargeback Order Deduction, Chargeback over 1 %/2 %/3 %, Chargeback Reversed, Cross Border Fee, Customer Service Fee, Monthly Fee, Rebate 2 %/3 %, Release of Frozen Funds, Remittance Charges, Service Fee, Settlement Fee, Setup Fee, Special Adjustment, Special Deduction, Wire Fee).
 
 #### Reglas de pareo
 
@@ -1486,7 +1491,7 @@ Se documentan los tres endpoints principales, uno por cada capacidad que define 
 
 ### 4.1. `POST /accounts/{accountId}/fees` — crear un fee
 
-Permiso `fee.manage`. Crea un fee vigente para la cuenta. Regla de negocio: no puede solaparse en vigencia con otro fee del mismo tipo en la misma cuenta; `startDate: null` significa "desde siempre" y `endDate: null` "sin fin", y ambos NULL se tratan como −∞ y +∞ en la comprobación de solapamiento.
+Permiso `fee.manage` (solo el rol `admin`), comprobado antes del alcance: sin él, `403 forbidden`; una cuenta inexistente o de un merchant fuera del alcance, `404 not_found`. Crea un fee para la cuenta y deja su fila `created` en `FeeHistory` y `fee.create` en `AuditLog`, en la misma transacción. Regla de negocio: no puede solaparse en vigencia con otro fee del mismo tipo en la misma cuenta; `startDate: null` (u omitido) significa "desde siempre" y `endDate: null` "sin fin", y ambos NULL se tratan como −∞ y +∞ en la comprobación de solapamiento. La respuesta es la misma forma plana que `GET /accounts/{id}/fees` (`AccountFee`), con `status` respecto al día de hoy en Nueva York. Las variantes (`conditionalPercentage`, `conditionThresholdAmt`, `brandFixedAmount`, `brandPercentage`) se guardan pero el motor aún no las aplica (ver "Limitaciones conocidas" en 1.2).
 
 ```yaml
 /accounts/{accountId}/fees:
@@ -1512,33 +1517,43 @@ Permiso `fee.manage`. Crea un fee vigente para la cuenta. Regla de negocio: no p
         description: Fee creado
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/Fee' }
+            schema: { $ref: '#/components/schemas/AccountFee' }
             example:
               feeId: "8f1c2b3e-…"
-              accountId: "efb2446e-…"
-              feeType: { feeTypeId: 3, code: "CHB", title: "Chargeback", isTransactional: true }
+              feeTypeId: 3
+              code: "CHB"
+              title: "Chargeback"
+              isTransactional: true
               fixedAmount: "25.0000"
               percentage: "0.025000"
               conditionalPercentage: null
               conditionThresholdAmt: null
               brandFixedAmount: null
+              brandPercentage: null
               startDate: null
               endDate: null
               description: "Chargeback fee (applies to every event)"
-              createdBy: { userId: 7, userName: "analyst1" }
+              status: active
+              inUse: false
+              lastAppliedEventDate: null
+              createdBy: { userId: 1, userName: "admin" }
               createdAt: "2026-10-01T14:02:11Z"
+              updatedAt: "2026-10-01T14:02:11Z"
       '400':
-        description: Datos inválidos (ni monto fijo ni porcentaje; endDate anterior a startDate cuando ambos están informados)
+        description: >-
+          Datos inválidos. Si el cuerpo no cumple el esquema (campo desconocido, importe mal formado),
+          details es la lista de { path, message }. Si rompe una regla del fee (ni monto fijo ni porcentaje,
+          endDate anterior a startDate, tipo inactivo), details.field dice cuál.
         content:
           application/json:
-            example: { code: validation_error, message: "fixedAmount o percentage es obligatorio", details: { field: "fixedAmount" } }
+            example: { code: validation_error, message: "fixedAmount or percentage is required", details: { field: "fixedAmount" } }
       '409':
-        description: Vigencia solapada con otro fee del mismo tipo
+        description: Vigencia solapada con otro fee del mismo tipo en la cuenta
         content:
           application/json:
             example:
-              code: FEE_OVERLAP
-              message: "Ya existe un fee de tipo CHB vigente en ese rango"
+              code: fee_overlap
+              message: "Another fee of this type is in force in that range"
               details:
                 conflicts:
                   - { feeId: "2a9d…", startDate: null, endDate: null }
@@ -1547,6 +1562,7 @@ components:
   schemas:
     FeeCreate:
       type: object
+      additionalProperties: false
       required: [feeTypeId]
       properties:
         feeTypeId: { type: integer }
@@ -1555,9 +1571,10 @@ components:
         conditionalPercentage: { type: string, nullable: true }
         conditionThresholdAmt: { type: string, nullable: true }
         brandFixedAmount: { type: string, nullable: true }
-        startDate: { type: string, format: date, nullable: true, description: 'null = desde siempre' }
-        endDate: { type: string, format: date, nullable: true, description: 'null = sin fin' }
-        description: { type: string, maxLength: 100 }
+        brandPercentage: { type: string, nullable: true }
+        startDate: { type: string, format: date, nullable: true, description: 'null u omitido = desde siempre' }
+        endDate: { type: string, format: date, nullable: true, description: 'null u omitido = sin fin' }
+        description: { type: string, maxLength: 100, nullable: true }
 ```
 
 ### 4.2. `POST /accounts/{accountId}/imports` — importar archivos y obtener la propuesta de pareo
@@ -1849,13 +1866,12 @@ Lista consolidada de lo que el MVP necesita; los tres documentados arriba están
 | Catálogo | `GET /providers/{id}/accounts` · `POST /providers/{id}/accounts` | `account.manage` (POST) | Cuentas del proveedor; crear cuenta (nombre, política de reserva ante chargeback, tope de reserva, `copyFeesFromAccountId` opcional, `matchingRuleSetId` opcional) |
 | Catálogo | `GET /accounts/{id}` · `PATCH /accounts/{id}` | `account.manage` (PATCH) | Detalle / editar cuenta, activar o cerrar |
 | Catálogo | `GET /accounts/{id}/channels` | — | Canales asociados a la cuenta (principal e históricos) |
-| Fees | `GET /fees?merchantId=&providerId=&accountId=&kind=&status=&q=` | `fee.view` | Vista global de fees activos, programados o cerrados, con filtros |
-| Fees | `GET /accounts/{id}/fees?asOf=&transactional=` | `fee.view` | Fees de la cuenta, vigentes a una fecha de negocio (`asOf`, YYYY-MM-DD); `transactional=false` da los preestablecidos por batch (un preestablecido solo con porcentaje sale sin importe: lo escribe el analista) |
-| Fees | **`POST /accounts/{id}/fees`** ✅ | `fee.manage` | Crear fee (4.1) |
-| Fees | `PATCH /fees/{id}` | `fee.manage` | Editar o cerrar vigencia; registra en historial |
-| Fees | `POST /fees/{id}/simulate` | `fee.manage` | Efecto de un cambio sobre los settlements afectados, sin aplicar |
-| Fees | `GET /fees/{id}/history` | `fee.view` | Historial de cambios |
-| Fees | `GET /fee-types` | — | Catálogo de tipos (transaccional, importe libre) |
+| Fees | **`GET /fees?merchantId=&providerId=&accountId=&kind=&status=&q=&page=&pageSize=`** ✅ | `fee.view` | Vista global de los fees del alcance: `{ items, page, pageSize, total }`, cada uno con la forma de `AccountFee` más `merchant`, `provider` y `account`, en orden merchant › proveedor › cuenta › título del tipo › `startDate` (NULL primero) › `feeId`, estable entre páginas. `kind` ∈ `transactional` \| `preset` \| `free_amount`; `status` ∈ `active` \| `scheduled` \| `closed` respecto al día de hoy en Nueva York (sin él, todos); `q` busca sin distinguir mayúsculas en la cuenta, el código y el título del tipo y la descripción. `page` desde 1, `pageSize` 1–500 (50). `400 validation_error` / `403 forbidden` / `404 not_found` si el `merchantId`, `providerId` o `accountId` no existe o queda fuera del alcance |
+| Fees | **`GET /accounts/{id}/fees?asOf=&transactional=`** ✅ | `fee.view` | Fees de la cuenta (`AccountFee`, con `status`, `inUse` y `lastAppliedEventDate`), vigentes a una fecha de negocio (`asOf`, YYYY-MM-DD); `transactional=false` da los preestablecidos por batch (un preestablecido solo con porcentaje sale sin importe: lo escribe el analista) |
+| Fees | **`POST /accounts/{id}/fees`** ✅ | `fee.manage` | Crear fee (4.1). Responde `201` con el `AccountFee`. `400 validation_error` (`details.field`: `fixedAmount`, `endDate`, `feeTypeId`) / `409 fee_overlap` (`details.conflicts`), `403 forbidden` antes del alcance, `404 not_found` |
+| Fees | **`PATCH /fees/{id}`** ✅ | `fee.manage` | Sin `effectiveFrom`, **corrección en el sitio** de cualquier subconjunto de valores, fechas y `description` (acción `closed` si solo pone `endDate` a un fee sin fin, `updated` si no); un fee en uso solo admite `description` y `endDate ≥ lastAppliedEventDate`. Con `effectiveFrom`, **cambio desde una fecha**: cierra el fee el día anterior (que debe ser `≥ lastAppliedEventDate`) y abre un sucesor con los valores nuevos y el `endDate` original. `reason` opcional (≤ 500). Responde `200` con `{ fee, successor }`; un cuerpo que no cambia nada responde `200` sin escribir historial ni auditoría. `400 validation_error` (`details.field`: `effectiveFrom`, `endDate`, `fixedAmount`; `feeTypeId` no es editable) / `409 fee_in_use` (`details.fields` o `details.lastAppliedEventDate`) / `409 fee_overlap`, `403 forbidden` antes del alcance, `404 not_found` |
+| Fees | **`GET /fees/{id}/history?scope=fee\|type`** ✅ | `fee.view` | Historial del fee (`scope=fee`, por defecto) o de todos los fees de su tipo en su cuenta (`scope=type`), del más reciente al más antiguo: `action`, `changedAt`, `changedBy`, `reason` y la configuración `before` / `after` en la forma del API. `400 validation_error` / `404 not_found` igual fuera del alcance |
+| Fees | **`GET /fee-types`** ✅ | — | Catálogo de tipos activos (transaccional, importe libre) |
 | Pareo | `GET /providers/{id}/matching-rule-sets` · `POST …/matching-rule-sets` | `account.manage` (POST) | Conjuntos de reglas del proveedor, con las cuentas que usan cada uno; crear conjunto |
 | Pareo | `GET /matching-rule-sets/{id}` · `PUT /matching-rule-sets/{id}` | `account.manage` (PUT) | Reglas de hoja, columna y filas a ignorar del conjunto |
 | Pareo | `GET /matching-rules/global` · `PUT /matching-rules/global` | `account.manage` (PUT) | Reglas globales por defecto y alias de estado |
@@ -1895,7 +1911,7 @@ Lista consolidada de lo que el MVP necesita; los tres documentados arriba están
 | Usuarios | `GET /users` · `POST /users` · `PATCH /users/{id}` | `user.manage` | Usuarios, rol, alcance y merchants asignados dentro de la autoridad del administrador |
 | Sistema | `GET /health` | — | Estado del servicio y de la conexión a la base |
 
-Fuera del MVP (roadmap, no se implementan): pagos como entidad (`/payments`), reportes avanzados (`/reports/aged-receivables`, `/reports/forecast`), reglas de interpretación avanzada (`/accounts/{id}/interpretation-rules`) y formatos adicionales a `.xlsx`.
+Fuera del MVP (roadmap, no se implementan): simular un cambio de fee (`POST /fees/{id}/simulate`), pagos como entidad (`/payments`), reportes avanzados (`/reports/aged-receivables`, `/reports/forecast`), reglas de interpretación avanzada (`/accounts/{id}/interpretation-rules`) y formatos adicionales a `.xlsx`.
 
 ---
 
