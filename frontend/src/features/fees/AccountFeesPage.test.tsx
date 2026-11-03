@@ -76,7 +76,7 @@ describe('Account fees: access and content', () => {
         .slice(0, 7)
         .map((c) => c.textContent),
     ).toEqual(['MDR', 'E · Successful', '2.900 %', '2026-01-01', 'open', 'Active', 'In use'])
-    expect(rowOf('Refund', '2027-01-01').getAllByRole('cell')[6]?.textContent).toBe('')
+    expect(rowOf('Refund per txn fee', '2027-01-01').getAllByRole('cell')[6]?.textContent).toBe('')
   })
 
   it('a closed fee shows Closed and its end, and offers no Close…', async () => {
@@ -116,7 +116,7 @@ describe('Account fees: actions by permission and use', () => {
     await openAccount('admin')
 
     expect(screen.getByRole('button', { name: s.add })).toBeInTheDocument()
-    expect(actionsOf(rowOf('Refund', '2027-01-01'))).toEqual(['Edit', 'Close…', 'History'])
+    expect(actionsOf(rowOf('Refund per txn fee', '2027-01-01'))).toEqual(['Edit', 'Close…', 'History'])
   })
 
   it('admin: a fee in use offers Edit, Change from date…, Close… and History', async () => {

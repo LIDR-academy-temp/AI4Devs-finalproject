@@ -26,6 +26,59 @@ export const formatValidTo = (endDate: string | null) => endDate ?? strings.open
 export const formatValidity = (startDate: string | null, endDate: string | null) =>
   strings.validityArrow(formatValidFrom(startDate), formatValidTo(endDate))
 
+/** The configuration a history row keeps (FeeSnapshot of @recon/shared). */
+export interface FeeSnapshotLike {
+  fixedAmount: string | null
+  percentage: string | null
+  conditionalPercentage: string | null
+  conditionThresholdAmt: string | null
+  brandFixedAmount: string | null
+  brandPercentage: string | null
+  startDate: string | null
+  endDate: string | null
+  description: string | null
+}
+
+type SnapshotField = keyof FeeSnapshotLike
+const SNAPSHOT_FIELDS: readonly SnapshotField[] = [
+  'fixedAmount',
+  'percentage',
+  'conditionalPercentage',
+  'conditionThresholdAmt',
+  'brandFixedAmount',
+  'brandPercentage',
+  'startDate',
+  'endDate',
+  'description',
+]
+const RATES = new Set<SnapshotField>(['percentage', 'conditionalPercentage', 'brandPercentage'])
+const AMOUNTS = new Set<SnapshotField>(['fixedAmount', 'conditionThresholdAmt', 'brandFixedAmount'])
+
+function snapshotValue(field: SnapshotField, value: string | null): string {
+  if (field === 'startDate') return formatValidFrom(value)
+  if (field === 'endDate') return formatValidTo(value)
+  if (value === null) return strings.history.none
+  if (RATES.has(field)) return formatRate(value)
+  if (AMOUNTS.has(field)) return formatDecimal(value)
+  return value
+}
+
+/**
+ * What a history row says: the fields that changed (`Percentage: 2.500 % → 2.750 %`), or, for a row without
+ * `before` (created, copied), the configuration it started with.
+ */
+export function historyLines(before: FeeSnapshotLike | null, after: FeeSnapshotLike): string[] {
+  const h = strings.history
+  if (before === null) {
+    return SNAPSHOT_FIELDS.filter((field) => field === 'startDate' || field === 'endDate' || after[field] !== null).map(
+      (field) => h.value(h.fields[field], snapshotValue(field, after[field])),
+    )
+  }
+  return SNAPSHOT_FIELDS.filter((field) => before[field] !== after[field]).map((field) =>
+    h.change(h.fields[field], snapshotValue(field, before[field]), snapshotValue(field, after[field])),
+  )
+}
+
 interface FeeTypeLike {
   feeTypeId: number
   isTransactional: boolean
