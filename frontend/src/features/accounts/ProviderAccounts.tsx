@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import type { AccountChannelItem, AccountSummary } from '@/lib/api/types'
 import { formatDecimal } from '@/lib/format'
+import { useMe } from '@/lib/session/me'
 import { accountChannelsQuery, providerQuery, unassignedChannelsQuery } from './queries'
 import { strings } from './strings'
 
@@ -37,10 +38,12 @@ function AccountRow({
   account,
   merchantId,
   channels,
+  canSeeFees,
 }: {
   account: AccountSummary
   merchantId: number
   channels: AccountChannelItem[] | undefined
+  canSeeFees: boolean
 }) {
   return (
     <TableRow>
@@ -66,12 +69,26 @@ function AccountRow({
           {strings.settlements}
         </Link>
       </TableCell>
+      {canSeeFees && (
+        <TableCell>
+          {/* Closed accounts too: their fees are still there (web-admin-fees design D2). */}
+          <Link
+            to="/accounts/$accountId/fees"
+            params={{ accountId: account.accountId }}
+            aria-label={strings.feesOf(account.name)}
+            className="text-primary underline underline-offset-4"
+          >
+            {strings.fees}
+          </Link>
+        </TableCell>
+      )}
     </TableRow>
   )
 }
 
 /** Accounts of one provider, their channels and the "not assigned yet" warning (openspec/specs/accounts). */
 export function ProviderAccounts({ providerId }: { providerId: number }) {
+  const canSeeFees = useMe().permissions.includes('fee.view')
   const provider = useQuery(providerQuery(providerId))
   const unassigned = useQuery(unassignedChannelsQuery)
   const accounts = provider.data?.accounts ?? []
@@ -114,6 +131,7 @@ export function ProviderAccounts({ providerId }: { providerId: number }) {
               <TableHead>{strings.columns.reserveCap}</TableHead>
               <TableHead>{strings.columns.status}</TableHead>
               <TableHead>{strings.columns.settlements}</TableHead>
+              {canSeeFees && <TableHead>{strings.columns.fees}</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -123,6 +141,7 @@ export function ProviderAccounts({ providerId }: { providerId: number }) {
                 account={account}
                 merchantId={provider.data.merchantId}
                 channels={channels[index]?.data}
+                canSeeFees={canSeeFees}
               />
             ))}
           </TableBody>

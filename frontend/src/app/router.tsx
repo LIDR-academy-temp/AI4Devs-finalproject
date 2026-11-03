@@ -10,6 +10,9 @@ import {
 } from '@tanstack/react-router'
 import { AccountsPage, validateAccountsSearch } from '@/features/accounts/AccountsPage'
 import { LoginPage } from '@/features/auth/LoginPage'
+import { AccountFeesPage } from '@/features/fees/AccountFeesPage'
+import { FeesPage } from '@/features/fees/FeesPage'
+import { strings as feeStrings } from '@/features/fees/strings'
 import { ImportPage } from '@/features/imports/ImportPage'
 import { NewReconciliationPage } from '@/features/imports/NewReconciliationPage'
 import { strings as importStrings } from '@/features/imports/strings'
@@ -88,6 +91,25 @@ const accountsRoute = createRoute({
   component: AccountsPage,
 })
 
+// Read only for every role: fees are created, edited and closed in the page of each account (web-admin-fees D2).
+const feesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/fees',
+  staticData: { requires: 'fee.view', crumbs: [strings.groups.administration, strings.screens.fees] },
+  component: FeesPage,
+})
+
+// fee.view to read; the actions also need fee.manage, decided by the page (web-admin-fees D2).
+const accountFeesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/accounts/$accountId/fees',
+  staticData: {
+    requires: 'fee.view',
+    crumbs: [strings.groups.administration, strings.screens.fees, feeStrings.account.crumb],
+  },
+  component: AccountFeesPage,
+})
+
 const newReconciliationRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/reconciliations/new',
@@ -145,6 +167,8 @@ function buildRouteTree(extraRoutes: AnyRoute[]) {
     appRoute.addChildren([
       dashboardRoute,
       accountsRoute,
+      accountFeesRoute,
+      feesRoute,
       newReconciliationRoute,
       importRoute,
       settlementReviewRoute,

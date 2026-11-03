@@ -5,9 +5,9 @@ import { strings } from './strings'
 
 export interface NavItem {
   label: string
-  to?: '/' | '/accounts' | '/reconciliations/new' | '/settlements'
-  /** Paths under which the entry is also the active one (the screens it leads to). */
-  activeUnder?: string
+  to?: '/' | '/accounts' | '/fees' | '/reconciliations/new' | '/settlements'
+  /** Other paths where the entry is also the active one (the screens it leads to); `to` itself is matched exactly. */
+  activeWhen?: (pathname: string) => boolean
   requires?: Permission
 }
 
@@ -27,7 +27,7 @@ export const NAV: readonly NavGroup[] = [
       {
         label: s.newReconciliation,
         to: '/reconciliations/new',
-        activeUnder: '/imports/',
+        activeWhen: (pathname) => pathname.startsWith('/imports/'),
         requires: 'settlement.process',
       },
       { label: s.inProgress, requires: 'settlement.process' },
@@ -47,7 +47,13 @@ export const NAV: readonly NavGroup[] = [
     items: [
       { label: s.merchantsProviders },
       { label: s.accounts, to: '/accounts' },
-      { label: s.fees, requires: 'fee.view' },
+      // The fees of an account belong to Fees, not to Accounts (web-admin-fees design D2).
+      {
+        label: s.fees,
+        to: '/fees',
+        activeWhen: (pathname) => /^\/accounts\/[^/]+\/fees\/?$/.test(pathname),
+        requires: 'fee.view',
+      },
       { label: s.channelAssignment },
       { label: s.matchingRules },
       { label: s.usersRoles, requires: 'user.manage' },

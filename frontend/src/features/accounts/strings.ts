@@ -19,6 +19,7 @@ export const strings = {
     reserveCap: 'Reserve cap',
     status: 'Status',
     settlements: 'Settlements',
+    fees: 'Fees',
   },
   none: 'none',
   active: 'active',
