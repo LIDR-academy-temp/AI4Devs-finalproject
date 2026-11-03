@@ -24,6 +24,9 @@ const cellsOf = (row: HTMLElement) =>
   within(row)
     .getAllByRole('cell')
     .map((c) => c.textContent)
+/** The two lines of the first cell of a row: its account, then its merchant and provider. */
+const linesOf = (row: HTMLElement) =>
+  [...(within(row).getAllByRole('cell')[0]?.children ?? [])].map((line) => line.textContent)
 const headers = () =>
   within(table())
     .getAllByRole('columnheader')
@@ -64,8 +67,6 @@ describe('Fees: columns and order', () => {
     await openFees(USD_FILTERS)
 
     expect(headers()).toEqual([
-      'Merchant',
-      'Provider',
       'Account',
       'Type',
       'Applies to',
@@ -75,10 +76,8 @@ describe('Fees: columns and order', () => {
       'Status',
       'Last change',
     ])
-    expect(cellsOf(bodyRows()[0]!)).toEqual([
-      'Merchant A',
-      'Provider A',
-      'ProviderA-USD',
+    expect(linesOf(bodyRows()[0]!)).toEqual(['ProviderA-USD', 'Merchant A · Provider A'])
+    expect(cellsOf(bodyRows()[0]!).slice(1)).toEqual([
       'MDR',
       'E · Successful',
       '2.900 %',
@@ -97,13 +96,13 @@ describe('Fees: columns and order', () => {
     expect(badge).toHaveAttribute('data-variant', 'warning')
   })
 
-  it('merchant and provider are columns of each row: no group header rows', async () => {
+  it('merchant and provider go under the account in each row: no group header rows', async () => {
     await openFees('status=all', 'admin')
 
     const firsts = bodyRows().map((row) => within(row).getAllByRole('cell').length)
-    expect(new Set(firsts)).toEqual(new Set([10]))
-    expect(cellsOf(bodyRows()[0]!).slice(0, 2)).toEqual(['Merchant A', 'Provider A'])
-    expect(cellsOf(bodyRows().at(-1)!).slice(0, 2)).toEqual(['Merchant B', 'Provider C'])
+    expect(new Set(firsts)).toEqual(new Set([8]))
+    expect(linesOf(bodyRows()[0]!)[1]).toBe('Merchant A · Provider A')
+    expect(linesOf(bodyRows().at(-1)!)[1]).toBe('Merchant B · Provider C')
   })
 })
 
