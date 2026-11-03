@@ -11,17 +11,23 @@ import {
 } from '@recon/shared'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { scopeOf } from '../../catalog/domain/scope.js'
 import { NotImplementedError } from '../application/errors.js'
+import type { FeeAdminService } from '../application/fee-admin-service.js'
+
+export interface FeeAdminRoutesOptions {
+  admin: FeeAdminService
+}
 
 const AccountParams = z.object({ accountId: z.uuid() })
 const FeeParams = z.object({ feeId: z.uuid() })
 const fees = { tags: ['fees'], security: [{ bearerAuth: [] }] }
 const errors = { 400: ErrorResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse }
-// Until the use cases land (design D11, tasks 3.4 and 4.4).
+// Until the use cases land (design D11, task 4.4).
 const notImplemented = { 501: ErrorResponse }
 
 /** Fee administration (README §4.1, §4.4; spec fees, admin-fees design D2). Mounted under /api/v1. */
-export const feeAdminRoutes: FastifyPluginAsyncZod = async (app) => {
+export const feeAdminRoutes: FastifyPluginAsyncZod<FeeAdminRoutesOptions> = async (app, { admin }) => {
   app.post(
     '/accounts/:accountId/fees',
     {
@@ -34,11 +40,12 @@ export const feeAdminRoutes: FastifyPluginAsyncZod = async (app) => {
           '400 validation_error (details.field: fixedAmount, endDate, feeTypeId), 409 fee_overlap (details.conflicts).',
         params: AccountParams,
         body: FeeCreate,
-        response: { 201: AccountFee, ...errors, 409: ErrorResponse, ...notImplemented },
+        response: { 201: AccountFee, ...errors, 409: ErrorResponse },
       },
     },
-    async () => {
-      throw new NotImplementedError('POST /accounts/{accountId}/fees')
+    async (request, reply) => {
+      const fee = await admin.create(scopeOf(request.auth), request.auth.userId, request.params.accountId, request.body)
+      return reply.code(201).send(fee)
     },
   )
 
@@ -55,12 +62,10 @@ export const feeAdminRoutes: FastifyPluginAsyncZod = async (app) => {
           '409 fee_in_use (details.fields or details.lastAppliedEventDate), 409 fee_overlap.',
         params: FeeParams,
         body: FeePatch,
-        response: { 200: FeeUpdateResult, ...errors, 409: ErrorResponse, ...notImplemented },
+        response: { 200: FeeUpdateResult, ...errors, 409: ErrorResponse },
       },
     },
-    async () => {
-      throw new NotImplementedError('PATCH /fees/{feeId}')
-    },
+    async (request) => admin.patch(scopeOf(request.auth), request.auth.userId, request.params.feeId, request.body),
   )
 
   app.get(

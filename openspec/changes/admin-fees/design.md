@@ -284,7 +284,7 @@ La secuencia acumula filas en la base local; se limpian con `pnpm db:seed`.
 - **[Carrera con el procesado]** `settlement-process` lee los fees sin bloquear la cuenta. Un `PATCH` que corrija en el sitio un fee sin uso mientras un settlement lo está aplicando dejaría un desglose con la configuración anterior (el snapshot guarda la correcta) y un historial `updated` posterior.
   → Riesgo aceptado: el importe procesado es correcto gracias al snapshot y la ventana es de milisegundos en un uso administrativo. Se anota en #67; el settlement no se toca en este change.
 - **[Uso sin índice por `feeId`]** `SettlementTransactionFee` solo tiene índice por `settlementTxnId`, así que el `GROUP BY feeId` de D5 recorre la tabla. Le pasa a cada `GET /accounts/{id}/fees` (Settlement Review incluido), a cada página de `GET /fees` y a cada escritura.
-  → Sin migración en este change. El tiempo medido sobre el seed queda en la descripción del PR, y el índice `(feeId) INCLUDE (eventDate)` es una casilla de #67.
+  → Sin migración en este change. Medido sobre el seed (800 filas en `SettlementTransactionFee`; 30 peticiones por cuenta tras 3 de calentamiento, a través de la app): ProviderA-USD p50 53 ms / p95 85 ms, ProviderB-Main p50 46 ms / p95 62 ms, ProviderC-Alt p50 43 ms / p95 69 ms. El coste crece con la tabla. La cifra va también en la descripción del PR, y el índice `(feeId) INCLUDE (eventDate)` es una casilla de #67.
 - **[`undone` cuenta como uso]** Un fee aplicado solo en un intento deshecho no se puede corregir en el sitio.
   → Se cambia desde una fecha, o se cierra con `endDate` ≥ su evento. Es la opción conservadora.
 - **[Historial del seed con números]** El lector es tolerante, pero un número con muchos decimales podría redondear al normalizarse.

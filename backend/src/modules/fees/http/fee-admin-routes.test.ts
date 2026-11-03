@@ -2,14 +2,21 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { buildTestApp, PASSWORD } from '../../../test-support/build-test-app.js'
 import { ACCOUNT_IDS } from '../../catalog/application/__fakes__/in-memory.js'
 import { InMemoryFeeRepository } from '../application/__fakes__/in-memory.js'
+import { InMemoryFeeAdminRepository } from '../application/__fakes__/in-memory-admin.js'
+import { FeeAdminService } from '../application/fee-admin-service.js'
 import { FeeReadService } from '../application/fee-read-service.js'
 
 // Spec fees "Permisos y alcance de la administración de fees" (admin-fees design D11): the routes, their schemas and
-// their permissions exist before the use cases. Behaviour behind the permission arrives with groups 3 and 4.
+// their permissions; the writes behind the permission (group 3), the reads still 501 until group 4.
 let ctx: Awaited<ReturnType<typeof buildTestApp>>
 
 beforeEach(async () => {
-  ctx = await buildTestApp({ fees: { service: new FeeReadService(new InMemoryFeeRepository()) } })
+  ctx = await buildTestApp({
+    fees: {
+      service: new FeeReadService(new InMemoryFeeRepository()),
+      adminService: new FeeAdminService(new InMemoryFeeAdminRepository(), () => '2026-11-03'),
+    },
+  })
   await ctx.app.ready()
 })
 
@@ -74,8 +81,18 @@ describe('fee administration routes', () => {
     }
   })
 
-  it('answer 501 not_implemented behind a valid request until the use cases land', async () => {
-    for (const [method, url, body] of writes) expect((await call(method, url, 'admin', body)).statusCode).toBe(501)
+  it('POST answers 201 with the fee and PATCH of an unknown fee 404 not_found', async () => {
+    const [[, postUrl, postBody], [, patchUrl, patchBody]] = writes
+    const created = await call('POST', postUrl, 'admin', postBody)
+    const unknown = await call('PATCH', patchUrl, 'admin', patchBody)
+
+    expect(created.statusCode, created.body).toBe(201)
+    expect(created.json()).toMatchObject({ code: 'Wire Fee', fixedAmount: '15.0000', status: 'active' })
+    expect(unknown.statusCode).toBe(404)
+    expect(unknown.json().code).toBe('not_found')
+  })
+
+  it('the reads answer 501 not_implemented behind a valid request until their use cases land', async () => {
     for (const [method, url] of reads) {
       const res = await call(method, url, 'viewer')
       expect(res.statusCode, url).toBe(501)

@@ -42,13 +42,13 @@ El grupo 1 es el contrato del que parte `web-admin-fees`. Al terminarlo se hace 
 
 ## 3. Crear, corregir, cerrar y cambiar desde una fecha
 
-- [ ] 3.1 Escribir `application/fee-admin-service.test.ts` con un repositorio en memoria en `__fakes__` y comprobar que falla. Debe cubrir:
+- [x] 3.1 Escribir `application/fee-admin-service.test.ts` con un repositorio en memoria en `__fakes__` y comprobar que falla. Debe cubrir:
   - creación (`inUse = false`, `lastAppliedEventDate = null`);
   - las dos formas del `PATCH`;
   - `fee_overlap` al crear y al corregir;
   - `404` del fee y de la cuenta;
   - el historial y la auditoría de cada acción (D10).
-- [ ] 3.2 Escribir `test/integration/fee-admin.int.test.ts` contra la base local con los escenarios de la delta spec y comprobar que falla. Cada test limpia sus filas. Escenarios:
+- [x] 3.2 Escribir `test/integration/fee-admin.int.test.ts` contra la base local con los escenarios de la delta spec y comprobar que falla. Cada test limpia sus filas. Escenarios:
   - "Fee creado con vigencia abierta", "Ni importe ni porcentaje", "Tipo inactivo o inexistente" y "Fee programado junto al vigente";
   - "Corrección completa de un fee sin uso", "Cambiar el valor de un fee en uso" y "Descripción de un fee en uso";
   - "Cierre posterior al último evento aplicado" y "Cierre que dejaría fuera eventos ya aplicados";
@@ -56,10 +56,12 @@ El grupo 1 es el contrato del que parte `web-admin-fees`. Al terminarlo se hace 
   - "Solapamiento rechazado", "Solapamiento al corregir" y "Bordes contiguos";
   - "Corrección auditada", "Cambio desde una fecha auditado" y "Fallo a mitad";
   - "Respaldo del trigger" y "Sin permiso de administración".
-- [ ] 3.3 Commit: test(fees): crear y editar fees con historial y auditoría
-- [ ] 3.4 Implementar `PrismaFeeAdminRepository` siguiendo el orden de D6: bloqueo `UPDLOCK, HOLDLOCK` de la cuenta, uso según D5, historial y auditoría en la misma transacción, y el error 50001 traducido a `fee_overlap`. Implementar `FeeAdminService.create` y `.patch` y conectar las rutas `POST` y `PATCH` del grupo 1. Si hace falta, mover `deadlock-retry` a `backend/src/infrastructure/` sin cambiar su comportamiento, con sus tests en verde. Verificar con 3.1 y 3.2.
-- [ ] 3.5 Escribir el test de concurrencia "Dos altas simultáneas" con compuertas, como `settlement-concurrency.int.test.ts`: una petición recibe `201` y la otra `409 fee_overlap`. Quitar el bloqueo debe hacer que la segunda la pare el trigger (`conflicts: []`) y el test lo detecte; después se revierte.
-- [ ] 3.6 Commit: feat(fees): crear, corregir, cerrar y cambiar fees desde una fecha
+  - Hecho: con `backend/` como en `1f7ff4b` el fichero falla al cargar (no existe aún el repositorio); después, 17 escenarios en verde. "Fallo a mitad" se prueba con el repositorio real y una unidad de trabajo que lanza tras escribir. El `404` fuera de alcance va en los tests de servicio y de rutas, porque solo `admin` tiene `fee.manage` y su alcance es `all`. Se añadió luego "Corrección sin cambios".
+- [x] 3.3 Commit: test(fees): crear y editar fees con historial y auditoría
+- [x] 3.4 Implementar `PrismaFeeAdminRepository` siguiendo el orden de D6: bloqueo `UPDLOCK, HOLDLOCK` de la cuenta, uso según D5, historial y auditoría en la misma transacción, y el error 50001 traducido a `fee_overlap`. Implementar `FeeAdminService.create` y `.patch` y conectar las rutas `POST` y `PATCH` del grupo 1. Si hace falta, mover `deadlock-retry` a `backend/src/infrastructure/` sin cambiar su comportamiento, con sus tests en verde. Verificar con 3.1 y 3.2.
+- [x] 3.5 Escribir el test de concurrencia "Dos altas simultáneas" con compuertas, como `settlement-concurrency.int.test.ts`: una petición recibe `201` y la otra `409 fee_overlap`. Quitar el bloqueo debe hacer que la segunda la pare el trigger (`conflicts: []`) y el test lo detecte; después se revierte.
+  - Hecho: la compuerta es el gancho `beforeWrite` del repositorio. Sin el bloqueo es la primera escritura la que cae en el trigger (`FeeOverlapError` sin conflictos) y el test falla; se revirtió. El test limpia por la firma del fixture, antes y después.
+- [x] 3.6 Commit: feat(fees): crear, corregir, cerrar y cambiar fees desde una fecha
 
 ## 4. Vista global e historial
 

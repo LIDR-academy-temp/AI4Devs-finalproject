@@ -4828,19 +4828,6 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Default Response */
-                501: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            code: string;
-                            message: string;
-                            details?: unknown;
-                        };
-                    };
-                };
             };
         };
         delete?: never;
@@ -5080,19 +5067,6 @@ export interface paths {
                 };
                 /** @description Default Response */
                 409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            code: string;
-                            message: string;
-                            details?: unknown;
-                        };
-                    };
-                };
-                /** @description Default Response */
-                501: {
                     headers: {
                         [name: string]: unknown;
                     };

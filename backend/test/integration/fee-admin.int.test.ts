@@ -239,6 +239,20 @@ describe('PATCH /fees/{id}: in-place correction and closing', () => {
     )
   })
 
+  it('answers 200 without history or audit when no value changes (spec "Corrección sin cambios")', async () => {
+    begin()
+    const { fee } = await feeInUse('MDR')
+
+    const res = await call('PATCH', `/fees/${fee.feeId}`, 'admin', { percentage: fee.percentage!.toString() })
+
+    expect(res.statusCode, res.body).toBe(200)
+    expect(res.json().fee.percentage).toBe(fee.percentage!.toFixed(6))
+    expect(await historyOf(fee.feeId)).toEqual([])
+    expect(
+      await ctx.prisma.auditLog.count({ where: { entityId: fee.feeId.toLowerCase(), createdAt: { gte: startedAt } } }),
+    ).toBe(0)
+  })
+
   it('takes the description of a fee in use, audited as fee.update', async () => {
     begin()
     const { fee } = await feeInUse('MDR')

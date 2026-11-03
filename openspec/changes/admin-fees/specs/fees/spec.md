@@ -101,6 +101,14 @@ Responde `200` con `{ fee, successor: null }`.
 - WHEN `admin` envía `{}`
 - THEN recibe `400 validation_error`
 
+### Requirement: Corrección sin cambios
+En una corrección en el sitio, un valor igual al guardado (los importes y porcentajes, comparados como decimales) SHALL no contar como cambio. Si ningún campo cambia, `PATCH /fees/{id}` SHALL responder `200` con el fee tal cual, sin escribir en `FeeHistory` ni en `AuditLog`, aunque el fee esté en uso.
+
+#### Scenario: Mismo valor con otra escritura
+- GIVEN un fee MDR en uso con `percentage = "0.100000"`
+- WHEN `admin` envía `{ percentage: "0.1" }`
+- THEN recibe `200` con el fee sin cambios, y no se escribe ninguna fila en `FeeHistory` ni en `AuditLog`
+
 ### Requirement: Campos editables de un fee en uso
 Un fee en uso SHALL admitir en el sitio solo `description` y `endDate`. Cualquier otro campo SHALL responder `409 fee_in_use` con `details.fields`, la lista de campos rechazados. Para cambiar sus valores se usa el cambio desde una fecha.
 

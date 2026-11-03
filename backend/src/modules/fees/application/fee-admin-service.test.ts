@@ -1,4 +1,4 @@
-import { AccountFee, FeeUpdateResult } from '@recon/shared'
+import { AccountFee } from '@recon/shared'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { NotFoundError } from '../../../shared/errors.js'
 import { ACCOUNT_IDS } from '../../catalog/application/__fakes__/in-memory.js'
@@ -121,7 +121,7 @@ describe('FeeAdminService.patch', () => {
 
     const result = await service.patch(ALL, ADMIN, 'mdr', { percentage: '0.0275', reason: 'typo' })
 
-    expect(FeeUpdateResult.parse(result)).toMatchObject({ fee: { percentage: '0.027500' }, successor: null })
+    expect(result).toMatchObject({ fee: { percentage: '0.027500' }, successor: null })
     expect(repo.store.history).toEqual([
       expect.objectContaining({
         feeId: 'mdr',
@@ -173,7 +173,7 @@ describe('FeeAdminService.patch', () => {
 
     const result = await service.patch(ALL, ADMIN, 'mdr', { effectiveFrom: '2026-11-01', percentage: '0.095' })
 
-    expect(FeeUpdateResult.parse(result)).toMatchObject({
+    expect(result).toMatchObject({
       fee: { feeId: 'mdr', endDate: '2026-10-31', status: 'closed' },
       successor: {
         startDate: '2026-11-01',
