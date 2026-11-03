@@ -29,8 +29,8 @@ Rama `feat/web-admin-fees`, rebasada sobre `origin/feat/admin-fees`. El PR va ha
 
 ## 5. Menú, rutas y acceso desde Accounts
 
-- [ ] 5.1 Actualizar los tests de navegación (`AppLayout.test.tsx`, `guards.test.tsx` y el de `nav-config`) con los escenarios de la delta spec `web-shell` (Fees enlace para `viewer`, `analyst` y `admin`; oculta sin `fee.view`; activa en `/accounts/<id>/fees` sin activar Accounts; `/fees` sin `fee.view` → `You don't have access to this page` sin llamar a `GET /fees`) y `AccountsPage.test.tsx` con el enlace **Fees** por cuenta. Comprobar que fallan.
-- [ ] 5.2 Commit: test(web): entrada Fees del menú y enlace desde Accounts
+- [x] 5.1 Actualizar los tests de navegación (`AppLayout.test.tsx`, `guards.test.tsx` y el de `nav-config`) con los escenarios de la delta spec `web-shell` (Fees enlace para `viewer`, `analyst` y `admin`; oculta sin `fee.view`; activa en `/accounts/<id>/fees` sin activar Accounts; `/fees` sin `fee.view` → `You don't have access to this page` sin llamar a `GET /fees`) y `AccountsPage.test.tsx` con el enlace **Fees** por cuenta. Comprobar que fallan.
+- [x] 5.2 Commit: test(web): entrada Fees del menú y enlace desde Accounts
 - [ ] 5.3 Implementar (design D2): rutas `/fees` y `/accounts/$accountId/fees` en `router.tsx` con páginas mínimas, `to: '/fees'` y `activeWhen` en `nav-config.ts` / `Sidebar.tsx` (New Reconciliation sin cambios de comportamiento), y el enlace **Fees** en `ProviderAccounts.tsx` con sus textos. Verificar con los tests de 5.1 y `pnpm typecheck`.
 - [ ] 5.4 Commit: feat(web): entrada Fees del menú y rutas de fees
 

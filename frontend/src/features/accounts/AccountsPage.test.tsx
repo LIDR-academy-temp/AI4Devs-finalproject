@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
-import { describe, expect, it } from 'vitest'
-import { ACCOUNT_IDS, ACCOUNTS } from '@/test/msw/fixtures'
+import { describe, expect, it, onTestFinished } from 'vitest'
+import { ACCOUNT_IDS, ACCOUNTS, USERS } from '@/test/msw/fixtures'
 import { db } from '@/test/msw/handlers'
 import { recordRequests } from '@/test/msw/record'
 import { server } from '@/test/msw/server'
@@ -185,6 +185,46 @@ describe('Accounts: the settlements of each account (settlements-browse)', () =>
       'href',
       '/settlements?merchantId=1&providerId=101&accountId=0b6f4c1e-1a2b-4c3d-8e4f-000000000009',
     )
+  })
+})
+
+describe('Accounts: the fees of each account (web-admin-fees)', () => {
+  it('links ProviderA-USD to its fees', async () => {
+    const { user, router } = renderApp('/accounts?merchantId=1&providerId=101', { as: 'viewer' })
+
+    const usd = await accountRow('ProviderA-USD')
+    await user.click(usd.getByRole('link', { name: strings.feesOf('ProviderA-USD') }))
+
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/accounts/${ACCOUNT_IDS['ProviderA-USD']}/fees`))
+  })
+
+  it('offers the link on a closed account too: its fees are still there', async () => {
+    db.accounts.push({
+      ...ACCOUNTS[0]!,
+      accountId: '0b6f4c1e-1a2b-4c3d-8e4f-000000000009',
+      name: 'ProviderA-Old',
+      isActive: false,
+    })
+    renderApp('/accounts?merchantId=1&providerId=101', { as: 'viewer' })
+
+    const old = await accountRow('ProviderA-Old')
+    expect(old.getByRole('link', { name: strings.feesOf('ProviderA-Old') })).toHaveAttribute(
+      'href',
+      '/accounts/0b6f4c1e-1a2b-4c3d-8e4f-000000000009/fees',
+    )
+  })
+
+  it('without fee.view there is no Fees link', async () => {
+    const permissions = USERS.viewer.permissions
+    USERS.viewer.permissions = ['reports.view']
+    onTestFinished(() => {
+      USERS.viewer.permissions = permissions
+    })
+    renderApp('/accounts?merchantId=1&providerId=101', { as: 'viewer' })
+
+    const usd = await accountRow('ProviderA-USD')
+    expect(usd.getByRole('link', { name: strings.settlementsOf('ProviderA-USD') })).toBeInTheDocument()
+    expect(usd.queryByRole('link', { name: strings.feesOf('ProviderA-USD') })).not.toBeInTheDocument()
   })
 })
 

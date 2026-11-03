@@ -31,6 +31,8 @@ export const strings = {
   loadingChannels: 'Loading channels…',
   settlements: 'Settlements',
   settlementsOf: (account: string) => `Settlements of ${account}`,
+  fees: 'Fees',
+  feesOf: (account: string) => `Fees of ${account}`,
   /** The merchant → provider → account choice of New Reconciliation and Settlement List. */
   picker: {
     merchant: 'Merchant',
