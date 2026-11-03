@@ -25,6 +25,7 @@ export const strings = {
       allMerchants: 'All merchants',
       allProviders: 'All providers',
       allAccounts: 'All accounts',
+      closedAccount: (account: string) => `${account} (closed)`,
       kinds: { all: 'All kinds', transactional: 'Transactional', preset: 'Batch preset', free_amount: 'Free amount' },
       statuses: { active: 'Active', scheduled: 'Scheduled', closed: 'Closed', all: 'All statuses' },
     },

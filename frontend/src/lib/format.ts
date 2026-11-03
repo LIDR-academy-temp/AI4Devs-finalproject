@@ -67,6 +67,11 @@ export function formatAuditDateTime(value: AuditInstant): string {
   return compose(value, DISPLAY_TIME_ZONE, true)
 }
 
+/** "2026-10-18": the New York day of a UTC instant (the last change of a fee). */
+export function formatAuditDate(value: AuditInstant): string {
+  return compose(value, DISPLAY_TIME_ZONE, false)
+}
+
 /**
  * Today's calendar day in New York as YYYY-MM-DD (web-admin-fees design D5). A default value only: the API decides
  * which days are allowed.

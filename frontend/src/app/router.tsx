@@ -12,6 +12,7 @@ import { AccountsPage, validateAccountsSearch } from '@/features/accounts/Accoun
 import { LoginPage } from '@/features/auth/LoginPage'
 import { AccountFeesPage } from '@/features/fees/AccountFeesPage'
 import { FeesPage } from '@/features/fees/FeesPage'
+import { validateFeesSearch } from '@/features/fees/fees-search'
 import { strings as feeStrings } from '@/features/fees/strings'
 import { ImportPage } from '@/features/imports/ImportPage'
 import { NewReconciliationPage } from '@/features/imports/NewReconciliationPage'
@@ -95,6 +96,7 @@ const accountsRoute = createRoute({
 const feesRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/fees',
+  validateSearch: validateFeesSearch,
   staticData: { requires: 'fee.view', crumbs: [strings.groups.administration, strings.screens.fees] },
   component: FeesPage,
 })

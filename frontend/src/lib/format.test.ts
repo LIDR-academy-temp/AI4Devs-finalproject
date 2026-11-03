@@ -3,6 +3,7 @@ import {
   auditInstant,
   businessDate,
   DISPLAY_TIME_ZONE,
+  formatAuditDate,
   formatAuditDateTime,
   formatBusinessDate,
   formatBusinessDateTime,
@@ -46,6 +47,11 @@ describe('dates shown in New York time (design D11)', () => {
 
   it('converts an audit instant to New York standard time after the change of 1 Nov 2026 (EST, -5 h)', () => {
     expect(formatAuditDateTime(auditInstant('2026-11-02T15:00:00.000Z'))).toBe('2026-11-02 10:00 ET')
+  })
+
+  it('gives the New York day of an audit instant', () => {
+    expect(formatAuditDate(auditInstant('2026-11-04T03:30:00.000Z'))).toBe('2026-11-03')
+    expect(formatAuditDate(auditInstant('2026-11-04T05:00:00.000Z'))).toBe('2026-11-04')
   })
 
   it('does not accept one kind of date in the formatter of the other', () => {
