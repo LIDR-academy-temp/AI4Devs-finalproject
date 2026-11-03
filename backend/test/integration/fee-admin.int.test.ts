@@ -2,7 +2,14 @@ import { AccountFee, FeeHistoryEntry, FeeUpdateResult } from '@recon/shared'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { PrismaFeeAdminRepository } from '../../src/modules/fees/infrastructure/prisma-fee-admin-repository.js'
-import { applyFeeUsage, createTestApp, fixtureIds, removeFeeUsage, SEED_PASSWORD } from './helpers.js'
+import {
+  applyFeeUsage,
+  createTestApp,
+  type FeeUsageFixture,
+  fixtureIds,
+  removeFeeUsage,
+  SEED_PASSWORD,
+} from './helpers.js'
 
 // Spec fees (admin-fees): "Crear un fee", "Reglas de un fee válido", "Corregir un fee en el sitio", "Campos editables
 // de un fee en uso", "Cerrar la vigencia de un fee", "Cambiar un fee desde una fecha", "Límites del cambio desde una
@@ -16,8 +23,8 @@ const feeTypeIds: Record<string, number> = {}
 /** Fees created by a test (deleted after it) and seed fees it modified (restored after it). */
 let created: string[] = []
 let touched: { feeId: string; row: Record<string, unknown> }[] = []
-/** Fixture breakdowns that put a seed fee in use (removed after each test). */
-const usages: bigint[] = []
+/** Fixture usages that put a fee in use (removed after each test, before the fees they reference). */
+const usages: FeeUsageFixture[] = []
 let startedAt: Date
 
 beforeAll(async () => {
@@ -43,9 +50,9 @@ afterEach(async () => {
     where: { entityType: 'Fee', entityId: { in: lower }, createdAt: { gte: startedAt } },
   })
   await ctx.prisma.feeHistory.deleteMany({ where: { feeId: { in: ids }, changedAt: { gte: startedAt } } })
+  await removeFeeUsage(ctx.prisma, usages)
   await ctx.prisma.fee.deleteMany({ where: { feeId: { in: fixtureIds(created, 'created fees') } } })
   for (const { feeId, row } of touched) await ctx.prisma.fee.update({ where: { feeId }, data: row })
-  await removeFeeUsage(ctx.prisma, usages)
   created = []
   touched = []
   usages.length = 0
@@ -85,7 +92,7 @@ async function feeInUse(code: string) {
   const fee = await ctx.prisma.fee.findFirstOrThrow({
     where: { accountId: accountIds['ProviderA-USD'], feeType: { code } },
   })
-  usages.push(...(await applyFeeUsage(ctx.prisma, fee.feeId, ['2026-09-14', '2026-10-02'])))
+  usages.push(await applyFeeUsage(ctx.prisma, fee.feeId, { days: ['2026-09-14', '2026-10-02'] }))
   const latest = await ctx.prisma.settlementTransactionFee.aggregate({
     where: { feeId: fee.feeId },
     _max: { eventDate: true },
@@ -435,6 +442,50 @@ describe('GET /fees/{id}/history', () => {
     expect(bad.statusCode).toBe(400)
     expect(outside.statusCode).toBe(404)
     expect(outside.json()).toEqual(unknown.json())
+  })
+})
+
+// Spec fees "Uso de un fee": a batch fee puts a fee in use and dates it with its batch's settlementDate, also when the
+// attempt is undone. The fee is created here, so no other breakdown or batch fee of the database references it.
+describe('usage of a fee through batch fees', () => {
+  async function unusedFee() {
+    const res = await createFee('ProviderA-USD', { feeTypeId: feeTypeIds['Wire Fee'], fixedAmount: '15' })
+    expect(res.statusCode, res.body).toBe(201)
+    return res.json().feeId as string
+  }
+
+  async function usageOf(feeId: string) {
+    const res = await call('GET', `/accounts/${accountIds['ProviderA-USD']}/fees`, 'viewer')
+    expect(res.statusCode, res.body).toBe(200)
+    const fee = z
+      .array(AccountFee)
+      .parse(res.json())
+      .find((f) => f.feeId.toLowerCase() === feeId.toLowerCase())
+    return { inUse: fee?.inUse, lastAppliedEventDate: fee?.lastAppliedEventDate }
+  }
+
+  it('a batch fee alone puts the fee in use, dated by the settlementDate of its batch', async () => {
+    begin()
+    const feeId = await unusedFee()
+    expect(await usageOf(feeId)).toEqual({ inUse: false, lastAppliedEventDate: null })
+
+    const usage = await applyFeeUsage(ctx.prisma, feeId, { batchFee: {} })
+    usages.push(usage)
+
+    expect(await usageOf(feeId)).toEqual({ inUse: true, lastAppliedEventDate: usage.batch!.settlementDate })
+  })
+
+  it('an undone attempt still counts, and its settlementDate beats an earlier breakdown', async () => {
+    begin()
+    const feeId = await unusedFee()
+    const usage = await applyFeeUsage(ctx.prisma, feeId, { days: ['2020-01-15'], batchFee: { undone: true } })
+    usages.push(usage)
+    expect(
+      (await ctx.prisma.settlementBatch.findUniqueOrThrow({ where: { batchId: usage.batch!.batchId } })).status,
+    ).toBe('undone')
+    expect(usage.batch!.settlementDate > '2020-01-15').toBe(true)
+
+    expect(await usageOf(feeId)).toEqual({ inUse: true, lastAppliedEventDate: usage.batch!.settlementDate })
   })
 })
 

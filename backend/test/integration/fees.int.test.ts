@@ -57,7 +57,7 @@ describe('GET /accounts/{id}/fees against the seed', () => {
     expect(fees.find((f) => f.code === 'MDR')).toMatchObject({ percentage: '0.100000', fixedAmount: null })
   })
 
-  // admin-fees: spec fees "Campos ampliados de un fee de la cuenta", "Fee del seed con settlements procesados".
+  // admin-fees: spec fees "Campos ampliados de un fee de la cuenta", "Fee aplicado por settlements procesados".
   it('every fee carries status, usage and authorship; Chargeback over 1% its conditional percentage', async () => {
     const fees = z.array(AccountFee).parse((await get(`/accounts/${accountIds['ProviderA-USD']}/fees`)).json())
 
@@ -73,7 +73,7 @@ describe('GET /accounts/{id}/fees against the seed', () => {
     const fee = await ctx.prisma.fee.findFirstOrThrow({
       where: { accountId: accountIds['ProviderA-USD'], feeType: { code: 'TRX Fee - Deposit' } },
     })
-    const usages = await applyFeeUsage(ctx.prisma, fee.feeId, ['2026-09-14', '2026-10-02'])
+    const usage = await applyFeeUsage(ctx.prisma, fee.feeId, { days: ['2026-09-14', '2026-10-02'] })
     try {
       const latest = await ctx.prisma.settlementTransactionFee.aggregate({
         where: { feeId: fee.feeId },
@@ -87,7 +87,7 @@ describe('GET /accounts/{id}/fees against the seed', () => {
         lastAppliedEventDate: latest._max.eventDate!.toISOString().slice(0, 10),
       })
     } finally {
-      await removeFeeUsage(ctx.prisma, usages)
+      await removeFeeUsage(ctx.prisma, [usage])
     }
   })
 
