@@ -15,7 +15,7 @@ Rama `feat/admin-accounts`. Las decisiones D1–D10 están en `design.md`; los e
 - [x] 1.6 Ejecutar `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`; ampliar `app.test.ts` con las rutas nuevas y los fixtures de MSW (`frontend/src/test/msw/fixtures.ts`: `createdBy`, `updatedAt`, `assignedInBatchNo`, `primaryAccount`) solo para el contrato. Verificar con `pnpm openapi:check`, `pnpm lint`, `pnpm typecheck` y `pnpm test`.
 - [x] 1.7 Actualizar README §4.4: filas de `POST /providers/{id}/accounts`, `PATCH /accounts/{id}`, `GET /channels` (`primaryAccount`), `GET /accounts/{id}/channels` y `GET /channels/{id}/accounts` (`assignedInBatchNo`), `GET /providers/{id}/matching-rule-sets` (sin permiso para leer) y el `409 account_inactive` de `POST /accounts/{id}/imports`, con sus códigos de error. Verificar con `grep` que aparecen `account_name_taken` y `account_inactive`.
 - [x] 1.8 Commit: feat(accounts): contrato de la administración de cuentas y export de OpenAPI
-- [ ] 1.9 Hacer `git push` de `feat/admin-accounts` y avisar a la persona de que el contrato está publicado, porque `web-admin-accounts` parte de aquí. No seguir hasta su confirmación.
+- [x] 1.9 Hacer `git push` de `feat/admin-accounts` y avisar a la persona de que el contrato está publicado, porque `web-admin-accounts` parte de aquí. No seguir hasta su confirmación.
 
 ## 2. Dominio de cuentas y plan de copia (TDD)
 
