@@ -502,29 +502,26 @@ El detalle está en [Backend Standards § Testing Standards](./docs/backend-stan
 
 ### **3.1. Diagrama del modelo de datos:**
 
-El esquema es **uno solo**. Se presenta en dos vistas porque veintiséis entidades en un único diagrama no se leen. Las entidades que aparecen en ambas —`agencies`, `advertisers`, `dsps`, `channels`, `campaign_types`, `campaign_lines`— son la costura entre las dos vistas, no copias de un modelo distinto.
+El esquema es **uno solo**. Se presenta en dos vistas porque más de treinta entidades en un único diagrama no se leen. Las entidades que aparecen en ambas —`agencies`, `advertisers`, `dsps`, `channels`, `campaign_types`, `campaign_lines`— son la costura entre las dos vistas, no copias de un modelo distinto.
 
-#### Vista 1 — Núcleo operativo: de la oferta a la entrega diaria
+**Estado de implementación (entrega final).** La base de datos tiene **29 tablas** (migración `439b6b8481f8`) y el diagrama refleja el esquema real. Respecto al diseño de la entrega 1 y a la entrega 2:
+
+| Cambio | Detalle |
+|---|---|
+| **La línea cuelga de la campaña** | `campaign_lines` tiene `campaign_id`, número de línea y fechas propias. Antes colgaba de un periodo mensual |
+| **Nuevo: flight** (`campaign_line_periods`) | Reparte el volumen de una línea por mes natural. Es la unidad del margen y del cierre de mes. `campaign_periods` queda como calendario |
+| **Nuevo: catálogo de Adform** (`dsp_catalog_lines`) | Las líneas que Adform ha entregado, con nombres y fechas; permite vincular excepciones sin teclear identificadores |
+| **Excepciones con entrega retenida** | `ingestion_exceptions` tiene dos tipos (`unmatched_delivery`, `missing_delivery`) y `ingestion_exception_deliveries` conserva la entrega mientras no hay línea |
+| **`applied_rates` por flight, con desglose** | Una fila por flight cerrado, con la posición del contador antes y después, y `applied_rate_brackets` con el desglose por tramo |
+| **Sin tabla en esta entrega** | `commercial_offers` (ofertas comerciales, fase 3) y `rebate_accruals` (devengado frente a liquidado: el contador se recorre en orden cronológico y su posición queda congelada en `applied_rates`) |
+
+#### Vista 1 — Núcleo operativo: de la orden de compra a la entrega diaria
 
 ```mermaid
 erDiagram
-    commercial_offers {
-        int id PK
-        string offer_reference UK "OF"
-        int agency_id FK
-        int advertiser_id FK
-        int sales_rep_id FK
-        int sector_id FK
-        string status "OFERTA|GANADA|PERDIDA"
-        date presented_on
-        date accepted_on
-        numeric net_budget
-        string currency "EUR"
-    }
     purchase_orders {
         int id PK
         string order_reference UK "OC"
-        int commercial_offer_id FK "nullable"
         date received_on
     }
     purchase_order_versions {
@@ -560,16 +557,28 @@ erDiagram
     }
     campaign_lines {
         int id PK
-        int campaign_period_id FK
+        int campaign_id FK
+        int line_number "unico por campana"
+        date start_date "fechas propias de la linea"
+        date end_date
         int purchase_order_version_id FK "nullable"
         int dsp_id FK
         int channel_id FK "tipo_plataforma"
         int format_id FK "tipo_formato"
         enum scope "national|international"
         string market_description "location libre"
-        bigint contracted_impressions "target_impressions_estandar"
-        numeric sale_cpm "cpm_estandar"
+        bigint contracted_impressions "target_impressions_estandar; mayor que 0"
+        numeric sale_cpm "cpm_estandar; 0 permitido"
         string currency "EUR"
+    }
+
+    campaign_line_periods {
+        int id PK
+        int campaign_line_id FK
+        int campaign_period_id FK "unico con la linea"
+        date flight_start
+        date flight_end "inicio no posterior al fin"
+        bigint contracted_impressions "volumen del mes"
     }
     dsp_mappings {
         int id PK
@@ -579,15 +588,49 @@ erDiagram
         string external_line_item_id
         datetime validated_at "nullable"
     }
-    applied_rates {
+
+    dsp_catalog_lines {
         int id PK
-        int campaign_line_id FK
-        numeric rebate_rate "congelada"
-        int rebate_resolution_step "1-8"
-        bool rebate_from_agency_exception
-        int rebate_source_year
-        numeric platform_cpm_rate
-        datetime calculated_at
+        int dsp_id FK
+        string external_campaign_id "unico con dsp y linea externa"
+        string external_line_item_id
+        string campaign_name
+        string line_item_name
+        date line_start_date "nullable"
+        date line_end_date "nullable"
+        date first_seen_date
+        date last_seen_date
+        date last_impressions_date "nullable"
+    }
+    applied_rates {
+        bigint id PK
+        int campaign_line_period_id FK "unico: una fila por flight cerrado"
+        int rebate_schedule_id FK "nullable"
+        int ladder_step "1 a 6, u 8 sin escala"
+        int source_year "nullable"
+        bool agency_exception
+        string zero_reason "nullable: no_schedule|no_schedule_for_year"
+        numeric effective_rate
+        int counter_group_id FK
+        int counter_agency_id FK "nullable"
+        int counter_channel_id FK
+        int counter_year
+        numeric position_before "contador antes del flight"
+        numeric position_after "contador despues del flight"
+        numeric rebate_amount
+        numeric platform_rate
+        datetime closed_at
+        int closed_by FK
+    }
+    applied_rate_brackets {
+        bigint id PK
+        bigint applied_rate_id FK
+        int position "unico con applied_rate_id"
+        numeric lower
+        numeric upper "nullable"
+        numeric rate
+        numeric amount "importe que cayo en el tramo"
+        numeric rebate "extraprima del tramo"
     }
     daily_deliveries {
         bigint id PK
@@ -607,19 +650,41 @@ erDiagram
         int id PK
         int dsp_id FK
         enum route "api|upload|email"
-        string source_file
+        string source_file "nullable"
         datetime started_at
-        datetime finished_at
-        string status
+        datetime finished_at "nullable"
+        enum status
         int row_count
+        int ignored_row_count
+        int zero_unmatched_row_count
+        date window_start "nullable"
+        date window_end "nullable"
     }
     ingestion_exceptions {
         int id PK
         int ingestion_batch_id FK
-        int campaign_line_id FK "nullable"
-        enum exception_type "delivery_without_line|line_without_delivery|channel_mismatch"
-        string external_key
-        string status "abierta|resuelta"
+        enum exception_type "unmatched_delivery|missing_delivery"
+        enum status "open|resolved"
+        int dsp_id FK "obligatorio si unmatched_delivery"
+        string external_campaign_id "idem"
+        string external_line_item_id "idem"
+        int campaign_line_id FK "obligatorio si missing_delivery"
+        int campaign_period_id FK "idem"
+        date first_date "nullable"
+        date last_date "nullable"
+        datetime resolved_at "nullable"
+        int resolved_by FK "nullable"
+        string note "nullable"
+    }
+    ingestion_exception_deliveries {
+        bigint id PK
+        int exception_id FK
+        date delivery_date "unico con la excepcion"
+        bigint impressions
+        bigint clicks
+        numeric media_cost
+        bigint measurable_impressions
+        bigint viewable_impressions
     }
     agencies {
         int id PK
@@ -641,20 +706,25 @@ erDiagram
         int id PK
         string name UK
     }
-
-    commercial_offers ||--o| purchase_orders : "se confirma como"
     purchase_orders   ||--|{ purchase_order_versions : "se versiona en"
     purchase_orders   ||--o{ campaigns : "da de alta"
     agencies          ||--o{ campaigns : "contrata y factura"
     advertisers       ||--o{ campaigns : "anuncia"
     campaign_types    ||--o{ campaigns : "clasifica"
     campaigns         ||--|{ campaign_periods : "se divide en meses"
-    campaign_periods  ||--|{ campaign_lines : "contiene"
     purchase_order_versions ||--o{ campaign_lines : "fija volumen y CPM de"
     dsps              ||--o{ campaign_lines : "ejecuta"
     channels          ||--o{ campaign_lines : "acumula extraprima de"
     campaign_lines    ||--o| dsp_mappings : "se enlaza al DSP por"
-    campaign_lines    ||--o| applied_rates : "congela tasas en"
+    campaigns         ||--|{ campaign_lines : "se compone de"
+    campaign_lines    ||--|{ campaign_line_periods : "se reparte en (flights)"
+    campaign_periods  ||--o{ campaign_line_periods : "calendario del mes"
+    campaign_line_periods ||--o| applied_rates : "congela tasas al cerrar el mes"
+    applied_rates     ||--|{ applied_rate_brackets : "desglosa por tramo"
+    users             ||--o{ applied_rates : "cierra el mes"
+    dsps              ||--o{ dsp_catalog_lines : "publica"
+    ingestion_exceptions ||--o{ ingestion_exception_deliveries : "retiene la entrega de"
+    campaign_periods  |o--o{ ingestion_exceptions : "ausencia en el mes de"
     campaign_lines    ||--o{ daily_deliveries : "recibe entrega en"
     ingestion_batches ||--o{ daily_deliveries : "carga"
     ingestion_batches ||--o{ ingestion_exceptions : "registra"
@@ -688,7 +758,6 @@ erDiagram
         int id PK
         int holding_group_id FK
         string name UK "Agencia"
-        string reclam_reference "descriptivo"
     }
     advertisers {
         int id PK
@@ -718,43 +787,32 @@ erDiagram
     sales_reps {
         int id PK
         string name UK "Comercial"
-        int user_id FK "nullable"
     }
     rebate_schedules {
         int id PK
         int holding_group_id FK
         int agency_id FK "nullable: excepcion"
         int channel_id FK "nullable"
-        enum scope "national|international|any"
+        enum scope "national|international|NULL = cualquiera"
         date valid_from
         date valid_to "nullable"
-        int source_year
     }
     rebate_brackets {
         int id PK
         int rebate_schedule_id FK
-        numeric threshold_from
-        numeric threshold_to "nullable"
+        int position "unico con la escala"
+        numeric lower "el primer tramo empieza en 0"
+        numeric upper "nullable: el ultimo tramo es abierto"
         numeric rate
-    }
-    rebate_accruals {
-        int id PK
-        int holding_group_id FK
-        int agency_id FK "nullable: contador propio"
-        int channel_id FK
-        int accrual_year
-        numeric accrued_amount
-        numeric settled_amount
-        date settled_on "nullable"
     }
     platform_rate_settings {
         int id PK
-        enum level "system|agency|campaign_type|campaign_line"
+        enum level "system|agency|campaign_type|line"
         int agency_id FK "nullable"
         int campaign_type_id FK "nullable"
         int campaign_line_id FK "nullable"
-        numeric rate_per_cpm "por defecto 1.00"
-        int created_by FK
+        numeric rate_per_thousand "1.00 en el nivel de sistema"
+        int created_by FK "nullable solo en el sistema"
         datetime created_at
     }
     campaign_lines {
@@ -765,15 +823,11 @@ erDiagram
 
     users            ||--o{ user_roles : "tiene"
     roles            ||--o{ user_roles : "se asigna en"
-    users            ||--o| sales_reps : "puede ser"
     holding_groups   ||--|{ agencies : "agrupa"
     holding_groups   ||--o{ rebate_schedules : "negocia"
     agencies         ||--o{ rebate_schedules : "puede excepcionar en"
     channels         ||--o{ rebate_schedules : "es clave de acumulacion de"
     rebate_schedules ||--|{ rebate_brackets : "se escalona en"
-    holding_groups   ||--o{ rebate_accruals : "devenga"
-    agencies         ||--o{ rebate_accruals : "acumula aparte en"
-    channels         ||--o{ rebate_accruals : "separa el contador de"
     agencies         ||--o{ platform_rate_settings : "puede sobrescribir"
     campaign_types   ||--o{ platform_rate_settings : "puede sobrescribir"
     campaign_lines   ||--o| platform_rate_settings : "puede sobrescribir"
@@ -804,23 +858,23 @@ Procedencia: [Base Standards §6](./docs/base-standards.md#6-authorization-model
 | Entidad | Propósito | Campos clave | Procedencia |
 |---|---|---|---|
 | `holding_groups` | Grupo de comunicación. **Es la clave por defecto contra la que se negocia la extraprima y se acumula su volumen anual**; una agencia con excepción se desgaja de ese contador (ver `rebate_accruals`). | `id` PK · `name` UNIQUE | Columna `GRUPO` de `Customer` y de los tres ficheros `extraprimas` |
-| `agencies` | Entidad a la que se factura la campaña. Pertenece a un grupo, y puede tener una extraprima propia que se aparte de la de su grupo — en cuyo caso también acumula volumen por separado. | `id` PK · `holding_group_id` FK **NOT NULL** · `name` UNIQUE · `reclam_reference` | `Customer.Agencia`; `customer` en `Campaigns`. `RECLAM` se conserva como metadato descriptivo y no gobierna nada (§8 del PO) |
+| `agencies` | Entidad a la que se factura la campaña. Pertenece a un grupo, y puede tener una extraprima propia que se aparte de la de su grupo — en cuyo caso también acumula volumen por separado. | `id` PK · `holding_group_id` FK **NOT NULL** · `name` UNIQUE | `Customer.Agencia`; `customer` en `Campaigns`. `RECLAM` no se ha incorporado: era metadato descriptivo y no gobierna nada (§8 del PO) |
 | `advertisers` | Anunciante o marca. | `id` PK · `name` UNIQUE | Columna `brand` |
 | `dsps` | Catálogo mantenido de plataformas, **no un enum**: el histórico contiene Adform, Equativ, Displayce, Pubmatic, DV360, RevenueMaker e Ikreate. | `id` PK · `name` UNIQUE · `is_active` | Columna `trading` (no `DSP`, ver §3.4) |
 | `channels` | Tipo de plataforma. Es la clave de acumulación de los tramos de extraprima, así que una mala clasificación desplaza los tramos de todo el año. | `id` PK · `name` UNIQUE | `tipo_plataforma` (`Directo`, `Deal`, `DOOH`) y la columna de canal de `extraprimas 2024/2026` (que además incluye `CTV`) |
 | `campaign_types` | Tipo de campaña. | `id` PK · `name` UNIQUE | `tipo_campaign`: `Branding`, `D2S` |
 | `formats` | Formato creativo. | `id` PK · `name` UNIQUE | `tipo_formato`: `Display`, `Vídeo` |
 | `sectors` | Sector del anunciante, dimensión de los acumulados. | `id` PK · `name` UNIQUE | Columna `sector`, 21 valores distintos |
-| `sales_reps` | Comercial responsable. | `id` PK · `name` UNIQUE · `user_id` FK *nullable* | Columna `Comercial`, 5 valores distintos |
+| `sales_reps` | Comercial responsable. | `id` PK · `name` UNIQUE | Columna `Comercial`, 5 valores distintos |
 
 #### Extraprima y coste de plataforma
 
 | Entidad | Propósito | Campos clave | Procedencia |
 |---|---|---|---|
-| `rebate_schedules` | Escala de extraprima vigente para un canal y un ámbito, **con vigencia temporal**. Se negocia normalmente **con el grupo**, pero una agencia concreta puede tener su propia escala que se aparte de la de su grupo: por eso `agency_id` es *nullable* y, cuando viene informado, la fila es una **excepción que gana sobre la del grupo**. Es lo que permite resolver la tasa por fecha en vez de por un `if` fijo. | `id` PK · `holding_group_id` FK **NOT NULL** · `agency_id` FK *nullable* · `channel_id` FK *nullable* · `scope` · `valid_from` **NOT NULL** · `valid_to` *nullable* · `source_year` | Normalización de los tres ficheros `extraprimas`, cuyas claves **no coinciden entre sí** (§3.4). La excepción por agencia **no existe en ellos**: los tres van por `GRUPO` |
-| `rebate_brackets` | Tramos marginales de una escala: desde, hasta y tasa. Los tramos se aplican a la porción, como los tramos del IRPF. | `id` PK · `rebate_schedule_id` FK · `threshold_from` · `threshold_to` *nullable* · `rate` | **No existe en ningún fichero.** Los tres traen una sola tasa por clave; la migración las carga como un tramo único que cubre todo el volumen |
-| `rebate_accruals` | Devengado frente a liquidado por contador, canal y año. Son dos cantidades distintas: la extraprima se devenga por campaña pero se paga una vez, a año vencido. **El contador es el grupo, salvo que la agencia tenga excepción**: en ese caso lleva volumen propio y queda excluida del contador de su grupo (ver abajo). | `id` PK · `holding_group_id` FK **NOT NULL** · `agency_id` FK *nullable* · `channel_id` FK · `accrual_year` · `accrued_amount` · `settled_amount` · `settled_on` | Requisito de [§5.4](./docs/product-description.md); no existe hoy en ninguna herramienta |
-| `platform_rate_settings` | Tarifa de infraestructura configurable en tres niveles, ganando el más específico: sistema (1,00 €/CPM) → agencia o tipo de campaña → línea. | `id` PK · `level` · FKs *nullable* según nivel · `rate_per_cpm` · `created_by` FK · `created_at` | Hoy **no es un dato**: es un `1` incrustado en una expresión de Qlik. Cada sobrescritura guarda autor y fecha porque mueve el margen |
+| `rebate_schedules` | Escala de extraprima vigente para un canal y un ámbito, **con vigencia temporal**. Se negocia normalmente **con el grupo**, pero una agencia concreta puede tener su propia escala que se aparte de la de su grupo: por eso `agency_id` es *nullable* y, cuando viene informado, la fila es una **excepción que gana sobre la del grupo**. Es lo que permite resolver la tasa por fecha en vez de por un `if` fijo. Una restricción de exclusión impide que dos escalas de la misma clave se solapen en el tiempo. | `id` PK · `holding_group_id` FK **NOT NULL** · `agency_id` FK *nullable* · `channel_id` FK *nullable* · `scope` *nullable* (NULL = cualquier ámbito) · `valid_from` **NOT NULL** · `valid_to` *nullable* | Normalización de los tres ficheros `extraprimas`, cuyas claves **no coinciden entre sí** (§3.4). La excepción por agencia **no existe en ellos**: los tres van por `GRUPO` |
+| `rebate_brackets` | Tramos marginales de una escala: desde, hasta y tasa. Los tramos se aplican a la porción, como los tramos del IRPF. Se validan al crearlos: la tabla empieza en 0, los tramos son contiguos y el último es abierto. | `id` PK · `rebate_schedule_id` FK · `position` · `lower` · `upper` *nullable* · `rate` | **No existe en ningún fichero.** Los tres traen una sola tasa por clave; la migración las carga como un tramo único que cubre todo el volumen. `(rebate_schedule_id, position)` único |
+| `rebate_accruals` | **No implementada.** El diseño preveía devengado frente a liquidado por contador, canal y año. La implementación no la necesita para calcular: el contador anual (grupo, agencia o NULL, canal, año) se recorre en orden cronológico y su posición queda congelada en `applied_rates`. La **liquidación** queda fuera de alcance. | — | Aplazado, ver §3.3 |
+| `platform_rate_settings` | Tarifa de infraestructura configurable en cuatro niveles, ganando el más específico: línea → agencia → tipo de campaña → sistema (1,00 € por mil impresiones). | `id` PK · `level` (`system`\|`agency`\|`campaign_type`\|`line`) · `agency_id`/`campaign_type_id`/`campaign_line_id` FK *nullable* (exactamente uno, según el nivel) · `rate_per_thousand` · `created_by` FK *nullable* (solo en el sistema) · `created_at` | Hoy **no es un dato**: es un `1` incrustado en una expresión de Qlik. Cada sobrescritura guarda autor y fecha porque mueve el margen |
 
 **La excepción por agencia desgaja el contador, no solo la tasa.** Una agencia con escala propia **acumula su volumen anual por separado y deja de computar en el de su grupo**. La consecuencia es que el contador del grupo baja: sus agencias hermanas tardan más en cruzar un tramo, y la agencia excepcionada recorre los suyos con su propio volumen. Por eso `rebate_accruals` lleva `agency_id` además de `holding_group_id`, y la clave de acumulación es:
 
@@ -836,22 +890,26 @@ El desgaje es **por canal**, no global, porque la excepción se negocia por cana
 
 | Entidad | Propósito | Campos clave | Procedencia |
 |---|---|---|---|
-| `commercial_offers` | Oferta del equipo de negocio, previa a la OC. **Fase 3.** | `id` PK · `offer_reference` UNIQUE · `agency_id` FK · `advertiser_id` FK · `status` · `presented_on` · `accepted_on` · `net_budget` · `currency` | Columna `OF` (47% de relleno) y el bloque `Estatus Agencias BEYUP` del Qlik, que ya define el embudo `OFERTA → GANADA` |
-| `purchase_orders` | Orden de compra que envía el cliente y que da de alta la campaña. | `id` PK · `order_reference` UNIQUE · `commercial_offer_id` FK *nullable* · `received_on` | Columna `OC` (38% de relleno, 47 OC distintas, 11 de ellas con más de una campaña) |
+| `commercial_offers` | Oferta del equipo de negocio, previa a la OC. **Fase 3, sin tabla en esta entrega.** | `id` PK · `offer_reference` UNIQUE · `agency_id` FK · `advertiser_id` FK · `status` · `presented_on` · `accepted_on` · `net_budget` · `currency` | Columna `OF` (47% de relleno) y el bloque `Estatus Agencias BEYUP` del Qlik, que ya define el embudo `OFERTA → GANADA` |
+| `purchase_orders` | Orden de compra que envía el cliente y que da de alta la campaña. | `id` PK · `order_reference` UNIQUE · `received_on` | Columna `OC` (38% de relleno, 47 OC distintas, 11 de ellas con más de una campaña) |
 | `purchase_order_versions` | **La OC se versiona, no se sobrescribe.** Una campaña que paró antes de tiempo se factura al menor entre contratado y servido, mediante abono u OC revisada, y el ingreso, la base de extraprima y la acumulación de tramos leen siempre la versión en vigor. | `id` PK · `purchase_order_id` FK · `version_number` · `issued_on` · `revision_reason` · `is_in_force` | Decisión del PO (2026-09-17). No existe en los ficheros |
 | `campaigns` | Cabecera de campaña. | `id` PK · `name` · `display_name` · `agency_id` FK **NOT NULL** · `advertiser_id` FK · `purchase_order_id` FK ***nullable*** · `campaign_type_id`/`sector_id`/`sales_rep_id` FK · `status` · `start_date` · `end_date` | `campaign`, `CAMPAÑA`, `customer`, `brand`. La FK a la OC es **nullable a propósito**: solo el 38% de las filas actuales trae referencia de OC |
-| `campaign_periods` | **Mes natural como entidad de primer nivel.** Es como el negocio piensa (`period` = `agosto`), como se compromete el presupuesto y como consolida el equipo financiero. Aplanarlo a un rango de fechas perdería la forma de trabajar del equipo. | `id` PK · `campaign_id` FK · `period_year` · `period_month` · `period_start` · `period_end` · `status` | El grano real de `Campaigns`: 259 filas para 113 campañas, una por mes |
-| `campaign_lines` | La línea es donde viven las tarifas y los volúmenes, porque `cpm_estandar` ya varía entre filas de una misma campaña (21 valores distintos, de 2 € a 31,25 €). | `id` PK · `campaign_period_id` FK · `purchase_order_version_id` FK *nullable* · `dsp_id`/`channel_id`/`format_id` FK · `scope` · `market_description` · `contracted_impressions` · `sale_cpm` · `currency` | `target_impressions_estandar`, `cpm_estandar`, `trading`, `tipo_plataforma`, `tipo_formato`, `location` |
-| `dsp_mappings` | **Clave foránea real contra el DSP**, en sustitución del nombre de campaña troceado por posición que hoy sostiene todo el modelo financiero. Es la mitigación del riesgo principal del proyecto. | `id` PK · `campaign_line_id` FK · `dsp_id` FK · `external_campaign_id` · `external_line_item_id` · `validated_at` | Requisito de [§7](./docs/product-description.md). Una línea activa sin mapeo es estado **bloqueante**, no aviso |
-| `applied_rates` | Tasa de extraprima y tarifa de plataforma **congeladas en el momento del cálculo**, con su procedencia: qué escalón de la escalera de resolución las produjo, de qué año venía la tabla y si la tasa salió de una excepción de agencia o de la escala del grupo. Sin ese último dato, un 25% negociado con una agencia concreta y el 25% heredado de su grupo son indistinguibles al revisar un margen. | `id` PK · `campaign_line_id` FK · `rebate_rate` · `rebate_resolution_step` · `rebate_from_agency_exception` · `rebate_source_year` · `platform_cpm_rate` · `calculated_at` | Decisión de [§5.9](./docs/product-description.md). Una cifra financiera que cambia sola cuando alguien edita un maestro no es auditable |
+| `campaign_periods` | **Mes natural como entidad de primer nivel.** Es como el negocio piensa (`period` = `agosto`), como se compromete el presupuesto y como consolida el equipo financiero. Aplanarlo a un rango de fechas perdería la forma de trabajar del equipo. **En la entrega final solo es calendario:** las líneas ya no cuelgan de él y el volumen por mes vive en `campaign_line_periods`. | `id` PK · `campaign_id` FK · `period_year` · `period_month` · `period_start` · `period_end` · `status` | El grano real de `Campaigns`: 259 filas para 113 campañas, una por mes |
+| `campaign_lines` | La línea es donde viven las tarifas y los volúmenes, porque `cpm_estandar` ya varía entre filas de una misma campaña (21 valores distintos, de 2 € a 31,25 €). **Cuelga de la campaña y tiene fechas propias**: puede empezar o acabar dentro del rango de la campaña. El CPM de venta puede ser 0 (excepción de precio, que el margen marca como «Sin venta»); el volumen contratado, nunca. | `id` PK · `campaign_id` FK · `line_number` · `start_date` · `end_date` · `purchase_order_version_id` FK *nullable* · `dsp_id`/`channel_id`/`format_id` FK · `scope` · `market_description` · `contracted_impressions` · `sale_cpm` · `currency` | `target_impressions_estandar`, `cpm_estandar`, `trading`, `tipo_plataforma`, `tipo_formato`, `location`. `(campaign_id, line_number)` único |
+| `campaign_line_periods` | **El flight: la parte de una línea que cae en un mes natural.** Reparte el volumen contratado por mes, en proporción a los días o con los volúmenes que fija el usuario, y es la unidad sobre la que se calcula el margen, se cierra el mes y se congelan las tasas. | `id` PK · `campaign_line_id` FK · `campaign_period_id` FK · `flight_start` · `flight_end` · `contracted_impressions` | Corrección de modelo del propietario del producto: la línea no pertenece a un mes, el volumen sí. `(campaign_line_id, campaign_period_id)` único y `flight_start <= flight_end` |
+| `dsp_mappings` | **Clave foránea real contra el DSP**, en sustitución del nombre de campaña troceado por posición que hoy sostiene todo el modelo financiero. Es la mitigación del riesgo principal del proyecto. | `id` PK · `campaign_line_id` FK · `dsp_id` FK · `external_campaign_id` · `external_line_item_id` · `validated_at` | Requisito de [§7](./docs/product-description.md). Una línea activa sin mapeo es estado **bloqueante**, no aviso. `(dsp_id, external_campaign_id, external_line_item_id)` único: una pareja externa solo se enlaza a una línea |
+| `dsp_catalog_lines` | **Catálogo de las líneas que Adform ha entregado**, con sus nombres y fechas. Se actualiza con cada ingesta (primera y última fecha vista, y última con impresiones) y permite **vincular** una excepción a una línea de AdOps360 sin escribir identificadores a mano. | `id` PK · `dsp_id` FK · `external_campaign_id` · `external_line_item_id` · `campaign_name` · `line_item_name` · `line_start_date`/`line_end_date` *nullable* · `first_seen_date` · `last_seen_date` · `last_impressions_date` *nullable* | `(dsp_id, external_campaign_id, external_line_item_id)` único. Nace de las dimensiones de nombre y fechas que devuelve la API de reporting de Adform |
+| `applied_rates` | Tasa de extraprima y tarifa de plataforma **congeladas al cerrar el mes**, **una fila por flight**, con su procedencia: qué escalón de la escalera de resolución las produjo (1 a 6, u 8 si no hay escala), de qué año venía la tabla y si salió de una excepción de agencia. Guarda la **posición del contador anual antes y después del flight** y el importe del rebate. Sin ese dato, un 25% negociado con una agencia concreta y el 25% heredado de su grupo son indistinguibles al revisar un margen. | `id` PK · `campaign_line_period_id` FK único · `rebate_schedule_id` FK *nullable* · `ladder_step` · `source_year` *nullable* · `agency_exception` · `zero_reason` *nullable* · `effective_rate` · `counter_group_id`/`counter_agency_id`/`counter_channel_id`/`counter_year` · `position_before` · `position_after` · `rebate_amount` · `platform_rate` · `closed_at` · `closed_by` FK | Decisión de [§5.9](./docs/product-description.md). Se escribe una vez, al cerrar el mes: una cifra financiera que cambia sola cuando alguien edita un maestro no es auditable. El escalón 7 (arrastre de la tabla anterior) queda aplazado |
+| `applied_rate_brackets` | Desglose por tramo del rebate de un flight: **qué parte del importe cayó en cada tramo y cuánta extraprima generó**. Sin él, un importe no se podría reconstruir tras cambiar la escala. | `id` PK · `applied_rate_id` FK · `position` · `lower` · `upper` *nullable* · `rate` · `amount` · `rebate` | `(applied_rate_id, position)` único |
 
 #### Ingesta y entrega
 
 | Entidad | Propósito | Campos clave | Procedencia |
 |---|---|---|---|
 | `daily_deliveries` | Entrega real por línea y día. Es el grano que hoy no existe en ninguna hoja de cálculo: **ninguno de los dos Excel contiene una sola fila de entrega real**. Volumen esperado: ~4.600 filas/día. | `id` PK · `campaign_line_id` FK · `ingestion_batch_id` FK · `delivery_date` · `impressions` · `clicks` · `media_cost` · `measurable_impressions` · `viewable_impressions` · `banner_size` · `screen` · `line_format` | Grano del QVD de entrega de Adform. `line_format` se guarda **solo como contraste**: el canal manda desde la configuración, nunca desde el DSP |
-| `ingestion_batches` | Cada ejecución de ingesta, con su ruta, fichero y resultado. Sustituye las 49 etiquetas escritas a mano (`carga 1`, `carga octopus`, `carga equativ 8/11`) por trazabilidad real. | `id` PK · `dsp_id` FK · `route` (`api`\|`upload`\|`email`) · `source_file` · `started_at` · `finished_at` · `status` · `row_count` | Campos `origen` y `file` del QVD, y la hoja `Providers` para la ruta de correo (fase 2) |
-| `ingestion_exceptions` | Claves sin casar, **en ambos sentidos**: entrega sin línea y línea sin entrega. Hoy las dos son invisibles, y una es un problema comercial mientras que la otra es una errata. | `id` PK · `ingestion_batch_id` FK · `campaign_line_id` FK *nullable* · `exception_type` · `external_key` · `status` | Requisito de [§7](./docs/product-description.md): 87 claves de entrega sin configuración y 178 configuraciones sin entrega |
+| `ingestion_batches` | Cada ejecución de ingesta, con su ruta, fichero y resultado. Sustituye las 49 etiquetas escritas a mano (`carga 1`, `carga octopus`, `carga equativ 8/11`) por trazabilidad real. Guarda además la **ventana de fechas pedida** y cuántas filas se ignoraron o llegaron sin casar y sin impresiones. | `id` PK · `dsp_id` FK · `route` (`api`\|`upload`\|`email`) · `source_file` *nullable* · `started_at` · `finished_at` *nullable* · `status` · `row_count` · `ignored_row_count` · `zero_unmatched_row_count` · `window_start`/`window_end` *nullable* | Campos `origen` y `file` del QVD, y la hoja `Providers` para la ruta de correo (fase 2). La ventana y los recuentos nacen de la ingesta real contra Adform |
+| `ingestion_exceptions` | Claves sin casar, **en ambos sentidos**: `unmatched_delivery` (entrega sin línea) y `missing_delivery` (línea mapeada sin entrega en un periodo terminado). Hoy las dos son invisibles, y una es un problema comercial mientras que la otra es una errata. Hay **una excepción abierta por pareja externa y DSP**, y una ausencia por línea y mes; se cierra resolviéndola con una nota o vinculándola a una línea. | `id` PK · `ingestion_batch_id` FK · `exception_type` · `status` (`open`\|`resolved`) · `dsp_id`/`external_campaign_id`/`external_line_item_id` (obligatorios en `unmatched_delivery`) · `campaign_line_id`/`campaign_period_id` (obligatorios en `missing_delivery`) · `first_date`/`last_date` · `resolved_at`/`resolved_by`/`note` | Requisito de [§7](./docs/product-description.md): 87 claves de entrega sin configuración y 178 configuraciones sin entrega. Restricciones `CHECK` por tipo y por estado, e índices únicos parciales |
+| `ingestion_exception_deliveries` | **La entrega retenida de una excepción sin casar**, día a día: no se pierde nada mientras no haya una línea a la que asignarla. | `id` PK · `exception_id` FK · `delivery_date` · `impressions` · `clicks` · `media_cost` · `measurable_impressions` · `viewable_impressions` | `(exception_id, delivery_date)` único |
 
 ### **3.3. Pendiente de validar**
 
@@ -865,6 +923,11 @@ Lo que no está en ningún fichero ni decidido, y por tanto no se ha rellenado c
 | 4 | **Qué ocurre con las líneas al revisar una OC** | ¿La revisión crea filas nuevas de `campaign_lines` asociadas a la nueva versión, o una tabla puente volumen-por-versión? Aquí se asume lo primero, que preserva el histórico, pero no está confirmado |
 | 5 | **Conjunto de estados de `campaigns` y `campaign_periods`** | El fichero actual solo tiene `Activa`/`Inactiva`; el ciclo de vida es nuevo y sus estados no están enumerados todavía |
 | 6 | **El rol `admin`** | [Base Standards §6](./docs/base-standards.md#6-authorization-model) fija tres roles; [Product Description §3](./docs/product-description.md) menciona cuatro, añadiendo `admin`. El diagrama sigue los tres de Base Standards |
+| 7 | **Ajuste de facturación de fin de mes** | La facturación es por el importe de la orden de compra y puede ajustarse a final de mes por infraentrega o por campaña parada. El margen se calcula sobre la venta contratada y no hay dónde registrar el ajuste. En el mes cerrado real verificado, ajustar a lo entregado habría reducido la venta en menos del 1 % y el margen en torno al 1,6 %. Mejora diseñada: ajuste por flight mientras está pendiente de cierre, que el cierre congelaría |
+| 8 | **Campañas sin volumen contratado** | Hay campañas con entrega y coste y sin venta ni orden de compra (en el mes en curso verificado, en torno a una cuarta parte del coste). No se contemplan: el registro exige un volumen mayor que 0 y su entrega queda como entrega sin casar |
+| 9 | **Contador de extraprima de un flight sin tarifa** | Se supone que avanza igualmente el contador del grupo; hay que confirmarlo con Finanzas |
+| 10 | **Reexpresión de contadores ya congelados** | Crear o quitar una excepción de agencia a mitad de año cambiaría posiciones ya congeladas. Se aplaza con su motivo |
+| 11 | **Escalón 7 de la escalera (arrastre de la tabla anterior)** | Aplazado: sin tabla del año, el flight se tarifica al 0 % con su motivo registrado |
 
 ### **3.4. Incompatibilidades detectadas entre los ficheros de origen**
 
@@ -880,7 +943,7 @@ Los ficheros no son consistentes entre sí, y esas discrepancias son requisitos 
 | 4 | grupo + canal + ámbito | El caso normal, y la clave del fichero de 2026 |
 | 5 | grupo + canal | La clave del fichero de 2024 |
 | 6 | grupo | La clave del fichero de 2023 |
-| 7 | tabla anterior en vigor, volviendo al escalón 1 | La regla de arrastre: 2025 se tarifica con la tabla de 2024 |
+| 7 | tabla anterior en vigor, volviendo al escalón 1 | La regla de arrastre: 2025 se tarifica con la tabla de 2024. **Aplazado en la implementación** (§3.3) |
 | 8 | 0%, registrado con su motivo | Grupo sin fila de extraprima en ningún año |
 
 Los escalones 1 a 3 son la novedad: **la extraprima se negocia normalmente con el grupo, pero una agencia puede tener excepción propia dentro de él**, y en ese caso gana sobre la de su grupo y acumula volumen por separado (§3.2). Ninguno de los tres ficheros contiene excepciones de agencia —los tres van por `GRUPO`—, así que la migración las carga todas como escala de grupo y las excepciones se dan de alta desde la aplicación.
