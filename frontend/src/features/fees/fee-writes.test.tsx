@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { feeFixture, feeRequests, respondNextFee, seedAccountFees } from '@/test/msw/fees'
 import { ACCOUNT_IDS } from '@/test/msw/fixtures'
@@ -353,5 +353,74 @@ describe('Account fees: errors of the API', () => {
     expect(screen.getByRole('alertdialog')).toBeInTheDocument()
     expect(dialog.getByRole('button', { name: f.close.confirm })).toBeEnabled()
     expect(feeRequests('accountFees')).toHaveLength(reads)
+  })
+})
+
+// Spec fees "Pantalla Account Fees: foco tras escribir y ante un error local".
+
+/**
+ * The element gets the focus and keeps it once Radix has finished closing: Radix gives the focus back to the button
+ * that opened the panel in a timeout after it unmounts, which a single waitFor would not wait for.
+ */
+async function focusStays(element: () => HTMLElement) {
+  await waitFor(() => expect(element()).toHaveFocus())
+  await act(() => new Promise((resolve) => setTimeout(resolve, 50)))
+  expect(element()).toHaveFocus()
+}
+
+describe('Account fees: focus after a write and on a local error', () => {
+  it('after a correction the focus goes to the History button of that fee', async () => {
+    seedOne()
+    const { user } = await openAccount()
+
+    await user.click(rowOf('MDR', 'always').getByRole('button', { name: 'Edit MDR, always' }))
+    const form = within(await screen.findByRole('dialog', { name: f.titles.correct('MDR') }))
+    await user.type(form.getByLabelText(f.labels.description), 'Card MDR')
+    await user.click(form.getByRole('button', { name: f.save }))
+
+    await focusStays(() => screen.getByRole('button', { name: 'History of MDR, always' }))
+  })
+
+  it('when the correction renames the row (a new Valid from), the focus follows the fee', async () => {
+    seedOne()
+    const { user } = await openAccount()
+
+    await user.click(rowOf('MDR', 'always').getByRole('button', { name: 'Edit MDR, always' }))
+    const form = within(await screen.findByRole('dialog', { name: f.titles.correct('MDR') }))
+    await user.click(form.getByLabelText(f.labels.always))
+    day(f.labels.validFrom, '2027-01-01', form)
+    await user.click(form.getByRole('button', { name: f.save }))
+
+    await focusStays(() => screen.getByRole('button', { name: 'History of MDR from 2027-01-01' }))
+  })
+
+  it('after a close the focus goes to the History button of that fee', async () => {
+    seedOne({ feeTypeId: 4, percentage: null, fixedAmount: '15.0000', inUse: true, lastAppliedEventDate: '2026-10-15' })
+    const { user } = await openAccount()
+
+    await user.click(
+      rowOf('Chargeback per txn fee', 'always').getByRole('button', { name: 'Close Chargeback per txn fee, always' }),
+    )
+    const dialog = within(await screen.findByRole('alertdialog', { name: f.close.title('Chargeback per txn fee') }))
+    day(f.close.endDate, '2026-10-31', dialog)
+    await user.click(dialog.getByRole('button', { name: f.close.confirm }))
+
+    await focusStays(() => screen.getByRole('button', { name: 'History of Chargeback per txn fee, always' }))
+  })
+
+  it('a local error puts the focus on the first field with an error', async () => {
+    const { user } = await openAccount()
+
+    await user.click(screen.getByRole('button', { name: s.add }))
+    const form = within(await screen.findByRole('dialog', { name: f.titles.create }))
+    await user.click(form.getByRole('button', { name: f.save }))
+
+    expect(form.getByLabelText(f.labels.feeType)).toHaveFocus()
+    await user.selectOptions(form.getByLabelText(f.labels.feeType), 'MDR')
+    await user.type(form.getByLabelText(f.labels.percent), '2,5')
+    await user.click(form.getByRole('button', { name: f.save }))
+
+    expect(form.getByLabelText(f.labels.percent)).toHaveFocus()
+    expect(feeRequests('create')).toHaveLength(0)
   })
 })

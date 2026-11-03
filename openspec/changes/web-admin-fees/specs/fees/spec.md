@@ -219,3 +219,18 @@ Un `400 validation_error` con `details.field` SHALL mostrarse junto a ese campo.
 #### Scenario: Teclado
 - **WHEN** cierra el panel con Escape
 - **THEN** el foco vuelve al botón **History** que lo abrió
+
+### Requirement: Pantalla Account Fees: foco tras escribir y ante un error local
+Cuando el API acepta un alta, una corrección, un cambio desde una fecha o un cierre, el foco SHALL ir al botón **History** de ese fee, aunque su fila haya cambiado de nombre o de sitio; si el fee ya no está en la lista, al título de la tabla. Si la validación local rechaza el formulario, el foco SHALL ir al primer campo con error, en el orden en que se muestran.
+
+#### Scenario: Tras una corrección o un cierre
+- **WHEN** `admin` guarda una corrección o cierra un fee
+- **THEN** el foco queda en **History** de ese fee
+
+#### Scenario: La fila cambia de nombre
+- **WHEN** la corrección le da `Valid from = 2027-01-01` a un MDR que era `always`
+- **THEN** el foco queda en `History of MDR from 2027-01-01`
+
+#### Scenario: Error local
+- **WHEN** `admin` pulsa **Save fee** en un alta sin tipo
+- **THEN** el foco queda en `Fee type`; si luego elige el tipo y escribe `2,5` como porcentaje, queda en `Percentage (%)`
