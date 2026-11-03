@@ -19,9 +19,9 @@ export class FeeAdminService {
   ) {}
 
   async create(scope: Scope, userId: number, accountId: string, body: FeeCreate): Promise<AccountFee> {
+    const today = this.today()
     const stored = await this.repository.inAccount(scope, accountId, async (unit) => {
-      const type = await unit.feeType(body.feeTypeId)
-      if (type === null || !type.isActive) throw new FeeRuleError('feeTypeId', 'Unknown or inactive fee type')
+      await assertActiveType(unit, body.feeTypeId)
       const fee = planCreate(body, this.newId())
       await assertNoOverlap(unit, accountId, fee)
 
@@ -31,10 +31,11 @@ export class FeeAdminService {
       return unit.stored(fee.feeId)
     })
     if (stored === null) throw new NotFoundError('Account')
-    return this.view(stored)
+    return view(stored, today)
   }
 
   async patch(scope: Scope, userId: number, feeId: string, body: FeePatch): Promise<FeeUpdateResult> {
+    const today = this.today()
     const accountId = await this.repository.accountOfFee(scope, feeId)
     if (accountId === null) throw new NotFoundError('Fee')
     const reason = body.reason ?? null
@@ -60,6 +61,8 @@ export class FeeAdminService {
         return { fee: await unit.stored(feeId), successor: null }
       }
 
+      // A successor is a new fee: its type must still be active, as for a creation.
+      await assertActiveType(unit, plan.successor.feeTypeId)
       await assertNoOverlap(unit, accountId, plan.successor, [plan.closed])
       // The original first, so that the trigger already sees it closed when the successor arrives (design D6).
       await unit.update(plan.closed)
@@ -76,12 +79,19 @@ export class FeeAdminService {
       return { fee: await unit.stored(feeId), successor: await unit.stored(successorId) }
     })
     if (result === null) throw new NotFoundError('Fee')
-    return { fee: this.view(result.fee), successor: result.successor === null ? null : this.view(result.successor) }
+    return {
+      fee: view(result.fee, today),
+      successor: result.successor === null ? null : view(result.successor, today),
+    }
   }
+}
 
-  private view(fee: StoredFee): AccountFee {
-    return { ...fee, status: statusOf(fee, this.today()) }
-  }
+/** The fee in API form; `today` is read once per request, so every fee of a response has the same day. */
+const view = (fee: StoredFee, today: string): AccountFee => ({ ...fee, status: statusOf(fee, today) })
+
+async function assertActiveType(unit: FeeAdminUnit, feeTypeId: number): Promise<void> {
+  const type = await unit.feeType(feeTypeId)
+  if (type === null || !type.isActive) throw new FeeRuleError('feeTypeId', 'Unknown or inactive fee type')
 }
 
 /**

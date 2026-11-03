@@ -31,6 +31,14 @@ const listOrder: Prisma.FeeOrderByWithRelationInput[] = [
 
 const dateOf = (day: string) => new Date(`${day}T00:00:00.000Z`)
 
+/**
+ * The search text as a literal inside the LIKE that Prisma builds for `contains` on SQL Server: Prisma does not escape
+ * the wildcards, so `%`, `_` and `[` go between brackets (SQL Server's literal form; `]` alone is already literal).
+ */
+export function likeLiteral(text: string): string {
+  return text.replace(/[%_[]/g, (c) => `[${c}]`)
+}
+
 /** The status predicates of design D7 on DATE columns; `today` is the New York day. */
 function statusWhere(status: FeesQuery['status'], today: string): Prisma.FeeWhereInput {
   const day = dateOf(today)
@@ -96,6 +104,7 @@ export class PrismaFeeQueryRepository implements FeeQueryRepository {
   }
 
   async list(scope: Scope, query: FeesQuery, today: string): Promise<{ items: StoredFeeListItem[]; total: number }> {
+    const q = query.q === undefined ? undefined : likeLiteral(query.q)
     const where: Prisma.FeeWhereInput = {
       AND: [
         { account: { provider: { merchantId: { in: [...scope.merchantIds] } } } },
@@ -104,14 +113,14 @@ export class PrismaFeeQueryRepository implements FeeQueryRepository {
         query.accountId === undefined ? {} : { accountId: query.accountId },
         kindWhere(query.kind),
         statusWhere(query.status, today),
-        query.q === undefined
+        q === undefined
           ? {}
           : {
               OR: [
-                { account: { name: { contains: query.q } } },
-                { feeType: { code: { contains: query.q } } },
-                { feeType: { title: { contains: query.q } } },
-                { description: { contains: query.q } },
+                { account: { name: { contains: q } } },
+                { feeType: { code: { contains: q } } },
+                { feeType: { title: { contains: q } } },
+                { description: { contains: q } },
               ],
             },
       ],

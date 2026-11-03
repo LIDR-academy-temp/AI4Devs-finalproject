@@ -18,8 +18,19 @@ type Tx = Prisma.TransactionClient
 /** A waiting write holds the transaction while the other one commits; well above any real fee write. */
 const TX_TIMEOUT_MS = 15_000
 
-/** What TR_Fee_NoOverlap raises (THROW 50001), the backstop of a write that skipped the use case. */
-const TRIGGER_OVERLAP = 'Fee validity overlaps an existing fee'
+/** The error number of TR_Fee_NoOverlap (THROW 50001), the backstop of a write that skipped the use case. */
+const TRIGGER_OVERLAP_NUMBER = 50001
+
+/**
+ * TR_Fee_NoOverlap's rejection as the mssql adapter reports it: the driver adapter cause of kind `mssql` keeps the
+ * SQL Server error number as `code`, the same path isDeadlockVictim reads 1205 from. By number, not by message.
+ */
+export function isFeeOverlapTrigger(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false
+  const cause = (error.meta as { driverAdapterError?: { cause?: { kind?: string; code?: unknown } } } | undefined)
+    ?.driverAdapterError?.cause
+  return cause?.kind === 'mssql' && cause.code === TRIGGER_OVERLAP_NUMBER
+}
 
 const stateSelect = {
   feeId: true,
@@ -77,7 +88,7 @@ async function overlapBackstop<T>(write: Promise<T>): Promise<T> {
   try {
     return await write
   } catch (error) {
-    if (error instanceof Error && error.message.includes(TRIGGER_OVERLAP)) throw new FeeOverlapError([])
+    if (isFeeOverlapTrigger(error)) throw new FeeOverlapError([])
     throw error
   }
 }

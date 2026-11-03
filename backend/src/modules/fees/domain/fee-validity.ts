@@ -28,10 +28,15 @@ export function findOverlaps<T extends FeeSpan>(candidate: FeeSpan, others: read
   )
 }
 
-/** The civil day before a YYYY-MM-DD day. */
+/**
+ * The civil day before a YYYY-MM-DD day. setUTCFullYear, not Date.UTC: Date.UTC reads years 0–99 as 1900–1999, so
+ * 0050-06-01 would step back to 1950-05-31.
+ */
 export function previousDay(day: string): string {
   const [year, month, date] = day.split('-').map(Number) as [number, number, number]
-  return new Date(Date.UTC(year, month - 1, date - 1)).toISOString().slice(0, 10)
+  const civil = new Date(0)
+  civil.setUTCFullYear(year, month - 1, date - 1)
+  return civil.toISOString().slice(0, 10)
 }
 
 /** Scheduled if it starts after today, closed if it ended before today, active otherwise. */
