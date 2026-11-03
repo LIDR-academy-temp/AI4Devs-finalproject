@@ -76,7 +76,7 @@ describe('planPatch: in-place correction', () => {
     expect(plan).toMatchObject({
       kind: 'correct',
       action: 'updated',
-      changed: ['percentage', 'startDate', 'description'],
+      changed: ['percentage', 'description', 'startDate'],
       before: mdr,
       after: { ...mdr, percentage: '0.027500', startDate: '2026-01-01', description: null },
     })

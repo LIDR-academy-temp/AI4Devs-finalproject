@@ -2,13 +2,10 @@
 // fee in use; its last applied event is the latest business day among the event dates of its breakdowns and the
 // settlement dates of the batches that charged it as a batch fee. Rows without a date count as use but not as a day.
 import type { Prisma, PrismaClient } from '../../../generated/prisma/client.js'
+import type { FeeUsage } from '../domain/fee-patch.js'
 import { businessDay } from '../domain/fee-selection.js'
 
-export interface FeeUsage {
-  inUse: boolean
-  /** YYYY-MM-DD, or null when there is no dated use. */
-  lastAppliedEventDate: string | null
-}
+export type { FeeUsage }
 
 type Db = PrismaClient | Prisma.TransactionClient
 

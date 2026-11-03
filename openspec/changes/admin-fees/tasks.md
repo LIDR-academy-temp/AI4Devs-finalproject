@@ -22,11 +22,11 @@ El grupo 1 es el contrato del que parte `web-admin-fees`. Al terminarlo se hace 
 
 ## 2. Dominio de vigencias, solapes y edición (TDD)
 
-- [ ] 2.1 Escribir `domain/fee-validity.test.ts` y comprobar que falla. Debe cubrir:
+- [x] 2.1 Escribir `domain/fee-validity.test.ts` y comprobar que falla. Debe cubrir:
   - `statusOf`: los tres estados y los bordes del día de hoy (escenario "Programado, cerrado y activo");
   - `findOverlaps`: NULL…NULL contra NULL…NULL, abierto contra cerrado, bordes contiguos (…10-31 y 11-01…), tipos distintos y la propia fila ignorada;
   - `previousDay`: fin de mes, 1 de marzo de un año bisiesto y 1 de enero.
-- [ ] 2.2 Escribir `domain/fee-patch.test.ts` con las dos formas de D3 y comprobar que falla. Debe cubrir:
+- [x] 2.2 Escribir `domain/fee-patch.test.ts` con las dos formas de D3 y comprobar que falla. Debe cubrir:
   - corrección completa de un fee sin uso (`updated`);
   - campos no editables en uso (`fee_in_use` con `fields`);
   - `description` en uso;
@@ -35,10 +35,10 @@ El grupo 1 es el contrato del que parte `web-admin-fees`. Al terminarlo se hace 
   - `effectiveFrom` igual a `startDate` o posterior a `endDate` (`400` con `field`);
   - `effectiveFrom − 1` anterior al último evento;
   - reglas de un fee válido: ni importe ni porcentaje, y `endDate < startDate`.
-- [ ] 2.3 Escribir `domain/fee-snapshot.test.ts` y comprobar que falla. Debe cubrir el paso de fila a `FeeSnapshot` y vuelta, y la lectura del formato del seed: `"percentage":0.1` → `"0.100000"` y `"fixedAmount":0.65` → `"0.6500"`.
-- [ ] 2.4 Commit: test(fees): reglas de vigencia, solape y edición
-- [ ] 2.5 Implementar `fee-validity.ts`, `fee-patch.ts`, `fee-snapshot.ts` y `application/errors.ts` (D9) hasta dejar los tres tests en verde. Rotura deliberada: hacer que `findOverlaps` trate como solapados los bordes contiguos debe hacer fallar su caso; después se revierte.
-- [ ] 2.6 Commit: feat(fees): reglas de vigencia, solape y edición como funciones puras
+- [x] 2.3 Escribir `domain/fee-snapshot.test.ts` y comprobar que falla. Debe cubrir el paso de fila a `FeeSnapshot` y vuelta, y la lectura del formato del seed: `"percentage":0.1` → `"0.100000"` y `"fixedAmount":0.65` → `"0.6500"`.
+- [x] 2.4 Commit: test(fees): reglas de vigencia, solape y edición
+- [x] 2.5 Implementar `fee-validity.ts`, `fee-patch.ts`, `fee-snapshot.ts` y `domain/errors.ts` (D9) hasta dejar los tres tests en verde. Rotura deliberada: hacer que `findOverlaps` trate como solapados los bordes contiguos debe hacer fallar su caso; después se revierte.
+- [x] 2.6 Commit: feat(fees): reglas de vigencia, solape y edición como funciones puras
 
 ## 3. Crear, corregir, cerrar y cambiar desde una fecha
 
