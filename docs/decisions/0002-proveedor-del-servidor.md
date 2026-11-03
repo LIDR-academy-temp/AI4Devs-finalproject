@@ -10,7 +10,7 @@ informed: Evaluadores de AI4Devs
 
 | | |
 |---|---|
-| **Estado** | Propuesto. La instalación local se aplica desde ya. El responsable eligió Google Cloud el 2 de noviembre de 2026 para el despliegue público, pero **lo pospuso ese mismo día**: se retomará después de la Entrega 2, con más datos que aportará. Entonces se confirmarán o se ajustarán el servicio, la región y el tamaño que propone este ADR. |
+| **Estado** | Propuesto. La instalación local se aplica desde ya. El responsable eligió Google Cloud el 2 de noviembre de 2026 para el despliegue público, pero **lo pospuso ese mismo día**: se retomará después de la Entrega 2, con más datos que aportará. Entonces se confirmarán o se ajustarán el servicio, la región y el tamaño que propone este ADR. Los primeros datos se revisaron el mismo día y lo pendiente quedó en la [hoja de ruta](../plan/hoja-de-ruta-entrega-final.md). |
 | **Alcance** | Actividad A13 del [plan](../plan/plan-implementacion-entrega-2.md). |
 | **Fuera de alcance** | Pipeline de entrega continua, alta disponibilidad y el servidor definitivo de producción empresarial. |
 

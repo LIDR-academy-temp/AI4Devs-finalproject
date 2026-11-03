@@ -1,6 +1,6 @@
 # Despliegue en Google Cloud Platform
 
-> **Pospuesto.** Esta guía todavía no se ejecutó en Google Cloud y se retomará después de la Entrega 2. La configuración de producción y los comandos dentro del servidor se probaron localmente, con datos simulados y certificado interno. Los comandos `gcloud`, el certificado real y la conexión con SAT2 desde la nube están sin probar.
+> **En pausa.** Esta guía todavía no se ejecutó en Google Cloud. Se retomará al terminar la instalación local; lo que falta revisar y hacer está en la [hoja de ruta](../plan/hoja-de-ruta-entrega-final.md#3-línea-b-despliegue-público-en-google-cloud-en-pausa). La configuración de producción y los comandos dentro del servidor se probaron localmente, con datos simulados y certificado interno. Los comandos `gcloud`, el certificado real y la conexión con SAT2 desde la nube están sin probar.
 
 Publica Weather Track en internet con HTTPS y un dominio propio, en una máquina virtual de Compute Engine. La [decisión](../decisions/0002-proveedor-del-servidor.md) está en su ADR. Para usarla solo en una computadora, alcanza con la [instalación local](instalacion-local.md).
 
