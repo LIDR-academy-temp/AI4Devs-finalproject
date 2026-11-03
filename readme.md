@@ -404,7 +404,7 @@ La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al
 
 ### 2.1. Diagrama de arquitectura
 
-> **Estado en la Entrega 2.** La arquitectura y el stack descritos están implementados: React 19, TypeScript, Fastify 5, Zod 4, Prisma 7 con `@prisma/adapter-mssql` y SQL Server 2022. Las decisiones y sus desviaciones respecto del plan están en los ADR de [`docs/adr/`](docs/adr/). En producción, la integración se alimentará de los datos consolidados de los gateways.
+> **Estado.** La arquitectura y el stack descritos están implementados: React 19, TypeScript, Fastify 5, Zod 4, Prisma 7 con `@prisma/adapter-mssql` y SQL Server 2022. Las decisiones y sus desviaciones respecto del plan están en los ADR de [`docs/adr/`](docs/adr/). En producción, la integración se alimentará de los datos consolidados de los gateways.
 
 Recon Tool 2.0 es una aplicación web de tres piezas —una SPA en React, una API REST en Node/TypeScript y una base de datos SQL Server— organizada como **monolito modular con arquitectura hexagonal** (puertos y adaptadores) en el backend.
 
@@ -580,7 +580,7 @@ flowchart LR
 
 ### 2.5. Seguridad
 
-> **Estado.** Implementados y probados: login con Argon2, JWT de acceso y refresh con rotación, permisos por acción, alcance por merchant aplicado en la consulta (lo ajeno responde `404`), validación de entrada con Zod y límites del lector `.xlsx`, auditoría de las acciones del flujo, usuario de base `recon_app` con permisos mínimos y gitleaks en la CI. La administración de usuarios llega con la Entrega 3. Lo que depende del despliegue (HTTPS en el túnel, red interna) ya está en marcha y se describe en [2.4](#24-infraestructura-y-despliegue).
+> **Estado.** Implementados y probados: login con Argon2, JWT de acceso y refresh con rotación, permisos por acción, alcance por merchant aplicado en la consulta (lo ajeno responde `404`), validación de entrada con Zod y límites del lector `.xlsx`, auditoría de las acciones del flujo, usuario de base `recon_app` con permisos mínimos y gitleaks en la CI. La administración de usuarios llega con la Entrega 3. HTTPS en el túnel y red interna, implementados (ver [2.4](#24-infraestructura-y-despliegue)).
 
 **Perfiles y permisos.** Cada perfil agrupa acciones autorizadas. Se separan consulta y exports (`reports.view`), reconciliación y deshacer (`settlement.process`), registro y retiro de pago (`payment.process`), cuentas y reglas (`account.manage`), consulta y edición de fees (`fee.view`, `fee.manage`) y administración de usuarios, perfiles y asignaciones (`user.manage`). Administrar cuentas no concede administración de usuarios.
 

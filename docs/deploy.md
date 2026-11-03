@@ -241,6 +241,7 @@ Nunca se usan `prisma migrate dev`, `prisma db push` ni `prisma migrate reset` e
 | Cloudflare muestra el error 1033 | El túnel no está conectado | Comprueba `cloudflared` con `ps` y `logs` |
 | Cloudflare muestra un error 502 | La **Service URL** de la ruta está mal | Debe ser `http://web:8080` |
 | La URL abre pero el login falla | Falta migrar o sembrar | Secciones 7 y 8 |
+| Tras actualizar, la web o la API siguen con la versión anterior (`ps` muestra `sha256:...` en vez de `recon-web` o `recon-api`) | `up` no recreó el contenedor | `scripts/deploy.sh up --wait --force-recreate web api` |
 | `api` no arranca y sus registros indican `Login failed` | La contraseña se cambió después del primer arranque | Sección 4, `ALTER LOGIN` |
 | `Msg 904` en los registros de `mssql` | SQL Server aún arranca | Es normal si va seguido de `[init] done`: se reintenta solo |
 | `mssql` se reinicia y aparece `[init] failed` | La inicialización no pudo terminar, a menudo por una contraseña débil | Lee el `Msg` anterior en `scripts/deploy.sh logs mssql` |
