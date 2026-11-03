@@ -125,6 +125,19 @@ describe('Account fees: actions by permission and use', () => {
     expect(actionsOf(rowOf('MDR', '2026-01-01'))).toEqual(['Edit', 'Change from date…', 'Close…', 'History'])
   })
 
+  it('each action names its fee for a screen reader: the type and its Valid from, the visible text first', async () => {
+    await openAccount('admin')
+
+    const names = (row: ReturnType<typeof rowOf>) => row.getAllByRole('button').map((b) => b.getAttribute('aria-label'))
+    expect(names(rowOf('MDR', '2026-01-01'))).toEqual([
+      'Edit MDR from 2026-01-01',
+      'Change from date: MDR from 2026-01-01',
+      'Close MDR from 2026-01-01',
+      'History of MDR from 2026-01-01',
+    ])
+    expect(names(rowOf('Chargeback per txn fee', 'always'))).toContain('Edit Chargeback per txn fee, always')
+  })
+
   it('there is no action to withdraw or delete a fee, not even a scheduled one without use', async () => {
     await openAccount('admin')
 
@@ -144,7 +157,7 @@ describe('Account fees: history', () => {
     })
     const { user } = await openAccount('analyst')
 
-    await user.click(rowOf('MDR', '2026-11-01').getByRole('button', { name: 'History' }))
+    await user.click(rowOf('MDR', '2026-11-01').getByRole('button', { name: 'History of MDR from 2026-11-01' }))
 
     const panel = within(await screen.findByRole('dialog', { name: 'History · MDR' }))
     const entries = await panel.findAllByRole('listitem')
@@ -162,7 +175,7 @@ describe('Account fees: history', () => {
     await call('admin', 'PATCH', `/fees/${fee.feeId}`, { percentage: '0.0275', reason: 'typo' })
     const { user } = await openAccount('viewer')
 
-    await user.click(rowOf('MDR', 'always').getByRole('button', { name: 'History' }))
+    await user.click(rowOf('MDR', 'always').getByRole('button', { name: 'History of MDR, always' }))
 
     const panel = within(await screen.findByRole('dialog', { name: 'History · MDR' }))
     const [updated] = await panel.findAllByRole('listitem')
@@ -173,7 +186,7 @@ describe('Account fees: history', () => {
 
   it('Escape closes the panel and gives the focus back to its History button', async () => {
     const { user } = await openAccount('viewer')
-    const history = rowOf('MDR', '2026-01-01').getByRole('button', { name: 'History' })
+    const history = rowOf('MDR', '2026-01-01').getByRole('button', { name: 'History of MDR from 2026-01-01' })
 
     await user.click(history)
     await screen.findByRole('dialog', { name: 'History · MDR' })

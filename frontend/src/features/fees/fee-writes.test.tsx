@@ -129,7 +129,7 @@ describe('Account fees: correct in place', () => {
     seedOne()
     const { user } = await openAccount()
 
-    await user.click(rowOf('MDR', 'always').getByRole('button', { name: s.actions.edit }))
+    await user.click(rowOf('MDR', 'always').getByRole('button', { name: 'Edit MDR, always' }))
     const form = within(await screen.findByRole('dialog', { name: f.titles.correct('MDR') }))
     await user.clear(form.getByLabelText(f.labels.percent))
     await user.type(form.getByLabelText(f.labels.percent), '2.75')
@@ -145,7 +145,7 @@ describe('Account fees: correct in place', () => {
     seedOne({ inUse: true, lastAppliedEventDate: '2026-10-15' })
     const { user } = await openAccount()
 
-    await user.click(rowOf('MDR', 'always').getByRole('button', { name: s.actions.edit }))
+    await user.click(rowOf('MDR', 'always').getByRole('button', { name: 'Edit MDR, always' }))
     const dialog = await screen.findByRole('dialog', { name: f.titles.correct('MDR') })
     const form = within(dialog)
 
@@ -162,7 +162,7 @@ describe('Account fees: correct in place', () => {
     seedOne()
     const { user } = await openAccount()
 
-    await user.click(rowOf('MDR', 'always').getByRole('button', { name: s.actions.edit }))
+    await user.click(rowOf('MDR', 'always').getByRole('button', { name: 'Edit MDR, always' }))
     const form = within(await screen.findByRole('dialog', { name: f.titles.correct('MDR') }))
     await user.click(form.getByRole('button', { name: f.save }))
 
@@ -176,7 +176,7 @@ describe('Account fees: change from a date', () => {
     seedOne({ percentage: '0.100000', inUse: true, lastAppliedEventDate: '2026-10-15' })
     const { user } = await openAccount()
 
-    await user.click(rowOf('MDR', 'always').getByRole('button', { name: s.actions.change }))
+    await user.click(rowOf('MDR', 'always').getByRole('button', { name: 'Change from date: MDR, always' }))
     const form = within(await screen.findByRole('dialog', { name: f.titles.change('MDR') }))
     expect(form.getByText(f.changeNotice)).toBeInTheDocument()
     day(f.labels.effectiveFrom, '2026-11-01', form)
@@ -195,7 +195,7 @@ describe('Account fees: change from a date', () => {
     seedOne({ percentage: '0.100000', inUse: true, lastAppliedEventDate: '2026-10-15' })
     const { user } = await openAccount()
 
-    await user.click(rowOf('MDR', 'always').getByRole('button', { name: s.actions.change }))
+    await user.click(rowOf('MDR', 'always').getByRole('button', { name: 'Change from date: MDR, always' }))
     const form = within(await screen.findByRole('dialog', { name: f.titles.change('MDR') }))
     day(f.labels.effectiveFrom, '2026-11-01', form)
     await user.click(form.getByRole('button', { name: f.apply }))
@@ -212,7 +212,7 @@ describe('Account fees: close the validity', () => {
     seedOne()
     const { user } = await openAccount()
 
-    await user.click(rowOf('MDR', 'always').getByRole('button', { name: s.actions.close }))
+    await user.click(rowOf('MDR', 'always').getByRole('button', { name: 'Close MDR, always' }))
     const dialog = within(await screen.findByRole('alertdialog', { name: f.close.title('MDR') }))
 
     expect(dialog.getByLabelText(f.close.endDate)).toHaveValue('2026-11-03')
@@ -222,7 +222,9 @@ describe('Account fees: close the validity', () => {
     seedOne({ feeTypeId: 4, percentage: null, fixedAmount: '15.0000', inUse: true, lastAppliedEventDate: '2026-10-15' })
     const { user } = await openAccount()
 
-    await user.click(rowOf('Chargeback per txn fee', 'always').getByRole('button', { name: s.actions.close }))
+    await user.click(
+      rowOf('Chargeback per txn fee', 'always').getByRole('button', { name: 'Close Chargeback per txn fee, always' }),
+    )
     const dialog = within(await screen.findByRole('alertdialog', { name: f.close.title('Chargeback per txn fee') }))
     expect(dialog.getByText(f.close.minimum('2026-10-15'))).toBeInTheDocument()
     day(f.close.endDate, '2026-10-31', dialog)
@@ -237,7 +239,9 @@ describe('Account fees: close the validity', () => {
     seedOne({ feeTypeId: 4, percentage: null, fixedAmount: '15.0000', inUse: true, lastAppliedEventDate: '2026-10-15' })
     const { user } = await openAccount()
 
-    await user.click(rowOf('Chargeback per txn fee', 'always').getByRole('button', { name: s.actions.close }))
+    await user.click(
+      rowOf('Chargeback per txn fee', 'always').getByRole('button', { name: 'Close Chargeback per txn fee, always' }),
+    )
     const dialog = within(await screen.findByRole('alertdialog', { name: f.close.title('Chargeback per txn fee') }))
     day(f.close.endDate, '2026-10-01', dialog)
 
@@ -293,7 +297,7 @@ describe('Account fees: errors of the API', () => {
   it('a fee that started being used says the field is no longer editable and asks the list again', async () => {
     const fee = seedOne()
     const { user } = await openAccount()
-    await user.click(rowOf('MDR', 'always').getByRole('button', { name: s.actions.edit }))
+    await user.click(rowOf('MDR', 'always').getByRole('button', { name: 'Edit MDR, always' }))
     const form = within(await screen.findByRole('dialog', { name: f.titles.correct('MDR') }))
     // Meanwhile a settlement applied it.
     seedAccountFees('ProviderA-USD', [{ ...fee, inUse: true, lastAppliedEventDate: '2026-11-02' }])

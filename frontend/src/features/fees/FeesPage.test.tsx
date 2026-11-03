@@ -43,7 +43,7 @@ describe('Fees: access and read only', () => {
     await openFees('', 'viewer')
 
     expect(screen.getByRole('heading', { level: 1, name: s.title })).toBeInTheDocument()
-    for (const name of ['Add fee', 'Edit', 'Change from date…', 'Close…']) {
+    for (const name of [/^Add fee/, /^Edit/, /^Change from date/, /^Close/]) {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
     }
   })
@@ -52,7 +52,7 @@ describe('Fees: access and read only', () => {
     const { user, router } = await openFees('', 'admin')
 
     expect(screen.queryByRole('button', { name: 'Add fee' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Edit/ })).not.toBeInTheDocument()
     await user.click(within(bodyRows()[0]!).getByRole('link', { name: 'ProviderA-EUR' }))
     await waitFor(() => expect(router.state.location.pathname).toBe(`/accounts/${ACCOUNT_IDS['ProviderA-EUR']}/fees`))
   })
