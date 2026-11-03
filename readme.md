@@ -200,7 +200,7 @@ Existe una aplicación en R Shiny, en un repositorio privado, creada para probar
 |---|---|---|
 | Análisis | Ingeniería inversa del prototipo con OpenSpec y Claude Code, y contraste entre la documentación de la API y sus respuestas reales | Realizado |
 | Diseño | Definición del MVP, arquitectura, modelo de datos, API, historias y tickets de este documento con Claude Code, con revisión y decisión humana | Realizado |
-| Implementación | Desarrollo guiado por especificaciones con OpenSpec y Claude Code, actividad por actividad, con aprobación humana de cada paso | Realizado |
+| Implementación | Desarrollo guiado por especificaciones con OpenSpec y Claude Code, actividad por actividad, con aprobación humana de cada paso. Las reglas del asistente están en [CLAUDE.md](CLAUDE.md) | Realizado |
 | Pruebas | Generación de tests a partir de los criterios de aceptación y de la tabla de la sección 2.6, con revisión humana | Realizado |
 | Despliegue | Configuración de producción e instalación local, probadas en copias limpias y en un clon real | Parcial: el despliegue público está pospuesto |
 | Mantenimiento y seguridad | Revisión de seguridad con pruebas negativas, y corrección de los hallazgos | Realizado para esta entrega ([informe](docs/seguridad/revision-entrega-2.md)) |
@@ -313,6 +313,7 @@ AI4Devs-finalproject-temp/
 ├── docker-compose.yml       # Pila local
 ├── docker-compose.prod.yml  # Ajustes para el servidor
 ├── .env.example
+├── CLAUDE.md                # Reglas para el asistente de IA
 ├── prompts.md
 └── readme.md
 ```
