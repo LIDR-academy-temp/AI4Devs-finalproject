@@ -8,10 +8,10 @@ Rama `feat/web-admin-fees`, rebasada sobre `origin/feat/admin-fees`. El PR va ha
 
 ## 2. Utilidades de fechas y porcentajes (test-first)
 
-- [ ] 2.1 Ampliar `frontend/src/lib/format.test.ts` con `newYorkToday` (relojes fijos: `2026-11-04T03:30:00Z` → `2026-11-03`, `2026-11-04T05:00:00Z` → `2026-11-04`, y los dos cambios de horario) y con `percentToRate` / `rateToPercent` (`"2.75"` ⇄ `"0.027500"`, `"0"`, `"100"`, `"0.0001"`, ceros a la izquierda, rechazo de 5 decimales y de texto no numérico), y crear `features/fees/fee-display.test.ts` (valor `2.900 %` / `15.0000`, `always` / `open`, a qué aplica: `E · Successful`, `batch · preset`, `batch · free amount`). Comprobar que fallan porque las funciones no existen.
-- [ ] 2.2 Commit: test(web): hoy en Nueva York, porcentajes como texto y formato de los fees
-- [ ] 2.3 Implementar `newYorkToday`, `percentToRate` y `rateToPercent` en `lib/format.ts` (design D5, D6; sin `parseFloat` ni `Number` sobre importes) y `features/fees/fee-display.ts`. Verificar con `pnpm --filter @recon/frontend test format fee-display`.
-- [ ] 2.4 Commit: feat(web): hoy en Nueva York, porcentajes como texto y formato de los fees
+- [x] 2.1 Ampliar `frontend/src/lib/format.test.ts` con `newYorkToday` (relojes fijos: `2026-11-04T03:30:00Z` → `2026-11-03`, `2026-11-04T05:00:00Z` → `2026-11-04`, y los dos cambios de horario) y con `percentToRate` / `rateToPercent` (`"2.75"` ⇄ `"0.027500"`, `"0"`, `"100"`, `"0.0001"`, ceros a la izquierda, rechazo de 5 decimales y de texto no numérico), y crear `features/fees/fee-display.test.ts` (valor `2.900 %` / `15.0000`, `always` / `open`, a qué aplica: `E · Successful`, `batch · preset`, `batch · free amount`). Comprobar que fallan porque las funciones no existen.
+- [x] 2.2 Commit: test(web): hoy en Nueva York, porcentajes como texto y formato de los fees
+- [x] 2.3 Implementar `newYorkToday`, `percentToRate` y `rateToPercent` en `lib/format.ts` (design D5, D6; sin `parseFloat` ni `Number` sobre importes) y `features/fees/fee-display.ts`. Verificar con `pnpm --filter @recon/frontend test format fee-display`.
+- [x] 2.4 Commit: feat(web): hoy en Nueva York, porcentajes como texto y formato de los fees
 
 ## 3. API falsa de fees
 

@@ -66,3 +66,48 @@ export function formatBusinessDateTime(value: BusinessDate): string {
 export function formatAuditDateTime(value: AuditInstant): string {
   return compose(value, DISPLAY_TIME_ZONE, true)
 }
+
+/**
+ * Today's calendar day in New York as YYYY-MM-DD (web-admin-fees design D5). A default value only: the API decides
+ * which days are allowed.
+ */
+export function newYorkToday(now: Date = new Date()): string {
+  return compose(now.toISOString(), DISPLAY_TIME_ZONE, false)
+}
+
+// Percentages (web-admin-fees design D6): the user writes a percent ("2.75"), the API takes a fraction from 0 to 1
+// with up to 6 decimals ("0.027500"). Both are text; the decimal point is moved on the digits, never through a number.
+
+const PERCENT = /^(\d+)(?:\.(\d+))?$/
+
+export type PercentError = 'invalid' | 'too_precise' | 'out_of_range'
+
+/** Why a written percent cannot be sent, or null: digits with an optional point, up to 4 decimals, 0 to 100. */
+export function percentError(value: string): PercentError | null {
+  const match = PERCENT.exec(value.trim())
+  if (!match) return 'invalid'
+  const [, integer = '', fraction = ''] = match
+  if (fraction.length > 4) return 'too_precise'
+  const whole = integer.replace(/^0+(?=\d)/, '')
+  if (whole.length > 3 || Number(whole) > 100 || (whole === '100' && /[1-9]/.test(fraction))) return 'out_of_range'
+  return null
+}
+
+/** "2.75" → "0.027500". Throws on a value percentError refuses. */
+export function percentToRate(percent: string): string {
+  const reason = percentError(percent)
+  if (reason) throw new Error(`Invalid percentage (${reason}): ${percent}`)
+  const [, integer = '', fraction = ''] = PERCENT.exec(percent.trim()) ?? []
+  const padded = integer.padStart(3, '0')
+  const whole = padded.slice(0, -2).replace(/^0+(?=\d)/, '')
+  return `${whole}.${(padded.slice(-2) + fraction).padEnd(6, '0')}`
+}
+
+/** "0.027500" → "2.75": the shortest percent, without trailing zeros. */
+export function rateToPercent(rate: string): string {
+  const [integer = '0', fraction = ''] = rate.split('.')
+  const digits = fraction.padEnd(2, '0')
+  const whole = (integer + digits.slice(0, 2)).replace(/^0+(?=\d)/, '')
+  const rest = digits.slice(2).replace(/0+$/, '')
+  return rest ? `${whole}.${rest}` : whole
+}
