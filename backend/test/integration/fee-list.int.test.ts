@@ -72,7 +72,19 @@ describe('GET /fees', () => {
 
     expect(result.items.length).toBeGreaterThan(0)
     expect(result.total).toBe(result.items.length)
-    expect(result.total).toBe(await ctx.prisma.fee.count({ where: { account: { provider: { merchantId: 1 } } } }))
+    // In force today in New York; the fees flow of the Bruno collection leaves scheduled ones until the next seed.
+    const today = new Date(`${new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' })}T00:00:00Z`)
+    expect(result.total).toBe(
+      await ctx.prisma.fee.count({
+        where: {
+          account: { provider: { merchantId: 1 } },
+          AND: [
+            { OR: [{ startDate: null }, { startDate: { lte: today } }] },
+            { OR: [{ endDate: null }, { endDate: { gte: today } }] },
+          ],
+        },
+      }),
+    )
     for (const item of result.items) {
       expect(item.merchant.id).toBe(1)
       expect(item.status).toBe('active')

@@ -4,17 +4,26 @@ import { ACCOUNT_IDS } from '../../catalog/application/__fakes__/in-memory.js'
 import { InMemoryFeeRepository } from '../application/__fakes__/in-memory.js'
 import { InMemoryFeeAdminRepository } from '../application/__fakes__/in-memory-admin.js'
 import { FeeAdminService } from '../application/fee-admin-service.js'
+import { FeeQueryService } from '../application/fee-query-service.js'
 import { FeeReadService } from '../application/fee-read-service.js'
+import type { FeeQueryRepository } from '../application/ports.js'
 
-// Spec fees "Permisos y alcance de la administración de fees" (admin-fees design D11): the routes, their schemas and
-// their permissions; the writes behind the permission (group 3), the reads still 501 until group 4.
+// Spec fees "Permisos y alcance de la administración de fees": the routes, their schemas and their permissions, over
+// in-memory writes and an empty query side (the reads against the seed are integration tests).
 let ctx: Awaited<ReturnType<typeof buildTestApp>>
+
+const emptyQueries: FeeQueryRepository = {
+  missingFilter: async () => null,
+  list: async () => ({ items: [], total: 0 }),
+  history: async () => null,
+}
 
 beforeEach(async () => {
   ctx = await buildTestApp({
     fees: {
       service: new FeeReadService(new InMemoryFeeRepository()),
       adminService: new FeeAdminService(new InMemoryFeeAdminRepository(), () => '2026-11-03'),
+      queryService: new FeeQueryService(emptyQueries, () => '2026-11-03'),
     },
   })
   await ctx.app.ready()
@@ -92,11 +101,13 @@ describe('fee administration routes', () => {
     expect(unknown.json().code).toBe('not_found')
   })
 
-  it('the reads answer 501 not_implemented behind a valid request until their use cases land', async () => {
-    for (const [method, url] of reads) {
-      const res = await call(method, url, 'viewer')
-      expect(res.statusCode, url).toBe(501)
-      expect(res.json().code).toBe('not_implemented')
-    }
+  it('GET /fees answers the page with its defaults and the history of an unknown fee 404 not_found', async () => {
+    const list = await call('GET', '/fees', 'viewer')
+    const history = await call('GET', `/fees/${FEE_ID}/history`, 'viewer')
+
+    expect(list.statusCode, list.body).toBe(200)
+    expect(list.json()).toEqual({ items: [], page: 1, pageSize: 50, total: 0 })
+    expect(history.statusCode).toBe(404)
+    expect(history.json().code).toBe('not_found')
   })
 })

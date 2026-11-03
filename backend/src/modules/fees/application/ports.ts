@@ -1,6 +1,6 @@
 // Ports of the fees module: the read side Settlement Review and the settlement engine need (settlement-process D1)
 // and the write side of the fee administration (admin-fees design D1, D6).
-import type { AccountFee, FeeTypeView } from '@recon/shared'
+import type { AccountFee, FeeHistoryEntry, FeeHistoryQuery, FeeListItem, FeesQuery, FeeTypeView } from '@recon/shared'
 import type { Scope } from '../../catalog/domain/scope.js'
 import type { FeeState, FeeUsage } from '../domain/fee-patch.js'
 
@@ -52,6 +52,22 @@ export interface FeeAdminRepository {
   inAccount<T>(scope: Scope, accountId: string, work: (unit: FeeAdminUnit) => Promise<T>): Promise<T | null>
   /** The account of a fee inside the scope; null when the fee is unknown or outside it. */
   accountOfFee(scope: Scope, feeId: string): Promise<string | null>
+}
+
+/** A fee of the global view, with the hierarchy it belongs to; the status depends on today. */
+export type StoredFeeListItem = Omit<FeeListItem, 'status'>
+
+/** Reads of the fee administration: the global view and the history (design D8, D10). */
+export interface FeeQueryRepository {
+  /** The first of the given merchant, provider or account that is unknown or outside the scope; null when all are in. */
+  missingFilter(
+    scope: Scope,
+    filter: Pick<FeesQuery, 'merchantId' | 'providerId' | 'accountId'>,
+  ): Promise<'Merchant' | 'Provider' | 'Account' | null>
+  /** One page of the fees in scope, in the order of the view, and the total; `today` is the New York day. */
+  list(scope: Scope, query: FeesQuery, today: string): Promise<{ items: StoredFeeListItem[]; total: number }>
+  /** The history of the fee or of every fee of its type in its account, newest first; null when out of scope. */
+  history(scope: Scope, feeId: string, of: FeeHistoryQuery['scope']): Promise<FeeHistoryEntry[] | null>
 }
 
 export interface FeeReadRepository {

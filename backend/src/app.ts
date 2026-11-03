@@ -14,6 +14,7 @@ import { authModule } from './modules/auth/auth-module.js'
 import type { CatalogService } from './modules/catalog/application/catalog-service.js'
 import { catalogModule } from './modules/catalog/catalog-module.js'
 import type { FeeAdminService } from './modules/fees/application/fee-admin-service.js'
+import type { FeeQueryService } from './modules/fees/application/fee-query-service.js'
 import type { FeeReadService } from './modules/fees/application/fee-read-service.js'
 import { feesModule } from './modules/fees/fees-module.js'
 import type { ImportService } from './modules/imports/application/import-service.js'
@@ -59,7 +60,7 @@ export interface BuildAppOptions {
   /** Injected validation service (tests); otherwise built on the Prisma sources and run repository. */
   validation?: { service: ValidationService }
   /** Injected fee read service (tests); otherwise built on the Prisma fee repository. */
-  fees?: { service?: FeeReadService; adminService?: FeeAdminService }
+  fees?: { service?: FeeReadService; adminService?: FeeAdminService; queryService?: FeeQueryService }
   /** Injected settlement services (tests); otherwise built on Prisma and the import service. */
   settlement?: { service: SettlementService; reads?: SettlementReadService; lifecycle?: SettlementLifecycleService }
   /** Log destination (tests capture logs through it); defaults to stdout. */
@@ -127,6 +128,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     routePrefix: API_PREFIX,
     service: options.fees?.service,
     adminService: options.fees?.adminService,
+    queryService: options.fees?.queryService,
   })
   await app.register(settlementModule, {
     routePrefix: API_PREFIX,

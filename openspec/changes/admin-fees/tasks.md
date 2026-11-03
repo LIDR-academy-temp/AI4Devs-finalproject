@@ -65,15 +65,17 @@ El grupo 1 es el contrato del que parte `web-admin-fees`. Al terminarlo se hace 
 
 ## 4. Vista global e historial
 
-- [ ] 4.1 Escribir `test/integration/fee-list.int.test.ts` y comprobar que falla. Debe cubrir:
+- [x] 4.1 Escribir `test/integration/fee-list.int.test.ts` y comprobar que falla. Debe cubrir:
   - "Activos de un merchant", "Preestablecidos por batch", "Alcance", "Paginación estable", "Tamaño de página inválido" y "Búsqueda";
   - `status=scheduled` y `status=closed` sobre fees creados en el test, con reloj fijo;
   - `inUse` y `lastAppliedEventDate` en la página;
   - `404` para un `providerId` fuera del alcance.
-- [ ] 4.2 Escribir en `fee-admin.int.test.ts` los casos de historial "Cadena de un tipo", "Historial del seed", "Alcance inválido" y "Fee fuera del alcance", y comprobar que fallan.
-- [ ] 4.3 Commit: test(fees): vista global e historial
-- [ ] 4.4 Implementar `list` (D8) e `history` (D10) en el servicio y el repositorio, conectar sus rutas y quitar los handlers provisionales `501`. Verificar con 4.1, 4.2 y `pnpm test`. Ejecutar `pnpm openapi:check`: si el contrato cambió respecto al grupo 1, regenerar y avisar a la persona.
-- [ ] 4.5 Commit: feat(fees): vista global de fees e historial de cambios
+- [x] 4.2 Escribir en `fee-admin.int.test.ts` los casos de historial "Cadena de un tipo", "Historial del seed", "Alcance inválido" y "Fee fuera del alcance", y comprobar que fallan.
+  - Hecho: con `backend/` como en `c93d3af` fallan 11 de 12 contra los `501` (el `400` de esquema ya pasaba); después, 30 de 30 en verde. El total de "Activos de un merchant" se compara con los fees vigentes hoy, porque el flujo de Bruno deja fees programados.
+- [x] 4.3 Commit: test(fees): vista global e historial
+- [x] 4.4 Implementar `list` (D8) e `history` (D10) en el servicio y el repositorio, conectar sus rutas y quitar los handlers provisionales `501`. Verificar con 4.1, 4.2 y `pnpm test`. Ejecutar `pnpm openapi:check`: si el contrato cambió respecto al grupo 1, regenerar y avisar a la persona.
+  - Hecho: servicio `FeeQueryService` y `PrismaFeeQueryRepository` aparte del de lectura. El contrato no cambió: solo desaparecieron las respuestas `501`. `pnpm --filter @recon/backend test:integration` completo: 60 fallos en 10 ficheros de import y settlement, todos por el estado de la base (ProviderA-USD tiene ya el batch 123 de `batch-clean` procesado, del flujo de Bruno), ninguno de fees. Hay que volver a ejecutarlo tras un `pnpm db:seed`.
+- [x] 4.5 Commit: feat(fees): vista global de fees e historial de cambios
 
 ## 5. Colección Bruno
 

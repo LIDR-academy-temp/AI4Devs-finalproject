@@ -12,22 +12,21 @@ import {
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { scopeOf } from '../../catalog/domain/scope.js'
-import { NotImplementedError } from '../application/errors.js'
 import type { FeeAdminService } from '../application/fee-admin-service.js'
+import type { FeeQueryService } from '../application/fee-query-service.js'
 
 export interface FeeAdminRoutesOptions {
   admin: FeeAdminService
+  query: FeeQueryService
 }
 
 const AccountParams = z.object({ accountId: z.uuid() })
 const FeeParams = z.object({ feeId: z.uuid() })
 const fees = { tags: ['fees'], security: [{ bearerAuth: [] }] }
 const errors = { 400: ErrorResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse }
-// Until the use cases land (design D11, task 4.4).
-const notImplemented = { 501: ErrorResponse }
 
 /** Fee administration (README §4.1, §4.4; spec fees, admin-fees design D2). Mounted under /api/v1. */
-export const feeAdminRoutes: FastifyPluginAsyncZod<FeeAdminRoutesOptions> = async (app, { admin }) => {
+export const feeAdminRoutes: FastifyPluginAsyncZod<FeeAdminRoutesOptions> = async (app, { admin, query }) => {
   app.post(
     '/accounts/:accountId/fees',
     {
@@ -79,12 +78,10 @@ export const feeAdminRoutes: FastifyPluginAsyncZod<FeeAdminRoutesOptions> = asyn
           'Ordered by merchant, provider, account, fee type title, startDate (nulls first) and feeId. ' +
           'status is against today in New York. 404 for a merchantId, providerId or accountId outside the scope.',
         querystring: FeesQuery,
-        response: { 200: FeePage, ...errors, ...notImplemented },
+        response: { 200: FeePage, ...errors },
       },
     },
-    async () => {
-      throw new NotImplementedError('GET /fees')
-    },
+    async (request) => query.list(scopeOf(request.auth), request.query),
   )
 
   app.get(
@@ -97,11 +94,9 @@ export const feeAdminRoutes: FastifyPluginAsyncZod<FeeAdminRoutesOptions> = asyn
         description: 'Newest first; before and after in API form (money as text, dates YYYY-MM-DD).',
         params: FeeParams,
         querystring: FeeHistoryQuery,
-        response: { 200: z.array(FeeHistoryEntry), ...errors, ...notImplemented },
+        response: { 200: z.array(FeeHistoryEntry), ...errors },
       },
     },
-    async () => {
-      throw new NotImplementedError('GET /fees/{feeId}/history')
-    },
+    async (request) => query.history(scopeOf(request.auth), request.params.feeId, request.query),
   )
 }
