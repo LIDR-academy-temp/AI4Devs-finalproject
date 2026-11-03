@@ -21,6 +21,11 @@ params:path {
   batchId: {{setBatchId}}
 }
 
+script:pre-request {
+  // Only a fee of this run's batch counts: nothing left from an earlier request or run.
+  bru.setVar('inUseFeeId', '');
+}
+
 script:post-response {
   // A fee this batch has just applied, for the fee_in_use negative of 31 Patch an applied fee.
   const applied = res.status === 200 && res.body.items.flatMap((m) => m.fees).find((f) => f.feeId);

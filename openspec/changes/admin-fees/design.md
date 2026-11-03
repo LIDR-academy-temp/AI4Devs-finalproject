@@ -265,7 +265,7 @@ Casos felices: `GET /fees` e historial.
 4. Cambia desde el día siguiente → `200` con sucesor.
 5. Pide el historial con `scope=type`.
 
-**Negativo de `fee_in_use`.** Va al final de `20-flows/settlements/batch-clean` (`31 Patch an applied fee`): `PATCH` con `fixedAmount` sobre un fee que ese batch acaba de aplicar (lo guarda `13 Transactions I`) → `409 fee_in_use`. Si `batch-clean` no puede procesar porque la base no está recién sembrada, usa el fee en uso que guardó `10-smoke/Fees`. El seed procesa sus batches sin desglose de fees, así que en una base recién sembrada ningún fee está en uso hasta que un flujo procesa un batch.
+**Negativo de `fee_in_use`.** Va al final de `20-flows/settlements/batch-clean` (`31 Patch an applied fee`): `PATCH` con `fixedAmount` sobre un fee que ese batch acaba de aplicar (lo guarda `13 Transactions I`) → `409 fee_in_use`. Si `batch-clean` no puede procesar porque la base no está recién sembrada (#111), usa el fee en uso de una ejecución anterior, que `10-smoke/Fees` guarda en otra variable (`earlierInUseFeeId`); `13` vacía la suya antes de pedir, y el nombre del test de `31` dice de cuál de las dos sale el fee. El seed procesa sus batches sin desglose de fees, así que en una base recién sembrada ningún fee está en uso hasta que un flujo procesa un batch.
 
 La secuencia acumula filas en la base local; se limpian con `pnpm db:seed`.
 

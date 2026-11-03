@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Permisos y alcance de la administración de fees
-Las escrituras (`POST /accounts/{id}/fees`, `PATCH /fees/{id}`) SHALL exigir `fee.manage` y las lecturas de administración (`GET /fees`, `GET /fees/{id}/history`), `fee.view`. El permiso SHALL comprobarse antes que el alcance y que los datos. Un fee o una cuenta inexistentes o de un merchant fuera del alcance SHALL responder el mismo `404 not_found`. Sin sesión, `401`.
+Las escrituras (`POST /accounts/{id}/fees`, `PATCH /fees/{id}`) SHALL exigir `fee.manage` y las lecturas de administración (`GET /fees`, `GET /fees/{id}/history`), `fee.view`. El permiso SHALL comprobarse antes que el alcance y que los datos; la validación de esquema puede responder antes (#72). Un fee o una cuenta inexistentes o de un merchant fuera del alcance SHALL responder el mismo `404 not_found`. Sin sesión, `401`.
 
 #### Scenario: Sin permiso de administración
 - GIVEN el usuario `analyst` (sin `fee.manage`)
@@ -10,7 +10,7 @@ Las escrituras (`POST /accounts/{id}/fees`, `PATCH /fees/{id}`) SHALL exigir `fe
 
 #### Scenario: Permiso antes que el alcance
 - GIVEN el usuario `analyst`
-- WHEN pide `PATCH /fees/{id}` de un fee que no existe
+- WHEN pide `PATCH /fees/{id}` con un cuerpo válido para un fee que no existe
 - THEN recibe `403 forbidden`, no `404`
 
 #### Scenario: Fee fuera del alcance

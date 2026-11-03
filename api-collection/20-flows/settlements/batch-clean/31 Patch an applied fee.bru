@@ -14,7 +14,7 @@ patch {
 }
 
 params:path {
-  feeId: {{inUseFeeId}}
+  feeId: {{appliedFeeId}}
 }
 
 auth:bearer {
@@ -32,13 +32,23 @@ vars:pre-request {
 }
 
 script:pre-request {
-  if (!bru.getVar('inUseFeeId')) {
-    throw new Error('no applied fee: 13 Transactions I or 10-smoke/Fees saves one');
+  // The fee this batch applied (13 Transactions I) or, when batch-clean could not process (#111), one an earlier run
+  // applied (10-smoke/Fees). The test name says which one.
+  if (bru.getVar('inUseFeeId')) {
+    bru.setVar('appliedFeeId', bru.getVar('inUseFeeId'));
+    bru.setVar('appliedFeeSource', 'this batch (13 Transactions I)');
+  } else if (bru.getVar('earlierInUseFeeId')) {
+    bru.setVar('appliedFeeId', bru.getVar('earlierInUseFeeId'));
+    bru.setVar('appliedFeeSource', 'an earlier run (10-smoke/Fees)');
+  } else {
+    throw new Error('no applied fee: neither 13 Transactions I nor 10-smoke/Fees found one');
   }
 }
 
 tests {
-  test('a fee the batch applied does not change its values in place: 409 fee_in_use naming the field', () => {
+  const source = bru.getVar('appliedFeeSource');
+  test(`a fee applied by ${source} does not change its values in place: 409 fee_in_use naming the field`, () => {
+    expect(['this batch (13 Transactions I)', 'an earlier run (10-smoke/Fees)']).to.include(source);
     expect(res.status).to.equal(409);
     expect(res.body.code).to.equal('fee_in_use');
     expect(res.body.details.fields).to.deep.equal(['fixedAmount']);

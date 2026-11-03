@@ -33,12 +33,10 @@ script:post-response {
   if (fee) {
     bru.setVar('providerAUsdMdrFeeId', fee.feeId);
   }
-  // A fee some earlier run applied, for 31 Patch an applied fee when batch-clean cannot process (it expects a fresh
-  // seed). A fresh seed has none: 13 Transactions I then saves the fee its batch has just applied.
+  // Fallback of 31 Patch an applied fee, in its own variable: a fee some earlier run applied, for when batch-clean
+  // cannot process (it expects a fresh seed, #111). A fresh seed has none; then 13 Transactions I provides the fee.
   const used = res.status === 200 && res.body.items.find((f) => f.inUse);
-  if (used) {
-    bru.setVar('inUseFeeId', used.feeId);
-  }
+  bru.setVar('earlierInUseFeeId', used ? used.feeId : '');
 }
 
 tests {
