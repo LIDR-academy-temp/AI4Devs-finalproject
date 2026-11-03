@@ -43,8 +43,8 @@ Rama `feat/web-admin-fees`, rebasada sobre `origin/feat/admin-fees`. El PR va ha
 
 ## 7. Fees de una cuenta: lista, acciones según permiso e historial (test-first)
 
-- [ ] 7.1 Escribir `features/fees/AccountFeesPage.test.tsx` con los escenarios "Pantalla Account Fees: acceso y contenido" (desde Accounts, desde `/fees`, cuenta de otro merchant e inexistente con el mismo mensaje, cerrado sin **Close…**), "acciones según permiso y uso" (`analyst` sin acciones; `admin` con fee sin uso / en uso; sin retirar) e "historial" (cadena del tipo con `scope=type`, diff `before → after`, motivo, fecha `ET`, Escape devuelve el foco a **History**). Comprobar que fallan.
-- [ ] 7.2 Commit: test(web): fees de una cuenta e historial
+- [x] 7.1 Escribir `features/fees/AccountFeesPage.test.tsx` con los escenarios "Pantalla Account Fees: acceso y contenido" (desde Accounts, desde `/fees`, cuenta de otro merchant e inexistente con el mismo mensaje, cerrado sin **Close…**), "acciones según permiso y uso" (`analyst` sin acciones; `admin` con fee sin uso / en uso; sin retirar) e "historial" (cadena del tipo con `scope=type`, diff `before → after`, motivo, fecha `ET`, Escape devuelve el foco a **History**). Comprobar que fallan.
+- [x] 7.2 Commit: test(web): fees de una cuenta e historial
 - [ ] 7.3 Implementar `permissions.ts`, `AccountFeesTable.tsx`, `AccountFeesPage.tsx` y `FeeHistorySheet.tsx` (con `Sheet`), con los botones de acción aún sin formulario. Verificar con los tests de 7.1.
 - [ ] 7.4 Commit: feat(web): fees de una cuenta e historial
 
