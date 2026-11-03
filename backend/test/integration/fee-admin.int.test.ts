@@ -1,5 +1,6 @@
-import { AccountFee, FeeUpdateResult } from '@recon/shared'
+import { AccountFee, FeeHistoryEntry, FeeUpdateResult } from '@recon/shared'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { z } from 'zod'
 import { PrismaFeeAdminRepository } from '../../src/modules/fees/infrastructure/prisma-fee-admin-repository.js'
 import { createTestApp, fixtureIds, SEED_PASSWORD } from './helpers.js'
 
@@ -372,6 +373,64 @@ describe('PATCH /fees/{id}: change from a date', () => {
 
     expect(res.statusCode, res.body).toBe(400)
     expect(res.json()).toMatchObject({ code: 'validation_error', details: { field: 'effectiveFrom' } })
+  })
+})
+
+describe('GET /fees/{id}/history', () => {
+  it('reads the seed history in API form: created by admin, percentage as a decimal string', async () => {
+    const mdr = await ctx.prisma.fee.findFirstOrThrow({
+      where: { accountId: accountIds['ProviderA-USD'], feeType: { code: 'MDR' } },
+    })
+
+    const res = await call('GET', `/fees/${mdr.feeId}/history`, 'viewer')
+
+    expect(res.statusCode, res.body).toBe(200)
+    expect(z.array(FeeHistoryEntry).parse(res.json())).toEqual([
+      expect.objectContaining({
+        action: 'created',
+        reason: 'seed',
+        changedBy: expect.objectContaining({ userName: 'admin' }),
+        before: null,
+        after: expect.objectContaining({ percentage: '0.100000', fixedAmount: null, startDate: null, endDate: null }),
+      }),
+    ])
+  })
+
+  it('scope=type gives the chain of the type, newest first', async () => {
+    begin()
+    const { fee, lastAppliedEventDate } = await feeInUse('MDR')
+    const effectiveFrom = new Date(Date.parse(`${lastAppliedEventDate}T00:00:00Z`) + 86_400_000)
+      .toISOString()
+      .slice(0, 10)
+    const change = await call('PATCH', `/fees/${fee.feeId}`, 'admin', { effectiveFrom, percentage: '0.095' })
+    expect(change.statusCode, change.body).toBe(200)
+    const successor = change.json().successor.feeId as string
+    created.push(successor)
+
+    const res = await call('GET', `/fees/${successor}/history?scope=type`, 'analyst')
+
+    expect(res.statusCode, res.body).toBe(200)
+    const rows = z.array(FeeHistoryEntry).parse(res.json())
+    expect(rows.map((r) => [r.feeId.toLowerCase(), r.action])).toEqual([
+      [successor.toLowerCase(), 'created'],
+      [fee.feeId.toLowerCase(), 'closed'],
+      [fee.feeId.toLowerCase(), 'created'],
+    ])
+    expect(rows[1]).toMatchObject({ before: { endDate: null }, after: { endDate: lastAppliedEventDate } })
+    expect(rows[0]!.after).toMatchObject({ startDate: effectiveFrom, percentage: '0.095000' })
+    expect((await call('GET', `/fees/${successor}/history`, 'analyst')).json()).toHaveLength(1)
+  })
+
+  it('answers 400 to an unknown scope and the same 404 outside the scope as for an unknown fee', async () => {
+    const alt = await ctx.prisma.fee.findFirstOrThrow({ where: { accountId: accountIds['ProviderC-Alt'] } })
+
+    const bad = await call('GET', `/fees/${alt.feeId}/history?scope=account`, 'analyst')
+    const outside = await call('GET', `/fees/${alt.feeId}/history`, 'viewer')
+    const unknown = await call('GET', '/fees/00000000-0000-4000-8000-00000000ffff/history', 'viewer')
+
+    expect(bad.statusCode).toBe(400)
+    expect(outside.statusCode).toBe(404)
+    expect(outside.json()).toEqual(unknown.json())
   })
 })
 
