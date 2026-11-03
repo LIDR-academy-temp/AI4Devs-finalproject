@@ -86,6 +86,7 @@ El grupo 1 es el contrato del que parte `web-admin-fees`. Al terminarlo se hace 
 - [x] 5.2 Añadir a `10-smoke` los negativos y los casos felices de lectura de D12.
 - [x] 5.3 Añadir `20-flows/fees/` con la secuencia de D12, en fechas futuras derivadas de la ejecución.
 - [ ] 5.4 La persona ejecuta `! pnpm test:api` con `pnpm dev` levantado. Verificar que pasa dos veces seguidas sin `db:seed` entre medias.
+  - Acotada (decisión de la persona): se cierra con lo de fees en verde en dos pasadas seguidas, incluido `31 Patch an applied fee` con el respaldo de `10-smoke/Fees` (`c949635`). `batch-clean` necesita base recién sembrada: en la segunda pasada fallan `batch-clean`, `10-smoke/Channels unassigned` e `imports/13 Analyze` (RAM-07 ya asignado, siguiente batch 124), y `8 Process without confirmation` procesa de verdad un batch. Deuda en #111.
 - [x] 5.5 Commit: test(api): colección Bruno de la administración de fees
 
 ## 6. Documentación
