@@ -19,7 +19,8 @@ export function SummaryHeader({ view }: { view: SettlementView }) {
     [s.grid.batch, s.batchAttempt(view.batchNo, view.attemptNo)],
     [
       s.grid.status,
-      <Badge key="status" variant={tone}>
+      // Wraps like in Settlement List: on one line it ran under Processed by at 1024 px.
+      <Badge key="status" variant={tone} className="h-auto whitespace-normal">
         {s.status[view.settledStatus]}
       </Badge>,
     ],
@@ -44,7 +45,8 @@ export function SummaryHeader({ view }: { view: SettlementView }) {
       </div>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm lg:grid-cols-5">
         {items.map(([term, definition]) => (
-          <div key={term} className="flex flex-col gap-0.5">
+          // min-w-0: an item never grows past its column into the next one.
+          <div key={term} className="flex min-w-0 flex-col gap-0.5">
             <dt className="text-muted-foreground">{term}</dt>
             <dd className="font-medium tabular-nums">{definition}</dd>
           </div>
