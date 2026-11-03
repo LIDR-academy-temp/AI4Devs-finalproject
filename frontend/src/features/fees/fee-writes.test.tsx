@@ -312,4 +312,46 @@ describe('Account fees: errors of the API', () => {
     await waitFor(() => expect(feeRequests('accountFees').length).toBeGreaterThan(reads))
     await waitFor(() => expect(rowOf('MDR', 'always').getByText(s.inUse)).toBeInTheDocument())
   })
+
+  async function openClose() {
+    seedOne({ feeTypeId: 4, percentage: null, fixedAmount: '15.0000', inUse: true, lastAppliedEventDate: '2026-10-15' })
+    const rendered = await openAccount()
+    await rendered.user.click(
+      rowOf('Chargeback per txn fee', 'always').getByRole('button', { name: 'Close Chargeback per txn fee, always' }),
+    )
+    const dialog = within(await screen.findByRole('alertdialog', { name: f.close.title('Chargeback per txn fee') }))
+    day(f.close.endDate, '2026-10-20', dialog)
+    return { ...rendered, dialog }
+  }
+
+  it('Close…: a settlement applied it after the chosen day; says up to when and asks the list again', async () => {
+    const { user, dialog } = await openClose()
+    respondNextFee('patch', { status: 409, code: 'fee_in_use', details: { lastAppliedEventDate: '2026-10-25' } })
+    const reads = feeRequests('accountFees').length
+
+    await user.click(dialog.getByRole('button', { name: f.close.confirm }))
+
+    expect(await dialog.findByRole('alert')).toHaveTextContent(f.errors.appliedUpTo('2026-10-25'))
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    expect(dialog.getByLabelText(f.close.endDate)).toHaveValue('2026-10-20')
+    await waitFor(() => expect(feeRequests('accountFees').length).toBeGreaterThan(reads))
+  })
+
+  it('Close…: a 400 of the end date shows its message and keeps the dialog open', async () => {
+    const { user, dialog } = await openClose()
+    respondNextFee('patch', {
+      status: 400,
+      code: 'validation_error',
+      message: 'endDate must not be before startDate',
+      details: { field: 'endDate' },
+    })
+    const reads = feeRequests('accountFees').length
+
+    await user.click(dialog.getByRole('button', { name: f.close.confirm }))
+
+    expect(await dialog.findByRole('alert')).toHaveTextContent('endDate must not be before startDate')
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    expect(dialog.getByRole('button', { name: f.close.confirm })).toBeEnabled()
+    expect(feeRequests('accountFees')).toHaveLength(reads)
+  })
 })
