@@ -184,7 +184,7 @@ describe('fake fee API: POST /accounts/{id}/fees', () => {
 })
 
 describe('fake fee API: PATCH /fees/{id}', () => {
-  async function seedOne(overrides: Parameters<typeof feeFixture>[0] = {}) {
+  async function seedOne(overrides: Partial<Parameters<typeof feeFixture>[0]> = {}) {
     const fee = feeFixture({ feeTypeId: 1, percentage: '0.100000', description: 'MDR', ...overrides })
     seedAccountFees('ProviderA-USD', [fee])
     return fee

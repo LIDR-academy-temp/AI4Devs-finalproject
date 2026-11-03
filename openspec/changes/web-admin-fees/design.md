@@ -116,7 +116,7 @@ El formulario nunca se cierra ante un error y conserva lo escrito.
 
 `test/msw/fees.ts` pasa a ser el dueño de `GET /accounts/{id}/fees` y `GET /fee-types`, movidos desde `settlements.ts` partiendo de la versión que dejó `admin-fees` (el fixture `preset` ya trae los campos ampliados de `AccountFee`); `settlements.ts` reexporta `ACCOUNT_FEES` y `FEE_TYPE_VIEWS` si sus tests los importan. Además añade:
 
-- `GET /fees`: valida la consulta con `FeesQuery` (`400 validation_error` si no valida, `fee.view` o `403`, merchant/proveedor/cuenta fuera del alcance → `404`). Filtra por alcance, ids, `kind`, `status` y `q` sobre los fixtures y pagina; **no ordena**: los fixtures ya están en el orden del API (como las listas de `settlements.ts`).
+- `GET /fees`: valida la consulta con `FeesQuery` (`400 validation_error` si no valida, `fee.view` o `403`, merchant/proveedor/cuenta fuera del alcance → `404`). Filtra por alcance, ids, `kind`, `status` y `q` sobre los fixtures y pagina. Ordena con la regla documentada del API (spec `fees` "Orden de la vista global") para que los fees que crea un test caigan en su sitio; no es una regla de negocio que la pantalla tenga que imitar.
 - `POST /accounts/{id}/fees`: `fee.manage` o `403`, cuenta visible o `404`, cuerpo con `FeeCreate` o `400`; guarda y responde `201` con una `AccountFee` (`status` según la fecha de hoy inyectada, `inUse = false`).
 - `PATCH /fees/{id}`: `fee.manage` antes que el alcance; cuerpo con `FeePatch`; aplica la corrección o el cambio (cierre + sucesor) en el estado del fake y responde `FeeUpdateResult`.
 - `GET /fees/{id}/history`: `FeeHistoryQuery`; filas guardadas por el fake en cada escritura, más las sembradas.

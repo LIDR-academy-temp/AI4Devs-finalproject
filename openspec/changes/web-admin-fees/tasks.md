@@ -17,8 +17,8 @@ Rama `feat/web-admin-fees`, rebasada sobre `origin/feat/admin-fees`. El PR va ha
 
 - [x] 3.1 Escribir `frontend/src/test/msw/fees.test.ts` (design D8) y comprobar que falla: `GET /fees` valida con `FeesQuery` (`pageSize=0` → `400`), pagina sin reordenar, filtra por alcance (`viewer` no recibe merchant 2; `merchantId=2` → `404`), `kind`, `status` y `q`; `POST` exige `fee.manage` (`analyst` → `403`) y valida con `FeeCreate` (número JSON → `400`); `PATCH` comprueba el permiso antes que el alcance, aplica corrección y cambio desde una fecha (cierre + sucesor) y valida con `FeePatch`; el historial se guarda por escritura y respeta `scope`; `respondNextFee` guiona `fee_overlap` / `fee_in_use`; toda respuesta pasa el `parse` de `AccountFee`, `FeePage`, `FeeUpdateResult` y `FeeHistoryEntry`.
 - [x] 3.2 Commit: test(web): API falsa de la administración de fees
-- [ ] 3.3 Crear `test/msw/fees.ts` con fixtures transaccionales y no transaccionales de las cuentas (en el orden del API, con fees activos, programados, cerrados, en uso y sin uso), mover allí `GET /accounts/{id}/fees` y `GET /fee-types` desde `settlements.ts` (con `transactional` filtrando de verdad) y registrarlo en `handlers.ts` y `resetDb`. Verificar con `fees.test.ts` en verde y **toda** la suite de `features/settlements` sin cambios en verde.
-- [ ] 3.4 Commit: feat(web): API falsa de la administración de fees
+- [x] 3.3 Crear `test/msw/fees.ts` con fixtures transaccionales y no transaccionales de las cuentas (en el orden del API, con fees activos, programados, cerrados, en uso y sin uso), mover allí `GET /accounts/{id}/fees` y `GET /fee-types` desde `settlements.ts` (con `transactional` filtrando de verdad) y registrarlo en `handlers.ts` y `resetDb`. Verificar con `fees.test.ts` en verde y **toda** la suite de `features/settlements` sin cambios en verde.
+- [x] 3.4 Commit: feat(web): API falsa de la administración de fees
 
 ## 4. Aviso de espera del pago en el Settlement Summary (test-first)
 

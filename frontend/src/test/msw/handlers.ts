@@ -1,6 +1,7 @@
 // In-memory stand-in for the API (openspec/specs/auth, openspec/specs/accounts): token rotation, merchant scope
 // and 404 for anything outside the scope, so the screens are tested against the real rules.
 import { HttpResponse, http, type PathParams } from 'msw'
+import { createFeeHandlers, resetFees } from './fees'
 import {
   ACCOUNT_CHANNELS,
   ACCOUNTS,
@@ -42,6 +43,7 @@ export function resetDb() {
   resetImports()
   resetValidations()
   resetSettlements()
+  resetFees()
 }
 
 /** Issues a token pair for a user, as a successful login would. */
@@ -189,4 +191,5 @@ export const handlers = [
   ...createImportHandlers(caller),
   ...createValidationHandlers(caller),
   ...createSettlementHandlers(caller),
+  ...createFeeHandlers(caller),
 ]
