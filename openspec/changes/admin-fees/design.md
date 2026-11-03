@@ -158,9 +158,9 @@ Las fechas se manejan como strings `YYYY-MM-DD`. "Menos un día" se calcula sobr
 
 **Dónde se calcula:**
 - En las escrituras, dentro de la transacción y después del bloqueo.
-- En las lecturas, en la misma consulta, con subconsultas `EXISTS` y `MAX` agrupadas por `feeId`:
+- En las lecturas, después de leer los fees y aparte de esa consulta, con `usageOf` (`infrastructure/fee-usage.ts`): un `groupBy` por `feeId` con `MAX(eventDate)` sobre `SettlementTransactionFee` y un `findMany` de `SettlementBatchFee` con la `settlementDate` de su batch, en paralelo, filtrados por los `feeId` pedidos:
   - `GET /accounts/{id}/fees`: para los fees de la cuenta;
-  - `GET /fees`: solo para los `feeId` de la página pedida, en una segunda consulta.
+  - `GET /fees`: solo para los `feeId` de la página pedida.
 
 ### D6. Atomicidad, bloqueo y solapes
 

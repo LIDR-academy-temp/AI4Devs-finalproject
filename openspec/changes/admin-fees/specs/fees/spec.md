@@ -38,8 +38,8 @@ Responde `201` con la `AccountFee`. Las variantes SHALL guardarse tal como llega
 - THEN recibe `201` con `fixedAmount = "15.0000"`, `percentage = null`, `startDate = null`, `endDate = null`, `status = "active"`, `inUse = false`, `lastAppliedEventDate = null` y `createdBy.userName = "admin"`
 
 #### Scenario: Fee programado junto al vigente
-- GIVEN un fee MDR con vigencia NULL…2026-12-31 en la cuenta
-- WHEN `admin` crea otro MDR con vigencia 2027-01-01…NULL
+- GIVEN un fee `Wire Fee` con vigencia NULL…2026-12-31 en la cuenta
+- WHEN `admin` crea otro `Wire Fee` con vigencia 2027-01-01…NULL
 - THEN recibe `201`, el nuevo tiene `status = "scheduled"` y los dos coexisten
 
 ### Requirement: Formato de los datos de un fee
@@ -76,6 +76,16 @@ Un fee SHALL estar en uso (`inUse = true`) si lo referencia el desglose de algú
 - WHEN se lee con `GET /accounts/{id}/fees`
 - THEN sale con `inUse = true` y `lastAppliedEventDate` igual al día del último evento al que se aplicó
 
+#### Scenario: Fee usado solo como fee por batch
+- GIVEN un fee sin desgloses que un batch con `settlementDate` D cobró como fee por batch
+- WHEN se lee con `GET /accounts/{id}/fees`
+- THEN sale con `inUse = true` y `lastAppliedEventDate = D`
+
+#### Scenario: Intento deshecho
+- GIVEN un fee con un desglose de 2020-01-15 y un fee por batch en un intento `undone` con `settlementDate` posterior
+- WHEN se lee con `GET /accounts/{id}/fees`
+- THEN sigue en uso y su `lastAppliedEventDate` es la `settlementDate` de ese intento
+
 #### Scenario: Fee recién creado
 - WHEN se crea un fee
 - THEN sale con `inUse = false` y `lastAppliedEventDate = null` hasta que un settlement lo aplique
@@ -89,9 +99,9 @@ Un fee SHALL estar en uso (`inUse = true`) si lo referencia el desglose de algú
 Responde `200` con `{ fee, successor: null }`.
 
 #### Scenario: Corrección completa de un fee sin uso
-- GIVEN un fee MDR sin uso con `percentage = "0.025000"`
-- WHEN `admin` envía `{ percentage: "0.027500", reason: "typo" }`
-- THEN recibe `200` con `percentage = "0.027500"` y `FeeHistory` tiene una fila `updated` con `reason = "typo"`, `beforeJson` con 0.025000 y `afterJson` con 0.027500
+- GIVEN un fee `Wire Fee` sin uso con `fixedAmount = "15.0000"` y vigencia NULL…NULL
+- WHEN `admin` envía `{ fixedAmount: "16.5", startDate: "2026-01-01", reason: "typo" }`
+- THEN recibe `200` con `fixedAmount = "16.5000"` y `startDate = "2026-01-01"`, y `FeeHistory` tiene una fila `updated` con `reason = "typo"`, `beforeJson` con 15.0000 y `afterJson` con 16.5000
 
 #### Scenario: Campo no editable
 - WHEN `admin` envía `{ feeTypeId: 2 }`
@@ -125,15 +135,15 @@ Un fee en uso SHALL admitir en el sitio solo `description` y `endDate`. Cualquie
 ### Requirement: Cerrar la vigencia de un fee
 Cerrar un fee SHALL ser ponerle `endDate` con `PATCH`. La acción del historial es `closed` cuando solo cambia `endDate` y pasa de `null` a una fecha, y `updated` en otro caso. En un fee en uso, `endDate` SHALL ser ≥ `lastAppliedEventDate`; si no, `409 fee_in_use` con `details.lastAppliedEventDate`. Cerrar nunca recalcula movimientos ya procesados.
 
-#### Scenario: Cierre posterior al último evento aplicado
-- GIVEN un fee de Chargeback NULL…NULL con `lastAppliedEventDate = 2026-10-15`
-- WHEN `admin` envía `{ endDate: "2026-10-31" }`
-- THEN recibe `200` con `endDate = "2026-10-31"` y `FeeHistory` tiene una fila `closed`
+#### Scenario: Cierre en el último evento aplicado
+- GIVEN un fee de `TRX Fee - Deposit` NULL…NULL con `lastAppliedEventDate = 2026-10-02`
+- WHEN `admin` envía `{ endDate: "2026-10-02" }`
+- THEN recibe `200` con `endDate = "2026-10-02"` y `FeeHistory` tiene una fila `closed`
 
 #### Scenario: Cierre que dejaría fuera eventos ya aplicados
 - GIVEN el mismo fee
 - WHEN `admin` envía `{ endDate: "2026-10-01" }`
-- THEN recibe `409 fee_in_use` con `details.lastAppliedEventDate = "2026-10-15"` y la base no cambia
+- THEN recibe `409 fee_in_use` con `details.lastAppliedEventDate = "2026-10-02"` y la base no cambia
 
 ### Requirement: Cambiar un fee desde una fecha
 `PATCH /api/v1/fees/{feeId}` con `effectiveFrom` (`YYYY-MM-DD`) y al menos un valor nuevo (`fixedAmount`, `percentage`, variantes, `description`) SHALL hacer el cambio en una transacción:
@@ -143,25 +153,25 @@ Cerrar un fee SHALL ser ponerle `endDate` con `PATCH`. La acción del historial 
 Responde `200` con `{ fee, successor }`.
 
 #### Scenario: Sucesor con el valor nuevo y el resto heredado
-- GIVEN un fee MDR vigente NULL…NULL con `percentage = "0.100000"` y descripción "MDR", cuyo `lastAppliedEventDate` es anterior a 2026-10-31
-- WHEN `admin` envía `{ effectiveFrom: "2026-11-01", percentage: "0.095000" }`
-- THEN recibe `200` con `fee.endDate = "2026-10-31"` y un `successor` con `startDate = "2026-11-01"`, `endDate = null`, `percentage = "0.095000"` y la descripción "MDR"
+- GIVEN un fee MDR vigente NULL…NULL con `percentage = "0.100000"` y `lastAppliedEventDate = 2026-10-02`
+- WHEN `admin` envía `{ effectiveFrom: "2026-10-03", percentage: "0.095000" }`
+- THEN recibe `200` con `fee.endDate = "2026-10-02"` y un `successor` con `startDate = "2026-10-03"`, `endDate = null`, `percentage = "0.095000"`, sin uso y con el resto de la configuración del original
 
 #### Scenario: Los movimientos procesados no cambian
-- GIVEN un movimiento procesado con el fee MDR al 10 %
-- WHEN el fee se cambia desde una fecha posterior a su evento
-- THEN `GET /settlements/{id}/transactions` devuelve el mismo importe de fee y la misma configuración aplicada que antes
+- GIVEN desgloses de movimientos (`SettlementTransactionFee`) que aplicaron el fee MDR
+- WHEN el fee se cambia desde una fecha posterior a su último evento
+- THEN esas filas de `SettlementTransactionFee` siguen con el mismo importe y la misma configuración aplicada que antes
 
 ### Requirement: Límites del cambio desde una fecha
 `effectiveFrom` SHALL ser posterior al `startDate` del fee (cualquiera si es `null`) y no posterior a su `endDate`. Si no, `400 validation_error` con `details.field = "effectiveFrom"`. `effectiveFrom − 1` SHALL ser ≥ `lastAppliedEventDate`; si no, `409 fee_in_use` con `details.lastAppliedEventDate`. Combinar `effectiveFrom` con `startDate` o `endDate`, o enviarlo sin valores nuevos, SHALL responder `400 validation_error`.
 
 #### Scenario: Cambio con fecha anterior a eventos ya aplicados
-- GIVEN un fee con `lastAppliedEventDate = 2026-10-15`
-- WHEN `admin` envía `{ effectiveFrom: "2026-10-10", fixedAmount: "50.0000" }`
-- THEN recibe `409 fee_in_use` con `details.lastAppliedEventDate = "2026-10-15"` y no se crea ningún fee
+- GIVEN un fee MDR con `lastAppliedEventDate = 2026-10-02`
+- WHEN `admin` envía `{ effectiveFrom: "2026-10-02", percentage: "0.095000" }`
+- THEN recibe `409 fee_in_use` con `details.lastAppliedEventDate = "2026-10-02"` y no se crea ningún fee
 
 #### Scenario: Fecha fuera de la vigencia del fee
-- GIVEN un fee con vigencia 2027-01-01…NULL
+- GIVEN un fee `Wire Fee` con vigencia 2027-01-01…NULL
 - WHEN `admin` envía `{ effectiveFrom: "2027-01-01", fixedAmount: "1.0000" }`
 - THEN recibe `400 validation_error` con `details.field = "effectiveFrom"`
 
@@ -234,7 +244,7 @@ El `status` de un fee SHALL derivarse del día de calendario de hoy en Nueva Yor
 `GET /api/v1/fees/{feeId}/history?scope=fee|type` SHALL devolver, de la más reciente a la más antigua, las filas de `FeeHistory`: las del fee (`scope=fee`, por defecto) o las de todos los fees del mismo tipo en su cuenta (`scope=type`). Cada fila lleva `feeHistoryId`, `feeId`, `action`, `changedAt`, `changedBy`, `reason`, `before` y `after`; estos dos, con la forma de la API.
 
 #### Scenario: Cadena de un tipo
-- GIVEN un MDR cambiado desde 2026-11-01 (un `closed` del original y un `created` del sucesor)
+- GIVEN un MDR cambiado desde el día siguiente a su último evento aplicado (un `closed` del original y un `created` del sucesor)
 - WHEN `analyst` pide `GET /fees/{sucesor}/history?scope=type`
 - THEN recibe las dos filas nuevas y la `created` del seed del original, de la más reciente a la más antigua
 
@@ -265,7 +275,7 @@ Toda escritura de fees SHALL dejar una entrada en `AuditLog` en la misma transac
 Crear, corregir o cambiar desde una fecha un fee que se solape con otro del mismo tipo en la cuenta SHALL responder `409 fee_overlap` con `details.conflicts`, una lista de `{ feeId, startDate, endDate }`, sin cambiar la base. Dos escrituras simultáneas sobre la misma cuenta SHALL serializarse.
 
 #### Scenario: Solapamiento al corregir
-- GIVEN dos fees de Refund sin uso, NULL…2026-12-31 y 2027-01-01…NULL
+- GIVEN dos fees de `Wire Fee` sin uso, NULL…2026-12-31 y 2027-01-01…NULL
 - WHEN se corrige el segundo con `startDate = 2026-12-15`
 - THEN la API responde `409 fee_overlap` con el primero en `details.conflicts`
 
@@ -297,12 +307,12 @@ Esto vale para `GET /accounts/{id}/fees`, para la vista global (calculado solo p
 
 #### Scenario: Tipos distintos no se solapan
 - GIVEN un fee MDR NULL…NULL
-- WHEN se crea un `TRX Fee - Deposit` NULL…NULL en la misma cuenta
+- WHEN se crea un `Annual Fee` NULL…NULL en la misma cuenta
 - THEN se crea sin conflicto
 
 #### Scenario: Bordes contiguos
-- GIVEN un fee de Refund NULL…2026-10-31
-- WHEN se crea otro de Refund 2026-11-01…NULL
+- GIVEN un fee de `Wire Fee` NULL…2026-12-31
+- WHEN se crea otro de `Wire Fee` 2027-01-01…NULL
 - THEN se crea sin conflicto
 
 #### Scenario: Respaldo del trigger
@@ -314,8 +324,8 @@ Toda creación, edición o cierre SHALL dejar una fila en `FeeHistory`: usuario,
 
 #### Scenario: Cambiar un fee cierra el vigente y abre el nuevo
 - GIVEN un fee MDR vigente NULL…NULL en una cuenta
-- WHEN el analista lo cambia con un nuevo valor desde 2026-11-01
-- THEN el fee anterior queda con `endDate = 2026-10-31` y no se borra, y existe un fee nuevo con `startDate = 2026-11-01`
+- WHEN `admin` lo cambia con un nuevo valor desde 2026-10-03
+- THEN el fee anterior queda con `endDate = 2026-10-02` y no se borra, y existe un fee nuevo con `startDate = 2026-10-03`
 - AND `FeeHistory` tiene una fila `closed` para el anterior y una `created` para el nuevo, cada una con usuario, fecha, `beforeJson` y `afterJson`
 
 #### Scenario: Motivo demasiado largo

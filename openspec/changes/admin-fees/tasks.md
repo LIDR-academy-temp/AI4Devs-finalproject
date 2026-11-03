@@ -14,7 +14,7 @@ El grupo 1 es el contrato del que parte `web-admin-fees`. Al terminarlo se hace 
   - `FeeHistoryEntry`, `FeePage` y `FeeUpdateResult`.
 - [x] 1.2 Commit: test(shared): contrato de la administración de fees
 - [x] 1.3 Implementar los esquemas en `packages/shared/src/fees.ts` y exportarlos desde `index.ts`. Verificar con `pnpm --filter @recon/shared test` y `pnpm typecheck`.
-- [x] 1.4 Ampliar `toStoredFee` y `feeSelect` del repositorio de lectura con los campos nuevos de `AccountFee`: variantes, `status` (con reloj inyectado, D7), `inUse` y `lastAppliedEventDate` (D5), `createdBy`, `createdAt` y `updatedAt`. Ajustar `fee-read-service.test.ts`, `fee-routes.test.ts` y `test/integration/fees.int.test.ts`, añadiendo los escenarios "Campos ampliados" y "Fee del seed con settlements procesados". Verificar que siguen en verde. `statusOf` y `newYorkDay` se adelantan aquí, en `domain/fee-validity.ts` con su test; la 2.1 añade el resto.
+- [x] 1.4 Ampliar `toStoredFee` y `feeSelect` del repositorio de lectura con los campos nuevos de `AccountFee`: variantes, `status` (con reloj inyectado, D7), `inUse` y `lastAppliedEventDate` (D5), `createdBy`, `createdAt` y `updatedAt`. Ajustar `fee-read-service.test.ts`, `fee-routes.test.ts` y `test/integration/fees.int.test.ts`, añadiendo los escenarios "Campos ampliados" y "Fee aplicado por settlements procesados". Verificar que siguen en verde. `statusOf` y `newYorkDay` se adelantan aquí, en `domain/fee-validity.ts` con su test; la 2.1 añade el resto.
 - [x] 1.5 Declarar en `http/fee-admin-routes.ts` las rutas `POST /accounts/:accountId/fees`, `PATCH /fees/:feeId`, `GET /fees` y `GET /fees/:feeId/history`, cada una con su esquema y su `preHandler` de permiso. Los handlers provisionales responden `501 not_implemented` (D11). Registrar las rutas en `fees-module.ts`. Verificar con un test de rutas que cubra `401`, `403` antes que el alcance y `400` de esquema.
 - [x] 1.6 Ejecutar `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`, y ampliar `app.test.ts` con las rutas nuevas y añadir los campos nuevos al fixture `preset` de `frontend/src/test/msw/settlements.ts` (contrato de la API falsa). Verificar con `pnpm openapi:check`, `pnpm lint` y `pnpm typecheck`.
 - [x] 1.7 Commit: feat(fees): contrato de la administración de fees y export de OpenAPI
@@ -51,7 +51,7 @@ El grupo 1 es el contrato del que parte `web-admin-fees`. Al terminarlo se hace 
 - [x] 3.2 Escribir `test/integration/fee-admin.int.test.ts` contra la base local con los escenarios de la delta spec y comprobar que falla. Cada test limpia sus filas. Escenarios:
   - "Fee creado con vigencia abierta", "Ni importe ni porcentaje", "Tipo inactivo o inexistente" y "Fee programado junto al vigente";
   - "Corrección completa de un fee sin uso", "Cambiar el valor de un fee en uso" y "Descripción de un fee en uso";
-  - "Cierre posterior al último evento aplicado" y "Cierre que dejaría fuera eventos ya aplicados";
+  - "Cierre en el último evento aplicado" y "Cierre que dejaría fuera eventos ya aplicados";
   - "Cambiar un fee cierra el vigente y abre el nuevo", "Cambio con fecha anterior a eventos ya aplicados" y "Los movimientos procesados no cambian";
   - "Solapamiento rechazado", "Solapamiento al corregir" y "Bordes contiguos";
   - "Corrección auditada", "Cambio desde una fecha auditado" y "Fallo a mitad";
