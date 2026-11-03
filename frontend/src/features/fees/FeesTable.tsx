@@ -11,6 +11,9 @@ import { strings } from './strings'
 
 const s = strings.global
 
+/** A text cell that may wrap: the shadcn cell does not by default. */
+const WRAP = 'whitespace-normal'
+
 /** The name of the global fees list for requestListFocus. */
 export const FEES_LIST = 'fees'
 
@@ -22,8 +25,6 @@ export interface FeeTypeInfo {
 }
 
 const COLUMNS = [
-  s.columns.merchant,
-  s.columns.provider,
   s.columns.account,
   s.columns.type,
   s.columns.appliesTo,
@@ -36,7 +37,7 @@ const COLUMNS = [
 
 /**
  * One page of GET /fees in the order of the API (spec fees "Pantalla Fees: columnas y orden"): merchant and provider
- * are columns of each row, never group headers that a page would cut. Every value is the text of the API.
+ * go under the account in each row, never group headers that a page would cut. Every value is the text of the API.
  */
 export function FeesTable({
   data,
@@ -60,7 +61,10 @@ export function FeesTable({
           <TableHeader>
             <TableRow>
               {COLUMNS.map((column) => (
-                <TableHead key={column} className={column === s.columns.value ? 'text-right' : undefined}>
+                <TableHead
+                  key={column}
+                  className={column === s.columns.value ? 'whitespace-normal text-right' : 'whitespace-normal'}
+                >
                   {column}
                 </TableHead>
               ))}
@@ -68,19 +72,24 @@ export function FeesTable({
           </TableHeader>
           <TableBody>
             {data.items.map((fee) => (
+              // Merchant and provider under the account, and the type wrapping, so the table fits at 1024 px; names,
+              // figures and days stay on one line.
               <TableRow key={fee.feeId}>
-                <TableCell>{fee.merchant.name}</TableCell>
-                <TableCell>{fee.provider.name}</TableCell>
-                <TableCell>
+                <TableCell className={WRAP}>
                   <Link
                     to="/accounts/$accountId/fees"
                     params={{ accountId: fee.account.id }}
-                    className="font-medium text-primary underline underline-offset-4"
+                    className="whitespace-nowrap font-medium text-primary underline underline-offset-4"
                   >
                     {fee.account.name}
                   </Link>
+                  {/* Breaks only after the separator: each name stays whole. */}
+                  <span className="block text-muted-foreground">
+                    <span className="whitespace-nowrap">{`${fee.merchant.name} ${s.hierarchySeparator}`}</span>{' '}
+                    <span className="whitespace-nowrap">{fee.provider.name}</span>
+                  </span>
                 </TableCell>
-                <TableCell>{fee.title}</TableCell>
+                <TableCell className={WRAP}>{fee.title}</TableCell>
                 <TableCell className="whitespace-nowrap">{feeAppliesTo(fee.feeTypeId, feeTypes)}</TableCell>
                 <TableCell className="whitespace-nowrap text-right tabular-nums">{formatFeeValue(fee)}</TableCell>
                 <TableCell className="whitespace-nowrap tabular-nums">{formatValidFrom(fee.startDate)}</TableCell>

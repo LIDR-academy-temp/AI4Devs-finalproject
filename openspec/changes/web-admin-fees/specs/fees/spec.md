@@ -17,11 +17,11 @@ Administration › Fees (`/fees`) SHALL exigir `fee.view`; sin él, la guarda de
 - **THEN** ve `You don't have access to this page` y no se llama a `GET /fees`
 
 ### Requirement: Pantalla Fees: columnas y orden
-Cada fila SHALL mostrar merchant, proveedor, cuenta (enlace a `/accounts/<accountId>/fees`), tipo, a qué aplica (ciclo y estado, o `batch · preset` / `batch · free amount`), valor (importe con 4 decimales y/o porcentaje como `2.900 %`), `Valid from` (`always` si es `null`), `Valid to` (`open` si es `null`), estado (`Active`, `Scheduled`, `Closed`) y el día del último cambio en Nueva York (quién lo hizo está en el historial: el API no lo da en la fila). Las filas SHALL seguir el orden del API, sin reordenarse ni agruparse en la pantalla.
+Cada fila SHALL mostrar la cuenta (enlace a `/accounts/<accountId>/fees`) con su merchant y su proveedor debajo, en la misma celda, tipo, a qué aplica (ciclo y estado, o `batch · preset` / `batch · free amount`), valor (importe con 4 decimales y/o porcentaje como `2.900 %`), `Valid from` (`always` si es `null`), `Valid to` (`open` si es `null`), estado (`Active`, `Scheduled`, `Closed`) y el día del último cambio en Nueva York (quién lo hizo está en el historial: el API no lo da en la fila). Las filas SHALL seguir el orden del API, sin reordenarse ni agruparse en la pantalla.
 
 #### Scenario: Fee abierto por los dos lados
 - **GIVEN** un MDR de ProviderA-USD con `percentage = "0.029000"`, `startDate = null` y `endDate = null`
-- **THEN** su fila muestra `Merchant A`, `Provider A`, `ProviderA-USD`, `MDR`, `E · Successful`, `2.900 %`, `always`, `open` y `Active`
+- **THEN** su fila muestra `ProviderA-USD` con `Merchant A · Provider A` debajo, `MDR`, `E · Successful`, `2.900 %`, `always`, `open` y `Active`
 
 #### Scenario: Programado
 - **GIVEN** un fee con `status = "scheduled"`
@@ -29,7 +29,11 @@ Cada fila SHALL mostrar merchant, proveedor, cuenta (enlace a `/accounts/<accoun
 
 #### Scenario: Sin cabeceras de grupo
 - **GIVEN** una página cuyo primer elemento es de `Provider A` y el último de `Provider C`
-- **THEN** la tabla no tiene filas de cabecera `Merchant › Provider`: merchant y proveedor son columnas de cada fila
+- **THEN** la tabla no tiene filas de cabecera `Merchant › Provider`: merchant y proveedor van bajo la cuenta en cada fila
+
+#### Scenario: A 1024 px
+- **GIVEN** la vista global a 1024 px de ancho, con la barra lateral
+- **THEN** la tabla cabe en su tarjeta sin desplazamiento: `Merchant A · Provider A` solo se parte tras el separador, el tipo puede ocupar dos líneas, y la cuenta, los importes y los días quedan en una línea
 
 ### Requirement: Pantalla Fees: filtros en la dirección
 La pantalla SHALL filtrar por merchant, proveedor y cuenta (en cascada, solo los del alcance), tipo (`All kinds`, `Transactional`, `Batch preset`, `Free amount`), estado (`Active`, `Scheduled`, `Closed`, `All statuses`) y búsqueda. Sin estado en la dirección SHALL pedir `status=active`; `All statuses` SHALL pedir sin `status`. Cada filtro SHALL escribirse en la dirección y volver a la primera página; la búsqueda, con espera entre pulsaciones. Valores inválidos de la dirección SHALL descartarse.

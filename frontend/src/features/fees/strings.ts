@@ -29,9 +29,9 @@ export const strings = {
       kinds: { all: 'All kinds', transactional: 'Transactional', preset: 'Batch preset', free_amount: 'Free amount' },
       statuses: { active: 'Active', scheduled: 'Scheduled', closed: 'Closed', all: 'All statuses' },
     },
+    /** Between the merchant and the provider, under the account in its cell. */
+    hierarchySeparator: '·',
     columns: {
-      merchant: 'Merchant',
-      provider: 'Provider',
       account: 'Account',
       type: 'Type',
       appliesTo: 'Applies to',

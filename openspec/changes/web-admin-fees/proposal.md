@@ -13,7 +13,7 @@ Además, en la cabecera del Settlement Summary, quien no tiene `payment.process`
 ## What Changes
 
 **Vista global `/fees`** (permiso `fee.view`, solo lectura)
-- Tabla paginada en servidor con `GET /fees`: merchant, proveedor y cuenta como columnas (en el orden que da el API, sin cabeceras de grupo que se corten entre páginas), tipo, a qué aplica, valor, vigencia (`always` / `open`), estado y último cambio.
+- Tabla paginada en servidor con `GET /fees`: la cuenta con su merchant y su proveedor debajo, en cada fila (en el orden que da el API, sin cabeceras de grupo que se corten entre páginas; en una sola columna para que quepa a 1024 px, decidido al ver las capturas), tipo, a qué aplica, valor, vigencia (`always` / `open`), estado y último cambio.
 - Filtros en la dirección: merchant, proveedor, cuenta, `kind` (`transactional` | `preset` | `free_amount`), `status` (`active` | `scheduled` | `closed`; **por defecto `active`**, con la opción de ver todos) y búsqueda `q`.
 - Cada cuenta enlaza a su página de fees.
 

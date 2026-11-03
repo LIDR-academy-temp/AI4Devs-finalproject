@@ -45,7 +45,7 @@ export function AccountFeesTable({
         <TableHeader>
           <TableRow>
             {Object.entries(s.columns).map(([key, label]) => (
-              <TableHead key={key} className={key === 'value' ? 'text-right' : undefined}>
+              <TableHead key={key} className={key === 'value' ? 'whitespace-normal text-right' : 'whitespace-normal'}>
                 {label}
               </TableHead>
             ))}
@@ -54,7 +54,8 @@ export function AccountFeesTable({
         <TableBody>
           {fees.map((fee) => (
             <TableRow key={fee.feeId} className={fee.status === 'closed' ? 'text-muted-foreground' : undefined}>
-              <TableCell className="font-medium">{fee.title}</TableCell>
+              {/* The type and the actions wrap so the table fits at 1024 px; figures and days stay on one line. */}
+              <TableCell className="whitespace-normal font-medium">{fee.title}</TableCell>
               <TableCell className="whitespace-nowrap">{feeAppliesTo(fee.feeTypeId, feeTypes)}</TableCell>
               <TableCell className="whitespace-nowrap text-right tabular-nums">{formatFeeValue(fee)}</TableCell>
               <TableCell className="whitespace-nowrap tabular-nums">{formatValidFrom(fee.startDate)}</TableCell>
@@ -63,7 +64,7 @@ export function AccountFeesTable({
                 <Badge variant={toneOf(FEE_STATUS_TONE, fee.status)}>{strings.status[fee.status]}</Badge>
               </TableCell>
               <TableCell>{fee.inUse ? s.inUse : ''}</TableCell>
-              <TableCell className="whitespace-nowrap">
+              <TableCell className="whitespace-normal">
                 {actionsFor(fee, canManage).map((action) => (
                   <Button
                     key={action}
