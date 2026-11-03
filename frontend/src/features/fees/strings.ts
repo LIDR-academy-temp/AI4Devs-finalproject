@@ -1,9 +1,47 @@
 // Texts of the fee screens (web-admin-fees; README §1.3 Fees, Account Fees / Fee History).
 
 export const strings = {
+  retry: 'Retry',
   global: {
     title: 'Fees · all accounts',
+    heading: 'Fees',
+    tableLabel: 'Fees',
+    note: 'Read-only overview to compare configuration across accounts. Fees are created, edited and closed per account: open its name.',
+    notAvailable: 'This selection is not available.',
+    empty: 'No fees match these filters.',
+    loading: 'Loading fees…',
+    loadError: 'Could not load the fees.',
+    pageOf: (page: number, pageCount: number, total: number) =>
+      `Page ${page} of ${pageCount} · ${total} ${total === 1 ? 'fee' : 'fees'}`,
+    filters: {
+      label: 'Filters',
+      merchant: 'Merchant',
+      provider: 'Provider',
+      account: 'Account',
+      kind: 'Kind',
+      status: 'Status',
+      search: 'Search',
+      searchPlaceholder: 'Account, type or description…',
+      allMerchants: 'All merchants',
+      allProviders: 'All providers',
+      allAccounts: 'All accounts',
+      kinds: { all: 'All kinds', transactional: 'Transactional', preset: 'Batch preset', free_amount: 'Free amount' },
+      statuses: { active: 'Active', scheduled: 'Scheduled', closed: 'Closed', all: 'All statuses' },
+    },
+    columns: {
+      merchant: 'Merchant',
+      provider: 'Provider',
+      account: 'Account',
+      type: 'Type',
+      appliesTo: 'Applies to',
+      value: 'Value',
+      validFrom: 'Valid from',
+      validTo: 'Valid to',
+      status: 'Status',
+      lastChange: 'Last change',
+    },
   },
+  status: { active: 'Active', scheduled: 'Scheduled', closed: 'Closed' },
   account: {
     crumb: 'Account fees',
     title: (account: string) => `Fees · ${account}`,

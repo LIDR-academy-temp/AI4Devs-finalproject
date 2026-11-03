@@ -36,8 +36,8 @@ Rama `feat/web-admin-fees`, rebasada sobre `origin/feat/admin-fees`. El PR va ha
 
 ## 6. Vista global `/fees` (test-first)
 
-- [ ] 6.1 Escribir `features/fees/fees-search.test.ts` (dirección: valores inválidos descartados, `status=all`, `page` ≤ 1 fuera) y `features/fees/FeesPage.test.tsx` con los escenarios de la delta spec `fees` "Pantalla Fees": acceso y solo lectura (`viewer`, `admin`), columnas (`always`, `open`, `2.900 %`, `Scheduled`, sin cabeceras de grupo), filtros (por defecto `status=active`, `All statuses`, cascada que borra los niveles inferiores, búsqueda con espera, recarga, valor inválido, merchant fuera del alcance sin pedir `GET /fees`), paginación (**Next**, página que ya no existe con `replace`), vacío, error con **Retry** y enlace de la cuenta. Comprobar que fallan.
-- [ ] 6.2 Commit: test(web): vista global de fees
+- [x] 6.1 Escribir `features/fees/fees-search.test.ts` (dirección: valores inválidos descartados, `status=all`, `page` ≤ 1 fuera) y `features/fees/FeesPage.test.tsx` con los escenarios de la delta spec `fees` "Pantalla Fees": acceso y solo lectura (`viewer`, `admin`), columnas (`always`, `open`, `2.900 %`, `Scheduled`, sin cabeceras de grupo), filtros (por defecto `status=active`, `All statuses`, cascada que borra los niveles inferiores, búsqueda con espera, recarga, valor inválido, merchant fuera del alcance sin pedir `GET /fees`), paginación (**Next**, página que ya no existe con `replace`), vacío, error con **Retry** y enlace de la cuenta. Comprobar que fallan.
+- [x] 6.2 Commit: test(web): vista global de fees
 - [ ] 6.3 Implementar `fees-search.ts`, `contract.ts` (tipos de `schema.gen.ts`), `queries.ts`, `FeeFilters.tsx`, `FeesTable.tsx` y `FeesPage.tsx` con `Pager`, `useLastPageLimit` y `ListHeading` (design D3, D9), y sus textos en `strings.ts`. Verificar con los tests de 6.1, `pnpm lint` y `pnpm typecheck`.
 - [ ] 6.4 Commit: feat(web): vista global de fees
 

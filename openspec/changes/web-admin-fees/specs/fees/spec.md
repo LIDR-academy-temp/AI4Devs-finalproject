@@ -17,7 +17,7 @@ Administration › Fees (`/fees`) SHALL exigir `fee.view`; sin él, la guarda de
 - **THEN** ve `You don't have access to this page` y no se llama a `GET /fees`
 
 ### Requirement: Pantalla Fees: columnas y orden
-Cada fila SHALL mostrar merchant, proveedor, cuenta (enlace a `/accounts/<accountId>/fees`), tipo, a qué aplica (ciclo y estado, o `batch · preset` / `batch · free amount`), valor (importe con 4 decimales y/o porcentaje como `2.900 %`), `Valid from` (`always` si es `null`), `Valid to` (`open` si es `null`), estado (`Active`, `Scheduled`, `Closed`) y último cambio (fecha y usuario). Las filas SHALL seguir el orden del API, sin reordenarse ni agruparse en la pantalla.
+Cada fila SHALL mostrar merchant, proveedor, cuenta (enlace a `/accounts/<accountId>/fees`), tipo, a qué aplica (ciclo y estado, o `batch · preset` / `batch · free amount`), valor (importe con 4 decimales y/o porcentaje como `2.900 %`), `Valid from` (`always` si es `null`), `Valid to` (`open` si es `null`), estado (`Active`, `Scheduled`, `Closed`) y el día del último cambio en Nueva York (quién lo hizo está en el historial: el API no lo da en la fila). Las filas SHALL seguir el orden del API, sin reordenarse ni agruparse en la pantalla.
 
 #### Scenario: Fee abierto por los dos lados
 - **GIVEN** un MDR de ProviderA-USD con `percentage = "0.029000"`, `startDate = null` y `endDate = null`
