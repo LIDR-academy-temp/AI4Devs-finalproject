@@ -2,7 +2,7 @@ import { AccountFee, FeeHistoryEntry, FeeUpdateResult } from '@recon/shared'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { PrismaFeeAdminRepository } from '../../src/modules/fees/infrastructure/prisma-fee-admin-repository.js'
-import { createTestApp, fixtureIds, SEED_PASSWORD } from './helpers.js'
+import { applyFeeUsage, createTestApp, fixtureIds, removeFeeUsage, SEED_PASSWORD } from './helpers.js'
 
 // Spec fees (admin-fees): "Crear un fee", "Reglas de un fee válido", "Corregir un fee en el sitio", "Campos editables
 // de un fee en uso", "Cerrar la vigencia de un fee", "Cambiar un fee desde una fecha", "Límites del cambio desde una
@@ -16,6 +16,8 @@ const feeTypeIds: Record<string, number> = {}
 /** Fees created by a test (deleted after it) and seed fees it modified (restored after it). */
 let created: string[] = []
 let touched: { feeId: string; row: Record<string, unknown> }[] = []
+/** Fixture breakdowns that put a seed fee in use (removed after each test). */
+const usages: bigint[] = []
 let startedAt: Date
 
 beforeAll(async () => {
@@ -43,8 +45,10 @@ afterEach(async () => {
   await ctx.prisma.feeHistory.deleteMany({ where: { feeId: { in: ids }, changedAt: { gte: startedAt } } })
   await ctx.prisma.fee.deleteMany({ where: { feeId: { in: fixtureIds(created, 'created fees') } } })
   for (const { feeId, row } of touched) await ctx.prisma.fee.update({ where: { feeId }, data: row })
+  await removeFeeUsage(ctx.prisma, usages)
   created = []
   touched = []
+  usages.length = 0
 })
 
 afterAll(async () => {
@@ -73,15 +77,15 @@ async function createFee(account: string, body: object) {
   return res
 }
 
-/** A seed fee of merchant 1 already applied by processed batches, with its last applied business day. */
+/**
+ * A seed fee of ProviderA-USD put in use by fixture breakdowns (removed after the test), with its last applied
+ * business day: the latest of the fixture days and of any breakdown already in the database.
+ */
 async function feeInUse(code: string) {
   const fee = await ctx.prisma.fee.findFirstOrThrow({
-    where: {
-      feeType: { code },
-      account: { provider: { merchantId: 1 } },
-      appliedFees: { some: { eventDate: { not: null } } },
-    },
+    where: { accountId: accountIds['ProviderA-USD'], feeType: { code } },
   })
+  usages.push(...(await applyFeeUsage(ctx.prisma, fee.feeId, ['2026-09-14', '2026-10-02'])))
   const latest = await ctx.prisma.settlementTransactionFee.aggregate({
     where: { feeId: fee.feeId },
     _max: { eventDate: true },

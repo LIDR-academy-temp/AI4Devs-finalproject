@@ -71,7 +71,7 @@ Un fee, al crearlo o tras editarlo, SHALL tener al menos `fixedAmount` o `percen
 ### Requirement: Uso de un fee
 Un fee SHALL estar en uso (`inUse = true`) si lo referencia el desglose de algún movimiento o algún fee por batch, de cualquier intento, incluidos los deshechos. Su `lastAppliedEventDate` SHALL ser el mayor de estos días: el de negocio de las fechas de evento de sus desgloses y la `settlementDate` de los batches que lo usan como fee por batch. Las apariciones sin fecha no cuentan. Sin uso, es `null`.
 
-#### Scenario: Fee del seed con settlements procesados
+#### Scenario: Fee aplicado por settlements procesados
 - GIVEN un fee de una cuenta con batches procesados que lo aplicaron
 - WHEN se lee con `GET /accounts/{id}/fees`
 - THEN sale con `inUse = true` y `lastAppliedEventDate` igual al día del último evento al que se aplicó

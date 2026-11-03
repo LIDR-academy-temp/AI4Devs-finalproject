@@ -1,7 +1,7 @@
 import { AccountFee, FeeTypeView } from '@recon/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { createTestApp, SEED_PASSWORD } from './helpers.js'
+import { applyFeeUsage, createTestApp, removeFeeUsage, SEED_PASSWORD } from './helpers.js'
 
 // Seed oracle (backend/prisma/synthetic.ts): ACCOUNT_FEES (all NULL…NULL) and the 27 FEE_TYPES. Spec fees
 // "Fees de la cuenta vigentes a una fecha" and "Catálogo de tipos de fee" (settlement-process).
@@ -68,24 +68,27 @@ describe('GET /accounts/{id}/fees against the seed', () => {
     expect(fees.find((f) => f.code === 'Chargeback over 1%')).toMatchObject({ conditionalPercentage: '0.020000' })
   })
 
-  it('a fee applied by seeded batches is in use, with its last applied event day', async () => {
-    const applied = await ctx.prisma.settlementTransactionFee.findFirst({
-      // The viewer sees merchant 1 only; a transactional fee is never a batch fee, so only breakdowns date it.
-      where: { eventDate: { not: null }, fee: { account: { provider: { merchantId: 1 } } } },
-      select: { feeId: true, fee: { select: { accountId: true } } },
+  it('a fee applied by processed movements is in use, with its last applied event day', async () => {
+    // The seed processes batches without fee breakdowns: the usage is a fixture, removed after the test.
+    const fee = await ctx.prisma.fee.findFirstOrThrow({
+      where: { accountId: accountIds['ProviderA-USD'], feeType: { code: 'TRX Fee - Deposit' } },
     })
-    expect(applied, 'the seed processes batches with transactional fees').not.toBeNull()
-    const latest = await ctx.prisma.settlementTransactionFee.aggregate({
-      where: { feeId: applied!.feeId },
-      _max: { eventDate: true },
-    })
+    const usages = await applyFeeUsage(ctx.prisma, fee.feeId, ['2026-09-14', '2026-10-02'])
+    try {
+      const latest = await ctx.prisma.settlementTransactionFee.aggregate({
+        where: { feeId: fee.feeId },
+        _max: { eventDate: true },
+      })
 
-    const fees = z.array(AccountFee).parse((await get(`/accounts/${applied!.fee.accountId}/fees`)).json())
+      const fees = z.array(AccountFee).parse((await get(`/accounts/${accountIds['ProviderA-USD']}/fees`)).json())
 
-    expect(fees.find((f) => f.feeId.toLowerCase() === applied!.feeId.toLowerCase())).toMatchObject({
-      inUse: true,
-      lastAppliedEventDate: latest._max.eventDate!.toISOString().slice(0, 10),
-    })
+      expect(fees.find((f) => f.feeId.toLowerCase() === fee.feeId.toLowerCase())).toMatchObject({
+        inUse: true,
+        lastAppliedEventDate: latest._max.eventDate!.toISOString().slice(0, 10),
+      })
+    } finally {
+      await removeFeeUsage(ctx.prisma, usages)
+    }
   })
 
   it('ProviderC-Alt is outside the viewer scope: the same 404 as an unknown account', async () => {

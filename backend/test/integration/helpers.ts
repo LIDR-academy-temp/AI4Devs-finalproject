@@ -60,3 +60,40 @@ export function fixtureIds<T>(values: readonly (T | null | undefined)[] | undefi
   if (values === undefined) throw new Error(`cleanup refused: ${name} is not defined`)
   return values.map((v, i) => fixtureId(v, `${name}[${i}]`))
 }
+
+/**
+ * Puts a fee in use: one movement breakdown per business day, on a seeded movement of the fee's account. The seed
+ * processes batches without fee breakdowns, so a test that needs a fee in use writes it and removes it with
+ * removeFeeUsage. Returns the appliedFeeIds.
+ */
+export async function applyFeeUsage(prisma: PrismaClient, feeId: string, days: readonly string[]): Promise<bigint[]> {
+  const fee = await prisma.fee.findUniqueOrThrow({ where: { feeId }, select: { accountId: true, feeTypeId: true } })
+  const movement = await prisma.settlementTransaction.findFirstOrThrow({
+    where: { batch: { accountId: fee.accountId } },
+    select: { settlementTxnId: true },
+    orderBy: { settlementTxnId: 'asc' },
+  })
+  const ids: bigint[] = []
+  for (const day of days) {
+    const row = await prisma.settlementTransactionFee.create({
+      data: {
+        settlementTxnId: movement.settlementTxnId,
+        feeId,
+        feeTypeId: fee.feeTypeId,
+        eventDate: new Date(`${day}T15:30:00Z`),
+        amountUsd: '1.0000',
+        configurationSnapshot: '{"fixture":"fee usage"}',
+      },
+      select: { appliedFeeId: true },
+    })
+    ids.push(row.appliedFeeId)
+  }
+  return ids
+}
+
+/** Removes the breakdowns applyFeeUsage wrote. */
+export async function removeFeeUsage(prisma: PrismaClient, appliedFeeIds: readonly bigint[]) {
+  await prisma.settlementTransactionFee.deleteMany({
+    where: { appliedFeeId: { in: fixtureIds(appliedFeeIds, 'fixture fee usages') } },
+  })
+}

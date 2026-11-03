@@ -33,11 +33,6 @@ script:post-response {
   if (fee) {
     bru.setVar('providerAUsdMdrFeeId', fee.feeId);
   }
-  // A fee already applied by processed batches, for the fee_in_use negative of the fees flow.
-  const used = res.status === 200 && res.body.items.find((f) => f.inUse);
-  if (used) {
-    bru.setVar('inUseFeeId', used.feeId);
-  }
 }
 
 tests {

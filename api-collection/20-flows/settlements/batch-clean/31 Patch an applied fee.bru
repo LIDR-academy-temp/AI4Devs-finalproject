@@ -1,7 +1,7 @@
 meta {
-  name: 6 Change a fee in use
+  name: 31 Patch an applied fee
   type: http
-  seq: 6
+  seq: 33
   tags: [
     flow
   ]
@@ -33,15 +33,12 @@ vars:pre-request {
 
 script:pre-request {
   if (!bru.getVar('inUseFeeId')) {
-    await bru.runRequest('10-smoke/Fees');
-  }
-  if (!bru.getVar('inUseFeeId')) {
-    throw new Error('no fee in use in the seed: the seeded batches should have applied fees');
+    throw new Error('no applied fee: 13 Transactions I saves the first fee of the batch breakdowns');
   }
 }
 
 tests {
-  test('the values of a fee in use do not change in place: 409 fee_in_use naming the field', () => {
+  test('a fee the batch applied does not change its values in place: 409 fee_in_use naming the field', () => {
     expect(res.status).to.equal(409);
     expect(res.body.code).to.equal('fee_in_use');
     expect(res.body.details.fields).to.deep.equal(['fixedAmount']);
