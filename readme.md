@@ -21,8 +21,7 @@ JobFlash
 El proyecto consiste en desarrollar una plataforma de software que conecta a empleadores con personas disponibles para trabajar de inmediato y dispuestas a desplazarse hasta el lugar de trabajo, incluso desde otra ciudad. Combina dos modelos conocidos: la red de perfiles profesionales y ofertas de empleo, al estilo de LinkedIn, y la conexión en tiempo real entre oferta y demanda, al estilo de Uber.
 El empleador publica una necesidad (un empleo o un servicio puntual), el sistema identifica a los aspirantes con las habilidades requeridas y disponibilidad, les envía una notificación y ambas partes pueden establecer contacto y coordinar el desplazamiento. Las habilidades de cada aspirante se respaldan con certificaciones y mecanismos de verificación, para que el empleador contrate con confianza.
 ### **0.4. URL del proyecto:**
-
-> Puede ser pública o privada, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/).
+https://github.com/Omar-Usb/AI4Devs-finalproject
 
 ### 0.5. URL o archivo comprimido del repositorio
 
@@ -594,7 +593,7 @@ Apache Kafka (modo KRaft): bus de eventos. El esquema de los eventos se document
 
 Es un monorepositorio con el frontend, los microservicios y la infraestructura como código. Cada microservicio replica la estructura multimódulo del scaffold de Bancolombia (applications, domain, infrastructure, deployment), adaptada a Quarkus.
 
-movitalento/
+jobFlash/
 |-- frontend/
 |   `-- web-app/                       # React + TypeScript + Vite
 |       |-- src/
@@ -616,7 +615,7 @@ movitalento/
 |   |-- ms-ofertas/                    # (todos los ms-* siguen esta estructura)
 |   |   |-- applications/
 |   |   |   `-- app-service/           # Único módulo con plugin Quarkus
-|   |   |       |-- src/main/java/co/com/movitalento/
+|   |   |       |-- src/main/java/co/com/jobFlash/
 |   |   |       |   |-- MainApplication.java
 |   |   |       |   `-- config/UseCasesConfig.java   # @Produces de casos de uso
 |   |   |       `-- src/main/resources/
@@ -624,7 +623,7 @@ movitalento/
 |   |   |           `-- db/migration/                # Scripts Flyway V1__*.sql
 |   |   |-- domain/
 |   |   |   |-- model/                 # Entidades, objetos de valor y gateways
-|   |   |   |   `-- src/main/java/co/com/movitalento/model/
+|   |   |   |   `-- src/main/java/co/com/jobFlash/model/
 |   |   |   |       `-- solicitud/
 |   |   |   |           |-- Solicitud.java
 |   |   |   |           |-- EstadoSolicitud.java
@@ -632,7 +631,7 @@ movitalento/
 |   |   |   |               |-- SolicitudRepository.java
 |   |   |   |               `-- EventPublisher.java
 |   |   |   `-- usecase/               # Casos de uso (Java puro)
-|   |   |       `-- src/main/java/co/com/movitalento/usecase/
+|   |   |       `-- src/main/java/co/com/jobFlash/usecase/
 |   |   |           |-- crearsolicitud/CrearSolicitudUseCase.java
 |   |   |           `-- respondersolicitud/ResponderSolicitudUseCase.java
 |   |   |-- infrastructure/
@@ -816,10 +815,10 @@ Ejemplo de configuración OIDC y autorización en un microservicio:
 
 properties
 # application.properties (ms-ofertas)
-quarkus.oidc.auth-server-url=${OIDC_ISSUER}       # https://auth.movitalento.co/realms/movitalento
+quarkus.oidc.auth-server-url=${OIDC_ISSUER}       # https://auth.jobFlash.co/realms/jobFlash
 quarkus.oidc.client-id=ms-ofertas
 quarkus.oidc.token.audience=ms-ofertas
-quarkus.http.cors.origins=https://app.movitalento.co
+quarkus.http.cors.origins=https://app.jobFlash.co
 java
 @Path("/solicitudes")
 public class SolicitudResource {
@@ -893,7 +892,7 @@ public class SolicitudResource {
 Ejemplo de prueba de arquitectura:
 
 java
-@AnalyzeClasses(packages = "co.com.movitalento")
+@AnalyzeClasses(packages = "co.com.jobFlash")
 class CleanArchitectureTest {
     @ArchTest
     static final ArchRule dominio_aislado = noClasses()
@@ -3548,7 +3547,7 @@ Restricciones e índices adicionales:
 
 ## 4. Especificación de la API
 
-> Si tu backend se comunica a través de API, describe los endpoints principales (máximo 3) en formato OpenAPI. Opcionalmente puedes añadir un ejemplo de petición y de respuesta para mayor claridad
+Se crea OppenApi en la carpeta docs
 
 ---
 

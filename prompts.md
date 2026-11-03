@@ -102,6 +102,7 @@ Recuerda incluir el máximo detalle de cada entidad, como el nombre y tipo de ca
 ### 4. Especificación de la API
 
 **Prompt 1:**
+Generame un OpenApi con las principales endPoints, usando el modelo de datos que me propones para que lo uses en los schemas, no te excedas de 7 endPoints
 
 **Prompt 2:**
 

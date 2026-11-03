@@ -1,0 +1,1084 @@
+openapi: 3.1.0
+info:
+  title: JobFlash API
+  version: 1.0.0
+  summary: API pública de la plataforma de conexión laboral con movilidad.
+  description: |
+    Endpoints principales de JobFlash expuestos a través del API Gateway (Kong).
+    Cada operación indica el microservicio que la atiende (`x-microservicio`).
+
+    **Convenciones**
+    - JSON en camelCase; la base de datos usa snake_case (`radio_viaje_km` -> `radioViajeKm`).
+    - Identificadores `uuid`; catálogos (skill, municipio) con id entero.
+    - Fechas y horas en ISO 8601 con zona (`2026-11-03T07:00:00-05:00`).
+    - Coordenadas en WGS84 (`latitud`, `longitud`), almacenadas como `geography(Point,4326)`.
+    - Dinero como string decimal (`"180000.00"`) más moneda ISO 4217, para no perder precisión.
+    - Errores con el formato Problem Details (RFC 9457), `application/problem+json`.
+    - El documento de identidad nunca se devuelve completo: solo `documentoEnmascarado`.
+  contact:
+    name: Equipo JobFlash
+servers:
+  - url: https://api.jobFlash.co/v1
+    description: Producción
+  - url: https://api.qa.jobFlash.co/v1
+    description: QA
+security:
+  - oidc: []
+tags:
+  - name: Aspirantes
+    description: Perfil laboral y skills (ms-perfiles, ms-skills-verificacion)
+  - name: Empleadores
+    description: Empleadores, organizaciones y sedes (ms-perfiles)
+  - name: Búsqueda
+    description: Búsqueda de candidatos (ms-matching)
+  - name: Ofertas
+    description: Vacantes, solicitudes y respuestas (ms-ofertas)
+
+paths:
+  /aspirantes:
+    post:
+      tags: [Aspirantes]
+      operationId: registrarAspirante
+      summary: Registrar el perfil de aspirante del usuario autenticado
+      description: |
+        Crea en una sola transacción `persona`, sus direcciones (máximo 3), el `aspirante`,
+        su disponibilidad, las ciudades destino y los consentimientos. El usuario se identifica
+        por el claim `sub` del token. Si ya tiene un perfil de aspirante se responde 409.
+        Son obligatorios los consentimientos `TERMINOS` y `TRATAMIENTO_DATOS`.
+      x-microservicio: ms-perfiles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AspiranteRequest' }
+            examples:
+              soldador:
+                $ref: '#/components/examples/AspiranteSoldador'
+      responses:
+        '201':
+          description: Aspirante creado.
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AspiranteResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /aspirantes/{aspiranteId}/skills:
+    parameters:
+      - $ref: '#/components/parameters/AspiranteId'
+    post:
+      tags: [Aspirantes]
+      operationId: registrarSkillAspirante
+      summary: Agregar un skill al aspirante, con sus certificaciones
+      description: |
+        Registra un `skill_aspirante` y, opcionalmente, sus `certificacion`. Cada certificación
+        con `documentoId` entra a la cola de revisión documental. El nivel de verificación inicial
+        es 0 (o 1 si la identidad ya está verificada) y sube cuando se aprueban las verificaciones.
+        El `documentoId` se obtiene antes, al cargar el archivo con URL prefirmada.
+        Solo el propio aspirante puede agregar sus skills.
+      x-microservicio: ms-skills-verificacion
+      security:
+        - oidc: [ASPIRANTE]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SkillAspiranteRequest' }
+            example:
+              skillId: 112
+              nivelDominio: AVANZADO
+              aniosExperiencia: 6
+              descripcion: Soldadura TIG en acero inoxidable para industria alimentaria.
+              certificaciones:
+                - entidadCertificadoraId: 7c0e4b0a-2a61-4c8e-9a61-8d2f1f0b3c11
+                  nombre: Soldador calificado ASME IX - GTAW
+                  codigoVerificacion: SENA-2024-118733
+                  fechaEmision: '2024-03-15'
+                  fechaVencimiento: '2027-03-15'
+                  documentoId: 5d8a7f0e-1b7c-4f0e-9d3a-0a7b5c6e2f90
+      responses:
+        '201':
+          description: Skill registrado.
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SkillAspiranteResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /empleadores:
+    post:
+      tags: [Empleadores]
+      operationId: registrarEmpleador
+      summary: Registrar un empleador (persona natural o empresa)
+      description: |
+        Para `PERSONA_NATURAL` crea `persona` + `empleador`. Para `EMPRESA` crea `organizacion`
+        + `empleador` y asigna al usuario autenticado el rol `ADMIN_ORGANIZACION` con ámbito en
+        ese empleador. En ambos casos puede crear la sede principal en la misma llamada.
+        Un NIT ya registrado responde 409.
+      x-microservicio: ms-perfiles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EmpleadorRequest' }
+            examples:
+              empresa:
+                $ref: '#/components/examples/EmpleadorEmpresa'
+      responses:
+        '201':
+          description: Empleador creado (estado PENDIENTE hasta verificar documento o NIT).
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EmpleadorResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /empleadores/{empleadorId}/sedes:
+    parameters:
+      - $ref: '#/components/parameters/EmpleadorId'
+    post:
+      tags: [Empleadores]
+      operationId: registrarSede
+      summary: Registrar una sede, fábrica o lugar de trabajo
+      description: |
+        Crea una `sede` con dirección y coordenada. La coordenada es obligatoria porque es el
+        origen de las búsquedas geográficas y de la geocerca del check-in. Requiere rol
+        `EMPLEADOR` (persona natural dueña) o `ADMIN_ORGANIZACION` del empleador.
+      x-microservicio: ms-perfiles
+      security:
+        - oidc: [EMPLEADOR, ADMIN_ORGANIZACION]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SedeRequest' }
+            example:
+              nombre: Planta Funza
+              tipoSede: PLANTA_PRODUCCION
+              direccion: Km 2 vía Funza - Siberia, Parque Industrial San Diego
+              complemento: Bodega 14
+              municipioId: 25286
+              coordenada: { latitud: 4.7351, longitud: -74.1797 }
+              radioGeocercaM: 200
+              contactoNombre: Carlos Rincón
+              contactoTelefono: '+573104567890'
+              instruccionesAcceso: Presentarse en portería 2 con botas de seguridad y documento.
+      responses:
+        '201':
+          description: Sede creada.
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SedeResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /candidatos:
+    get:
+      tags: [Búsqueda]
+      operationId: buscarCandidatos
+      summary: Buscar aspirantes por skills, verificación y ubicación
+      description: |
+        Consulta la proyección `matching.candidato_proyeccion`. El origen geográfico se toma, en
+        este orden, de `sedeId`, de `latitud`/`longitud` o de `municipioId`; al menos uno es
+        obligatorio (si falta, 422). Se incluyen aspirantes dentro de `radioKm` y aspirantes de
+        otras ciudades que tengan el municipio de destino entre sus ciudades destino.
+        **Privacidad:** no devuelve datos de contacto, documento ni coordenadas exactas, solo la
+        distancia aproximada.
+      x-microservicio: ms-matching
+      security:
+        - oidc: [EMPLEADOR, ADMIN_ORGANIZACION, RECLUTADOR]
+      parameters:
+        - name: skills
+          in: query
+          required: true
+          description: Ids de skill requeridos (el candidato debe tener todos). Separados por coma.
+          style: form
+          explode: false
+          schema:
+            type: array
+            minItems: 1
+            maxItems: 10
+            items: { type: integer, minimum: 1 }
+          example: [112, 87]
+        - name: nivelVerificacionMin
+          in: query
+          schema: { $ref: '#/components/schemas/NivelVerificacion' }
+        - name: nivelDominioMin
+          in: query
+          schema: { $ref: '#/components/schemas/NivelDominio' }
+        - name: sedeId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: latitud
+          in: query
+          schema: { type: number, minimum: -90, maximum: 90 }
+        - name: longitud
+          in: query
+          schema: { type: number, minimum: -180, maximum: 180 }
+        - name: municipioId
+          in: query
+          schema: { type: integer }
+        - name: radioKm
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 2000, default: 30 }
+        - name: incluirOtrasCiudades
+          in: query
+          description: Incluye aspirantes de otras ciudades con disposición a viajar al destino.
+          schema: { type: boolean, default: true }
+        - name: disponibleAhora
+          in: query
+          schema: { type: boolean }
+        - name: calificacionMin
+          in: query
+          schema: { type: number, minimum: 1, maximum: 5 }
+        - name: orden
+          in: query
+          schema:
+            type: string
+            enum: [PUNTUACION, DISTANCIA, CALIFICACION, VERIFICACION]
+            default: PUNTUACION
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Tamano'
+      responses:
+        '200':
+          description: Página de candidatos.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginaCandidatos' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /ofertas:
+    post:
+      tags: [Ofertas]
+      operationId: crearOferta
+      summary: Crear una vacante o una solicitud inmediata/programada
+      description: |
+        Crea la `oferta` y sus `oferta_skill`. La ubicación y el municipio se copian de la sede.
+        Con `publicar = true`, una oferta `INMEDIATA` o `PROGRAMADA` queda en `NOTIFICANDO` y
+        publica el evento `solicitud.creada` (outbox), que inicia la búsqueda por oleadas.
+        Una `VACANTE` queda en `PUBLICADA`. La cabecera `Idempotency-Key` evita crear
+        duplicados si el cliente reintenta.
+      x-microservicio: ms-ofertas
+      security:
+        - oidc: [EMPLEADOR, ADMIN_ORGANIZACION, RECLUTADOR]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OfertaRequest' }
+            examples:
+              inmediata:
+                $ref: '#/components/examples/SolicitudInmediata'
+      responses:
+        '201':
+          description: Oferta creada.
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OfertaResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+
+  /postulaciones/{postulacionId}/respuesta:
+    parameters:
+      - name: postulacionId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Ofertas]
+      operationId: responderSolicitud
+      summary: El aspirante acepta o rechaza una solicitud recibida
+      description: |
+        Responde una `postulacion` en estado `NOTIFICADO` o `VISTO` antes de `responderAntesDe`.
+        Al aceptar, se publica `solicitud.respondida`. Si la oferta tiene `asignacionAutomatica`
+        y quedan cupos, se crea la `asignacion` y la postulación pasa a `CONFIRMADO`.
+        Errores de negocio:
+        - **409** `cupos-agotados`: la oferta ya no tiene cupos (otro aspirante aceptó antes).
+        - **409** `estado-invalido`: la postulación ya fue respondida.
+        - **410** `plazo-vencido`: venció el plazo de respuesta.
+      x-microservicio: ms-ofertas
+      security:
+        - oidc: [ASPIRANTE]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RespuestaSolicitudRequest' }
+            example:
+              decision: ACEPTA
+              mensaje: Puedo llegar a las 6:30 a. m., salgo desde Facatativá.
+      responses:
+        '200':
+          description: Respuesta registrada.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PostulacionResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '410':
+          description: El plazo de respuesta venció.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+components:
+  securitySchemes:
+    oidc:
+      type: openIdConnect
+      description: |
+        Keycloak (Authorization Code + PKCE). Los valores listados en cada operación son los
+        roles del realm requeridos (claim `realm_access.roles`).
+      openIdConnectUrl: https://auth.jobFlash.co/realms/jobFlash/.well-known/openid-configuration
+
+  parameters:
+    AspiranteId:
+      name: aspiranteId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    EmpleadorId:
+      name: empleadorId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Pagina:
+      name: pagina
+      in: query
+      description: Número de página, desde 0.
+      schema: { type: integer, minimum: 0, default: 0 }
+    Tamano:
+      name: tamano
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: UUID generado por el cliente; se conserva 24 h.
+      schema: { type: string, format: uuid }
+
+  headers:
+    Location:
+      description: URL del recurso creado.
+      schema: { type: string, format: uri-reference }
+
+  responses:
+    BadRequest:
+      description: Solicitud mal formada o con errores de validación.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: https://api.jobFlash.co/problemas/validacion
+            title: Datos inválidos
+            status: 400
+            detail: La solicitud tiene 1 error de validación.
+            errores:
+              - campo: persona.telefono
+                mensaje: Debe estar en formato E.164, por ejemplo +573001234567.
+    Unauthorized:
+      description: Token ausente, vencido o inválido.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: El usuario no tiene el rol o no es dueño del recurso.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Recurso no encontrado.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: Conflicto con el estado actual (duplicado, cupos agotados, versión).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    UnprocessableEntity:
+      description: Regla de negocio incumplida (p. ej. menor de edad, más de 3 direcciones).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    # ------------------------------------------------------------ tipos base
+    Uuid:
+      type: string
+      format: uuid
+    Telefono:
+      type: string
+      description: Formato E.164.
+      pattern: '^\+[1-9][0-9]{6,14}$'
+      examples: ['+573001234567']
+    Correo:
+      type: string
+      format: email
+      maxLength: 254
+    Moneda:
+      type: string
+      pattern: '^[A-Z]{3}$'
+      default: COP
+    Monto:
+      type: string
+      description: Decimal con 2 decimales (numeric(14,2)).
+      pattern: '^\d{1,12}(\.\d{1,2})?$'
+      examples: ['180000.00']
+    Coordenada:
+      type: object
+      description: Punto WGS84 (geography(Point,4326)).
+      required: [latitud, longitud]
+      properties:
+        latitud: { type: number, minimum: -90, maximum: 90 }
+        longitud: { type: number, minimum: -180, maximum: 180 }
+    NivelDominio:
+      type: string
+      enum: [BASICO, INTERMEDIO, AVANZADO, EXPERTO]
+    NivelVerificacion:
+      type: integer
+      minimum: 0
+      maximum: 4
+      description: |
+        0 Declarado, 1 Identidad verificada, 2 Soporte documental, 3 Validado con la fuente,
+        4 Comprobado en plataforma.
+    UnidadPago:
+      type: string
+      enum: [HORA, DIA, SERVICIO, MES]
+    Remuneracion:
+      type: object
+      required: [monto, unidad]
+      properties:
+        monto: { $ref: '#/components/schemas/Monto' }
+        unidad: { $ref: '#/components/schemas/UnidadPago' }
+        moneda: { $ref: '#/components/schemas/Moneda' }
+    Auditoria:
+      type: object
+      properties:
+        creadoEn: { type: string, format: date-time, readOnly: true }
+        actualizadoEn: { type: string, format: date-time, readOnly: true }
+
+    # ------------------------------------------------------------ persona y direcciones
+    Direccion:
+      type: object
+      description: perfiles.direccion_persona (orden 1..3 = direccion1..3 / coordenadaDir1..3).
+      required: [orden, tipo, direccion, municipioId]
+      properties:
+        orden: { type: integer, minimum: 1, maximum: 3 }
+        tipo: { type: string, enum: [RESIDENCIA, TRABAJO, CORRESPONDENCIA, OTRA] }
+        direccion: { type: string, maxLength: 200, examples: ['Calle 26 # 68-35'] }
+        complemento: { type: string, maxLength: 100 }
+        barrio: { type: string, maxLength: 100 }
+        municipioId: { type: integer, description: 'Código del municipio (catalogo.municipio).' }
+        codigoPostal: { type: string, maxLength: 10 }
+        coordenada: { $ref: '#/components/schemas/Coordenada' }
+        origenCoordenada: { type: string, enum: [GPS, GEOCODIFICADA, MANUAL] }
+        esPrincipal: { type: boolean, default: false }
+    PersonaRequest:
+      type: object
+      description: perfiles.persona. Las direcciones deben tener `orden` distinto.
+      required: [tipoDocumento, numeroDocumento, nombres, apellidos, fechaNacimiento,
+                 paisNacimiento, nacionalidad, telefono]
+      properties:
+        tipoDocumento: { type: string, enum: [CC, CE, TI, PPT, PA] }
+        numeroDocumento:
+          type: string
+          pattern: '^[A-Za-z0-9]{4,20}$'
+          writeOnly: true
+          description: Se cifra en la aplicación y nunca se devuelve.
+        nombres: { type: string, minLength: 1, maxLength: 100 }
+        apellidos: { type: string, minLength: 1, maxLength: 100 }
+        fechaNacimiento: { type: string, format: date, description: Debe ser mayor de edad. }
+        municipioNacimientoId: { type: integer }
+        paisNacimiento: { type: string, pattern: '^[A-Z]{2}$', description: ISO 3166-1 alfa-2. }
+        nacionalidad: { type: string, pattern: '^[A-Z]{2}$' }
+        telefono: { $ref: '#/components/schemas/Telefono' }
+        telefonoAlterno: { $ref: '#/components/schemas/Telefono' }
+        correoContacto: { $ref: '#/components/schemas/Correo' }
+        direcciones:
+          type: array
+          maxItems: 3
+          items: { $ref: '#/components/schemas/Direccion' }
+    PersonaResponse:
+      allOf:
+        - $ref: '#/components/schemas/Auditoria'
+        - type: object
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            tipoDocumento: { type: string }
+            documentoEnmascarado: { type: string, examples: ['******4821'] }
+            nombres: { type: string }
+            apellidos: { type: string }
+            fechaNacimiento: { type: string, format: date }
+            municipioNacimientoId: { type: [integer, 'null'] }
+            paisNacimiento: { type: string }
+            nacionalidad: { type: string }
+            telefono: { type: string }
+            correoContacto: { type: [string, 'null'] }
+            estadoIdentidad:
+              type: string
+              enum: [NO_VERIFICADA, EN_PROCESO, VERIFICADA, RECHAZADA]
+            direcciones:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/Direccion'
+                  - type: object
+                    properties:
+                      id: { $ref: '#/components/schemas/Uuid' }
+
+    # ------------------------------------------------------------ aspirante
+    Disponibilidad:
+      type: object
+      description: |
+        perfiles.disponibilidad. RECURRENTE requiere `diaSemana` (1 = lunes); PUNTUAL requiere
+        `fecha`. `horaFin` debe ser mayor que `horaInicio`.
+      required: [tipo, horaInicio, horaFin]
+      properties:
+        tipo: { type: string, enum: [RECURRENTE, PUNTUAL] }
+        diaSemana: { type: integer, minimum: 1, maximum: 7 }
+        fecha: { type: string, format: date }
+        horaInicio: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$', examples: ['06:00'] }
+        horaFin: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$', examples: ['18:00'] }
+    Consentimiento:
+      type: object
+      required: [tipo, versionDocumento, otorgado]
+      properties:
+        tipo:
+          type: string
+          enum: [TERMINOS, TRATAMIENTO_DATOS, DATOS_BIOMETRICOS, UBICACION, COMUNICACIONES]
+        versionDocumento: { type: string, maxLength: 20 }
+        otorgado: { type: boolean }
+    PreferenciasMovilidad:
+      type: object
+      properties:
+        radioViajeKm: { type: integer, minimum: 0, maximum: 2000, default: 30 }
+        viajaOtraCiudad: { type: boolean, default: false }
+        aceptaPernoctar: { type: boolean, default: false }
+        transportePropio:
+          type: string
+          enum: [NINGUNO, BICICLETA, MOTO, CARRO, OTRO]
+          default: NINGUNO
+        licenciaConduccion: { type: string, maxLength: 5, examples: ['B1'] }
+        municipiosDestino:
+          type: array
+          uniqueItems: true
+          items: { type: integer }
+    AspiranteRequest:
+      type: object
+      required: [persona, tipoPerfil, consentimientos]
+      properties:
+        persona: { $ref: '#/components/schemas/PersonaRequest' }
+        tipoPerfil: { type: string, enum: [EMPLEO, SERVICIO, AMBOS] }
+        titular: { type: string, maxLength: 120 }
+        resumen: { type: string, maxLength: 2000 }
+        aniosExperiencia: { type: number, minimum: 0, maximum: 70 }
+        movilidad: { $ref: '#/components/schemas/PreferenciasMovilidad' }
+        aspiracion: { $ref: '#/components/schemas/Remuneracion' }
+        disponibilidad:
+          type: array
+          maxItems: 50
+          items: { $ref: '#/components/schemas/Disponibilidad' }
+        consentimientos:
+          type: array
+          minItems: 2
+          items: { $ref: '#/components/schemas/Consentimiento' }
+    AspiranteResponse:
+      allOf:
+        - $ref: '#/components/schemas/Auditoria'
+        - type: object
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            persona: { $ref: '#/components/schemas/PersonaResponse' }
+            tipoPerfil: { type: string, enum: [EMPLEO, SERVICIO, AMBOS] }
+            titular: { type: [string, 'null'] }
+            resumen: { type: [string, 'null'] }
+            aniosExperiencia: { type: number }
+            disponibleAhora: { type: boolean }
+            movilidad: { $ref: '#/components/schemas/PreferenciasMovilidad' }
+            aspiracion:
+              oneOf:
+                - $ref: '#/components/schemas/Remuneracion'
+                - type: 'null'
+            disponibilidad:
+              type: array
+              items: { $ref: '#/components/schemas/Disponibilidad' }
+            visible: { type: boolean }
+            estado: { type: string, enum: [BORRADOR, ACTIVO, PAUSADO, SUSPENDIDO] }
+
+    # ------------------------------------------------------------ skills
+    CertificacionRequest:
+      type: object
+      description: skills.certificacion. Se exige `entidadCertificadoraId` o `entidadNombreLibre`.
+      required: [nombre, fechaEmision]
+      anyOf:
+        - required: [entidadCertificadoraId]
+        - required: [entidadNombreLibre]
+      properties:
+        entidadCertificadoraId: { $ref: '#/components/schemas/Uuid' }
+        entidadNombreLibre: { type: string, maxLength: 200 }
+        nombre: { type: string, maxLength: 200 }
+        codigoVerificacion: { type: string, maxLength: 100 }
+        fechaEmision: { type: string, format: date }
+        fechaVencimiento: { type: string, format: date }
+        documentoId:
+          $ref: '#/components/schemas/Uuid'
+          description: Id de skills.documento cargado previamente (PDF/JPG/PNG, máx. 10 MB).
+        urlVerificacion: { type: string, format: uri, maxLength: 500 }
+    CertificacionResponse:
+      allOf:
+        - $ref: '#/components/schemas/CertificacionRequest'
+        - type: object
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            estadoValidacion:
+              type: string
+              enum: [PENDIENTE, EN_REVISION, VALIDADA_DOCUMENTAL, VALIDADA_FUENTE, RECHAZADA, VENCIDA]
+    SkillAspiranteRequest:
+      type: object
+      required: [skillId, nivelDominio]
+      properties:
+        skillId: { type: integer, minimum: 1 }
+        nivelDominio: { $ref: '#/components/schemas/NivelDominio' }
+        aniosExperiencia: { type: number, minimum: 0, maximum: 70, default: 0 }
+        descripcion: { type: string, maxLength: 500 }
+        certificaciones:
+          type: array
+          maxItems: 10
+          items: { $ref: '#/components/schemas/CertificacionRequest' }
+    SkillResumen:
+      type: object
+      properties:
+        id: { type: integer }
+        codigo: { type: string, examples: ['SOLDADURA_TIG'] }
+        nombre: { type: string }
+        categoria: { type: string }
+    SkillAspiranteResponse:
+      allOf:
+        - $ref: '#/components/schemas/Auditoria'
+        - type: object
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            aspiranteId: { $ref: '#/components/schemas/Uuid' }
+            skill: { $ref: '#/components/schemas/SkillResumen' }
+            nivelDominio: { $ref: '#/components/schemas/NivelDominio' }
+            aniosExperiencia: { type: number }
+            nivelVerificacion: { $ref: '#/components/schemas/NivelVerificacion' }
+            estado: { type: string, enum: [ACTIVO, VENCIDO, SUSPENDIDO] }
+            certificaciones:
+              type: array
+              items: { $ref: '#/components/schemas/CertificacionResponse' }
+
+    # ------------------------------------------------------------ empleador, organización, sede
+    OrganizacionRequest:
+      type: object
+      description: perfiles.organizacion.
+      required: [nit, digitoVerificacion, razonSocial, telefono, correo]
+      properties:
+        nit: { type: string, pattern: '^[0-9]{6,15}$', description: Sin puntos ni dígito de verificación. }
+        digitoVerificacion: { type: string, pattern: '^[0-9]$' }
+        razonSocial: { type: string, maxLength: 200 }
+        nombreComercial: { type: string, maxLength: 200 }
+        tipoSociedad: { type: string, enum: [SAS, LTDA, SA, ESAL, COOPERATIVA, OTRA] }
+        actividadCiiu: { type: string, pattern: '^[0-9]{4}$' }
+        telefono: { $ref: '#/components/schemas/Telefono' }
+        correo: { $ref: '#/components/schemas/Correo' }
+        sitioWeb: { type: string, format: uri, maxLength: 255 }
+        representanteLegal: { $ref: '#/components/schemas/PersonaRequest' }
+        camaraComercioDocumentoId: { $ref: '#/components/schemas/Uuid' }
+    EmpleadorPersonaNaturalRequest:
+      type: object
+      required: [tipo, persona]
+      properties:
+        tipo: { type: string, const: PERSONA_NATURAL }
+        persona: { $ref: '#/components/schemas/PersonaRequest' }
+        sedePrincipal: { $ref: '#/components/schemas/SedeRequest' }
+    EmpleadorEmpresaRequest:
+      type: object
+      required: [tipo, organizacion]
+      properties:
+        tipo: { type: string, const: EMPRESA }
+        organizacion: { $ref: '#/components/schemas/OrganizacionRequest' }
+        sedePrincipal: { $ref: '#/components/schemas/SedeRequest' }
+    EmpleadorRequest:
+      description: perfiles.empleador. Exactamente una de las dos variantes.
+      oneOf:
+        - $ref: '#/components/schemas/EmpleadorPersonaNaturalRequest'
+        - $ref: '#/components/schemas/EmpleadorEmpresaRequest'
+      discriminator:
+        propertyName: tipo
+        mapping:
+          PERSONA_NATURAL: '#/components/schemas/EmpleadorPersonaNaturalRequest'
+          EMPRESA: '#/components/schemas/EmpleadorEmpresaRequest'
+    OrganizacionResponse:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        nit: { type: string }
+        digitoVerificacion: { type: string }
+        razonSocial: { type: string }
+        nombreComercial: { type: [string, 'null'] }
+        tipoSociedad: { type: [string, 'null'] }
+        actividadCiiu: { type: [string, 'null'] }
+        telefono: { type: string }
+        correo: { type: string }
+        sitioWeb: { type: [string, 'null'] }
+    EmpleadorResponse:
+      allOf:
+        - $ref: '#/components/schemas/Auditoria'
+        - type: object
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            tipo: { type: string, enum: [PERSONA_NATURAL, EMPRESA] }
+            persona:
+              oneOf:
+                - $ref: '#/components/schemas/PersonaResponse'
+                - type: 'null'
+            organizacion:
+              oneOf:
+                - $ref: '#/components/schemas/OrganizacionResponse'
+                - type: 'null'
+            verificado: { type: boolean }
+            estado: { type: string, enum: [PENDIENTE, ACTIVO, SUSPENDIDO] }
+            sedes:
+              type: array
+              items: { $ref: '#/components/schemas/SedeResponse' }
+    SedeRequest:
+      type: object
+      description: perfiles.sede.
+      required: [nombre, tipoSede, direccion, municipioId, coordenada]
+      properties:
+        nombre: { type: string, maxLength: 120 }
+        tipoSede:
+          type: string
+          enum: [PRINCIPAL, OFICINA, FABRICA, PLANTA_PRODUCCION, BODEGA, OBRA, FINCA,
+                 PUNTO_VENTA, RESIDENCIA, OTRO]
+        direccion: { type: string, maxLength: 200 }
+        complemento: { type: string, maxLength: 100 }
+        barrio: { type: string, maxLength: 100 }
+        municipioId: { type: integer }
+        coordenada: { $ref: '#/components/schemas/Coordenada' }
+        radioGeocercaM: { type: integer, minimum: 20, maximum: 2000, default: 150 }
+        telefono: { $ref: '#/components/schemas/Telefono' }
+        contactoNombre: { type: string, maxLength: 150 }
+        contactoTelefono: { $ref: '#/components/schemas/Telefono' }
+        instruccionesAcceso: { type: string, maxLength: 500 }
+    SedeResponse:
+      allOf:
+        - $ref: '#/components/schemas/SedeRequest'
+        - $ref: '#/components/schemas/Auditoria'
+        - type: object
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            empleadorId: { $ref: '#/components/schemas/Uuid' }
+            activa: { type: boolean }
+
+    # ------------------------------------------------------------ búsqueda
+    CandidatoResumen:
+      type: object
+      description: Fila de matching.candidato_proyeccion sin datos de contacto.
+      properties:
+        aspiranteId: { $ref: '#/components/schemas/Uuid' }
+        nombreVisible: { type: string, examples: ['Jhon F.'] }
+        titular: { type: [string, 'null'] }
+        municipio: { type: string, examples: ['Facatativá, Cundinamarca'] }
+        distanciaKm: { type: number, description: Distancia aproximada (redondeada a 1 km). }
+        etaMinutos: { type: [integer, 'null'] }
+        disponibleAhora: { type: boolean }
+        viajaOtraCiudad: { type: boolean }
+        nivelIdentidad: { $ref: '#/components/schemas/NivelVerificacion' }
+        calificacionPromedio: { type: [number, 'null'], minimum: 1, maximum: 5 }
+        serviciosCompletados: { type: integer }
+        puntuacion: { type: number, description: Compatibilidad calculada por ms-matching. }
+        skills:
+          type: array
+          items:
+            type: object
+            properties:
+              skillId: { type: integer }
+              nombre: { type: string }
+              nivelDominio: { $ref: '#/components/schemas/NivelDominio' }
+              nivelVerificacion: { $ref: '#/components/schemas/NivelVerificacion' }
+              aniosExperiencia: { type: number }
+    PaginaCandidatos:
+      type: object
+      required: [contenido, pagina, tamano, totalElementos]
+      properties:
+        contenido:
+          type: array
+          items: { $ref: '#/components/schemas/CandidatoResumen' }
+        pagina: { type: integer }
+        tamano: { type: integer }
+        totalElementos: { type: integer }
+
+    # ------------------------------------------------------------ ofertas y postulaciones
+    Modalidad:
+      type: string
+      enum: [VACANTE, INMEDIATA, PROGRAMADA]
+    EstadoOferta:
+      type: string
+      enum: [BORRADOR, PUBLICADA, NOTIFICANDO, CON_ACEPTADOS, ASIGNADA, EN_CURSO, FINALIZADA,
+             CERRADA, EXPIRADA, CANCELADA]
+    OfertaSkill:
+      type: object
+      description: ofertas.oferta_skill.
+      required: [skillId, nivelDominioMin]
+      properties:
+        skillId: { type: integer, minimum: 1 }
+        nivelDominioMin: { $ref: '#/components/schemas/NivelDominio' }
+        nivelVerificacionMin:
+          allOf:
+            - $ref: '#/components/schemas/NivelVerificacion'
+          default: 0
+        aniosExperienciaMin: { type: number, minimum: 0, default: 0 }
+        obligatorio: { type: boolean, default: true }
+        peso: { type: integer, minimum: 1, maximum: 10, default: 5 }
+    CondicionesDesplazamiento:
+      type: object
+      properties:
+        cubreTransporte: { type: boolean, default: false }
+        cubreAlimentacion: { type: boolean, default: false }
+        cubreHospedaje: { type: boolean, default: false }
+        auxilioTransporte: { $ref: '#/components/schemas/Monto' }
+    ParametrosBusqueda:
+      type: object
+      properties:
+        radioInicialKm: { type: integer, minimum: 1, default: 20 }
+        radioMaximoKm: { type: integer, minimum: 1, default: 300, description: '>= radioInicialKm.' }
+        plazoRespuestaSeg: { type: integer, minimum: 60, maximum: 86400, default: 300 }
+        asignacionAutomatica: { type: boolean, default: false }
+    OfertaRequest:
+      type: object
+      description: |
+        ofertas.oferta. `inicioEn` es obligatorio para INMEDIATA y PROGRAMADA; `cierreEn` aplica
+        a VACANTE.
+      required: [modalidad, sedeId, titulo, descripcion, tipoVinculacion, remuneracion,
+                 skillsRequeridos]
+      properties:
+        modalidad: { $ref: '#/components/schemas/Modalidad' }
+        empleadorId:
+          $ref: '#/components/schemas/Uuid'
+          description: Obligatorio si el usuario pertenece a más de un empleador.
+        sedeId: { $ref: '#/components/schemas/Uuid' }
+        titulo: { type: string, maxLength: 150 }
+        descripcion: { type: string, maxLength: 5000 }
+        tipoVinculacion:
+          type: string
+          enum: [TERMINO_INDEFINIDO, TERMINO_FIJO, OBRA_LABOR, PRESTACION_SERVICIOS, POR_DIAS]
+        cupos: { type: integer, minimum: 1, maximum: 500, default: 1 }
+        inicioEn: { type: string, format: date-time }
+        duracionHoras: { type: number, exclusiveMinimum: 0 }
+        cierreEn: { type: string, format: date-time }
+        remuneracion: { $ref: '#/components/schemas/Remuneracion' }
+        condiciones: { $ref: '#/components/schemas/CondicionesDesplazamiento' }
+        skillsRequeridos:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items: { $ref: '#/components/schemas/OfertaSkill' }
+        busqueda: { $ref: '#/components/schemas/ParametrosBusqueda' }
+        publicar: { type: boolean, default: true, description: false = queda en BORRADOR. }
+    OfertaResponse:
+      allOf:
+        - $ref: '#/components/schemas/Auditoria'
+        - type: object
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            empleadorId: { $ref: '#/components/schemas/Uuid' }
+            sedeId: { $ref: '#/components/schemas/Uuid' }
+            modalidad: { $ref: '#/components/schemas/Modalidad' }
+            titulo: { type: string }
+            descripcion: { type: string }
+            tipoVinculacion: { type: string }
+            cupos: { type: integer }
+            cuposCubiertos: { type: integer }
+            inicioEn: { type: [string, 'null'], format: date-time }
+            duracionHoras: { type: [number, 'null'] }
+            cierreEn: { type: [string, 'null'], format: date-time }
+            remuneracion: { $ref: '#/components/schemas/Remuneracion' }
+            condiciones: { $ref: '#/components/schemas/CondicionesDesplazamiento' }
+            skillsRequeridos:
+              type: array
+              items: { $ref: '#/components/schemas/OfertaSkill' }
+            ubicacion: { $ref: '#/components/schemas/Coordenada' }
+            municipioId: { type: integer }
+            busqueda: { $ref: '#/components/schemas/ParametrosBusqueda' }
+            estado: { $ref: '#/components/schemas/EstadoOferta' }
+            publicadaEn: { type: [string, 'null'], format: date-time }
+            version: { type: integer, description: Versión para bloqueo optimista. }
+    RespuestaSolicitudRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision: { type: string, enum: [ACEPTA, RECHAZA] }
+        mensaje: { type: string, maxLength: 1000 }
+        motivoRechazo: { type: string, maxLength: 255 }
+    PostulacionResponse:
+      allOf:
+        - $ref: '#/components/schemas/Auditoria'
+        - type: object
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            ofertaId: { $ref: '#/components/schemas/Uuid' }
+            aspiranteId: { $ref: '#/components/schemas/Uuid' }
+            origen: { type: string, enum: [POSTULACION, INVITACION, OLEADA] }
+            numeroOleada: { type: [integer, 'null'] }
+            puntuacionMatch: { type: [number, 'null'] }
+            estado:
+              type: string
+              enum: [NOTIFICADO, POSTULADO, VISTO, ACEPTADO, RECHAZADO, EXPIRADO,
+                     PRESELECCIONADO, CONFIRMADO, DESCARTADO, RETIRADO]
+            notificadoEn: { type: [string, 'null'], format: date-time }
+            responderAntesDe: { type: [string, 'null'], format: date-time }
+            respondidoEn: { type: [string, 'null'], format: date-time }
+            asignacionId:
+              type: [string, 'null']
+              format: uuid
+              description: Presente si la aceptación generó una asignación automática.
+
+    # ------------------------------------------------------------ errores
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details.
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri, examples: ['https://api.jobFlash.co/problemas/cupos-agotados'] }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string, format: uri-reference }
+        traceId: { type: string, description: Id de traza de OpenTelemetry. }
+        errores:
+          type: array
+          items:
+            type: object
+            required: [campo, mensaje]
+            properties:
+              campo: { type: string }
+              mensaje: { type: string }
+
+  examples:
+    AspiranteSoldador:
+      summary: Aspirante que acepta viajar a otras ciudades
+      value:
+        persona:
+          tipoDocumento: CC
+          numeroDocumento: '1072654821'
+          nombres: Jhon Fredy
+          apellidos: Castro Melo
+          fechaNacimiento: '1991-08-14'
+          municipioNacimientoId: 25269
+          paisNacimiento: CO
+          nacionalidad: CO
+          telefono: '+573114567812'
+          correoContacto: jhon.castro@example.com
+          direcciones:
+            - orden: 1
+              tipo: RESIDENCIA
+              direccion: Carrera 3 # 7-45
+              barrio: Centro
+              municipioId: 25269
+              coordenada: { latitud: 4.8137, longitud: -74.3545 }
+              origenCoordenada: GPS
+              esPrincipal: true
+            - orden: 2
+              tipo: TRABAJO
+              direccion: Calle 13 # 68-20
+              municipioId: 11001
+              coordenada: { latitud: 4.6380, longitud: -74.1201 }
+              origenCoordenada: GEOCODIFICADA
+        tipoPerfil: AMBOS
+        titular: Soldador TIG/MIG certificado
+        aniosExperiencia: 8
+        movilidad:
+          radioViajeKm: 80
+          viajaOtraCiudad: true
+          aceptaPernoctar: true
+          transportePropio: MOTO
+          licenciaConduccion: A2
+          municipiosDestino: [11001, 25286, 15001]
+        aspiracion: { monto: '150000.00', unidad: DIA, moneda: COP }
+        disponibilidad:
+          - { tipo: RECURRENTE, diaSemana: 1, horaInicio: '06:00', horaFin: '18:00' }
+          - { tipo: RECURRENTE, diaSemana: 2, horaInicio: '06:00', horaFin: '18:00' }
+        consentimientos:
+          - { tipo: TERMINOS, versionDocumento: '2026.1', otorgado: true }
+          - { tipo: TRATAMIENTO_DATOS, versionDocumento: '2026.1', otorgado: true }
+          - { tipo: UBICACION, versionDocumento: '2026.1', otorgado: true }
+    EmpleadorEmpresa:
+      summary: Empresa con sede principal
+      value:
+        tipo: EMPRESA
+        organizacion:
+          nit: '901234567'
+          digitoVerificacion: '8'
+          razonSocial: Alimentos del Sabana S.A.S.
+          nombreComercial: Sabana Foods
+          tipoSociedad: SAS
+          actividadCiiu: '1089'
+          telefono: '+576017654321'
+          correo: talento@sabanafoods.example.com
+        sedePrincipal:
+          nombre: Oficina principal
+          tipoSede: PRINCIPAL
+          direccion: Avenida Calle 80 # 69-70
+          municipioId: 11001
+          coordenada: { latitud: 4.6925, longitud: -74.0868 }
+    SolicitudInmediata:
+      summary: Solicitud inmediata de 3 soldadores para mañana
+      value:
+        modalidad: INMEDIATA
+        sedeId: 3f6b2c1e-8d4a-4b7f-9c2e-6a1d0e5f7b88
+        titulo: Soldadores TIG para mantenimiento de línea
+        descripcion: Mantenimiento de tuberías de acero inoxidable en la línea de pasteurización.
+        tipoVinculacion: POR_DIAS
+        cupos: 3
+        inicioEn: '2026-11-04T07:00:00-05:00'
+        duracionHoras: 10
+        remuneracion: { monto: '180000.00', unidad: DIA, moneda: COP }
+        condiciones:
+          cubreTransporte: false
+          cubreAlimentacion: true
+          cubreHospedaje: true
+          auxilioTransporte: '40000.00'
+        skillsRequeridos:
+          - { skillId: 112, nivelDominioMin: AVANZADO, nivelVerificacionMin: 2, obligatorio: true, peso: 8 }
+          - { skillId: 87, nivelDominioMin: BASICO, obligatorio: false, peso: 3 }
+        busqueda:
+          radioInicialKm: 30
+          radioMaximoKm: 250
+          plazoRespuestaSeg: 600
+          asignacionAutomatica: false
