@@ -24,8 +24,8 @@ Rama `feat/web-admin-fees`, rebasada sobre `origin/feat/admin-fees`. El PR va ha
 
 - [x] 4.1 Añadir a `features/settlements/lifecycle-actions.test.tsx` los escenarios de la delta spec `settlement` (`processed`: la ven `analyst` y `viewer`, no `payments` ni `admin`; también en **Movements**; `paid` y `undone`: nadie). Comprobar que fallan.
 - [x] 4.2 Commit: test(web): aviso de espera del pago para quien no paga
-- [ ] 4.3 Implementar la línea en `SummaryHeader.tsx` con su texto en `settlements/strings.ts` (design D10). Verificar con `pnpm --filter @recon/frontend test settlements`.
-- [ ] 4.4 Commit: feat(web): aviso de espera del pago en el Settlement Summary
+- [x] 4.3 Implementar la línea en `SummaryHeader.tsx` con su texto en `settlements/strings.ts` (design D10). Verificar con `pnpm --filter @recon/frontend test settlements`.
+- [x] 4.4 Commit: feat(web): aviso de espera del pago en el Settlement Summary
 
 ## 5. Menú, rutas y acceso desde Accounts
 

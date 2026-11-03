@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { useCanPay } from '@/features/imports/permissions'
 import { formatAuditDateTime, formatBusinessDate } from '@/lib/format'
 import { SETTLED_STATUS_TONE, TONE_NOTICE_CLASS, toneOf } from '@/lib/status-tone'
 import type { SettlementView } from './contract'
@@ -11,6 +12,7 @@ const s = strings.summary
 
 /** The attempt in a compact grid and whether it is Settled (design D11); its date ranges are in Totals by type (D9). */
 export function SummaryHeader({ view }: { view: SettlementView }) {
+  const canPay = useCanPay()
   const tone = toneOf(SETTLED_STATUS_TONE, view.settledStatus)
   const items: [string, ReactNode][] = [
     [s.grid.account, view.accountName],
@@ -53,6 +55,10 @@ export function SummaryHeader({ view }: { view: SettlementView }) {
         <p data-tone={tone} className={`rounded-md border p-2 text-sm ${TONE_NOTICE_CLASS[tone]}`}>
           {s.notSettled}
         </p>
+      )}
+      {view.status === 'processed' && !canPay && (
+        // Whoever cannot pay sees no action: say what is missing (web-admin-fees design D10).
+        <p className="text-sm text-muted-foreground">{s.waitingForPayment}</p>
       )}
       {view.status === 'undone' && (
         <p className="text-sm">

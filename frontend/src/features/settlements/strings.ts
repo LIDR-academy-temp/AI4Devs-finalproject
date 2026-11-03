@@ -185,6 +185,7 @@ export const strings = {
     byAt: (userName: string, at: string) => `${userName} · ${at}`,
     notSet: 'Not set',
     notSettled: 'Movements are not Settled yet: that happens when the batch is marked as paid.',
+    waitingForPayment: 'Waiting for a user with payment permission to mark it as paid.',
     goToAnalysis: 'Go to Analysis & Validations',
     attempts: {
       title: 'Attempts of this import',
