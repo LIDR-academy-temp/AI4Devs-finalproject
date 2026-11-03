@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -8,7 +8,9 @@ import { accountQuery } from '@/features/accounts/queries'
 import { feeTypesQuery } from '@/features/settlements/queries'
 import { ApiError } from '@/lib/api/client'
 import { AccountFeesTable, type FeeAction } from './AccountFeesTable'
+import { CloseFeeDialog } from './CloseFeeDialog'
 import type { AccountFee } from './contract'
+import { FeeFormSheet, type FeeFormTarget } from './FeeFormSheet'
 import { useCanManageFees } from './permissions'
 import { accountFeesQuery } from './queries'
 import { strings } from './strings'
@@ -28,7 +30,12 @@ export function AccountFeesPage() {
   const feeTypes = useQuery(feeTypesQuery())
   const canManage = useCanManageFees()
 
-  const onAction = (_action: FeeAction, _fee: AccountFee) => {}
+  const [form, setForm] = useState<FeeFormTarget | null>(null)
+  const [closing, setClosing] = useState<AccountFee | null>(null)
+  const onAction = (action: FeeAction, fee: AccountFee) => {
+    if (action === 'close') setClosing(fee)
+    else setForm({ mode: action === 'edit' ? 'correct' : 'change', fee })
+  }
 
   const notAvailable = isNotFound(account.error) || isNotFound(fees.error)
   let body: ReactNode
@@ -79,7 +86,11 @@ export function AccountFeesPage() {
             </p>
           )}
         </div>
-        {canManage && detail && <Button size="sm">{s.add}</Button>}
+        {canManage && detail && (
+          <Button size="sm" onClick={() => setForm({ mode: 'create' })}>
+            {s.add}
+          </Button>
+        )}
       </div>
       <Card>
         <CardContent className="flex flex-col gap-4">
@@ -88,6 +99,19 @@ export function AccountFeesPage() {
         </CardContent>
       </Card>
       <p className="text-xs text-muted-foreground">{s.note}</p>
+      {canManage && form && (
+        <FeeFormSheet
+          // A new target is a new form, with its own values.
+          key={`${form.mode}:${form.fee?.feeId ?? 'new'}`}
+          target={form}
+          accountId={accountId}
+          feeTypes={feeTypes.data}
+          onDone={() => setForm(null)}
+        />
+      )}
+      {canManage && closing && (
+        <CloseFeeDialog key={closing.feeId} fee={closing} accountId={accountId} onDone={() => setClosing(null)} />
+      )}
     </section>
   )
 }

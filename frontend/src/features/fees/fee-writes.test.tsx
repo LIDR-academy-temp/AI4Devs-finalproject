@@ -38,7 +38,7 @@ function rowOf(title: string, validFrom: string) {
   return within(row)
 }
 
-const day = (label: string, value: string, container = screen) =>
+const day = (label: string, value: string, container: Pick<typeof screen, 'getByLabelText'> = screen) =>
   fireEvent.change(container.getByLabelText(label), { target: { value } })
 
 /** The single fee of the account, seeded for the test. */

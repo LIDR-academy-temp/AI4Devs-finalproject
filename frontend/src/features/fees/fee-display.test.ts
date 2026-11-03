@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { feeAppliesTo, formatFeeValue, formatRate, formatValidFrom, formatValidity, formatValidTo } from './fee-display'
+import {
+  feeAppliesTo,
+  formatFeeValue,
+  formatRate,
+  formatValidFrom,
+  formatValidity,
+  formatValidTo,
+  shiftDay,
+} from './fee-display'
 
 // Spec fees "Pantalla Fees: columnas y orden" (web-admin-fees design D6): values as text, never through a JS number.
 describe('formatRate', () => {
@@ -40,6 +48,18 @@ describe('validity', () => {
     expect(formatValidFrom('2026-01-01')).toBe('2026-01-01')
     expect(formatValidTo('2026-10-31')).toBe('2026-10-31')
     expect(formatValidity('2026-01-01', null)).toBe('2026-01-01 → open')
+  })
+})
+
+describe('shiftDay', () => {
+  it.each([
+    ['2026-11-01', -1, '2026-10-31'],
+    ['2028-03-01', -1, '2028-02-29'],
+    ['2027-03-01', -1, '2027-02-28'],
+    ['2026-01-01', -1, '2025-12-31'],
+    ['2026-10-15', 1, '2026-10-16'],
+  ] as const)('%s %s day is %s, on the civil date', (day, days, expected) => {
+    expect(shiftDay(day, days)).toBe(expected)
   })
 })
 

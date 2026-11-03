@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { type FeeFormValues, feeFormBody, initialFeeValues } from './fee-form'
+import { type EditableFee, type FeeFormValues, feeFormBody, initialFeeValues } from './fee-form'
 import { strings } from './strings'
 
 // web-admin-fees design D4, D6: the form's text values → the body of the API, with only what changed; the local
 // checks are the ones that save a sure 400. Amounts and rates never go through a JS number.
 const e = strings.form.errors
 
-const mdr = {
+const mdr: EditableFee = {
   feeTypeId: 1,
   fixedAmount: null,
   percentage: '0.025000',
@@ -16,7 +16,7 @@ const mdr = {
   inUse: false,
 }
 
-const values = (mode: 'create' | 'correct' | 'change', patch: Partial<FeeFormValues>, fee = mdr) => ({
+const values = (mode: 'create' | 'correct' | 'change', patch: Partial<FeeFormValues>, fee: EditableFee = mdr) => ({
   ...initialFeeValues(mode, mode === 'create' ? undefined : fee),
   ...patch,
 })

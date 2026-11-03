@@ -53,8 +53,8 @@ Rama `feat/web-admin-fees`, rebasada sobre `origin/feat/admin-fees`. El PR va ha
 - [x] 8.1 Escribir `features/fees/fee-form.test.ts` (valores → `FeeCreate` / `FeeCorrection` / `FeeChange` con solo los campos cambiados, `"15"` y `"15.0000"` iguales, porcentaje a fracción, rechazo local de un porcentaje con 5 decimales y de uno fuera de 0–100, `always` / `no end date` a `null`, sin cambios → error local) y `fee-errors.test.ts` (`validation_error` con `details.field` y con lista de Fastify, `fee_overlap` con conflictos, `fee_in_use` con `fields` y con `lastAppliedEventDate`, `details` que no validan). Comprobar que fallan.
 - [x] 8.2 Escribir `features/fees/fee-writes.test.tsx` con los escenarios de alta, corrección en el sitio, cambio desde una fecha, cierre (valor por defecto con el reloj fijado a las 22:30 de Nueva York, mínimo `lastAppliedEventDate`, botón deshabilitado con el motivo asociado) y errores del API (solape con su conflicto, campo de dominio, fee que pasó a estar en uso que vuelve a pedir la lista, formulario abierto con lo escrito, doble clic = una petición). Comprobar que fallan.
 - [x] 8.3 Commit: test(web): alta, edición, cambio desde una fecha y cierre de fees
-- [ ] 8.4 Implementar `fee-form.ts`, `fee-errors.ts`, `mutations.ts` (caché e invalidaciones de design D9), `FeeFormSheet.tsx` (tres modos, design D4) y `CloseFeeDialog.tsx`, con sus textos. Verificar con los tests de 8.1 y 8.2 y con la suite de `features/settlements` en verde (comparte la caché de los fees de la cuenta).
-- [ ] 8.5 Commit: feat(web): alta, edición, cambio desde una fecha y cierre de fees
+- [x] 8.4 Implementar `fee-form.ts`, `fee-errors.ts`, `mutations.ts` (caché e invalidaciones de design D9), `FeeFormSheet.tsx` (tres modos, design D4) y `CloseFeeDialog.tsx`, con sus textos. Verificar con los tests de 8.1 y 8.2 y con la suite de `features/settlements` en verde (comparte la caché de los fees de la cuenta).
+- [x] 8.5 Commit: feat(web): alta, edición, cambio desde una fecha y cierre de fees
 
 ## 9. Documentación y revisión
 

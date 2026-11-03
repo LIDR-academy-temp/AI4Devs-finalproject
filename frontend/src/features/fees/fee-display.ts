@@ -17,6 +17,13 @@ export function formatFeeValue(fee: { fixedAmount: string | null; percentage: st
   return amount ?? rate ?? ''
 }
 
+/** The civil day before or after a YYYY-MM-DD day, without a time zone (the end of a fee changed from a date). */
+export function shiftDay(day: string, days: number): string {
+  const date = new Date(`${day}T00:00:00.000Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
 /** null start: since forever. */
 export const formatValidFrom = (startDate: string | null) => startDate ?? strings.always
 
