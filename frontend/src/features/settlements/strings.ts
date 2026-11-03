@@ -178,7 +178,8 @@ export const strings = {
       undoReason: 'Reason',
     },
     batchAttempt: (batchNo: number, attemptNo: number) => `${batchNo} · attempt ${attemptNo}`,
-    byAt: (userName: string, at: string) => `${userName} · ${at}`,
+    /** The first piece of who and when; the date and the time follow as their own pieces. */
+    byUser: (userName: string) => `${userName} ·`,
     notSet: 'Not set',
     notSettled: 'Movements are not Settled yet: that happens when the batch is marked as paid.',
     waitingForPayment: 'Waiting for a user with payment permission to mark it as paid.',
