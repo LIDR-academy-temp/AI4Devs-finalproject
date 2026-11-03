@@ -54,7 +54,12 @@ export function FeeHistorySheet({ fee }: { fee: AccountFee }) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="link" size="sm" className="h-auto px-1">
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto px-1"
+          aria-label={strings.account.actionNames.history(strings.account.feeName(fee.title, fee.startDate))}
+        >
           {strings.account.actions.history}
         </Button>
       </SheetTrigger>

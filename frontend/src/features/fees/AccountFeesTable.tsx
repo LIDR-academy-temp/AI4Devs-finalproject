@@ -70,6 +70,7 @@ export function AccountFeesTable({
                     variant="link"
                     size="sm"
                     className="h-auto px-1"
+                    aria-label={s.actionNames[action](s.feeName(fee.title, fee.startDate))}
                     onClick={() => onAction(action, fee)}
                   >
                     {LABEL[action]}

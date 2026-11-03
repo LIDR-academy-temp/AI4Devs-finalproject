@@ -74,6 +74,16 @@ export const strings = {
       close: 'Close…',
       history: 'History',
     },
+    /** Accessible names of the row actions: the visible text first, then the fee they act on. */
+    actionNames: {
+      edit: (fee: string) => `Edit ${fee}`,
+      change: (fee: string) => `Change from date: ${fee}`,
+      close: (fee: string) => `Close ${fee}`,
+      history: (fee: string) => `History of ${fee}`,
+    },
+    /** A fee in its account: its type and its Valid from ("MDR from 2026-01-01", "MDR, always"). */
+    feeName: (title: string, startDate: string | null) =>
+      startDate === null ? `${title}, always` : `${title} from ${startDate}`,
   },
   form: {
     titles: {
