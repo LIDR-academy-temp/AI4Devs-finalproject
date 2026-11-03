@@ -101,10 +101,17 @@ async function overflows(page: Page): Promise<string[]> {
 const problems: string[] = []
 
 /**
+ * Screens named on the command line (`pnpm screenshots:web-admin-fees summary-waiting-analyst`): only those are
+ * captured and measured, and the other files stay as they are. Without names, every screen.
+ */
+const ONLY = process.argv.slice(2)
+
+/**
  * Captures the screen at 1280 and at 1024 px, measures both, and leaves the page at 1280. A page is captured whole; with
  * a dialog open only the viewport is, as the dialog veils it.
  */
 async function shot(page: Page, name: string, { dialog = false } = {}) {
+  if (ONLY.length > 0 && !ONLY.includes(name)) return
   for (const size of WIDTHS) {
     await page.setViewportSize(size)
     // The layout settles after a resize (the sidebar and the tables reflow).

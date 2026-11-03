@@ -71,8 +71,23 @@ Requiere que `admin-fees` haya terminado sus grupos 4 y 5 (rutas sin `501`).
 - [x] 10.3 Commit: docs(web): capturas de las pantallas de fees
 - [x] 10.4 Lo que encontraron las medidas a 1024 px, arreglado antes de versionar: las celdas de shadcn no parten el texto, así que las dos tablas se salían de su tarjeta. En la de la cuenta parten el tipo y las acciones; en la vista global el merchant y el proveedor pasan bajo la cuenta (decidido con la persona) y solo se parte el tipo. El seed no deja ningún fee en uso (su historial no referencia fees), por eso el script procesa `batch-clean` primero.
 
+## 11. Arreglos de la revisión de la #113
+
+Del `review-diff` en sesión nueva (APROBAR CON CAMBIOS MENORES), cada uno con su test y su rotura comprobada salvo donde se dice.
+
+- [x] 11.1 Cabecera del Summary: la insignia de estado se parte como en Settlement List y ningún elemento de la rejilla crece más que su columna; a 1024 px quedaba bajo **Processed by**. Test de clases como excepción de D15.
+- [x] 11.2 **Processed by**, **Paid by** y **Undone by** en tres piezas enteras (usuario con «·», fecha y hora), con la regla de `settlements-browse` D11: la línea solo se parte entre ellas.
+- [x] 11.3 `percentError` compara la parte entera con 100 como texto, sin `Number`. Refactor sin cambio de comportamiento: casos nuevos como guarda.
+- [x] 11.4 Foco tras escribir: alta, corrección, cambio desde una fecha y cierre aceptados llevan el foco al **History** de ese fee, buscado por su id; si ya no está en la lista, al título de la tabla (solo test unitario: el fake siempre conserva el fee). La validación local pone el foco en el primer campo con error. Spec: requisito nuevo.
+- [x] 11.5 El campo de búsqueda de `/fees` sigue a `q` de la dirección al ir atrás o adelante, sin volver a escribir el texto anterior. Spec: escenario nuevo.
+- [x] 11.6 La API falsa filtra `GET /accounts/{id}/fees` por `asOf` (con `AccountFeesQuery`); comentadas las otras dos simplificaciones (estado contra un día fijo, acción `closed` / `updated`).
+- [x] 11.7 Tests nuevos sobre código ya correcto: `403` y red con el formulario abierto y lo escrito intacto, recarga con `page=2`, historial actualizado tras una corrección, y el reloj de **Close…** a las 22:30 de Nueva York como dice la spec.
+- [x] 11.8 Regenerada solo `summary-waiting-analyst` a 1280 y 1024 px sobre base recién sembrada (`pnpm screenshots:web-admin-fees summary-waiting-analyst`; el script admite nombres de captura). Revisada: insignia entera, nada solapado, fecha y hora sin partir.
+- [x] 11.9 Casilla en #94: los scripts de capturas no detectan elementos que se solapan dentro de una rejilla.
+
 ## Workflow follow-up
 
 - `/opsx:verify web-admin-fees`.
-- Cuando `admin-fees` se mergee: `git rebase --onto feature/entrega-3-MVP origin/feat/admin-fees` y PR con la plantilla hacia `feature/entrega-3-MVP`.
+- Hecho: `admin-fees` (#112) fusionado y rama rebasada con `git rebase --onto origin/feature/entrega-3-MVP origin/feat/admin-fees`; PR #113 hacia `feature/entrega-3-MVP`.
+- Re-revisión de la #113 en sesión nueva tras el grupo 11.
 - `/opsx:archive web-admin-fees` tras el merge.
