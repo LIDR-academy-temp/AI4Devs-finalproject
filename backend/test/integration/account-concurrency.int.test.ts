@@ -158,12 +158,15 @@ describe('two simultaneous creations with the same name', () => {
 })
 
 describe('a copy of fees and a change of a source fee at the same time', () => {
-  it('the copy carries the amount of before or after the change, as their commit order says', async () => {
+  it('the change waits for the copy, and the copy carries the amount from before the change', async () => {
     const { service, hold, decided } = heldService()
     const fees = new FeeAdminService(new PrismaFeeAdminRepository(prisma))
     const before = money(sourceBefore.fixedAmount)
     expect(before).not.toBe(CORRECTED_AMOUNT)
-    /** Each write notes itself when it commits: the order the values must agree with. */
+    /**
+     * Each write notes itself when its use case resolves: after its transaction committed (and, for the copy, after
+     * the catalog read that builds its answer), not at the commit itself.
+     */
     const commits: string[] = []
 
     // The copy is held after reading the source fees and before inserting anything.
@@ -184,11 +187,14 @@ describe('a copy of fees and a change of a source fee at the same time', () => {
     })
     // With the source lock the change waits for the copy; without it, it commits now while the copy is held.
     await Promise.race([change, new Promise((resolve) => setTimeout(resolve, 500))])
-    // Always release the copy, so a failure never leaves its transaction waiting on the gate.
+    const duringHold = [...commits]
+    // Always release the copy before any assertion, so a failure never leaves its transaction waiting on the gate.
     hold.open()
     const account = await copy
     await change
 
+    // Nothing resolved while the copy was held: the change waited on the source account lock.
+    expect(duringHold).toEqual([])
     const copied = await prisma.fee.findMany({
       where: { accountId: account.accountId },
       select: { feeTypeId: true, fixedAmount: true },
@@ -197,8 +203,7 @@ describe('a copy of fees and a change of a source fee at the same time', () => {
     const copiedChargeback = money(copied.find((f) => f.feeTypeId === CHARGEBACK_TYPE)?.fixedAmount ?? null)
     const sourceNow = money((await prisma.fee.findUniqueOrThrow({ where: { feeId: sourceFeeId } })).fixedAmount)
     expect(sourceNow).toBe(CORRECTED_AMOUNT)
-    // Committed first, the copy holds the amount before the change; committed last, the amount after it. A copy that
-    // commits after the change with the old amount read a state the change had already replaced.
-    expect(copiedChargeback).toBe(commits[0] === 'copy' ? before : CORRECTED_AMOUNT)
+    // The copy read the source fees before the change could start, so it carries the amount from before it.
+    expect(copiedChargeback).toBe(before)
   })
 })
