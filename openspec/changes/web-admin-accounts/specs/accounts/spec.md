@@ -182,7 +182,7 @@ El campo Fees SHALL ofrecer `No fees` (por defecto) y las cuentas del proveedor 
 - **THEN** no se envía nada y el foco vuelve a la acción
 
 ### Requirement: Formularios de cuenta: errores del API
-Ante un error del API, el diálogo o el panel SHALL seguir abiertos con todo lo escrito. `409 account_name_taken` SHALL mostrarse en el campo Name; `400 validation_error` con `details.field` (`copyFeesFromAccountId`, `matchingRuleSetId`, `rollingReserveCapAmt`) junto a ese campo; el resto (`400` sin campo, `403`, `404`, error de red) como mensaje del formulario. El foco SHALL ir al campo con error o al mensaje.
+Ante un error del API, el diálogo o el panel SHALL seguir abiertos con todo lo escrito. `409 account_name_taken` SHALL mostrarse en el campo Name; `400 validation_error` con `details.field` (`copyFeesFromAccountId`, `matchingRuleSetId`, `rollingReserveCapAmt`) junto a ese campo; el resto (`400` sin campo, `403`, `404`, `5xx`, error de red) como mensaje del formulario. Un `5xx` SHALL decir `The account could not be saved. Try again.`; `Could not reach the server. Try again.` SHALL reservarse a los fallos de red (sin respuesta del servidor). El foco SHALL ir al campo con error o al mensaje, también cuando el mismo mensaje se repite en otro envío.
 
 #### Scenario: Nombre en uso
 - **GIVEN** que `POST /providers/201/accounts` responde `409 account_name_taken`
@@ -199,10 +199,15 @@ Ante un error del API, el diálogo o el panel SHALL seguir abiertos con todo lo 
 - **WHEN** `admin` crea la cuenta
 - **THEN** el campo Fees muestra `Fees cannot be copied from this account.`
 
-#### Scenario: Sin permiso o sin red
-- **GIVEN** que la escritura responde `403`, o la red falla
+#### Scenario: Sin permiso, error del servidor o sin red
+- **GIVEN** que la escritura responde `403` o `500`, o la red falla
 - **WHEN** `admin` envía el formulario
-- **THEN** ve el mensaje del formulario (`You don't have permission to manage accounts.` o `Could not reach the server. Try again.`) y lo escrito se conserva
+- **THEN** ve el mensaje del formulario (`You don't have permission to manage accounts.`, `The account could not be saved. Try again.` o `Could not reach the server. Try again.`), con el foco en él, y lo escrito se conserva
+
+#### Scenario: El mismo mensaje otra vez
+- **GIVEN** que la escritura responde `403` en dos envíos seguidos
+- **WHEN** `admin` mueve el foco a un campo y vuelve a enviar
+- **THEN** el mensaje del formulario recupera el foco
 
 ### Requirement: Pantalla Channel Assignment: acceso y filtros
 Administration › Channel Assignment (`/channel-assignment`) SHALL mostrarse a todos los roles, ser de solo lectura y ofrecer filtros opcionales de merchant (`All merchants`) y proveedor (`All providers`, del merchant elegido) reflejados en la dirección. Un merchant o proveedor fuera del alcance en la dirección SHALL mostrar `This merchant or provider is not available.` sin datos. SHALL explicar que la asignación ocurre al procesar settlements y que deshacer un batch no mueve la principal.

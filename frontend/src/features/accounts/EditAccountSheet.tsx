@@ -33,7 +33,7 @@ export function EditAccountSheet({ account, onSaved }: { account: AccountDetail;
   const { register, handleSubmit, watch, setFocus } = useForm<AccountFormValues>({
     defaultValues: initialEditValues(account),
   })
-  const { shown, show, clear } = useShown(setFocus)
+  const { shown, attempt, show, clear } = useShown(setFocus)
   const write = useAccountWrite()
   const refresh = useRefreshAccount()
   const ruleSets = useQuery(matchingRuleSetsQuery(account.providerId))
@@ -119,7 +119,7 @@ export function EditAccountSheet({ account, onSaved }: { account: AccountDetail;
             {...invalidProps(shown, 'reason', ids.reason)}
           />
         </Field>
-        <GeneralMessage message={shown.general} />
+        <GeneralMessage message={shown.general} attempt={attempt} />
         <div className="flex justify-end gap-2">
           <SheetClose asChild>
             <Button type="button" variant="outline" disabled={pending}>

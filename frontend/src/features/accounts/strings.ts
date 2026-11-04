@@ -169,6 +169,7 @@ export const strings = {
     errors: {
       nameRequired: 'Name is required.',
       nameTooLong: 'Use at most 50 characters.',
+      merchantRequired: 'Choose a merchant.',
       providerRequired: 'Choose a provider.',
       capInvalid: 'Enter an amount ≥ 0 with up to 4 decimals.',
       reasonTooLong: 'Use at most 500 characters.',
@@ -179,6 +180,7 @@ export const strings = {
       invalid: 'The account could not be saved: check the values.',
       forbidden: "You don't have permission to manage accounts.",
       notFound: 'This account or provider is no longer available.',
+      saveFailed: 'The account could not be saved. Try again.',
       unreachable: 'Could not reach the server. Try again.',
     },
   },

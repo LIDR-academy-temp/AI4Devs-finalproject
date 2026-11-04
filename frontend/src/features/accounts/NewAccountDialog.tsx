@@ -43,7 +43,7 @@ export function NewAccountDialog({ merchantId, providerId }: { merchantId?: numb
   const { register, handleSubmit, watch, setValue, setFocus } = useForm<AccountFormValues>({
     defaultValues: initialCreateValues({ merchantId, providerId }),
   })
-  const { shown, show, clear } = useShown(setFocus)
+  const { shown, attempt, show, clear } = useShown(setFocus)
   const write = useAccountWrite()
   const refresh = useRefreshAccount()
   const navigate = useNavigate()
@@ -192,7 +192,7 @@ export function NewAccountDialog({ merchantId, providerId }: { merchantId?: numb
           </Field>
         </div>
         <p className="text-xs text-muted-foreground">{f.feesHelp}</p>
-        <GeneralMessage message={shown.general} />
+        <GeneralMessage message={shown.general} attempt={attempt} />
         <div className="flex justify-end gap-2">
           <DialogClose asChild>
             <Button type="button" variant="outline" disabled={pending}>

@@ -138,9 +138,10 @@ frontend/src/test/msw/accounts.ts      account writes + matching rule sets fake 
 - `400` con `details` en lista (esquema de Fastify) → `general = 'The account could not be saved: check the values.'`
 - `403` → `You don't have permission to manage accounts.`
 - `404` → `This account or provider is no longer available.`, e invalida la cuenta y el proveedor.
-- Error de red u otro → `Could not reach the server. Try again.`
+- `5xx` u otra respuesta → `The account could not be saved. Try again.`
+- Error de red (sin respuesta, no es un `ApiError`) → `Could not reach the server. Try again.`
 
-El formulario nunca se cierra ante un error y conserva lo escrito. El foco va al primer campo con error, en el orden visible, o al mensaje general (`role="alert"`), con el mismo criterio que `fee-focus.ts`.
+El formulario nunca se cierra ante un error y conserva lo escrito. El foco va al primer campo con error, en el orden visible, o al mensaje general (`role="alert"`), con el mismo criterio que `fee-focus.ts`. El mensaje general recupera el foco en cada envío rechazado, aunque repita el texto (`useShown` cuenta los intentos). Sin merchant, `createBody` marca también `merchantId`: el select de proveedor está deshabilitado y no puede recibir el foco.
 
 ### D7. Diálogo, panel y confirmación
 

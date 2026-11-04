@@ -50,12 +50,15 @@ export const NOTHING: Shown = { fields: {}, general: null }
  */
 export function useShown(setFocus: UseFormSetFocus<AccountFormValues>) {
   const [shown, setShown] = useState<Shown>(NOTHING)
+  // Counts the refused submits, so the same general message shown again takes the focus again.
+  const [attempt, setAttempt] = useState(0)
   const show = (next: Shown) => {
     setShown(next)
+    setAttempt((n) => n + 1)
     const first = FIELD_ORDER.find((field) => next.fields[field])
     if (first) setFocus(first)
   }
-  return { shown, show, clear: () => setShown(NOTHING) }
+  return { shown, attempt, show, clear: () => setShown(NOTHING) }
 }
 
 /** aria-invalid and aria-describedby of a field with an error. */
@@ -95,12 +98,16 @@ export function Field({
   )
 }
 
-/** The message of the form as a whole; it takes the focus when it appears or changes. */
-export function GeneralMessage({ message }: { message: string | null }) {
+/**
+ * The message of the form as a whole; it takes the focus when it appears, changes, or is shown again by another
+ * refused submit (`attempt`), even with the same words.
+ */
+export function GeneralMessage({ message, attempt }: { message: string | null; attempt: number }) {
   const ref = useRef<HTMLDivElement>(null)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt is the signal to focus again, not a value read.
   useEffect(() => {
     if (message) ref.current?.focus()
-  }, [message])
+  }, [message, attempt])
   if (!message) return null
   return (
     <div

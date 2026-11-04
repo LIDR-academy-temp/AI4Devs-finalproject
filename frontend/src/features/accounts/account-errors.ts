@@ -35,6 +35,7 @@ function domainField(details: unknown): string | undefined {
 }
 
 export function accountProblemOf(error: unknown): AccountProblem {
+  // No answer at all: fetch failed before reaching the server.
   if (!(error instanceof ApiError)) return problem({ general: e.unreachable })
   if (error.status === 409 && error.code === 'account_name_taken') return problem({ fields: { name: e.nameTaken } })
   if (error.status === 400) {
@@ -45,5 +46,6 @@ export function accountProblemOf(error: unknown): AccountProblem {
   }
   if (error.status === 403) return problem({ general: e.forbidden })
   if (error.status === 404) return problem({ general: e.notFound, invalidate: 'account' })
-  return problem({ general: e.unreachable })
+  // The server answered (5xx or anything else): it was reached, the write failed.
+  return problem({ general: e.saveFailed })
 }

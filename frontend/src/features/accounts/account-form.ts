@@ -97,6 +97,8 @@ const hasErrors = (errors: AccountFormErrors) => Object.keys(errors).length > 0
 
 export function createBody(values: AccountFormValues): CreateResult {
   const p = parse(values)
+  // Without a merchant the provider select is disabled: the merchant is marked too, so the focus can go there.
+  if (values.merchantId === '') p.errors.merchantId = e.merchantRequired
   if (values.providerId === '') p.errors.providerId = e.providerRequired
   if (hasErrors(p.errors)) return { ok: false, errors: p.errors, general: null }
   return {
