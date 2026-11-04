@@ -13,13 +13,13 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
   - Escenarios "Ver todas las cuentas" y "Add fee en la pestaña".
   - En `AppLayout.test.tsx` y en el test de `nav-config`: Accounts activa en `/accounts/<id>` y en `/accounts/<id>/fees`, Fees no; Channel Assignment como enlace para `viewer`, `analyst` y `admin`; Channel Assignment activa en `/channel-assignment?merchantId=1`.
 - [x] 2.2 Commit: test(web): los fees de la cuenta como pestaña de su ficha y Accounts activa en la ficha
-- [ ] 2.3 Extraer `features/fees/AccountFeesPanel.tsx` de `AccountFeesPage.tsx` (design D3) y borrar la página.
+- [x] 2.3 Extraer `features/fees/AccountFeesPanel.tsx` de `AccountFeesPage.tsx` (design D3) y borrar la página.
   - Crear en `features/accounts` un `AccountDetailPage.tsx` mínimo: `h1`, jerarquía, pestañas como enlaces y `Outlet`, con el `404` como `This account is not available.`
   - Crear las rutas padre e hijas de design D2 (Overview vacía de momento) y la ruta `/channel-assignment` con una página mínima.
   - En `nav-config.ts`: `activeWhen` de Accounts, Fees sin `activeWhen`, Channel Assignment con `to`.
   - Ajustar `e2e/screenshots/web-admin-fees.ts` al nuevo `h1`.
   - Verificar con los tests de 2.1, **toda** la suite de `features/fees` y `features/settlements` en verde, `pnpm typecheck` y `pnpm lint`.
-- [ ] 2.4 Commit: refactor(web): la página de fees de una cuenta pasa a ser una pestaña de Account Detail
+- [x] 2.4 Commit: refactor(web): la página de fees de una cuenta pasa a ser una pestaña de Account Detail
 
 ## 3. Utilidades puras (test-first)
 

@@ -34,6 +34,20 @@ export const strings = {
   settlementsOf: (account: string) => `Settlements of ${account}`,
   fees: 'Fees',
   feesOf: (account: string) => `Fees of ${account}`,
+  /** Account Detail (web-admin-accounts design D2, D4). */
+  detail: {
+    crumb: 'Account detail',
+    titleLoading: 'Account',
+    hierarchy: (merchant: string, provider: string) => `${merchant} › ${provider}`,
+    notAvailable: 'This account is not available.',
+    loading: 'Loading the account…',
+    loadError: 'Could not load the account.',
+    tabs: { label: 'Account sections', overview: 'Overview', fees: 'Fees' },
+  },
+  /** Channel Assignment (web-admin-accounts design D8). */
+  channelAssignment: {
+    title: 'Channel Assignment',
+  },
   /** The merchant → provider → account choice of New Reconciliation and Settlement List. */
   picker: {
     merchant: 'Merchant',

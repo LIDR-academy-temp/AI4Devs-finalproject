@@ -44,10 +44,6 @@ export const strings = {
   },
   status: { active: 'Active', scheduled: 'Scheduled', closed: 'Closed' },
   account: {
-    crumb: 'Account fees',
-    title: (account: string) => `Fees · ${account}`,
-    titleLoading: 'Fees',
-    hierarchy: (merchant: string, provider: string) => `${merchant} › ${provider}`,
     seeAll: 'See all accounts',
     tableLabel: 'Fees of the account',
     heading: 'Fees of the account',
