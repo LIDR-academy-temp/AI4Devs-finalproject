@@ -44,12 +44,12 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
 
 ## 4. API falsa de cuentas
 
-- [ ] 4.1 Escribir `test/msw/accounts.test.ts` (design D9) y comprobar que falla. Debe cubrir:
+- [x] 4.1 Escribir `test/msw/accounts.test.ts` (design D9) y comprobar que falla. Debe cubrir:
   - `POST /providers/{id}/accounts`: `analyst` → `403`; `viewer` en el proveedor 201 → `403` (el permiso va antes que el alcance); `admin` en el proveedor 999 → `404`; tope numérico o campo desconocido → `400` (`AccountCreate`); `201` con un `AccountDetail` que pasa su `parse` y aparece después en `GET /providers/{id}` y `GET /accounts/{id}`.
   - `PATCH /accounts/{id}`: los mismos `403` y `404`; `{}` y `{ providerId }` → `400` (`AccountPatch`); `200` con los campos aplicados y `updatedAt` posterior.
   - `GET /providers/{id}/matching-rule-sets`: Provider C con "Provider C legacy" (y ProviderC-Alt en `accounts`) y el conjunto inactivo; Provider A, lista vacía; `viewer` en el 201 → `404`. Cada respuesta pasa `MatchingRuleSetSummary`.
   - El fake no responde `409 account_name_taken` por sí mismo ante un nombre repetido.
-- [ ] 4.2 Commit: test(web): API falsa de la administración de cuentas
+- [x] 4.2 Commit: test(web): API falsa de la administración de cuentas
 - [ ] 4.3 Implementar `test/msw/accounts.ts` con los fixtures `RULE_SETS` y registrarlo en `handlers.ts` y `resetDb`. Verificar con `accounts.test.ts` y toda la suite del frontend en verde.
 - [ ] 4.4 Commit: feat(web): API falsa de la administración de cuentas
 
