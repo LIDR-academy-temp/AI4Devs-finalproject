@@ -8,7 +8,7 @@ Proyecto final del máster **AI4Devs (LIDR)** · Ariel Fonseca Sandoval
 | **API (Swagger)** | https://apicuartaquinientos.runasp.net/swagger |
 | **GraphQL** | https://apicuartaquinientos.runasp.net/graphql |
 | **Salud** | https://apicuartaquinientos.runasp.net/health |
-| **Repositorio** | https://github.com/afonsecanice/ProyectoFinalLIDR_AFS · rama `feature/entrega-2-AFS` |
+| **Repositorio** | https://github.com/afonsecanice/ProyectoFinalLIDR_AFS · rama **`final-project-AFS`** (entrega final) |
 | **Uso de IA** | [`prompts.md`](prompts.md) |
 | **Diseño detallado** | [`documentacion/`](documentacion/) |
 
@@ -41,7 +41,7 @@ Proyecto final del máster **AI4Devs (LIDR)** · Ariel Fonseca Sandoval
 
 **0.5. Repositorio:** https://github.com/afonsecanice/ProyectoFinalLIDR_AFS (privado; acceso de lectura para el equipo de LIDR).
 
-**Alcance de esta entrega.** Implementados los dominios web + API documentados. **Fuera de alcance (v2):** bot de Telegram «C500 Asiste», asistente con IA (RAG) y reportes/BI avanzados. El diseño completo de esas piezas se conserva en [`documentacion/`](documentacion/).
+**Alcance de esta entrega.** Implementados los dominios web + API documentados, incluyendo **reportes operativos (RPT)**, **tablero BI con snapshots** (`/admin/reportes`) y **aviso general** a residentes (`/admin/notificaciones/aviso`). **Fuera de alcance (v2):** bot de Telegram «C500 Asiste», resumen BI por IA (`/bi` + RAG) e integración BOT en menú. El diseño extendido se conserva en [`documentacion/`](documentacion/) y [`ContextoCuartaQuinientos/specs/reportes-bi.md`](ContextoCuartaQuinientos/specs/reportes-bi.md).
 
 ---
 
@@ -65,7 +65,8 @@ Que residentes y administración dejen de depender de canales informales: los re
 | **USR** — vehículos y mascotas | Registro por residente con catálogos administrables |
 | **ARC** — archivos | Documentos del fraccionamiento por tipo |
 | **WMS** — almacén | Inventario y préstamos de artículos |
-| **NTF** — notificaciones | Bandeja in-app |
+| **NTF** — notificaciones | Bandeja in-app; aviso general admin a residentes del condominio |
+| **BI / RPT** — reportes | Snapshots KPI (`bi.KpiSnapshots`), tendencias, exports PDF/Excel y morosos (`/admin/reportes`) |
 | **Dashboard** | KPIs para admin y resumen para residente |
 
 Detalle por módulo y visión del bot: [`documentacion/01-producto.md`](documentacion/01-producto.md).
@@ -181,10 +182,25 @@ Las credenciales se leen de los `.publishSettings` locales (excluidos de git). C
 
 | Nivel | Herramienta | Volumen |
 |---|---|---|
-| Unitarios API | xUnit + Moq | 45 archivos · ~160 casos |
-| Unitarios Web | Vitest + Testing Library | 83 archivos · ~270 casos |
+| Unitarios API | xUnit + Moq | ~52 archivos · **188** casos (runner Entrega 3, sin integración SQL) |
+| Unitarios Web | Vitest + Testing Library | **104** archivos · **325** casos (+ gate `entrega3ModulosTdd`) |
 | SQL | Suites `SQL/pruebas/*.sql` (`BEGIN TRAN … ROLLBACK`) | 1 suite por ticket de BD |
 | Smoke | `Fase1SmokeApiIntegrationTests` (`Category=Smoke`) y `scripts/Invoke-Fase1Smoke.ps1` | Requiere API y BD levantadas |
+| **Matriz Entrega 3** | [`MATRIZ_TDD_ENTREGA3.md`](ContextoCuartaQuinientos/MATRIZ_TDD_ENTREGA3.md) + gates `ModulosTddCoverageTests` / `entrega3ModulosTdd.test.ts` | `scripts/Invoke-Entrega3Tests.ps1` |
+
+#### 2.6.1. E2E Playwright (smoke manual, opt-in)
+
+No corre en CI por defecto (`E2E_SMOKE` unset → specs en skip). **Evidencia local recomendada** antes de Typeform: API + Web levantados, contraseña seed en env (no commitear).
+
+```powershell
+$env:E2E_SMOKE='1'
+$env:FASE1_SMOKE_PASSWORD='<password seed local>'
+# opcional: $env:E2E_BASE_URL='http://localhost:5173'
+cd Web
+npm run test:e2e
+```
+
+Specs: `Web/e2e/login-residente.spec.ts`, `crear-ticket.spec.ts`, `estado-cuenta.spec.ts`, `admin-casas.spec.ts`. Última corrida documentada en cierre: ejecutar tras `Invoke-Entrega3Tests.ps1` en verde (4 tests activos con `E2E_SMOKE=1`).
 
 ---
 
@@ -274,5 +290,6 @@ Los 40 tickets planificados en la Entrega 1 están en [`documentacion/06-tickets
 |---|---|---|
 | 1 | `feature/entrega-1-AFS` (PR #1) | Diseño y documentación |
 | 2 | `feature/entrega-2-AFS` | Implementación API + Web, despliegue y documentación de uso de IA |
+| 3 (final) | **`final-project-AFS`** | Cierre BI-RPT, portal UX, matriz TDD, E2E, Typeform (rama de entrega académica) |
 
 Detalle de la PR de la Entrega 1: [`documentacion/07-pull-requests-entrega-1.md`](documentacion/07-pull-requests-entrega-1.md).

@@ -135,6 +135,13 @@ describe('AdminAlmacenPage', () => {
     expect(screen.getByRole('heading', { name: 'Registrar préstamo' })).toBeInTheDocument()
   })
 
+  it('tab Categorías abre panel CRUD', async () => {
+    render(<AdminAlmacenPage />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Categorías' }))
+    fireEvent.click(screen.getByRole('button', { name: /Nueva categoría/i }))
+    expect(screen.getByLabelText(/Nombre/i)).toBeInTheDocument()
+  })
+
   it('muestra error de inventario vía toast', async () => {
     const { useToast } = await import('../shared/toast/ToastContext')
     const toast = useToast()

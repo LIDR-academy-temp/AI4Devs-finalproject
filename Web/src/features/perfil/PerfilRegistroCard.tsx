@@ -1,6 +1,7 @@
 import { ChevronRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { PortalEntityMeta, PortalSection } from '../../shared/components/admin'
 import { useQueryErrorToast } from '../../shared/hooks/useQueryErrorToast'
 
 type PerfilRegistroCardProps = {
@@ -33,44 +34,32 @@ export function PerfilRegistroCard({
   useQueryErrorToast(error)
 
   return (
-    <section
-      className="flex flex-col rounded-xl border border-neutral-200 bg-surface-alt p-4 shadow-sm ring-1 ring-black/[0.02] dark:ring-white/[0.06]"
-      aria-labelledby={sectionId}
-    >
-      <div className="flex items-start gap-3">
-        <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
-          aria-hidden="true"
-        >
-          <Icon className="h-5 w-5" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 id={sectionId} className="text-base font-semibold text-neutral-900">
-              {title}
-            </h2>
-            {!loading && !error && (
-              <span className="rounded-full bg-surface px-2 py-0.5 text-xs font-medium text-neutral-700">
-                {count}
-              </span>
-            )}
-          </div>
-          <p className="mt-0.5 text-sm text-neutral">{description}</p>
-        </div>
+    <PortalSection variant="padded" title={title} titleId={sectionId} className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <PortalEntityMeta>{description}</PortalEntityMeta>
+        {!loading && !error && (
+          <span className="cq-portal-badge bg-neutral-100 text-neutral-700 border border-neutral-200">
+            {count}
+          </span>
+        )}
       </div>
 
-      <div className="mt-4 min-h-[4.5rem] rounded-lg bg-surface/80 px-3 py-2.5">
-        {loading && <p className="text-sm text-neutral animate-pulse">Cargando…</p>}
+      <div className="cq-portal-stat-block min-h-[4.5rem]">
+        {loading && <p className="cq-portal-stat-block__meta animate-pulse">Cargando…</p>}
         {!loading && error && (
-          <p className="text-sm text-neutral" role="status">No se pudo cargar el resumen.</p>
+          <p className="cq-portal-stat-block__meta" role="status">
+            No se pudo cargar el resumen.
+          </p>
         )}
         {!loading && !error && previewLines.length === 0 && (
-          <p className="text-sm text-neutral">{emptyHint}</p>
+          <p className="cq-portal-stat-block__meta">{emptyHint}</p>
         )}
         {!loading && !error && previewLines.length > 0 && (
-          <ul className="space-y-1 text-sm text-neutral-700">
+          <ul className="m-0 list-none space-y-1 p-0">
             {previewLines.map((line) => (
-              <li key={line} className="truncate">{line}</li>
+              <li key={line} className="truncate text-sm text-neutral-800">
+                {line}
+              </li>
             ))}
           </ul>
         )}
@@ -78,11 +67,12 @@ export function PerfilRegistroCard({
 
       <Link
         to={to}
-        className="mt-4 inline-flex items-center justify-center gap-1 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+        className="cq-portal-btn cq-portal-btn-primary inline-flex w-full items-center justify-center gap-1 sm:w-auto"
       >
+        <Icon className="h-4 w-4" aria-hidden />
         {manageLabel}
-        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+        <ChevronRight className="h-4 w-4" aria-hidden />
       </Link>
-    </section>
+    </PortalSection>
   )
 }

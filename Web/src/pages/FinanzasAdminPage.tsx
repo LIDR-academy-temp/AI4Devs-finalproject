@@ -29,10 +29,9 @@ import type { GenerarCuotasForm as GenerarForm } from '../features/admin/finanza
 import type { RegistrarPagoForm } from '../features/admin/finanzas/finanzasAdminSchemas'
 import { usePadronUsuarios } from '../features/admin/usuarios/usePadronUsuarios'
 import { useAuth } from '../features/auth/AuthContext'
-import { CuotaAdminMobileCard } from '../features/admin/finanzas/CuotaAdminMobileCard'
-import { morosoSelectionKey, morososFromKeys } from '../features/admin/finanzas/morosoSelection'
 import { CuotasAdminTable } from '../features/admin/finanzas/CuotasAdminTable'
-import { AdminListToolbar, AdminMobileCardList, ConfirmDialog } from '../shared/components/admin'
+import { morosoSelectionKey, morososFromKeys } from '../features/admin/finanzas/morosoSelection'
+import { AdminListToolbar, ConfirmDialog } from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 import { useToast } from '../shared/toast/ToastContext'
 import type { CuotaEstado } from '../shared/types/finanzas'
@@ -528,8 +527,8 @@ export function FinanzasAdminPage() {
               </div>
             }
           />
-          <div className="card">
-            <div className="card-body">
+          <div className="card cq-admin-card">
+            <div className="card-body pt-3">
               {cuotasLoading && (
                 <div className="placeholder-glow" aria-label="Cargando cuotas">
                   <span className="placeholder col-12 mb-2" />
@@ -541,31 +540,14 @@ export function FinanzasAdminPage() {
                   <p className="text-muted">Este residente no tiene cuotas registradas.</p>
                 </div>
               )}
-              {cuotas.length > 0 && (
-                <>
-                  <div className="cq-admin-table-pane d-none d-md-block">
-                    <CuotasAdminTable
-                      cuotas={cuotas}
-                      onRegistrarPago={(cuota) => {
-                        setPagoError(null)
-                        setPagoCuota(cuota)
-                      }}
-                    />
-                  </div>
-                  <AdminMobileCardList
-                    rows={cuotas}
-                    getRowKey={(c) => c.cuotaId}
-                    renderCard={(c) => (
-                      <CuotaAdminMobileCard
-                        cuota={c}
-                        onRegistrarPago={(cuota) => {
-                          setPagoError(null)
-                          setPagoCuota(cuota)
-                        }}
-                      />
-                    )}
-                  />
-                </>
+              {!cuotasLoading && cuotas.length > 0 && (
+                <CuotasAdminTable
+                  cuotas={cuotas}
+                  onRegistrarPago={(cuota) => {
+                    setPagoError(null)
+                    setPagoCuota(cuota)
+                  }}
+                />
               )}
             </div>
           </div>
@@ -616,8 +598,8 @@ export function FinanzasAdminPage() {
             selectedCount={selectedMorosoKeys.size}
             morasAplicadasEnSeleccion={morasAplicadasEnSeleccion}
           />
-          <div className="card">
-            <div className="card-body">
+          <div className="card cq-admin-card">
+            <div className="card-body pt-3">
               <MorososTable
                 morosos={morosos}
                 loading={morososLoading}

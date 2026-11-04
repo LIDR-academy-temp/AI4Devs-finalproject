@@ -1,59 +1,63 @@
-import { Link } from 'react-router-dom'
-import { CuotaAdminMobileCard } from '../features/admin/finanzas/CuotaAdminMobileCard'
-import { CuotasTable } from '../features/finanzas/CuotasTable'
+import { CuotasResidentList } from '../features/finanzas/CuotasResidentList'
 import { formatMxn } from '../features/finanzas/format'
 import { useEstadoCuenta } from '../features/finanzas/useEstadoCuenta'
-import { AdminMobileCardList, EmptyState, PageHeader } from '../shared/components/admin'
+import {
+  PortalListPage,
+  PortalListSection,
+  PortalStat,
+  PortalStatStrip,
+  portalListCountDescription,
+} from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 
 export function EstadoCuentaPage() {
   const { data, loading, error, refetch } = useEstadoCuenta()
   useQueryErrorToast(error)
 
+  const count = data?.cuotas.length ?? 0
+
   return (
-    <main className="mx-auto max-w-4xl space-y-4 px-4 py-6 md:px-8">
-      <Link to="/" className="text-sm text-primary hover:underline">← Inicio</Link>
-      <PageHeader title="Mi estado de cuenta" description="Cuotas pendientes, vencidas y pagadas." />
-      {loading && <p className="text-neutral">Cargando cuotas…</p>}
-      {error && (
-        <button
-          type="button"
-          className="cursor-pointer text-sm text-primary underline"
-          onClick={() => void refetch()}
-        >
-          Reintentar
-        </button>
-      )}
-      {!loading && !error && data && data.cuotas.length === 0 && (
-        <EmptyState title="No tienes cuotas registradas." />
-      )}
-      {!loading && !error && data && data.cuotas.length > 0 && (
+    <PortalListPage
+      width="4xl"
+      backLink={{ to: '/', label: '← Inicio' }}
+      header={{
+        title: 'Mi estado de cuenta',
+        description: portalListCountDescription(
+          count,
+          'cuota',
+          'cuotas',
+          'Cuotas pendientes, vencidas y pagadas de tu vivienda.',
+        ),
+      }}
+      loading={loading}
+      loadingMessage="Cargando cuotas…"
+      error={error}
+      onRetry={() => void refetch()}
+      empty={
+        !loading && !error && data && count === 0
+          ? { title: 'No tienes cuotas registradas.', description: 'Cuando se generen aparecerán aquí.' }
+          : undefined
+      }
+    >
+      {data && count > 0 ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded border border-neutral-100 bg-surface-alt p-4 shadow-sm">
-              <p className="text-xs uppercase text-neutral">Total pendiente</p>
-              <p className="text-xl font-semibold text-warning tabular-nums">
-                {formatMxn(data.totalPendiente)}
-              </p>
-            </div>
-            <div className="rounded border border-neutral-100 bg-surface-alt p-4 shadow-sm">
-              <p className="text-xs uppercase text-neutral">Total vencido</p>
-              <p className="text-xl font-semibold text-danger tabular-nums">
-                {formatMxn(data.totalVencido)}
-              </p>
-            </div>
-          </div>
-          <div className="hidden md:block">
-            <CuotasTable cuotas={data.cuotas} />
-          </div>
-          <AdminMobileCardList
-            className="space-y-2 md:hidden"
-            rows={data.cuotas}
-            getRowKey={(c) => c.cuotaId}
-            renderCard={(c) => <CuotaAdminMobileCard cuota={c} />}
-          />
+          <PortalStatStrip className="cq-portal-finanzas-resumen">
+            <PortalStat
+              label="Total pendiente"
+              value={formatMxn(data.totalPendiente)}
+              valueClassName="text-warning"
+            />
+            <PortalStat
+              label="Total vencido"
+              value={formatMxn(data.totalVencido)}
+              valueClassName="text-danger"
+            />
+          </PortalStatStrip>
+          <PortalListSection title="Listado">
+            <CuotasResidentList cuotas={data.cuotas} />
+          </PortalListSection>
         </>
-      )}
-    </main>
+      ) : null}
+    </PortalListPage>
   )
 }

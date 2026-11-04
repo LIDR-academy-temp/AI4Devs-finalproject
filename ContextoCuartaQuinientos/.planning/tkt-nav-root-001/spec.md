@@ -23,9 +23,9 @@
 
 1. Manifest + paridad + `DB-008` (4 perfiles, nodos [MATRIZ_MODULOS.md](MATRIZ_MODULOS.md)).
 2. Cerrar GAPs fases A–D (tickets, visitas/QR, reservas, encuestas ya OK; resto en matriz).
-3. **Fase E:** SPA Reportes/BI admin + menú + consumo API (crear endpoints Cuarta si no existen).
-4. **Fase F:** Pantalla admin integración BOT (estado vinculación, comandos, enlace; **no** reimplementar bot Python en web).
-5. **Fase G:** Aviso general NTF admin UI; verificación matriz 15/15; actualizar `specs/frontend.md`, inventario SQL si aplica.
+3. **Fase E:** SPA Reportes/BI admin + menú + consumo API (crear endpoints Cuarta si no existen) — **ejecución:** [[BI-RPT-001]].
+4. **Fase F:** Pantalla admin integración BOT — **Won't en [[BI-RPT-001]]**; ticket futuro [[bot-ia]].
+5. **Fase G:** Aviso general NTF admin UI — **incluido en [[BI-RPT-001]]** junto con E.
 6. Regresión: [[SGR-FE-001]] `NavMenuGuard`, permisos `PerfilMenus`, Vitest + build.
 
 ### Should
@@ -35,12 +35,13 @@
 
 ### Could
 
-9. Export PDF/Excel desde UI Reportes (API QuestPDF/ClosedXML ya en stack).
+9. Ninguno adicional en epic base (export RPT/BI → Must en [[BI-RPT-001]]).
 
-### Won't
+### Won't (epic completo histórico)
 
-- **Ningún módulo del readme queda fuera del epic** (decisión 2026-10-28).
+- **Ningún módulo del readme queda fuera del epic** (decisión 2026-10-28) — implementación por tickets (BI-RPT-001, bot-ia, …).
 - Won't técnico: reescribir el bot Telegram en React; duplicar lógica de negocio fuera del API.
+- **[[BI-RPT-001]]:** fase F BOT web, HU-BI-03, `/bi`, KPI adopción Telegram.
 
 ## Instancias en scope
 
@@ -94,7 +95,8 @@
 
 - [ ] **CA-E1 [M]:** Menú **Reportes** → `/admin/reportes`.
 - [ ] **CA-E2 [M]:** Pestaña/export morosos reusa `GET /Reports/Reportes/Morosos`.
-- [ ] **CA-E3 [M]:** `GET /Reports/Bi/tendencias?meses=6` (crear en API si falta) + 3 gráficas Chart.js (tickets, cobranza, morosos) solo admin.
+- [ ] **CA-E3 [M]:** `GET /Reports/Bi/tendencias?meses=6` (crear en API si falta) + **3** gráficas Chart.js (tickets/resolución, cobranza, morosidad % ocupación) solo admin — **sin** gráfica adopción bot ([[BI-RPT-001]]).
+- [ ] **CA-E5 [M]:** Export RPT/BI PDF/Excel desde UI ([[BI-RPT-001]]).
 - [ ] **CA-E4 [M]:** Residente no accede `/admin/reportes` (403).
 
 ### F — BOT (web)
@@ -142,6 +144,14 @@
 | Endpoint BI no existe | Alta | Fase E crea servicio Cuarta |
 | Telegram admin API ausente | Media | Fase F UI degradada documentada |
 
+## Desglose ejecutable (2026-11-04)
+
+| Fase epic | Ticket | Nota |
+|-----------|--------|------|
+| E + export RPT/BI | [[BI-RPT-001]] | Web completo sin bot/IA |
+| G aviso NTF | [[BI-RPT-001]] | Misma entrega |
+| F BOT web | — | Backlog [[bot-ia]] |
+
 ## Preguntas abiertas
 
-- *(ninguna bloqueante — decisión Luis: alcance completo)*
+- *(ninguna bloqueante para [[BI-RPT-001]])*

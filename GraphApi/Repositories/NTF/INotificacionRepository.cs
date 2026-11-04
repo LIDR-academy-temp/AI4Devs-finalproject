@@ -37,5 +37,6 @@ public interface INotificacionRepository
         int tipoNotificacionId,
         string titulo,
         string mensaje,
-        NotificacionAutor autor);
+        NotificacionAutor autor,
+        int? condominioId = null);
 }

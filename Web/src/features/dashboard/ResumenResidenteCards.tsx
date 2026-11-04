@@ -1,44 +1,58 @@
 import { Link } from 'react-router-dom'
+import { AlertCircle } from 'lucide-react'
 import { formatFecha, formatMxn } from '../finanzas/format'
+import { PortalStat, PortalStatStrip } from '../../shared/components/admin'
 import type { ResumenResidente } from '../../shared/types/dashboard'
 
 type Props = { data: ResumenResidente }
 
 export function ResumenResidenteCards({ data }: Props) {
+  const cuotaVencida = data.estadoCuotaMes?.estado === 'Vencida'
+
   return (
-    <section className="space-y-4">
+    <section className="flex flex-col gap-4">
       {data.avisoVencida && (
-        <div className="rounded-lg border border-danger bg-danger-light p-4 text-danger">
-          <p className="font-medium">Tienes cuotas vencidas por regularizar.</p>
-          <Link to="/finanzas/cuenta" className="mt-2 inline-block text-sm font-medium underline">
-            Ver estado de cuenta
+        <div className="cq-portal-alert" role="alert">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 shrink-0 text-danger" aria-hidden />
+            <p className="cq-portal-alert__text">Tienes cuotas vencidas por regularizar.</p>
+          </div>
+          <Link to="/finanzas/cuenta" className="cq-portal-alert__action">
+            Ver estado de cuenta →
           </Link>
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-neutral-100 bg-surface-alt p-4 shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)]">
-          <p className="text-xs font-medium uppercase tracking-wide text-neutral">Tickets activos</p>
-          <p className="mt-1 text-xl font-semibold text-primary-dark">{data.ticketsActivos}</p>
-        </div>
-        <div className="rounded-lg border border-neutral-100 bg-surface-alt p-4 shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)]">
-          <p className="text-xs font-medium uppercase tracking-wide text-neutral">Notificaciones sin leer</p>
-          <p className="mt-1 text-xl font-semibold text-primary-dark">{data.notificacionesNoLeidas}</p>
-        </div>
-      </div>
+      <PortalStatStrip>
+        <PortalStat
+          label="Tickets activos"
+          value={data.ticketsActivos}
+          valueClassName={data.ticketsActivos > 0 ? 'text-primary-dark' : ''}
+        />
+        <PortalStat
+          label="Notificaciones sin leer"
+          value={data.notificacionesNoLeidas}
+          valueClassName={data.notificacionesNoLeidas > 0 ? 'text-danger' : ''}
+        />
+      </PortalStatStrip>
 
       {data.estadoCuotaMes ? (
-        <div className="rounded-lg border border-neutral-100 bg-surface-alt p-4 shadow-[var(--shadow-card)] transition-shadow duration-150 hover:shadow-[var(--shadow-card-hover)]">
-          <p className="text-xs font-medium uppercase tracking-wide text-neutral">Cuota del mes</p>
-          <p className="mt-1 text-lg font-semibold text-primary-dark">
+        <div className={`cq-portal-stat-block${cuotaVencida ? ' border-danger/30 ring-1 ring-danger/10' : ''}`}>
+          <p className="cq-portal-stat-block__label">Cuota del mes</p>
+          <p className={`cq-portal-stat-block__value${cuotaVencida ? ' text-danger' : ''}`}>
             {formatMxn(data.estadoCuotaMes.monto)} — {data.estadoCuotaMes.estado}
           </p>
-          <p className="text-sm text-neutral">
+          <p className="cq-portal-stat-block__meta">
             Vence {formatFecha(data.estadoCuotaMes.fechaVencimiento)}
           </p>
+          {cuotaVencida && (
+            <Link to="/finanzas/cuenta" className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
+              Pagar o consultar detalle
+            </Link>
+          )}
         </div>
       ) : (
-        <p className="text-neutral">Sin cuota registrada para el período actual.</p>
+        <p className="text-sm text-neutral">Sin cuota registrada para el período actual.</p>
       )}
     </section>
   )

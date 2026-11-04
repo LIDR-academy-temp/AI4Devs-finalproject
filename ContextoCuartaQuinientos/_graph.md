@@ -84,11 +84,22 @@ Evolución SDD: [_sdd_evolution.md](_sdd_evolution.md)
 
 ### [[NAV-ROOT-001]]: Catálogo navegación + paridad 15 módulos (epic completo)
 
-- **Estado**: LISTO PARA TEST
+- **Estado**: A–D cerrados; E+G → [[BI-RPT-001]]; F → backlog [[bot-ia]]
 - **Dominios**: [[frontend]], [[sgr]], [[usuarios]], [[visitas-areas]], [[tickets]], [[notificaciones]], [[reportes-bi]], [[bot-ia]], [[dashboard]]
-- **Objetos clave**: `navCatalog.manifest.ts`, `DB-008`, fases A–G (RPT/BI/BOT web incluidos)
+- **Objetos clave**: `navCatalog.manifest.ts`, `DB-008`, fases A–G (RPT/BI sin bot en BI-RPT-001)
 - **Hub**: [spec](.planning/tkt-nav-root-001/spec.md) · [design](.planning/tkt-nav-root-001/design.md) · [matriz](.planning/tkt-nav-root-001/MATRIZ_MODULOS.md)
-- **Entrega 1**: fases E/F/G ocultas en UI vía [[FE-NAV-ENT1-001]] (manifest + filtro Web); epic E→G sigue pendiente.
+- **Entrega 1**: E/F/G ocultas vía [[FE-NAV-ENT1-001]]; reactivación parcial al cerrar [[BI-RPT-001]]
+
+### [[BI-RPT-001]]: Reportes + BI web (sin bot / IA)
+
+- **Estado**: ARCHIVADO
+- **Dominios**: [[reportes-bi]] · [[frontend]] · [[finanzas]] · [[tickets]] · [[notificaciones]] · [[sgr]]
+- **Objetos clave**: `bi.KpiSnapshots`, `BiSnapshotWorker`, `GET /Reports/Bi/tendencias`, `AdminReportesPage`, `BiTrendsPanel`, aviso NTF scoped condominio
+- **Patrones**: snapshots BI + backfill mensual; JWT `condominioId` admin; SqlSchemaCompat cache en ctor NTF
+- **Hub**: [spec](.planning/tkt-bi-rpt-001/spec.md) · [design](.planning/tkt-bi-rpt-001/design.md) · [delta](.planning/tkt-bi-rpt-001/delta.md)
+- **Rama:** `final-project-AFS`
+- **Fecha cierre**: 2026-11-04
+- **Won't**: fase F NAV, HU-BI-03, `/bi`, KPI adopción Telegram
 
 ### [[FE-NAV-ENT1-001]]: Ocultar menús NAV E/F/G (entrega 1)
 
@@ -198,6 +209,14 @@ Evolución SDD: [_sdd_evolution.md](_sdd_evolution.md)
 - **Relacionado con**: [[FE-UX-004]], [[FE-UX-003]], [[FE-UX-006]] (follow-up B/C fuera de delta 005)
 - **Fecha cierre**: 2026-10-27
 - **Hub**: [spec](.planning/tkt-fe-ux-005/spec.md) · [delta](.planning/tkt-fe-ux-005/delta.md)
+
+### [[FE-ADMIN-UX-002]]: Menús SGR, finanzas tablas, vigencia anuncios
+
+- **Estado**: ARCHIVADO (2026-11-04)
+- **Dominios**: [[frontend]], [[usuarios]], [[finanzas]], [[anuncios]]
+- **Objetos clave**: `AdminMenusPage`, `MenuPerfilPermisosPanel`, `CuotasAdminTable`, `MovimientosAdminTable`, `CuartaAnunciosRepository` (filtro vigencia por fecha)
+- **APIs**: `GET/PUT /SGR/Menus/admin/{id}/permisos-perfiles`
+- **Hub**: [_index](.planning/tkt-fe-admin-ux-002/_index.md) · [delta](.planning/tkt-fe-admin-ux-002/delta.md)
 
 ### [[FE-ADMIN-CAT-001]]: CRUD catálogos admin (mascotas, almacén, visitas, vehículos)
 

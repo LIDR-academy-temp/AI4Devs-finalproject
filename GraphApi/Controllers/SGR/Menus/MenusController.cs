@@ -139,6 +139,40 @@ public class MenusController : Controller
         return NoContent();
     }
 
+    [HttpGet("admin/{id:int}/permisos-perfiles")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(IReadOnlyList<MenuPerfilPermisoDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListarPermisosPerfilesAdmin(int id, CancellationToken ct)
+    {
+        var list = await _cuarta.ListarPermisosPerfilesMenuAsync(id, ct);
+        return list is null ? NotFound() : Ok(list);
+    }
+
+    [HttpPut("admin/{id:int}/permisos-perfiles")]
+    [Authorize(Policy = "SoloAdministrador")]
+    [ProducesResponseType(typeof(IReadOnlyList<MenuPerfilPermisoDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ActualizarPermisosPerfilesAdmin(
+        int id,
+        [FromBody] MenuPerfilAsignacionRequest request,
+        CancellationToken ct)
+    {
+        if (!JwtUserContext.TryGetUsuarioId(User, out var adminId))
+        {
+            return Unauthorized();
+        }
+
+        var correo = JwtUserContext.GetCorreo(User) ?? "admin";
+        var (data, code, status, detail) = await _cuarta.ActualizarPermisosPerfilesMenuAsync(
+            id, request, adminId, correo, ct);
+        if (data is null)
+        {
+            return Problem(detail: detail, statusCode: status, title: code,
+                extensions: code is null ? null : new Dictionary<string, object?> { ["code"] = code });
+        }
+
+        return Ok(data);
+    }
+
     #endregion
 
     /// <summary>Obtiene todos los Menus, con filtros opcionales (legacy).</summary>

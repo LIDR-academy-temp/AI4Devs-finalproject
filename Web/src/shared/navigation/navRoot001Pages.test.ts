@@ -17,7 +17,7 @@ describe('NAV-ROOT-001 pages and routes', () => {
     expect(epicRouteModules['../components/TrabajadorRoute.tsx']).toBeDefined()
   })
 
-  it.skip('TC-NAV-06 AdminReportesPage existe', () => {
+  it('TC-NAV-06 AdminReportesPage existe', () => {
     expect(epicPageModules['../../pages/AdminReportesPage.tsx']).toBeDefined()
   })
 

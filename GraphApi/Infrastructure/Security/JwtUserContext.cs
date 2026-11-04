@@ -20,4 +20,10 @@ public static class JwtUserContext
 
     public static bool EsAdministrador(ClaimsPrincipal user) =>
         user.HasClaim("perfil", "Administrador");
+
+    public static bool TryGetCondominioId(ClaimsPrincipal user, out int condominioId)
+    {
+        var raw = user.FindFirstValue("condominioId");
+        return int.TryParse(raw, out condominioId) && condominioId > 0;
+    }
 }

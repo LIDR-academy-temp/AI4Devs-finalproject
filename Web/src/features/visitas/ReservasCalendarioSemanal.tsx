@@ -62,14 +62,14 @@ export function ReservasCalendarioSemanal({
         <div className="flex gap-2">
           <button
             type="button"
-            className="cursor-pointer rounded border px-2 py-1 text-sm hover:bg-surface"
+            className="cq-portal-btn"
             onClick={() => onWeekChange(addDays(weekStartNorm, -7))}
           >
             ← Anterior
           </button>
           <button
             type="button"
-            className="cursor-pointer rounded border px-2 py-1 text-sm hover:bg-surface"
+            className="cq-portal-btn"
             onClick={() => onWeekChange(addDays(weekStartNorm, 7))}
           >
             Siguiente →
@@ -91,20 +91,26 @@ export function ReservasCalendarioSemanal({
       {loading ? (
         <div className="h-48 animate-pulse rounded-lg bg-neutral-100" aria-label="Cargando calendario" />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-neutral-100">
+        <div className="cq-portal-calendar-shell overflow-x-auto">
           <div
             className="grid min-w-[640px]"
             style={{ gridTemplateColumns: '3rem repeat(7, minmax(0, 1fr))' }}
           >
-            <div className="border-b bg-surface p-1 text-xs font-medium text-neutral-500">Todo el día</div>
+            <div className="cq-portal-calendar-grid-header border-b p-2 text-xs">Todo el día</div>
             {dayLabels.map((label) => (
-              <div key={label} className="border-b border-l bg-surface p-1 text-center text-xs font-medium text-neutral-600">
+              <div
+                key={label}
+                className="cq-portal-calendar-grid-header border-b border-l p-2 text-center text-xs"
+              >
                 {label}
               </div>
             ))}
-            <div className="p-1 text-[10px] text-neutral-400" />
+            <div className="cq-portal-calendar-hour p-1 text-[10px]" />
             {Array.from({ length: 7 }, (_, col) => (
-              <div key={`allday-${col}`} className="min-h-[2.5rem] border-l border-b p-0.5 space-y-0.5">
+              <div
+                key={`allday-${col}`}
+                className="cq-portal-calendar-cell min-h-[2.5rem] border-l border-b p-0.5 space-y-0.5"
+              >
                 {allDay
                   .filter((e) => dayIndexInWeek(weekStartNorm, new Date(e.fechaInicio)) === col)
                   .map((e) => (
@@ -123,10 +129,13 @@ export function ReservasCalendarioSemanal({
             {Array.from({ length: hourRowCount }, (_, row) => {
               const hour = hourStart + row
               return (
-                <div key={`row-${hour}`} className="contents">
-                  <div className="border-b p-1 text-[10px] text-neutral-400 tabular-nums">{hour}:00</div>
+                  <div key={`row-${hour}`} className="contents">
+                  <div className="cq-portal-calendar-hour border-b p-1 text-[10px] tabular-nums">{hour}:00</div>
                   {Array.from({ length: 7 }, (_, col) => (
-                    <div key={`cell-${hour}-${col}`} className="relative min-h-[2rem] border-l border-b p-0.5">
+                    <div
+                      key={`cell-${hour}-${col}`}
+                      className="cq-portal-calendar-cell relative min-h-[2rem] border-l border-b p-0.5"
+                    >
                       {timed
                         .filter((e) => {
                           const slotStart = new Date(weekStartNorm)

@@ -114,6 +114,37 @@ public sealed class PerfilMenuAsignacionRequest
         Array.Empty<PerfilMenuAsignacionItemRequest>();
 }
 
+public sealed class MenuPerfilPermisoDto
+{
+    [JsonPropertyName("perfilId")]
+    public int PerfilId { get; set; }
+
+    [JsonPropertyName("nombre")]
+    public string Nombre { get; set; } = string.Empty;
+
+    [JsonPropertyName("visible")]
+    public bool Visible { get; set; }
+
+    [JsonPropertyName("asignado")]
+    public bool Asignado { get; set; }
+}
+
+public sealed class MenuPerfilAsignacionItemRequest
+{
+    [JsonPropertyName("perfilId")]
+    public int PerfilId { get; set; }
+
+    [JsonPropertyName("visible")]
+    public bool Visible { get; set; } = true;
+}
+
+public sealed class MenuPerfilAsignacionRequest
+{
+    [JsonPropertyName("perfiles")]
+    public IReadOnlyList<MenuPerfilAsignacionItemRequest> Perfiles { get; set; } =
+        Array.Empty<MenuPerfilAsignacionItemRequest>();
+}
+
 public sealed class PerfilAdminListItemDto
 {
     [JsonPropertyName("perfilId")]

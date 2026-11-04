@@ -2,9 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { AdminListToolbar } from '../../../shared/components/admin'
 import { apiPost } from '../../../shared/lib/apiClient'
 import { useToast } from '../../../shared/toast/ToastContext'
 import type { CuentaFnzCatalogo, MovimientoFnz, TipoMovimientoFnz } from '../../../shared/types/finanzasAdmin'
+import { MovimientosAdminTable } from './MovimientosAdminTable'
 
 const schema = z.object({
   cuentaId: z.string().min(1, 'Selecciona cuenta'),
@@ -36,6 +38,10 @@ export function AdminMovimientosFnzSection({
 }: Props) {
   const toast = useToast()
   const tiposConMonto = useMemo(() => tipos.filter((t) => t.bCargo || t.bAbono), [tipos])
+  const metrics = useMemo(
+    () => [{ label: 'Movimientos', value: movimientos.length }],
+    [movimientos.length],
+  )
 
   const form = useForm<Form>({
     resolver: zodResolver(schema),
@@ -62,9 +68,9 @@ export function AdminMovimientosFnzSection({
 
   return (
     <>
-      <div className="card">
+      <AdminListToolbar title="Registrar movimiento" metrics={[]} />
+      <div className="card cq-admin-card mb-3">
         <div className="card-body pt-3">
-          <h2 className="h5 mb-1">Movimientos contables</h2>
           <p className="text-muted small mb-3">
             Registra egresos (ej. compra de banca, pala) o ingresos. El tipo «Gasto» resta saldo; un tipo solo abono
             suma. Configura tipos en «Tipos de movimiento».
@@ -123,51 +129,22 @@ export function AdminMovimientosFnzSection({
         </div>
       </div>
 
-      <div className="card mt-3">
+      <AdminListToolbar title="Registro de movimientos" metrics={metrics} />
+      <div className="card cq-admin-card">
         <div className="card-body pt-3">
-          <h2 className="h6 mb-3">Registro de movimientos</h2>
-          {loading && <p className="text-muted">Cargando…</p>}
-          {!loading && movimientos.length === 0 && (
-            <p className="text-muted mb-0">Sin movimientos registrados.</p>
-          )}
-          {!loading && movimientos.length > 0 && (
-            <div className="table-responsive">
-              <table className="table table-sm table-hover mb-0">
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Cuenta</th>
-                    <th>Tipo</th>
-                    <th>Motivo</th>
-                    <th className="text-end">Cargo</th>
-                    <th className="text-end">Abono</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {movimientos.map((m) => (
-                    <tr key={m.transaccionId}>
-                      <td className="tabular-nums text-nowrap small">
-                        {new Date(m.fechaCreacion).toLocaleString('es-MX')}
-                      </td>
-                      <td>{m.cuentaNombre}</td>
-                      <td>{m.tipoMovimiento}</td>
-                      <td className="min-w-0 text-break">{m.motivo ?? '—'}</td>
-                      <td className="tabular-nums text-end text-danger">
-                        {m.cargo != null
-                          ? m.cargo.toLocaleString('es-MX', { minimumFractionDigits: 2 })
-                          : '—'}
-                      </td>
-                      <td className="tabular-nums text-end text-success">
-                        {m.abono != null
-                          ? m.abono.toLocaleString('es-MX', { minimumFractionDigits: 2 })
-                          : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {loading && (
+            <div className="placeholder-glow" aria-label="Cargando movimientos">
+              <span className="placeholder col-12 mb-2" />
             </div>
           )}
+          {!loading && movimientos.length === 0 && (
+            <div className="cq-empty-state">
+              <i className="mdi mdi-swap-horizontal cq-empty-icon" aria-hidden="true" />
+              <p className="cq-empty-title">Sin movimientos</p>
+              <p className="text-muted mb-0">Registra el primer movimiento con el formulario de arriba.</p>
+            </div>
+          )}
+          {!loading && movimientos.length > 0 && <MovimientosAdminTable movimientos={movimientos} />}
         </div>
       </div>
     </>

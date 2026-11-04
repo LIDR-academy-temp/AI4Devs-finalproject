@@ -7,12 +7,25 @@ import {
 } from '../features/vehiculos/vehiculoMappers'
 import { useVehiculos, useMarcas, useModelos } from '../features/vehiculos/useVehiculos'
 import { vehiculoResidenteSchema } from '../features/vehiculos/vehiculoResidenteSchemas'
-import { ConfirmDialog, EmptyState, FormModal, PageHeader } from '../shared/components/admin'
+import {
+  ConfirmDialog,
+  FormModal,
+  PortalEntityIcon,
+  PortalEntityMain,
+  PortalEntityMeta,
+  PortalEntityTitle,
+  PortalListPage,
+  PortalListSection,
+  PortalRowActionButton,
+  PortalRowActions,
+  PortalRowList,
+  PortalRowListItem,
+} from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 import { apiPost, apiPut, apiDelete } from '../shared/lib/apiClient'
 import type { AutomovilListItem, AutomovilCrearRequest } from '../shared/types/vehiculos'
 
-function VehiculoCard({
+function VehiculoRow({
   v,
   onEdit,
   onDelete,
@@ -23,43 +36,30 @@ function VehiculoCard({
 }) {
   const incompleto = vehiculoIncompleto(v)
   return (
-    <article
-      className={`flex flex-col gap-3 rounded-xl border border-neutral-100 bg-surface-alt p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between ${
-        incompleto ? 'border-warning/40 ring-1 ring-warning/20' : 'border-neutral-200'
+    <PortalRowListItem
+      className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between${
+        incompleto ? ' ring-2 ring-inset ring-warning/30' : ''
       }`}
     >
       <div className="flex min-w-0 flex-1 items-start gap-3">
-        <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
-          aria-hidden="true"
-        >
+        <PortalEntityIcon>
           <Car className="h-5 w-5" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-lg font-bold tracking-wide text-neutral-900">{vehiculoTitulo(v)}</p>
-          <p className="text-sm text-neutral-600">{vehiculoSubtitulo(v)}</p>
+        </PortalEntityIcon>
+        <PortalEntityMain>
+          <PortalEntityTitle>{vehiculoTitulo(v)}</PortalEntityTitle>
+          <PortalEntityMeta>{vehiculoSubtitulo(v)}</PortalEntityMeta>
           {incompleto && (
             <p className="mt-1 text-xs font-medium text-warning">Agrega placas para identificar el vehículo en caseta.</p>
           )}
-        </div>
+        </PortalEntityMain>
       </div>
-      <div className="flex shrink-0 gap-2 sm:flex-col sm:items-stretch">
-        <button
-          type="button"
-          onClick={onEdit}
-          className="rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium hover:bg-surface"
-        >
-          Editar
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          className="rounded-lg border border-danger/30 bg-danger-light px-3 py-1.5 text-sm font-medium text-danger hover:bg-danger-light/80"
-        >
+      <PortalRowActions className="sm:flex-col sm:items-stretch">
+        <PortalRowActionButton onClick={onEdit}>Editar</PortalRowActionButton>
+        <PortalRowActionButton variant="danger" onClick={onDelete}>
           Eliminar
-        </button>
-      </div>
-    </article>
+        </PortalRowActionButton>
+      </PortalRowActions>
+    </PortalRowListItem>
   )
 }
 
@@ -138,49 +138,42 @@ export function MisVehiculosPage() {
   const modelosFiltrados = form.marcaId ? modelos.filter((m) => m.marcaId === form.marcaId) : modelos
 
   return (
-    <main className="mx-auto max-w-2xl space-y-4 px-4 py-6">
-      <PageHeader
-        title="Mis vehículos"
-        description="Registra los automóviles asociados a tu unidad."
-        actions={
-          <button
-            type="button"
-            onClick={openCreate}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
-          >
-            + Agregar vehículo
-          </button>
+    <>
+      <PortalListPage
+        width="2xl"
+        header={{
+          title: 'Mis vehículos',
+          description: 'Registra los automóviles asociados a tu unidad.',
+          actions: (
+            <button type="button" onClick={openCreate} className="cq-portal-btn-primary">
+              + Agregar vehículo
+            </button>
+          ),
+        }}
+        loading={loading}
+        error={error}
+        onRetry={() => void refetch()}
+        empty={
+          !loading && !error && vehiculos.length === 0
+            ? { title: 'No tienes vehículos registrados.', description: 'Agrega placas y datos para caseta.' }
+            : undefined
         }
-      />
-
-      {loading ? (
-        <div className="space-y-3" aria-label="Cargando vehículos">
-          {[1, 2].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-xl bg-neutral-100" />
-          ))}
-        </div>
-      ) : error ? (
-        <button
-          type="button"
-          className="cursor-pointer text-sm text-primary underline"
-          onClick={() => void refetch()}
-        >
-          Reintentar
-        </button>
-      ) : vehiculos.length === 0 ? (
-        <EmptyState title="No tienes vehículos registrados." />
-      ) : (
-        <div className="space-y-3">
-          {vehiculos.map((v) => (
-            <VehiculoCard
-              key={v.automovilId}
-              v={v}
-              onEdit={() => openEdit(v)}
-              onDelete={() => setDeleteId(v.automovilId)}
-            />
-          ))}
-        </div>
-      )}
+      >
+        {vehiculos.length > 0 ? (
+          <PortalListSection>
+            <PortalRowList>
+              {vehiculos.map((v) => (
+                <VehiculoRow
+                  key={v.automovilId}
+                  v={v}
+                  onEdit={() => openEdit(v)}
+                  onDelete={() => setDeleteId(v.automovilId)}
+                />
+              ))}
+            </PortalRowList>
+          </PortalListSection>
+        ) : null}
+      </PortalListPage>
 
       <FormModal
         open={modalOpen}
@@ -284,6 +277,6 @@ export function MisVehiculosPage() {
         onCancel={() => setDeleteId(null)}
         onConfirm={() => void confirmDelete()}
       />
-    </main>
+    </>
   )
 }

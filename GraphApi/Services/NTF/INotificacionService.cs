@@ -13,7 +13,12 @@ public interface INotificacionService
         string correo,
         CancellationToken ct = default);
 
-    Task<int> AvisoGeneralAsync(string titulo, string mensaje, NotificacionAutor autor, CancellationToken ct = default);
+    Task<int> AvisoGeneralAsync(
+        string titulo,
+        string mensaje,
+        NotificacionAutor autor,
+        CancellationToken ct = default,
+        int? condominioId = null);
 
     Task<int> NotificarUsuarioAsync(
         IDbTransaction tx,

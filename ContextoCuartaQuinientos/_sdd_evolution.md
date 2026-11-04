@@ -29,6 +29,20 @@
 | 2026-10-28 | FE-ENC-RES-001 | encuestas, frontend, backend | S | 0 | backend, frontend | Sí (APROBADO 1ª en revisar) | 0 | N/A | estándar |
 | 2026-10-30 | PROD-RES-001 | encuestas, tickets, visitas-areas, frontend, backend | M | 0 | backend, frontend, database | Sí (retro impl.md) | 0 | N/A | estándar (retro-SDD) |
 | 2026-10-30 | FE-NAV-ENT1-001 | frontend, sgr | S | 0 | frontend, database | Sí (retro impl.md) | 0 | N/A | estándar (retro-SDD) |
+| 2026-11-04 | FE-ADMIN-UX-002 | frontend, usuarios, finanzas, anuncios | M | 0 | frontend, backend | Sí (retro SDD) | 0 | N/A | ligero (retro post-código) |
+| 2026-11-04 | BI-RPT-001 | reportes-bi, frontend, finanzas, tickets, notificaciones, sgr | L | 0 | database, backend, frontend | No (1 ciclo auditoría SQL + fixes post-PR) | 1 | 7/7 PASS | estándar |
+
+## 2026-11-04 — BI-RPT-001
+
+- **Qué:** Reportes admin + BI tendencias + exports + aviso NTF; menús SGR; fixes JWT/Dapper/NTF post-revisión.
+- **Evidencia:** SQL 7/7; xUnit 4; Vitest 6; hub [.planning/tkt-bi-rpt-001/_index.md](.planning/tkt-bi-rpt-001/_index.md).
+- **meta-sdd:** cache SqlSchemaCompat fuera de tx; Dapper DateOnly; condominioId admin en login.
+
+## 2026-11-04 — FE-ADMIN-UX-002
+
+- **Qué:** Menús admin + permisos por menú; tablas finanzas; fix vigencia anuncios por día.
+- **Evidencia:** Vitest 293 OK; hub [.planning/tkt-fe-admin-ux-002/_index.md](.planning/tkt-fe-admin-ux-002/_index.md).
+- **Despliegue:** reiniciar GraphApi.
 
 ## 2026-10-16 — Fase 1 núcleo cerrada
 

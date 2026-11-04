@@ -7,6 +7,7 @@ import { AppSidebar } from './AppSidebar'
 import { Breadcrumbs } from './Breadcrumbs'
 import { ModuleTitle } from './ModuleTitle'
 import { MobileDrawer } from './MobileDrawer'
+import { ThemeSwitcher } from './ThemeSwitcher/ThemeSwitcher'
 import { UserMenu } from './UserMenu'
 import '../../styles/app-shell.css'
 
@@ -55,6 +56,7 @@ export function AppShell() {
           </div>
 
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            <ThemeSwitcher />
             <NotificationBell />
             <UserMenu variant="header" />
           </div>

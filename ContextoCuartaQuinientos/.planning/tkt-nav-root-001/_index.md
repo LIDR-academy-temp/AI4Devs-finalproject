@@ -2,7 +2,7 @@
 
 ## Estado
 
-**CERRADO ENTREGA 2 (fases A–D en prod)** — fases **E→G** diferidas a **v2** ([[FE-NAV-ENT1-001]] ARCHIVADO; no reactivar en entrega académica)
+**CERRADO ENTREGA 2 (fases A–D en prod)** — **E + G** en ejecución vía [[BI-RPT-001]] (sin bot); **F** (BOT web) backlog [[bot-ia]]
 
 | Campo | Valor |
 |-------|-------|
@@ -47,7 +47,7 @@
 | **F** | NAV-ROOT-001-F | Integración BOT en web (`/admin/integraciones/bot`) + manifest |
 | **G** | NAV-ROOT-001-G | NTF aviso admin, cierre matriz 15/15, docs + inventario deploy |
 
-> **Entrega 2 académica:** E/F/G siguen ocultos — [[FE-NAV-ENT1-001]]. Implementar E→G solo en v2 (bot / BI / aviso masivo), no en el cierre Typeform actual.
+> **2026-11-04:** [[BI-RPT-001]] implementa **E + G** (reportes/BI/aviso) **sin** fase F ni bot/IA. Menús BOT siguen ocultos hasta ticket bot.
 
 ## TKTs relacionados
 
@@ -65,3 +65,4 @@
 | 2026-10-28 | LISTO PARA PR (fase A) | EN REVISIÓN (fase B) | /ejecutar fase B: NotificacionesPage + rutas /notificaciones |
 | 2026-10-28 | EN REVISIÓN (fase D) | LISTO PARA PR (fases A+B+C+D) | /revisar fase D: SQL 6/6 · xUnit 4/4 · APIS.md +1 endpoint · auditorías APROBADO |
 | 2026-10-30 | LISTO PARA PR (A–D) | **CERRADO E2 (A–D)** | Alcance académico · [PULIR_ENTREGA_2.md](../../PULIR_ENTREGA_2.md) |
+| 2026-11-04 | — | **E+G → BI-RPT-001** | Spec/design BI-RPT sin bot/IA; F backlog bot-ia |

@@ -1,6 +1,10 @@
 import { formatFecha, formatMxn, formatPeriodo } from '../../finanzas/format'
-import { cuotaMontoTotal } from './cuotaMontoUtils'
+import { AdminFilterableTable, AdminMobileCardList } from '../../../shared/components/admin'
+import { useClientTableFilter } from '../../../shared/hooks/useClientTableFilter'
 import type { CuotaEstado } from '../../../shared/types/finanzas'
+import { CuotaAdminMobileCard } from './CuotaAdminMobileCard'
+import { CUOTAS_ADMIN_ACCESSORS, CUOTAS_ADMIN_COLUMNS } from './cuotasAdminTableFilter'
+import { cuotaMontoTotal } from './cuotaMontoUtils'
 
 const estadoBadgeClass: Record<string, string> = {
   Pagada: 'badge bg-success',
@@ -14,20 +18,36 @@ type Props = {
 }
 
 export function CuotasAdminTable({ cuotas, onRegistrarPago }: Props) {
+  const {
+    filteredRows,
+    globalSearch,
+    setGlobalSearch,
+    columnFilters,
+    onColumnFilterChange,
+    filteredCount,
+    totalCount,
+  } = useClientTableFilter(cuotas, CUOTAS_ADMIN_COLUMNS, CUOTAS_ADMIN_ACCESSORS)
+
   return (
-    <div className="table-responsive">
-      <table className="table table-sm table-hover mb-0">
-        <thead>
+    <>
+      <AdminFilterableTable
+        columns={CUOTAS_ADMIN_COLUMNS}
+        columnFilters={columnFilters}
+        onColumnFilterChange={onColumnFilterChange}
+        globalSearch={globalSearch}
+        onGlobalSearchChange={setGlobalSearch}
+        filteredCount={filteredCount}
+        totalCount={totalCount}
+        globalSearchPlaceholder="Buscar cuota…"
+      >
+        {filteredRows.length === 0 ? (
           <tr>
-            <th>Período</th>
-            <th className="text-end">Monto</th>
-            <th>Vencimiento</th>
-            <th>Estado</th>
-            <th className="text-center cq-actions">Acciones</th>
+            <td colSpan={CUOTAS_ADMIN_COLUMNS.length} className="text-center text-muted py-4">
+              Sin resultados para los filtros aplicados.
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {cuotas.map((c) => {
+        ) : (
+          filteredRows.map((c) => {
             const pendiente = c.estado !== 'Pagada'
             return (
               <tr key={c.cuotaId} className={c.esVencida ? 'table-danger' : undefined}>
@@ -61,9 +81,21 @@ export function CuotasAdminTable({ cuotas, onRegistrarPago }: Props) {
                 </td>
               </tr>
             )
-          })}
-        </tbody>
-      </table>
-    </div>
+          })
+        )}
+      </AdminFilterableTable>
+      <AdminMobileCardList
+        className="d-md-none"
+        rows={filteredRows}
+        getRowKey={(c) => c.cuotaId}
+        emptyMessage="Sin cuotas para mostrar."
+        renderCard={(c) => (
+          <CuotaAdminMobileCard
+            cuota={c}
+            onRegistrarPago={onRegistrarPago ? (cuota) => onRegistrarPago(cuota) : undefined}
+          />
+        )}
+      />
+    </>
   )
 }

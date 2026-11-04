@@ -44,6 +44,15 @@ public interface ICuartaNavegacionService
         string adminCorreo,
         CancellationToken ct = default);
 
+    Task<IReadOnlyList<MenuPerfilPermisoDto>?> ListarPermisosPerfilesMenuAsync(int menuId, CancellationToken ct = default);
+
+    Task<(IReadOnlyList<MenuPerfilPermisoDto>? Data, string? Code, int Status, string? Detail)> ActualizarPermisosPerfilesMenuAsync(
+        int menuId,
+        MenuPerfilAsignacionRequest request,
+        int adminId,
+        string adminCorreo,
+        CancellationToken ct = default);
+
     Task<(PerfilAdminListItemDto? Data, string? Code, int Status, string? Detail)> CrearPerfilAdminAsync(
         PerfilAdminUpsertRequest request,
         int adminId,

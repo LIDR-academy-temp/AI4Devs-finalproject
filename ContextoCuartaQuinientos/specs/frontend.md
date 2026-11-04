@@ -102,6 +102,7 @@ Source of truth del comportamiento UI compartido de la SPA (`Web/`), independien
 - Menú usuario: `GET /SGR/Navegacion/menus` (JWT). Vacío → `APP_NAV` estático.
 - Con menú API poblado: `NavMenuGuard` exige ruta en árbol permitido.
 - Admin menús/permisos: APIs [[SGR-BE-030]]; listado perfiles `GET /SGR/Perfiles/admin`.
+- **(delta [[FE-ADMIN-UX-002]])** `/admin/menus`: panel lateral CRUD + `MenuPerfilPermisosPanel`; APIs `GET/PUT /SGR/Menus/admin/{id}/permisos-perfiles`.
 - Seed menús: `SQL/DB-007_sgr_menus_seed.sql` (ticket DB-006 SGR); tras ejecutarlo el sidebar usa API si hay filas en `PerfilMenus`.
 - **(delta [[NAV-ROOT-001]])** Epic completo: manifest + DB-008 + fases A–G; matriz [MATRIZ_MODULOS.md](.planning/tkt-nav-root-001/MATRIZ_MODULOS.md); incluye RPT/BI, integración BOT web, NTF admin.
 - **(delta [[FE-NAV-ENT1-001]])** Entrega 1: fases E/F/G con `implemented: false` + `filterNavItemsByManifest`; SQL opcional `20261030_sgr_menus_entrega1_off_nav_efg.sql`. Ocultar solo en BD no basta (supplement re-inyectaba).
@@ -151,6 +152,7 @@ N/A en este dominio (consumen contratos por módulo).
 
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
+| 2026-11-04 | [[FE-ADMIN-UX-002]] | `/admin/menus` permisos por menú; finanzas tablas filtrables; fix vigencia anuncios (fecha). |
 | 2026-10-30 | [[PROD-ADMIN-001]] | Pestañas archivos/anuncios admin; CRUD perfiles; alineación prod documentada. |
 | 2026-10-30 | [[FE-NAV-ENT1-001]] | Ocultar sidebar E/F/G entrega 1; manifest `implemented:false`; filtro nav; script PerfilMenus. |
 | 2026-10-30 | [[PROD-RES-001]] | `supplementApiNavWithManifest` si SGR prod incompleto; encuestas residente PascalCase; pases visita combo Tipo ID. |

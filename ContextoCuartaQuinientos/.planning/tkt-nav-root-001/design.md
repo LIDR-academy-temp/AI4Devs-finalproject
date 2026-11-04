@@ -1,6 +1,8 @@
-[← spec](spec.md) | [← index](_index.md) | [matriz](MATRIZ_MODULOS.md)
-
 # design.md — NAV-ROOT-001 (alcance completo)
+
+> **Ejecución 2026-11-04:** fases **E + G** (reportes, BI, aviso NTF) viven en [[BI-RPT-001]] **sin bot/IA**. Fase **F** permanece en backlog [[bot-ia]]. Este design sigue siendo referencia del epic; detalle implementación acotado en [tkt-bi-rpt-001/design.md](../tkt-bi-rpt-001/design.md).
+
+[← spec](spec.md) | [← index](_index.md) | [matriz](MATRIZ_MODULOS.md)
 
 ## Estrategia técnica
 

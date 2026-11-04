@@ -24,6 +24,13 @@ export type PerfilMenuPermiso = {
   asignado: boolean
 }
 
+export type MenuPerfilPermiso = {
+  perfilId: number
+  nombre: string
+  visible: boolean
+  asignado: boolean
+}
+
 export type PerfilListItem = {
   perfilId: number
   nombre: string

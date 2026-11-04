@@ -58,7 +58,14 @@ export function AdminAnunciosPage() {
       { label: 'Anuncios', value: data.length },
       {
         label: 'Vigentes',
-        value: data.filter((a) => !a.vigenteHasta || new Date(a.vigenteHasta) >= new Date()).length,
+        value: data.filter((a) => {
+          if (!a.vigenteHasta) return true
+          const end = new Date(a.vigenteHasta)
+          const today = new Date()
+          end.setHours(0, 0, 0, 0)
+          today.setHours(0, 0, 0, 0)
+          return end >= today
+        }).length,
       },
       { label: 'Tipos', value: tipos.length },
     ],
@@ -207,13 +214,7 @@ export function AdminAnunciosPage() {
       </ul>
 
       {tab === 'tipos' && (
-        <>
-          <AdminListToolbar
-            title="Tipos de anuncio"
-            metrics={[{ label: 'Tipos', value: tipos.length }]}
-          />
-          <AdminTiposAnuncioSection tipos={tipos} loading={tiposLoading} onReload={reloadTipos} />
-        </>
+        <AdminTiposAnuncioSection tipos={tipos} loading={tiposLoading} onReload={reloadTipos} />
       )}
 
       {tab === 'anuncios' && (
@@ -370,6 +371,7 @@ export function AdminAnunciosPage() {
                 Vigente hasta (opcional)
               </label>
               <input id="anuncio-vigencia" type="date" className="form-control" {...register('vigenteHasta')} />
+              <div className="form-text">Incluye todo el dia elegido. Vacio = sin fecha de fin.</div>
             </div>
           </AdminSidePanel>
         }

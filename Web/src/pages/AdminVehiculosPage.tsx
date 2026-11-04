@@ -291,40 +291,26 @@ export function AdminVehiculosPage() {
       </ul>
 
       {tab === 'marcas' && (
-        <>
-          <AdminListToolbar
-            title="Marcas"
-            metrics={[{ label: 'Marcas', value: marcas.length }]}
-            primaryAction={primaryAction}
-          />
-          <AdminMarcasVehiculoSection
-            marcas={marcas}
-            loading={marcasLoading}
-            onReload={async () => {
-              await reloadMarcas()
-              await reloadModelos()
-            }}
-          />
-        </>
+        <AdminMarcasVehiculoSection
+          marcas={marcas}
+          loading={marcasLoading}
+          onReload={async () => {
+            await reloadMarcas()
+            await reloadModelos()
+          }}
+        />
       )}
 
       {tab === 'modelos' && (
-        <>
-          <AdminListToolbar
-            title="Modelos"
-            metrics={[{ label: 'Modelos', value: modelos.length }]}
-            primaryAction={primaryAction}
-          />
-          <AdminModelosVehiculoSection
-            modelos={modelos}
-            marcas={marcas}
-            loading={modelosLoading}
-            onReload={async () => {
-              await reloadModelos()
-              await reloadMarcas()
-            }}
-          />
-        </>
+        <AdminModelosVehiculoSection
+          modelos={modelos}
+          marcas={marcas}
+          loading={modelosLoading}
+          onReload={async () => {
+            await reloadModelos()
+            await reloadMarcas()
+          }}
+        />
       )}
 
       {tab === 'padron' && (

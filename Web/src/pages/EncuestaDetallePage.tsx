@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { EmptyState, PageHeader } from '../shared/components/admin'
+import { EmptyState, PageHeader, PortalPageLayout } from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 import { esPreguntaSeleccionMultiple, esPreguntaTextoLibre } from '../features/encuestas/encuestaQuestionTypes'
 import { normalizeEncuestaDetalle } from '../features/admin/encuestas/encuestaMappers'
@@ -76,27 +76,27 @@ export function EncuestaDetallePage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-2xl p-8">
+      <PortalPageLayout width="2xl">
         <p className="text-neutral-700">Cargando…</p>
-      </main>
+      </PortalPageLayout>
     )
   }
   if (error) {
     return (
-      <main className="mx-auto max-w-2xl p-8">
+      <PortalPageLayout width="2xl">
         <Link to="/encuestas" className="text-sm text-primary hover:underline">← Encuestas</Link>
         <EmptyState
           title="No se pudo cargar la encuesta"
           description="Revisa tu conexión o vuelve al listado."
         />
-      </main>
+      </PortalPageLayout>
     )
   }
   if (!encuesta) return null
 
   if (encuesta.yaParticipo || enviado) {
     return (
-      <main className="mx-auto flex max-w-2xl flex-col items-center gap-4 md:p-8 p-8 text-center">
+      <PortalPageLayout width="2xl" className="flex flex-col gap-4">
         <svg className="h-12 w-12 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
@@ -115,12 +115,12 @@ export function EncuestaDetallePage() {
         >
           Volver a encuestas
         </button>
-      </main>
+      </PortalPageLayout>
     )
   }
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 p-4 md:p-8">
+    <PortalPageLayout width="2xl" className="flex flex-col gap-6">
       <Link to="/encuestas" className="text-sm text-primary hover:underline">← Encuestas</Link>
       <PageHeader title={encuesta.titulo} description={encuesta.descripcion ?? undefined} />
 
@@ -191,6 +191,6 @@ export function EncuestaDetallePage() {
           </button>
         </div>
       </form>
-    </main>
+    </PortalPageLayout>
   )
 }

@@ -47,6 +47,17 @@ public interface ICuartaNavegacionRepository
         int usuarioId,
         IDbTransaction tx);
 
+    Task<IReadOnlyList<MenuPerfilPermisoDto>> ListarPermisosPerfilesMenuAsync(int menuId, CancellationToken ct = default);
+
+    Task<int> ContarPerfilesExistentesAsync(IReadOnlyCollection<int> perfilIds, IDbTransaction tx);
+
+    Task SincronizarMenuPerfilesAsync(
+        int menuId,
+        IReadOnlyList<MenuPerfilAsignacionItemRequest> perfiles,
+        string correo,
+        int usuarioId,
+        IDbTransaction tx);
+
     Task<int> InsertPerfilAsync(
         string nombre,
         string? descripcion,

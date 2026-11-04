@@ -10,6 +10,7 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using FluentValidation;
 using GraphApi.Infrastructure;
+using GraphApi.Infrastructure.Dapper;
 using GraphApi.Infrastructure.RequestContext;
 using GraphApi.Infrastructure.RateLimiting;
 using GraphApi.Infrastructure.Services;
@@ -55,6 +56,8 @@ namespace GraphApi.Infrastructure.Extensions
     {
         public static WebApplicationBuilder AddInfrastructureServices(this WebApplicationBuilder builder)
         {
+            DapperDateOnlyBootstrap.EnsureRegistered();
+
             var services = builder.Services;
             var config = builder.Configuration;
             var isDevelopment = builder.Environment.IsDevelopment();
@@ -266,6 +269,9 @@ namespace GraphApi.Infrastructure.Extensions
             services.AddScoped<IValidator<ResumenPeriodoQuery>, ResumenPeriodoQueryValidator>();
             services.AddScoped<IDashboardKpiRepository, DashboardKpiRepository>();
             services.AddScoped<IFinanzasService, FinanzasService>();
+            services.AddScoped<GraphApi.Repositories.Reports.IBiKpiSnapshotRepository, GraphApi.Repositories.Reports.BiKpiSnapshotRepository>();
+            services.AddScoped<GraphApi.Services.Reports.IBiKpiSnapshotService, GraphApi.Services.Reports.BiKpiSnapshotService>();
+            services.AddHostedService<GraphApi.Services.Reports.BiSnapshotWorker>();
             services.AddScoped<IUsuarioAdminRepository, UsuarioAdminRepository>();
             services.AddScoped<ICuartaUsuarioAdminService, CuartaUsuarioAdminService>();
             services.AddScoped<ICasasCuartaRepository, CasasCuartaRepository>();

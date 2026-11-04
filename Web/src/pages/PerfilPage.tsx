@@ -9,7 +9,7 @@ import { perfilSchema, type PerfilForm } from '../features/perfil/perfilSchema'
 import { PerfilRegistroCard } from '../features/perfil/PerfilRegistroCard'
 import { vehiculoSubtitulo, vehiculoTitulo } from '../features/vehiculos/vehiculoMappers'
 import { useVehiculos } from '../features/vehiculos/useVehiculos'
-import { PageHeader } from '../shared/components/admin'
+import { PageHeader, PortalPageLayout, PortalSection } from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 import { apiGet, apiPut } from '../shared/lib/apiClient'
 
@@ -126,82 +126,70 @@ export function PerfilPage() {
   })
 
   const ubicacion = [meta?.unidad, meta?.condominio].filter(Boolean).join(' · ')
+  const displayName = session?.nombre ?? meta?.perfil
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-6 md:p-8">
+    <PortalPageLayout width="3xl" className="flex flex-col gap-4">
       <PageHeader
+        bordered
         title="Mi perfil"
         description="Datos de contacto y registros de tu unidad (vehículos y mascotas)."
       />
 
-      {ubicacion && (
-        <p className="text-sm text-neutral">
-          <span className="font-medium text-neutral-800">{session?.nombre}</span>
-          {meta?.perfil && (
-            <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              {meta.perfil}
-            </span>
-          )}
-          <span className="mt-1 block text-neutral">{ubicacion}</span>
-        </p>
+      {(displayName || ubicacion || meta?.perfil) && (
+        <div className="cq-portal-perfil-identity">
+          {displayName ? (
+            <p className="cq-portal-perfil-identity__name">
+              {displayName}
+              {meta?.perfil ? (
+                <span className="cq-portal-badge ml-2 bg-primary/10 text-primary border border-primary/20">
+                  {meta.perfil}
+                </span>
+              ) : null}
+            </p>
+          ) : null}
+          {ubicacion ? <p className="cq-portal-perfil-identity__meta">{ubicacion}</p> : null}
+        </div>
       )}
 
-      {loadError && (
+      {loadError ? (
         <p className="text-sm text-neutral" role="status">
           No se pudieron cargar tus datos. Recarga la página o intenta más tarde.
         </p>
-      )}
+      ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section
-          className="rounded-xl border border-neutral-200 bg-surface-alt p-5 shadow-sm"
-          aria-labelledby="perfil-datos-heading"
-        >
-          <h2 id="perfil-datos-heading" className="text-base font-semibold text-neutral-900">
-            Datos de contacto
-          </h2>
-          <p className="mt-1 text-sm text-neutral">Correo y teléfono para avisos del condominio.</p>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <PortalSection variant="padded" title="Datos de contacto" titleId="perfil-datos-heading">
+          <p className="cq-portal-stat-block__meta mb-3">
+            Correo y teléfono para avisos del condominio.
+          </p>
 
-          {loading && <p className="mt-4 text-sm text-neutral">Cargando perfil…</p>}
-          {!loading && (
-            <form className="mt-4 flex flex-col gap-3" onSubmit={onSubmit} noValidate>
-              {esAdmin && (
-                <label className="flex flex-col gap-1 text-sm">
+          {loading ? <p className="text-sm text-neutral">Cargando perfil…</p> : null}
+          {!loading ? (
+            <form className="cq-portal-form" onSubmit={onSubmit} noValidate>
+              {esAdmin ? (
+                <label>
                   Nombre
-                  <input className="rounded-md border border-neutral-200 px-3 py-2" {...register('nombre')} />
-                  {errors.nombre && <span className="text-danger">{errors.nombre.message}</span>}
+                  <input {...register('nombre')} />
+                  {errors.nombre ? <span className="text-danger">{errors.nombre.message}</span> : null}
                 </label>
-              )}
-              <label className="flex flex-col gap-1 text-sm">
+              ) : null}
+              <label>
                 Correo
-                <input
-                  type="email"
-                  autoComplete="email"
-                  className="rounded-md border border-neutral-200 px-3 py-2"
-                  {...register('correo')}
-                />
-                {errors.correo && <span className="text-danger">{errors.correo.message}</span>}
+                <input type="email" autoComplete="email" {...register('correo')} />
+                {errors.correo ? <span className="text-danger">{errors.correo.message}</span> : null}
               </label>
-              <label className="flex flex-col gap-1 text-sm">
+              <label>
                 Teléfono
-                <input
-                  inputMode="tel"
-                  autoComplete="tel"
-                  className="rounded-md border border-neutral-200 px-3 py-2"
-                  {...register('telefono')}
-                />
-                {errors.telefono && <span className="text-danger">{errors.telefono.message}</span>}
+                <input inputMode="tel" autoComplete="tel" {...register('telefono')} />
+                {errors.telefono ? <span className="text-danger">{errors.telefono.message}</span> : null}
               </label>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
-              >
+              <button type="submit" disabled={isSubmitting} className="cq-portal-btn cq-portal-btn-primary">
                 Guardar cambios
               </button>
             </form>
-          )}
-        </section>
+          ) : null}
+        </PortalSection>
 
         <div className="flex flex-col gap-4">
           <PerfilRegistroCard
@@ -233,11 +221,19 @@ export function PerfilPage() {
         </div>
       </div>
 
-      <p className="text-center text-sm text-neutral">
-        <Link to="/cambiar-password" className="text-primary hover:underline">
+      <p className="border-t border-neutral-100 pt-4 text-center text-sm">
+        <Link to="/cambiar-password" className="font-medium text-primary hover:underline">
           Cambiar contraseña
         </Link>
+        {esAdmin ? (
+          <>
+            {' · '}
+            <Link to="/admin/perfiles" className="font-medium text-primary hover:underline">
+              Administrar perfiles
+            </Link>
+          </>
+        ) : null}
       </p>
-    </main>
+    </PortalPageLayout>
   )
 }

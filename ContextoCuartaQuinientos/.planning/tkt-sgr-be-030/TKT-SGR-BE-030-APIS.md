@@ -68,6 +68,24 @@ Body:
 ### 2.4 Eliminar (soft) → **DELETE**
 `DELETE /SGR/Menus/admin/{id}` → **204**
 
+### 2.5 Permisos por menú (inverso a §4) → **GET / PUT** *(delta [[FE-ADMIN-UX-002]])*
+`GET /SGR/Menus/admin/{menuId}/permisos-perfiles`
+
+Lista todos los perfiles con flags `asignado` / `visible` para ese menú.
+
+`PUT /SGR/Menus/admin/{menuId}/permisos-perfiles`
+
+Body:
+```json
+{
+  "perfiles": [
+    { "perfilId": 2, "visible": true }
+  ]
+}
+```
+
+Solo perfiles en el array quedan asignados a ese menú; el resto se desasigna (soft delete en `sgr.PerfilMenus`).
+
 Errores de negocio: `ProblemDetails` con extensión `code` (ej. `MENU_PADRE_INVALIDO`, `NOT_FOUND`).
 
 ---
@@ -131,5 +149,7 @@ Body:
 | 6 | GET | `/SGR/Perfiles/admin` | Administrador |
 | 7 | GET | `/SGR/Perfiles/{id}/permisos-menus` | Administrador |
 | 8 | PUT | `/SGR/Perfiles/{id}/permisos-menus` | Administrador |
+| 9 | GET | `/SGR/Menus/admin/{id}/permisos-perfiles` | Administrador |
+| 10 | PUT | `/SGR/Menus/admin/{id}/permisos-perfiles` | Administrador |
 
 **Smoke:** `GET /SGR/Navegacion/menus` y `GET /SGR/Menus/admin` → **200**; residente `POST /SGR/Menus/admin` → **403** (2026-10-27).

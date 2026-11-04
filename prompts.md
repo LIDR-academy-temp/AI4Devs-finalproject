@@ -1438,6 +1438,45 @@ Documentar workflows de cierre (gap analysis, E2E, rama, Typeform) con herramien
 
 ---
 
+## Flujo 5 — TDD por módulo (matriz + gates + script)
+
+**Objetivo dado a la IA (Cursor Agent):** ningún dominio in-scope sin tests; bot/IA v2 excluido; alineado a ADR-001 (lógica en C#, no SP de negocio por módulo).
+
+**Prompt representativo:**
+
+```markdown
+## Rol
+Arquitecto de pruebas Entrega 3.
+
+## Contexto
+CuartaQuinientos: xUnit (API), Vitest (Web), E2E Playwright opt-in, SQL TDD solo en tickets de BD (BI-RPT-001).
+
+## Objetivo
+Matriz por módulo + gates que fallen si falta un dominio + script único de ejecución local.
+
+## Restricciones
+No inventar suites SQL por dominio si no hay SP; documentar sqlcmd solo para BI-RPT-001_PruebasUnitarias.sql.
+
+## Criterio de calidad
+Invoke-Entrega3Tests.ps1 en verde; ModulosTddCoverageTests + entrega3ModulosTdd.test.ts en repo.
+```
+
+**Artefactos (verificables en repo):**
+
+| Pieza | Ruta |
+|--------|------|
+| Matriz humana | `ContextoCuartaQuinientos/MATRIZ_TDD_ENTREGA3.md` |
+| Gate API (13 módulos) | `GraphApi/GraphApi.Tests/ModulosTddCoverageTests.cs` |
+| Gate Web (15 checks) | `Web/src/smoke/entrega3ModulosTdd.test.ts` |
+| Runner local | `scripts/Invoke-Entrega3Tests.ps1` |
+| Tests nuevos BI/NTF/SGR | `CuartaCasasServiceTests`, `AvisoGeneralRequestValidatorTests`, `biTrendsUtils.test.ts`, páginas admin reportes/aviso, etc. |
+
+**Ejecución registrada (nov 2026, local):** `.\scripts\Invoke-Entrega3Tests.ps1` → Vitest **325** passed (1 skipped E2E gate) · xUnit **188** passed (filtro sin Smoke ni integración HTTP+SQL).
+
+**Criterio humano:** no duplicar TDD en 13 scripts SQL; el gate de archivos evita “módulo olvidado” sin burocracia por ticket. SQL TDD explícito solo donde hay DDL ticket (`BI-RPT-001`).
+
+---
+
 ## Criterio humano — Entrega 3
 
 | Decisión | Motivo |
@@ -1446,9 +1485,11 @@ Documentar workflows de cierre (gap analysis, E2E, rama, Typeform) con herramien
 | 4 specs E2E | Login, ticket, finanzas residente + admin casas |
 | Bot sin tests | v2 fuera de alcance en README |
 | Typeform manual | Activa revisión; solo el humano envía |
+| TDD por módulo vía gates | Matriz + script; no 13 suites SQL inventadas |
 
 ## Métricas de cierre (noviembre 2026)
 
 - **Rama:** `final-project-AFS`.
-- **E2E:** 4 archivos en `Web/e2e/` (`E2E_SMOKE=1`).
+- **E2E:** 4 archivos en `Web/e2e/` (`E2E_SMOKE=1`); ver README §2.6.1.
+- **TDD gates:** `ModulosTddCoverageTests` + `entrega3ModulosTdd.test.ts`; runner `Invoke-Entrega3Tests.ps1`.
 - **Pendiente humano:** Typeform con link al remoto.

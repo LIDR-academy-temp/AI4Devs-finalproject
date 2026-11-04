@@ -27,8 +27,10 @@ export function NotificationDropdown({
     return <p className="p-3 text-sm text-neutral">Sin notificaciones.</p>
   }
 
+  const listClass = 'max-h-80 divide-y divide-neutral-100 overflow-y-auto'
+
   return (
-    <ul className="max-h-80 divide-y divide-neutral-100 overflow-y-auto">
+    <ul className={listClass}>
       {items.map((n) => (
         <li
           key={n.notificacionId}

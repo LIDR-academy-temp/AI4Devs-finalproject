@@ -93,7 +93,15 @@ public sealed class UserRepository : IUserRepository
                        u.bActualizarPassword AS RequiereCambioPassword,
                        p.Nombre AS Perfil,
                        p.bAdministrador,
-                       c.CondominioID AS CondominioID
+                       CASE
+                           WHEN p.bAdministrador = 1 THEN COALESCE(
+                               c.CondominioID,
+                               (SELECT TOP (1) cond.CondominioID
+                                  FROM sgr.Condominios AS cond WITH (NOLOCK)
+                                 WHERE cond.bEliminado = 0
+                                 ORDER BY cond.CondominioID))
+                           ELSE c.CondominioID
+                       END AS CondominioID
                 FROM sgr.Usuarios AS u WITH (NOLOCK)
                 INNER JOIN sgr.Perfiles AS p WITH (NOLOCK) ON p.PerfilID = u.PerfilID
                 OUTER APPLY (
@@ -115,7 +123,15 @@ public sealed class UserRepository : IUserRepository
                    u.bActualizarPassword AS RequiereCambioPassword,
                    p.Perfil AS Perfil,
                    p.bAdministrador,
-                   c.CondominioID AS CondominioID
+                   CASE
+                       WHEN p.bAdministrador = 1 THEN COALESCE(
+                           c.CondominioID,
+                           (SELECT TOP (1) cond.CondominioID
+                              FROM sgr.Condominios AS cond WITH (NOLOCK)
+                             WHERE cond.bEliminado = 0
+                             ORDER BY cond.CondominioID))
+                       ELSE c.CondominioID
+                   END AS CondominioID
             FROM sgr.Usuarios AS u WITH (NOLOCK)
             INNER JOIN sgr.Perfiles AS p WITH (NOLOCK) ON p.PerfilID = u.PerfilID
             OUTER APPLY (

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { TicketsList } from '../features/tickets/TicketsList'
 import { useCatalogosTicket } from '../features/tickets/useCatalogosTicket'
 import { useTicketsAsignados } from '../features/tickets/useTicketsAsignados'
-import { EmptyState, PageHeader } from '../shared/components/admin'
+import { EmptyState, PageHeader, PortalPageLayout } from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 
 export function TrabajadorTicketsPage() {
@@ -15,7 +15,7 @@ export function TrabajadorTicketsPage() {
   useQueryErrorToast(error)
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+    <PortalPageLayout width="3xl" className="space-y-4">
       <PageHeader
         title="Tickets asignados"
         description="Incidencias que te asignó el administrador del condominio."
@@ -53,6 +53,6 @@ export function TrabajadorTicketsPage() {
       {data?.items.length ? (
         <TicketsList items={data.items} ticketPathPrefix="/trabajador/tickets" />
       ) : null}
-    </main>
+    </PortalPageLayout>
   )
 }

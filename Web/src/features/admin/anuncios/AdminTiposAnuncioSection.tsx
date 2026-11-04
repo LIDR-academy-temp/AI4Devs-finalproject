@@ -2,7 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { ConfirmDialog } from '../../../shared/components/admin'
+import {
+  AdminCatalogCrudShell,
+  AdminCatalogRowActions,
+  useAdminPanelEscape,
+} from '../../../shared/components/admin'
 import { apiDelete, apiPost, apiPut } from '../../../shared/lib/apiClient'
 import { useToast } from '../../../shared/toast/ToastContext'
 import type { TipoAnuncioItem } from '../../../shared/types/anuncios'
@@ -21,6 +25,7 @@ type Props = {
 
 export function AdminTiposAnuncioSection({ tipos, loading, onReload }: Props) {
   const toast = useToast()
+  const [panelOpen, setPanelOpen] = useState(false)
   const [editing, setEditing] = useState<TipoAnuncioItem | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<TipoAnuncioItem | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -30,16 +35,26 @@ export function AdminTiposAnuncioSection({ tipos, loading, onReload }: Props) {
     defaultValues: { tipoAnuncio: '' },
   })
 
+  const closePanel = () => {
+    setPanelOpen(false)
+    setEditing(null)
+    setFormError(null)
+  }
+
+  useAdminPanelEscape(panelOpen, closePanel)
+
   const openCreate = () => {
     setEditing(null)
     setFormError(null)
     form.reset({ tipoAnuncio: '' })
+    setPanelOpen(true)
   }
 
   const openEdit = (t: TipoAnuncioItem) => {
     setFormError(null)
     setEditing(t)
     form.reset({ tipoAnuncio: t.tipoAnuncio })
+    setPanelOpen(true)
   }
 
   const onSave = form.handleSubmit(async (values) => {
@@ -59,9 +74,8 @@ export function AdminTiposAnuncioSection({ tipos, loading, onReload }: Props) {
         return
       }
       toast.success('Tipo creado')
-      form.reset({ tipoAnuncio: '' })
     }
-    setEditing(null)
+    closePanel()
     await onReload()
   })
 
@@ -72,96 +86,91 @@ export function AdminTiposAnuncioSection({ tipos, loading, onReload }: Props) {
       toast.error(problem.detail ?? `Error ${status}`)
       return
     }
+    if (editing?.tipoAnuncioId === deleteTarget.tipoAnuncioId) closePanel()
     setDeleteTarget(null)
     toast.success('Tipo eliminado')
     await onReload()
   }
 
+  const formFooter = (
+    <>
+      <button type="button" className="btn btn-primary flex-grow-1" onClick={() => void onSave()}>
+        <i className={`mdi ${editing ? 'mdi-content-save' : 'mdi-plus'} mr-1`} />
+        {editing ? 'Actualizar' : 'Crear'}
+      </button>
+      <button type="button" className="btn btn-outline-secondary" onClick={closePanel}>
+        Cancelar
+      </button>
+    </>
+  )
+
   return (
-    <div className="card">
-      <div className="card-body pt-3">
-        <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-          <p className="text-muted mb-0 small">Catálogo usado al publicar anuncios.</p>
-          <button type="button" className="btn btn-primary btn-sm" onClick={openCreate}>
-            <i className="mdi mdi-plus mr-1" />
-            Nuevo tipo
-          </button>
-        </div>
-
-        {formError && (
-          <div className="alert alert-danger py-2 small" role="alert">
-            {formError}
-          </div>
-        )}
-
-        <form className="mb-3 border rounded p-3 bg-light" onSubmit={(e) => void onSave(e)}>
-          <div className="form-group mb-2">
+    <AdminCatalogCrudShell
+      toolbarTitle="Tipos de anuncio"
+      metricLabel="Tipos"
+      count={tipos.length}
+      createLabel="Nuevo tipo"
+      createIconClass="mdi mdi-bullhorn-outline"
+      onCreate={openCreate}
+      panelOpen={panelOpen}
+      panelTitle={editing ? 'Editar tipo de anuncio' : 'Nuevo tipo de anuncio'}
+      panelSubtitle="Catálogo usado al publicar comunicados."
+      panelIconClass={editing ? 'mdi mdi-pencil' : 'mdi mdi-bullhorn-outline'}
+      editing={Boolean(editing)}
+      onClosePanel={closePanel}
+      formFooter={formFooter}
+      loading={loading}
+      isEmpty={tipos.length === 0}
+      emptyIconClass="mdi mdi-bullhorn-outline"
+      emptyTitle="Sin tipos de anuncio"
+      emptyDescription="Crea al menos un tipo o ejecuta el script de catálogo en BD."
+      tableHead={
+        <tr>
+          <th>Tipo</th>
+          <th className="text-center cq-actions">Acciones</th>
+        </tr>
+      }
+      tableBody={tipos.map((t) => (
+        <tr key={t.tipoAnuncioId}>
+          <td className="min-w-0 text-break">
+            <strong>{t.tipoAnuncio}</strong>
+          </td>
+          <AdminCatalogRowActions
+            name={t.tipoAnuncio}
+            onEdit={() => openEdit(t)}
+            onDelete={() => setDeleteTarget(t)}
+          />
+        </tr>
+      ))}
+      panelChildren={
+        <>
+          {formError && (
+            <div className="alert alert-danger py-2 small" role="alert">
+              {formError}
+            </div>
+          )}
+          <div className="form-group mb-0">
             <label className="cq-label" htmlFor="tipo-anuncio-nombre">
-              {editing ? 'Editar tipo' : 'Nuevo tipo'}
+              Nombre <span className="text-danger">*</span>
             </label>
-            <input id="tipo-anuncio-nombre" className="form-control form-control-sm" {...form.register('tipoAnuncio')} />
+            <input id="tipo-anuncio-nombre" className="form-control" {...form.register('tipoAnuncio')} />
             {form.formState.errors.tipoAnuncio && (
-              <span className="text-danger small">{form.formState.errors.tipoAnuncio.message}</span>
+              <span className="text-danger small d-block">{form.formState.errors.tipoAnuncio.message}</span>
             )}
           </div>
-          <div className="d-flex gap-2">
-            <button type="submit" className="btn btn-primary btn-sm">
-              {editing ? 'Guardar' : 'Crear'}
-            </button>
-            {editing && (
-              <button type="button" className="btn btn-outline-secondary btn-sm" onClick={openCreate}>
-                Cancelar edición
-              </button>
-            )}
-          </div>
-        </form>
-
-        {loading && <p className="text-muted">Cargando tipos…</p>}
-        {!loading && tipos.length === 0 && (
-          <p className="text-muted mb-0">No hay tipos. Crea al menos uno o ejecuta DB-003 en la base.</p>
-        )}
-        {!loading && tipos.length > 0 && (
-          <div className="table-responsive">
-            <table className="table table-sm mb-0">
-              <thead>
-                <tr>
-                  <th>Tipo</th>
-                  <th className="text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tipos.map((t) => (
-                  <tr key={t.tipoAnuncioId}>
-                    <td className="min-w-0 text-break">{t.tipoAnuncio}</td>
-                    <td className="text-center cq-actions">
-                      <button type="button" className="btn btn-link btn-sm" onClick={() => openEdit(t)} aria-label={`Editar ${t.tipoAnuncio}`}>
-                        <i className="mdi mdi-pencil" />
-                      </button>
-                      <button type="button" className="btn btn-link btn-sm text-danger" onClick={() => setDeleteTarget(t)} aria-label={`Eliminar ${t.tipoAnuncio}`}>
-                        <i className="mdi mdi-delete" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        <ConfirmDialog
-          open={deleteTarget !== null}
-          title="Eliminar tipo de anuncio"
-          message={
-            deleteTarget
-              ? `¿Eliminar "${deleteTarget.tipoAnuncio}"? No afecta anuncios ya publicados.`
-              : ''
-          }
-          confirmLabel="Eliminar"
-          variant="danger"
-          onCancel={() => setDeleteTarget(null)}
-          onConfirm={() => void onConfirmDelete()}
-        />
-      </div>
-    </div>
+        </>
+      }
+      deleteDialog={{
+        open: deleteTarget !== null,
+        title: 'Eliminar tipo de anuncio',
+        message: deleteTarget
+          ? `¿Eliminar "${deleteTarget.tipoAnuncio}"? No afecta anuncios ya publicados.`
+          : '',
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+        onCancel: () => setDeleteTarget(null),
+        onConfirm: () => void onConfirmDelete(),
+      }}
+    />
   )
 }

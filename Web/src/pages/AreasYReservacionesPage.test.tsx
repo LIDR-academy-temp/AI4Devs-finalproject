@@ -50,7 +50,7 @@ describe('AreasYReservacionesPage', () => {
     expect(screen.getByText('Áreas comunes y reservaciones')).toBeInTheDocument()
     expect(screen.getByText('No hay áreas comunes registradas.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('tab', { name: 'Mis reservas' }))
-    expect(screen.getByText('No tienes reservaciones registradas.')).toBeInTheDocument()
+    expect(screen.getByText('Sin reservaciones')).toBeInTheDocument()
   })
 
   it('muestra área con botón reservar', () => {
@@ -69,7 +69,7 @@ describe('AreasYReservacionesPage', () => {
     render(<AreasYReservacionesPage />)
     expect(screen.getByRole('heading', { name: 'Salón' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Reservar' }))
-    expect(screen.getByText('Reservar área')).toBeInTheDocument()
+    expect(screen.getByText('Reservar: Salón')).toBeInTheDocument()
   })
 
   it('muestra reservación en tabla', () => {
@@ -154,7 +154,7 @@ describe('AreasYReservacionesPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reservar' }))
     fireEvent.change(screen.getByLabelText(/inicio/i), { target: { value: '2026-11-01T10:00' } })
     fireEvent.change(screen.getByLabelText(/fin/i), { target: { value: '2026-11-01T12:00' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar reserva' }))
 
     const { useToast } = await import('../shared/toast/ToastContext')
     const toast = useToast()
@@ -189,7 +189,7 @@ describe('AreasYReservacionesPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reservar' }))
     fireEvent.change(screen.getByLabelText(/inicio/i), { target: { value: '2026-11-01T10:00' } })
     fireEvent.change(screen.getByLabelText(/fin/i), { target: { value: '2026-11-01T12:00' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar reserva' }))
 
     const { useToast } = await import('../shared/toast/ToastContext')
     const toast = useToast()

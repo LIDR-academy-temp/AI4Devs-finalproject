@@ -1,0 +1,790 @@
+/* Portal (residente/trabajador) — refinamiento sobre .cq-portal-page-card */
+
+.cq-admin-page .cq-portal-page-card {
+  border: 1px solid var(--color-neutral-100);
+  border-radius: var(--radius-lg, 0.75rem);
+  background: var(--color-surface-alt);
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+.cq-admin-page .cq-portal-page-card > .card-body {
+  padding: 1.25rem 1.35rem;
+}
+
+@media (min-width: 768px) {
+  .cq-admin-page .cq-portal-page-card > .card-body {
+    padding: 1.5rem 2rem 2rem;
+  }
+}
+
+.cq-portal-page-header {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-neutral-100);
+}
+
+.cq-portal-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.cq-portal-back-link:hover {
+  text-decoration: underline;
+}
+
+.cq-portal-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.cq-portal-stat {
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--color-neutral-100);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-surface);
+}
+
+.cq-portal-stat-label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-neutral);
+}
+
+.cq-portal-stat-value {
+  margin: 0.35rem 0 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.cq-portal-section {
+  overflow: hidden;
+  border: 1px solid var(--color-neutral-100);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-surface);
+}
+
+.cq-portal-section--padded:has(> .cq-portal-section--padded-title) {
+  padding: 0;
+}
+
+.cq-portal-section--padded:has(> .cq-portal-section--padded-title) > :not(.cq-portal-section--padded-title) {
+  padding: 0 1.125rem 1.125rem;
+}
+
+@media (min-width: 768px) {
+  .cq-portal-section--padded:has(> .cq-portal-section--padded-title) > :not(.cq-portal-section--padded-title) {
+    padding: 0 1.25rem 1.25rem;
+  }
+}
+
+
+.cq-portal-section--padded:not(:has(> .cq-portal-section--padded-title)) {
+  padding: 1rem 1.125rem;
+}
+
+@media (min-width: 768px) {
+  .cq-portal-section--padded:not(:has(> .cq-portal-section--padded-title)) {
+    padding: 1.125rem 1.25rem;
+  }
+}
+
+
+.cq-portal-section--flush-list,
+.cq-portal-section--table {
+  padding: 0;
+}
+
+.cq-portal-section--padded-title {
+  margin: 0;
+  padding: 1rem 1.125rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-neutral-700);
+  border-bottom: 1px solid var(--color-neutral-100);
+}
+
+.cq-portal-section--flush-list > .cq-portal-section--padded-title {
+  margin-bottom: 0;
+}
+
+/* Filas alternadas — listas */
+.cq-portal-row-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cq-portal-row-list__item {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-neutral-200, var(--color-neutral-100));
+  background: var(--color-surface-alt);
+  transition: background-color 0.12s ease;
+}
+
+.cq-portal-row-list__item:nth-child(even) {
+  background: var(--color-neutral-100);
+}
+
+.cq-portal-row-list__item:hover {
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface-alt));
+}
+
+.cq-portal-row-list__item:nth-child(even):hover {
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-neutral-100));
+}
+
+.cq-portal-row-list__item:last-child {
+  border-bottom: none;
+}
+
+/* Tablas portal */
+.cq-portal-data-table-wrap {
+  width: 100%;
+}
+
+.cq-portal-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.cq-portal-data-table thead {
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-neutral-200, var(--color-neutral-100));
+}
+
+.cq-portal-data-table th {
+  padding: 0.5rem 0.875rem;
+  font-weight: 600;
+  color: var(--color-neutral-700);
+}
+
+.cq-portal-data-table td {
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--color-neutral-100);
+  vertical-align: middle;
+}
+
+.cq-portal-data-table tbody tr {
+  background: var(--color-surface-alt);
+  transition: background-color 0.12s ease;
+}
+
+.cq-portal-data-table tbody tr:nth-child(even) {
+  background: var(--color-neutral-100);
+}
+
+.cq-portal-data-table tbody tr:hover {
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
+}
+
+.cq-portal-data-table tbody tr:nth-child(even):hover {
+  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface-raised));
+}
+
+.cq-portal-data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cq-portal-row-list__item[data-unread='true'] {
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface-alt));
+}
+
+.cq-portal-row-list__item[data-unread='true']:nth-child(even) {
+  background: color-mix(in srgb, var(--color-primary) 9%, var(--color-neutral-100));
+}
+
+.cq-portal-row-list__item[data-unread='true']:hover {
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface-alt));
+}
+
+.cq-portal-row-list__item[data-unread='true']:nth-child(even):hover {
+  background: color-mix(in srgb, var(--color-primary) 14%, var(--color-neutral-100));
+}
+
+.cq-portal-section-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-neutral-700);
+}
+
+.cq-portal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.cq-portal-toolbar label {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-neutral-700);
+}
+
+/* Tabs portal */
+.cq-portal-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0;
+  border-bottom: 1px solid var(--color-neutral-100);
+}
+
+.cq-portal-tab {
+  cursor: pointer;
+  margin-bottom: -1px;
+  padding: 0.5rem 0.875rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-neutral);
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.cq-portal-tab:hover {
+  color: var(--color-neutral-700);
+}
+
+.cq-portal-tab--active {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+/* Botones secundarios */
+.cq-portal-btn {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--color-neutral-200, var(--color-neutral-100));
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-surface-alt);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-neutral-700);
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.cq-portal-btn:hover {
+  background: var(--color-neutral-100);
+  border-color: var(--color-neutral-300, var(--color-neutral-200));
+}
+
+.cq-portal-btn-primary {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-primary);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.cq-portal-btn-primary:hover {
+  background: var(--color-primary-dark);
+}
+
+/* Tarjetas de área / amenidad */
+.cq-portal-area-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--color-neutral-100);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-surface-alt);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.cq-portal-area-card:hover {
+  border-color: var(--color-neutral-200);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.cq-portal-area-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.cq-portal-area-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+}
+
+.cq-portal-area-card__meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-neutral);
+}
+
+/* Filas de entidad (mascota, vehículo) */
+.cq-portal-entity-icon {
+  display: flex;
+  height: 2.75rem;
+  width: 2.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md, 0.5rem);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface-alt));
+  font-size: 1.35rem;
+  color: var(--color-primary-dark);
+}
+
+.cq-portal-entity-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+}
+
+.cq-portal-entity-meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-neutral);
+}
+
+.cq-portal-row-action {
+  cursor: pointer;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-surface-alt);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-neutral-700);
+}
+
+.cq-portal-row-action:hover {
+  background: var(--color-neutral-100);
+}
+
+.cq-portal-row-action--danger {
+  cursor: pointer;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 35%, transparent);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-danger-light);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-danger);
+}
+
+.cq-portal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cq-portal-form label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-neutral-700);
+}
+
+.cq-portal-form input,
+.cq-portal-form select,
+.cq-portal-form textarea {
+  width: 100%;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-surface-alt);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.cq-portal-form input:focus,
+.cq-portal-form select:focus,
+.cq-portal-form textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+  outline-offset: 1px;
+}
+
+.cq-portal-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.cq-portal-link-row {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.cq-portal-link-row:hover .cq-portal-entity-title {
+  color: var(--color-primary-dark);
+}
+
+/* Inicio / dashboard */
+.cq-portal-home-welcome {
+  margin-bottom: 0.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-neutral-100);
+}
+
+.cq-portal-home-welcome h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+
+.cq-portal-home-welcome p {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-neutral);
+}
+
+.cq-portal-alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1.125rem;
+  border-radius: var(--radius-md, 0.5rem);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
+  background: var(--color-danger-light);
+}
+
+.cq-portal-alert__text {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.cq-portal-alert__action {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  text-decoration: none;
+}
+
+.cq-portal-alert__action:hover {
+  text-decoration: underline;
+}
+
+.cq-portal-stat--danger .cq-portal-stat-value {
+  color: var(--color-danger);
+}
+
+.cq-portal-stat--warning .cq-portal-stat-value {
+  color: var(--color-warning);
+}
+
+.cq-portal-finanzas-resumen {
+  margin-bottom: 0.25rem;
+}
+
+.cq-portal-perfil-identity {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-neutral-100);
+}
+
+.cq-portal-perfil-identity__name {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+}
+
+.cq-portal-perfil-identity__meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-neutral);
+}
+
+.cq-portal-stat-block {
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--color-neutral-100);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-surface-alt);
+  box-shadow: var(--shadow-card);
+}
+
+.cq-portal-stat-block__label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-neutral);
+}
+
+.cq-portal-stat-block__value {
+  margin: 0.35rem 0 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+}
+
+.cq-portal-stat-block__meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-neutral);
+}
+
+.cq-portal-quick-grid {
+  display: grid;
+  gap: 0.625rem;
+}
+
+@media (min-width: 640px) {
+  .cq-portal-quick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.cq-portal-quick-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-neutral-100);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-surface-alt);
+  box-shadow: var(--shadow-card);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+  text-decoration: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.cq-portal-quick-link:hover {
+  border-color: var(--color-neutral-200);
+  box-shadow: var(--shadow-card-hover);
+  background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface-alt));
+}
+
+.cq-portal-quick-link__icon {
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md, 0.5rem);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface-alt));
+  color: var(--color-primary-dark);
+}
+
+.cq-portal-quick-link__chevron {
+  margin-left: auto;
+  color: var(--color-neutral-300);
+}
+
+.cq-portal-ticket-row-chevron {
+  flex-shrink: 0;
+  color: var(--color-neutral-300);
+}
+
+.cq-portal-pase-layout {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .cq-portal-pase-layout {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  }
+}
+
+.cq-portal-pase-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cq-portal-pase-qr-panel {
+  border-top: 1px solid var(--color-neutral-100);
+  background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface-alt));
+}
+
+.cq-portal-pase-qr-panel .cq-portal-section--padded-title {
+  background: transparent;
+}
+
+.cq-portal-row-list__item--selected {
+  box-shadow: inset 3px 0 0 var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface-alt)) !important;
+}
+
+.cq-portal-row-list__item--selected:nth-child(even) {
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-neutral-100)) !important;
+}
+
+.cq-portal-pase-qr-card {
+  border: 1px solid var(--color-neutral-100);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-surface-alt);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+
+/* Segmentos (radios tipo pill) */
+.cq-portal-field-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-neutral-700);
+}
+
+.cq-portal-segment-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cq-portal-segment {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-neutral-700);
+  background: var(--color-surface-alt);
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.cq-portal-segment:hover {
+  border-color: var(--color-neutral-300);
+}
+
+.cq-portal-segment:has(input:checked) {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface-alt));
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.cq-portal-segment input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Áreas comunes */
+.cq-portal-area-grid {
+  display: grid;
+  gap: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .cq-portal-area-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.cq-portal-area-card__icon-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.cq-portal-area-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-neutral-100);
+}
+
+.cq-portal-reservas-panel {
+  overflow: hidden;
+}
+
+.cq-portal-reservas-panel__head {
+  padding: 1rem 1.125rem 0;
+  border-bottom: 1px solid var(--color-neutral-100);
+  background: var(--color-surface-alt);
+}
+
+.cq-portal-reservas-panel__head .cq-portal-tabs {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.cq-portal-reservas-panel__body {
+  padding: 1rem 1.125rem 1.25rem;
+  background: var(--color-surface);
+}
+
+.cq-portal-calendar-shell {
+  overflow: hidden;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-surface-alt);
+  box-shadow: var(--shadow-card);
+}
+
+.cq-portal-calendar-shell .cq-portal-calendar-grid-header {
+  background: var(--color-neutral-100);
+  font-weight: 600;
+  color: var(--color-neutral-700);
+}
+
+.cq-portal-calendar-shell .cq-portal-calendar-hour {
+  background: var(--color-surface-alt);
+  color: var(--color-neutral);
+}
+
+.cq-portal-calendar-shell .cq-portal-calendar-cell {
+  background: var(--color-surface-alt);
+}
+
+.cq-portal-calendar-shell .cq-portal-calendar-cell:nth-child(odd) {
+  background: color-mix(in srgb, var(--color-neutral-100) 40%, var(--color-surface-alt));
+}

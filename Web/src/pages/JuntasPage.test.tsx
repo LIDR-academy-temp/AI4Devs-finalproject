@@ -25,10 +25,10 @@ beforeEach(() => {
 })
 
 describe('JuntasPage', () => {
-  it('muestra skeleton al cargar', () => {
-    mockUseJuntas.mockReturnValue({ juntas: [], loading: true, error: null })
-    const { container } = renderPage()
-    expect(container.querySelector('.animate-pulse')).toBeTruthy()
+  it('muestra estado de carga', () => {
+    mockUseJuntas.mockReturnValue({ juntas: [], loading: true, error: null, refetch: vi.fn() })
+    renderPage()
+    expect(screen.getByText('Cargando…')).toBeInTheDocument()
   })
 
   it('muestra mensaje vacío', () => {

@@ -1,14 +1,23 @@
 # specs/reportes-bi.md — Reportes y BI (source of truth SDD)
 > Contexto de dominio SDD-Nice; se lee en /definir antes de spec.md. Solo lo verificado; lo nuevo (delta).
 
+## Alcance activo (post [[BI-RPT-001]] — ARCHIVADO 2026-11-04)
+
+| Incluye | Fuera (backlog [[bot-ia]]) |
+|---------|------------------------------|
+| Web `/admin/reportes`: morosos (selección + exports), RPT export (HU-RPT-01/02), tablero tendencias (HU-BI-01) con `BiTrendsPanel`, export BI (HU-BI-02) | Comando `/bi`, HU-BI-03, resumen redactado por IA |
+| `bi.KpiSnapshots` + `BiSnapshotWorker` + `GET /Reports/Bi/tendencias?meses=` + export BI | KPI adopción WEB/Telegram |
+| `/admin/notificaciones/aviso` + `POST /NTF/Notificaciones/aviso` (residentes del condominio JWT) | Pantalla integración BOT (NAV fase F) |
+| Menús SGR Reportes/Aviso (`20261104_sgr_menus_bi_rpt_reactivate.sql`) | Export PNG por gráfica (Should, no implementado) |
+
 ## Propósito
-Dos capas: **RPT (Reportes)** — generación y exportación de reportes operativos/financieros a PDF (QuestPDF) y Excel (ClosedXML) sobre vistas `vs*` + servicios C#; y **BI (nuevo)** — KPIs con **tendencia** entre períodos alimentados por vistas `vs*` + snapshots periódicos `bi.KpiSnapshots`. El resumen BI también se puede pedir por el bot (`/bi`), redactado por el asistente IA.
+Dos capas: **RPT (Reportes)** — generación y exportación de reportes operativos/financieros a PDF (QuestPDF) y Excel (ClosedXML) sobre vistas `vs*` + servicios C#; y **BI (nuevo)** — KPIs con **tendencia** entre períodos alimentados por vistas `vs*` + snapshots periódicos `bi.KpiSnapshots`. Resumen BI por Telegram (`/bi` + IA) queda en dominio [[bot-ia]], no en BI-RPT-001.
 
 ## Objetos del dominio (tablas + vistas reales)
 - RPT: **sin tablas propias**; lee vistas `vs*` (`fnz.vsTransacciones`, `tkt.vsTickets`, `vts.vsReservacionesArea`, etc.) vía Dapper y compone reportes con servicios C#.
 - Exportación: QuestPDF (PDF) + ClosedXML (Excel) — dependencias reales del `.csproj`.
 - BI (delta):
-  - `bi.KpiSnapshots (SnapshotID, CondominioID, Fecha, TicketsAbiertos, TicketsCerrados, IngresosMXN, EgresosMXN, ResidentesMorosos, FechaCreacion)` — **(delta)** foto periódica de KPIs para tendencias (cobranza, morosidad, tickets abiertos y tiempo de resolución, ocupación, adopción del bot). Esquema nuevo `bi`, no existe en la referencia.
+  - `bi.KpiSnapshots` — columnas: `TicketsAbiertos`, `TicketsCerrados`, `TiempoMedioResolucionHoras`, `IngresosMXN`, `EgresosMXN`, `ResidentesMorosos`, `CasasTotales`, `CasasOcupadas`, auditoría + `bEliminado`; índice único `(CondominioID, Fecha)`.
 
 ## Catálogos y estados
 - No define catálogos propios; reutiliza estados de los dominios origen (estados de ticket, `Pagado` de cuotas, estados de reservación).
@@ -31,8 +40,9 @@ Dos capas: **RPT (Reportes)** — generación y exportación de reportes operati
 ## Endpoints (/{Dominio}/{Controller})
 - Base `/Reports`:
   - `/Reports/Reportes` (`ReportesController`) — reporte financiero, de tickets, de ocupación; export PDF/Excel.
-- BI: KPIs con tendencia servidos desde `/Reports` sobre `bi.KpiSnapshots` (endpoint BI dedicado `(asumido)`; convención `/{Dominio}/{Controller}`).
-- Resumen BI por bot: `/bi` (comando del bot) -> orquesta el asistente IA (`/BOT/Asistente/Consultar`) sobre `bi.KpiSnapshots` + vistas; solo Administrador.
+- BI: `GET /Reports/Bi/tendencias?meses=N` y `GET /Reports/Bi/export?formato=pdf|xlsx` — [[BI-RPT-001]].
+- Aviso admin: `POST /NTF/Notificaciones/aviso` — residentes del condominio del JWT (admin).
+- *(Backlog bot-ia)* Resumen BI por bot: `/bi` → asistente IA sobre snapshots; solo Administrador.
 
 Controller backend real: `Reports/Reportes` (`ReportesController`).
 
@@ -43,10 +53,21 @@ Controller backend real: `Reports/Reportes` (`ReportesController`).
 4. BI por Telegram reutiliza el asistente IA y los endpoints de dominio; no duplica lógica.
 
 ## Deltas del proyecto (nuevo)
-- (delta) Esquema nuevo `bi` con `bi.KpiSnapshots` para tendencias — no existe en la referencia.
-- (delta) Módulo BI (KPIs con comparativa entre períodos) sobre vistas `vs*` + snapshots.
-- (delta) Comando `/bi` en el bot y resumen ejecutivo redactado por IA (esquemas `bot`/`ia`).
-- (delta) KPI de adopción del bot (WEB vs TELEGRAM), dependiente del delta `tkt.Tickets.Canal`.
+
+- Esquema `bi` + `bi.KpiSnapshots` — **cerrado** [[BI-RPT-001]].
+- Módulo BI web + exports RPT en `/admin/reportes` — **cerrado** [[BI-RPT-001]].
+- *(delta backlog)* Comando `/bi` + resumen IA (`bot`/`ia`).
+- *(delta backlog)* KPI adopción bot (WEB vs TELEGRAM) cuando exista `tkt.Tickets.Canal` y bot operativo.
+
+## Changelog
+
+| Fecha | Requerimiento | Cambio |
+|-------|---------------|--------|
+| 2026-11-04 | [[BI-RPT-001]] | Reportes/BI web, worker snapshots, menús, aviso NTF scoped; ver [delta](.planning/tkt-bi-rpt-001/delta.md) |
+
+## Registro de cambios de contexto
+- **2026-11-04** — Alcance web RPT/BI acotado en [[BI-RPT-001]]; bot/IA explícitamente excluidos del hito actual.
+- **2026-11-04** — Cierre ARCHIVADO: specs alineadas a implementación (JWT condominio, SqlSchemaCompat NTF, demo SQL opcional).
 
 ## Notas
 - Sin stored procedures: Dapper sobre vistas `vs*` + servicios C# + QuestPDF/ClosedXML.

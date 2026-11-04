@@ -1,5 +1,5 @@
 import { apiDelete, apiGet, apiPost, apiPut } from '../../shared/lib/apiClient'
-import type { MenuAdminItem, MenuNodoDto, PerfilListItem, PerfilMenuPermiso } from './types'
+import type { MenuAdminItem, MenuNodoDto, PerfilListItem, MenuPerfilPermiso, PerfilMenuPermiso } from './types'
 
 export async function fetchMenusNavegacion() {
   return apiGet<MenuNodoDto[]>('/SGR/Navegacion/menus')
@@ -46,6 +46,17 @@ export async function savePermisosMenus(
   menus: { menuId: number; visible: boolean }[],
 ) {
   return apiPut<PerfilMenuPermiso[]>(`/SGR/Perfiles/${perfilId}/permisos-menus`, { menus })
+}
+
+export async function fetchPermisosPerfilesMenu(menuId: number) {
+  return apiGet<MenuPerfilPermiso[]>(`/SGR/Menus/admin/${menuId}/permisos-perfiles`)
+}
+
+export async function savePermisosPerfilesMenu(
+  menuId: number,
+  perfiles: { perfilId: number; visible: boolean }[],
+) {
+  return apiPut<MenuPerfilPermiso[]>(`/SGR/Menus/admin/${menuId}/permisos-perfiles`, { perfiles })
 }
 
 /** Listado JWT admin (evita legacy vsPerfiles / columna Perfil). */

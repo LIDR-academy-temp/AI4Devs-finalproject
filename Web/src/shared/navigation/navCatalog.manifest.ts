@@ -97,9 +97,9 @@ export const NAV_CATALOG_NODES: NavCatalogNode[] = [
   { clave: 'admin-almacen', path: '/admin/almacen', label: 'Almacén', icon: 'warehouse', groupKey: 'registro-admin', profiles: ['Administrador'], order: 64, implemented: true },
   { clave: 'guardia-validar-pase', path: '/guardia/validar-pase', label: 'Validar pase QR', icon: 'scan', groupKey: 'principal', profiles: ['Guardia', 'Administrador'], order: 5, implemented: true },
   { clave: 'trabajador-tickets', path: '/trabajador/tickets', label: 'Tickets asignados', icon: 'ticket', groupKey: 'principal', profiles: ['Trabajador'], order: 6, implemented: true },
-  { clave: 'admin-reportes', path: '/admin/reportes', label: 'Reportes', icon: 'chart', groupKey: 'gestion', profiles: ['Administrador'], order: 47, implemented: false },
+  { clave: 'admin-reportes', path: '/admin/reportes', label: 'Reportes', icon: 'chart', groupKey: 'gestion', profiles: ['Administrador'], order: 47, implemented: true },
   { clave: 'admin-bot', path: '/admin/integraciones/bot', label: 'Integración BOT', icon: 'bot', groupKey: 'gestion', profiles: ['Administrador'], order: 48, implemented: false },
-  { clave: 'admin-ntf-aviso', path: '/admin/notificaciones/aviso', label: 'Aviso general', icon: 'megaphone', groupKey: 'gestion', profiles: ['Administrador'], order: 49, implemented: false },
+  { clave: 'admin-ntf-aviso', path: '/admin/notificaciones/aviso', label: 'Aviso general', icon: 'megaphone', groupKey: 'gestion', profiles: ['Administrador'], order: 49, implemented: true },
 ]
 
 export function manifestClaveSet(): Set<string> {

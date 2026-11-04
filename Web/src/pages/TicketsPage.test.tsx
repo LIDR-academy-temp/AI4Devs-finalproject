@@ -44,7 +44,7 @@ describe('TicketsPage', () => {
   it('muestra título y enlace nuevo ticket', () => {
     renderPage()
     expect(screen.getByText('Mis tickets')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Nuevo ticket' })).toHaveAttribute('href', '/tickets/nuevo')
+    expect(screen.getByRole('link', { name: /Nuevo ticket/i })).toHaveAttribute('href', '/tickets/nuevo')
   })
 
   it('muestra estado vacío', () => {

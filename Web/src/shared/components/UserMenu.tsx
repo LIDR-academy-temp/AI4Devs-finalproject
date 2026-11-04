@@ -10,7 +10,7 @@ type UserMenuProps = {
 
 export function UserMenu({ variant = 'default' }: UserMenuProps) {
   const { session, logout } = useAuth()
-  const { mode, toggleMode } = useTheme()
+  const { isDark, toggleDark } = useTheme()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -129,16 +129,16 @@ export function UserMenu({ variant = 'default' }: UserMenuProps) {
               role="menuitem"
               type="button"
               onClick={() => {
-                toggleMode()
+                toggleDark()
               }}
               className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-900 hover:bg-primary-50"
             >
-              {mode === 'dark' ? (
+              {isDark ? (
                 <Sun className="h-4 w-4 text-neutral-700" aria-hidden="true" />
               ) : (
                 <Moon className="h-4 w-4 text-neutral-700" aria-hidden="true" />
               )}
-              {mode === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+              {isDark ? 'Modo claro' : 'Modo oscuro'}
             </button>
           </div>
 

@@ -299,20 +299,14 @@ export function AdminArchivosPage() {
       </ul>
 
       {tab === 'tipos' && (
-        <>
-          <AdminListToolbar
-            title="Tipos de documento"
-            metrics={[{ label: 'Tipos', value: tipos.length }]}
-          />
-          <AdminTiposArchivoSection
-            tipos={tipos}
-            loading={tiposLoading}
-            onReload={async () => {
-              await refetchTipos()
-              await refetch()
-            }}
-          />
-        </>
+        <AdminTiposArchivoSection
+          tipos={tipos}
+          loading={tiposLoading}
+          onReload={async () => {
+            await refetchTipos()
+            await refetch()
+          }}
+        />
       )}
 
       {tab === 'archivos' && (

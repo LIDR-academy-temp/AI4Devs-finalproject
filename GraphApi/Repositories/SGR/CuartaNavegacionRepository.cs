@@ -332,6 +332,121 @@ public sealed class CuartaNavegacionRepository : ICuartaNavegacionRepository
         }
     }
 
+    public async Task<IReadOnlyList<MenuPerfilPermisoDto>> ListarPermisosPerfilesMenuAsync(
+        int menuId,
+        CancellationToken ct = default)
+    {
+        var nombreExpr = SqlSchemaCompat.PerfilNombreColumn(_db);
+        var sql = $"""
+            SELECT
+                p.PerfilID AS PerfilId,
+                {nombreExpr} AS Nombre,
+                CAST(CASE WHEN PM.PerfilMenuID IS NOT NULL AND PM.bVisible = 1 THEN 1 ELSE 0 END AS bit) AS Visible,
+                CAST(CASE WHEN PM.PerfilMenuID IS NOT NULL AND PM.bEliminado = 0 THEN 1 ELSE 0 END AS bit) AS Asignado
+            FROM sgr.Perfiles p WITH (NOLOCK)
+            LEFT JOIN sgr.PerfilMenus PM WITH (NOLOCK)
+                ON PM.PerfilID = p.PerfilID AND PM.MenuID = @MenuId AND PM.bEliminado = 0
+            WHERE p.bEliminado = 0
+            ORDER BY {nombreExpr};
+            """;
+        var list = await _db.QueryAsync<MenuPerfilPermisoDto>(
+            new CommandDefinition(sql, new { MenuId = menuId }, cancellationToken: ct));
+        return list.ToList();
+    }
+
+    public async Task<int> ContarPerfilesExistentesAsync(IReadOnlyCollection<int> perfilIds, IDbTransaction tx)
+    {
+        if (perfilIds.Count == 0)
+        {
+            return 0;
+        }
+
+        const string sql = """
+            SELECT COUNT(DISTINCT PerfilID)
+            FROM sgr.Perfiles
+            WHERE bEliminado = 0 AND PerfilID IN @PerfilIds;
+            """;
+        return await _db.ExecuteScalarAsync<int>(sql, new { PerfilIds = perfilIds }, tx);
+    }
+
+    public async Task SincronizarMenuPerfilesAsync(
+        int menuId,
+        IReadOnlyList<MenuPerfilAsignacionItemRequest> perfiles,
+        string correo,
+        int usuarioId,
+        IDbTransaction tx)
+    {
+        const string softDeleteOtros = """
+            UPDATE sgr.PerfilMenus
+               SET bEliminado = 1,
+                   Modificado = @Correo,
+                   UsuarioModificacionID = @UsuarioId,
+                   FechaModificacion = SYSUTCDATETIME()
+             WHERE MenuID = @MenuId
+               AND bEliminado = 0
+               AND PerfilID NOT IN @PerfilIds;
+            """;
+
+        var perfilIds = perfiles.Select(p => p.PerfilId).Distinct().ToArray();
+        if (perfilIds.Length > 0)
+        {
+            await _db.ExecuteAsync(softDeleteOtros, new
+            {
+                MenuId = menuId,
+                PerfilIds = perfilIds,
+                Correo = correo,
+                UsuarioId = usuarioId
+            }, tx);
+        }
+        else
+        {
+            const string softDeleteAll = """
+                UPDATE sgr.PerfilMenus
+                   SET bEliminado = 1,
+                       Modificado = @Correo,
+                       UsuarioModificacionID = @UsuarioId,
+                       FechaModificacion = SYSUTCDATETIME()
+                 WHERE MenuID = @MenuId AND bEliminado = 0;
+                """;
+            await _db.ExecuteAsync(softDeleteAll, new { MenuId = menuId, Correo = correo, UsuarioId = usuarioId }, tx);
+            return;
+        }
+
+        foreach (var item in perfiles)
+        {
+            const string merge = """
+                IF EXISTS (
+                    SELECT 1 FROM sgr.PerfilMenus
+                    WHERE PerfilID = @PerfilId AND MenuID = @MenuId
+                )
+                BEGIN
+                    UPDATE sgr.PerfilMenus
+                       SET bVisible = @Visible,
+                           bEliminado = 0,
+                           Modificado = @Correo,
+                           UsuarioModificacionID = @UsuarioId,
+                           FechaModificacion = SYSUTCDATETIME()
+                     WHERE PerfilID = @PerfilId AND MenuID = @MenuId;
+                END
+                ELSE
+                BEGIN
+                    INSERT INTO sgr.PerfilMenus (
+                        PerfilID, MenuID, bVisible, Creado, UsuarioCreacionID, FechaCreacion, bEliminado)
+                    VALUES (
+                        @PerfilId, @MenuId, @Visible, @Correo, @UsuarioId, SYSUTCDATETIME(), 0);
+                END
+                """;
+            await _db.ExecuteAsync(merge, new
+            {
+                PerfilId = item.PerfilId,
+                MenuId = menuId,
+                Visible = item.Visible,
+                Correo = correo,
+                UsuarioId = usuarioId
+            }, tx);
+        }
+    }
+
     public async Task<int> InsertPerfilAsync(
         string nombre,
         string? descripcion,

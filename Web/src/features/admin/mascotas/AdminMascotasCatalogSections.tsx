@@ -1,7 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { ConfirmDialog } from '../../../shared/components/admin'
+import {
+  AdminCatalogCrudShell,
+  AdminCatalogRowActions,
+  useAdminPanelEscape,
+} from '../../../shared/components/admin'
 import { apiDelete, apiPost, apiPut } from '../../../shared/lib/apiClient'
 import { useToast } from '../../../shared/toast/ToastContext'
 import type { RazaMascotaDto, TipoMascotaDto } from '../../../shared/types/mascotas'
@@ -20,6 +24,7 @@ type TiposProps = {
 
 export function AdminTiposMascotaSection({ tipos, loading, onReload }: TiposProps) {
   const toast = useToast()
+  const [panelOpen, setPanelOpen] = useState(false)
   const [editing, setEditing] = useState<TipoMascotaDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<TipoMascotaDto | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -29,16 +34,26 @@ export function AdminTiposMascotaSection({ tipos, loading, onReload }: TiposProp
     defaultValues: { tipoMascota: '' },
   })
 
+  const closePanel = () => {
+    setPanelOpen(false)
+    setEditing(null)
+    setFormError(null)
+  }
+
+  useAdminPanelEscape(panelOpen, closePanel)
+
   const openCreate = () => {
     setEditing(null)
     setFormError(null)
     form.reset({ tipoMascota: '' })
+    setPanelOpen(true)
   }
 
   const openEdit = (t: TipoMascotaDto) => {
     setFormError(null)
     setEditing(t)
     form.reset({ tipoMascota: t.tipoMascota })
+    setPanelOpen(true)
   }
 
   const onSave = form.handleSubmit(async (values) => {
@@ -57,9 +72,8 @@ export function AdminTiposMascotaSection({ tipos, loading, onReload }: TiposProp
         return
       }
       toast.success('Tipo creado')
-      form.reset({ tipoMascota: '' })
     }
-    setEditing(null)
+    closePanel()
     await onReload()
   })
 
@@ -70,86 +84,93 @@ export function AdminTiposMascotaSection({ tipos, loading, onReload }: TiposProp
       toast.error(problem.detail ?? `Error ${status}`)
       return
     }
+    if (editing?.tipoMascotaId === deleteTarget.tipoMascotaId) closePanel()
     setDeleteTarget(null)
     toast.success('Tipo eliminado')
     await onReload()
   }
 
+  const formFooter = (
+    <>
+      <button type="button" className="btn btn-primary flex-grow-1" onClick={() => void onSave()}>
+        <i className={`mdi ${editing ? 'mdi-content-save' : 'mdi-plus'} mr-1`} />
+        {editing ? 'Actualizar' : 'Crear'}
+      </button>
+      <button type="button" className="btn btn-outline-secondary" onClick={closePanel}>
+        Cancelar
+      </button>
+    </>
+  )
+
   return (
-    <div className="card">
-      <div className="card-body">
-        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-          <h2 className="h5 mb-0">Tipos de mascota</h2>
-          <button type="button" className="btn btn-sm btn-outline-primary" onClick={openCreate}>
-            <i className="mdi mdi-plus mr-1" /> Nuevo tipo
-          </button>
-        </div>
-
-        <form className="row g-2 align-items-end mb-4" onSubmit={(e) => void onSave(e)}>
-          <div className="col-md-8">
-            <label className="cq-label small">Nombre</label>
-            <input className="form-control" {...form.register('tipoMascota')} />
+    <AdminCatalogCrudShell
+      toolbarTitle="Tipos de mascota"
+      metricLabel="Tipos"
+      count={tipos.length}
+      createLabel="Nuevo tipo"
+      createIconClass="mdi mdi-paw"
+      onCreate={openCreate}
+      panelOpen={panelOpen}
+      panelTitle={editing ? 'Editar tipo' : 'Nuevo tipo de mascota'}
+      panelSubtitle="Perro, gato u otras categorías del padrón."
+      panelIconClass={editing ? 'mdi mdi-pencil' : 'mdi mdi-paw'}
+      editing={Boolean(editing)}
+      onClosePanel={closePanel}
+      formFooter={formFooter}
+      loading={loading}
+      isEmpty={tipos.length === 0}
+      emptyIconClass="mdi mdi-paw"
+      emptyTitle="Sin tipos de mascota"
+      emptyDescription="Registra las categorías antes de capturar razas."
+      tableHead={
+        <tr>
+          <th>Tipo</th>
+          <th className="text-center cq-actions">Acciones</th>
+        </tr>
+      }
+      tableBody={tipos.map((t) => (
+        <tr
+          key={t.tipoMascotaId}
+          className={editing?.tipoMascotaId === t.tipoMascotaId ? 'cq-row-active' : undefined}
+        >
+          <td>
+            <strong>{t.tipoMascota}</strong>
+          </td>
+          <AdminCatalogRowActions
+            name={t.tipoMascota}
+            onEdit={() => openEdit(t)}
+            onDelete={() => setDeleteTarget(t)}
+          />
+        </tr>
+      ))}
+      panelChildren={
+        <>
+          {formError && (
+            <div className="alert alert-danger py-2 small" role="alert">
+              {formError}
+            </div>
+          )}
+          <div className="form-group mb-0">
+            <label className="cq-label" htmlFor="tipo-mascota-nombre">
+              Nombre <span className="text-danger">*</span>
+            </label>
+            <input id="tipo-mascota-nombre" className="form-control" {...form.register('tipoMascota')} />
             {form.formState.errors.tipoMascota && (
-              <span className="text-danger small">{form.formState.errors.tipoMascota.message}</span>
+              <span className="text-danger small d-block">{form.formState.errors.tipoMascota.message}</span>
             )}
           </div>
-          <div className="col-md-4 d-flex gap-2">
-            <button type="submit" className="btn btn-primary flex-grow-1">
-              {editing ? 'Actualizar' : 'Agregar'}
-            </button>
-            {editing && (
-              <button type="button" className="btn btn-outline-secondary" onClick={openCreate}>
-                Cancelar
-              </button>
-            )}
-          </div>
-          {formError && <div className="col-12 alert alert-danger py-2 small mb-0">{formError}</div>}
-        </form>
-
-        {loading && <p className="text-muted small">Cargando…</p>}
-        {!loading && tipos.length === 0 && <p className="text-muted">Sin tipos registrados.</p>}
-        {!loading && tipos.length > 0 && (
-          <table className="table table-sm cq-admin-table mb-0">
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th className="text-end">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tipos.map((t) => (
-                <tr key={t.tipoMascotaId} className={editing?.tipoMascotaId === t.tipoMascotaId ? 'cq-row-active' : undefined}>
-                  <td>{t.tipoMascota}</td>
-                  <td className="text-end cq-actions">
-                    <button type="button" className="btn btn-link btn-sm" onClick={() => openEdit(t)} aria-label="Editar">
-                      <i className="mdi mdi-pencil" />
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-link btn-sm text-danger"
-                      onClick={() => setDeleteTarget(t)}
-                      aria-label="Eliminar"
-                    >
-                      <i className="mdi mdi-delete" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <ConfirmDialog
-        open={deleteTarget !== null}
-        title="Eliminar tipo"
-        message={deleteTarget ? `¿Eliminar el tipo «${deleteTarget.tipoMascota}»?` : ''}
-        confirmLabel="Eliminar"
-        variant="danger"
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={() => void onConfirmDelete()}
-      />
-    </div>
+        </>
+      }
+      deleteDialog={{
+        open: deleteTarget !== null,
+        title: 'Eliminar tipo',
+        message: deleteTarget ? `¿Eliminar el tipo «${deleteTarget.tipoMascota}»?` : '',
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+        onCancel: () => setDeleteTarget(null),
+        onConfirm: () => void onConfirmDelete(),
+      }}
+    />
   )
 }
 
@@ -162,6 +183,7 @@ type RazasProps = {
 
 export function AdminRazasMascotaSection({ razas, tipos, loading, onReload }: RazasProps) {
   const toast = useToast()
+  const [panelOpen, setPanelOpen] = useState(false)
   const [editing, setEditing] = useState<RazaMascotaDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<RazaMascotaDto | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -171,10 +193,19 @@ export function AdminRazasMascotaSection({ razas, tipos, loading, onReload }: Ra
     defaultValues: { tipoMascotaId: '', razaMascota: '' },
   })
 
+  const closePanel = () => {
+    setPanelOpen(false)
+    setEditing(null)
+    setFormError(null)
+  }
+
+  useAdminPanelEscape(panelOpen, closePanel)
+
   const openCreate = () => {
     setEditing(null)
     setFormError(null)
-    form.reset({ tipoMascotaId: '', razaMascota: '' })
+    form.reset({ tipoMascotaId: tipos[0] ? String(tipos[0].tipoMascotaId) : '', razaMascota: '' })
+    setPanelOpen(true)
   }
 
   const openEdit = (r: RazaMascotaDto) => {
@@ -184,6 +215,7 @@ export function AdminRazasMascotaSection({ razas, tipos, loading, onReload }: Ra
       tipoMascotaId: String(r.tipoMascotaId),
       razaMascota: r.razaMascota,
     })
+    setPanelOpen(true)
   }
 
   const onSave = form.handleSubmit(async (values) => {
@@ -206,9 +238,8 @@ export function AdminRazasMascotaSection({ razas, tipos, loading, onReload }: Ra
         return
       }
       toast.success('Raza creada')
-      form.reset({ tipoMascotaId: '', razaMascota: '' })
     }
-    setEditing(null)
+    closePanel()
     await onReload()
   })
 
@@ -219,6 +250,7 @@ export function AdminRazasMascotaSection({ razas, tipos, loading, onReload }: Ra
       toast.error(problem.detail ?? `Error ${status}`)
       return
     }
+    if (editing?.razaMascotaId === deleteTarget.razaMascotaId) closePanel()
     setDeleteTarget(null)
     toast.success('Raza eliminada')
     await onReload()
@@ -226,94 +258,111 @@ export function AdminRazasMascotaSection({ razas, tipos, loading, onReload }: Ra
 
   const tipoLabel = (id: number) => tipos.find((t) => t.tipoMascotaId === id)?.tipoMascota ?? `#${id}`
 
-  return (
-    <div className="card">
-      <div className="card-body">
-        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-          <h2 className="h5 mb-0">Razas</h2>
-          <button type="button" className="btn btn-sm btn-outline-primary" onClick={openCreate}>
-            <i className="mdi mdi-plus mr-1" /> Nueva raza
-          </button>
-        </div>
+  const formFooter = (
+    <>
+      <button type="button" className="btn btn-primary flex-grow-1" onClick={() => void onSave()}>
+        <i className={`mdi ${editing ? 'mdi-content-save' : 'mdi-plus'} mr-1`} />
+        {editing ? 'Actualizar' : 'Crear'}
+      </button>
+      <button type="button" className="btn btn-outline-secondary" onClick={closePanel}>
+        Cancelar
+      </button>
+    </>
+  )
 
-        <form className="row g-2 align-items-end mb-4" onSubmit={(e) => void onSave(e)}>
-          <div className="col-md-4">
-            <label className="cq-label small">Tipo</label>
-            <select className="form-control" {...form.register('tipoMascotaId')}>
+  return (
+    <AdminCatalogCrudShell
+      toolbarTitle="Razas"
+      metricLabel="Razas"
+      count={razas.length}
+      createLabel="Nueva raza"
+      createIconClass="mdi mdi-dog"
+      onCreate={openCreate}
+      panelOpen={panelOpen}
+      panelTitle={editing ? 'Editar raza' : 'Nueva raza'}
+      panelSubtitle="Asocia cada raza a un tipo de mascota."
+      panelIconClass={editing ? 'mdi mdi-pencil' : 'mdi mdi-dog'}
+      editing={Boolean(editing)}
+      onClosePanel={closePanel}
+      formFooter={formFooter}
+      topBanner={
+        tipos.length === 0 ? (
+          <div className="alert alert-warning py-2 small mb-3" role="alert">
+            Crea al menos un tipo de mascota en la pestaña Tipos antes de registrar razas.
+          </div>
+        ) : undefined
+      }
+      loading={loading}
+      isEmpty={razas.length === 0}
+      emptyIconClass="mdi mdi-dog"
+      emptyTitle="Sin razas registradas"
+      emptyDescription="Define razas por tipo para el padrón de mascotas."
+      tableHead={
+        <tr>
+          <th>Raza</th>
+          <th>Tipo</th>
+          <th className="text-center cq-actions">Acciones</th>
+        </tr>
+      }
+      tableBody={razas.map((r) => (
+        <tr
+          key={r.razaMascotaId}
+          className={editing?.razaMascotaId === r.razaMascotaId ? 'cq-row-active' : undefined}
+        >
+          <td>
+            <strong>{r.razaMascota}</strong>
+          </td>
+          <td>{tipoLabel(r.tipoMascotaId)}</td>
+          <AdminCatalogRowActions
+            name={r.razaMascota}
+            onEdit={() => openEdit(r)}
+            onDelete={() => setDeleteTarget(r)}
+          />
+        </tr>
+      ))}
+      panelChildren={
+        <>
+          {formError && (
+            <div className="alert alert-danger py-2 small" role="alert">
+              {formError}
+            </div>
+          )}
+          <div className="form-group mb-3">
+            <label className="cq-label" htmlFor="raza-tipo">
+              Tipo <span className="text-danger">*</span>
+            </label>
+            <select id="raza-tipo" className="form-control" {...form.register('tipoMascotaId')}>
               <option value="">Seleccione…</option>
               {tipos.map((t) => (
-                <option key={t.tipoMascotaId} value={t.tipoMascotaId}>{t.tipoMascota}</option>
+                <option key={t.tipoMascotaId} value={t.tipoMascotaId}>
+                  {t.tipoMascota}
+                </option>
               ))}
             </select>
             {form.formState.errors.tipoMascotaId && (
-              <span className="text-danger small">{form.formState.errors.tipoMascotaId.message}</span>
+              <span className="text-danger small d-block">{form.formState.errors.tipoMascotaId.message}</span>
             )}
           </div>
-          <div className="col-md-5">
-            <label className="cq-label small">Raza</label>
-            <input className="form-control" {...form.register('razaMascota')} />
+          <div className="form-group mb-0">
+            <label className="cq-label" htmlFor="raza-nombre">
+              Raza <span className="text-danger">*</span>
+            </label>
+            <input id="raza-nombre" className="form-control" {...form.register('razaMascota')} />
             {form.formState.errors.razaMascota && (
-              <span className="text-danger small">{form.formState.errors.razaMascota.message}</span>
+              <span className="text-danger small d-block">{form.formState.errors.razaMascota.message}</span>
             )}
           </div>
-          <div className="col-md-3 d-flex gap-2">
-            <button type="submit" className="btn btn-primary flex-grow-1">
-              {editing ? 'Actualizar' : 'Agregar'}
-            </button>
-            {editing && (
-              <button type="button" className="btn btn-outline-secondary" onClick={openCreate}>
-                Cancelar
-              </button>
-            )}
-          </div>
-          {formError && <div className="col-12 alert alert-danger py-2 small mb-0">{formError}</div>}
-        </form>
-
-        {loading && <p className="text-muted small">Cargando…</p>}
-        {!loading && razas.length === 0 && <p className="text-muted">Sin razas registradas.</p>}
-        {!loading && razas.length > 0 && (
-          <table className="table table-sm cq-admin-table mb-0">
-            <thead>
-              <tr>
-                <th>Raza</th>
-                <th>Tipo</th>
-                <th className="text-end">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {razas.map((r) => (
-                <tr key={r.razaMascotaId} className={editing?.razaMascotaId === r.razaMascotaId ? 'cq-row-active' : undefined}>
-                  <td>{r.razaMascota}</td>
-                  <td>{tipoLabel(r.tipoMascotaId)}</td>
-                  <td className="text-end cq-actions">
-                    <button type="button" className="btn btn-link btn-sm" onClick={() => openEdit(r)} aria-label="Editar">
-                      <i className="mdi mdi-pencil" />
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-link btn-sm text-danger"
-                      onClick={() => setDeleteTarget(r)}
-                      aria-label="Eliminar"
-                    >
-                      <i className="mdi mdi-delete" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <ConfirmDialog
-        open={deleteTarget !== null}
-        title="Eliminar raza"
-        message={deleteTarget ? `¿Eliminar la raza «${deleteTarget.razaMascota}»?` : ''}
-        confirmLabel="Eliminar"
-        variant="danger"
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={() => void onConfirmDelete()}
-      />
-    </div>
+        </>
+      }
+      deleteDialog={{
+        open: deleteTarget !== null,
+        title: 'Eliminar raza',
+        message: deleteTarget ? `¿Eliminar la raza «${deleteTarget.razaMascota}»?` : '',
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+        onCancel: () => setDeleteTarget(null),
+        onConfirm: () => void onConfirmDelete(),
+      }}
+    />
   )
 }

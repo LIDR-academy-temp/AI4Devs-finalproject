@@ -6,11 +6,7 @@ import {
   type NavItem,
 } from './appNavigation'
 
-const hiddenPaths = [
-  '/admin/reportes',
-  '/admin/integraciones/bot',
-  '/admin/notificaciones/aviso',
-]
+const hiddenPaths = ['/admin/integraciones/bot']
 
 describe('TC-NAV-ENT1-01 manifest visibility (FE-NAV-ENT1-001)', () => {
   it('excluye rutas con implemented:false en manifest aunque vengan del API', () => {

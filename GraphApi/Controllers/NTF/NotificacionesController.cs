@@ -93,12 +93,22 @@ public class NotificacionesController : ControllerBase
             return Unauthorized();
         }
 
+        if (!JwtUserContext.TryGetCondominioId(User, out var condominioId))
+        {
+            return Problem(
+                detail: "condominioId no disponible en el token",
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "VALIDATION_ERROR",
+                extensions: new Dictionary<string, object?> { ["code"] = "VALIDATION_ERROR" });
+        }
+
         var correo = JwtUserContext.GetCorreo(User) ?? "admin";
         var destinatarios = await _service.AvisoGeneralAsync(
             request.Titulo,
             request.Mensaje,
             new NotificacionAutor(usuarioId, correo),
-            ct);
+            ct,
+            condominioId);
 
         return StatusCode(StatusCodes.Status201Created, new AvisoGeneralResponse { Destinatarios = destinatarios });
     }

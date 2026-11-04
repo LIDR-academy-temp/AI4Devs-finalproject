@@ -46,7 +46,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
   shield: Shield,
   settings: Settings,
   layout: LayoutGrid,
+  grid: LayoutGrid,
 }
+
+/** Claves válidas para icono de menú (select admin). */
+export const MENU_ICON_OPTIONS = Object.keys(ICON_MAP).sort()
 
 export function iconFromMenuKey(icono: string | null | undefined): LucideIcon {
   if (!icono) return Circle

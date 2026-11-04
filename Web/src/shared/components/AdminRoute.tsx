@@ -19,7 +19,7 @@ export function AdminRoute() {
   }
 
   if (session.perfil !== 'Administrador') {
-    return <Navigate to="/" replace />
+    return <Navigate to="/403" replace />
   }
 
   if (session.requiereCambioPassword) {

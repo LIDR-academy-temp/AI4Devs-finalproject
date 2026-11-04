@@ -4,7 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import '@mdi/font/css/materialdesignicons.min.css'
 import '../styles/bootstrap-pantone.css'
 import '../styles/cq-admin.css'
-import { PageHeader } from '../shared/components/admin'
+import { PageHeader, PortalPageLayout } from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 import { normalizeEncuestaResultados } from '../features/admin/encuestas/encuestaMappers'
 import { parseEncuestaId } from '../features/encuestas/parseEncuestaId'
@@ -138,9 +138,9 @@ export function ResultadosEncuestaPage({ variant = 'admin' }: Props) {
   if (loading) {
     if (variant === 'residente') {
       return (
-        <main className="mx-auto max-w-3xl px-4 py-6 md:px-8">
+        <PortalPageLayout width="3xl">
           <p className="text-neutral">Cargando resultados…</p>
-        </main>
+        </PortalPageLayout>
       )
     }
     return (
@@ -157,7 +157,7 @@ export function ResultadosEncuestaPage({ variant = 'admin' }: Props) {
   if (error || !resultados) {
     if (variant === 'residente') {
       return (
-        <main className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-6 md:px-8">
+        <PortalPageLayout width="3xl">
           <Link to={listPath} className="text-sm text-primary hover:underline">
             ← Encuestas
           </Link>
@@ -171,7 +171,7 @@ export function ResultadosEncuestaPage({ variant = 'admin' }: Props) {
           >
             Reintentar
           </button>
-        </main>
+        </PortalPageLayout>
       )
     }
     return (
@@ -197,7 +197,7 @@ export function ResultadosEncuestaPage({ variant = 'admin' }: Props) {
 
   if (variant === 'residente') {
     return (
-      <main className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-6 md:px-8">
+      <PortalPageLayout width="3xl" className="flex flex-col gap-6">
         <Link to={listPath} className="text-sm text-primary hover:underline">
           ← Encuestas
         </Link>
@@ -223,7 +223,7 @@ export function ResultadosEncuestaPage({ variant = 'admin' }: Props) {
         >
           Ver encuesta
         </Link>
-      </main>
+      </PortalPageLayout>
     )
   }
 

@@ -35,7 +35,7 @@ public sealed class CuartaAnunciosRepository : ICuartaAnunciosRepository
         {
             sql += """
                  AND v.FechaPublicacion <= SYSUTCDATETIME()
-                 AND (v.VigenteHasta IS NULL OR v.VigenteHasta >= SYSUTCDATETIME())
+                 AND (v.VigenteHasta IS NULL OR CAST(v.VigenteHasta AS date) >= CAST(SYSUTCDATETIME() AS date))
                 """;
         }
 
@@ -57,7 +57,7 @@ public sealed class CuartaAnunciosRepository : ICuartaAnunciosRepository
         {
             sql += """
                  AND v.FechaPublicacion <= SYSUTCDATETIME()
-                 AND (v.VigenteHasta IS NULL OR v.VigenteHasta >= SYSUTCDATETIME())
+                 AND (v.VigenteHasta IS NULL OR CAST(v.VigenteHasta AS date) >= CAST(SYSUTCDATETIME() AS date))
                 """;
         }
 
@@ -72,7 +72,7 @@ public sealed class CuartaAnunciosRepository : ICuartaAnunciosRepository
                 SELECT 1 FROM anm.vsAnuncios v WITH (NOLOCK)
                 WHERE v.AnuncioID = @Id AND v.bEliminado = 0
                   AND v.FechaPublicacion <= SYSUTCDATETIME()
-                  AND (v.VigenteHasta IS NULL OR v.VigenteHasta >= SYSUTCDATETIME())
+                  AND (v.VigenteHasta IS NULL OR CAST(v.VigenteHasta AS date) >= CAST(SYSUTCDATETIME() AS date))
             ) THEN 1 ELSE 0 END;
             """;
         return await _db.ExecuteScalarAsync<int>(

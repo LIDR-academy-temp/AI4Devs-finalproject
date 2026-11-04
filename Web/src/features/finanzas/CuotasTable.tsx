@@ -1,46 +1,33 @@
 import type { CuotaEstado } from '../../shared/types/finanzas'
+import { PortalDataTable, PortalDataTableBody, PortalDataTableHead } from '../../shared/components/portal'
+import { cuotaEstadoBadgeClass } from './cuotaEstadoUi'
 import { formatFecha, formatMxn, formatPeriodo } from './format'
-
-const estadoClass: Record<string, string> = {
-  Pagada: 'bg-success-light text-success',
-  Pendiente: 'bg-warning-light text-warning',
-  Vencida: 'bg-danger-light text-danger',
-}
 
 type Props = { cuotas: CuotaEstado[] }
 
 export function CuotasTable({ cuotas }: Props) {
   return (
-    <div className="overflow-x-auto rounded border">
-      <table className="min-w-full text-left text-sm">
-        <thead className="bg-surface text-neutral">
-          <tr>
-            <th className="px-3 py-2 font-medium">Período</th>
-            <th className="px-3 py-2 font-medium">Monto</th>
-            <th className="px-3 py-2 font-medium">Vencimiento</th>
-            <th className="px-3 py-2 font-medium">Estado</th>
+    <PortalDataTable>
+      <PortalDataTableHead>
+        <tr>
+          <th>Período</th>
+          <th>Monto</th>
+          <th>Vencimiento</th>
+          <th>Estado</th>
+        </tr>
+      </PortalDataTableHead>
+      <PortalDataTableBody>
+        {cuotas.map((c) => (
+          <tr key={c.cuotaId}>
+            <td>{formatPeriodo(c.periodoInicio)}</td>
+            <td>{formatMxn(c.monto)}</td>
+            <td>{formatFecha(c.fechaVencimiento)}</td>
+            <td>
+              <span className={`cq-portal-badge ${cuotaEstadoBadgeClass(c.estado)}`}>{c.estado}</span>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {cuotas.map((c) => (
-            <tr
-              key={c.cuotaId}
-              className={c.esVencida ? 'bg-danger-light' : 'border-t border-neutral-100'}
-            >
-              <td className="px-3 py-2">{formatPeriodo(c.periodoInicio)}</td>
-              <td className="px-3 py-2">{formatMxn(c.monto)}</td>
-              <td className="px-3 py-2">{formatFecha(c.fechaVencimiento)}</td>
-              <td className="px-3 py-2">
-                <span
-                  className={`inline rounded px-2 py-0.5 text-xs font-medium ${estadoClass[c.estado] ?? 'bg-surface-alt'}`}
-                >
-                  {c.estado}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </PortalDataTableBody>
+    </PortalDataTable>
   )
 }

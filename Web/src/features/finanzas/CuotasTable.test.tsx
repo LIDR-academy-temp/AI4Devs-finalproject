@@ -23,14 +23,13 @@ const base: CuotaEstado = {
 }
 
 describe('CuotasTable', () => {
-  it('resalta fila vencida con esVencida', () => {
+  it('muestra badge Vencida cuando esVencida', () => {
     const cuotas: CuotaEstado[] = [
       base,
       { ...base, cuotaId: 2, estado: 'Vencida', esVencida: true },
     ]
-    const { container } = render(<CuotasTable cuotas={cuotas} />)
-    const rows = container.querySelectorAll('tbody tr')
-    expect(rows[1].className).toContain('bg-danger-light')
+    render(<CuotasTable cuotas={cuotas} />)
+    expect(screen.getByText('Vencida')).toHaveClass('cq-portal-badge')
   })
 
   it('muestra estado del API sin recalcular', () => {

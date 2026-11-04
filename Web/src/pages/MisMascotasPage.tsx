@@ -1,7 +1,20 @@
 import { useState, type FormEvent } from 'react'
 import { mascotaResidenteSchema } from '../features/mascotas/mascotaResidenteSchemas'
 import { useMascotas, useTiposMascota, useRazasMascota } from '../features/mascotas/useMascotas'
-import { ConfirmDialog, EmptyState, FormModal, PageHeader } from '../shared/components/admin'
+import {
+  ConfirmDialog,
+  FormModal,
+  PortalEntityIcon,
+  PortalEntityMain,
+  PortalEntityMeta,
+  PortalEntityTitle,
+  PortalListPage,
+  PortalListSection,
+  PortalRowActionButton,
+  PortalRowActions,
+  PortalRowList,
+  PortalRowListItem,
+} from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 import { apiPost, apiPut, apiDelete } from '../shared/lib/apiClient'
 import type { MascotaListItem, MascotaCrearRequest } from '../shared/types/mascotas'
@@ -16,7 +29,7 @@ const emptyForm = (): MascotaCrearRequest => ({
   fechaNacimiento: '',
 })
 
-function MascotaCard({
+function MascotaRow({
   m,
   onEdit,
   onDelete,
@@ -26,37 +39,33 @@ function MascotaCard({
   onDelete: (id: number) => void
 }) {
   return (
-    <div className="flex items-start gap-4 rounded-xl border border-neutral-200 bg-surface-alt p-4">
-      <div className="select-none text-4xl">🐾</div>
-      <div className="flex-1">
-        <p className="font-semibold text-neutral-900">{m.nombreMascota}</p>
-        <p className="text-sm text-neutral">
+    <PortalRowListItem className="flex flex-wrap items-start gap-3 sm:items-center">
+      <PortalEntityIcon>🐾</PortalEntityIcon>
+      <PortalEntityMain>
+        <PortalEntityTitle>{m.nombreMascota}</PortalEntityTitle>
+        <PortalEntityMeta>
           {[m.tipoMascota, m.razaMascota ?? m.razaLibre].filter(Boolean).join(' · ') || 'Sin tipo / raza'}
-        </p>
+        </PortalEntityMeta>
         {m.fechaNacimiento && (
-          <p className="text-xs text-neutral-300">
-            Nac. {new Date(m.fechaNacimiento).toLocaleDateString()}
-          </p>
+          <PortalEntityMeta>Nac. {new Date(m.fechaNacimiento).toLocaleDateString('es-MX')}</PortalEntityMeta>
         )}
         {m.vacunasAlDia !== undefined && (
           <span
-            className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+            className={`cq-portal-badge mt-2 ${
               m.vacunasAlDia ? 'bg-success-light text-success' : 'bg-warning-light text-warning'
             }`}
           >
             {m.vacunasAlDia ? 'Vacunas al día' : 'Vacunas pendientes'}
           </span>
         )}
-      </div>
-      <div className="flex gap-2">
-        <button type="button" onClick={() => onEdit(m)} className="text-sm text-primary hover:underline">
-          Editar
-        </button>
-        <button type="button" onClick={() => onDelete(m.mascotaId)} className="text-sm text-danger hover:underline">
+      </PortalEntityMain>
+      <PortalRowActions>
+        <PortalRowActionButton onClick={() => onEdit(m)}>Editar</PortalRowActionButton>
+        <PortalRowActionButton variant="danger" onClick={() => onDelete(m.mascotaId)}>
           Eliminar
-        </button>
-      </div>
-    </div>
+        </PortalRowActionButton>
+      </PortalRowActions>
+    </PortalRowListItem>
   )
 }
 
@@ -139,44 +148,40 @@ export function MisMascotasPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 px-4 py-6">
-      <PageHeader
-        title="Mis mascotas"
-        description="Mantén actualizado el registro de mascotas de tu hogar."
-        actions={
-          <button
-            type="button"
-            onClick={openCreate}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
-          >
-            + Nueva mascota
-          </button>
+    <>
+      <PortalListPage
+        width="3xl"
+        header={{
+          title: 'Mis mascotas',
+          description: 'Mantén actualizado el registro de mascotas de tu hogar.',
+          actions: (
+            <button type="button" onClick={openCreate} className="cq-portal-btn-primary">
+              + Nueva mascota
+            </button>
+          ),
+        }}
+        loading={loading}
+        error={error}
+        onRetry={() => void reload()}
+        empty={
+          !loading && !error && mascotas.length === 0
+            ? {
+                title: 'No tienes mascotas registradas.',
+                description: 'Registra a tus mascotas para el padrón del fraccionamiento.',
+              }
+            : undefined
         }
-      />
-
-      {error && (
-        <button
-          type="button"
-          className="cursor-pointer text-sm text-primary underline"
-          onClick={() => void reload()}
-        >
-          Reintentar
-        </button>
-      )}
-
-      {loading && <p className="text-sm text-neutral">Cargando…</p>}
-
-      {!loading && !error && mascotas.length === 0 && (
-        <EmptyState title="No tienes mascotas registradas." />
-      )}
-
-      {!loading && !error && mascotas.length > 0 && (
-        <div className="space-y-3">
-          {mascotas.map((m) => (
-            <MascotaCard key={m.mascotaId} m={m} onEdit={openEdit} onDelete={setDeleteId} />
-          ))}
-        </div>
-      )}
+      >
+        {mascotas.length > 0 ? (
+          <PortalListSection>
+            <PortalRowList>
+              {mascotas.map((m) => (
+                <MascotaRow key={m.mascotaId} m={m} onEdit={openEdit} onDelete={setDeleteId} />
+              ))}
+            </PortalRowList>
+          </PortalListSection>
+        ) : null}
+      </PortalListPage>
 
       <FormModal
         open={modalOpen}
@@ -208,7 +213,9 @@ export function MisMascotasPage() {
               >
                 <option value="">— Seleccionar —</option>
                 {tipos.map((t) => (
-                  <option key={t.tipoMascotaId} value={t.tipoMascotaId}>{t.tipoMascota}</option>
+                  <option key={t.tipoMascotaId} value={t.tipoMascotaId}>
+                    {t.tipoMascota}
+                  </option>
                 ))}
               </select>
             </div>
@@ -226,7 +233,9 @@ export function MisMascotasPage() {
               >
                 <option value="">— Seleccionar —</option>
                 {filteredRazas.map((r) => (
-                  <option key={r.razaMascotaId} value={r.razaMascotaId}>{r.razaMascota}</option>
+                  <option key={r.razaMascotaId} value={r.razaMascotaId}>
+                    {r.razaMascota}
+                  </option>
                 ))}
               </select>
             </div>
@@ -268,7 +277,9 @@ export function MisMascotasPage() {
               onChange={(e) => setForm((f) => ({ ...f, vacunasAlDia: e.target.checked }))}
               className="h-4 w-4 rounded border-neutral-200 text-primary"
             />
-            <label htmlFor="vacunas" className="text-sm text-neutral-700">Vacunas al día</label>
+            <label htmlFor="vacunas" className="text-sm text-neutral-700">
+              Vacunas al día
+            </label>
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button
@@ -281,7 +292,7 @@ export function MisMascotasPage() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
+              className="cq-portal-btn-primary disabled:opacity-50"
             >
               {saving ? 'Guardando…' : 'Guardar'}
             </button>
@@ -298,6 +309,6 @@ export function MisMascotasPage() {
         onCancel={() => setDeleteId(null)}
         onConfirm={() => void confirmDelete()}
       />
-    </main>
+    </>
   )
 }

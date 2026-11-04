@@ -123,7 +123,7 @@ public class CuartaEncuestasServiceTests
         uow.Setup(u => u.BeginTransaction()).Returns(Mock.Of<System.Data.IDbTransaction>());
 
         var ntf = new Mock<INotificacionService>();
-        ntf.Setup(n => n.AvisoGeneralAsync("Enc", It.IsAny<string>(), It.IsAny<NotificacionAutor>(), It.IsAny<CancellationToken>()))
+        ntf.Setup(n => n.AvisoGeneralAsync("Enc", It.IsAny<string>(), It.IsAny<NotificacionAutor>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()))
             .ReturnsAsync(1);
 
         var sut = new CuartaEncuestasService(repo.Object, uow.Object, ntf.Object, NullLogger<CuartaEncuestasService>.Instance);
@@ -132,7 +132,7 @@ public class CuartaEncuestasServiceTests
         Assert.True(ok);
         Assert.Null(code);
         Assert.Equal(StatusCodes.Status204NoContent, status);
-        ntf.Verify(n => n.AvisoGeneralAsync("Enc", It.IsAny<string>(), It.IsAny<NotificacionAutor>(), It.IsAny<CancellationToken>()), Times.Once);
+        ntf.Verify(n => n.AvisoGeneralAsync("Enc", It.IsAny<string>(), It.IsAny<NotificacionAutor>(), It.IsAny<CancellationToken>(), It.IsAny<int?>()), Times.Once);
     }
 
     private static CuartaEncuestasService CreateSut(Mock<ICuartaEncuestasRepository> repo) =>

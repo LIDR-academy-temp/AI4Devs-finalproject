@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { CuotasAdminTable } from './CuotasAdminTable'
 import type { CuotaEstado } from '../../../shared/types/finanzas'
@@ -31,6 +31,7 @@ describe('CuotasAdminTable', () => {
         onRegistrarPago={onPay}
       />,
     )
-    expect(screen.getAllByRole('button', { name: /Registrar pago/i })).toHaveLength(1)
+    const table = screen.getByRole('table')
+    expect(within(table).getAllByRole('button', { name: /Registrar pago/i })).toHaveLength(1)
   })
 })

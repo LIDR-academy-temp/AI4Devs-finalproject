@@ -9,6 +9,8 @@ public sealed class NotificacionRepository : INotificacionRepository
 {
     private readonly IDbConnection _db;
     private readonly string _tipoNotificacionCol;
+    private readonly string _usuarioActivoCol;
+    private readonly string _perfilNombreCol;
 
     public NotificacionRepository(IDbConnection db)
     {
@@ -16,6 +18,9 @@ public sealed class NotificacionRepository : INotificacionRepository
         _tipoNotificacionCol = SqlSchemaCompat.HasColumn(db, "ntf", "TiposNotificacion", "TipoNotificacion")
             ? "TipoNotificacion"
             : "TipoNotiicfacion";
+        var (_, _, activo) = SqlSchemaCompat.UsuarioColumns(db, "u");
+        _usuarioActivoCol = activo;
+        _perfilNombreCol = SqlSchemaCompat.PerfilNombreColumn(db, "p");
     }
 
     public async Task<(IReadOnlyList<NotificacionItemDto> Items, int TotalNoLeidas)> GetBandejaAsync(
@@ -165,14 +170,21 @@ public sealed class NotificacionRepository : INotificacionRepository
         int tipoNotificacionId,
         string titulo,
         string mensaje,
-        NotificacionAutor autor)
+        NotificacionAutor autor,
+        int? condominioId = null)
     {
-        // ADR-008: detectar columnas según schema pre/post DB-001.
-        var (_, _, activoCol) = SqlSchemaCompat.UsuarioColumns(_db, "u");
-        var perfilNomCol = SqlSchemaCompat.PerfilNombreColumn(_db, "p");
         var filtro = soloAdministradores
             ? "p.bAdministrador = 1"
-            : $"{perfilNomCol} = @Perfil";
+            : $"{_perfilNombreCol} = @Perfil";
+
+        var condoFilter = condominioId is null
+            ? string.Empty
+            : """
+              AND EXISTS (
+                    SELECT 1 FROM sgr.CasaOcupantes co WITH (NOLOCK)
+                      INNER JOIN sgr.Casas ca WITH (NOLOCK) ON ca.CasaID = co.CasaID AND ca.CondominioID = @CondominioId AND ca.bEliminado = 0
+                     WHERE co.UsuarioID = u.UsuarioID AND co.Vigente = 1 AND co.bEliminado = 0)
+              """;
 
         var sql = $"""
             DECLARE @nuevas TABLE (NotificacionID INT, UsuarioID INT);
@@ -185,9 +197,10 @@ public sealed class NotificacionRepository : INotificacionRepository
             FROM sgr.Usuarios AS u WITH (NOLOCK)
             INNER JOIN sgr.Perfiles AS p WITH (NOLOCK) ON p.PerfilID = u.PerfilID
             WHERE u.bEliminado = 0
-              AND {activoCol} = 1
+              AND {_usuarioActivoCol} = 1
               AND p.bEliminado = 0
-              AND {filtro};
+              AND {filtro}
+              {condoFilter};
 
 
             SELECT COUNT(*) FROM @nuevas;
@@ -201,6 +214,7 @@ public sealed class NotificacionRepository : INotificacionRepository
             TipoNotificacionID = tipoNotificacionId,
             Correo = autor.Correo,
             AutorId = autor.UsuarioId,
+            CondominioId = condominioId,
         }, tx);
     }
 

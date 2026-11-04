@@ -167,12 +167,25 @@ export function AdminPerfilesPage() {
         tablePane={
           <div className="card">
             <div className="card-body pt-3">
-              {loading && <p className="text-muted">Cargando…</p>}
+              {loading && (
+                <div className="placeholder-glow" aria-label="Cargando perfiles">
+                  <span className="placeholder col-12 mb-2" />
+                  <span className="placeholder col-10" />
+                </div>
+              )}
               {!loading && perfiles.length === 0 && (
-                <p className="text-muted">No hay perfiles o no se pudo cargar el listado.</p>
+                <div className="cq-empty-state">
+                  <i className="mdi mdi-shield-account-outline cq-empty-icon" />
+                  <p className="cq-empty-title">Sin perfiles</p>
+                  <p className="text-muted">Crea perfiles y asigna permisos de menú.</p>
+                  <button type="button" className="btn btn-primary btn-sm mt-2" onClick={openCreate}>
+                    Nuevo perfil
+                  </button>
+                </div>
               )}
               {!loading && perfiles.length > 0 && (
                 <>
+                <div className="cq-admin-table-pane">
                 <AdminFilterableTable
                   columns={columns}
                   columnFilters={columnFilters}
@@ -214,6 +227,7 @@ export function AdminPerfilesPage() {
                     </tr>
                   ))}
                 </AdminFilterableTable>
+                </div>
                 <AdminMobileCardList
                   rows={filteredRows}
                   getRowKey={(row) => row.perfilId}

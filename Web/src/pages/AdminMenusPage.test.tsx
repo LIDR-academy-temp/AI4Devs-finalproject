@@ -22,6 +22,10 @@ vi.mock('../features/navegacion/useMenusAdmin', () => ({
   }),
 }))
 
+vi.mock('../features/navegacion/NavegacionContext', () => ({
+  useNavegacion: () => ({ refetch: vi.fn() }),
+}))
+
 describe('AdminMenusPage', () => {
   it('muestra árbol de menús', () => {
     render(<AdminMenusPage />)

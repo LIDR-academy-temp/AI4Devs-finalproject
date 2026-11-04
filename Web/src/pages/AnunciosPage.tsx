@@ -1,50 +1,66 @@
-import { Link } from 'react-router-dom'
+import { Megaphone } from 'lucide-react'
 import { useAnunciosResidente } from '../features/anuncios/useAnuncios'
-import { EmptyState, PageHeader } from '../shared/components/admin'
+import {
+  PortalContentListRow,
+  PortalListPage,
+  PortalListSection,
+  PortalRowList,
+  portalListCountDescription,
+} from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 
 export function AnunciosPage() {
   const { data, loading, error, refetch } = useAnunciosResidente()
   useQueryErrorToast(error)
 
+  const count = data.length
+
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6 md:px-8">
-      <PageHeader title="Comunicados" description="Avisos y noticias del condominio." />
-      {loading && <p className="text-neutral">Cargando…</p>}
-      {error && (
-        <button
-          type="button"
-          className="cursor-pointer text-sm text-primary underline"
-          onClick={() => void refetch()}
-        >
-          Reintentar
-        </button>
-      )}
-      {!loading && !error && data.length === 0 && (
-        <EmptyState title="No hay comunicados vigentes." />
-      )}
-      {!loading && !error && data.length > 0 && (
-        <ul className="flex flex-col gap-2">
-          {data.map((a) => (
-            <li key={a.anuncioId}>
-              <Link
+    <PortalListPage
+      width="3xl"
+      header={{
+        title: 'Comunicados',
+        description: portalListCountDescription(
+          count,
+          'comunicado',
+          'comunicados',
+          'Avisos y noticias del condominio.',
+        ),
+      }}
+      loading={loading}
+      error={error}
+      onRetry={() => void refetch()}
+      empty={
+        !loading && !error && count === 0
+          ? {
+              title: 'No hay comunicados vigentes.',
+              description: 'Cuando publiquen un aviso, aparecerá aquí.',
+            }
+          : undefined
+      }
+    >
+      {count > 0 ? (
+        <PortalListSection title="Listado">
+          <PortalRowList>
+            {data.map((a) => (
+              <PortalContentListRow
+                key={a.anuncioId}
+                icon={Megaphone}
+                title={a.titulo}
+                meta={`${a.tipoAnuncio} · ${new Date(a.fechaPublicacion).toLocaleDateString('es-MX')}`}
                 to={`/anuncios/${a.anuncioId}`}
-                className="block rounded border p-3 hover:bg-surface"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate font-medium text-neutral-900">{a.titulo}</span>
-                  {!a.visto && (
-                    <span className="shrink-0 rounded bg-primary-100 px-2 py-0.5 text-xs text-primary-dark">Nuevo</span>
-                  )}
-                </div>
-                <p className="text-sm text-neutral">
-                  {a.tipoAnuncio} · {new Date(a.fechaPublicacion).toLocaleDateString()}
-                </p>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
+                trailing={
+                  !a.visto ? (
+                    <span className="cq-portal-badge bg-primary-light text-primary-dark border border-primary/25">
+                      Nuevo
+                    </span>
+                  ) : null
+                }
+              />
+            ))}
+          </PortalRowList>
+        </PortalListSection>
+      ) : null}
+    </PortalListPage>
   )
 }

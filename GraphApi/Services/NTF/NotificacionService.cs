@@ -60,12 +60,13 @@ public sealed class NotificacionService : INotificacionService
         string titulo,
         string mensaje,
         NotificacionAutor autor,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        int? condominioId = null)
     {
         var tx = _uow.BeginTransaction();
         try
         {
-            var count = await NotificarResidentesAsync(tx, "AVISO_GENERAL", titulo, mensaje, autor);
+            var count = await NotificarResidentesAsync(tx, "AVISO_GENERAL", titulo, mensaje, autor, condominioId);
             _uow.Commit();
             return count;
         }
@@ -111,7 +112,8 @@ public sealed class NotificacionService : INotificacionService
         string tipoNotificacion,
         string titulo,
         string mensaje,
-        NotificacionAutor autor)
+        NotificacionAutor autor,
+        int? condominioId = null)
     {
         var tipoId = await ResolveTipoAsync(tipoNotificacion, tx);
         return await _repo.NotificarPerfilAsync(
@@ -121,7 +123,8 @@ public sealed class NotificacionService : INotificacionService
             tipoId,
             titulo,
             mensaje,
-            autor);
+            autor,
+            condominioId);
     }
 
     private async Task<int> ResolveTipoAsync(string tipoNotificacion, IDbTransaction tx)

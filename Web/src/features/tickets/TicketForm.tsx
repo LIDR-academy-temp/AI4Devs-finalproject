@@ -46,44 +46,46 @@ export function TicketForm({ categorias, prioridades }: Props) {
   })
 
   return (
-    <form className="flex max-w-lg flex-col gap-3" onSubmit={onSubmit} noValidate>
-      <label className="flex flex-col gap-1 text-sm">
-        Categoría
-        <select className="rounded border border-neutral-200 px-3 py-2" {...register('categoria')}>
+    <form className="cq-portal-form max-w-2xl" onSubmit={onSubmit} noValidate>
+      <div>
+        <label htmlFor="ticket-categoria">Categoría</label>
+        <select id="ticket-categoria" {...register('categoria')}>
           <option value="">Selecciona…</option>
           {categorias.map((c) => (
-            <option key={c.id} value={c.nombre}>{c.nombre}</option>
+            <option key={c.id} value={c.nombre}>
+              {c.nombre}
+            </option>
           ))}
         </select>
-        {errors.categoria && <span className="text-danger">{errors.categoria.message}</span>}
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        Título
-        <input className="rounded border border-neutral-200 px-3 py-2" {...register('titulo')} />
-        {errors.titulo && <span className="text-danger">{errors.titulo.message}</span>}
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        Descripción
-        <textarea rows={5} className="rounded border border-neutral-200 px-3 py-2" {...register('descripcion')} />
-        {errors.descripcion && <span className="text-danger">{errors.descripcion.message}</span>}
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        Prioridad (opcional)
-        <select className="rounded border border-neutral-200 px-3 py-2" {...register('prioridad')}>
-          <option value="">Por defecto (sin especificar)</option>
+        {errors.categoria && <p className="mt-1 text-sm text-danger">{errors.categoria.message}</p>}
+      </div>
+      <div>
+        <label htmlFor="ticket-titulo">Título</label>
+        <input id="ticket-titulo" placeholder="Resumen breve del problema" {...register('titulo')} />
+        {errors.titulo && <p className="mt-1 text-sm text-danger">{errors.titulo.message}</p>}
+      </div>
+      <div>
+        <label htmlFor="ticket-descripcion">Descripción</label>
+        <textarea id="ticket-descripcion" rows={5} placeholder="Detalla qué ocurre y dónde" {...register('descripcion')} />
+        {errors.descripcion && <p className="mt-1 text-sm text-danger">{errors.descripcion.message}</p>}
+      </div>
+      <div>
+        <label htmlFor="ticket-prioridad">Prioridad (opcional)</label>
+        <select id="ticket-prioridad" {...register('prioridad')}>
+          <option value="">Por defecto</option>
           {prioridades.map((p) => (
             <option key={p.id} value={p.nombre}>
               {p.nombre}
             </option>
           ))}
         </select>
-      </label>
-      {rootError && <p className="text-sm text-danger" role="alert">{rootError}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
-      >
+      </div>
+      {rootError && (
+        <p className="text-sm text-danger" role="alert">
+          {rootError}
+        </p>
+      )}
+      <button type="submit" disabled={loading} className="cq-portal-btn-primary w-full sm:w-auto disabled:opacity-60">
         {loading ? 'Enviando…' : 'Enviar incidencia'}
       </button>
     </form>

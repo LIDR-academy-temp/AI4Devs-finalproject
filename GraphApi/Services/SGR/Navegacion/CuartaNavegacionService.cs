@@ -200,6 +200,58 @@ public sealed class CuartaNavegacionService : ICuartaNavegacionService
         }
     }
 
+    public async Task<IReadOnlyList<MenuPerfilPermisoDto>?> ListarPermisosPerfilesMenuAsync(int menuId, CancellationToken ct = default)
+    {
+        var menu = await _repo.ObtenerMenuAdminAsync(menuId, ct);
+        if (menu is null || menu.Eliminado)
+        {
+            return null;
+        }
+
+        return await _repo.ListarPermisosPerfilesMenuAsync(menuId, ct);
+    }
+
+    public async Task<(IReadOnlyList<MenuPerfilPermisoDto>? Data, string? Code, int Status, string? Detail)> ActualizarPermisosPerfilesMenuAsync(
+        int menuId,
+        MenuPerfilAsignacionRequest request,
+        int adminId,
+        string adminCorreo,
+        CancellationToken ct = default)
+    {
+        var perfiles = request.Perfiles ?? Array.Empty<MenuPerfilAsignacionItemRequest>();
+        var ids = perfiles.Select(p => p.PerfilId).Distinct().ToArray();
+
+        var tx = _uow.BeginTransaction();
+        try
+        {
+            if (!await _repo.MenuExisteAsync(menuId, tx))
+            {
+                _uow.Rollback();
+                return (null, "NOT_FOUND", StatusCodes.Status404NotFound, "Menú no encontrado");
+            }
+
+            if (ids.Length > 0)
+            {
+                var count = await _repo.ContarPerfilesExistentesAsync(ids, tx);
+                if (count != ids.Length)
+                {
+                    _uow.Rollback();
+                    return (null, "PERFIL_NO_ENCONTRADO", StatusCodes.Status422UnprocessableEntity, "Uno o más perfiles no existen");
+                }
+            }
+
+            await _repo.SincronizarMenuPerfilesAsync(menuId, perfiles, adminCorreo, adminId, tx);
+            _uow.Commit();
+            var list = await _repo.ListarPermisosPerfilesMenuAsync(menuId, ct);
+            return (list, null, StatusCodes.Status200OK, null);
+        }
+        catch
+        {
+            _uow.Rollback();
+            throw;
+        }
+    }
+
     public async Task<(PerfilAdminListItemDto? Data, string? Code, int Status, string? Detail)> CrearPerfilAdminAsync(
         PerfilAdminUpsertRequest request,
         int adminId,

@@ -1,7 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { ConfirmDialog } from '../../../shared/components/admin'
+import {
+  AdminCatalogCrudShell,
+  AdminCatalogRowActions,
+  useAdminPanelEscape,
+} from '../../../shared/components/admin'
 import { apiDelete, apiPost, apiPut } from '../../../shared/lib/apiClient'
 import { useToast } from '../../../shared/toast/ToastContext'
 import type { MarcaDto, ModeloDto } from '../../../shared/types/vehiculos'
@@ -20,6 +24,7 @@ type MarcasProps = {
 
 export function AdminMarcasVehiculoSection({ marcas, loading, onReload }: MarcasProps) {
   const toast = useToast()
+  const [panelOpen, setPanelOpen] = useState(false)
   const [editing, setEditing] = useState<MarcaDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<MarcaDto | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -29,16 +34,26 @@ export function AdminMarcasVehiculoSection({ marcas, loading, onReload }: Marcas
     defaultValues: { marca: '' },
   })
 
+  const closePanel = () => {
+    setPanelOpen(false)
+    setEditing(null)
+    setFormError(null)
+  }
+
+  useAdminPanelEscape(panelOpen, closePanel)
+
   const openCreate = () => {
     setEditing(null)
     setFormError(null)
     form.reset({ marca: '' })
+    setPanelOpen(true)
   }
 
   const openEdit = (m: MarcaDto) => {
     setFormError(null)
     setEditing(m)
     form.reset({ marca: m.marca })
+    setPanelOpen(true)
   }
 
   const onSave = form.handleSubmit(async (values) => {
@@ -58,9 +73,8 @@ export function AdminMarcasVehiculoSection({ marcas, loading, onReload }: Marcas
         return
       }
       toast.success('Marca creada')
-      form.reset({ marca: '' })
     }
-    setEditing(null)
+    closePanel()
     await onReload()
   })
 
@@ -71,86 +85,90 @@ export function AdminMarcasVehiculoSection({ marcas, loading, onReload }: Marcas
       toast.error(problem.detail ?? `Error ${status}`)
       return
     }
+    if (editing?.marcaId === deleteTarget.marcaId) closePanel()
     setDeleteTarget(null)
     toast.success('Marca eliminada')
     await onReload()
   }
 
+  const formFooter = (
+    <>
+      <button type="button" className="btn btn-primary flex-grow-1" onClick={() => void onSave()}>
+        <i className={`mdi ${editing ? 'mdi-content-save' : 'mdi-plus'} mr-1`} />
+        {editing ? 'Actualizar' : 'Crear'}
+      </button>
+      <button type="button" className="btn btn-outline-secondary" onClick={closePanel}>
+        Cancelar
+      </button>
+    </>
+  )
+
   return (
-    <div className="card">
-      <div className="card-body">
-        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-          <h2 className="h5 mb-0">Marcas</h2>
-          <button type="button" className="btn btn-sm btn-outline-primary" onClick={openCreate}>
-            <i className="mdi mdi-plus mr-1" /> Nueva marca
-          </button>
-        </div>
-
-        <form className="row g-2 align-items-end mb-4" onSubmit={(e) => void onSave(e)}>
-          <div className="col-md-8">
-            <label className="cq-label small">Marca</label>
-            <input className="form-control" {...form.register('marca')} />
+    <AdminCatalogCrudShell
+      toolbarTitle="Marcas"
+      metricLabel="Marcas"
+      count={marcas.length}
+      createLabel="Nueva marca"
+      createIconClass="mdi mdi-car"
+      onCreate={openCreate}
+      panelOpen={panelOpen}
+      panelTitle={editing ? 'Editar marca' : 'Nueva marca'}
+      panelSubtitle="Fabricantes para el padrón de vehículos."
+      panelIconClass={editing ? 'mdi mdi-pencil' : 'mdi mdi-car'}
+      editing={Boolean(editing)}
+      onClosePanel={closePanel}
+      formFooter={formFooter}
+      loading={loading}
+      isEmpty={marcas.length === 0}
+      emptyIconClass="mdi mdi-car"
+      emptyTitle="Sin marcas registradas"
+      emptyDescription="Registra marcas antes de capturar modelos."
+      tableHead={
+        <tr>
+          <th>Marca</th>
+          <th className="text-center cq-actions">Acciones</th>
+        </tr>
+      }
+      tableBody={marcas.map((m) => (
+        <tr key={m.marcaId} className={editing?.marcaId === m.marcaId ? 'cq-row-active' : undefined}>
+          <td>
+            <strong>{m.marca}</strong>
+          </td>
+          <AdminCatalogRowActions
+            name={m.marca}
+            onEdit={() => openEdit(m)}
+            onDelete={() => setDeleteTarget(m)}
+          />
+        </tr>
+      ))}
+      panelChildren={
+        <>
+          {formError && (
+            <div className="alert alert-danger py-2 small" role="alert">
+              {formError}
+            </div>
+          )}
+          <div className="form-group mb-0">
+            <label className="cq-label" htmlFor="marca-nombre">
+              Marca <span className="text-danger">*</span>
+            </label>
+            <input id="marca-nombre" className="form-control" {...form.register('marca')} />
             {form.formState.errors.marca && (
-              <span className="text-danger small">{form.formState.errors.marca.message}</span>
+              <span className="text-danger small d-block">{form.formState.errors.marca.message}</span>
             )}
           </div>
-          <div className="col-md-4 d-flex gap-2">
-            <button type="submit" className="btn btn-primary flex-grow-1">
-              {editing ? 'Actualizar' : 'Agregar'}
-            </button>
-            {editing && (
-              <button type="button" className="btn btn-outline-secondary" onClick={openCreate}>
-                Cancelar
-              </button>
-            )}
-          </div>
-          {formError && <div className="col-12 alert alert-danger py-2 small mb-0">{formError}</div>}
-        </form>
-
-        {loading && <p className="text-muted small">Cargando…</p>}
-        {!loading && marcas.length === 0 && <p className="text-muted">Sin marcas registradas.</p>}
-        {!loading && marcas.length > 0 && (
-          <table className="table table-sm cq-admin-table mb-0">
-            <thead>
-              <tr>
-                <th>Marca</th>
-                <th className="text-end">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {marcas.map((m) => (
-                <tr key={m.marcaId} className={editing?.marcaId === m.marcaId ? 'cq-row-active' : undefined}>
-                  <td>{m.marca}</td>
-                  <td className="text-end cq-actions">
-                    <button type="button" className="btn btn-link btn-sm" onClick={() => openEdit(m)} aria-label="Editar">
-                      <i className="mdi mdi-pencil" />
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-link btn-sm text-danger"
-                      onClick={() => setDeleteTarget(m)}
-                      aria-label="Eliminar"
-                    >
-                      <i className="mdi mdi-delete" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <ConfirmDialog
-        open={deleteTarget !== null}
-        title="Eliminar marca"
-        message={deleteTarget ? `¿Eliminar la marca «${deleteTarget.marca}»?` : ''}
-        confirmLabel="Eliminar"
-        variant="danger"
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={() => void onConfirmDelete()}
-      />
-    </div>
+        </>
+      }
+      deleteDialog={{
+        open: deleteTarget !== null,
+        title: 'Eliminar marca',
+        message: deleteTarget ? `¿Eliminar la marca «${deleteTarget.marca}»?` : '',
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+        onCancel: () => setDeleteTarget(null),
+        onConfirm: () => void onConfirmDelete(),
+      }}
+    />
   )
 }
 
@@ -163,6 +181,7 @@ type ModelosProps = {
 
 export function AdminModelosVehiculoSection({ modelos, marcas, loading, onReload }: ModelosProps) {
   const toast = useToast()
+  const [panelOpen, setPanelOpen] = useState(false)
   const [editing, setEditing] = useState<ModeloDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ModeloDto | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -172,16 +191,26 @@ export function AdminModelosVehiculoSection({ modelos, marcas, loading, onReload
     defaultValues: { marcaId: '', modelo: '' },
   })
 
+  const closePanel = () => {
+    setPanelOpen(false)
+    setEditing(null)
+    setFormError(null)
+  }
+
+  useAdminPanelEscape(panelOpen, closePanel)
+
   const openCreate = () => {
     setEditing(null)
     setFormError(null)
-    form.reset({ marcaId: '', modelo: '' })
+    form.reset({ marcaId: marcas[0] ? String(marcas[0].marcaId) : '', modelo: '' })
+    setPanelOpen(true)
   }
 
   const openEdit = (m: ModeloDto) => {
     setFormError(null)
     setEditing(m)
     form.reset({ marcaId: String(m.marcaId), modelo: m.modelo })
+    setPanelOpen(true)
   }
 
   const onSave = form.handleSubmit(async (values) => {
@@ -201,9 +230,8 @@ export function AdminModelosVehiculoSection({ modelos, marcas, loading, onReload
         return
       }
       toast.success('Modelo creado')
-      form.reset({ marcaId: '', modelo: '' })
     }
-    setEditing(null)
+    closePanel()
     await onReload()
   })
 
@@ -214,6 +242,7 @@ export function AdminModelosVehiculoSection({ modelos, marcas, loading, onReload
       toast.error(problem.detail ?? `Error ${status}`)
       return
     }
+    if (editing?.modeloId === deleteTarget.modeloId) closePanel()
     setDeleteTarget(null)
     toast.success('Modelo eliminado')
     await onReload()
@@ -221,94 +250,108 @@ export function AdminModelosVehiculoSection({ modelos, marcas, loading, onReload
 
   const marcaLabel = (id: number) => marcas.find((m) => m.marcaId === id)?.marca ?? `#${id}`
 
-  return (
-    <div className="card">
-      <div className="card-body">
-        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-          <h2 className="h5 mb-0">Modelos</h2>
-          <button type="button" className="btn btn-sm btn-outline-primary" onClick={openCreate}>
-            <i className="mdi mdi-plus mr-1" /> Nuevo modelo
-          </button>
-        </div>
+  const formFooter = (
+    <>
+      <button type="button" className="btn btn-primary flex-grow-1" onClick={() => void onSave()}>
+        <i className={`mdi ${editing ? 'mdi-content-save' : 'mdi-plus'} mr-1`} />
+        {editing ? 'Actualizar' : 'Crear'}
+      </button>
+      <button type="button" className="btn btn-outline-secondary" onClick={closePanel}>
+        Cancelar
+      </button>
+    </>
+  )
 
-        <form className="row g-2 align-items-end mb-4" onSubmit={(e) => void onSave(e)}>
-          <div className="col-md-4">
-            <label className="cq-label small">Marca</label>
-            <select className="form-control" {...form.register('marcaId')}>
+  return (
+    <AdminCatalogCrudShell
+      toolbarTitle="Modelos"
+      metricLabel="Modelos"
+      count={modelos.length}
+      createLabel="Nuevo modelo"
+      createIconClass="mdi mdi-car-side"
+      onCreate={openCreate}
+      panelOpen={panelOpen}
+      panelTitle={editing ? 'Editar modelo' : 'Nuevo modelo'}
+      panelSubtitle="Cada modelo pertenece a una marca."
+      panelIconClass={editing ? 'mdi mdi-pencil' : 'mdi mdi-car-side'}
+      editing={Boolean(editing)}
+      onClosePanel={closePanel}
+      formFooter={formFooter}
+      topBanner={
+        marcas.length === 0 ? (
+          <div className="alert alert-warning py-2 small mb-3" role="alert">
+            Crea al menos una marca en la pestaña Marcas antes de registrar modelos.
+          </div>
+        ) : undefined
+      }
+      loading={loading}
+      isEmpty={modelos.length === 0}
+      emptyIconClass="mdi mdi-car-side"
+      emptyTitle="Sin modelos registrados"
+      emptyDescription="Define modelos por marca para el padrón vehicular."
+      tableHead={
+        <tr>
+          <th>Modelo</th>
+          <th>Marca</th>
+          <th className="text-center cq-actions">Acciones</th>
+        </tr>
+      }
+      tableBody={modelos.map((m) => (
+        <tr key={m.modeloId} className={editing?.modeloId === m.modeloId ? 'cq-row-active' : undefined}>
+          <td>
+            <strong>{m.modelo}</strong>
+          </td>
+          <td>{marcaLabel(m.marcaId)}</td>
+          <AdminCatalogRowActions
+            name={m.modelo}
+            onEdit={() => openEdit(m)}
+            onDelete={() => setDeleteTarget(m)}
+          />
+        </tr>
+      ))}
+      panelChildren={
+        <>
+          {formError && (
+            <div className="alert alert-danger py-2 small" role="alert">
+              {formError}
+            </div>
+          )}
+          <div className="form-group mb-3">
+            <label className="cq-label" htmlFor="modelo-marca">
+              Marca <span className="text-danger">*</span>
+            </label>
+            <select id="modelo-marca" className="form-control" {...form.register('marcaId')}>
               <option value="">Seleccione…</option>
               {marcas.map((m) => (
-                <option key={m.marcaId} value={m.marcaId}>{m.marca}</option>
+                <option key={m.marcaId} value={m.marcaId}>
+                  {m.marca}
+                </option>
               ))}
             </select>
             {form.formState.errors.marcaId && (
-              <span className="text-danger small">{form.formState.errors.marcaId.message}</span>
+              <span className="text-danger small d-block">{form.formState.errors.marcaId.message}</span>
             )}
           </div>
-          <div className="col-md-5">
-            <label className="cq-label small">Modelo</label>
-            <input className="form-control" {...form.register('modelo')} />
+          <div className="form-group mb-0">
+            <label className="cq-label" htmlFor="modelo-nombre">
+              Modelo <span className="text-danger">*</span>
+            </label>
+            <input id="modelo-nombre" className="form-control" {...form.register('modelo')} />
             {form.formState.errors.modelo && (
-              <span className="text-danger small">{form.formState.errors.modelo.message}</span>
+              <span className="text-danger small d-block">{form.formState.errors.modelo.message}</span>
             )}
           </div>
-          <div className="col-md-3 d-flex gap-2">
-            <button type="submit" className="btn btn-primary flex-grow-1">
-              {editing ? 'Actualizar' : 'Agregar'}
-            </button>
-            {editing && (
-              <button type="button" className="btn btn-outline-secondary" onClick={openCreate}>
-                Cancelar
-              </button>
-            )}
-          </div>
-          {formError && <div className="col-12 alert alert-danger py-2 small mb-0">{formError}</div>}
-        </form>
-
-        {loading && <p className="text-muted small">Cargando…</p>}
-        {!loading && modelos.length === 0 && <p className="text-muted">Sin modelos registrados.</p>}
-        {!loading && modelos.length > 0 && (
-          <table className="table table-sm cq-admin-table mb-0">
-            <thead>
-              <tr>
-                <th>Modelo</th>
-                <th>Marca</th>
-                <th className="text-end">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {modelos.map((m) => (
-                <tr key={m.modeloId} className={editing?.modeloId === m.modeloId ? 'cq-row-active' : undefined}>
-                  <td>{m.modelo}</td>
-                  <td>{marcaLabel(m.marcaId)}</td>
-                  <td className="text-end cq-actions">
-                    <button type="button" className="btn btn-link btn-sm" onClick={() => openEdit(m)} aria-label="Editar">
-                      <i className="mdi mdi-pencil" />
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-link btn-sm text-danger"
-                      onClick={() => setDeleteTarget(m)}
-                      aria-label="Eliminar"
-                    >
-                      <i className="mdi mdi-delete" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <ConfirmDialog
-        open={deleteTarget !== null}
-        title="Eliminar modelo"
-        message={deleteTarget ? `¿Eliminar el modelo «${deleteTarget.modelo}»?` : ''}
-        confirmLabel="Eliminar"
-        variant="danger"
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={() => void onConfirmDelete()}
-      />
-    </div>
+        </>
+      }
+      deleteDialog={{
+        open: deleteTarget !== null,
+        title: 'Eliminar modelo',
+        message: deleteTarget ? `¿Eliminar el modelo «${deleteTarget.modelo}»?` : '',
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+        onCancel: () => setDeleteTarget(null),
+        onConfirm: () => void onConfirmDelete(),
+      }}
+    />
   )
 }

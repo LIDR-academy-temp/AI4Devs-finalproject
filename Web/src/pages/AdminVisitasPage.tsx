@@ -228,18 +228,11 @@ export function AdminVisitasPage() {
       )}
 
       {tab === 'tipos' && (
-        <>
-          <AdminListToolbar
-            title="Tipos de identificación"
-            metrics={[{ label: 'Tipos', value: tipos.length }]}
-            primaryAction={primaryAction}
-          />
-          <AdminTiposIdentificacionSection
-            tipos={tipos}
-            loading={tiposLoading}
-            onReload={recargarTipos}
-          />
-        </>
+        <AdminTiposIdentificacionSection
+          tipos={tipos}
+          loading={tiposLoading}
+          onReload={recargarTipos}
+        />
       )}
 
       {tab === 'visitas' && (

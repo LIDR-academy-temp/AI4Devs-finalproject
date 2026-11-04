@@ -1,0 +1,64 @@
+/* Classic — paleta Pantone existente (light + dark) */
+[data-theme='classic-light'] {
+  color-scheme: light;
+
+  --color-surface: #dae2e6;
+  --color-surface-alt: #f0f4f6;
+  --color-surface-raised: #e4ecf0;
+  --color-primary: #6096ba;
+  --color-primary-dark: #274c77;
+  --color-primary-light: #a3cef1;
+  --color-primary-50: #ebf3fa;
+  --color-sidebar-bg: #274c77;
+  --color-header-bg: #274c77;
+  --color-sidebar-fg: rgba(255, 255, 255, 0.82);
+  --color-sidebar-icon: #b8d9f0;
+  --color-sidebar-active: #a3cef1;
+  --color-neutral-900: #1e1e1e;
+  --color-neutral-700: #4a4a4a;
+  --color-neutral: #8b8c89;
+  --color-neutral-300: #b0b0ae;
+  --color-neutral-200: #c6c5c1;
+  --color-neutral-100: #e8e7e4;
+  --color-success: #2e7d52;
+  --color-success-light: #d4edda;
+  --color-warning: #c48a1a;
+  --color-warning-light: #fff3cd;
+  --color-danger: #c0392b;
+  --color-danger-light: #f8d7da;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='classic-dark'] {
+  color-scheme: dark;
+
+  --color-surface: #121820;
+  --color-surface-alt: #1a2430;
+  --color-surface-raised: #1f2e3d;
+  --color-primary: #7eb3d8;
+  --color-primary-dark: #d6e8f5;
+  --color-primary-light: #a3cef1;
+  --color-primary-50: #243447;
+  --color-sidebar-bg: #1a2d42;
+  --color-header-bg: #1a2d42;
+  --color-sidebar-fg: rgba(255, 255, 255, 0.82);
+  --color-sidebar-icon: #b8d9f0;
+  --color-sidebar-active: #a3cef1;
+  --color-neutral-900: #f1f3f5;
+  --color-neutral-700: #d8dde3;
+  --color-neutral: #b4bcc6;
+  --color-neutral-300: #8a96a3;
+  --color-neutral-200: #3d4a57;
+  --color-neutral-100: #2a3542;
+  --color-success: #5ecf8a;
+  --color-success-light: #1a3d2c;
+  --color-warning: #e8b84a;
+  --color-warning-light: #3d3420;
+  --color-danger: #f07167;
+  --color-danger-light: #3d2220;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.55);
+}

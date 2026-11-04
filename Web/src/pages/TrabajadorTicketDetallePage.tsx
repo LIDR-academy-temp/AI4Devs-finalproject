@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { TicketDetallePanel } from '../features/tickets/TicketDetallePanel'
-import { PageHeader } from '../shared/components/admin'
+import { PageHeader, PortalPageLayout } from '../shared/components/admin'
 
 export function TrabajadorTicketDetallePage() {
   const { ticketId } = useParams()
@@ -8,21 +8,21 @@ export function TrabajadorTicketDetallePage() {
 
   if (!Number.isFinite(id)) {
     return (
-      <main className="mx-auto max-w-3xl p-4 md:p-8">
+      <PortalPageLayout width="3xl">
         <p className="text-danger" role="alert">
           Identificador inválido.
         </p>
-      </main>
+      </PortalPageLayout>
     )
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 p-4 md:p-8">
+    <PortalPageLayout width="3xl" className="space-y-4">
       <Link to="/trabajador/tickets" className="text-sm text-primary hover:underline">
         ← Tickets asignados
       </Link>
       <PageHeader title="Detalle del ticket" />
       <TicketDetallePanel ticketId={id} />
-    </main>
+    </PortalPageLayout>
   )
 }

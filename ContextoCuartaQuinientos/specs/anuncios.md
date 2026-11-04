@@ -21,7 +21,7 @@ Todas las tablas comparten el patrón de auditoría del sistema (`Creado`, `Modi
 - **INV-1**: todo acceso a un anuncio por un residente se registra en `anm.LogVisualizacionAnuncios` (una lectura => una fila; idempotencia por usuario+anuncio `(asumido)`).
 - **INV-2**: el borrado es lógico (`bEliminado = 1`); nunca DELETE físico.
 - **INV-3**: `anm.Anuncios.TipoAnuncioID` referencia siempre un tipo existente en `anm.TiposAnuncio`.
-- **INV-4**: publicación restringida a perfiles con `bAdministrador = 1` (Administrador); lectura abierta a residentes autorizados.
+- **INV-ANM-VIG (delta [[FE-ADMIN-UX-002]])**: un anuncio con `VigenteHasta` en el día calendario actual sigue vigente **todo ese día** (comparación por `date`, no por hora UTC).
 
 ## Historias del dominio (HU-XXX [M/S/C] + 1 línea)
 - **HU-ANM-01 [S]** — Ver anuncios del fraccionamiento: el residente ve comunicados por tipo y fecha; su lectura se registra en `anm.LogVisualizacionAnuncios`.
@@ -62,6 +62,7 @@ Cliente: `Web/src/features/anuncios/useAnuncios.ts` + páginas en `Web/src/pages
 
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
+| 2026-11-04 | [[FE-ADMIN-UX-002]] | Vigencia residente por día calendario; form admin fin de día local. |
 | 2026-10-26 | [[FE-CRUD-002]] | Admin anuncios: patrón CRUD admin (tabla filtrable + split panel) |
 | 2026-10-19 | [[FE-043]] | UI `/anuncios`, `/anuncios/:id`, `/admin/anuncios`; nav Anuncios habilitado |
 | 2026-10-19 | [[ANM-BE-027]] | API JWT Cuarta `/ANM/*` (planning; ver delta backend) |

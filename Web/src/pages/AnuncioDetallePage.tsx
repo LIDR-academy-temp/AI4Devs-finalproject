@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { useAnuncioDetalle } from '../features/anuncios/useAnuncios'
-import { PageHeader } from '../shared/components/admin'
+import { PageHeader, PortalPageLayout } from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 
 export function AnuncioDetallePage() {
@@ -11,14 +11,14 @@ export function AnuncioDetallePage() {
 
   if (!Number.isFinite(anuncioId)) {
     return (
-      <main className="mx-auto max-w-3xl p-4 md:p-8">
+      <PortalPageLayout width="3xl">
         <p className="text-danger" role="alert">Identificador inválido.</p>
-      </main>
+      </PortalPageLayout>
     )
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 p-4 md:p-8">
+    <PortalPageLayout width="3xl" className="space-y-4">
       <Link to="/anuncios" className="text-sm text-primary hover:underline">← Volver</Link>
       {loading && <p className="text-neutral">Cargando…</p>}
       {error && !loading && (
@@ -33,6 +33,6 @@ export function AnuncioDetallePage() {
           <div className="mt-6 whitespace-pre-wrap text-neutral-700">{item.contenido}</div>
         </article>
       )}
-    </main>
+    </PortalPageLayout>
   )
 }

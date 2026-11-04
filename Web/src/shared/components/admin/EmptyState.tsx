@@ -14,7 +14,7 @@ export function EmptyState({ title, description, action, icon }: EmptyStateProps
       <div className="text-neutral-300" aria-hidden="true">
         {icon ?? <Inbox className="h-8 w-8" />}
       </div>
-      <p className="text-base font-medium text-primary-dark">{title}</p>
+      <p className="text-base font-medium text-neutral-900">{title}</p>
       {description && <p className="max-w-md text-sm text-neutral">{description}</p>}
       {action && <div className="mt-2">{action}</div>}
     </div>

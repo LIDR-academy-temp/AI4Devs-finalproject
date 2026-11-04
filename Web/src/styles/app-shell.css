@@ -1,7 +1,7 @@
 /* App shell — header + sidebar (FE-UX) */
 
 .cq-app-header {
-  background: linear-gradient(180deg, #274c77 0%, #223f5c 100%);
+  background: var(--color-header-bg, var(--color-sidebar-bg));
 }
 
 .cq-app-brand {
@@ -21,8 +21,8 @@
   --cq-nav-icon-size: 1.75rem;
   --cq-nav-icon-svg: 0.9375rem;
   --cq-nav-fg-muted: rgba(255, 255, 255, 0.82);
-  --cq-nav-fg-icon: #b8d9f0;
-  background: linear-gradient(180deg, #223f5c 0%, #274c77 42%, #1a3349 100%);
+  --cq-nav-fg-icon: var(--color-sidebar-icon);
+  background: var(--color-sidebar-bg);
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
@@ -87,7 +87,7 @@
   position: relative;
   z-index: 10;
   overflow: visible;
-  background: linear-gradient(180deg, #223f5c 0%, #274c77 42%, #1a3349 100%);
+  background: var(--color-sidebar-bg);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -113,7 +113,7 @@
   width: 2px;
   height: 1.125rem;
   border-radius: 0 3px 3px 0;
-  background: #a3cef1;
+  background: var(--color-sidebar-active);
   transform: translateY(-50%);
 }
 
@@ -136,7 +136,7 @@
   pointer-events: none;
   white-space: nowrap;
   border-radius: var(--radius-md);
-  background: #1a3349;
+  background: var(--color-sidebar-bg);
   padding: 0.4rem 0.65rem;
   font-size: 0.8125rem;
   font-weight: 500;

@@ -2,7 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { ConfirmDialog } from '../../../shared/components/admin'
+import {
+  AdminCatalogCrudShell,
+  AdminCatalogRowActions,
+  useAdminPanelEscape,
+} from '../../../shared/components/admin'
 import { apiDelete, apiPost, apiPut } from '../../../shared/lib/apiClient'
 import { useToast } from '../../../shared/toast/ToastContext'
 import type { TipoIdentificacionDto } from '../../../shared/types/visitas'
@@ -21,6 +25,7 @@ type Props = {
 
 export function AdminTiposIdentificacionSection({ tipos, loading, onReload }: Props) {
   const toast = useToast()
+  const [panelOpen, setPanelOpen] = useState(false)
   const [editing, setEditing] = useState<TipoIdentificacionDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<TipoIdentificacionDto | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -30,16 +35,26 @@ export function AdminTiposIdentificacionSection({ tipos, loading, onReload }: Pr
     defaultValues: { tipoIdentificacion: '' },
   })
 
+  const closePanel = () => {
+    setPanelOpen(false)
+    setEditing(null)
+    setFormError(null)
+  }
+
+  useAdminPanelEscape(panelOpen, closePanel)
+
   const openCreate = () => {
     setEditing(null)
     setFormError(null)
     form.reset({ tipoIdentificacion: '' })
+    setPanelOpen(true)
   }
 
   const openEdit = (t: TipoIdentificacionDto) => {
     setFormError(null)
     setEditing(t)
     form.reset({ tipoIdentificacion: t.tipoIdentificacion })
+    setPanelOpen(true)
   }
 
   const onSave = form.handleSubmit(async (values) => {
@@ -59,9 +74,8 @@ export function AdminTiposIdentificacionSection({ tipos, loading, onReload }: Pr
         return
       }
       toast.success('Tipo creado')
-      form.reset({ tipoIdentificacion: '' })
     }
-    setEditing(null)
+    closePanel()
     await onReload()
   })
 
@@ -72,90 +86,92 @@ export function AdminTiposIdentificacionSection({ tipos, loading, onReload }: Pr
       toast.error(problem.detail ?? `Error ${status}`)
       return
     }
+    if (editing?.tipoIdentificacionId === deleteTarget.tipoIdentificacionId) closePanel()
     setDeleteTarget(null)
     toast.success('Tipo eliminado')
     await onReload()
   }
 
+  const formFooter = (
+    <>
+      <button type="button" className="btn btn-primary flex-grow-1" onClick={() => void onSave()}>
+        <i className={`mdi ${editing ? 'mdi-content-save' : 'mdi-plus'} mr-1`} />
+        {editing ? 'Actualizar' : 'Crear'}
+      </button>
+      <button type="button" className="btn btn-outline-secondary" onClick={closePanel}>
+        Cancelar
+      </button>
+    </>
+  )
+
   return (
-    <div className="card">
-      <div className="card-body">
-        <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-          <h2 className="h5 mb-0">Tipos de identificación</h2>
-          <button type="button" className="btn btn-sm btn-outline-primary" onClick={openCreate}>
-            <i className="mdi mdi-plus mr-1" /> Nuevo tipo
-          </button>
-        </div>
-
-        <form className="row g-2 align-items-end mb-4" onSubmit={(e) => void onSave(e)}>
-          <div className="col-md-8">
-            <label className="cq-label small">Nombre</label>
-            <input className="form-control" {...form.register('tipoIdentificacion')} />
+    <AdminCatalogCrudShell
+      toolbarTitle="Tipos de identificación"
+      metricLabel="Tipos"
+      count={tipos.length}
+      createLabel="Nuevo tipo"
+      createIconClass="mdi mdi-card-account-details-outline"
+      onCreate={openCreate}
+      panelOpen={panelOpen}
+      panelTitle={editing ? 'Editar tipo de ID' : 'Nuevo tipo de ID'}
+      panelSubtitle="INE, pasaporte u otros documentos aceptados en caseta."
+      panelIconClass={editing ? 'mdi mdi-pencil' : 'mdi mdi-card-account-details-outline'}
+      editing={Boolean(editing)}
+      onClosePanel={closePanel}
+      formFooter={formFooter}
+      loading={loading}
+      isEmpty={tipos.length === 0}
+      emptyIconClass="mdi mdi-card-account-details-outline"
+      emptyTitle="Sin tipos de identificación"
+      emptyDescription="Agrega INE, pasaporte u otros documentos para visitas y pases QR."
+      tableHead={
+        <tr>
+          <th>Tipo</th>
+          <th className="text-center cq-actions">Acciones</th>
+        </tr>
+      }
+      tableBody={tipos.map((t) => (
+        <tr
+          key={t.tipoIdentificacionId}
+          className={editing?.tipoIdentificacionId === t.tipoIdentificacionId ? 'cq-row-active' : undefined}
+        >
+          <td className="min-w-0 text-break">
+            <strong>{t.tipoIdentificacion}</strong>
+          </td>
+          <AdminCatalogRowActions
+            name={t.tipoIdentificacion}
+            onEdit={() => openEdit(t)}
+            onDelete={() => setDeleteTarget(t)}
+          />
+        </tr>
+      ))}
+      panelChildren={
+        <>
+          {formError && (
+            <div className="alert alert-danger py-2 small" role="alert">
+              {formError}
+            </div>
+          )}
+          <div className="form-group mb-0">
+            <label className="cq-label" htmlFor="tipo-id-nombre">
+              Nombre <span className="text-danger">*</span>
+            </label>
+            <input id="tipo-id-nombre" className="form-control" {...form.register('tipoIdentificacion')} />
             {form.formState.errors.tipoIdentificacion && (
-              <span className="text-danger small">{form.formState.errors.tipoIdentificacion.message}</span>
+              <span className="text-danger small d-block">{form.formState.errors.tipoIdentificacion.message}</span>
             )}
           </div>
-          <div className="col-md-4 d-flex gap-2">
-            <button type="submit" className="btn btn-primary flex-grow-1">
-              {editing ? 'Actualizar' : 'Agregar'}
-            </button>
-            {editing && (
-              <button type="button" className="btn btn-outline-secondary" onClick={openCreate}>
-                Cancelar
-              </button>
-            )}
-          </div>
-          {formError && <div className="col-12 alert alert-danger py-2 small mb-0">{formError}</div>}
-        </form>
-
-        {loading && <p className="text-muted small">Cargando…</p>}
-        {!loading && tipos.length === 0 && (
-          <p className="text-muted">Sin tipos en catálogo. Agrega INE, Pasaporte, etc.</p>
-        )}
-        {!loading && tipos.length > 0 && (
-          <table className="table table-sm cq-admin-table mb-0">
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th className="text-end">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tipos.map((t) => (
-                <tr
-                  key={t.tipoIdentificacionId}
-                  className={editing?.tipoIdentificacionId === t.tipoIdentificacionId ? 'cq-row-active' : undefined}
-                >
-                  <td>{t.tipoIdentificacion}</td>
-                  <td className="text-end cq-actions">
-                    <button type="button" className="btn btn-link btn-sm" onClick={() => openEdit(t)} aria-label="Editar">
-                      <i className="mdi mdi-pencil" />
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-link btn-sm text-danger"
-                      onClick={() => setDeleteTarget(t)}
-                      aria-label="Eliminar"
-                    >
-                      <i className="mdi mdi-delete" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <ConfirmDialog
-        open={deleteTarget !== null}
-        title="Eliminar tipo"
-        message={deleteTarget ? `¿Eliminar «${deleteTarget.tipoIdentificacion}»?` : ''}
-        confirmLabel="Eliminar"
-        variant="danger"
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={() => void onConfirmDelete()}
-      />
-    </div>
+        </>
+      }
+      deleteDialog={{
+        open: deleteTarget !== null,
+        title: 'Eliminar tipo',
+        message: deleteTarget ? `¿Eliminar «${deleteTarget.tipoIdentificacion}»?` : '',
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+        onCancel: () => setDeleteTarget(null),
+        onConfirm: () => void onConfirmDelete(),
+      }}
+    />
   )
 }

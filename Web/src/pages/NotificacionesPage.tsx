@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../features/auth/AuthContext'
-import { NotificationDropdown } from '../features/notifications/NotificationDropdown'
+import { NotificacionesBandeja } from '../features/notifications/NotificacionesBandeja'
 import { fetchNotificaciones, marcarNotificacionLeida } from '../features/notifications/notifications.api'
-import { EmptyState, PageHeader } from '../shared/components/admin'
+import {
+  PortalListPage,
+  PortalListSection,
+  PortalStat,
+  PortalStatStrip,
+  portalListCountDescription,
+} from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 import type { NotificacionItem } from '../shared/types/notifications'
 
@@ -46,52 +52,45 @@ export function NotificacionesPage() {
     }
   }
 
-  return (
-    <main className="mx-auto max-w-2xl space-y-4 px-4 py-6">
-      <PageHeader
-        title="Notificaciones"
-        description={
-          totalNoLeidas > 0
-            ? `${totalNoLeidas} sin leer`
-            : 'Avisos del condominio y del portal.'
-        }
-      />
+  const count = items.length
 
-      <section
-        className="rounded-lg border border-neutral-100 bg-surface-alt shadow-sm"
-        aria-labelledby="notif-bandeja-heading"
-      >
-        <h2 id="notif-bandeja-heading" className="sr-only">
-          Bandeja de notificaciones
-        </h2>
-        {loading && <p className="p-4 text-sm text-neutral">Cargando…</p>}
-        {error && !loading && (
-          <div className="p-4">
-            <p className="text-sm text-neutral" role="status">
-              No se pudieron cargar las notificaciones.
-            </p>
-            <button
-              type="button"
-              className="mt-2 cursor-pointer text-sm text-primary underline"
-              onClick={() => void load()}
-            >
-              Reintentar
-            </button>
-          </div>
-        )}
-        {!loading && !error && items.length === 0 && (
-          <EmptyState title="Sin notificaciones." />
-        )}
-        {!loading && !error && items.length > 0 && (
-          <NotificationDropdown
-            items={items}
-            loading={false}
-            error={null}
-            markingId={markingId}
-            onMarcarLeida={(id) => void handleMarcarLeida(id)}
-          />
-        )}
-      </section>
-    </main>
+  return (
+    <PortalListPage
+      width="3xl"
+      header={{
+        title: 'Notificaciones',
+        description: portalListCountDescription(
+          count,
+          'aviso',
+          'avisos',
+          'Avisos del condominio y del portal.',
+        ),
+      }}
+      loading={loading}
+      loadingMessage="Cargando notificaciones…"
+      error={error}
+      onRetry={() => void load()}
+      empty={
+        !loading && !error && count === 0
+          ? { title: 'Sin notificaciones.', description: 'Cuando haya novedades, aparecerán aquí.' }
+          : undefined
+      }
+    >
+      {count > 0 ? (
+        <>
+          <PortalStatStrip>
+            <PortalStat label="Sin leer" value={totalNoLeidas} valueClassName="text-primary" />
+            <PortalStat label="En esta bandeja" value={count} />
+          </PortalStatStrip>
+          <PortalListSection title="Listado">
+            <NotificacionesBandeja
+              items={items}
+              markingId={markingId}
+              onMarcarLeida={(id) => void handleMarcarLeida(id)}
+            />
+          </PortalListSection>
+        </>
+      ) : null}
+    </PortalListPage>
   )
 }

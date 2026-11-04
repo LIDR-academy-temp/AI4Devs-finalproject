@@ -42,6 +42,7 @@ Dominio financiero del fraccionamiento (esquema `fnz`). Cubre las cuotas del res
 ## UI web (admin / residente)
 - `/finanzas/cuenta` (residente, FE-032) — estado de cuenta propio.
 - `/admin/finanzas` (admin, FE-039) — búsqueda `usuarioId`, registrar pago, morosos, generar cuotas del período.
+- **(delta [[FE-ADMIN-UX-002]])** Pestañas **Cuotas residente** y **Movimientos**: `AdminFilterableTable` + filtros columna (`cuotasAdminTableFilter`, `movimientosAdminTableFilter`).
 
 ## Endpoints (/FNZ/{Controller})
 - `GET /FNZ/Cuotas/mis` (residente, `sub`) y `GET /FNZ/Cuotas?usuarioId={id}` (Admin) → `{ cuotas: [...], totalPendiente, totalVencido }` con `esVencida` — FNZ-BE-010.
@@ -66,16 +67,19 @@ Dominio financiero del fraccionamiento (esquema `fnz`). Cubre las cuotas del res
 
 ## Frontend admin (SPA) — vigente
 
-- Ruta `/admin/finanzas` ([[FE-CRUD-001]]): shell `cq-admin`; tab **Morosos** con `AdminFilterableTable`; tab **Cuotas** aún con `CuotasTable` legacy; pagos en `RegistrarPagoModal`.
-
-## Notas
-- Sin stored procedures: Dapper + vistas `vs*` + servicios C#; validación con FluentValidation; transacciones vía `IDbTransaction`.
-- Nombres reales del esquema español (`fnz`); soft delete con `bEliminado` (NO `IsActive`).
-- No existe tabla de auditoría dedicada; la auditoría es por columnas (Creado/Modificado/Usuario…/Fecha…).
+- Ruta `/admin/finanzas` ([[FE-039]]): tabs cuotas residente, morosos, cuentas, tipos, generar, movimientos.
+- **Cuotas residente** y **Movimientos**: `AdminFilterableTable` ([[FE-ADMIN-UX-002]]).
+- Morosos: `AdminFilterableTable` + moras lote ([[PROD-UX-001]]).
 
 ## Changelog
 
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
+| 2026-11-04 | [[FE-ADMIN-UX-002]] | UI admin finanzas: tablas filtrables cuotas residente + movimientos. |
 | 2026-10-30 | [[PROD-UX-001]] | Morosos: columna moras, aplicar/condonar lote; `MontoMora` + endpoints batch |
 | 2026-10-23 | [[FE-CRUD-001]] | Finanzas admin: morosos con tabla filtrable; tabs Bootstrap |
+
+## Notas
+- Sin stored procedures: Dapper + vistas `vs*` + servicios C#; validación con FluentValidation; transacciones vía `IDbTransaction`.
+- Nombres reales del esquema español (`fnz`); soft delete con `bEliminado` (NO `IsActive`).
+- No existe tabla de auditoría dedicada; la auditoría es por columnas (Creado/Modificado/Usuario…/Fecha…).

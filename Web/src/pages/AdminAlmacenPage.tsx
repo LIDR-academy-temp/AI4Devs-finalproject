@@ -365,7 +365,7 @@ export function AdminAlmacenPage() {
                   {!loadingArt && !errArt && articulos.length > 0 && (
                     <>
                     <div className="table-responsive cq-admin-table-pane">
-                      <table className="table table-hover mb-0">
+                      <table className="table table-striped table-hover align-middle mb-0">
                         <thead>
                           <tr>
                             <th>Artículo</th>
@@ -562,15 +562,6 @@ export function AdminAlmacenPage() {
 
       {tab === 'categorias' && (
         <div id="almacen-tab-categorias" role="tabpanel" tabIndex={0} aria-labelledby="almacen-tab-categorias-btn">
-          <AdminListToolbar
-            title="Categorías"
-            metrics={[{ label: 'Categorías', value: categorias.length }]}
-            primaryAction={{
-              label: 'Actualizar',
-              iconClass: 'mdi mdi-refresh',
-              onClick: () => void recargarCat(),
-            }}
-          />
           <AdminCategoriasAlmacenSection
             categorias={categorias}
             loading={loadingCat}
@@ -621,7 +612,7 @@ export function AdminAlmacenPage() {
                   {!loadingPre && !errPre && prestamos.length > 0 && (
                     <>
                     <div className="table-responsive cq-admin-table-pane">
-                      <table className="table table-hover mb-0">
+                      <table className="table table-striped table-hover align-middle mb-0">
                         <thead>
                           <tr>
                             <th>Artículo</th>

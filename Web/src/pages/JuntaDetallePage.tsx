@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { useJuntaDetalle } from '../features/juntas/useJuntaDetalle'
-import { EmptyState, PageHeader } from '../shared/components/admin'
+import { EmptyState, PageHeader, PortalPageLayout } from '../shared/components/admin'
 import { useQueryErrorToast } from '../shared/hooks/useQueryErrorToast'
 
 export function JuntaDetallePage() {
@@ -10,35 +10,35 @@ export function JuntaDetallePage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-3xl p-6">
+      <PortalPageLayout width="3xl">
         <div className="animate-pulse space-y-4" aria-label="Cargando junta">
           <div className="h-8 w-2/3 rounded bg-neutral-100" />
           <div className="h-4 w-1/2 rounded bg-neutral-100" />
           <div className="h-40 rounded bg-neutral-100" />
         </div>
-      </main>
+      </PortalPageLayout>
     )
   }
 
   if (error) {
     return (
-      <main className="mx-auto max-w-3xl p-6">
+      <PortalPageLayout width="3xl">
         <Link to="/juntas" className="text-sm text-primary hover:underline">← Juntas</Link>
         <EmptyState title="No se pudo cargar la junta" description={error} />
-      </main>
+      </PortalPageLayout>
     )
   }
 
   if (!junta) {
     return (
-      <main className="mx-auto max-w-3xl p-6">
+      <PortalPageLayout width="3xl">
         <EmptyState title="Junta no encontrada." />
-      </main>
+      </PortalPageLayout>
     )
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 p-6">
+    <PortalPageLayout width="3xl" className="space-y-4">
       <Link to="/juntas" className="text-sm text-primary hover:underline">← Juntas</Link>
       <div className="rounded-xl border border-neutral-100 bg-surface-alt p-6 shadow-sm">
         <PageHeader
@@ -93,6 +93,6 @@ export function JuntaDetallePage() {
           </section>
         )}
       </div>
-    </main>
+    </PortalPageLayout>
   )
 }

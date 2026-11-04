@@ -2,7 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { ConfirmDialog } from '../../../shared/components/admin'
+import {
+  AdminCatalogCrudShell,
+  AdminCatalogRowActions,
+  useAdminPanelEscape,
+} from '../../../shared/components/admin'
 import { apiDelete, apiPost, apiPut } from '../../../shared/lib/apiClient'
 import { useToast } from '../../../shared/toast/ToastContext'
 import type { TipoMovimientoFnz } from '../../../shared/types/finanzasAdmin'
@@ -25,6 +29,7 @@ type Props = {
 
 export function AdminTiposMovimientoFnzSection({ tipos, loading, onReload }: Props) {
   const toast = useToast()
+  const [panelOpen, setPanelOpen] = useState(false)
   const [editing, setEditing] = useState<TipoMovimientoFnz | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<TipoMovimientoFnz | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -34,16 +39,26 @@ export function AdminTiposMovimientoFnzSection({ tipos, loading, onReload }: Pro
     defaultValues: { tipoMovimiento: '', bCargo: false, bAbono: true },
   })
 
+  const closePanel = () => {
+    setPanelOpen(false)
+    setEditing(null)
+    setFormError(null)
+  }
+
+  useAdminPanelEscape(panelOpen, closePanel)
+
   const openCreate = () => {
     setEditing(null)
     setFormError(null)
     form.reset({ tipoMovimiento: '', bCargo: false, bAbono: true })
+    setPanelOpen(true)
   }
 
   const openEdit = (t: TipoMovimientoFnz) => {
     setFormError(null)
     setEditing(t)
     form.reset({ tipoMovimiento: t.tipoMovimiento, bCargo: t.bCargo, bAbono: t.bAbono })
+    setPanelOpen(true)
   }
 
   const onSave = form.handleSubmit(async (values) => {
@@ -70,9 +85,8 @@ export function AdminTiposMovimientoFnzSection({ tipos, loading, onReload }: Pro
         return
       }
       toast.success('Tipo creado')
-      form.reset({ tipoMovimiento: '', bCargo: false, bAbono: true })
     }
-    setEditing(null)
+    closePanel()
     await onReload()
   })
 
@@ -85,6 +99,7 @@ export function AdminTiposMovimientoFnzSection({ tipos, loading, onReload }: Pro
       toast.error(problem?.detail ?? `Error ${status}`)
       return
     }
+    if (editing?.tipoMovimientoId === deleteTarget.tipoMovimientoId) closePanel()
     setDeleteTarget(null)
     toast.success('Tipo eliminado')
     await onReload()
@@ -94,132 +109,108 @@ export function AdminTiposMovimientoFnzSection({ tipos, loading, onReload }: Pro
     (t) => t.tipoMovimiento.toLowerCase() === 'pago de cuota' && t.bAbono,
   )
 
-  return (
+  const formFooter = (
     <>
-      <div className="card">
-        <div className="card-body pt-3">
-          <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-            <div>
-              <h2 className="h5 mb-1">Tipos de movimiento</h2>
-              <p className="text-muted mb-0 small">
-                Catálogo <code>fnz.TiposMovimiento</code> (cargos/abonos en transacciones). Para registrar
-                pagos de cuota debe existir <strong>Pago de cuota</strong> con abono.
-              </p>
-            </div>
-            <button type="button" className="btn btn-primary btn-sm" onClick={openCreate}>
-              <i className="mdi mdi-plus mr-1" />
-              Nuevo tipo
-            </button>
+      <button type="button" className="btn btn-primary flex-grow-1" onClick={() => void onSave()}>
+        <i className={`mdi ${editing ? 'mdi-content-save' : 'mdi-plus'} mr-1`} />
+        {editing ? 'Actualizar' : 'Crear'}
+      </button>
+      <button type="button" className="btn btn-outline-secondary" onClick={closePanel}>
+        Cancelar
+      </button>
+    </>
+  )
+
+  return (
+    <AdminCatalogCrudShell
+      toolbarTitle="Tipos de movimiento"
+      metricLabel="Tipos"
+      count={tipos.length}
+      createLabel="Nuevo tipo"
+      createIconClass="mdi mdi-swap-horizontal"
+      onCreate={openCreate}
+      panelOpen={panelOpen}
+      panelTitle={editing ? 'Editar tipo de movimiento' : 'Nuevo tipo de movimiento'}
+      panelSubtitle="Cargos y abonos en transacciones (fnz.TiposMovimiento)."
+      panelIconClass={editing ? 'mdi mdi-pencil' : 'mdi mdi-swap-horizontal'}
+      editing={Boolean(editing)}
+      onClosePanel={closePanel}
+      formFooter={formFooter}
+      topBanner={
+        !loading && !tienePagoCuota ? (
+          <div className="alert alert-warning py-2 small mb-3" role="alert">
+            Falta «Pago de cuota» (abono). Ejecuta{' '}
+            <code className="text-break">SQL/20261029_fnz_pago_cuota_catalog.sql</code> o créalo aquí.
           </div>
-
-          {!loading && !tienePagoCuota && (
-            <div className="alert alert-warning py-2 small" role="alert">
-              Falta «Pago de cuota» (abono). Ejecuta{' '}
-              <code className="text-break">SQL/20261029_fnz_pago_cuota_catalog.sql</code> o créalo aquí.
-            </div>
-          )}
-
+        ) : undefined
+      }
+      loading={loading}
+      isEmpty={tipos.length === 0}
+      emptyIconClass="mdi mdi-swap-horizontal"
+      emptyTitle="Sin tipos de movimiento"
+      emptyDescription="Crea «Pago de cuota» y otros tipos para registrar transacciones."
+      tableHead={
+        <tr>
+          <th>Nombre</th>
+          <th className="text-center">Cargo</th>
+          <th className="text-center">Abono</th>
+          <th className="text-center cq-actions">Acciones</th>
+        </tr>
+      }
+      tableBody={tipos.map((t) => (
+        <tr key={t.tipoMovimientoId}>
+          <td className="font-weight-bold">{t.tipoMovimiento}</td>
+          <td className="text-center">{t.bCargo ? 'Sí' : '—'}</td>
+          <td className="text-center">{t.bAbono ? 'Sí' : '—'}</td>
+          <AdminCatalogRowActions
+            name={t.tipoMovimiento}
+            onEdit={() => openEdit(t)}
+            onDelete={() => setDeleteTarget(t)}
+          />
+        </tr>
+      ))}
+      panelChildren={
+        <>
           {formError && (
             <div className="alert alert-danger py-2 small" role="alert">
               {formError}
             </div>
           )}
-
-          <form className="mb-3 border rounded p-3 bg-light" onSubmit={(e) => void onSave(e)}>
-            <div className="form-group mb-2">
-              <label className="cq-label" htmlFor="tipo-mov-nombre">
-                {editing ? 'Editar tipo' : 'Nuevo tipo'}
-              </label>
-              <input
-                id="tipo-mov-nombre"
-                className="form-control form-control-sm"
-                {...form.register('tipoMovimiento')}
-              />
-              {form.formState.errors.tipoMovimiento && (
-                <span className="text-danger small">{form.formState.errors.tipoMovimiento.message}</span>
-              )}
-            </div>
-            <div className="d-flex flex-wrap gap-3 mb-2">
-              <label className="mb-0 small">
-                <input type="checkbox" className="mr-1" {...form.register('bCargo')} />
-                Es cargo
-              </label>
-              <label className="mb-0 small">
-                <input type="checkbox" className="mr-1" {...form.register('bAbono')} />
-                Es abono
-              </label>
-            </div>
-            {form.formState.errors.bAbono && (
-              <span className="text-danger small d-block mb-2">{form.formState.errors.bAbono.message}</span>
+          <div className="form-group mb-3">
+            <label className="cq-label" htmlFor="tipo-mov-nombre">
+              Nombre <span className="text-danger">*</span>
+            </label>
+            <input id="tipo-mov-nombre" className="form-control" {...form.register('tipoMovimiento')} />
+            {form.formState.errors.tipoMovimiento && (
+              <span className="text-danger small d-block">{form.formState.errors.tipoMovimiento.message}</span>
             )}
-            <div className="d-flex gap-2">
-              <button type="submit" className="btn btn-primary btn-sm">
-                {editing ? 'Guardar' : 'Crear'}
-              </button>
-              {editing && (
-                <button type="button" className="btn btn-outline-secondary btn-sm" onClick={openCreate}>
-                  Cancelar edición
-                </button>
-              )}
-            </div>
-          </form>
-
-          {loading && <p className="text-muted">Cargando tipos…</p>}
-          {!loading && tipos.length === 0 && (
-            <p className="text-muted mb-0">Sin tipos. Aplica el script SQL o crea «Pago de cuota» y «Gasto».</p>
+          </div>
+          <div className="d-flex flex-wrap gap-3 mb-2">
+            <label className="mb-0 small">
+              <input type="checkbox" className="mr-1" {...form.register('bCargo')} />
+              Es cargo
+            </label>
+            <label className="mb-0 small">
+              <input type="checkbox" className="mr-1" {...form.register('bAbono')} />
+              Es abono
+            </label>
+          </div>
+          {form.formState.errors.bAbono && (
+            <span className="text-danger small d-block">{form.formState.errors.bAbono.message}</span>
           )}
-          {!loading && tipos.length > 0 && (
-            <div className="table-responsive">
-              <table className="table table-sm table-hover mb-0">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th className="text-center">Cargo</th>
-                    <th className="text-center">Abono</th>
-                    <th className="text-center">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tipos.map((t) => (
-                    <tr key={t.tipoMovimientoId}>
-                      <td className="font-weight-bold">{t.tipoMovimiento}</td>
-                      <td className="text-center">{t.bCargo ? 'Sí' : '—'}</td>
-                      <td className="text-center">{t.bAbono ? 'Sí' : '—'}</td>
-                      <td className="text-center cq-actions text-nowrap">
-                        <button
-                          type="button"
-                          className="btn btn-link btn-sm"
-                          aria-label={`Editar ${t.tipoMovimiento}`}
-                          onClick={() => openEdit(t)}
-                        >
-                          <i className="mdi mdi-pencil" />
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-link btn-sm text-danger"
-                          aria-label={`Eliminar ${t.tipoMovimiento}`}
-                          onClick={() => setDeleteTarget(t)}
-                        >
-                          <i className="mdi mdi-delete" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-      <ConfirmDialog
-        open={deleteTarget !== null}
-        title="Eliminar tipo de movimiento"
-        message={`¿Eliminar «${deleteTarget?.tipoMovimiento}»? No debe haber transacciones con este tipo.`}
-        confirmLabel="Eliminar"
-        variant="danger"
-        onConfirm={() => void onConfirmDelete()}
-        onCancel={() => setDeleteTarget(null)}
-      />
-    </>
+        </>
+      }
+      deleteDialog={{
+        open: deleteTarget !== null,
+        title: 'Eliminar tipo de movimiento',
+        message: deleteTarget
+          ? `¿Eliminar «${deleteTarget.tipoMovimiento}»? No debe haber transacciones con este tipo.`
+          : '',
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+        onCancel: () => setDeleteTarget(null),
+        onConfirm: () => void onConfirmDelete(),
+      }}
+    />
   )
 }

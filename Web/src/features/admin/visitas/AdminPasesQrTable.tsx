@@ -63,7 +63,7 @@ export function AdminPasesQrTable({ pases, loading, selectedId, onShare, onEdit,
         onGlobalSearchChange={setGlobalSearch}
         filteredCount={filteredCount}
         totalCount={totalCount}
-        tableClassName="table table-sm table-hover align-middle cq-admin-table cq-filterable"
+        tableClassName="table table-sm table-striped table-hover align-middle cq-admin-table cq-filterable"
       >
         {filteredRows.length === 0 ? (
           <tr>

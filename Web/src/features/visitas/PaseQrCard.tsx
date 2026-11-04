@@ -36,7 +36,7 @@ export function PaseQrCard({ pase }: PaseQrCardProps) {
   }
 
   return (
-    <article className="rounded-xl border border-neutral-200 bg-surface p-4 shadow-sm">
+    <article className="cq-portal-pase-qr-card">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="flex shrink-0 flex-col items-center gap-2">
           {qrDataUrl ? (
@@ -44,7 +44,7 @@ export function PaseQrCard({ pase }: PaseQrCardProps) {
           ) : (
             <div className="h-[220px] w-[220px] animate-pulse rounded-lg bg-neutral-100" aria-hidden />
           )}
-          <p className="max-w-[220px] break-all text-center font-mono text-xs text-neutral-600">{pase.codigoQr}</p>
+          <p className="max-w-[220px] break-all text-center font-mono text-[0.65rem] text-neutral-500">{pase.codigoQr}</p>
         </div>
         <div className="min-w-0 flex-1 space-y-3">
           <div>

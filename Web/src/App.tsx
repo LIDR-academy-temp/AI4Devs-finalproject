@@ -46,6 +46,8 @@ import { AdminMascotasPage } from './pages/AdminMascotasPage'
 import { AdminAlmacenPage } from './pages/AdminAlmacenPage'
 import { AdminMenusPage } from './pages/AdminMenusPage'
 import { AdminPerfilesPage } from './pages/AdminPerfilesPage'
+import { AdminReportesPage } from './pages/AdminReportesPage'
+import { AdminAvisoNotificacionPage } from './pages/AdminAvisoNotificacionPage'
 import { AdminPerfilPermisosPage } from './pages/AdminPerfilPermisosPage'
 import { NotificacionesPage } from './pages/NotificacionesPage'
 import { AdminAreasReservasPage } from './pages/AdminAreasReservasPage'
@@ -129,6 +131,8 @@ export default function App() {
           <Route path="/admin/menus" element={<AdminMenusPage />} />
           <Route path="/admin/perfiles" element={<AdminPerfilesPage />} />
           <Route path="/admin/perfiles/:id/permisos" element={<AdminPerfilPermisosPage />} />
+          <Route path="/admin/reportes" element={<AdminReportesPage />} />
+          <Route path="/admin/notificaciones/aviso" element={<AdminAvisoNotificacionPage />} />
         </Route>
       </Route>
     </Routes>
