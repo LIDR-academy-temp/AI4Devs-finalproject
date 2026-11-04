@@ -1,0 +1,52 @@
+meta {
+  name: 8 Deactivate
+  type: http
+  seq: 8
+  tags: [
+    flow
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/matching-rule-sets/:ruleSetId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  ruleSetId: {{flowRuleSetId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {}
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:pre-request {
+  /** The detail as a PUT body: without rule ids nor the read-only row ignores. */
+  function bodyOf(detail) {
+    return {
+      name: detail.name,
+      isActive: detail.isActive,
+      sheetRules: detail.sheetRules.map(({ sheetRuleId, ...rule }) => rule),
+      columnRules: detail.columnRules.map(({ columnRuleId, ...rule }) => rule),
+    };
+  }
+
+  // The flow leaves its set inactive: it has no accounts.
+  req.setBody({ ...bodyOf(bru.getVar('flowRuleSetDetail')), isActive: false, reason: 'Bruno flow: leave it inactive' });
+}
+
+tests {
+  test('the flow leaves its set inactive: 200, isActive false', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.isActive).to.equal(false);
+  });
+}

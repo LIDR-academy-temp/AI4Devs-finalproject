@@ -1,0 +1,54 @@
+meta {
+  name: 2 Create rule set
+  type: http
+  seq: 2
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/providers/:providerId/matching-rule-sets
+  body: json
+  auth: bearer
+}
+
+params:path {
+  providerId: {{flowMatchingProviderId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "name": "{{flowRuleSetName}}",
+    "sheetRules": [{ "sheetPattern": "Transactions", "isRegex": false, "kind": "transactions", "cycle": "E", "statusId": null, "priority": 10 }],
+    "columnRules": [{ "sheetPattern": null, "columnPattern": "Txn Ref", "isRegex": false, "targetField": "transactionId", "priority": 10 }],
+    "reason": "Bruno flow"
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar('flowRuleSetId', res.body.ruleSetId);
+    bru.setVar('flowRuleSetDetail', res.body);
+  }
+}
+
+tests {
+  test('admin creates the set in Provider C: 201, active, without accounts, with its two rules', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.name).to.equal(bru.getVar('flowRuleSetName'));
+    expect(res.body.isActive).to.equal(true);
+    expect(res.body.provider.name).to.equal('Provider C');
+    expect(res.body.accounts).to.deep.equal([]);
+    expect(res.body.sheetRules).to.have.length(1);
+    expect(res.body.columnRules).to.have.length(1);
+  });
+}

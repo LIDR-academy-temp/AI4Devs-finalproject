@@ -1,0 +1,64 @@
+meta {
+  name: 6 Incoherent status
+  type: http
+  seq: 6
+  tags: [
+    flow
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/matching-rule-sets/:ruleSetId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  ruleSetId: {{flowRuleSetId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {}
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:pre-request {
+  /** The detail as a PUT body: without rule ids nor the read-only row ignores. */
+  function bodyOf(detail) {
+    return {
+      name: detail.name,
+      isActive: detail.isActive,
+      sheetRules: detail.sheetRules.map(({ sheetRuleId, ...rule }) => rule),
+      columnRules: detail.columnRules.map(({ columnRuleId, ...rule }) => rule),
+    };
+  }
+
+  // APP fixed to E/Chargeback: Chargeback is a cycle I status.
+  const body = bodyOf(bru.getVar('flowRuleSetDetail'));
+  body.sheetRules.push({
+    sheetPattern: 'APP',
+    isRegex: false,
+    kind: 'transactions',
+    cycle: 'E',
+    statusId: 4,
+    priority: 10,
+    isActive: true,
+  });
+  bru.setVar('flowIncoherentIndex', body.sheetRules.length - 1);
+  req.setBody(body);
+}
+
+tests {
+  test('APP as E/Chargeback: 400 validation_error at the statusId of that rule, nothing written', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+    expect(res.body.details.field).to.equal(`sheetRules[${bru.getVar('flowIncoherentIndex')}].statusId`);
+  });
+}

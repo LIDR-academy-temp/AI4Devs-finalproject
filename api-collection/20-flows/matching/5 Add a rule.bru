@@ -1,0 +1,72 @@
+meta {
+  name: 5 Add a rule
+  type: http
+  seq: 5
+  tags: [
+    flow
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/matching-rule-sets/:ruleSetId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  ruleSetId: {{flowRuleSetId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {}
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:pre-request {
+  /** The detail as a PUT body: without rule ids nor the read-only row ignores. */
+  function bodyOf(detail) {
+    return {
+      name: detail.name,
+      isActive: detail.isActive,
+      sheetRules: detail.sheetRules.map(({ sheetRuleId, ...rule }) => rule),
+      columnRules: detail.columnRules.map(({ columnRuleId, ...rule }) => rule),
+    };
+  }
+
+  const detail = bru.getVar('flowRuleSetDetail');
+  if (!detail) {
+    throw new Error('flowRuleSetDetail is missing: run "4 Detail" first');
+  }
+  const body = bodyOf(detail);
+  body.sheetRules.push({
+    sheetPattern: 'Chargebacks',
+    isRegex: false,
+    kind: 'transactions',
+    cycle: 'I',
+    statusId: null,
+    priority: 10,
+    isActive: true,
+  });
+  body.reason = 'Bruno flow: a chargeback sheet';
+  req.setBody(body);
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar('flowRuleSetDetail', res.body);
+  }
+}
+
+tests {
+  test('the whole document with one more sheet: 200, the two sheets in body order with new ids', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.sheetRules.map((r) => r.sheetPattern)).to.deep.equal(['Transactions', 'Chargebacks']);
+  });
+}

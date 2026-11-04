@@ -1,0 +1,67 @@
+meta {
+  name: 1 Find Provider C
+  type: http
+  seq: 1
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/merchants/:merchantId/providers
+  body: none
+  auth: bearer
+}
+
+params:path {
+  merchantId: {{flowMatchingMerchantId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:pre-request {
+  // Provider C resolved by name through GET /merchants and GET /merchants/{id}/providers (no literal ids). One new
+  // rule set per run in Provider C, named bruno-<run id>; the flow leaves it inactive, it stays until the next
+  // pnpm db:seed and the tests ignore the prefix (admin-matching D8).
+  const base = `${bru.getEnvVar('baseUrl')}/api/v1`;
+  const headers = { authorization: `Bearer ${bru.getVar('adminToken')}` };
+  bru.setVar('flowMatchingMerchantId', '');
+  const merchants = await bru.sendRequest({ method: 'GET', url: `${base}/merchants`, headers });
+  for (const merchant of merchants.data || []) {
+    const providers = await bru.sendRequest({
+      method: 'GET',
+      url: `${base}/merchants/${merchant.merchantId}/providers`,
+      headers,
+    });
+    if ((providers.data || []).some((p) => p.name === 'Provider C')) {
+      bru.setVar('flowMatchingMerchantId', merchant.merchantId);
+      break;
+    }
+  }
+  if (!bru.getVar('flowMatchingMerchantId')) {
+    throw new Error('Provider C could not be found among the merchants');
+  }
+  bru.setVar('flowRuleSetName', `bruno-${Date.now().toString(36)}`);
+  bru.setVar('flowMatchingProviderId', '');
+  bru.setVar('flowRuleSetId', '');
+}
+
+script:post-response {
+  const provider = Array.isArray(res.body) && res.body.find((p) => p.name === 'Provider C');
+  if (provider) {
+    bru.setVar('flowMatchingProviderId', provider.providerId);
+  }
+}
+
+tests {
+  test('Provider C is found by name', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.map((p) => p.name)).to.include('Provider C');
+  });
+}
