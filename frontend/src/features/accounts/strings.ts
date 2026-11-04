@@ -48,6 +48,33 @@ export const strings = {
   channelAssignment: {
     title: 'Channel Assignment',
   },
+  /** A channel in Account Detail and Channel Assignment (web-admin-accounts design D4). */
+  channel: {
+    termReserve: (termDays: number, percent: string, releaseDays: number) =>
+      `${termDays} d · ${percent} % / ${releaseDays} d`,
+    historicalIn: (account: string) => `historical · primary in ${account}`,
+    historicalNoPrimary: 'historical · no primary',
+    batch: (batchNo: number) => `batch ${batchNo}`,
+    none: '—',
+  },
+  /** New account, Edit, Close… and Reopen… (web-admin-accounts design D5–D7). */
+  form: {
+    errors: {
+      nameRequired: 'Name is required.',
+      nameTooLong: 'Use at most 50 characters.',
+      providerRequired: 'Choose a provider.',
+      capInvalid: 'Enter an amount ≥ 0 with up to 4 decimals.',
+      reasonTooLong: 'Use at most 500 characters.',
+      nothingToSave: 'Nothing to save.',
+      nameTaken: 'This name is already used by another account. Name must be unique.',
+      copyFromInvalid: 'Fees cannot be copied from this account.',
+      ruleSetInvalid: 'This rule set is no longer available for this provider.',
+      invalid: 'The account could not be saved: check the values.',
+      forbidden: "You don't have permission to manage accounts.",
+      notFound: 'This account or provider is no longer available.',
+      unreachable: 'Could not reach the server. Try again.',
+    },
+  },
   /** The merchant → provider → account choice of New Reconciliation and Settlement List. */
   picker: {
     merchant: 'Merchant',

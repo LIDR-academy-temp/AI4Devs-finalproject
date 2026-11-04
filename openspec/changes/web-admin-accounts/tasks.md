@@ -35,12 +35,12 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
     - rechazo local de nombre vacío o de 51 caracteres, de tope `-1`, `1.23456` y `abc`, y de motivo de 501 caracteres.
   - `features/accounts/account-errors.test.ts` (design D6): `account_name_taken` en `name`; `details.field` en cada uno de los tres campos; `400` con lista de Fastify; `403`, `404`, red.
 - [x] 3.2 Commit: test(web): formato de canales, cuerpos y errores de los formularios de cuenta
-- [ ] 3.3 Implementar las utilidades puras:
+- [x] 3.3 Implementar las utilidades puras:
   - Mover `canonical` de `fee-form.ts` a `lib/format.ts` como `canonicalDecimal` y hacer que `fee-form.ts` la importe.
   - Implementar `channel-display.ts`, `account-form.ts` y `account-errors.ts`, con los textos en `features/accounts/strings.ts`.
   - Rotura deliberada: hacer que `patchBody` compare el tope sin `canonicalDecimal` debe hacer fallar el caso de la escala; después se revierte.
   - Verificar con `pnpm --filter @recon/frontend test format channel-display account-form account-errors fee-form`.
-- [ ] 3.4 Commit: feat(web): formato de canales, cuerpos y errores de los formularios de cuenta
+- [x] 3.4 Commit: feat(web): formato de canales, cuerpos y errores de los formularios de cuenta
 
 ## 4. API falsa de cuentas
 
