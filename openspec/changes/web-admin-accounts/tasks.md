@@ -128,7 +128,7 @@ Requiere que `admin-accounts` haya terminado su grupo 4 (`GET /providers/{id}/ma
 
 ## 11. Revisión
 
-- [ ] 11.1 `review-diff` en una sesión nueva (la pide la persona), antes del PR. Lo que encuentre se arregla con su test y su commit en esta rama.
+- [x] 11.1 `review-diff` en una sesión nueva (la pide la persona), antes del PR. Lo que encuentre se arregla con su test y su commit en esta rama.
 
 ## Workflow follow-up
 
