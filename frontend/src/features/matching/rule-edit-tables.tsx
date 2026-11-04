@@ -20,8 +20,12 @@ type Form = UseFormReturn<RulesValues>
 type ListName = 'sheetRules' | 'columnRules' | 'statusAliases'
 
 const controlClass =
-  'h-8 rounded-md border border-input bg-background px-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[invalid=true]:border-destructive'
+  'h-8 rounded-md border border-input bg-background px-1.5 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[invalid=true]:border-destructive'
 const checkClass = 'size-4 accent-primary'
+// Tighter than the read tables, so the eight columns of a sheet rule fit their card at 1024 px (design D11); an
+// error under a control wraps inside its column.
+const cellClass = 'px-1 align-top'
+const headClass = 'px-1'
 
 const errorId = (path: string) => `error-${path.replace(/\./g, '-')}`
 
@@ -40,7 +44,7 @@ function useFieldError(form: Form, path: string) {
 function ErrorText({ path, message }: { path: string; message: string | undefined }) {
   if (!message) return null
   return (
-    <p id={errorId(path)} className="mt-1 text-xs text-destructive">
+    <p id={errorId(path)} className="mt-1 text-xs whitespace-normal text-destructive">
       {message}
     </p>
   )
@@ -50,10 +54,10 @@ function ErrorText({ path, message }: { path: string; message: string | undefine
 function TextCell({ form, path, label, className }: { form: Form; path: string; label: string; className?: string }) {
   const error = useFieldError(form, path)
   return (
-    <TableCell className="align-top">
+    <TableCell className={cellClass}>
       <input
         aria-label={label}
-        className={`${controlClass} ${className ?? 'w-full min-w-28'}`}
+        className={`${controlClass} ${className ?? 'w-full min-w-24'}`}
         {...error.aria}
         {...form.register(path as `sheetRules.${number}.sheetPattern`)}
       />
@@ -64,7 +68,7 @@ function TextCell({ form, path, label, className }: { form: Form; path: string; 
 
 function CheckCell({ form, path, label }: { form: Form; path: string; label: string }) {
   return (
-    <TableCell className="align-top">
+    <TableCell className={cellClass}>
       <input
         type="checkbox"
         aria-label={label}
@@ -81,19 +85,21 @@ function SelectCell({
   label,
   options,
   onChange,
+  className = 'min-w-24',
 }: {
   form: Form
   path: string
   label: string
   options: readonly { value: string; label: string }[]
   onChange?: (value: string) => void
+  className?: string
 }) {
   const error = useFieldError(form, path)
   return (
-    <TableCell className="align-top">
+    <TableCell className={cellClass}>
       <select
         aria-label={label}
-        className={`${controlClass} min-w-24`}
+        className={`${controlClass} ${className}`}
         {...error.aria}
         {...form.register(path as `sheetRules.${number}.kind`, {
           onChange: (event: { target: { value: string } }) => onChange?.(event.target.value),
@@ -146,8 +152,8 @@ function RowActions({
 }) {
   const label = e.rowLabel[list]
   return (
-    <TableCell className="align-top">
-      <div className="flex items-center gap-1">
+    <TableCell className={cellClass}>
+      <div className="flex items-center gap-0.5">
         {movable && (
           <>
             <Button
@@ -251,14 +257,14 @@ export function EditSheetRules({ form, statuses }: { form: Form; statuses: reado
       <Table aria-label={t.sheets}>
         <TableHeader>
           <TableRow>
-            <TableHead>{h.pattern}</TableHead>
-            <TableHead>{h.regex}</TableHead>
-            <TableHead>{h.kind}</TableHead>
-            <TableHead>{h.cycle}</TableHead>
-            <TableHead>{h.status}</TableHead>
-            <TableHead>{h.priority}</TableHead>
-            <TableHead>{h.active}</TableHead>
-            <TableHead>{h.actions}</TableHead>
+            <TableHead className={headClass}>{h.pattern}</TableHead>
+            <TableHead className={headClass}>{h.regex}</TableHead>
+            <TableHead className={headClass}>{h.kind}</TableHead>
+            <TableHead className={headClass}>{h.cycle}</TableHead>
+            <TableHead className={headClass}>{h.status}</TableHead>
+            <TableHead className={headClass}>{h.priority}</TableHead>
+            <TableHead className={headClass}>{h.active}</TableHead>
+            <TableHead className={headClass}>{h.actions}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -283,9 +289,15 @@ export function EditSheetRules({ form, statuses }: { form: Form; statuses: reado
                   }}
                 />
                 {transactions ? (
-                  <SelectCell form={form} path={path('cycle')} label={label(h.cycle, index)} options={CYCLES} />
+                  <SelectCell
+                    form={form}
+                    path={path('cycle')}
+                    label={label(h.cycle, index)}
+                    options={CYCLES}
+                    className="min-w-14"
+                  />
                 ) : (
-                  <TableCell className="align-top text-muted-foreground">{strings.none}</TableCell>
+                  <TableCell className={`${cellClass} text-muted-foreground`}>{strings.none}</TableCell>
                 )}
                 {transactions && value?.cycle !== 'R' ? (
                   <SelectCell
@@ -295,9 +307,9 @@ export function EditSheetRules({ form, statuses }: { form: Form; statuses: reado
                     options={statusOptions(statuses, e.noFixedStatus)}
                   />
                 ) : (
-                  <TableCell className="align-top text-muted-foreground">{strings.none}</TableCell>
+                  <TableCell className={`${cellClass} text-muted-foreground`}>{strings.none}</TableCell>
                 )}
-                <TextCell form={form} path={path('priority')} label={label(h.priority, index)} className="w-20" />
+                <TextCell form={form} path={path('priority')} label={label(h.priority, index)} className="w-16" />
                 <CheckCell form={form} path={path('isActive')} label={e.sheetActive(index + 1)} />
                 <RowActions
                   list="sheetRules"
@@ -342,13 +354,13 @@ export function EditColumnRules({ form }: { form: Form }) {
       <Table aria-label={t.columns}>
         <TableHeader>
           <TableRow>
-            <TableHead>{h.sheet}</TableHead>
-            <TableHead>{h.pattern}</TableHead>
-            <TableHead>{h.regex}</TableHead>
-            <TableHead>{h.field}</TableHead>
-            <TableHead>{h.priority}</TableHead>
-            <TableHead>{h.active}</TableHead>
-            <TableHead>{h.actions}</TableHead>
+            <TableHead className={headClass}>{h.sheet}</TableHead>
+            <TableHead className={headClass}>{h.pattern}</TableHead>
+            <TableHead className={headClass}>{h.regex}</TableHead>
+            <TableHead className={headClass}>{h.field}</TableHead>
+            <TableHead className={headClass}>{h.priority}</TableHead>
+            <TableHead className={headClass}>{h.active}</TableHead>
+            <TableHead className={headClass}>{h.actions}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -360,7 +372,7 @@ export function EditColumnRules({ form }: { form: Form }) {
                 <TextCell form={form} path={path('columnPattern')} label={label(h.pattern, index)} />
                 <CheckCell form={form} path={path('isRegex')} label={label(h.regex, index)} />
                 <SelectCell form={form} path={path('targetField')} label={label(h.field, index)} options={FIELDS} />
-                <TextCell form={form} path={path('priority')} label={label(h.priority, index)} className="w-20" />
+                <TextCell form={form} path={path('priority')} label={label(h.priority, index)} className="w-16" />
                 <CheckCell form={form} path={path('isActive')} label={e.columnActive(index + 1)} />
                 <RowActions
                   list="columnRules"
@@ -404,11 +416,11 @@ export function EditStatusAliases({ form, statuses }: { form: Form; statuses: re
       <Table aria-label={t.aliases}>
         <TableHeader>
           <TableRow>
-            <TableHead>{h.text}</TableHead>
-            <TableHead>{h.status}</TableHead>
-            <TableHead>{e.excludeAmount}</TableHead>
-            <TableHead>{h.legacy}</TableHead>
-            <TableHead>{h.actions}</TableHead>
+            <TableHead className={headClass}>{h.text}</TableHead>
+            <TableHead className={headClass}>{h.status}</TableHead>
+            <TableHead className={headClass}>{e.excludeAmount}</TableHead>
+            <TableHead className={headClass}>{h.legacy}</TableHead>
+            <TableHead className={headClass}>{h.actions}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
