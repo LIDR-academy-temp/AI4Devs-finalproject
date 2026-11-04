@@ -102,9 +102,12 @@ export function AccountDetailPage() {
   return (
     <section className="flex flex-col gap-4">
       <section aria-label={s.headerLabel} className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold">{detail ? detail.name : s.titleLoading}</h1>
+        {/* A name of up to 50 characters, maybe without spaces, wraps instead of widening the page. */}
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h1 className="min-w-0 text-2xl font-semibold [overflow-wrap:anywhere]">
+              {detail ? detail.name : s.titleLoading}
+            </h1>
             {detail && <Badge variant={ACCOUNT_STATUS_TONE[status]}>{strings[status]}</Badge>}
           </div>
           {detail ? (

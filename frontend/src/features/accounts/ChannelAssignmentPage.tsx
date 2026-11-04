@@ -39,7 +39,8 @@ function PrimaryRow({
     <TableRow>
       <TableCell className="font-medium">{channel.name}</TableCell>
       <TableCell>{provider}</TableCell>
-      <TableCell>
+      {/* Account names of up to 50 characters, maybe without spaces, wrap instead of widening the table. */}
+      <TableCell className="min-w-32 whitespace-normal [overflow-wrap:anywhere]">
         {channel.primaryAccount ? (
           <Link
             to="/accounts/$accountId"
@@ -53,7 +54,7 @@ function PrimaryRow({
         )}
       </TableCell>
       <TableCell>{loaded ? batchLabel(primaryRow?.assignedInBatchNo ?? null) : pending}</TableCell>
-      <TableCell className="whitespace-normal">
+      <TableCell className="min-w-32 whitespace-normal [overflow-wrap:anywhere]">
         {loaded ? historical.map((a) => a.name).join(', ') || strings.channel.none : pending}
       </TableCell>
     </TableRow>

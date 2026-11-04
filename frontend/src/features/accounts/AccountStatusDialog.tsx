@@ -59,7 +59,7 @@ export function AccountStatusDialog({ account, onDone }: { account: AccountDetai
   return (
     <AlertDialogContent {...keepOpenWhile(write.isPending)}>
       <AlertDialogHeader>
-        <AlertDialogTitle>
+        <AlertDialogTitle className="[overflow-wrap:anywhere]">
           {closing ? f.status.closeTitle(account.name) : f.status.reopenTitle(account.name)}
         </AlertDialogTitle>
         <AlertDialogDescription>{closing ? f.status.closeBody : f.status.reopenBody}</AlertDialogDescription>

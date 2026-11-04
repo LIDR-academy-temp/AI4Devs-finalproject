@@ -62,7 +62,7 @@ export function EditAccountSheet({ account, onSaved }: { account: AccountDetail;
   return (
     <SheetContent className="overflow-y-auto sm:max-w-md" showCloseButton={!pending} {...keepOpenWhile(pending)}>
       <SheetHeader>
-        <SheetTitle>{f.editTitle(account.name)}</SheetTitle>
+        <SheetTitle className="[overflow-wrap:anywhere]">{f.editTitle(account.name)}</SheetTitle>
         <SheetDescription>{f.editDescription}</SheetDescription>
       </SheetHeader>
       <form className="flex flex-col gap-4 px-4 pb-4" noValidate onSubmit={(event) => void submit(event)}>
