@@ -119,12 +119,12 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
 
 Requiere que `admin-accounts` haya terminado su grupo 4 (`GET /providers/{id}/matching-rule-sets` y `409 account_inactive` sin `501`) y turno de base.
 
-- [ ] 10.1 `git fetch` e integrar `origin/feat/admin-accounts` como dice la cabecera (rebase y force push de la persona). Verificar con `pnpm typecheck` y `pnpm test` en verde. Si cambió algún esquema, ajustar el front y el fake en el mismo commit.
-- [ ] 10.2 Generar las capturas en `docs/wireframes/web-admin-accounts/`, con la base local sembrada por la persona (`! pnpm db:seed` dentro de la sesión) y `pnpm dev` levantado:
+- [x] 10.1 `git fetch` e integrar `origin/feat/admin-accounts` como dice la cabecera (rebase y force push de la persona). Verificar con `pnpm typecheck` y `pnpm test` en verde. Si cambió algún esquema, ajustar el front y el fake en el mismo commit.
+- [x] 10.2 Generar las capturas en `docs/wireframes/web-admin-accounts/`, con la base local sembrada por la persona (`! pnpm db:seed` dentro de la sesión) y `pnpm dev` levantado:
   - Escribir `e2e/screenshots/web-admin-accounts.ts` y el script `screenshots:web-admin-accounts` (design D11).
   - Las cuentas que se crean usan el prefijo `bruno-` y quedan cerradas.
   - Verificar abriéndolas: cada captura de D11 a 1280 y a 1024 px, sin tablas que se salgan de su tarjeta ni elementos solapados.
-- [ ] 10.3 Commit: docs(web): capturas de las pantallas de cuentas y canales
+- [x] 10.3 Commit: docs(web): capturas de las pantallas de cuentas y canales
 
 ## 11. Revisión
 
