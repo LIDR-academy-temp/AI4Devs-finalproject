@@ -83,7 +83,7 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
 
 ## 5. Lectura: lista, detalle, globales y Overview (test-first)
 
-- [ ] 5.1 Escribir `features/matching/MatchingRulesPage.test.tsx`, `RuleSetPage.test.tsx` y `GlobalRulesPage.test.tsx`, y ampliar `AccountDetailPage.test.tsx`, con los escenarios de las deltas `matching` y `accounts`. Comprobar que fallan:
+- [x] 5.1 Escribir `features/matching/MatchingRulesPage.test.tsx`, `RuleSetPage.test.tsx` y `GlobalRulesPage.test.tsx`, y ampliar `AccountDetailPage.test.tsx`, con los escenarios de las deltas `matching` y `accounts`. Comprobar que fallan:
   - **"acceso y conjuntos del proveedor":** Provider C, Provider A sin conjuntos, fuera del alcance y migas.
   - **"detalle de un conjunto":**
     - el legacy;
@@ -93,7 +93,7 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
   - **"reglas globales"**, y **"filas a ignorar"** en lectura con la nota `Not applied yet (#120).`
   - **"permisos de la pantalla"** en lectura: `viewer`, `analyst` y `admin`, y `admin` con alcance `assigned` (con `withScopedAdmin()`, design D8).
   - **"Overview":** el enlace del legacy a `/matching-rules/3`, `None · global rules` a `/matching-rules/global` y sin pestaña de reglas.
-- [ ] 5.2 Commit: test(web): lista, detalle y reglas globales de Matching Rules en lectura
+- [x] 5.2 Commit: test(web): lista, detalle y reglas globales de Matching Rules en lectura
 - [ ] 5.3 Implementar lo necesario hasta dejar en verde los tests de 5.1 (design D3, D8, D9):
   - `queries.ts` y `permissions.ts`;
   - `rule-tables.tsx` en lectura;

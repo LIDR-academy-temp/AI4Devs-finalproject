@@ -190,6 +190,29 @@ describe('Account Detail: Overview', () => {
     await waitFor(async () => expect(await generalValue('Matching rules')).toBe('Provider C legacy'))
     expect(await generalValue('Reserve cap')).toBe('none')
   })
+
+  // The rule set belongs to the provider and is shared by its accounts: a link, not a tab (web-admin-matching D9).
+  it('the rule set links to its detail in Matching Rules', async () => {
+    await openAccount('admin', ALT)
+    expect(await screen.findByRole('link', { name: 'Provider C legacy' })).toHaveAttribute('href', '/matching-rules/3')
+  })
+
+  it('without a rule set, None · global rules links to the global rules', async () => {
+    await openAccount('viewer', EUR)
+    expect(await screen.findByRole('link', { name: 'None · global rules' })).toHaveAttribute(
+      'href',
+      '/matching-rules/global',
+    )
+  })
+
+  it('has no tab for the matching rules', async () => {
+    await openAccount('admin', ALT)
+    expect(
+      sections()
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Overview', 'Fees'])
+  })
 })
 
 describe('Account Detail: channels', () => {
