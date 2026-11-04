@@ -63,12 +63,12 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
   - "canales": principales, histórico, `—` sin batch, cuenta sin canales.
   - "carga y errores": reintento de los canales; conjunto no disponible → `Rule set 3`.
 - [x] 5.2 Commit: test(web): ficha de la cuenta con sus datos y sus canales
-- [ ] 5.3 Implementar lo necesario hasta dejar en verde los tests de 5.1 (design D4):
+- [x] 5.3 Implementar lo necesario hasta dejar en verde los tests de 5.1 (design D4):
   - la cabecera completa de `AccountDetailPage`, `AccountOverview.tsx` y `AccountChannels.tsx`;
   - `matchingRuleSetsQuery` en `queries.ts`, `useCanManageAccounts` en `permissions.ts` y `ACCOUNT_STATUS_TONE` en `lib/status-tone.ts`;
   - en `ProviderAccounts.tsx`, el nombre como enlace a la ficha.
   - Verificar con los tests de 5.1, `AccountsPage.test.tsx` ampliado con el escenario "Enlace a la ficha", `pnpm typecheck` y `pnpm lint`.
-- [ ] 5.4 Commit: feat(web): ficha de la cuenta con sus datos y sus canales
+- [x] 5.4 Commit: feat(web): ficha de la cuenta con sus datos y sus canales
 
 ## 6. Crear, editar, cerrar y reabrir (test-first)
 

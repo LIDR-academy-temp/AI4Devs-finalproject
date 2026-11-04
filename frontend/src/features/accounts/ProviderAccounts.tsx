@@ -47,7 +47,15 @@ function AccountRow({
 }) {
   return (
     <TableRow>
-      <TableCell className="font-medium">{account.name}</TableCell>
+      <TableCell className="font-medium">
+        <Link
+          to="/accounts/$accountId"
+          params={{ accountId: account.accountId }}
+          className="text-primary underline underline-offset-4"
+        >
+          {account.name}
+        </Link>
+      </TableCell>
       <TableCell>
         <ChannelList channels={channels} />
       </TableCell>

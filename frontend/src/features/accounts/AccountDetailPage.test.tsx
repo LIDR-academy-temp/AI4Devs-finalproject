@@ -22,7 +22,7 @@ async function openAccount(as: UserName, accountId: string = USD) {
   return rendered
 }
 
-const header = () => within(screen.getByRole('group', { name: 'Account' }))
+const header = () => within(screen.getByRole('region', { name: 'Account' }))
 
 /** The value next to a label of the General card. */
 async function generalValue(label: string) {
