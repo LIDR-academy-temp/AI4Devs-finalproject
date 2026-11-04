@@ -49,6 +49,7 @@ ESTADOS_RECOMENDACION = (
 TIPOS_EJECUCION = ("CICLO", "CARGA_INICIAL")
 RESULTADOS_EJECUCION = ("EN_CURSO", "EXITO", "PARCIAL", "ERROR")
 NATURALEZAS = ("REAL", "FICTICIA", "COPIA_DE_PRUEBA")
+PROPOSITOS_ENLACE = ("CONFIRMACION", "RECUPERO", "BAJA")
 
 
 def _lista_sql(valores: tuple[str, ...]) -> str:
@@ -79,6 +80,18 @@ class Usuario(Base):
     creado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+    # Datos del registro (weather-track-registro-cuentas, D2). Opcionales en la base para no romper
+    # las cuentas anteriores; la API exige los obligatorios al registrar.
+    apellido: Mapped[str | None] = mapped_column(String(120))
+    organizacion: Mapped[str | None] = mapped_column(String(160))
+    telefono: Mapped[str | None] = mapped_column(String(40))
+    localidad: Mapped[str | None] = mapped_column(String(120))
+    provincia: Mapped[str | None] = mapped_column(String(60))
+    # Sin confirmar no se puede iniciar sesión.
+    confirmado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    terminos_version: Mapped[str | None] = mapped_column(String(20))
+    terminos_aceptados_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    acepta_novedades: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
 
     estaciones: Mapped[list["Estacion"]] = relationship(secondary="usuario_estacion")
 
@@ -254,6 +267,64 @@ class ConfiguracionBase(Base):
     fijada_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class EnlaceCuenta(Base):
+    """Código de un solo uso de confirmación, recupero o baja. Solo se guarda su hash (D3)."""
+
+    __tablename__ = "enlace_cuenta"
+    __table_args__ = (
+        CheckConstraint(f"proposito IN ({_lista_sql(PROPOSITOS_ENLACE)})", name="proposito_valido"),
+        CheckConstraint("vence_en > creado_en", name="vence_despues_de_crearse"),
+        Index("ix_enlace_cuenta_usuario_proposito", "usuario_id", "proposito"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    usuario_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("usuario.id", ondelete="CASCADE"))
+    proposito: Mapped[str] = mapped_column(String(14))
+    hash_codigo: Mapped[str] = mapped_column(String(64), unique=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    vence_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    usado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class CorreoSaliente(Base):
+    """Bandeja de salida: el worker envía y, al terminar, borra el contenido (D4)."""
+
+    __tablename__ = "correo_saliente"
+    __table_args__ = (
+        CheckConstraint("intentos >= 0", name="intentos_no_negativos"),
+        Index("ix_correo_saliente_reciente", "destinatario", "tipo", "creado_en"),
+        Index(
+            "ix_correo_saliente_pendiente",
+            "proximo_intento_en",
+            postgresql_where=text("enviado_en IS NULL AND descartado_en IS NULL"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    tipo: Mapped[str] = mapped_column(String(30))
+    destinatario: Mapped[str] = mapped_column(String(254))
+    asunto: Mapped[str | None] = mapped_column(String(200))
+    cuerpo_texto: Mapped[str | None] = mapped_column(Text)
+    cuerpo_html: Mapped[str | None] = mapped_column(Text)
+    cabeceras: Mapped[dict[str, str] | None] = mapped_column(JSONB)
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    intentos: Mapped[int] = mapped_column(Integer, server_default=text("0"))
+    proximo_intento_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    enviado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    descartado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class LimiteIp(Base):
+    """Contador de pedidos por acción y dirección IP, en ventanas fijas (D9)."""
+
+    __tablename__ = "limite_ip"
+    __table_args__ = (CheckConstraint("cantidad > 0", name="cantidad_positiva"),)
+
+    clave: Mapped[str] = mapped_column(String(120), primary_key=True)
+    ventana_inicio: Mapped[datetime] = mapped_column(DateTime(timezone=True), primary_key=True)
+    cantidad: Mapped[int] = mapped_column(Integer)
 
 
 class IntentoAcceso(Base):

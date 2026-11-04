@@ -409,6 +409,7 @@ Además, la ingesta se probó una vez contra SAT2 real, durante 38 minutos y con
 ```mermaid
 erDiagram
     USUARIO ||--o{ USUARIO_ESTACION : "accede mediante"
+    USUARIO ||--o{ ENLACE_CUENTA : "recibe"
     ESTACION ||--o{ USUARIO_ESTACION : "se asigna mediante"
     ESTACION ||--|{ SENSOR : "tiene"
     SENSOR ||--o{ OBSERVACION : "registra"
@@ -422,6 +423,24 @@ erDiagram
         varchar password_hash "NOT NULL"
         boolean activo "NOT NULL DEFAULT true"
         timestamptz creado_en "NOT NULL"
+        varchar apellido
+        varchar organizacion
+        varchar telefono
+        varchar localidad
+        varchar provincia
+        timestamptz confirmado_en "NULL si no confirmó"
+        varchar terminos_version
+        timestamptz terminos_aceptados_en
+        boolean acepta_novedades "NOT NULL DEFAULT false"
+    }
+    ENLACE_CUENTA {
+        bigint id PK
+        uuid usuario_id FK "NOT NULL"
+        varchar proposito "CONFIRMACION, RECUPERO o BAJA"
+        varchar hash_codigo UK "NOT NULL"
+        timestamptz creado_en "NOT NULL"
+        timestamptz vence_en "NOT NULL"
+        timestamptz usado_en
     }
     ESTACION {
         bigint id PK
@@ -486,7 +505,7 @@ erDiagram
 
 > Se guarda en UTC. La interfaz muestra la hora de Argentina (`America/Argentina/Buenos_Aires`).
 >
-> Las tablas de soporte `SESION` e `INTENTO_ACCESO` se detallan en el [diseño del cambio](openspec/changes/archive/2026-11-03-weather-track-mvp-nucleo/design.md). La tabla `CONFIGURACION_BASE`, de una sola fila, registra si la base guarda datos reales o ficticios para que nunca se mezclen; se detalla en el [diseño de `weather-track-estaciones`](openspec/changes/weather-track-estaciones/design.md).
+> Las tablas de soporte `SESION` e `INTENTO_ACCESO` se detallan en el [diseño del cambio](openspec/changes/archive/2026-11-03-weather-track-mvp-nucleo/design.md). La tabla `CONFIGURACION_BASE`, de una sola fila, registra si la base guarda datos reales o ficticios para que nunca se mezclen; se detalla en el [diseño de `weather-track-estaciones`](openspec/changes/weather-track-estaciones/design.md). `CORREO_SALIENTE`, la bandeja de salida de los correos de las cuentas, y `LIMITE_IP`, los contadores del límite de pedidos por dirección IP, se detallan en el [diseño de `weather-track-registro-cuentas`](openspec/changes/weather-track-registro-cuentas/design.md).
 
 **USUARIO.** Persona con acceso al sistema.
 
@@ -498,6 +517,21 @@ erDiagram
 | `password_hash` | `varchar(255)` | NOT NULL | Hash Argon2id |
 | `activo` | `boolean` | NOT NULL, DEFAULT true | Permite desactivar sin borrar |
 | `creado_en` | `timestamptz` | NOT NULL | Fecha de alta |
+| `apellido`, `organizacion`, `telefono`, `localidad`, `provincia` | `varchar` | | Datos del registro. Opcionales en la base para las cuentas anteriores; la API exige los obligatorios |
+| `confirmado_en` | `timestamptz` | | Cuándo confirmó el correo. Sin confirmar no puede iniciar sesión. Las cuentas anteriores quedaron confirmadas |
+| `terminos_version`, `terminos_aceptados_en` | `varchar(20)`, `timestamptz` | | Versión y fecha de los términos y la política de privacidad aceptados |
+| `acepta_novedades` | `boolean` | NOT NULL, DEFAULT false | Consentimiento para recibir novedades, que se ofrece sin marcar |
+
+**ENLACE_CUENTA.** Código de un solo uso de confirmación, recupero o baja (N:1 con USUARIO, borrado en cascada). El código solo viaja en el correo: la base guarda su SHA-256.
+
+| Atributo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | `bigint` | PK | Identificador |
+| `usuario_id` | `uuid` | FK, NOT NULL, ON DELETE CASCADE | Cuenta |
+| `proposito` | `varchar(14)` | CHECK `CONFIRMACION`, `RECUPERO` o `BAJA` | Vence a las 48 horas, a los 30 minutos y a los 60 días, respectivamente |
+| `hash_codigo` | `varchar(64)` | UNIQUE, NOT NULL | SHA-256 del código |
+| `creado_en`, `vence_en` | `timestamptz` | NOT NULL, `vence_en > creado_en` | Vigencia |
+| `usado_en` | `timestamptz` | | Cuándo se usó. Un código usado, vencido o reemplazado no vuelve a servir |
 
 **ESTACION.** Equipo meteorológico registrado en SAT2.
 

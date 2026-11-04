@@ -9,10 +9,10 @@ Las decisiones están en `design.md` (D1 a D12) y el comportamiento en las specs
 
 ## 2. Modelo de datos (D2, D3)
 
-- [ ] 2.1 Crear la migración `0002` con las columnas de `usuario` y las tablas `enlace_cuenta`, `correo_saliente` y `limite_ip`, y verificar que `upgrade` y `downgrade` funcionan sobre una base con datos de la `0001`
-- [ ] 2.2 Verificar con una prueba de integración que las cuentas existentes quedan confirmadas y que borrar una cuenta borra en cascada sus sesiones y enlaces
-- [ ] 2.3 Implementar la emisión y validación de códigos de un solo uso, con su vigencia y la invalidación del anterior, y verificar con pruebas cada fila de la tabla de D3
-- [ ] 2.4 Actualizar el modelo de datos de la sección 3 del README y verificar que coincide con la migración
+- [x] 2.1 Crear la migración `0003` con las columnas de `usuario` y las tablas `enlace_cuenta`, `correo_saliente` y `limite_ip`, y verificar que `upgrade` y `downgrade` funcionan sobre una base con datos de la `0002`
+- [x] 2.2 Verificar con una prueba de integración que las cuentas existentes quedan confirmadas y que borrar una cuenta borra en cascada sus sesiones y enlaces
+- [x] 2.3 Implementar la emisión y validación de códigos de un solo uso, con su vigencia y la invalidación del anterior, y verificar con pruebas cada fila de la tabla de D3
+- [x] 2.4 Actualizar el modelo de datos de la sección 3 del README y verificar que coincide con la migración
 
 ## 3. Correo (D4, D5)
 

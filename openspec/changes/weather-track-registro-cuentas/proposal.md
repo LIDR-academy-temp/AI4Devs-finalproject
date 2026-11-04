@@ -36,7 +36,7 @@ Estas capacidades vienen del cambio `weather-track-mvp-nucleo`, que se archivó 
 
 ## Impact
 
-- **Datos:** migración `0002` con columnas nuevas en `usuario`, y tablas de enlaces de un solo uso, bandeja de salida y límite por IP. Las cuentas existentes quedan confirmadas.
+- **Datos:** migración `0003` con columnas nuevas en `usuario`, y tablas de enlaces de un solo uso, bandeja de salida y límite por IP. Las cuentas existentes quedan confirmadas.
 - **API:** endpoints nuevos bajo `/api/v1/auth` y `/api/v1/cuenta`; cambian el listado de estaciones y el error de estación no asignada. Se regeneran `openapi.json` y los tipos del frontend.
 - **Worker:** tareas nuevas para enviar correos y borrar cuentas vencidas.
 - **Frontend:** pantallas de registro, confirmación, recupero, nueva contraseña, baja y "Mi cuenta".

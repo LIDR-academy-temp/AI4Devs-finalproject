@@ -6,15 +6,18 @@ import pytest
 from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
-from sqlalchemy import inspect, select, text
+from sqlalchemy import func, inspect, select, text
 from sqlalchemy.exc import IntegrityError
 
 from app.datos.modelos import (
     Base,
     ConfiguracionBase,
+    CorreoSaliente,
     EjecucionIngesta,
+    EnlaceCuenta,
     Estacion,
     IntentoAcceso,
+    LimiteIp,
     Observacion,
     Recomendacion,
     Sensor,
@@ -36,6 +39,9 @@ TABLAS = {
     "sesion",
     "intento_acceso",
     "configuracion_base",
+    "enlace_cuenta",
+    "correo_saliente",
+    "limite_ip",
 }
 MOTIVO = [{"codigo": "SIN_INVERSION", "detalle": "No hay inversión."}]
 
@@ -159,6 +165,104 @@ def test_la_migracion_0002_conserva_los_datos_al_aplicarse_y_revertirse(motor):
         command.upgrade(configuracion, "head")
         with motor.begin() as conexion:
             conexion.execute(text("DELETE FROM estacion WHERE id_equipo_sat2 > 900"))
+
+
+def test_la_migracion_0003_confirma_las_cuentas_existentes_y_se_revierte(motor):
+    configuracion = configuracion_alembic()
+    command.downgrade(configuracion, "0002")
+    try:
+        with motor.begin() as conexion:
+            conexion.execute(
+                text(
+                    "INSERT INTO usuario (id, email, nombre, password_hash, creado_en) "
+                    "VALUES (gen_random_uuid(), 'antigua@ejemplo.com', 'Antigua', 'h', "
+                    "'2026-11-01 10:00+00')"
+                )
+            )
+
+        command.upgrade(configuracion, "head")
+        with motor.connect() as conexion:
+            confirmado, creado, novedades = conexion.execute(
+                text(
+                    "SELECT confirmado_en, creado_en, acepta_novedades FROM usuario "
+                    "WHERE email = 'antigua@ejemplo.com'"
+                )
+            ).one()
+        assert confirmado == creado
+        assert novedades is False
+
+        command.downgrade(configuracion, "0002")
+        with motor.connect() as conexion:
+            assert conexion.execute(
+                text("SELECT count(*) FROM usuario WHERE email = 'antigua@ejemplo.com'")
+            ).scalar() == 1
+    finally:
+        command.upgrade(configuracion, "head")
+        with motor.begin() as conexion:
+            conexion.execute(text("DELETE FROM usuario WHERE email = 'antigua@ejemplo.com'"))
+
+
+def enlace(usuario, **cambios):
+    datos = {
+        "usuario_id": usuario.id,
+        "proposito": "CONFIRMACION",
+        "hash_codigo": "c" * 64,
+        "creado_en": AHORA,
+        "vence_en": AHORA + timedelta(hours=48),
+    }
+    return EnlaceCuenta(**{**datos, **cambios})
+
+
+def test_borrar_una_cuenta_borra_sus_sesiones_y_enlaces(sesion, usuario):
+    sesion.add_all(
+        [
+            Sesion(
+                usuario_id=usuario.id,
+                hash_identificador="s" * 64,
+                creada_en=AHORA,
+                vence_en=AHORA + timedelta(hours=8),
+            ),
+            enlace(usuario),
+            enlace(usuario, proposito="BAJA", hash_codigo="b" * 64),
+        ]
+    )
+    sesion.flush()
+
+    sesion.execute(text("DELETE FROM usuario WHERE id = :id"), {"id": usuario.id})
+
+    assert sesion.scalar(select(func.count()).select_from(Sesion)) == 0
+    assert sesion.scalar(select(func.count()).select_from(EnlaceCuenta)) == 0
+
+
+def test_rechaza_un_enlace_con_proposito_desconocido(sesion, usuario):
+    debe_rechazarse(sesion, enlace(usuario, proposito="OTRO"))
+
+
+def test_rechaza_un_enlace_que_vence_al_crearse(sesion, usuario):
+    debe_rechazarse(sesion, enlace(usuario, vence_en=AHORA))
+
+
+def test_rechaza_dos_enlaces_con_el_mismo_codigo(sesion, usuario):
+    sesion.add(enlace(usuario))
+    sesion.flush()
+    debe_rechazarse(sesion, enlace(usuario, proposito="BAJA"))
+
+
+def test_rechaza_intentos_negativos_en_la_bandeja(sesion):
+    debe_rechazarse(
+        sesion,
+        CorreoSaliente(
+            tipo="CONFIRMACION",
+            destinatario="a@b.example",
+            creado_en=AHORA,
+            proximo_intento_en=AHORA,
+            intentos=-1,
+        ),
+    )
+
+
+def test_rechaza_un_contador_de_ip_en_cero(sesion):
+    debe_rechazarse(sesion, LimiteIp(clave="registro:203.0.113.5", ventana_inicio=AHORA, cantidad=0))
 
 
 def test_una_observacion_valida_se_guarda(sesion, sensor):

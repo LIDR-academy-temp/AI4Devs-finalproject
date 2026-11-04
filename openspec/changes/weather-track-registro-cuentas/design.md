@@ -38,7 +38,7 @@ Las cuentas siguen en la base local de Weather Track.
 
 ### D2. Modelo de datos
 
-Migración `0002`:
+Migración `0003` (la `0002` es de `weather-track-estaciones`):
 
 - **`usuario`:** columnas nuevas `apellido`, `organizacion`, `telefono`, `localidad`, `provincia`, `confirmado_en`, `terminos_version`, `terminos_aceptados_en` y `acepta_novedades`. Son opcionales en la base para no romper las cuentas existentes; la API exige las obligatorias al registrar. Las cuentas existentes quedan confirmadas con `confirmado_en = creado_en`.
 - **`enlace_cuenta`:** `id`, `usuario_id` (borrado en cascada), `proposito` (`CONFIRMACION`, `RECUPERO` o `BAJA`), `hash_codigo` único, `creado_en`, `vence_en` y `usado_en`.
@@ -136,7 +136,7 @@ Rutas públicas nuevas: `/registro`, `/confirmar`, `/recuperar`, `/restablecer`,
 ## Migration Plan
 
 1. Archivar `weather-track-mvp-nucleo` para que sus especificaciones pasen a `openspec/specs`. Su tarea 11.2, el despliegue en Google Cloud, sigue en la hoja de ruta.
-2. La migración `0002` es aditiva y marca como confirmadas las cuentas existentes. Para volver atrás, su `downgrade` borra las tablas y columnas nuevas.
+2. La migración `0003` es aditiva y marca como confirmadas las cuentas existentes. Para volver atrás, su `downgrade` borra las tablas y columnas nuevas.
 3. `docker compose up --build` aplica la migración, levanta Mailpit y el worker empieza a enviar y a borrar.
 4. Las pruebas, las de extremo a extremo y las negativas se amplían antes de que el responsable verifique la aplicación local.
 
