@@ -3,7 +3,8 @@
 // with MatchingRuleSetDetail / GlobalMatchingRules, so the fake cannot drift from the contract. Permission is checked
 // before scope, and anything outside the scope answers the same 404 as a missing id. A PUT may give the rules new ids;
 // never keep them between edits. To stay out of deciding which lists changed, the fake gives new ids to both lists
-// on every write. Rules are answered by priority and then in the order they were saved, the order of the API.
+// on every write. Rules are answered by priority, then saved order; the API also puts a sheet-bound column rule before
+// a generic one at equal priority, tested in admin-matching.
 // It does NOT decide business rules: a regex that does not compile, a repeated pattern, Pending, a status of another
 // cycle, a name in use or a rule set in use are scripted by each test (respondNextMatching).
 import {
