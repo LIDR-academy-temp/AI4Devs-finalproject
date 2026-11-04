@@ -1,17 +1,23 @@
-import { MatchingRuleSetSummary } from '@recon/shared'
+import { MatchingRuleSetDetail, MatchingRuleSetSummary } from '@recon/shared'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { buildTestApp, PASSWORD } from '../../../test-support/build-test-app.js'
 import { ACCOUNT_IDS } from '../../catalog/application/__fakes__/in-memory.js'
 import { InMemoryRuleSets } from '../application/__fakes__/in-memory-rule-sets.js'
+import { RuleSetAdminService } from '../application/rule-set-admin-service.js'
 import { RuleSetReadService } from '../application/rule-set-read-service.js'
 
 // Spec matching "Conjuntos de reglas de un proveedor" (admin-accounts design D8), over the in-memory double.
 let ctx: Awaited<ReturnType<typeof buildTestApp>>
+let ruleSets: InMemoryRuleSets
 
 beforeEach(async () => {
+  ruleSets = new InMemoryRuleSets()
   ctx = await buildTestApp({
-    matching: { ruleSetService: new RuleSetReadService(new InMemoryRuleSets()) },
+    matching: {
+      ruleSetService: new RuleSetReadService(ruleSets),
+      ruleSetAdminService: new RuleSetAdminService(ruleSets),
+    },
   })
   await ctx.app.ready()
 })
@@ -77,8 +83,8 @@ describe('GET /providers/{id}/matching-rule-sets', () => {
   })
 })
 
-// admin-matching group 1 (design D5): the rule administration routes are declared with their permission and
-// schema; the handlers answer 501 not_implemented until groups 3 and 4 wire them.
+// admin-matching design D5: the rule administration routes with their permission and schema. The global rules
+// answer 501 not_implemented until group 4 wires them.
 async function call(method: 'GET' | 'POST' | 'PUT', url: string, userName?: string, payload?: object) {
   const headers = userName
     ? { authorization: `Bearer ${(await ctx.authService.login({ userName, password: PASSWORD })).accessToken}` }
@@ -136,9 +142,6 @@ describe('matching rule administration routes (contract)', () => {
   })
 
   it.each([
-    ['POST', '/providers/201/matching-rule-sets', 'admin', { name: 'Provider C v2' }],
-    ['GET', '/matching-rule-sets/1', 'viewer', undefined],
-    ['PUT', '/matching-rule-sets/1', 'admin', ruleSetBody],
     ['GET', '/matching-rules/global', 'viewer', undefined],
     ['PUT', '/matching-rules/global', 'admin', globalBody],
   ] as const)('%s %s answers 501 not_implemented for now', async (method, url, userName, body) => {
@@ -146,5 +149,79 @@ describe('matching rule administration routes (contract)', () => {
 
     expect(res.statusCode).toBe(501)
     expect(res.json().code).toBe('not_implemented')
+  })
+})
+
+describe('rule set routes (spec matching, admin-matching design D3–D5)', () => {
+  it('POST answers 201 with the detail of the new set', async () => {
+    const res = await call('POST', '/providers/201/matching-rule-sets', 'admin', { name: ' Provider C v2 ' })
+
+    expect(res.statusCode, res.body).toBe(201)
+    expect(MatchingRuleSetDetail.parse(res.json())).toMatchObject({ name: 'Provider C v2', accounts: [] })
+    expect(ruleSets.audits.map((a) => [a.action, a.userId])).toEqual([['matching_rule_set.create', 1]])
+  })
+
+  it('POST answers 409 rule_set_name_taken and 404 not_found for an unknown provider', async () => {
+    const taken = await call('POST', '/providers/201/matching-rule-sets', 'admin', { name: 'provider c legacy' })
+    const unknown = await call('POST', '/providers/999/matching-rule-sets', 'admin', { name: 'X' })
+
+    expect([taken.statusCode, taken.json().code]).toEqual([409, 'rule_set_name_taken'])
+    expect([unknown.statusCode, unknown.json().code]).toEqual([404, 'not_found'])
+  })
+
+  it('POST answers 400 validation_error with details.field to a broken rule', async () => {
+    const res = await call('POST', '/providers/201/matching-rule-sets', 'admin', {
+      name: 'Bad',
+      sheetRules: [{ sheetPattern: 'Other Fees', isRegex: false, kind: 'batch_fees', cycle: 'E', statusId: null }],
+    })
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json()).toMatchObject({ code: 'validation_error', details: { field: 'sheetRules[0].cycle' } })
+  })
+
+  it('GET answers 200 to analyst and the same 404 to viewer (merchant 1 only) as for an unknown set', async () => {
+    const analyst = await call('GET', '/matching-rule-sets/1', 'analyst')
+    const viewer = await call('GET', '/matching-rule-sets/1', 'viewer')
+    const unknown = await call('GET', '/matching-rule-sets/999999', 'analyst')
+
+    expect(analyst.statusCode).toBe(200)
+    expect(MatchingRuleSetDetail.parse(analyst.json()).provider.name).toBe('Provider C')
+    expect([viewer.statusCode, viewer.json().code]).toEqual([404, 'not_found'])
+    expect(viewer.body).toBe(unknown.body)
+  })
+
+  it('GET answers 404 to an admin with an assigned scope outside merchant 2', async () => {
+    const res = await call('GET', '/matching-rule-sets/1', 'scoped_admin')
+
+    expect([res.statusCode, res.json().code]).toEqual([404, 'not_found'])
+  })
+
+  it('PUT answers 200 with the detail and 409 rule_set_in_use with the accounts when deactivating the legacy set', async () => {
+    const detail = MatchingRuleSetDetail.parse((await call('GET', '/matching-rule-sets/1', 'admin')).json())
+    const body = {
+      name: detail.name,
+      isActive: true,
+      sheetRules: detail.sheetRules.map(({ sheetRuleId: _, ...r }) => r),
+      columnRules: detail.columnRules.map(({ columnRuleId: _, ...r }) => r),
+    }
+
+    const same = await call('PUT', '/matching-rule-sets/1', 'admin', body)
+    const off = await call('PUT', '/matching-rule-sets/1', 'admin', { ...body, isActive: false })
+
+    expect(same.statusCode, same.body).toBe(200)
+    expect(same.json()).toEqual(detail)
+    expect(off.statusCode).toBe(409)
+    expect(off.json()).toMatchObject({
+      code: 'rule_set_in_use',
+      details: { accounts: [{ name: 'ProviderC-Alt' }] },
+    })
+  })
+
+  it('PUT answers 400 validation_error to a body without columnRules', async () => {
+    const { columnRules: _, ...partial } = ruleSetBody
+
+    const res = await call('PUT', '/matching-rule-sets/1', 'admin', partial)
+
+    expect([res.statusCode, res.json().code]).toEqual([400, 'validation_error'])
   })
 })

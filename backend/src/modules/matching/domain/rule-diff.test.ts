@@ -59,6 +59,13 @@ describe('diffRuleSet', () => {
     })
   })
 
+  it('compares in priority order: a list given in another order of distinct priorities is no change', () => {
+    const late = { ...cb, priority: 20 }
+    const stored = { ...legacy, sheetRules: [late, trx] }
+
+    expect(diffRuleSet(stored, { ...legacy, sheetRules: [trx, late] })).toEqual({})
+  })
+
   it('records only the list that changes, as whole lists without rule ids', () => {
     const fail = { ...trx, statusId: 3 }
     const changes = diffRuleSet(legacy, { ...legacy, sheetRules: [fail, cb] })
@@ -110,7 +117,7 @@ describe('diffGlobals', () => {
   const globals: GlobalRulesDocument = {
     sheetRules: [trx],
     columnRules: [id],
-    statusAliases: [successful, { alias: 'CHB 2', statusId: 4, excludeAmount: true, isLegacy: true }],
+    statusAliases: [{ alias: 'CHB 2', statusId: 4, excludeAmount: true, isLegacy: true }, successful],
   }
 
   it('has no changes for the same document', () => {
@@ -122,8 +129,12 @@ describe('diffGlobals', () => {
     const changes = diffGlobals(globals, { ...globals, statusAliases: [...globals.statusAliases, approved] })
 
     expect(changes).toEqual({
-      statusAliases: { before: globals.statusAliases, after: [...globals.statusAliases, approved] },
+      statusAliases: { before: globals.statusAliases, after: [approved, ...globals.statusAliases] },
     })
+  })
+
+  it('compares the aliases by text: their order means nothing (the alias is the key)', () => {
+    expect(diffGlobals(globals, { ...globals, statusAliases: [...globals.statusAliases].reverse() })).toEqual({})
   })
 
   it('compares each list on its own', () => {

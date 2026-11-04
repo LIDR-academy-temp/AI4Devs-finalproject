@@ -13,12 +13,13 @@ import { z } from 'zod'
 import { NotImplementedError } from '../../../shared/errors.js'
 import { ForbiddenError } from '../../auth/domain/errors.js'
 import { scopeOf } from '../../catalog/domain/scope.js'
+import type { RuleSetAdminService } from '../application/rule-set-admin-service.js'
 import type { RuleSetReadService } from '../application/rule-set-read-service.js'
 
 const ProviderParams = z.object({ providerId: IntId })
 const RuleSetParams = z.object({ ruleSetId: IntId })
 const matching = { tags: ['matching'], security: [{ bearerAuth: [] }] }
-/** 501 is temporary (admin-matching design D5): it leaves the contract when the handlers are wired. */
+/** 501 is temporary (admin-matching design D5): it leaves the contract when the global handlers are wired. */
 const pending = { 501: ErrorResponse }
 const writeErrors = {
   400: ErrorResponse,
@@ -26,7 +27,6 @@ const writeErrors = {
   403: ErrorResponse,
   404: ErrorResponse,
   409: ErrorResponse,
-  ...pending,
 }
 const contentRules =
   'A transactions sheet carries a cycle; batch_fees and ignore carry neither cycle nor status; cycle R has no ' +
@@ -36,13 +36,17 @@ const contentRules =
 
 export interface MatchingRoutesOptions {
   ruleSetService: RuleSetReadService
+  ruleSetAdminService: RuleSetAdminService
 }
 
 /**
  * Matching rules (spec matching; admin-accounts design D8, admin-matching design D5). Mounted under /api/v1.
- * The writes answer 501 not_implemented until their use cases are wired (admin-matching groups 3 and 4).
+ * The global rules answer 501 not_implemented until their use case is wired (admin-matching group 4).
  */
-export const matchingRoutes: FastifyPluginAsyncZod<MatchingRoutesOptions> = async (app, { ruleSetService }) => {
+export const matchingRoutes: FastifyPluginAsyncZod<MatchingRoutesOptions> = async (
+  app,
+  { ruleSetService, ruleSetAdminService },
+) => {
   app.get(
     '/providers/:providerId/matching-rule-sets',
     {
@@ -78,8 +82,10 @@ export const matchingRoutes: FastifyPluginAsyncZod<MatchingRoutesOptions> = asyn
         response: { 201: MatchingRuleSetDetail, ...writeErrors },
       },
     },
-    async () => {
-      throw new NotImplementedError('POST /providers/{providerId}/matching-rule-sets')
+    async (request, reply) => {
+      const { auth, params, body } = request
+      const detail = await ruleSetAdminService.create(scopeOf(auth), auth.userId, params.providerId, body)
+      return reply.code(201).send(detail)
     },
   )
 
@@ -100,13 +106,10 @@ export const matchingRoutes: FastifyPluginAsyncZod<MatchingRoutesOptions> = asyn
           400: ErrorResponse,
           401: ErrorResponse,
           404: ErrorResponse,
-          ...pending,
         },
       },
     },
-    async () => {
-      throw new NotImplementedError('GET /matching-rule-sets/{ruleSetId}')
-    },
+    async (request) => ruleSetService.detail(scopeOf(request.auth), request.params.ruleSetId),
   )
 
   app.put(
@@ -126,8 +129,9 @@ export const matchingRoutes: FastifyPluginAsyncZod<MatchingRoutesOptions> = asyn
         response: { 200: MatchingRuleSetDetail, ...writeErrors },
       },
     },
-    async () => {
-      throw new NotImplementedError('PUT /matching-rule-sets/{ruleSetId}')
+    async (request) => {
+      const { auth, params, body } = request
+      return ruleSetAdminService.put(scopeOf(auth), auth.userId, params.ruleSetId, body)
     },
   )
 

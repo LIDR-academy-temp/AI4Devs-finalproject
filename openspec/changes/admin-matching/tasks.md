@@ -56,20 +56,27 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
   - `404` de proveedor y de conjunto;
   - `400` sin escrituras;
   - cuerpo sin cambios: sin escritura, sin auditoría y con los mismos ids.
-- [ ] 3.2 Escribir `test/integration/rule-set-admin.int.test.ts` contra la base local, con los mismos escenarios por HTTP, y comprobar que falla.
+- [x] 3.2 Escribir `test/integration/rule-set-admin.int.test.ts` contra la base local, con los mismos escenarios por HTTP, y comprobar que falla.
   - Conjuntos `it-rs-<n>`; el `afterEach` borra en orden de claves foráneas (D8).
   - Incluye "Nombre repetido en mayúsculas" (intercalación), "Mismo nombre en otro proveedor" y "Cuenta cerrada enlazada" (con una cuenta `it-acc-` cerrada).
   - Incluye un test de integración que no da por hecho que `createMany` conserva el orden: inserta las reglas en un orden no alfabético y con prioridades iguales, las lee de la base ordenadas por `sheetRuleId`/`columnRuleId` y comprueba que salen en el orden del cuerpo; repite con el orden invertido. Es lo que sostiene el desempate (D3).
   - Si no hay turno de base, se anota y se ejecuta en rojo en el turno de la 3.4.
 - [x] 3.3 Commit: test(matching): crear, ver y editar conjuntos de reglas
-- [ ] 3.4 Implementar:
+- [x] 3.4 Implementar:
   - `PrismaMatchingRulesAdminRepository`: `inProvider`, `inRuleSet` con `UPDLOCK, HOLDLOCK`, `retryOnDeadlock`, respaldo de `MatchingRuleSet_providerId_name_key` por número de error y `createMany` en orden;
   - `RuleSetAdminService.create`/`.put`;
   - `RuleSetReadService.detail` (D4).
 
   Conectar en `matching-module.ts` y quitar los `501` de las rutas de conjuntos. Verificar con 3.1, 3.2 y `pnpm test`.
-- [ ] 3.5 Escribir un test de concurrencia con compuertas, como `fee-concurrency.int.test.ts`: dos `PUT` simultáneos sobre el mismo conjunto se serializan, el resultado es el documento del segundo entero (sin reglas mezcladas) y hay dos entradas de auditoría. Quitar el `UPDLOCK` debe hacer fallar el test o mezclar reglas; después se revierte.
-- [ ] 3.6 Commit: feat(matching): crear, ver y editar conjuntos de reglas con auditoría
+- [x] 3.5 Escribir un test de concurrencia con compuertas, como `fee-concurrency.int.test.ts`: dos `PUT` simultáneos sobre el mismo conjunto se serializan, el resultado es el documento del segundo entero (sin reglas mezcladas) y hay dos entradas de auditoría. Quitar el `UPDLOCK` debe hacer fallar el test o mezclar reglas; después se revierte.
+- [x] 3.6 Commit: feat(matching): crear, ver y editar conjuntos de reglas con auditoría
+
+  Cambios del grupo 3 fuera del plan:
+  - La comparación (D2) ordena las reglas por `priority` de forma estable y los alias por texto: reenviar el detalle no es un cambio aunque llegue en otro orden de prioridades; reordenar reglas de igual prioridad sí lo es.
+  - Un `PUT` solo reemplaza la lista que cambia: un renombrado conserva los ids de las reglas.
+  - La comprobación de clave duplicada pasa de admin-accounts a `infrastructure/duplicate-key.ts` (`isDuplicateKey`), compartida por los dos respaldos de nombre.
+  - La 3.5 añade dos altas simultáneas con el mismo nombre (respaldo del índice único).
+  - Verificado con la base local (turno de la persona): `rule-set` de integración, 26/26; sin `UPDLOCK, HOLDLOCK` falla el test de los dos `PUT` simultáneos (el segundo confirma durante la espera del primero), y se restauró.
 
 ## 4. Reglas globales
 
