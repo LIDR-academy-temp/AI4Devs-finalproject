@@ -100,7 +100,7 @@ export class PrismaImportRepository implements ImportRepository {
   async findAccount(scope: Scope, accountId: string): Promise<AccountRef | null> {
     return this.prisma.account.findFirst({
       where: { accountId, ...visibleAccount(scope) },
-      select: { accountId: true, matchingRuleSetId: true },
+      select: { accountId: true, matchingRuleSetId: true, isActive: true },
     })
   }
 

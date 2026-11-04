@@ -108,6 +108,9 @@ export const ACCOUNT_CHANNELS: AccountChannelRow[] = [
 
 export const ASSIGNED_AT = '2026-09-28T00:00:00.000Z'
 export const ASSIGNED_IN_BATCH = '7d1c2b3a-0000-4000-8000-000000000068'
+export const ASSIGNED_IN_BATCH_NO = 68
+/** The seed creates every account as admin. */
+export const ACCOUNT_CREATOR = { userId: 1, userName: 'admin' }
 
 export type UserName = 'admin' | 'analyst' | 'payments' | 'viewer'
 
@@ -145,6 +148,7 @@ export function toAccountChannelItem(row: AccountChannelRow, rows: AccountChanne
     isPrimary: row.isPrimary,
     assignedAt: ASSIGNED_AT,
     assignedInBatchId: ASSIGNED_IN_BATCH,
+    assignedInBatchNo: ASSIGNED_IN_BATCH_NO,
     primaryAccount: primary ? { accountId: primary.accountId, name: primary.name } : null,
   }
 }

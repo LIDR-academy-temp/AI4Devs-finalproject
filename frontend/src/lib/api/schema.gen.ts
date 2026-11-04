@@ -676,7 +676,137 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /**
+         * Create an account of the provider
+         * @description The name is unique across all accounts, ignoring case. copyFeesFromAccountId copies the fees active today (New York) of another account of the provider, each with open validity (null…null). 400 validation_error (details.field: rollingReserveCapAmt, matchingRuleSetId, copyFeesFromAccountId), 409 account_name_taken.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    providerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        /** @enum {string} */
+                        chargebackReservePolicy: "hold_until_term" | "release_on_chargeback";
+                        rollingReserveCapAmt?: string | null;
+                        matchingRuleSetId?: number | null;
+                        /** Format: uuid */
+                        copyFeesFromAccountId?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            accountId: string;
+                            providerId: number;
+                            name: string;
+                            /** @enum {string} */
+                            chargebackReservePolicy: "hold_until_term" | "release_on_chargeback";
+                            rollingReserveCapAmt: string | null;
+                            matchingRuleSetId: number | null;
+                            isActive: boolean;
+                            /** Format: date-time */
+                            createdAt: string;
+                            provider: {
+                                providerId: number;
+                                merchantId: number;
+                                name: string;
+                                isActive: boolean;
+                            };
+                            merchant: {
+                                merchantId: number;
+                                name: string;
+                            };
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -730,6 +860,12 @@ export interface paths {
                                 merchantId: number;
                                 name: string;
                             };
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            updatedAt: string;
                         };
                     };
                 };
@@ -779,7 +915,137 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Edit, close or reopen an account
+         * @description Any subset of name, chargebackReservePolicy, rollingReserveCapAmt, matchingRuleSetId and isActive (false closes, true reopens), with an optional reason. A rule set change applies from the next import. A body that changes nothing answers 200 without writing. 400 validation_error (details.field: rollingReserveCapAmt, matchingRuleSetId), 409 account_name_taken.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    accountId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        /** @enum {string} */
+                        chargebackReservePolicy?: "hold_until_term" | "release_on_chargeback";
+                        rollingReserveCapAmt?: string | null;
+                        matchingRuleSetId?: number | null;
+                        isActive?: boolean;
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            accountId: string;
+                            providerId: number;
+                            name: string;
+                            /** @enum {string} */
+                            chargebackReservePolicy: "hold_until_term" | "release_on_chargeback";
+                            rollingReserveCapAmt: string | null;
+                            matchingRuleSetId: number | null;
+                            isActive: boolean;
+                            /** Format: date-time */
+                            createdAt: string;
+                            provider: {
+                                providerId: number;
+                                merchantId: number;
+                                name: string;
+                                isActive: boolean;
+                            };
+                            merchant: {
+                                merchantId: number;
+                                name: string;
+                            };
+                            createdBy: {
+                                userId: number;
+                                userName: string;
+                            };
+                            /** Format: date-time */
+                            updatedAt: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/v1/accounts/{accountId}/channels": {
@@ -821,6 +1087,7 @@ export interface paths {
                             assignedAt: string;
                             /** Format: uuid */
                             assignedInBatchId: string | null;
+                            assignedInBatchNo: number | null;
                             primaryAccount: {
                                 /** Format: uuid */
                                 accountId: string;
@@ -885,7 +1152,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Channels in scope; unassigned=true keeps only those with transactions and no account */
+        /**
+         * Channels in scope; unassigned=true keeps only those with transactions and no account
+         * @description Each channel with its primary account, null when it has none or it is outside your scope.
+         */
         get: {
             parameters: {
                 query?: {
@@ -912,6 +1182,11 @@ export interface paths {
                             settlementTermDays: number;
                             rollingReservePct: string;
                             rollingReserveDays: number;
+                            primaryAccount: {
+                                /** Format: uuid */
+                                accountId: string;
+                                name: string;
+                            } | null;
                         }[];
                     };
                 };
@@ -987,6 +1262,7 @@ export interface paths {
                             assignedAt: string;
                             /** Format: uuid */
                             assignedInBatchId: string | null;
+                            assignedInBatchNo: number | null;
                         }[];
                     };
                 };
@@ -5326,6 +5602,97 @@ export interface paths {
                 };
                 /** @description Default Response */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/providers/{providerId}/matching-rule-sets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Matching rule sets of a provider, with the accounts linked to each one
+         * @description Active and inactive sets, by name; 404 for a provider outside your scope.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    providerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ruleSetId: number;
+                            providerId: number;
+                            name: string;
+                            isActive: boolean;
+                            accounts: {
+                                /** Format: uuid */
+                                accountId: string;
+                                name: string;
+                                isActive: boolean;
+                            }[];
+                        }[];
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
                     headers: {
                         [name: string]: unknown;
                     };

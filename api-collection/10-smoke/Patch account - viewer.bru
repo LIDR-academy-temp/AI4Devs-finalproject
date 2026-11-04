@@ -1,0 +1,50 @@
+meta {
+  name: Patch account - viewer
+  type: http
+  seq: 102
+  tags: [
+    smoke
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/accounts/:accountId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  accountId: {{providerCUsdAccountId}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+body:json {
+  {
+    "name": "ProviderC-USD"
+  }
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+script:pre-request {
+  // A real account of merchant 2, outside the viewer's scope: the 403 must come before the scope (never a 404). The
+  // body repeats the current name, so the request would change nothing even if it ever got through.
+  if (!bru.getVar('providerCUsdAccountId')) {
+    await bru.runRequest('10-smoke/Provider C accounts');
+  }
+  if (!bru.getVar('providerCUsdAccountId')) {
+    throw new Error(bru.getVar('providerCUsdLookupError') || 'ProviderC-USD accountId could not be resolved');
+  }
+}
+
+tests {
+  test('viewer lacks account.manage: 403 forbidden on an account of merchant 2, before the scope', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

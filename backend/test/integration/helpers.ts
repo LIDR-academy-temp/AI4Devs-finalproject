@@ -55,6 +55,14 @@ export function fixtureId<T>(value: T | null | undefined, name: string): T {
   return value
 }
 
+/** Prefix of the accounts the Bruno flow leaves closed in Provider C until the next `pnpm db:seed` (admin-accounts D9). */
+export const BRUNO_ACCOUNT_PREFIX = 'bruno-'
+
+/** The accounts of a listing without those of the Bruno collection: what a test that expects the seed's exact list compares. */
+export function seedAccounts<T extends { name: string }>(accounts: readonly T[]): T[] {
+  return accounts.filter((a) => !a.name.startsWith(BRUNO_ACCOUNT_PREFIX))
+}
+
 /** The ids of an `in` filter of a cleanup: the list and each id defined (an empty list deletes nothing). */
 export function fixtureIds<T>(values: readonly (T | null | undefined)[] | undefined, name: string): T[] {
   if (values === undefined) throw new Error(`cleanup refused: ${name} is not defined`)

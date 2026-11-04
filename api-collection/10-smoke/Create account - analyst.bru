@@ -1,0 +1,32 @@
+meta {
+  name: Create account - analyst
+  type: http
+  seq: 100
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/providers/:providerId/accounts
+  body: json
+  auth: inherit
+}
+
+params:path {
+  providerId: 201
+}
+
+body:json {
+  {
+    "name": "bruno-smoke-forbidden",
+    "chargebackReservePolicy": "hold_until_term"
+  }
+}
+
+tests {
+  test('analyst lacks account.manage: 403 forbidden, nothing created', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

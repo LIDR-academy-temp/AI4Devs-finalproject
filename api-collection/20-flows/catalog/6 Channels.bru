@@ -1,0 +1,30 @@
+meta {
+  name: 6 Channels
+  type: http
+  seq: 6
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/channels
+  body: none
+  auth: inherit
+}
+
+tests {
+  test('every channel carries its primary account: RAM-01 has ProviderA-USD; RAM-07 none or ProviderA-USD', () => {
+    expect(res.status).to.equal(200);
+    for (const channel of res.body) {
+      expect(channel).to.have.property('primaryAccount');
+    }
+    const ram01 = res.body.find((c) => c.name === 'RAM-01');
+    const ram07 = res.body.find((c) => c.name === 'RAM-07');
+    expect(ram01.primaryAccount.name).to.equal('ProviderA-USD');
+    // Unassigned in the seed; batch-clean of the imports flow assigns it to ProviderA-USD, its only possible account (#111).
+    if (ram07.primaryAccount !== null) {
+      expect(ram07.primaryAccount.name).to.equal('ProviderA-USD');
+    }
+  });
+}

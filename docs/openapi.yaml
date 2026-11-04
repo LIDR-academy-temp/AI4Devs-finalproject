@@ -819,6 +819,242 @@ paths:
                   - code
                   - message
                 additionalProperties: false
+    post:
+      summary: Create an account of the provider
+      tags: &a3
+        - accounts
+      description: "The name is unique across all accounts, ignoring case.
+        copyFeesFromAccountId copies the fees active today (New York) of another
+        account of the provider, each with open validity (null…null). 400
+        validation_error (details.field: rollingReserveCapAmt,
+        matchingRuleSetId, copyFeesFromAccountId), 409 account_name_taken."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                chargebackReservePolicy:
+                  type: string
+                  enum:
+                    - hold_until_term
+                    - release_on_chargeback
+                rollingReserveCapAmt:
+                  nullable: true
+                  type: string
+                  pattern: ^-?\d{1,15}(\.\d{1,4})?$
+                matchingRuleSetId:
+                  nullable: true
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                  maximum: 2147483647
+                copyFeesFromAccountId:
+                  nullable: true
+                  type: string
+                  format: uuid
+                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+              required:
+                - name
+                - chargebackReservePolicy
+              additionalProperties: false
+      parameters:
+        - schema:
+            type: string
+            pattern: ^\d{1,10}$
+          in: path
+          name: providerId
+          required: true
+      security: &a4
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  providerId:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  name:
+                    type: string
+                  chargebackReservePolicy:
+                    type: string
+                    enum:
+                      - hold_until_term
+                      - release_on_chargeback
+                  rollingReserveCapAmt:
+                    nullable: true
+                    type: string
+                    pattern: ^-?\d{1,15}(\.\d{1,4})?$
+                  matchingRuleSetId:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  isActive:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  provider:
+                    type: object
+                    properties:
+                      providerId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      merchantId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      name:
+                        type: string
+                      isActive:
+                        type: boolean
+                    required:
+                      - providerId
+                      - merchantId
+                      - name
+                      - isActive
+                    additionalProperties: false
+                  merchant:
+                    type: object
+                    properties:
+                      merchantId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      name:
+                        type: string
+                    required:
+                      - merchantId
+                      - name
+                    additionalProperties: false
+                  createdBy:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                required:
+                  - accountId
+                  - providerId
+                  - name
+                  - chargebackReservePolicy
+                  - rollingReserveCapAmt
+                  - matchingRuleSetId
+                  - isActive
+                  - createdAt
+                  - provider
+                  - merchant
+                  - createdBy
+                  - updatedAt
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
   /api/v1/accounts/{accountId}:
     get:
       summary: Account detail with its provider and merchant
@@ -904,6 +1140,23 @@ paths:
                       - merchantId
                       - name
                     additionalProperties: false
+                  createdBy:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
                 required:
                   - accountId
                   - providerId
@@ -915,6 +1168,8 @@ paths:
                   - createdAt
                   - provider
                   - merchant
+                  - createdBy
+                  - updatedAt
                 additionalProperties: false
         "400":
           description: Default Response
@@ -949,6 +1204,240 @@ paths:
                   - message
                 additionalProperties: false
         "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+    patch:
+      summary: Edit, close or reopen an account
+      tags: *a3
+      description: "Any subset of name, chargebackReservePolicy, rollingReserveCapAmt,
+        matchingRuleSetId and isActive (false closes, true reopens), with an
+        optional reason. A rule set change applies from the next import. A body
+        that changes nothing answers 200 without writing. 400 validation_error
+        (details.field: rollingReserveCapAmt, matchingRuleSetId), 409
+        account_name_taken."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                chargebackReservePolicy:
+                  type: string
+                  enum:
+                    - hold_until_term
+                    - release_on_chargeback
+                rollingReserveCapAmt:
+                  nullable: true
+                  type: string
+                  pattern: ^-?\d{1,15}(\.\d{1,4})?$
+                matchingRuleSetId:
+                  nullable: true
+                  type: integer
+                  minimum: 0
+                  exclusiveMinimum: true
+                  maximum: 2147483647
+                isActive:
+                  type: boolean
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+              additionalProperties: false
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          in: path
+          name: accountId
+          required: true
+      security: *a4
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:
+                    type: string
+                    format: uuid
+                    pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                  providerId:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  name:
+                    type: string
+                  chargebackReservePolicy:
+                    type: string
+                    enum:
+                      - hold_until_term
+                      - release_on_chargeback
+                  rollingReserveCapAmt:
+                    nullable: true
+                    type: string
+                    pattern: ^-?\d{1,15}(\.\d{1,4})?$
+                  matchingRuleSetId:
+                    nullable: true
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  isActive:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                  provider:
+                    type: object
+                    properties:
+                      providerId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      merchantId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      name:
+                        type: string
+                      isActive:
+                        type: boolean
+                    required:
+                      - providerId
+                      - merchantId
+                      - name
+                      - isActive
+                    additionalProperties: false
+                  merchant:
+                    type: object
+                    properties:
+                      merchantId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      name:
+                        type: string
+                    required:
+                      - merchantId
+                      - name
+                    additionalProperties: false
+                  createdBy:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      userName:
+                        type: string
+                    required:
+                      - userId
+                      - userName
+                    additionalProperties: false
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                required:
+                  - accountId
+                  - providerId
+                  - name
+                  - chargebackReservePolicy
+                  - rollingReserveCapAmt
+                  - matchingRuleSetId
+                  - isActive
+                  - createdAt
+                  - provider
+                  - merchant
+                  - createdBy
+                  - updatedAt
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "409":
           description: Default Response
           content:
             application/json:
@@ -1026,6 +1515,11 @@ paths:
                       type: string
                       format: uuid
                       pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                    assignedInBatchNo:
+                      nullable: true
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
                     primaryAccount:
                       nullable: true
                       type: object
@@ -1052,6 +1546,7 @@ paths:
                     - isPrimary
                     - assignedAt
                     - assignedInBatchId
+                    - assignedInBatchNo
                     - primaryAccount
                   additionalProperties: false
         "400":
@@ -1107,6 +1602,8 @@ paths:
       summary: Channels in scope; unassigned=true keeps only those with transactions
         and no account
       tags: *a1
+      description: Each channel with its primary account, null when it has none or it
+        is outside your scope.
       parameters:
         - schema:
             type: string
@@ -1154,6 +1651,20 @@ paths:
                       type: integer
                       minimum: -9007199254740991
                       maximum: 9007199254740991
+                    primaryAccount:
+                      nullable: true
+                      type: object
+                      properties:
+                        accountId:
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        name:
+                          type: string
+                      required:
+                        - accountId
+                        - name
+                      additionalProperties: false
                   required:
                     - channelId
                     - gatewayId
@@ -1163,6 +1674,7 @@ paths:
                     - settlementTermDays
                     - rollingReservePct
                     - rollingReserveDays
+                    - primaryAccount
                   additionalProperties: false
         "400":
           description: Default Response
@@ -1241,6 +1753,11 @@ paths:
                       type: string
                       format: uuid
                       pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                    assignedInBatchNo:
+                      nullable: true
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
                   required:
                     - accountId
                     - name
@@ -1249,6 +1766,7 @@ paths:
                     - isPrimary
                     - assignedAt
                     - assignedInBatchId
+                    - assignedInBatchNo
                   additionalProperties: false
         "400":
           description: Default Response
@@ -1301,7 +1819,7 @@ paths:
   /api/v1/accounts/{accountId}/imports:
     post:
       summary: Upload one or more template files and get the mapping proposal
-      tags: &a3
+      tags: &a5
         - imports
       description: "multipart/form-data with 1 to 10 `files` parts, each a `.xlsx` of
         at most 20 MiB. Rejected as a whole when any part fails: 400 (type,
@@ -1332,7 +1850,7 @@ paths:
           in: path
           name: accountId
           required: true
-      security: &a4
+      security: &a6
         - bearerAuth: []
       responses:
         "201":
@@ -2009,7 +2527,7 @@ paths:
                 additionalProperties: false
     get:
       summary: Imports of an account, newest first, optionally filtered by status
-      tags: *a3
+      tags: *a5
       parameters:
         - schema:
             type: string
@@ -2030,7 +2548,7 @@ paths:
           in: path
           name: accountId
           required: true
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -2173,7 +2691,7 @@ paths:
   /api/v1/imports/{importId}/files:
     post:
       summary: Add files to an import before it is analyzed
-      tags: *a3
+      tags: *a5
       description: "multipart/form-data with 1 to 10 `files` parts, each a `.xlsx` of
         at most 20 MiB. Rejected as a whole when any part fails: 400 (type,
         size, count), 409 (same bytes already in the import), 422 (unreadable
@@ -2203,7 +2721,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -2880,7 +3398,7 @@ paths:
   /api/v1/imports/{importId}/files/{fileId}:
     delete:
       summary: Remove a file from an import before it is analyzed
-      tags: *a3
+      tags: *a5
       parameters:
         - schema:
             type: string
@@ -2896,7 +3414,7 @@ paths:
           in: path
           name: fileId
           required: true
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -3557,7 +4075,7 @@ paths:
   /api/v1/imports/{importId}:
     get:
       summary: "Import detail: files, sheets, mapping proposal, preview and readiness"
-      tags: *a3
+      tags: *a5
       parameters:
         - schema:
             type: string
@@ -3566,7 +4084,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -4196,7 +4714,7 @@ paths:
     put:
       summary: Confirm the mapping of every sheet of the import; the import moves to
         mapped
-      tags: *a3
+      tags: *a5
       requestBody:
         required: true
         content:
@@ -4272,7 +4790,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -4934,7 +5452,7 @@ paths:
     post:
       summary: Parse the rows with the confirmed mapping and cross-match them by
         external identity
-      tags: *a3
+      tags: *a5
       description: The import must be mapped (409 import_not_mapped otherwise). An
         incomplete mapping answers 422 mapping_incomplete; more than the allowed
         transaction rows per import answers 422 import_too_large.
@@ -4946,7 +5464,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -5608,7 +6126,7 @@ paths:
     get:
       summary: Rows of an analyzed import, unmatched and ambiguous first (empty before
         the analysis)
-      tags: *a3
+      tags: *a5
       parameters:
         - schema:
             type: string
@@ -5650,7 +6168,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -5978,7 +6496,7 @@ paths:
     patch:
       summary: Resolve an ambiguous row by choosing the gateway among its candidates
         (audited)
-      tags: *a3
+      tags: *a5
       requestBody:
         required: true
         content:
@@ -6014,7 +6532,7 @@ paths:
           in: path
           name: rowNo
           required: true
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -6349,7 +6867,7 @@ paths:
     post:
       summary: Cancel an import that is not processed, keeping its files, rows and
         findings
-      tags: *a3
+      tags: *a5
       parameters:
         - schema:
             type: string
@@ -6358,7 +6876,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a4
+      security: *a6
       responses:
         "200":
           description: Default Response
@@ -7003,7 +7521,7 @@ paths:
   /api/v1/imports/{importId}/validations:
     post:
       summary: Run the eight validations; the previous current run is superseded
-      tags: &a5
+      tags: &a7
         - validations
       description: Accepted in analyzed or validated (a validated import goes back to
         analyzed and its review is invalidated). 409 import_not_analyzed in any
@@ -7016,7 +7534,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: &a6
+      security: &a8
         - bearerAuth: []
       responses:
         "201":
@@ -7401,7 +7919,7 @@ paths:
     get:
       summary: The current run of the import (null without one) and its last
         invalidated review
-      tags: *a5
+      tags: *a7
       parameters:
         - schema:
             type: string
@@ -7410,7 +7928,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a6
+      security: *a8
       responses:
         "200":
           description: Default Response
@@ -7763,7 +8281,7 @@ paths:
     get:
       summary: Findings of the current run, filtered and paged in a fixed order (empty
         without a run)
-      tags: *a5
+      tags: *a7
       parameters:
         - schema:
             type: string
@@ -7841,7 +8359,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a6
+      security: *a8
       responses:
         "200":
           description: Default Response
@@ -8139,7 +8657,7 @@ paths:
     get:
       summary: A finding with every occurrence, its resolution and the history of
         changes
-      tags: *a5
+      tags: *a7
       parameters:
         - schema:
             type: string
@@ -8147,7 +8665,7 @@ paths:
           in: path
           name: issueId
           required: true
-      security: *a6
+      security: *a8
       responses:
         "200":
           description: Default Response
@@ -8647,7 +9165,7 @@ paths:
     patch:
       summary: Resolve by hand a non_recorded_adjustment or a status_mismatch of the
         current run
-      tags: *a5
+      tags: *a7
       requestBody:
         required: true
         content:
@@ -8674,7 +9192,7 @@ paths:
           in: path
           name: issueId
           required: true
-      security: *a6
+      security: *a8
       responses:
         "200":
           description: Default Response
@@ -9223,7 +9741,7 @@ paths:
     post:
       summary: "Continue with the current run: the import moves to validated (no
         decision per finding)"
-      tags: *a5
+      tags: *a7
       description: "Only in analyzed and on the current run (runId). 409
         validation_run_required without a run, validation_run_superseded for
         another runId, blocking_validation_issue when provider_mismatch blocks
@@ -9251,7 +9769,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a6
+      security: *a8
       responses:
         "200":
           description: Default Response
@@ -9635,7 +10153,7 @@ paths:
   /api/v1/conflict-occurrences/{occurrenceId}:
     patch:
       summary: Include or exclude an occurrence of the current import in the settlement
-      tags: *a5
+      tags: *a7
       description: Accepted in analyzed or validated (a validated import goes back to
         analyzed and its review is invalidated). In cycle R at most one
         occurrence is included, and none when the reserve was released in a
@@ -9659,7 +10177,7 @@ paths:
           in: path
           name: occurrenceId
           required: true
-      security: *a6
+      security: *a8
       responses:
         "200":
           description: Default Response
@@ -10191,7 +10709,7 @@ paths:
   /api/v1/accounts/{accountId}/fees:
     get:
       summary: Fees of an account, optionally by kind and in force at a business date
-      tags: &a7
+      tags: &a9
         - fees
       description: transactional=false lists the batch presets; asOf is a business
         date (YYYY-MM-DD).
@@ -10217,7 +10735,7 @@ paths:
           in: path
           name: accountId
           required: true
-      security: &a8
+      security: &a10
         - bearerAuth: []
       responses:
         "200":
@@ -10400,7 +10918,7 @@ paths:
                 additionalProperties: false
     post:
       summary: Create a fee of the account
-      tags: &a9
+      tags: &a11
         - fees
       description: "Money and percentages as decimal strings; startDate/endDate null
         mean since forever / no end. 400 validation_error (details.field:
@@ -10466,7 +10984,7 @@ paths:
           in: path
           name: accountId
           required: true
-      security: &a10
+      security: &a12
         - bearerAuth: []
       responses:
         "201":
@@ -10664,8 +11182,8 @@ paths:
   /api/v1/fee-types:
     get:
       summary: Fee type catalog (transactional, free amount)
-      tags: *a7
-      security: *a8
+      tags: *a9
+      security: *a10
       responses:
         "200":
           description: Default Response
@@ -10721,7 +11239,7 @@ paths:
   /api/v1/fees/{feeId}:
     patch:
       summary: Correct a fee in place, close it, or change it from a date
-      tags: *a9
+      tags: *a11
       description: "Without effectiveFrom: in-place correction (a fee in use takes
         only description and endDate). With effectiveFrom: closes the fee on
         effectiveFrom − 1 day and opens a successor with the new values. 409
@@ -10824,7 +11342,7 @@ paths:
           in: path
           name: feeId
           required: true
-      security: *a10
+      security: *a12
       responses:
         "200":
           description: Default Response
@@ -11137,7 +11655,7 @@ paths:
   /api/v1/fees:
     get:
       summary: Fees of every account in scope, paginated, with filters
-      tags: *a9
+      tags: *a11
       description: Ordered by merchant, provider, account, fee type title, startDate
         (nulls first) and feeId. status is against today in New York. 404 for a
         merchantId, providerId or accountId outside the scope.
@@ -11202,7 +11720,7 @@ paths:
           in: query
           name: pageSize
           required: false
-      security: *a10
+      security: *a12
       responses:
         "200":
           description: Default Response
@@ -11452,7 +11970,7 @@ paths:
   /api/v1/fees/{feeId}/history:
     get:
       summary: Change history of a fee, or of every fee of its type in its account
-      tags: *a9
+      tags: *a11
       description: Newest first; before and after in API form (money as text, dates
         YYYY-MM-DD).
       parameters:
@@ -11472,7 +11990,7 @@ paths:
           in: path
           name: feeId
           required: true
-      security: *a10
+      security: *a12
       responses:
         "200":
           description: Default Response
@@ -11704,10 +12222,120 @@ paths:
                   - code
                   - message
                 additionalProperties: false
+  /api/v1/providers/{providerId}/matching-rule-sets:
+    get:
+      summary: Matching rule sets of a provider, with the accounts linked to each one
+      tags:
+        - matching
+      description: Active and inactive sets, by name; 404 for a provider outside your scope.
+      parameters:
+        - schema:
+            type: string
+            pattern: ^\d{1,10}$
+          in: path
+          name: providerId
+          required: true
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    ruleSetId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    providerId:
+                      type: integer
+                      minimum: -9007199254740991
+                      maximum: 9007199254740991
+                    name:
+                      type: string
+                    isActive:
+                      type: boolean
+                    accounts:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          accountId:
+                            type: string
+                            format: uuid
+                            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                          name:
+                            type: string
+                          isActive:
+                            type: boolean
+                        required:
+                          - accountId
+                          - name
+                          - isActive
+                        additionalProperties: false
+                  required:
+                    - ruleSetId
+                    - providerId
+                    - name
+                    - isActive
+                    - accounts
+                  additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
   /api/v1/settlements/{batchId}:
     get:
       summary: "The attempt as written: the same view as the 201 of processing"
-      tags: &a11
+      tags: &a13
         - settlements
       description: Seeded attempts without a processing audit answer validationSummary
         null and nothing skipped. Previous accounts of assigned channels outside
@@ -11720,7 +12348,7 @@ paths:
           in: path
           name: batchId
           required: true
-      security: &a12
+      security: &a14
         - bearerAuth: []
       responses:
         "200":
@@ -12436,7 +13064,7 @@ paths:
     get:
       summary: Movements of one cycle of the attempt, with their fee breakdown, in a
         stable order
-      tags: *a11
+      tags: *a13
       description: type is required (E, I or R); page from 1, pageSize 1-500 (50).
         settled is true only when the attempt is paid.
       parameters:
@@ -12472,7 +13100,7 @@ paths:
           in: path
           name: batchId
           required: true
-      security: *a12
+      security: *a14
       responses:
         "200":
           description: Default Response
@@ -12727,7 +13355,7 @@ paths:
   /api/v1/imports/{importId}/settlements:
     get:
       summary: Attempts of the import, current and undone, newest first
-      tags: *a11
+      tags: *a13
       parameters:
         - schema:
             type: string
@@ -12736,7 +13364,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a12
+      security: *a14
       responses:
         "200":
           description: Default Response
@@ -12874,7 +13502,7 @@ paths:
     post:
       summary: Process the validated import as a batch attempt (processed, pending
         payment)
-      tags: &a13
+      tags: &a15
         - settlements
       description: runId is the reviewed validation run. 409 import_not_validated,
         validation_run_required, validation_run_superseded,
@@ -12951,7 +13579,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: &a14
+      security: &a16
         - bearerAuth: []
       responses:
         "201":
@@ -13698,7 +14326,7 @@ paths:
   /api/v1/accounts/{accountId}/settlements:
     get:
       summary: Attempts of the account in any status, newest first, paginated
-      tags: *a11
+      tags: *a13
       description: "Ordered by processedAt, batchNo and attemptNo, descending. status
         filters by attempt status. from and to are inclusive YYYY-MM-DD days of
         dateField: settlementDate (default) compares the business date as
@@ -13760,7 +14388,7 @@ paths:
           in: path
           name: accountId
           required: true
-      security: *a12
+      security: *a14
       responses:
         "200":
           description: Default Response
@@ -13920,7 +14548,7 @@ paths:
   /api/v1/settlements/{batchId}/export:
     get:
       summary: Download the merchant summary or a Back-Office CSV of the attempt
-      tags: *a11
+      tags: *a13
       description: RFC 4180 CSV (comma, CRLF, UTF-8 without BOM), named
         <account>_B<batchNo>_A<attemptNo>_<type>.csv in Content-Disposition.
         Every download is audited (settlement.export) and changes no state;
@@ -13943,7 +14571,7 @@ paths:
           in: path
           name: batchId
           required: true
-      security: *a12
+      security: *a14
       responses:
         "200":
           description: The CSV file
@@ -14034,7 +14662,7 @@ paths:
   /api/v1/imports/{importId}/settlements/preview:
     post:
       summary: What processing would do, without writing anything
-      tags: *a13
+      tags: *a15
       description: "Same body as processing; answers 200 with a SettlementPreview. 409
         import_not_validated, validation_run_required,
         validation_run_superseded, blocking_validation_issue; 400
@@ -14111,7 +14739,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a14
+      security: *a16
       responses:
         "200":
           description: Default Response
@@ -14730,7 +15358,7 @@ paths:
     get:
       summary: Proposed batch number of the account (the same one again to reprocess
         an undone attempt)
-      tags: *a13
+      tags: *a15
       parameters:
         - schema:
             type: string
@@ -14746,7 +15374,7 @@ paths:
           in: path
           name: accountId
           required: true
-      security: *a14
+      security: *a16
       responses:
         "200":
           description: Default Response
@@ -14831,7 +15459,7 @@ paths:
   /api/v1/settlements/{batchId}/pay:
     post:
       summary: "Mark a processed attempt as paid: its movements become Settled"
-      tags: &a15
+      tags: &a17
         - settlements
       description: Without a body. 409 settlement_not_processed from paid or undone
         (details.status); settlement_busy.
@@ -14843,7 +15471,7 @@ paths:
           in: path
           name: batchId
           required: true
-      security: &a16
+      security: &a18
         - bearerAuth: []
       responses:
         "200":
@@ -15591,7 +16219,7 @@ paths:
     post:
       summary: Remove the payment of a paid attempt, with a reason; it does not revert
         the Back-Office
-      tags: *a15
+      tags: *a17
       description: 400 validation_error without a reason. 409 settlement_not_paid from
         processed or undone (details.status); settlement_busy.
       requestBody:
@@ -15616,7 +16244,7 @@ paths:
           in: path
           name: batchId
           required: true
-      security: *a16
+      security: *a18
       responses:
         "200":
           description: Default Response
@@ -16363,7 +16991,7 @@ paths:
     post:
       summary: Undo a processed attempt, with a reason, keeping its data; its import
         goes back to analyzed
-      tags: *a15
+      tags: *a17
       description: Supersedes the current validation run of the import and reopens the
         missing findings the attempt resolved; the primary account of the
         channels does not change. 400 validation_error without a reason. 409
@@ -16392,7 +17020,7 @@ paths:
           in: path
           name: batchId
           required: true
-      security: *a16
+      security: *a18
       responses:
         "200":
           description: Default Response

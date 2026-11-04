@@ -1,0 +1,40 @@
+meta {
+  name: 9 Close again
+  type: http
+  seq: 9
+  tags: [
+    flow
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/accounts/:accountId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  accountId: {{flowNewAccountId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "isActive": false,
+    "reason": "Bruno flow: leave the account closed"
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+tests {
+  test('the flow leaves its account closed: 200, isActive false', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.isActive).to.equal(false);
+  });
+}

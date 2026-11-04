@@ -4,6 +4,7 @@ import type {
   AccountDetail,
   AccountSummary,
   ChannelAccountItem,
+  ChannelListItem,
   ChannelSummary,
   MerchantRef,
   MerchantSummary,
@@ -16,6 +17,7 @@ export type {
   AccountDetail,
   AccountSummary,
   ChannelAccountItem,
+  ChannelListItem,
   ChannelSummary,
   MerchantRef,
   MerchantSummary,
@@ -44,7 +46,8 @@ export interface CatalogRepository {
   listProviderAccounts(scope: Scope, providerId: number): Promise<AccountSummary[]>
   findAccount(scope: Scope, accountId: string): Promise<AccountDetail | null>
   listAccountChannels(scope: Scope, accountId: string): Promise<AccountChannelItem[]>
-  listChannels(scope: Scope, filter: ChannelFilter): Promise<ChannelSummary[]>
+  /** Channels with their primary account, null when there is none or it belongs to a merchant outside the scope. */
+  listChannels(scope: Scope, filter: ChannelFilter): Promise<ChannelListItem[]>
   findChannel(scope: Scope, channelId: number): Promise<ChannelSummary | null>
   listChannelAccounts(scope: Scope, channelId: number): Promise<ChannelAccountItem[]>
 }

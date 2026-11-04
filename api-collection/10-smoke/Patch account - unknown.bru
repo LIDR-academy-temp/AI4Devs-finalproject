@@ -1,0 +1,39 @@
+meta {
+  name: Patch account - unknown
+  type: http
+  seq: 103
+  tags: [
+    smoke
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/accounts/:accountId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  accountId: {{$randomUUID}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "chargebackReservePolicy": "release_on_chargeback"
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+tests {
+  test('an unknown account: 404 not_found', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

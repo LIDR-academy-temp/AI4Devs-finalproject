@@ -1,13 +1,14 @@
-import { createHash } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ImportDetail, ImportSummary } from '@recon/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { createTestApp, SEED_PASSWORD } from './helpers.js'
+import { createTestApp, fixtureIds, SEED_PASSWORD } from './helpers.js'
+import { confirmProposal, removeImportsFrom } from './import-flow.js'
 
 // Oracle: data/samples (README of the folder) and the seed: ProviderA-USD has no rule set, ProviderC-Alt
 // is linked to "Provider C legacy"; viewer sees merchant 1 only; analyst has settlement.process.
@@ -30,6 +31,8 @@ let uploadDir: string
 const accountIds: Record<string, string> = {}
 const tokens: Record<string, string> = {}
 const createdImportIds = new Set<string>()
+/** Accounts this file creates (admin-accounts D7), removed in afterAll. */
+const ACCOUNT_PREFIX = `it-acc-imp-${Date.now().toString(36)}`
 
 function samplePart(relative: string): Part {
   return { name: path.basename(relative), bytes: readFileSync(path.join(SAMPLES, relative)) }
@@ -81,16 +84,28 @@ beforeAll(async () => {
 afterAll(async () => {
   if (ctx) {
     const { prisma } = ctx
-    const importIds = [...createdImportIds]
-    if (importIds.length > 0) {
-      await prisma.importRow.deleteMany({ where: { sheet: { file: { importId: { in: importIds } } } } })
-      await prisma.importSheetColumnMap.deleteMany({ where: { sheet: { file: { importId: { in: importIds } } } } })
-      await prisma.importSheet.deleteMany({ where: { file: { importId: { in: importIds } } } })
-      await prisma.importFile.deleteMany({ where: { importId: { in: importIds } } })
-      await prisma.import.deleteMany({ where: { importId: { in: importIds } } })
+    try {
+      // The analyzed import of the closed account leaves rows and audit entries too.
+      await removeImportsFrom(prisma, [...createdImportIds])
+      const accounts = await prisma.account.findMany({
+        where: { name: { startsWith: ACCOUNT_PREFIX } },
+        select: { accountId: true },
+      })
+      await prisma.account.deleteMany({
+        where: {
+          accountId: {
+            in: fixtureIds(
+              accounts.map((a) => a.accountId),
+              'closed-account fixtures',
+            ),
+          },
+        },
+      })
+      expect(await prisma.account.count({ where: { name: { startsWith: 'it-acc-' } } })).toBe(0)
+    } finally {
+      await ctx.app.close()
+      await prisma.$disconnect()
     }
-    await ctx.app.close()
-    await prisma.$disconnect()
   }
   if (uploadDir) await rm(uploadDir, { recursive: true, force: true })
 })
@@ -326,5 +341,95 @@ describe('a template saved by Excel desktop (data/samples/excel-real)', () => {
       sheetName: 'APP',
       message: expect.stringMatching(/^1 numeric ID cell.*(scientific notation|15 digits).*rejected/),
     })
+  })
+})
+
+// Spec import "Cuenta cerrada no admite imports nuevos" (admin-accounts D7). The accounts are created here, in
+// ProviderA (merchant 1) and ProviderC (merchant 2), and closed or reopened straight in the database: the API that
+// does it is covered by account-admin.int.test.ts.
+describe('a closed account (spec "Cuenta cerrada no admite imports nuevos")', () => {
+  async function account(suffix: string, providerId: number, isActive: boolean): Promise<string> {
+    const admin = await ctx.prisma.user.findUniqueOrThrow({ where: { userName: 'admin' } })
+    const accountId = randomUUID()
+    await ctx.prisma.account.create({
+      data: {
+        accountId,
+        providerId,
+        name: `${ACCOUNT_PREFIX}-${suffix}`,
+        chargebackReservePolicy: 'hold_until_term',
+        isActive,
+        createdByUserId: admin.userId,
+      },
+    })
+    return accountId
+  }
+
+  const setActive = (accountId: string, isActive: boolean) =>
+    ctx.prisma.account.update({ where: { accountId }, data: { isActive } })
+
+  async function storedFiles(): Promise<string[]> {
+    return (await readdir(uploadDir, { recursive: true })).sort()
+  }
+
+  function inject(method: 'PUT' | 'POST', url: string, body?: object) {
+    return ctx.app.inject({
+      method,
+      url: `/api/v1${url}`,
+      headers: { authorization: `Bearer ${tokens.analyst}` },
+      ...(body === undefined ? {} : { payload: body }),
+    })
+  }
+
+  it('answers 409 account_inactive to an upload, creating no import and leaving nothing in UPLOAD_DIR', async () => {
+    const closed = await account('closed', 101, false)
+    const before = await storedFiles()
+
+    const res = await upload(`/accounts/${closed}/imports`, [samplePart(BATCH_CLEAN)])
+
+    expect(res.statusCode).toBe(409)
+    expect(res.json()).toMatchObject({ code: 'account_inactive' })
+    expect(await ctx.prisma.import.count({ where: { accountId: closed } })).toBe(0)
+    expect(await storedFiles()).toEqual(before)
+  })
+
+  it('answers 403 forbidden to viewer for a closed account of another merchant, never 409', async () => {
+    const closed = await account('closed-c', 201, false)
+
+    const res = await upload(`/accounts/${closed}/imports`, [samplePart(BATCH_CLEAN)], 'viewer')
+
+    expect(res.statusCode).toBe(403)
+    expect(res.json().code).toBe('forbidden')
+  })
+
+  it('lets an open import of an account closed afterwards be listed, confirmed and analyzed', async () => {
+    const accountId = await account('open-then-closed', 101, true)
+    const created = await upload(`/accounts/${accountId}/imports`, [samplePart(PART1)])
+    expect(created.statusCode, created.body).toBe(201)
+    const detail = ImportDetail.parse(created.json())
+    await setActive(accountId, false)
+
+    const listed = await call('GET', `/accounts/${accountId}/imports`)
+    const mapping = await inject('PUT', `/imports/${detail.importId}/mapping`, confirmProposal(detail))
+    const analyzed = await inject('POST', `/imports/${detail.importId}/analyze`)
+
+    expect(listed.statusCode).toBe(200)
+    expect(
+      z
+        .array(ImportSummary)
+        .parse(listed.json())
+        .map((i) => i.importId),
+    ).toEqual([detail.importId])
+    expect(mapping.statusCode, mapping.body).toBe(200)
+    expect(analyzed.statusCode, analyzed.body).toBe(200)
+    expect(ImportDetail.parse(analyzed.json()).status).toBe('analyzed')
+  })
+
+  it('accepts uploads again once the account is reopened', async () => {
+    const accountId = await account('reopened', 101, false)
+    await setActive(accountId, true)
+
+    const res = await upload(`/accounts/${accountId}/imports`, [samplePart(BATCH_CLEAN)])
+
+    expect(res.statusCode, res.body).toBe(201)
   })
 })

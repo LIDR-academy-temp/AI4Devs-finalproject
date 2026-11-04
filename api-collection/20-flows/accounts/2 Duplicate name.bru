@@ -1,0 +1,45 @@
+meta {
+  name: 2 Duplicate name
+  type: http
+  seq: 2
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/providers/:providerId/accounts
+  body: json
+  auth: bearer
+}
+
+params:path {
+  providerId: 201
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "name": "{{flowAccountNameUpper}}",
+    "chargebackReservePolicy": "hold_until_term"
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:pre-request {
+  // The same name in capitals: account names are unique without case.
+  bru.setVar('flowAccountNameUpper', String(bru.getVar('flowAccountName')).toUpperCase());
+}
+
+tests {
+  test('the name of step 1 in capitals: 409 account_name_taken', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('account_name_taken');
+  });
+}

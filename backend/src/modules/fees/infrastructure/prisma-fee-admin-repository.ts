@@ -32,7 +32,7 @@ export function isFeeOverlapTrigger(error: unknown): boolean {
   return cause?.kind === 'mssql' && cause.code === TRIGGER_OVERLAP_NUMBER
 }
 
-const stateSelect = {
+export const stateSelect = {
   feeId: true,
   feeTypeId: true,
   fixedAmount: true,
@@ -52,7 +52,7 @@ const day = (value: Date | null) => (value === null ? null : businessDay(value))
 /** A DATE column takes midnight UTC of the day, as it comes back. */
 const dateOf = (value: string | null) => (value === null ? null : new Date(`${value}T00:00:00.000Z`))
 
-function toState(row: StateRow): FeeState {
+export function toState(row: StateRow): FeeState {
   return {
     feeId: row.feeId,
     feeTypeId: row.feeTypeId,
@@ -69,7 +69,7 @@ function toState(row: StateRow): FeeState {
 }
 
 /** The columns a write sets, from the normalized state (decimal strings, never JS numbers). */
-function columns(fee: FeeState) {
+export function columns(fee: FeeState) {
   return {
     fixedAmount: fee.fixedAmount,
     percentage: fee.percentage,
@@ -84,7 +84,7 @@ function columns(fee: FeeState) {
 }
 
 /** The trigger's rejection as 409 fee_overlap; the use case found no conflict, so there are none to list. */
-async function overlapBackstop<T>(write: Promise<T>): Promise<T> {
+export async function overlapBackstop<T>(write: Promise<T>): Promise<T> {
   try {
     return await write
   } catch (error) {

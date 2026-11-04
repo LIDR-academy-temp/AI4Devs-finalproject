@@ -15,7 +15,9 @@ export type MerchantSummary = ApiResponse<'/api/v1/merchants', 'get'>[number]
 export type ProviderSummary = ApiResponse<'/api/v1/merchants/{merchantId}/providers', 'get'>[number]
 export type ProviderDetail = ApiResponse<'/api/v1/providers/{providerId}', 'get'>
 export type AccountSummary = ProviderDetail['accounts'][number]
-export type ChannelSummary = ApiResponse<'/api/v1/channels', 'get'>[number]
+export type ChannelSummary = ProviderDetail['channels'][number]
+/** A row of `GET /channels`: the channel and its primary account, if visible. */
+export type ChannelListItem = ApiResponse<'/api/v1/channels', 'get'>[number]
 export type AccountChannelItem = ApiResponse<'/api/v1/accounts/{accountId}/channels', 'get'>[number]
 export type Permission = Me['permissions'][number]
 export type AccountDetail = ApiResponse<'/api/v1/accounts/{accountId}', 'get'>

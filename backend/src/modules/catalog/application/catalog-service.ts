@@ -8,6 +8,7 @@ import type {
   CatalogRepository,
   ChannelAccountItem,
   ChannelFilter,
+  ChannelListItem,
   ChannelSummary,
   MerchantSummary,
   ProviderSummary,
@@ -60,7 +61,7 @@ export class CatalogService {
     return this.catalog.listAccountChannels(scope, accountId)
   }
 
-  listChannels(scope: Scope, filter: ChannelFilter): Promise<ChannelSummary[]> {
+  listChannels(scope: Scope, filter: ChannelFilter): Promise<ChannelListItem[]> {
     return this.catalog.listChannels(scope, filter)
   }
 

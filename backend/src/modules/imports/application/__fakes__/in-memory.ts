@@ -475,7 +475,8 @@ export class InMemoryFileStore implements FileStore {
 
 // ───────────────────────── Import repository ─────────────────────────
 
-interface AccountRow extends AccountRef {
+/** `isActive` comes from the repository's closed set (setAccountActive). */
+interface AccountRow extends Omit<AccountRef, 'isActive'> {
   name: string
   merchantId: number
   providerId: number
@@ -548,10 +549,18 @@ export interface StoredImport extends Omit<ImportSummaryRecord, 'fileCount'> {
 
 export class InMemoryImportRepository implements ImportRepository {
   private readonly imports = new Map<string, StoredImport>()
+  /** Accounts closed by the test (admin-accounts D7); every fixture account starts active. */
+  private readonly closed = new Set<string>()
   private failWrite = false
   private tick = 0
 
   constructor(private readonly epoch = new Date('2026-10-16T10:00:00.000Z')) {}
+
+  /** Test seam: closes or reopens an account, as PATCH /accounts/{id} does. */
+  setAccountActive(accountId: string, isActive: boolean): void {
+    if (isActive) this.closed.delete(accountId)
+    else this.closed.add(accountId)
+  }
 
   failNextWrite(): void {
     this.failWrite = true
@@ -639,7 +648,13 @@ export class InMemoryImportRepository implements ImportRepository {
 
   async findAccount(scope: Scope, accountId: string): Promise<AccountRef | null> {
     const account = this.visible(scope, accountId)
-    return account ? { accountId: account.accountId, matchingRuleSetId: account.matchingRuleSetId } : null
+    return account
+      ? {
+          accountId: account.accountId,
+          matchingRuleSetId: account.matchingRuleSetId,
+          isActive: !this.closed.has(account.accountId),
+        }
+      : null
   }
 
   async findImport(scope: Scope, importId: string): Promise<ImportRecord | null> {

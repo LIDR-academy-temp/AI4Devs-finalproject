@@ -22,4 +22,14 @@ tests {
     expect(res.status).to.equal(200);
     expect(res.body).to.be.an('array').that.is.not.empty;
   });
+  test('each primary channel carries the number of the batch that assigned it', () => {
+    // Exact numbers move when other flows process batches of ProviderA-USD: only their shape is checked.
+    const primaries = res.body.filter((c) => c.isPrimary);
+    expect(primaries).to.not.be.empty;
+    for (const channel of primaries) {
+      expect(channel).to.have.property('assignedInBatchNo');
+      expect(channel.assignedInBatchNo).to.be.a('number');
+      expect(channel.assignedInBatchNo).to.be.above(0);
+    }
+  });
 }

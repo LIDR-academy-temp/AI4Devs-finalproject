@@ -1,8 +1,10 @@
+import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { createTestApp, SEED_PASSWORD } from './helpers.js'
+import { BRUNO_ACCOUNT_PREFIX, createTestApp, fixtureId, SEED_PASSWORD, seedAccounts } from './helpers.js'
 
 // Seed oracle (backend/prisma/synthetic.ts): 2 merchants, 3 providers, 9 channels, 5 accounts;
 // RAM-07 (1007) and RAM-13 (1013) have transactions and no account; viewer sees merchant 1 only.
+// Lists of accounts go through seedAccounts(): the Bruno flow leaves closed bruno- accounts in Provider C.
 const RAM_01 = 1001
 const RAM_07 = 1007
 const RAM_13 = 1013
@@ -16,6 +18,7 @@ type User = 'admin' | 'analyst' | 'viewer'
 let ctx: Awaited<ReturnType<typeof createTestApp>>
 const accountIds: Record<string, string> = {}
 const tokens: Partial<Record<User, string>> = {}
+let brunoAccountId: string | undefined
 
 beforeAll(async () => {
   ctx = await createTestApp()
@@ -34,6 +37,22 @@ beforeAll(async () => {
     tokens[userName] = res.json().accessToken
   }
 
+  // Scenario "Cuentas de la colección presentes": a closed bruno- account in Provider C, as the Bruno flow leaves one
+  // per run, so every exact list below proves it ignores them. Removed in afterAll.
+  const admin = await prisma.user.findUniqueOrThrow({ where: { userName: 'admin' } })
+  brunoAccountId = (
+    await prisma.account.create({
+      data: {
+        accountId: randomUUID(),
+        providerId: 201,
+        name: `${BRUNO_ACCOUNT_PREFIX}it-${Date.now().toString(36)}`,
+        chargebackReservePolicy: 'hold_until_term',
+        isActive: false,
+        createdByUserId: admin.userId,
+      },
+    })
+  ).accountId
+
   // RAM-01 keeps ProviderA-USD as primary; this row is its history in ProviderA-EUR (never a second primary).
   await prisma.accountChannel.upsert({
     where: { accountId_channelId: { accountId: accountIds['ProviderA-EUR']!, channelId: RAM_01 } },
@@ -50,13 +69,18 @@ beforeAll(async () => {
 afterAll(async () => {
   if (ctx) {
     const { prisma } = ctx
-    if (accountIds['ProviderA-EUR']) {
-      await prisma.accountChannel.deleteMany({
-        where: { accountId: accountIds['ProviderA-EUR'], channelId: RAM_01, isPrimary: false },
-      })
+    try {
+      if (accountIds['ProviderA-EUR']) {
+        await prisma.accountChannel.deleteMany({
+          where: { accountId: accountIds['ProviderA-EUR'], channelId: RAM_01, isPrimary: false },
+        })
+      }
+      if (brunoAccountId !== undefined)
+        await prisma.account.delete({ where: { accountId: fixtureId(brunoAccountId, 'bruno account') } })
+    } finally {
+      await ctx.app.close()
+      await prisma.$disconnect()
     }
-    await ctx.app.close()
-    await prisma.$disconnect()
   }
 })
 
@@ -110,15 +134,15 @@ describe('merchant scope (issue #2, criterion 1)', () => {
   it('viewer sees 1 merchant, 2 providers, 3 accounts and 7 channels', async () => {
     expect(await json('/merchants', 'viewer')).toEqual([{ merchantId: 1, name: 'Merchant A', isActive: true }])
     expect(ids(await json('/merchants/1/providers', 'viewer'), 'providerId')).toEqual([101, 102])
-    expect(await json('/providers/101/accounts', 'viewer')).toHaveLength(2)
-    expect(await json('/providers/102/accounts', 'viewer')).toHaveLength(1)
+    expect(seedAccounts(await json<{ name: string }[]>('/providers/101/accounts', 'viewer'))).toHaveLength(2)
+    expect(seedAccounts(await json<{ name: string }[]>('/providers/102/accounts', 'viewer'))).toHaveLength(1)
     expect(await json('/channels', 'viewer')).toHaveLength(7)
   })
 
   it('admin sees 2 merchants, 3 providers, 5 accounts and 9 channels', async () => {
     expect(ids(await json('/merchants', 'admin'), 'merchantId')).toEqual([1, 2])
     expect(ids(await json('/merchants/2/providers', 'admin'), 'providerId')).toEqual([201])
-    expect(await json('/providers/201/accounts', 'admin')).toHaveLength(2)
+    expect(seedAccounts(await json<{ name: string }[]>('/providers/201/accounts', 'admin'))).toHaveLength(2)
     expect(await json('/channels', 'admin')).toHaveLength(9)
   })
 
@@ -204,6 +228,67 @@ describe('GET /accounts/{id}/channels (issue #2, criterion 3)', () => {
   it('GET /channels/1007/accounts is empty for a channel that is not assigned yet', async () => {
     expect(await json(`/channels/${RAM_07}/accounts`, 'admin')).toEqual([])
   })
+
+  it('carries the batchNo of the assigning batch, and null for an association without batch', async () => {
+    type Assigned = { name: string; assignedInBatchId: string | null; assignedInBatchNo: number | null }
+    // The batchNo of the batch each row names, read from the database: holds whichever batch assigned the channel.
+    const batchNoOf = async (batchId: string | null) =>
+      batchId === null
+        ? null
+        : (await ctx.prisma.settlementBatch.findUniqueOrThrow({ where: { batchId }, select: { batchNo: true } }))
+            .batchNo
+
+    const usdChannels = await json<Assigned[]>(`/accounts/${accountIds['ProviderA-USD']}/channels`, 'viewer')
+    const eurChannels = await json<Assigned[]>(`/accounts/${accountIds['ProviderA-EUR']}/channels`, 'admin')
+    const ram01Accounts = await json<Assigned[]>(`/channels/${RAM_01}/accounts`, 'admin')
+
+    // Scenarios "Canales principales de ProviderA-USD", "Asociación sin batch" and "Número de batch de la asociación".
+    // RAM-01 and RAM-02 only: batch-clean of the Bruno collection may add RAM-07 to ProviderA-USD (#111).
+    const seeded = usdChannels.filter((c) => c.name === 'RAM-01' || c.name === 'RAM-02')
+    expect(seeded.map((c) => c.name)).toEqual(['RAM-01', 'RAM-02'])
+    for (const channel of seeded) {
+      expect(channel.assignedInBatchId).not.toBeNull()
+      expect(channel.assignedInBatchNo).toBe(await batchNoOf(channel.assignedInBatchId))
+    }
+    expect(eurChannels.find((c) => c.name === 'RAM-01')?.assignedInBatchNo).toBeNull()
+    const usdRow = ram01Accounts.find((a) => a.name === 'ProviderA-USD')
+    expect(usdRow?.assignedInBatchNo).toBe(await batchNoOf(usdRow?.assignedInBatchId ?? null))
+    expect(ram01Accounts.find((a) => a.name === 'ProviderA-EUR')?.assignedInBatchNo).toBeNull()
+  })
+})
+
+describe('GET /channels with the primary account of each channel', () => {
+  type Row = { channelId: number; primaryAccount: { accountId: string; name: string } | null }
+  const primaryOf = (rows: Row[], channelId: number) => rows.find((c) => c.channelId === channelId)?.primaryAccount
+
+  it('gives RAM-01 and RAM-03 their primary account and RAM-07 none ("Cuenta principal de cada canal")', async () => {
+    const channels = await json<Row[]>('/channels', 'viewer')
+
+    expect(primaryOf(channels, RAM_01)?.name).toBe('ProviderA-USD')
+    expect(primaryOf(channels, 1003)?.name).toBe('ProviderA-EUR')
+    // None on a fresh seed; ProviderA-USD, its only possible account, once batch-clean of Bruno assigned it (#111).
+    const ram07 = primaryOf(channels, RAM_07)
+    if (ram07 !== null) expect(ram07?.name).toBe('ProviderA-USD')
+    expect((await json<Row[]>('/channels?unassigned=true', 'admin')).every((c) => c.primaryAccount === null)).toBe(true)
+  })
+
+  it('hides a primary account of a merchant outside the scope ("Principal de otro merchant oculta")', async () => {
+    const { prisma } = ctx
+    const usd = { accountId: accountIds['ProviderA-USD']!, channelId: RAM_01 }
+    const foreign = { accountId: accountIds['ProviderC-USD']!, channelId: RAM_01 }
+    // The schema does not force account and channel onto the same provider (#24): move RAM-01's primary to
+    // ProviderC-USD (merchant 2) for this test and put it back afterwards.
+    await prisma.accountChannel.update({ where: { accountId_channelId: usd }, data: { isPrimary: false } })
+    try {
+      await prisma.accountChannel.create({ data: { ...foreign, isPrimary: true, assignedAt: HISTORY_ASSIGNED_AT } })
+
+      expect(primaryOf(await json<Row[]>('/channels', 'viewer'), RAM_01)).toBeNull()
+      expect(primaryOf(await json<Row[]>('/channels', 'admin'), RAM_01)?.name).toBe('ProviderC-USD')
+    } finally {
+      await prisma.accountChannel.deleteMany({ where: foreign })
+      await prisma.accountChannel.update({ where: { accountId_channelId: usd }, data: { isPrimary: true } })
+    }
+  })
 })
 
 describe('account and provider detail', () => {
@@ -228,7 +313,7 @@ describe('account and provider detail', () => {
         json<{ name: string; isActive: boolean }[]>(`/providers/${providerId}/accounts`, 'admin'),
       ),
     )
-    const accounts = perProvider.flat()
+    const accounts = seedAccounts(perProvider.flat())
 
     expect(accounts.map((a) => a.name)).toEqual([
       'ProviderA-EUR',
@@ -239,6 +324,13 @@ describe('account and provider detail', () => {
     ])
     expect(new Set(accounts.map((a) => a.name)).size).toBe(5)
     expect(accounts.every((a) => a.isActive)).toBe(true)
+  })
+
+  it('says that admin created ProviderA-USD and when it last changed ("Quién creó la cuenta")', async () => {
+    const account = await json<Record<string, unknown>>(`/accounts/${accountIds['ProviderA-USD']}`, 'viewer')
+
+    expect(account.createdBy).toMatchObject({ userName: 'admin' })
+    expect(account.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
   })
 
   it('ProviderA-USD has neither a reserve cap nor a rule set', async () => {
@@ -256,7 +348,7 @@ describe('account and provider detail', () => {
   })
 
   it('ProviderB-Main releases the reserve on chargeback', async () => {
-    const accounts = await json<Record<string, unknown>[]>('/providers/102/accounts', 'viewer')
+    const accounts = seedAccounts(await json<{ name: string }[]>('/providers/102/accounts', 'viewer'))
 
     expect(accounts).toHaveLength(1)
     expect(accounts[0]).toMatchObject({ name: 'ProviderB-Main', chargebackReservePolicy: 'release_on_chargeback' })
@@ -272,7 +364,7 @@ describe('account and provider detail', () => {
       name: 'Provider A',
       merchant: { merchantId: 1, name: 'Merchant A' },
     })
-    expect(provider.accounts.map((a) => a.name)).toEqual(['ProviderA-EUR', 'ProviderA-USD'])
+    expect(seedAccounts(provider.accounts).map((a) => a.name)).toEqual(['ProviderA-EUR', 'ProviderA-USD'])
     expect(ids(provider.channels, 'channelId')).toEqual([1001, 1002, 1003, 1007])
     for (const channel of provider.channels) {
       expect(channel).toMatchObject({

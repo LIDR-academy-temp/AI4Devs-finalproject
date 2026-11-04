@@ -12,6 +12,7 @@ import type {
   CatalogRepository,
   ChannelAccountItem,
   ChannelFilter,
+  ChannelListItem,
   ChannelSummary,
   MerchantSummary,
   ProviderSummary,
@@ -24,13 +25,17 @@ export interface AccountChannelRow {
   isPrimary: boolean
   assignedAt: string
   assignedInBatchId: string | null
+  assignedInBatchNo: number | null
 }
+
+/** An account as stored: the summary plus who created it and when it last changed. */
+export type AccountRecord = AccountSummary & Pick<AccountDetail, 'createdBy' | 'updatedAt'>
 
 export interface CatalogFixture {
   merchants: MerchantSummary[]
   providers: ProviderSummary[]
   channels: ChannelSummary[]
-  accounts: AccountSummary[]
+  accounts: AccountRecord[]
   accountChannels: AccountChannelRow[]
   channelsWithTransactions: number[]
 }
@@ -48,6 +53,11 @@ export const LEGACY_RULE_SET_ID = 1
 export const LAST_BATCH_IDS: Partial<Record<AccountName, string>> = {
   'ProviderA-USD': 'd0000000-0000-4000-8000-000000000123',
 }
+export const LAST_BATCH_NOS: Partial<Record<AccountName, number>> = {
+  'ProviderA-USD': 123,
+}
+/** The seed creates every account as admin. */
+export const SEED_CREATOR = { userId: 1, userName: 'admin' }
 
 function channel(
   channelId: number,
@@ -77,7 +87,7 @@ function account(
   cap: string | null,
   matchingRuleSetId: number | null,
   createdAt: string,
-): AccountSummary {
+): AccountRecord {
   return {
     accountId: ACCOUNT_IDS[name],
     providerId,
@@ -87,6 +97,8 @@ function account(
     matchingRuleSetId,
     isActive: true,
     createdAt,
+    createdBy: { ...SEED_CREATOR },
+    updatedAt: createdAt,
   }
 }
 
@@ -97,7 +109,13 @@ function assigned(name: AccountName, channelId: number, assignedAt: string): Acc
     isPrimary: true,
     assignedAt,
     assignedInBatchId: LAST_BATCH_IDS[name] ?? null,
+    assignedInBatchNo: LAST_BATCH_NOS[name] ?? null,
   }
+}
+
+/** The summary of a stored account, without the detail-only fields. */
+function summaryOf({ createdBy: _c, updatedAt: _u, ...summary }: AccountRecord): AccountSummary {
+  return structuredClone(summary)
 }
 
 export function seedFixture(): CatalogFixture {
@@ -219,9 +237,10 @@ export class InMemoryCatalogRepository implements CatalogRepository {
 
   async listProviderAccounts(scope: Scope, providerId: number): Promise<AccountSummary[]> {
     if (!this.providerVisible(scope, providerId)) return []
-    return structuredClone(
-      this.fixture.accounts.filter((a) => a.providerId === providerId).sort((a, b) => a.name.localeCompare(b.name)),
-    )
+    return this.fixture.accounts
+      .filter((a) => a.providerId === providerId)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(summaryOf)
   }
 
   async findAccount(scope: Scope, accountId: string): Promise<AccountDetail | null> {
@@ -229,10 +248,20 @@ export class InMemoryCatalogRepository implements CatalogRepository {
     if (!a || !this.providerVisible(scope, a.providerId)) return null
     const provider = this.provider(a.providerId)!
     return {
-      ...structuredClone(a),
+      ...summaryOf(a),
       provider: structuredClone(provider),
       merchant: this.merchantRef(provider.merchantId),
+      createdBy: { ...a.createdBy },
+      updatedAt: a.updatedAt,
     }
+  }
+
+  /** The channel's primary account if the caller sees it. */
+  private primaryOf(scope: Scope, channelId: number) {
+    const primary = this.fixture.accountChannels.find(
+      (x) => x.channelId === channelId && x.isPrimary && this.accountVisible(scope, x.accountId),
+    )
+    return primary ? this.accountRef(primary.accountId) : null
   }
 
   async listAccountChannels(scope: Scope, accountId: string): Promise<AccountChannelItem[]> {
@@ -243,28 +272,25 @@ export class InMemoryCatalogRepository implements CatalogRepository {
       .sort((x, y) => x.assignedAt.localeCompare(y.assignedAt) || x.channelId - y.channelId)
       .map((row) => {
         const c = this.fixture.channels.find((x) => x.channelId === row.channelId)!
-        const primary = this.fixture.accountChannels.find(
-          (x) => x.channelId === row.channelId && x.isPrimary && this.accountVisible(scope, x.accountId),
-        )
         return {
           ...structuredClone(c),
           isPrimary: row.isPrimary,
           assignedAt: row.assignedAt,
           assignedInBatchId: row.assignedInBatchId,
-          primaryAccount: primary ? this.accountRef(primary.accountId) : null,
+          assignedInBatchNo: row.assignedInBatchNo,
+          primaryAccount: this.primaryOf(scope, row.channelId),
         }
       })
   }
 
-  async listChannels(scope: Scope, filter: ChannelFilter): Promise<ChannelSummary[]> {
+  async listChannels(scope: Scope, filter: ChannelFilter): Promise<ChannelListItem[]> {
     const withTransactions = new Set(this.fixture.channelsWithTransactions)
     const assigned = new Set(this.fixture.accountChannels.map((row) => row.channelId))
-    return structuredClone(
-      this.fixture.channels
-        .filter((c) => this.providerVisible(scope, c.providerId))
-        .filter((c) => !filter.unassigned || (withTransactions.has(c.channelId) && !assigned.has(c.channelId)))
-        .sort((a, b) => byId(a, b, 'channelId')),
-    )
+    return this.fixture.channels
+      .filter((c) => this.providerVisible(scope, c.providerId))
+      .filter((c) => !filter.unassigned || (withTransactions.has(c.channelId) && !assigned.has(c.channelId)))
+      .sort((a, b) => byId(a, b, 'channelId'))
+      .map((c) => ({ ...structuredClone(c), primaryAccount: this.primaryOf(scope, c.channelId) }))
   }
 
   async findChannel(scope: Scope, channelId: number): Promise<ChannelSummary | null> {
@@ -286,6 +312,7 @@ export class InMemoryCatalogRepository implements CatalogRepository {
         isPrimary: row.isPrimary,
         assignedAt: row.assignedAt,
         assignedInBatchId: row.assignedInBatchId,
+        assignedInBatchNo: row.assignedInBatchNo,
       }))
   }
 }

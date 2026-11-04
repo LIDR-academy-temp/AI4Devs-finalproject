@@ -221,6 +221,33 @@ describe('buildApp', () => {
     await app.close()
   })
 
+  it('publishes the account administration and the provider rule sets with bearer security (admin-accounts)', async () => {
+    const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
+
+    const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json()
+
+    const writes: [string, 'post' | 'patch', string][] = [
+      ['/api/v1/providers/{providerId}/accounts', 'post', '201'],
+      ['/api/v1/accounts/{accountId}', 'patch', '200'],
+    ]
+    for (const [path, method, success] of writes) {
+      const operation = doc.paths[path]?.[method]
+      expect(operation, `${method} ${path}`).toBeDefined()
+      expect(operation.tags, path).toEqual(['accounts'])
+      expect(operation.security, path).toEqual([{ bearerAuth: [] }])
+      expect(operation.requestBody?.content?.['application/json']?.schema, path).toBeDefined()
+      for (const status of [success, '400', '401', '403', '404', '409']) {
+        expect(operation.responses, path).toHaveProperty(status)
+      }
+    }
+    const ruleSets = doc.paths['/api/v1/providers/{providerId}/matching-rule-sets']?.get
+    expect(ruleSets).toBeDefined()
+    expect(ruleSets.tags).toEqual(['matching'])
+    expect(ruleSets.security).toEqual([{ bearerAuth: [] }])
+    for (const status of ['200', '401', '404']) expect(ruleSets.responses).toHaveProperty(status)
+    await app.close()
+  })
+
   it('publishes the four reads of an attempt, the export as text/csv with 403 and 500 (summary-exports)', async () => {
     const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
 

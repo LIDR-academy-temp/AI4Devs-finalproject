@@ -45,6 +45,7 @@ import { type BatchFeeSheet, type FeeTypeRef, prefillBatchFees } from '../domain
 import { buildRowDraft, type RowContext, toNewImportRow } from '../domain/build-rows.js'
 import { channelNotices } from '../domain/channel-notice.js'
 import {
+  AccountInactiveError,
   CandidateNotFoundError,
   DuplicateFileError,
   FileUnreadableError,
@@ -151,6 +152,8 @@ export class ImportService {
   async createImport(scope: Scope, userId: number, accountId: string, uploads: StagedUpload[]): Promise<ImportDetail> {
     const importId = await this.withStaged(uploads, async (committed) => {
       const account = await this.requireAccount(scope, accountId)
+      // Before reading any file: withStaged discards the staged uploads on the way out (admin-accounts D7).
+      if (!account.isActive) throw new AccountInactiveError()
       this.rejectDuplicates(uploads, [])
       const read = await this.readAll(uploads)
       const rules = await this.deps.rules.rulesFor(account.matchingRuleSetId)

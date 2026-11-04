@@ -1,0 +1,39 @@
+meta {
+  name: Patch account - providerId
+  type: http
+  seq: 104
+  tags: [
+    smoke
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/accounts/:accountId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  accountId: {{$randomUUID}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "providerId": 101
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+tests {
+  test('an account never moves to another provider: 400 validation_error', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}

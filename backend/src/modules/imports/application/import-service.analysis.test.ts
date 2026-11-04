@@ -959,3 +959,23 @@ describe('the confirmed mapping governs once rules change (spec: matching, D6)',
     expect(await service.listRows(ANALYST, detail.importId, { page: 1, pageSize: 50 })).toEqual(before)
   })
 })
+
+describe('an open import of an account that is closed afterwards (admin-accounts D7)', () => {
+  it('still lists, takes and removes files, confirms the mapping and analyzes', async () => {
+    const detail = await uploaded(A_USD, [SAMPLE_FILES.part1])
+    imports.setAccountActive(A_USD, false)
+
+    expect((await service.listImports(ANALYST, A_USD)).map((i) => i.importId)).toEqual([detail.importId])
+    const added = await service.addFiles(ANALYST, detail.importId, [await upload(SAMPLE_FILES.batchClean)])
+    const extra = added.files.find((f) => f.fileName === SAMPLE_FILES.batchClean.fileName)
+    if (!extra) throw new Error('added file missing')
+    await service.removeFile(ANALYST, detail.importId, extra.fileId)
+    await service.addFiles(ANALYST, detail.importId, [await upload(SAMPLE_FILES.part2)])
+    const current = await service.getImport(ANALYST, detail.importId)
+    const confirmed = await service.confirmMapping(ANALYST, detail.importId, confirmation(current))
+    const result = await service.analyze(ANALYST, detail.importId)
+
+    expect(confirmed.status).toBe('mapped')
+    expect(result.status).toBe('analyzed')
+  })
+})
