@@ -55,36 +55,35 @@
   - La clave de repetición es `trim().toLowerCase()`, sin `isRegex`, igual que el índice filtrado de las globales y que la comparación de la propuesta.
   - El regex se comprueba con `new RegExp(p, 'i')`, el mismo constructor que `matchesPattern`.
 - **`diffRuleSet(before, after)` y `diffGlobals(before, after)`:**
-  - Comparan los documentos normalizados (sin ids, listas en el orden de guardado) y devuelven `changes: { campo: { before, after } }` solo con lo que cambia.
-  - El orden cuenta: reordenar es un cambio, porque cambia el desempate.
+  - Comparan los documentos normalizados (sin ids, cada regla con sus campos en un orden fijo) y devuelven `changes: { campo: { before, after } }` solo con lo que cambia.
+  - Las reglas se comparan en el orden en que las muestra el detalle: por `priority`, con un orden estable que conserva el del cuerpo entre prioridades iguales. Así, reenviar el detalle no es un cambio aunque el cuerpo traiga las prioridades en otro orden, y reordenar reglas de igual prioridad sí lo es, porque cambia el desempate.
+  - Los alias se comparan por texto: el alias es la clave y su orden no significa nada.
   - `actionFor(changes)` devuelve `deactivate` o `activate` si cambia `isActive`, aunque haya otros cambios, y `update` en el resto, como `planAccountPatch`.
 - **Rotura deliberada:** aceptar `Pending` como estado fijo debe hacer fallar su caso; después se revierte.
 
 ### D3. Servicio y unidad de trabajo
 
-- **`RuleSetAdminService`** (`create`, `put`) y **`GlobalRulesService`** (`get`, `put`), con un puerto `MatchingRulesAdminRepository`:
+- **`RuleSetAdminService`** (`create`, `put`), con el puerto `MatchingRulesAdminRepository` (`PrismaMatchingRulesAdminRepository`):
   - `inProvider(scope, providerId, work)`: transacción; `null` → `404`.
-  - `inRuleSet(scope, ruleSetId, work)`: transacción con la fila de `MatchingRuleSet` en `UPDLOCK, HOLDLOCK`, filtrada por el merchant del proveedor en el alcance; `null` → `404`.
-  - `inGlobals(work)`: transacción que toma `sp_getapplock @Resource = 'matching_rules_global', @LockMode = 'Exclusive', @LockOwner = 'Transaction'`, porque no hay una fila que bloquear.
-  - Las tres envuelven `retryOnDeadlock` con el timeout de 15 s de fees y cuentas.
-- **La unidad expone:**
-  - `nameTaken(providerId, name, exceptId?)`;
-  - `linkedAccounts(ruleSetId)` (abiertas y cerradas, por nombre);
-  - `statuses()`;
-  - `readRuleSet` y `readGlobals` (documento normalizado);
-  - `replaceRuleSet`, `replaceGlobals` e `insertRuleSet`;
-  - `audit`.
+  - `inRuleSet(scope, ruleSetId, work)`: transacción con la fila de `MatchingRuleSet` en `UPDLOCK, HOLDLOCK`, filtrada por el merchant del proveedor en el alcance, y el documento leído bajo el bloqueo; `null` → `404`.
+  - La unidad (`RuleSetAdminUnit`) expone `statuses()`, `nameTaken(providerId, name, exceptId?)`, `linkedAccounts(ruleSetId)` (abiertas y cerradas, por nombre), `insertRuleSet`, `updateRuleSet` (nombre, `isActive` y cada lista que cambia), `detail(ruleSetId)` y `audit`.
+- **`GlobalRulesService`** (`get`, `put`), con el puerto `GlobalRulesRepository` (`PrismaGlobalRulesRepository`):
+  - `globals()`: la lectura del `GET`.
+  - `inGlobals(work)`: transacción que toma `sp_getapplock @Resource = 'matching_rules_global', @LockMode = 'Exclusive', @LockOwner = 'Transaction'`, porque no hay una fila que bloquear, y lee el documento global bajo él.
+  - La unidad (`GlobalRulesAdminUnit`) expone `statuses()`, `replaceGlobals` (cada lista que cambia), `globals()` y `audit`.
+- Son dos puertos porque las globales no tienen fila ni alcance por merchant: comparten las funciones de dominio y la lectura del catálogo de estados (`readStatusCatalog`), no la unidad.
+- Todas las transacciones envuelven `retryOnDeadlock` con el timeout de 15 s de fees y cuentas.
 - **Orden de un `PUT` de conjunto:**
   1. Bloqueo y alcance.
   2. Validar con `statuses()`.
   3. `diffRuleSet` frente a lo leído bajo bloqueo; si no hay cambios, responder sin escribir.
   4. Si `isActive` pasa a `false`, `linkedAccounts` → `409 rule_set_in_use`.
   5. Si cambia el nombre, `nameTaken` → `409`.
-  6. Borrar las reglas de hoja y de columna del conjunto e insertarlas en el orden del cuerpo, con `createMany` por lista: los ids crecen en ese orden y el desempate se conserva.
+  6. Por cada lista que cambia, borrar sus reglas e insertarlas en el orden del cuerpo con un `createMany`: los ids crecen en ese orden y el desempate se conserva. Una lista sin cambios conserva sus reglas y sus ids.
   7. Actualizar `name` e `isActive`.
   8. `audit`.
 - **Validación antes que el estado.** Se valida antes de comparar, así que un documento inválido es `400` aunque coincida con lo guardado, cosa que no puede pasar con datos válidos en la base.
-- **El `POST`** sigue el mismo orden sin el paso 4. El `PUT` global, sin los pasos 4 y 5. Reemplaza solo las filas con `ruleSetId NULL` y todos los alias, y nunca toca `MatchingRowIgnoreRule`.
+- **El `POST`** sigue el mismo orden sin el paso 4. El `PUT` global, sin los pasos 4 y 5. Reemplaza solo las listas que cambian (las filas con `ruleSetId NULL`, o todos los alias), y nunca toca `MatchingRowIgnoreRule`.
 - **Respaldo del nombre.** `MatchingRuleSet_providerId_name_key` (2627/2601, o `P2002`) se traduce a `RuleSetNameTakenError` por número, como D5 de `admin-accounts`. Lo mismo para `UX_MatchingSheetRule_global_pattern`, que no debería saltar tras la validación: si salta, es `400` en `sheetRules`.
 - **Alternativa descartada:** diff fila a fila con `update`, `create` y `delete` para conservar ids. Más código y más casos para el mismo resultado observable.
 
@@ -165,7 +164,7 @@
 - **[Última escritura gana]** Dos admins que editan el mismo conjunto se pisan; el segundo no ve el aviso. **Riesgo aceptado.** Las escrituras se serializan (`UPDLOCK` o `sp_getapplock`), así que no hay estado mezclado, y la auditoría guarda los dos. Un control optimista necesitaría `updatedAt` (una migración).
 - **[Cambiar las globales afecta a todas las cuentas sin conjunto]** El `PUT` global exige alcance `all`, queda auditado con el antes y el después, y no permite dejar listas inválidas.
 - **[Alias cambiado entre confirmar y analizar]** Un import `mapped` se analiza con el alias nuevo. Se documenta en el README y en un escenario; fijarlo exigiría una migración.
-- **[Ids de regla nuevos en cada `PUT`]** Nada los referencia. El frontend no debe guardarlos entre ediciones.
+- **[Ids de regla nuevos en cada `PUT` que cambia la lista]** Nada los referencia; una lista sin cambios conserva los suyos. El frontend no debe guardarlos entre ediciones.
 - **[Conjuntos `bruno-` acumulados]** Quedan inactivos, se ignoran en los tests y desaparecen con `pnpm db:seed`.
 - **[Un test de integración que deja las globales cambiadas]** `afterAll` las restaura y comprueba la propuesta de `batch-clean`. Si un fallo deja las globales mal, `pnpm db:seed` las recrea.
 - **[`sp_getapplock` con el adaptador mssql]** Se ejecuta con `$executeRaw` dentro de la transacción interactiva. Lo cubre un test de concurrencia con compuertas, como `fee-concurrency.int.test.ts`.

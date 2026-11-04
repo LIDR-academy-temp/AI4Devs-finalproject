@@ -294,6 +294,17 @@ describe('proposeMapping: tie-breaks of a linked rule set', () => {
     },
   })
 
+  it('falls back to the global rules for an account linked to an empty set ("Conjunto vacío")', () => {
+    const proposal = proposeMapping(BATCH_CLEAN_WORKBOOK, withSet({}))
+
+    const sources = proposal.sheets.flatMap((s) => [
+      s.proposed.source,
+      ...s.columns.filter((c) => c.targetField !== null).map((c) => c.source),
+    ])
+    expect(new Set(sources)).toEqual(new Set(['global']))
+    expect(sheetNamed(proposal, 'APP').proposed).toMatchObject({ cycle: 'E', statusId: 2 })
+  })
+
   it('lets the set win even when the global rule has the better priority', () => {
     const rules = withSet({ sheetRules: [sheetRule(1, { statusId: 3, priority: 100 })] })
     expect(GLOBAL_RULES.sheetRules.find((r) => r.sheetPattern === 'APP')?.priority).toBeLessThan(100)

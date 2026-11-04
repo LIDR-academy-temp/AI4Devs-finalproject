@@ -144,8 +144,19 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
   - Integración completa sobre una base recién sembrada (turno de la persona): 450/451, 8 omitidos. Falló solo el test de 20 000 filas de `import-analyze` por tiempo (31,7 s frente al límite de 20 s, justo tras la siembra); la rama no toca `imports`, `propose-mapping.ts` ni ese test. Repetido el fichero solo: 30/30 y 20 000 filas en 14,1 s. Se trata como ruido del entorno.
   - El único commit de la 7.2 es esta nota.
 
+## Correcciones tras `/opsx:verify`
+
+- W1: `design.md` recoge lo implementado: la comparación por `priority` estable y de los alias por texto (D2), el reemplazo solo de las listas que cambian (D3, paso 6) y los dos puertos, `MatchingRulesAdminRepository` y `GlobalRulesRepository`, con sus unidades (D3).
+- W2: la ruta, README §4.4, `openapi.yaml`, `schema.gen.ts`, la spec ("Editar un conjunto de reglas") y el seguimiento de abajo dicen "las listas que cambian se reemplazan en el orden dado (ids nuevos); una lista sin cambios conserva sus ids".
+- W3: `propose-mapping.test.ts` cubre "Conjunto vacío" (cuenta enlazada a un conjunto sin reglas, todo `source = global`). Rotura observada: sin las globales cuando hay conjunto, falla ese test; revertida.
+- S2: el test de Provider A de `matching-rule-sets.int.test.ts` usa `seedRuleSets()`.
+- S3: `readStatusCatalog` (`matching/infrastructure/prisma-status-catalog.ts`) es la única lectura del catálogo en los dos repositorios de escritura; `rulesFor()` conserva la suya, porque el diseño no lo toca.
+- S4: `GET /matching-rule-sets/{id}` sin token, `401`, en el test de rutas y en `rule-set-admin.int.test.ts`; el test de rutas cubre también el `GET` global.
+- S1, nota: el escenario "Alias nuevo" se comprueba con `rulesFor()` y `resolveStatusAlias` en `global-rules.int.test.ts`, no con una propuesta real con columna de estado. Equivalente en la práctica, menos literal; queda así.
+
 ## Incidencias de proceso
 
+- Usé un `python -c` en línea, contra la misma regla, para contar los caracteres de un requisito tras la verificación; los scripts de edición fueron heredocs pasados a `python -I -`.
 - Usé `cd` dos veces contra la regla de la sesión (una en la 2.4, `cd backend`; otra en la 6.1, `cd api-collection`); en las dos volví a la raíz enseguida y no tuvo efecto en el código.
 - `f6f7cce` lleva el mensaje "anotar los cambios del grupo 1 fuera del plan", pero solo contiene la marca de la 1.8: la edición de la nota falló y el commit salió sin ella; la nota va en `e4145df`. No se reescribe para no forzar el push.
 
@@ -153,7 +164,7 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 
 - `/opsx:verify`, PR hacia `feature/entrega-3-MVP` con la plantilla y CI en verde, y `/opsx:archive`.
 - `web-admin-matching` parte del contrato del grupo 1:
-  - los ids de regla cambian en cada `PUT`;
+  - las listas que cambian se reemplazan en el orden dado (ids nuevos); una lista sin cambios conserva sus ids;
   - las filas a ignorar son de solo lectura;
   - hay que traducir `rule_set_name_taken` y `rule_set_in_use`;
   - la edición de las globales solo se ofrece con alcance `all`.

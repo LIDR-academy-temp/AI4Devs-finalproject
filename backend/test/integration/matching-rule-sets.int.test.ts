@@ -93,11 +93,11 @@ describe('GET /api/v1/providers/{id}/matching-rule-sets', () => {
     expect(seedRuleSets(sets).map((s) => s.name)).not.toContain(BRUNO_SET)
   })
 
-  it('answers 200 with an empty list to viewer for Provider A, which has no sets', async () => {
+  it('answers 200 with an empty list to viewer for Provider A, which has no sets besides the bruno- ones', async () => {
     const res = await get('/providers/101/matching-rule-sets', 'viewer')
 
     expect(res.statusCode).toBe(200)
-    expect(res.json()).toEqual([])
+    expect(seedRuleSets(z.array(MatchingRuleSetSummary).parse(res.json()))).toEqual([])
   })
 
   it('answers 404 not_found to viewer for Provider C, with the same body as an unknown provider', async () => {

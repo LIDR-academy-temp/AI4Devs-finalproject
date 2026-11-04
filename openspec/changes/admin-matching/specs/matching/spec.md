@@ -33,7 +33,7 @@
 - **THEN** recibe `400` con `code = "validation_error"`
 
 ### Requirement: Editar un conjunto de reglas
-`PUT /api/v1/matching-rule-sets/{id}` SHALL recibir el documento completo (`name`, `isActive`, `sheetRules`, `columnRules` y `reason` opcional) y SHALL reemplazar todas las reglas de hoja y de columna del conjunto en una sola transacción. Responde `200` con el detalle. Un cuerpo que no cambia nada SHALL responder `200` sin escribir reglas ni auditoría. `providerId` no se edita y no hay borrado de conjuntos.
+`PUT /api/v1/matching-rule-sets/{id}` SHALL recibir el documento completo (`name`, `isActive`, `sheetRules`, `columnRules` y `reason` opcional) y SHALL reemplazar, en una sola transacción, las listas que cambian en el orden dado (ids nuevos); una lista sin cambios conserva sus ids. Responde `200` con el detalle. Un cuerpo que no cambia nada SHALL responder `200` sin escribir reglas ni auditoría. `providerId` no se edita y no hay borrado de conjuntos.
 
 #### Scenario: Cambiar una regla de hoja
 - **GIVEN** un conjunto con la hoja `TRX` → E sin estado

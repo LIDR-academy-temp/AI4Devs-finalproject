@@ -2,7 +2,6 @@
 // the rule set row under UPDLOCK + HOLDLOCK, so two edits of the same set run one after the other and neither mixes
 // rules with the other. The rules of a list are replaced whole with one createMany in body order: the ids grow in
 // that order, which is the tie-break of the proposal. The audit entry goes inside the same transaction.
-import { Cycle } from '@recon/shared'
 import type { FastifyBaseLogger } from 'fastify'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import { retryOnDeadlock } from '../../../infrastructure/deadlock-retry.js'
@@ -20,6 +19,7 @@ import {
   toSheetRule,
 } from './prisma-matching-rules-repository.js'
 import { readRuleSetDetail } from './prisma-rule-set-detail.js'
+import { readStatusCatalog } from './prisma-status-catalog.js'
 
 type Tx = Prisma.TransactionClient
 
@@ -119,13 +119,7 @@ function unitOf(tx: Tx, hooks: MatchingRulesAdminRepositoryHooks): RuleSetAdminU
   }
 
   return {
-    statuses: async () =>
-      (
-        await tx.transactionStatus.findMany({
-          select: { statusId: true, name: true, cycle: true },
-          orderBy: { statusId: 'asc' },
-        })
-      ).map((s) => ({ ...s, cycle: Cycle.parse(s.cycle) })),
+    statuses: () => readStatusCatalog(tx),
 
     // The column's collation compares without case.
     nameTaken: async (providerId, name, exceptRuleSetId) =>
