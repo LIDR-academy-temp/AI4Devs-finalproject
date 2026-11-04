@@ -4,7 +4,7 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 
 ## 1. Contrato en `@recon/shared` y export de OpenAPI
 
-- [ ] 1.1 Escribir `packages/shared/src/matching.test.ts` con los esquemas de D1 y comprobar que falla porque los exports no existen. Debe cubrir:
+- [x] 1.1 Escribir `packages/shared/src/matching.test.ts` con los esquemas de D1 y comprobar que falla porque los exports no existen. Debe cubrir:
   - `SheetRuleInput`: patrón recortado; vacío tras recortar o de 129 caracteres, rechazado; `kind` desconocido, rechazado; `priority` y `isActive` por defecto.
   - `ColumnRuleInput`: `sheetPattern` `null` o recortado; `targetField = "fee"`, rechazado.
   - `StatusAliasInput`: alias recortado, 1–50.
@@ -12,7 +12,7 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
   - `MatchingRuleSetPut`: sin `columnRules`, rechazado; un `sheetRuleId` dentro de una regla, rechazado; `reason` recortado, 1–500.
   - `GlobalMatchingRulesPut`: `rowIgnoreRules` y `statuses`, rechazados.
   - `MatchingRuleSetDetail` y `GlobalMatchingRules`, con ids y `rowIgnoreRules`.
-- [ ] 1.2 Commit: test(shared): contrato de la administración de reglas de pareo
+- [x] 1.2 Commit: test(shared): contrato de la administración de reglas de pareo
 - [ ] 1.3 Implementar los esquemas en `packages/shared/src/matching.ts`, reutilizando `Cycle`, `SheetKind`, `TargetField` y `MatchingRuleSetSummary`, y exportarlos desde `index.ts`. Verificar con `pnpm --filter @recon/shared test` y `pnpm typecheck`.
 - [ ] 1.4 Declarar en `matching/http/matching-routes.ts` las cinco rutas de D5, con `preHandler` de permiso (y la comprobación de alcance `all` en el `PUT` global) y handlers provisionales en `501 not_implemented`. Verificar con `matching-routes.test.ts`: `401` sin token, `403` de `analyst` en las tres escrituras antes de mirar el recurso, `403` de un admin con alcance `assigned` en el `PUT` global, y `400` de esquema (`rowIgnoreRules` en el cuerpo, `GET /matching-rule-sets/abc`).
 - [ ] 1.5 Ejecutar `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`. Ampliar `app.test.ts` con las rutas nuevas y añadir los fixtures de MSW (`frontend/src/test/msw/fixtures.ts`: detalle del conjunto legacy y reglas globales) solo para el contrato. Verificar con `pnpm openapi:check`, `pnpm lint`, `pnpm typecheck` y `pnpm test`.
