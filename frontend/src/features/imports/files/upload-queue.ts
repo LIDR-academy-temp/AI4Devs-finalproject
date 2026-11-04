@@ -56,6 +56,9 @@ export function rejectionText(error: unknown): string {
         : strings.rejections.duplicateInSelection
     case 'import_not_editable':
       return strings.rejections.notEditable(details.status ?? '')
+    // The account was closed after it was chosen: no import is created (web-admin-accounts design D10).
+    case 'account_inactive':
+      return strings.rejections.account_inactive
     default:
       return strings.rejections.failed
   }

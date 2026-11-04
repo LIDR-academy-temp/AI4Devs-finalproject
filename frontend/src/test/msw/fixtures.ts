@@ -94,6 +94,8 @@ export interface AccountChannelRow {
   accountId: string
   channelId: number
   isPrimary: boolean
+  /** Absent: batch 68 created the association; null: no batch did. */
+  assignedInBatchNo?: number | null
 }
 
 export const ACCOUNT_CHANNELS: AccountChannelRow[] = [
@@ -147,8 +149,8 @@ export function toAccountChannelItem(row: AccountChannelRow, rows: AccountChanne
     ...ch,
     isPrimary: row.isPrimary,
     assignedAt: ASSIGNED_AT,
-    assignedInBatchId: ASSIGNED_IN_BATCH,
-    assignedInBatchNo: ASSIGNED_IN_BATCH_NO,
+    assignedInBatchId: row.assignedInBatchNo === null ? null : ASSIGNED_IN_BATCH,
+    assignedInBatchNo: row.assignedInBatchNo === undefined ? ASSIGNED_IN_BATCH_NO : row.assignedInBatchNo,
     primaryAccount: primary ? { accountId: primary.accountId, name: primary.name } : null,
   }
 }

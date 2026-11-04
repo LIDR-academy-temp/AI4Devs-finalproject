@@ -1,7 +1,7 @@
 // The fee form's values ⇄ the bodies of the API (web-admin-fees design D4, D6). Pure: the form shows, this decides
 // what is sent. Only what changed is sent, compared as text; amounts and rates never go through a JS number. The
 // local checks are the ones that would be a sure 400; overlaps, use and validity limits are decided by the API.
-import { percentError, percentToRate, rateToPercent } from '@/lib/format'
+import { canonicalDecimal, percentError, percentToRate, rateToPercent } from '@/lib/format'
 import type { FeeCreateBody, FeePatchBody } from './contract'
 import { strings } from './strings'
 
@@ -59,16 +59,6 @@ export function initialFeeValues(_mode: FeeFormMode, fee?: EditableFee): FeeForm
     reason: '',
     effectiveFrom: '',
   }
-}
-
-/** "15", "15.0", "015.0000" → "15": the same amount written in different ways. */
-function canonical(value: string | null): string | null {
-  if (value === null) return null
-  const negative = value.startsWith('-')
-  const [integer = '0', fraction = ''] = (negative ? value.slice(1) : value).split('.')
-  const whole = integer.replace(/^0+(?=\d)/, '')
-  const rest = fraction.replace(/0+$/, '')
-  return `${negative ? '-' : ''}${whole}${rest ? `.${rest}` : ''}`
 }
 
 interface Parsed {
@@ -176,7 +166,9 @@ function correctionBody(p: Parsed, fee: EditableFee): FeeFormResult {
     const now = p[field] as string | null
     const before = fee[field as keyof EditableFee] as string | null
     const same =
-      field === 'fixedAmount' || field === 'percentage' ? canonical(now) === canonical(before) : now === before
+      field === 'fixedAmount' || field === 'percentage'
+        ? canonicalDecimal(now) === canonicalDecimal(before)
+        : now === before
     if (!same) body[field] = now
   }
   if (Object.keys(body).length === 0) return failed({}, e.nothingToSave)
@@ -194,8 +186,8 @@ function changeBody(values: FeeFormValues, p: Parsed, fee: EditableFee): FeeForm
   if (Object.keys(errors).length > 0) return failed(errors)
 
   const body: Record<string, string | null> = {}
-  if (canonical(p.fixedAmount) !== canonical(fee.fixedAmount)) body.fixedAmount = p.fixedAmount
-  if (canonical(p.percentage) !== canonical(fee.percentage)) body.percentage = p.percentage
+  if (canonicalDecimal(p.fixedAmount) !== canonicalDecimal(fee.fixedAmount)) body.fixedAmount = p.fixedAmount
+  if (canonicalDecimal(p.percentage) !== canonicalDecimal(fee.percentage)) body.percentage = p.percentage
   if (p.description !== fee.description) body.description = p.description
   if (Object.keys(body).length === 0) return failed({}, e.changeAValue)
   return {

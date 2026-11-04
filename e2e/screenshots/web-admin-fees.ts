@@ -147,7 +147,10 @@ async function globalFees(page: Page) {
 async function accountFees(page: Page) {
   const table = await globalFees(page)
   await table.getByRole('link', { name: ACCOUNT }).first().click()
-  await expect(page.getByRole('heading', { level: 1, name: `Fees · ${ACCOUNT}` })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: ACCOUNT })).toBeVisible()
+  await expect(
+    page.getByRole('navigation', { name: 'Account sections' }).getByRole('link', { name: 'Fees' }),
+  ).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('table', { name: 'Fees of the account' }).getByRole('row').nth(1)).toBeVisible()
 }
 

@@ -62,6 +62,7 @@ describe('navigation filtered by permissions', () => {
     expect(nav.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/accounts')
     expect(nav.getByRole('link', { name: 'Settlement List' })).toHaveAttribute('href', '/settlements')
     expect(nav.getByRole('link', { name: 'Fees' })).toHaveAttribute('href', '/fees')
+    expect(nav.getByRole('link', { name: 'Channel Assignment' })).toHaveAttribute('href', '/channel-assignment')
   })
 
   it('analyst sees New Reconciliation as a link and In Progress disabled, and not Payments nor Users & Roles', async () => {
@@ -71,6 +72,7 @@ describe('navigation filtered by permissions', () => {
     expect(nav.getByRole('link', { name: 'New Reconciliation' })).toHaveAttribute('href', '/reconciliations/new')
     expect(nav.getByRole('link', { name: 'Settlement List' })).toHaveAttribute('href', '/settlements')
     expect(nav.getByRole('link', { name: 'Fees' })).toHaveAttribute('href', '/fees')
+    expect(nav.getByRole('link', { name: 'Channel Assignment' })).toHaveAttribute('href', '/channel-assignment')
     const inProgress = nav.getByText('In Progress').closest('[aria-disabled]')
     expect(inProgress).toHaveAttribute('aria-disabled', 'true')
     expect(nav.queryByRole('link', { name: 'In Progress' })).not.toBeInTheDocument()
@@ -78,12 +80,19 @@ describe('navigation filtered by permissions', () => {
     expect(nav.queryByText('Users & Roles')).not.toBeInTheDocument()
   })
 
-  it('admin sees every MVP entry; only Dashboard, New Reconciliation, Settlement List, Accounts and Fees are links', async () => {
+  it('admin sees every MVP entry; only Dashboard, New Reconciliation, Settlement List, Accounts, Fees and Channel Assignment are links', async () => {
     renderApp('/', { as: 'admin' })
     const nav = await mainNav()
 
     for (const entry of MVP_ENTRIES) expect(nav.getByText(entry)).toBeInTheDocument()
-    expect(linkNames(nav)).toEqual(['Dashboard', 'New Reconciliation', 'Settlement List', 'Accounts', 'Fees'])
+    expect(linkNames(nav)).toEqual([
+      'Dashboard',
+      'New Reconciliation',
+      'Settlement List',
+      'Accounts',
+      'Fees',
+      'Channel Assignment',
+    ])
   })
 
   it('a role without fee.view does not see Fees', async () => {
@@ -95,12 +104,28 @@ describe('navigation filtered by permissions', () => {
     expect(nav.queryByText('Fees')).not.toBeInTheDocument()
   })
 
-  it('marks Fees as the active entry in the fees of an account, and not Accounts (web-admin-fees design D2)', async () => {
+  it('marks Accounts as the active entry in the detail of an account', async () => {
+    renderApp(`/accounts/${ACCOUNT_IDS['ProviderA-USD']}`, { as: 'viewer' })
+    const nav = await mainNav()
+
+    await waitFor(() => expect(nav.getByRole('link', { name: 'Accounts' })).toHaveAttribute('aria-current', 'page'))
+  })
+
+  it('marks Accounts as the active entry in the fees of an account, and not Fees (web-admin-accounts design D2)', async () => {
     renderApp(`/accounts/${ACCOUNT_IDS['ProviderA-USD']}/fees`, { as: 'viewer' })
     const nav = await mainNav()
 
-    await waitFor(() => expect(nav.getByRole('link', { name: 'Fees' })).toHaveAttribute('aria-current', 'page'))
-    expect(nav.getByRole('link', { name: 'Accounts' })).not.toHaveAttribute('aria-current')
+    await waitFor(() => expect(nav.getByRole('link', { name: 'Accounts' })).toHaveAttribute('aria-current', 'page'))
+    expect(nav.getByRole('link', { name: 'Fees' })).not.toHaveAttribute('aria-current')
+  })
+
+  it('marks Channel Assignment as the active entry with filters in the address', async () => {
+    renderApp('/channel-assignment?merchantId=1', { as: 'viewer' })
+    const nav = await mainNav()
+
+    await waitFor(() =>
+      expect(nav.getByRole('link', { name: 'Channel Assignment' })).toHaveAttribute('aria-current', 'page'),
+    )
   })
 
   it('marks Fees as the active entry in the global view with filters in the address', async () => {

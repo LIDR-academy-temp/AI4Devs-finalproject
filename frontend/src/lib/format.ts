@@ -111,6 +111,19 @@ export function percentToRate(percent: string): string {
   return `${whole}.${(padded.slice(-2) + fraction).padEnd(6, '0')}`
 }
 
+/**
+ * "15", "15.0", "015.0000" → "15": the same amount written in different ways, to compare decimals as text without
+ * a JS number (web-admin-fees design D4, web-admin-accounts design D5).
+ */
+export function canonicalDecimal(value: string | null): string | null {
+  if (value === null) return null
+  const negative = value.startsWith('-')
+  const [integer = '0', fraction = ''] = (negative ? value.slice(1) : value).split('.')
+  const whole = integer.replace(/^0+(?=\d)/, '')
+  const rest = fraction.replace(/0+$/, '')
+  return `${negative ? '-' : ''}${whole}${rest ? `.${rest}` : ''}`
+}
+
 /** "0.027500" → "2.75": the shortest percent, without trailing zeros. */
 export function rateToPercent(rate: string): string {
   const [integer = '0', fraction = ''] = rate.split('.')

@@ -42,6 +42,7 @@ export const strings = {
     duplicate_file: (fileName: string) => `This file is already in the import as ${fileName}.`,
     duplicateInSelection: 'This file appears twice in the selection.',
     notEditable: (status: string) => `This import can no longer be edited (${status}).`,
+    account_inactive: 'This account is closed. Choose another account.',
     failed: 'The upload failed. Try again.',
   },
   readiness: {

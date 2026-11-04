@@ -5,7 +5,7 @@ import { strings } from './strings'
 
 export interface NavItem {
   label: string
-  to?: '/' | '/accounts' | '/fees' | '/reconciliations/new' | '/settlements'
+  to?: '/' | '/accounts' | '/channel-assignment' | '/fees' | '/reconciliations/new' | '/settlements'
   /** Other paths where the entry is also the active one (the screens it leads to); `to` itself is matched exactly. */
   activeWhen?: (pathname: string) => boolean
   requires?: Permission
@@ -46,15 +46,14 @@ export const NAV: readonly NavGroup[] = [
     label: strings.groups.administration,
     items: [
       { label: s.merchantsProviders },
-      { label: s.accounts, to: '/accounts' },
-      // The fees of an account belong to Fees, not to Accounts (web-admin-fees design D2).
+      // The detail of an account, with every tab (its fees too), belongs to Accounts (web-admin-accounts design D2).
       {
-        label: s.fees,
-        to: '/fees',
-        activeWhen: (pathname) => /^\/accounts\/[^/]+\/fees\/?$/.test(pathname),
-        requires: 'fee.view',
+        label: s.accounts,
+        to: '/accounts',
+        activeWhen: (pathname) => /^\/accounts\/[^/]+(\/fees)?\/?$/.test(pathname),
       },
-      { label: s.channelAssignment },
+      { label: s.fees, to: '/fees', requires: 'fee.view' },
+      { label: s.channelAssignment, to: '/channel-assignment' },
       { label: s.matchingRules },
       { label: s.usersRoles, requires: 'user.manage' },
       { label: s.auditLog, requires: 'user.manage' },

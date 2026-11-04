@@ -49,6 +49,12 @@ export const FEE_STATUS_TONE = {
   closed: 'neutral',
 } as const satisfies Record<FeeStatus, Tone>
 
+/** An open account takes new imports; a closed one is kept, not deleted (web-admin-accounts design D4). */
+export const ACCOUNT_STATUS_TONE = {
+  active: 'success',
+  closed: 'neutral',
+} as const satisfies Record<'active' | 'closed', Tone>
+
 /**
  * The colours of a notice that explains a status, by tone, as the Badge takes them from its variant: the same theme
  * pairs whose contrast was calculated (design D8). Literal strings, so Tailwind generates them.

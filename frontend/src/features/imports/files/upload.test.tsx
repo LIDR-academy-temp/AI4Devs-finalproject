@@ -1,4 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react'
+import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 import {
   dropFiles,
@@ -11,6 +12,7 @@ import {
 } from '@/test/import-screens'
 import { db } from '@/test/msw/handlers'
 import { holdNext, importRecord, importRequests, sampleFile, seedImport } from '@/test/msw/imports'
+import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 import { strings } from '../strings'
 
@@ -190,6 +192,27 @@ describe('Upload Files: rejected files (spec "Pantalla Upload Files: archivos re
     ).toBeInTheDocument()
     await findFileEntry(PART2)
     expect(importRecord(importId).files.map((f) => f.fileName)).toEqual([PART1, PART2])
+  })
+
+  it('an account closed between the choice and the upload: the reason, no import, still in New Reconciliation', async () => {
+    // Spec import "Pantalla Upload Files: archivos rechazados", web-admin-accounts design D10.
+    server.use(
+      http.post('*/api/v1/accounts/:accountId/imports', () =>
+        HttpResponse.json(
+          { code: 'account_inactive', message: 'The account is closed and takes no new imports' },
+          { status: 409 },
+        ),
+      ),
+    )
+    const { user, router } = renderApp(NEW_IN_PROVIDER_A_USD, { as: 'analyst' })
+    await waitFor(() => expect(dropZone()).toBeEnabled())
+
+    await user.upload(fileInput(), sampleFile('batch-clean'))
+
+    expect(
+      (await findFileEntry(CLEAN)).getByText('This account is closed. Choose another account.'),
+    ).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/reconciliations/new')
   })
 
   it('names the file already included when the same content comes with another name', async () => {

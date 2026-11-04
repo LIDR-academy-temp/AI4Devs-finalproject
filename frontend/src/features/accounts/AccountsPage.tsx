@@ -1,8 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useEffect, useId } from 'react'
+import { useEffect, useId, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogTrigger } from '@/components/ui/dialog'
+import { NewAccountDialog } from './NewAccountDialog'
 import { ProviderAccounts } from './ProviderAccounts'
+import { useCanManageAccounts } from './permissions'
 import { merchantsQuery, providersQuery } from './queries'
 import { strings } from './strings'
 
@@ -30,6 +34,8 @@ export function AccountsPage() {
   const navigate = useNavigate({ from: '/accounts' })
   const merchantSelectId = useId()
   const providerSelectId = useId()
+  const canManage = useCanManageAccounts()
+  const [creating, setCreating] = useState(false)
 
   const merchants = useQuery(merchantsQuery)
   const merchantId = search.merchantId ?? (merchants.data?.length === 1 ? merchants.data[0]?.merchantId : undefined)
@@ -68,7 +74,22 @@ export function AccountsPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{strings.title}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold">{strings.title}</h1>
+        {canManage && (
+          <Dialog open={creating} onOpenChange={setCreating}>
+            <DialogTrigger asChild>
+              <Button size="sm">{strings.form.newAccount}</Button>
+            </DialogTrigger>
+            {creating && (
+              <NewAccountDialog
+                merchantId={merchantVisible ? merchantId : undefined}
+                providerId={providerVisible ? providerId : undefined}
+              />
+            )}
+          </Dialog>
+        )}
+      </div>
       <Card>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-wrap gap-4">
