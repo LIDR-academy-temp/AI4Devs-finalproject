@@ -172,17 +172,22 @@ La barra lateral SHALL mostrar el mapa de pantallas MVP de README §1.3 en sus g
 - **GIVEN** el usuario `viewer` (permisos `fee.view`, `reports.view`)
 - **WHEN** entra
 - **THEN** no ve el grupo Reconciliation (New Reconciliation, In Progress) ni la entrada Payments, ni Users & Roles ni Audit Log
-- **AND** ve Dashboard, Settlements › Settlement List y Administration › Accounts como enlaces
+- **AND** ve Dashboard, Settlements › Settlement List, Administration › Accounts y Administration › Fees como enlaces
 
 #### Scenario: analyst
 - **GIVEN** el usuario `analyst` (`settlement.process`, `fee.view`, `reports.view`)
 - **WHEN** entra
-- **THEN** ve New Reconciliation como enlace a `/reconciliations/new`, Settlement List como enlace a `/settlements`, In Progress deshabilitada mientras no exista, y no ve Payments ni Users & Roles
+- **THEN** ve New Reconciliation como enlace a `/reconciliations/new`, Settlement List como enlace a `/settlements`, Fees como enlace a `/fees`, In Progress deshabilitada mientras no exista, y no ve Payments ni Users & Roles
 
 #### Scenario: admin
 - **GIVEN** el usuario `admin` (los siete permisos)
 - **WHEN** entra
-- **THEN** ve todas las entradas MVP de §1.3; solo Dashboard, New Reconciliation, Settlement List y Accounts son enlaces en este tramo
+- **THEN** ve todas las entradas MVP de §1.3; solo Dashboard, New Reconciliation, Settlement List, Accounts y Fees son enlaces en este tramo
+
+#### Scenario: Sin fee.view
+- **GIVEN** un rol sin `fee.view`
+- **WHEN** entra
+- **THEN** no ve la entrada Administration › Fees
 
 #### Scenario: Entrada deshabilitada
 - **WHEN** un usuario pulsa una entrada aún no construida
@@ -197,6 +202,11 @@ La barra lateral SHALL mostrar el mapa de pantallas MVP de README §1.3 en sus g
 - **GIVEN** `viewer` en `/settlements?accountId=<ProviderA-USD>&status=paid`
 - **WHEN** mira la barra lateral
 - **THEN** Settlement List aparece como la entrada activa
+
+#### Scenario: Entrada activa en los fees de una cuenta
+- **GIVEN** `viewer` en `/accounts/<ProviderA-USD>/fees`
+- **WHEN** mira la barra lateral
+- **THEN** Fees aparece como la entrada activa, y Accounts no
 
 ### Requirement: Guarda de ruta por permiso
 Una ruta que requiera un permiso SHALL mostrar, dentro del layout, la página `You don't have access to this page` a un usuario cuyo rol no lo tenga, sin llamar a los endpoints de esa pantalla. La guarda SHALL ser solo de presentación: el API sigue respondiendo `403` por su cuenta.
