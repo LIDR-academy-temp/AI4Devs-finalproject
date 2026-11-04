@@ -475,7 +475,8 @@ export class InMemoryFileStore implements FileStore {
 
 // ───────────────────────── Import repository ─────────────────────────
 
-interface AccountRow extends AccountRef {
+/** `isActive` comes from the repository's closed set (setAccountActive). */
+interface AccountRow extends Omit<AccountRef, 'isActive'> {
   name: string
   merchantId: number
   providerId: number
@@ -647,7 +648,13 @@ export class InMemoryImportRepository implements ImportRepository {
 
   async findAccount(scope: Scope, accountId: string): Promise<AccountRef | null> {
     const account = this.visible(scope, accountId)
-    return account ? { accountId: account.accountId, matchingRuleSetId: account.matchingRuleSetId } : null
+    return account
+      ? {
+          accountId: account.accountId,
+          matchingRuleSetId: account.matchingRuleSetId,
+          isActive: !this.closed.has(account.accountId),
+        }
+      : null
   }
 
   async findImport(scope: Scope, importId: string): Promise<ImportRecord | null> {

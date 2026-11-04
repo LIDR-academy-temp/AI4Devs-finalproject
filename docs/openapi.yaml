@@ -12332,22 +12332,6 @@ paths:
                   - code
                   - message
                 additionalProperties: false
-        "501":
-          description: Default Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: string
-                  message:
-                    type: string
-                  details: {}
-                required:
-                  - code
-                  - message
-                additionalProperties: false
   /api/v1/settlements/{batchId}:
     get:
       summary: "The attempt as written: the same view as the 201 of processing"

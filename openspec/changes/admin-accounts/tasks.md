@@ -31,6 +31,7 @@ Rama `feat/admin-accounts`. Las decisiones D1–D10 están en `design.md`; los e
 
 - [x] 3.1 Escribir `accounts/application/account-admin-service.test.ts` con un repositorio en memoria en `__fakes__` (D4) y comprobar que falla. Debe cubrir los escenarios de "Crear una cuenta", "Nombre de cuenta único en todo el sistema" (salvo el concurrente), "Conjunto de reglas de una cuenta", "Editar una cuenta", "Cerrar y reabrir una cuenta", "Auditoría de cuentas" y "Copia de fees al crear cuenta" (salvo el concurrente): orden de los pasos de D4, `404` de proveedor y cuenta, `400` con `details.field` y sin escrituras, y cuerpo sin cambios sin auditoría.
 - [x] 3.2 Escribir `test/integration/account-admin.int.test.ts` contra la base local con los mismos escenarios por HTTP y comprobar que falla. Cuentas `it-acc-<n>`; un `afterEach` borra en orden `AuditLog`, `FeeHistory`, `Fee`, `Import` y `Account` de esas cuentas (D9). Incluye "providerc-usd" (intercalación, D5), "Copia de los cinco fees de ProviderC-USD", "Historial de la copia" vía `GET /fees/{id}/history`, "Cuenta origen cerrada" (cerrando una cuenta `it-acc-` con fees) y "Canales de solo lectura" (`AccountChannel` intacto tras crear, editar y cerrar).
+  - La 3.2 no se ejecutó en rojo antes de implementar porque no había turno de base. Se compensó en el turno del grupo 4: sin la escritura de la fila `copied` en la creación, `account-admin.int.test.ts` falla ("writes one copied history row per copy…": `expected [] to have a length of 1 but got +0`). Después se restauró, Grep confirmó que no quedaba rastro y el fichero volvió a 23/23.
 - [x] 3.3 Commit: test(accounts): crear y editar cuentas con copia de fees y auditoría
 - [x] 3.4 Escribir el historial `copied` desde la unidad de cuentas reutilizando los ayudantes del repositorio de fees (D4). Implementar `PrismaAccountAdminRepository` (`inProvider`, `inAccount` con `UPDLOCK, HOLDLOCK`, `lockSourceAccount`, `retryOnDeadlock`, respaldo de `Account_name_key` por número de error, D5) y `AccountAdminService.create`/`.patch`, respondiendo con `CatalogService.getAccount`. Conectar las rutas del grupo 1 y quitar sus `501`. Verificar con 3.1, 3.2 y `pnpm test`.
 - [x] 3.5 Escribir los tests de concurrencia con compuertas, como `fee-concurrency.int.test.ts`:
@@ -49,8 +50,11 @@ Rama `feat/admin-accounts`. Las decisiones D1–D10 están en `design.md`; los e
   - El test de rutas falla al cargar porque aún no existe `RuleSetReadService`. El puerto y el doble en memoria entran con los tests.
   - La integración se ejecuta en el turno de base de la 4.4. Añade un conjunto inactivo `it-rs-` y lo borra al terminar.
 - [x] 4.3 Commit: test(imports): cuenta cerrada y conjuntos de reglas del proveedor
-- [ ] 4.4 Implementar D7: `isActive` en `AccountRef` del repositorio de imports y del doble, `AccountInactiveError` (`409 account_inactive`) comprobado en `createImport` dentro de `withStaged`. Implementar D8 para `GET /providers/{id}/matching-rule-sets` y quitar su `501`. Verificar con 4.1, 4.2 y `pnpm test`. Ejecutar `pnpm openapi:check`: si el contrato cambió respecto al grupo 1, regenerar y avisar a la persona.
-- [ ] 4.5 Commit: feat(imports): cuenta cerrada sin imports nuevos y conjuntos de reglas del proveedor
+- [x] 4.4 Implementar D7: `isActive` en `AccountRef` del repositorio de imports y del doble, `AccountInactiveError` (`409 account_inactive`) comprobado en `createImport` dentro de `withStaged`. Implementar D8 para `GET /providers/{id}/matching-rule-sets` y quitar su `501`. Verificar con 4.1, 4.2 y `pnpm test`. Ejecutar `pnpm openapi:check`: si el contrato cambió respecto al grupo 1, regenerar y avisar a la persona.
+  - Integración de 4.1 y 4.2: 17/17 en verde. Integración completa: 416 en verde y 8 omitidos. Los `afterAll` comprueban que no quedan cuentas `it-acc-` ni conjuntos `it-rs-`.
+  - El contrato solo cambia en que `GET /providers/{id}/matching-rule-sets` ya no documenta el `501`; OpenAPI y `schema.gen.ts` regenerados. `NotImplementedError` eliminado.
+  - Unitarios del backend: 1219 en verde. Dos timeouts de 5 s al arrancar la app (`app.test.ts` health y `export-openapi.test.ts`) pasan aislados: carga local, anotada para el PR.
+- [x] 4.5 Commit: feat(imports): cuenta cerrada sin imports nuevos y conjuntos de reglas del proveedor
 
 ## 5. Tests robustos ante cuentas de la colección
 

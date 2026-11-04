@@ -22,6 +22,8 @@ export type { Scope }
 export interface AccountRef {
   accountId: string
   matchingRuleSetId: number | null
+  /** A closed account takes no new imports (admin-accounts D7). */
+  isActive: boolean
 }
 
 export interface ImportFileRecord {
