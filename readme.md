@@ -63,7 +63,7 @@ https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp
 | ID | Funcionalidad | Descripción |
 |---|---|---|
 | F1 | Acceso | Inicio y cierre de sesión con cuentas propias de Weather Track. Las cuentas las crea un administrador; no hay registro público. |
-| F2 | Estación | Selección entre las estaciones asignadas al usuario. |
+| F2 | Estación | Selector siempre visible con las estaciones: cada una es un equipo de SAT2, hoy INTA Pergamino. Un equipo que deja de llegar de SAT2 queda inactivo y muestra solo sus históricos. |
 | F3 | Condiciones actuales | Una tarjeta por sensor con valor, unidad, calidad del dato y antigüedad. |
 | F4 | Recomendación | Estado de aplicación, índice TIS (Índice de Inversión Térmica), diferencia térmica y motivos. |
 | F5 | Históricos | Serie por sensor de los últimos 7 o 31 días, con resumen estadístico. |
@@ -126,25 +126,31 @@ La recomendación es **orientativa** y la pantalla lo indica siempre. Los pesos 
 
 ```mermaid
 flowchart LR
-    A["Acceso"] --> B["Elegir estación"]
-    B --> C["Pantalla de decisión"]
+    A["Acceso"] --> C["Pantalla de decisión<br/>de la primera estación activa"]
+    B["Selector de estación<br/>en el encabezado"] --> C
+    B --> G["Equipo inactivo:<br/>solo históricos"]
     C --> D["Motivos de la recomendación"]
     C --> E["Detalle de un sensor"]
+    G --> E
     E --> F["Históricos"]
 ```
 
 La **pantalla de decisión** es el centro de la experiencia. Muestra primero el estado de aplicación con su color, debajo los motivos y el aviso de que es orientativa, y al final las tarjetas de sensores. Se actualiza sola cada 60 segundos. Si los datos no son vigentes, el estado pasa a `DATOS_INSUFICIENTES` y explica por qué.
 
-Capturas del MVP, con datos ficticios:
+El encabezado tiene siempre el selector de estación, aunque haya una sola. En los modos con datos ficticios, una franja lo avisa en todas las pantallas.
+
+Capturas del MVP, con datos ficticios. Las primeras cuatro son del modo `simulado`, con el nombre de la estación real; las demás, del modo `prueba`, con las situaciones cargadas en "Caso de prueba - 1":
 
 | Pantalla | Captura |
 |---|---|
-| Acceso | ![Pantalla de acceso](docs/capturas/acceso.png) |
-| Decisión: apto | ![Estado apto para aplicar](docs/capturas/decision-apto.png) |
-| Decisión: no aplicar | ![Estado no aplicar por inversión con poco viento](docs/capturas/decision-no-aplicar.png) |
-| Decisión: datos insuficientes | ![Estado datos insuficientes por una lectura faltante](docs/capturas/decision-datos-insuficientes.png) |
+| Acceso | ![Pantalla de acceso con el aviso de datos simulados](docs/capturas/acceso.png) |
+| Decisión: apto | ![Estado apto para aplicar en INTA Pergamino](docs/capturas/decision-apto.png) |
 | Detalle e históricos | ![Detalle de un sensor con su gráfico y resumen](docs/capturas/detalle-sensor.png) |
 | Móvil, a 360 píxeles | ![Pantalla de decisión en un celular](docs/capturas/decision-movil.png) |
+| Decisión: no aplicar | ![Estado no aplicar por inversión con poco viento](docs/capturas/decision-no-aplicar.png) |
+| Decisión: datos insuficientes | ![Estado datos insuficientes por una lectura faltante](docs/capturas/decision-datos-insuficientes.png) |
+| Selector con dos estaciones | ![Encabezado con el selector de estación](docs/capturas/selector-estacion.png) |
+| Equipo inactivo | ![Equipo inactivo con la lista de sensores para ver sus históricos](docs/capturas/equipo-inactivo.png) |
 
 En `docs/prototipo/` quedan las capturas del prototipo de validación, que sirvió de referencia. No son del MVP.
 
@@ -370,13 +376,13 @@ Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-ent
 
 ### **2.6. Tests**
 
-Resultado de la última ejecución, el 2 de noviembre de 2026: todas pasan.
+Resultado de la última ejecución, el 4 de noviembre de 2026: todas pasan.
 
 | Nivel | Herramienta | Qué cubre | Pruebas |
 |---|---|---|---|
-| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, permisos, restricciones de la base, ingesta y errores de SAT2 | 355 |
-| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión y flujos de acceso e históricos | 46 |
-| Extremo a extremo | Playwright, contra la pila completa en contenedores | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 | 14 |
+| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, permisos, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba y situaciones | 428 |
+| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo y flujos de acceso e históricos | 52 |
+| Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el selector y el equipo inactivo | 17 |
 | Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras y carga | 77 |
 
 Además, la ingesta se probó una vez contra SAT2 real, durante 38 minutos y con 48.427 lecturas. Los comandos están en la [sección 1.4](#14-instrucciones-de-instalación).

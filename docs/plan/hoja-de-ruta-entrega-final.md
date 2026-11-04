@@ -83,7 +83,7 @@ Una estación es solo una central meteorológica que llega de SAT2, un "equipo".
 - [x] Responder las preguntas abiertas (sección 5)
 - [x] Proponer los cambios de OpenSpec de cuentas y de estaciones
 - [x] El responsable aprueba los cambios (3 de noviembre de 2026)
-- [ ] Implementar las tareas, cada grupo con sus pruebas y su documentación
+- [ ] Implementar las tareas, cada grupo con sus pruebas y su documentación. `weather-track-estaciones`: 20 de 20, el 4 de noviembre de 2026. `weather-track-registro-cuentas`: pendiente
 - [ ] **El responsable verifica la aplicación local** y la aprueba
 
 ## 3. Línea B: despliegue público en Google Cloud, en pausa

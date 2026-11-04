@@ -38,7 +38,7 @@ Las decisiones están en `design.md` (D1 a D8). Todo se verifica con Compose ais
 
 ## 6. Documentación
 
-- [ ] 6.1 Actualizar la F2 del README, la guía de la demo y las capturas, y verificar que ningún documento presenta casos de prueba como estaciones
+- [x] 6.1 Actualizar la F2 del README, la guía de la demo y las capturas, y verificar que ningún documento presenta casos de prueba como estaciones
 
 ## Workflow follow-up
 

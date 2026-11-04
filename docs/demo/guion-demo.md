@@ -45,7 +45,7 @@ Ese último comando muestra el correo y la clave de demostración. Abrir <http:/
 | Min. | Situación cargada | Dónde | Qué mostrar | Qué decir |
 |---|---|---|---|---|
 | 0:00 | `favorables` | Acceso | Ingresar con la cuenta de demostración | "¿Puedo aplicar ahora sin riesgo de deriva?" |
-| 0:30 | | Lista de estaciones | Los dos casos de prueba | Una estación es un equipo de SAT2; en la instalación real aparece INTA Pergamino |
+| 0:30 | | Selector del encabezado | Los dos casos de prueba y la franja "Modo de prueba" | Una estación es un equipo de SAT2; en la instalación real aparece INTA Pergamino. El selector está siempre, aunque haya una sola |
 | 1:00 | | **Caso de prueba - 1** | "Apto para aplicar", índice, diferencia térmica, hora, motivos y aviso | El estado no depende solo del color: lleva texto e ícono. La recomendación siempre es orientativa |
 | 1:30 | | Misma pantalla | Tarjetas de sensores, incluidas "Sin dato válido" y "En alarma" | Cada lectura informa su calidad. Se actualiza sola cada minuto |
 | 2:00 | `inversion_indice_bajo` | Caso 1 | "Precaución" con índice bajo | Regla R3: el índice solo daría apto, pero una inversión nunca lo es |
@@ -56,7 +56,7 @@ Ese último comando muestra el correo y la clave de demostración. Abrir <http:/
 | 4:30 | `sospechosa` | Caso 1 | "Precaución" y tarjetas marcadas | Regla R4: humedades incoherentes entre 2 m y 10 m. **Es lo que hoy ocurre en la estación real** |
 | 5:00 | `fuente_caida` | Caso 1 | Aviso "Sin conexión con la fuente de datos" | El sistema distingue una falla de la fuente de la falta de datos |
 | 5:30 | `con_historicos` | Caso 1, tocar *Temp Amb. a 2 Mts* | Gráfico y resumen; cambiar a 31 días | La línea se corta en los huecos, sin inventar datos |
-| 6:15 | | **Caso de prueba - 2** | "Datos insuficientes", sin mediciones | Un equipo sin lecturas nunca muestra una recomendación |
+| 6:15 | | **Caso de prueba - 2**, desde el selector | "Datos insuficientes", sin mediciones | Un equipo sin lecturas nunca muestra una recomendación. Si un equipo deja de llegar de SAT2, queda como "Equipo inactivo - solo históricos" |
 | 6:30 | | Herramientas del navegador, ancho 360 | La pantalla de decisión | Pensada para usarse en el lote, con el celular |
 | 6:45 | | Salir | Cerrar sesión | La sesión se invalida en el servidor |
 
