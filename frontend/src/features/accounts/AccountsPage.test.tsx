@@ -189,13 +189,15 @@ describe('Accounts: the settlements of each account (settlements-browse)', () =>
 })
 
 describe('Accounts: the fees of each account (web-admin-fees)', () => {
-  it('links ProviderA-USD to its fees', async () => {
+  it('links ProviderA-USD to its fees: the Fees tab of its detail', async () => {
     const { user, router } = renderApp('/accounts?merchantId=1&providerId=101', { as: 'viewer' })
 
     const usd = await accountRow('ProviderA-USD')
     await user.click(usd.getByRole('link', { name: strings.feesOf('ProviderA-USD') }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe(`/accounts/${ACCOUNT_IDS['ProviderA-USD']}/fees`))
+    expect(await screen.findByRole('heading', { level: 1, name: 'ProviderA-USD' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Fees' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('offers the link on a closed account too: its fees are still there', async () => {

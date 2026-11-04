@@ -4,15 +4,15 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
 
 ## 1. Base
 
-- [ ] 1.1 Ejecutar `git fetch` y comprobar con `git merge-base --is-ancestor origin/feat/admin-accounts HEAD` que la rama contiene `origin/feat/admin-accounts`. Si `admin-accounts` subió commits nuevos, integrarlos como dice la cabecera. Verificar con `pnpm typecheck`, `pnpm lint` y `pnpm --filter @recon/frontend test` en verde antes de tocar nada.
+- [x] 1.1 Ejecutar `git fetch` y comprobar con `git merge-base --is-ancestor origin/feat/admin-accounts HEAD` que la rama contiene `origin/feat/admin-accounts`. Si `admin-accounts` subió commits nuevos, integrarlos como dice la cabecera. Verificar con `pnpm typecheck`, `pnpm lint` y `pnpm --filter @recon/frontend test` en verde antes de tocar nada.
 
 ## 2. Account Detail como contenedor y pestaña Fees extraída (refactor protegido por los tests de fees)
 
-- [ ] 2.1 Actualizar la suite de fees y el menú a las delta specs `fees` y `web-shell`, y comprobar que fallan:
+- [x] 2.1 Actualizar la suite de fees y el menú a las delta specs `fees` y `web-shell`, y comprobar que fallan:
   - En `AccountFeesPage.test.tsx` (renombrado a `AccountFeesPanel.test.tsx`) y `fee-writes.test.tsx`, el `h1` pasa a ser el nombre de la cuenta, con la pestaña **Fees** seleccionada (`role="tab"`, `aria-selected`).
   - Escenarios "Ver todas las cuentas" y "Add fee en la pestaña".
   - En `AppLayout.test.tsx` y en el test de `nav-config`: Accounts activa en `/accounts/<id>` y en `/accounts/<id>/fees`, Fees no; Channel Assignment como enlace para `viewer`, `analyst` y `admin`; Channel Assignment activa en `/channel-assignment?merchantId=1`.
-- [ ] 2.2 Commit: test(web): los fees de la cuenta como pestaña de su ficha y Accounts activa en la ficha
+- [x] 2.2 Commit: test(web): los fees de la cuenta como pestaña de su ficha y Accounts activa en la ficha
 - [ ] 2.3 Extraer `features/fees/AccountFeesPanel.tsx` de `AccountFeesPage.tsx` (design D3) y borrar la página.
   - Crear en `features/accounts` un `AccountDetailPage.tsx` mínimo: `h1`, jerarquía, pestañas como enlaces y `Outlet`, con el `404` como `This account is not available.`
   - Crear las rutas padre e hijas de design D2 (Overview vacía de momento) y la ruta `/channel-assignment` con una página mínima.

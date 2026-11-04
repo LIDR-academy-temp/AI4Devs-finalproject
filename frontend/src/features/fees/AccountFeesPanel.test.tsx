@@ -8,8 +8,8 @@ import { OPENING } from '@/test/validation-screens'
 import { strings } from './strings'
 
 // Spec fees "Pantalla Account Fees: acceso y contenido", "acciones según permiso y uso" and "historial"
-// (web-admin-fees design D2, D9). The rows come from the fake; the screen decides only what it offers by permission
-// and by the inUse / status / endDate the API sends.
+// (web-admin-fees design D2, D9): the Fees tab of Account Detail (web-admin-accounts design D3). The rows come from
+// the fake; the screen decides only what it offers by permission and by the inUse / status / endDate the API sends.
 const s = strings.account
 const USD = ACCOUNT_IDS['ProviderA-USD']
 
@@ -49,7 +49,9 @@ describe('Account fees: access and content', () => {
   it('shows the account, its merchant and provider, and every fee: active, scheduled and closed', async () => {
     await openAccount('viewer')
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Fees · ProviderA-USD' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'ProviderA-USD' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Fees' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'false')
     expect(screen.getByText('Merchant A › Provider A')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: s.seeAll })).toHaveAttribute(
       'href',
@@ -59,6 +61,20 @@ describe('Account fees: access and content', () => {
       expect.arrayContaining(['Active', 'Scheduled', 'Closed']),
     )
     expect(feeRequests('accountFees').at(-1)!.url).toBe(`/api/v1/accounts/${USD}/fees`)
+  })
+
+  it('See all accounts leads to the global view filtered by the account, every status', async () => {
+    const { user, router } = await openAccount('viewer')
+
+    await user.click(screen.getByRole('link', { name: s.seeAll }))
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/fees'))
+    expect(router.state.location.search).toEqual({
+      merchantId: 1,
+      providerId: 101,
+      accountId: USD,
+      status: 'all',
+    })
   })
 
   it('shows the columns, the use and the values as text', async () => {
@@ -117,6 +133,13 @@ describe('Account fees: actions by permission and use', () => {
 
     expect(screen.getByRole('button', { name: s.add })).toBeInTheDocument()
     expect(actionsOf(rowOf('Refund per txn fee', '2027-01-01'))).toEqual(['Edit', 'Close…', 'History'])
+  })
+
+  it('admin: Add fee is inside the Fees tab, and the header of the account does not repeat it', async () => {
+    await openAccount('admin')
+
+    expect(within(screen.getByRole('tabpanel', { name: 'Fees' })).getByRole('button', { name: s.add })).toBeVisible()
+    expect(screen.getAllByRole('button', { name: s.add })).toHaveLength(1)
   })
 
   it('admin: a fee in use offers Edit, Change from date…, Close… and History', async () => {
