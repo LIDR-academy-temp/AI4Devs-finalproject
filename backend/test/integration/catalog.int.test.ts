@@ -1,8 +1,10 @@
+import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { createTestApp, SEED_PASSWORD } from './helpers.js'
+import { BRUNO_ACCOUNT_PREFIX, createTestApp, fixtureId, SEED_PASSWORD, seedAccounts } from './helpers.js'
 
 // Seed oracle (backend/prisma/synthetic.ts): 2 merchants, 3 providers, 9 channels, 5 accounts;
 // RAM-07 (1007) and RAM-13 (1013) have transactions and no account; viewer sees merchant 1 only.
+// Lists of accounts go through seedAccounts(): the Bruno flow leaves closed bruno- accounts in Provider C.
 const RAM_01 = 1001
 const RAM_07 = 1007
 const RAM_13 = 1013
@@ -16,6 +18,7 @@ type User = 'admin' | 'analyst' | 'viewer'
 let ctx: Awaited<ReturnType<typeof createTestApp>>
 const accountIds: Record<string, string> = {}
 const tokens: Partial<Record<User, string>> = {}
+let brunoAccountId: string | undefined
 
 beforeAll(async () => {
   ctx = await createTestApp()
@@ -34,6 +37,22 @@ beforeAll(async () => {
     tokens[userName] = res.json().accessToken
   }
 
+  // Scenario "Cuentas de la colección presentes": a closed bruno- account in Provider C, as the Bruno flow leaves one
+  // per run, so every exact list below proves it ignores them. Removed in afterAll.
+  const admin = await prisma.user.findUniqueOrThrow({ where: { userName: 'admin' } })
+  brunoAccountId = (
+    await prisma.account.create({
+      data: {
+        accountId: randomUUID(),
+        providerId: 201,
+        name: `${BRUNO_ACCOUNT_PREFIX}it-${Date.now().toString(36)}`,
+        chargebackReservePolicy: 'hold_until_term',
+        isActive: false,
+        createdByUserId: admin.userId,
+      },
+    })
+  ).accountId
+
   // RAM-01 keeps ProviderA-USD as primary; this row is its history in ProviderA-EUR (never a second primary).
   await prisma.accountChannel.upsert({
     where: { accountId_channelId: { accountId: accountIds['ProviderA-EUR']!, channelId: RAM_01 } },
@@ -50,13 +69,18 @@ beforeAll(async () => {
 afterAll(async () => {
   if (ctx) {
     const { prisma } = ctx
-    if (accountIds['ProviderA-EUR']) {
-      await prisma.accountChannel.deleteMany({
-        where: { accountId: accountIds['ProviderA-EUR'], channelId: RAM_01, isPrimary: false },
-      })
+    try {
+      if (accountIds['ProviderA-EUR']) {
+        await prisma.accountChannel.deleteMany({
+          where: { accountId: accountIds['ProviderA-EUR'], channelId: RAM_01, isPrimary: false },
+        })
+      }
+      if (brunoAccountId !== undefined)
+        await prisma.account.delete({ where: { accountId: fixtureId(brunoAccountId, 'bruno account') } })
+    } finally {
+      await ctx.app.close()
+      await prisma.$disconnect()
     }
-    await ctx.app.close()
-    await prisma.$disconnect()
   }
 })
 
@@ -110,15 +134,15 @@ describe('merchant scope (issue #2, criterion 1)', () => {
   it('viewer sees 1 merchant, 2 providers, 3 accounts and 7 channels', async () => {
     expect(await json('/merchants', 'viewer')).toEqual([{ merchantId: 1, name: 'Merchant A', isActive: true }])
     expect(ids(await json('/merchants/1/providers', 'viewer'), 'providerId')).toEqual([101, 102])
-    expect(await json('/providers/101/accounts', 'viewer')).toHaveLength(2)
-    expect(await json('/providers/102/accounts', 'viewer')).toHaveLength(1)
+    expect(seedAccounts(await json<{ name: string }[]>('/providers/101/accounts', 'viewer'))).toHaveLength(2)
+    expect(seedAccounts(await json<{ name: string }[]>('/providers/102/accounts', 'viewer'))).toHaveLength(1)
     expect(await json('/channels', 'viewer')).toHaveLength(7)
   })
 
   it('admin sees 2 merchants, 3 providers, 5 accounts and 9 channels', async () => {
     expect(ids(await json('/merchants', 'admin'), 'merchantId')).toEqual([1, 2])
     expect(ids(await json('/merchants/2/providers', 'admin'), 'providerId')).toEqual([201])
-    expect(await json('/providers/201/accounts', 'admin')).toHaveLength(2)
+    expect(seedAccounts(await json<{ name: string }[]>('/providers/201/accounts', 'admin'))).toHaveLength(2)
     expect(await json('/channels', 'admin')).toHaveLength(9)
   })
 
@@ -286,7 +310,7 @@ describe('account and provider detail', () => {
         json<{ name: string; isActive: boolean }[]>(`/providers/${providerId}/accounts`, 'admin'),
       ),
     )
-    const accounts = perProvider.flat()
+    const accounts = seedAccounts(perProvider.flat())
 
     expect(accounts.map((a) => a.name)).toEqual([
       'ProviderA-EUR',
@@ -321,7 +345,7 @@ describe('account and provider detail', () => {
   })
 
   it('ProviderB-Main releases the reserve on chargeback', async () => {
-    const accounts = await json<Record<string, unknown>[]>('/providers/102/accounts', 'viewer')
+    const accounts = seedAccounts(await json<{ name: string }[]>('/providers/102/accounts', 'viewer'))
 
     expect(accounts).toHaveLength(1)
     expect(accounts[0]).toMatchObject({ name: 'ProviderB-Main', chargebackReservePolicy: 'release_on_chargeback' })
@@ -337,7 +361,7 @@ describe('account and provider detail', () => {
       name: 'Provider A',
       merchant: { merchantId: 1, name: 'Merchant A' },
     })
-    expect(provider.accounts.map((a) => a.name)).toEqual(['ProviderA-EUR', 'ProviderA-USD'])
+    expect(seedAccounts(provider.accounts).map((a) => a.name)).toEqual(['ProviderA-EUR', 'ProviderA-USD'])
     expect(ids(provider.channels, 'channelId')).toEqual([1001, 1002, 1003, 1007])
     for (const channel of provider.channels) {
       expect(channel).toMatchObject({
