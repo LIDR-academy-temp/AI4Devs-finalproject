@@ -47,10 +47,10 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
   - `rule_set_name_taken` → `name`;
   - `403`, `404` (invalida), `5xx` y red.
 - [x] 3.3 Commit: test(web): cuerpos y errores de las reglas de pareo
-- [ ] 3.4 Implementar `rule-form.ts`, `rule-errors.ts` y sus textos en `features/matching/strings.ts`.
+- [x] 3.4 Implementar `rule-form.ts`, `rule-errors.ts` y sus textos en `features/matching/strings.ts`.
   - **Rotura deliberada:** que `valuesOf` conserve `sheetRuleId` debe hacer fallar su caso; después se revierte.
   - Verificar con `pnpm --filter @recon/frontend test rule-form rule-errors`.
-- [ ] 3.5 Commit: feat(web): cuerpos y errores de las reglas de pareo
+- [x] 3.5 Commit: feat(web): cuerpos y errores de las reglas de pareo
 
 ## 4. API falsa de reglas de pareo
 
