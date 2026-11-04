@@ -19,6 +19,11 @@ describe('normalizeCap', () => {
     expect(normalizeCap('0')).toBe('0.0000')
   })
 
+  it('accepts "-0" as a zero cap, the value CK_Account_rollingReserveCapAmt (≥ 0) stores', () => {
+    expect(normalizeCap('-0')).toBe('0.0000')
+    expect(normalizeCap('-0.0000')).toBe('0.0000')
+  })
+
   it('keeps null as no cap', () => {
     expect(normalizeCap(null)).toBeNull()
   })

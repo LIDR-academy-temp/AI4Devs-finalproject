@@ -12,6 +12,8 @@ const tokens: Record<string, string> = {}
 const accountIds: Record<string, string> = {}
 let legacyRuleSetId: number
 const UNKNOWN_UUID = '00000000-0000-4000-8000-00000000ffff'
+/** RAM-13 (provider 102) has no account in the seed: the test gives one a primary row there and removes it. */
+const RAM_13 = 1013
 const RUN = Date.now().toString(36)
 let serial = 0
 
@@ -86,6 +88,14 @@ async function create(body: Record<string, unknown>, providerId = 201) {
   return AccountDetail.parse(res.json())
 }
 
+/** Rows of every table a creation writes: a failed write leaves them all as they were (tests run in series). */
+const writeCounts = async () => ({
+  accounts: await ctx.prisma.account.count(),
+  fees: await ctx.prisma.fee.count(),
+  feeHistory: await ctx.prisma.feeHistory.count(),
+  auditLog: await ctx.prisma.auditLog.count(),
+})
+
 const audits = (accountId: string) =>
   ctx.prisma.auditLog.findMany({
     where: { entityType: 'Account', entityId: accountId.toLowerCase() },
@@ -146,16 +156,21 @@ describe('POST /providers/{id}/accounts', () => {
     { title: 'an unknown fee source', body: { copyFeesFromAccountId: UNKNOWN_UUID }, field: 'copyFeesFromAccountId' },
   ])('answers 400 on $field for $title and creates nothing', async ({ body, field, providerId = 201 }) => {
     const name = nextName()
+    const before = await writeCounts()
 
     const res = await call('POST', `/providers/${providerId}/accounts`, 'admin', {
       name,
       chargebackReservePolicy: 'hold_until_term',
+      // A valid fee source where the case under test is not about it: a failure must not leave copies behind.
+      ...(field === 'copyFeesFromAccountId' ? {} : { copyFeesFromAccountId: accountIds['ProviderC-USD'] }),
       ...(typeof body === 'function' ? body() : body),
     })
 
     expect(res.statusCode, res.body).toBe(400)
     expect(res.json()).toMatchObject({ code: 'validation_error', details: { field } })
     expect(await ctx.prisma.account.count({ where: { name } })).toBe(0)
+    // Scenario "Escritura que falla no deja auditoría": no account, fee, FeeHistory row or AuditLog entry.
+    expect(await writeCounts()).toEqual(before)
   })
 
   it('links the account to the rule set of its provider', async () => {
@@ -170,16 +185,18 @@ describe('name unique across the system', () => {
     { title: 'another account of the provider, ignoring case (database collation, D5)', name: 'providerc-usd' },
     { title: 'an account of another provider', name: 'ProviderA-USD' },
   ])('answers 409 account_name_taken for the name of $title', async ({ name }) => {
-    const before = await ctx.prisma.account.count()
+    const before = await writeCounts()
 
     const res = await call('POST', '/providers/201/accounts', 'admin', {
       name,
       chargebackReservePolicy: 'hold_until_term',
+      copyFeesFromAccountId: accountIds['ProviderC-USD'],
     })
 
     expect(res.statusCode).toBe(409)
     expect(res.json().code).toBe('account_name_taken')
-    expect(await ctx.prisma.account.count()).toBe(before)
+    // Scenario "Escritura que falla no deja auditoría": no account, fee, FeeHistory row or AuditLog entry.
+    expect(await writeCounts()).toEqual(before)
   })
 
   it('answers 409 to a rename to a name in use and keeps the name', async () => {
@@ -371,6 +388,22 @@ describe('channels stay read-only', () => {
     await call('PATCH', `/accounts/${account.accountId}`, 'admin', { name: nextName(), isActive: false })
     await call('PATCH', `/accounts/${account.accountId}`, 'admin', { isActive: true })
 
+    expect(await snapshot()).toEqual(before)
+    // ...and the account's own primary row stays primary through every write (scenario "Cerrar").
+    const own = { accountId: account.accountId, channelId: RAM_13 }
+    await ctx.prisma.accountChannel.create({ data: { ...own, isPrimary: true, assignedAt: new Date() } })
+    try {
+      const withRow = await snapshot()
+      for (const body of [{ isActive: false, reason: 'provider stopped' }, { isActive: true }, { isActive: false }]) {
+        const res = await call('PATCH', `/accounts/${account.accountId}`, 'admin', body)
+        expect(res.statusCode, res.body).toBe(200)
+      }
+      expect(await snapshot()).toEqual(withRow)
+      const channels = (await call('GET', `/accounts/${account.accountId}/channels`, 'admin')).json()
+      expect(channels).toMatchObject([{ channelId: RAM_13, isPrimary: true }])
+    } finally {
+      await ctx.prisma.accountChannel.deleteMany({ where: own })
+    }
     expect(await snapshot()).toEqual(before)
     // RAM-13 stays unassigned; RAM-07 too on a fresh seed, but batch-clean of the Bruno collection assigns it to
     // ProviderA-USD, its only possible account (#111): either state is fine, never the account created here.

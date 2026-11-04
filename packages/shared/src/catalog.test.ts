@@ -225,6 +225,12 @@ describe('AccountCreate', () => {
     expect(AccountCreate.safeParse({ ...body, copyFeesFromAccountId: 'not-a-uuid' }).success).toBe(false)
   })
 
+  it('bounds matchingRuleSetId to an INT column: a larger id is a 400, never an overflow in the database', () => {
+    expect(AccountCreate.safeParse({ ...body, matchingRuleSetId: 2_147_483_647 }).success).toBe(true)
+    expect(AccountCreate.safeParse({ ...body, matchingRuleSetId: 2_147_483_648 }).success).toBe(false)
+    expect(AccountPatch.safeParse({ matchingRuleSetId: 2_147_483_648 }).success).toBe(false)
+  })
+
   it('rejects unknown fields', () => {
     expect(AccountCreate.safeParse({ ...body, color: 'red' }).success).toBe(false)
     expect(AccountCreate.safeParse({ ...body, isActive: false }).success).toBe(false)

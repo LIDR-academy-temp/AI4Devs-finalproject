@@ -75,6 +75,9 @@ describe('account administration routes', () => {
       ['PATCH', `/accounts/${ACCOUNT}`, { providerId: 101 }],
       ['PATCH', `/accounts/${ACCOUNT}`, { color: 'red' }],
       ['PATCH', '/accounts/not-a-uuid', { isActive: false }],
+      // Beyond an INT column: 400 from the schema, never an overflow (500) in the database.
+      ['POST', '/providers/201/accounts', { ...CREATE, matchingRuleSetId: 2_147_483_648 }],
+      ['PATCH', `/accounts/${ACCOUNT}`, { matchingRuleSetId: 2_147_483_648 }],
     ] as const) {
       const res = await call(method, url, 'admin', body)
       expect(res.statusCode, `${method} ${url} ${JSON.stringify(body)}`).toBe(400)

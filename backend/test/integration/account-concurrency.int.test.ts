@@ -6,7 +6,7 @@ import { CatalogService } from '../../src/modules/catalog/application/catalog-se
 import { PrismaCatalogRepository } from '../../src/modules/catalog/infrastructure/prisma-catalog-repository.js'
 import { FeeAdminService } from '../../src/modules/fees/application/fee-admin-service.js'
 import { PrismaFeeAdminRepository } from '../../src/modules/fees/infrastructure/prisma-fee-admin-repository.js'
-import { createPrismaClient, fixtureId, fixtureIds } from './helpers.js'
+import { createPrismaClient, fixtureId, fixtureIds, lastAppliedOf } from './helpers.js'
 
 // Spec accounts "Nombre de cuenta único en todo el sistema" ("Dos altas simultáneas con el mismo nombre") and spec fees
 // "Copia de fees al crear cuenta" ("Copia y cambio de fee simultáneos"), admin-accounts design D4 and D5. A gate holds
@@ -15,8 +15,9 @@ const prisma = createPrismaClient()
 const ALL = { merchantIds: [1, 2] }
 const RUN = Date.now().toString(36)
 const PREFIX = `it-acc-conc-${RUN}`
-/** The change from a date of the source fee: far in the future, undone after the test. */
-const EFFECTIVE_FROM = '2099-06-01'
+const CHARGEBACK_TYPE = 4
+/** The in-place correction of the source fee amount, undone after the test. */
+const CORRECTED_AMOUNT = '41.0000'
 let adminId: number
 let sourceAccountId: string
 let sourceFeeId: string
@@ -41,10 +42,15 @@ async function sourceSnapshot() {
         orderBy: { auditId: 'asc' },
       })
     ).map((a) => a.auditId),
-    feesOfType: await prisma.fee.count({ where: { accountId: sourceAccountId, feeTypeId: 4 } }),
+    feesOfType: await prisma.fee.count({ where: { accountId: sourceAccountId, feeTypeId: CHARGEBACK_TYPE } }),
   }
 }
 let before: Awaited<ReturnType<typeof sourceSnapshot>>
+/** The source fee row as the test found it. */
+let sourceBefore: Awaited<ReturnType<typeof sourceSnapshot>>['row']
+
+/** A DECIMAL as the four-decimal string the API speaks, null kept. */
+const money = (value: { toFixed(digits: number): string } | null) => (value === null ? null : value.toFixed(4))
 /** The last history and audit ids before this file wrote anything: cleanup only removes rows above them. */
 let lastHistoryId: number
 let lastAuditId: bigint
@@ -54,12 +60,15 @@ beforeAll(async () => {
   sourceAccountId = (await prisma.account.findFirstOrThrow({ where: { name: 'ProviderC-USD' } })).accountId
   sourceFeeId = (
     await prisma.fee.findFirstOrThrow({
-      where: { accountId: sourceAccountId, feeTypeId: 4 },
+      where: { accountId: sourceAccountId, feeTypeId: CHARGEBACK_TYPE },
       orderBy: { feeId: 'asc' },
     })
   ).feeId
+  // An in-place correction of values needs a fee no settlement has applied (fee_in_use otherwise).
+  expect(await lastAppliedOf(prisma, sourceFeeId)).toBeNull()
   catalog = new CatalogService(new PrismaCatalogRepository(prisma))
   before = await sourceSnapshot()
+  sourceBefore = before.row
   lastHistoryId = (await prisma.feeHistory.aggregate({ _max: { feeHistoryId: true } }))._max.feeHistoryId ?? 0
   lastAuditId = (await prisma.auditLog.aggregate({ _max: { auditId: true } }))._max.auditId ?? 0n
 })
@@ -85,21 +94,13 @@ afterEach(async () => {
   await prisma.account.deleteMany({ where: { accountId: { in: ids } } })
 
   const source = fixtureId(sourceFeeId, 'source fee')
-  const successors = await prisma.fee.findMany({
-    where: { accountId: sourceAccountId, startDate: new Date(`${EFFECTIVE_FROM}T00:00:00Z`) },
-    select: { feeId: true },
-  })
-  const touched = [source, ...successors.map((s) => s.feeId)]
   await prisma.auditLog.deleteMany({
-    where: { entityType: 'Fee', entityId: { in: touched.map((id) => id.toLowerCase()) }, auditId: { gt: lastAuditId } },
+    where: { entityType: 'Fee', entityId: source.toLowerCase(), auditId: { gt: lastAuditId } },
   })
-  await prisma.feeHistory.deleteMany({ where: { feeId: { in: touched }, feeHistoryId: { gt: lastHistoryId } } })
-  await prisma.fee.deleteMany({ where: { feeId: { in: successors.map((s) => s.feeId) } } })
-  // updatedAt too: the row must be byte for byte the seed's again.
-  await prisma.fee.update({
-    where: { feeId: source },
-    data: { endDate: before.row.endDate, updatedAt: before.row.updatedAt },
-  })
+  await prisma.feeHistory.deleteMany({ where: { feeId: source, feeHistoryId: { gt: lastHistoryId } } })
+  // The whole row back, updatedAt too: byte for byte the seed's again.
+  const { feeId: _, accountId: __, ...columns } = before.row
+  await prisma.fee.update({ where: { feeId: source }, data: columns })
 })
 
 afterAll(async () => {
@@ -157,11 +158,15 @@ describe('two simultaneous creations with the same name', () => {
 })
 
 describe('a copy of fees and a change of a source fee at the same time', () => {
-  it('the change waits for the copy, and the new account has one fee per type', async () => {
+  it('the copy carries the amount of before or after the change, as their commit order says', async () => {
     const { service, hold, decided } = heldService()
     const fees = new FeeAdminService(new PrismaFeeAdminRepository(prisma))
-    const events: string[] = []
+    const before = money(sourceBefore.fixedAmount)
+    expect(before).not.toBe(CORRECTED_AMOUNT)
+    /** Each write notes itself when it commits: the order the values must agree with. */
+    const commits: string[] = []
 
+    // The copy is held after reading the source fees and before inserting anything.
     const copy = service
       .create(ALL, adminId, 201, {
         name: `${PREFIX}-copy`,
@@ -169,24 +174,31 @@ describe('a copy of fees and a change of a source fee at the same time', () => {
         copyFeesFromAccountId: sourceAccountId,
       })
       .then((account) => {
-        events.push('copy')
+        commits.push('copy')
         return account
       })
     await decided.opened
-    const change = fees
-      .patch(ALL, adminId, sourceFeeId, { effectiveFrom: EFFECTIVE_FROM, fixedAmount: '41' })
-      .then(() => events.push('change'))
-    // The change waits on the source account lock while the copy holds it.
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    const duringHold = [...events]
+    // An in-place correction of the amount of the source Chargeback fee (no effectiveFrom, the fee is not in use).
+    const change = fees.patch(ALL, adminId, sourceFeeId, { fixedAmount: CORRECTED_AMOUNT }).then(() => {
+      commits.push('change')
+    })
+    // With the source lock the change waits for the copy; without it, it commits now while the copy is held.
+    await Promise.race([change, new Promise((resolve) => setTimeout(resolve, 500))])
     // Always release the copy, so a failure never leaves its transaction waiting on the gate.
     hold.open()
     const account = await copy
     await change
 
-    expect(duringHold).toEqual([])
-    expect(events).toEqual(['copy', 'change'])
-    const copied = await prisma.fee.findMany({ where: { accountId: account.accountId }, select: { feeTypeId: true } })
+    const copied = await prisma.fee.findMany({
+      where: { accountId: account.accountId },
+      select: { feeTypeId: true, fixedAmount: true },
+    })
     expect(copied.map((f) => f.feeTypeId).sort()).toEqual([1, 2, 3, 4, 5])
+    const copiedChargeback = money(copied.find((f) => f.feeTypeId === CHARGEBACK_TYPE)?.fixedAmount ?? null)
+    const sourceNow = money((await prisma.fee.findUniqueOrThrow({ where: { feeId: sourceFeeId } })).fixedAmount)
+    expect(sourceNow).toBe(CORRECTED_AMOUNT)
+    // Committed first, the copy holds the amount before the change; committed last, the amount after it. A copy that
+    // commits after the change with the old amount read a state the change had already replaced.
+    expect(copiedChargeback).toBe(commits[0] === 'copy' ? before : CORRECTED_AMOUNT)
   })
 })

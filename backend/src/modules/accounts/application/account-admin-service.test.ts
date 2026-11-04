@@ -239,6 +239,27 @@ describe('copy of fees when creating an account', () => {
     })
   })
 
+  it('writes the ids of account.create in lowercase, as the entityId, whatever case they arrive in', async () => {
+    // SQL Server returns uniqueidentifier in capitals and a client may send them so.
+    for (const fee of repo.fees.get(ACCOUNT_IDS['ProviderC-USD'])!) fee.feeId = fee.feeId.toUpperCase()
+
+    await service.create(ALL, ADMIN, 201, {
+      ...fromCUsd,
+      copyFeesFromAccountId: ACCOUNT_IDS['ProviderC-USD'].toUpperCase(),
+    })
+
+    const detail = repo.audits[0]!.detail as {
+      copyFeesFromAccountId: string
+      copiedFees: { sourceFeeId: string; feeId: string }[]
+    }
+    expect(detail.copyFeesFromAccountId).toBe(ACCOUNT_IDS['ProviderC-USD'].toLowerCase())
+    expect(detail.copiedFees).toHaveLength(5)
+    for (const pair of detail.copiedFees) {
+      expect(pair.sourceFeeId).toBe(pair.sourceFeeId.toLowerCase())
+      expect(pair.feeId).toBe(pair.feeId.toLowerCase())
+    }
+  })
+
   it('leaves out a fee scheduled from tomorrow and one closed yesterday ("Un fee programado no se copia")', async () => {
     const sourceId = ACCOUNT_IDS['ProviderC-USD']
     const fees = repo.fees.get(sourceId)!

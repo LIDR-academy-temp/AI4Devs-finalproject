@@ -230,29 +230,30 @@ describe('GET /accounts/{id}/channels (issue #2, criterion 3)', () => {
   })
 
   it('carries the batchNo of the assigning batch, and null for an association without batch', async () => {
-    const accountId = accountIds['ProviderA-USD']!
-    const lastPaid = await ctx.prisma.settlementBatch.findFirstOrThrow({
-      where: { accountId, status: 'paid' },
-      orderBy: { processedAt: 'desc' },
-    })
+    type Assigned = { name: string; assignedInBatchId: string | null; assignedInBatchNo: number | null }
+    // The batchNo of the batch each row names, read from the database: holds whichever batch assigned the channel.
+    const batchNoOf = async (batchId: string | null) =>
+      batchId === null
+        ? null
+        : (await ctx.prisma.settlementBatch.findUniqueOrThrow({ where: { batchId }, select: { batchNo: true } }))
+            .batchNo
 
-    const usdChannels = await json<{ assignedInBatchNo: number | null }[]>(`/accounts/${accountId}/channels`, 'viewer')
-    const eurChannels = await json<{ name: string; assignedInBatchNo: number | null }[]>(
-      `/accounts/${accountIds['ProviderA-EUR']}/channels`,
-      'admin',
-    )
-    const ram01Accounts = await json<{ name: string; assignedInBatchNo: number | null }[]>(
-      `/channels/${RAM_01}/accounts`,
-      'admin',
-    )
+    const usdChannels = await json<Assigned[]>(`/accounts/${accountIds['ProviderA-USD']}/channels`, 'viewer')
+    const eurChannels = await json<Assigned[]>(`/accounts/${accountIds['ProviderA-EUR']}/channels`, 'admin')
+    const ram01Accounts = await json<Assigned[]>(`/channels/${RAM_01}/accounts`, 'admin')
 
     // Scenarios "Canales principales de ProviderA-USD", "Asociación sin batch" and "Número de batch de la asociación".
-    expect(usdChannels.map((c) => c.assignedInBatchNo)).toEqual([lastPaid.batchNo, lastPaid.batchNo])
+    // RAM-01 and RAM-02 only: batch-clean of the Bruno collection may add RAM-07 to ProviderA-USD (#111).
+    const seeded = usdChannels.filter((c) => c.name === 'RAM-01' || c.name === 'RAM-02')
+    expect(seeded.map((c) => c.name)).toEqual(['RAM-01', 'RAM-02'])
+    for (const channel of seeded) {
+      expect(channel.assignedInBatchId).not.toBeNull()
+      expect(channel.assignedInBatchNo).toBe(await batchNoOf(channel.assignedInBatchId))
+    }
     expect(eurChannels.find((c) => c.name === 'RAM-01')?.assignedInBatchNo).toBeNull()
-    expect(ram01Accounts.map((a) => [a.name, a.assignedInBatchNo])).toEqual([
-      ['ProviderA-USD', lastPaid.batchNo],
-      ['ProviderA-EUR', null],
-    ])
+    const usdRow = ram01Accounts.find((a) => a.name === 'ProviderA-USD')
+    expect(usdRow?.assignedInBatchNo).toBe(await batchNoOf(usdRow?.assignedInBatchId ?? null))
+    expect(ram01Accounts.find((a) => a.name === 'ProviderA-EUR')?.assignedInBatchNo).toBeNull()
   })
 })
 
@@ -265,7 +266,9 @@ describe('GET /channels with the primary account of each channel', () => {
 
     expect(primaryOf(channels, RAM_01)?.name).toBe('ProviderA-USD')
     expect(primaryOf(channels, 1003)?.name).toBe('ProviderA-EUR')
-    expect(primaryOf(channels, RAM_07)).toBeNull()
+    // None on a fresh seed; ProviderA-USD, its only possible account, once batch-clean of Bruno assigned it (#111).
+    const ram07 = primaryOf(channels, RAM_07)
+    if (ram07 !== null) expect(ram07?.name).toBe('ProviderA-USD')
     expect((await json<Row[]>('/channels?unassigned=true', 'admin')).every((c) => c.primaryAccount === null)).toBe(true)
   })
 
