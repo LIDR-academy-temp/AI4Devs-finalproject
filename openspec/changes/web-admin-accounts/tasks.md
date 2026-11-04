@@ -50,8 +50,8 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
   - `GET /providers/{id}/matching-rule-sets`: Provider C con "Provider C legacy" (y ProviderC-Alt en `accounts`) y el conjunto inactivo; Provider A, lista vacía; `viewer` en el 201 → `404`. Cada respuesta pasa `MatchingRuleSetSummary`.
   - El fake no responde `409 account_name_taken` por sí mismo ante un nombre repetido.
 - [x] 4.2 Commit: test(web): API falsa de la administración de cuentas
-- [ ] 4.3 Implementar `test/msw/accounts.ts` con los fixtures `RULE_SETS` y registrarlo en `handlers.ts` y `resetDb`. Verificar con `accounts.test.ts` y toda la suite del frontend en verde.
-- [ ] 4.4 Commit: feat(web): API falsa de la administración de cuentas
+- [x] 4.3 Implementar `test/msw/accounts.ts` con los fixtures `RULE_SETS` y registrarlo en `handlers.ts` y `resetDb`. Verificar con `accounts.test.ts` y toda la suite del frontend en verde.
+- [x] 4.4 Commit: feat(web): API falsa de la administración de cuentas
 
 ## 5. Account Detail: cabecera, Overview y canales (test-first)
 

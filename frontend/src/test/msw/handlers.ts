@@ -1,10 +1,10 @@
 // In-memory stand-in for the API (openspec/specs/auth, openspec/specs/accounts): token rotation, merchant scope
 // and 404 for anything outside the scope, so the screens are tested against the real rules.
 import { HttpResponse, http, type PathParams } from 'msw'
+import { createAccountHandlers, resetAccounts, toAccountDetail } from './accounts'
 import { createFeeHandlers, resetFees } from './fees'
 import {
   ACCOUNT_CHANNELS,
-  ACCOUNT_CREATOR,
   ACCOUNTS,
   type AccountChannelRow,
   CHANNELS,
@@ -45,6 +45,7 @@ export function resetDb() {
   resetValidations()
   resetSettlements()
   resetFees()
+  resetAccounts()
 }
 
 /** Issues a token pair for a user, as a successful login would. */
@@ -153,14 +154,7 @@ export const handlers = [
       const acc = db.accounts.find((a) => a.accountId === params.accountId)
       const provider = acc && visibleProvider(user, acc.providerId)
       if (!acc || !provider) return notFound('Account')
-      const merchant = MERCHANTS.find((m) => m.merchantId === provider.merchantId)!
-      return HttpResponse.json({
-        ...acc,
-        provider,
-        merchant: { merchantId: merchant.merchantId, name: merchant.name },
-        createdBy: ACCOUNT_CREATOR,
-        updatedAt: acc.createdAt,
-      })
+      return HttpResponse.json(toAccountDetail(acc, provider))
     }),
   ),
 
@@ -201,4 +195,5 @@ export const handlers = [
   ...createValidationHandlers(caller),
   ...createSettlementHandlers(caller),
   ...createFeeHandlers(caller),
+  ...createAccountHandlers(caller, { accounts: () => db.accounts, visibleProvider }),
 ]
