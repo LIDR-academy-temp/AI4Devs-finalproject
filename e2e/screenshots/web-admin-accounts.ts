@@ -160,14 +160,17 @@ const LONG_NAME = `bruno-${'X'.repeat(44)}`
 async function longNameFits(page: Page, screen: string, target: Locator, text: (name: string) => string) {
   if (ONLY.length > 0 && !ONLY.includes(screen)) return
   await page.setViewportSize(WIDTHS[1])
-  const original = await target.evaluate((element, value) => {
+  // The element is pinned before its text changes: a locator by name (the dialog, the heading) would stop matching.
+  const handle = await target.elementHandle()
+  if (!handle) throw new Error(`${screen}: no element to measure`)
+  const original = await handle.evaluate((element, value) => {
     const before = element.textContent ?? ''
     element.textContent = value
     return before
   }, text(LONG_NAME))
   await page.waitForTimeout(300)
   const found = await overflows(page)
-  const own = await target.evaluate((element) => {
+  const own = await handle.evaluate((element) => {
     const box = element.getBoundingClientRect()
     const issues: string[] = []
     if (element.scrollWidth > element.clientWidth) issues.push('the name scrolls inside its element')
@@ -177,9 +180,10 @@ async function longNameFits(page: Page, screen: string, target: Locator, text: (
   found.push(...own)
   console.log(`measured ${screen}-1024 with a 50-character name · ${found.length === 0 ? 'fits' : found.join(', ')}`)
   if (found.length > 0) problems.push(`${screen}-1024 with a 50-character name: ${found.join(', ')}`)
-  await target.evaluate((element, value) => {
+  await handle.evaluate((element, value) => {
     element.textContent = value
   }, original)
+  await handle.dispose()
   await page.setViewportSize(WIDTHS[0])
 }
 
