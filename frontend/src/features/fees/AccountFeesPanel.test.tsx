@@ -50,8 +50,9 @@ describe('Account fees: access and content', () => {
     await openAccount('viewer')
 
     expect(screen.getByRole('heading', { level: 1, name: 'ProviderA-USD' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Fees' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'false')
+    const sections = within(screen.getByRole('navigation', { name: 'Account sections' }))
+    expect(sections.getByRole('link', { name: 'Fees' })).toHaveAttribute('aria-current', 'page')
+    expect(sections.getByRole('link', { name: 'Overview' })).not.toHaveAttribute('aria-current')
     expect(screen.getByText('Merchant A › Provider A')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: s.seeAll })).toHaveAttribute(
       'href',
@@ -138,8 +139,9 @@ describe('Account fees: actions by permission and use', () => {
   it('admin: Add fee is inside the Fees tab, and the header of the account does not repeat it', async () => {
     await openAccount('admin')
 
-    expect(within(screen.getByRole('tabpanel', { name: 'Fees' })).getByRole('button', { name: s.add })).toBeVisible()
+    expect(screen.getByRole('button', { name: s.add })).toBeVisible()
     expect(screen.getAllByRole('button', { name: s.add })).toHaveLength(1)
+    expect(within(screen.getByRole('region', { name: 'Account' })).queryByRole('button', { name: s.add })).toBeNull()
   })
 
   it('admin: a fee in use offers Edit, Change from date…, Close… and History', async () => {

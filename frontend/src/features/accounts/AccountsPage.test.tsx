@@ -196,7 +196,8 @@ describe('Accounts: the detail of each account (web-admin-accounts)', () => {
     await user.click(usd.getByRole('link', { name: 'ProviderA-USD' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe(`/accounts/${ACCOUNT_IDS['ProviderA-USD']}`))
-    expect(await screen.findByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+    const sections = within(await screen.findByRole('navigation', { name: 'Account sections' }))
+    expect(sections.getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page')
   })
 })
 
@@ -209,7 +210,8 @@ describe('Accounts: the fees of each account (web-admin-fees)', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe(`/accounts/${ACCOUNT_IDS['ProviderA-USD']}/fees`))
     expect(await screen.findByRole('heading', { level: 1, name: 'ProviderA-USD' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Fees' })).toHaveAttribute('aria-selected', 'true')
+    const sections = within(screen.getByRole('navigation', { name: 'Account sections' }))
+    expect(sections.getByRole('link', { name: 'Fees' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('offers the link on a closed account too: its fees are still there', async () => {

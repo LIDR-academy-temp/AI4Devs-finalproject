@@ -58,6 +58,9 @@ describe('Fees: access and read only', () => {
     expect(screen.queryByRole('button', { name: /^Edit/ })).not.toBeInTheDocument()
     await user.click(within(bodyRows()[0]!).getByRole('link', { name: 'ProviderA-EUR' }))
     await waitFor(() => expect(router.state.location.pathname).toBe(`/accounts/${ACCOUNT_IDS['ProviderA-EUR']}/fees`))
+    // The Fees tab of the detail of that account (spec fees "Desde la vista global").
+    const sections = within(await screen.findByRole('navigation', { name: 'Account sections' }, OPENING))
+    expect(sections.getByRole('link', { name: 'Fees' })).toHaveAttribute('aria-current', 'page')
   })
 })
 

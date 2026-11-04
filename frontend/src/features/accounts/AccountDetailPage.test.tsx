@@ -24,6 +24,9 @@ async function openAccount(as: UserName, accountId: string = USD) {
 
 const header = () => within(screen.getByRole('region', { name: 'Account' }))
 
+/** The links to the sections of the account: plain links, the current one marked aria-current="page". */
+const sections = () => within(screen.getByRole('navigation', { name: 'Account sections' }))
+
 /** The value next to a label of the General card. */
 async function generalValue(label: string) {
   const term = await screen.findByText(label, { selector: 'dt' })
@@ -67,7 +70,7 @@ describe('Account Detail: access and header', () => {
     renderApp(`/accounts/${accountId}`, { as: 'viewer' })
 
     expect(await screen.findByText('This account is not available.', undefined, OPENING)).toBeInTheDocument()
-    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Account sections' })).not.toBeInTheDocument()
   })
 
   it('a malformed id (400 of the API) is not available either', async () => {
@@ -136,12 +139,14 @@ describe('Account Detail: actions of the header', () => {
 describe('Account Detail: tabs', () => {
   it('the Fees tab changes the address and keeps the header', async () => {
     const { user, router } = await openAccount('viewer')
-    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+    expect(sections().getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page')
+    expect(sections().getByRole('link', { name: 'Fees' })).not.toHaveAttribute('aria-current')
 
-    await user.click(screen.getByRole('tab', { name: 'Fees' }))
+    await user.click(sections().getByRole('link', { name: 'Fees' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe(`/accounts/${USD}/fees`))
-    expect(screen.getByRole('tab', { name: 'Fees' })).toHaveAttribute('aria-selected', 'true')
+    expect(sections().getByRole('link', { name: 'Fees' })).toHaveAttribute('aria-current', 'page')
+    expect(sections().getByRole('link', { name: 'Overview' })).not.toHaveAttribute('aria-current')
     expect(screen.getByRole('heading', { level: 1, name: 'ProviderA-USD' })).toBeInTheDocument()
   })
 
@@ -149,13 +154,20 @@ describe('Account Detail: tabs', () => {
     renderApp(`/accounts/${USD}/fees`, { as: 'viewer' })
 
     await screen.findByRole('heading', { level: 1, name: 'ProviderA-USD' }, OPENING)
-    expect(screen.getByRole('tab', { name: 'Fees' })).toHaveAttribute('aria-selected', 'true')
+    expect(sections().getByRole('link', { name: 'Fees' })).toHaveAttribute('aria-current', 'page')
   })
 
-  it('offers no tab for matching rules, settlements or activity', async () => {
+  it('offers no tab for matching rules, settlements or activity, and no tab roles: the sections are links', async () => {
     await openAccount('viewer')
 
-    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Overview', 'Fees'])
+    expect(
+      sections()
+        .getAllByRole('link')
+        .map((t) => t.textContent),
+    ).toEqual(['Overview', 'Fees'])
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(screen.queryAllByRole('tab')).toEqual([])
+    expect(screen.queryByRole('tabpanel')).not.toBeInTheDocument()
   })
 })
 
