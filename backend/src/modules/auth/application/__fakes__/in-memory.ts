@@ -193,5 +193,7 @@ export function seedUsers(): UserRecord[] {
     user({ userId: 3, userName: 'viewer', assignedMerchantIds: [1] }),
     user({ userId: 4, userName: 'inactive_user', isActive: false, assignedMerchantIds: [1] }),
     user({ userId: 5, userName: 'unassigned', assignedMerchantIds: [] }),
+    // Admin permissions with a limited scope: may manage rule sets of merchant 1 but not the global rules.
+    user({ userId: 6, userName: 'scoped_admin', role: 'admin', assignedMerchantIds: [1] }),
   ]
 }

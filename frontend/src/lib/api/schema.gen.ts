@@ -5720,6 +5720,695 @@ export interface paths {
             };
         };
         put?: never;
+        /**
+         * Create a matching rule set of the provider
+         * @description The name is unique within the provider, ignoring case (409 rule_set_name_taken). The set starts without accounts; link them with PATCH /accounts/{id}. A transactions sheet carries a cycle; batch_fees and ignore carry neither cycle nor status; cycle R has no status; a fixed status is never Pending and has the natural cycle of the sheet; a regex must compile; patterns are not repeated in a list (ignoring case and surrounding spaces). Each violation is 400 validation_error with details.field (e.g. sheetRules[2].statusId).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    providerId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        isActive?: boolean;
+                        /** @default [] */
+                        sheetRules?: {
+                            sheetPattern: string;
+                            isRegex: boolean;
+                            /** @enum {string} */
+                            kind: "transactions" | "batch_fees" | "ignore";
+                            /** @enum {string|null} */
+                            cycle: "E" | "I" | "R" | null;
+                            statusId: number | null;
+                            /** @default 100 */
+                            priority?: number;
+                            /** @default true */
+                            isActive?: boolean;
+                        }[];
+                        /** @default [] */
+                        columnRules?: {
+                            sheetPattern: string | null;
+                            columnPattern: string;
+                            isRegex: boolean;
+                            /** @enum {string} */
+                            targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                            /** @default 100 */
+                            priority?: number;
+                            /** @default true */
+                            isActive?: boolean;
+                        }[];
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ruleSetId: number;
+                            name: string;
+                            isActive: boolean;
+                            provider: {
+                                providerId: number;
+                                name: string;
+                            };
+                            accounts: {
+                                /** Format: uuid */
+                                accountId: string;
+                                name: string;
+                                isActive: boolean;
+                            }[];
+                            sheetRules: {
+                                sheetRuleId: number;
+                                sheetPattern: string;
+                                isRegex: boolean;
+                                /** @enum {string} */
+                                kind: "transactions" | "batch_fees" | "ignore";
+                                /** @enum {string|null} */
+                                cycle: "E" | "I" | "R" | null;
+                                statusId: number | null;
+                                priority: number;
+                                isActive: boolean;
+                            }[];
+                            columnRules: {
+                                columnRuleId: number;
+                                sheetPattern: string | null;
+                                columnPattern: string;
+                                isRegex: boolean;
+                                /** @enum {string} */
+                                targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                                priority: number;
+                                isActive: boolean;
+                            }[];
+                            rowIgnoreRules: {
+                                rowIgnoreId: number;
+                                pattern: string;
+                                isRegex: boolean;
+                                description: string | null;
+                                isActive: boolean;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/matching-rule-sets/{ruleSetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail of a matching rule set
+         * @description Sheet, column and row-ignore rules (the latter read-only, #120) in priority order and, at equal priority, in the order they were saved, which is the tie-break of the proposal (for columns, a rule bound to a sheet goes before a generic one at equal priority). 404 for a set outside your scope.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ruleSetId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ruleSetId: number;
+                            name: string;
+                            isActive: boolean;
+                            provider: {
+                                providerId: number;
+                                name: string;
+                            };
+                            accounts: {
+                                /** Format: uuid */
+                                accountId: string;
+                                name: string;
+                                isActive: boolean;
+                            }[];
+                            sheetRules: {
+                                sheetRuleId: number;
+                                sheetPattern: string;
+                                isRegex: boolean;
+                                /** @enum {string} */
+                                kind: "transactions" | "batch_fees" | "ignore";
+                                /** @enum {string|null} */
+                                cycle: "E" | "I" | "R" | null;
+                                statusId: number | null;
+                                priority: number;
+                                isActive: boolean;
+                            }[];
+                            columnRules: {
+                                columnRuleId: number;
+                                sheetPattern: string | null;
+                                columnPattern: string;
+                                isRegex: boolean;
+                                /** @enum {string} */
+                                targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                                priority: number;
+                                isActive: boolean;
+                            }[];
+                            rowIgnoreRules: {
+                                rowIgnoreId: number;
+                                pattern: string;
+                                isRegex: boolean;
+                                description: string | null;
+                                isActive: boolean;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Replace a matching rule set
+         * @description The whole document of the set: the lists that change are replaced in the order given (new rule ids); a list without changes keeps its ids. A body that changes nothing answers 200 without writing. A change applies from the next proposal and the next analysis; confirmed mappings and analysed rows do not change. Deactivating a set with linked accounts, open or closed, is 409 rule_set_in_use (details.accounts). At equal priority a column rule bound to a sheet goes before a generic one, and then the rule saved first wins. Rules compare in priority order keeping the body order among equal priorities, so reordering rules of equal priority is a change even when it does not alter any proposal. A transactions sheet carries a cycle; batch_fees and ignore carry neither cycle nor status; cycle R has no status; a fixed status is never Pending and has the natural cycle of the sheet; a regex must compile; patterns are not repeated in a list (ignoring case and surrounding spaces). Each violation is 400 validation_error with details.field (e.g. sheetRules[2].statusId).
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ruleSetId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        isActive: boolean;
+                        sheetRules: {
+                            sheetPattern: string;
+                            isRegex: boolean;
+                            /** @enum {string} */
+                            kind: "transactions" | "batch_fees" | "ignore";
+                            /** @enum {string|null} */
+                            cycle: "E" | "I" | "R" | null;
+                            statusId: number | null;
+                            /** @default 100 */
+                            priority?: number;
+                            /** @default true */
+                            isActive?: boolean;
+                        }[];
+                        columnRules: {
+                            sheetPattern: string | null;
+                            columnPattern: string;
+                            isRegex: boolean;
+                            /** @enum {string} */
+                            targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                            /** @default 100 */
+                            priority?: number;
+                            /** @default true */
+                            isActive?: boolean;
+                        }[];
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ruleSetId: number;
+                            name: string;
+                            isActive: boolean;
+                            provider: {
+                                providerId: number;
+                                name: string;
+                            };
+                            accounts: {
+                                /** Format: uuid */
+                                accountId: string;
+                                name: string;
+                                isActive: boolean;
+                            }[];
+                            sheetRules: {
+                                sheetRuleId: number;
+                                sheetPattern: string;
+                                isRegex: boolean;
+                                /** @enum {string} */
+                                kind: "transactions" | "batch_fees" | "ignore";
+                                /** @enum {string|null} */
+                                cycle: "E" | "I" | "R" | null;
+                                statusId: number | null;
+                                priority: number;
+                                isActive: boolean;
+                            }[];
+                            columnRules: {
+                                columnRuleId: number;
+                                sheetPattern: string | null;
+                                columnPattern: string;
+                                isRegex: boolean;
+                                /** @enum {string} */
+                                targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                                priority: number;
+                                isActive: boolean;
+                            }[];
+                            rowIgnoreRules: {
+                                rowIgnoreId: number;
+                                pattern: string;
+                                isRegex: boolean;
+                                description: string | null;
+                                isActive: boolean;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/matching-rules/global": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Global matching rules, status aliases and the status catalog
+         * @description Global rules are the defaults of every account; row-ignore rules are read-only (#120).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            sheetRules: {
+                                sheetRuleId: number;
+                                sheetPattern: string;
+                                isRegex: boolean;
+                                /** @enum {string} */
+                                kind: "transactions" | "batch_fees" | "ignore";
+                                /** @enum {string|null} */
+                                cycle: "E" | "I" | "R" | null;
+                                statusId: number | null;
+                                priority: number;
+                                isActive: boolean;
+                            }[];
+                            columnRules: {
+                                columnRuleId: number;
+                                sheetPattern: string | null;
+                                columnPattern: string;
+                                isRegex: boolean;
+                                /** @enum {string} */
+                                targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                                priority: number;
+                                isActive: boolean;
+                            }[];
+                            rowIgnoreRules: {
+                                rowIgnoreId: number;
+                                pattern: string;
+                                isRegex: boolean;
+                                description: string | null;
+                                isActive: boolean;
+                            }[];
+                            statusAliases: {
+                                alias: string;
+                                statusId: number;
+                                excludeAmount: boolean;
+                                isLegacy: boolean;
+                            }[];
+                            statuses: {
+                                statusId: number;
+                                name: string;
+                                /** @enum {string} */
+                                cycle: "E" | "I" | "R";
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        /**
+         * Replace the global matching rules and status aliases
+         * @description Needs account.manage and merchant scope "all" (403 otherwise): the global rules apply to every merchant. A body that changes nothing answers 200 without writing. At equal priority a column rule bound to a sheet goes before a generic one, and then the rule saved first wins. Rules compare in priority order keeping the body order among equal priorities, so reordering rules of equal priority is a change even when it does not alter any proposal. A transactions sheet carries a cycle; batch_fees and ignore carry neither cycle nor status; cycle R has no status; a fixed status is never Pending and has the natural cycle of the sheet; a regex must compile; patterns are not repeated in a list (ignoring case and surrounding spaces). Each violation is 400 validation_error with details.field (e.g. sheetRules[2].statusId).
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        sheetRules: {
+                            sheetPattern: string;
+                            isRegex: boolean;
+                            /** @enum {string} */
+                            kind: "transactions" | "batch_fees" | "ignore";
+                            /** @enum {string|null} */
+                            cycle: "E" | "I" | "R" | null;
+                            statusId: number | null;
+                            /** @default 100 */
+                            priority?: number;
+                            /** @default true */
+                            isActive?: boolean;
+                        }[];
+                        columnRules: {
+                            sheetPattern: string | null;
+                            columnPattern: string;
+                            isRegex: boolean;
+                            /** @enum {string} */
+                            targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                            /** @default 100 */
+                            priority?: number;
+                            /** @default true */
+                            isActive?: boolean;
+                        }[];
+                        statusAliases: {
+                            alias: string;
+                            statusId: number;
+                            excludeAmount: boolean;
+                            isLegacy: boolean;
+                        }[];
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            sheetRules: {
+                                sheetRuleId: number;
+                                sheetPattern: string;
+                                isRegex: boolean;
+                                /** @enum {string} */
+                                kind: "transactions" | "batch_fees" | "ignore";
+                                /** @enum {string|null} */
+                                cycle: "E" | "I" | "R" | null;
+                                statusId: number | null;
+                                priority: number;
+                                isActive: boolean;
+                            }[];
+                            columnRules: {
+                                columnRuleId: number;
+                                sheetPattern: string | null;
+                                columnPattern: string;
+                                isRegex: boolean;
+                                /** @enum {string} */
+                                targetField: "transactionId" | "status" | "gateway" | "amount" | "currency" | "txnDate" | "feeType" | "providerRef" | "orderId" | "reference";
+                                priority: number;
+                                isActive: boolean;
+                            }[];
+                            rowIgnoreRules: {
+                                rowIgnoreId: number;
+                                pattern: string;
+                                isRegex: boolean;
+                                description: string | null;
+                                isActive: boolean;
+                            }[];
+                            statusAliases: {
+                                alias: string;
+                                statusId: number;
+                                excludeAmount: boolean;
+                                isLegacy: boolean;
+                            }[];
+                            statuses: {
+                                statusId: number;
+                                name: string;
+                                /** @enum {string} */
+                                cycle: "E" | "I" | "R";
+                            }[];
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;

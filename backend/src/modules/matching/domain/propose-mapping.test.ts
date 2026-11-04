@@ -259,3 +259,83 @@ describe('proposeMapping: pattern matching and precedence', () => {
     expect(column).toEqual({ sourceColumn: 'Order Status', targetField: 'status', source: 'account' })
   })
 })
+
+// admin-matching, spec matching "Reglas globales y conjuntos por proveedor" (MODIFIED): the tie-breaks that the rule
+// editor relies on. They pin the behaviour that already exists.
+describe('proposeMapping: tie-breaks of a linked rule set', () => {
+  const sheetRule = (sheetRuleId: number, overrides: Partial<SheetRule>): SheetRule => ({
+    sheetRuleId,
+    sheetPattern: 'APP',
+    isRegex: false,
+    kind: 'transactions',
+    cycle: 'E',
+    statusId: 3,
+    priority: 10,
+    isActive: true,
+    ...overrides,
+  })
+  const columnRule = (columnRuleId: number, overrides: Partial<ColumnRule>): ColumnRule => ({
+    columnRuleId,
+    sheetPattern: null,
+    columnPattern: 'Amount',
+    isRegex: false,
+    targetField: 'amount',
+    priority: 10,
+    isActive: true,
+    ...overrides,
+  })
+  const withSet = (set: { sheetRules?: SheetRule[]; columnRules?: ColumnRule[] }): MatchingRules => ({
+    ...RULES_FOR_PROVIDER_A,
+    account: {
+      ruleSetId: 50,
+      name: 'Tie-breaks',
+      sheetRules: set.sheetRules ?? [],
+      columnRules: set.columnRules ?? [],
+    },
+  })
+
+  it('falls back to the global rules for an account linked to an empty set ("Conjunto vacío")', () => {
+    const proposal = proposeMapping(BATCH_CLEAN_WORKBOOK, withSet({}))
+
+    const sources = proposal.sheets.flatMap((s) => [
+      s.proposed.source,
+      ...s.columns.filter((c) => c.targetField !== null).map((c) => c.source),
+    ])
+    expect(new Set(sources)).toEqual(new Set(['global']))
+    expect(sheetNamed(proposal, 'APP').proposed).toMatchObject({ cycle: 'E', statusId: 2 })
+  })
+
+  it('lets the set win even when the global rule has the better priority', () => {
+    const rules = withSet({ sheetRules: [sheetRule(1, { statusId: 3, priority: 100 })] })
+    expect(GLOBAL_RULES.sheetRules.find((r) => r.sheetPattern === 'APP')?.priority).toBeLessThan(100)
+
+    const proposed = sheetNamed(proposeMapping({ sheets: [sheet('APP', ['ID'], 0, [], [])] }, rules), 'APP').proposed
+
+    expect(proposed).toMatchObject({ cycle: 'E', statusId: 3, statusName: 'Declined', source: 'account' })
+  })
+
+  it('breaks a tie of equal priority by saving order (rule id)', () => {
+    const regexFirst = withSet({
+      sheetRules: [sheetRule(1, { sheetPattern: '^A.*', isRegex: true, statusId: 2 }), sheetRule(2, { statusId: 3 })],
+    })
+    const plainFirst = withSet({
+      sheetRules: [sheetRule(1, { statusId: 3 }), sheetRule(2, { sheetPattern: '^A.*', isRegex: true, statusId: 2 })],
+    })
+    const workbook = { sheets: [sheet('APP', ['ID'], 0, [], [])] }
+
+    expect(sheetNamed(proposeMapping(workbook, regexFirst), 'APP').proposed.statusId).toBe(2)
+    expect(sheetNamed(proposeMapping(workbook, plainFirst), 'APP').proposed.statusId).toBe(3)
+  })
+
+  it('prefers the column rule of a sheet over the generic one at equal priority, even saved later', () => {
+    const rules = withSet({
+      columnRules: [columnRule(1, {}), columnRule(2, { sheetPattern: 'CB', targetField: 'reference' })],
+    })
+    const workbook = { sheets: [sheet('CB', ['Amount'], 0, [], []), sheet('TRX', ['Amount'], 0, [], [])] }
+
+    const proposal = proposeMapping(workbook, rules)
+
+    expect(sheetNamed(proposal, 'CB').columns[0]).toMatchObject({ targetField: 'reference', source: 'account' })
+    expect(sheetNamed(proposal, 'TRX').columns[0]).toMatchObject({ targetField: 'amount', source: 'account' })
+  })
+})

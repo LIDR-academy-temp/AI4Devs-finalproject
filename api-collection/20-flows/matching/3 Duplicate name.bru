@@ -1,0 +1,44 @@
+meta {
+  name: 3 Duplicate name
+  type: http
+  seq: 3
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/providers/:providerId/matching-rule-sets
+  body: json
+  auth: bearer
+}
+
+params:path {
+  providerId: {{flowMatchingProviderId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "name": "{{flowRuleSetNameUpper}}"
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:pre-request {
+  // The same name in capitals: set names are unique within the provider without case.
+  bru.setVar('flowRuleSetNameUpper', String(bru.getVar('flowRuleSetName')).toUpperCase());
+}
+
+tests {
+  test('the name of step 2 in capitals: 409 rule_set_name_taken', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('rule_set_name_taken');
+  });
+}

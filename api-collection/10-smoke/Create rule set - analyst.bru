@@ -1,0 +1,55 @@
+meta {
+  name: Create rule set - analyst
+  type: http
+  seq: 107
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/providers/:providerId/matching-rule-sets
+  body: json
+  auth: inherit
+}
+
+params:path {
+  providerId: {{providerCId}}
+}
+
+body:json {
+  {
+    "name": "bruno-smoke-forbidden"
+  }
+}
+
+script:pre-request {
+  // Provider C resolved by name through GET /merchants and GET /merchants/{id}/providers (no literal ids).
+  if (!bru.getVar('providerCId')) {
+    const base = `${bru.getEnvVar('baseUrl')}/api/v1`;
+    const headers = { authorization: `Bearer ${bru.getVar('accessToken')}` };
+    const merchants = await bru.sendRequest({ method: 'GET', url: `${base}/merchants`, headers });
+    for (const merchant of merchants.data || []) {
+      const providers = await bru.sendRequest({
+        method: 'GET',
+        url: `${base}/merchants/${merchant.merchantId}/providers`,
+        headers,
+      });
+      const found = (providers.data || []).find((p) => p.name === 'Provider C');
+      if (found) {
+        bru.setVar('providerCId', found.providerId);
+        break;
+      }
+    }
+  }
+  if (!bru.getVar('providerCId')) {
+    throw new Error('Provider C could not be found among the merchants');
+  }
+}
+
+tests {
+  test('analyst lacks account.manage: 403 forbidden, nothing created', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

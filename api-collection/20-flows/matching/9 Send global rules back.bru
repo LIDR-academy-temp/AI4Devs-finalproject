@@ -1,0 +1,50 @@
+meta {
+  name: 9 Send global rules back
+  type: http
+  seq: 9
+  tags: [
+    flow
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/matching-rules/global
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {}
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:pre-request {
+  // The global rules as GET returned them, without rule ids, row ignores (read-only, #120) nor statuses: nothing
+  // changes, so nothing is written or audited.
+  await bru.runRequest('10-smoke/Global rules');
+  const globals = bru.getVar('globalMatchingRules');
+  if (!globals) {
+    throw new Error('the global rules could not be read');
+  }
+  req.setBody({
+    sheetRules: globals.sheetRules.map(({ sheetRuleId, ...rule }) => rule),
+    columnRules: globals.columnRules.map(({ columnRuleId, ...rule }) => rule),
+    statusAliases: globals.statusAliases,
+  });
+}
+
+tests {
+  test('the global rules sent back unchanged: 200 with the same rules and ids', () => {
+    expect(res.status).to.equal(200);
+    const before = bru.getVar('globalMatchingRules');
+    expect(res.body.sheetRules.map((r) => r.sheetRuleId)).to.deep.equal(before.sheetRules.map((r) => r.sheetRuleId));
+    expect(res.body.statusAliases).to.deep.equal(before.statusAliases);
+  });
+}

@@ -5,7 +5,7 @@ import type { Prisma, PrismaClient } from '../../../generated/prisma/client.js'
 import type { MatchingRulesRepository } from '../application/ports.js'
 import type { ColumnRule, MatchingRules, RuleSet, SheetRule } from '../domain/rules.js'
 
-const sheetRuleSelect = {
+export const sheetRuleSelect = {
   sheetRuleId: true,
   sheetPattern: true,
   isRegex: true,
@@ -16,7 +16,7 @@ const sheetRuleSelect = {
   isActive: true,
 } satisfies Prisma.MatchingSheetRuleSelect
 
-const columnRuleSelect = {
+export const columnRuleSelect = {
   columnRuleId: true,
   sheetPattern: true,
   columnPattern: true,
@@ -29,18 +29,21 @@ const columnRuleSelect = {
 type SheetRuleRow = Prisma.MatchingSheetRuleGetPayload<{ select: typeof sheetRuleSelect }>
 type ColumnRuleRow = Prisma.MatchingColumnRuleGetPayload<{ select: typeof columnRuleSelect }>
 
-const sheetRuleOrder: Prisma.MatchingSheetRuleOrderByWithRelationInput[] = [{ priority: 'asc' }, { sheetRuleId: 'asc' }]
-const columnRuleOrder: Prisma.MatchingColumnRuleOrderByWithRelationInput[] = [
+export const sheetRuleOrder: Prisma.MatchingSheetRuleOrderByWithRelationInput[] = [
+  { priority: 'asc' },
+  { sheetRuleId: 'asc' },
+]
+export const columnRuleOrder: Prisma.MatchingColumnRuleOrderByWithRelationInput[] = [
   { priority: 'asc' },
   { columnRuleId: 'asc' },
 ]
 
 // The CHECK constraints guarantee the vocabulary; an unexpected value is a data error, not a silent default.
-function toSheetRule(row: SheetRuleRow): SheetRule {
+export function toSheetRule(row: SheetRuleRow): SheetRule {
   return { ...row, kind: SheetKind.parse(row.kind), cycle: row.cycle === null ? null : Cycle.parse(row.cycle) }
 }
 
-function toColumnRule(row: ColumnRuleRow): ColumnRule {
+export function toColumnRule(row: ColumnRuleRow): ColumnRule {
   return { ...row, targetField: TargetField.parse(row.targetField) }
 }
 

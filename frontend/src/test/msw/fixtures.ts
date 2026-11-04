@@ -5,6 +5,7 @@ import { ROLES } from '@recon/shared'
 import type {
   AccountChannelItem,
   AccountSummary,
+  ApiResponse,
   ChannelSummary,
   Me,
   MerchantSummary,
@@ -153,4 +154,174 @@ export function toAccountChannelItem(row: AccountChannelRow, rows: AccountChanne
     assignedInBatchNo: row.assignedInBatchNo === undefined ? ASSIGNED_IN_BATCH_NO : row.assignedInBatchNo,
     primaryAccount: primary ? { accountId: primary.accountId, name: primary.name } : null,
   }
+}
+
+// ───────────────────────── Matching rules (admin-matching, contract only) ─────────────────────────
+
+/** The seed's "Provider C legacy" rule set, with the id the accounts above link to. */
+export const LEGACY_RULE_SET: ApiResponse<'/api/v1/matching-rule-sets/{ruleSetId}', 'get'> = {
+  ruleSetId: 3,
+  name: 'Provider C legacy',
+  isActive: true,
+  provider: { providerId: 201, name: 'Provider C' },
+  accounts: [{ accountId: ACCOUNT_IDS['ProviderC-Alt'], name: 'ProviderC-Alt', isActive: true }],
+  sheetRules: [
+    {
+      sheetRuleId: 31,
+      sheetPattern: 'TRX',
+      isRegex: false,
+      kind: 'transactions',
+      cycle: 'E',
+      statusId: null,
+      priority: 10,
+      isActive: true,
+    },
+    {
+      sheetRuleId: 32,
+      sheetPattern: 'CB',
+      isRegex: false,
+      kind: 'transactions',
+      cycle: 'I',
+      statusId: null,
+      priority: 10,
+      isActive: true,
+    },
+    {
+      sheetRuleId: 33,
+      sheetPattern: 'Fail',
+      isRegex: false,
+      kind: 'transactions',
+      cycle: 'E',
+      statusId: 3,
+      priority: 10,
+      isActive: true,
+    },
+    {
+      sheetRuleId: 34,
+      sheetPattern: 'Summary',
+      isRegex: false,
+      kind: 'ignore',
+      cycle: null,
+      statusId: null,
+      priority: 10,
+      isActive: true,
+    },
+  ],
+  columnRules: [
+    {
+      columnRuleId: 41,
+      sheetPattern: null,
+      columnPattern: 'Merchant Order No#',
+      isRegex: false,
+      targetField: 'transactionId',
+      priority: 5,
+      isActive: true,
+    },
+    {
+      columnRuleId: 42,
+      sheetPattern: null,
+      columnPattern: 'Order Status',
+      isRegex: false,
+      targetField: 'status',
+      priority: 5,
+      isActive: true,
+    },
+    {
+      columnRuleId: 43,
+      sheetPattern: null,
+      columnPattern: 'Amount USD',
+      isRegex: false,
+      targetField: 'amount',
+      priority: 5,
+      isActive: true,
+    },
+  ],
+  rowIgnoreRules: [],
+}
+
+/** A subset of the seed's global rules: enough for the editor, with the read-only row ignore and the catalog. */
+export const GLOBAL_MATCHING_RULES: ApiResponse<'/api/v1/matching-rules/global', 'get'> = {
+  sheetRules: [
+    {
+      sheetRuleId: 1,
+      sheetPattern: 'APP',
+      isRegex: false,
+      kind: 'transactions',
+      cycle: 'E',
+      statusId: 2,
+      priority: 10,
+      isActive: true,
+    },
+    {
+      sheetRuleId: 6,
+      sheetPattern: 'RR',
+      isRegex: false,
+      kind: 'transactions',
+      cycle: 'R',
+      statusId: null,
+      priority: 10,
+      isActive: true,
+    },
+    {
+      sheetRuleId: 7,
+      sheetPattern: 'Other Fees',
+      isRegex: false,
+      kind: 'batch_fees',
+      cycle: null,
+      statusId: null,
+      priority: 10,
+      isActive: true,
+    },
+    {
+      sheetRuleId: 10,
+      sheetPattern: 'Settings',
+      isRegex: false,
+      kind: 'ignore',
+      cycle: null,
+      statusId: null,
+      priority: 10,
+      isActive: true,
+    },
+  ],
+  columnRules: [
+    {
+      columnRuleId: 1,
+      sheetPattern: null,
+      columnPattern: 'ID',
+      isRegex: false,
+      targetField: 'transactionId',
+      priority: 10,
+      isActive: true,
+    },
+    {
+      columnRuleId: 2,
+      sheetPattern: null,
+      columnPattern: 'Amount',
+      isRegex: false,
+      targetField: 'amount',
+      priority: 10,
+      isActive: true,
+    },
+  ],
+  rowIgnoreRules: [
+    {
+      rowIgnoreId: 1,
+      pattern: 'transactionId:empty',
+      isRegex: false,
+      description: 'Total rows (=SUM) and blank rows: no ID, no row',
+      isActive: true,
+    },
+  ],
+  statusAliases: [
+    { alias: 'Successful', statusId: 2, excludeAmount: false, isLegacy: false },
+    { alias: 'CHB 2', statusId: 4, excludeAmount: true, isLegacy: true },
+  ],
+  statuses: [
+    { statusId: 1, name: 'Pending', cycle: 'E' },
+    { statusId: 2, name: 'Successful', cycle: 'E' },
+    { statusId: 3, name: 'Declined', cycle: 'E' },
+    { statusId: 4, name: 'Chargeback', cycle: 'I' },
+    { statusId: 5, name: 'Refund', cycle: 'I' },
+    { statusId: 6, name: 'RDR', cycle: 'I' },
+  ],
 }

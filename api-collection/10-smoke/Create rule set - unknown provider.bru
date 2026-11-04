@@ -1,0 +1,39 @@
+meta {
+  name: Create rule set - unknown provider
+  type: http
+  seq: 108
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/providers/:providerId/matching-rule-sets
+  body: json
+  auth: bearer
+}
+
+params:path {
+  providerId: 999
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "name": "bruno-smoke-unknown-provider"
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+tests {
+  test('admin on an unknown provider: 404 not_found, nothing created', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

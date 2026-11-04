@@ -1,0 +1,43 @@
+meta {
+  name: Rule set detail - viewer out of scope
+  type: http
+  seq: 110
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/matching-rule-sets/:ruleSetId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  ruleSetId: {{providerCLegacyRuleSetId}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+script:pre-request {
+  // "Provider C legacy" resolved by name (no literal ids).
+  if (!bru.getVar('providerCLegacyRuleSetId')) {
+    await bru.runRequest('10-smoke/Matching rule sets');
+  }
+  if (!bru.getVar('providerCLegacyRuleSetId')) {
+    throw new Error('the "Provider C legacy" rule set could not be resolved');
+  }
+}
+
+tests {
+  test('viewer on a rule set of merchant 2: 404 not_found', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

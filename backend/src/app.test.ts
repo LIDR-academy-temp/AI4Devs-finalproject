@@ -248,6 +248,29 @@ describe('buildApp', () => {
     await app.close()
   })
 
+  it('publishes the matching rule administration with bearer security and the matching tag (admin-matching)', async () => {
+    const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
+
+    const doc = (await app.inject({ method: 'GET', url: '/docs/json' })).json()
+
+    const operations: [string, 'get' | 'post' | 'put', string[]][] = [
+      ['/api/v1/providers/{providerId}/matching-rule-sets', 'post', ['201', '400', '401', '403', '404', '409']],
+      ['/api/v1/matching-rule-sets/{ruleSetId}', 'get', ['200', '400', '401', '404']],
+      ['/api/v1/matching-rule-sets/{ruleSetId}', 'put', ['200', '400', '401', '403', '404', '409']],
+      ['/api/v1/matching-rules/global', 'get', ['200', '401']],
+      ['/api/v1/matching-rules/global', 'put', ['200', '400', '401', '403']],
+    ]
+    for (const [path, method, statuses] of operations) {
+      const operation = doc.paths[path]?.[method]
+      expect(operation, `${method} ${path}`).toBeDefined()
+      expect(operation.tags, path).toEqual(['matching'])
+      expect(operation.security, path).toEqual([{ bearerAuth: [] }])
+      if (method !== 'get') expect(operation.requestBody?.content?.['application/json']?.schema, path).toBeDefined()
+      for (const status of statuses) expect(operation.responses, `${method} ${path}`).toHaveProperty(status)
+    }
+    await app.close()
+  })
+
   it('publishes the four reads of an attempt, the export as text/csv with 403 and 500 (summary-exports)', async () => {
     const app = await buildApp({ env, prisma: fakePrisma(async () => [{ ok: 1 }]) })
 

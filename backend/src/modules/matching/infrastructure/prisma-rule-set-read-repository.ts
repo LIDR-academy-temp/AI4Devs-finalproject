@@ -1,9 +1,10 @@
 // Prisma adapter of RuleSetReadRepository (admin-accounts design D8). The scope is checked on the provider, as the
 // catalog does for its channels; the linked accounts belong to the same provider, hence to a merchant in scope.
-import type { MatchingRuleSetSummary } from '@recon/shared'
+import type { MatchingRuleSetDetail, MatchingRuleSetSummary } from '@recon/shared'
 import type { PrismaClient } from '../../../generated/prisma/client.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import type { RuleSetReadRepository } from '../application/ports.js'
+import { readRuleSetDetail } from './prisma-rule-set-detail.js'
 
 export class PrismaRuleSetReadRepository implements RuleSetReadRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -26,5 +27,10 @@ export class PrismaRuleSetReadRepository implements RuleSetReadRepository {
       },
     })
     return provider?.ruleSets ?? null
+  }
+
+  async findDetail(scope: Scope, ruleSetId: number): Promise<MatchingRuleSetDetail | null> {
+    if (scope.merchantIds.length === 0) return null
+    return readRuleSetDetail(this.prisma, ruleSetId, scope)
   }
 }
