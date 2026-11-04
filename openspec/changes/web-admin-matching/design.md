@@ -182,7 +182,7 @@ frontend/src/test/msw/matching.ts (+ matching.test.ts)
   - `useCanManageRules()` = `account.manage`;
   - `useCanEditGlobals()` = `account.manage && merchantScope === 'all'`.
 - **Es solo presentación.** El `403` del API se muestra como en D6.
-- **Admin con alcance limitado.** Ningún usuario del fake lo es. Los tests sustituyen `GET /auth/me` con `server.use` por `admin` con `merchantScope = 'assigned'` y el merchant 2, sin tocar `USERS`.
+- **Admin con alcance limitado.** Ningún usuario del fake lo es. Un ayudante `withScopedAdmin()` cambia durante un test `USERS.admin` a `merchantScope = 'assigned'` con el merchant 2 y lo restaura con `onTestFinished`, como `withoutFeeView` de `AppLayout.test.tsx`. Así `GET /auth/me`, el alcance del fake y el `403` del `PUT` global dicen lo mismo. Con `server.use` sobre `/auth/me`, el fake seguiría viendo al admin con alcance total.
 
 ### D9. Account Detail: enlace, sin pestaña
 

@@ -54,7 +54,7 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
 
 ## 4. API falsa de reglas de pareo
 
-- [ ] 4.1 Escribir `test/msw/matching.test.ts` (design D10) y comprobar que falla. Debe cubrir:
+- [x] 4.1 Escribir `test/msw/matching.test.ts` (design D10) y comprobar que falla. Debe cubrir:
   - **Lecturas:**
     - `GET /matching-rule-sets/3`: el detalle del legacy pasa `MatchingRuleSetDetail.parse`;
     - `viewer` → `404` en el 3 y en `999999`;
@@ -73,7 +73,7 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
     - `rowIgnoreRules` → `400`;
     - `200`.
   - **El fake no decide reglas de negocio:** no responde `409` ni `400` de dominio por sí mismo.
-- [ ] 4.2 Commit: test(web): API falsa de las reglas de pareo
+- [x] 4.2 Commit: test(web): API falsa de las reglas de pareo
 - [ ] 4.3 Implementar el fake:
   - `test/msw/matching-fixtures.ts`, con `RULE_SETS` movido desde `accounts.ts` y ampliado con reglas;
   - `test/msw/matching.ts`, registrado en `handlers.ts` y `resetDb`;
@@ -91,7 +91,7 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
     - catálogo de estados no disponible → `Status 3`;
     - error y reintento.
   - **"reglas globales"**, y **"filas a ignorar"** en lectura con la nota `Not applied yet (#120).`
-  - **"permisos de la pantalla"** en lectura: `viewer`, `analyst` y `admin`, y `admin` con alcance `assigned` (con `GET /auth/me` sustituido, design D8).
+  - **"permisos de la pantalla"** en lectura: `viewer`, `analyst` y `admin`, y `admin` con alcance `assigned` (con `withScopedAdmin()`, design D8).
   - **"Overview":** el enlace del legacy a `/matching-rules/3`, `None · global rules` a `/matching-rules/global` y sin pestaña de reglas.
 - [ ] 5.2 Commit: test(web): lista, detalle y reglas globales de Matching Rules en lectura
 - [ ] 5.3 Implementar lo necesario hasta dejar en verde los tests de 5.1 (design D3, D8, D9):
