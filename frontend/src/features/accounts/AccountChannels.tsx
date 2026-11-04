@@ -48,7 +48,7 @@ export function AccountChannels({ accountId }: { accountId: string }) {
             <TableRow key={channel.channelId} className={channel.isPrimary ? undefined : 'text-muted-foreground'}>
               <TableCell className="font-medium">{channel.name}</TableCell>
               <TableCell>{s.gateway(channel.gatewayId)}</TableCell>
-              <TableCell className="whitespace-normal">{roleOf(channel)}</TableCell>
+              <TableCell className="whitespace-normal [overflow-wrap:anywhere]">{roleOf(channel)}</TableCell>
               <TableCell>{batchLabel(channel.assignedInBatchNo)}</TableCell>
               <TableCell className="tabular-nums">{termReserve(channel)}</TableCell>
             </TableRow>
