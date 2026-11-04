@@ -104,8 +104,8 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
 
 - [x] 8.1 Añadir a `features/imports/files/upload.test.tsx` el escenario "Cuenta cerrada entre la elección y la subida" de la delta `import`, con `409 account_inactive` guionado en el fake: motivo `This account is closed. Choose another account.`, ningún import y la pantalla sigue en New Reconciliation. Comprobar que falla.
 - [x] 8.2 Commit: test(web): subida a una cuenta cerrada
-- [ ] 8.3 Añadir el caso `account_inactive` a `rejectionText` y su texto en `imports/strings.ts` (design D10). Verificar con `pnpm --filter @recon/frontend test imports`.
-- [ ] 8.4 Commit: feat(web): motivo de la subida a una cuenta cerrada
+- [x] 8.3 Añadir el caso `account_inactive` a `rejectionText` y su texto en `imports/strings.ts` (design D10). Verificar con `pnpm --filter @recon/frontend test imports`.
+- [x] 8.4 Commit: feat(web): motivo de la subida a una cuenta cerrada
 
 ## 9. Documentación y revisión
 
