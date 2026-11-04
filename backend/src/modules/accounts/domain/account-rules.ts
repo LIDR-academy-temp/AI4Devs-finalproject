@@ -35,8 +35,9 @@ const FIELDS: readonly AccountField[] = [
 export function normalizeCap(value: string | null): string | null {
   if (value === null) return null
   const amount = new Prisma.Decimal(value)
-  if (amount.isNegative()) throw new AccountRuleError('rollingReserveCapAmt', 'The reserve cap cannot be negative')
-  return amount.toFixed(4)
+  // lt(0), not isNegative(): "-0" is a zero cap, which CK_Account_rollingReserveCapAmt (≥ 0) accepts.
+  if (amount.lt(0)) throw new AccountRuleError('rollingReserveCapAmt', 'The reserve cap cannot be negative')
+  return amount.isZero() ? '0.0000' : amount.toFixed(4)
 }
 
 /**

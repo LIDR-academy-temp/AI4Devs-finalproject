@@ -110,7 +110,8 @@ export type MatchingRuleSetSummary = z.infer<typeof MatchingRuleSetSummary>
 // ───────────────────────── Account administration ─────────────────────────
 
 const AccountName = z.string().trim().min(1).max(50)
-const RuleSetId = z.number().int().positive()
+/** An INT column: a larger id is a 400 here, never an overflow (500) in the database. */
+const RuleSetId = z.number().int().positive().max(2_147_483_647)
 
 /**
  * Body of POST /providers/{id}/accounts. A negative cap, a rule set of another provider and a fee source outside

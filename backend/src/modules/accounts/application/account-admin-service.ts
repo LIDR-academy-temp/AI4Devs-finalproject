@@ -57,8 +57,12 @@ export class AccountAdminService {
           chargebackReservePolicy: state.chargebackReservePolicy,
           rollingReserveCapAmt: cap,
           matchingRuleSetId,
-          copyFeesFromAccountId: source,
-          copiedFees: copies.map((c) => ({ sourceFeeId: c.sourceFeeId, feeId: c.copy.feeId })),
+          // Ids in lowercase, as the entityId (D6): SQL Server returns them in capitals.
+          copyFeesFromAccountId: source?.toLowerCase() ?? null,
+          copiedFees: copies.map((c) => ({
+            sourceFeeId: c.sourceFeeId.toLowerCase(),
+            feeId: c.copy.feeId.toLowerCase(),
+          })),
         },
       })
       return id

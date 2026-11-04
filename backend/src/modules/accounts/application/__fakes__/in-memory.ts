@@ -74,8 +74,10 @@ export class InMemoryAccountAdminRepository implements AccountAdminRepository {
 
   constructor(readonly catalog: InMemoryCatalogRepository) {}
 
+  /** The fees of an account, matching the id without case as SQL Server compares uniqueidentifier. */
   feesOf(accountId: string): FeeState[] {
-    return structuredClone(this.fees.get(accountId) ?? [])
+    const key = [...this.fees.keys()].find((k) => k.toLowerCase() === accountId.toLowerCase())
+    return structuredClone(key === undefined ? [] : (this.fees.get(key) ?? []))
   }
 
   async inProvider<T>(scope: Scope, providerId: number, work: (unit: AccountAdminUnit) => Promise<T>) {
