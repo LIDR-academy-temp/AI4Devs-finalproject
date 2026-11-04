@@ -80,13 +80,13 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 
 ## 4. Reglas globales
 
-- [ ] 4.1 Escribir `matching/application/global-rules-service.test.ts` (con el doble en memoria) y `test/integration/global-rules.int.test.ts`, y comprobar que fallan. Deben cubrir:
+- [x] 4.1 Escribir `matching/application/global-rules-service.test.ts` (con el doble en memoria) y `test/integration/global-rules.int.test.ts`, y comprobar que fallan. Deben cubrir:
   - los escenarios de "Reglas globales editables" y "Filas a ignorar de solo lectura";
   - el `403` de alcance `assigned` (en el test de rutas);
   - la auditoría `matching_rules.update` con solo las listas que cambian.
 
   El fichero de integración lee las globales en `beforeAll`, las restaura en `afterAll` y comprueba que la propuesta de `batch-clean` en `ProviderA-USD` sigue siendo toda `source = global` (D8).
-- [ ] 4.2 Commit: test(matching): reglas globales editables
+- [x] 4.2 Commit: test(matching): reglas globales editables
 - [ ] 4.3 Implementar `GlobalRulesService.get`/`.put` e `inGlobals` con `sp_getapplock` (D3), sin tocar `MatchingRowIgnoreRule`, y quitar los `501` de las globales. Añadir a la 3.5 un caso de dos `PUT` globales simultáneos que se serializan. Verificar con 4.1, la 3.5 ampliada y `pnpm test`. Ejecutar `pnpm openapi:check`: si el contrato cambió respecto al grupo 1, regenerar y avisar a la persona.
 - [ ] 4.4 Commit: feat(matching): reglas globales y alias de estado editables
 

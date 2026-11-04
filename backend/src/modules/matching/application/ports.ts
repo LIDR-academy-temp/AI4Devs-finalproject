@@ -1,9 +1,9 @@
 // Ports of the matching application layer. The Prisma adapters live in ../infrastructure; the in-memory double of
 // rulesFor in ../../imports/application/__fakes__ (the import module is its only consumer); the double of the rule
 // set reads and writes in ./__fakes__.
-import type { AccountRef, MatchingRuleSetDetail, MatchingRuleSetSummary } from '@recon/shared'
+import type { AccountRef, GlobalMatchingRules, MatchingRuleSetDetail, MatchingRuleSetSummary } from '@recon/shared'
 import type { Scope } from '../../catalog/domain/scope.js'
-import type { RuleSetDocument } from '../domain/rule-diff.js'
+import type { GlobalRulesDocument, RuleSetDocument } from '../domain/rule-diff.js'
 import type { MatchingRules, StatusCatalogEntry } from '../domain/rules.js'
 
 export interface MatchingRulesRepository {
@@ -69,4 +69,30 @@ export interface MatchingRulesAdminRepository {
     ruleSetId: number,
     work: (unit: RuleSetAdminUnit, current: StoredRuleSet) => Promise<T>,
   ): Promise<T | null>
+}
+
+/** The AuditLog entry of a global rules edit (design D6): entityType MatchingRules, entityId global. */
+export interface GlobalRulesAuditWrite {
+  detail: Record<string, unknown>
+  userId: number
+}
+
+/** What a global rules write may do inside its transaction (design D3). */
+export interface GlobalRulesAdminUnit {
+  statuses(): Promise<StatusCatalogEntry[]>
+  /** Replaces each list given, in list order; the row-ignore rules are never touched (#120). */
+  replaceGlobals(changes: Partial<GlobalRulesDocument>): Promise<void>
+  /** The global rules as GET /matching-rules/global answers them, read inside the transaction. */
+  globals(): Promise<GlobalMatchingRules>
+  audit(row: GlobalRulesAuditWrite): Promise<void>
+}
+
+export interface GlobalRulesRepository {
+  /** The global rules, aliases and status catalog (design D4). */
+  globals(): Promise<GlobalMatchingRules>
+  /**
+   * Runs `work` in one transaction holding the application lock of the global rules (there is no row to lock), with
+   * the global document read under it. A deadlock victim is retried whole.
+   */
+  inGlobals<T>(work: (unit: GlobalRulesAdminUnit, current: GlobalRulesDocument) => Promise<T>): Promise<T>
 }
