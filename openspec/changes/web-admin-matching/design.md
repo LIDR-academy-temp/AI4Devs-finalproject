@@ -18,7 +18,7 @@
   - `matchingRuleSetsQuery(providerId)` (clave `['providers', id, 'matching-rule-sets']`), que ya usan la Overview y los formularios de cuenta.
   - `react-hook-form` 7 y `@hookform/resolvers`. `useFieldArray` se usa por primera vez en el proyecto.
 - **Hechos del API que marcan el diseño:**
-  - Cada `PUT` genera ids de regla nuevos.
+  - Un `PUT` puede dar ids de regla nuevos (el API solo reemplaza las listas que cambian). El frontend nunca guarda ids entre ediciones.
   - Los esquemas son `strict`: un id de regla, `rowIgnoreRules` o `statuses` en el cuerpo es `400`.
   - El catálogo de estados solo llega en `GET /matching-rules/global`. El detalle de un conjunto trae `statusId` sin nombre.
   - Los alias no tienen id.
@@ -142,7 +142,7 @@ frontend/src/test/msw/matching.ts (+ matching.test.ts)
 - **Cambios sin guardar.** `formState.isDirty` deshabilita **Rename…**, **Deactivate…** y **Activate…** (D7) y muestra `You have unsaved changes.` junto a Save.
 - **Nota fija** en modo edición: `Order breaks ties at equal priority.`
 - **Alternativas descartadas:**
-  - Editar regla a regla en un panel, como los "Edit" del wireframe: cada guardado reenviaría el documento entero y, con ids nuevos en cada `PUT`, la regla que se edita cambia de id entre una apertura y la siguiente.
+  - Editar regla a regla en un panel, como los "Edit" del wireframe: cada guardado reenviaría el documento entero y, como un `PUT` puede dar ids nuevos, la regla que se edita puede cambiar de id entre una apertura y la siguiente.
   - Arrastrar y soltar: los botones son accesibles con teclado y no traen dependencias.
 
 ### D6. `rule-errors.ts`: errores del API
@@ -219,7 +219,7 @@ frontend/src/test/msw/matching.ts (+ matching.test.ts)
   - `RULE_SETS` se mueve a `test/msw/matching-fixtures.ts`, con las reglas del legacy (las del seed, spec "Detalle del conjunto legacy") y unas pocas en el retirado.
   - `accounts.ts` lo importa de ahí y su resumen sale de la misma lista, así que lo creado en Matching Rules aparece en los formularios de cuenta.
   - Las globales del fake son las de la plantilla y los seis estados.
-- **Ids nuevos en cada `PUT`,** como el API, para que los tests de "sin ids" tengan sentido.
+- **Ids nuevos en las dos listas en cada `PUT`.** Un `PUT` del API puede dar ids nuevos, y el fake no decide qué listas cambiaron, porque eso sería una regla del API: siempre los da, y así los tests de "sin ids" tienen sentido. Que una lista sin cambios conserve sus ids lo prueba `admin-matching`.
 - **El fake no decide reglas de negocio.** No hay regex, repetidos, `Pending`, nombre en uso ni conjunto en uso: los guiona cada test.
 - **`resetMatching()`** se registra en `handlers.ts` y `resetDb`.
 

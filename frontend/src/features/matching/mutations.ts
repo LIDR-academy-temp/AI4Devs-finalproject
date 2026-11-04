@@ -1,6 +1,6 @@
 // Writes of the Matching Rules screens (web-admin-matching design D5, D7). Every answer is parsed with its schema and
 // becomes the cache of what it changed, so the screen shows the order of the answer and the next edit starts from it
-// (each PUT gives the rules new ids: nothing keeps an id between edits).
+// (a PUT may give the rules new ids; never keep them between edits).
 import {
   GlobalMatchingRules,
   type GlobalMatchingRulesPut,

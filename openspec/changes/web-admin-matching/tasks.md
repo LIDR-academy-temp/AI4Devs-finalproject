@@ -67,7 +67,7 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
   - **`PUT` del conjunto:**
     - `403` y `404` como el `POST`;
     - un `sheetRuleId` o un cuerpo sin `columnRules` → `400`;
-    - `200` con ids nuevos.
+    - `200` con ids nuevos en el fake (un `PUT` del API puede darlos; nunca se guardan entre ediciones).
   - **`PUT` global:**
     - `403` para `admin` con `merchantScope = assigned`;
     - `rowIgnoreRules` → `400`;

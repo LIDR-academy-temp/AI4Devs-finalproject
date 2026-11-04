@@ -1,6 +1,6 @@
 // The fake matching rules API on its own, without screens (web-admin-matching design D10). It checks bodies with the
-// schemas of @recon/shared, parses every answer with its schema, applies permission before scope and gives new rule
-// ids on every write, like the API. It does NOT decide business rules: no regex, repeated pattern, Pending, name in
+// schemas of @recon/shared, parses every answer with its schema and applies permission before scope. A PUT may give
+// the rules new ids; never keep them between edits. It does NOT decide business rules: no regex, repeated pattern, Pending, name in
 // use nor rule set in use answers on its own; each test scripts them.
 import { GlobalMatchingRules, MatchingRuleSetDetail, MatchingRuleSetSummary } from '@recon/shared'
 import { describe, expect, it } from 'vitest'
