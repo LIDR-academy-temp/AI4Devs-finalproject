@@ -155,8 +155,8 @@ function byApiOrder(a: FeeListItem, b: FeeListItem): number {
   return 0
 }
 
-/** "15" → "15.0000", "0.0275" → "0.027500": the API answers Money4 and Rate6. */
-function fixed(value: string | null | undefined, decimals: number): string | null {
+/** "15" → "15.0000", "0.0275" → "0.027500": the API answers Money4 and Rate6 (also the cap of an account). */
+export function fixed(value: string | null | undefined, decimals: number): string | null {
   if (value === null || value === undefined) return null
   const [integer = '0', fraction = ''] = value.split('.')
   return `${integer}.${fraction.padEnd(decimals, '0')}`

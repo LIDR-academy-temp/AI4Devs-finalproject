@@ -80,14 +80,14 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
   - "errores del API": nombre en uso, conjunto no válido, cuenta origen no válida, `403` y red con lo escrito intacto.
   - "Pantalla Accounts": **New account** solo para `admin`.
 - [x] 6.2 Commit: test(web): crear, editar, cerrar y reabrir cuentas
-- [ ] 6.3 Implementar lo necesario hasta dejar en verde los tests de 6.1 (design D5–D7):
+- [x] 6.3 Implementar lo necesario hasta dejar en verde los tests de 6.1 (design D5–D7):
   - añadir `components/ui/dialog.tsx` (shadcn, sobre `radix-ui`, sin dependencias nuevas);
   - `contract.ts` y `mutations.ts` (caché e invalidaciones de D7);
   - `NewAccountDialog.tsx`, `EditAccountSheet.tsx` y `AccountStatusDialog.tsx`;
   - el botón **New account** en `AccountsPage.tsx`;
   - sus textos, incluido `Name must be unique`.
   - Verificar con los tests de 6.1 y con toda la suite del frontend en verde.
-- [ ] 6.4 Commit: feat(web): crear, editar, cerrar y reabrir cuentas
+- [x] 6.4 Commit: feat(web): crear, editar, cerrar y reabrir cuentas
 
 ## 7. Channel Assignment (test-first)
 

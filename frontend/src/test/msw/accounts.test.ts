@@ -39,7 +39,8 @@ describe('fake account API: POST /providers/{id}/accounts', () => {
       name: 'ProviderC-New',
       providerId: 201,
       isActive: true,
-      rollingReserveCapAmt: '25000',
+      // Money4, as the API answers it (admin-accounts scenario "Tope de reserva normalizado").
+      rollingReserveCapAmt: '25000.0000',
       matchingRuleSetId: RULE_SET_IDS.legacy,
       createdBy: { userName: 'admin' },
       merchant: { merchantId: 2 },
@@ -92,7 +93,7 @@ describe('fake account API: PATCH /accounts/{id}', () => {
     const after = AccountDetail.parse(body)
     expect(after).toMatchObject({
       chargebackReservePolicy: 'release_on_chargeback',
-      rollingReserveCapAmt: '1000',
+      rollingReserveCapAmt: '1000.0000',
       isActive: false,
     })
     expect(after.updatedAt > before.updatedAt).toBe(true)

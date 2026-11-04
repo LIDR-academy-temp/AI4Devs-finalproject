@@ -7,6 +7,7 @@
 import { AccountCreate, AccountDetail, AccountPatch, MatchingRuleSetSummary } from '@recon/shared'
 import { HttpResponse, http, type PathParams } from 'msw'
 import type { AccountSummary, ProviderSummary } from '@/lib/api/types'
+import { fixed } from './fees'
 import { ACCOUNT_CREATOR, MERCHANTS, USERS, type UserName } from './fixtures'
 
 const API = '*/api/v1'
@@ -148,7 +149,8 @@ export function createAccountHandlers(caller: (request: Request) => UserName | n
           providerId: provider.providerId,
           name: parsed.data.name,
           chargebackReservePolicy: parsed.data.chargebackReservePolicy,
-          rollingReserveCapAmt: parsed.data.rollingReserveCapAmt ?? null,
+          // The API answers the cap as Money4 (admin-accounts scenario "Tope de reserva normalizado").
+          rollingReserveCapAmt: fixed(parsed.data.rollingReserveCapAmt, 4),
           matchingRuleSetId: parsed.data.matchingRuleSetId ?? null,
           isActive: true,
           createdAt,
@@ -175,6 +177,8 @@ export function createAccountHandlers(caller: (request: Request) => UserName | n
         if (!parsed.success) return invalid(parsed.error.issues)
         const { reason: _reason, ...changes } = parsed.data
         const next: AccountSummary = { ...current, ...changes }
+        if (changes.rollingReserveCapAmt !== undefined)
+          next.rollingReserveCapAmt = fixed(changes.rollingReserveCapAmt, 4)
         accounts[index] = next
         state.meta.set(next.accountId, {
           createdBy: state.meta.get(next.accountId)?.createdBy ?? ACCOUNT_CREATOR,

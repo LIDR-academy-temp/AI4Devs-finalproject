@@ -93,6 +93,48 @@ export const strings = {
   },
   /** New account, Edit, Close… and Reopen… (web-admin-accounts design D5–D7). */
   form: {
+    newAccount: 'New account',
+    createTitle: 'New account',
+    createDescription: 'The account groups the channels of a provider to keep their settlements apart.',
+    editTitle: (account: string) => `Edit ${account}`,
+    editDescription: 'Changes apply to the next batches and the next imports; processed batches keep their values.',
+    labels: {
+      name: 'Name',
+      merchant: 'Merchant',
+      provider: 'Provider',
+      policy: 'Reserve policy on chargeback',
+      cap: 'Reserve cap (optional, USD)',
+      fees: 'Fees',
+      matchingRules: 'Matching rules',
+      reason: 'Reason (optional)',
+    },
+    nameHelp: 'Name must be unique: no other account, of any provider, may use it.',
+    chooseMerchant: 'Choose a merchant',
+    chooseProvider: 'Choose a provider',
+    policies: {
+      hold_until_term: 'hold_until_term · keep the reserve until the term',
+      release_on_chargeback: 'release_on_chargeback · release it when the chargeback arrives',
+    },
+    capPlaceholder: 'no cap',
+    noFees: 'No fees',
+    closedAccount: (account: string) => `${account} (closed)`,
+    globalRules: 'None · global rules',
+    inactiveRuleSet: (name: string) => `${name} (inactive)`,
+    feesHelp:
+      'Copying from another account copies only the active fees and creates them here with open validity (always → no end), so every movement that reaches this account is covered; adjust them afterwards if needed. Matching rule sets belong to the provider; channels join the account with the first settlement that includes them.',
+    cancel: 'Cancel',
+    create: 'Create account',
+    save: 'Save',
+    saving: 'Saving…',
+    status: {
+      closeTitle: (account: string) => `Close ${account}?`,
+      closeBody:
+        'A closed account takes no new imports. What is already open goes on: imports in progress, settlements and payments. Its channels keep their primary account, and the account can be reopened.',
+      closeConfirm: 'Close account',
+      reopenTitle: (account: string) => `Reopen ${account}?`,
+      reopenBody: 'The account will take new imports again.',
+      reopenConfirm: 'Reopen account',
+    },
     errors: {
       nameRequired: 'Name is required.',
       nameTooLong: 'Use at most 50 characters.',

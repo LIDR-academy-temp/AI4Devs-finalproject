@@ -1,13 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet, useMatchRoute, useParams } from '@tanstack/react-router'
-import { useId } from 'react'
+import { useId, useState } from 'react'
+import { AlertDialog, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Sheet, SheetTrigger } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApiError } from '@/lib/api/client'
 import { useMe } from '@/lib/session/me'
 import { ACCOUNT_STATUS_TONE } from '@/lib/status-tone'
+import { AccountStatusDialog } from './AccountStatusDialog'
 import type { AccountDetail } from './contract'
+import { EditAccountSheet } from './EditAccountSheet'
 import { useCanManageAccounts, useCanProcess } from './permissions'
 import { accountQuery } from './queries'
 import { strings } from './strings'
@@ -27,6 +31,7 @@ const notAvailable = (error: unknown) => error instanceof ApiError && (error.sta
 function HeaderActions({ account }: { account: AccountDetail }) {
   const canManage = useCanManageAccounts()
   const canProcess = useCanProcess()
+  const [open, setOpen] = useState<'edit' | 'status' | null>(null)
   const where = {
     merchantId: account.merchant.merchantId,
     providerId: account.provider.providerId,
@@ -39,12 +44,23 @@ function HeaderActions({ account }: { account: AccountDetail }) {
       </Link>
       {canManage && (
         <>
-          <Button variant="outline" size="sm">
-            {s.actions.edit}
-          </Button>
-          <Button variant="outline" size="sm">
-            {account.isActive ? s.actions.close : s.actions.reopen}
-          </Button>
+          {/* Each action is the Trigger of its form, so closing the form gives the focus back to it. */}
+          <Sheet open={open === 'edit'} onOpenChange={(next) => setOpen(next ? 'edit' : null)}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm">
+                {s.actions.edit}
+              </Button>
+            </SheetTrigger>
+            {open === 'edit' && <EditAccountSheet account={account} onSaved={() => setOpen(null)} />}
+          </Sheet>
+          <AlertDialog open={open === 'status'} onOpenChange={(next) => setOpen(next ? 'status' : null)}>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                {account.isActive ? s.actions.close : s.actions.reopen}
+              </Button>
+            </AlertDialogTrigger>
+            {open === 'status' && <AccountStatusDialog account={account} onDone={() => setOpen(null)} />}
+          </AlertDialog>
         </>
       )}
       {canProcess && account.isActive && (
