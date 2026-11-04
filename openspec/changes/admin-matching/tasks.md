@@ -120,14 +120,19 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 
 ## 6. Colección Bruno
 
-- [ ] 6.1 Añadir a `10-smoke` las peticiones de D8, cada una con su código de estado y `code`. Ninguna escribe.
-- [ ] 6.2 Añadir `20-flows/matching/` con la secuencia 1–9 de D8, con `admin` (`as: admin`, `{{adminToken}}`):
+- [x] 6.1 Añadir a `10-smoke` las peticiones de D8, cada una con su código de estado y `code`. Ninguna escribe.
+- [x] 6.2 Añadir `20-flows/matching/` con la secuencia 1–9 de D8, con `admin` (`as: admin`, `{{adminToken}}`):
   - Provider C y "Provider C legacy" se buscan por nombre;
   - el nombre `bruno-<id>` sale de la pasada;
   - un script de petición quita ids, `rowIgnoreRules` y `statuses` antes del `PUT` global.
-- [ ] 6.3 La persona ejecuta `! pnpm test:api` con `pnpm dev` levantado. Verificar que todo lo de reglas de pareo pasa dos veces seguidas sin `db:seed` entre medias y que, tras esas dos pasadas, `pnpm test` sigue en verde. Los fallos conocidos de #111 se anotan, no se arreglan aquí.
-- [ ] 6.4 Actualizar la sección Bruno de `CLAUDE.md`: las escrituras de reglas de pareo usan `admin` y sus `403` usan `analyst`; el flujo `20-flows/matching` deja un conjunto `bruno-` inactivo por pasada en Provider C hasta el siguiente `pnpm db:seed`; el `PUT` global reenvía lo leído; los tests ignoran el prefijo.
-- [ ] 6.5 Commit: test(api): colección Bruno de la administración de reglas de pareo
+- [x] 6.3 La persona ejecuta `! pnpm test:api` con `pnpm dev` levantado. Verificar que todo lo de reglas de pareo pasa dos veces seguidas sin `db:seed` entre medias y que, tras esas dos pasadas, `pnpm test` sigue en verde. Los fallos conocidos de #111 se anotan, no se arreglan aquí.
+- [x] 6.4 Actualizar la sección Bruno de `CLAUDE.md`: las escrituras de reglas de pareo usan `admin` y sus `403` usan `analyst`; el flujo `20-flows/matching` deja un conjunto `bruno-` inactivo por pasada en Provider C hasta el siguiente `pnpm db:seed`; el `PUT` global reenvía lo leído; los tests ignoran el prefijo.
+- [x] 6.5 Commit: test(api): colección Bruno de la administración de reglas de pareo
+
+  Grupo 6, verificación y notas:
+  - 6.3, con la base recién sembrada y `pnpm dev` (turno de la persona): primera pasada de `pnpm test:api`, 230/230 peticiones y 242/242 tests; segunda pasada sin sembrar, todo lo de reglas de pareo en verde (smoke 107–114 y `20-flows/matching` 1–9, con un segundo conjunto `bruno-` inactivo). Fallos de la segunda pasada, todos #111 (estado que deja `batch-clean` de la primera): `10-smoke/Channels unassigned`, `20-flows/imports/13 Analyze` y `20-flows/settlements/batch-clean` 6–30 en cascada. La salida de la segunda pasada llegó cortada, sin la tabla final. Después, `pnpm test` en verde (shared 274, backend 1326 + 3 omitidos, frontend 811).
+  - El paso 1 del flujo busca Provider C con `bru.sendRequest` sobre `GET /merchants` y `GET /merchants/{id}/providers`; `10-smoke/Rule set detail` y `Global rules` dejan en variables lo que leen para los pasos 7 y 9.
+  - `collection.bru`: el comentario de la cabecera incluye las escrituras de cuentas y de reglas de pareo entre las que usan `admin`.
 
 ## 7. Cierre
 

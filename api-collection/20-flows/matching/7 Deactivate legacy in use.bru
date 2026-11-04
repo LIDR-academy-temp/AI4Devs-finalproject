@@ -1,0 +1,60 @@
+meta {
+  name: 7 Deactivate legacy in use
+  type: http
+  seq: 7
+  tags: [
+    flow
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/matching-rule-sets/:ruleSetId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  ruleSetId: {{providerCLegacyRuleSetId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {}
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:pre-request {
+  /** The detail as a PUT body: without rule ids nor the read-only row ignores. */
+  function bodyOf(detail) {
+    return {
+      name: detail.name,
+      isActive: detail.isActive,
+      sheetRules: detail.sheetRules.map(({ sheetRuleId, ...rule }) => rule),
+      columnRules: detail.columnRules.map(({ columnRuleId, ...rule }) => rule),
+    };
+  }
+
+  // "Provider C legacy" resolved by name, sent back with isActive false: ProviderC-Alt links to it.
+  if (!bru.getVar('providerCLegacyDetail')) {
+    await bru.runRequest('10-smoke/Rule set detail');
+  }
+  const detail = bru.getVar('providerCLegacyDetail');
+  if (!detail) {
+    throw new Error('the detail of "Provider C legacy" could not be read');
+  }
+  req.setBody({ ...bodyOf(detail), isActive: false });
+}
+
+tests {
+  test('deactivating the legacy set: 409 rule_set_in_use with ProviderC-Alt, the set stays active', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('rule_set_in_use');
+    expect(res.body.details.accounts.map((a) => a.name)).to.include('ProviderC-Alt');
+  });
+}

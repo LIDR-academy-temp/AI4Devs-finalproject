@@ -1,0 +1,42 @@
+meta {
+  name: 4 Detail
+  type: http
+  seq: 4
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/matching-rule-sets/:ruleSetId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  ruleSetId: {{flowRuleSetId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar('flowRuleSetDetail', res.body);
+  }
+}
+
+tests {
+  test('the detail of the new set: its rules with ids, no row ignores', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.ruleSetId).to.equal(Number(bru.getVar('flowRuleSetId')));
+    expect(res.body.sheetRules[0]).to.include({ sheetPattern: 'Transactions', cycle: 'E', isActive: true });
+    expect(res.body.sheetRules[0].sheetRuleId).to.be.a('number');
+    expect(res.body.rowIgnoreRules).to.deep.equal([]);
+  });
+}

@@ -1,0 +1,29 @@
+meta {
+  name: Put global rules - analyst
+  type: http
+  seq: 113
+  tags: [
+    smoke
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/matching-rules/global
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "sheetRules": [],
+    "columnRules": [],
+    "statusAliases": []
+  }
+}
+
+tests {
+  test('analyst lacks account.manage: 403 forbidden, the global rules are not touched', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

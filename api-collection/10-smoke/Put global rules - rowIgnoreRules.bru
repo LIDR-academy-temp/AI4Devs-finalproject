@@ -1,0 +1,38 @@
+meta {
+  name: Put global rules - rowIgnoreRules
+  type: http
+  seq: 114
+  tags: [
+    smoke
+  ]
+}
+
+put {
+  url: {{baseUrl}}/api/v1/matching-rules/global
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "sheetRules": [],
+    "columnRules": [],
+    "statusAliases": [],
+    "rowIgnoreRules": []
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+tests {
+  test('row ignores are read-only (#120): 400 validation_error, nothing written', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}

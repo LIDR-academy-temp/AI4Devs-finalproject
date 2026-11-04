@@ -1,0 +1,31 @@
+meta {
+  name: Create rule set - analyst
+  type: http
+  seq: 107
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/providers/:providerId/matching-rule-sets
+  body: json
+  auth: inherit
+}
+
+params:path {
+  providerId: 201
+}
+
+body:json {
+  {
+    "name": "bruno-smoke-forbidden"
+  }
+}
+
+tests {
+  test('analyst lacks account.manage: 403 forbidden, nothing created', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}
