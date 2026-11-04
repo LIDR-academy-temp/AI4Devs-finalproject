@@ -1,22 +1,27 @@
-import { MatchingRuleSetDetail, MatchingRuleSetSummary } from '@recon/shared'
+import { GlobalMatchingRules, MatchingRuleSetDetail, MatchingRuleSetSummary } from '@recon/shared'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { buildTestApp, PASSWORD } from '../../../test-support/build-test-app.js'
 import { ACCOUNT_IDS } from '../../catalog/application/__fakes__/in-memory.js'
+import { InMemoryGlobalRules } from '../application/__fakes__/in-memory-global-rules.js'
 import { InMemoryRuleSets } from '../application/__fakes__/in-memory-rule-sets.js'
+import { GlobalRulesService } from '../application/global-rules-service.js'
 import { RuleSetAdminService } from '../application/rule-set-admin-service.js'
 import { RuleSetReadService } from '../application/rule-set-read-service.js'
 
 // Spec matching "Conjuntos de reglas de un proveedor" (admin-accounts design D8), over the in-memory double.
 let ctx: Awaited<ReturnType<typeof buildTestApp>>
 let ruleSets: InMemoryRuleSets
+let globals: InMemoryGlobalRules
 
 beforeEach(async () => {
   ruleSets = new InMemoryRuleSets()
+  globals = new InMemoryGlobalRules()
   ctx = await buildTestApp({
     matching: {
       ruleSetService: new RuleSetReadService(ruleSets),
       ruleSetAdminService: new RuleSetAdminService(ruleSets),
+      globalRulesService: new GlobalRulesService(globals),
     },
   })
   await ctx.app.ready()
@@ -83,8 +88,7 @@ describe('GET /providers/{id}/matching-rule-sets', () => {
   })
 })
 
-// admin-matching design D5: the rule administration routes with their permission and schema. The global rules
-// answer 501 not_implemented until group 4 wires them.
+// admin-matching design D5: the rule administration routes with their permission and schema.
 async function call(method: 'GET' | 'POST' | 'PUT', url: string, userName?: string, payload?: object) {
   const headers = userName
     ? { authorization: `Bearer ${(await ctx.authService.login({ userName, password: PASSWORD })).accessToken}` }
@@ -140,15 +144,56 @@ describe('matching rule administration routes (contract)', () => {
     expect(res.statusCode).toBe(400)
     expect(res.json().code).toBe('validation_error')
   })
+})
 
-  it.each([
-    ['GET', '/matching-rules/global', 'viewer', undefined],
-    ['PUT', '/matching-rules/global', 'admin', globalBody],
-  ] as const)('%s %s answers 501 not_implemented for now', async (method, url, userName, body) => {
-    const res = await call(method, url, userName, body)
+describe('global rule routes (spec matching "Reglas globales editables", admin-matching design D3–D5)', () => {
+  it('GET answers 200 to viewer with the row ignores and the statuses', async () => {
+    const res = await call('GET', '/matching-rules/global', 'viewer')
 
-    expect(res.statusCode).toBe(501)
-    expect(res.json().code).toBe('not_implemented')
+    expect(res.statusCode).toBe(200)
+    const body = GlobalMatchingRules.parse(res.json())
+    expect(body.rowIgnoreRules).toHaveLength(1)
+    expect(body.statuses).toHaveLength(6)
+  })
+
+  it('PUT answers 200 with the rules sent back and audits as admin only when something changes', async () => {
+    const before = GlobalMatchingRules.parse((await call('GET', '/matching-rules/global', 'admin')).json())
+    const body = {
+      sheetRules: before.sheetRules.map(({ sheetRuleId: _, ...r }) => r),
+      columnRules: before.columnRules.map(({ columnRuleId: _, ...r }) => r),
+      statusAliases: before.statusAliases,
+    }
+
+    const same = await call('PUT', '/matching-rules/global', 'admin', body)
+    const added = await call('PUT', '/matching-rules/global', 'admin', {
+      ...body,
+      statusAliases: [
+        ...body.statusAliases,
+        { alias: 'Approved OK', statusId: 2, excludeAmount: false, isLegacy: false },
+      ],
+    })
+
+    expect(same.statusCode, same.body).toBe(200)
+    expect(same.json()).toEqual(before)
+    expect(added.statusCode, added.body).toBe(200)
+    expect(globals.audits.map((a) => a.userId)).toEqual([1])
+  })
+
+  it('PUT answers 400 validation_error with details.field to an alias of an unknown status', async () => {
+    const res = await call('PUT', '/matching-rules/global', 'admin', {
+      ...globalBody,
+      statusAliases: [{ alias: 'Lost', statusId: 99, excludeAmount: false, isLegacy: false }],
+    })
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json()).toMatchObject({ code: 'validation_error', details: { field: 'statusAliases[0].statusId' } })
+  })
+
+  it('PUT answers 403 to an admin with an assigned scope without taking the lock', async () => {
+    const res = await call('PUT', '/matching-rules/global', 'scoped_admin', globalBody)
+
+    expect(res.statusCode).toBe(403)
+    expect(globals.locks).toBe(0)
   })
 })
 

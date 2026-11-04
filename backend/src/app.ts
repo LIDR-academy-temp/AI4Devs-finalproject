@@ -22,6 +22,7 @@ import { feesModule } from './modules/fees/fees-module.js'
 import type { ImportService } from './modules/imports/application/import-service.js'
 import type { FileStore } from './modules/imports/application/ports.js'
 import { importsModule } from './modules/imports/imports-module.js'
+import type { GlobalRulesService } from './modules/matching/application/global-rules-service.js'
 import type { RuleSetAdminService } from './modules/matching/application/rule-set-admin-service.js'
 import type { RuleSetReadService } from './modules/matching/application/rule-set-read-service.js'
 import { matchingModule } from './modules/matching/matching-module.js'
@@ -71,7 +72,11 @@ export interface BuildAppOptions {
   /** Injected account administration (tests); otherwise built on Prisma and the catalog. */
   accounts?: { adminService: AccountAdminService }
   /** Injected rule set reads and writes (tests); otherwise built on the Prisma repositories. */
-  matching?: { ruleSetService?: RuleSetReadService; ruleSetAdminService?: RuleSetAdminService }
+  matching?: {
+    ruleSetService?: RuleSetReadService
+    ruleSetAdminService?: RuleSetAdminService
+    globalRulesService?: GlobalRulesService
+  }
   /** Log destination (tests capture logs through it); defaults to stdout. */
   logStream?: { write(line: string): void }
 }

@@ -10,17 +10,15 @@ import {
 } from '@recon/shared'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { NotImplementedError } from '../../../shared/errors.js'
 import { ForbiddenError } from '../../auth/domain/errors.js'
 import { scopeOf } from '../../catalog/domain/scope.js'
+import type { GlobalRulesService } from '../application/global-rules-service.js'
 import type { RuleSetAdminService } from '../application/rule-set-admin-service.js'
 import type { RuleSetReadService } from '../application/rule-set-read-service.js'
 
 const ProviderParams = z.object({ providerId: IntId })
 const RuleSetParams = z.object({ ruleSetId: IntId })
 const matching = { tags: ['matching'], security: [{ bearerAuth: [] }] }
-/** 501 is temporary (admin-matching design D5): it leaves the contract when the global handlers are wired. */
-const pending = { 501: ErrorResponse }
 const writeErrors = {
   400: ErrorResponse,
   401: ErrorResponse,
@@ -37,15 +35,15 @@ const contentRules =
 export interface MatchingRoutesOptions {
   ruleSetService: RuleSetReadService
   ruleSetAdminService: RuleSetAdminService
+  globalRulesService: GlobalRulesService
 }
 
 /**
  * Matching rules (spec matching; admin-accounts design D8, admin-matching design D5). Mounted under /api/v1.
- * The global rules answer 501 not_implemented until their use case is wired (admin-matching group 4).
  */
 export const matchingRoutes: FastifyPluginAsyncZod<MatchingRoutesOptions> = async (
   app,
-  { ruleSetService, ruleSetAdminService },
+  { ruleSetService, ruleSetAdminService, globalRulesService },
 ) => {
   app.get(
     '/providers/:providerId/matching-rule-sets',
@@ -143,12 +141,10 @@ export const matchingRoutes: FastifyPluginAsyncZod<MatchingRoutesOptions> = asyn
         ...matching,
         summary: 'Global matching rules, status aliases and the status catalog',
         description: 'Global rules are the defaults of every account; row-ignore rules are read-only (#120).',
-        response: { 200: GlobalMatchingRules, 401: ErrorResponse, ...pending },
+        response: { 200: GlobalMatchingRules, 401: ErrorResponse },
       },
     },
-    async () => {
-      throw new NotImplementedError('GET /matching-rules/global')
-    },
+    async () => globalRulesService.get(),
   )
 
   app.put(
@@ -162,12 +158,12 @@ export const matchingRoutes: FastifyPluginAsyncZod<MatchingRoutesOptions> = asyn
           'Needs account.manage and merchant scope "all" (403 otherwise): the global rules apply to every merchant. ' +
           `A body that changes nothing answers 200 without writing. ${contentRules}`,
         body: GlobalMatchingRulesPut,
-        response: { 200: GlobalMatchingRules, 400: ErrorResponse, 401: ErrorResponse, 403: ErrorResponse, ...pending },
+        response: { 200: GlobalMatchingRules, 400: ErrorResponse, 401: ErrorResponse, 403: ErrorResponse },
       },
     },
     async (request) => {
       if (request.auth.merchantScope !== 'all') throw new ForbiddenError()
-      throw new NotImplementedError('PUT /matching-rules/global')
+      return globalRulesService.put(request.auth.userId, request.body)
     },
   )
 }

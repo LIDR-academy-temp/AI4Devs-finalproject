@@ -87,8 +87,13 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 
   El fichero de integración lee las globales en `beforeAll`, las restaura en `afterAll` y comprueba que la propuesta de `batch-clean` en `ProviderA-USD` sigue siendo toda `source = global` (D8).
 - [x] 4.2 Commit: test(matching): reglas globales editables
-- [ ] 4.3 Implementar `GlobalRulesService.get`/`.put` e `inGlobals` con `sp_getapplock` (D3), sin tocar `MatchingRowIgnoreRule`, y quitar los `501` de las globales. Añadir a la 3.5 un caso de dos `PUT` globales simultáneos que se serializan. Verificar con 4.1, la 3.5 ampliada y `pnpm test`. Ejecutar `pnpm openapi:check`: si el contrato cambió respecto al grupo 1, regenerar y avisar a la persona.
-- [ ] 4.4 Commit: feat(matching): reglas globales y alias de estado editables
+- [x] 4.3 Implementar `GlobalRulesService.get`/`.put` e `inGlobals` con `sp_getapplock` (D3), sin tocar `MatchingRowIgnoreRule`, y quitar los `501` de las globales. Añadir a la 3.5 un caso de dos `PUT` globales simultáneos que se serializan. Verificar con 4.1, la 3.5 ampliada y `pnpm test`. Ejecutar `pnpm openapi:check`: si el contrato cambió respecto al grupo 1, regenerar y avisar a la persona.
+- [x] 4.4 Commit: feat(matching): reglas globales y alias de estado editables
+
+  Grupo 4, verificación y notas:
+  - Contrato frente al grupo 1: solo desaparecen las cinco respuestas `501`; nada nuevo para `web-admin-matching`.
+  - Verificado con la base local (turno de la persona): `global-rules` y `rule-set-concurrency`, 10/10; sin `sp_getapplock` falla el caso de los dos `PUT` globales simultáneos (el segundo confirma durante la espera del primero), y se restauró. El `finally` del test dejó las globales como estaban.
+  - Los alias se reemplazan solo si su lista cambia; una clave repetida que se cuele (índice de patrones globales o clave del alias) es `400` en su lista.
 
 ## 5. Efecto de un cambio y escenarios de #21
 

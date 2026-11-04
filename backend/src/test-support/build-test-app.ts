@@ -23,6 +23,7 @@ import type { FeeQueryService } from '../modules/fees/application/fee-query-serv
 import type { FeeReadService } from '../modules/fees/application/fee-read-service.js'
 import type { ImportService } from '../modules/imports/application/import-service.js'
 import type { FileStore } from '../modules/imports/application/ports.js'
+import type { GlobalRulesService } from '../modules/matching/application/global-rules-service.js'
 import type { RuleSetAdminService } from '../modules/matching/application/rule-set-admin-service.js'
 import type { RuleSetReadService } from '../modules/matching/application/rule-set-read-service.js'
 import type { SettlementLifecycleService } from '../modules/settlement/application/settlement-lifecycle-service.js'
@@ -47,7 +48,11 @@ export interface TestAppOptions {
   /** Account administration over in-memory doubles; without it the account writes hit the fake Prisma client. */
   accounts?: { adminService: AccountAdminService }
   /** Rule set reads and writes over in-memory doubles; without them the matching routes hit the fake Prisma client. */
-  matching?: { ruleSetService?: RuleSetReadService; ruleSetAdminService?: RuleSetAdminService }
+  matching?: {
+    ruleSetService?: RuleSetReadService
+    ruleSetAdminService?: RuleSetAdminService
+    globalRulesService?: GlobalRulesService
+  }
 }
 
 export async function buildTestApp(options: TestAppOptions = {}) {

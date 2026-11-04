@@ -1,14 +1,17 @@
-import type { MatchingRuleSetPut } from '@recon/shared'
+import type { GlobalMatchingRules, GlobalMatchingRulesPut, MatchingRuleSetPut } from '@recon/shared'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { GlobalRulesService } from '../../src/modules/matching/application/global-rules-service.js'
 import { RuleSetAdminService } from '../../src/modules/matching/application/rule-set-admin-service.js'
 import { RuleSetNameTakenError } from '../../src/modules/matching/domain/errors.js'
+import { PrismaGlobalRulesRepository } from '../../src/modules/matching/infrastructure/prisma-global-rules-repository.js'
 import { PrismaMatchingRulesAdminRepository } from '../../src/modules/matching/infrastructure/prisma-matching-rules-admin-repository.js'
 import { createPrismaClient, fixtureIds } from './helpers.js'
 
 // admin-matching design D3 and the accepted risk "Última escritura gana": two edits of the same set run one after the
 // other (UPDLOCK, HOLDLOCK on the set row), so the result is the second document whole, never a mix, and both are
-// audited; two creations with the same name leave one set (the unique index backstop). A gate holds the first write
-// after its decision and before its first write.
+// audited; two creations with the same name leave one set (the unique index backstop); two edits of the global rules
+// run one after the other too (sp_getapplock). A gate holds the first write after its decision and before its first
+// write. The global rules are written back as found.
 const prisma = createPrismaClient()
 const ALL = { merchantIds: [1, 2] }
 const RUN = Date.now().toString(36)
@@ -147,5 +150,64 @@ describe('two simultaneous creations with the same name', () => {
     expect(outcomes.filter((o) => o instanceof RuleSetNameTakenError)).toHaveLength(1)
     expect(outcomes.filter((o) => (o as { name?: string }).name === body.name)).toHaveLength(1)
     expect(await prisma.matchingRuleSet.count({ where: { name: body.name } })).toBe(1)
+  })
+})
+
+/** The GET as a PUT body: without rule ids, row ignores nor statuses. */
+const globalBody = (g: GlobalMatchingRules, extraAlias?: string): GlobalMatchingRulesPut => ({
+  sheetRules: g.sheetRules.map(({ sheetRuleId: _, ...r }) => r),
+  columnRules: g.columnRules.map(({ columnRuleId: _, ...r }) => r),
+  statusAliases:
+    extraAlias === undefined
+      ? g.statusAliases
+      : [...g.statusAliases, { alias: extraAlias, statusId: 2, excludeAmount: false, isLegacy: false }],
+})
+
+describe('two simultaneous PUTs of the global rules', () => {
+  it('run one after the other under the application lock: the second document stays whole', async () => {
+    const plain = new GlobalRulesService(new PrismaGlobalRulesRepository(prisma))
+    const original = await plain.get()
+    const lastAuditId = (await prisma.auditLog.aggregate({ _max: { auditId: true } }))._max.auditId ?? 0n
+    const hold = gate()
+    const decided = gate()
+    let calls = 0
+    const held = new GlobalRulesService(
+      new PrismaGlobalRulesRepository(prisma, undefined, {
+        beforeWrite: async () => {
+          if (++calls === 1) {
+            decided.open()
+            await hold.opened
+          }
+        },
+      }),
+    )
+    const commits: string[] = []
+    try {
+      const first = held.put(adminId, globalBody(original, 'it-conc-a')).then(() => commits.push('first'))
+      await decided.opened
+      const second = held.put(adminId, globalBody(original, 'it-conc-b')).then(() => commits.push('second'))
+      // With the lock the second waits for the first; without it, it commits now while the first is held.
+      await Promise.race([second, new Promise((resolve) => setTimeout(resolve, 500))])
+      const duringHold = [...commits]
+      hold.open()
+      await Promise.all([first, second])
+
+      expect(duringHold).toEqual([])
+      expect(commits).toEqual(['first', 'second'])
+      const aliases = (await plain.get()).statusAliases.map((a) => a.alias)
+      expect(aliases).toContain('it-conc-b')
+      expect(aliases).not.toContain('it-conc-a')
+      const audits = await prisma.auditLog.findMany({
+        where: { entityType: 'MatchingRules', entityId: 'global', auditId: { gt: lastAuditId } },
+      })
+      expect(audits).toHaveLength(2)
+    } finally {
+      hold.open()
+      await plain.put(adminId, globalBody(original))
+      await prisma.auditLog.deleteMany({
+        where: { entityType: 'MatchingRules', entityId: 'global', auditId: { gt: lastAuditId } },
+      })
+      expect(globalBody(await plain.get())).toEqual(globalBody(original))
+    }
   })
 })
