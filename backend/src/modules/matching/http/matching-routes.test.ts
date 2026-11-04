@@ -138,6 +138,16 @@ describe('matching rule administration routes (contract)', () => {
     expect(global.json().code).toBe('validation_error')
   })
 
+  it.each([
+    ['GET', '/matching-rule-sets/1'],
+    ['GET', '/matching-rules/global'],
+  ] as const)('%s %s answers 401 unauthorized without a token', async (method, url) => {
+    const res = await call(method, url)
+
+    expect(res.statusCode).toBe(401)
+    expect(res.json().code).toBe('unauthorized')
+  })
+
   it('answers 400 validation_error to a malformed rule set id', async () => {
     const res = await call('GET', '/matching-rule-sets/abc', 'viewer')
 

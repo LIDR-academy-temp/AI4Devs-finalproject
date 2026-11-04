@@ -2,7 +2,7 @@
 // 'matching_rules_global' for its transaction: there is no row to lock, and two edits must run one after the other.
 // The sheet and column rules with ruleSetId NULL and the aliases of each list that changes are replaced whole, in
 // body order; MatchingRowIgnoreRule is never touched (#120). The audit entry goes inside the same transaction.
-import { Cycle, type GlobalMatchingRules } from '@recon/shared'
+import type { GlobalMatchingRules } from '@recon/shared'
 import type { FastifyBaseLogger } from 'fastify'
 import type { Prisma, PrismaClient } from '../../../generated/prisma/client.js'
 import { retryOnDeadlock } from '../../../infrastructure/deadlock-retry.js'
@@ -18,6 +18,7 @@ import {
   toColumnRule,
   toSheetRule,
 } from './prisma-matching-rules-repository.js'
+import { readStatusCatalog } from './prisma-status-catalog.js'
 
 type Tx = Prisma.TransactionClient
 type Client = Pick<
@@ -46,17 +47,14 @@ async function readGlobals(client: Client): Promise<GlobalMatchingRules> {
       select: { alias: true, statusId: true, excludeAmount: true, isLegacy: true },
       orderBy: { alias: 'asc' },
     }),
-    client.transactionStatus.findMany({
-      select: { statusId: true, name: true, cycle: true },
-      orderBy: { statusId: 'asc' },
-    }),
+    readStatusCatalog(client),
   ])
   return {
     sheetRules: sheetRules.map(toSheetRule),
     columnRules: columnRules.map(toColumnRule),
     rowIgnoreRules,
     statusAliases,
-    statuses: statuses.map((s) => ({ ...s, cycle: Cycle.parse(s.cycle) })),
+    statuses,
   }
 }
 
@@ -127,13 +125,7 @@ function unitOf(tx: Tx, hooks: GlobalRulesRepositoryHooks): GlobalRulesAdminUnit
     return writing
   }
   return {
-    statuses: async () =>
-      (
-        await tx.transactionStatus.findMany({
-          select: { statusId: true, name: true, cycle: true },
-          orderBy: { statusId: 'asc' },
-        })
-      ).map((s) => ({ ...s, cycle: Cycle.parse(s.cycle) })),
+    statuses: () => readStatusCatalog(tx),
 
     replaceGlobals: async ({ sheetRules, columnRules, statusAliases }) => {
       await beforeWrite()

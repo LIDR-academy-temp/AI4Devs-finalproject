@@ -118,7 +118,8 @@ export const matchingRoutes: FastifyPluginAsyncZod<MatchingRoutesOptions> = asyn
         ...matching,
         summary: 'Replace a matching rule set',
         description:
-          'The whole document replaces every sheet and column rule of the set, in the order given (new rule ids). ' +
+          'The whole document of the set: the lists that change are replaced in the order given (new rule ids); a ' +
+          'list without changes keeps its ids. ' +
           'A body that changes nothing answers 200 without writing. A change applies from the next proposal and ' +
           'the next analysis; confirmed mappings and analysed rows do not change. Deactivating a set with linked ' +
           `accounts, open or closed, is 409 rule_set_in_use (details.accounts). ${contentRules}`,

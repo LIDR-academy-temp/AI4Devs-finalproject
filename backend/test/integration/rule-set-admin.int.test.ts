@@ -224,6 +224,12 @@ describe('GET /matching-rule-sets/{id}', () => {
     ])
   })
 
+  it('answers 401 unauthorized without a token ("Sin token")', async () => {
+    const res = await call('GET', `/matching-rule-sets/${legacyId}`, null)
+
+    expect([res.statusCode, res.json().code]).toEqual([401, 'unauthorized'])
+  })
+
   it('answers 404 with the same body to viewer (merchant 1 only) and for an unknown set', async () => {
     const outside = await call('GET', `/matching-rule-sets/${legacyId}`, 'viewer')
     const unknown = await call('GET', '/matching-rule-sets/999999', 'admin')
