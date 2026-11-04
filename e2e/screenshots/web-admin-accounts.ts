@@ -12,7 +12,7 @@
 // table scrolls inside its card, or an open dialog is wider or taller than what it shows.
 import { existsSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { type Browser, chromium, expect, type Page } from '@playwright/test'
+import { type Browser, chromium, expect, type Locator, type Page } from '@playwright/test'
 
 const BASE_URL = 'http://localhost:5173'
 const FOLDER = 'docs/wireframes/web-admin-accounts/'
@@ -149,29 +149,38 @@ async function overview(page: Page, merchant: string, provider: string, account:
   await page.waitForLoadState('networkidle')
 }
 
+/** The longest account name the API takes: 50 characters, without spaces, so nothing breaks it by itself. */
+const LONG_NAME = `bruno-${'X'.repeat(44)}`
+
 /**
- * Measures the Accounts table at 1024 px with the first account renamed in the page to 50 characters without spaces,
- * the longest name the API takes. Nothing is saved nor captured; the list is reloaded afterwards.
+ * Measures a screen at 1024 px with the account name in one element replaced, in the page, by LONG_NAME (`text` builds
+ * the whole text of the element around it). Besides the checks of every screenshot, the element itself must neither
+ * scroll sideways nor end past the viewport. Nothing is saved nor captured; the text is put back afterwards.
  */
-async function longNameFits(page: Page) {
-  if (ONLY.length > 0 && !ONLY.includes('accounts-admin')) return
+async function longNameFits(page: Page, screen: string, target: Locator, text: (name: string) => string) {
+  if (ONLY.length > 0 && !ONLY.includes(screen)) return
   await page.setViewportSize(WIDTHS[1])
-  await page
-    .getByRole('table')
-    .getByRole('link')
-    .first()
-    .evaluate((link) => {
-      link.textContent = `bruno-${'X'.repeat(44)}`
-    })
+  const original = await target.evaluate((element, value) => {
+    const before = element.textContent ?? ''
+    element.textContent = value
+    return before
+  }, text(LONG_NAME))
   await page.waitForTimeout(300)
   const found = await overflows(page)
-  console.log(
-    `measured accounts-admin-1024 with a 50-character name · ${found.length === 0 ? 'fits' : found.join(', ')}`,
-  )
-  if (found.length > 0) problems.push(`accounts-admin-1024 with a 50-character name: ${found.join(', ')}`)
+  const own = await target.evaluate((element) => {
+    const box = element.getBoundingClientRect()
+    const issues: string[] = []
+    if (element.scrollWidth > element.clientWidth) issues.push('the name scrolls inside its element')
+    if (box.right > window.innerWidth + 0.5) issues.push('the name ends past the viewport')
+    return issues
+  })
+  found.push(...own)
+  console.log(`measured ${screen}-1024 with a 50-character name · ${found.length === 0 ? 'fits' : found.join(', ')}`)
+  if (found.length > 0) problems.push(`${screen}-1024 with a 50-character name: ${found.join(', ')}`)
+  await target.evaluate((element, value) => {
+    element.textContent = value
+  }, original)
   await page.setViewportSize(WIDTHS[0])
-  await page.reload()
-  await expect(page.getByRole('table').getByRole('row').nth(1)).toBeVisible()
 }
 
 /** The first bruno- name no account uses yet: an earlier run on the same seed left its account behind. */
@@ -193,7 +202,7 @@ async function main() {
     await accounts(admin, 'Merchant B', 'Provider C')
     const name = await freeName(admin)
     await shot(admin, 'accounts-admin')
-    await longNameFits(admin)
+    await longNameFits(admin, 'accounts-admin', admin.getByRole('table').getByRole('link').first(), (n) => n)
 
     // New account under Provider C, copying the fees of ProviderC-USD, with the provider's rule set.
     await admin.getByRole('button', { name: 'New account' }).click()
@@ -231,6 +240,7 @@ async function main() {
       const close = admin.getByRole('alertdialog', { name: `Close ${name}?` })
       await expect(close).toBeVisible()
       await shot(admin, 'close-dialog', { dialog: true })
+      await longNameFits(admin, 'close-dialog', close.getByRole('heading'), (n) => `Close ${n}?`)
       await close.getByRole('button', { name: 'Close account' }).click()
       await expect(close).toBeHidden()
       const header = admin.getByRole('region', { name: 'Account' })
@@ -243,11 +253,13 @@ async function main() {
     // admin: Overview of ProviderA-USD, the Edit sheet (cancelled) and the Fees tab.
     await overview(admin, 'Merchant A', 'Provider A', ACCOUNT)
     await shot(admin, 'overview-admin')
+    await longNameFits(admin, 'overview-admin', admin.getByRole('heading', { level: 1 }), (n) => n)
 
     await admin.getByRole('button', { name: 'Edit' }).click()
     const edit = admin.getByRole('dialog', { name: `Edit ${ACCOUNT}` })
     await expect(edit).toBeVisible()
     await shot(admin, 'edit-sheet', { dialog: true })
+    await longNameFits(admin, 'edit-sheet', edit.getByRole('heading', { name: `Edit ${ACCOUNT}` }), (n) => `Edit ${n}`)
     await edit.getByRole('button', { name: 'Cancel' }).click()
     await expect(edit).toBeHidden()
 
@@ -273,6 +285,7 @@ async function main() {
     await expect(primary.getByRole('row').nth(1)).toBeVisible()
     await viewer.waitForLoadState('networkidle')
     await shot(viewer, 'channel-assignment-viewer')
+    await longNameFits(viewer, 'channel-assignment-viewer', primary.getByRole('link').first(), (n) => n)
   } finally {
     await browser.close()
     if (created) console.log(`${created} is now in the local database, closed: seed it again with \`pnpm db:seed\`.`)
