@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { controlClass, GeneralMessage } from '@/features/accounts/account-fields'
 import { EditColumnRules, EditSheetRules, EditStatusAliases } from './rule-edit-tables'
 import { formPath, ruleProblemOf } from './rule-errors'
-import { checkRules, type RulesInput, type RulesValues, valuesOf } from './rule-form'
+import { checkRules, hiddenFields, type RulesInput, type RulesValues, valuesOf } from './rule-form'
 import { ColumnRulesTable, RowsToIgnore, RulesCard, SheetRulesTable, StatusAliasesTable } from './rule-tables'
 import { strings } from './strings'
 
@@ -34,6 +34,8 @@ export interface RulesEditorProps {
   onStale?: () => void
   /** Whether the form has unsaved changes (Rename, Deactivate and Activate wait for them, design D7). */
   onDirtyChange?: (dirty: boolean) => void
+  /** Reads the catalog of statuses again when it is missing. */
+  onRetryStatuses?: () => void
 }
 
 const LISTS = ['sheetRules', 'columnRules', 'statusAliases'] as const
@@ -113,6 +115,7 @@ function RulesForm({
         columnRules: values.columnRules.length,
         statusAliases: withAliases ? values.statusAliases.length : 0,
         name: false,
+        hidden: hiddenFields(values),
       })
       if (problem.invalidate) onStale?.()
       showFields(problem.fields)
@@ -139,7 +142,7 @@ function RulesForm({
             <label htmlFor={reasonId} className="text-sm font-medium">
               {e.reason}
             </label>
-            <input id={reasonId} className={controlClass} {...form.register('reason')} />
+            <input id={reasonId} className={controlClass} maxLength={500} {...form.register('reason')} />
           </div>
           <GeneralMessage message={general} attempt={attempt} />
           <div className="flex flex-wrap items-center gap-3">
@@ -157,7 +160,15 @@ function RulesForm({
   )
 }
 
-export function RulesEditor({ doc, statuses, canEdit, save, onStale, onDirtyChange }: RulesEditorProps) {
+export function RulesEditor({
+  doc,
+  statuses,
+  canEdit,
+  save,
+  onStale,
+  onDirtyChange,
+  onRetryStatuses,
+}: RulesEditorProps) {
   const [editing, setEditing] = useState(false)
   const editButton = useRef<HTMLButtonElement>(null)
   const wasEditing = useRef(false)
@@ -184,6 +195,11 @@ export function RulesEditor({ doc, statuses, canEdit, save, onStale, onDirtyChan
   const actions = canEdit && (
     <div className="flex flex-wrap items-center gap-2">
       {!statuses && <span className="text-sm text-muted-foreground">{e.statusesUnavailable}</span>}
+      {!statuses && onRetryStatuses && (
+        <Button size="sm" variant="outline" onClick={onRetryStatuses}>
+          {strings.retry}
+        </Button>
+      )}
       <Button ref={editButton} size="sm" variant="outline" disabled={!statuses} onClick={() => setEditing(true)}>
         {strings.detail.actions.edit}
       </Button>

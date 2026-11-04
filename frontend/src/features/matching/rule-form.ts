@@ -142,6 +142,24 @@ export function inputsOf(doc: StoredRules): { sheetRules: SheetRuleInput[]; colu
 const integer = (value: string) => (/^\d+$/.test(value.trim()) ? Number(value.trim()) : Number.NaN)
 const optionalId = (value: string) => (value === '' ? null : Number(value))
 
+/** Whether the form shows that field of a sheet rule: batch_fees and ignore have no cycle nor status, R no status. */
+export function showsSheetField(row: Pick<SheetRuleValues, 'kind' | 'cycle'>, field: string): boolean {
+  if (field === 'cycle') return row.kind === 'transactions'
+  if (field === 'statusId') return row.kind === 'transactions' && row.cycle !== 'R'
+  return true
+}
+
+/** The details.field paths of the fields the form does not show (`sheetRules[3].statusId`). */
+export function hiddenFields(values: Pick<RulesValues, 'sheetRules'>): Set<string> {
+  const hidden = new Set<string>()
+  values.sheetRules.forEach((row, index) => {
+    for (const field of ['cycle', 'statusId']) {
+      if (!showsSheetField(row, field)) hidden.add(`sheetRules[${index}].${field}`)
+    }
+  })
+  return hidden
+}
+
 /** The fields that do not exist for the kind of the sheet travel as null (design D4). */
 function sheetInput(row: SheetRuleValues) {
   const transactions = row.kind === 'transactions'

@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react'
 import { get, type UseFormReturn, useFieldArray, useWatch } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { newColumnRule, newSheetRule, newStatusAlias, type RulesValues } from './rule-form'
+import { newColumnRule, newSheetRule, newStatusAlias, type RulesValues, showsSheetField } from './rule-form'
 import { RulesCard } from './rule-tables'
 import { strings } from './strings'
 
@@ -67,14 +67,17 @@ function TextCell({ form, path, label, className }: { form: Form; path: string; 
 }
 
 function CheckCell({ form, path, label }: { form: Form; path: string; label: string }) {
+  const error = useFieldError(form, path)
   return (
     <TableCell className={cellClass}>
       <input
         type="checkbox"
         aria-label={label}
         className={checkClass}
+        {...error.aria}
         {...form.register(path as `sheetRules.${number}.isRegex`)}
       />
+      <ErrorText path={path} message={error.message} />
     </TableCell>
   )
 }
@@ -270,7 +273,7 @@ export function EditSheetRules({ form, statuses }: { form: Form; statuses: reado
         <TableBody>
           {rows.fields.map((row, index) => {
             const value = values[index]
-            const transactions = value?.kind === 'transactions'
+            const shows = (field: string) => value !== undefined && showsSheetField(value, field)
             const path = (field: string) => `sheetRules.${index}.${field}`
             return (
               <TableRow key={row.id}>
@@ -288,7 +291,7 @@ export function EditSheetRules({ form, statuses }: { form: Form; statuses: reado
                     }
                   }}
                 />
-                {transactions ? (
+                {shows('cycle') ? (
                   <SelectCell
                     form={form}
                     path={path('cycle')}
@@ -299,7 +302,7 @@ export function EditSheetRules({ form, statuses }: { form: Form; statuses: reado
                 ) : (
                   <TableCell className={`${cellClass} text-muted-foreground`}>{strings.none}</TableCell>
                 )}
-                {transactions && value?.cycle !== 'R' ? (
+                {shows('statusId') ? (
                   <SelectCell
                     form={form}
                     path={path('statusId')}

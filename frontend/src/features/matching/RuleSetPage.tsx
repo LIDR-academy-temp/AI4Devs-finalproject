@@ -138,6 +138,7 @@ export function RuleSetPage() {
             }
             onStale={() => void queryClient.invalidateQueries({ queryKey: ruleSetKey(ruleSetId) })}
             onDirtyChange={setDirty}
+            onRetryStatuses={() => void globals.refetch()}
           />
         </>
       ) : (

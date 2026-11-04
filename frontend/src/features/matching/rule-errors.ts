@@ -21,6 +21,8 @@ export interface RuleFormShape {
   columnRules: number
   statusAliases: number
   name: boolean
+  /** details.field paths of fields the form does not show for the kind of their sheet: their 400 is general. */
+  hidden?: ReadonlySet<string>
 }
 
 const FIELDS: Record<'sheetRules' | 'columnRules' | 'statusAliases', readonly string[]> = {
@@ -35,7 +37,7 @@ const ROW_PATH = /^(sheetRules|columnRules|statusAliases)\[(\d+)\]\.(\w+)$/
 function inForm(field: string, shape: RuleFormShape): boolean {
   if (field === 'name') return shape.name
   const match = ROW_PATH.exec(field)
-  if (!match) return false
+  if (!match || shape.hidden?.has(field)) return false
   const list = match[1] as keyof typeof FIELDS
   return Number(match[2]) < shape[list] && FIELDS[list].includes(match[3] ?? '')
 }
@@ -58,7 +60,10 @@ const problem = (patch: Partial<RuleProblem>): RuleProblem => ({
 export function ruleProblemOf(error: unknown, shape: RuleFormShape): RuleProblem {
   // No answer at all: fetch failed before reaching the server.
   if (!(error instanceof ApiError)) return problem({ general: e.unreachable })
-  if (error.status === 409 && error.code === 'rule_set_name_taken') return problem({ fields: { name: e.nameTaken } })
+  if (error.status === 409 && error.code === 'rule_set_name_taken') {
+    // Edit mode has no name field: the message is the form's.
+    return shape.name ? problem({ fields: { name: e.nameTaken } }) : problem({ general: e.nameTaken })
+  }
   if (error.status === 400) {
     const field = domainField(error.details)
     return field && inForm(field, shape)

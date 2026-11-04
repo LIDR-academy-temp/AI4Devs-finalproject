@@ -201,7 +201,8 @@ describe('Matching Rules: edit mode', () => {
     expect(matchingRequests('put')).toEqual([])
   })
 
-  it('a second edit builds its body from the last answer, without the ids of the first one', async () => {
+  // That a body never carries ids is in rule-form.test.ts; this checks the second edit starts from the answer.
+  it('a second edit builds its body from the last answer', async () => {
     const { user } = await editLegacy()
     await user.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument())
@@ -240,6 +241,23 @@ describe('Matching Rules: edit mode', () => {
 
     expect(screen.getByRole('button', { name: 'Edit rules' })).toBeDisabled()
     expect(screen.getByText('Statuses are not available.')).toBeInTheDocument()
+  })
+
+  it('without the catalog of statuses, Retry reads it again and Edit rules is enabled', async () => {
+    server.use(http.get('*/api/v1/matching-rules/global', () => HttpResponse.json({}, { status: 500 }), { once: true }))
+    const { user } = renderApp('/matching-rules/3', { as: 'admin' })
+    await tableRows('Sheet rules')
+    expect(screen.getByRole('button', { name: 'Edit rules' })).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Edit rules' })).toBeEnabled())
+    expect(screen.queryByText('Statuses are not available.')).not.toBeInTheDocument()
+  })
+
+  it('the reason takes at most 500 characters, as in Rename and Deactivate', async () => {
+    await editLegacy()
+    expect(field('Reason (optional)')).toHaveAttribute('maxlength', '500')
   })
 })
 
@@ -360,16 +378,46 @@ describe('Matching Rules: errors of the API', () => {
     expect(field('Pattern of column rule 1')).toHaveAccessibleDescription('Invalid regular expression')
   })
 
+  it('a 400 on a checkbox goes next to it', async () => {
+    respondNextMatching('put', {
+      status: 400,
+      code: 'validation_error',
+      message: 'A regex must compile',
+      details: { field: 'sheetRules[0].isRegex' },
+    })
+    const { user } = await editLegacy()
+
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText('A regex must compile')).toBeInTheDocument()
+    expect(field('Regex of sheet rule 1')).toHaveAccessibleDescription('A regex must compile')
+    expect(field('Regex of sheet rule 1')).toHaveAttribute('aria-invalid', 'true')
+  })
+
   it.each([
     ['a schema 400', { status: 400, code: 'validation_error', details: [{ path: 'sheetRules.0', message: 'x' }] }],
     [
       'a 400 on a row the form does not have',
       { status: 400, code: 'validation_error', details: { field: 'sheetRules[9].cycle' } },
     ],
-  ])('%s is a general message and the form stays as it was', async (_case, scripted) => {
+    [
+      'a 400 on the status of an ignore sheet, which the form does not show',
+      { status: 400, code: 'validation_error', details: { field: 'sheetRules[3].statusId' } },
+    ],
+    [
+      'a 400 on the cycle of an ignore sheet, which the form does not show',
+      { status: 400, code: 'validation_error', details: { field: 'sheetRules[3].cycle' } },
+    ],
+    [
+      'a 400 on the status of a cycle R sheet, which the form does not show',
+      { status: 400, code: 'validation_error', details: { field: 'sheetRules[1].statusId' } },
+      'R',
+    ],
+  ])('%s is a general message and the form stays as it was', async (_case, scripted, cycleOfRule2?: string) => {
     respondNextMatching('put', scripted)
     const { user } = await editLegacy()
 
+    if (cycleOfRule2) await user.selectOptions(field('Cycle of sheet rule 2'), cycleOfRule2)
     await user.clear(field('Pattern of sheet rule 1'))
     await user.type(field('Pattern of sheet rule 1'), 'TRX2')
     await user.click(screen.getByRole('button', { name: 'Save' }))
@@ -378,6 +426,16 @@ describe('Matching Rules: errors of the API', () => {
       'The rules were not saved. Check the values and try again.',
     )
     expect(field('Pattern of sheet rule 1')).toHaveValue('TRX2')
+  })
+
+  it('a name in use while editing the rules, which have no name field, is a general message', async () => {
+    respondNextMatching('put', { status: 409, code: 'rule_set_name_taken' })
+    const { user } = await editLegacy()
+
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('A rule set of this provider already uses this name.')
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
   })
 
   it('a network error says the server was not reached and keeps what was written', async () => {
