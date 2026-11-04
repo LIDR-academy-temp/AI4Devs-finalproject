@@ -25,6 +25,11 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 - [x] 1.7 Commit: feat(matching): contrato de la administración de reglas de pareo y export de OpenAPI
 - [x] 1.8 Hacer `git push` de `feat/admin-matching`, vigilar el CI con `gh run list --branch feat/admin-matching --json status,conclusion --jq` y avisar a la persona de que el contrato está publicado, porque `web-admin-matching` parte de aquí. No seguir hasta su confirmación.
 
+  Cambios del grupo 1 fuera del plan:
+  - `NotImplementedError` (`501 not_implemented`) vuelve temporalmente a `backend/src/shared/errors.ts`, como en admin-accounts; se quita en la 4.3.
+  - El doble en memoria de auth (`auth/application/__fakes__/in-memory.ts`) gana el usuario `scoped_admin` (rol admin, alcance `assigned` al merchant 1) para el `403` del `PUT` global.
+  - La marca de la 1.8 se commitea aparte, después del push. La rama no dispara el CI por push (solo ramas de entrega, `main` y PR), así que se abre un PR en borrador hacia `feature/entrega-3-MVP` para que corra.
+
 ## 2. Validación y diff de reglas (TDD)
 
 - [ ] 2.1 Escribir `matching/domain/rule-validation.test.ts` (D2) y comprobar que falla. Debe cubrir cada escenario de "Validación del contenido de las reglas" y de "Patrones sin repetir y límites":
