@@ -46,8 +46,8 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
   - `before`/`after` sin ids;
   - diff de las globales por lista (`sheetRules`, `columnRules`, `statusAliases`).
 - [x] 2.3 Commit: test(matching): validación y comparación de reglas de pareo
-- [ ] 2.4 Implementar `rule-validation.ts`, `rule-diff.ts` y `matching/domain/errors.ts` (`MatchingRuleError`, `RuleSetNameTakenError`, `RuleSetInUseError`) hasta dejar los tests en verde. Rotura deliberada: aceptar `Pending` como estado fijo debe hacer fallar su caso; después se revierte.
-- [ ] 2.5 Commit: feat(matching): validación y comparación de reglas como funciones puras
+- [x] 2.4 Implementar `rule-validation.ts`, `rule-diff.ts` y `matching/domain/errors.ts` (`MatchingRuleError`, `RuleSetNameTakenError`, `RuleSetInUseError`) hasta dejar los tests en verde. Rotura deliberada: aceptar `Pending` como estado fijo debe hacer fallar su caso; después se revierte.
+- [x] 2.5 Commit: feat(matching): validación y comparación de reglas como funciones puras
 
 ## 3. Conjuntos: crear, ver y editar
 

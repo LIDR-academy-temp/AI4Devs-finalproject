@@ -41,7 +41,8 @@ describe('diffRuleSet', () => {
   })
 
   it('ignores the key order of a rule', () => {
-    const reordered = { ...legacy, sheetRules: [{ isActive: true, priority: 10, ...trx }, cb] }
+    const { sheetPattern, ...rest } = trx
+    const reordered = { ...legacy, sheetRules: [{ ...rest, sheetPattern }, cb] }
 
     expect(diffRuleSet(legacy, reordered)).toEqual({})
   })
