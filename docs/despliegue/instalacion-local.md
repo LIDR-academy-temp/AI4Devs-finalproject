@@ -82,7 +82,7 @@ docker compose up --build -d --wait
 
 Requiere una cuenta de servicio de SAT2.
 
-> **Empezá desde una base vacía.** La base de demostración tiene una estación ficticia que no existe en SAT2, y no conviene mezclar datos ficticios con reales. El siguiente comando **borra todos los datos de esta instalación**, incluidas las cuentas:
+> **Empezá desde una base vacía.** La base de demostración tiene datos ficticios, y el sistema no arranca en modo real sobre ella para no mezclarlos con los de SAT2 (ver la [sección 5](#5-modos-de-datos)). El siguiente comando **borra todos los datos de esta instalación**, incluidas las cuentas:
 
 ```bash
 docker compose down -v
@@ -122,7 +122,35 @@ docker compose exec api python -m app.administracion asignar-estacion --email tu
 
 El sistema consulta SAT2 cada 10 minutos. La carga de los últimos 31 días tarda unos 40 minutos y avanza en segundo plano, con pausas para no sobrecargar a SAT2.
 
-## 5. Desinstalar
+## 5. Modos de datos
+
+`SAT2_MODO`, en el `.env`, elige de dónde salen los datos:
+
+| Modo | Para qué | Datos |
+|---|---|---|
+| `simulado` | Probar y evaluar sin cuenta de SAT2. Es el modo por defecto | Ficticios, con el nombre de la estación real y el aviso "Datos simulados" |
+| `real` | Usar la aplicación con la estación | Los de SAT2 |
+| `prueba` | Ver el selector con dos casos: "Caso de prueba - 1", con los datos ya guardados, y "Caso de prueba - 2", sin lecturas | No consulta SAT2 ni agrega lecturas. Si la base está vacía, carga una vez los datos simulados |
+
+**Los datos reales y los ficticios nunca se mezclan.** La base recuerda con qué modo se llenó por primera vez. Si después arrancás con un modo que no corresponde, el worker y la API se detienen y explican qué hacer, sin modificar nada. Pasar de `simulado` a `prueba` está permitido, porque los dos usan datos ficticios.
+
+### Probar con los datos reales sin tocar la instalación
+
+Para ver los datos reales en "Caso de prueba - 1", el modo de prueba usa una copia de la base en otro proyecto de Docker Compose. De la base real solo se lee. Hace falta Python 3 en la computadora.
+
+Con la base real en marcha (`docker compose start db`, si estaba detenida):
+
+```bash
+python backend/herramientas/preparar_copia_de_prueba.py
+```
+
+La copia queda en <http://localhost:8089> y se ingresa con las mismas cuentas. **Contiene datos personales:** borrala al terminar.
+
+```bash
+docker compose -p wt-prueba down -v
+```
+
+## 6. Desinstalar
 
 Borra los contenedores y **todos los datos**:
 
@@ -144,6 +172,7 @@ Después podés borrar la carpeta `weather-track`.
 | "Datos insuficientes" al usar datos reales | Es esperable hasta el primer ciclo. Si sigue, mirá `docker compose logs worker --tail 30`: los registros nunca muestran la clave |
 | El comando de las semillas termina con un error justo después de levantar | El sistema todavía estaba creando las estaciones. Repetilo: no duplica nada |
 | Un servicio no arranca | Revisá `docker compose ps` y `docker compose logs --tail 50` |
+| El worker o la API dicen que la base tiene datos de otra naturaleza | Cambiaste `SAT2_MODO` sobre una base llenada con otro modo. Volvé al modo anterior, o usá una base nueva: otro proyecto con `docker compose -p <nombre>` o la [copia de prueba](#probar-con-los-datos-reales-sin-tocar-la-instalación) |
 
 ## Probado en
 

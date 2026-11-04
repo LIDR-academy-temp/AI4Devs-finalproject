@@ -23,10 +23,12 @@ from app.ingesta.ciclo import ejecutar_ciclo
 from app.ingesta.cliente_sat2 import ClienteSat2, ClienteSat2Http
 from app.ingesta.cliente_simulado import ClienteSat2Escenarios, ClienteSat2Simulado
 from app.ingesta.configuracion import ConfiguracionIncompleta, cargar_configuracion
+from app.ingesta.modo_prueba import preparar_modo_prueba
 
 MODO_SIMULADO = "simulado"
 MODO_ESCENARIOS = "escenarios"
 MODO_REAL = "real"
+MODO_PRUEBA = "prueba"
 INTERVALO_LATIDO_SEGUNDOS = 30
 INTERVALO_CICLO_MINUTOS = 10
 INTERVALO_CATALOGO_HORAS = 24
@@ -179,10 +181,29 @@ def protegida(nombre: str, tarea: Callable[..., None], *argumentos: Any) -> None
         registro.error("La tarea %s falló: %s", nombre, type(error).__name__)
 
 
+def principal_de_prueba(fabrica: Callable[[], Session]) -> int:
+    """Modo de prueba: no crea el cliente de SAT2 ni programa el ciclo y la carga.
+
+    Solo prepara los dos casos y mantiene el latido que usa la comprobación de salud.
+    """
+    if not preparar_base(fabrica, MODO_PRUEBA):
+        return 2
+    with fabrica() as sesion:
+        preparar_modo_prueba(sesion, _ahora())
+    registro.info("Worker iniciado en modo prueba, sin consultar SAT2")
+    registrar_latido()
+    planificador = BlockingScheduler(timezone="UTC")
+    planificador.add_job(registrar_latido, "interval", seconds=INTERVALO_LATIDO_SEGUNDOS)
+    planificador.start()
+    return 0
+
+
 def principal() -> int:
     logging.basicConfig(level=logging.INFO)
     logging.getLogger("httpx").setLevel(logging.WARNING)
     modo = os.environ.get("SAT2_MODO", MODO_SIMULADO)
+    if modo == MODO_PRUEBA:
+        return principal_de_prueba(sessionmaker(obtener_motor()))
     try:
         cliente = ClienteSerializado(crear_cliente(modo))
     except ConfiguracionIncompleta as error:

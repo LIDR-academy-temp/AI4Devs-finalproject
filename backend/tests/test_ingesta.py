@@ -95,7 +95,7 @@ def observacion_de(sesion, nombre, medido_en=MEDICION):
 
 def test_sincroniza_estaciones_y_sensores(sesion, cliente):
     estacion = sincronizar_catalogo(sesion, cliente)[0]
-    assert estacion.nombre == "Estación de ejemplo"
+    assert estacion.nombre == "INTA Pergamino"
     assert contar(sesion, Sensor) == 11
 
     t10 = sesion.scalar(select(Sensor).where(Sensor.nombre == "Temp Amb. a 10 Mts"))
@@ -112,7 +112,7 @@ def test_sincronizar_dos_veces_no_duplica_y_actualiza(sesion, cliente):
 
     assert contar(sesion, Estacion) == 1
     assert contar(sesion, Sensor) == 11
-    assert sesion.scalar(select(Estacion)).nombre == "Estación de ejemplo"
+    assert sesion.scalar(select(Estacion)).nombre == "INTA Pergamino"
 
 
 def test_guarda_las_unidades_en_el_sistema_de_weather_track(sesion, cliente):

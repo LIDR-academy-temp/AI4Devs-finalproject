@@ -68,7 +68,7 @@ Si no coinciden, el proceso sale con un mensaje que explica cómo seguir. La ins
 
 ### D6. Copia de la base real para probar
 
-Un comando `herramientas/preparar_copia_de_prueba.py` hace `pg_dump` de la base del proyecto real en solo lectura y la restaura en un proyecto aislado (`-p wt-prueba` por defecto). Luego marca la copia como `COPIA_DE_PRUEBA` y renombra el equipo real a "Caso de prueba - 1". La base original no se escribe en ningún momento.
+Un comando `herramientas/preparar_copia_de_prueba.py` hace `pg_dump` de la base del proyecto real en solo lectura y la restaura en un proyecto aislado (`-p wt-prueba` por defecto). Luego aplica las migraciones, marca la copia como `COPIA_DE_PRUEBA` y la arranca en modo `prueba` en el puerto 8089. El worker de prueba renombra los equipos a "Caso de prueba - 1" y "Caso de prueba - 2" (D5). La base original no se escribe en ningún momento: solo se ejecuta `pg_dump` dentro de su contenedor.
 
 - **Por qué una copia:** el responsable quiere ver los datos reales en el caso 1, pero agregar un equipo ficticio a la base real lo dejaría como "Equipo inactivo" en producción cuando se vuelva al modo real.
 - La copia contiene las cuentas reales, así que se borra con el proyecto aislado (`docker compose -p wt-prueba down -v`) al terminar.

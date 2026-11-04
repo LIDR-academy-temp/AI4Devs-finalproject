@@ -1,9 +1,9 @@
 [
   {
     "idEquipo": 1,
-    "descripcion": "Estación de ejemplo",
-    "lat": -34.0,
-    "lng": -60.0,
+    "descripcion": "INTA Pergamino",
+    "lat": -33.89,
+    "lng": -60.57,
     "NroSerie": "00000",
     "fechaAlta": "01/01/2024 0:00:00",
     "sensores": [

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.api import autenticacion, estaciones, lecturas
 from app.api.errores import registrar_manejadores
 from app.datos.conexion import obtener_motor, verificar_conexion
-from app.datos.naturaleza import verificar_naturaleza
+from app.datos.naturaleza import ADMITIDAS, verificar_naturaleza
 
 registro = logging.getLogger("weather_track.api")
 
@@ -55,9 +55,15 @@ app.include_router(estaciones.router)
 app.include_router(lecturas.router)
 
 
+def modo_publico() -> str:
+    """El modo de datos, para los avisos de la interfaz. Nunca otro dato de la configuración."""
+    modo = os.environ.get("SAT2_MODO", "simulado")
+    return modo if modo in ADMITIDAS else "desconocido"
+
+
 @app.get("/api/v1/salud", tags=["operación"])
 def salud(respuesta: Response) -> dict[str, str]:
     if verificar_conexion():
-        return {"estado": "ok"}
+        return {"estado": "ok", "modo": modo_publico()}
     respuesta.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    return {"estado": "sin_base_de_datos"}
+    return {"estado": "sin_base_de_datos", "modo": modo_publico()}

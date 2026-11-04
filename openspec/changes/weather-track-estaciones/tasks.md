@@ -15,11 +15,11 @@ Las decisiones están en `design.md` (D1 a D8). Todo se verifica con Compose ais
 
 ## 3. Modos (D5, D6, D7)
 
-- [ ] 3.1 Renombrar la estación simulada a "INTA Pergamino" con coordenadas públicas aproximadas, y comparar el nombre con la `descripcion` real guardada en la base local, sin leer credenciales
-- [ ] 3.2 Agregar el campo `modo` a la respuesta de salud y verificar con una prueba que nunca incluye datos de configuración
-- [ ] 3.3 Implementar el modo `prueba` con sus dos casos y la siembra en base vacía, y verificar con pruebas los escenarios de "Modo de prueba", incluido que no se crea el cliente de SAT2
-- [ ] 3.4 Escribir `preparar_copia_de_prueba.py` y verificar en proyectos aislados que la copia muestra los datos copiados y que la base de origen no cambia
-- [ ] 3.5 Documentar los tres modos y la copia de prueba en la instalación local y en el README, y verificar los comandos en un clon limpio
+- [x] 3.1 Renombrar la estación simulada a "INTA Pergamino" con coordenadas públicas aproximadas, y comparar el nombre con la `descripcion` real guardada en la base local, sin leer credenciales
+- [x] 3.2 Agregar el campo `modo` a la respuesta de salud y verificar con una prueba que nunca incluye datos de configuración
+- [x] 3.3 Implementar el modo `prueba` con sus dos casos y la siembra en base vacía, y verificar con pruebas los escenarios de "Modo de prueba", incluido que no se crea el cliente de SAT2
+- [x] 3.4 Escribir `preparar_copia_de_prueba.py` y verificar en proyectos aislados que la copia muestra los datos copiados y que la base de origen no cambia
+- [x] 3.5 Documentar los tres modos y la copia de prueba en la instalación local y en el README, y verificar los comandos en un clon limpio
 
 ## 4. Situaciones de prueba (D8)
 

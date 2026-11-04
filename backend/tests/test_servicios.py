@@ -11,10 +11,28 @@ CLAVE = "clave-secreta-de-prueba"
 
 
 def test_salud_con_base_de_datos(monkeypatch):
+    monkeypatch.setenv("SAT2_MODO", "simulado")
     monkeypatch.setattr(api, "verificar_conexion", lambda: True)
     respuesta = TestClient(api.app).get("/api/v1/salud")
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"estado": "ok"}
+    assert respuesta.json() == {"estado": "ok", "modo": "simulado"}
+
+
+@pytest.mark.parametrize("modo", ["real", "simulado", "prueba"])
+def test_la_salud_informa_el_modo_de_datos(monkeypatch, modo):
+    monkeypatch.setenv("SAT2_MODO", modo)
+    monkeypatch.setattr(api, "verificar_conexion", lambda: True)
+    assert TestClient(api.app).get("/api/v1/salud").json()["modo"] == modo
+
+
+def test_la_salud_no_expone_otros_datos_de_la_configuracion(monkeypatch):
+    monkeypatch.setenv("SAT2_MODO", CLAVE)
+    monkeypatch.setenv("SAT2_URL_BASE", "https://fuente.example")
+    monkeypatch.setattr(api, "verificar_conexion", lambda: True)
+    respuesta = TestClient(api.app).get("/api/v1/salud")
+    assert respuesta.json() == {"estado": "ok", "modo": "desconocido"}
+    assert CLAVE not in respuesta.text
+    assert "fuente.example" not in respuesta.text
 
 
 def test_salud_sin_base_de_datos(monkeypatch):
