@@ -19,11 +19,11 @@ Rama `feat/admin-accounts`. Las decisiones D1–D10 están en `design.md`; los e
 
 ## 2. Dominio de cuentas y plan de copia (TDD)
 
-- [ ] 2.1 Escribir `accounts/domain/account-rules.test.ts` (D3) y comprobar que falla. Debe cubrir:
+- [x] 2.1 Escribir `accounts/domain/account-rules.test.ts` (D3) y comprobar que falla. Debe cubrir:
   - `normalizeCap`: `"25000"` → `"25000.0000"`; `null` → `null`; `"-1"` → `AccountRuleError` con `field = rollingReserveCapAmt`.
   - `planAccountPatch`: sin cambios → `changes = {}`; mismo tope con otra escala, sin cambio; renombrar solo en mayúsculas, con cambio; `isActive` false → `account.close` aunque haya otros campos, true → `account.reopen`; resto → `account.update`; `before`/`after` de cada campo con el dinero como string.
-- [ ] 2.2 Escribir `fees/domain/fee-copy.test.ts` (D3) y comprobar que falla. Debe cubrir: solo `active` respecto a `today` (un `scheduled` de mañana y un `closed` de ayer quedan fuera; uno que cierra hoy entra); la copia conserva valores, variantes y `description` con `startDate = endDate = null` y `feeId` nuevo; orden por `feeTypeId` y `feeId`; lista vacía si no hay activos.
-- [ ] 2.3 Commit: test(accounts): reglas de edición de cuenta y plan de copia de fees
+- [x] 2.2 Escribir `fees/domain/fee-copy.test.ts` (D3) y comprobar que falla. Debe cubrir: solo `active` respecto a `today` (un `scheduled` de mañana y un `closed` de ayer quedan fuera; uno que cierra hoy entra); la copia conserva valores, variantes y `description` con `startDate = endDate = null` y `feeId` nuevo; orden por `feeTypeId` y `feeId`; lista vacía si no hay activos.
+- [x] 2.3 Commit: test(accounts): reglas de edición de cuenta y plan de copia de fees
 - [ ] 2.4 Implementar `account-rules.ts`, `accounts/domain/errors.ts` (`AccountRuleError`, `AccountNameTakenError`) y `fee-copy.ts` hasta dejar los tests en verde. Rotura deliberada: hacer que `planCopy` copie también los `scheduled` debe hacer fallar su caso; después se revierte.
 - [ ] 2.5 Commit: feat(accounts): reglas de edición de cuenta y plan de copia de fees como funciones puras
 
