@@ -20,10 +20,11 @@ const s = strings.account
 const isNotFound = (error: unknown) => error instanceof ApiError && error.status === 404
 
 /**
- * Administration › Fees › Account fees (README §1.3 Account Fees / Fee History, web-admin-fees design D2): every fee
- * of the account, with History for everyone and the actions of fee.manage.
+ * The Fees tab of Account Detail (README §1.3 Account Fees / Fee History, web-admin-accounts design D3): every fee
+ * of the account, with History for everyone and the actions of fee.manage. The header of the account is the
+ * detail's; this panel is the rest of what web-admin-fees built as a page.
  */
-export function AccountFeesPage() {
+export function AccountFeesPanel() {
   const { accountId } = useParams({ from: '/app/accounts/$accountId/fees' })
   const account = useQuery(accountQuery(accountId))
   const fees = useQuery(accountFeesQuery(accountId))
@@ -77,39 +78,35 @@ export function AccountFeesPage() {
 
   const detail = notAvailable ? undefined : account.data
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">{detail ? s.title(detail.name) : s.titleLoading}</h1>
-          {detail && (
-            <p className="text-sm text-muted-foreground">
-              <span>{s.hierarchy(detail.merchant.name, detail.provider.name)}</span> ·{' '}
-              <Link
-                to="/fees"
-                search={{
-                  merchantId: detail.merchant.merchantId,
-                  providerId: detail.provider.providerId,
-                  accountId: detail.accountId,
-                  status: 'all',
-                }}
-                className="text-primary underline underline-offset-4"
-              >
-                {s.seeAll}
-              </Link>
-            </p>
-          )}
-        </div>
-        {canManage && detail && (
-          <Button size="sm" onClick={() => setForm({ mode: 'create' })}>
-            {s.add}
-          </Button>
-        )}
-      </div>
+    <div className="flex flex-col gap-4">
       <Card>
         <CardContent className="flex flex-col gap-4">
-          <h2 ref={heading} tabIndex={-1} className="font-medium focus-visible:outline-none">
-            {s.heading}
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 ref={heading} tabIndex={-1} className="font-medium focus-visible:outline-none">
+              {s.heading}
+            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              {detail && (
+                <Link
+                  to="/fees"
+                  search={{
+                    merchantId: detail.merchant.merchantId,
+                    providerId: detail.provider.providerId,
+                    accountId: detail.accountId,
+                    status: 'all',
+                  }}
+                  className="text-sm text-primary underline underline-offset-4"
+                >
+                  {s.seeAll}
+                </Link>
+              )}
+              {canManage && detail && (
+                <Button size="sm" onClick={() => setForm({ mode: 'create' })}>
+                  {s.add}
+                </Button>
+              )}
+            </div>
+          </div>
           {body}
         </CardContent>
       </Card>
@@ -134,6 +131,6 @@ export function AccountFeesPage() {
           onSaved={onSaved}
         />
       )}
-    </section>
+    </div>
   )
 }

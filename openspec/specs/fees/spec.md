@@ -558,31 +558,35 @@ La tabla SHALL paginarse en servidor con **Previous** / **Next**, el resumen `Pa
 - **THEN** ve el mensaje de error y **Retry** vuelve a pedir la misma página
 
 ### Requirement: Pantalla Account Fees: acceso y contenido
-`/accounts/<accountId>/fees` SHALL exigir `fee.view` y mostrar el nombre de la cuenta, su merchant y proveedor, y todos sus fees (activos, programados y cerrados) con las columnas de la vista global salvo merchant, proveedor y cuenta, más el uso (`In use` o nada). Se llega desde el enlace de la cuenta en `/fees` y desde el enlace **Fees** de cada cuenta en Administration › Accounts. Una cuenta inexistente o fuera del alcance SHALL mostrar `This account is not available.`
+`/accounts/<accountId>/fees` SHALL ser la pestaña **Fees** de la ficha de la cuenta, SHALL exigir `fee.view` y SHALL mostrar, bajo la cabecera de la cuenta, todos sus fees (activos, programados y cerrados) con las columnas de la vista global salvo merchant, proveedor y cuenta, más el uso (`In use` o nada), y el enlace `See all accounts`. Una cuenta inexistente o fuera del alcance SHALL mostrar `This account is not available.`
 
 #### Scenario: Desde Accounts
 - **GIVEN** `viewer` en Administration › Accounts con Provider A elegido
 - **WHEN** pulsa **Fees** en la fila de ProviderA-USD
-- **THEN** llega a `/accounts/<ProviderA-USD>/fees` y ve `Fees · ProviderA-USD` con sus fees
+- **THEN** llega a `/accounts/<ProviderA-USD>/fees` y ve la ficha de ProviderA-USD con la pestaña Fees seleccionada y sus fees
 
 #### Scenario: Desde la vista global
 - **WHEN** pulsa `ProviderA-USD` en una fila de `/fees`
-- **THEN** llega a la página de fees de esa cuenta
+- **THEN** llega a la pestaña Fees de la ficha de esa cuenta
 
 #### Scenario: Cuenta de otro merchant
 - **GIVEN** `viewer` (merchant 1)
-- **WHEN** abre la página de fees de ProviderC-Alt (merchant 2) o de un uuid inexistente
+- **WHEN** abre la pestaña Fees de ProviderC-Alt (merchant 2) o de un uuid inexistente
 - **THEN** ve `This account is not available.` en los dos casos
 
 #### Scenario: Cerrado
 - **GIVEN** un fee con `status = "closed"` y `endDate = "2025-12-31"`
 - **THEN** su fila muestra `Closed` y `2025-12-31`, y no ofrece **Close…**
 
+#### Scenario: Ver todas las cuentas
+- **WHEN** `viewer` pulsa `See all accounts` en la pestaña Fees de ProviderA-USD
+- **THEN** llega a `/fees` con Merchant A, Provider A, ProviderA-USD y el estado `all` elegidos
+
 ### Requirement: Pantalla Account Fees: acciones según permiso y uso
-Las acciones SHALL ofrecerse solo a quien tiene `fee.manage`: **Add fee** en la cabecera y, por fila, **Edit** (completo si `inUse = false`; limitado a descripción y fecha de fin si `inUse = true`), **Change from date…** solo si `inUse = true`, y **Close…** si el fee no está cerrado y su `endDate` es `null`. **History** SHALL ofrecerse a todos. No SHALL existir acción para retirar o borrar un fee.
+Las acciones SHALL ofrecerse solo a quien tiene `fee.manage`: **Add fee** en la pestaña Fees, junto al título de la tabla, y, por fila, **Edit** (completo si `inUse = false`; limitado a descripción y fecha de fin si `inUse = true`), **Change from date…** solo si `inUse = true`, y **Close…** si el fee no está cerrado y su `endDate` es `null`. **History** SHALL ofrecerse a todos. No SHALL existir acción para retirar o borrar un fee.
 
 #### Scenario: Sin fee.manage
-- **WHEN** `analyst` abre la página de fees de ProviderA-USD
+- **WHEN** `analyst` abre la pestaña Fees de ProviderA-USD
 - **THEN** ve la tabla y **History** en cada fila, y no ve **Add fee**, **Edit**, **Change from date…** ni **Close…**
 
 #### Scenario: Fee sin uso
@@ -596,6 +600,10 @@ Las acciones SHALL ofrecerse solo a quien tiene `fee.manage`: **Add fee** en la 
 #### Scenario: Sin retirar
 - **GIVEN** `admin` y un fee programado sin uso
 - **THEN** ninguna acción lo retira o lo borra: se corrige con **Edit**
+
+#### Scenario: Add fee en la pestaña
+- **WHEN** `admin` abre la pestaña Fees de ProviderA-USD
+- **THEN** ve **Add fee** dentro de la pestaña, y la cabecera de la cuenta no lo repite
 
 ### Requirement: Pantalla Account Fees: alta
 **Add fee** SHALL abrir un formulario con tipo (los de `GET /fee-types`), importe fijo, porcentaje (en tanto por ciento), `Valid from` con la casilla `always (no start date)`, `Valid to` con `no end date` y descripción (hasta 100 caracteres). SHALL exigir al menos importe o porcentaje antes de enviar. El porcentaje SHALL enviarse como fracción en texto (`2.75` → `"0.027500"`) y el importe con hasta 4 decimales, nunca como número JSON. Al crearse, la lista SHALL mostrar el fee nuevo.

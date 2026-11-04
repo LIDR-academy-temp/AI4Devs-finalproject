@@ -8,12 +8,16 @@ import {
   type RouterHistory,
   redirect,
 } from '@tanstack/react-router'
+import { AccountDetailPage } from '@/features/accounts/AccountDetailPage'
+import { AccountOverview } from '@/features/accounts/AccountOverview'
 import { AccountsPage, validateAccountsSearch } from '@/features/accounts/AccountsPage'
+import { ChannelAssignmentPage } from '@/features/accounts/ChannelAssignmentPage'
+import { validateChannelAssignmentSearch } from '@/features/accounts/channel-assignment-search'
+import { strings as accountStrings } from '@/features/accounts/strings'
 import { LoginPage } from '@/features/auth/LoginPage'
-import { AccountFeesPage } from '@/features/fees/AccountFeesPage'
+import { AccountFeesPanel } from '@/features/fees/AccountFeesPanel'
 import { FeesPage } from '@/features/fees/FeesPage'
 import { validateFeesSearch } from '@/features/fees/fees-search'
-import { strings as feeStrings } from '@/features/fees/strings'
 import { ImportPage } from '@/features/imports/ImportPage'
 import { NewReconciliationPage } from '@/features/imports/NewReconciliationPage'
 import { strings as importStrings } from '@/features/imports/strings'
@@ -101,15 +105,37 @@ const feesRoute = createRoute({
   component: FeesPage,
 })
 
-// fee.view to read; the actions also need fee.manage, decided by the page (web-admin-fees D2).
-const accountFeesRoute = createRoute({
+// No permission required: the API decides the scope; each tab is a child route (web-admin-accounts design D2).
+const accountDetailRoute = createRoute({
   getParentRoute: () => appRoute,
-  path: '/accounts/$accountId/fees',
+  path: '/accounts/$accountId',
   staticData: {
-    requires: 'fee.view',
-    crumbs: [strings.groups.administration, strings.screens.fees, feeStrings.account.crumb],
+    crumbs: [strings.groups.administration, strings.screens.accounts, accountStrings.detail.crumb],
   },
-  component: AccountFeesPage,
+  component: AccountDetailPage,
+})
+
+const accountOverviewRoute = createRoute({
+  getParentRoute: () => accountDetailRoute,
+  path: '/',
+  component: AccountOverview,
+})
+
+// fee.view to read; the actions also need fee.manage, decided by the panel (web-admin-fees D2).
+const accountFeesRoute = createRoute({
+  getParentRoute: () => accountDetailRoute,
+  path: 'fees',
+  staticData: { requires: 'fee.view' },
+  component: AccountFeesPanel,
+})
+
+// Read only for every role: channels join accounts by processing settlements (web-admin-accounts design D8).
+const channelAssignmentRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/channel-assignment',
+  validateSearch: validateChannelAssignmentSearch,
+  staticData: { crumbs: [strings.groups.administration, strings.screens.channelAssignment] },
+  component: ChannelAssignmentPage,
 })
 
 const newReconciliationRoute = createRoute({
@@ -169,7 +195,8 @@ function buildRouteTree(extraRoutes: AnyRoute[]) {
     appRoute.addChildren([
       dashboardRoute,
       accountsRoute,
-      accountFeesRoute,
+      accountDetailRoute.addChildren([accountOverviewRoute, accountFeesRoute]),
+      channelAssignmentRoute,
       feesRoute,
       newReconciliationRoute,
       importRoute,

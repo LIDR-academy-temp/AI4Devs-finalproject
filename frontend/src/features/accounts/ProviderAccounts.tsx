@@ -47,7 +47,16 @@ function AccountRow({
 }) {
   return (
     <TableRow>
-      <TableCell className="font-medium">{account.name}</TableCell>
+      {/* A name of up to 50 characters, maybe without spaces, wraps instead of widening the table at 1024 px. */}
+      <TableCell className="min-w-32 font-medium whitespace-normal [overflow-wrap:anywhere]">
+        <Link
+          to="/accounts/$accountId"
+          params={{ accountId: account.accountId }}
+          className="text-primary underline underline-offset-4"
+        >
+          {account.name}
+        </Link>
+      </TableCell>
       <TableCell>
         <ChannelList channels={channels} />
       </TableCell>
@@ -127,7 +136,8 @@ export function ProviderAccounts({ providerId }: { providerId: number }) {
             <TableRow>
               <TableHead>{strings.columns.account}</TableHead>
               <TableHead>{strings.columns.channels}</TableHead>
-              <TableHead>{strings.columns.reservePolicy}</TableHead>
+              {/* The longest header wraps, so every column fits at 1024 px (web-admin-accounts task 10.2). */}
+              <TableHead className="whitespace-normal">{strings.columns.reservePolicy}</TableHead>
               <TableHead>{strings.columns.reserveCap}</TableHead>
               <TableHead>{strings.columns.status}</TableHead>
               <TableHead>{strings.columns.settlements}</TableHead>

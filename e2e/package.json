@@ -10,6 +10,7 @@
     "screenshots:settlements-browse": "node screenshots/settlements-browse.ts",
     "screenshots:settlement-lifecycle": "node screenshots/settlement-lifecycle.ts",
     "screenshots:web-admin-fees": "node screenshots/web-admin-fees.ts",
+    "screenshots:web-admin-accounts": "node screenshots/web-admin-accounts.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
