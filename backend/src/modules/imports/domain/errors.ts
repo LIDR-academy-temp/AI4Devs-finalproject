@@ -51,6 +51,16 @@ export class DuplicateFileError extends DomainError {
   }
 }
 
+/** A closed account takes no new imports; its open imports carry on (admin-accounts D7). */
+export class AccountInactiveError extends DomainError {
+  readonly status = 409
+  readonly code = 'account_inactive'
+
+  constructor() {
+    super('The account is closed and takes no new imports')
+  }
+}
+
 /** The request carried no `files` part (README §4.2: 400). */
 export class NoFilesError extends DomainError {
   readonly status = 400

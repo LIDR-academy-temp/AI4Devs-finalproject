@@ -41,9 +41,14 @@ Rama `feat/admin-accounts`. Las decisiones D1–D10 están en `design.md`; los e
 
 ## 4. Cuenta cerrada en imports y conjuntos de reglas del proveedor
 
-- [ ] 4.1 Escribir los escenarios de "Cuenta cerrada no admite imports nuevos" en `import-service.test.ts` (con el doble en memoria) y en `test/integration/imports.int.test.ts`, y comprobar que fallan. Incluye que no quede nada en `UPLOAD_DIR` y que el listado, el pareo y el análisis de un import abierto sigan funcionando tras cerrar la cuenta.
-- [ ] 4.2 Escribir los escenarios de "Conjuntos de reglas de un proveedor" en un test de rutas de `matching` y en `test/integration/matching-rule-sets.int.test.ts`, y comprobar que fallan.
-- [ ] 4.3 Commit: test(imports): cuenta cerrada y conjuntos de reglas del proveedor
+- [x] 4.1 Escribir los escenarios de "Cuenta cerrada no admite imports nuevos" en `import-service.test.ts` (con el doble en memoria) y en `test/integration/imports.int.test.ts`, y comprobar que fallan. Incluye que no quede nada en `UPLOAD_DIR` y que el listado, el pareo y el análisis de un import abierto sigan funcionando tras cerrar la cuenta.
+  - Unitario en rojo por la aserción: `expected … to be an instance of AccountInactiveError`. La clase del error entra con los tests porque es el contrato que comprueban. Los escenarios "import abierto de una cuenta que se cierra" y "reabrir" pasan ya: protegen de regresiones.
+  - El `404` con permiso y sin el merchant se cubre en el unitario: el seed no tiene ningún usuario con `settlement.process` y sin el merchant 2.
+  - La integración se ejecuta en el turno de base de la 4.4.
+- [x] 4.2 Escribir los escenarios de "Conjuntos de reglas de un proveedor" en un test de rutas de `matching` y en `test/integration/matching-rule-sets.int.test.ts`, y comprobar que fallan.
+  - El test de rutas falla al cargar porque aún no existe `RuleSetReadService`. El puerto y el doble en memoria entran con los tests.
+  - La integración se ejecuta en el turno de base de la 4.4. Añade un conjunto inactivo `it-rs-` y lo borra al terminar.
+- [x] 4.3 Commit: test(imports): cuenta cerrada y conjuntos de reglas del proveedor
 - [ ] 4.4 Implementar D7: `isActive` en `AccountRef` del repositorio de imports y del doble, `AccountInactiveError` (`409 account_inactive`) comprobado en `createImport` dentro de `withStaged`. Implementar D8 para `GET /providers/{id}/matching-rule-sets` y quitar su `501`. Verificar con 4.1, 4.2 y `pnpm test`. Ejecutar `pnpm openapi:check`: si el contrato cambió respecto al grupo 1, regenerar y avisar a la persona.
 - [ ] 4.5 Commit: feat(imports): cuenta cerrada sin imports nuevos y conjuntos de reglas del proveedor
 

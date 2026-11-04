@@ -4,7 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NotFoundError } from '../../../shared/errors.js'
 import { InMemoryAuditLogger } from '../../../test-support/in-memory-audit-logger.js'
 import type { Scope } from '../../catalog/domain/scope.js'
-import { DuplicateFileError, FileUnreadableError, ImportNotEditableError } from '../domain/errors.js'
+import {
+  AccountInactiveError,
+  DuplicateFileError,
+  FileUnreadableError,
+  ImportNotEditableError,
+} from '../domain/errors.js'
 import { UNPROPOSED_SHEET_KIND } from '../domain/sheet-kind-marker.js'
 import {
   ACCOUNT_IDS,
@@ -296,6 +301,37 @@ describe('createImport', () => {
 
     expect(outside.message).toBe(unknown.message)
     expect(files.paths()).toEqual([])
+  })
+
+  describe('on a closed account (admin-accounts D7)', () => {
+    it('answers 409 account_inactive without creating the import or leaving files', async () => {
+      imports.setAccountActive(A_USD, false)
+
+      const error = await caught(
+        service.createImport(ANALYST, ANALYST_ID, A_USD, [await upload(SAMPLE_FILES.batchClean)]),
+        AccountInactiveError,
+      )
+
+      expect(error).toMatchObject({ status: 409, code: 'account_inactive' })
+      expect(files.paths()).toEqual([])
+      expect(await imports.listImports(ANALYST, A_USD)).toEqual([])
+    })
+
+    it('answers not found, never 409, for a closed account outside the scope', async () => {
+      imports.setAccountActive(C_USD, false)
+
+      await caught(service.createImport(VIEWER, 3, C_USD, [await upload(SAMPLE_FILES.batchClean)]), NotFoundError)
+      expect(files.paths()).toEqual([])
+    })
+
+    it('accepts uploads again once the account is reopened', async () => {
+      imports.setAccountActive(A_USD, false)
+      imports.setAccountActive(A_USD, true)
+
+      const detail = await service.createImport(ANALYST, ANALYST_ID, A_USD, [await upload(SAMPLE_FILES.batchClean)])
+
+      expect(detail.status).toBe('uploaded')
+    })
   })
 
   it('removes the moved files when the repository fails after the commit, and rethrows', async () => {
