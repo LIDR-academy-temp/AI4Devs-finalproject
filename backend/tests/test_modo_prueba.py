@@ -90,12 +90,24 @@ def test_una_base_con_lecturas_no_recibe_lecturas_nuevas(sesion):
     assert lecturas_de(sesion, caso_2) == 0
 
 
+def test_el_caso_2_tiene_los_sensores_del_caso_1_sin_lecturas(sesion):
+    base_con_lecturas(sesion)
+    caso_1, caso_2 = preparar_modo_prueba(sesion, AHORA)
+
+    def sensores(estacion):
+        return set(sesion.scalars(select(Sensor.nombre).where(Sensor.estacion_id == estacion.id)))
+
+    assert sensores(caso_2) == sensores(caso_1) == {"Temp Amb. a 2 Mts"}
+    assert lecturas_de(sesion, caso_2) == 0
+
+
 def test_se_puede_repetir_sin_duplicar(sesion):
     base_con_lecturas(sesion)
     preparar_modo_prueba(sesion, AHORA)
     preparar_modo_prueba(sesion, AHORA)
 
     assert contar(sesion, Estacion) == 2
+    assert contar(sesion, Sensor) == 2
     assert contar(sesion, Observacion) == 1
 
 

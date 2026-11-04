@@ -1,22 +1,24 @@
 import { expect } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
-import { EMAIL_E2E } from './pila.ts'
+import { EMAIL_E2E, cargarSituacion } from './pila.ts'
 
 export const FECHA_Y_HORA = /\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}/
 export const MINUTO_Y_MEDIO_MS = 90_000
+export const CASO_1 = 'Caso de prueba - 1'
 
+/** La cuenta solo ve el caso 1, así que la aplicación lo abre directamente. */
 export async function ingresar(page: Page) {
   await page.goto('/')
   await page.getByLabel('Correo').fill(EMAIL_E2E)
   await page.getByLabel('Contraseña').fill(process.env.E2E_CLAVE ?? '')
   await page.getByRole('button', { name: 'Ingresar' }).click()
-  await expect(page.getByRole('heading', { name: 'Elija una estación' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: CASO_1, exact: true })).toBeVisible()
 }
 
-export async function abrirEstacion(page: Page, nombre: string) {
+/** Carga la situación en el caso 1 y lo abre. */
+export async function abrirSituacion(page: Page, clave: string) {
+  cargarSituacion(clave)
   await ingresar(page)
-  await page.getByRole('link', { name: nombre, exact: true }).click()
-  await expect(page.getByRole('heading', { name: nombre, exact: true })).toBeVisible()
 }
 
 export function bloqueDeEstado(page: Page): Locator {

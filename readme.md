@@ -163,7 +163,7 @@ docker compose exec api python -m app.semillas
 El último comando muestra el usuario de demostración y su clave, que aparece una sola vez. La aplicación queda en `http://localhost:8080`.
 
 - **[Guía de instalación local](docs/despliegue/instalacion-local.md):** paso a paso desde cero, uso con datos reales de SAT2, actualización, desinstalación y problemas frecuentes.
-- **[Guion de la demostración](docs/demo/guion-demo.md):** recorre los cinco estados y las reglas en unos 7 minutos, con el modo `escenarios`.
+- **[Guion de la demostración](docs/demo/guion-demo.md):** recorre los cinco estados y las reglas en unos 7 minutos, en modo `prueba`, cargando cada situación en "Caso de prueba - 1" con `python -m herramientas.situaciones`.
 - **[Despliegue en Google Cloud](docs/despliegue/despliegue-gcp.md) (pospuesto):** guía preparada para publicar en internet con HTTPS y dominio propio. Todavía no se ejecutó.
 - **Modos de datos:** `simulado` por defecto, `real` con una cuenta de SAT2 y `prueba` para ver el selector con dos casos. La base recuerda con qué modo se llenó y no arranca con otro, así que los datos reales y los ficticios nunca se mezclan. Para probar con datos reales hay un comando que copia la base a un proyecto aislado. Detalle en la [sección 5 de la guía](docs/despliegue/instalacion-local.md#5-modos-de-datos).
 - Las cuentas se administran con `docker compose exec api python -m app.administracion`, con los comandos `crear-usuario`, `asignar-estacion`, `restablecer-clave` y `desactivar-usuario`.

@@ -23,10 +23,10 @@ Las decisiones están en `design.md` (D1 a D8). Todo se verifica con Compose ais
 
 ## 4. Situaciones de prueba (D8)
 
-- [ ] 4.1 Crear `fixtures_situaciones` con las nueve situaciones y verificar con pruebas del backend que cada una produce el estado y los motivos esperados
-- [ ] 4.2 Pasar las pruebas de extremo a extremo HU1 y HU2 a esas situaciones y verificar que todas pasan
-- [ ] 4.3 Pasar las pruebas negativas a esas situaciones y verificar que siguen dando los mismos resultados
-- [ ] 4.4 Eliminar el modo `escenarios`, su cliente, su JSON y sus semillas, y verificar que `grep -ri escenarios` solo encuentra el historial de documentos
+- [x] 4.1 Crear `fixtures_situaciones` con las nueve situaciones y verificar con pruebas del backend que cada una produce el estado y los motivos esperados
+- [x] 4.2 Pasar las pruebas de extremo a extremo HU1 y HU2 a esas situaciones y verificar que todas pasan
+- [x] 4.3 Pasar las pruebas negativas a esas situaciones y verificar que siguen dando los mismos resultados
+- [x] 4.4 Eliminar el modo `escenarios`, su cliente, su JSON y sus semillas, y verificar que los rastros del modo (`ClienteSat2Escenarios`, `escenarios.json`, `MODO_ESCENARIOS`, `SAT2_MODO=escenarios`, "modo `escenarios`") solo quedan en el historial de documentos. La palabra "escenarios" sigue usándose con el sentido de escenarios de una spec
 
 ## 5. API y frontend (D2, D3)
 

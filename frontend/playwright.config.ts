@@ -6,6 +6,9 @@ export default defineConfig({
   globalSetup: './e2e/preparacion-global.ts',
   globalTeardown: './e2e/cierre-global.ts',
   forbidOnly: true,
+  // Todas las pruebas cargan su situación en el mismo caso de prueba: no pueden correr a la vez.
+  workers: 1,
+  fullyParallel: false,
   reporter: 'list',
   use: {
     baseURL: URL_E2E,

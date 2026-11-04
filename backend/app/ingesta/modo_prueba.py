@@ -1,7 +1,7 @@
 """Modo de prueba: dos casos en el selector y ninguna consulta a SAT2 (D5 de weather-track-estaciones).
 
-"Caso de prueba - 1" muestra lo que ya está guardado en la base y "Caso de prueba - 2" nunca recibe
-lecturas. Una base vacía recibe una sola vez los 31 días simulados para el caso 1.
+"Caso de prueba - 1" muestra lo que ya está guardado en la base y "Caso de prueba - 2", con los mismos
+sensores, nunca recibe lecturas. Una base vacía recibe una sola vez los 31 días simulados para el caso 1.
 """
 
 from datetime import datetime
@@ -10,7 +10,7 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.datos.modelos import Estacion, Observacion, UsuarioEstacion
+from app.datos.modelos import Estacion, Observacion, Sensor, UsuarioEstacion
 from app.ingesta.carga_inicial import ejecutar_carga_inicial
 from app.ingesta.catalogo import sincronizar_catalogo
 from app.ingesta.ciclo import ejecutar_ciclo
@@ -50,6 +50,25 @@ def _asegurar_estacion(sesion: Session, id_equipo: int, modelo: Estacion | None)
     return estacion
 
 
+def _copiar_sensores(sesion: Session, origen: Estacion, destino: Estacion) -> None:
+    """El caso 2 tiene los mismos sensores que el caso 1, pero nunca recibe lecturas."""
+    if sesion.scalar(select(Sensor.id).where(Sensor.estacion_id == destino.id).limit(1)):
+        return
+    for sensor in sesion.scalars(select(Sensor).where(Sensor.estacion_id == origen.id)).all():
+        sesion.add(
+            Sensor(
+                estacion_id=destino.id,
+                id_sensor_sat2=sensor.id_sensor_sat2,
+                nombre=sensor.nombre,
+                clave_normalizada=sensor.clave_normalizada,
+                magnitud=sensor.magnitud,
+                altura_m=sensor.altura_m,
+                unidad=sensor.unidad,
+            )
+        )
+    sesion.flush()
+
+
 def preparar_modo_prueba(sesion: Session, ahora: datetime) -> tuple[Estacion, Estacion]:
     """Deja listos los dos casos. Se puede repetir sin duplicar nada. Hace commit."""
     sin_lecturas = sesion.scalar(select(Observacion.sensor_id).limit(1)) is None
@@ -62,6 +81,7 @@ def preparar_modo_prueba(sesion: Session, ahora: datetime) -> tuple[Estacion, Es
     caso_2 = _asegurar_estacion(sesion, EQUIPO_CASO_2, caso_1)
     caso_2.nombre = NOMBRE_CASO_2
     sesion.flush()
+    _copiar_sensores(sesion, caso_1, caso_2)
 
     # Mientras el acceso dependa de asignaciones, quien ve el caso 1 también ve el caso 2.
     usuarios = sesion.scalars(

@@ -1,8 +1,7 @@
 """Datos ficticios de demostración. Ejecutarlo más de una vez no duplica nada.
 
-Solo funciona en los modos con datos ficticios, para no mezclarlos con los reales. En modo
-escenarios, el usuario ve una estación por cada caso, para mostrar todos los estados. En modo
-prueba, ve los dos casos de prueba.
+Solo funciona en los modos con datos ficticios, para no mezclarlos con los reales. En modo prueba,
+el usuario ve los dos casos de prueba.
 """
 
 import os
@@ -17,14 +16,12 @@ from app.datos.conexion import obtener_motor
 from app.datos.modelos import Estacion, Usuario, UsuarioEstacion
 from app.datos.naturaleza import NaturalezaIncompatible, asegurar_naturaleza
 from app.ingesta.catalogo import sincronizar_catalogo
-from app.ingesta.cliente_simulado import ClienteSat2Escenarios, ClienteSat2Simulado
+from app.ingesta.cliente_simulado import ClienteSat2Simulado
 from app.ingesta.modo_prueba import preparar_modo_prueba
 from app.seguridad import calcular_hash_contrasena
 
 EMAIL_DEMO = "demo@weathertrack.example"
 NOMBRE_DEMO = "Usuario de demostración"
-# Queda sin asignar, para mostrar el acceso denegado.
-ESTACION_AJENA = "Estación ajena"
 
 
 def _asegurar_usuario(sesion: Session, estaciones: list[Estacion]) -> str | None:
@@ -51,18 +48,12 @@ def cargar_semillas(sesion: Session) -> str | None:
     return _asegurar_usuario(sesion, [estacion])
 
 
-def cargar_semillas_de_escenarios(sesion: Session) -> str | None:
-    estaciones = sincronizar_catalogo(sesion, ClienteSat2Escenarios())
-    return _asegurar_usuario(sesion, [e for e in estaciones if e.nombre != ESTACION_AJENA])
-
-
 def cargar_semillas_de_prueba(sesion: Session) -> str | None:
     return _asegurar_usuario(sesion, list(preparar_modo_prueba(sesion, datetime.now(UTC))))
 
 
 CARGADORES = {
     "simulado": cargar_semillas,
-    "escenarios": cargar_semillas_de_escenarios,
     "prueba": cargar_semillas_de_prueba,
 }
 
@@ -71,7 +62,7 @@ def principal() -> int:
     modo = os.environ.get("SAT2_MODO", "simulado")
     if modo not in CARGADORES:
         print(
-            "Las semillas solo se pueden cargar en modo simulado, escenarios o prueba.",
+            "Las semillas solo se pueden cargar en modo simulado o prueba.",
             file=sys.stderr,
         )
         return 2

@@ -21,12 +21,11 @@ from app.ingesta.carga_inicial import ejecutar_carga_inicial
 from app.ingesta.catalogo import sincronizar_catalogo
 from app.ingesta.ciclo import ejecutar_ciclo
 from app.ingesta.cliente_sat2 import ClienteSat2, ClienteSat2Http
-from app.ingesta.cliente_simulado import ClienteSat2Escenarios, ClienteSat2Simulado
+from app.ingesta.cliente_simulado import ClienteSat2Simulado
 from app.ingesta.configuracion import ConfiguracionIncompleta, cargar_configuracion
 from app.ingesta.modo_prueba import preparar_modo_prueba
 
 MODO_SIMULADO = "simulado"
-MODO_ESCENARIOS = "escenarios"
 MODO_REAL = "real"
 MODO_PRUEBA = "prueba"
 INTERVALO_LATIDO_SEGUNDOS = 30
@@ -70,8 +69,6 @@ class ClienteSerializado:
 def crear_cliente(modo: str) -> ClienteSat2:
     if modo == MODO_SIMULADO:
         return ClienteSat2Simulado()
-    if modo == MODO_ESCENARIOS:
-        return ClienteSat2Escenarios()
     if modo == MODO_REAL:
         return ClienteSat2Http(cargar_configuracion(RUTA_ENV))
     raise ConfiguracionIncompleta(f"SAT2_MODO no admitido: {modo}")

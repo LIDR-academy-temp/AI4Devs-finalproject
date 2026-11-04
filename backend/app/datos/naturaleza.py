@@ -17,11 +17,9 @@ COPIA_DE_PRUEBA = "COPIA_DE_PRUEBA"
 ADMITIDAS = {
     "real": {REAL},
     "simulado": {FICTICIA},
-    # Se elimina junto con el modo escenarios (grupo 4 del cambio).
-    "escenarios": {FICTICIA},
     "prueba": {FICTICIA, COPIA_DE_PRUEBA},
 }
-INICIAL = {"real": REAL, "simulado": FICTICIA, "escenarios": FICTICIA, "prueba": FICTICIA}
+INICIAL = {"real": REAL, "simulado": FICTICIA, "prueba": FICTICIA}
 
 DESCRIPCION = {
     REAL: "reales de SAT2",

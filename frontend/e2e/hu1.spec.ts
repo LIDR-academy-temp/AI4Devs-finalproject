@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import {
   FECHA_Y_HORA,
   MINUTO_Y_MEDIO_MS,
-  abrirEstacion,
+  abrirSituacion,
   bloqueDeEstado,
   exigirSinDesplazamientoHorizontal,
   ingresar,
@@ -12,7 +12,7 @@ import {
 
 test.describe('HU1: ver si puedo aplicar ahora', () => {
   test('condiciones favorables con datos vigentes', async ({ page }) => {
-    await abrirEstacion(page, 'Condiciones favorables')
+    await abrirSituacion(page, 'favorables')
 
     const bloque = bloqueDeEstado(page)
     await expect(bloque).toContainText('Apto para aplicar')
@@ -31,19 +31,18 @@ test.describe('HU1: ver si puedo aplicar ahora', () => {
 
   test('estación sin acceso', async ({ page }) => {
     await ingresar(page)
-    await expect(page.getByRole('link', { name: 'Estación ajena' })).toHaveCount(0)
 
-    await page.goto(`/estaciones/${process.env.E2E_ESTACION_AJENA}`)
+    await page.goto(`/estaciones/${process.env.E2E_CASO_2}`)
 
     await expect(page.getByRole('alert')).toContainText('No tiene acceso')
-    await expect(page.getByText('Estación ajena')).toHaveCount(0)
+    await expect(page.getByText('Caso de prueba - 2')).toHaveCount(0)
     await expect(bloqueDeEstado(page)).toHaveCount(0)
     await expect(page.locator('.grilla')).toHaveCount(0)
   })
 
   test('la falta de conexión no deja el estado anterior como vigente', async ({ page }) => {
     await page.clock.install()
-    await abrirEstacion(page, 'Condiciones favorables')
+    await abrirSituacion(page, 'favorables')
     await expect(bloqueDeEstado(page)).toContainText('Apto para aplicar')
 
     await page.route('**/api/v1/**', (ruta) => ruta.abort())
@@ -62,7 +61,7 @@ test.describe('HU1: ver si puedo aplicar ahora', () => {
 
   test('la sesión vencida lleva a la pantalla de acceso', async ({ page, context }) => {
     await page.clock.install()
-    await abrirEstacion(page, 'Condiciones favorables')
+    await abrirSituacion(page, 'favorables')
 
     await context.clearCookies()
     await page.clock.fastForward(MINUTO_Y_MEDIO_MS)
@@ -75,7 +74,7 @@ test.describe('HU1: ver si puedo aplicar ahora', () => {
     test.use({ viewport: { width: 360, height: 800 } })
 
     test('la pantalla de decisión no tiene desplazamiento horizontal', async ({ page }) => {
-      await abrirEstacion(page, 'Inversión con poco viento')
+      await abrirSituacion(page, 'inversion_poco_viento')
       await expect(bloqueDeEstado(page)).toContainText('No aplicar')
       await exigirSinDesplazamientoHorizontal(page)
     })

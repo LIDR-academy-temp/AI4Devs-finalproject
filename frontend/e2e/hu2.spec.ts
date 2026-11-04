@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test'
-import { abrirEstacion, bloqueDeEstado, motivos, tarjeta } from './ayudantes.ts'
+import { abrirSituacion, bloqueDeEstado, motivos, tarjeta } from './ayudantes.ts'
 
 const APTO = 'Apto para aplicar'
 
 test.describe('HU2: entender la recomendación y no confiar en datos dudosos', () => {
   test('inversión térmica con índice bajo', async ({ page }) => {
-    await abrirEstacion(page, 'Inversión con índice bajo')
+    await abrirSituacion(page, 'inversion_indice_bajo')
 
     const bloque = bloqueDeEstado(page)
     await expect(bloque).toContainText('Precaución')
@@ -14,7 +14,7 @@ test.describe('HU2: entender la recomendación y no confiar en datos dudosos', (
   })
 
   test('inversión térmica con poco viento', async ({ page }) => {
-    await abrirEstacion(page, 'Inversión con poco viento')
+    await abrirSituacion(page, 'inversion_poco_viento')
 
     await expect(bloqueDeEstado(page)).toContainText('No aplicar')
     await expect(motivos(page)).toContainText('supera a la de 2 m en 2 °C')
@@ -22,14 +22,14 @@ test.describe('HU2: entender la recomendación y no confiar en datos dudosos', (
   })
 
   test('índice elevado sin inversión', async ({ page }) => {
-    await abrirEstacion(page, 'Índice elevado')
+    await abrirSituacion(page, 'indice_elevado')
 
     await expect(bloqueDeEstado(page)).toContainText('Riesgo de deriva')
     await expect(motivos(page)).toContainText('El índice TIS es 50, mayor que 20')
   })
 
   test('falta una lectura necesaria', async ({ page }) => {
-    await abrirEstacion(page, 'Lectura faltante')
+    await abrirSituacion(page, 'lectura_faltante')
 
     const bloque = bloqueDeEstado(page)
     await expect(bloque).toContainText('Datos insuficientes')
@@ -39,7 +39,7 @@ test.describe('HU2: entender la recomendación y no confiar en datos dudosos', (
   })
 
   test('datos desactualizados', async ({ page }) => {
-    await abrirEstacion(page, 'Datos desactualizados')
+    await abrirSituacion(page, 'desactualizada')
 
     const bloque = bloqueDeEstado(page)
     // El ciclo la calculó apta, pero tiene más de 30 minutos: no debe mostrarse como vigente.
@@ -51,7 +51,7 @@ test.describe('HU2: entender la recomendación y no confiar en datos dudosos', (
   })
 
   test('lectura sospechosa', async ({ page }) => {
-    await abrirEstacion(page, 'Lectura sospechosa')
+    await abrirSituacion(page, 'sospechosa')
 
     const bloque = bloqueDeEstado(page)
     await expect(bloque).toContainText('Precaución')
@@ -64,7 +64,7 @@ test.describe('HU2: entender la recomendación y no confiar en datos dudosos', (
   })
 
   test('sin conexión con la fuente de datos', async ({ page }) => {
-    await abrirEstacion(page, 'Fuente caída')
+    await abrirSituacion(page, 'fuente_caida')
 
     await expect(bloqueDeEstado(page)).toContainText('Datos insuficientes')
     await expect(page.getByRole('alert')).toContainText('Sin conexión con la fuente de datos')

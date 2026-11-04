@@ -49,6 +49,13 @@ def test_el_worker_usa_el_simulado_por_defecto():
     assert isinstance(worker.crear_cliente(worker.MODO_SIMULADO), ClienteSat2Simulado)
 
 
+def test_el_modo_escenarios_ya_no_existe(monkeypatch, caplog):
+    monkeypatch.setenv("SAT2_MODO", "escenarios")
+    with caplog.at_level(logging.ERROR):
+        assert worker.principal() == 2
+    assert "SAT2_MODO no admitido: escenarios" in caplog.text
+
+
 def test_modo_real_sin_credenciales_termina_sin_exponer_valores(
     tmp_path, monkeypatch, caplog
 ):

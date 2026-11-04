@@ -22,11 +22,19 @@ export function compose(...argumentos: string[]): string {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        SAT2_MODO: 'escenarios',
+        SAT2_MODO: 'prueba',
         PUERTO_WEB: PUERTO,
         CARGA_PAUSA_SEGUNDOS: '0',
         COOKIE_SEGURA: 'false',
       },
     },
   )
+}
+
+/**
+ * Carga una situación de la recomendación en "Caso de prueba - 1". La calculan el ciclo y el
+ * motor reales a partir de lecturas ficticias; ninguna situación se presenta como estación.
+ */
+export function cargarSituacion(clave: string) {
+  compose('exec', '-T', 'api', 'python', '-m', 'herramientas.situaciones', clave)
 }

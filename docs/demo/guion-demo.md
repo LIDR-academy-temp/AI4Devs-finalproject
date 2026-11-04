@@ -2,7 +2,15 @@
 
 Muestra el flujo principal de Weather Track en unos 7 minutos, sobre la [instalación local](../despliegue/instalacion-local.md). Usa datos ficticios, sin credenciales ni conexión a SAT2.
 
-El modo de demostración habitual siempre da "Apto". Esta demo usa el modo `escenarios`: una estación ficticia por cada caso. Los estados no están forzados: los calculan el ciclo y el motor reales a partir de lo que entrega la fuente simulada.
+La demo usa el modo `prueba`. El selector muestra dos casos: "Caso de prueba - 1", donde se cargan las situaciones, y "Caso de prueba - 2", sin lecturas. Ninguna situación se presenta como estación: una estación es solo un equipo de SAT2.
+
+Antes de cada paso del guion, una terminal carga la situación en el caso 1. Los estados no están forzados: los calculan el ciclo y el motor reales a partir de lo que entrega la fuente simulada.
+
+```bash
+docker compose exec api python -m herramientas.situaciones indice_elevado
+```
+
+La pantalla se actualiza sola cada minuto; para verlo enseguida, se recarga la página. `--lista` muestra todas las situaciones.
 
 ## Preparación (unos 5 minutos, antes de presentar)
 
@@ -20,12 +28,7 @@ cd weather-track
 cp .env.example .env
 ```
 
-Editar `.env` así:
-
-| Variable | Valor |
-|---|---|
-| `SAT2_MODO` | `escenarios` |
-| `CARGA_PAUSA_SEGUNDOS` | `0`. Hay que agregar esta línea |
+En `.env`, cambiar `SAT2_MODO` a `prueba`. El sistema carga solo los 31 días simulados del caso 1 antes de quedar listo.
 
 ```bash
 docker compose up --build -d --wait
@@ -35,27 +38,27 @@ docker compose up --build -d --wait
 docker compose exec api python -m app.semillas
 ```
 
-Ese último comando muestra el correo y la clave de demostración. Esperar un minuto, para que se carguen los históricos, y abrir <http://localhost:8080>.
+Ese último comando muestra el correo y la clave de demostración. Abrir <http://localhost:8080>.
 
 ## Guion
 
-| Min. | Dónde | Qué mostrar | Qué decir |
-|---|---|---|---|
-| 0:00 | Acceso | Ingresar con la cuenta de demostración | "¿Puedo aplicar ahora sin riesgo de deriva?" No hay registro público, y las cuentas las crea un administrador |
-| 0:30 | Lista de estaciones | Las estaciones asignadas | Cada persona ve solo las suyas, y el servidor lo comprueba en cada consulta |
-| 1:00 | **Condiciones favorables** | "Apto para aplicar", índice, diferencia térmica, hora, motivos y aviso | El estado no depende solo del color: lleva texto e ícono. La recomendación siempre es orientativa |
-| 1:30 | Misma pantalla | Tarjetas de sensores, incluidas "Sin dato válido" y "En alarma" | Cada lectura informa su calidad. Se actualiza sola cada minuto |
-| 2:00 | **Inversión con índice bajo** | "Precaución" con índice bajo | Regla R3: el índice solo daría apto, pero una inversión nunca lo es |
-| 2:30 | **Inversión con poco viento** | "No aplicar", con la inversión y el viento en los motivos | Regla R3b: sin viento no hay mezcla de aire |
-| 3:00 | **Índice elevado** | "Riesgo de deriva" | Calma, sin sol y mucha humedad: el índice sube aunque no haya inversión |
-| 3:30 | **Lectura faltante** | "Datos insuficientes", sin índice, y el sensor afectado | Regla R1: sin las seis lecturas no se calcula nada |
-| 4:00 | **Datos desactualizados** | "Datos insuficientes", con la antigüedad | Regla R2: un dato viejo nunca se muestra como vigente |
-| 4:30 | **Lectura sospechosa** | "Precaución" y tarjetas marcadas | Regla R4: humedades incoherentes entre 2 m y 10 m. **Es lo que hoy ocurre en la estación real** |
-| 5:00 | **Fuente caída** | Aviso "Sin conexión con la fuente de datos" | El sistema distingue una falla de la fuente de la falta de datos |
-| 5:30 | **Con históricos**, tocar *Temp Amb. a 2 Mts* | Gráfico y resumen; cambiar a 31 días | La línea se corta en los huecos, sin inventar datos |
-| 6:15 | `http://localhost:8080/estaciones/10` | "No tiene acceso a esta estación." | Es la estación ajena: no alcanza con conocer el enlace |
-| 6:30 | Herramientas del navegador, ancho 360 | La pantalla de decisión | Pensada para usarse en el lote, con el celular |
-| 6:45 | Salir | Cerrar sesión | La sesión se invalida en el servidor |
+| Min. | Situación cargada | Dónde | Qué mostrar | Qué decir |
+|---|---|---|---|---|
+| 0:00 | `favorables` | Acceso | Ingresar con la cuenta de demostración | "¿Puedo aplicar ahora sin riesgo de deriva?" |
+| 0:30 | | Lista de estaciones | Los dos casos de prueba | Una estación es un equipo de SAT2; en la instalación real aparece INTA Pergamino |
+| 1:00 | | **Caso de prueba - 1** | "Apto para aplicar", índice, diferencia térmica, hora, motivos y aviso | El estado no depende solo del color: lleva texto e ícono. La recomendación siempre es orientativa |
+| 1:30 | | Misma pantalla | Tarjetas de sensores, incluidas "Sin dato válido" y "En alarma" | Cada lectura informa su calidad. Se actualiza sola cada minuto |
+| 2:00 | `inversion_indice_bajo` | Caso 1 | "Precaución" con índice bajo | Regla R3: el índice solo daría apto, pero una inversión nunca lo es |
+| 2:30 | `inversion_poco_viento` | Caso 1 | "No aplicar", con la inversión y el viento en los motivos | Regla R3b: sin viento no hay mezcla de aire |
+| 3:00 | `indice_elevado` | Caso 1 | "Riesgo de deriva" | Calma, sin sol y mucha humedad: el índice sube aunque no haya inversión |
+| 3:30 | `lectura_faltante` | Caso 1 | "Datos insuficientes", sin índice, y el sensor afectado | Regla R1: sin las seis lecturas no se calcula nada |
+| 4:00 | `desactualizada` | Caso 1 | "Datos insuficientes", con la antigüedad | Regla R2: un dato viejo nunca se muestra como vigente |
+| 4:30 | `sospechosa` | Caso 1 | "Precaución" y tarjetas marcadas | Regla R4: humedades incoherentes entre 2 m y 10 m. **Es lo que hoy ocurre en la estación real** |
+| 5:00 | `fuente_caida` | Caso 1 | Aviso "Sin conexión con la fuente de datos" | El sistema distingue una falla de la fuente de la falta de datos |
+| 5:30 | `con_historicos` | Caso 1, tocar *Temp Amb. a 2 Mts* | Gráfico y resumen; cambiar a 31 días | La línea se corta en los huecos, sin inventar datos |
+| 6:15 | | **Caso de prueba - 2** | "Datos insuficientes", sin mediciones | Un equipo sin lecturas nunca muestra una recomendación |
+| 6:30 | | Herramientas del navegador, ancho 360 | La pantalla de decisión | Pensada para usarse en el lote, con el celular |
+| 6:45 | | Salir | Cerrar sesión | La sesión se invalida en el servidor |
 
 ## Si preguntan
 

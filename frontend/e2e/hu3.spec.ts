@@ -1,14 +1,14 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 import {
-  abrirEstacion,
+  abrirSituacion,
   exigirSinDesplazamientoHorizontal,
   tarjeta,
   vigilarPoliticaDeContenido,
 } from './ayudantes.ts'
 
 async function abrirDetalle(page: Page) {
-  await abrirEstacion(page, 'Con históricos')
+  await abrirSituacion(page, 'con_historicos')
   await tarjeta(page, 'Temp Amb. a 2 Mts').click()
   await expect(page.getByRole('heading', { name: 'Temp Amb. a 2 Mts' })).toBeVisible()
 }

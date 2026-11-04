@@ -4,7 +4,7 @@ Se ejecuta en la computadora anfitriona, con Docker y los puertos 80 y 443 libre
 
     python backend/herramientas/pruebas_negativas.py
 
-Usa el proyecto `wt-seg`, que crea y borra, y el modo escenarios: datos ficticios, sin conexión
+Usa el proyecto `wt-seg`, que crea y borra, y el modo prueba: datos ficticios, sin conexión
 a SAT2. Nunca muestra claves ni identificadores de sesión. Termina con código 1 si algo falla.
 """
 
@@ -92,7 +92,7 @@ def entrar(email, clave):
 carpeta = pathlib.Path(tempfile.mkdtemp())
 env = carpeta / "seg.env"
 env.write_text(
-    f"SAT2_MODO=escenarios\nPOSTGRES_PASSWORD={secrets.token_hex(32)}\nDIRECCION_WEB=localhost\nCARGA_PAUSA_SEGUNDOS=0\n",
+    f"SAT2_MODO=prueba\nPOSTGRES_PASSWORD={secrets.token_hex(32)}\nDIRECCION_WEB=localhost\nCARGA_PAUSA_SEGUNDOS=0\n",
     encoding="utf-8",
 )
 E = str(env)
@@ -103,8 +103,8 @@ try:
         print(arriba.stderr[-500:])
         raise SystemExit(1)
 
-    clave_a = crear(E, "a@ejemplo.com", 101)
-    clave_b = crear(E, "b@ejemplo.com", 102)
+    clave_a = crear(E, "a@ejemplo.com", 1)
+    clave_b = crear(E, "b@ejemplo.com", 2)
     codigo, galleta_cruda = entrar("a@ejemplo.com", clave_a)
     galleta_a = galleta_cruda.split(";")[0]
     atributos = galleta_cruda.lower()
@@ -199,7 +199,7 @@ try:
     comprobar(f"cuerpo de 3 MB rechazado por el proxy ({codigo})", codigo in (413, 0), str(codigo))
 
     print("\n== Bloqueo y enumeracion")
-    clave_v = crear(E, "victima@ejemplo.com", 101)
+    clave_v = crear(E, "victima@ejemplo.com", 1)
     t0 = time.perf_counter(); pedir("/api/v1/auth/login", "POST", {"email": "victima@ejemplo.com", "contrasena": "mala"}); t_existe = time.perf_counter() - t0
     t0 = time.perf_counter(); r_no = pedir("/api/v1/auth/login", "POST", {"email": "noexiste@ejemplo.com", "contrasena": "mala"}); t_no = time.perf_counter() - t0
     r_si = pedir("/api/v1/auth/login", "POST", {"email": "victima@ejemplo.com", "contrasena": "mala"})
@@ -216,7 +216,7 @@ try:
     comprobar("un correo inexistente tambien se bloquea", pedir("/api/v1/auth/login", "POST", {"email": "fantasma@ejemplo.com", "contrasena": "mala"})[0] == 429)
 
     print("\n== Vida de la sesion")
-    clave_c = crear(E, "ciclo@ejemplo.com", 101)
+    clave_c = crear(E, "ciclo@ejemplo.com", 1)
     galleta_c = entrar("ciclo@ejemplo.com", clave_c)[1].split(";")[0]
     comprobar("sesion activa", pedir("/api/v1/estaciones", galleta=galleta_c)[0] == 200)
     pedir("/api/v1/auth/logout", "POST", galleta=galleta_c)

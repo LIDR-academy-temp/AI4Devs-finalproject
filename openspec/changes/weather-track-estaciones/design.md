@@ -79,9 +79,9 @@ El catálogo simulado pasa a llamar a su equipo "INTA Pergamino", con las coorde
 
 ### D8. Las situaciones de la recomendación, en las pruebas
 
-Se elimina `ClienteSat2Escenarios` y su JSON. Un módulo de pruebas `fixtures_situaciones` carga cada situación (favorable, índice elevado, inversión con índice bajo, inversión con poco viento, lectura faltante, desactualizada, sospechosa, fuente caída, con históricos) directo en la base de la prueba, como observaciones y ejecuciones de ingesta de la estación 1. Las pruebas de extremo a extremo y las negativas lo invocan antes de cada caso, en su proyecto aislado.
+Se elimina `ClienteSat2Escenarios` y su JSON. El módulo `herramientas/situaciones.py`, con sus datos en `situaciones.json`, carga cada situación (favorable, índice elevado, inversión con índice bajo, inversión con poco viento, lectura faltante, desactualizada, sospechosa, fuente caída, con históricos) en "Caso de prueba - 1": borra lo posterior a la medición de la situación y ejecuta el ciclo real con una fuente simulada que la reproduce. Solo escribe en una base ficticia. Las pruebas de extremo a extremo lo invocan antes de cada caso, de a una por vez porque comparten el caso 1, y la guía de la demo lo usa entre pasos. "Caso de prueba - 2" copia los sensores del caso 1 para que las pruebas negativas tengan una segunda estación con sensores.
 
-- **Consecuencia aceptada:** la demo en vivo muestra la estación real o la simulada, y las demás situaciones se presentan con las capturas y los resultados de las pruebas.
+- **Consecuencia:** la demo sigue mostrando en vivo todas las situaciones, cargándolas una tras otra en "Caso de prueba - 1", sin presentarlas como estaciones.
 
 ## Risks / Trade-offs
 
