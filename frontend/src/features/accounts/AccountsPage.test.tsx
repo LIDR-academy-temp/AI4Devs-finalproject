@@ -188,6 +188,18 @@ describe('Accounts: the settlements of each account (settlements-browse)', () =>
   })
 })
 
+describe('Accounts: the detail of each account (web-admin-accounts)', () => {
+  it('the name of the account leads to its Overview', async () => {
+    const { user, router } = renderApp('/accounts?merchantId=1&providerId=101', { as: 'viewer' })
+
+    const usd = await accountRow('ProviderA-USD')
+    await user.click(usd.getByRole('link', { name: 'ProviderA-USD' }))
+
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/accounts/${ACCOUNT_IDS['ProviderA-USD']}`))
+    expect(await screen.findByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+  })
+})
+
 describe('Accounts: the fees of each account (web-admin-fees)', () => {
   it('links ProviderA-USD to its fees: the Fees tab of its detail', async () => {
     const { user, router } = renderApp('/accounts?merchantId=1&providerId=101', { as: 'viewer' })

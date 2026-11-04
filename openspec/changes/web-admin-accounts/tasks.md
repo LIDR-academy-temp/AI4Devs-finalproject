@@ -55,14 +55,14 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
 
 ## 5. Account Detail: cabecera, Overview y canales (test-first)
 
-- [ ] 5.1 Escribir `features/accounts/AccountDetailPage.test.tsx` con los escenarios de la delta `accounts` y comprobar que fallan:
+- [x] 5.1 Escribir `features/accounts/AccountDetailPage.test.tsx` con los escenarios de la delta `accounts` y comprobar que fallan:
   - "acceso y cabecera": ProviderA-USD; otro merchant, uuid inexistente y `not-a-uuid`; migas.
   - "acciones de la cabecera": `admin`, `analyst` con el enlace de New reconciliation, `viewer`, cuenta cerrada.
   - "pestañas": cambiar de pestaña y enlace directo.
   - "Overview": tope `50,000.0000`, `None · global rules`, `by admin`, ProviderC-Alt con `Provider C legacy`.
   - "canales": principales, histórico, `—` sin batch, cuenta sin canales.
   - "carga y errores": reintento de los canales; conjunto no disponible → `Rule set 3`.
-- [ ] 5.2 Commit: test(web): ficha de la cuenta con sus datos y sus canales
+- [x] 5.2 Commit: test(web): ficha de la cuenta con sus datos y sus canales
 - [ ] 5.3 Implementar lo necesario hasta dejar en verde los tests de 5.1 (design D4):
   - la cabecera completa de `AccountDetailPage`, `AccountOverview.tsx` y `AccountChannels.tsx`;
   - `matchingRuleSetsQuery` en `queries.ts`, `useCanManageAccounts` en `permissions.ts` y `ACCOUNT_STATUS_TONE` en `lib/status-tone.ts`;
