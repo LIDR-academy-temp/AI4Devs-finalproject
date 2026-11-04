@@ -121,6 +121,23 @@ describe('Channel Assignment: primary account per channel', () => {
     )
   })
 
+  it('a channel without a primary account shows a dash for it and for the batch', async () => {
+    // RAM-01 keeps its association with ProviderA-USD, but no account is its primary any more.
+    const index = db.accountChannels.findIndex((r) => r.channelId === 1001 && r.isPrimary)
+    db.accountChannels[index] = { ...db.accountChannels[index]!, isPrimary: false }
+    await open('admin', 'merchantId=1&providerId=101')
+
+    await waitFor(async () =>
+      expect((await rowsOf('Primary account per channel'))[0]).toEqual([
+        'RAM-01',
+        'Provider A',
+        '—',
+        '—',
+        'ProviderA-USD',
+      ]),
+    )
+  })
+
   it('the primary account leads to its detail', async () => {
     const { user, router } = await open('viewer', 'merchantId=1&providerId=101')
 
@@ -144,5 +161,40 @@ describe('Channel Assignment: loading and errors', () => {
     await user.click(screen.getByRole('button', { name: 'Retry' }))
 
     expect((await rowsOf('Channels not assigned yet')).map((r) => r[0])).toEqual(['RAM-07', 'RAM-13'])
+  })
+
+  it('a failed read of the accounts of one channel shows the error, and Retry asks only for that one', async () => {
+    const asked: string[] = []
+    server.events.on('request:start', ({ request }) => {
+      const path = new URL(request.url).pathname
+      if (path.startsWith('/api/v1/channels')) asked.push(path + new URL(request.url).search)
+    })
+    server.use(
+      http.get(
+        '*/api/v1/channels/1001/accounts',
+        () => HttpResponse.json({ code: 'internal_error' }, { status: 500 }),
+        {
+          once: true,
+        },
+      ),
+    )
+    const { user } = await open('viewer', 'merchantId=1&providerId=101')
+
+    expect(await screen.findByText('Could not load channels.', undefined, OPENING)).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    asked.length = 0
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
+
+    await waitFor(async () =>
+      expect((await rowsOf('Primary account per channel'))[0]).toEqual([
+        'RAM-01',
+        'Provider A',
+        'ProviderA-USD',
+        'batch 68',
+        '—',
+      ]),
+    )
+    expect(asked).toEqual(['/api/v1/channels/1001/accounts'])
+    server.events.removeAllListeners()
   })
 })
