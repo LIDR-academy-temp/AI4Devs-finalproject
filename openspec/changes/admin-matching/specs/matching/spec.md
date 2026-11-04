@@ -90,7 +90,7 @@ Pasar `isActive` de `true` a `false` en un conjunto con cuentas enlazadas, abier
 - **THEN** las dos respuestas son `200` y la auditoría registra `matching_rule_set.deactivate` y `matching_rule_set.activate`
 
 ### Requirement: Validación del contenido de las reglas
-Una regla de hoja `transactions` SHALL llevar ciclo; una `batch_fees` o `ignore`, ni ciclo ni estado; el ciclo `R`, sin estado. Un estado fijo no SHALL ser `Pending` ni tener un ciclo natural distinto del de la hoja. Un regex SHALL compilar. Los patrones se guardan sin espacios de borde y no SHALL estar vacíos. Cada incumplimiento SHALL responder `400 validation_error` con `details.field` (p. ej. `sheetRules[2].statusId`) sin escribir.
+Una regla de hoja `transactions` SHALL llevar ciclo; una `batch_fees` o `ignore`, ni ciclo ni estado; el ciclo `R`, sin estado. Un estado fijo no SHALL ser `Pending` ni tener un ciclo natural distinto del de la hoja. Un regex SHALL compilar. Los patrones se guardan sin espacios de borde y no SHALL estar vacíos (eso lo rechaza el esquema). Cada otro incumplimiento SHALL responder `400 validation_error` con `details.field` (p. ej. `sheetRules[2].statusId`) sin escribir.
 
 #### Scenario: Hoja batch_fees con ciclo
 - **WHEN** `admin` envía `Other Fees` → `batch_fees` con `cycle = "E"`
@@ -114,7 +114,7 @@ Una regla de hoja `transactions` SHALL llevar ciclo; una `batch_fees` o `ignore`
 
 #### Scenario: Patrón vacío tras recortar
 - **WHEN** envía una hoja con `sheetPattern = "   "`
-- **THEN** recibe `400` con `details.field = "sheetRules[0].sheetPattern"`
+- **THEN** recibe `400` con `code = "validation_error"` del esquema, con `details[0].path = "/sheetRules/0/sheetPattern"`
 
 #### Scenario: Campo destino fuera del vocabulario
 - **WHEN** envía una columna con `targetField = "fee"`

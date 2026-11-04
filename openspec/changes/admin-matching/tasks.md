@@ -32,20 +32,20 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 
 ## 2. Validación y diff de reglas (TDD)
 
-- [ ] 2.1 Escribir `matching/domain/rule-validation.test.ts` (D2) y comprobar que falla. Debe cubrir cada escenario de "Validación del contenido de las reglas" y de "Patrones sin repetir y límites":
+- [x] 2.1 Escribir `matching/domain/rule-validation.test.ts` (D2) y comprobar que falla. Debe cubrir cada escenario de "Validación del contenido de las reglas" y de "Patrones sin repetir y límites":
   - ruta exacta de `details.field`;
   - se señala el segundo repetido;
   - repetición independiente de `isRegex`;
   - la misma columna en hojas distintas, aceptada;
   - alias repetidos o de estado inexistente.
-- [ ] 2.2 Escribir `matching/domain/rule-diff.test.ts` (D2) y comprobar que falla. Debe cubrir:
+- [x] 2.2 Escribir `matching/domain/rule-diff.test.ts` (D2) y comprobar que falla. Debe cubrir:
   - sin cambios → `changes = {}`;
   - renombrar solo en mayúsculas es un cambio;
   - reordenar reglas es un cambio;
   - `isActive` a `false` con otros cambios → `deactivate`; a `true` → `activate`; el resto → `update`;
   - `before`/`after` sin ids;
   - diff de las globales por lista (`sheetRules`, `columnRules`, `statusAliases`).
-- [ ] 2.3 Commit: test(matching): validación y comparación de reglas de pareo
+- [x] 2.3 Commit: test(matching): validación y comparación de reglas de pareo
 - [ ] 2.4 Implementar `rule-validation.ts`, `rule-diff.ts` y `matching/domain/errors.ts` (`MatchingRuleError`, `RuleSetNameTakenError`, `RuleSetInUseError`) hasta dejar los tests en verde. Rotura deliberada: aceptar `Pending` como estado fijo debe hacer fallar su caso; después se revierte.
 - [ ] 2.5 Commit: feat(matching): validación y comparación de reglas como funciones puras
 
