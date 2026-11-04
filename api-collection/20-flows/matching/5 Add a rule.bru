@@ -44,6 +44,8 @@ script:pre-request {
   if (!detail) {
     throw new Error('flowRuleSetDetail is missing: run "4 Detail" first');
   }
+  // The ids before the PUT: the sheet list changes, so its rules come back with new ids.
+  bru.setVar('flowPreviousSheetRuleIds', detail.sheetRules.map((r) => r.sheetRuleId));
   const body = bodyOf(detail);
   body.sheetRules.push({
     sheetPattern: 'Chargebacks',
@@ -68,5 +70,10 @@ tests {
   test('the whole document with one more sheet: 200, the two sheets in body order with new ids', () => {
     expect(res.status).to.equal(200);
     expect(res.body.sheetRules.map((r) => r.sheetPattern)).to.deep.equal(['Transactions', 'Chargebacks']);
+    const previous = bru.getVar('flowPreviousSheetRuleIds');
+    expect(previous).to.have.length(1);
+    for (const rule of res.body.sheetRules) {
+      expect(previous).to.not.include(rule.sheetRuleId);
+    }
   });
 }

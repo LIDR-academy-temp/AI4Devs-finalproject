@@ -264,6 +264,27 @@ describe('PUT /matching-rule-sets/{id}', () => {
     const [, edit] = await audits(copy.ruleSetId)
     expect(edit).toMatchObject({ action: 'matching_rule_set.update', userId: adminId })
     expect(JSON.parse(edit!.detailJson!)).toEqual({ changes: { name: { before: copy.name, after: name } } })
+    // The rule lists do not change: they keep their rule ids.
+    const after = MatchingRuleSetDetail.parse(res.json())
+    expect(after.sheetRules.map((r) => r.sheetRuleId)).toEqual(copy.sheetRules.map((r) => r.sheetRuleId))
+    expect(after.columnRules.map((r) => r.columnRuleId)).toEqual(copy.columnRules.map((r) => r.columnRuleId))
+  })
+
+  it('answers a list whose priority order is the reverse of its id order, sent back, without writing', async () => {
+    // Saved as Late (priority 20) then Early (priority 10): the detail shows Early first, the ids grow the other way.
+    const set = await create({
+      name: nextName(),
+      sheetRules: [sheet('Late', { priority: 20 }), sheet('Early', { priority: 10 })],
+    })
+    expect(set.sheetRules.map((r) => r.sheetPattern)).toEqual(['Early', 'Late'])
+    expect(set.sheetRules[0]!.sheetRuleId).toBeGreaterThan(set.sheetRules[1]!.sheetRuleId)
+    const counts = await writeCounts()
+
+    const res = await call('PUT', `/matching-rule-sets/${set.ruleSetId}`, 'admin', bodyOf(set))
+
+    expect(res.statusCode, res.body).toBe(200)
+    expect(MatchingRuleSetDetail.parse(res.json())).toEqual(set)
+    expect(await writeCounts()).toEqual(counts)
   })
 
   it('answers the legacy detail sent back unchanged without writing ("Documento sin cambios")', async () => {

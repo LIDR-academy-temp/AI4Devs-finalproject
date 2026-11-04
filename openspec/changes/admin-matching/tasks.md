@@ -154,6 +154,19 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 - S4: `GET /matching-rule-sets/{id}` sin token, `401`, en el test de rutas y en `rule-set-admin.int.test.ts`; el test de rutas cubre también el `GET` global.
 - S1, nota: el escenario "Alias nuevo" se comprueba con `rulesFor()` y `resolveStatusAlias` en `global-rules.int.test.ts`, no con una propuesta real con columna de estado. Equivalente en la práctica, menos literal; queda así.
 
+## Arreglos del review-diff (#121, revisión de `1e036d9`)
+
+- M1: además de lo de `57ee429` (que ya cambió `design.md:167`), `proposal.md`, los comentarios de `MatchingRuleSetPut` y `GlobalMatchingRulesPut` y la fila global de README §4.4 dicen que se reemplazan las listas que cambian.
+- M2: `10-smoke/Put global rules - rowIgnoreRules` envía lo que devolvió el `GET` (sin ids ni `statuses`) más `rowIgnoreRules`.
+- M3: `global-rules.int.test.ts` cambia la `priority` de `Settings`: ids nuevos en las hojas, columnas y alias iguales, `MatchingRowIgnoreRule` idéntico, auditoría solo de `sheetRules` y restauración. El test del `400` con `rowIgnoreRules` ya no comprueba el recuento (pasaba por construcción).
+- m1: lista en orden de prioridad inverso a sus ids, reenviada: sin escritura (servicio e integración).
+- m2: `@LockTimeout` de 10 s (`LOCK_TIMEOUT_MS`), menor que los 15 s de la transacción.
+- m5: "Renombrar" comprueba que se conservan los ids; `20-flows/matching/5 Add a rule` comprueba que cambian.
+- m6: la descripción de las rutas y README §4.4 aclaran que en columnas la regla de una hoja va antes que la genérica y que reordenar reglas de igual prioridad cuenta como cambio aunque no altere la propuesta.
+- m7: `10-smoke/Create rule set - analyst` resuelve Provider C por nombre.
+- m3 y m4, notas en el PR (sin cambios).
+- Verificado: unitarios en verde; `global-rules` y `rule-set-admin` de integración, 30/30, con la base local. La colección (M2, m5, m7) la ejecuta la persona con `pnpm dev`.
+
 ## Incidencias de proceso
 
 - Usé un `python -c` en línea, contra la misma regla, para contar los caracteres de un requisito tras la verificación; los scripts de edición fueron heredocs pasados a `python -I -`.

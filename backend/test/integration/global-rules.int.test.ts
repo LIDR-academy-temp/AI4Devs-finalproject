@@ -177,7 +177,7 @@ describe('PUT /matching-rules/global', () => {
     expect(GlobalMatchingRules.parse((await call('GET', '/matching-rules/global', 'viewer')).json())).toEqual(before)
   })
 
-  it('answers 400 to rowIgnoreRules in the body and keeps the row ignores ("Intento de escribir filas a ignorar")', async () => {
+  it('answers 400 to rowIgnoreRules in the body, before writing ("Intento de escribir filas a ignorar")', async () => {
     const before = GlobalMatchingRules.parse((await call('GET', '/matching-rules/global', 'viewer')).json())
 
     const res = await call('PUT', '/matching-rules/global', 'admin', {
@@ -185,10 +185,47 @@ describe('PUT /matching-rules/global', () => {
       rowIgnoreRules: before.rowIgnoreRules,
     })
 
+    // The schema refuses the body; that a real write leaves the row ignores alone is the next test.
     expect([res.statusCode, res.json().code]).toEqual([400, 'validation_error'])
-    expect(await ctx.prisma.matchingRowIgnoreRule.count({ where: { ruleSetId: null } })).toBe(
-      before.rowIgnoreRules.length,
+  })
+
+  it('replaces the changed sheet list with new ids, keeps the other lists and the row ignores, and is restored', async () => {
+    const before = GlobalMatchingRules.parse((await call('GET', '/matching-rules/global', 'viewer')).json())
+    const rowIgnores = () =>
+      ctx.prisma.matchingRowIgnoreRule.findMany({ where: { ruleSetId: null }, orderBy: { rowIgnoreId: 'asc' } })
+    const rowIgnoresBefore = await rowIgnores()
+    expect(rowIgnoresBefore.length).toBeGreaterThan(0)
+    const settings = before.sheetRules.find((r) => r.sheetPattern === 'Settings')
+    expect(settings).toBeDefined()
+    // Earlier tests of the file may have left their entries: only those written from here on count.
+    const startAuditId = (await ctx.prisma.auditLog.aggregate({ _max: { auditId: true } }))._max.auditId ?? 0n
+    const sheetRules = bodyOf(before).sheetRules.map((r) =>
+      r.sheetPattern === 'Settings' ? { ...r, priority: r.priority + 5 } : r,
     )
+    try {
+      const res = await call('PUT', '/matching-rules/global', 'admin', bodyOf(before, { sheetRules }))
+
+      expect(res.statusCode, res.body).toBe(200)
+      const after = GlobalMatchingRules.parse(res.json())
+      expect(after.sheetRules.find((r) => r.sheetPattern === 'Settings')?.priority).toBe(settings!.priority + 5)
+      const oldSheetIds = new Set(before.sheetRules.map((r) => r.sheetRuleId))
+      expect(after.sheetRules.some((r) => oldSheetIds.has(r.sheetRuleId))).toBe(false)
+      expect(after.columnRules.map((r) => r.columnRuleId)).toEqual(before.columnRules.map((r) => r.columnRuleId))
+      expect(after.statusAliases).toEqual(before.statusAliases)
+      expect(await rowIgnores()).toEqual(rowIgnoresBefore)
+      const entries = (await globalAudits()).filter((a) => a.auditId > startAuditId)
+      expect(entries).toHaveLength(1)
+      expect(Object.keys(JSON.parse(entries[0]!.detailJson!).changes)).toEqual(['sheetRules'])
+    } finally {
+      const restore = await call('PUT', '/matching-rules/global', 'admin', bodyOf(before))
+      expect(restore.statusCode, restore.body).toBe(200)
+      await ctx.prisma.auditLog.deleteMany({
+        where: { entityType: 'MatchingRules', entityId: 'global', auditId: { gt: startAuditId } },
+      })
+    }
+    const restored = GlobalMatchingRules.parse((await call('GET', '/matching-rules/global', 'viewer')).json())
+    expect(bodyOf(restored)).toEqual(bodyOf(before))
+    expect(await rowIgnores()).toEqual(rowIgnoresBefore)
   })
 
   it('answers 403 to analyst', async () => {

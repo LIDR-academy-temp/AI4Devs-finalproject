@@ -18,16 +18,29 @@ auth:bearer {
 }
 
 body:json {
-  {
-    "sheetRules": [],
-    "columnRules": [],
-    "statusAliases": [],
-    "rowIgnoreRules": []
-  }
+  {}
 }
 
 vars:pre-request {
   as: admin
+}
+
+script:pre-request {
+  // The body is what GET returned, without rule ids nor statuses, as in "20-flows/matching/9 Send global rules back",
+  // plus the read-only rowIgnoreRules: at worst, if the schema let it through, nothing would change.
+  if (!bru.getVar('globalMatchingRules')) {
+    await bru.runRequest('10-smoke/Global rules');
+  }
+  const globals = bru.getVar('globalMatchingRules');
+  if (!globals) {
+    throw new Error('the global rules could not be read');
+  }
+  req.setBody({
+    sheetRules: globals.sheetRules.map(({ sheetRuleId, ...rule }) => rule),
+    columnRules: globals.columnRules.map(({ columnRuleId, ...rule }) => rule),
+    statusAliases: globals.statusAliases,
+    rowIgnoreRules: globals.rowIgnoreRules,
+  });
 }
 
 tests {
