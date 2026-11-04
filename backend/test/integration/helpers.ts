@@ -63,6 +63,14 @@ export function seedAccounts<T extends { name: string }>(accounts: readonly T[])
   return accounts.filter((a) => !a.name.startsWith(BRUNO_ACCOUNT_PREFIX))
 }
 
+/**
+ * The rule sets of a listing without those of the Bruno collection, which leaves an inactive bruno- set in Provider C
+ * per run until the next `pnpm db:seed` (admin-matching design D8): what a test that expects the seed's sets compares.
+ */
+export function seedRuleSets<T extends { name: string }>(sets: readonly T[]): T[] {
+  return sets.filter((s) => !s.name.startsWith(BRUNO_ACCOUNT_PREFIX))
+}
+
 /** The ids of an `in` filter of a cleanup: the list and each id defined (an empty list deletes nothing). */
 export function fixtureIds<T>(values: readonly (T | null | undefined)[] | undefined, name: string): T[] {
   if (values === undefined) throw new Error(`cleanup refused: ${name} is not defined`)
