@@ -74,12 +74,12 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
     - `200`.
   - **El fake no decide reglas de negocio:** no responde `409` ni `400` de dominio por sí mismo.
 - [x] 4.2 Commit: test(web): API falsa de las reglas de pareo
-- [ ] 4.3 Implementar el fake:
+- [x] 4.3 Implementar el fake:
   - `test/msw/matching-fixtures.ts`, con `RULE_SETS` movido desde `accounts.ts` y ampliado con reglas;
   - `test/msw/matching.ts`, registrado en `handlers.ts` y `resetDb`;
   - `accounts.ts` importa los fixtures.
   - Verificar con `matching.test.ts`, `accounts.test.ts` y toda la suite del frontend en verde.
-- [ ] 4.4 Commit: feat(web): API falsa de las reglas de pareo
+- [x] 4.4 Commit: feat(web): API falsa de las reglas de pareo
 
 ## 5. Lectura: lista, detalle, globales y Overview (test-first)
 
