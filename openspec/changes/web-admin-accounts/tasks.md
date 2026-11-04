@@ -97,8 +97,8 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
   - "cuenta principal por canal": principales de Provider A con `batch <n>` y sin RAM-07, canal con histórica, enlace a la ficha.
   - "carga y errores": reintento.
 - [x] 7.2 Commit: test(web): Channel Assignment de solo lectura
-- [ ] 7.3 Implementar `channel-assignment-search.ts`, `channelsQuery` y `channelAccountsQuery` en `queries.ts` y `ChannelAssignmentPage.tsx` (design D8), con sus textos. Verificar con los tests de 7.1, `pnpm typecheck` y `pnpm lint`.
-- [ ] 7.4 Commit: feat(web): Channel Assignment de solo lectura
+- [x] 7.3 Implementar `channel-assignment-search.ts`, `channelsQuery` y `channelAccountsQuery` en `queries.ts` y `ChannelAssignmentPage.tsx` (design D8), con sus textos. Verificar con los tests de 7.1, `pnpm typecheck` y `pnpm lint`.
+- [x] 7.4 Commit: feat(web): Channel Assignment de solo lectura
 
 ## 8. Cuenta cerrada al subir (test-first)
 

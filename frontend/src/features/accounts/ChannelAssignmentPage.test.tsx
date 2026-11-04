@@ -15,7 +15,7 @@ async function open(as: UserName, search = '') {
   return rendered
 }
 
-const section = (name: RegExp) => within(screen.getByRole('region', { name }))
+const section = async (name: RegExp) => within(await screen.findByRole('region', { name }, OPENING))
 
 async function rowsOf(tableName: string) {
   const table = await screen.findByRole('table', { name: tableName }, OPENING)
@@ -44,8 +44,10 @@ describe('Channel Assignment: access and filters', () => {
   it('the provider filter goes to the address and narrows both sections', async () => {
     const { user, router } = await open('admin')
 
+    await screen.findByRole('option', { name: 'Merchant A' })
     await user.selectOptions(screen.getByLabelText('Merchant'), 'Merchant A')
-    await user.selectOptions(await screen.findByRole('combobox', { name: 'Provider' }), 'Provider B')
+    await screen.findByRole('option', { name: 'Provider B' })
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Provider' }), 'Provider B')
 
     await waitFor(() => expect(router.state.location.search).toEqual({ merchantId: 1, providerId: 102 }))
     expect((await rowsOf('Channels not assigned yet')).map((r) => r[0])).toEqual(['RAM-13'])
@@ -55,7 +57,8 @@ describe('Channel Assignment: access and filters', () => {
   it('choosing a merchant clears the provider', async () => {
     const { user, router } = await open('admin', 'merchantId=1&providerId=102')
 
-    await user.selectOptions(await screen.findByLabelText('Merchant'), 'Merchant B')
+    await screen.findByRole('option', { name: 'Merchant B' })
+    await user.selectOptions(screen.getByLabelText('Merchant'), 'Merchant B')
 
     await waitFor(() => expect(router.state.location.search).toEqual({ merchantId: 2 }))
   })
@@ -74,7 +77,9 @@ describe('Channel Assignment: channels not assigned yet', () => {
   it('lists the two new channels of the seed with gateway, merchant and provider, term and reserve', async () => {
     await open('viewer')
 
-    expect(section(/Not assigned yet/).getByRole('heading', { name: 'Not assigned yet (2)' })).toBeInTheDocument()
+    expect(
+      (await section(/Not assigned yet/)).getByRole('heading', { name: 'Not assigned yet (2)' }),
+    ).toBeInTheDocument()
     expect(await rowsOf('Channels not assigned yet')).toEqual([
       ['RAM-07', 'Gateway 1', 'Merchant A › Provider A', '14 d · 10 % / 180 d'],
       ['RAM-13', 'Gateway 1', 'Merchant A › Provider B', '10 d · 5 % / 120 d'],

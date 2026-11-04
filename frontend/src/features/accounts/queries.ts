@@ -30,6 +30,20 @@ export const unassignedChannelsQuery = queryOptions({
   queryFn: () => unwrap(api.GET('/api/v1/channels', { params: { query: { unassigned: 'true' } } })),
 })
 
+/** Every channel of the scope with its primary account (Channel Assignment, web-admin-accounts design D8). */
+export const channelsQuery = queryOptions({
+  queryKey: ['channels', { unassigned: false }],
+  queryFn: () => unwrap(api.GET('/api/v1/channels')),
+})
+
+/** The accounts a channel was ever associated to: the primary one and the historical ones. */
+export const channelAccountsQuery = (channelId: number) =>
+  queryOptions({
+    queryKey: ['channels', channelId, 'accounts'],
+    queryFn: () =>
+      unwrap(api.GET('/api/v1/channels/{channelId}/accounts', { params: { path: { channelId: String(channelId) } } })),
+  })
+
 export const accountChannelsQuery = (accountId: string) =>
   queryOptions({
     queryKey: ['accounts', accountId, 'channels'],

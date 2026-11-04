@@ -12,6 +12,7 @@ import { AccountDetailPage } from '@/features/accounts/AccountDetailPage'
 import { AccountOverview } from '@/features/accounts/AccountOverview'
 import { AccountsPage, validateAccountsSearch } from '@/features/accounts/AccountsPage'
 import { ChannelAssignmentPage } from '@/features/accounts/ChannelAssignmentPage'
+import { validateChannelAssignmentSearch } from '@/features/accounts/channel-assignment-search'
 import { strings as accountStrings } from '@/features/accounts/strings'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { AccountFeesPanel } from '@/features/fees/AccountFeesPanel'
@@ -132,6 +133,7 @@ const accountFeesRoute = createRoute({
 const channelAssignmentRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/channel-assignment',
+  validateSearch: validateChannelAssignmentSearch,
   staticData: { crumbs: [strings.groups.administration, strings.screens.channelAssignment] },
   component: ChannelAssignmentPage,
 })

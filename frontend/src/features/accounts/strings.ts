@@ -81,6 +81,37 @@ export const strings = {
   /** Channel Assignment (web-admin-accounts design D8). */
   channelAssignment: {
     title: 'Channel Assignment',
+    merchant: 'Merchant',
+    provider: 'Provider',
+    allMerchants: 'All merchants',
+    allProviders: 'All providers',
+    notAvailable: 'This merchant or provider is not available.',
+    loading: 'Loading channels…',
+    loadError: 'Could not load channels.',
+    unassigned: {
+      heading: (count: number) => `Not assigned yet (${count})`,
+      tableLabel: 'Channels not assigned yet',
+      columns: {
+        channel: 'Channel',
+        gateway: 'Gateway',
+        merchantProvider: 'Merchant / Provider',
+        termReserve: 'Term · reserve',
+      },
+      empty: 'Every channel with transactions has an account.',
+    },
+    primary: {
+      heading: 'Primary account per channel',
+      tableLabel: 'Primary account per channel',
+      columns: {
+        channel: 'Channel',
+        provider: 'Provider',
+        primary: 'Primary account',
+        since: 'Since',
+        historical: 'Historical accounts',
+      },
+      empty: 'No channel has an account yet.',
+    },
+    note: 'This screen is read only on purpose: channels join an account by processing settlements, and undoing a batch does not move the primary back. It shows where the pending movements of each channel are reported.',
   },
   /** A channel in Account Detail and Channel Assignment (web-admin-accounts design D4). */
   channel: {
