@@ -159,12 +159,12 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
 
 Requiere que `admin-matching` haya terminado y turno de base.
 
-- [ ] 9.1 `git fetch` e integrar `origin/feat/admin-matching` por merge. Verificar con `pnpm typecheck` y `pnpm test` en verde. Si cambió algún esquema, ajustar el front y el fake en el mismo commit.
-- [ ] 9.2 Generar las capturas en `docs/wireframes/web-admin-matching/`:
+- [x] 9.1 `git fetch` e integrar `origin/feat/admin-matching` por merge. Verificar con `pnpm typecheck` y `pnpm test` en verde. Si cambió algún esquema, ajustar el front y el fake en el mismo commit.
+- [x] 9.2 Generar las capturas en `docs/wireframes/web-admin-matching/`:
   - **Requisitos:** la base local sembrada por la persona (`! pnpm db:seed` dentro de la sesión) y `pnpm dev` levantado.
   - **Script:** escribir `e2e/screenshots/web-admin-matching.ts` y el script `screenshots:web-admin-matching` (design D11). Lo que se crea usa el prefijo `bruno-` y queda inactivo.
   - **Verificar** abriendo cada captura de D11 a 1280 y a 1024 px: sin tablas que se salgan de su tarjeta ni elementos solapados, con el modo edición incluido.
-- [ ] 9.3 Commit: docs(web): capturas de Matching Rules
+- [x] 9.3 Commit: docs(web): capturas de Matching Rules
 
 ## 10. Revisión
 

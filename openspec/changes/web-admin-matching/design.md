@@ -232,7 +232,9 @@ frontend/src/test/msw/matching.ts (+ matching.test.ts)
   - un `400` junto a su campo;
   - el diálogo `rule_set_in_use`;
   - las globales con los alias;
-  - la Overview de ProviderC-Alt con el enlace.
+  - la Overview de ProviderC-Alt con el enlace;
+  - el diálogo New rule set del conjunto que crea la pasada.
+- **Modo edición a 1024 px:** las celdas y los controles de las filas editables son más estrechos que los de lectura, para que las ocho columnas de una regla de hoja quepan en su tarjeta, y el error de un campo se parte dentro de su columna.
 - **Lo que crea la captura** es un conjunto `bruno-<id de la pasada>` en Provider C, que queda inactivo. Lo ignoran los tests del seed (`admin-matching` D8), así que nada cambia en "Provider C legacy" ni en las globales.
 
 ## Risks / Trade-offs
