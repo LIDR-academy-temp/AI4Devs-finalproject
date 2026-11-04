@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import type { ChannelListItem, ProviderSummary } from '@/lib/api/types'
+import type { ChannelAccountItem, ChannelListItem, ProviderSummary } from '@/lib/api/types'
 import { chooseMerchant, chooseProvider } from './channel-assignment-search'
 import { batchLabel, termReserve } from './channel-display'
 import { channelAccountsQuery, channelsQuery, merchantsQuery, providersQuery, unassignedChannelsQuery } from './queries'
@@ -18,12 +18,23 @@ const selectClass =
 
 const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name)
 
-/** The primary account of a channel, the batch since which it is, and its historical accounts. */
-function PrimaryRow({ channel, provider }: { channel: ChannelListItem; provider: string }) {
-  const accounts = useQuery(channelAccountsQuery(channel.channelId))
-  const primaryRow = accounts.data?.find((a) => a.isPrimary)
-  const historical = (accounts.data ?? []).filter((a) => !a.isPrimary).sort(byName)
+/**
+ * The primary account of a channel, the batch since which it is, and its historical accounts. The accounts of the
+ * channel are read by the page, so a failed read shows its error and its Retry like every other query.
+ */
+function PrimaryRow({
+  channel,
+  provider,
+  accounts,
+}: {
+  channel: ChannelListItem
+  provider: string
+  accounts: ChannelAccountItem[] | undefined
+}) {
+  const primaryRow = accounts?.find((a) => a.isPrimary)
+  const historical = (accounts ?? []).filter((a) => !a.isPrimary).sort(byName)
   const pending = <Skeleton className="h-4 w-16" />
+  const loaded = accounts !== undefined
   return (
     <TableRow>
       <TableCell className="font-medium">{channel.name}</TableCell>
@@ -41,9 +52,9 @@ function PrimaryRow({ channel, provider }: { channel: ChannelListItem; provider:
           strings.channel.none
         )}
       </TableCell>
-      <TableCell>{accounts.data ? batchLabel(primaryRow?.assignedInBatchNo ?? null) : pending}</TableCell>
+      <TableCell>{loaded ? batchLabel(primaryRow?.assignedInBatchNo ?? null) : pending}</TableCell>
       <TableCell className="whitespace-normal">
-        {accounts.data ? historical.map((a) => a.name).join(', ') || strings.channel.none : pending}
+        {loaded ? historical.map((a) => a.name).join(', ') || strings.channel.none : pending}
       </TableCell>
     </TableRow>
   )
@@ -91,13 +102,22 @@ export function ChannelAssignmentPage() {
       search.providerId !== undefined &&
       !merchantProviders.some((p) => p.providerId === search.providerId))
 
-  const failed = [merchants, channels, unassigned, ...providerLists].filter((q) => q.isError)
-
   /** Within the filters: one provider, the providers of one merchant, or the whole scope. */
   const inFilter = (channel: { providerId: number }) =>
     search.providerId !== undefined
       ? channel.providerId === search.providerId
       : search.merchantId === undefined || providers.get(channel.providerId)?.merchantId === search.merchantId
+
+  // The rows of each section, once the lists are there; the accounts of every primary row are read in parallel here,
+  // with the same cache per channel as the rest of the app.
+  const waiting = new Set((unassigned.data ?? []).map((c) => c.channelId))
+  const pendingRows = (unassigned.data ?? []).filter(inFilter).sort(byName)
+  const primaryRows = unassigned.data
+    ? (channels.data ?? []).filter((c) => !waiting.has(c.channelId) && inFilter(c)).sort(byName)
+    : []
+  const channelAccounts = useQueries({ queries: primaryRows.map((c) => channelAccountsQuery(c.channelId)) })
+
+  const failed = [merchants, channels, unassigned, ...providerLists, ...channelAccounts].filter((q) => q.isError)
   const providerName = (providerId: number) => providers.get(providerId)?.name ?? ''
   const hierarchy = (providerId: number) => {
     const provider = providers.get(providerId)
@@ -118,9 +138,6 @@ export function ChannelAssignmentPage() {
   } else if (!channels.data || !unassigned.data || !providersLoaded) {
     body = <Skeleton className="h-40 w-full" aria-label={s.loading} />
   } else {
-    const waiting = new Set(unassigned.data.map((c) => c.channelId))
-    const pendingRows = unassigned.data.filter(inFilter).sort(byName)
-    const primaryRows = channels.data.filter((c) => !waiting.has(c.channelId) && inFilter(c)).sort(byName)
     body = (
       <>
         <Section id={ids.unassigned} heading={s.unassigned.heading(pendingRows.length)}>
@@ -164,8 +181,13 @@ export function ChannelAssignmentPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {primaryRows.map((channel) => (
-                  <PrimaryRow key={channel.channelId} channel={channel} provider={providerName(channel.providerId)} />
+                {primaryRows.map((channel, index) => (
+                  <PrimaryRow
+                    key={channel.channelId}
+                    channel={channel}
+                    provider={providerName(channel.providerId)}
+                    accounts={channelAccounts[index]?.data}
+                  />
                 ))}
               </TableBody>
             </Table>
