@@ -105,7 +105,7 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
 
 ## 6. Modo edición (test-first)
 
-- [ ] 6.1 Escribir `features/matching/rules-editor.test.tsx` con los escenarios de la delta `matching` y comprobar que fallan:
+- [x] 6.1 Escribir `features/matching/rules-editor.test.tsx` con los escenarios de la delta `matching` y comprobar que fallan:
   - **"modo edición":**
     - cambiar `Fail`, con el cuerpo exacto y una sola petición aunque se pulse dos veces;
     - reordenar con **Move up**, con el orden de la respuesta después;
@@ -121,7 +121,7 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
     - regex;
     - ruta fuera del formulario, lista de esquema y red;
     - `403` con lo escrito intacto.
-- [ ] 6.2 Commit: test(web): modo edición de las reglas de pareo
+- [x] 6.2 Commit: test(web): modo edición de las reglas de pareo
 - [ ] 6.3 Implementar `RulesEditor.tsx`, las filas editables de `rule-tables.tsx` y las mutaciones de `PUT` en `mutations.ts` (design D5, D6), con sus textos. Verificar con los tests de 6.1 y con toda la suite del frontend en verde.
 - [ ] 6.4 Commit: feat(web): modo edición de las reglas de pareo
 
