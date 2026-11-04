@@ -136,8 +136,13 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 
 ## 7. Cierre
 
-- [ ] 7.1 Verificar con `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check`, `openspec validate admin-matching --strict` y la integración completa sobre una base recién sembrada (la siembra la ejecuta la persona con `! pnpm db:seed` dentro de la sesión).
-- [ ] 7.2 Commit: docs(matching): OpenAPI y verificación final de la administración de reglas de pareo (solo si 7.1 dejó cambios)
+- [x] 7.1 Verificar con `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check`, `openspec validate admin-matching --strict` y la integración completa sobre una base recién sembrada (la siembra la ejecuta la persona con `! pnpm db:seed` dentro de la sesión).
+- [x] 7.2 Commit: docs(matching): OpenAPI y verificación final de la administración de reglas de pareo (solo si 7.1 dejó cambios)
+
+  Grupo 7, verificación:
+  - `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check` y `openspec validate admin-matching --strict`, en verde.
+  - Integración completa sobre una base recién sembrada (turno de la persona): 450/451, 8 omitidos. Falló solo el test de 20 000 filas de `import-analyze` por tiempo (31,7 s frente al límite de 20 s, justo tras la siembra); la rama no toca `imports`, `propose-mapping.ts` ni ese test. Repetido el fichero solo: 30/30 y 20 000 filas en 14,1 s. Se trata como ruido del entorno.
+  - El único commit de la 7.2 es esta nota.
 
 ## Workflow follow-up
 
