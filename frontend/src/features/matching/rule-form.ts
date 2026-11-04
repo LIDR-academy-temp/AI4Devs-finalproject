@@ -23,8 +23,6 @@ const m = strings.form.local
 
 /** A sheet rule as the form edits it: selects and numbers as text, `''` for none. */
 export interface SheetRuleValues {
-  /** Local React key; never sent. */
-  key: string
   sheetPattern: string
   isRegex: boolean
   kind: SheetKind
@@ -35,7 +33,6 @@ export interface SheetRuleValues {
 }
 
 export interface ColumnRuleValues {
-  key: string
   /** `''` = any sheet. */
   sheetPattern: string
   columnPattern: string
@@ -46,7 +43,6 @@ export interface ColumnRuleValues {
 }
 
 export interface StatusAliasValues {
-  key: string
   alias: string
   statusId: string
   excludeAmount: boolean
@@ -76,14 +72,7 @@ interface StoredRules {
   statusAliases?: StatusAlias[]
 }
 
-let seq = 0
-const newKey = () => {
-  seq += 1
-  return `row-${seq}`
-}
-
 export const newSheetRule = (): SheetRuleValues => ({
-  key: newKey(),
   sheetPattern: '',
   isRegex: false,
   kind: 'transactions',
@@ -94,7 +83,6 @@ export const newSheetRule = (): SheetRuleValues => ({
 })
 
 export const newColumnRule = (): ColumnRuleValues => ({
-  key: newKey(),
   sheetPattern: '',
   columnPattern: '',
   isRegex: false,
@@ -104,7 +92,6 @@ export const newColumnRule = (): ColumnRuleValues => ({
 })
 
 export const newStatusAlias = (): StatusAliasValues => ({
-  key: newKey(),
   alias: '',
   statusId: '',
   excludeAmount: false,
@@ -117,7 +104,6 @@ const text = (id: number | null) => (id === null ? '' : String(id))
 export function valuesOf(doc: StoredRules): RulesValues {
   return {
     sheetRules: doc.sheetRules.map((r) => ({
-      key: newKey(),
       sheetPattern: r.sheetPattern,
       isRegex: r.isRegex,
       kind: r.kind,
@@ -127,7 +113,6 @@ export function valuesOf(doc: StoredRules): RulesValues {
       isActive: r.isActive,
     })),
     columnRules: doc.columnRules.map((r) => ({
-      key: newKey(),
       sheetPattern: r.sheetPattern ?? '',
       columnPattern: r.columnPattern,
       isRegex: r.isRegex,
@@ -136,7 +121,6 @@ export function valuesOf(doc: StoredRules): RulesValues {
       isActive: r.isActive,
     })),
     statusAliases: (doc.statusAliases ?? []).map((a) => ({
-      key: newKey(),
       alias: a.alias,
       statusId: String(a.statusId),
       excludeAmount: a.excludeAmount,

@@ -103,7 +103,7 @@ frontend/src/test/msw/matching.ts (+ matching.test.ts)
   - los `null` de `cycle`, `statusId` y `sheetPattern` pasan a `''` en los `select`;
   - `priority` se edita como texto.
 
-  Cada fila lleva una `key` local generada en el navegador, que solo sirve de `key` de React y para `useFieldArray` (`keyName`). Nunca viaja al API.
+  Las filas no llevan clave propia: la `key` de React es el `id` que genera `useFieldArray`, que no forma parte de los valores y nunca viaja al API.
 - **`ruleSetBody(values, base)` y `globalsBody(values)`** construyen el documento completo:
   - `name` e `isActive` salen del formulario o de `base` (Rename y Activate cambian solo esos campos);
   - `reason` va recortado y solo si no está vacío;

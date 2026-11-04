@@ -206,13 +206,6 @@ describe('valuesOf', () => {
     expect(values.reason).toBe('')
   })
 
-  it('gives each row a local key that never reaches a body', () => {
-    const values = valuesOf(LEGACY)
-    const keys = values.sheetRules.map((r) => r.key)
-    expect(new Set(keys).size).toBe(4)
-    expect(JSON.stringify(rulesOf(values))).not.toContain(keys[0])
-  })
-
   it('round-trips the stored rules unchanged', () => {
     expect(rulesOf(valuesOf(LEGACY))).toEqual({
       sheetRules: LEGACY_SHEETS,
@@ -364,7 +357,6 @@ describe('fields adapted to the kind of sheet', () => {
     })
     expect(newColumnRule()).toMatchObject({ sheetPattern: '', priority: '100', isActive: true })
     expect(newStatusAlias()).toMatchObject({ statusId: '', excludeAmount: false, isLegacy: false })
-    expect(newSheetRule().key).not.toBe(newSheetRule().key)
   })
 })
 
