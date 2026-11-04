@@ -13,16 +13,16 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
   - `GlobalMatchingRulesPut`: `rowIgnoreRules` y `statuses`, rechazados.
   - `MatchingRuleSetDetail` y `GlobalMatchingRules`, con ids y `rowIgnoreRules`.
 - [x] 1.2 Commit: test(shared): contrato de la administración de reglas de pareo
-- [ ] 1.3 Implementar los esquemas en `packages/shared/src/matching.ts`, reutilizando `Cycle`, `SheetKind`, `TargetField` y `MatchingRuleSetSummary`, y exportarlos desde `index.ts`. Verificar con `pnpm --filter @recon/shared test` y `pnpm typecheck`.
-- [ ] 1.4 Declarar en `matching/http/matching-routes.ts` las cinco rutas de D5, con `preHandler` de permiso (y la comprobación de alcance `all` en el `PUT` global) y handlers provisionales en `501 not_implemented`. Verificar con `matching-routes.test.ts`: `401` sin token, `403` de `analyst` en las tres escrituras antes de mirar el recurso, `403` de un admin con alcance `assigned` en el `PUT` global, y `400` de esquema (`rowIgnoreRules` en el cuerpo, `GET /matching-rule-sets/abc`).
-- [ ] 1.5 Ejecutar `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`. Ampliar `app.test.ts` con las rutas nuevas y añadir los fixtures de MSW (`frontend/src/test/msw/fixtures.ts`: detalle del conjunto legacy y reglas globales) solo para el contrato. Verificar con `pnpm openapi:check`, `pnpm lint`, `pnpm typecheck` y `pnpm test`.
-- [ ] 1.6 Actualizar README §4.4:
+- [x] 1.3 Implementar los esquemas en `packages/shared/src/matching.ts`, reutilizando `Cycle`, `SheetKind`, `TargetField` y `MatchingRuleSetSummary`, y exportarlos desde `index.ts`. Verificar con `pnpm --filter @recon/shared test` y `pnpm typecheck`.
+- [x] 1.4 Declarar en `matching/http/matching-routes.ts` las cinco rutas de D5, con `preHandler` de permiso (y la comprobación de alcance `all` en el `PUT` global) y handlers provisionales en `501 not_implemented`. Verificar con `matching-routes.test.ts`: `401` sin token, `403` de `analyst` en las tres escrituras antes de mirar el recurso, `403` de un admin con alcance `assigned` en el `PUT` global, y `400` de esquema (`rowIgnoreRules` en el cuerpo, `GET /matching-rule-sets/abc`).
+- [x] 1.5 Ejecutar `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`. Ampliar `app.test.ts` con las rutas nuevas y añadir los fixtures de MSW (`frontend/src/test/msw/fixtures.ts`: detalle del conjunto legacy y reglas globales) solo para el contrato. Verificar con `pnpm openapi:check`, `pnpm lint`, `pnpm typecheck` y `pnpm test`.
+- [x] 1.6 Actualizar README §4.4:
   - filas de `POST /providers/{id}/matching-rule-sets`, `GET`/`PUT /matching-rule-sets/{id}` y `GET`/`PUT /matching-rules/global`, con permisos (alcance `all` en el `PUT` global) y códigos de error;
   - filas a ignorar de solo lectura (#120);
   - corregir la frase "Reglas de hoja, columna y filas a ignorar".
 
   Verificar con `grep` que aparecen `rule_set_name_taken`, `rule_set_in_use` y `#120`.
-- [ ] 1.7 Commit: feat(matching): contrato de la administración de reglas de pareo y export de OpenAPI
+- [x] 1.7 Commit: feat(matching): contrato de la administración de reglas de pareo y export de OpenAPI
 - [ ] 1.8 Hacer `git push` de `feat/admin-matching`, vigilar el CI con `gh run list --branch feat/admin-matching --json status,conclusion --jq` y avisar a la persona de que el contrato está publicado, porque `web-admin-matching` parte de aquí. No seguir hasta su confirmación.
 
 ## 2. Validación y diff de reglas (TDD)

@@ -12225,7 +12225,7 @@ paths:
   /api/v1/providers/{providerId}/matching-rule-sets:
     get:
       summary: Matching rule sets of a provider, with the accounts linked to each one
-      tags:
+      tags: &a13
         - matching
       description: Active and inactive sets, by name; 404 for a provider outside your scope.
       parameters:
@@ -12235,7 +12235,7 @@ paths:
           in: path
           name: providerId
           required: true
-      security:
+      security: &a14
         - bearerAuth: []
       responses:
         "200":
@@ -12332,10 +12332,1661 @@ paths:
                   - code
                   - message
                 additionalProperties: false
+    post:
+      summary: Create a matching rule set of the provider
+      tags: *a13
+      description: The name is unique within the provider, ignoring case (409
+        rule_set_name_taken). The set starts without accounts; link them with
+        PATCH /accounts/{id}. A transactions sheet carries a cycle; batch_fees
+        and ignore carry neither cycle nor status; cycle R has no status; a
+        fixed status is never Pending and has the natural cycle of the sheet; a
+        regex must compile; patterns are not repeated in a list (ignoring case
+        and surrounding spaces). Each violation is 400 validation_error with
+        details.field (e.g. sheetRules[2].statusId).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                isActive:
+                  type: boolean
+                sheetRules:
+                  default: []
+                  maxItems: 200
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      sheetPattern:
+                        type: string
+                        minLength: 1
+                        maxLength: 128
+                      isRegex:
+                        type: boolean
+                      kind:
+                        type: string
+                        enum:
+                          - transactions
+                          - batch_fees
+                          - ignore
+                      cycle:
+                        nullable: true
+                        type: string
+                        enum:
+                          - E
+                          - I
+                          - R
+                      statusId:
+                        nullable: true
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 2147483647
+                      priority:
+                        default: 100
+                        type: integer
+                        minimum: 0
+                        maximum: 32767
+                      isActive:
+                        default: true
+                        type: boolean
+                    required:
+                      - sheetPattern
+                      - isRegex
+                      - kind
+                      - cycle
+                      - statusId
+                    additionalProperties: false
+                columnRules:
+                  default: []
+                  maxItems: 200
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      sheetPattern:
+                        nullable: true
+                        type: string
+                        minLength: 1
+                        maxLength: 128
+                      columnPattern:
+                        type: string
+                        minLength: 1
+                        maxLength: 128
+                      isRegex:
+                        type: boolean
+                      targetField:
+                        type: string
+                        enum:
+                          - transactionId
+                          - status
+                          - gateway
+                          - amount
+                          - currency
+                          - txnDate
+                          - feeType
+                          - providerRef
+                          - orderId
+                          - reference
+                      priority:
+                        default: 100
+                        type: integer
+                        minimum: 0
+                        maximum: 32767
+                      isActive:
+                        default: true
+                        type: boolean
+                    required:
+                      - sheetPattern
+                      - columnPattern
+                      - isRegex
+                      - targetField
+                    additionalProperties: false
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+              required:
+                - name
+              additionalProperties: false
+      parameters:
+        - schema:
+            type: string
+            pattern: ^\d{1,10}$
+          in: path
+          name: providerId
+          required: true
+      security: *a14
+      responses:
+        "201":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ruleSetId:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  name:
+                    type: string
+                  isActive:
+                    type: boolean
+                  provider:
+                    type: object
+                    properties:
+                      providerId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      name:
+                        type: string
+                    required:
+                      - providerId
+                      - name
+                    additionalProperties: false
+                  accounts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        accountId:
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        name:
+                          type: string
+                        isActive:
+                          type: boolean
+                      required:
+                        - accountId
+                        - name
+                        - isActive
+                      additionalProperties: false
+                  sheetRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        sheetRuleId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        sheetPattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        kind:
+                          type: string
+                          enum:
+                            - transactions
+                            - batch_fees
+                            - ignore
+                        cycle:
+                          nullable: true
+                          type: string
+                          enum:
+                            - E
+                            - I
+                            - R
+                        statusId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        priority:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        isActive:
+                          type: boolean
+                      required:
+                        - sheetRuleId
+                        - sheetPattern
+                        - isRegex
+                        - kind
+                        - cycle
+                        - statusId
+                        - priority
+                        - isActive
+                      additionalProperties: false
+                  columnRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        columnRuleId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        sheetPattern:
+                          nullable: true
+                          type: string
+                        columnPattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        targetField:
+                          type: string
+                          enum:
+                            - transactionId
+                            - status
+                            - gateway
+                            - amount
+                            - currency
+                            - txnDate
+                            - feeType
+                            - providerRef
+                            - orderId
+                            - reference
+                        priority:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        isActive:
+                          type: boolean
+                      required:
+                        - columnRuleId
+                        - sheetPattern
+                        - columnPattern
+                        - isRegex
+                        - targetField
+                        - priority
+                        - isActive
+                      additionalProperties: false
+                  rowIgnoreRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rowIgnoreId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        pattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        description:
+                          nullable: true
+                          type: string
+                        isActive:
+                          type: boolean
+                      required:
+                        - rowIgnoreId
+                        - pattern
+                        - isRegex
+                        - description
+                        - isActive
+                      additionalProperties: false
+                required:
+                  - ruleSetId
+                  - name
+                  - isActive
+                  - provider
+                  - accounts
+                  - sheetRules
+                  - columnRules
+                  - rowIgnoreRules
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "501":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/matching-rule-sets/{ruleSetId}:
+    get:
+      summary: Detail of a matching rule set
+      tags: *a13
+      description: "Sheet, column and row-ignore rules (the latter read-only, #120) in
+        priority order and, at equal priority, in the order they were saved,
+        which is the tie-break of the proposal. 404 for a set outside your
+        scope."
+      parameters:
+        - schema:
+            type: string
+            pattern: ^\d{1,10}$
+          in: path
+          name: ruleSetId
+          required: true
+      security: *a14
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ruleSetId:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  name:
+                    type: string
+                  isActive:
+                    type: boolean
+                  provider:
+                    type: object
+                    properties:
+                      providerId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      name:
+                        type: string
+                    required:
+                      - providerId
+                      - name
+                    additionalProperties: false
+                  accounts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        accountId:
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        name:
+                          type: string
+                        isActive:
+                          type: boolean
+                      required:
+                        - accountId
+                        - name
+                        - isActive
+                      additionalProperties: false
+                  sheetRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        sheetRuleId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        sheetPattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        kind:
+                          type: string
+                          enum:
+                            - transactions
+                            - batch_fees
+                            - ignore
+                        cycle:
+                          nullable: true
+                          type: string
+                          enum:
+                            - E
+                            - I
+                            - R
+                        statusId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        priority:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        isActive:
+                          type: boolean
+                      required:
+                        - sheetRuleId
+                        - sheetPattern
+                        - isRegex
+                        - kind
+                        - cycle
+                        - statusId
+                        - priority
+                        - isActive
+                      additionalProperties: false
+                  columnRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        columnRuleId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        sheetPattern:
+                          nullable: true
+                          type: string
+                        columnPattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        targetField:
+                          type: string
+                          enum:
+                            - transactionId
+                            - status
+                            - gateway
+                            - amount
+                            - currency
+                            - txnDate
+                            - feeType
+                            - providerRef
+                            - orderId
+                            - reference
+                        priority:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        isActive:
+                          type: boolean
+                      required:
+                        - columnRuleId
+                        - sheetPattern
+                        - columnPattern
+                        - isRegex
+                        - targetField
+                        - priority
+                        - isActive
+                      additionalProperties: false
+                  rowIgnoreRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rowIgnoreId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        pattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        description:
+                          nullable: true
+                          type: string
+                        isActive:
+                          type: boolean
+                      required:
+                        - rowIgnoreId
+                        - pattern
+                        - isRegex
+                        - description
+                        - isActive
+                      additionalProperties: false
+                required:
+                  - ruleSetId
+                  - name
+                  - isActive
+                  - provider
+                  - accounts
+                  - sheetRules
+                  - columnRules
+                  - rowIgnoreRules
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "501":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+    put:
+      summary: Replace a matching rule set
+      tags: *a13
+      description: The whole document replaces every sheet and column rule of the set,
+        in the order given (new rule ids). A body that changes nothing answers
+        200 without writing. A change applies from the next proposal and the
+        next analysis; confirmed mappings and analysed rows do not change.
+        Deactivating a set with linked accounts, open or closed, is 409
+        rule_set_in_use (details.accounts). A transactions sheet carries a
+        cycle; batch_fees and ignore carry neither cycle nor status; cycle R has
+        no status; a fixed status is never Pending and has the natural cycle of
+        the sheet; a regex must compile; patterns are not repeated in a list
+        (ignoring case and surrounding spaces). Each violation is 400
+        validation_error with details.field (e.g. sheetRules[2].statusId).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 80
+                isActive:
+                  type: boolean
+                sheetRules:
+                  maxItems: 200
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      sheetPattern:
+                        type: string
+                        minLength: 1
+                        maxLength: 128
+                      isRegex:
+                        type: boolean
+                      kind:
+                        type: string
+                        enum:
+                          - transactions
+                          - batch_fees
+                          - ignore
+                      cycle:
+                        nullable: true
+                        type: string
+                        enum:
+                          - E
+                          - I
+                          - R
+                      statusId:
+                        nullable: true
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 2147483647
+                      priority:
+                        default: 100
+                        type: integer
+                        minimum: 0
+                        maximum: 32767
+                      isActive:
+                        default: true
+                        type: boolean
+                    required:
+                      - sheetPattern
+                      - isRegex
+                      - kind
+                      - cycle
+                      - statusId
+                    additionalProperties: false
+                columnRules:
+                  maxItems: 200
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      sheetPattern:
+                        nullable: true
+                        type: string
+                        minLength: 1
+                        maxLength: 128
+                      columnPattern:
+                        type: string
+                        minLength: 1
+                        maxLength: 128
+                      isRegex:
+                        type: boolean
+                      targetField:
+                        type: string
+                        enum:
+                          - transactionId
+                          - status
+                          - gateway
+                          - amount
+                          - currency
+                          - txnDate
+                          - feeType
+                          - providerRef
+                          - orderId
+                          - reference
+                      priority:
+                        default: 100
+                        type: integer
+                        minimum: 0
+                        maximum: 32767
+                      isActive:
+                        default: true
+                        type: boolean
+                    required:
+                      - sheetPattern
+                      - columnPattern
+                      - isRegex
+                      - targetField
+                    additionalProperties: false
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+              required:
+                - name
+                - isActive
+                - sheetRules
+                - columnRules
+              additionalProperties: false
+      parameters:
+        - schema:
+            type: string
+            pattern: ^\d{1,10}$
+          in: path
+          name: ruleSetId
+          required: true
+      security: *a14
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ruleSetId:
+                    type: integer
+                    minimum: -9007199254740991
+                    maximum: 9007199254740991
+                  name:
+                    type: string
+                  isActive:
+                    type: boolean
+                  provider:
+                    type: object
+                    properties:
+                      providerId:
+                        type: integer
+                        minimum: -9007199254740991
+                        maximum: 9007199254740991
+                      name:
+                        type: string
+                    required:
+                      - providerId
+                      - name
+                    additionalProperties: false
+                  accounts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        accountId:
+                          type: string
+                          format: uuid
+                          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                        name:
+                          type: string
+                        isActive:
+                          type: boolean
+                      required:
+                        - accountId
+                        - name
+                        - isActive
+                      additionalProperties: false
+                  sheetRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        sheetRuleId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        sheetPattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        kind:
+                          type: string
+                          enum:
+                            - transactions
+                            - batch_fees
+                            - ignore
+                        cycle:
+                          nullable: true
+                          type: string
+                          enum:
+                            - E
+                            - I
+                            - R
+                        statusId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        priority:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        isActive:
+                          type: boolean
+                      required:
+                        - sheetRuleId
+                        - sheetPattern
+                        - isRegex
+                        - kind
+                        - cycle
+                        - statusId
+                        - priority
+                        - isActive
+                      additionalProperties: false
+                  columnRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        columnRuleId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        sheetPattern:
+                          nullable: true
+                          type: string
+                        columnPattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        targetField:
+                          type: string
+                          enum:
+                            - transactionId
+                            - status
+                            - gateway
+                            - amount
+                            - currency
+                            - txnDate
+                            - feeType
+                            - providerRef
+                            - orderId
+                            - reference
+                        priority:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        isActive:
+                          type: boolean
+                      required:
+                        - columnRuleId
+                        - sheetPattern
+                        - columnPattern
+                        - isRegex
+                        - targetField
+                        - priority
+                        - isActive
+                      additionalProperties: false
+                  rowIgnoreRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rowIgnoreId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        pattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        description:
+                          nullable: true
+                          type: string
+                        isActive:
+                          type: boolean
+                      required:
+                        - rowIgnoreId
+                        - pattern
+                        - isRegex
+                        - description
+                        - isActive
+                      additionalProperties: false
+                required:
+                  - ruleSetId
+                  - name
+                  - isActive
+                  - provider
+                  - accounts
+                  - sheetRules
+                  - columnRules
+                  - rowIgnoreRules
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "409":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "501":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+  /api/v1/matching-rules/global:
+    get:
+      summary: Global matching rules, status aliases and the status catalog
+      tags: *a13
+      description: Global rules are the defaults of every account; row-ignore rules
+        are read-only (#120).
+      security: *a14
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sheetRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        sheetRuleId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        sheetPattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        kind:
+                          type: string
+                          enum:
+                            - transactions
+                            - batch_fees
+                            - ignore
+                        cycle:
+                          nullable: true
+                          type: string
+                          enum:
+                            - E
+                            - I
+                            - R
+                        statusId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        priority:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        isActive:
+                          type: boolean
+                      required:
+                        - sheetRuleId
+                        - sheetPattern
+                        - isRegex
+                        - kind
+                        - cycle
+                        - statusId
+                        - priority
+                        - isActive
+                      additionalProperties: false
+                  columnRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        columnRuleId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        sheetPattern:
+                          nullable: true
+                          type: string
+                        columnPattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        targetField:
+                          type: string
+                          enum:
+                            - transactionId
+                            - status
+                            - gateway
+                            - amount
+                            - currency
+                            - txnDate
+                            - feeType
+                            - providerRef
+                            - orderId
+                            - reference
+                        priority:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        isActive:
+                          type: boolean
+                      required:
+                        - columnRuleId
+                        - sheetPattern
+                        - columnPattern
+                        - isRegex
+                        - targetField
+                        - priority
+                        - isActive
+                      additionalProperties: false
+                  rowIgnoreRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rowIgnoreId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        pattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        description:
+                          nullable: true
+                          type: string
+                        isActive:
+                          type: boolean
+                      required:
+                        - rowIgnoreId
+                        - pattern
+                        - isRegex
+                        - description
+                        - isActive
+                      additionalProperties: false
+                  statusAliases:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        alias:
+                          type: string
+                        statusId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        excludeAmount:
+                          type: boolean
+                        isLegacy:
+                          type: boolean
+                      required:
+                        - alias
+                        - statusId
+                        - excludeAmount
+                        - isLegacy
+                      additionalProperties: false
+                  statuses:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        statusId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          type: string
+                        cycle:
+                          type: string
+                          enum:
+                            - E
+                            - I
+                            - R
+                      required:
+                        - statusId
+                        - name
+                        - cycle
+                      additionalProperties: false
+                required:
+                  - sheetRules
+                  - columnRules
+                  - rowIgnoreRules
+                  - statusAliases
+                  - statuses
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "501":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+    put:
+      summary: Replace the global matching rules and status aliases
+      tags: *a13
+      description: 'Needs account.manage and merchant scope "all" (403 otherwise): the
+        global rules apply to every merchant. A body that changes nothing
+        answers 200 without writing. A transactions sheet carries a cycle;
+        batch_fees and ignore carry neither cycle nor status; cycle R has no
+        status; a fixed status is never Pending and has the natural cycle of the
+        sheet; a regex must compile; patterns are not repeated in a list
+        (ignoring case and surrounding spaces). Each violation is 400
+        validation_error with details.field (e.g. sheetRules[2].statusId).'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sheetRules:
+                  maxItems: 200
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      sheetPattern:
+                        type: string
+                        minLength: 1
+                        maxLength: 128
+                      isRegex:
+                        type: boolean
+                      kind:
+                        type: string
+                        enum:
+                          - transactions
+                          - batch_fees
+                          - ignore
+                      cycle:
+                        nullable: true
+                        type: string
+                        enum:
+                          - E
+                          - I
+                          - R
+                      statusId:
+                        nullable: true
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 2147483647
+                      priority:
+                        default: 100
+                        type: integer
+                        minimum: 0
+                        maximum: 32767
+                      isActive:
+                        default: true
+                        type: boolean
+                    required:
+                      - sheetPattern
+                      - isRegex
+                      - kind
+                      - cycle
+                      - statusId
+                    additionalProperties: false
+                columnRules:
+                  maxItems: 200
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      sheetPattern:
+                        nullable: true
+                        type: string
+                        minLength: 1
+                        maxLength: 128
+                      columnPattern:
+                        type: string
+                        minLength: 1
+                        maxLength: 128
+                      isRegex:
+                        type: boolean
+                      targetField:
+                        type: string
+                        enum:
+                          - transactionId
+                          - status
+                          - gateway
+                          - amount
+                          - currency
+                          - txnDate
+                          - feeType
+                          - providerRef
+                          - orderId
+                          - reference
+                      priority:
+                        default: 100
+                        type: integer
+                        minimum: 0
+                        maximum: 32767
+                      isActive:
+                        default: true
+                        type: boolean
+                    required:
+                      - sheetPattern
+                      - columnPattern
+                      - isRegex
+                      - targetField
+                    additionalProperties: false
+                statusAliases:
+                  maxItems: 200
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      alias:
+                        type: string
+                        minLength: 1
+                        maxLength: 50
+                      statusId:
+                        type: integer
+                        minimum: 0
+                        exclusiveMinimum: true
+                        maximum: 2147483647
+                      excludeAmount:
+                        type: boolean
+                      isLegacy:
+                        type: boolean
+                    required:
+                      - alias
+                      - statusId
+                      - excludeAmount
+                      - isLegacy
+                    additionalProperties: false
+                reason:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+              required:
+                - sheetRules
+                - columnRules
+                - statusAliases
+              additionalProperties: false
+      security: *a14
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sheetRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        sheetRuleId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        sheetPattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        kind:
+                          type: string
+                          enum:
+                            - transactions
+                            - batch_fees
+                            - ignore
+                        cycle:
+                          nullable: true
+                          type: string
+                          enum:
+                            - E
+                            - I
+                            - R
+                        statusId:
+                          nullable: true
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        priority:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        isActive:
+                          type: boolean
+                      required:
+                        - sheetRuleId
+                        - sheetPattern
+                        - isRegex
+                        - kind
+                        - cycle
+                        - statusId
+                        - priority
+                        - isActive
+                      additionalProperties: false
+                  columnRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        columnRuleId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        sheetPattern:
+                          nullable: true
+                          type: string
+                        columnPattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        targetField:
+                          type: string
+                          enum:
+                            - transactionId
+                            - status
+                            - gateway
+                            - amount
+                            - currency
+                            - txnDate
+                            - feeType
+                            - providerRef
+                            - orderId
+                            - reference
+                        priority:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        isActive:
+                          type: boolean
+                      required:
+                        - columnRuleId
+                        - sheetPattern
+                        - columnPattern
+                        - isRegex
+                        - targetField
+                        - priority
+                        - isActive
+                      additionalProperties: false
+                  rowIgnoreRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rowIgnoreId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        pattern:
+                          type: string
+                        isRegex:
+                          type: boolean
+                        description:
+                          nullable: true
+                          type: string
+                        isActive:
+                          type: boolean
+                      required:
+                        - rowIgnoreId
+                        - pattern
+                        - isRegex
+                        - description
+                        - isActive
+                      additionalProperties: false
+                  statusAliases:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        alias:
+                          type: string
+                        statusId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        excludeAmount:
+                          type: boolean
+                        isLegacy:
+                          type: boolean
+                      required:
+                        - alias
+                        - statusId
+                        - excludeAmount
+                        - isLegacy
+                      additionalProperties: false
+                  statuses:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        statusId:
+                          type: integer
+                          minimum: -9007199254740991
+                          maximum: 9007199254740991
+                        name:
+                          type: string
+                        cycle:
+                          type: string
+                          enum:
+                            - E
+                            - I
+                            - R
+                      required:
+                        - statusId
+                        - name
+                        - cycle
+                      additionalProperties: false
+                required:
+                  - sheetRules
+                  - columnRules
+                  - rowIgnoreRules
+                  - statusAliases
+                  - statuses
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "403":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
+        "501":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  details: {}
+                required:
+                  - code
+                  - message
+                additionalProperties: false
   /api/v1/settlements/{batchId}:
     get:
       summary: "The attempt as written: the same view as the 201 of processing"
-      tags: &a13
+      tags: &a15
         - settlements
       description: Seeded attempts without a processing audit answer validationSummary
         null and nothing skipped. Previous accounts of assigned channels outside
@@ -12348,7 +13999,7 @@ paths:
           in: path
           name: batchId
           required: true
-      security: &a14
+      security: &a16
         - bearerAuth: []
       responses:
         "200":
@@ -13064,7 +14715,7 @@ paths:
     get:
       summary: Movements of one cycle of the attempt, with their fee breakdown, in a
         stable order
-      tags: *a13
+      tags: *a15
       description: type is required (E, I or R); page from 1, pageSize 1-500 (50).
         settled is true only when the attempt is paid.
       parameters:
@@ -13100,7 +14751,7 @@ paths:
           in: path
           name: batchId
           required: true
-      security: *a14
+      security: *a16
       responses:
         "200":
           description: Default Response
@@ -13355,7 +15006,7 @@ paths:
   /api/v1/imports/{importId}/settlements:
     get:
       summary: Attempts of the import, current and undone, newest first
-      tags: *a13
+      tags: *a15
       parameters:
         - schema:
             type: string
@@ -13364,7 +15015,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a14
+      security: *a16
       responses:
         "200":
           description: Default Response
@@ -13502,7 +15153,7 @@ paths:
     post:
       summary: Process the validated import as a batch attempt (processed, pending
         payment)
-      tags: &a15
+      tags: &a17
         - settlements
       description: runId is the reviewed validation run. 409 import_not_validated,
         validation_run_required, validation_run_superseded,
@@ -13579,7 +15230,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: &a16
+      security: &a18
         - bearerAuth: []
       responses:
         "201":
@@ -14326,7 +15977,7 @@ paths:
   /api/v1/accounts/{accountId}/settlements:
     get:
       summary: Attempts of the account in any status, newest first, paginated
-      tags: *a13
+      tags: *a15
       description: "Ordered by processedAt, batchNo and attemptNo, descending. status
         filters by attempt status. from and to are inclusive YYYY-MM-DD days of
         dateField: settlementDate (default) compares the business date as
@@ -14388,7 +16039,7 @@ paths:
           in: path
           name: accountId
           required: true
-      security: *a14
+      security: *a16
       responses:
         "200":
           description: Default Response
@@ -14548,7 +16199,7 @@ paths:
   /api/v1/settlements/{batchId}/export:
     get:
       summary: Download the merchant summary or a Back-Office CSV of the attempt
-      tags: *a13
+      tags: *a15
       description: RFC 4180 CSV (comma, CRLF, UTF-8 without BOM), named
         <account>_B<batchNo>_A<attemptNo>_<type>.csv in Content-Disposition.
         Every download is audited (settlement.export) and changes no state;
@@ -14571,7 +16222,7 @@ paths:
           in: path
           name: batchId
           required: true
-      security: *a14
+      security: *a16
       responses:
         "200":
           description: The CSV file
@@ -14662,7 +16313,7 @@ paths:
   /api/v1/imports/{importId}/settlements/preview:
     post:
       summary: What processing would do, without writing anything
-      tags: *a15
+      tags: *a17
       description: "Same body as processing; answers 200 with a SettlementPreview. 409
         import_not_validated, validation_run_required,
         validation_run_superseded, blocking_validation_issue; 400
@@ -14739,7 +16390,7 @@ paths:
           in: path
           name: importId
           required: true
-      security: *a16
+      security: *a18
       responses:
         "200":
           description: Default Response
@@ -15358,7 +17009,7 @@ paths:
     get:
       summary: Proposed batch number of the account (the same one again to reprocess
         an undone attempt)
-      tags: *a15
+      tags: *a17
       parameters:
         - schema:
             type: string
@@ -15374,7 +17025,7 @@ paths:
           in: path
           name: accountId
           required: true
-      security: *a16
+      security: *a18
       responses:
         "200":
           description: Default Response
@@ -15459,7 +17110,7 @@ paths:
   /api/v1/settlements/{batchId}/pay:
     post:
       summary: "Mark a processed attempt as paid: its movements become Settled"
-      tags: &a17
+      tags: &a19
         - settlements
       description: Without a body. 409 settlement_not_processed from paid or undone
         (details.status); settlement_busy.
@@ -15471,7 +17122,7 @@ paths:
           in: path
           name: batchId
           required: true
-      security: &a18
+      security: &a20
         - bearerAuth: []
       responses:
         "200":
@@ -16219,7 +17870,7 @@ paths:
     post:
       summary: Remove the payment of a paid attempt, with a reason; it does not revert
         the Back-Office
-      tags: *a17
+      tags: *a19
       description: 400 validation_error without a reason. 409 settlement_not_paid from
         processed or undone (details.status); settlement_busy.
       requestBody:
@@ -16244,7 +17895,7 @@ paths:
           in: path
           name: batchId
           required: true
-      security: *a18
+      security: *a20
       responses:
         "200":
           description: Default Response
@@ -16991,7 +18642,7 @@ paths:
     post:
       summary: Undo a processed attempt, with a reason, keeping its data; its import
         goes back to analyzed
-      tags: *a17
+      tags: *a19
       description: Supersedes the current validation run of the import and reopens the
         missing findings the attempt resolved; the primary account of the
         channels does not change. 400 validation_error without a reason. 409
@@ -17020,7 +18671,7 @@ paths:
           in: path
           name: batchId
           required: true
-      security: *a18
+      security: *a20
       responses:
         "200":
           description: Default Response

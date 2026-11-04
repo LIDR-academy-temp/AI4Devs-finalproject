@@ -18,6 +18,20 @@ export abstract class DomainError extends Error {
 }
 
 /**
+ * Temporary answer of the matching rule administration routes while their use cases are built (admin-matching
+ * design D5): the contract and the OpenAPI document are published first. Removed when the last handler is wired
+ * (admin-matching task 4.3).
+ */
+export class NotImplementedError extends DomainError {
+  readonly status = 501
+  readonly code = 'not_implemented'
+
+  constructor(operation: string) {
+    super(`${operation} is not implemented yet`)
+  }
+}
+
+/**
  * The resource does not exist or is outside the caller's merchant scope (README §4: 404, never 403).
  * The message names the resource type only, so both cases read exactly the same.
  */
