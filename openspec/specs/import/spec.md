@@ -859,7 +859,7 @@ El usuario SHALL poder arrastrar y soltar, o elegir con el teclado, uno o varios
 - **THEN** `broken.xlsx` aparece rechazado con su motivo, `batch-clean` crea el import con `POST /api/v1/accounts/{id}/imports` y el import contiene solo `batch-clean`
 
 ### Requirement: Pantalla Upload Files: archivos rechazados
-Un archivo rechazado SHALL mostrarse en la lista con su nombre y el motivo, sin afectar a los archivos ya incluidos ni al pareo en edición. Antes de enviar, la pantalla SHALL rechazar sin llamar al API un archivo que no sea `.xlsx` o que supere 20 MiB, y una selección de más de 10 archivos. Los rechazos del API SHALL mostrarse con el mismo texto que los del cliente.
+Un archivo rechazado SHALL mostrarse en la lista con su nombre y el motivo, sin afectar a los archivos ya incluidos ni al pareo en edición. Antes de enviar, la pantalla SHALL rechazar sin llamar al API un archivo que no sea `.xlsx` o que supere 20 MiB, y una selección de más de 10 archivos. Los rechazos del API SHALL mostrarse con el mismo texto que los del cliente. Una cuenta cerrada (`409 account_inactive`) SHALL decirse en el motivo.
 
 #### Scenario: Duplicado con el nombre del coincidente
 - **GIVEN** el import con `batch-split_part1.xlsx` y `batch-split_part2.xlsx` y un cambio sin confirmar en la hoja `DEC`
@@ -881,6 +881,11 @@ Un archivo rechazado SHALL mostrarse en la lista con su nombre y el motivo, sin 
 #### Scenario: Archivo ilegible
 - **WHEN** el API responde `422 file_unreadable` a `batch.xlsx`
 - **THEN** ve `batch.xlsx` con `The file cannot be read as an Excel workbook.` y los demás archivos de la selección se siguen subiendo
+
+#### Scenario: Cuenta cerrada entre la elección y la subida
+- **GIVEN** `analyst` en New Reconciliation con `ProviderA-USD` elegida, y la cuenta se cierra antes de subir
+- **WHEN** suelta `Recon_Template_ProviderA-USD_batch-clean.xlsx` y el API responde `409 account_inactive`
+- **THEN** ve el archivo con `This account is closed. Choose another account.`, no se crea ningún import y la pantalla sigue en New Reconciliation
 
 ### Requirement: Pantalla Upload Files: quitar archivos
 Mientras el import esté en `uploaded` o `mapped`, cada archivo SHALL tener **Remove**. Quitarlo SHALL actualizar la lista, las hojas del paso Mapping y la readiness con la respuesta del API, conservando los cambios sin confirmar de las hojas que siguen.
