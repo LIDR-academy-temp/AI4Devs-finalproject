@@ -2,14 +2,18 @@ import type { MatchingRuleSetDetail } from '@recon/shared'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from '@tanstack/react-router'
 import { useState } from 'react'
+import { AlertDialog, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Sheet, SheetTrigger } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApiError } from '@/lib/api/client'
 import { usePutRuleSet } from './mutations'
 import { useCanManageRules } from './permissions'
 import { globalRulesQuery, ruleSetKey, ruleSetQuery } from './queries'
+import { RenameRuleSetSheet } from './RenameRuleSetSheet'
+import { RuleSetStatusDialog } from './RuleSetStatusDialog'
 import { RulesEditor } from './RulesEditor'
 import { ruleSetBody } from './rule-form'
 import { strings } from './strings'
@@ -46,17 +50,29 @@ function LinkedAccounts({ accounts }: { accounts: MatchingRuleSetDetail['account
   )
 }
 
+/** Rename…, Deactivate… / Activate…: each the Trigger of its form, so closing it gives the focus back (design D7). */
 function HeaderActions({ ruleSet, blocked }: { ruleSet: MatchingRuleSetDetail; blocked: boolean }) {
   const canManage = useCanManageRules()
+  const [open, setOpen] = useState<'rename' | 'status' | null>(null)
   if (!canManage) return null
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <Button variant="outline" size="sm" disabled={blocked}>
-        {s.actions.rename}
-      </Button>
-      <Button variant="outline" size="sm" disabled={blocked}>
-        {ruleSet.isActive ? s.actions.deactivate : s.actions.activate}
-      </Button>
+      <Sheet open={open === 'rename'} onOpenChange={(next) => setOpen(next ? 'rename' : null)}>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="sm" disabled={blocked}>
+            {s.actions.rename}
+          </Button>
+        </SheetTrigger>
+        {open === 'rename' && <RenameRuleSetSheet ruleSet={ruleSet} onDone={() => setOpen(null)} />}
+      </Sheet>
+      <AlertDialog open={open === 'status'} onOpenChange={(next) => setOpen(next ? 'status' : null)}>
+        <AlertDialogTrigger asChild>
+          <Button variant="outline" size="sm" disabled={blocked}>
+            {ruleSet.isActive ? s.actions.deactivate : s.actions.activate}
+          </Button>
+        </AlertDialogTrigger>
+        {open === 'status' && <RuleSetStatusDialog ruleSet={ruleSet} onDone={() => setOpen(null)} />}
+      </AlertDialog>
     </div>
   )
 }

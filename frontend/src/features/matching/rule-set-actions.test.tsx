@@ -104,6 +104,8 @@ describe('Matching Rules: deactivate and activate', () => {
       `/accounts/${ACCOUNT_IDS['ProviderC-Alt']}`,
     )
     expect(lastPut()).toEqual({ name: 'Provider C legacy', isActive: false, ...stored(LEGACY) })
+    // The dialog is modal: the page is read once it is closed.
+    await user.click(dialog.getByRole('button', { name: 'Cancel' }))
     expect(within(screen.getByRole('region', { name: 'Rule set' })).getByText('active')).toBeInTheDocument()
   })
 

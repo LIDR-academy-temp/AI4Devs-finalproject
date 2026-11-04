@@ -104,9 +104,40 @@ export const strings = {
     excludeAmount: 'Excludes amount',
     anySheetHint: 'Leave Sheet empty to apply the rule to any sheet.',
   },
+  /** Rename…, Deactivate… / Activate… and New rule set (design D7). */
+  rename: {
+    title: (name: string) => `Rename ${name}`,
+    description: 'The rules of the set stay as they are saved.',
+  },
+  status: {
+    deactivateTitle: (name: string) => `Deactivate ${name}?`,
+    activateTitle: (name: string) => `Activate ${name}?`,
+    deactivateBody: 'An inactive rule set cannot be linked to an account. Its rules stay as they are saved.',
+    activateBody: 'The rule set can be linked to the accounts of its provider again.',
+    deactivate: 'Deactivate',
+    activate: 'Activate',
+    inUse: 'This rule set is linked to these accounts. Link them to another set first.',
+  },
+  create: {
+    title: 'New rule set',
+    description: 'A rule set of this provider. Link accounts to it from their Edit panel.',
+    startFrom: 'Start from',
+    empty: 'Empty',
+    copyOf: (name: string) => `Copy of ${name}`,
+    copyOfInactive: (name: string) => `Copy of ${name} (inactive)`,
+    create: 'Create rule set',
+    creating: 'Creating…',
+    sourceUnavailable: 'Could not read the rules to copy. Try again.',
+  },
   form: {
+    name: 'Name',
+    cancel: 'Cancel',
+    save: 'Save',
+    saving: 'Saving…',
+    reason: 'Reason (optional)',
     /** What the *Input schemas reject before sending (design D4). */
     local: {
+      name: 'Enter a name.',
       pattern: 'Enter a pattern.',
       aliasText: 'Enter the text.',
       tooLong: (max: number) => `At most ${max} characters.`,

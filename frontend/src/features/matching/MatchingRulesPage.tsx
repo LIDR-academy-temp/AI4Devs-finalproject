@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import { type ReactNode, useCallback } from 'react'
+import { type ReactNode, useCallback, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogTrigger } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ProviderChoiceFields, type ProviderChoiceSearch, useProviderChoice } from '@/features/accounts/provider-choice'
+import { NewRuleSetDialog } from './NewRuleSetDialog'
 import { useCanManageRules } from './permissions'
 import { matchingRuleSetsQuery } from './queries'
 import { strings } from './strings'
@@ -17,6 +19,7 @@ const linkClass = 'text-primary underline underline-offset-4'
 function ProviderRuleSets({ providerId, providerName }: { providerId: number; providerName: string | undefined }) {
   const ruleSets = useQuery(matchingRuleSetsQuery(providerId))
   const canManage = useCanManageRules()
+  const [creating, setCreating] = useState(false)
 
   let body: ReactNode
   if (ruleSets.isError) {
@@ -78,9 +81,14 @@ function ProviderRuleSets({ providerId, providerName }: { providerId: number; pr
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-medium">{providerName ? s.heading(providerName) : s.headingNoName}</h2>
         {canManage && (
-          <Button size="sm" variant="outline">
-            {s.newRuleSet}
-          </Button>
+          <Dialog open={creating} onOpenChange={setCreating}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                {s.newRuleSet}
+              </Button>
+            </DialogTrigger>
+            {creating && <NewRuleSetDialog providerId={providerId} />}
+          </Dialog>
         )}
       </div>
       {body}

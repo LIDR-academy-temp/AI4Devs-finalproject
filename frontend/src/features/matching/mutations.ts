@@ -4,6 +4,7 @@
 import {
   GlobalMatchingRules,
   type GlobalMatchingRulesPut,
+  type MatchingRuleSetCreate,
   MatchingRuleSetDetail,
   type MatchingRuleSetPut,
 } from '@recon/shared'
@@ -23,6 +24,26 @@ export function usePutRuleSet(ruleSetId: string) {
       queryClient.setQueryData(ruleSetKey(ruleSetId), detail)
       // The list of the provider and the account forms show the name and the state of the set.
       void queryClient.invalidateQueries({ queryKey: matchingRuleSetsQuery(detail.provider.providerId).queryKey })
+    },
+  })
+}
+
+/** POST /providers/{id}/matching-rule-sets: the new set is cached, so its detail opens without another read. */
+export function useCreateRuleSet(providerId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (body: MatchingRuleSetCreate) =>
+      MatchingRuleSetDetail.parse(
+        await unwrap(
+          api.POST('/api/v1/providers/{providerId}/matching-rule-sets', {
+            params: { path: { providerId: String(providerId) } },
+            body,
+          }),
+        ),
+      ),
+    onSuccess: (detail) => {
+      queryClient.setQueryData(ruleSetKey(detail.ruleSetId), detail)
+      void queryClient.invalidateQueries({ queryKey: matchingRuleSetsQuery(providerId).queryKey })
     },
   })
 }

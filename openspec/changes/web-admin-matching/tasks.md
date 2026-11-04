@@ -137,12 +137,12 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
     - sin proveedor elegido no hay **New rule set**;
     - doble clic = una petición.
 - [x] 7.2 Commit: test(web): renombrar, activar, desactivar y crear conjuntos de reglas
-- [ ] 7.3 Implementar lo necesario hasta dejar en verde los tests de 7.1 (design D7):
+- [x] 7.3 Implementar lo necesario hasta dejar en verde los tests de 7.1 (design D7):
   - `RenameRuleSetSheet.tsx`, `RuleSetStatusDialog.tsx` y `NewRuleSetDialog.tsx`;
   - la mutación de `POST` y la caché en `mutations.ts`;
   - sus textos.
   - Verificar con los tests de 7.1, `pnpm typecheck`, `pnpm lint` y toda la suite del frontend en verde.
-- [ ] 7.4 Commit: feat(web): renombrar, activar, desactivar y crear conjuntos de reglas
+- [x] 7.4 Commit: feat(web): renombrar, activar, desactivar y crear conjuntos de reglas
 
 ## 8. Documentación
 

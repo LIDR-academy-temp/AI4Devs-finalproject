@@ -7,7 +7,7 @@ import {
   ColumnRuleInput,
   type Cycle,
   type GlobalMatchingRulesPut,
-  type MatchingRuleSetCreate,
+  MatchingRuleSetCreate,
   type MatchingRuleSetPut,
   type SheetKind,
   type SheetRule,
@@ -236,6 +236,14 @@ export function ruleSetBody(
     columnRules: changes.columnRules ?? stored.columnRules,
     ...withReason(changes.reason),
   }
+}
+
+/** The name of a rule set through its schema (trimmed, 1–80): the local message, or null when it is fine. */
+export function checkName(name: string): string | null {
+  const parsed = MatchingRuleSetCreate.shape.name.safeParse(name)
+  if (parsed.success) return null
+  const issue = parsed.error.issues[0]
+  return issue?.code === 'too_big' && typeof issue.maximum === 'number' ? m.tooLong(issue.maximum) : m.name
 }
 
 /** PUT /matching-rules/global. */
