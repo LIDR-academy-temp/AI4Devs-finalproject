@@ -115,7 +115,7 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 
   Grupo 5, verificación y notas:
   - 5.1: rotura de `byColumnPrecedence` observada (fallan dos tests) y revertida.
-  - 5.2: `matching-effect` y `matching-rule-sets` en verde con la base local (turno de la persona). La rotura que fija la propuesta en la subida se aplicó y se revirtió **sin llegar a ejecutarse**, por decisión de la persona: no hay evidencia observada de que "Import subido sin confirmar" falle con ella. Grep confirma que no queda rastro.
+  - 5.2: `matching-effect` y `matching-rule-sets` en verde con la base local (turno de la persona). Rotura observada: con `imports` fijando la propuesta en la subida (`detailOf` reutiliza las reglas de la primera lectura), "Import subido sin confirmar" falla (`Fail` sigue en `statusId = 3`) y "Import con el pareo confirmado" también, en su `proposed`; las otras dos pasan. Revertida, Grep sin rastro y `matching-effect` de nuevo en verde (4/4). En un primer intento la rotura se revirtió sin ejecutarse por un error mío, no por decisión de la persona.
   - El `afterAll` de `matching-effect` comprueba que los alias globales vuelven a su valor y que no quedan `it-rs-` ni `it-acc-`.
 
 ## 6. Colección Bruno
@@ -143,6 +143,11 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
   - `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check` y `openspec validate admin-matching --strict`, en verde.
   - Integración completa sobre una base recién sembrada (turno de la persona): 450/451, 8 omitidos. Falló solo el test de 20 000 filas de `import-analyze` por tiempo (31,7 s frente al límite de 20 s, justo tras la siembra); la rama no toca `imports`, `propose-mapping.ts` ni ese test. Repetido el fichero solo: 30/30 y 20 000 filas en 14,1 s. Se trata como ruido del entorno.
   - El único commit de la 7.2 es esta nota.
+
+## Incidencias de proceso
+
+- Usé `cd` dos veces contra la regla de la sesión (una en la 2.4, `cd backend`; otra en la 6.1, `cd api-collection`); en las dos volví a la raíz enseguida y no tuvo efecto en el código.
+- `f6f7cce` lleva el mensaje "anotar los cambios del grupo 1 fuera del plan", pero solo contiene la marca de la 1.8: la edición de la nota falló y el commit salió sin ella; la nota va en `e4145df`. No se reescribe para no forzar el push.
 
 ## Workflow follow-up
 
