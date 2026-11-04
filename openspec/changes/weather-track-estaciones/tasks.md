@@ -4,7 +4,7 @@ Las decisiones están en `design.md` (D1 a D8). Todo se verifica con Compose ais
 
 ## 1. Base de especificaciones
 
-- [ ] 1.1 Verificar que `weather-track-mvp-nucleo` ya está archivado (tarea 1.1 de `weather-track-registro-cuentas`) y que `openspec validate weather-track-estaciones --strict` pasa sin avisos
+- [x] 1.1 Verificar que `weather-track-mvp-nucleo` ya está archivado (tarea 1.1 de `weather-track-registro-cuentas`) y que `openspec validate weather-track-estaciones --strict` pasa sin avisos
 
 ## 2. Catálogo y naturaleza de la base (D1, D4)
 

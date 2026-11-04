@@ -32,7 +32,7 @@ Hoy solo un administrador puede crear cuentas desde la línea de comandos. Weath
 - `account-access`: se elimina "Alta de cuentas sin registro público"; el inicio de sesión exige una cuenta confirmada; la autorización por estación pasa a ser autorización de consultas sobre cualquier estación existente; se agrega el límite por dirección IP.
 - `sat2-ingestion`: se agrega como requisito explícito que las credenciales de SAT2 solo lleguen al worker.
 
-Estas capacidades vienen del cambio `weather-track-mvp-nucleo`, que todavía no está archivado. Hay que archivarlo primero para que sus especificaciones pasen a `openspec/specs`; es la primera tarea de este cambio.
+Estas capacidades vienen del cambio `weather-track-mvp-nucleo`, que se archivó el 3 de noviembre de 2026 como primera tarea de este cambio; sus especificaciones ya están en `openspec/specs`.
 
 ## Impact
 

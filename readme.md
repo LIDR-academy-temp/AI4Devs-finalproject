@@ -478,7 +478,7 @@ erDiagram
 
 > Se guarda en UTC. La interfaz muestra la hora de Argentina (`America/Argentina/Buenos_Aires`).
 >
-> Las tablas de soporte `SESION` e `INTENTO_ACCESO` se detallan en el [diseño del cambio](openspec/changes/weather-track-mvp-nucleo/design.md).
+> Las tablas de soporte `SESION` e `INTENTO_ACCESO` se detallan en el [diseño del cambio](openspec/changes/archive/2026-11-03-weather-track-mvp-nucleo/design.md).
 
 **USUARIO.** Persona con acceso al sistema.
 

@@ -30,7 +30,7 @@ Ninguna.
 - `station-conditions`: el selector siempre visible reemplaza la selección automática; se agrega la presentación del equipo inactivo.
 - `sat2-ingestion`: el catálogo marca y reactiva equipos; cambia el modo simulado; se agregan el modo de prueba y la separación entre datos reales y ficticios.
 
-Ambas vienen de `weather-track-mvp-nucleo`, que hay que archivar antes, igual que para `weather-track-registro-cuentas`.
+Ambas vienen de `weather-track-mvp-nucleo`, archivado el 3 de noviembre de 2026; sus especificaciones ya están en `openspec/specs`.
 
 ## Impact
 

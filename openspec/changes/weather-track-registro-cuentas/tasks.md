@@ -4,8 +4,8 @@ Las decisiones están en `design.md` (D1 a D12) y el comportamiento en las specs
 
 ## 1. Base de especificaciones
 
-- [ ] 1.1 Archivar `weather-track-mvp-nucleo`, dejando su tarea 11.2 registrada en la hoja de ruta, y verificar que `openspec list --specs` muestra `account-access` y `sat2-ingestion`
-- [ ] 1.2 Ejecutar `openspec validate weather-track-registro-cuentas --strict` y verificar que pasa sin errores
+- [x] 1.1 Archivar `weather-track-mvp-nucleo`, dejando su tarea 11.2 registrada en la hoja de ruta, y verificar que `openspec list --specs` muestra `account-access` y `sat2-ingestion`
+- [x] 1.2 Ejecutar `openspec validate weather-track-registro-cuentas --strict` y verificar que pasa sin errores
 
 ## 2. Modelo de datos (D2, D3)
 

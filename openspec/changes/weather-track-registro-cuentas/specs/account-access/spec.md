@@ -30,6 +30,11 @@ El sistema SHALL iniciar una sesión cuando una persona ingresa un correo y una 
 
 El sistema MUST comprobar en el servidor, en cada consulta, que la persona tenga una sesión válida y que la estación pedida exista. Una estación es un equipo de SAT2, no un permiso: mientras no haya niveles de usuario, toda cuenta confirmada MUST poder consultar todas las estaciones, activas e inactivas.
 
+#### Scenario: Estación no asignada
+
+- **WHEN** una persona con sesión consulta una estación existente que no figura en ninguna asignación a su cuenta
+- **THEN** la API entrega sus datos, porque el acceso no depende de asignaciones por persona
+
 #### Scenario: Estación inexistente
 
 - **WHEN** una persona con sesión consulta una estación que no existe

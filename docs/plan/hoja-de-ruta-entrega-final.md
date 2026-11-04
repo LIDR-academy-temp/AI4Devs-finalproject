@@ -88,7 +88,7 @@ Una estación es solo una central meteorológica que llega de SAT2, un "equipo".
 
 ## 3. Línea B: despliegue público en Google Cloud, en pausa
 
-El 2 de noviembre de 2026 se revisó, en modo solo lectura y sin credenciales, el proyecto de Firebase que el responsable ya usa para pruebas y el repositorio privado que lo alimenta. No se cambió nada.
+El 2 de noviembre de 2026 se revisó, en modo solo lectura y sin credenciales, el proyecto de Firebase que el responsable ya usa para pruebas y el repositorio privado que lo alimenta. No se cambió nada. La tarea 11.2 del cambio del núcleo, el despliegue en Google Cloud, quedó abierta en esta línea cuando ese cambio se archivó, el 3 de noviembre de 2026.
 
 **Qué se aprendió:**
 
