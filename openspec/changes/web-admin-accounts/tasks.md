@@ -23,7 +23,7 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
 
 ## 3. Utilidades puras (test-first)
 
-- [ ] 3.1 Escribir los tests de las utilidades puras y comprobar que fallan porque no existen:
+- [x] 3.1 Escribir los tests de las utilidades puras y comprobar que fallan porque no existen:
   - `lib/format.test.ts` con `canonicalDecimal` (`"50000"` = `"50000.0000"`, `"015.10"` → `"15.1"`, `"0"`, negativos).
   - `features/accounts/channel-display.test.ts`:
     - `termReserve` → `14 d · 10 % / 180 d` y `7 d · 0 % / 0 d`, sin `Number`;
@@ -34,7 +34,7 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
     - `patchBody` solo con los cambios: escala del tope, cambio solo de mayúsculas, desenlazar a `null`, quitar el tope a `null`, motivo solo si hay cambios, sin cambios → `Nothing to save.`;
     - rechazo local de nombre vacío o de 51 caracteres, de tope `-1`, `1.23456` y `abc`, y de motivo de 501 caracteres.
   - `features/accounts/account-errors.test.ts` (design D6): `account_name_taken` en `name`; `details.field` en cada uno de los tres campos; `400` con lista de Fastify; `403`, `404`, red.
-- [ ] 3.2 Commit: test(web): formato de canales, cuerpos y errores de los formularios de cuenta
+- [x] 3.2 Commit: test(web): formato de canales, cuerpos y errores de los formularios de cuenta
 - [ ] 3.3 Implementar las utilidades puras:
   - Mover `canonical` de `fee-form.ts` a `lib/format.ts` como `canonicalDecimal` y hacer que `fee-form.ts` la importe.
   - Implementar `channel-display.ts`, `account-form.ts` y `account-errors.ts`, con los textos en `features/accounts/strings.ts`.

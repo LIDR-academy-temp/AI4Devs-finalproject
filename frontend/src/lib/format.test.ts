@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   auditInstant,
   businessDate,
+  canonicalDecimal,
   DISPLAY_TIME_ZONE,
   formatAuditDate,
   formatAuditDateTime,
@@ -27,6 +28,23 @@ describe('formatDecimal', () => {
     ['12345678901234567.8901', '12,345,678,901,234,567.8901'],
   ])('groups the integer part of %s without going through a JS number', (input, expected) => {
     expect(formatDecimal(input)).toBe(expected)
+  })
+})
+
+describe('canonicalDecimal (web-admin-accounts design D5)', () => {
+  it.each([
+    ['50000', '50000'],
+    ['50000.0000', '50000'],
+    ['015.10', '15.1'],
+    ['0', '0'],
+    ['0.0000', '0'],
+    ['-12.500', '-12.5'],
+  ])('%s is the same amount as %s', (value, canonical) => {
+    expect(canonicalDecimal(value)).toBe(canonical)
+  })
+
+  it('keeps null as null', () => {
+    expect(canonicalDecimal(null)).toBeNull()
   })
 })
 
