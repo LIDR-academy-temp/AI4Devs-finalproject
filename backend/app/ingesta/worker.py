@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.datos.conexion import obtener_motor
 from app.datos.modelos import EjecucionIngesta, Estacion, IntentoAcceso, Sesion
+from app.datos.naturaleza import NaturalezaIncompatible, asegurar_naturaleza
 from app.ingesta.carga_inicial import ejecutar_carga_inicial
 from app.ingesta.catalogo import sincronizar_catalogo
 from app.ingesta.ciclo import ejecutar_ciclo
@@ -157,6 +158,19 @@ def tarea_carga(
                 )
 
 
+def preparar_base(fabrica: Callable[[], Session], modo: str) -> bool:
+    """No arranca sobre una base de otra naturaleza, para no mezclar datos reales y ficticios."""
+    try:
+        with fabrica() as sesion:
+            naturaleza = asegurar_naturaleza(sesion, modo)
+            sesion.commit()
+    except NaturalezaIncompatible as error:
+        registro.error("%s", error)
+        return False
+    registro.info("Base con datos de naturaleza %s", naturaleza)
+    return True
+
+
 def protegida(nombre: str, tarea: Callable[..., None], *argumentos: Any) -> None:
     """Una falla no debe detener el planificador. Solo se registra el tipo de error."""
     try:
@@ -176,9 +190,12 @@ def principal() -> int:
         registro.error("Configuración incompleta: %s", error)
         return 2
 
+    fabrica = sessionmaker(obtener_motor())
+    if not preparar_base(fabrica, modo):
+        return 2
+
     registro.info("Worker iniciado en modo %s", modo)
     registrar_latido()
-    fabrica = sessionmaker(obtener_motor())
     # Antes de planificar: si corriera junto al ciclo, ambos crearían las mismas estaciones.
     protegida("catálogo", tarea_catalogo, fabrica, cliente)
     ahora = _ahora()

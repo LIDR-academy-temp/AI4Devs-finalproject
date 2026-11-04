@@ -8,10 +8,10 @@ Las decisiones están en `design.md` (D1 a D8). Todo se verifica con Compose ais
 
 ## 2. Catálogo y naturaleza de la base (D1, D4)
 
-- [ ] 2.1 Crear la migración con `inactiva_desde` y `configuracion_base`, y verificar `upgrade` y `downgrade` sobre una base con datos
-- [ ] 2.2 Inactivar y reactivar equipos en la sincronización del catálogo, y verificar con pruebas los escenarios de "Sincronización del catálogo", incluida la lista vacía
-- [ ] 2.3 Implementar el control de naturaleza al arrancar el worker y la API, y verificar con pruebas cada fila de la tabla de D4 y el mensaje de error
-- [ ] 2.4 Verificar con una prueba que el ciclo y la carga inicial no piden lecturas de una estación inactiva
+- [x] 2.1 Crear la migración con `inactiva_desde` y `configuracion_base`, y verificar `upgrade` y `downgrade` sobre una base con datos
+- [x] 2.2 Inactivar y reactivar equipos en la sincronización del catálogo, y verificar con pruebas los escenarios de "Sincronización del catálogo", incluida la lista vacía
+- [x] 2.3 Implementar el control de naturaleza al arrancar el worker y la API, y verificar con pruebas cada fila de la tabla de D4 y el mensaje de error
+- [x] 2.4 Verificar con una prueba que el ciclo y la carga inicial no piden lecturas de una estación inactiva
 
 ## 3. Modos (D5, D6, D7)
 

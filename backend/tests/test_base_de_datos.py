@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.datos.modelos import (
     Base,
+    ConfiguracionBase,
     EjecucionIngesta,
     Estacion,
     IntentoAcceso,
@@ -34,6 +35,7 @@ TABLAS = {
     "ejecucion_ingesta",
     "sesion",
     "intento_acceso",
+    "configuracion_base",
 }
 MOTIVO = [{"codigo": "SIN_INVERSION", "detalle": "No hay inversión."}]
 
@@ -124,6 +126,39 @@ def test_se_puede_revertir_y_volver_a_aplicar(motor):
 
     command.upgrade(configuracion, "head")
     assert TABLAS <= set(inspect(motor).get_table_names())
+
+
+def test_la_migracion_0002_conserva_los_datos_al_aplicarse_y_revertirse(motor):
+    configuracion = configuracion_alembic()
+    command.downgrade(configuracion, "0001")
+    try:
+        with motor.begin() as conexion:
+            conexion.execute(
+                text(
+                    "INSERT INTO estacion (id_equipo_sat2, nombre, latitud, longitud, activa) "
+                    "VALUES (901, 'Activa', -34, -60, true), (902, 'Inactiva', -34, -60, false)"
+                )
+            )
+
+        command.upgrade(configuracion, "head")
+        with motor.connect() as conexion:
+            fechas = dict(
+                conexion.execute(
+                    text("SELECT nombre, inactiva_desde FROM estacion WHERE id_equipo_sat2 > 900")
+                ).all()
+            )
+        assert fechas["Activa"] is None
+        assert fechas["Inactiva"] is not None
+
+        command.downgrade(configuracion, "0001")
+        with motor.connect() as conexion:
+            assert conexion.execute(
+                text("SELECT count(*) FROM estacion WHERE id_equipo_sat2 > 900")
+            ).scalar() == 2
+    finally:
+        command.upgrade(configuracion, "head")
+        with motor.begin() as conexion:
+            conexion.execute(text("DELETE FROM estacion WHERE id_equipo_sat2 > 900"))
 
 
 def test_una_observacion_valida_se_guarda(sesion, sensor):
@@ -221,6 +256,52 @@ def test_rechaza_latitud_fuera_de_rango(sesion):
         sesion,
         Estacion(id_equipo_sat2=2, nombre="E", latitud=Decimal("91"), longitud=Decimal("0")),
     )
+
+
+def test_rechaza_estacion_inactiva_sin_fecha(sesion):
+    debe_rechazarse(
+        sesion,
+        Estacion(
+            id_equipo_sat2=2, nombre="E", latitud=Decimal("0"), longitud=Decimal("0"), activa=False
+        ),
+    )
+
+
+def test_rechaza_estacion_activa_con_fecha_de_inactividad(sesion):
+    debe_rechazarse(
+        sesion,
+        Estacion(
+            id_equipo_sat2=2,
+            nombre="E",
+            latitud=Decimal("0"),
+            longitud=Decimal("0"),
+            inactiva_desde=AHORA,
+        ),
+    )
+
+
+def test_acepta_estacion_inactiva_con_fecha(sesion):
+    registro = Estacion(
+        id_equipo_sat2=2,
+        nombre="E",
+        latitud=Decimal("0"),
+        longitud=Decimal("0"),
+        activa=False,
+        inactiva_desde=AHORA,
+    )
+    sesion.add(registro)
+    sesion.flush()
+    assert registro.id
+
+
+def test_la_configuracion_de_la_base_admite_una_sola_fila(sesion):
+    sesion.add(ConfiguracionBase(naturaleza="REAL"))
+    sesion.flush()
+    debe_rechazarse(sesion, ConfiguracionBase(id=2, naturaleza="REAL"))
+
+
+def test_rechaza_naturaleza_desconocida(sesion):
+    debe_rechazarse(sesion, ConfiguracionBase(naturaleza="MIXTA"))
 
 
 def test_rechaza_magnitud_desconocida(sesion, estacion):

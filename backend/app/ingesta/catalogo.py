@@ -1,6 +1,7 @@
 """Sincronización del catálogo de estaciones y sensores."""
 
 import logging
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -46,23 +47,49 @@ def _sincronizar_sensor(sesion: Session, estacion: Estacion, datos: dict) -> Non
         registro.warning("Unidad no admitida en %s: %s", datos["nombre"], sensor.unidad)
 
 
-def sincronizar_catalogo(sesion: Session, cliente: ClienteSat2) -> list[Estacion]:
-    """Crea o actualiza estaciones y sensores. No hace commit."""
+def sincronizar_catalogo(
+    sesion: Session, cliente: ClienteSat2, ahora: datetime | None = None
+) -> list[Estacion]:
+    """Crea o actualiza estaciones y sensores, e inactiva las que dejaron de llegar. No hace commit.
+
+    Devuelve las estaciones de los equipos que informó SAT2.
+    """
+    momento = ahora or datetime.now(UTC)
+    equipos = cliente.recuperar_equipos()
     estaciones = []
-    for equipo in cliente.recuperar_equipos():
+    for equipo in equipos:
         estacion = sesion.scalar(
             select(Estacion).where(Estacion.id_equipo_sat2 == equipo["idEquipo"])
         )
         if estacion is None:
             estacion = Estacion(id_equipo_sat2=equipo["idEquipo"])
             sesion.add(estacion)
+        elif not estacion.activa:
+            registro.info("El equipo %s volvió a SAT2: estación reactivada", equipo["idEquipo"])
         estacion.nombre = equipo["descripcion"]
         estacion.nro_serie = equipo.get("NroSerie")
         estacion.latitud = Decimal(str(equipo["lat"]))
         estacion.longitud = Decimal(str(equipo["lng"]))
+        estacion.activa = True
+        estacion.inactiva_desde = None
         sesion.flush()
         for datos in equipo.get("sensores", []):
             _sincronizar_sensor(sesion, estacion, datos)
         estaciones.append(estacion)
+    # Una lista vacía suele ser una falla de la fuente: apagaría todas las estaciones de golpe.
+    if equipos:
+        _inactivar_ausentes(sesion, {equipo["idEquipo"] for equipo in equipos}, momento)
     sesion.flush()
     return estaciones
+
+
+def _inactivar_ausentes(sesion: Session, informados: set[int], ahora: datetime) -> None:
+    ausentes = sesion.scalars(
+        select(Estacion).where(Estacion.activa, Estacion.id_equipo_sat2.not_in(informados))
+    )
+    for estacion in ausentes:
+        registro.warning(
+            "El equipo %s ya no llega de SAT2: estación inactiva", estacion.id_equipo_sat2
+        )
+        estacion.activa = False
+        estacion.inactiva_desde = ahora

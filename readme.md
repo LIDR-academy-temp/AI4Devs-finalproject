@@ -424,6 +424,7 @@ erDiagram
         numeric latitud "NOT NULL"
         numeric longitud "NOT NULL"
         boolean activa "NOT NULL DEFAULT true"
+        timestamptz inactiva_desde "NULL si activa"
     }
     USUARIO_ESTACION {
         uuid usuario_id PK, FK
@@ -478,7 +479,7 @@ erDiagram
 
 > Se guarda en UTC. La interfaz muestra la hora de Argentina (`America/Argentina/Buenos_Aires`).
 >
-> Las tablas de soporte `SESION` e `INTENTO_ACCESO` se detallan en el [diseño del cambio](openspec/changes/archive/2026-11-03-weather-track-mvp-nucleo/design.md).
+> Las tablas de soporte `SESION` e `INTENTO_ACCESO` se detallan en el [diseño del cambio](openspec/changes/archive/2026-11-03-weather-track-mvp-nucleo/design.md). La tabla `CONFIGURACION_BASE`, de una sola fila, registra si la base guarda datos reales o ficticios para que nunca se mezclen; se detalla en el [diseño de `weather-track-estaciones`](openspec/changes/weather-track-estaciones/design.md).
 
 **USUARIO.** Persona con acceso al sistema.
 
@@ -501,7 +502,8 @@ erDiagram
 | `nro_serie` | `varchar(40)` | | Serie del equipo |
 | `latitud` | `numeric(9,6)` | NOT NULL, entre −90 y 90 | Ubicación |
 | `longitud` | `numeric(9,6)` | NOT NULL, entre −180 y 180 | Ubicación |
-| `activa` | `boolean` | NOT NULL, DEFAULT true | Si participa de la ingesta |
+| `activa` | `boolean` | NOT NULL, DEFAULT true | Si su equipo sigue llegando de SAT2 y participa de la ingesta |
+| `inactiva_desde` | `timestamptz` | NULL si y solo si `activa` | Desde cuándo el equipo dejó de llegar de SAT2. La estación conserva sus datos |
 
 **USUARIO_ESTACION.** Estaciones a las que accede cada usuario (N:M).
 

@@ -1,10 +1,45 @@
 """Punto de entrada de la API."""
 
+import logging
+import os
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractContextManager, asynccontextmanager
+
 from fastapi import FastAPI, Response, status
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from app.api import autenticacion, estaciones, lecturas
 from app.api.errores import registrar_manejadores
-from app.datos.conexion import verificar_conexion
+from app.datos.conexion import obtener_motor, verificar_conexion
+from app.datos.naturaleza import verificar_naturaleza
+
+registro = logging.getLogger("weather_track.api")
+
+
+def _abrir_sesion() -> AbstractContextManager[Session]:
+    return Session(obtener_motor())
+
+
+def comprobar_base(abrir_sesion: Callable[[], AbstractContextManager[Session]] = _abrir_sesion) -> None:
+    """Corta el arranque si la base no corresponde al modo (D4 de weather-track-estaciones).
+
+    Solo lee: la naturaleza la fija el worker o la siembra. Sin base disponible, arranca igual
+    y la ruta de salud lo informa.
+    """
+    modo = os.environ.get("SAT2_MODO", "simulado")
+    try:
+        with abrir_sesion() as sesion:
+            verificar_naturaleza(sesion, modo)
+    except (KeyError, SQLAlchemyError) as error:
+        registro.warning("No se pudo verificar la base al arrancar: %s", type(error).__name__)
+
+
+@asynccontextmanager
+async def ciclo_de_vida(_app: FastAPI) -> AsyncIterator[None]:
+    comprobar_base()
+    yield
+
 
 app = FastAPI(
     title="Weather Track API",
@@ -12,6 +47,7 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url=None,
     openapi_url="/api/openapi.json",
+    lifespan=ciclo_de_vida,
 )
 registrar_manejadores(app)
 app.include_router(autenticacion.router)

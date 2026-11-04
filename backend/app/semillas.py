@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.datos.conexion import obtener_motor
 from app.datos.modelos import Estacion, Usuario, UsuarioEstacion
+from app.datos.naturaleza import NaturalezaIncompatible, asegurar_naturaleza
 from app.ingesta.catalogo import sincronizar_catalogo
 from app.ingesta.cliente_simulado import ClienteSat2Escenarios, ClienteSat2Simulado
 from app.seguridad import calcular_hash_contrasena
@@ -59,6 +60,11 @@ def principal() -> int:
         return 2
     cargar = cargar_semillas if modo == "simulado" else cargar_semillas_de_escenarios
     with Session(obtener_motor()) as sesion:
+        try:
+            asegurar_naturaleza(sesion, modo)
+        except NaturalezaIncompatible as error:
+            print(error, file=sys.stderr)
+            return 2
         clave = cargar(sesion)
         sesion.commit()
     print(f"Semillas cargadas. Usuario de demostración: {EMAIL_DEMO}")

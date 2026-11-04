@@ -48,6 +48,7 @@ ESTADOS_RECOMENDACION = (
 )
 TIPOS_EJECUCION = ("CICLO", "CARGA_INICIAL")
 RESULTADOS_EJECUCION = ("EN_CURSO", "EXITO", "PARCIAL", "ERROR")
+NATURALEZAS = ("REAL", "FICTICIA", "COPIA_DE_PRUEBA")
 
 
 def _lista_sql(valores: tuple[str, ...]) -> str:
@@ -87,6 +88,7 @@ class Estacion(Base):
     __table_args__ = (
         CheckConstraint("latitud BETWEEN -90 AND 90", name="latitud_valida"),
         CheckConstraint("longitud BETWEEN -180 AND 180", name="longitud_valida"),
+        CheckConstraint("activa = (inactiva_desde IS NULL)", name="inactiva_con_fecha"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
@@ -95,7 +97,9 @@ class Estacion(Base):
     nro_serie: Mapped[str | None] = mapped_column(String(40))
     latitud: Mapped[Decimal] = mapped_column(Numeric(9, 6))
     longitud: Mapped[Decimal] = mapped_column(Numeric(9, 6))
+    # Inactiva: su equipo dejó de llegar de SAT2. Conserva sus datos (D1 de weather-track-estaciones).
     activa: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
+    inactiva_desde: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     sensores: Mapped[list["Sensor"]] = relationship(back_populates="estacion")
 
@@ -234,6 +238,22 @@ class Sesion(Base):
         DateTime(timezone=True), server_default=func.now()
     )
     vence_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ConfiguracionBase(Base):
+    """Una sola fila: si la base guarda datos reales o ficticios (D4 de weather-track-estaciones)."""
+
+    __tablename__ = "configuracion_base"
+    __table_args__ = (
+        CheckConstraint("id = 1", name="una_sola_fila"),
+        CheckConstraint(f"naturaleza IN ({_lista_sql(NATURALEZAS)})", name="naturaleza_valida"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False, default=1)
+    naturaleza: Mapped[str] = mapped_column(String(16))
+    fijada_en: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
 
 
 class IntentoAcceso(Base):

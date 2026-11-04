@@ -167,6 +167,70 @@ def test_un_sensor_no_clasificable_no_detiene_el_catalogo(sesion, caplog):
     assert "Sensor nuevo" in caplog.text
 
 
+def estacion_registrada(sesion, id_equipo, **datos):
+    estacion = Estacion(
+        id_equipo_sat2=id_equipo, nombre=f"Equipo {id_equipo}", latitud=D("-34"), longitud=D("-60"), **datos
+    )
+    sesion.add(estacion)
+    sesion.flush()
+    return estacion
+
+
+def test_inactiva_el_equipo_que_deja_de_llegar_y_conserva_sus_datos(sesion, cliente):
+    ausente = estacion_registrada(sesion, 77)
+    sesion.add(
+        Sensor(
+            estacion_id=ausente.id,
+            id_sensor_sat2=1,
+            nombre="Temp",
+            clave_normalizada="temp",
+            magnitud="TEMPERATURA",
+            unidad="°C",
+        )
+    )
+    sesion.flush()
+
+    sincronizar_catalogo(sesion, cliente, ahora=AHORA)
+
+    assert ausente.activa is False
+    assert ausente.inactiva_desde == AHORA
+    assert contar(sesion, Sensor, Sensor.estacion_id == ausente.id) == 1
+    informada = sesion.scalar(select(Estacion).where(Estacion.id_equipo_sat2 == 1))
+    assert informada.activa is True
+
+
+def test_reactiva_el_equipo_que_vuelve(sesion, cliente):
+    estacion = estacion_registrada(sesion, 1, activa=False, inactiva_desde=AHORA - timedelta(days=3))
+
+    sincronizar_catalogo(sesion, cliente, ahora=AHORA)
+
+    assert estacion.activa is True
+    assert estacion.inactiva_desde is None
+
+
+def test_una_lista_vacia_de_equipos_no_inactiva_nada(sesion):
+    estacion = estacion_registrada(sesion, 1)
+
+    class SinEquipos(Cliente):
+        def recuperar_equipos(self):
+            return []
+
+    assert sincronizar_catalogo(sesion, SinEquipos(), ahora=AHORA) == []
+    assert estacion.activa is True
+
+
+def test_un_error_de_la_fuente_no_cambia_el_estado_de_las_estaciones(sesion):
+    estacion = estacion_registrada(sesion, 77)
+
+    class FuenteCaida(Cliente):
+        def recuperar_equipos(self):
+            raise ErrorSat2("RecuperarEquipos: estado 500")
+
+    with pytest.raises(ErrorSat2):
+        sincronizar_catalogo(sesion, FuenteCaida(), ahora=AHORA)
+    assert estacion.activa is True
+
+
 # Ciclo
 
 
@@ -510,14 +574,35 @@ def test_el_ciclo_del_worker_sincroniza_si_no_hay_estaciones(sesion, cliente):
     assert contar(sesion, Recomendacion) == 1
 
 
-def test_el_worker_no_ingesta_estaciones_inactivas(sesion, cliente, estacion):
+class ClienteQueCuentaInstantaneos(Cliente):
+    def __init__(self):
+        super().__init__()
+        self.instantaneos_pedidos: list[int] = []
+
+    def recuperar_instantaneos(self, id_equipo):
+        self.instantaneos_pedidos.append(id_equipo)
+        return super().recuperar_instantaneos(id_equipo)
+
+
+def test_el_worker_no_pide_lecturas_de_estaciones_inactivas(sesion):
+    cliente = ClienteQueCuentaInstantaneos()
+    estacion = sincronizar_catalogo(sesion, cliente)[0]
+    otra = estacion_registrada(sesion, 77)
+    otra.activa = False
+    otra.inactiva_desde = AHORA - timedelta(days=1)
     estacion.activa = False
+    estacion.inactiva_desde = AHORA - timedelta(days=1)
     sesion.commit()
     fabrica = FabricaDePruebas(sesion)
 
     worker.tarea_carga(fabrica, cliente, reloj=lambda: AHORA, pausa_segundos=0, dormir=sin_pausa)
-
     assert cliente.historicos_pedidos == []
+
+    estacion.activa = True
+    estacion.inactiva_desde = None
+    sesion.commit()
+    worker.tarea_ciclo(fabrica, cliente, reloj=lambda: AHORA)
+    assert cliente.instantaneos_pedidos == [1]
 
 
 def test_la_carga_exitosa_no_se_repite(sesion, cliente, estacion, monkeypatch):

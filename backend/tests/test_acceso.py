@@ -311,6 +311,7 @@ def test_lista_solo_las_estaciones_asignadas(cliente, sesion, usuario):
 def test_no_lista_estaciones_inactivas(cliente, sesion, usuario):
     estacion = crear_estacion(sesion, 1)
     estacion.activa = False
+    estacion.inactiva_desde = datetime(2026, 11, 1, tzinfo=UTC)
     sesion.add(UsuarioEstacion(usuario_id=usuario.id, estacion_id=estacion.id))
     sesion.commit()
     ingresar(cliente)
