@@ -94,7 +94,7 @@ Motivación y alcance en `proposal.md`; comportamiento en las delta specs (`acco
   9. `account.create`.
 
   La cuenta origen se bloquea **antes** de leer sus fees, así que un cambio de fee en curso termina antes o empieza después (escenario "Copia y cambio de fee simultáneos"). Las copias son `NULL…NULL` en una cuenta nueva sin fees, así que `TR_Fee_NoOverlap` no puede saltar; si saltara, el respaldo `overlapBackstop` de fees lo convierte en `409 fee_overlap`.
-- **Puerto de fees.** `FeeHistoryWrite.action` se amplía a `'created' | 'updated' | 'closed' | 'copied'`, y la escritura reutiliza `snapshotJson`. No hace falta una entrada `fee.*` por copia en `AuditLog`: la única entrada `account.create` lleva los pares `{ sourceFeeId, feeId }`.
+- **Historial de la copia.** La unidad de cuentas escribe la fila `copied` con su propio `copiedHistory`, reutilizando `snapshotJson`, y las copias con `columns`, `stateSelect`, `toState` y `overlapBackstop`, que se exportan del repositorio de escritura de fees. `FeeHistoryWrite` de fees no cambia: ninguna escritura de fees produce `copied`. No hace falta una entrada `fee.*` por copia en `AuditLog`: la única entrada `account.create` lleva los pares `{ sourceFeeId, feeId }`.
 - **Edición:** `inAccount`. Se relee la cuenta bajo bloqueo, `planAccountPatch`, y luego conjunto válido y nombre libre (si cambian), `updateAccount` y la auditoría. Si no hay cambios, no hay escritura y `updatedAt` no cambia.
 
 ### D5. Nombre único: comprobación previa + respaldo del índice

@@ -56,8 +56,13 @@ afterEach(async () => {
 
 afterAll(async () => {
   if (ctx) {
-    await ctx.app.close()
-    await ctx.prisma.$disconnect()
+    try {
+      // Nothing of this file stays behind.
+      expect(await ctx.prisma.account.count({ where: { name: { startsWith: 'it-acc-' } } })).toBe(0)
+    } finally {
+      await ctx.app.close()
+      await ctx.prisma.$disconnect()
+    }
   }
 })
 

@@ -4,6 +4,7 @@ import { vi } from 'vitest'
 import { buildApp } from '../app.js'
 import { loadEnv } from '../config/env.js'
 import type { PrismaClient } from '../generated/prisma/client.js'
+import type { AccountAdminService } from '../modules/accounts/application/account-admin-service.js'
 import {
   FakeClock,
   FakePasswordHasher,
@@ -41,6 +42,8 @@ export interface TestAppOptions {
   fees?: { service?: FeeReadService; adminService?: FeeAdminService; queryService?: FeeQueryService }
   /** Settlement services over in-memory doubles; without them the settlement routes hit the fake Prisma client. */
   settlement?: { service: SettlementService; reads?: SettlementReadService; lifecycle?: SettlementLifecycleService }
+  /** Account administration over in-memory doubles; without it the account writes hit the fake Prisma client. */
+  accounts?: { adminService: AccountAdminService }
 }
 
 export async function buildTestApp(options: TestAppOptions = {}) {
@@ -69,6 +72,7 @@ export async function buildTestApp(options: TestAppOptions = {}) {
     validation: options.validation,
     fees: options.fees,
     settlement: options.settlement,
+    accounts: options.accounts,
     logStream: logLines ? { write: (line: string) => void logLines.push(line) } : undefined,
   })
   return { app, clock, users, refreshTokens, audit, authService }

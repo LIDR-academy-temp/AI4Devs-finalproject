@@ -1055,22 +1055,6 @@ paths:
                   - code
                   - message
                 additionalProperties: false
-        "501":
-          description: Default Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: string
-                  message:
-                    type: string
-                  details: {}
-                required:
-                  - code
-                  - message
-                additionalProperties: false
   /api/v1/accounts/{accountId}:
     get:
       summary: Account detail with its provider and merchant
@@ -1454,22 +1438,6 @@ paths:
                   - message
                 additionalProperties: false
         "409":
-          description: Default Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  code:
-                    type: string
-                  message:
-                    type: string
-                  details: {}
-                required:
-                  - code
-                  - message
-                additionalProperties: false
-        "501":
           description: Default Response
           content:
             application/json:

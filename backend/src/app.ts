@@ -10,6 +10,7 @@ import {
 import type { Env } from './config/env.js'
 import type { PrismaClient } from './generated/prisma/client.js'
 import { accountsModule } from './modules/accounts/accounts-module.js'
+import type { AccountAdminService } from './modules/accounts/application/account-admin-service.js'
 import type { AuthService } from './modules/auth/application/auth-service.js'
 import { authModule } from './modules/auth/auth-module.js'
 import type { CatalogService } from './modules/catalog/application/catalog-service.js'
@@ -65,6 +66,8 @@ export interface BuildAppOptions {
   fees?: { service?: FeeReadService; adminService?: FeeAdminService; queryService?: FeeQueryService }
   /** Injected settlement services (tests); otherwise built on Prisma and the import service. */
   settlement?: { service: SettlementService; reads?: SettlementReadService; lifecycle?: SettlementLifecycleService }
+  /** Injected account administration (tests); otherwise built on Prisma and the catalog. */
+  accounts?: { adminService: AccountAdminService }
   /** Log destination (tests capture logs through it); defaults to stdout. */
   logStream?: { write(line: string): void }
 }
@@ -132,7 +135,11 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     adminService: options.fees?.adminService,
     queryService: options.fees?.queryService,
   })
-  await app.register(accountsModule, { routePrefix: API_PREFIX })
+  await app.register(accountsModule, {
+    routePrefix: API_PREFIX,
+    adminService: options.accounts?.adminService,
+    catalogService: options.catalogService,
+  })
   await app.register(matchingModule, { routePrefix: API_PREFIX })
   await app.register(settlementModule, {
     routePrefix: API_PREFIX,

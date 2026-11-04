@@ -1,16 +1,20 @@
 import { AccountCreate, AccountDetail, AccountPatch, ErrorResponse, IntId } from '@recon/shared'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { NotImplementedError } from '../../../shared/errors.js'
+import { scopeOf } from '../../catalog/domain/scope.js'
+import type { AccountAdminService } from '../application/account-admin-service.js'
+
+export interface AccountAdminRoutesOptions {
+  admin: AccountAdminService
+}
 
 const ProviderParams = z.object({ providerId: IntId })
 const AccountParams = z.object({ accountId: z.uuid() })
 const accounts = { tags: ['accounts'], security: [{ bearerAuth: [] }] }
 const errors = { 400: ErrorResponse, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse, 409: ErrorResponse }
-const notImplemented = { 501: ErrorResponse }
 
 /** Account administration (README §4.4; spec accounts, admin-accounts design D2, D10). Mounted under /api/v1. */
-export const accountAdminRoutes: FastifyPluginAsyncZod = async (app) => {
+export const accountAdminRoutes: FastifyPluginAsyncZod<AccountAdminRoutesOptions> = async (app, { admin }) => {
   app.post(
     '/providers/:providerId/accounts',
     {
@@ -25,11 +29,17 @@ export const accountAdminRoutes: FastifyPluginAsyncZod = async (app) => {
           '409 account_name_taken.',
         params: ProviderParams,
         body: AccountCreate,
-        response: { 201: AccountDetail, ...errors, ...notImplemented },
+        response: { 201: AccountDetail, ...errors },
       },
     },
-    async () => {
-      throw new NotImplementedError('POST /providers/{providerId}/accounts')
+    async (request, reply) => {
+      const account = await admin.create(
+        scopeOf(request.auth),
+        request.auth.userId,
+        request.params.providerId,
+        request.body,
+      )
+      return reply.code(201).send(account)
     },
   )
 
@@ -47,11 +57,9 @@ export const accountAdminRoutes: FastifyPluginAsyncZod = async (app) => {
           '400 validation_error (details.field: rollingReserveCapAmt, matchingRuleSetId), 409 account_name_taken.',
         params: AccountParams,
         body: AccountPatch,
-        response: { 200: AccountDetail, ...errors, ...notImplemented },
+        response: { 200: AccountDetail, ...errors },
       },
     },
-    async () => {
-      throw new NotImplementedError('PATCH /accounts/{accountId}')
-    },
+    async (request) => admin.patch(scopeOf(request.auth), request.auth.userId, request.params.accountId, request.body),
   )
 }
