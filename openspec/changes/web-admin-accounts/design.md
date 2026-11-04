@@ -99,7 +99,7 @@ frontend/src/test/msw/accounts.ts      account writes + matching rule sets fake 
   - Matching rules: el nombre del conjunto, buscado en `matchingRuleSetsQuery(providerId)` por `matchingRuleSetId`. Sin enlace: `None · global rules`. Si la consulta falla o el conjunto no aparece: `Rule set <id>`, sin bloquear.
   - Created: `formatAuditDate(createdAt)` + `by <userName>`. Last change: `formatAuditDateTime(updatedAt)`.
 - **Overview, tarjeta Channels** (`AccountChannels`):
-  - Columnas Channel, Gateway (`Gateway <gatewayId>`), Role here, Batch (`batch <assignedInBatchNo>` o `—`) y Term · reserve.
+  - Columnas Channel, Gateway (`Gateway <gatewayId>`), Role here, Since (`batch <assignedInBatchNo>` o `—`, el mismo nombre que en Channel Assignment) y Term · reserve.
   - `channel-display.ts` es puro y con tests:
     - `termReserve(c)` → `14 d · 10 % / 180 d`, con `rateToPercent`, sin `Number`.
     - `roleOf(item)` → `primary` | `historical · primary in X` | `historical · no primary`.

@@ -44,7 +44,7 @@ Hoy Administration › Accounts solo lista las cuentas de un proveedor: no hay f
 
 **New Reconciliation**
 
-- `409 account_inactive` al crear el import (cuenta cerrada entre la elección y la subida) se muestra como `This account is closed.`; la pantalla ya no lista cuentas cerradas.
+- `409 account_inactive` al crear el import (cuenta cerrada entre la elección y la subida) se muestra como `This account is closed. Choose another account.`; la pantalla ya no lista cuentas cerradas.
 
 **MSW**
 
@@ -76,5 +76,5 @@ Ninguna.
   - `test/msw/`: handlers y fixtures de escrituras de cuentas y de conjuntos de reglas.
 - **API, base de datos y backend:** ningún cambio; el contrato es el de `admin-accounts`.
 - **Documentación:** capturas en `docs/wireframes/web-admin-accounts/` y la mención en README §1.3.
-- **Dependencia:** la rama avanza por fast-forward a `origin/feat/admin-accounts` cuando esta integre `feature/entrega-3-MVP` (con `features/fees` de `web-admin-fees` y las specs vivas sincronizadas en #116). La delta de `fees` se escribe contra esas specs.
+- **Dependencia:** la rama avanza por fast-forward a `origin/feat/admin-accounts` cuando esta integre `feature/entrega-3-MVP` (con `features/fees` de `web-admin-fees` y las specs vivas sincronizadas en #116). La delta de `fees` se escribe contra esas specs. Al final no fue un fast-forward: como la rama ya tenía commits, se rebasó sobre `origin/feat/admin-accounts` y, cuando `admin-accounts` se fusionó en `feature/entrega-3-MVP` (#117), con `git rebase --onto` sobre esa rama, y la persona hizo los force push con `--force-with-lease`.
 - **Fuera de alcance:** lista global de cuentas con filtros y búsqueda, recuentos de fees y último batch por cuenta, actividad de la cuenta, recuentos y primera vista de los canales sin asignar, asignación manual de canales (no existe por diseño) y administración de conjuntos de reglas (`admin-matching`).
