@@ -72,14 +72,14 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
 
 ## 6. Crear, editar, cerrar y reabrir (test-first)
 
-- [ ] 6.1 Escribir `features/accounts/account-writes.test.tsx` con los escenarios de la delta `accounts` y comprobar que fallan:
+- [x] 6.1 Escribir `features/accounts/account-writes.test.tsx` con los escenarios de la delta `accounts` y comprobar que fallan:
   - "New account: formulario": sin `account.manage`, cuenta mínima con el cuerpo exacto y la navegación a la ficha, tope como texto, validación local con el foco en el primer error, cancelar con el foco de vuelta, doble clic = una petición.
   - "fees y reglas de pareo": copia y conjunto en Provider C, Provider A sin conjuntos, cambio de proveedor que vacía los campos.
   - "Edit account": política y tope, misma escala → `Nothing to save.`, desenlazar, quitar el tope, renombrar con motivo, conjunto actual inactivo que se conserva.
   - "Close / Reopen": cerrar con motivo, reabrir sin motivo, cancelar, diálogo abierto con la petición en curso.
   - "errores del API": nombre en uso, conjunto no válido, cuenta origen no válida, `403` y red con lo escrito intacto.
   - "Pantalla Accounts": **New account** solo para `admin`.
-- [ ] 6.2 Commit: test(web): crear, editar, cerrar y reabrir cuentas
+- [x] 6.2 Commit: test(web): crear, editar, cerrar y reabrir cuentas
 - [ ] 6.3 Implementar lo necesario hasta dejar en verde los tests de 6.1 (design D5–D7):
   - añadir `components/ui/dialog.tsx` (shadcn, sobre `radix-ui`, sin dependencias nuevas);
   - `contract.ts` y `mutations.ts` (caché e invalidaciones de D7);
