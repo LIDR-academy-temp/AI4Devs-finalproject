@@ -23,7 +23,7 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 
   Verificar con `grep` que aparecen `rule_set_name_taken`, `rule_set_in_use` y `#120`.
 - [x] 1.7 Commit: feat(matching): contrato de la administración de reglas de pareo y export de OpenAPI
-- [ ] 1.8 Hacer `git push` de `feat/admin-matching`, vigilar el CI con `gh run list --branch feat/admin-matching --json status,conclusion --jq` y avisar a la persona de que el contrato está publicado, porque `web-admin-matching` parte de aquí. No seguir hasta su confirmación.
+- [x] 1.8 Hacer `git push` de `feat/admin-matching`, vigilar el CI con `gh run list --branch feat/admin-matching --json status,conclusion --jq` y avisar a la persona de que el contrato está publicado, porque `web-admin-matching` parte de aquí. No seguir hasta su confirmación.
 
 ## 2. Validación y diff de reglas (TDD)
 
