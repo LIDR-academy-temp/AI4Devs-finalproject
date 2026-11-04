@@ -109,11 +109,11 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
 
 ## 9. Documentación y revisión
 
-- [ ] 9.1 Actualizar la documentación y verificar releyendo que README y delta specs dicen lo mismo:
+- [x] 9.1 Actualizar la documentación y verificar releyendo que README y delta specs dicen lo mismo:
   - README §1.3: fila **Accounts / Account Detail** (pestañas Overview y Fees, nombre único en todo el sistema, cerrar y reabrir, sin pestaña de reglas de pareo ni actividad); fila **Channel Assignment** (solo lectura, filtros, "since" e históricas); fila **Account Fees** (pestaña de Account Detail). Mencionar la carpeta `docs/wireframes/web-admin-accounts/`.
   - `docs/wireframes/README.md`: la carpeta nueva.
-- [ ] 9.2 Verificar con `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 9.3 Commit: docs(web): pantallas de cuentas y canales en el mapa de pantallas
+- [x] 9.2 Verificar con `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
+- [x] 9.3 Commit: docs(web): pantallas de cuentas y canales en el mapa de pantallas
 
 ## 10. Capturas contra el backend real
 
