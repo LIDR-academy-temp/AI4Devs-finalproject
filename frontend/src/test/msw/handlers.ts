@@ -1,6 +1,8 @@
 // In-memory stand-in for the API (openspec/specs/auth, openspec/specs/accounts): token rotation, merchant scope
 // and 404 for anything outside the scope, so the screens are tested against the real rules.
+import { ChannelAccountItem } from '@recon/shared'
 import { HttpResponse, http, type PathParams } from 'msw'
+import { z } from 'zod'
 import { createAccountHandlers, resetAccounts, toAccountDetail } from './accounts'
 import { createFeeHandlers, resetFees } from './fees'
 import {
@@ -188,6 +190,33 @@ export const handlers = [
           return { ...c, primaryAccount: seen ? { accountId: primary.accountId, name: primary.name } : null }
         }),
       )
+    }),
+  ),
+
+  // Every association of a visible channel, parsed with the schema of the contract (web-admin-accounts design D8).
+  http.get(
+    `${API}/channels/:channelId/accounts`,
+    protectedRoute(({ user, params }) => {
+      const channel = CHANNELS.find((c) => c.channelId === Number(params.channelId))
+      if (!channel || !visibleProvider(user, channel.providerId)) return notFound('Channel')
+      const items = db.accountChannels
+        .filter((r) => r.channelId === channel.channelId)
+        .map((row) => {
+          const account = db.accounts.find((a) => a.accountId === row.accountId)!
+          const item = toAccountChannelItem(row, db.accountChannels)
+          return {
+            accountId: account.accountId,
+            name: account.name,
+            providerId: account.providerId,
+            isActive: account.isActive,
+            isPrimary: item.isPrimary,
+            assignedAt: item.assignedAt,
+            assignedInBatchId: item.assignedInBatchId,
+            assignedInBatchNo: item.assignedInBatchNo,
+          }
+        })
+        .sort((a, b) => a.name.localeCompare(b.name))
+      return HttpResponse.json(z.array(ChannelAccountItem).parse(items))
     }),
   ),
 

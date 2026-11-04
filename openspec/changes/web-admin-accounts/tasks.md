@@ -91,12 +91,12 @@ Rama `feat/web-admin-accounts`, avanzada por fast-forward hasta `origin/feat/adm
 
 ## 7. Channel Assignment (test-first)
 
-- [ ] 7.1 Escribir `features/accounts/channel-assignment-search.test.ts` (ids inválidos descartados; elegir merchant borra el proveedor) y `features/accounts/ChannelAssignmentPage.test.tsx` con los escenarios de la delta `accounts`, y comprobar que fallan:
+- [x] 7.1 Escribir `features/accounts/channel-assignment-search.test.ts` (ids inválidos descartados; elegir merchant borra el proveedor) y `features/accounts/ChannelAssignmentPage.test.tsx` con los escenarios de la delta `accounts`, y comprobar que fallan:
   - "acceso y filtros": `viewer` sin filtros y sin acciones; filtro por Provider B en la dirección; proveedor fuera del alcance.
   - "canales sin asignar": los dos del seed, Provider C sin ninguno.
   - "cuenta principal por canal": principales de Provider A con `batch <n>` y sin RAM-07, canal con histórica, enlace a la ficha.
   - "carga y errores": reintento.
-- [ ] 7.2 Commit: test(web): Channel Assignment de solo lectura
+- [x] 7.2 Commit: test(web): Channel Assignment de solo lectura
 - [ ] 7.3 Implementar `channel-assignment-search.ts`, `channelsQuery` y `channelAccountsQuery` en `queries.ts` y `ChannelAssignmentPage.tsx` (design D8), con sus textos. Verificar con los tests de 7.1, `pnpm typecheck` y `pnpm lint`.
 - [ ] 7.4 Commit: feat(web): Channel Assignment de solo lectura
 

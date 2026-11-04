@@ -1,12 +1,12 @@
 // The fake account administration API on its own, without screens (web-admin-accounts design D9). It checks bodies
 // with the schemas of @recon/shared, applies permission before scope and stores what the writes change. It does NOT
 // decide business rules: name uniqueness, the rule set and the fee source are scripted by each test.
-import { AccountDetail, MatchingRuleSetSummary, ProviderDetail } from '@recon/shared'
+import { AccountDetail, ChannelAccountItem, MatchingRuleSetSummary, ProviderDetail } from '@recon/shared'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { accountRequests, RULE_SET_IDS, respondNextAccount } from './accounts'
 import { ACCOUNT_IDS, type UserName } from './fixtures'
-import { issueTokens } from './handlers'
+import { db, issueTokens } from './handlers'
 
 async function call(as: UserName, method: string, path: string, body?: object) {
   const { accessToken } = issueTokens(as)
@@ -113,6 +113,27 @@ describe('fake account API: PATCH /accounts/{id}', () => {
     ['providerId', { providerId: 101 }],
   ])('validates the body with AccountPatch: %s is 400', async (_case, body) => {
     expect((await call('admin', 'PATCH', `/accounts/${USD}`, body)).status).toBe(400)
+  })
+})
+
+describe('fake catalog: GET /channels/{id}/accounts', () => {
+  const items = (body: unknown) => z.array(ChannelAccountItem).parse(body)
+
+  it('lists the accounts of a channel, the primary and the historical ones, with the batch number', async () => {
+    db.accountChannels.push({ accountId: ACCOUNT_IDS['ProviderA-EUR'], channelId: 1001, isPrimary: false })
+
+    const { status, body } = await call('admin', 'GET', '/channels/1001/accounts')
+
+    expect(status).toBe(200)
+    expect(items(body).map((a) => [a.name, a.isPrimary, a.assignedInBatchNo])).toEqual([
+      ['ProviderA-EUR', false, 68],
+      ['ProviderA-USD', true, 68],
+    ])
+  })
+
+  it('a channel without accounts answers an empty list; one outside the scope is 404', async () => {
+    expect(items((await call('admin', 'GET', '/channels/1007/accounts')).body)).toEqual([])
+    expect((await call('viewer', 'GET', '/channels/2001/accounts')).body.code).toBe('not_found')
   })
 })
 
