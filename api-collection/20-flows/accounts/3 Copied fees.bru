@@ -1,0 +1,39 @@
+meta {
+  name: 3 Copied fees
+  type: http
+  seq: 3
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/fees
+  body: none
+  auth: bearer
+}
+
+params:path {
+  accountId: {{flowNewAccountId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+vars:pre-request {
+  as: admin
+}
+
+tests {
+  test('the five fees of ProviderC-USD, copied with no start and no end, one per type', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.length(5);
+    for (const fee of res.body) {
+      expect(fee.startDate).to.equal(null);
+      expect(fee.endDate).to.equal(null);
+      expect(fee.status).to.equal('active');
+    }
+    expect(new Set(res.body.map((f) => f.feeTypeId)).size).to.equal(5);
+  });
+}

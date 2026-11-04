@@ -1,0 +1,33 @@
+meta {
+  name: Matching rule sets - viewer out of scope
+  type: http
+  seq: 106
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/providers/:providerId/matching-rule-sets
+  body: none
+  auth: bearer
+}
+
+params:path {
+  providerId: 201
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer on a provider of merchant 2: 404 not_found', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

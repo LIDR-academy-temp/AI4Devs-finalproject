@@ -58,16 +58,30 @@ Rama `feat/admin-accounts`. Las decisiones D1–D10 están en `design.md`; los e
 
 ## 5. Tests robustos ante cuentas de la colección
 
-- [ ] 5.1 Añadir el ayudante `seedAccounts()` (sin las de prefijo `bruno-`) a `test/integration/helpers.ts` y usarlo en `catalog.int.test.ts` (líneas 113–121, 225–240, 275) y en cualquier otro test que liste cuentas exactas: buscar con Grep `ProviderA-EUR', 'ProviderA-USD`, `toHaveLength` sobre cuentas y nombres de cuentas del seed en `backend/test`. Verificar insertando a mano en la prueba una cuenta `bruno-` temporal (y borrándola) que los tests siguen en verde, escenario "Cuentas de la colección presentes".
-- [ ] 5.2 Commit: test(catalog): las listas de cuentas del seed ignoran las cuentas bruno-
+- [x] 5.1 Añadir el ayudante `seedAccounts()` (sin las de prefijo `bruno-`) a `test/integration/helpers.ts` y usarlo en `catalog.int.test.ts` (líneas 113–121, 225–240, 275) y en cualquier otro test que liste cuentas exactas: buscar con Grep `ProviderA-EUR', 'ProviderA-USD`, `toHaveLength` sobre cuentas y nombres de cuentas del seed en `backend/test`. Verificar insertando a mano en la prueba una cuenta `bruno-` temporal (y borrándola) que los tests siguen en verde, escenario "Cuentas de la colección presentes".
+  - Las únicas listas exactas de cuentas estaban en `catalog.int.test.ts`. La cuenta `bruno-` temporal no se inserta a mano una sola vez: el `beforeAll` crea una cerrada en Provider C y el `afterAll` la borra, así que el escenario se comprueba en cada ejecución.
+  - Resultado: 35/35 sobre la base recién sembrada y otra vez 35/35 con las dos cuentas `bruno-` reales que dejaron las pasadas de la 6.3.
+- [x] 5.2 Commit: test(catalog): las listas de cuentas del seed ignoran las cuentas bruno-
 
 ## 6. Colección Bruno
 
-- [ ] 6.1 Añadir a `10-smoke` las peticiones de D9 (`Create account - analyst`, `Create account - unknown provider`, `Patch account - viewer`, `Patch account - unknown`, `Patch account - providerId`, `Matching rule sets`, `Matching rule sets - viewer out of scope`), cada una con su código de estado y `code`. Ninguna escribe.
-- [ ] 6.2 Añadir `20-flows/accounts/` con la secuencia 1–8 de D9 en Provider C, con `admin` (`as: admin`, `{{adminToken}}`) y la subida con `analyst`, y el nombre `bruno-<id>` derivado de la pasada. Añadir a `20-flows/catalog` una comprobación de `primaryAccount` en `GET /channels` y de `assignedInBatchNo` en `5 Account channels`.
-- [ ] 6.3 La persona ejecuta `! pnpm test:api` con `pnpm dev` levantado. Verificar que todo lo de cuentas (`10-smoke` de cuentas y conjuntos, `20-flows/accounts` y los cambios de `20-flows/catalog`) pasa dos veces seguidas sin `db:seed` entre medias, y que tras esas dos pasadas `pnpm test` sigue en verde. Los fallos conocidos de #111 se anotan, no se arreglan aquí.
-- [ ] 6.4 Actualizar la sección Bruno de `CLAUDE.md`: las escrituras de cuentas usan `admin` y sus `403` usan `analyst`; el flujo `20-flows/accounts` deja una cuenta `bruno-` cerrada por pasada en Provider C hasta el siguiente `pnpm db:seed`, y los tests ignoran ese prefijo.
-- [ ] 6.5 Commit: test(api): colección Bruno de la administración de cuentas
+- [x] 6.1 Añadir a `10-smoke` las peticiones de D9 (`Create account - analyst`, `Create account - unknown provider`, `Patch account - viewer`, `Patch account - unknown`, `Patch account - providerId`, `Matching rule sets`, `Matching rule sets - viewer out of scope`), cada una con su código de estado y `code`. Ninguna escribe.
+- [x] 6.2 Añadir `20-flows/accounts/` con la secuencia 1–8 de D9 en Provider C, con `admin` (`as: admin`, `{{adminToken}}`) y la subida con `analyst`, y el nombre `bruno-<id>` derivado de la pasada. Añadir a `20-flows/catalog` una comprobación de `primaryAccount` en `GET /channels` y de `assignedInBatchNo` en `5 Account channels`.
+  - El paso 8 de D9 ("Reopen and close") son dos peticiones: `8 Reopen` y `9 Close again`. El paso 2 repite el nombre en mayúsculas, que además comprueba la unicidad sin distinguir mayúsculas.
+  - En `20-flows/catalog`, `4 Account detail` comprueba también `createdBy` y `updatedAt`. El paso nuevo `6 Channels` exige RAM-01 → ProviderA-USD y, para RAM-07, `null` o ProviderA-USD: batch-clean se lo asigna en la primera pasada (#111). `5 Account channels` comprueba que `assignedInBatchNo` es un número positivo, no un valor exacto.
+- [x] 6.3 La persona ejecuta `! pnpm test:api` con `pnpm dev` levantado. Verificar que todo lo de cuentas (`10-smoke` de cuentas y conjuntos, `20-flows/accounts` y los cambios de `20-flows/catalog`) pasa dos veces seguidas sin `db:seed` entre medias, y que tras esas dos pasadas `pnpm test` sigue en verde. Los fallos conocidos de #111 se anotan, no se arreglan aquí.
+  - **Primera pasada:** 213/213 peticiones y 225/225 tests.
+  - **Segunda pasada:** todo lo de cuentas pasa. Los fallos son los de #111:
+    - `10-smoke/Channels unassigned` (RAM-07 ya asignado);
+    - `20-flows/imports/13 Analyze` (RAM-07 asignado);
+    - la cadena de `20-flows/settlements/batch-clean`, del paso 6 al 30 (batch 123 ya consumido).
+  - **`pnpm test` después de las dos pasadas:**
+    - shared 255 y frontend 811 en verde;
+    - backend 1219 en verde y dos timeouts de 5 s (Argon2 y `export-openapi` "is deterministic") que pasan aislados: carga local;
+    - el frontend tuvo un fallo intermitente en una primera ejecución y pasó en las dos siguientes.
+  - **Integración completa tras las pasadas, sin sembrar:** pasan todos los ficheros de cuentas, catálogo, imports, matching y fees (`catalog` 35, `account-admin` 23, `account-concurrency` 2, `imports` 13, `matching-rule-sets` 4, `fee-*`, `fees`). Fallan 59 tests en 10 ficheros de settlement y validación (`settlement-*`, `account-settlements`, `validation-samples`, `validation-sources`). Todos esperan el estado de una base recién sembrada (batch 123 libre, RAM-07 sin asignar, 22 intentos pagados de ProviderA-USD) que batch-clean de Bruno consume: es #111. Sobre una base recién sembrada, la integración completa dio 416/416 en el grupo 4.
+- [x] 6.4 Actualizar la sección Bruno de `CLAUDE.md`: las escrituras de cuentas usan `admin` y sus `403` usan `analyst`; el flujo `20-flows/accounts` deja una cuenta `bruno-` cerrada por pasada en Provider C hasta el siguiente `pnpm db:seed`, y los tests ignoran ese prefijo.
+- [x] 6.5 Commit: test(api): colección Bruno de la administración de cuentas
 
 ## 7. Cierre
 
