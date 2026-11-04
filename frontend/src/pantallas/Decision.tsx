@@ -2,11 +2,27 @@ import { useParams } from 'react-router'
 import { BloqueEstado } from '../componentes/BloqueEstado'
 import { TarjetaSensor } from '../componentes/TarjetaSensor'
 import { obtenerCondiciones, obtenerRecomendacion } from '../servicios/cliente'
+import { useEstaciones } from '../servicios/estaciones'
 import { formatearFechaHora, formatearHoraDeArgentina } from '../servicios/serie'
 import { useConsultaPeriodica } from '../servicios/useConsultaPeriodica'
+import { EquipoInactivo } from './EquipoInactivo'
 
 export function Decision() {
   const { estacionId = '' } = useParams()
+  const estaciones = useEstaciones()
+
+  if (estaciones.cargando) {
+    return <p role="status">Cargando condiciones…</p>
+  }
+  const estacion = estaciones.datos?.find((e) => String(e.id) === estacionId)
+  // Un equipo inactivo no tiene recomendación: ni siquiera se la pide.
+  if (estacion?.activa === false) {
+    return <EquipoInactivo estacionId={estacionId} />
+  }
+  return <DecisionActiva estacionId={estacionId} />
+}
+
+function DecisionActiva({ estacionId }: { estacionId: string }) {
   const { datos, error, cargando, actualizadoEn } = useConsultaPeriodica(
     async () => {
       const [recomendacion, condiciones] = await Promise.all([

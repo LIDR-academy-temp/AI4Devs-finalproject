@@ -1,9 +1,9 @@
-import { Link, Navigate } from 'react-router'
-import { listarEstaciones } from '../servicios/cliente'
-import { useCarga } from '../servicios/useCarga'
+import { Navigate } from 'react-router'
+import { useEstaciones } from '../servicios/estaciones'
 
+/** Abre la primera estación activa o, si todas están inactivas, la primera. */
 export function Estaciones() {
-  const { datos, error, cargando } = useCarga(() => listarEstaciones(), [])
+  const { datos, error, cargando } = useEstaciones()
 
   if (cargando) {
     return <p role="status">Cargando estaciones…</p>
@@ -16,23 +16,8 @@ export function Estaciones() {
     )
   }
   if (!datos || datos.length === 0) {
-    return <p role="status">No tiene estaciones asignadas. Consulte con quien administra el sistema.</p>
+    return <p role="status">Aún no se recibieron estaciones de la fuente de datos.</p>
   }
-  if (datos.length === 1) {
-    return <Navigate to={`/estaciones/${datos[0].id}`} replace />
-  }
-  return (
-    <section>
-      <h2>Elija una estación</h2>
-      <ul className="lista">
-        {datos.map((estacion) => (
-          <li key={estacion.id}>
-            <Link className="tarjeta enlace" to={`/estaciones/${estacion.id}`}>
-              {estacion.nombre}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
+  const primera = datos.find((estacion) => estacion.activa) ?? datos[0]
+  return <Navigate to={`/estaciones/${primera.id}`} replace />
 }

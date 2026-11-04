@@ -308,14 +308,16 @@ def test_lista_solo_las_estaciones_asignadas(cliente, sesion, usuario):
     assert datos[0]["id"] == propia.id
 
 
-def test_no_lista_estaciones_inactivas(cliente, sesion, usuario):
+def test_lista_las_estaciones_inactivas_con_su_estado(cliente, sesion, usuario):
     estacion = crear_estacion(sesion, 1)
     estacion.activa = False
     estacion.inactiva_desde = datetime(2026, 11, 1, tzinfo=UTC)
     sesion.add(UsuarioEstacion(usuario_id=usuario.id, estacion_id=estacion.id))
     sesion.commit()
     ingresar(cliente)
-    assert cliente.get(ESTACIONES).json() == []
+    [listada] = cliente.get(ESTACIONES).json()
+    assert listada["activa"] is False
+    assert listada["inactiva_desde"] == "2026-10-31T21:00:00-03:00"
 
 
 def test_estacion_no_asignada_responde_403(cliente, sesion, usuario):

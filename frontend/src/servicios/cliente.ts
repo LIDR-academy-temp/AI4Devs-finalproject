@@ -84,6 +84,12 @@ export function cerrarSesion(): Promise<void> {
   return pedir('/auth/logout', { metodo: 'POST' })
 }
 
+/** El modo de datos que informa la ruta de salud: real, simulado o prueba. */
+export async function obtenerModo(): Promise<string> {
+  const salud = await pedir<Record<string, string>>('/salud', { sinAvisoDeVencimiento: true })
+  return salud.modo ?? 'desconocido'
+}
+
 export function listarEstaciones(sinAvisoDeVencimiento = false): Promise<Estacion[]> {
   return pedir('/estaciones', { sinAvisoDeVencimiento })
 }

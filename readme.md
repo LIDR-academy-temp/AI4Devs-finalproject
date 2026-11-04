@@ -667,7 +667,10 @@ paths:
       operationId: listarEstaciones
       responses:
         '200':
-          description: Estaciones activas del usuario, ordenadas por nombre
+          description: >-
+            Estaciones del usuario, activas e inactivas, ordenadas por nombre.
+            Una estación inactiva es un equipo que dejó de llegar de SAT2 y
+            solo conserva sus históricos.
           content:
             application/json:
               schema:
@@ -679,6 +682,8 @@ paths:
                   nombre: INTA Pergamino
                   latitud: '-33.890000'
                   longitud: '-60.570000'
+                  activa: true
+                  inactiva_desde: null
         '401':
           $ref: '#/components/responses/NoAutenticado'
   /estaciones/{estacionId}/condiciones-actuales:
@@ -697,6 +702,8 @@ paths:
               example:
                 estacion_id: 1
                 estacion_nombre: INTA Pergamino
+                activa: true
+                inactiva_desde: null
                 medido_en: '2026-11-01T14:40:00-03:00'
                 antiguedad_segundos: 180
                 estado_datos: VIGENTE
@@ -877,7 +884,7 @@ components:
           type: string
     EstacionResumen:
       type: object
-      required: [id, nombre, latitud, longitud]
+      required: [id, nombre, latitud, longitud, activa]
       properties:
         id:
           type: integer
@@ -892,6 +899,13 @@ components:
           type: string
           format: decimal
           description: Grados decimales, como texto para no perder precisión
+        activa:
+          type: boolean
+          description: Falso si el equipo dejó de llegar de SAT2
+        inactiva_desde:
+          type: string
+          format: date-time
+          nullable: true
     Calidad:
       type: string
       enum: [OK, FALTANTE, SOSPECHOSO]
@@ -937,13 +951,20 @@ components:
           nullable: true
     CondicionesActuales:
       type: object
-      required: [estacion_id, estacion_nombre, estado_datos, ultima_ingesta_con_error, sensores]
+      required: [estacion_id, estacion_nombre, activa, estado_datos, ultima_ingesta_con_error, sensores]
       properties:
         estacion_id:
           type: integer
           format: int64
         estacion_nombre:
           type: string
+        activa:
+          type: boolean
+          description: Falso si el equipo dejó de llegar de SAT2; la pantalla muestra solo sus históricos
+        inactiva_desde:
+          type: string
+          format: date-time
+          nullable: true
         medido_en:
           type: string
           format: date-time

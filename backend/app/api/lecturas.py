@@ -79,6 +79,8 @@ class LecturaSensor(BaseModel):
 class CondicionesActuales(BaseModel):
     estacion_id: int
     estacion_nombre: str
+    activa: bool
+    inactiva_desde: datetime | None
     medido_en: datetime | None
     antiguedad_segundos: int | None
     estado_datos: Literal["VIGENTE", "DESACTUALIZADO", "SIN_DATOS"]
@@ -244,6 +246,8 @@ def obtener_condiciones_actuales(
     return CondicionesActuales(
         estacion_id=estacion.id,
         estacion_nombre=estacion.nombre,
+        activa=estacion.activa,
+        inactiva_desde=_en_argentina(estacion.inactiva_desde),
         medido_en=_en_argentina(medido_en),
         antiguedad_segundos=None if medido_en is None else antiguedad_segundos(medido_en, ahora),
         estado_datos=estado_de_los_datos(medido_en, ahora),

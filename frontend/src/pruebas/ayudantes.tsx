@@ -11,8 +11,22 @@ export interface Simulada {
 
 export type Rutas = Record<string, Simulada | (() => Simulada | Promise<Simulada>)>
 
-export const ESTACION = { id: 1, nombre: 'Estación Norte', latitud: '-34', longitud: '-60' }
-export const OTRA = { id: 2, nombre: 'Estación Sur', latitud: '-35', longitud: '-61' }
+export const ESTACION = {
+  id: 1,
+  nombre: 'Estación Norte',
+  latitud: '-34',
+  longitud: '-60',
+  activa: true,
+  inactiva_desde: null,
+}
+export const OTRA = { ...ESTACION, id: 2, nombre: 'Estación Sur', latitud: '-35', longitud: '-61' }
+export const INACTIVA = {
+  ...ESTACION,
+  id: 3,
+  nombre: 'Estación Oeste',
+  activa: false,
+  inactiva_desde: '2026-10-30T09:00:00-03:00',
+}
 export const NO_AUTENTICADO = {
   estado: 401,
   cuerpo: { codigo: 'NO_AUTENTICADO', mensaje: 'Sesión ausente o vencida.' },
@@ -37,6 +51,8 @@ export const RECOMENDACION = {
 export const CONDICIONES = {
   estacion_id: 1,
   estacion_nombre: 'Estación Norte',
+  activa: true,
+  inactiva_desde: null,
   medido_en: '2026-11-01T22:40:00-03:00',
   antiguedad_segundos: 120,
   estado_datos: 'VIGENTE',

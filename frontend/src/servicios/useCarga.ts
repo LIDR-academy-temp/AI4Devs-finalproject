@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { mensajeDeError } from './cliente'
 
-interface Carga<T> {
+export interface Carga<T> {
   datos: T | null
   error: string | null
   cargando: boolean

@@ -30,11 +30,11 @@ Las decisiones están en `design.md` (D1 a D8). Todo se verifica con Compose ais
 
 ## 5. API y frontend (D2, D3)
 
-- [ ] 5.1 Agregar `activa` e `inactiva_desde` al listado y a las condiciones actuales, regenerar `openapi.json` y los tipos, y verificar la prueba de contrato
-- [ ] 5.2 Crear el selector del encabezado y la redirección de `/`, y verificar con pruebas de componentes los escenarios de "Selección de estación"
-- [ ] 5.3 Crear la vista de equipo inactivo con la leyenda y la lista de sensores, y verificar con pruebas de componentes los escenarios de "Equipo inactivo"
-- [ ] 5.4 Mostrar los avisos "Datos simulados" y "Modo de prueba", y verificar con pruebas de componentes que no aparecen en modo real
-- [ ] 5.5 Agregar a las pruebas de extremo a extremo el selector con dos estaciones y un equipo inactivo, y verificar que pasan
+- [x] 5.1 Agregar `activa` e `inactiva_desde` al listado y a las condiciones actuales, regenerar `openapi.json` y los tipos, y verificar la prueba de contrato
+- [x] 5.2 Crear el selector del encabezado y la redirección de `/`, y verificar con pruebas de componentes los escenarios de "Selección de estación"
+- [x] 5.3 Crear la vista de equipo inactivo con la leyenda y la lista de sensores, y verificar con pruebas de componentes los escenarios de "Equipo inactivo"
+- [x] 5.4 Mostrar los avisos "Datos simulados" y "Modo de prueba", y verificar con pruebas de componentes que no aparecen en modo real
+- [x] 5.5 Agregar a las pruebas de extremo a extremo el selector con dos estaciones y un equipo inactivo, y verificar que pasan
 
 ## 6. Documentación
 

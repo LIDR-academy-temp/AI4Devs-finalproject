@@ -3,6 +3,10 @@
     "schemas": {
       "CondicionesActuales": {
         "properties": {
+          "activa": {
+            "title": "Activa",
+            "type": "boolean"
+          },
           "antiguedad_segundos": {
             "anyOf": [
               {
@@ -30,6 +34,18 @@
             ],
             "title": "Estado Datos",
             "type": "string"
+          },
+          "inactiva_desde": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inactiva Desde"
           },
           "medido_en": {
             "anyOf": [
@@ -70,6 +86,8 @@
         "required": [
           "estacion_id",
           "estacion_nombre",
+          "activa",
+          "inactiva_desde",
           "medido_en",
           "antiguedad_segundos",
           "estado_datos",
@@ -82,9 +100,25 @@
       },
       "EstacionResumen": {
         "properties": {
+          "activa": {
+            "title": "Activa",
+            "type": "boolean"
+          },
           "id": {
             "title": "Id",
             "type": "integer"
+          },
+          "inactiva_desde": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inactiva Desde"
           },
           "latitud": {
             "title": "Latitud",
@@ -103,7 +137,9 @@
           "id",
           "nombre",
           "latitud",
-          "longitud"
+          "longitud",
+          "activa",
+          "inactiva_desde"
         ],
         "title": "EstacionResumen",
         "type": "object"

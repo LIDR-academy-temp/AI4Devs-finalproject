@@ -1,9 +1,10 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import {
   CONDICIONES,
   ESTACION,
+  INACTIVA,
   NO_AUTENTICADO,
   OTRA,
   RECOMENDACION,
@@ -59,11 +60,13 @@ describe('acceso', () => {
         conSesion = true
         return { cuerpo: { email: 'a@b.example', nombre: 'A' } }
       },
+      'GET /estaciones/1/recomendacion': { cuerpo: RECOMENDACION },
+      'GET /estaciones/1/condiciones-actuales': { cuerpo: CONDICIONES },
     })
     abrir()
     const usuario = await completarAcceso()
     await usuario.click(screen.getByRole('button', { name: 'Ingresar' }))
-    expect(await screen.findByRole('heading', { name: 'Elija una estación' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Estación Norte' })).toBeInTheDocument()
   })
 
   it('muestra el error genérico y borra la contraseña', async () => {
@@ -127,9 +130,7 @@ describe('acceso', () => {
         return NO_AUTENTICADO
       },
     })
-    const usuario = userEvent.setup()
     abrir()
-    await usuario.click(await screen.findByRole('link', { name: 'Estación Norte' }))
     expect(await screen.findByRole('button', { name: 'Ingresar' })).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Su sesión venció')
   })
@@ -148,21 +149,33 @@ describe('acceso', () => {
   })
 })
 
+const RUTAS_NORTE = {
+  'GET /estaciones/1/recomendacion': { cuerpo: RECOMENDACION },
+  'GET /estaciones/1/condiciones-actuales': { cuerpo: CONDICIONES },
+}
+
+const CONDICIONES_INACTIVA = {
+  ...CONDICIONES,
+  estacion_id: 3,
+  estacion_nombre: 'Estación Oeste',
+  activa: false,
+  inactiva_desde: '2026-10-30T09:00:00-03:00',
+}
+
 describe('selección de estación', () => {
-  it('con una sola estación la abre directamente', async () => {
-    simularApi({
-      'GET /estaciones': { cuerpo: [ESTACION] },
-      'GET /estaciones/1/recomendacion': { cuerpo: RECOMENDACION },
-      'GET /estaciones/1/condiciones-actuales': { cuerpo: CONDICIONES },
-    })
+  it('con una sola estación la abre y el selector la muestra como única opción', async () => {
+    simularApi({ 'GET /estaciones': { cuerpo: [ESTACION] }, ...RUTAS_NORTE })
     abrir()
     expect(await screen.findByRole('heading', { name: 'Estación Norte' })).toBeInTheDocument()
-    expect(screen.queryByText('Elija una estación')).not.toBeInTheDocument()
+    const selector = screen.getByRole('combobox', { name: 'Estación' })
+    expect(selector).toHaveValue('1')
+    expect(within(selector).getAllByRole('option')).toHaveLength(1)
   })
 
-  it('con varias estaciones permite elegir', async () => {
+  it('con varias estaciones abre la primera activa y permite elegir otra', async () => {
     simularApi({
-      'GET /estaciones': { cuerpo: [ESTACION, OTRA] },
+      'GET /estaciones': { cuerpo: [INACTIVA, ESTACION, OTRA] },
+      ...RUTAS_NORTE,
       'GET /estaciones/2/recomendacion': { cuerpo: { ...RECOMENDACION, estacion_id: 2 } },
       'GET /estaciones/2/condiciones-actuales': {
         cuerpo: { ...CONDICIONES, estacion_id: 2, estacion_nombre: 'Estación Sur' },
@@ -170,16 +183,30 @@ describe('selección de estación', () => {
     })
     const usuario = userEvent.setup()
     abrir()
-    await usuario.click(await screen.findByRole('link', { name: 'Estación Sur' }))
+    expect(await screen.findByRole('heading', { name: 'Estación Norte' })).toBeInTheDocument()
+    await usuario.selectOptions(screen.getByRole('combobox', { name: 'Estación' }), 'Estación Sur')
     expect(await screen.findByRole('heading', { name: 'Estación Sur' })).toBeInTheDocument()
+  })
+
+  it('marca las estaciones inactivas en el selector', async () => {
+    simularApi({ 'GET /estaciones': { cuerpo: [ESTACION, INACTIVA] }, ...RUTAS_NORTE })
+    abrir()
+    await screen.findByRole('heading', { name: 'Estación Norte' })
+    expect(
+      screen.getByRole('option', { name: 'Estación Oeste (Equipo inactivo)' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Estación Norte' })).toBeInTheDocument()
   })
 
   it('sin estaciones lo informa', async () => {
     simularApi({ 'GET /estaciones': { cuerpo: [] } })
     abrir()
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent('No tiene estaciones asignadas'),
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Aún no se recibieron estaciones de la fuente de datos',
+      ),
     )
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
   })
 
   it('una estación ajena muestra el mensaje de la API y ningún dato', async () => {
@@ -288,5 +315,68 @@ describe('detalle e históricos', () => {
       'href',
       '/estaciones/1',
     )
+  })
+})
+
+describe('equipo inactivo', () => {
+  it('muestra la leyenda y sus sensores, sin recomendación ni tarjetas', async () => {
+    const llamadas = simularApi({
+      'GET /estaciones': { cuerpo: [ESTACION, INACTIVA] },
+      'GET /estaciones/3/condiciones-actuales': { cuerpo: CONDICIONES_INACTIVA },
+    })
+    abrir('/estaciones/3')
+    expect(await screen.findByRole('heading', { name: 'Estación Oeste' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Equipo inactivo - solo históricos')
+    expect(screen.getByRole('status')).toHaveTextContent('30/10/2026 09:00')
+    const sensores = screen.getByRole('list', { name: 'Sensores' })
+    expect(within(sensores).getByRole('link', { name: 'Temp Amb. a 2 Mts' })).toHaveAttribute(
+      'href',
+      '/estaciones/3/sensores/6',
+    )
+    expect(
+      screen.queryByRole('region', { name: 'Recomendación de aplicación' }),
+    ).not.toBeInTheDocument()
+    expect(within(sensores).queryByText(/20,3/)).not.toBeInTheDocument()
+    expect(llamadas).not.toContain('GET /estaciones/3/recomendacion')
+  })
+
+  it('lleva al histórico del sensor', async () => {
+    simularApi({
+      'GET /estaciones': { cuerpo: [INACTIVA] },
+      'GET /estaciones/3/condiciones-actuales': { cuerpo: CONDICIONES_INACTIVA },
+      'GET /estaciones/3/sensores/6/historico': { cuerpo: historico(12) },
+    })
+    const usuario = userEvent.setup()
+    abrir()
+    await usuario.click(await screen.findByRole('link', { name: 'Temp Amb. a 2 Mts' }))
+    expect(await screen.findByRole('img')).toHaveAccessibleName(
+      'Temp Amb. a 2 Mts: últimos 7 días, en °C',
+    )
+  })
+})
+
+describe('avisos del modo de datos', () => {
+  it.each([
+    ['simulado', 'Datos simulados'],
+    ['prueba', 'Modo de prueba'],
+  ])('en modo %s avisa en todas las pantallas', async (modo, texto) => {
+    simularApi({
+      'GET /salud': { cuerpo: { estado: 'ok', modo } },
+      'GET /estaciones': NO_AUTENTICADO,
+    })
+    abrir()
+    expect(await screen.findByRole('note')).toHaveTextContent(texto)
+    expect(await screen.findByRole('button', { name: 'Ingresar' })).toBeInTheDocument()
+  })
+
+  it('en modo real no muestra ningún aviso', async () => {
+    simularApi({
+      'GET /salud': { cuerpo: { estado: 'ok', modo: 'real' } },
+      'GET /estaciones': { cuerpo: [ESTACION] },
+      ...RUTAS_NORTE,
+    })
+    abrir()
+    await screen.findByRole('heading', { name: 'Estación Norte' })
+    expect(screen.queryByRole('note')).not.toBeInTheDocument()
   })
 })

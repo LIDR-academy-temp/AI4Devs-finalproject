@@ -1,10 +1,10 @@
 import { request } from '@playwright/test'
 import { setTimeout as esperar } from 'node:timers/promises'
-import { EMAIL_E2E, URL_E2E, compose } from './pila.ts'
+import { EMAIL_E2E, EMAIL_E2E_DOS, URL_E2E, compose, sql } from './pila.ts'
 
 /**
- * La cuenta ve solo "Caso de prueba - 1", donde cada prueba carga su situación. "Caso de prueba - 2"
- * queda sin asignar para probar el acceso denegado.
+ * La cuenta principal ve solo "Caso de prueba - 1", donde cada prueba carga su situación, y así el
+ * caso 2 sirve para probar el acceso denegado. La segunda cuenta ve los dos casos, para el selector.
  */
 const EQUIPO_CASO_1 = 1
 const EQUIPO_CASO_2 = 2
@@ -22,10 +22,10 @@ async function reintentar<T>(descripcion: string, intento: () => Promise<T | nul
   throw new Error(`Se agotó el tiempo esperando: ${descripcion}`)
 }
 
-function crearCuenta(): string {
+function crearCuenta(email = EMAIL_E2E): string {
   const salida = compose(
     'exec', '-T', 'api', 'python', '-m', 'app.administracion',
-    'crear-usuario', '--email', EMAIL_E2E, '--nombre', 'Prueba E2E',
+    'crear-usuario', '--email', email, '--nombre', 'Prueba E2E',
   )
   const clave = /se muestra una sola vez: (\S+)/.exec(salida)?.[1]
   if (!clave) {
@@ -34,18 +34,15 @@ function crearCuenta(): string {
   return clave
 }
 
-function asignarEstacion(idEquipo: number) {
+function asignarEstacion(idEquipo: number, email = EMAIL_E2E) {
   compose(
     'exec', '-T', 'api', 'python', '-m', 'app.administracion',
-    'asignar-estacion', '--email', EMAIL_E2E, '--id-equipo', String(idEquipo),
+    'asignar-estacion', '--email', email, '--id-equipo', String(idEquipo),
   )
 }
 
 function idDeEstacion(idEquipo: number): string {
-  return compose(
-    'exec', '-T', 'db', 'psql', '-U', 'weather_track', '-d', 'weather_track', '-tAc',
-    `select id from estacion where id_equipo_sat2 = ${idEquipo}`,
-  ).trim()
+  return sql(`select id from estacion where id_equipo_sat2 = ${idEquipo}`)
 }
 
 export default async function preparacionGlobal() {
@@ -57,6 +54,9 @@ export default async function preparacionGlobal() {
       asignarEstacion(EQUIPO_CASO_1)
       return true
     })
+    const claveDos = crearCuenta(EMAIL_E2E_DOS)
+    asignarEstacion(EQUIPO_CASO_1, EMAIL_E2E_DOS)
+    asignarEstacion(EQUIPO_CASO_2, EMAIL_E2E_DOS)
 
     const api = await request.newContext({ baseURL: URL_E2E })
     const acceso = await api.post('/api/v1/auth/login', {
@@ -69,6 +69,7 @@ export default async function preparacionGlobal() {
 
     // Playwright hereda estas variables en los procesos que corren las pruebas.
     process.env.E2E_CLAVE = clave
+    process.env.E2E_CLAVE_DOS = claveDos
     process.env.E2E_CASO_2 = idDeEstacion(EQUIPO_CASO_2)
   } catch (error) {
     // Si la preparación falla, Playwright no ejecuta el cierre global.

@@ -226,6 +226,8 @@ def test_condiciones_con_datos_vigentes(cliente, sesion, estacion, sensor):
     assert datos["estado_datos"] == "VIGENTE"
     assert datos["antiguedad_segundos"] == 600
     assert datos["estacion_nombre"] == "Estación"
+    assert datos["activa"] is True
+    assert datos["inactiva_desde"] is None
     assert datos["ultima_ingesta_exitosa_en"] == "2026-11-02T12:00:00-03:00"
     assert datos["ultima_ingesta_con_error"] is False
     assert datos["sensores"] == [
@@ -240,6 +242,32 @@ def test_condiciones_con_datos_vigentes(cliente, sesion, estacion, sensor):
             "alarma": True,
         }
     ]
+
+
+def test_un_equipo_inactivo_informa_desde_cuando(cliente, sesion, estacion, sensor):
+    observar(sesion, sensor, AHORA - timedelta(days=2))
+    estacion.activa = False
+    estacion.inactiva_desde = AHORA - timedelta(days=1)
+    sesion.commit()
+
+    datos = cliente.get(ruta(estacion, "condiciones-actuales")).json()
+
+    assert datos["activa"] is False
+    assert datos["inactiva_desde"] == "2026-11-01T12:00:00-03:00"
+    assert [s["nombre"] for s in datos["sensores"]] == ["Temp Amb. a 2 Mts"]
+
+
+def test_el_historico_de_un_equipo_inactivo_sigue_disponible(cliente, sesion, estacion, sensor):
+    observar(sesion, sensor, AHORA - timedelta(days=2))
+    estacion.activa = False
+    estacion.inactiva_desde = AHORA - timedelta(days=1)
+    sesion.commit()
+    consulta = {"desde": (AHORA - timedelta(days=7)).isoformat(), "hasta": AHORA.isoformat()}
+
+    respuesta = cliente.get(ruta(estacion, f"sensores/{sensor.id}/historico"), params=consulta)
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["resumen"]["cantidad"] == 1
 
 
 def test_condiciones_con_datos_viejos(cliente, sesion, estacion, sensor):
@@ -513,7 +541,7 @@ def test_las_rutas_coinciden_con_el_contrato(contrato):
 
 @pytest.mark.parametrize(
     "esquema",
-    ["Recomendacion", "CondicionesActuales", "Historico", "LecturaSensor", "Punto", "Resumen", "Motivo"],
+    ["Recomendacion", "CondicionesActuales", "Historico", "LecturaSensor", "Punto", "Resumen", "Motivo", "EstacionResumen"],
 )
 def test_los_campos_coinciden_con_el_contrato(contrato, esquema):
     del_contrato = contrato["components"]["schemas"][esquema]

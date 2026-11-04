@@ -129,6 +129,8 @@ export interface components {
     schemas: {
         /** CondicionesActuales */
         CondicionesActuales: {
+            /** Activa */
+            activa: boolean;
             /** Antiguedad Segundos */
             antiguedad_segundos: number | null;
             /** Estacion Id */
@@ -140,6 +142,8 @@ export interface components {
              * @enum {string}
              */
             estado_datos: "VIGENTE" | "DESACTUALIZADO" | "SIN_DATOS";
+            /** Inactiva Desde */
+            inactiva_desde: string | null;
             /** Medido En */
             medido_en: string | null;
             /** Sensores */
@@ -151,8 +155,12 @@ export interface components {
         };
         /** EstacionResumen */
         EstacionResumen: {
+            /** Activa */
+            activa: boolean;
             /** Id */
             id: number;
+            /** Inactiva Desde */
+            inactiva_desde: string | null;
             /** Latitud */
             latitud: string;
             /** Longitud */
