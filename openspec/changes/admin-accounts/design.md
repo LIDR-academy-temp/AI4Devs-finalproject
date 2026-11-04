@@ -154,6 +154,7 @@ Motivación y alcance en `proposal.md`; comportamiento en las delta specs (`acco
 
 - `POST /providers/:providerId/accounts` y `PATCH /accounts/:accountId` con `preHandler: app.requirePermission('account.manage')`, `tags: ['accounts']` y respuestas `201`/`200`, `400`, `401`, `403`, `404` y `409`.
 - Grupo 1: handlers provisionales en `501 not_implemented`, como en `admin-fees`.
+- **Orden del tope en la creación.** `normalizeCap` se aplica antes de abrir la transacción de `inProvider`. Por eso un tope negativo en un proveedor inexistente o fuera del alcance responde `400` (`details.field = rollingReserveCapAmt`) antes que el `404`, igual que la validación de esquema (#72). No revela nada del proveedor: la respuesta es la misma exista o no. En la edición el tope se valida dentro de `inAccount`, así que una cuenta inexistente responde `404` primero. `-0` es un tope válido y se guarda como `0.0000`.
 
 ## Risks / Trade-offs
 
