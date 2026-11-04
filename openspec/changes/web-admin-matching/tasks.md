@@ -127,7 +127,7 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
 
 ## 7. Rename, activar y desactivar, y crear (test-first)
 
-- [ ] 7.1 Escribir `features/matching/rule-set-actions.test.tsx` con los escenarios de la delta `matching` y comprobar que fallan:
+- [x] 7.1 Escribir `features/matching/rule-set-actions.test.tsx` con los escenarios de la delta `matching` y comprobar que fallan:
   - **"renombrar":** renombrar, nombre en uso con el panel abierto, y deshabilitado con cambios sin guardar.
   - **"activar y desactivar":** conjunto en uso con las cuentas enlazadas, reactivar "Provider C retired" y foco de vuelta al cerrar.
   - **"crear un conjunto":**
@@ -136,7 +136,7 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
     - nombre en uso;
     - sin proveedor elegido no hay **New rule set**;
     - doble clic = una petición.
-- [ ] 7.2 Commit: test(web): renombrar, activar, desactivar y crear conjuntos de reglas
+- [x] 7.2 Commit: test(web): renombrar, activar, desactivar y crear conjuntos de reglas
 - [ ] 7.3 Implementar lo necesario hasta dejar en verde los tests de 7.1 (design D7):
   - `RenameRuleSetSheet.tsx`, `RuleSetStatusDialog.tsx` y `NewRuleSetDialog.tsx`;
   - la mutación de `POST` y la caché en `mutations.ts`;
