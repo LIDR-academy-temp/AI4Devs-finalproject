@@ -109,6 +109,14 @@ describe('createBody', () => {
     expect(createBody(create(patch))).toEqual({ ok: false, errors: { [field]: message }, general: null })
   })
 
+  it('without a merchant, marks the merchant too: the provider cannot be chosen yet', () => {
+    expect(createBody(create({ merchantId: '', providerId: '' }))).toEqual({
+      ok: false,
+      errors: { merchantId: e.merchantRequired, providerId: e.providerRequired },
+      general: null,
+    })
+  })
+
   it('accepts a name of exactly 50 characters and a cap of 0', () => {
     expect(createBody(create({ name: 'x'.repeat(50), cap: '0' })).ok).toBe(true)
   })

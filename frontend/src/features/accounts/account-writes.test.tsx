@@ -140,6 +140,21 @@ describe('New account: the form', () => {
     },
   )
 
+  it('without a merchant, the focus goes to Merchant: Provider cannot take it while it is disabled', async () => {
+    const { user } = renderApp('/accounts', { as: 'admin' })
+    await user.click(await screen.findByRole('button', { name: 'New account' }, OPENING))
+    const dialog = within(await screen.findByRole('dialog', { name: 'New account' }))
+
+    expect(dialog.getByLabelText('Provider')).toBeDisabled()
+    await user.type(dialog.getByLabelText('Name'), 'ProviderC-New')
+    await user.click(dialog.getByRole('button', { name: 'Create account' }))
+
+    expect(await dialog.findByText('Choose a merchant.')).toBeInTheDocument()
+    expect(dialog.getByLabelText('Merchant')).toHaveAttribute('aria-invalid', 'true')
+    expect(dialog.getByLabelText('Merchant')).toHaveFocus()
+    expect(accountRequests('create')).toEqual([])
+  })
+
   it('Cancel sends nothing and gives the focus back to New account', async () => {
     const { user, dialog } = await openNewAccount()
 
@@ -356,7 +371,7 @@ describe('Close… and Reopen…', () => {
     expect(screen.getByRole('alertdialog')).toBeInTheDocument()
 
     release()
-    expect(await dialog.findByText('Could not reach the server. Try again.')).toBeInTheDocument()
+    expect(await dialog.findByText('The account could not be saved. Try again.')).toBeInTheDocument()
   })
 })
 
@@ -384,13 +399,22 @@ describe('Account forms: errors of the API', () => {
       details: { field: 'matchingRuleSetId' },
     })
     const { user, sheet } = await openEdit(ALT, 'ProviderC-Alt')
+    await waitFor(() => expect(optionsOf(sheet.getByLabelText('Matching rules'))).toContain('Provider C legacy'))
+    let ruleSetReads = 0
+    server.events.on('request:start', ({ request }) => {
+      if (new URL(request.url).pathname === '/api/v1/providers/201/matching-rule-sets') ruleSetReads += 1
+    })
 
     await user.selectOptions(sheet.getByLabelText('Reserve policy on chargeback'), 'release_on_chargeback')
     await user.click(sheet.getByRole('button', { name: 'Save' }))
 
     expect(await sheet.findByText('This rule set is no longer available for this provider.')).toBeInTheDocument()
     expect(sheet.getByLabelText('Matching rules')).toHaveAttribute('aria-invalid', 'true')
+    expect(sheet.getByLabelText('Matching rules')).toHaveFocus()
     expect(sheet.getByLabelText('Reserve policy on chargeback')).toHaveValue('release_on_chargeback')
+    // The rule sets on display are stale: they are asked for again.
+    await waitFor(() => expect(ruleSetReads).toBe(1))
+    server.events.removeAllListeners()
   })
 
   it('a fee source that is not valid goes next to Fees', async () => {
@@ -416,7 +440,43 @@ describe('Account forms: errors of the API', () => {
     await user.type(sheet.getByLabelText('Reserve cap (optional, USD)'), '1000')
     await user.click(sheet.getByRole('button', { name: 'Save' }))
 
-    expect(await sheet.findByRole('alert')).toHaveTextContent("You don't have permission to manage accounts.")
+    const alert = await sheet.findByRole('alert')
+    expect(alert).toHaveTextContent("You don't have permission to manage accounts.")
+    expect(alert).toHaveFocus()
+    expect(sheet.getByLabelText('Reserve cap (optional, USD)')).toHaveValue('1000')
+  })
+
+  it('the same message again takes the focus again', async () => {
+    server.use(
+      http.patch(`*/api/v1/accounts/${USD}`, () =>
+        HttpResponse.json({ code: 'forbidden', message: 'Forbidden' }, { status: 403 }),
+      ),
+    )
+    const { user, sheet } = await openEdit(USD, 'ProviderA-USD')
+
+    await user.type(sheet.getByLabelText('Reserve cap (optional, USD)'), '1000')
+    await user.click(sheet.getByRole('button', { name: 'Save' }))
+    expect(await sheet.findByRole('alert')).toHaveFocus()
+
+    await user.click(sheet.getByLabelText('Reserve cap (optional, USD)'))
+    await user.click(sheet.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(sheet.getByRole('alert')).toHaveFocus())
+    expect(sheet.getByRole('alert')).toHaveTextContent("You don't have permission to manage accounts.")
+  })
+
+  it('a 500 says the account could not be saved, not that the server was unreachable', async () => {
+    server.use(
+      http.patch(`*/api/v1/accounts/${USD}`, () =>
+        HttpResponse.json({ code: 'internal_error', message: 'boom' }, { status: 500 }),
+      ),
+    )
+    const { user, sheet } = await openEdit(USD, 'ProviderA-USD')
+
+    await user.type(sheet.getByLabelText('Reserve cap (optional, USD)'), '1000')
+    await user.click(sheet.getByRole('button', { name: 'Save' }))
+
+    expect(await sheet.findByRole('alert')).toHaveTextContent('The account could not be saved. Try again.')
     expect(sheet.getByLabelText('Reserve cap (optional, USD)')).toHaveValue('1000')
   })
 

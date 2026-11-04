@@ -47,10 +47,18 @@ describe('accountProblemOf', () => {
     })
   })
 
+  it('a network error says the server could not be reached', () => {
+    expect(accountProblemOf(new TypeError('Failed to fetch'))).toEqual({
+      fields: {},
+      general: e.unreachable,
+      invalidate: null,
+    })
+  })
+
   it.each([
-    ['a network error', new TypeError('Failed to fetch')],
     ['a 500', new ApiError(500, 'internal_error', 'boom')],
-  ])('%s asks to try again', (_case, error) => {
-    expect(accountProblemOf(error)).toEqual({ fields: {}, general: e.unreachable, invalidate: null })
+    ['a 503', new ApiError(503, 'unavailable', 'down')],
+  ])('%s says the account could not be saved, not that the server was unreachable', (_case, error) => {
+    expect(accountProblemOf(error)).toEqual({ fields: {}, general: e.saveFailed, invalidate: null })
   })
 })
