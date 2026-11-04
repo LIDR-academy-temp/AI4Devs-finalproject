@@ -401,20 +401,23 @@ describe('Account forms: errors of the API', () => {
     const { user, sheet } = await openEdit(ALT, 'ProviderC-Alt')
     await waitFor(() => expect(optionsOf(sheet.getByLabelText('Matching rules'))).toContain('Provider C legacy'))
     let ruleSetReads = 0
-    server.events.on('request:start', ({ request }) => {
+    const countRuleSetReads = ({ request }: { request: Request }) => {
       if (new URL(request.url).pathname === '/api/v1/providers/201/matching-rule-sets') ruleSetReads += 1
-    })
+    }
+    server.events.on('request:start', countRuleSetReads)
+    try {
+      await user.selectOptions(sheet.getByLabelText('Reserve policy on chargeback'), 'release_on_chargeback')
+      await user.click(sheet.getByRole('button', { name: 'Save' }))
 
-    await user.selectOptions(sheet.getByLabelText('Reserve policy on chargeback'), 'release_on_chargeback')
-    await user.click(sheet.getByRole('button', { name: 'Save' }))
-
-    expect(await sheet.findByText('This rule set is no longer available for this provider.')).toBeInTheDocument()
-    expect(sheet.getByLabelText('Matching rules')).toHaveAttribute('aria-invalid', 'true')
-    expect(sheet.getByLabelText('Matching rules')).toHaveFocus()
-    expect(sheet.getByLabelText('Reserve policy on chargeback')).toHaveValue('release_on_chargeback')
-    // The rule sets on display are stale: they are asked for again.
-    await waitFor(() => expect(ruleSetReads).toBe(1))
-    server.events.removeAllListeners()
+      expect(await sheet.findByText('This rule set is no longer available for this provider.')).toBeInTheDocument()
+      expect(sheet.getByLabelText('Matching rules')).toHaveAttribute('aria-invalid', 'true')
+      expect(sheet.getByLabelText('Matching rules')).toHaveFocus()
+      expect(sheet.getByLabelText('Reserve policy on chargeback')).toHaveValue('release_on_chargeback')
+      // The rule sets on display are stale: they are asked for again.
+      await waitFor(() => expect(ruleSetReads).toBe(1))
+    } finally {
+      server.events.removeListener('request:start', countRuleSetReads)
+    }
   })
 
   it('a fee source that is not valid goes next to Fees', async () => {
@@ -447,22 +450,20 @@ describe('Account forms: errors of the API', () => {
   })
 
   it('the same message again takes the focus again', async () => {
-    server.use(
-      http.patch(`*/api/v1/accounts/${USD}`, () =>
-        HttpResponse.json({ code: 'forbidden', message: 'Forbidden' }, { status: 403 }),
-      ),
-    )
+    // A refusal of the form itself, twice in a row: the message never goes away in between, so only the attempt
+    // tells GeneralMessage to take the focus again.
     const { user, sheet } = await openEdit(USD, 'ProviderA-USD')
 
-    await user.type(sheet.getByLabelText('Reserve cap (optional, USD)'), '1000')
     await user.click(sheet.getByRole('button', { name: 'Save' }))
-    expect(await sheet.findByRole('alert')).toHaveFocus()
+    expect(await sheet.findByRole('alert')).toHaveTextContent('Nothing to save.')
+    expect(sheet.getByRole('alert')).toHaveFocus()
 
     await user.click(sheet.getByLabelText('Reserve cap (optional, USD)'))
     await user.click(sheet.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(sheet.getByRole('alert')).toHaveFocus())
-    expect(sheet.getByRole('alert')).toHaveTextContent("You don't have permission to manage accounts.")
+    expect(sheet.getByRole('alert')).toHaveTextContent('Nothing to save.')
+    expect(accountRequests('patch')).toEqual([])
   })
 
   it('a 500 says the account could not be saved, not that the server was unreachable', async () => {

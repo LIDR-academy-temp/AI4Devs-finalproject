@@ -165,36 +165,40 @@ describe('Channel Assignment: loading and errors', () => {
 
   it('a failed read of the accounts of one channel shows the error, and Retry asks only for that one', async () => {
     const asked: string[] = []
-    server.events.on('request:start', ({ request }) => {
+    const recordChannelReads = ({ request }: { request: Request }) => {
       const path = new URL(request.url).pathname
       if (path.startsWith('/api/v1/channels')) asked.push(path + new URL(request.url).search)
-    })
-    server.use(
-      http.get(
-        '*/api/v1/channels/1001/accounts',
-        () => HttpResponse.json({ code: 'internal_error' }, { status: 500 }),
-        {
-          once: true,
-        },
-      ),
-    )
-    const { user } = await open('viewer', 'merchantId=1&providerId=101')
+    }
+    server.events.on('request:start', recordChannelReads)
+    try {
+      server.use(
+        http.get(
+          '*/api/v1/channels/1001/accounts',
+          () => HttpResponse.json({ code: 'internal_error' }, { status: 500 }),
+          {
+            once: true,
+          },
+        ),
+      )
+      const { user } = await open('viewer', 'merchantId=1&providerId=101')
 
-    expect(await screen.findByText('Could not load channels.', undefined, OPENING)).toBeInTheDocument()
-    expect(screen.queryByRole('table')).not.toBeInTheDocument()
-    asked.length = 0
-    await user.click(screen.getByRole('button', { name: 'Retry' }))
+      expect(await screen.findByText('Could not load channels.', undefined, OPENING)).toBeInTheDocument()
+      expect(screen.queryByRole('table')).not.toBeInTheDocument()
+      asked.length = 0
+      await user.click(screen.getByRole('button', { name: 'Retry' }))
 
-    await waitFor(async () =>
-      expect((await rowsOf('Primary account per channel'))[0]).toEqual([
-        'RAM-01',
-        'Provider A',
-        'ProviderA-USD',
-        'batch 68',
-        '—',
-      ]),
-    )
-    expect(asked).toEqual(['/api/v1/channels/1001/accounts'])
-    server.events.removeAllListeners()
+      await waitFor(async () =>
+        expect((await rowsOf('Primary account per channel'))[0]).toEqual([
+          'RAM-01',
+          'Provider A',
+          'ProviderA-USD',
+          'batch 68',
+          '—',
+        ]),
+      )
+      expect(asked).toEqual(['/api/v1/channels/1001/accounts'])
+    } finally {
+      server.events.removeListener('request:start', recordChannelReads)
+    }
   })
 })
