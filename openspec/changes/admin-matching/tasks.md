@@ -165,7 +165,7 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 - m6: la descripción de las rutas y README §4.4 aclaran que en columnas la regla de una hoja va antes que la genérica y que reordenar reglas de igual prioridad cuenta como cambio aunque no altere la propuesta.
 - m7: `10-smoke/Create rule set - analyst` resuelve Provider C por nombre.
 - m3 y m4, notas en el PR (sin cambios).
-- Verificado: unitarios en verde; `global-rules` y `rule-set-admin` de integración, 30/30, con la base local. La colección (M2, m5, m7) la ejecuta la persona con `pnpm dev`.
+- Verificado: unitarios en verde; `global-rules` y `rule-set-admin` de integración, 30/30, con la base local. Colección con `pnpm dev` (turno de la persona): `pnpm test:api:smoke`, 105/105 peticiones y 108/108 tests; `pnpm test:api`, 230/230 y 242/242, sin fallos (M2, m5 y m7 incluidos).
 
 ## Incidencias de proceso
 
