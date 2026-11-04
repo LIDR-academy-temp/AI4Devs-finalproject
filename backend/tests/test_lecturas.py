@@ -507,7 +507,8 @@ def test_las_rutas_coinciden_con_el_contrato(contrato):
     generadas = app.openapi()["paths"]
     for ruta_contrato, operaciones in contrato["paths"].items():
         generada = generadas[f"/api/v1{ruta_contrato}"]
-        assert generada["get"]["operationId"] == operaciones["get"]["operationId"]
+        for metodo, operacion in operaciones.items():
+            assert generada[metodo]["operationId"] == operacion["operationId"]
 
 
 @pytest.mark.parametrize(

@@ -19,7 +19,7 @@ class EstacionResumen(BaseModel):
     longitud: Decimal
 
 
-@router.get("")
+@router.get("", operation_id="listarEstaciones")
 def listar_estaciones(sesion: SesionBd, usuario: UsuarioActual) -> list[EstacionResumen]:
     estaciones = sesion.scalars(
         select(Estacion)

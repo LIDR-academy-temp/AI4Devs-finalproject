@@ -58,7 +58,7 @@ def segundos_de_bloqueo(sesion: Session, email: str, ahora: datetime) -> int:
     return max(0, int(restante.total_seconds()) + 1) if restante.total_seconds() > 0 else 0
 
 
-@router.post("/login")
+@router.post("/login", operation_id="iniciarSesion")
 def iniciar_sesion(
     solicitud: SolicitudInicio,
     respuesta: Response,
@@ -113,7 +113,7 @@ def iniciar_sesion(
     return UsuarioPublico(email=usuario.email, nombre=usuario.nombre)
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT, operation_id="cerrarSesion")
 def cerrar_sesion(
     respuesta: Response,
     sesion: SesionBd,

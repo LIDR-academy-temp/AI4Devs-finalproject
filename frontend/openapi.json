@@ -528,7 +528,7 @@
   "paths": {
     "/api/v1/auth/login": {
       "post": {
-        "operationId": "iniciar_sesion_api_v1_auth_login_post",
+        "operationId": "iniciarSesion",
         "requestBody": {
           "content": {
             "application/json": {
@@ -569,7 +569,7 @@
     },
     "/api/v1/auth/logout": {
       "post": {
-        "operationId": "cerrar_sesion_api_v1_auth_logout_post",
+        "operationId": "cerrarSesion",
         "parameters": [
           {
             "in": "cookie",
@@ -611,7 +611,7 @@
     },
     "/api/v1/estaciones": {
       "get": {
-        "operationId": "listar_estaciones_api_v1_estaciones_get",
+        "operationId": "listarEstaciones",
         "parameters": [
           {
             "in": "cookie",
@@ -638,7 +638,7 @@
                   "items": {
                     "$ref": "#/components/schemas/EstacionResumen"
                   },
-                  "title": "Response Listar Estaciones Api V1 Estaciones Get",
+                  "title": "Response Listarestaciones",
                   "type": "array"
                 }
               }

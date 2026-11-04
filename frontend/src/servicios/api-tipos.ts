@@ -14,7 +14,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Iniciar Sesion */
-        post: operations["iniciar_sesion_api_v1_auth_login_post"];
+        post: operations["iniciarSesion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -31,7 +31,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Cerrar Sesion */
-        post: operations["cerrar_sesion_api_v1_auth_logout_post"];
+        post: operations["cerrarSesion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -46,7 +46,7 @@ export interface paths {
             cookie?: never;
         };
         /** Listar Estaciones */
-        get: operations["listar_estaciones_api_v1_estaciones_get"];
+        get: operations["listarEstaciones"];
         put?: never;
         post?: never;
         delete?: never;
@@ -299,7 +299,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    iniciar_sesion_api_v1_auth_login_post: {
+    iniciarSesion: {
         parameters: {
             query?: never;
             header?: never;
@@ -332,7 +332,7 @@ export interface operations {
             };
         };
     };
-    cerrar_sesion_api_v1_auth_logout_post: {
+    cerrarSesion: {
         parameters: {
             query?: never;
             header?: never;
@@ -361,7 +361,7 @@ export interface operations {
             };
         };
     };
-    listar_estaciones_api_v1_estaciones_get: {
+    listarEstaciones: {
         parameters: {
             query?: never;
             header?: never;
