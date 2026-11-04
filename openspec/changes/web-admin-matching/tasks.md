@@ -8,7 +8,7 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
 
 ## 1. Base
 
-- [ ] 1.1 Verificar la base antes de tocar nada:
+- [x] 1.1 Verificar la base antes de tocar nada:
   - `git fetch`;
   - comprobar con `git merge-base --is-ancestor` que la rama contiene `origin/feat/admin-matching` y `origin/feature/entrega-3-MVP`;
   - integrar lo nuevo como dice la cabecera;
@@ -16,10 +16,10 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
 
 ## 2. Elección de proveedor compartida y menú (refactor y test-first)
 
-- [ ] 2.1 Actualizar `AppLayout.test.tsx` y el test de `nav-config` a la delta `web-shell` y comprobar que fallan:
+- [x] 2.1 Actualizar `AppLayout.test.tsx` y el test de `nav-config` a la delta `web-shell` y comprobar que fallan:
   - Matching Rules como enlace a `/matching-rules` para `viewer`, `analyst` y `admin`;
   - activa en `/matching-rules?merchantId=1`, `/matching-rules/global` y `/matching-rules/3`.
-- [ ] 2.2 Commit: test(web): Matching Rules habilitada en el menú
+- [x] 2.2 Commit: test(web): Matching Rules habilitada en el menú
 - [ ] 2.3 Hacer pasar los tests de 2.1:
   - Extraer `features/accounts/provider-choice.tsx` de `AccountsPage.tsx` (design D1) sin cambiar su comportamiento.
   - Crear las tres rutas de design D2 con páginas mínimas (título y migas) y habilitar la entrada en `nav-config.ts`.

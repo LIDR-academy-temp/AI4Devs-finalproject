@@ -63,6 +63,7 @@ describe('navigation filtered by permissions', () => {
     expect(nav.getByRole('link', { name: 'Settlement List' })).toHaveAttribute('href', '/settlements')
     expect(nav.getByRole('link', { name: 'Fees' })).toHaveAttribute('href', '/fees')
     expect(nav.getByRole('link', { name: 'Channel Assignment' })).toHaveAttribute('href', '/channel-assignment')
+    expect(nav.getByRole('link', { name: 'Matching Rules' })).toHaveAttribute('href', '/matching-rules')
   })
 
   it('analyst sees New Reconciliation as a link and In Progress disabled, and not Payments nor Users & Roles', async () => {
@@ -73,6 +74,7 @@ describe('navigation filtered by permissions', () => {
     expect(nav.getByRole('link', { name: 'Settlement List' })).toHaveAttribute('href', '/settlements')
     expect(nav.getByRole('link', { name: 'Fees' })).toHaveAttribute('href', '/fees')
     expect(nav.getByRole('link', { name: 'Channel Assignment' })).toHaveAttribute('href', '/channel-assignment')
+    expect(nav.getByRole('link', { name: 'Matching Rules' })).toHaveAttribute('href', '/matching-rules')
     const inProgress = nav.getByText('In Progress').closest('[aria-disabled]')
     expect(inProgress).toHaveAttribute('aria-disabled', 'true')
     expect(nav.queryByRole('link', { name: 'In Progress' })).not.toBeInTheDocument()
@@ -80,7 +82,7 @@ describe('navigation filtered by permissions', () => {
     expect(nav.queryByText('Users & Roles')).not.toBeInTheDocument()
   })
 
-  it('admin sees every MVP entry; only Dashboard, New Reconciliation, Settlement List, Accounts, Fees and Channel Assignment are links', async () => {
+  it('admin sees every MVP entry; only Dashboard, New Reconciliation, Settlement List, Accounts, Fees, Channel Assignment and Matching Rules are links', async () => {
     renderApp('/', { as: 'admin' })
     const nav = await mainNav()
 
@@ -92,6 +94,7 @@ describe('navigation filtered by permissions', () => {
       'Accounts',
       'Fees',
       'Channel Assignment',
+      'Matching Rules',
     ])
   })
 
@@ -126,6 +129,20 @@ describe('navigation filtered by permissions', () => {
     await waitFor(() =>
       expect(nav.getByRole('link', { name: 'Channel Assignment' })).toHaveAttribute('aria-current', 'page'),
     )
+  })
+
+  it.each([
+    ['viewer', '/matching-rules?merchantId=1'],
+    ['viewer', '/matching-rules/global'],
+    ['analyst', '/matching-rules/3'],
+  ] as const)('marks Matching Rules as the active entry for %s in %s', async (as, path) => {
+    renderApp(path, { as })
+    const nav = await mainNav()
+
+    await waitFor(() =>
+      expect(nav.getByRole('link', { name: 'Matching Rules' })).toHaveAttribute('aria-current', 'page'),
+    )
+    expect(nav.getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
   })
 
   it('marks Fees as the active entry in the global view with filters in the address', async () => {
