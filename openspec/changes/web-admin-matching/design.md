@@ -52,7 +52,8 @@ frontend/src/features/matching/
   RuleSetPage.tsx           /matching-rules/$ruleSetId: header, actions, linked accounts, RulesEditor
   GlobalRulesPage.tsx       /matching-rules/global: RulesEditor with aliases
   RulesEditor.tsx           read tables ⇄ edit mode (useForm + useFieldArray), Save / Cancel, Reason
-  rule-tables.tsx           SheetRules, ColumnRules, StatusAliases, RowIgnoreRules (read and edit rows)
+  rule-tables.tsx           SheetRules, ColumnRules, StatusAliases, RowsToIgnore in read mode
+  rule-edit-tables.tsx      the same lists as editable rows (useFieldArray), Move up / Move down, Remove, Add
   NewRuleSetDialog.tsx      name + Start from
   RenameRuleSetSheet.tsx    name + Reason
   RuleSetStatusDialog.tsx   Deactivate / Activate + Reason, 409 rule_set_in_use

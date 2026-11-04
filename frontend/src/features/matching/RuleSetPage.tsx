@@ -1,14 +1,17 @@
 import type { MatchingRuleSetDetail } from '@recon/shared'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from '@tanstack/react-router'
+import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ApiError } from '@/lib/api/client'
+import { usePutRuleSet } from './mutations'
 import { useCanManageRules } from './permissions'
-import { globalRulesQuery, ruleSetQuery } from './queries'
-import { ColumnRulesTable, RowsToIgnore, RulesCard, SheetRulesTable } from './rule-tables'
+import { globalRulesQuery, ruleSetKey, ruleSetQuery } from './queries'
+import { RulesEditor } from './RulesEditor'
+import { ruleSetBody } from './rule-form'
 import { strings } from './strings'
 
 const s = strings.detail
@@ -43,15 +46,15 @@ function LinkedAccounts({ accounts }: { accounts: MatchingRuleSetDetail['account
   )
 }
 
-function HeaderActions({ ruleSet }: { ruleSet: MatchingRuleSetDetail }) {
+function HeaderActions({ ruleSet, blocked }: { ruleSet: MatchingRuleSetDetail; blocked: boolean }) {
   const canManage = useCanManageRules()
   if (!canManage) return null
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <Button variant="outline" size="sm">
+      <Button variant="outline" size="sm" disabled={blocked}>
         {s.actions.rename}
       </Button>
-      <Button variant="outline" size="sm">
+      <Button variant="outline" size="sm" disabled={blocked}>
         {ruleSet.isActive ? s.actions.deactivate : s.actions.activate}
       </Button>
     </div>
@@ -65,6 +68,10 @@ export function RuleSetPage() {
   // The catalog of statuses only comes with the global rules; without it a status is shown by its id.
   const globals = useQuery(globalRulesQuery)
   const canManage = useCanManageRules()
+  const queryClient = useQueryClient()
+  const put = usePutRuleSet(ruleSetId)
+  // Unsaved rules: Rename, Deactivate and Activate would send the stored rules over them (design D7).
+  const [dirty, setDirty] = useState(false)
 
   if (notAvailable(ruleSet.error)) return <p className="text-sm">{s.notAvailable}</p>
   if (ruleSet.isError) {
@@ -99,27 +106,23 @@ export function RuleSetPage() {
             <Skeleton className="h-4 w-48" aria-label={s.loading} />
           )}
         </div>
-        {detail && <HeaderActions ruleSet={detail} />}
+        {detail && <HeaderActions ruleSet={detail} blocked={dirty} />}
       </section>
       {detail ? (
         <>
           <LinkedAccounts accounts={detail.accounts} />
-          <RulesCard
-            title={strings.tables.sheets}
-            actions={
-              canManage && (
-                <Button size="sm" variant="outline">
-                  {s.actions.edit}
-                </Button>
+          <RulesEditor
+            doc={detail}
+            statuses={globals.data?.statuses}
+            canEdit={canManage}
+            save={(rules, reason) =>
+              put.mutateAsync(
+                ruleSetBody(detail, { sheetRules: rules.sheetRules, columnRules: rules.columnRules, reason }),
               )
             }
-          >
-            <SheetRulesTable rules={detail.sheetRules} statuses={globals.data?.statuses} />
-          </RulesCard>
-          <RulesCard title={strings.tables.columns}>
-            <ColumnRulesTable rules={detail.columnRules} />
-          </RulesCard>
-          <RowsToIgnore rules={detail.rowIgnoreRules} />
+            onStale={() => void queryClient.invalidateQueries({ queryKey: ruleSetKey(ruleSetId) })}
+            onDirtyChange={setDirty}
+          />
         </>
       ) : (
         <Skeleton className="h-48 w-full" />

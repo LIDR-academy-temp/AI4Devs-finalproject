@@ -122,8 +122,8 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
     - ruta fuera del formulario, lista de esquema y red;
     - `403` con lo escrito intacto.
 - [x] 6.2 Commit: test(web): modo edición de las reglas de pareo
-- [ ] 6.3 Implementar `RulesEditor.tsx`, las filas editables de `rule-tables.tsx` y las mutaciones de `PUT` en `mutations.ts` (design D5, D6), con sus textos. Verificar con los tests de 6.1 y con toda la suite del frontend en verde.
-- [ ] 6.4 Commit: feat(web): modo edición de las reglas de pareo
+- [x] 6.3 Implementar `RulesEditor.tsx`, las filas editables de `rule-tables.tsx` y las mutaciones de `PUT` en `mutations.ts` (design D5, D6), con sus textos. Verificar con los tests de 6.1 y con toda la suite del frontend en verde.
+- [x] 6.4 Commit: feat(web): modo edición de las reglas de pareo
 
 ## 7. Rename, activar y desactivar, y crear (test-first)
 

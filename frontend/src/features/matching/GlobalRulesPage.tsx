@@ -2,17 +2,23 @@ import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { usePutGlobals } from './mutations'
 import { useCanEditGlobals } from './permissions'
 import { globalRulesQuery } from './queries'
-import { ColumnRulesTable, RowsToIgnore, RulesCard, SheetRulesTable, StatusAliasesTable } from './rule-tables'
+import { RulesEditor } from './RulesEditor'
+import { globalsBody } from './rule-form'
 import { strings } from './strings'
 
 const g = strings.global
 
-/** Administration › Matching Rules › Global defaults: read by every role (web-admin-matching design D2, D3). */
+/**
+ * Administration › Matching Rules › Global defaults: read by every role; edited with account.manage and the scope
+ * all, because they apply to every account without a set (web-admin-matching design D2, D3, D8).
+ */
 export function GlobalRulesPage() {
   const globals = useQuery(globalRulesQuery)
   const canEdit = useCanEditGlobals()
+  const put = usePutGlobals()
 
   let body: ReactNode
   if (globals.isError) {
@@ -27,29 +33,13 @@ export function GlobalRulesPage() {
   } else if (!globals.data) {
     body = <Skeleton className="h-48 w-full" aria-label={g.loading} />
   } else {
-    const data = globals.data
     body = (
-      <>
-        <RulesCard
-          title={strings.tables.sheets}
-          actions={
-            canEdit && (
-              <Button size="sm" variant="outline">
-                {strings.detail.actions.edit}
-              </Button>
-            )
-          }
-        >
-          <SheetRulesTable rules={data.sheetRules} statuses={data.statuses} />
-        </RulesCard>
-        <RulesCard title={strings.tables.columns}>
-          <ColumnRulesTable rules={data.columnRules} />
-        </RulesCard>
-        <RulesCard title={strings.tables.aliases}>
-          <StatusAliasesTable aliases={data.statusAliases} statuses={data.statuses} />
-        </RulesCard>
-        <RowsToIgnore rules={data.rowIgnoreRules} />
-      </>
+      <RulesEditor
+        doc={globals.data}
+        statuses={globals.data.statuses}
+        canEdit={canEdit}
+        save={(rules, reason) => put.mutateAsync(globalsBody(rules, reason))}
+      />
     )
   }
 
