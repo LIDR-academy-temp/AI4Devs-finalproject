@@ -141,3 +141,22 @@ Cuando el pareo confirmado de una hoja `transactions` tiene estado fijo (`status
 - **GIVEN** una hoja `APP` confirmada como `E`/`Successful` con una columna `Status → status` cuya fila trae `Declined`
 - **WHEN** se analiza
 - **THEN** la fila tiene `statusId = 2`, `statusRaw = "Declined"`, `warnings` incluye `"status_differs_from_sheet"` y `analysis.warnings.status_differs_from_sheet = 1`
+
+### Requirement: Conjuntos de reglas de un proveedor
+`GET /api/v1/providers/{id}/matching-rule-sets` SHALL responder `200` con los conjuntos del proveedor, activos e inactivos, ordenados por nombre: `{ ruleSetId, providerId, name, isActive, accounts }`, con `accounts` las cuentas enlazadas (`{ accountId, name, isActive }`, por nombre). SHALL exigir token y ningún permiso; proveedor inexistente o fuera del alcance SHALL responder `404`. Crear, ver el detalle y editar conjuntos amplían esta lectura en `admin-matching`.
+
+#### Scenario: Conjunto de Provider C
+- **WHEN** `analyst` llama a `GET /api/v1/providers/201/matching-rule-sets`
+- **THEN** recibe un conjunto con `name = "Provider C legacy"`, `providerId = 201`, `isActive = true` y en `accounts` `ProviderC-Alt`, sin contar las cuentas de prefijo `bruno-`
+
+#### Scenario: Proveedor sin conjuntos
+- **WHEN** `viewer` llama a `GET /api/v1/providers/101/matching-rule-sets`
+- **THEN** recibe `200` con una lista vacía
+
+#### Scenario: Proveedor fuera del alcance
+- **WHEN** `viewer` llama a `GET /api/v1/providers/201/matching-rule-sets`
+- **THEN** recibe `404` con `code = "not_found"`, el mismo cuerpo que para el proveedor 999
+
+#### Scenario: Sin token
+- **WHEN** se llama sin cabecera `Authorization`
+- **THEN** recibe `401` con `code = "unauthorized"`
