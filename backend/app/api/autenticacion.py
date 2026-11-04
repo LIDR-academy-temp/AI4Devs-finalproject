@@ -16,6 +16,7 @@ from app.api.dependencias import (
     cookie_segura,
 )
 from app.api.errores import ErrorApi
+from app.api.limite_ip import limitar
 from app.datos.modelos import IntentoAcceso, Sesion, Usuario
 from app.seguridad import (
     generar_identificador_de_sesion,
@@ -58,7 +59,7 @@ def segundos_de_bloqueo(sesion: Session, email: str, ahora: datetime) -> int:
     return max(0, int(restante.total_seconds()) + 1) if restante.total_seconds() > 0 else 0
 
 
-@router.post("/login", operation_id="iniciarSesion")
+@router.post("/login", operation_id="iniciarSesion", dependencies=[limitar("inicio_de_sesion")])
 def iniciar_sesion(
     solicitud: SolicitudInicio,
     respuesta: Response,

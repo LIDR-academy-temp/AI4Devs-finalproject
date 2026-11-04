@@ -100,7 +100,7 @@ Entre 15 y 128 caracteres contados en Unicode normalizado NFKC, sin reglas de co
 
 ### D9. Límite por dirección IP
 
-Ventana fija en `limite_ip`, actualizada con un `INSERT ... ON CONFLICT DO UPDATE` atómico. La IP sale de `X-Forwarded-For`, que Caddy reemplaza en cada pedido. uvicorn arranca con `--proxy-headers` y `--forwarded-allow-ips` limitado a la red interna de Compose.
+Ventana fija en `limite_ip`, actualizada con un `INSERT ... ON CONFLICT DO UPDATE` atómico. La IP sale de `X-Forwarded-For`, que Caddy reemplaza en cada pedido. uvicorn arranca con `--proxy-headers` y `--forwarded-allow-ips=*`: la API no publica su puerto, así que solo le llega lo que reenvía Caddy, y la dirección de Caddy dentro de la red de Compose cambia en cada arranque. Una prueba de Compose verifica que la API no tenga puertos publicados. Sin esa opción, uvicorn solo confía en `127.0.0.1`, vería a todos con la dirección de Caddy y el límite sería uno solo para todos.
 
 | Acción | Límite por IP |
 |---|---|

@@ -27,6 +27,7 @@ include = ["app*", "herramientas*"]
 
 [tool.setuptools.package-data]
 "app.ingesta" = ["datos_simulados/*.json"]
+"app.cuentas" = ["*.txt"]
 "herramientas" = ["*.json"]
 
 [tool.pytest.ini_options]

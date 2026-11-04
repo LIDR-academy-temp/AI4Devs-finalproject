@@ -44,8 +44,8 @@ def comprobar(nombre, condicion, detalle=""):
         FALLAS.append(nombre)
 
 
-def pedir(ruta, metodo="GET", cuerpo=None, galleta=None, tipo="application/json", url_cruda=False):
-    cabeceras = {}
+def pedir(ruta, metodo="GET", cuerpo=None, galleta=None, tipo="application/json", url_cruda=False, extra=None):
+    cabeceras = dict(extra or {})
     datos = None
     if cuerpo is not None:
         datos = cuerpo if isinstance(cuerpo, bytes) else json.dumps(cuerpo).encode()
@@ -217,6 +217,24 @@ try:
     for _ in range(5):
         pedir("/api/v1/auth/login", "POST", {"email": "fantasma@ejemplo.com", "contrasena": "mala"})
     comprobar("un correo inexistente tambien se bloquea", pedir("/api/v1/auth/login", "POST", {"email": "fantasma@ejemplo.com", "contrasena": "mala"})[0] == 429)
+
+    print("\n== Limite por IP")
+
+    def vaciar_contadores_de_ip():
+        compose(E, "exec", "-T", "db", "psql", "-U", "weather_track", "-d", "weather_track", "-qc", "delete from limite_ip")
+
+    vaciar_contadores_de_ip()
+    codigos = [
+        pedir("/api/v1/auth/login", "POST", {"email": f"ip{n}@ejemplo.com", "contrasena": "mala"},
+              extra={"X-Forwarded-For": f"10.9.{n}.1"})[0]
+        for n in range(30)
+    ]
+    comprobar("30 inicios de sesion desde una IP se atienden", set(codigos) == {401}, str(set(codigos)))
+    codigo, cabeceras, _ = pedir("/api/v1/auth/login", "POST", {"email": "ip99@ejemplo.com", "contrasena": "mala"},
+                                 extra={"X-Forwarded-For": "10.9.99.1"})
+    comprobar("el 31 recibe 429 aunque cambie X-Forwarded-For", codigo == 429 and cabeceras.get("Retry-After") is not None, str(codigo))
+    # Lo que sigue no prueba el limite: sin vaciar, cada inicio de sesion recibiria 429.
+    vaciar_contadores_de_ip()
 
     print("\n== Vida de la sesion")
     clave_c = crear(E, "ciclo@ejemplo.com", 1)

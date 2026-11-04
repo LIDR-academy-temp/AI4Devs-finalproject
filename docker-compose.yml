@@ -47,7 +47,9 @@ services:
 
   api:
     build: ./backend
-    command: uvicorn app.api.principal:app --host 0.0.0.0 --port 8000
+    # Confía en X-Forwarded-For porque la API no se publica: solo le llega lo que reenvía Caddy,
+    # que reemplaza esa cabecera con la dirección real. La usa el límite por IP.
+    command: uvicorn app.api.principal:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=*
     # La API nunca recibe las credenciales de SAT2 ni las del servidor de correo: solo encola.
     environment:
       DATABASE_URL: *url-base-de-datos

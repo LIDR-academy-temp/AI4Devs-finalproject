@@ -11,10 +11,12 @@ from sqlalchemy.orm import Session
 
 from app.api import autenticacion, estaciones, lecturas
 from app.api.errores import registrar_manejadores
+from app.api.registros import instalar_filtro_de_codigos
 from app.datos.conexion import obtener_motor, verificar_conexion
 from app.datos.naturaleza import ADMITIDAS, verificar_naturaleza
 
 registro = logging.getLogger("weather_track.api")
+instalar_filtro_de_codigos()
 
 
 def _abrir_sesion() -> AbstractContextManager[Session]:

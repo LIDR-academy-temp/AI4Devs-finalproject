@@ -129,8 +129,9 @@ class PlanificadorFalso:
         self.tareas = []
         PlanificadorFalso.ultimo = self
 
-    def add_job(self, funcion, *_args, **_opciones):
-        self.tareas.append(funcion)
+    def add_job(self, funcion, *_args, **opciones):
+        # De las tareas protegidas se guarda el nombre: "ciclo", "carga inicial", "limpieza"...
+        self.tareas.append(opciones["args"][0] if funcion is worker.protegida else funcion)
 
     def start(self):
         pass
@@ -148,7 +149,8 @@ def test_el_worker_en_modo_prueba_no_crea_el_cliente_de_sat2(sesion, monkeypatch
 
     assert worker.principal_de_prueba(FabricaDePruebas(sesion)) == 0
 
-    assert PlanificadorFalso.ultimo.tareas == [worker.registrar_latido]
+    # Sin ciclo, carga ni catálogo: solo el latido y la limpieza (el correo, si hay servidor).
+    assert PlanificadorFalso.ultimo.tareas == [worker.registrar_latido, "limpieza"]
     assert contar(sesion, Observacion) == 1
     assert sesion.scalar(select(ConfiguracionBase.naturaleza)) == "FICTICIA"
 

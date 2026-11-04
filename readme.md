@@ -367,7 +367,7 @@ Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-ent
 | Contraseñas | Solo se guarda un hash con Argon2id, con un tope de cálculos simultáneos para que una ráfaga no agote la memoria. |
 | Sesión | Identificador opaco en cookie `HttpOnly` y `SameSite`, y `Secure` en el servidor. Vence a las 8 horas y se invalida al salir. |
 | Autorización | Todas las rutas se protegen en el servidor. Un usuario solo accede a sus estaciones; de lo contrario recibe 403. |
-| Abuso | Bloqueo por cuenta tras 5 intentos fallidos. Aún no hay límite por dirección IP. |
+| Abuso | Bloqueo por cuenta tras 5 intentos fallidos, y límite por dirección IP: 30 inicios de sesión cada 15 minutos. Caddy reemplaza `X-Forwarded-For` con la dirección real, así que una cabecera falsa no lo evade. Los flujos de registro y recupero tendrán su propio límite. |
 | Transporte | HTTPS en el servidor. En local, HTTP solo desde la misma computadora. El navegador y la API comparten dominio, así que CORS no está habilitado. |
 | Cabeceras | HSTS, política de contenido, `nosniff`, protección contra marcos y sin cabecera `Server`. |
 | Entrada | Validación con Pydantic, consultas parametrizadas por el ORM y límite de 64 KB en el cuerpo. |
@@ -676,8 +676,9 @@ paths:
           $ref: '#/components/responses/SolicitudInvalida'
         '429':
           description: >-
-            Cinco intentos fallidos para el mismo correo en 15 minutos. No se
-            evalúa la contraseña.
+            Cinco intentos fallidos para el mismo correo en 15 minutos
+            (DEMASIADOS_INTENTOS), o más de 30 pedidos desde la misma dirección
+            IP en 15 minutos (DEMASIADOS_PEDIDOS). No se evalúa la contraseña.
           headers:
             Retry-After:
               description: Segundos que faltan para volver a intentar

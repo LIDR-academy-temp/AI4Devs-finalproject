@@ -6,7 +6,7 @@ import sys
 import threading
 import time
 from collections.abc import Callable
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +21,7 @@ from app.cuentas.envio import (
     enviar_pendientes,
 )
 from app.datos.conexion import obtener_motor
-from app.datos.modelos import EjecucionIngesta, Estacion, IntentoAcceso, Sesion
+from app.datos.modelos import EjecucionIngesta, Estacion, IntentoAcceso, LimiteIp, Sesion
 from app.datos.naturaleza import NaturalezaIncompatible, asegurar_naturaleza
 from app.ingesta.carga_inicial import ejecutar_carga_inicial
 from app.ingesta.catalogo import sincronizar_catalogo
@@ -124,7 +124,7 @@ def tarea_ciclo(
 
 
 def _limpiar_vencidos(sesion: Session, ahora: datetime) -> None:
-    """D8 del diseño: evita que sesiones e intentos crezcan sin límite."""
+    """Evita que sesiones, intentos y contadores del límite por IP crezcan sin límite."""
     sesion.execute(delete(Sesion).where(Sesion.vence_en < ahora))
     limite = ahora.timestamp() - ANTIGUEDAD_INTENTOS_HORAS * 3600
     sesion.execute(
@@ -132,7 +132,14 @@ def _limpiar_vencidos(sesion: Session, ahora: datetime) -> None:
             IntentoAcceso.ocurrido_en < datetime.fromtimestamp(limite, UTC)
         )
     )
+    # La ventana más larga del límite por IP es de una hora.
+    sesion.execute(delete(LimiteIp).where(LimiteIp.ventana_inicio < ahora - timedelta(hours=2)))
     sesion.commit()
+
+
+def tarea_limpieza(fabrica: Callable[[], Session], reloj: Callable[[], datetime] = _ahora) -> None:
+    with fabrica() as sesion:
+        _limpiar_vencidos(sesion, reloj())
 
 
 def tarea_carga(
@@ -227,6 +234,9 @@ def principal_de_prueba(fabrica: Callable[[], Session]) -> int:
     )
     planificador.add_job(registrar_latido, "interval", seconds=INTERVALO_LATIDO_SEGUNDOS)
     programar_correo(planificador, fabrica)
+    planificador.add_job(
+        protegida, "interval", minutes=INTERVALO_CICLO_MINUTOS, args=["limpieza", tarea_limpieza, fabrica]
+    )
     planificador.start()
     return 0
 

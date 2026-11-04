@@ -24,10 +24,10 @@ Las decisiones están en `design.md` (D1 a D12) y el comportamiento en las specs
 
 ## 4. Seguridad común (D8, D9)
 
-- [ ] 4.1 Implementar la política de contraseñas con la lista local de contraseñas comunes, verificar la licencia de la lista y verificar con pruebas los escenarios de "Política de contraseñas"
-- [ ] 4.2 Implementar el límite por IP con `X-Forwarded-For` confiado solo desde la red interna, y verificar con pruebas el 429, el `Retry-After` y que otra IP no queda afectada
-- [ ] 4.3 Agregar el filtro que oculta `codigo` en el registro de accesos de uvicorn y verificar con una prueba que el valor no aparece
-- [ ] 4.4 Agregar una prueba que falle si el servicio `api` de Compose recibe variables de SAT2 o del SMTP, y verificar que falla con una variable de ejemplo
+- [x] 4.1 Implementar la política de contraseñas con la lista local de contraseñas comunes, verificar la licencia de la lista y verificar con pruebas los escenarios de "Política de contraseñas"
+- [x] 4.2 Implementar el límite por IP con `X-Forwarded-For` confiado solo desde la red interna, y verificar con pruebas el 429, el `Retry-After` y que otra IP no queda afectada
+- [x] 4.3 Agregar el filtro que oculta `codigo` en el registro de accesos de uvicorn y verificar con una prueba que el valor no aparece
+- [x] 4.4 Agregar una prueba que falle si el servicio `api` de Compose recibe variables de SAT2 o del SMTP, y verificar que falla con una variable de ejemplo
 
 ## 5. API de cuentas (D7, D10, D11)
 
