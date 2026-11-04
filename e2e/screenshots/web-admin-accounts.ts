@@ -125,6 +125,10 @@ async function shot(page: Page, name: string, { dialog = false } = {}) {
   await page.setViewportSize(WIDTHS[0])
 }
 
+/** A link to a section of Account Detail (Overview, Fees). */
+const section = (page: Page, name: string) =>
+  page.getByRole('navigation', { name: 'Account sections' }).getByRole('link', { name })
+
 /** Accounts from the menu, with the merchant and provider chosen. */
 async function accounts(page: Page, merchant: string, provider: string) {
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Accounts' }).click()
@@ -140,7 +144,7 @@ async function overview(page: Page, merchant: string, provider: string, account:
   await accounts(page, merchant, provider)
   await page.getByRole('table').getByRole('link', { name: account, exact: true }).click()
   await expect(page.getByRole('heading', { level: 1, name: account })).toBeVisible()
-  await expect(page.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+  await expect(section(page, 'Overview')).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('table', { name: 'Channels of the account' }).getByRole('row').nth(1)).toBeVisible()
   await page.waitForLoadState('networkidle')
 }
@@ -247,8 +251,8 @@ async function main() {
     await edit.getByRole('button', { name: 'Cancel' }).click()
     await expect(edit).toBeHidden()
 
-    await admin.getByRole('tab', { name: 'Fees' }).click()
-    await expect(admin.getByRole('tab', { name: 'Fees' })).toHaveAttribute('aria-selected', 'true')
+    await section(admin, 'Fees').click()
+    await expect(section(admin, 'Fees')).toHaveAttribute('aria-current', 'page')
     await expect(admin.getByRole('table', { name: 'Fees of the account' }).getByRole('row').nth(1)).toBeVisible()
     await admin.waitForLoadState('networkidle')
     await shot(admin, 'account-fees-tab')

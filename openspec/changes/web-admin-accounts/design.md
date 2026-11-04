@@ -72,7 +72,7 @@ frontend/src/test/msw/accounts.ts      account writes + matching rule sets fake 
 - `accountDetailRoute`: `path: '/accounts/$accountId'`, `component: AccountDetailPage`, sin `requires` (como Settlement List: el API decide el alcance) y migas `['Administration', 'Accounts', 'Account detail']`. Hijas:
   - `accountOverviewRoute`: `path: '/'`, `AccountOverview`.
   - `accountFeesRoute`: `path: 'fees'`, `AccountFeesPanel`, `requires: 'fee.view'`. Las migas son las del padre, porque las de Fees ya no tienen sentido en una pestaña de la cuenta.
-- Las pestañas son enlaces (`Link`) con `role="tab"` y `aria-selected` según la ruta activa, dentro de un `role="tablist"`. No se usa `components/ui/tabs` (Radix), porque su estado es local y aquí manda la dirección. La pestaña Fees solo se pinta con `fee.view`.
+- Las pestañas son enlaces (`Link`) dentro de un `<nav aria-label="Account sections">`, y la de la ruta activa lleva `aria-current="page"`. No llevan `role="tab"`: un `tablist` promete navegación con flechas dentro de una misma página, y aquí cada pestaña es una ruta (cambio del review-diff de la #119). No se usa `components/ui/tabs` (Radix), porque su estado es local y aquí manda la dirección. La pestaña Fees solo se pinta con `fee.view`.
 - `nav-config.ts`:
   - Accounts gana `activeWhen: (p) => /^\/accounts\/[^/]+(\/fees)?\/?$/.test(p)`.
   - Fees pierde su `activeWhen`. **Esto revierte web-admin-fees D2**: la página de fees de una cuenta pasa a ser una pestaña de su ficha, y la ficha es de Accounts.

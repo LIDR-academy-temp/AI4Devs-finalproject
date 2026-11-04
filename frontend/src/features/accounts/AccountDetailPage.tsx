@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet, useMatchRoute, useParams } from '@tanstack/react-router'
-import { useId, useState } from 'react'
+import { useState } from 'react'
 import { AlertDialog, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -84,8 +84,6 @@ export function AccountDetailPage() {
   const canSeeFees = useMe().permissions.includes('fee.view')
   const matchRoute = useMatchRoute()
   const onFees = Boolean(matchRoute({ to: '/accounts/$accountId/fees', params: { accountId } }))
-  const overviewTabId = useId()
-  const feesTabId = useId()
 
   if (notAvailable(account.error)) return <p className="text-sm">{s.notAvailable}</p>
   if (account.isError) {
@@ -117,33 +115,30 @@ export function AccountDetailPage() {
         </div>
         {detail && <HeaderActions account={detail} />}
       </section>
-      <div role="tablist" aria-label={s.tabs.label} className="flex gap-1 border-b">
+      {/* The sections are routes, so they are links in a nav, the current one marked as the page: tab roles would
+          promise arrow-key navigation within one page that these links do not have. */}
+      <nav aria-label={s.tabs.label} className="flex gap-1 border-b">
         <Link
-          id={overviewTabId}
-          role="tab"
-          aria-selected={!onFees}
           to="/accounts/$accountId"
           params={{ accountId }}
+          activeOptions={{ exact: true }}
+          aria-current={onFees ? undefined : 'page'}
           className={`${tabClass} ${onFees ? otherTab : selectedTab}`}
         >
           {s.tabs.overview}
         </Link>
         {canSeeFees && (
           <Link
-            id={feesTabId}
-            role="tab"
-            aria-selected={onFees}
             to="/accounts/$accountId/fees"
             params={{ accountId }}
+            aria-current={onFees ? 'page' : undefined}
             className={`${tabClass} ${onFees ? selectedTab : otherTab}`}
           >
             {s.tabs.fees}
           </Link>
         )}
-      </div>
-      <div role="tabpanel" aria-labelledby={onFees ? feesTabId : overviewTabId}>
-        <Outlet />
-      </div>
+      </nav>
+      <Outlet />
     </section>
   )
 }

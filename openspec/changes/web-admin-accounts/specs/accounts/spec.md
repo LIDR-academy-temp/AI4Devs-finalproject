@@ -40,7 +40,7 @@ La cabecera SHALL ofrecer **Edit** y **Close…** (cuenta abierta) o **Reopen…
 - **THEN** ve `closed`, **Edit** y **Reopen…**, y no **Close…** ni **New reconciliation**
 
 ### Requirement: Pantalla Account Detail: pestañas
-La ficha SHALL tener dos pestañas, cada una con su dirección: **Overview** (`/accounts/<accountId>`) y **Fees** (`/accounts/<accountId>/fees`, solo con `fee.view`). Recargar o compartir la dirección SHALL mostrar la misma pestaña. No SHALL haber pestañas de reglas de pareo, settlements ni actividad.
+La ficha SHALL tener dos pestañas, cada una con su dirección: **Overview** (`/accounts/<accountId>`) y **Fees** (`/accounts/<accountId>/fees`, solo con `fee.view`). Recargar o compartir la dirección SHALL mostrar la misma pestaña. Las pestañas SHALL ser enlaces de una navegación (`Account sections`), sin roles `tab`/`tablist`/`tabpanel`, y la actual SHALL marcarse con `aria-current="page"`. No SHALL haber pestañas de reglas de pareo, settlements ni actividad.
 
 #### Scenario: Cambiar de pestaña
 - **GIVEN** `viewer` en la Overview de ProviderA-USD
@@ -182,7 +182,7 @@ El campo Fees SHALL ofrecer `No fees` (por defecto) y las cuentas del proveedor 
 - **THEN** no se envía nada y el foco vuelve a la acción
 
 ### Requirement: Formularios de cuenta: errores del API
-Ante un error del API, el diálogo o el panel SHALL seguir abiertos con todo lo escrito. `409 account_name_taken` SHALL mostrarse en el campo Name; `400 validation_error` con `details.field` (`copyFeesFromAccountId`, `matchingRuleSetId`, `rollingReserveCapAmt`) junto a ese campo; el resto (`400` sin campo, `403`, `404`, `5xx`, error de red) como mensaje del formulario. Un `5xx` SHALL decir `The account could not be saved. Try again.`; `Could not reach the server. Try again.` SHALL reservarse a los fallos de red (sin respuesta del servidor). El foco SHALL ir al campo con error o al mensaje, también cuando el mismo mensaje se repite en otro envío.
+Ante un error del API, el diálogo o el panel SHALL seguir abiertos con todo lo escrito. `409 account_name_taken` SHALL mostrarse en el campo Name; `400 validation_error` con `details.field` junto a ese campo; el resto (`400` sin campo, `403`, `404`, `5xx`, red) como mensaje del formulario, distinguiendo un `5xx` de un fallo de red. El foco SHALL ir al campo con error o al mensaje, también si el mensaje se repite.
 
 #### Scenario: Nombre en uso
 - **GIVEN** que `POST /providers/201/accounts` responde `409 account_name_taken`
