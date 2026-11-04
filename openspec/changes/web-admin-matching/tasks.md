@@ -94,14 +94,14 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
   - **"permisos de la pantalla"** en lectura: `viewer`, `analyst` y `admin`, y `admin` con alcance `assigned` (con `withScopedAdmin()`, design D8).
   - **"Overview":** el enlace del legacy a `/matching-rules/3`, `None · global rules` a `/matching-rules/global` y sin pestaña de reglas.
 - [x] 5.2 Commit: test(web): lista, detalle y reglas globales de Matching Rules en lectura
-- [ ] 5.3 Implementar lo necesario hasta dejar en verde los tests de 5.1 (design D3, D8, D9):
+- [x] 5.3 Implementar lo necesario hasta dejar en verde los tests de 5.1 (design D3, D8, D9):
   - `queries.ts` y `permissions.ts`;
   - `rule-tables.tsx` en lectura;
   - `MatchingRulesPage.tsx`, `RuleSetPage.tsx` y `GlobalRulesPage.tsx`;
   - el enlace de `AccountOverview.tsx`;
   - sus textos.
   - Verificar con los tests de 5.1, `pnpm typecheck` y `pnpm lint`.
-- [ ] 5.4 Commit: feat(web): lista, detalle y reglas globales de Matching Rules en lectura
+- [x] 5.4 Commit: feat(web): lista, detalle y reglas globales de Matching Rules en lectura
 
 ## 6. Modo edición (test-first)
 
