@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
 import { strings as loginStrings } from '@/features/auth/strings'
 import { session } from '@/lib/session/session'
-import { ACCOUNT_IDS } from '@/test/msw/fixtures'
+import { ACCOUNT_IDS, USERS } from '@/test/msw/fixtures'
 import { seedImport } from '@/test/msw/imports'
 import { recordRequests } from '@/test/msw/record'
 import { renderApp } from '@/test/render'
@@ -25,6 +25,15 @@ const MVP_ENTRIES = [
   'Users & Roles',
   'Audit Log',
 ]
+
+/** viewer without fee.view for one test (no seeded role lacks it). */
+function withoutFeeView() {
+  const permissions = USERS.viewer.permissions
+  USERS.viewer.permissions = ['reports.view']
+  onTestFinished(() => {
+    USERS.viewer.permissions = permissions
+  })
+}
 
 async function mainNav() {
   return within(await screen.findByRole('navigation', { name: strings.mainNav }))
@@ -52,6 +61,7 @@ describe('navigation filtered by permissions', () => {
     expect(nav.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/')
     expect(nav.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/accounts')
     expect(nav.getByRole('link', { name: 'Settlement List' })).toHaveAttribute('href', '/settlements')
+    expect(nav.getByRole('link', { name: 'Fees' })).toHaveAttribute('href', '/fees')
   })
 
   it('analyst sees New Reconciliation as a link and In Progress disabled, and not Payments nor Users & Roles', async () => {
@@ -60,6 +70,7 @@ describe('navigation filtered by permissions', () => {
 
     expect(nav.getByRole('link', { name: 'New Reconciliation' })).toHaveAttribute('href', '/reconciliations/new')
     expect(nav.getByRole('link', { name: 'Settlement List' })).toHaveAttribute('href', '/settlements')
+    expect(nav.getByRole('link', { name: 'Fees' })).toHaveAttribute('href', '/fees')
     const inProgress = nav.getByText('In Progress').closest('[aria-disabled]')
     expect(inProgress).toHaveAttribute('aria-disabled', 'true')
     expect(nav.queryByRole('link', { name: 'In Progress' })).not.toBeInTheDocument()
@@ -67,12 +78,36 @@ describe('navigation filtered by permissions', () => {
     expect(nav.queryByText('Users & Roles')).not.toBeInTheDocument()
   })
 
-  it('admin sees every MVP entry; only Dashboard, New Reconciliation, Settlement List and Accounts are links', async () => {
+  it('admin sees every MVP entry; only Dashboard, New Reconciliation, Settlement List, Accounts and Fees are links', async () => {
     renderApp('/', { as: 'admin' })
     const nav = await mainNav()
 
     for (const entry of MVP_ENTRIES) expect(nav.getByText(entry)).toBeInTheDocument()
-    expect(linkNames(nav)).toEqual(['Dashboard', 'New Reconciliation', 'Settlement List', 'Accounts'])
+    expect(linkNames(nav)).toEqual(['Dashboard', 'New Reconciliation', 'Settlement List', 'Accounts', 'Fees'])
+  })
+
+  it('a role without fee.view does not see Fees', async () => {
+    withoutFeeView()
+    renderApp('/', { as: 'viewer' })
+    const nav = await mainNav()
+
+    expect(nav.getByRole('link', { name: 'Accounts' })).toBeInTheDocument()
+    expect(nav.queryByText('Fees')).not.toBeInTheDocument()
+  })
+
+  it('marks Fees as the active entry in the fees of an account, and not Accounts (web-admin-fees design D2)', async () => {
+    renderApp(`/accounts/${ACCOUNT_IDS['ProviderA-USD']}/fees`, { as: 'viewer' })
+    const nav = await mainNav()
+
+    await waitFor(() => expect(nav.getByRole('link', { name: 'Fees' })).toHaveAttribute('aria-current', 'page'))
+    expect(nav.getByRole('link', { name: 'Accounts' })).not.toHaveAttribute('aria-current')
+  })
+
+  it('marks Fees as the active entry in the global view with filters in the address', async () => {
+    renderApp('/fees?status=all', { as: 'viewer' })
+    const nav = await mainNav()
+
+    await waitFor(() => expect(nav.getByRole('link', { name: 'Fees' })).toHaveAttribute('aria-current', 'page'))
   })
 
   it('marks Settlement List as the active entry with filters in the address', async () => {
@@ -101,6 +136,26 @@ describe('navigation filtered by permissions', () => {
     await user.click(nav.getByText('Payments'))
 
     expect(router.state.location.pathname).toBe('/')
+  })
+})
+
+describe('permission guard of the fee screens (web-admin-fees design D2)', () => {
+  it('/fees without fee.view shows "no access" and does not ask GET /fees', async () => {
+    withoutFeeView()
+    const rec = recordRequests()
+    renderApp('/fees', { as: 'viewer' })
+
+    expect(await screen.findByText(strings.forbiddenTitle)).toBeInTheDocument()
+    expect(rec.calls.some((call) => call.startsWith('GET /api/v1/fees'))).toBe(false)
+  })
+
+  it('the fees of an account without fee.view show "no access" and do not ask its fees', async () => {
+    withoutFeeView()
+    const rec = recordRequests()
+    renderApp(`/accounts/${ACCOUNT_IDS['ProviderA-USD']}/fees`, { as: 'viewer' })
+
+    expect(await screen.findByText(strings.forbiddenTitle)).toBeInTheDocument()
+    expect(rec.calls.some((call) => call.includes('/fees'))).toBe(false)
   })
 })
 

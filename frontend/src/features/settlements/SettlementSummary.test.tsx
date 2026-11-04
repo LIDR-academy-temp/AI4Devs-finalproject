@@ -65,6 +65,28 @@ describe('Settlement Summary: header grid of the attempt (spec "estado y cabecer
     expect(grid()).toContainEqual(['Settlement date', 'Not set'])
   })
 
+  // An exception to design D15 (no tests of classes): at 1024 px the status Badge ran under Processed by, and jsdom
+  // has no layout to show it. The Badge may wrap and no item of the grid may be wider than its column.
+  it('the status Badge wraps instead of running into the next item of the grid', async () => {
+    await openSummary()
+
+    const badge = header().getByText('Processed · pending payment')
+    expect(badge).toHaveClass('whitespace-normal', 'h-auto')
+    expect(badge).not.toHaveClass('whitespace-nowrap')
+    for (const term of header().getAllByRole('term')) expect(term.parentElement).toHaveClass('min-w-0')
+  })
+
+  // The rule of settlements-browse D11 for a date and a time: whole pieces, a line may break only between them.
+  it('who and when breaks only between the user, the date and the time, never inside them', async () => {
+    await openSummary()
+
+    const processedBy = header().getByText('Processed by')
+    const pieces = [...(processedBy.nextElementSibling?.children ?? [])]
+    expect(pieces.map((piece) => piece.textContent)).toEqual(['analyst ·', '2026-10-19', '11:40 ET'])
+    for (const piece of pieces) expect(piece).toHaveClass('whitespace-nowrap')
+    expect(grid()).toContainEqual(['Processed by', 'analyst · 2026-10-19 11:40 ET'])
+  })
+
   it('the header has no table of date ranges: they are in Totals by type', async () => {
     await openSummary()
 

@@ -1,4 +1,4 @@
-import type { BatchStatus, ImportStatus, SettledStatus, ValidationOutcome } from '@recon/shared'
+import type { BatchStatus, FeeStatus, ImportStatus, SettledStatus, ValidationOutcome } from '@recon/shared'
 
 /** The Badge variant of a status: the colour answers "is anything still pending?" (design D8). */
 export type Tone = 'success' | 'warning' | 'danger' | 'neutral'
@@ -41,6 +41,13 @@ export const SETTLED_STATUS_TONE = {
   settled: 'success',
   undone: 'neutral',
 } as const satisfies Record<SettledStatus, Tone>
+
+/** A scheduled fee is still to come; a closed one is history (web-admin-fees). */
+export const FEE_STATUS_TONE = {
+  active: 'success',
+  scheduled: 'warning',
+  closed: 'neutral',
+} as const satisfies Record<FeeStatus, Tone>
 
 /**
  * The colours of a notice that explains a status, by tone, as the Badge takes them from its variant: the same theme
