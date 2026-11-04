@@ -51,7 +51,7 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
 
 ## 3. Conjuntos: crear, ver y editar
 
-- [ ] 3.1 Escribir `matching/application/rule-set-admin-service.test.ts` con un repositorio en memoria en `__fakes__` (D3) y comprobar que falla. Debe cubrir los escenarios de "Crear un conjunto de reglas", "Detalle de un conjunto de reglas", "Editar un conjunto de reglas", "Nombre de conjunto único por proveedor", "Desactivar un conjunto en uso", "Permiso y alcance de las escrituras de reglas" y "Auditoría de las reglas de pareo" (salvo los de concurrencia):
+- [x] 3.1 Escribir `matching/application/rule-set-admin-service.test.ts` con un repositorio en memoria en `__fakes__` (D3) y comprobar que falla. Debe cubrir los escenarios de "Crear un conjunto de reglas", "Detalle de un conjunto de reglas", "Editar un conjunto de reglas", "Nombre de conjunto único por proveedor", "Desactivar un conjunto en uso", "Permiso y alcance de las escrituras de reglas" y "Auditoría de las reglas de pareo" (salvo los de concurrencia):
   - orden de los pasos de D3;
   - `404` de proveedor y de conjunto;
   - `400` sin escrituras;
@@ -61,7 +61,7 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
   - Incluye "Nombre repetido en mayúsculas" (intercalación), "Mismo nombre en otro proveedor" y "Cuenta cerrada enlazada" (con una cuenta `it-acc-` cerrada).
   - Incluye un test de integración que no da por hecho que `createMany` conserva el orden: inserta las reglas en un orden no alfabético y con prioridades iguales, las lee de la base ordenadas por `sheetRuleId`/`columnRuleId` y comprueba que salen en el orden del cuerpo; repite con el orden invertido. Es lo que sostiene el desempate (D3).
   - Si no hay turno de base, se anota y se ejecuta en rojo en el turno de la 3.4.
-- [ ] 3.3 Commit: test(matching): crear, ver y editar conjuntos de reglas
+- [x] 3.3 Commit: test(matching): crear, ver y editar conjuntos de reglas
 - [ ] 3.4 Implementar:
   - `PrismaMatchingRulesAdminRepository`: `inProvider`, `inRuleSet` con `UPDLOCK, HOLDLOCK`, `retryOnDeadlock`, respaldo de `MatchingRuleSet_providerId_name_key` por número de error y `createMany` en orden;
   - `RuleSetAdminService.create`/`.put`;

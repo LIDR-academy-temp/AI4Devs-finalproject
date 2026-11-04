@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { buildTestApp, PASSWORD } from '../../../test-support/build-test-app.js'
 import { ACCOUNT_IDS } from '../../catalog/application/__fakes__/in-memory.js'
-import { InMemoryRuleSetReadRepository } from '../application/__fakes__/in-memory-rule-sets.js'
+import { InMemoryRuleSets } from '../application/__fakes__/in-memory-rule-sets.js'
 import { RuleSetReadService } from '../application/rule-set-read-service.js'
 
 // Spec matching "Conjuntos de reglas de un proveedor" (admin-accounts design D8), over the in-memory double.
@@ -11,7 +11,7 @@ let ctx: Awaited<ReturnType<typeof buildTestApp>>
 
 beforeEach(async () => {
   ctx = await buildTestApp({
-    matching: { ruleSetService: new RuleSetReadService(new InMemoryRuleSetReadRepository()) },
+    matching: { ruleSetService: new RuleSetReadService(new InMemoryRuleSets()) },
   })
   await ctx.app.ready()
 })
