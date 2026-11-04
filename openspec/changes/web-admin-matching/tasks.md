@@ -20,11 +20,11 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
   - Matching Rules como enlace a `/matching-rules` para `viewer`, `analyst` y `admin`;
   - activa en `/matching-rules?merchantId=1`, `/matching-rules/global` y `/matching-rules/3`.
 - [x] 2.2 Commit: test(web): Matching Rules habilitada en el menú
-- [ ] 2.3 Hacer pasar los tests de 2.1:
+- [x] 2.3 Hacer pasar los tests de 2.1:
   - Extraer `features/accounts/provider-choice.tsx` de `AccountsPage.tsx` (design D1) sin cambiar su comportamiento.
   - Crear las tres rutas de design D2 con páginas mínimas (título y migas) y habilitar la entrada en `nav-config.ts`.
   - Verificar con los tests de 2.1, `AccountsPage.test.tsx` sin cambios y en verde, `pnpm typecheck` y `pnpm lint`.
-- [ ] 2.4 Commit: feat(web): rutas de Matching Rules y elección de proveedor compartida con Accounts
+- [x] 2.4 Commit: feat(web): rutas de Matching Rules y elección de proveedor compartida con Accounts
 
 ## 3. Cuerpos y errores (funciones puras, test-first)
 
