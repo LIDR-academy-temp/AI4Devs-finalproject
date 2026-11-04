@@ -146,14 +146,14 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
 
 ## 8. Documentación
 
-- [ ] 8.1 Actualizar la documentación y verificar releyendo que README y delta specs dicen lo mismo:
+- [x] 8.1 Actualizar la documentación y verificar releyendo que README y delta specs dicen lo mismo:
   - **README §1.3:**
     - fila **Matching Rules**: lista por proveedor, detalle, globales y alias; edición con `account.manage`, y las globales con alcance `all`; filas a ignorar de solo lectura (#120); sin "Test against a file…";
     - fila **Accounts / Account Detail**: el conjunto enlaza a Matching Rules, sin pestaña;
     - mención de `docs/wireframes/web-admin-matching/`.
   - **`docs/wireframes/README.md`:** la carpeta nueva.
-- [ ] 8.2 Verificar con `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
-- [ ] 8.3 Commit: docs(web): Matching Rules en el mapa de pantallas
+- [x] 8.2 Verificar con `pnpm lint`, `pnpm typecheck` y `pnpm test` en verde.
+- [x] 8.3 Commit: docs(web): Matching Rules en el mapa de pantallas
 
 ## 9. Capturas contra el backend real
 
