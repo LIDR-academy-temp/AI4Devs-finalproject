@@ -372,7 +372,16 @@ describe('channels stay read-only', () => {
     await call('PATCH', `/accounts/${account.accountId}`, 'admin', { isActive: true })
 
     expect(await snapshot()).toEqual(before)
-    const unassigned = (await call('GET', '/channels?unassigned=true', 'admin')).json()
-    expect(unassigned.map((c: { name: string }) => c.name)).toEqual(['RAM-07', 'RAM-13'])
+    // RAM-13 stays unassigned; RAM-07 too on a fresh seed, but batch-clean of the Bruno collection assigns it to
+    // ProviderA-USD, its only possible account (#111): either state is fine, never the account created here.
+    const unassigned: string[] = (await call('GET', '/channels?unassigned=true', 'admin'))
+      .json()
+      .map((c: { name: string }) => c.name)
+    expect(unassigned).toContain('RAM-13')
+    if (!unassigned.includes('RAM-07')) {
+      const channels = (await call('GET', '/channels', 'admin')).json()
+      const ram07 = channels.find((c: { name: string }) => c.name === 'RAM-07')
+      expect(ram07?.primaryAccount?.name).toBe('ProviderA-USD')
+    }
   })
 })

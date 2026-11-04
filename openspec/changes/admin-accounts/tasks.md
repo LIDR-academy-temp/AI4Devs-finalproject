@@ -85,8 +85,13 @@ Rama `feat/admin-accounts`. Las decisiones D1–D10 están en `design.md`; los e
 
 ## 7. Cierre
 
-- [ ] 7.1 Verificar con `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check` y `openspec validate admin-accounts --strict`.
-- [ ] 7.2 Commit: docs(accounts): OpenAPI y verificación final de la administración de cuentas (solo si 7.1 dejó cambios)
+- [x] 7.1 Verificar con `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check` y `openspec validate admin-accounts --strict`.
+  - Lint, typecheck (4 paquetes), `openapi:check` y `validate --strict`: limpios.
+  - `pnpm test`: shared 255, backend 1219 y frontend 811 en verde. Los timeouts de 5 s por carga local (arranque de la app, `export-openapi`, Argon2) pasan aislados; criterio aprobado por la persona, el CI decide.
+  - `/opsx:verify` sin críticos. Su aviso 2 se resolvió: `account-admin.int.test.ts` ("Canales de solo lectura") acepta RAM-07 sin cuenta o con ProviderA-USD (#111), como `6 Channels`.
+  - Integración completa sobre una base recién sembrada, tras los grupos 5 y 6: 416 en verde y 8 omitidos.
+- [x] 7.2 Commit: docs(accounts): OpenAPI y verificación final de la administración de cuentas (solo si 7.1 dejó cambios)
+  - 7.1 no dejó cambios de OpenAPI ni de docs. El commit final solo lleva el test relajado y `tasks.md`, como `test(accounts)`.
 
 ## Workflow follow-up
 
