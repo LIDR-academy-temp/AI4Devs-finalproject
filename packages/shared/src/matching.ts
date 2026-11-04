@@ -116,7 +116,10 @@ export const MatchingRuleSetCreate = z.strictObject({
 })
 export type MatchingRuleSetCreate = z.infer<typeof MatchingRuleSetCreate>
 
-/** Body of PUT /matching-rule-sets/{id}: the whole document; it replaces every sheet and column rule of the set. */
+/**
+ * Body of PUT /matching-rule-sets/{id}: the whole document. The rule lists that change are replaced in the order given
+ * (new rule ids); a list without changes keeps its ids.
+ */
 export const MatchingRuleSetPut = z.strictObject({
   name: z.string().trim().min(1).max(80),
   isActive: z.boolean(),
@@ -136,7 +139,7 @@ export const GlobalMatchingRules = z.object({
 })
 export type GlobalMatchingRules = z.infer<typeof GlobalMatchingRules>
 
-/** Body of PUT /matching-rules/global: replaces the global sheet and column rules and the status aliases. */
+/** Body of PUT /matching-rules/global: the lists that change (global sheet rules, column rules, aliases) are replaced. */
 export const GlobalMatchingRulesPut = z.strictObject({
   sheetRules: z.array(SheetRuleInput).max(MAX_RULES),
   columnRules: z.array(ColumnRuleInput).max(MAX_RULES),

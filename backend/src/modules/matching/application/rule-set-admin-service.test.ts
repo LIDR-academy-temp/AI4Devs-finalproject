@@ -210,6 +210,28 @@ describe('put', () => {
     expect(repo.audits).toEqual([])
   })
 
+  it('answers a list whose priority order is the reverse of its id order, sent back, without writing', async () => {
+    const created = await service.create(
+      ALL,
+      ADMIN,
+      201,
+      MatchingRuleSetCreate.parse({
+        name: 'Reversed',
+        sheetRules: [
+          { ...transactions, sheetPattern: 'Late', priority: 20 },
+          { ...transactions, sheetPattern: 'Early', priority: 10 },
+        ],
+      }),
+    )
+    expect(created.sheetRules.map((r) => r.sheetPattern)).toEqual(['Early', 'Late'])
+    expect(created.sheetRules[0]!.sheetRuleId).toBeGreaterThan(created.sheetRules[1]!.sheetRuleId)
+
+    const after = await service.put(ALL, ADMIN, created.ruleSetId, bodyOf(created))
+
+    expect(after).toEqual(created)
+    expect(repo.audits.map((a) => a.action)).toEqual(['matching_rule_set.create'])
+  })
+
   it('saves an inactive rule and shows it', async () => {
     const before = await legacy()
     const sheetRules = bodyOf(before).sheetRules.map((r) => (r.sheetPattern === 'Fail' ? { ...r, isActive: false } : r))

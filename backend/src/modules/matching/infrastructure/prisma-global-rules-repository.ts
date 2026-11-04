@@ -29,6 +29,11 @@ type Client = Pick<
 /** A waiting write holds the transaction while the other one commits; the timeout of the other rule writes. */
 const TX_TIMEOUT_MS = 15_000
 const GLOBAL_LOCK = 'matching_rules_global'
+/**
+ * How long a write waits for the lock: shorter than the transaction, so a write that cannot get it fails with the
+ * lock's answer (a negative result) before the transaction times out.
+ */
+const LOCK_TIMEOUT_MS = 10_000
 
 async function readGlobals(client: Client): Promise<GlobalMatchingRules> {
   const [sheetRules, columnRules, rowIgnoreRules, statusAliases, statuses] = await Promise.all([
@@ -95,7 +100,7 @@ export class PrismaGlobalRulesRepository implements GlobalRulesRepository {
             const [{ result }] = await tx.$queryRaw<{ result: number }[]>`
               DECLARE @result INT;
               EXEC @result = sp_getapplock @Resource = ${GLOBAL_LOCK}, @LockMode = 'Exclusive',
-                @LockOwner = 'Transaction', @LockTimeout = ${TX_TIMEOUT_MS};
+                @LockOwner = 'Transaction', @LockTimeout = ${LOCK_TIMEOUT_MS};
               SELECT @result AS result;`
             // 0 granted, 1 granted after waiting; negative: timeout, cancelled, deadlock victim or error.
             if (result === undefined || result < 0) throw new Error(`sp_getapplock ${GLOBAL_LOCK} answered ${result}`)

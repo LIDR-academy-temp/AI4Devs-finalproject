@@ -26,6 +26,11 @@ const writeErrors = {
   404: ErrorResponse,
   409: ErrorResponse,
 }
+/** How the proposal breaks ties, and what the comparison of a PUT counts as a change (design D2). */
+const ruleOrder =
+  'At equal priority a column rule bound to a sheet goes before a generic one, and then the rule saved first ' +
+  'wins. Rules compare in priority order keeping the body order among equal priorities, so reordering rules of ' +
+  'equal priority is a change even when it does not alter any proposal.'
 const contentRules =
   'A transactions sheet carries a cycle; batch_fees and ignore carry neither cycle nor status; cycle R has no ' +
   'status; a fixed status is never Pending and has the natural cycle of the sheet; a regex must compile; patterns ' +
@@ -96,7 +101,8 @@ export const matchingRoutes: FastifyPluginAsyncZod<MatchingRoutesOptions> = asyn
         summary: 'Detail of a matching rule set',
         description:
           'Sheet, column and row-ignore rules (the latter read-only, #120) in priority order and, at equal ' +
-          'priority, in the order they were saved, which is the tie-break of the proposal. 404 for a set outside ' +
+          'priority, in the order they were saved, which is the tie-break of the proposal (for columns, a rule ' +
+          'bound to a sheet goes before a generic one at equal priority). 404 for a set outside ' +
           'your scope.',
         params: RuleSetParams,
         response: {
@@ -122,7 +128,7 @@ export const matchingRoutes: FastifyPluginAsyncZod<MatchingRoutesOptions> = asyn
           'list without changes keeps its ids. ' +
           'A body that changes nothing answers 200 without writing. A change applies from the next proposal and ' +
           'the next analysis; confirmed mappings and analysed rows do not change. Deactivating a set with linked ' +
-          `accounts, open or closed, is 409 rule_set_in_use (details.accounts). ${contentRules}`,
+          `accounts, open or closed, is 409 rule_set_in_use (details.accounts). ${ruleOrder} ${contentRules}`,
         params: RuleSetParams,
         body: MatchingRuleSetPut,
         response: { 200: MatchingRuleSetDetail, ...writeErrors },
@@ -157,7 +163,7 @@ export const matchingRoutes: FastifyPluginAsyncZod<MatchingRoutesOptions> = asyn
         summary: 'Replace the global matching rules and status aliases',
         description:
           'Needs account.manage and merchant scope "all" (403 otherwise): the global rules apply to every merchant. ' +
-          `A body that changes nothing answers 200 without writing. ${contentRules}`,
+          `A body that changes nothing answers 200 without writing. ${ruleOrder} ${contentRules}`,
         body: GlobalMatchingRulesPut,
         response: { 200: GlobalMatchingRules, 400: ErrorResponse, 401: ErrorResponse, 403: ErrorResponse },
       },
