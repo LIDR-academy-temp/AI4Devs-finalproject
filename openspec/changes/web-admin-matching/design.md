@@ -114,7 +114,8 @@ frontend/src/test/msw/matching.ts (+ matching.test.ts)
 
   No es una regla de validación: el campo deja de existir para ese tipo. El API sigue validando la coherencia.
 - **Validación local** con `SheetRuleInput`, `ColumnRuleInput` y `StatusAliasInput` de `@recon/shared` aplicados a cada fila del body (`safeParse`). Las rutas de Zod se traducen a la misma forma que `details.field` (`sheetRules[1].sheetPattern`), así que local y API comparten D6.
-- **Mensajes locales** de texto fijo: `Enter a pattern.`, `At most 128 characters.`, `Enter a whole number from 0 to 32767.`, `Choose a cycle.`, `Choose a status.` No se comprueban regex, repetidos, `Pending` ni ciclo natural.
+- **Mensajes locales** de texto fijo, solo para lo que rechazan los esquemas: `Enter a pattern.`, `At most <n> characters.`, `Enter a whole number from 0 to 32767.` y, en los alias, `Choose a status.` No se comprueban regex, repetidos, `Pending`, ciclo natural ni una hoja `transactions` sin ciclo, porque `SheetRuleInput` acepta `cycle: null` y esa coherencia es del dominio. En la interfaz no puede pasar: el `select` de ciclo de una hoja `transactions` no ofrece opción vacía, y pasar una hoja a `transactions` le pone `E`.
+- **Columna para cualquier hoja.** El campo de hoja de una regla de columna es un texto: vacío significa `Any sheet` y viaja como `sheetPattern = null`.
 - **Copia de un conjunto** (`Start from: Copy of …`): `createBody(name, source)` con `source` = `valuesOf(detail de origen)`. Se pide el detalle de origen al elegirlo y **Create rule set** espera a tenerlo.
 - **Rotura deliberada:** que `valuesOf` conserve `sheetRuleId` debe hacer fallar el caso "sin ids"; después se revierte.
 

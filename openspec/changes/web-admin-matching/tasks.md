@@ -28,7 +28,7 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
 
 ## 3. Cuerpos y errores (funciones puras, test-first)
 
-- [ ] 3.1 Escribir `features/matching/rule-form.test.ts` (design D4) y comprobar que falla:
+- [x] 3.1 Escribir `features/matching/rule-form.test.ts` (design D4) y comprobar que falla:
   - `valuesOf` del legacy sin `sheetRuleId`, `columnRuleId`, `rowIgnoreRules` ni `statuses`, con las filas en el orden de la respuesta.
   - `ruleSetBody` exacto. `reason` va recortado y solo si no está vacío. Rename cambia solo `name` y Activate solo `isActive`.
   - `globalsBody` con `statusAliases` y sin `rowIgnoreRules` ni `statuses`.
@@ -36,16 +36,17 @@ Rama `feat/web-admin-matching`. Contiene `origin/feat/admin-matching` (ad75fb8) 
   - Validación local:
     - patrón vacío o de 129 caracteres;
     - prioridad `-1`, `32768` y `1.5`;
-    - `transactions` sin ciclo;
+    - alias sin estado;
     - ruta en forma de `details.field`.
-  - Lo que el navegador no rechaza: regex `^amount(`, `APP` y ` app `, `Pending`, `E` · `Chargeback`.
+  - Lo que el navegador no rechaza: regex `^amount(`, `APP` y ` app `, `Pending`, `E` · `Chargeback` y una hoja `transactions` sin ciclo.
+  - Columna con hoja vacía → `sheetPattern = null`.
   - `createBody` vacío y como copia del legacy, sin ids.
-- [ ] 3.2 Escribir `features/matching/rule-errors.test.ts` (design D6) y comprobar que falla:
+- [x] 3.2 Escribir `features/matching/rule-errors.test.ts` (design D6) y comprobar que falla:
   - `details.field` en `sheetRules[2].statusId`, `columnRules[0].columnPattern`, `statusAliases[1].alias` y `name`, con el mensaje del API;
   - una ruta fuera del formulario (`sheetRules[9].cycle`) y la lista de Fastify → mensaje general;
   - `rule_set_name_taken` → `name`;
   - `403`, `404` (invalida), `5xx` y red.
-- [ ] 3.3 Commit: test(web): cuerpos y errores de las reglas de pareo
+- [x] 3.3 Commit: test(web): cuerpos y errores de las reglas de pareo
 - [ ] 3.4 Implementar `rule-form.ts`, `rule-errors.ts` y sus textos en `features/matching/strings.ts`.
   - **Rotura deliberada:** que `valuesOf` conserve `sheetRuleId` debe hacer fallar su caso; después se revierte.
   - Verificar con `pnpm --filter @recon/frontend test rule-form rule-errors`.
