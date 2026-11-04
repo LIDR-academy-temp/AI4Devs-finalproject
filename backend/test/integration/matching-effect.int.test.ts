@@ -13,6 +13,8 @@ let flow: ImportFlow
 let adminToken: string
 let adminId: number
 let legacy: MatchingRuleSetDetail
+/** The global aliases as the file found them: the diverted alias must be back to its value at the end. */
+let aliasesBefore: GlobalMatchingRules['statusAliases']
 const RUN = Date.now().toString(36)
 let serial = 0
 let set: MatchingRuleSetDetail
@@ -32,6 +34,7 @@ beforeAll(async () => {
   const legacyId = (await ctx.prisma.matchingRuleSet.findFirstOrThrow({ where: { name: 'Provider C legacy' } }))
     .ruleSetId
   legacy = MatchingRuleSetDetail.parse((await admin('GET', `/matching-rule-sets/${legacyId}`)).json())
+  aliasesBefore = GlobalMatchingRules.parse((await admin('GET', '/matching-rules/global')).json()).statusAliases
 })
 
 beforeEach(async () => {
@@ -77,6 +80,8 @@ afterAll(async () => {
   try {
     expect(await ctx.prisma.account.count({ where: { name: { startsWith: 'it-acc-' } } })).toBe(0)
     expect(await ctx.prisma.matchingRuleSet.count({ where: { name: { startsWith: 'it-rs-' } } })).toBe(0)
+    const aliasesAfter = GlobalMatchingRules.parse((await admin('GET', '/matching-rules/global')).json()).statusAliases
+    expect(aliasesAfter).toEqual(aliasesBefore)
   } finally {
     await ctx.app.close()
     await ctx.prisma.$disconnect()

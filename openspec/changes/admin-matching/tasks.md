@@ -103,7 +103,7 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
   - "Columna de una hoja antes que la genérica".
 
   Deberían pasar ya: protegen de regresiones. Comprobarlo rompiendo a propósito `byColumnPrecedence` y revirtiendo.
-- [ ] 5.2 Escribir `test/integration/matching-effect.int.test.ts` (D7) con los cuatro escenarios de "Efecto de un cambio de reglas". Usa un conjunto `it-rs-` copia del legacy y una cuenta `it-acc-` enlazada en Provider C con `legacy-provider`. El alias se cambia y se restaura en `try`/`finally`. Verificar que pasa sin cambios en `imports` y que, si se fija la propuesta en la subida (prueba a propósito), "Import subido sin confirmar" falla.
+- [x] 5.2 Escribir `test/integration/matching-effect.int.test.ts` (D7) con los cuatro escenarios de "Efecto de un cambio de reglas". Usa un conjunto `it-rs-` copia del legacy y una cuenta `it-acc-` enlazada en Provider C con `legacy-provider`. El alias se cambia y se restaura en `try`/`finally`. Verificar que pasa sin cambios en `imports` y que, si se fija la propuesta en la subida (prueba a propósito), "Import subido sin confirmar" falla.
 - [x] 5.3 Añadir el ayudante `seedRuleSets()` (sin los de prefijo `bruno-`) a `test/integration/helpers.ts` y usarlo en `matching-rule-sets.int.test.ts` y en cualquier otro test que liste conjuntos exactos (buscar con Grep `Provider C legacy` y `toHaveLength` sobre conjuntos en `backend/test`). Cubrir "Conjuntos de la colección presentes" con un conjunto `bruno-` inactivo creado en `beforeAll` y borrado en `afterAll`.
 - [x] 5.4 Actualizar README:
   - §1.2: efecto de un cambio de reglas (pareo confirmado y filas analizadas intactos; import `uploaded` sin confirmar con la propuesta nueva; alias en el siguiente análisis), con el porqué: fijarlo por import exigiría una migración;
@@ -111,7 +111,12 @@ Rama `feat/admin-matching`. Las decisiones D1–D9 están en `design.md`; los es
   - §1.5: se quita el recorte de #80.
 
   Verificar con `grep` que §1.5 ya no lista "Administración de reglas de pareo".
-- [ ] 5.5 Commit: test(matching): efecto de un cambio de reglas y conjuntos de la colección
+- [x] 5.5 Commit: test(matching): efecto de un cambio de reglas y conjuntos de la colección
+
+  Grupo 5, verificación y notas:
+  - 5.1: rotura de `byColumnPrecedence` observada (fallan dos tests) y revertida.
+  - 5.2: `matching-effect` y `matching-rule-sets` en verde con la base local (turno de la persona). La rotura que fija la propuesta en la subida se aplicó y se revirtió **sin llegar a ejecutarse**, por decisión de la persona: no hay evidencia observada de que "Import subido sin confirmar" falle con ella. Grep confirma que no queda rastro.
+  - El `afterAll` de `matching-effect` comprueba que los alias globales vuelven a su valor y que no quedan `it-rs-` ni `it-acc-`.
 
 ## 6. Colección Bruno
 
