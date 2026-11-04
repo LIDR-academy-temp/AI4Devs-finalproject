@@ -48,12 +48,14 @@ services:
   api:
     build: ./backend
     command: uvicorn app.api.principal:app --host 0.0.0.0 --port 8000
-    # La API nunca recibe las credenciales de SAT2.
+    # La API nunca recibe las credenciales de SAT2 ni las del servidor de correo: solo encola.
     environment:
       DATABASE_URL: *url-base-de-datos
       SAT2_MODO: ${SAT2_MODO:-simulado}
       # false solo para el desarrollo local por HTTP; el despliegue usa HTTPS.
       COOKIE_SEGURA: ${COOKIE_SEGURA:-false}
+      # Dirección con la que se arman los enlaces de los correos.
+      URL_PUBLICA: ${URL_PUBLICA:-http://localhost:${PUERTO_WEB:-8080}}
     depends_on:
       migraciones:
         condition: service_completed_successfully
@@ -79,6 +81,11 @@ services:
       DATABASE_URL: *url-base-de-datos
       SAT2_MODO: ${SAT2_MODO:-simulado}
       CARGA_PAUSA_SEGUNDOS: ${CARGA_PAUSA_SEGUNDOS:-2}
+      # En local, los correos van a Mailpit y no salen a internet.
+      SMTP_HOST: ${SMTP_HOST:-correo}
+      SMTP_PUERTO: ${SMTP_PUERTO:-1025}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+      CORREO_REMITENTE: "${CORREO_REMITENTE:-Weather Track <no-responder@weathertrack.localhost>}"
     depends_on:
       migraciones:
         condition: service_completed_successfully
@@ -91,6 +98,22 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  # Atrapa los correos de la instalación local y los muestra en http://localhost:8025.
+  # No envía nada a internet. En producción se desactiva (docker-compose.prod.yml).
+  correo:
+    image: axllent/mailpit:v1.31.6
+    ports:
+      - "127.0.0.1:${PUERTO_CORREO:-8025}:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      MP_MAX_MESSAGES: "500"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   proxy:
     build: ./frontend

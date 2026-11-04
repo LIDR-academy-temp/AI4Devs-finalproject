@@ -66,7 +66,9 @@ La API escribe el correo en `correo_saliente` dentro de la misma transacción qu
 
 - **Por qué:** la respuesta de la API no depende del servidor de correo, tarda lo mismo exista o no la cuenta y los datos del SMTP quedan solo en el worker, que ya lee el `.env`.
 - **Alternativa descartada:** `BackgroundTasks` de FastAPI. Pierde el correo si la API se reinicia y obliga a darle las credenciales del SMTP a la API.
-- **Límite por destinatario:** antes de encolar se cuentan los correos del mismo tipo y destinatario de la última hora. Si ya hay 3, no se encola y la respuesta no cambia.
+- **Límite por destinatario:** antes de encolar se cuentan los correos del mismo tipo y destinatario de la última hora. Si ya hay 3, no se encola y la respuesta no cambia. Tampoco se emiten enlaces nuevos, así el último enlace que recibió la persona sigue sirviendo.
+- **Registro del envío:** al enviar o descartar un correo se borran su asunto, sus cuerpos y sus cabeceras; quedan el tipo, el destinatario y las fechas, que usa el límite. Pasado un día, el worker borra también eso.
+- **Cabeceras sin plegar:** el mensaje usa la política SMTP con líneas de hasta 998 caracteres. Con la política por defecto, Python codifica la URL larga de `List-Unsubscribe` y ningún programa de correo la reconoce.
 
 ### D5. Correo local con Mailpit
 

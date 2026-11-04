@@ -121,6 +121,7 @@ Editar `.env` con `nano .env`:
 | `POSTGRES_PASSWORD` | La salida de `openssl rand -hex 32` |
 | `DIRECCION_WEB` | El dominio, sin `https://`. Quitar el `#` de esa línea |
 | `COMPOSE_FILE` | Quitar el `#` de esa línea, para que Compose use también la configuración de producción |
+| `SMTP_HOST`, `SMTP_PUERTO`, `SMTP_USUARIO`, `SMTP_CLAVE`, `CORREO_REMITENTE` | Los datos del proveedor de correo, para los correos de las cuentas. Son obligatorios: sin ellos el sistema no arranca. Siempre se usa STARTTLS |
 
 Levantar el sistema. La primera vez tarda varios minutos:
 

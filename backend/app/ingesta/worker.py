@@ -14,6 +14,12 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.cuentas.envio import (
+    Enviador,
+    cargar_configuracion_smtp,
+    enviador_smtp,
+    enviar_pendientes,
+)
 from app.datos.conexion import obtener_motor
 from app.datos.modelos import EjecucionIngesta, Estacion, IntentoAcceso, Sesion
 from app.datos.naturaleza import NaturalezaIncompatible, asegurar_naturaleza
@@ -32,6 +38,7 @@ INTERVALO_LATIDO_SEGUNDOS = 30
 INTERVALO_CICLO_MINUTOS = 10
 INTERVALO_CATALOGO_HORAS = 24
 INTERVALO_CARGA_MINUTOS = 60
+INTERVALO_CORREO_SEGUNDOS = 10
 ANTIGUEDAD_MAXIMA_LATIDO_SEGUNDOS = 120
 ANTIGUEDAD_INTENTOS_HORAS = 24
 RUTA_LATIDO = Path(os.environ.get("WORKER_RUTA_LATIDO", "/tmp/weather-track-latido"))
@@ -157,6 +164,31 @@ def tarea_carga(
                 )
 
 
+def tarea_correo(
+    fabrica: Callable[[], Session],
+    enviar: Enviador,
+    remitente: str,
+    reloj: Callable[[], datetime] = _ahora,
+) -> None:
+    with fabrica() as sesion:
+        enviar_pendientes(sesion, enviar, remitente, reloj())
+
+
+def programar_correo(planificador: BlockingScheduler, fabrica: Callable[[], Session]) -> bool:
+    """Sin servidor de correo configurado, los correos esperan en la bandeja."""
+    configuracion = cargar_configuracion_smtp()
+    if configuracion is None:
+        registro.warning("Sin SMTP_HOST: los correos quedan en la bandeja de salida")
+        return False
+    planificador.add_job(
+        protegida,
+        "interval",
+        seconds=INTERVALO_CORREO_SEGUNDOS,
+        args=["correo", tarea_correo, fabrica, enviador_smtp(configuracion), configuracion.remitente],
+    )
+    return True
+
+
 def preparar_base(fabrica: Callable[[], Session], modo: str) -> bool:
     """No arranca sobre una base de otra naturaleza, para no mezclar datos reales y ficticios."""
     try:
@@ -189,8 +221,12 @@ def principal_de_prueba(fabrica: Callable[[], Session]) -> int:
         preparar_modo_prueba(sesion, _ahora())
     registro.info("Worker iniciado en modo prueba, sin consultar SAT2")
     registrar_latido()
-    planificador = BlockingScheduler(timezone="UTC")
+    planificador = BlockingScheduler(
+        timezone="UTC",
+        job_defaults={"coalesce": True, "max_instances": 1, "misfire_grace_time": 300},
+    )
     planificador.add_job(registrar_latido, "interval", seconds=INTERVALO_LATIDO_SEGUNDOS)
+    programar_correo(planificador, fabrica)
     planificador.start()
     return 0
 
@@ -222,6 +258,7 @@ def principal() -> int:
         job_defaults={"coalesce": True, "max_instances": 1, "misfire_grace_time": 300},
     )
     planificador.add_job(registrar_latido, "interval", seconds=INTERVALO_LATIDO_SEGUNDOS)
+    programar_correo(planificador, fabrica)
     planificador.add_job(
         protegida,
         "interval",

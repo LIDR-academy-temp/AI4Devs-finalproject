@@ -92,7 +92,13 @@ def principal(argumentos: list[str] | None = None) -> int:
     args = analizador.parse_args(argumentos)
 
     # SAT2_MODO del entorno pisa al de .env: la copia nunca arranca en modo real.
-    entorno = {**os.environ, "SAT2_MODO": "prueba", "PUERTO_WEB": args.puerto}
+    # Mailpit en otro puerto, para no chocar con el de la instalación real.
+    entorno = {
+        **os.environ,
+        "SAT2_MODO": "prueba",
+        "PUERTO_WEB": args.puerto,
+        "PUERTO_CORREO": "8029",
+    }
     try:
         validar_proyectos(args.origen, args.destino)
         if not base_de_origen_en_marcha(args.origen, entorno):
@@ -123,6 +129,7 @@ def principal(argumentos: list[str] | None = None) -> int:
         print(error, file=sys.stderr)
         return 2
     print(f"Lista en http://localhost:{args.puerto}, con las cuentas de la base copiada.")
+    print("Sus correos quedan en http://localhost:8029, sin salir a internet.")
     print(f"Contiene datos personales: borrarla al terminar con docker compose -p {args.destino} down -v")
     return 0
 

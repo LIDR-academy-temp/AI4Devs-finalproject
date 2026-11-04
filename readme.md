@@ -329,7 +329,7 @@ El backend sigue una arquitectura en capas: `api` y `ingesta` dependen de `domin
 
 ### **2.4. Infraestructura y despliegue**
 
-**Implementado.** Toda la pila corre con Docker Compose, en cinco servicios: `db`, `migraciones` (se ejecuta una vez y termina), `api`, `worker` y `proxy`.
+**Implementado.** Toda la pila corre con Docker Compose, en cinco servicios: `db`, `migraciones` (se ejecuta una vez y termina), `api`, `worker` y `proxy`. En la instalación local se suma `correo` (Mailpit), que atrapa los correos de las cuentas sin enviarlos a internet; en el servidor se usa un proveedor real.
 
 | Modo | Cómo se usa | Estado |
 |---|---|---|

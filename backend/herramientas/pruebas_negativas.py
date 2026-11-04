@@ -92,7 +92,10 @@ def entrar(email, clave):
 carpeta = pathlib.Path(tempfile.mkdtemp())
 env = carpeta / "seg.env"
 env.write_text(
-    f"SAT2_MODO=prueba\nPOSTGRES_PASSWORD={secrets.token_hex(32)}\nDIRECCION_WEB=localhost\nCARGA_PAUSA_SEGUNDOS=0\n",
+    f"SAT2_MODO=prueba\nPOSTGRES_PASSWORD={secrets.token_hex(32)}\nDIRECCION_WEB=localhost\nCARGA_PAUSA_SEGUNDOS=0\n"
+    # La configuración de producción exige un servidor de correo: uno inexistente, que nunca recibe nada.
+    f"SMTP_HOST=correo.invalid\nSMTP_PUERTO=587\nSMTP_USUARIO=prueba\nSMTP_CLAVE={secrets.token_hex(16)}\n"
+    "CORREO_REMITENTE=Weather Track <no-responder@ejemplo.com>\n",
     encoding="utf-8",
 )
 E = str(env)

@@ -16,11 +16,11 @@ Las decisiones están en `design.md` (D1 a D12) y el comportamiento en las specs
 
 ## 3. Correo (D4, D5)
 
-- [ ] 3.1 Implementar la bandeja de salida, las plantillas de texto y HTML con la leyenda de baja y las cabeceras `List-Unsubscribe`, y verificar con pruebas el contenido de cada tipo de correo
-- [ ] 3.2 Implementar la tarea de envío del worker con reintentos y borrado del contenido, y verificar con un servidor SMTP de prueba los escenarios de `transactional-email`
-- [ ] 3.3 Implementar el límite de 3 correos por tipo y destinatario por hora, y verificar que el cuarto pedido no se encola y recibe la misma respuesta
-- [ ] 3.4 Agregar el servicio `correo` (Mailpit) a Compose, publicado solo en `127.0.0.1:8025`, y las variables `SMTP_*` obligatorias en producción, y verificar que la configuración de producción no arranca sin ellas
-- [ ] 3.5 Documentar Mailpit en la instalación local y verificar que un correo de prueba aparece en `http://localhost:8025`
+- [x] 3.1 Implementar la bandeja de salida, las plantillas de texto y HTML con la leyenda de baja y las cabeceras `List-Unsubscribe`, y verificar con pruebas el contenido de cada tipo de correo
+- [x] 3.2 Implementar la tarea de envío del worker con reintentos y borrado del contenido, y verificar con un servidor SMTP de prueba los escenarios de `transactional-email`
+- [x] 3.3 Implementar el límite de 3 correos por tipo y destinatario por hora, y verificar que el cuarto pedido no se encola y recibe la misma respuesta
+- [x] 3.4 Agregar el servicio `correo` (Mailpit) a Compose, publicado solo en `127.0.0.1:8025`, y las variables `SMTP_*` obligatorias en producción, y verificar que la configuración de producción no arranca sin ellas
+- [x] 3.5 Documentar Mailpit en la instalación local y verificar que un correo de prueba aparece en `http://localhost:8025`
 
 ## 4. Seguridad común (D8, D9)
 

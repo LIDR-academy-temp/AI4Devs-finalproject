@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process'
 import { resolve } from 'node:path'
 
 const PUERTO = '8088'
+/** Mailpit de la pila de pruebas, aparte del de la instalación local. */
+export const PUERTO_CORREO = '8026'
 const RAIZ = resolve(import.meta.dirname, '../..')
 
 export const URL_E2E = `http://localhost:${PUERTO}`
@@ -26,6 +28,7 @@ export function compose(...argumentos: string[]): string {
         ...process.env,
         SAT2_MODO: 'prueba',
         PUERTO_WEB: PUERTO,
+        PUERTO_CORREO: PUERTO_CORREO,
         CARGA_PAUSA_SEGUNDOS: '0',
         COOKIE_SEGURA: 'false',
       },

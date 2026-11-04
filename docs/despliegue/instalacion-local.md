@@ -54,6 +54,8 @@ Los históricos ficticios se cargan en segundo plano y pueden tardar un par de m
 
 Con estos datos la estación siempre da "Apto". Para ver todos los estados, seguí el [guion de la demostración](../demo/guion-demo.md).
 
+**Correos.** Los correos de las cuentas, como la confirmación o el recupero de la contraseña, no salen a internet: los atrapa Mailpit y se leen en <http://localhost:8025>, solo desde tu computadora. En el servidor se usa un proveedor de correo real.
+
 ## 3. Detener, encender y actualizar
 
 Detener, conservando los datos:
@@ -166,6 +168,7 @@ Después podés borrar la carpeta `weather-track`.
 |---|---|
 | `Cannot connect to the Docker daemon` o `failed to connect to the docker API` | Docker no está abierto. Abrí Docker Desktop y esperá a que indique que está en ejecución |
 | `port is already allocated` o `address already in use` | Otro programa usa el 8080. Agregá `PUERTO_WEB=8090` al `.env`, repetí `docker compose up -d --wait` y entrá por <http://localhost:8090> |
+| Lo mismo con el puerto 8025 | Otro programa usa el puerto de Mailpit. Agregá `PUERTO_CORREO=8035` al `.env` y leé los correos en <http://localhost:8035> |
 | `cp` no se reconoce (solo en `cmd`) | Usá `copy .env.example .env`, o abrí PowerShell |
 | Perdiste la clave de la demostración | `docker compose exec api python -m app.administracion restablecer-clave --email demo@weathertrack.example` |
 | Demasiados intentos al ingresar | Tras 5 errores el acceso se bloquea 15 minutos. Hay que esperar |

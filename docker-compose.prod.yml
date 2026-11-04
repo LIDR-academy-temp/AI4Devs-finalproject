@@ -27,12 +27,24 @@ services:
       DATABASE_URL: *url-base-de-datos
       SAT2_MODO: ${SAT2_MODO:?Falta SAT2_MODO}
       COOKIE_SEGURA: "true"
+      URL_PUBLICA: https://${DIRECCION_WEB:?Falta DIRECCION_WEB}
 
   worker:
     <<: *servicio-permanente
     environment:
       DATABASE_URL: *url-base-de-datos
       SAT2_MODO: ${SAT2_MODO:?Falta SAT2_MODO}
+      # Un proveedor de correo real, siempre con STARTTLS.
+      SMTP_HOST: ${SMTP_HOST:?Falta SMTP_HOST}
+      SMTP_PUERTO: ${SMTP_PUERTO:?Falta SMTP_PUERTO}
+      SMTP_USUARIO: ${SMTP_USUARIO:?Falta SMTP_USUARIO}
+      SMTP_CLAVE: ${SMTP_CLAVE:?Falta SMTP_CLAVE}
+      SMTP_STARTTLS: "true"
+      CORREO_REMITENTE: ${CORREO_REMITENTE:?Falta CORREO_REMITENTE}
+
+  # Mailpit es solo para la instalación local.
+  correo:
+    profiles: ["solo-local"]
 
   proxy:
     <<: *servicio-permanente
