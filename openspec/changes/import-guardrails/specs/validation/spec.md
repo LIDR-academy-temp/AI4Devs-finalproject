@@ -20,9 +20,9 @@ Una fila E con un estado resuelto distinto de `Pending` cuya transacción está 
 - **THEN** ninguna produce hallazgo `status_mismatch`
 
 #### Scenario: Gateway Pending contra la base
-- **GIVEN** una transacción `Pending` de un canal de `ProviderA-USD`, creada por el test, y un import de `ProviderA-USD` que la trae en APP
+- **GIVEN** un proveedor, un canal y una cuenta aislados creados por el test (para no alterar los conteos de otras suites), con una transacción `Pending` que un import de esa cuenta trae en APP, otra `Pending` dentro del rango que no viene en el archivo y dos `Successful` que abren el rango APP
 - **WHEN** se valida y se lee el hallazgo con `GET /api/v1/validation-issues/{id}`
-- **THEN** es `status_mismatch` en ciclo E con estado reportado `Successful` y del gateway `Pending`, se resuelve a mano con `PATCH` y nota, y procesar el import produce un movimiento E `Successful` de esa transacción
+- **THEN** es `status_mismatch` en ciclo E con estado reportado `Successful` y del gateway `Pending`, `pendingInRangeCount = 1`, se resuelve a mano con `PATCH` y nota, y procesar el import produce un movimiento E `Successful` de esa transacción
 
 ### Requirement: Batch sin filas asociadas al revisar
 Si el import no tiene filas asociadas (`requiresEmptyBatchConfirmation`), `POST /api/v1/imports/{id}/review` SHALL exigir `confirmEmptyBatch: true` en el cuerpo; sin él (o con `false`) SHALL responder `409 no_matched_rows` con `details = { rowsTotal, rowsUnmatched, unmatchedByReason, likelyWrongAccount }`, sin cambiar el import. Las comprobaciones de la corrida van antes. Con la confirmación, la auditoría `import.review` SHALL llevar `emptyBatchConfirmed: true`.

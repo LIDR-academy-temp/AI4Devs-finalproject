@@ -130,9 +130,14 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
   - confirmación de más → 200 sin la clave;
   - bloqueante antes que batch vacío;
   - `false` equivale a omitirlo.
-- [ ] 7.3 Integración en `validation-review.int.test.ts` (pedir turno): los escenarios de "Batch sin filas asociadas al revisar" con `batch-wrong-account` y `batch-issues`, y la auditoría leída de `AuditLog`. Limpiar los imports creados (`removeImportsFrom`).
-- [ ] 7.4 Integración #63 en `validation-edges.int.test.ts` (pedir turno). El test crea una transacción `Pending` en RAM-01 con un `sourceTransactionId` sintético y un import de `ProviderA-USD` que la trae en APP. Luego valida, lee el hallazgo, lo resuelve con nota, revisa y procesa con `batchNo` 98xx (D10): el movimiento es E `Successful`. En `afterAll` borra el intento (`removeSettlementsFrom`), el import y la transacción.
-- [ ] 7.5 Commit: feat(validation): confirmación del batch sin filas asociadas en el review (#92), y `git push`.
+- [x] 7.3 Integración en `validation-review.int.test.ts` (pedir turno): los escenarios de "Batch sin filas asociadas al revisar" con `batch-wrong-account` y `batch-issues`, y la auditoría leída de `AuditLog`. Limpiar los imports creados (`removeImportsFrom`).
+- [x] 7.4 Integración #63 en `validation-edges.int.test.ts` (pedir turno). El test crea una transacción `Pending` en RAM-01 con un `sourceTransactionId` sintético y un import de `ProviderA-USD` que la trae en APP. Luego valida, lee el hallazgo, lo resuelve con nota, revisa y procesa con `batchNo` 98xx (D10): el movimiento es E `Successful`. En `afterAll` borra el intento (`removeSettlementsFrom`), el import y la transacción.
+  Resultado de 7.3 y 7.4 (turno de base de la persona):
+  - `validation-review.int.test.ts` y `validation-edges.int.test.ts`: 24 de 24.
+  - 7.4 usa un proveedor, un canal y una cuenta aislados (9502), como el describe de contadores, para no alterar los conteos de las suites en paralelo; el escenario del delta se ajustó. Al ser una cuenta aislada, procesar no consume números de ProviderA-USD.
+  - Al terminar no queda ningún resto en la base: 9502 (proveedor, canal, cuenta, transacciones, intentos), los imports de `batch-wrong-account` y de los archivos generados, ni auditorías con `emptyBatchConfirmed`.
+
+- [x] 7.5 Commit: feat(validation): confirmación del batch sin filas asociadas en el review (#92), y `git push`.
 
 ## 8. Settlement: vista previa y procesar
 

@@ -9,7 +9,7 @@ import { Prisma } from '../../src/generated/prisma/client.js'
 import { PrismaImportRepository } from '../../src/modules/imports/infrastructure/prisma-import-repository.js'
 import { buildXlsx } from '../../src/modules/imports/infrastructure/xlsx/test-support.js'
 import { createTestApp, fixtureId, fixtureIds } from './helpers.js'
-import { ImportFlow } from './import-flow.js'
+import { ImportFlow, removeSettlementsFrom } from './import-flow.js'
 
 // Edges of validation-runs against SQL Server (verify W4–W6): a historical occurrence with its sheet and row, the
 // informative counters end to end, and the scope of every validation route with an import of another merchant.
@@ -383,6 +383,129 @@ describe('the informative counters from the engine to GET validations (spec "Con
       (await flow.call('GET', `/imports/${detail.importId}/validation-issues?type=missing`)).json(),
     )
     expect(missing.items.map((i) => i.transactionIdRaw)).not.toContain(ids.undatedCandidate)
+  })
+})
+
+// ───────────────────────── #63: status_mismatch with the gateway Pending, end to end ─────────────────────────
+
+// Spec validation "status_mismatch con el gateway en Pending" and "Pending aparte" (#63, design D6). An isolated
+// provider, channel and account (9502), as the counters above: a Pending transaction of a seeded channel would show
+// in the counts of the suites running at the same time.
+describe('an APP row whose transaction is Pending in the gateway (spec "Gateway Pending contra la base", #63)', () => {
+  const PROVIDER = 9502
+  const CHANNEL = 9502
+  const ACCOUNT_ID = 'a0000000-0000-4000-8000-000000009502'
+  const ids = { successful: '950200000000001', pendingInFile: '950200000000002', pendingNotInFile: '950200000000003' }
+
+  async function removeFixture(): Promise<void> {
+    const { prisma } = ctx
+    const imports = await prisma.import.findMany({ where: { accountId: ACCOUNT_ID }, select: { importId: true } })
+    await removeSettlementsFrom(
+      prisma,
+      imports.map((i) => i.importId),
+    )
+    await flow.removeImports(imports.map((i) => i.importId))
+    await prisma.transaction.deleteMany({ where: { channelId: CHANNEL } })
+    await prisma.accountChannel.deleteMany({ where: { channelId: CHANNEL } })
+    await prisma.account.deleteMany({ where: { accountId: ACCOUNT_ID } })
+    await prisma.channel.deleteMany({ where: { channelId: CHANNEL } })
+    await prisma.provider.deleteMany({ where: { providerId: PROVIDER } })
+  }
+
+  beforeAll(async () => {
+    await removeFixture()
+    const { prisma } = ctx
+    await prisma.provider.create({ data: { providerId: PROVIDER, merchantId: 1, name: 'Provider 9502' } })
+    await prisma.channel.create({
+      data: {
+        channelId: CHANNEL,
+        gatewayId: 1,
+        providerId: PROVIDER,
+        name: 'RAM-9502',
+        settlementTermDays: 10,
+        rollingReservePct: '0.100000',
+        rollingReserveDays: 180,
+      },
+    })
+    await prisma.account.create({
+      data: {
+        accountId: ACCOUNT_ID,
+        providerId: PROVIDER,
+        name: 'ZZ-Pending',
+        chargebackReservePolicy: 'hold_until_term',
+        createdByUserId: flow.userIds.analyst,
+      },
+    })
+    await prisma.accountChannel.create({
+      data: { accountId: ACCOUNT_ID, channelId: CHANNEL, isPrimary: true, assignedAt: new Date() },
+    })
+    const txn = (sourceTransactionId: string, statusId: number, day: string) => ({
+      sourceTransactionId,
+      gatewayId: 1,
+      merchantId: 1,
+      providerId: PROVIDER,
+      channelId: CHANNEL,
+      amount: '10.0000',
+      statusId,
+      transactionDate: new Date(`${day}T12:00:00.000Z`),
+      lastStatusChangedAt: null,
+      appliedReservePct: '0.100000',
+    })
+    await prisma.transaction.createMany({
+      data: [
+        // Successful in the gateway: it opens the APP range from 2026-09-01 to 2026-09-30.
+        txn(ids.successful, 2, '2026-09-01'),
+        txn('950200000000004', 2, '2026-09-30'),
+        // Pending in the gateway, reported in APP: the status_mismatch of #63.
+        txn(ids.pendingInFile, 1, '2026-09-10'),
+        // Pending, within the range, not in the file: what pendingInRangeCount still counts.
+        txn(ids.pendingNotInFile, 1, '2026-09-11'),
+      ],
+    })
+  })
+
+  afterAll(async () => {
+    await removeFixture()
+  })
+
+  it('is a status_mismatch (Successful reported, Pending in the gateway), resolvable, and processed as Successful', async () => {
+    const detail = await flow.analyzed(ACCOUNT_ID, [
+      { name: 'pending-9502.xlsx', bytes: xlsx('APP', [ids.successful, ids.pendingInFile, '950200000000004']) },
+    ])
+    const posted = await run(detail.importId)
+    expect(posted.run).toMatchObject({ pendingInRangeCount: 1 })
+
+    const page = ValidationIssuesPage.parse(
+      (await flow.call('GET', `/imports/${detail.importId}/validation-issues?type=status_mismatch`)).json(),
+    )
+    expect(page.items.map((i) => i.transactionIdRaw)).toEqual([ids.pendingInFile])
+    const issue = ValidationIssueDetail.parse(
+      (await flow.call('GET', `/validation-issues/${page.items[0]?.issueId}`)).json(),
+    )
+    expect(issue).toMatchObject({
+      issueType: 'status_mismatch',
+      cycle: 'E',
+      blocking: false,
+      status: { code: 'Successful' },
+      gatewayStatus: { code: 'Pending' },
+    })
+
+    const resolved = await flow.call('PATCH', `/validation-issues/${issue.issueId}`, {
+      resolutionStatus: 'resolved',
+      note: 'Pending in the gateway; the merchant fixes it',
+    })
+    expect(resolved.statusCode, resolved.body).toBe(200)
+
+    const review = await flow.call('POST', `/imports/${detail.importId}/review`, { runId: posted.run!.runId })
+    expect(review.statusCode, review.body).toBe(200)
+    const processed = await flow.call('POST', `/imports/${detail.importId}/settlements`, { runId: posted.run!.runId })
+    expect(processed.statusCode, processed.body).toBe(201)
+    const movements = await flow.call('GET', `/settlements/${processed.json().batchId}/transactions?type=E`)
+    expect(movements.statusCode).toBe(200)
+    const pending = (movements.json().items as { sourceTransactionId: string; status: string }[]).find(
+      (m) => m.sourceTransactionId === ids.pendingInFile,
+    )
+    expect(pending?.status).toBe('Successful')
   })
 })
 
