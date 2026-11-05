@@ -106,12 +106,14 @@ Hecho: los casos pasan a la primera, porque la implementación es de los grupos 
 
 ## 6. Colección Bruno
 
-- [ ] 6.1 Añadir en `api-collection/20-flows/validations/batch-issues` dos peticiones tras `17 Review again`, con el import en `validated`, y renumerar `seq` de las siguientes:
+- [x] 6.1 Añadir en `api-collection/20-flows/validations/batch-issues` dos peticiones tras `17 Review again`, con el import en `validated`, y renumerar `seq` de las siguientes:
   - `17b Preview reserve early release`: `200`; `reserveEarlyReleasedAmt` igual al oráculo, comentado como en `batch-clean/7 Preview`; la línea `reserve_early_released` con ese importe; el desglose sumado con `BigInt` igual a `amountPayable`; sin `chargeback_reserve_policy_not_applied`;
   - `17c Preview as viewer`: `as: viewer` y `{{viewerToken}}`, `403` con `code = "forbidden"`.
 
   Prerrequisitos, en el turno de base que se pide a la persona: `pnpm db:up`, `pnpm db:seed` (lo ejecuta la persona con `! pnpm db:seed` dentro de la sesión) y `pnpm dev`. Verificar con `pnpm test:api` dos veces seguidas sin sembrar entre medias (lo ejecuta la persona con `! pnpm test:api`).
-- [ ] 6.2 Commit: test(api): vista previa de batch-issues con la reserva liberada por ajuste, y `git push`.
+- [x] 6.2 Commit: test(api): vista previa de batch-issues con la reserva liberada por ajuste, y `git push`.
+
+  Hecho: la colección completa no se puede repetir sin sembrar, porque el flujo `settlements/batch-clean` deja batch-clean procesado y RAM-07 asignado ("Needs a fresh seed", #111); en la segunda pasada fallan sus pasos y los que esperan RAM-07 sin asignar. Lo que se repite sin sembrar es el flujo `validations/batch-issues`, que termina en `19 Cancel`: con `pnpm test:api` en verde tras `pnpm db:seed` (232/232) y luego `(cd api-collection && ../node_modules/.bin/bru run "20-flows/validations/batch-issues" -r --env local)` (23/23) sin sembrar entre medias. `17b` da 151.8930 aunque el paso 9 incluye el duplicado: el segundo ajuste sale `already_released`.
 
 ## 7. Documentación y contrato
 
