@@ -219,11 +219,11 @@ describe('missing candidates', () => {
         }),
       ).issues.map((x) => x.transactionId)
 
-    it('Reserva liberada anticipadamente: the release of a live Chargeback I is not missing', () => {
+    it('the release of a live Chargeback I is not missing ("Reserva liberada anticipadamente")', () => {
       expect(missingR({ transactionId: 10n, status: 'Chargeback', earlyReleased: '10.0000' })).toEqual([])
     })
 
-    it('Reserva liberada por un refund o un RDR: neither is missing', () => {
+    it('a release by a Refund or an RDR: neither is missing ("Reserva liberada por un refund o un RDR")', () => {
       expect(
         missingR(
           { transactionId: 10n, status: 'Refund', earlyReleased: '10.0000' },
@@ -232,11 +232,11 @@ describe('missing candidates', () => {
       ).toEqual([])
     })
 
-    it('Liberación de un intento deshecho: the source leaves it out, so the reserve is missing', () => {
+    it('the source leaves out a release of an undone attempt, so the reserve is missing ("Liberación de un intento deshecho")', () => {
       expect(missingR({ transactionId: 10n, status: 'Chargeback', earlyReleased: '0.0000' })).toEqual([10n])
     })
 
-    it('Ajuste sin liberación: a live I that released 0 (hold_until_term, or before the policy) is missing', () => {
+    it('a live I that released 0 (hold_until_term, or before the policy) is missing ("Ajuste sin liberación")', () => {
       expect(
         missingR(
           { transactionId: 10n, status: 'Chargeback', earlyReleased: '0.0000' },
