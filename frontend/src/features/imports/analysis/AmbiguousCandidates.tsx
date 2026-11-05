@@ -18,13 +18,18 @@ export interface Resolution {
   mode: ResolutionMode
   /** A PATCH is on its way: one write at a time, so every Choose waits (design D4). */
   pending: boolean
-  /** Opens the confirmation for this candidate of this row. */
-  onChoose: (row: ImportRowItem, candidate: Candidate) => void
+  /** Opens the confirmation for this candidate of this row; `opener` is the Choose pressed (design D4). */
+  onChoose: (row: ImportRowItem, candidate: Candidate, opener: HTMLElement) => void
 }
 
 export const ResolutionContext = createContext<Resolution>({ mode: 'none', pending: false, onChoose: () => {} })
 
 export const isOutOfScope = (c: Candidate) => 'outOfScope' in c && c.outOfScope === true
+
+/** A candidate of the user's merchants: with its channel, status and amount (spec "Candidata de otro merchant"). */
+export type VisibleCandidate = Extract<Candidate, { channelName: string }>
+
+export const isVisibleCandidate = (c: Candidate): c is VisibleCandidate => !isOutOfScope(c)
 
 /** The name of a candidate as the screen shows it: its gateway, and whose it is when of another merchant. */
 export const candidateLabel = (c: Candidate) =>
@@ -52,7 +57,7 @@ export function AmbiguousCandidates({ row }: { row: ImportRowItem }) {
                 aria-label={s.choose(candidateLabel(c), row.rowNo, row.sheetName)}
                 aria-describedby={mode === 'disabled' ? hintId : undefined}
                 disabled={mode === 'disabled' || pending}
-                onClick={() => onChoose(row, c)}
+                onClick={(event) => onChoose(row, c, event.currentTarget)}
               >
                 {s.chooseButton}
               </Button>

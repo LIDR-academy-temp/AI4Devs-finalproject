@@ -881,20 +881,23 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
       ),
     ),
 
-    // The checks in the order of ImportService.resolveRow; what the row becomes is the fixture's (design D5).
+    // The checks in the order of the API (design D5): the schema of params and body first, because Fastify validates
+    // before the preHandlers (#72); then permission before scope (requirePermission), and the rest in the order of
+    // ImportService.resolveRow. Which candidates count is decided with the stored row's own, as the service does; what
+    // the row becomes is the fixture's. The 401 stays first: the route wrapper answers it before any of this.
     http.patch(
       `${API}/imports/:importId/rows/:sheetId/:rowNo`,
       route(
         'resolveRow',
         async ({ request, params, user }) => {
-          // Permission before scope, as the requirePermission preHandler of the API: viewer gets 403 for any import.
-          if (!canProcess(user)) return forbidden()
-          const record = visibleImport(user, params.importId)
-          if (!record) return notFound('Import')
           const rowNo = Number(params.rowNo)
           if (!/^\d+$/.test(String(params.rowNo)) || rowNo < 1) return error(400, 'validation_error', 'Invalid rowNo')
           const body = ResolveRowBody.safeParse(await request.json().catch(() => undefined))
           if (!body.success) return error(400, 'validation_error', 'Invalid body')
+          // viewer gets 403 for any import, visible or not.
+          if (!canProcess(user)) return forbidden()
+          const record = visibleImport(user, params.importId)
+          if (!record) return notFound('Import')
           if (record.status !== 'analyzed') return notEditable(record)
           const rows = record.rows ?? []
           const index = rows.findIndex((r) => r.sheetId === params.sheetId && r.rowNo === rowNo)
@@ -903,13 +906,16 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
           if (row.matchResult !== 'ambiguous') {
             return error(409, 'row_not_ambiguous', 'The row is not ambiguous', { matchResult: row.matchResult })
           }
-          const resolved = record.resolutions.get(`${row.sheetId}:${row.rowNo}`)?.get(body.data.gatewayId)
-          if (!resolved) {
+          if (!row.candidates.some((c) => c.gatewayId === body.data.gatewayId)) {
             return error(400, 'validation_error', 'The gateway is not a candidate of the row', {
               gatewayId: body.data.gatewayId,
               candidates: row.candidates,
             })
           }
+          const resolved = record.resolutions.get(`${row.sheetId}:${row.rowNo}`)?.get(body.data.gatewayId)
+          // A candidate without its answer is a mistake of the test, not a 400 of the API.
+          if (!resolved)
+            throw new Error(`no resolution of ${row.sheetId}:${row.rowNo} for gateway ${body.data.gatewayId}`)
           rows[index] = resolved
           deps.onRowResolved(record.importId)
           return HttpResponse.json(ImportRowItemSchema.parse(resolved))

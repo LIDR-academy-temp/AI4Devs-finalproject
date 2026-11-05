@@ -42,7 +42,7 @@ Un botón por candidata en lugar de `radio` + **Resolve**: suele haber dos candi
 
 `RowsTable` monta un único `AlertDialog` (`ResolveRowDialog.tsx`) con la fila y la candidata elegidas en estado local. Cuerpo: `Row <rowNo> of <hoja> (<ID>) will be matched to <gateway>. The choice is recorded.` Para una candidata `outOfScope`, el gateway se nombra `<gateway> (another merchant)` y no se muestra nada más de ella; para una visible, canal, estado e importe como ayuda a decidir.
 
-El aviso de la corrida se decide al abrir: `queryClient.getQueryData<ValidationRunView>(validationRunKey(importId))`. Si es `undefined` (no cargada o en error) o trae `run !== null`, se añade `The current validation run is discarded: run the validations again before continuing.`; con `run === null` no. Así no se dice nada falso cuando no hay corrida y, cuando no se sabe, se avisa. El tipo `ValidationRunView` viene de `@/lib/api/types`, no de `features/validations`.
+El aviso de la corrida se decide al abrir: `queryClient.getQueryData<{ run: unknown }>(validationRunKey(importId))`. Si es `undefined` (no cargada o en error) o trae `run !== null`, se añade `The current validation run is discarded: run the validations again before continuing.`; con `run === null` no. Así no se dice nada falso cuando no hay corrida y, cuando no se sabe, se avisa. El tipo es estructural (`{ run: unknown }`): `ValidationRunView` no está en `@/lib/api/types`, solo en `features/validations/contract`, y de esa feature solo se importa la clave.
 
 Alternativa: suscribirse con `useQuery(validationRunQuery(...))` (obligaría a importar la consulta entera de `features/validations`, contra la regla del gate) o un texto fijo condicional (menos preciso; descartado en el gate).
 
@@ -70,15 +70,35 @@ Al confirmar, el diálogo se cierra con la respuesta (como el de cancelar). Los 
 
 El foco usa el mecanismo de `ui-polish` D13 (`requestListFocus(ROWS_LIST)` y `ListHeading`), pero el encabezado solo atiende una petición cuando cambia su `focusKey`, y resolver no cambia ni filtro ni página. Por eso `RowsTable` lleva un contador de resoluciones que entra en la clave (`<match>:<page>:<resoluciones>`): cada `200` pide el foco y suma uno, y el encabezado lo toma al volver a pintarse. Alternativa descartada: enfocar el encabezado con una referencia propia, que duplicaría el mecanismo común y su desplazamiento.
 
+El foco al cerrar el diálogo lo decide `onCloseAutoFocus` del propio diálogo. El `AlertDialog` de Radix ya llama a `preventDefault` y enfoca su trigger, pero este diálogo no tiene (`AlertDialogTrigger` no se usa): por sí solo, el foco acabaría en `body`. El diálogo hace dos cosas:
+
+- Siempre llama a `preventDefault`.
+- Cerrado sin resolver (**Keep** o Escape), devuelve el foco al **Choose** que lo abrió (`opener`, que llega con el clic).
+- Tras un `200` (`returnFocus = false`) no enfoca nada, y el encabezado de las filas toma el foco.
+
+Radix llama al manejador después de desmontar el contenido, con el del último render que lo mostró. Por eso `opener` y `returnFocus` se leen de una referencia que se actualiza en cada render, también en el que cierra.
+
 Mientras el `PATCH` está en vuelo, todos los **Choose** y el botón de confirmar quedan deshabilitados: una escritura a la vez.
 
 Si tras el refresco la página pedida queda más allá de la última (se resolvió la única ambigua de la última página con el filtro `Ambiguous`), `RowsTable` lleva a la última página con `onChange` (dirección con `replace`), en lugar de enseñar una página vacía.
 
 ### D5. Fake MSW: aplica, no decide
 
-Handler `http.patch(\`${API}/imports/:importId/rows/:sheetId/:rowNo\`, route('resolveRow', …))` en `imports.ts`, con el mismo orden que la ruta y el servicio: permiso antes que alcance, como el `preHandler` `requirePermission` (`viewer` recibe `403` aunque el import no sea visible), después alcance (`404`), estado (`409 import_not_editable`), `rowNo` y cuerpo con `ResolveRowBody.safeParse` (`400`), fila (`404`), `ambiguous` (`409 row_not_ambiguous`), candidata (`400` con `details.candidates`).
+Handler `http.patch(\`${API}/imports/:importId/rows/:sheetId/:rowNo\`, route('resolveRow', …))` en `imports.ts`, con el mismo orden que el API:
 
-Lo que la fila pasa a ser no lo calcula el fake: `makeAmbiguousRow` (nuevo en `import-fixtures.ts`) construye la fila ambigua y, por cada candidata, el `ImportRowItem` resuelto que respondería el API (con `transaction` o, si es `outOfScope`, `transaction: null` y `out_of_scope_transaction`). El handler copia ese resultado en la fila guardada, lo valida con `ImportRowItem.parse` antes de responder y llama a `supersedeCurrentRun(importId)`, una función nueva de `validations.ts` que marca la corrida vigente como no vigente sin sustituta (lo que `supersedeRunOnUndo` hace sin la parte de la revisión, que en `analyzed` no existe). Los contadores del detalle salen de las filas (`summarize`), así que bajan solos.
+1. `rowNo` y cuerpo con `ResolveRowBody.safeParse` (`400`). Fastify valida el esquema antes de los `preHandler` (#72), así que va antes que el permiso.
+2. Permiso antes que alcance, como el `preHandler` `requirePermission`: `viewer` recibe `403` aunque el import no sea visible.
+3. Alcance (`404`).
+4. Estado (`409 import_not_editable`).
+5. Fila (`404`).
+6. `ambiguous` (`409 row_not_ambiguous`).
+7. Candidata (`400` con `details.candidates`).
+
+El `401` sigue siendo lo primero, porque lo responde el envoltorio común de las rutas del fake; en el API, un esquema inválido sin token da `400`. Ese caso no lo ejercita ninguna pantalla.
+
+Qué gateways son candidatos lo decide el fake con las candidatas de la fila guardada (`row.candidates`), igual que el servicio.
+
+Lo que la fila pasa a ser no lo calcula el fake: `makeAmbiguousRow` (nuevo en `import-fixtures.ts`) construye la fila ambigua y, por cada candidata, el `ImportRowItem` resuelto que respondería el API (con `transaction` o, si es `outOfScope`, `transaction: null` y `out_of_scope_transaction`). Si la candidata no tiene respuesta preparada, es un error del test y el fake lanza una excepción, no un `400`. El handler copia ese resultado en la fila guardada, lo valida con `ImportRowItem.parse` antes de responder y llama a `supersedeCurrentRun(importId)`, una función nueva de `validations.ts` que marca la corrida vigente como no vigente sin sustituta (lo que `supersedeRunOnUndo` hace sin la parte de la revisión, que en `analyzed` no existe). Los contadores del detalle salen de las filas (`summarize`), así que bajan solos.
 
 ### D6. Capturas con una fila ambigua sintética y una corrida real
 

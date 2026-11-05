@@ -181,8 +181,9 @@ export const strings = {
       /** Resolving an ambiguous row (spec "Confirmación al resolver una fila ambigua"). */
       resolve: {
         title: 'Resolve this ambiguous row?',
-        body: (rowNo: number, sheet: string, id: string, gateway: string) =>
-          `Row ${rowNo} of ${sheet} (${id}) will be matched to ${gateway}. The choice is recorded.`,
+        // An ambiguous row always has its ID; without one the parenthesis is left out rather than shown empty.
+        body: (rowNo: number, sheet: string, id: string | null, gateway: string) =>
+          `Row ${rowNo} of ${sheet}${id === null ? '' : ` (${id})`} will be matched to ${gateway}. The choice is recorded.`,
         candidate: (channel: string, status: string, amount: string) => `${channel} · ${status} · ${amount}`,
         runWarning: 'The current validation run is discarded: run the validations again before continuing.',
         confirm: 'Yes, match the row',

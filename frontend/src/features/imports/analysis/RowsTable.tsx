@@ -136,16 +136,19 @@ export function RowsTable({
   const resolver = useResolveRow(importId)
   const reloadImport = useReloadImport(importId)
   const [choice, setChoice] = useState<RowChoice | null>(null)
+  // False once a resolution closes the dialog: the heading of the rows takes the focus, not the Choose (design D4).
+  const [returnFocus, setReturnFocus] = useState(true)
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
   // Each resolution changes the key of the heading, so it takes the focus the success asked for.
   const [resolutions, setResolutions] = useState(0)
   const [afterResolve, setAfterResolve] = useState(false)
 
-  const choose = (row: ImportRowItem, candidate: Candidate) => {
+  const choose = (row: ImportRowItem, candidate: Candidate, opener: HTMLElement) => {
     // Known only from what the validations section already read: unknown warns as well (design D2).
     const view = queryClient.getQueryData<{ run: unknown }>(validationRunKey(importId))
     setMessage(null)
-    setChoice({ row, candidate, warnRun: view === undefined || view.run !== null })
+    setReturnFocus(true)
+    setChoice({ row, candidate, warnRun: view === undefined || view.run !== null, opener })
   }
   const askRows = () => void queryClient.invalidateQueries({ queryKey: [...importKey(importId), 'rows'] })
   const confirm = ({ row, candidate }: RowChoice) =>
@@ -153,6 +156,7 @@ export function RowsTable({
       { sheetId: row.sheetId, rowNo: row.rowNo, gatewayId: candidate.gatewayId },
       {
         onSuccess: () => {
+          setReturnFocus(false)
           setChoice(null)
           setMessage({ text: s.resolve.resolved(row.rowNo, row.sheetName, candidateLabel(candidate)), error: false })
           requestListFocus(ROWS_LIST)
@@ -291,6 +295,7 @@ export function RowsTable({
         <ResolveRowDialog
           choice={choice}
           pending={resolver.isPending}
+          returnFocus={returnFocus}
           onConfirm={confirm}
           onClose={() => setChoice(null)}
         />

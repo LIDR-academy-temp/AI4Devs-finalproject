@@ -228,7 +228,8 @@ async function injectAmbiguousRow(page: Page, importId: string) {
     real ??= body.items[0] ?? null
     const match = new URL(route.request().url()).searchParams.get('match')
     if (real && body.page === 1 && (match === null || match === 'ambiguous')) {
-      // The page keeps its size: the last real row moves to the next page, as the API would order it.
+      // The page keeps its size, so its last real row drops out of view: page 2 comes from the API as it is and does not
+      // shift. Only page 1 is captured, so nothing is missing from the screenshots.
       body.items = [syntheticRow(real) as unknown as RowItem, ...body.items].slice(0, body.pageSize)
       body.total += 1
     }
