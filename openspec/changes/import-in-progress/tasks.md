@@ -113,7 +113,7 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 ## 10. Pantalla In Progress y menú
 
 - [x] 10.1 Mover `useFeeScope` a `features/accounts/scope-selection.ts` como `useScopeSelection` (D5) e importarlo desde Fees. Verificar que los tests de `features/fees` pasan sin cambios
-- [ ] 10.2 Tests primero:
+- [x] 10.2 Tests primero:
   - `features/imports/in-progress/InProgressPage.test.tsx`:
     - lista y columnas, con `—` antes del análisis y `Merchant A › Provider A`;
     - estado vacío con enlace;
