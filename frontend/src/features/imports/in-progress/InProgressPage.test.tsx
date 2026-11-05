@@ -173,12 +173,16 @@ describe('In Progress: resume and cancel (spec "Pantalla In Progress: retomar y 
     const { user } = await openInProgress()
     await screen.findByRole('table', { name: s.tableLabel }, OPENING)
 
+    const before = importRequests('list').length
     await user.click(within(rowOf(uploaded.importId)).getByRole('button', { name: s.cancel }))
     const dialog = within(await screen.findByRole('alertdialog'))
     await user.type(dialog.getByLabelText(strings.cancel.reason), 'Duplicate upload')
     await user.click(dialog.getByRole('button', { name: strings.cancel.confirm }))
 
     expect(await screen.findByText(s.empty, undefined, OPENING)).toBeInTheDocument()
+    // One request for the list after the cancel: the invalidation of the mutation, nothing else (verify S2).
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(importRequests('list').length - before).toBe(1)
     expect(importRequests('cancel')[0]?.body).toEqual({ reason: 'Duplicate upload' })
     expect(importRecord(uploaded.importId).status).toBe('cancelled')
   })
