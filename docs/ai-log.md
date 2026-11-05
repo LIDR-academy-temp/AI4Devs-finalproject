@@ -339,3 +339,29 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con la revisión adversarial y sus correcciones en PRD, visión, arquitectura, ADR-0002, historias, tickets y `docs/ai-log.md`.
+
+### Prompt 26
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  llena readme.md y prompts.md
+  ```
+
+- **Resultado:** Se llenó `readme.md` (secciones 0 a 7, generadas a partir de `docs/`: diagramas, ERD, tablas de entidades, OpenAPI de 3 endpoints, 3 historias y 3 tickets) y `prompts.md` (herramientas, modelos, ajustes humanos y prompts clave por sección). Quedan pendientes el nombre completo, el nombre final del proyecto, la URL de despliegue, las capturas y las pull requests.
+
+### Prompt 27
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con `readme.md`, `prompts.md` y `docs/ai-log.md`; el nombre completo y el nombre final del proyecto siguen marcados como pendientes.
