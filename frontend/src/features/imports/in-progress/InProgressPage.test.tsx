@@ -1,9 +1,10 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { ACCOUNT_IDS, type UserName } from '@/test/msw/fixtures'
-import { importRecord, importRequests, seedImport } from '@/test/msw/imports'
+import { detailOf, importRecord, importRequests, seedImport } from '@/test/msw/imports'
 import { renderApp } from '@/test/render'
 import { OPENING } from '@/test/validation-screens'
+import { importKey } from '../queries'
 import { strings } from '../strings'
 
 // Spec import "Pantalla In Progress: lista", "filtros" and "retomar y cancelar" (import-in-progress design D5, D6).
@@ -187,19 +188,56 @@ describe('In Progress: resume and cancel (spec "Pantalla In Progress: retomar y 
     expect(importRecord(uploaded.importId).status).toBe('cancelled')
   })
 
-  it('an import cancelled by someone else says so and the list is asked again', async () => {
+  it('an import cancelled by someone else: the row leaves, the page says so, and its detail is not reloaded', async () => {
     const uploaded = seedImport('batch-split', PART1)
-    const { user } = await openInProgress()
+    const { user, queryClient } = await openInProgress()
     await screen.findByRole('table', { name: s.tableLabel }, OPENING)
     importRecord(uploaded.importId).status = 'cancelled'
-    const before = importRequests('list').length
+    // A detail of that import already in the cache: In Progress must leave it alone (review-diff B4).
+    queryClient.setQueryData(importKey(uploaded.importId), detailOf(importRecord(uploaded.importId)))
 
     await user.click(within(rowOf(uploaded.importId)).getByRole('button', { name: s.cancel }))
     const dialog = within(await screen.findByRole('alertdialog'))
     await user.type(dialog.getByLabelText(strings.cancel.reason), 'Duplicate upload')
     await user.click(dialog.getByRole('button', { name: strings.cancel.confirm }))
 
-    expect(await screen.findByText('This import can no longer be cancelled (cancelled).')).toBeInTheDocument()
-    await waitFor(() => expect(importRequests('list').length).toBeGreaterThan(before))
+    // The list is asked again and the row leaves with its dialog; the notice is the page's (review-diff M3).
+    expect(await screen.findByText(s.empty, undefined, OPENING)).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: s.resume })).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('This import can no longer be cancelled (cancelled).')
+    expect(queryClient.getQueryState(importKey(uploaded.importId))?.isInvalidated).toBe(false)
+  })
+})
+
+describe('In Progress: the focus on the list (review-diff M4)', () => {
+  const heading = () => screen.getByRole('heading', { name: s.heading })
+
+  it('Next and Previous put the focus on the heading of the list', async () => {
+    for (let i = 0; i < 51; i++) seedImport('batch-split', PART1)
+    const { user } = await openInProgress()
+    await screen.findByRole('table', { name: s.tableLabel }, OPENING)
+
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    expect(await screen.findByText('Page 2 of 2 · 51 imports')).toBeInTheDocument()
+    await waitFor(() => expect(document.activeElement).toBe(heading()))
+
+    await user.click(screen.getByRole('button', { name: 'Previous' }))
+    expect(await screen.findByText('Page 1 of 2 · 51 imports')).toBeInTheDocument()
+    await waitFor(() => expect(document.activeElement).toBe(heading()))
+  })
+
+  it('after a cancel the focus goes to the heading of the list, since the row and its button are gone', async () => {
+    const first = seedImport('batch-split', PART1)
+    seedImport('batch-split', PART1)
+    const { user } = await openInProgress()
+    await screen.findByRole('table', { name: s.tableLabel }, OPENING)
+
+    await user.click(within(rowOf(first.importId)).getByRole('button', { name: s.cancel }))
+    const dialog = within(await screen.findByRole('alertdialog'))
+    await user.type(dialog.getByLabelText(strings.cancel.reason), 'Duplicate upload')
+    await user.click(dialog.getByRole('button', { name: strings.cancel.confirm }))
+
+    await waitFor(() => expect(screen.getAllByRole('link', { name: s.resume })).toHaveLength(1))
+    await waitFor(() => expect(document.activeElement).toBe(heading()))
   })
 })
