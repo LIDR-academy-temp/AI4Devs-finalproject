@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { type SettlementRequest, SettlementView } from '@recon/shared'
+import { SettlementPreview, type SettlementRequest, SettlementView } from '@recon/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { Prisma } from '../../src/generated/prisma/client.js'
 import { buildXlsx } from '../../src/modules/imports/infrastructure/xlsx/test-support.js'
@@ -410,15 +410,279 @@ describe('warnings of the account', () => {
 
     expect(processed.warnings.map((w) => w.code)).toContain('reserve_cap_not_applied')
   })
+})
 
-  it('ProviderB-Main releases on chargeback, a policy not applied yet (#62)', async () => {
-    const { importId, runId } = await flow.validatedSample('batch-issues')
+/** The I movements of an attempt with their source id, their sheet and their snapshot. */
+async function adjustmentsOf(batchId: string) {
+  const movements = await ctx.prisma.settlementTransaction.findMany({
+    where: { batchId, cycle: 'I' },
+    orderBy: { settlementTxnId: 'asc' },
+    select: {
+      reserveEarlyReleasedAmt: true,
+      reservePolicySnapshot: true,
+      transaction: { select: { sourceTransactionId: true } },
+      sheet: { select: { sheetName: true } },
+    },
+  })
+  return movements.map((m) => ({
+    id: m.transaction.sourceTransactionId,
+    sheet: m.sheet?.sheetName ?? null,
+    amount: m.reserveEarlyReleasedAmt.toFixed(4),
+    snapshot:
+      m.reservePolicySnapshot === null ? null : (JSON.parse(m.reservePolicySnapshot) as Record<string, unknown>),
+  }))
+}
 
-    const processed = await view((await process(importId, { runId, confirmChannelAssignment: true })).batchId)
+const lower = (id: string | null) => (id === null ? null : id.toLowerCase())
 
-    expect(processed.warnings.map((w) => w.code)).toContain('chargeback_reserve_policy_not_applied')
-    expect(processed.reserveEarlyReleasedAmt).toBe('0.0000')
-    expect(processed.skipped.unmatched).toBe(1)
+// settlement-reserve-chargeback (#62; spec settlement "Política de reserva ante chargeback", "Reserva ya liberada por
+// un ajuste", "Advertencias del procesamiento"). Every import is removed by its test or by the last one of the suite,
+// which checks that the batches and imports left are the ones found.
+describe('the reserve of an adjusted transaction (#62)', () => {
+  const oracle = expectedOf('batch-issues').reserveEarlyRelease as {
+    released: { id: string; sheet: string; amount: string; heldInBatchNo: number | null }[]
+    notReleased: { id: string; sheet: string; outcome: string }[]
+    reserveEarlyReleasedAmt: string
+  }
+  const counts = async () => ({
+    batches: await ctx.prisma.settlementBatch.count(),
+    imports: await ctx.prisma.import.count(),
+    movements: await ctx.prisma.settlementTransaction.count(),
+    audit: await ctx.prisma.auditLog.count(),
+    issues: await ctx.prisma.validationIssue.count(),
+  })
+  let before: Awaited<ReturnType<typeof counts>>
+  let importId: string
+  let body: { runId: number; confirmChannelAssignment: true }
+  let preview: SettlementPreview
+  let first: SettlementView
+  const created: string[] = []
+
+  beforeAll(async () => {
+    before = await counts()
+    let runId: number
+    ;({ importId, runId } = await flow.validatedSample('batch-issues'))
+    created.push(importId)
+    body = { runId, confirmChannelAssignment: true }
+    const previewed = await flow.call('POST', `/imports/${importId}/settlements/preview`, body)
+    expect(previewed.statusCode, previewed.body).toBe(200)
+    preview = SettlementPreview.parse(previewed.json())
+    const processed = await flow.call('POST', `/imports/${importId}/settlements`, body)
+    expect(processed.statusCode, processed.body).toBe(201)
+    first = SettlementView.parse(processed.json())
+  })
+
+  afterAll(async () => {
+    try {
+      await flow.removeImports(created)
+    } finally {
+      await restoreAccountChannels(ctx.prisma, channels)
+    }
+  })
+
+  it('batch-issues (ProviderB-Main, release_on_chargeback): each CHB and REF releases as the oracle', async () => {
+    const heldIn = new Map<number, string>()
+    for (const no of new Set(oracle.released.flatMap((r) => (r.heldInBatchNo === null ? [] : [r.heldInBatchNo])))) {
+      const held = await ctx.prisma.settlementBatch.findFirstOrThrow({
+        where: { accountId: flow.accountIds['ProviderB-Main'], batchNo: no, status: { not: 'undone' } },
+      })
+      heldIn.set(no, held.batchId)
+    }
+    const adjustments = await adjustmentsOf(first.batchId)
+    const of = (id: string, sheet: string) => adjustments.find((a) => a.id === id && a.sheet === sheet)
+
+    for (const r of oracle.released)
+      expect(of(r.id, r.sheet), `${r.sheet} ${r.id}`).toEqual({
+        id: r.id,
+        sheet: r.sheet,
+        amount: r.amount,
+        snapshot: {
+          policy: 'release_on_chargeback',
+          applied: true,
+          outcome: 'released',
+          heldInBatchId: r.heldInBatchNo === null ? null : lower(heldIn.get(r.heldInBatchNo)!),
+        },
+      })
+    for (const r of oracle.notReleased)
+      expect(of(r.id, r.sheet), `${r.sheet} ${r.id}`).toMatchObject({
+        amount: '0.0000',
+        snapshot: { policy: 'release_on_chargeback', applied: true, outcome: r.outcome },
+      })
+    expect(adjustments).toHaveLength(first.movements.I)
+    expect(adjustments.every((a) => a.snapshot?.applied === true)).toBe(true)
+  })
+
+  it('the view: the total, its line of the breakdown, an amount payable that adds up, and no old warning', async () => {
+    const read = await view(first.batchId)
+
+    expect(read.reserveEarlyReleasedAmt).toBe(oracle.reserveEarlyReleasedAmt)
+    expect(read.payableBreakdown.find((l) => l.code === 'reserve_early_released')).toMatchObject({
+      sign: '+',
+      amount: oracle.reserveEarlyReleasedAmt,
+    })
+    expect(signedSum(read)).toBe(read.amountPayable)
+    expect(read.warnings.map((w) => w.code)).not.toContain('chargeback_reserve_policy_not_applied')
+    expect(read.skipped.unmatched).toBe(1)
+  })
+
+  it('the preview computes the same as processing (spec "Vista previa igual que procesar")', () => {
+    expect(preview.reserveEarlyReleasedAmt).toBe(first.reserveEarlyReleasedAmt)
+    expect(preview.payableBreakdown).toEqual(first.payableBreakdown)
+    expect(preview.amountPayable).toBe(first.amountPayable)
+    expect(preview.warnings.map((w) => w.code)).not.toContain('chargeback_reserve_policy_not_applied')
+  })
+
+  it('P12: the RR of a reserve a CHB released is an R of 0 with reserve_already_released, listed in the RR and the summary', async () => {
+    const released = oracle.released.find((r) => r.sheet === 'CHB' && r.heldInBatchNo !== null)!
+    const detail = await flow.analyzed(flow.accountIds['ProviderB-Main']!, [
+      { name: 'rr-released.xlsx', bytes: xlsx('RR', [released.id]) },
+    ])
+    created.push(detail.importId)
+    const runId = await flow.validateAndReview(detail.importId)
+
+    const res = await flow.call('POST', `/imports/${detail.importId}/settlements`, {
+      runId,
+      confirmChannelAssignment: true,
+    })
+
+    expect(res.statusCode, res.body).toBe(201)
+    const second = SettlementView.parse(res.json())
+    const t = await transactionOf(102, released.id)
+    const [r] = await ctx.prisma.settlementTransaction.findMany({
+      where: { batchId: second.batchId, transactionId: t.transactionId, cycle: 'R' },
+    })
+    expect(r?.reserveReleasedAmt.toFixed(4)).toBe('0.0000')
+    expect(second.reserveReleasedAmt).toBe('0.0000')
+    expect(second.reservesReleasedQty).toBe(1)
+    expect(second.warnings).toContainEqual({
+      code: 'reserve_already_released',
+      transactionId: String(t.transactionId),
+      sheetId: r!.sheetId,
+      rowNo: r!.rowNo,
+    })
+    const reserves = await flow.call('GET', `/settlements/${second.batchId}/export?type=reserves`)
+    expect(reserves.statusCode, reserves.body).toBe(200)
+    expect(reserves.body).toBe(`ID,Description\r\n${released.id},Batch ${second.batchNo}\r\n`)
+    const summary = await flow.call('GET', `/settlements/${second.batchId}/export?type=summary`)
+    expect(summary.statusCode, summary.body).toBe(200)
+    expect(summary.body).toContain(`\r\nreserve_already_released,${released.id},Row ${r!.rowNo}\r\n`)
+
+    // The next test undoes the release: this RR is undone first, as if it had never been processed.
+    await undone(second)
+  })
+
+  it('an undone release does not count: batch-issues processed again releases the same reserves', async () => {
+    await undone(first)
+    await ctx.prisma.import.update({ where: { importId }, data: { status: 'analyzed', currentBatchId: null } })
+    const runId = await flow.validateAndReview(importId)
+
+    const res = await flow.call('POST', `/imports/${importId}/settlements`, { runId, confirmChannelAssignment: true })
+
+    expect(res.statusCode, res.body).toBe(201)
+    const again = SettlementView.parse(res.json())
+    expect(again).toMatchObject({ batchNo: first.batchNo, attemptNo: 2 })
+    expect(again.reserveEarlyReleasedAmt).toBe(oracle.reserveEarlyReleasedAmt)
+    const adjustments = await adjustmentsOf(again.batchId)
+    expect(adjustments.filter((a) => a.snapshot?.outcome === 'released').map((a) => [a.sheet, a.id, a.amount])).toEqual(
+      expect.arrayContaining(oracle.released.map((r) => [r.sheet, r.id, r.amount])),
+    )
+  })
+
+  it('round 1: an APP and a REF of the same transaction in one ProviderB-Main batch release the reserve of that APP', async () => {
+    const id = await sourceIdOf(Prisma.sql`t.[providerId] = 102 AND t.[channelId] = 1011 AND t.[statusId] = 2`)
+    const bytes = buildXlsx({
+      sheets: ['APP', 'REF'].map((name) => ({
+        name,
+        rows: [
+          ['ID', 'Amount', 'Currency'],
+          [id, { v: '10' }, 'USD'],
+        ],
+      })),
+    })
+    const detail = await flow.analyzed(flow.accountIds['ProviderB-Main']!, [{ name: 'app-ref.xlsx', bytes }])
+    created.push(detail.importId)
+    const runId = await flow.validateAndReview(detail.importId)
+
+    const { batchId } = await process(detail.importId, { runId, confirmChannelAssignment: true })
+
+    const t = await transactionOf(102, id)
+    const [e, i] = await movementsOf(batchId, t.transactionId)
+    expect(e?.cycle).toBe('E')
+    expect(e!.reserveHeldAmt.gt(0)).toBe(true)
+    expect(i).toMatchObject({ cycle: 'I', roundNo: 1 })
+    expect(i!.reserveEarlyReleasedAmt.toFixed(4)).toBe(e!.reserveHeldAmt.toFixed(4))
+    expect(JSON.parse(i!.reservePolicySnapshot!)).toEqual({
+      policy: 'release_on_chargeback',
+      applied: true,
+      outcome: 'released',
+      heldInBatchId: null,
+    })
+    await flow.removeImports([detail.importId])
+  })
+
+  it('hold_until_term (ProviderA-USD): a refund of a held reserve releases 0, outcome held_until_term', async () => {
+    const id = await heldAdjustmentIdOf(
+      Prisma.sql`t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 5 AND t.[lastStatusChangedAt] IS NOT NULL`,
+    )
+    const detail = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [
+      { name: 'ref-hold.xlsx', bytes: xlsx('REF', [id]) },
+    ])
+    created.push(detail.importId)
+    const runId = await flow.validateAndReview(detail.importId)
+
+    const { batchId } = await process(detail.importId, { runId })
+
+    const [i] = await adjustmentsOf(batchId)
+    expect(i).toEqual({
+      id,
+      sheet: 'REF',
+      amount: '0.0000',
+      snapshot: { policy: 'hold_until_term', applied: true, outcome: 'held_until_term', heldInBatchId: null },
+    })
+    await flow.removeImports([detail.importId])
+  })
+
+  // batch-issues has no RDR rows (spec "Refund y RDR liberan como un chargeback"): an RDR row of ProviderB-Main whose E a
+  // seeded paid batch held. The seed settles the adjustments of its history, so no RDR of RAM-11 is left unadjusted:
+  // the sheet sets the status (RDR), and a Successful transaction of RAM-11 is a non_recorded_adjustment, a warning.
+  it('an RDR of ProviderB-Main releases the reserve its E held in a seeded batch, outcome released', async () => {
+    const id = await heldAdjustmentIdOf(Prisma.sql`t.[providerId] = 102 AND t.[channelId] = 1011 AND t.[statusId] = 2`)
+    const t = await transactionOf(102, id)
+    const [e] = await ctx.prisma.settlementTransaction.findMany({
+      where: { transactionId: t.transactionId, cycle: 'E', statusId: 2, batch: { status: { not: 'undone' } } },
+      orderBy: { settlementTxnId: 'asc' },
+    })
+    const detail = await flow.analyzed(flow.accountIds['ProviderB-Main']!, [
+      { name: 'rdr-release.xlsx', bytes: xlsx('RDR', [id]) },
+    ])
+    created.push(detail.importId)
+    const runId = await flow.validateAndReview(detail.importId)
+
+    const { batchId } = await process(detail.importId, { runId })
+
+    expect(await adjustmentsOf(batchId)).toEqual([
+      {
+        id,
+        sheet: 'RDR',
+        amount: e!.reserveHeldAmt.toFixed(4),
+        snapshot: {
+          policy: 'release_on_chargeback',
+          applied: true,
+          outcome: 'released',
+          heldInBatchId: lower(e!.batchId),
+        },
+      },
+    ])
+    expect(e!.reserveHeldAmt.gt(0)).toBe(true)
+    expect((await view(batchId)).reserveEarlyReleasedAmt).toBe(e!.reserveHeldAmt.toFixed(4))
+    await flow.removeImports([detail.importId])
+  })
+
+  it('leaves the batches, imports, movements, audit and findings it found once its imports are removed', async () => {
+    await flow.removeImports(created)
+    await restoreAccountChannels(ctx.prisma, channels)
+
+    expect(await counts()).toEqual(before)
   })
 })
 
@@ -475,6 +739,19 @@ async function adjustmentIdOf(where: Prisma.Sql): Promise<string> {
     SELECT TOP 1 t.[sourceTransactionId] FROM [Transaction] t WHERE ${where}
       AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st
                       WHERE st.[transactionId] = t.[transactionId] AND st.[cycle] = 'I')
+    ORDER BY t.[transactionId] DESC`
+  return found!.sourceTransactionId
+}
+
+/** As adjustmentIdOf, with a Successful E of a current attempt that held a reserve, and no R nor I movement. */
+async function heldAdjustmentIdOf(where: Prisma.Sql): Promise<string> {
+  const [found] = await ctx.prisma.$queryRaw<{ sourceTransactionId: string }[]>`
+    SELECT TOP 1 t.[sourceTransactionId] FROM [Transaction] t WHERE ${where}
+      AND EXISTS (SELECT 1 FROM [SettlementTransaction] e JOIN [SettlementBatch] b ON b.[batchId] = e.[batchId]
+                  WHERE e.[transactionId] = t.[transactionId] AND e.[cycle] = 'E' AND e.[statusId] = 2
+                    AND e.[reserveHeldAmt] > 0 AND b.[status] <> 'undone')
+      AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st
+                      WHERE st.[transactionId] = t.[transactionId] AND st.[cycle] IN ('I', 'R'))
     ORDER BY t.[transactionId] DESC`
   return found!.sourceTransactionId
 }

@@ -154,4 +154,90 @@ describe('InMemoryValidationSources.heldReserves (M1)', () => {
     expect(await ids(expiry)).toContain(9_000_002n)
     expect(await ids(new Date(expiry.getTime() - 1))).not.toContain(9_000_002n)
   })
+
+  // settlement-reserve-chargeback D4: reserveEarlyReleasedAmt is the sum of the release of the live I movements of the
+  // transaction, of any status and any account of the provider; an undone attempt does not count.
+  it('sums the release of the live I movements of the provider, of any status, and not that of an undone attempt', async () => {
+    const sources = new InMemoryValidationSources()
+    const account = { ...accountScopeOf('ProviderA-USD'), primaryChannelIds: new Set([1001]) }
+    const created = new Date('2026-01-05T00:00:00.000Z')
+    const ids = [9_000_011n, 9_000_012n, 9_000_013n, 9_000_014n, 9_000_015n]
+    for (const [i, transactionId] of ids.entries())
+      sources.addTransaction({
+        transactionId,
+        sourceTransactionId: `90000000000001${i + 1}`,
+        providerId: account.providerId,
+        channelId: 1001,
+        statusId: STATUS.Successful,
+        transactionDate: created,
+        lastStatusChangedAt: null,
+      })
+    const move = (transactionId: bigint, cycle: 'E' | 'I', statusId: number, held: string, early: string) => ({
+      transactionId,
+      cycle,
+      statusId,
+      excludeAmount: false,
+      sheetId: null,
+      rowNo: null,
+      reserveHeldAmt: held,
+      reserveEarlyReleasedAmt: early,
+    })
+    sources.addBatch(
+      batch({
+        batchId: 'held',
+        batchNo: 991,
+        status: 'paid',
+        importId: 'import-held',
+        movements: ids.map((id) => move(id, 'E', STATUS.Successful, '10.0000', '0.0000')),
+      }),
+    )
+    sources.addBatch(
+      batch({
+        batchId: 'adjusted-eur',
+        accountId: ACCOUNT_IDS['ProviderA-EUR'],
+        batchNo: 992,
+        importId: 'import-adjusted-eur',
+        movements: [
+          move(9_000_011n, 'I', STATUS.Refund, '0.0000', '10.0000'),
+          move(9_000_013n, 'I', STATUS.Chargeback, '0.0000', '0.0000'),
+          move(9_000_014n, 'I', STATUS.Chargeback, '0.0000', '4.0000'),
+          move(9_000_014n, 'I', STATUS.RDR, '0.0000', '6.0000'),
+        ],
+      }),
+    )
+    sources.addBatch(
+      batch({
+        batchId: 'undone',
+        batchNo: 993,
+        status: 'undone',
+        importId: 'import-undone',
+        movements: [move(9_000_012n, 'I', STATUS.RDR, '0.0000', '10.0000')],
+      }),
+    )
+    sources.addBatch(
+      batch({
+        batchId: 'other-provider',
+        accountId: ACCOUNT_IDS['ProviderB-Main'],
+        batchNo: 994,
+        importId: 'import-other-provider',
+        movements: [move(9_000_015n, 'I', STATUS.Refund, '0.0000', '10.0000')],
+      }),
+    )
+
+    const released = new Map(
+      (await sources.heldReserves(account, new Date('2026-12-31T00:00:00.000Z')))
+        .filter((r) => ids.includes(r.transactionId))
+        .map((r) => [r.transactionId, r.reserveEarlyReleasedAmt]),
+    )
+
+    expect(released).toEqual(
+      new Map([
+        [9_000_011n, '10.0000'],
+        [9_000_012n, '0.0000'],
+        [9_000_013n, '0.0000'],
+        [9_000_014n, '10.0000'],
+        [9_000_015n, '0.0000'],
+      ]),
+    )
+  })
 })

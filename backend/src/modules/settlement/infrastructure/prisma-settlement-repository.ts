@@ -16,7 +16,7 @@ import {
   ValidationRunRequiredError,
   ValidationRunSupersededError,
 } from '../application/errors.js'
-import { loadSettlementInput } from '../application/load-settlement-input.js'
+import { loadSettlementInput, reserveTransactionIds } from '../application/load-settlement-input.js'
 import type { ProcessCommand, SettlementRepository } from '../application/ports.js'
 import { attemptFor } from '../domain/batch-number.js'
 import {
@@ -146,15 +146,28 @@ export class PrismaSettlementRepository implements SettlementRepository {
             options: { transactionalFees: true },
           })
           const loaded = performance.now()
-          const plan = computeSettlement(input)
-          const computed = performance.now()
-          if (plan.batchFeeError) throw new BatchFeeInvalidError(plan.batchFeeError.index, plan.batchFeeError.reason)
+          const planned = computeSettlement(input)
+          if (planned.batchFeeError)
+            throw new BatchFeeInvalidError(planned.batchFeeError.index, planned.batchFeeError.reason)
           await this.phase('number')
-          const attemptNo = await this.lockNumber(tx, context.account.accountId, plan.batchNo)
-          race.attempted = { accountId: context.account.accountId, batchNo: plan.batchNo, attemptNo }
+          const attemptNo = await this.lockNumber(tx, context.account.accountId, planned.batchNo)
+          race.attempted = { accountId: context.account.accountId, batchNo: planned.batchNo, attemptNo }
           // The channels as they are under lock (design D7, D14): another account may have taken one since the load.
           await this.phase('channelLock')
           const lockedChannels = await this.lockChannels(tx, context.account.accountId, input.channels)
+          // Past the lock of the number and of the channels, another process of the provider that adjusted or released
+          // the same transaction has committed: the number one holds a process of the same account and number, and
+          // the channel one a process of any account, since a transaction belongs to one channel (that another account
+          // also waits at the number one, as in the tests, depends on the execution plan). The reserve states are read
+          // again and the plan recomputed with them, so a reserve is never released twice (settlement-reserve-chargeback, #67). Only the reserves
+          // change: the number, the channels and the batch fees come from the same input.
+          const reserveStates = await source.reserveStates(
+            context.account.providerId,
+            reserveTransactionIds(input.rows),
+            importId,
+          )
+          const plan = computeSettlement({ ...input, reserveStates })
+          const computed = performance.now()
           const batchChannelsNow = batchChannels(plan.movements, lockedChannels)
           race.toAssign = batchChannelsNow.toAssign
           if (batchChannelsNow.toAssign.length > 0 && request.confirmChannelAssignment !== true)

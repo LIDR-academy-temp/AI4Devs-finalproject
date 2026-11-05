@@ -11,7 +11,6 @@ const ctx: MovementContext = {
     [RAM_120.channelId, RAM_120],
   ]),
   previousE: new Set<bigint>(),
-  policy: 'hold_until_term',
 }
 const one = (r: Parameters<typeof buildMovements>[0][number], context = ctx) =>
   buildMovements([r], context).movements[0]!
@@ -104,14 +103,14 @@ describe('I movements', () => {
     ])
   })
 
-  it('hold no reserve and record the account policy without applying it (#62)', () => {
-    const m = one(row(2, { cycle: 'I', statusCode: 'Chargeback' }, chargeback()), {
-      ...ctx,
-      policy: 'release_on_chargeback',
-    })
+  it('hold no reserve and leave the reserve policy to applyAdjustmentReserve (#62)', () => {
+    const m = one(row(2, { cycle: 'I', statusCode: 'Chargeback' }, chargeback()))
 
-    expect(m).toMatchObject({ reserveHeldAmt: '0.0000', reserveEarlyReleasedAmt: '0.0000' })
-    expect(JSON.parse(m.reservePolicySnapshot!)).toEqual({ policy: 'release_on_chargeback', applied: false })
+    expect(m).toMatchObject({
+      reserveHeldAmt: '0.0000',
+      reserveEarlyReleasedAmt: '0.0000',
+      reservePolicySnapshot: null,
+    })
   })
 
   it('round 1 with the E in the same batch, round 2 with the E in a previous attempt, null otherwise', () => {

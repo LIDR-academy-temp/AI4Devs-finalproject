@@ -208,6 +208,42 @@ describe('missing candidates', () => {
     expect(previous(i).issues.map((x) => x.transactionId)).toEqual([13n])
   })
 
+  // The source sums into reserveEarlyReleasedAmt the release of the live I movements of the transaction, of any status
+  // and any account of the provider (settlement-reserve-chargeback D4); the engine checks it again.
+  describe('R: a reserve released by an adjustment (spec validation "Candidatas a faltante")', () => {
+    const missingR = (...reserves: Parameters<typeof reserve>[0][]) =>
+      inRange(
+        input({
+          rows: [row({ transactionId: 1n, cycle: 'R', status: 'Successful', date: MIN })],
+          reserveCandidates: reserves.map((r) => reserve({ date: MIN, ...r })),
+        }),
+      ).issues.map((x) => x.transactionId)
+
+    it('the release of a live Chargeback I is not missing ("Reserva liberada anticipadamente")', () => {
+      expect(missingR({ transactionId: 10n, status: 'Chargeback', earlyReleased: '10.0000' })).toEqual([])
+    })
+
+    it('a release by a Refund or an RDR: neither is missing ("Reserva liberada por un refund o un RDR")', () => {
+      expect(
+        missingR(
+          { transactionId: 10n, status: 'Refund', earlyReleased: '10.0000' },
+          { transactionId: 11n, status: 'RDR', earlyReleased: '10.0000' },
+        ),
+      ).toEqual([])
+    })
+
+    // A release of an undone attempt reaches the engine as 0.0000 too: the source leaves it out (spec "Liberación de un
+    // intento deshecho", covered in in-memory.test.ts and validation-sources.int.test.ts).
+    it('a live I that released 0 (hold_until_term, or before the policy) is missing ("Ajuste sin liberación")', () => {
+      expect(
+        missingR(
+          { transactionId: 10n, status: 'Chargeback', earlyReleased: '0.0000' },
+          { transactionId: 11n, status: 'Refund', earlyReleased: '0' },
+        ),
+      ).toEqual([10n, 11n])
+    })
+  })
+
   it('R: a reserve created after the max of the R range is not expired yet and is in neither validation', () => {
     const i = input({
       rows: [row({ transactionId: 1n, cycle: 'R', status: 'Successful', date: MIN })],

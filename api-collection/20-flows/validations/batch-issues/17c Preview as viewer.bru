@@ -1,0 +1,43 @@
+meta {
+  name: 17c Preview as viewer
+  type: http
+  seq: 20
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements/preview
+  body: json
+  auth: bearer
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({ runId: bru.getVar('runId2') });
+}
+
+tests {
+  test('viewer, without settlement.process, gets 403 forbidden on the preview', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

@@ -142,7 +142,7 @@ export const strings = {
       case 'transactional_fees_not_computed':
         return 'Transaction fees are not computed yet.'
       case 'chargeback_reserve_policy_not_applied':
-        return 'The reserve release on chargeback of the account is not applied yet.'
+        return 'The reserve release on chargeback of the account was not applied to this attempt.'
       case 'fee_variant_not_applied':
         return `A conditional or per-brand variant of fee ${w.feeId} is not applied.`
       default:

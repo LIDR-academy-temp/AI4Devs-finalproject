@@ -92,7 +92,11 @@ export interface CandidateTransaction {
   lastStatusChangedAt: Date | null
 }
 
-/** An E movement of a non-undone attempt that held a reserve not released yet. Money as decimal strings. */
+/**
+ * An E movement of a non-undone attempt that held a reserve without an R. Money as decimal strings.
+ * reserveEarlyReleasedAmt is the sum released by the transaction's I movements (Chargeback, Refund or RDR) in
+ * non-undone attempts of the provider; above 0 the reserve is not a missing R (settlement-reserve-chargeback D4).
+ */
 export interface HeldReserve {
   transactionId: bigint
   sourceTransactionId: string

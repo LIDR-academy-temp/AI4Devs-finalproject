@@ -1,6 +1,7 @@
 import { SettlementView } from '@recon/shared'
 import { describe, expect, it, vi } from 'vitest'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
+import { summaryCsv } from '../domain/exports/summary-csv.js'
 import { PrismaSettlementReader } from './prisma-settlement-reader.js'
 
 const BATCH_ID = '6f1c2a5e-0000-4000-8000-000000000001'
@@ -123,5 +124,33 @@ describe('PrismaSettlementReader', () => {
     expect(view?.validationSummary).toEqual({ runId: 42, persistent: 0, resolved: 0, blocking: 0, resolvedMissing: 2 })
     expect(view?.skipped).toEqual(detail.skipped)
     expect(groupBy).toHaveBeenCalledWith(expect.objectContaining({ where: { result: { runId: 42 } } }))
+  })
+
+  // Spec settlement "Intento procesado antes de la política": the warning is no longer emitted (D5), but an attempt
+  // whose settlement.process audit kept it still shows it, and its I movements released nothing.
+  it('an attempt processed before the reserve policy keeps chargeback_reserve_policy_not_applied in its view and summary', async () => {
+    const detail = {
+      runId: 42,
+      skipped: { ignored: 0, unmatched: 0, ambiguous: 0, excluded: 0, unresolvedStatus: 0, pending: 0 },
+      warnings: [{ code: 'chargeback_reserve_policy_not_applied' }],
+      channelsAssigned: [],
+      resolvedMissing: 0,
+    }
+    const { prisma } = stubPrisma('870.0000', { detailJson: JSON.stringify(detail) })
+    const aggregate = vi.fn(async () => ({
+      _sum: { feeAmount: money('30'), reserveEarlyReleasedAmt: money('0') },
+    }))
+    ;(prisma as unknown as { settlementTransaction: { aggregate: typeof aggregate } }).settlementTransaction.aggregate =
+      aggregate
+
+    const view = SettlementView.parse(await new PrismaSettlementReader(prisma).view(BATCH_ID))
+
+    expect(view.warnings).toEqual([{ code: 'chargeback_reserve_policy_not_applied' }])
+    expect(view.reserveEarlyReleasedAmt).toBe('0.0000')
+    expect(view.payableBreakdown.find((l) => l.code === 'reserve_early_released')).toMatchObject({
+      sign: '+',
+      amount: '0.0000',
+    })
+    expect(summaryCsv(view, new Map())).toContain('\r\nchargeback_reserve_policy_not_applied,,\r\n')
   })
 })

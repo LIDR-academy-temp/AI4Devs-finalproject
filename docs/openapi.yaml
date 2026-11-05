@@ -14603,6 +14603,10 @@ paths:
                             - sheetId
                             - rowNo
                           additionalProperties: false
+                          description: "An RR row of a transaction whose reserve a Chargeback, Refund or
+                            RDR of a current attempt already released: its R
+                            movement releases 0.0000 and still counts in
+                            reservesReleasedQty and in the RR export."
                         - type: object
                           properties:
                             code:
@@ -14639,6 +14643,10 @@ paths:
                           required:
                             - code
                           additionalProperties: false
+                          description: No longer emitted. Attempts processed before the reserve policy
+                            applied (#62) keep it in their view and summary;
+                            their I movements keep reserveEarlyReleasedAmt =
+                            0.0000.
                         - type: object
                           properties:
                             code:
@@ -15091,6 +15099,14 @@ paths:
                           pattern: ^-?\d+\.\d{4}$
                         reservePolicySnapshot:
                           nullable: true
+                          description: "The reserve policy applied to an I movement; null on E and R.
+                            Before #62: { policy, applied: false }. Since #62: {
+                            policy, applied: true, outcome, heldInBatchId },
+                            outcome one of released, held_until_term,
+                            no_held_reserve, already_released, released_in_r;
+                            heldInBatchId is the attempt that held the reserve,
+                            null when this batch held it, there is none or the
+                            policy is hold_until_term."
                           type: object
                           additionalProperties: {}
                         settled:
@@ -15834,6 +15850,10 @@ paths:
                             - sheetId
                             - rowNo
                           additionalProperties: false
+                          description: "An RR row of a transaction whose reserve a Chargeback, Refund or
+                            RDR of a current attempt already released: its R
+                            movement releases 0.0000 and still counts in
+                            reservesReleasedQty and in the RR export."
                         - type: object
                           properties:
                             code:
@@ -15870,6 +15890,10 @@ paths:
                           required:
                             - code
                           additionalProperties: false
+                          description: No longer emitted. Attempts processed before the reserve policy
+                            applied (#62) keep it in their view and summary;
+                            their I movements keep reserveEarlyReleasedAmt =
+                            0.0000.
                         - type: object
                           properties:
                             code:
@@ -16993,6 +17017,10 @@ paths:
                             - sheetId
                             - rowNo
                           additionalProperties: false
+                          description: "An RR row of a transaction whose reserve a Chargeback, Refund or
+                            RDR of a current attempt already released: its R
+                            movement releases 0.0000 and still counts in
+                            reservesReleasedQty and in the RR export."
                         - type: object
                           properties:
                             code:
@@ -17029,6 +17057,10 @@ paths:
                           required:
                             - code
                           additionalProperties: false
+                          description: No longer emitted. Attempts processed before the reserve policy
+                            applied (#62) keep it in their view and summary;
+                            their I movements keep reserveEarlyReleasedAmt =
+                            0.0000.
                         - type: object
                           properties:
                             code:
@@ -17726,6 +17758,10 @@ paths:
                             - sheetId
                             - rowNo
                           additionalProperties: false
+                          description: "An RR row of a transaction whose reserve a Chargeback, Refund or
+                            RDR of a current attempt already released: its R
+                            movement releases 0.0000 and still counts in
+                            reservesReleasedQty and in the RR export."
                         - type: object
                           properties:
                             code:
@@ -17762,6 +17798,10 @@ paths:
                           required:
                             - code
                           additionalProperties: false
+                          description: No longer emitted. Attempts processed before the reserve policy
+                            applied (#62) keep it in their view and summary;
+                            their I movements keep reserveEarlyReleasedAmt =
+                            0.0000.
                         - type: object
                           properties:
                             code:
@@ -18498,6 +18538,10 @@ paths:
                             - sheetId
                             - rowNo
                           additionalProperties: false
+                          description: "An RR row of a transaction whose reserve a Chargeback, Refund or
+                            RDR of a current attempt already released: its R
+                            movement releases 0.0000 and still counts in
+                            reservesReleasedQty and in the RR export."
                         - type: object
                           properties:
                             code:
@@ -18534,6 +18578,10 @@ paths:
                           required:
                             - code
                           additionalProperties: false
+                          description: No longer emitted. Attempts processed before the reserve policy
+                            applied (#62) keep it in their view and summary;
+                            their I movements keep reserveEarlyReleasedAmt =
+                            0.0000.
                         - type: object
                           properties:
                             code:
@@ -19274,6 +19322,10 @@ paths:
                             - sheetId
                             - rowNo
                           additionalProperties: false
+                          description: "An RR row of a transaction whose reserve a Chargeback, Refund or
+                            RDR of a current attempt already released: its R
+                            movement releases 0.0000 and still counts in
+                            reservesReleasedQty and in the RR export."
                         - type: object
                           properties:
                             code:
@@ -19310,6 +19362,10 @@ paths:
                           required:
                             - code
                           additionalProperties: false
+                          description: No longer emitted. Attempts processed before the reserve policy
+                            applied (#62) keep it in their view and summary;
+                            their I movements keep reserveEarlyReleasedAmt =
+                            0.0000.
                         - type: object
                           properties:
                             code:

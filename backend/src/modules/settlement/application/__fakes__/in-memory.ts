@@ -5,7 +5,7 @@
 import type { ImportStatus, SettlementView } from '@recon/shared'
 import type { Scope } from '../../../catalog/domain/scope.js'
 import type { LifecycleAction } from '../../domain/batch-lifecycle.js'
-import type { SettlementInput } from '../../domain/types.js'
+import type { PriorReserveState, SettlementInput } from '../../domain/types.js'
 import type {
   CurrentRun,
   ImportContext,
@@ -74,6 +74,16 @@ export class InMemorySettlementSource implements SettlementSource {
   async previousE(_providerId: number, transactionIds: readonly bigint[], _excludeImportId: string) {
     this.calls.push('previousE')
     return new Set(transactionIds.filter((id) => this.input.previousE.has(id)))
+  }
+
+  async reserveStates(_providerId: number, transactionIds: readonly bigint[], _excludeImportId: string) {
+    this.calls.push('reserveStates')
+    const states = new Map<bigint, PriorReserveState>()
+    for (const id of transactionIds) {
+      const state = this.input.reserveStates.get(id)
+      if (state) states.set(id, state)
+    }
+    return states
   }
 
   async accountFees() {

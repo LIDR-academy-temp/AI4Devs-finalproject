@@ -10,6 +10,7 @@ import { buildWorld, CHANNELS, STATUS, settlementMovementsOf } from '../../../..
 import { ACCOUNT_IDS, type AccountName } from '../../../catalog/application/__fakes__/in-memory.js'
 import { IMPORT_ACCOUNTS, type InMemoryImportRepository } from '../../../imports/application/__fakes__/in-memory.js'
 import type { InMemoryImportRowRepository } from '../../../imports/application/__fakes__/in-memory-analysis.js'
+import { Decimal } from '../../../settlement/domain/money.js'
 import { reserveExpiry } from '../../domain/ranges.js'
 import type {
   AccountScope,
@@ -308,6 +309,17 @@ export class InMemoryValidationSources
 
   async heldReserves(account: AccountScope, rMax: Date): Promise<HeldReserve[]> {
     const processed = this.processed(account.providerId)
+    // The release of the live I movements of the provider, of any status (settlement-reserve-chargeback D4).
+    const earlyReleased = new Map<bigint, Decimal>()
+    for (const b of this.batches) {
+      if (b.status === 'undone' || this.providerOf(b.accountId) !== account.providerId) continue
+      for (const m of b.movements)
+        if (m.cycle === 'I')
+          earlyReleased.set(
+            m.transactionId,
+            (earlyReleased.get(m.transactionId) ?? new Decimal(0)).plus(m.reserveEarlyReleasedAmt),
+          )
+    }
     const out: HeldReserve[] = []
     for (const b of this.batches) {
       if (b.status === 'undone' || this.providerOf(b.accountId) !== account.providerId) continue
@@ -324,7 +336,7 @@ export class InMemoryValidationSources
           transactionDate: t.transactionDate,
           batchId: b.batchId,
           reserveHeldAmt: m.reserveHeldAmt,
-          reserveEarlyReleasedAmt: m.reserveEarlyReleasedAmt,
+          reserveEarlyReleasedAmt: (earlyReleased.get(t.transactionId) ?? new Decimal(0)).toFixed(4),
         })
       }
     }

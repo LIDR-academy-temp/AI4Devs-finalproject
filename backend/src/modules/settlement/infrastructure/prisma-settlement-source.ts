@@ -19,6 +19,7 @@ import { channelStateOf } from '../domain/channels.js'
 import type {
   AccountAttempt,
   AccountFeeConfig,
+  PriorReserveState,
   RowInclusion,
   SettlementAccount,
   SettlementChannel,
@@ -31,6 +32,7 @@ type Db = PrismaClient | Prisma.TransactionClient
 const codeOf = new Map<number, TransactionStatusCode>(TRANSACTION_STATUSES.map((s) => [s.statusId, s.code]))
 const statusCode = (statusId: number | null): TransactionStatusCode | null =>
   statusId === null ? null : (codeOf.get(statusId) ?? null)
+const SUCCESSFUL_STATUS_ID = TRANSACTION_STATUSES.find((s) => s.code === 'Successful')!.statusId
 
 /** Binary order of text, the same in every environment (no collation involved). */
 const binary = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
@@ -301,6 +303,57 @@ export class PrismaSettlementSource implements SettlementSource {
       for (const r of rows) found.add(BigInt(String(r.transactionId)))
     }
     return found
+  }
+
+  async reserveStates(
+    providerId: number,
+    transactionIds: readonly bigint[],
+    excludeImportId: string,
+  ): Promise<Map<bigint, PriorReserveState>> {
+    const states = new Map<bigint, PriorReserveState>()
+    for (const ids of chunks(transactionIds)) {
+      // The held reserve is the first Successful E that held, by processedAt of its attempt and settlementTxnId;
+      // amounts travel as text (never through a JS number).
+      const rows = await this.db.$queryRaw<
+        {
+          transactionId: bigint | number | string
+          heldAmt: string | null
+          heldBatchId: string | null
+          releasedInR: number
+          releasedByAdjustment: number
+        }[]
+      >`
+        WITH m AS (
+          SELECT st.[transactionId], st.[settlementTxnId], st.[cycle], st.[statusId], st.[reserveHeldAmt],
+            st.[reserveEarlyReleasedAmt], b.[batchId], b.[processedAt]
+          FROM [SettlementTransaction] st
+          JOIN [SettlementBatch] b ON b.[batchId] = st.[batchId]
+          JOIN [Account] a ON a.[accountId] = b.[accountId]
+          WHERE b.[status] <> 'undone' AND a.[providerId] = ${providerId}
+            AND b.[importId] <> ${excludeImportId}
+            AND st.[transactionId] IN (${Prisma.join(ids)})
+        ), held AS (
+          SELECT [transactionId], [batchId], [reserveHeldAmt],
+            ROW_NUMBER() OVER (PARTITION BY [transactionId] ORDER BY [processedAt], [settlementTxnId]) AS n
+          FROM m
+          WHERE [cycle] = 'E' AND [statusId] = ${SUCCESSFUL_STATUS_ID} AND [reserveHeldAmt] > 0
+        )
+        SELECT m.[transactionId],
+          MAX(CONVERT(VARCHAR(40), h.[reserveHeldAmt])) AS heldAmt,
+          MAX(LOWER(CONVERT(VARCHAR(36), h.[batchId]))) AS heldBatchId,
+          MAX(CASE WHEN m.[cycle] = 'R' THEN 1 ELSE 0 END) AS releasedInR,
+          MAX(CASE WHEN m.[cycle] = 'I' AND m.[reserveEarlyReleasedAmt] > 0 THEN 1 ELSE 0 END) AS releasedByAdjustment
+        FROM m
+        LEFT JOIN held h ON h.[transactionId] = m.[transactionId] AND h.n = 1
+        GROUP BY m.[transactionId]`
+      for (const r of rows)
+        states.set(BigInt(String(r.transactionId)), {
+          held: r.heldAmt === null || r.heldBatchId === null ? null : { amount: r.heldAmt, batchId: r.heldBatchId },
+          releasedInR: Number(r.releasedInR) === 1,
+          releasedByAdjustment: Number(r.releasedByAdjustment) === 1,
+        })
+    }
+    return states
   }
 
   async accountFees(accountId: string): Promise<AccountFeeConfig[]> {

@@ -10,6 +10,7 @@
  */
 import {
   ACCOUNT_FEES,
+  ACCOUNTS,
   ANCHOR,
   amount4,
   type BatchPlan,
@@ -174,6 +175,64 @@ const ranges = (s: ReturnType<typeof baseSheets>) => {
     // R by expiry date: creation + rollingReserveDays of the transaction's channel.
     R: r(s.RR, (t) => day(t.transactionDate, chan(t.channelId).days)),
   }
+}
+
+const ACCOUNTS_BY_NAME = new Map<string, (typeof ACCOUNTS)[number]>(ACCOUNTS.map((a) => [a.name, a]))
+const txnBySourceId = new Map(world.txns.map((t) => [t.sourceTransactionId, t]))
+
+/**
+ * Expected early reserve release of a release_on_chargeback sample (settlement-reserve-chargeback D6): the CHB, REF
+ * and RDR rows in processing order; the first adjustment of a transaction releases the whole reserve held by its
+ * Successful E (a previous seeded batch of the provider, or the sample's own APP sheet), unless a previous seeded
+ * batch or the sample's RR sheet releases it in R. Seeded adjustments released nothing (P6).
+ */
+function adjustmentReserveRelease(plan: BatchPlan, sheets: Record<string, SheetDef>) {
+  const account = ACCOUNTS_BY_NAME.get(plan.account)!
+  // The rules below are those of release_on_chargeback: with hold_until_term every adjustment is held_until_term.
+  if (account.policy !== 'release_on_chargeback')
+    throw new Error(
+      `${plan.account} is ${account.policy}: the reserve early release oracle is for release_on_chargeback`,
+    )
+  const providerId = account.providerId
+  const previous = world.batches.filter((b) => ACCOUNTS_BY_NAME.get(b.account)!.providerId === providerId)
+  const heldIn = new Map<string, number>()
+  for (const b of previous)
+    for (const k of b.eKeys) {
+      const t = T(k)
+      if (t.status !== 'Declined' && reserveOf(t).gt(0) && !heldIn.has(k)) heldIn.set(k, b.batchNo)
+    }
+  const releasedInR = new Set(previous.flatMap((b) => b.rKeys))
+  const keysOf = (sheet: string) =>
+    new Set(sheets[sheet]!.rows.flatMap((r) => (r[0] === '' ? [] : [txnBySourceId.get(String(r[0]))?.key ?? ''])))
+  const appInBatch = keysOf('APP')
+  const rrInBatch = keysOf('RR')
+  const releasedInBatch = new Set<string>()
+  const released: { id: string; sheet: string; amount: string; heldInBatchNo: number | null }[] = []
+  const notReleased: { id: string; sheet: string; outcome: string }[] = []
+  let total = new Decimal(0)
+  for (const sheet of ['CHB', 'REF', 'RDR'])
+    for (const r of sheets[sheet]!.rows) {
+      if (r[0] === '') continue
+      const id = String(r[0])
+      const t = txnBySourceId.get(id)!
+      const heldInBatchNo = heldIn.get(t.key) ?? (appInBatch.has(t.key) && reserveOf(t).gt(0) ? null : undefined)
+      const outcome =
+        heldInBatchNo === undefined
+          ? 'no_held_reserve'
+          : releasedInR.has(t.key) || rrInBatch.has(t.key)
+            ? 'released_in_r'
+            : releasedInBatch.has(t.key)
+              ? 'already_released'
+              : 'released'
+      if (outcome !== 'released') {
+        notReleased.push({ id, sheet, outcome })
+        continue
+      }
+      releasedInBatch.add(t.key)
+      released.push({ id, sheet, amount: reserveOf(t).toFixed(4), heldInBatchNo: heldInBatchNo ?? null })
+      total = total.plus(reserveOf(t))
+    }
+  return { released, notReleased, reserveEarlyReleasedAmt: total.toFixed(4) }
 }
 
 const samples: Sample[] = []
@@ -389,6 +448,7 @@ const samples: Sample[] = []
     'CHB Alerts': { columns: ['ID', 'Type of Fee'], rows: [] },
     'Other Fees': { columns: ['Type of Fee', 'Amount', 'Currency'], rows: otherFees },
   }
+  const reserveEarlyRelease = adjustmentReserveRelease(plan, sheets)
   const countRows = (k: string) => sheets[k]!.rows.filter((r) => r[0] !== '').length
   // rows.read counts the transaction sheets only (as batch-clean does): Other Fees rows are batch fees, not rows to match.
   const totalRows = ['APP', 'DEC', 'CHB', 'REF', 'RDR', 'RR'].reduce((a, k) => a + sheets[k]!.rows.length, 0)
@@ -432,7 +492,8 @@ const samples: Sample[] = []
       affectedIds: notes,
       batchFeesPrefilled: otherFees.map(([type, amount]) => ({ feeType: type, amount })),
       proposedBatchNo: plan.batchNo,
-      note: 'Los totales del summary dependen de las decisiones de inclusión y de la política release_on_chargeback de la cuenta; no se fijan aquí.',
+      reserveEarlyRelease,
+      note: 'Los totales del summary dependen de las decisiones de inclusión y no se fijan aquí; reserveEarlyRelease fija la liberación de reserva por ajuste de release_on_chargeback con las inclusiones por defecto.',
     },
   })
   void missSet
