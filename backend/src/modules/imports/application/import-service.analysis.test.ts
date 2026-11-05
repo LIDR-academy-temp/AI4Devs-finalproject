@@ -790,7 +790,7 @@ describe('cancel', () => {
   it('cancels an analyzed import keeping files, rows and the analysis, and records it', async () => {
     const detail = await analyzed(A_USD, [SAMPLE_FILES.batchClean])
 
-    const cancelled = await service.cancel(ANALYST, ANALYST_ID, detail.importId)
+    const cancelled = await service.cancel(ANALYST, ANALYST_ID, detail.importId, 'Wrong file from the provider')
 
     expect(cancelled).toMatchObject({
       status: 'cancelled',
@@ -808,7 +808,7 @@ describe('cancel', () => {
         action: 'import.cancel',
         entityType: 'Import',
         entityId: detail.importId,
-        detail: { previousStatus: 'analyzed', runId: null },
+        detail: { previousStatus: 'analyzed', runId: null, reason: 'Wrong file from the provider' },
       },
     ])
   })
@@ -817,18 +817,20 @@ describe('cancel', () => {
     const detail = await analyzed(A_USD, [SAMPLE_FILES.batchClean])
     imports.setCurrentRun(detail.importId, 7)
 
-    await service.cancel(ANALYST, ANALYST_ID, detail.importId)
+    await service.cancel(ANALYST, ANALYST_ID, detail.importId, 'Wrong file from the provider')
 
     expect(audit.entries.at(-1)).toMatchObject({
       action: 'import.cancel',
-      detail: { previousStatus: 'analyzed', runId: 7 },
+      detail: { previousStatus: 'analyzed', runId: 7, reason: 'Wrong file from the provider' },
     })
     expect(await imports.currentRunId(detail.importId)).toBe(7)
   })
 
   it('cancels from uploaded and from mapped too; then the files cannot be touched', async () => {
     const uploadedOne = await uploaded(A_USD, [SAMPLE_FILES.batchClean])
-    expect(await service.cancel(ANALYST, ANALYST_ID, uploadedOne.importId)).toMatchObject({
+    expect(
+      await service.cancel(ANALYST, ANALYST_ID, uploadedOne.importId, 'Wrong file from the provider'),
+    ).toMatchObject({
       status: 'cancelled',
       analysis: null,
     })
@@ -838,21 +840,29 @@ describe('cancel', () => {
     )
 
     const mappedOne = await mapped(C_ALT, [SAMPLE_FILES.legacy])
-    expect((await service.cancel(ANALYST, ANALYST_ID, mappedOne.importId)).status).toBe('cancelled')
+    expect((await service.cancel(ANALYST, ANALYST_ID, mappedOne.importId, 'Wrong file from the provider')).status).toBe(
+      'cancelled',
+    )
   })
 
   it('refuses a processed or an already cancelled import, and reads as not found outside the scope', async () => {
     const detail = await analyzed(A_USD, [SAMPLE_FILES.batchClean])
-    await service.cancel(ANALYST, ANALYST_ID, detail.importId)
-    const twice = await caught(service.cancel(ANALYST, ANALYST_ID, detail.importId), ImportNotCancellableError)
+    await service.cancel(ANALYST, ANALYST_ID, detail.importId, 'Wrong file from the provider')
+    const twice = await caught(
+      service.cancel(ANALYST, ANALYST_ID, detail.importId, 'Wrong file from the provider'),
+      ImportNotCancellableError,
+    )
     expect(twice.details).toEqual({ status: 'cancelled' })
 
     const processed = await analyzed(A_USD, [SAMPLE_FILES.part1])
     await imports.setStatus(processed.importId, 'processed')
-    await caught(service.cancel(ANALYST, ANALYST_ID, processed.importId), ImportNotCancellableError)
+    await caught(
+      service.cancel(ANALYST, ANALYST_ID, processed.importId, 'Wrong file from the provider'),
+      ImportNotCancellableError,
+    )
 
     const legacy = await uploaded(C_ALT, [SAMPLE_FILES.legacy])
-    await caught(service.cancel(VIEWER, ANALYST_ID, legacy.importId), NotFoundError)
+    await caught(service.cancel(VIEWER, ANALYST_ID, legacy.importId, 'Wrong file from the provider'), NotFoundError)
   })
 })
 
