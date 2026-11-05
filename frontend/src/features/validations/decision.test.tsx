@@ -204,9 +204,10 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
     const { user } = await openAnalysis(importId)
 
     await user.click(decision().getByRole('button', { name: 'Cancel and reprocess' }))
-    await user.click(
-      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Yes, cancel the import' }),
-    )
+    const dialog = within(await screen.findByRole('alertdialog'))
+    // The reason is required (spec import "Cancelación del import desde la pantalla", #47).
+    await user.type(dialog.getByLabelText('Reason'), 'Wrong file from the provider')
+    await user.click(dialog.getByRole('button', { name: 'Yes, cancel the import' }))
 
     expect(await header().findByText('cancelled')).toBeInTheDocument()
     expect(importRequests('cancel')).toHaveLength(1)

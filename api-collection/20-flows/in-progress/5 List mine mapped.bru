@@ -1,0 +1,28 @@
+meta {
+  name: 5 List mine mapped
+  type: http
+  seq: 5
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports?status=mapped&mine=true&pageSize=500
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: mapped
+  mine: true
+  pageSize: 500
+}
+
+tests {
+  test('finds the import among the mapped ones analyst created', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.items.map((i) => i.importId)).to.include(bru.getVar('inProgressImportId'));
+    expect(res.body.items.every((i) => i.createdBy.userName === 'analyst' && i.status === 'mapped')).to.equal(true);
+  });
+}

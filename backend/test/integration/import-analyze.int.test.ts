@@ -100,6 +100,9 @@ async function upload(accountId: string, parts: Part[], user: 'analyst' | 'viewe
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
+/** Body of every cancel: the reason is required (spec "Motivo de la cancelación", #47). */
+const CANCEL_REASON = { reason: 'Wrong file from the provider' }
+
 function call(method: Method, url: string, body?: object, user: 'analyst' | 'viewer' = 'analyst') {
   return ctx.app.inject({
     method,
@@ -597,6 +600,35 @@ describe('what the analysis refuses (issue #5, criteria 1 and 4)', () => {
     expect(remove.statusCode).toBe(409)
   })
 
+  it('a file added after the confirmation: the detail names its sheets for confirmation, as the 422 does (#42)', async () => {
+    const detail = await mapped(accountIds['ProviderA-USD'] as string, [samplePart(PART1)])
+    const { payload, contentType } = await multipart([samplePart(PART2)])
+    const add = await ctx.app.inject({
+      method: 'POST',
+      url: `/api/v1/imports/${detail.importId}/files`,
+      headers: { authorization: `Bearer ${tokens.analyst}`, 'content-type': contentType },
+      payload,
+    })
+    expect(add.statusCode).toBe(200)
+    const added = ImportDetail.parse(add.json())
+    const reread = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
+    const analyze = await call('POST', `/imports/${detail.importId}/analyze`)
+    expect(analyze.statusCode).toBe(422)
+    const expected = analyze.json().details.missing
+    const part2Sheets = added.files[1]?.sheets.map((s) => s.sheetName)
+
+    expect(expected.map((m: { sheetName: string }) => m.sheetName)).toEqual(part2Sheets)
+    for (const answer of [added, reread]) {
+      expect(answer.status).toBe('mapped')
+      expect(answer.readiness.canAnalyze).toBe(false)
+      expect(answer.readiness.missing).toEqual(expected)
+    }
+
+    const confirmed = await call('PUT', `/imports/${detail.importId}/mapping`, confirmProposal(reread))
+    expect(confirmed.statusCode).toBe(200)
+    expect(confirmed.json().readiness).toMatchObject({ canAnalyze: true, missing: [] })
+  })
+
   it('a numeric id cell that lost precision is unmatched with reason lossy_numeric_id, never looked up', async () => {
     const bytes = buildXlsx({
       sheets: [
@@ -650,7 +682,7 @@ describe('cancel (HU1 CA8, HU2 CA8) and scope', () => {
   it('cancels an analyzed import keeping everything, records it, refuses a second cancel and admits the file again', async () => {
     const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
 
-    const res = await call('POST', `/imports/${detail.importId}/cancel`)
+    const res = await call('POST', `/imports/${detail.importId}/cancel`, CANCEL_REASON)
 
     expect(res.statusCode).toBe(200)
     const cancelled = ImportDetail.parse(res.json())
@@ -668,9 +700,13 @@ describe('cancel (HU1 CA8, HU2 CA8) and scope', () => {
     expect((await rows(detail.importId, '?pageSize=1')).total).toBe(783)
     const audit = await ctx.prisma.auditLog.findMany({ where: { action: 'import.cancel', entityId: detail.importId } })
     expect(audit).toHaveLength(1)
-    expect(JSON.parse(audit[0]?.detailJson ?? '{}')).toEqual({ previousStatus: 'analyzed', runId: null })
+    expect(JSON.parse(audit[0]?.detailJson ?? '{}')).toEqual({
+      previousStatus: 'analyzed',
+      runId: null,
+      reason: CANCEL_REASON.reason,
+    })
 
-    const again = await call('POST', `/imports/${detail.importId}/cancel`)
+    const again = await call('POST', `/imports/${detail.importId}/cancel`, CANCEL_REASON)
     expect(again.statusCode).toBe(409)
     expect(again.json()).toMatchObject({ code: 'import_not_cancellable', details: { status: 'cancelled' } })
 
@@ -679,13 +715,41 @@ describe('cancel (HU1 CA8, HU2 CA8) and scope', () => {
     expect(reupload.json().importId).not.toBe(detail.importId)
   })
 
+  it('audits the reason without the spaces of its ends (spec "Motivo de la cancelación", #47)', async () => {
+    const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [samplePart(PART1), samplePart(PART2)])
+
+    const res = await call('POST', `/imports/${detail.importId}/cancel`, { reason: '  Wrong file from the provider  ' })
+
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ status: 'cancelled' })
+    const audit = await ctx.prisma.auditLog.findMany({ where: { action: 'import.cancel', entityId: detail.importId } })
+    expect(audit).toHaveLength(1)
+    expect(JSON.parse(audit[0]?.detailJson ?? '{}')).toEqual({
+      previousStatus: 'analyzed',
+      runId: null,
+      reason: 'Wrong file from the provider',
+    })
+  })
+
+  it('refuses a cancel without a valid reason with 400, leaving the import and the audit log untouched', async () => {
+    const detail = await uploaded(accountIds['ProviderA-USD'] as string, [samplePart(PART1)])
+
+    for (const body of [undefined, {}, { reason: '   ' }, { reason: 'x'.repeat(501) }, { reason: 'x', note: 'y' }]) {
+      const res = await call('POST', `/imports/${detail.importId}/cancel`, body)
+      expect(res.statusCode, JSON.stringify(body)).toBe(400)
+      expect(res.json().code).toBe('validation_error')
+    }
+    expect((await call('GET', `/imports/${detail.importId}`)).json()).toMatchObject({ status: 'uploaded' })
+    expect(await ctx.prisma.auditLog.count({ where: { action: 'import.cancel', entityId: detail.importId } })).toBe(0)
+  })
+
   it('viewer gets 403 on every write and 404 on the rows of an import outside the scope, identical to an unknown id', async () => {
     const own = await uploaded(accountIds['ProviderA-USD'] as string, [samplePart(PART1)])
     for (const [method, url, body] of [
       ['PUT', `/imports/${own.importId}/mapping`, confirmProposal(own)],
       ['POST', `/imports/${own.importId}/analyze`, undefined],
       ['PATCH', `/imports/${own.importId}/rows/${sheetNamed(own, 'APP').sheetId}/2`, { gatewayId: 1 }],
-      ['POST', `/imports/${own.importId}/cancel`, undefined],
+      ['POST', `/imports/${own.importId}/cancel`, CANCEL_REASON],
     ] as [Method, string, object | undefined][]) {
       const res = await call(method, url, body, 'viewer')
       expect(res.statusCode, `${method} ${url}`).toBe(403)
@@ -869,7 +933,7 @@ describe('writes that read the import before a concurrent request commits (spec:
   it('a PUT mapping that read mapped is refused with 409 once cancel committed; the import stays cancelled', async () => {
     const detail = await mapped(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
     const service = serviceWithWindow(async () => {
-      const res = await call('POST', `/imports/${detail.importId}/cancel`)
+      const res = await call('POST', `/imports/${detail.importId}/cancel`, CANCEL_REASON)
       expect(res.statusCode, res.body).toBe(200)
     })
 
@@ -906,19 +970,23 @@ describe('writes that read the import before a concurrent request commits (spec:
       expect(res.statusCode, res.body).toBe(200)
     })
 
-    const cancelled = await service.cancel(await allMerchants(), analystId, detail.importId)
+    const cancelled = await service.cancel(await allMerchants(), analystId, detail.importId, CANCEL_REASON.reason)
 
     expect(cancelled.status).toBe('cancelled')
     const audit = await ctx.prisma.auditLog.findMany({ where: { action: 'import.cancel', entityId: detail.importId } })
     expect(audit).toHaveLength(1)
-    expect(JSON.parse(audit[0]?.detailJson ?? '{}')).toEqual({ previousStatus: 'analyzed', runId: null })
+    expect(JSON.parse(audit[0]?.detailJson ?? '{}')).toEqual({
+      previousStatus: 'analyzed',
+      runId: null,
+      reason: CANCEL_REASON.reason,
+    })
   })
 
   it('a cancel that read analyzed still cancels, and a second cancel is refused by the guarded write', async () => {
     const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
     const [first, second] = await Promise.all([
-      call('POST', `/imports/${detail.importId}/cancel`),
-      call('POST', `/imports/${detail.importId}/cancel`),
+      call('POST', `/imports/${detail.importId}/cancel`, CANCEL_REASON),
+      call('POST', `/imports/${detail.importId}/cancel`, CANCEL_REASON),
     ])
 
     expect([first.statusCode, second.statusCode].sort((a, b) => a - b)).toEqual([200, 409])

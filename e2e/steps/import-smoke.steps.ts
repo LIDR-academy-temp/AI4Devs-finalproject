@@ -107,6 +107,8 @@ Then('they see the channel notice {string}', async ({ page }, text: string) => {
 
 When('they cancel the import', async ({ page }) => {
   await page.getByRole('button', { name: 'Cancel import' }).click()
+  // The reason is required (spec "Cancelación del import desde la pantalla", #47).
+  await page.getByRole('alertdialog').getByLabel('Reason').fill('Smoke test cleanup')
   await page.getByRole('alertdialog').getByRole('button', { name: 'Yes, cancel the import' }).click()
 })
 
@@ -127,6 +129,10 @@ After(async ({ page, created, $testInfo }) => {
     const cancel = tab.getByRole('button', { name: 'Cancel import' })
     if (!(await cancel.isVisible())) return
     await cancel.click({ timeout: 5_000 })
+    await tab
+      .getByRole('alertdialog')
+      .getByLabel('Reason')
+      .fill('Smoke test cleanup after a failure', { timeout: 5_000 })
     await tab.getByRole('alertdialog').getByRole('button', { name: 'Yes, cancel the import' }).click({ timeout: 5_000 })
     await header.getByText('cancelled', { exact: true }).waitFor({ timeout: 10_000 })
   } catch (error) {

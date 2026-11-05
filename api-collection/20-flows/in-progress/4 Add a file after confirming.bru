@@ -1,0 +1,33 @@
+meta {
+  name: 4 Add a file after confirming
+  type: http
+  seq: 4
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/files
+  body: multipartForm
+  auth: inherit
+}
+
+params:path {
+  importId: {{inProgressImportId}}
+}
+
+body:multipart-form {
+  files: @file(../data/samples/batch-split/Recon_Template_ProviderA-USD_batch-split_part2.xlsx)
+}
+
+tests {
+  test('the readiness names every sheet of the new file for confirmation and cannot analyze (#42)', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.status).to.equal('mapped');
+    const added = res.body.files[1].sheets.map((s) => s.sheetId);
+    expect(res.body.readiness.canAnalyze).to.equal(false);
+    const confirmation = res.body.readiness.missing.filter((m) => m.field === 'confirmation');
+    expect(confirmation.map((m) => m.sheetId)).to.deep.equal(added);
+  });
+}

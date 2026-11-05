@@ -56,6 +56,39 @@ export const validateImportSearch = (search: Record<string, unknown>): ImportSea
   })
 }
 
+/** The open statuses In Progress filters by (spec "Pantalla In Progress: filtros"). */
+export const OPEN_STATUSES = ['uploaded', 'mapped', 'analyzed', 'validated'] as const
+export type OpenStatus = (typeof OPEN_STATUSES)[number]
+
+export interface InProgressSearch {
+  merchantId?: number
+  providerId?: number
+  accountId?: string
+  status?: OpenStatus
+  mine?: true
+  page?: number
+}
+
+/**
+ * The address of In Progress (design D5): invalid values are dropped, and a level of the merchant → provider →
+ * account cascade without the one above is dropped too, so every filter can be checked against the lists shown.
+ */
+export const validateInProgressSearch = (search: Record<string, unknown>): InProgressSearch => {
+  const merchantId = intId(search.merchantId)
+  const providerId = merchantId === undefined ? undefined : intId(search.providerId)
+  const accountId = providerId === undefined ? undefined : uuid(search.accountId)
+  const status = OPEN_STATUSES.find((open) => open === search.status)
+  const page = intId(search.page)
+  return dropUndefined({
+    merchantId,
+    providerId,
+    accountId,
+    status,
+    mine: search.mine === true || search.mine === 'true' ? (true as const) : undefined,
+    page: page && page > 1 ? page : undefined,
+  })
+}
+
 /** Absent keys stay absent, so the address carries only what is set. */
 function dropUndefined<T extends object>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as T

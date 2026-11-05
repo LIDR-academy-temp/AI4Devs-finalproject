@@ -1,0 +1,25 @@
+meta {
+  name: Imports in progress - bad page size
+  type: http
+  seq: 117
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports?pageSize=501
+  body: none
+  auth: inherit
+}
+
+params:query {
+  pageSize: 501
+}
+
+tests {
+  test('a pageSize over 500 answers 400 validation_error', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}

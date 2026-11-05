@@ -1,0 +1,33 @@
+meta {
+  name: 2 List by account
+  type: http
+  seq: 2
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports?accountId={{providerCAltAccountId}}&status=uploaded&pageSize=500
+  body: none
+  auth: inherit
+}
+
+params:query {
+  accountId: {{providerCAltAccountId}}
+  status: uploaded
+  pageSize: 500
+}
+
+tests {
+  test('finds the new import among the uploaded ones of ProviderC-Alt, with its hierarchy', () => {
+    expect(res.status).to.equal(200);
+    const item = res.body.items.find((i) => i.importId === bru.getVar('inProgressImportId'));
+    expect(item).to.not.equal(undefined);
+    expect(item.fileCount).to.equal(1);
+    expect(item.account).to.deep.equal({ id: bru.getVar('providerCAltAccountId'), name: 'ProviderC-Alt' });
+    expect(item.provider).to.deep.equal({ id: 201, name: 'Provider C' });
+    expect(item.merchant).to.deep.equal({ id: 2, name: 'Merchant B' });
+    expect(res.body.items.every((i) => i.status === 'uploaded')).to.equal(true);
+  });
+}

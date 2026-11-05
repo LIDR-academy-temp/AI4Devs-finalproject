@@ -3,7 +3,7 @@ import type { UserEvent } from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
 import { dropZone, fileInput, findFileEntry } from '@/test/import-screens'
-import { failNext, holdNext, importRecord, importRequests, sampleFile, seedImport } from '@/test/msw/imports'
+import { detailOf, failNext, holdNext, importRecord, importRequests, sampleFile, seedImport } from '@/test/msw/imports'
 import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 import { strings } from '../strings'
@@ -96,6 +96,28 @@ describe('Column Mapping: readiness and Analyze (spec "Pantalla Column Mapping: 
     expect(confirmations.map(sheetOf)).toEqual(part2Sheets)
     expect(analyzeButton()).toBeDisabled()
     expect(within(screen.getByRole('region', { name: PART1 })).getAllByRole('region').length).toBe(10)
+    // The words of the API, not ones of the screen (spec "Pantalla Column Mapping: readiness y Analyze", #42).
+    expect(confirmations.map((item) => item.textContent)).toEqual(
+      part2Sheets.map((name) => `${name}: confirmation: The mapping of sheet "${name}" is not confirmed`),
+    )
+  })
+
+  it('shows what the API says and derives nothing from mappingConfirmed (#42)', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'mapped' })
+    // A detail whose readiness has nothing missing although a sheet is not confirmed: the bar trusts the API.
+    server.use(
+      http.get('*/api/v1/imports/:importId', () => {
+        const body = detailOf(importRecord(importId))
+        body.files[0]!.sheets[0]!.mappingConfirmed = false
+        return HttpResponse.json(body)
+      }),
+    )
+
+    await openMapping(importId)
+
+    expect(readiness().getByText(strings.readiness.ready)).toBeInTheDocument()
+    expect(itemsAbout(readiness(), 'confirmation: ')).toHaveLength(0)
+    expect(analyzeButton()).toBeEnabled()
   })
 })
 
