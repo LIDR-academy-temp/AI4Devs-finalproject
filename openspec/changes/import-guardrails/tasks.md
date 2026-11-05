@@ -13,8 +13,8 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
 
 ## 1. Contrato compartido (`@recon/shared`)
 
-- [ ] 1.1 Añadir en `packages/shared/src/vocabulary.ts` el enum `UnmatchedReason` (`no_match`, `id_format`, `lossy_numeric_id`, `no_gateways`). Verificar con un test en `vocabulary.test.ts` que es `RowReason` sin `empty_id`.
-- [ ] 1.2 Añadir los esquemas de D3:
+- [x] 1.1 Añadir en `packages/shared/src/vocabulary.ts` el enum `UnmatchedReason` (`no_match`, `id_format`, `lossy_numeric_id`, `no_gateways`). Verificar con un test en `vocabulary.test.ts` que es `RowReason` sin `empty_id`.
+- [x] 1.2 Añadir los esquemas de D3:
   - `EmptyBatchDetails` y `UnmatchedByReason`;
   - `AnalysisRows.unmatchedByReason`, `AnalysisSummary.requiresEmptyBatchConfirmation` y `AnalysisSummary.likelyWrongAccount`;
   - `ChannelNotice.otherProvider` (opcional, `true`);
@@ -23,7 +23,7 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
   - `NoMatchedRowsDetails` e `ImportFileLimitReachedDetails`.
 
   Verificar con tests de parseo: `ReviewBody` sigue rechazando claves desconocidas, y `EmptyBatchDetails` exige las cuatro claves de motivo. `pnpm --filter @recon/shared test` y `pnpm typecheck` en verde, salvo los errores esperados en backend y frontend, que se listan para los grupos siguientes.
-- [ ] 1.3 Commit: feat(shared): contrato del batch sin filas asociadas, canal de otro proveedor y tope de archivos, y `git push`.
+- [x] 1.3 Commit: feat(shared): contrato del batch sin filas asociadas, canal de otro proveedor y tope de archivos, y `git push`.
 
 ## 2. Muestra `batch-wrong-account`
 

@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { UserRef } from './auth.js'
 import { AccountRef } from './catalog.js'
-import { HiddenAccountRef } from './imports.js'
+import { EmptyBatchDetails, HiddenAccountRef } from './imports.js'
 import { BatchStatus, ImportStatus, IsoDate, Money } from './vocabulary.js'
 
 /** BIGINT ids travel as decimal strings, never as JSON numbers (README §4). */
@@ -54,6 +54,8 @@ export const SettlementRequest = z.strictObject({
   /** Audit only. */
   note: z.string().max(500).optional(),
   confirmChannelAssignment: z.boolean().optional(),
+  /** Required true to process an import without matched rows of the account's provider (#92); the preview ignores it. */
+  confirmEmptyBatch: z.boolean().optional(),
   batchFees: z.array(BatchFeeInput).max(MAX_BATCH_FEES).optional(),
 })
 export type SettlementRequest = z.infer<typeof SettlementRequest>
@@ -215,6 +217,10 @@ export const SettlementPreview = SettlementFigures.extend({
   batchNoAvailable: z.boolean(),
   requiresChannelConfirmation: z.boolean(),
   channelsToAssign: z.array(ChannelToAssign),
+  /** true: no matched row of the account's provider; processing would answer 409 no_matched_rows without confirmEmptyBatch. */
+  requiresEmptyBatchConfirmation: z.boolean(),
+  /** The details 409 no_matched_rows would carry; null when no confirmation is needed. */
+  emptyBatch: EmptyBatchDetails.nullable(),
 })
 export type SettlementPreview = z.infer<typeof SettlementPreview>
 
