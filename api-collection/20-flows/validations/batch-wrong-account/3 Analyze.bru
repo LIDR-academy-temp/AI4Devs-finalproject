@@ -1,0 +1,32 @@
+meta {
+  name: 3 Analyze
+  type: http
+  seq: 3
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/analyze
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{wraImportId}}
+}
+
+tests {
+  // Oracle: data/samples/batch-wrong-account/expected.json (12 rows, all id_format).
+  test('nothing matches: an empty batch to confirm and a likely wrong account', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.status).to.equal('analyzed');
+    expect(res.body.analysis.rows.matched).to.equal(0);
+    expect(res.body.analysis.rows.unmatched).to.equal(12);
+    expect(res.body.analysis.rows.unmatchedByReason).to.eql({ no_match: 0, id_format: 12, lossy_numeric_id: 0, no_gateways: 0 });
+    expect(res.body.analysis.requiresEmptyBatchConfirmation).to.equal(true);
+    expect(res.body.analysis.likelyWrongAccount).to.equal(true);
+    expect(res.body.channels).to.eql([]);
+  });
+}

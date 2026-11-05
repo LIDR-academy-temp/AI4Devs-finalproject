@@ -1,0 +1,47 @@
+meta {
+  name: 1 Upload
+  type: http
+  seq: 1
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/imports
+  body: multipartForm
+  auth: inherit
+}
+
+params:path {
+  accountId: {{providerAUsdAccountId}}
+}
+
+body:multipart-form {
+  files: @file(../data/samples/batch-wrong-account/Recon_Template_ProviderA-USD_batch-wrong-account.xlsx)
+}
+
+script:pre-request {
+  // A file of another account (#92): UUIDs of ProviderC-USD into ProviderA-USD, whose gateway is numeric.
+  // The flow never processes it, so it consumes no batch number of ProviderA-USD; it ends cancelled.
+  if (!bru.getVar('providerAUsdAccountId')) {
+    await bru.runRequest('10-smoke/Provider accounts');
+  }
+  if (!bru.getVar('providerAUsdAccountId')) {
+    throw new Error(bru.getVar('providerAUsdLookupError') || 'ProviderA-USD accountId could not be resolved');
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar('wraImportId', res.body.importId);
+    bru.setVar('wraDetail', res.body);
+  }
+}
+
+tests {
+  test('creates the batch-wrong-account import in uploaded', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.status).to.equal('uploaded');
+  });
+}

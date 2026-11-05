@@ -22,4 +22,10 @@ tests {
     expect(res.status).to.equal(200);
     expect(res.body.status).to.equal('analyzed');
   });
+  test('RAM-01 is a channel of another provider, with its own note; Provider B channels are not marked (#92)', () => {
+    const ram01 = res.body.channels.find((c) => c.name === 'RAM-01');
+    expect(ram01.otherProvider).to.equal(true);
+    expect(ram01.note).to.equal('Channel of another provider: its rows are not processed in this account');
+    expect(res.body.channels.filter((c) => c.otherProvider).map((c) => c.name)).to.eql(['RAM-01']);
+  });
 }
