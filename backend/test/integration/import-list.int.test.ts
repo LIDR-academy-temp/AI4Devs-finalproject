@@ -197,6 +197,27 @@ describe('GET /imports: filters and pages (spec "Filtros" and "Paginación de im
     }
   })
 
+  it('two imports with the same updatedAt come in the order of their importId, on every page (review-diff B3)', async () => {
+    const pair = [await upload('ProviderA-USD', [PART1]), await upload('ProviderA-USD', [PART1])].map((d) => d.importId)
+    const same = new Date('2026-11-04T12:00:00.000Z')
+    await ctx.prisma.import.updateMany({ where: { importId: { in: pair } }, data: { updatedAt: same } })
+    // The order of the database for uniqueidentifier, not the one of the strings: the API sorts in SQL Server.
+    const expected = (
+      await ctx.prisma.import.findMany({
+        where: { importId: { in: pair } },
+        orderBy: { importId: 'asc' },
+        select: { importId: true },
+      })
+    ).map((i) => i.importId)
+    const query = `?accountId=${accountIds['ProviderA-USD']}&mine=true&status=uploaded&pageSize=500`
+
+    const first = ours(await list(query)).filter((id) => pair.includes(id))
+    const again = ours(await list(query)).filter((id) => pair.includes(id))
+
+    expect(first).toEqual(expected)
+    expect(again).toEqual(expected)
+  })
+
   it('pages over a stable order without repeating an import, with the total of every match', async () => {
     const mine = [
       await upload('ProviderA-USD', [PART1]),
