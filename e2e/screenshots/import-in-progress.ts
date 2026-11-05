@@ -163,11 +163,29 @@ async function inProgress(page: Page, search = '') {
 const rowOf = (page: Page, importId: string) =>
   page.getByRole('row').filter({ has: page.locator(`a[href="/imports/${importId}"]`) })
 
-/** Cancels from In Progress with a reason; optionally captures the dialog with the reason written. */
-async function cancelFromList(page: Page, importId: string, reason: string, capture?: string) {
+/**
+ * Cancels from In Progress with a reason; optionally captures the dialog with the reason written. An import that is
+ * not in the list is looked up in its own page: `already` when it says cancelled, `missing` otherwise, which the
+ * cleanup reports to cancel by hand (review-diff B1).
+ */
+async function cancelFromList(
+  page: Page,
+  importId: string,
+  reason: string,
+  capture?: string,
+): Promise<'cancelled' | 'already' | 'missing'> {
   await inProgress(page, 'mine=true')
   const row = rowOf(page, importId)
-  if ((await row.count()) === 0) return
+  if ((await row.count()) === 0) {
+    await page.goto(`${BASE_URL}/imports/${importId}`)
+    const header = page.getByRole('region', { name: 'Import' })
+    const cancelled = await header
+      .getByText('cancelled', { exact: true })
+      .waitFor({ timeout: 10_000 })
+      .then(() => true)
+      .catch(() => false)
+    return cancelled ? 'already' : 'missing'
+  }
   await row.getByRole('button', { name: 'Cancel' }).click()
   const dialog = page.getByRole('alertdialog')
   await dialog.getByLabel('Reason').fill(reason)
@@ -175,6 +193,7 @@ async function cancelFromList(page: Page, importId: string, reason: string, capt
   await dialog.getByRole('button', { name: 'Yes, cancel the import' }).click()
   await expect(dialog).toBeHidden()
   await expect(rowOf(page, importId)).toHaveCount(0)
+  return 'cancelled'
 }
 
 async function main() {
@@ -227,7 +246,15 @@ async function main() {
       const cleaner = await newPage(browser)
       try {
         await signIn(cleaner, 'analyst')
-        for (const importId of created) await cancelFromList(cleaner, importId, CLEANUP_REASON)
+        const missing: string[] = []
+        for (const importId of created) {
+          const outcome = await cancelFromList(cleaner, importId, CLEANUP_REASON)
+          if (outcome === 'already') console.log(`${importId} was already cancelled`)
+          if (outcome === 'missing') missing.push(importId)
+        }
+        if (missing.length > 0) {
+          console.log(`cleanup failed, cancel these imports by hand: ${missing.join(', ')} (not in In Progress)`)
+        }
       } catch (error) {
         console.log(`cleanup failed, cancel these imports by hand: ${created.join(', ')} (${(error as Error).message})`)
       }
