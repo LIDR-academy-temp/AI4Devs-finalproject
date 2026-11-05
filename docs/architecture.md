@@ -2,7 +2,7 @@
 
 > Fase 2 (Arquitectura base) del AI SDLC. Parte de [`docs/prd.md`](./prd.md) y de las decisiones registradas en [`docs/adr/`](./adr/). Alimenta las secciones 2, 3 y 4 de `readme.md`.
 
-- **Estado:** borrador v0.1
+- **Estado:** borrador v0.2 (alineado con `docs/prd.md` v0.2)
 - **Fecha:** 2026-11-04
 
 ---
@@ -14,7 +14,7 @@ Monorepo con dos aplicaciones: una **API REST** en AdonisJS v7 y una **SPA** en 
 | Decisión | ADR |
 | --- | --- |
 | Monorepo con API AdonisJS + SPA React en un solo contenedor | [ADR-0001](./adr/0001-monorepo-api-spa-un-contenedor.md) |
-| Importación de ofertas mediante adaptadores (Greenhouse en el MVP) | [ADR-0002](./adr/0002-importacion-por-adaptadores.md) |
+| Importación de ofertas mediante adaptadores (Greenhouse, Ashby, Lever) y búsquedas en un agregador | [ADR-0002](./adr/0002-importacion-por-adaptadores.md) |
 | Modelos de Claude por entorno y por tarea | [ADR-0003](./adr/0003-modelos-claude-por-entorno.md) |
 | Integración de IA: Markdown canónico, respuestas estructuradas, prompts versionados y evals | [ADR-0004](./adr/0004-integracion-ia.md) |
 | Cola de trabajos en PostgreSQL | [ADR-0005](./adr/0005-cola-de-trabajos-postgresql.md) |
@@ -45,7 +45,8 @@ flowchart LR
     api --> data
     worker --> data
     worker -->|Messages API| claude["Claude API"]
-    worker -->|Job Board API| gh["Greenhouse"]
+    worker -->|Job Board APIs| gh["Greenhouse / Ashby / Lever"]
+    worker -->|Búsquedas| agg["Agregador de ofertas<br/>(por definir en spike)"]
 ```
 
 **Patrón:** monolito modular por capas en el backend (controladores → servicios de dominio → modelos Lucid), con puertos y adaptadores en las integraciones externas (Claude y plataformas de empleo). El frontend es una SPA que consume la API con un cliente tipado.
@@ -70,9 +71,9 @@ flowchart LR
 | Persistencia | PostgreSQL + Lucid ORM | Datos de la aplicación y migraciones. |
 | Cola de trabajos | PostgreSQL (librería por confirmar en el walking skeleton; ver ADR-0005) | Extracción, puntaje e importación en segundo plano. |
 | Módulo de IA | `@anthropic-ai/sdk` | Cliente de Claude, prompts versionados, esquemas de salida, registro de uso. |
-| Adaptadores de empleo | `JobSourceAdapter` + `GreenhouseAdapter` | Traer ofertas de plataformas externas y normalizarlas. |
-| Filtros duros | TypeScript puro, sin dependencias | Evaluar `pass`/`fail`/`unknown` por criterio. |
-| Evals | Script de Node + golden set en el repositorio | Medir el acuerdo entre el puntaje y el juicio manual (RNF-08). |
+| Adaptadores de empleo | `JobSourceAdapter` con dos modos: por job board (`GreenhouseAdapter`, `AshbyAdapter`, `LeverAdapter`) y por búsqueda (`AggregatorAdapter`) | Traer ofertas de plataformas externas, normalizarlas y respetar el tope por sincronización. |
+| Filtros duros | TypeScript puro en `app/filters/`, sin dependencias | Evaluar `pass`/`fail`/`unknown` por criterio (rol, modalidad, ubicación, salario, seniority) según `docs/prd.md` 6.1; tabla de mapeo de seniority versionada. |
+| Evals | Script de Node + golden sets en el repositorio | Medir el acuerdo del puntaje (ajuste/prueba) y la precisión de la extracción (RNF-08). |
 
 ### 2.3 Flujo principal de datos
 
@@ -118,9 +119,10 @@ sequenceDiagram
 │   │   │   ├── controllers/
 │   │   │   ├── models/         # Lucid
 │   │   │   ├── validators/     # VineJS
-│   │   │   ├── services/       # reglas de dominio (filtros, pipeline)
+│   │   │   ├── services/       # reglas de dominio (pipeline, decisiones)
+│   │   │   ├── filters/        # filtros duros y mapeo de seniority
 │   │   │   ├── ai/             # cliente Claude, prompts/, schemas/
-│   │   │   ├── job_sources/    # JobSourceAdapter, GreenhouseAdapter
+│   │   │   ├── job_sources/    # JobSourceAdapter y adaptadores (Greenhouse, Ashby, Lever, agregador)
 │   │   │   └── jobs/           # handlers de la cola
 │   │   ├── database/migrations/
 │   │   ├── evals/              # golden set y script de evaluación
@@ -163,17 +165,17 @@ flowchart LR
 | Inyección de prompts desde ofertas o correos | El texto externo va siempre como dato dentro del mensaje de usuario, delimitado; el prompt de sistema indica que nunca contiene instrucciones. La salida se valida con el esquema y no ejecuta acciones automáticas: cualquier cambio de estado lo confirma el usuario. |
 | SSRF | Solo si se implementa RF-08: esquemas `http`/`https`, resolución de DNS y bloqueo de rangos privados (RNF-04). El adaptador de Greenhouse solo llama a su dominio fijo. |
 | Fuga de datos personales | El currículum y los correos no se registran completos en los logs (RNF-05). |
-| Abuso de costo | Límite de trabajos de IA por día configurable y caché de análisis (RNF-07). |
-| Fuerza bruta en el login | Limitador de intentos en `/api/v1/auth/login`. |
+| Abuso de costo | Filtro de roles antes de la IA, tope de ofertas nuevas por sincronización, caché de análisis y límite diario de trabajos de IA configurable (RNF-07). |
+| Fuerza bruta en el login | Limitador de intentos en `/api/v1/auth/login` (could-have; la contraseña del usuario único es larga y aleatoria). |
 
 ### 2.7 Pruebas
 
 | Nivel | Herramienta | Alcance |
 | --- | --- | --- |
 | Unitarias | Japa | Filtros duros, transiciones del pipeline, normalización de ofertas, parseo de respuestas de IA. |
-| Integración | Japa (pruebas funcionales con base de datos de prueba) | Endpoints de la API, adaptador de Greenhouse con respuestas grabadas, handlers de la cola. |
-| E2E | Playwright | Flujo principal: login → pegar oferta → filtro → puntaje → crear candidatura → moverla en el tablero. |
-| Calidad de la IA | Script de evals | Golden set de al menos 10 ofertas; llama a la API real y se ejecuta a mano, no en CI. |
+| Integración | Japa (pruebas funcionales con base de datos de prueba) | Endpoints de la API, adaptadores con respuestas grabadas, handlers de la cola. |
+| E2E | Playwright + `axe-core` | Flujo principal: login → pegar oferta → filtro → puntaje → decisión `apply` → mover la candidatura; revisión de accesibilidad sin violaciones `serious` o `critical` (RNF-13). |
+| Calidad de la IA | Script de evals | Golden set de puntaje (≥ 20 ofertas, ajuste y prueba) y de extracción (≥ 10 ofertas); llama a la API real y se ejecuta a mano, no en CI. |
 
 En las pruebas automatizadas, el cliente de Claude se sustituye por un doble de prueba con respuestas fijas; ninguna prueba de CI llama a la API real (RNF-10).
 
@@ -186,6 +188,8 @@ erDiagram
     users ||--o{ resumes : has
     users ||--|| job_preferences : has
     users ||--o{ target_companies : tracks
+    users ||--o{ job_searches : saves
+    job_searches ||--o{ job_postings : finds
     users ||--o{ job_postings : owns
     target_companies ||--o{ job_postings : publishes
     job_postings ||--o| filter_results : "evaluated by"
@@ -218,7 +222,19 @@ erDiagram
         jsonb locations
         int min_salary_usd "nullable"
         jsonb seniorities
+        jsonb role_include_keywords
+        jsonb role_exclude_keywords
+        int max_new_postings_per_sync "por defecto 50"
         int follow_up_days "por defecto 10"
+    }
+    job_searches {
+        int id PK
+        int user_id FK
+        string provider "agregador elegido en el spike"
+        string keywords
+        string location "nullable"
+        boolean is_active
+        timestamp last_synced_at
     }
     target_companies {
         int id PK
@@ -233,12 +249,15 @@ erDiagram
         int id PK
         int user_id FK
         int target_company_id FK "nullable"
-        string source "manual | greenhouse"
+        int job_search_id FK "nullable"
+        string source "manual | greenhouse | ashby | lever | aggregator"
         string external_id "nullable"
         string source_url "nullable"
         string title
         string company_name
         string location_text
+        jsonb locations "ciudades y estados normalizados"
+        string country "nullable"
         string work_mode "remote | hybrid | onsite | unknown"
         int salary_min "nullable"
         int salary_max "nullable"
@@ -251,6 +270,10 @@ erDiagram
         text description_markdown
         string content_hash
         string status "active | archived"
+        string decision "apply | skip | null"
+        string skip_reason "nullable"
+        timestamp first_viewed_at "nullable"
+        timestamp decided_at "nullable"
     }
     filter_results {
         int id PK
@@ -297,7 +320,9 @@ erDiagram
 
 - `job_postings`: único por (`user_id`, `source`, `external_id`) y por (`user_id`, `source_url`) cuando no son nulos (RF-05).
 - `resumes`: solo uno con `is_active = true` por usuario (índice único parcial) (RF-14).
-- `match_analyses.input_hash` = hash de (contenido de la oferta, versión del currículum, versión del prompt, modelo). Si existe, no se vuelve a llamar a la IA (RF-26). Al activar un currículum nuevo, los análisis anteriores se marcan `is_stale = true`.
+- `match_analyses.input_hash` = hash de (contenido de la oferta, versión del currículum, versión del prompt, modelo). Si existe, no se vuelve a llamar a la IA (RF-26). Las preferencias no forman parte del hash: el ajuste por modalidad (RF-28) se calcula al leer, fuera de la caché. Al activar un currículum nuevo, los análisis anteriores se marcan `is_stale = true` y se recalculan solo a pedido (RF-14).
+- `job_postings.first_viewed_at` se fija la primera vez que el usuario abre el detalle; `decided_at` al registrar la decisión. Ambos alimentan OBJ-1 (RNF-14).
+- `match_analyses.evidence` solo guarda fragmentos verificados literalmente contra la oferta o el currículum (RF-24a).
 - `applications`: una por oferta. Cada cambio de `status` inserta un `application_events` en la misma transacción y actualiza `last_activity_at` (RF-32).
 - Las tablas de la cola las gestiona la librería elegida en ADR-0005.
 
@@ -325,15 +350,18 @@ En caso de error: `data` es `null` y `error` contiene `{ "code": "VALIDATION_ERR
 | `PATCH` | `/resumes/{id}` | Corregir el Markdown o el perfil | RF-13 |
 | `GET` / `POST` | `/target-companies` | Listar o registrar empresas objetivo | RF-09 |
 | `PATCH` / `DELETE` | `/target-companies/{id}` | Editar o eliminar | RF-09 |
-| `POST` | `/target-companies/{id}/sync` | Importar ofertas; devuelve `202` con `jobId` | RF-04 |
+| `POST` | `/target-companies/{id}/sync` | Importar ofertas del job board; devuelve `202` con `jobId` | RF-04, RF-04b |
+| `GET` / `POST` | `/job-searches` | Listar o guardar búsquedas en el agregador | RF-04a |
+| `PATCH` / `DELETE` | `/job-searches/{id}` | Editar o eliminar una búsqueda | RF-04a |
+| `POST` | `/job-searches/{id}/sync` | Ejecutar la búsqueda; devuelve `202` con `jobId` | RF-04a, RF-04b |
 | `POST` | `/job-postings/extractions` | Extraer campos de un texto pegado; devuelve `202` con `jobId` | RF-01, RF-02 |
 | `GET` | `/job-postings` | Listar con filtro de estado y orden por puntaje o fecha; paginado | RF-06 |
 | `POST` | `/job-postings` | Guardar una oferta revisada; aplica filtros y encola el puntaje | RF-03, RF-21, RF-23 |
-| `GET` / `PATCH` | `/job-postings/{id}` | Detalle (con filtro y puntaje) o corrección de campos | RF-03 |
-| `POST` | `/job-postings/{id}/archive` | Archivar | RF-07 |
+| `GET` / `PATCH` | `/job-postings/{id}` | Detalle (con filtro y puntaje; fija `firstViewedAt` la primera vez) o corrección de campos | RF-03, RNF-14 |
+| `POST` | `/job-postings/{id}/decision` | Registrar `apply` (crea la candidatura) o `skip` (archiva, con motivo opcional) | RF-07, RF-30 |
 | `POST` | `/job-postings/{id}/match` | Calcular o recalcular el puntaje; devuelve `202` con `jobId` | RF-23, RF-27 |
 | `GET` | `/jobs/{id}` | Estado y resultado de un trabajo en segundo plano | — |
-| `GET` / `POST` | `/applications` | Listar (agrupadas por estado) o crear desde una oferta | RF-30, RF-33 |
+| `GET` | `/applications` | Listar agrupadas por estado | RF-33 |
 | `GET` | `/applications/{id}` | Detalle con oferta, puntaje e historial | RF-34 |
 | `PATCH` | `/applications/{id}/status` | Cambiar de estado; registra el evento | RF-31, RF-32 |
 | `POST` | `/applications/{id}/notes` | Agregar una nota | RF-35 |
@@ -378,9 +406,11 @@ Content-Type: application/json
 
 | RNF | Cómo se cumple |
 | --- | --- |
-| RNF-06 (< 20 s) | Trabajos en segundo plano con estado consultable; la UI muestra el progreso. |
-| RNF-07 (costo) | Filtros antes de la IA, caché por `input_hash`, Markdown en lugar de PDF o HTML, modelos económicos fuera de producción, caché de prompts de Claude para el perfil. |
-| RNF-08 (evals) | `apps/api/evals/` con golden set y script; prompts versionados en `apps/api/app/ai/prompts/`. |
+| RNF-06 (p90 < 30 s) | Trabajos en segundo plano con estado consultable; la UI muestra el progreso; duración registrada en los logs. |
+| RNF-07 (costo) | Filtro de roles y demás filtros antes de la IA, tope por sincronización, caché por `input_hash`, Markdown en lugar de PDF o HTML, modelos económicos fuera de producción; caché de prompts de Claude como could-have. |
+| RNF-08 (evals) | `apps/api/evals/` con golden sets de puntaje y extracción; prompts versionados en `apps/api/app/ai/prompts/`. |
+| RNF-13 (accesibilidad) | `axe-core` en la prueba E2E. |
+| RNF-14 (medición) | Columnas `first_viewed_at`, `decided_at` y `source` en `job_postings`. |
 | RNF-09 (robustez) | Respuestas estructuradas validadas con esquema; un reintento; el trabajo queda en `failed` con mensaje claro. |
 | RNF-10 (pruebas) | Doble de prueba del cliente de Claude; Japa y Playwright en CI. |
 | RNF-11 (idioma) | Código y base de datos en inglés; documentación en español. |
@@ -389,6 +419,7 @@ Content-Type: application/json
 ## 6. Pendiente para el walking skeleton
 
 - Confirmar la librería de la cola de trabajos (ADR-0005).
+- Spike del agregador de ofertas: cobertura de las empresas objetivo, cuota y términos de uso (ADR-0002).
 - Confirmar la integración de Tuyau con una SPA separada en AdonisJS v7.
 - Medir el costo real por oferta con cada modelo (ADR-0003).
 - Crear `CLAUDE.md` con comandos, estructura y definition of done.

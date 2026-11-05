@@ -3,7 +3,7 @@
 > Fase 0 (Descubrimiento) del AI SDLC. Este documento fija el problema, el usuario, la hipótesis y el perímetro del producto. El detalle de requisitos vive en `docs/prd.md`.
 
 - **Nombre provisional:** ATS personal (panel inteligente de búsqueda de empleo)
-- **Estado:** borrador v0.1
+- **Estado:** borrador v0.2 (incorpora la revisión adversarial de `docs/prd-review.md`)
 - **Fecha:** 2026-11-04
 
 ---
@@ -35,10 +35,11 @@ Como el autor es el usuario real, la hipótesis se valida con su propia búsqued
 
 | Métrica | Línea base | Objetivo |
 | --- | --- | --- |
-| Tiempo para decidir si aplico a una oferta | ~15 min (**supuesto**, por medir) | < 2 min |
-| Seguimientos olvidados (candidaturas sin respuesta y sin acción después de 10 días) | Desconocido (**supuesto**) | 0 |
+| Tiempo entre abrir una oferta y registrar la decisión de aplicar o descartar | ~15 min (**supuesto**; se mide con 5 ofertas reales antes del desarrollo) | < 2 min (mediana) |
+| Seguimientos olvidados en 4 semanas de uso (revisados contra el correo) | Desconocido (**supuesto**) | 0 |
+| Ofertas nuevas que llegan por importación automática | 0 % | ≥ 50 % |
 | Tiempo para encontrar el historial de una candidatura | Búsqueda manual en el correo | < 30 s desde el panel |
-| Acuerdo entre el puntaje de la IA y mi juicio manual | — | ≥ 80 % en un conjunto de referencia (golden set) |
+| Acuerdo entre la etiqueta de la IA y mi etiqueta manual (±1 nivel) | — | ≥ 80 % en el conjunto de prueba del golden set |
 
 > Los valores marcados como **supuesto** se medirán durante la primera semana de uso para fijar la línea base real.
 
@@ -79,13 +80,16 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 | --- | --- |
 | Registrar ofertas pegando el texto o la URL; la IA extrae los campos estructurados | `MVP` |
 | Lista de empresas objetivo (grandes y medianas) con su plataforma de empleo | `MVP` |
-| Importar ofertas de las empresas objetivo mediante adaptadores; primer adaptador: Greenhouse | `MVP` |
-| Adaptadores para Ashby, Lever y SmartRecruiters | `v1.1` |
+| Importar ofertas de las empresas objetivo mediante adaptadores: Greenhouse, Ashby y Lever | `MVP` |
+| Búsquedas guardadas en un agregador de ofertas para empresas sin API (sujeto a spike; plan B: SmartRecruiters) | `MVP` |
+| Adaptador para SmartRecruiters (si el agregador es viable) | `v1.1` |
 | Convertir los correos de alertas de empleo de los portales en ofertas | `v1.1` |
 | Adaptador para Workday (endpoint no documentado; requiere revisar sus términos de uso) | `futuro` |
 | Descubrir empresas medianas nuevas según el perfil | `futuro` |
-| Cargar un currículum en PDF; la IA lo convierte en un perfil estructurado | `MVP` |
-| Configurar filtros duros: modalidad, ubicación, salario mínimo y seniority | `MVP` |
+| Cargar el currículum en Markdown; la IA lo convierte en un perfil estructurado | `MVP` |
+| Cargar el currículum en PDF y convertirlo a Markdown | `MVP (should-have)` |
+| Configurar filtros duros: roles objetivo, modalidad, ubicación, salario mínimo y seniority | `MVP` |
+| Registrar la decisión de aplicar o descartar cada oferta | `MVP` |
 | Calcular un puntaje de encaje (0-100) con fortalezas, brechas y evidencia | `MVP` |
 | Gestionar candidaturas en un pipeline (guardada, aplicada, entrevista, oferta, rechazada) | `MVP` |
 | Interfaz en inglés (idioma principal), preparada para i18n | `MVP` |
@@ -112,7 +116,7 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 
 ## 7. Restricciones
 
-- **Tiempo:** unas 30 horas de desarrollo asistido por IA (recomendación del curso AI4Devs).
+- **Tiempo:** 30 horas de desarrollo asistido por IA (recomendación del curso AI4Devs), con tope aceptado de 36 horas.
 - **Entregas:** documentación (Entrega 1), código funcional con el flujo principal (Entrega 2) y entrega final con pruebas y despliegue.
 - **Stack tecnológico (preferido, alineado con el curso):** TypeScript, AdonisJS, PostgreSQL con Lucid, React 19, Vite, Tuyau y despliegue en Railway. La versión de AdonisJS se confirma en la fase de arquitectura.
 - **Proveedor de IA:** Claude API.

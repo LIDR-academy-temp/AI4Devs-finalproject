@@ -284,3 +284,58 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con `docs/user-stories.md`, `docs/tickets.md`, `docs/architecture.md` y `docs/ai-log.md`.
+
+### Prompt 22
+
+- **Categoría:** `🔍 Investigación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Esto se debió haber hecho antes.
+
+  PRD adversarial
+  Cambia de sombrero: sé un revisor de producto adversarial. Critíca el PRD: ¿qué requerimientos están ambiguos o nomás no se pueden probar? ¿Qué suposición, si resulta ser falsa, se trae abajo todo el MVP? ¿En dónde hay desviación del alcance escondido? ¿Qué métrica nomás no hay forma de medir bien en la vida real? Priorízalo todo por nivel de riesgo.
+  ```
+
+- **Resultado:** Revisión adversarial de `docs/prd.md` priorizada por riesgo: suposiciones que invalidan el MVP, requisitos ambiguos o no comprobables, alcance escondido y métricas no medibles, con una corrección propuesta para cada hallazgo. Respuesta en el chat; sin cambios en archivos.
+
+### Prompt 23
+
+- **Categoría:** `🔍 Investigación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code (WebSearch)
+- **Prompt:**
+
+  ```markdown
+  El recolectar ofertas de diferentes portales automáticamente es tan importante como copiar y pegar la oferta. Se tienen 30 hrs pero no hay problema si nos pasamos un 20% más.
+  ```
+
+- **Resultado:** Investigación de agregadores de ofertas (JSearch, SerpApi Google Jobs) y propuesta de fuentes automáticas adicionales para el MVP (adaptadores de Ashby y Lever, agregador por búsqueda, alertas por correo) con estimación dentro del nuevo tope de 36 horas. Respuesta en el chat; pendiente de decisión.
+
+### Prompt 24
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  A, y aplica el resto de las correcciones
+  ```
+
+- **Resultado:** Se guardó la revisión en `docs/prd-review.md` y se aplicaron sus correcciones: `docs/prd.md` v0.2 (filtro de roles, reglas de filtros, decisión apply/skip, verificación de evidencia, métricas medibles, OBJ-5 y fuentes automáticas Greenhouse/Ashby/Lever + agregador), `docs/vision.md`, `docs/architecture.md`, ADR-0002, `docs/user-stories.md` (42 escenarios) y `docs/tickets.md` (30 tickets; must-have ≈ 33 h, tope 36 h).
+
+### Prompt 25
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con la revisión adversarial y sus correcciones en PRD, visión, arquitectura, ADR-0002, historias, tickets y `docs/ai-log.md`.

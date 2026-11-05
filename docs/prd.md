@@ -1,25 +1,31 @@
 # PRD del MVP — ATS personal
 
-> Fase 1 (Producto) del AI SDLC. Detalla solo lo que entra en el MVP. El contexto, la hipótesis y el alcance completo están en [`docs/vision.md`](./vision.md).
+> Fase 1 (Producto) del AI SDLC. Detalla solo lo que entra en el MVP. El contexto, la hipótesis y el alcance completo están en [`docs/vision.md`](./vision.md). La revisión adversarial que originó la versión 0.2 está en [`docs/prd-review.md`](./prd-review.md).
 
-- **Estado:** borrador v0.1
+- **Estado:** borrador v0.2 (incorpora la revisión adversarial)
 - **Fecha:** 2026-11-04
-- **Presupuesto de desarrollo:** ~30 horas asistidas por IA
+- **Presupuesto de desarrollo:** 30 horas asistidas por IA, con tope aceptado de 36 horas (+20 %)
 
 ---
 
 ## 1. Resumen
 
-El MVP es un panel web personal para buscar empleo en Estados Unidos. Concentra las ofertas, descarta las que no cumplen los criterios no negociables, calcula con IA un puntaje de encaje explicado contra el currículum y gestiona cada candidatura en un pipeline.
+El MVP es un panel web personal para buscar empleo en Estados Unidos. Recolecta ofertas automáticamente desde plataformas de empleo y búsquedas guardadas, y también acepta ofertas pegadas a mano; ambas vías son igual de importantes. Descarta las que no cumplen los criterios no negociables, calcula con IA un puntaje de encaje explicado contra el currículum, registra la decisión del usuario sobre cada oferta y gestiona cada candidatura en un pipeline.
 
 ## 2. Objetivos y métricas de éxito
 
-| Id | Objetivo | Métrica | Meta |
+| Id | Objetivo | Métrica (cómo se mide) | Meta |
 | --- | --- | --- | --- |
-| OBJ-1 | Decidir más rápido si conviene aplicar | Tiempo desde que la oferta entra al panel hasta la decisión | < 2 min (línea base supuesta: ~15 min) |
-| OBJ-2 | Confiar en el puntaje | Acuerdo entre el puntaje y el juicio manual en el conjunto de referencia | ≥ 80 % |
-| OBJ-3 | Tener el estado de todas las candidaturas en un solo lugar | Candidaturas activas registradas en el pipeline | 100 % |
+| OBJ-1 | Decidir más rápido si conviene aplicar | Mediana del tiempo entre la primera vez que se abre una oferta (`first_viewed_at`) y la decisión registrada (`decided_at`, RF-07) | < 2 min; línea base medida a mano con 5 ofertas reales antes del desarrollo |
+| OBJ-2 | Confiar en el puntaje | Acuerdo entre la etiqueta de la IA y la etiqueta manual, con tolerancia de ±1 nivel, en el conjunto de prueba del golden set (separado del conjunto usado para ajustar el prompt) | ≥ 80 % |
+| OBJ-3 | No perder seguimientos | Candidaturas que, en 4 semanas de uso, tuvieron un correo de la empresa sin reflejarse en el pipeline (revisión manual contra el correo) | 0 |
 | OBJ-4 | Demostrar el flujo de punta a punta | Flujo principal desplegado y cubierto por una prueba E2E | Sí |
+| OBJ-5 | Recolectar ofertas sin esfuerzo manual | Porcentaje de ofertas nuevas que llegan por importación automática (campo `source` distinto de `manual`) | ≥ 50 % |
+
+### 2.1 Limitaciones de la validación
+
+- El usuario que valida la hipótesis es también quien construye el sistema; hay sesgo de confirmación. Se mitiga con la etiqueta manual del golden set hecha antes de ver los puntajes de la IA.
+- OBJ-3 y parte de OBJ-1 y OBJ-5 solo se pueden medir con uso real, en parte después de la entrega final.
 
 ## 3. Usuario
 
@@ -29,21 +35,26 @@ Un único usuario: el autor, profesional del software que busca empleo en EE. UU
 
 ```text
  1. Iniciar sesión
- 2. Cargar el currículum ──▶ la IA extrae el perfil ──▶ el usuario lo revisa
- 3. Definir filtros duros (modalidad, ubicación, salario mínimo, seniority)
- 4. Agregar ofertas (pegar texto o importar desde una fuente pública)
+ 2. Cargar el currículum (Markdown) ──▶ la IA extrae el perfil ──▶ el usuario lo revisa
+ 3. Definir filtros duros (roles, modalidad, ubicación, salario mínimo, seniority)
+ 4. Llegan ofertas:
+      a) automáticas: job boards de empresas objetivo (Greenhouse, Ashby, Lever) y búsquedas guardadas en un agregador
+      b) manuales: pegar el texto de la oferta
           │
           ▼
  5. Filtros duros ──▶ no cumple: descartada, con el motivo visible
           │ cumple o hay datos desconocidos
           ▼
- 6. Puntaje de encaje (IA): 0-100, fortalezas, brechas y evidencia
+ 6. Puntaje de encaje (IA): 0-100, etiqueta, fortalezas, brechas y evidencia verificada
           │
           ▼
- 7. El usuario decide ──▶ crea la candidatura ──▶ la mueve por el pipeline
+ 7. El usuario decide: aplicar (crea la candidatura) o descartar (archiva la oferta)
+          │ aplicar
+          ▼
+ 8. La candidatura avanza por el pipeline
 ```
 
-El flujo E2E obligatorio para la entrega final cubre los pasos 1, 4, 5, 6 y 7.
+El flujo E2E obligatorio para la entrega final cubre los pasos 1, 4b, 5, 6, 7 y 8.
 
 ## 5. Alcance del MVP
 
@@ -51,9 +62,9 @@ El flujo E2E obligatorio para la entrega final cubre los pasos 1, 4, 5, 6 y 7.
 
 | Id | Historia | Prioridad |
 | --- | --- | --- |
-| HU1 | Como buscador de empleo, quiero agregar ofertas pegando su texto o importándolas de una fuente pública, para tenerlas en un solo lugar. | Must-have |
+| HU1 | Como buscador de empleo, quiero que las ofertas de mis empresas objetivo y de mis búsquedas lleguen automáticamente, y poder agregar otras pegando su texto, para tenerlas todas en un solo lugar. | Must-have |
 | HU2 | Como buscador de empleo, quiero cargar mi currículum y obtener un perfil estructurado que pueda corregir, para que el sistema me conozca. | Must-have |
-| HU3 | Como buscador de empleo, quiero que cada oferta pase por mis filtros duros y reciba un puntaje de encaje explicado, para decidir rápido si aplico. | Must-have |
+| HU3 | Como buscador de empleo, quiero que cada oferta pase por mis filtros duros, reciba un puntaje de encaje explicado y pueda registrar mi decisión, para decidir rápido si aplico. | Must-have |
 | HU4 | Como buscador de empleo, quiero gestionar mis candidaturas en un pipeline con historial de cambios, para saber en qué estado va cada una. | Must-have |
 | HU5 | Como buscador de empleo, quiero pegar un correo en una candidatura y que la IA lo clasifique, y recibir alertas de seguimiento, para no perder ningún proceso. | Should-have |
 | HU6 | Como buscador de empleo, quiero usar la interfaz en español, para trabajar en mi idioma cuando lo prefiera. | Should-have |
@@ -62,7 +73,7 @@ La autenticación de un solo usuario es un requisito técnico del walking skelet
 
 ### 5.2 Fuera del MVP
 
-Todo lo etiquetado `v1.1` o `futuro` en `docs/vision.md` (sección 6): segunda fuente de ofertas, lectura de Gmail, dashboard de métricas, carta de presentación, varios currículums, vista híbrida, RAG para entrevistas, extensión de navegador y multiusuario.
+Todo lo etiquetado `v1.1` o `futuro` en `docs/vision.md` (sección 6), entre otros: alertas de empleo por Gmail, adaptador de Workday, dashboard de métricas, carta de presentación, varios currículums, vista híbrida, RAG para entrevistas, extensión de navegador y multiusuario.
 
 ## 6. Requisitos funcionales
 
@@ -73,47 +84,63 @@ Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 | Id | Requisito | Prioridad |
 | --- | --- | --- |
 | RF-01 | El usuario pega el texto de una oferta y, opcionalmente, su URL de origen. | M |
-| RF-02 | La IA extrae los campos estructurados de la oferta: título, empresa, ubicación, modalidad (`remote`, `hybrid`, `onsite`), salario (mínimo, máximo, moneda, periodo), seniority, habilidades requeridas y deseables, y años de experiencia pedidos. Los campos ausentes quedan como desconocidos; nunca se inventan. | M |
-| RF-03 | El usuario revisa y corrige los campos extraídos antes de guardar. | M |
-| RF-04 | El usuario importa las ofertas de sus empresas objetivo desde la API pública de su plataforma de empleo. La importación usa una interfaz común de adaptadores; el MVP implementa solo el adaptador de Greenhouse. | M |
-| RF-09 | El usuario gestiona su lista de empresas objetivo: nombre, tipo (`big` o `mid`), plataforma de empleo y, si la plataforma tiene API, el identificador de su job board. Las empresas sin API se registran igual y sus ofertas se agregan pegando el texto. | M |
+| RF-02 | La IA extrae los campos estructurados de la oferta: título, empresa, ubicaciones, país, modalidad (`remote`, `hybrid`, `onsite`, `unknown`), salario (mínimo, máximo, moneda, periodo), seniority, habilidades requeridas y deseables, y años de experiencia pedidos. Los campos ausentes quedan como desconocidos. Calidad exigida en el golden set de extracción: ≥ 90 % de campos correctos y 0 salarios inventados. | M |
+| RF-03 | El usuario puede guardar la oferta directamente o corregir los campos extraídos antes o después de guardar. | M |
+| RF-04 | El sistema importa las ofertas de las empresas objetivo desde la API pública de su job board. Adaptadores del MVP: Greenhouse, Ashby y Lever. | M |
+| RF-04a | El usuario guarda búsquedas (palabras clave y ubicación) que el sistema ejecuta en un agregador de ofertas para traer ofertas de empresas sin API propia. El proveedor se elige con un spike de cobertura, cuota y términos de uso; si ninguno es viable, se reemplaza por el adaptador de SmartRecruiters. | M |
+| RF-04b | Cada sincronización agrega como máximo N ofertas nuevas (configurable; por defecto 50) y reporta cuántas trajo, cuántas omitió por duplicadas y cuántas por el tope. | M |
 | RF-05 | El sistema evita duplicados por fuente e identificador externo, o por URL. | M |
-| RF-06 | El usuario ve la lista de ofertas con su estado de filtro y su puntaje, y la ordena por puntaje o fecha. | M |
-| RF-07 | El usuario archiva una oferta que no le interesa. | S |
+| RF-06 | El usuario ve la lista de ofertas con su estado de filtro, su puntaje y su decisión, y la ordena por puntaje o fecha. | M |
+| RF-07 | El usuario registra su decisión sobre cada oferta: `apply` (crea la candidatura, RF-30) o `skip` (archiva la oferta, con motivo opcional). El sistema guarda la decisión, su fecha (`decided_at`) y la primera vez que el usuario abrió la oferta (`first_viewed_at`). | M |
 | RF-08 | El sistema descarga y lee el contenido a partir de una URL pegada. | C |
+| RF-09 | El usuario gestiona su lista de empresas objetivo: nombre, tipo (`big` o `mid`), plataforma de empleo y, si la plataforma tiene API, el identificador de su job board. Las empresas sin API se registran igual. | M |
 
 ### HU2 — Currículum
 
 | Id | Requisito | Prioridad |
 | --- | --- | --- |
-| RF-10 | El usuario carga su currículum en PDF o en Markdown (máximo 5 MB). | M |
-| RF-11 | Si el currículum es PDF, el sistema lo convierte una sola vez a Markdown, que pasa a ser la representación usada en todos los análisis. Si la conversión falla, pide pegar el texto. | M |
+| RF-10 | El usuario carga su currículum en Markdown (máximo 5 MB). | M |
+| RF-11 | El usuario carga su currículum en PDF; el sistema lo convierte una sola vez a Markdown, que pasa a ser la representación usada en todos los análisis. Si la conversión falla, pide pegar el texto. | S |
 | RF-12 | La IA genera un perfil estructurado: habilidades (con años cuando se puedan inferir), experiencia laboral, años totales de experiencia, seniority estimado, formación e idiomas. | M |
 | RF-13 | El usuario revisa y corrige el perfil. El perfil corregido es la fuente para el puntaje. | M |
-| RF-14 | Hay un solo currículum activo. Cargar uno nuevo crea una nueva versión y marca los puntajes anteriores como desactualizados. | M |
+| RF-14 | Hay un solo currículum activo. Cargar uno nuevo crea una nueva versión y marca los puntajes anteriores como desactualizados. Los puntajes se recalculan solo a pedido del usuario, quien ve antes cuántas ofertas se recalcularán. | M |
 
-### HU3 — Filtros duros y puntaje de encaje
+### HU3 — Filtros duros, puntaje y decisión
 
 | Id | Requisito | Prioridad |
 | --- | --- | --- |
-| RF-20 | El usuario configura sus preferencias: modalidades aceptadas en orden de preferencia, ubicaciones aceptadas (ciudades o áreas metropolitanas para modalidades híbrida y presencial), salario mínimo anual en USD y seniorities aceptados. | M |
-| RF-21 | Los filtros duros se evalúan sin IA y devuelven `pass`, `fail` o `unknown`, con el motivo de cada criterio. | M |
-| RF-22 | Un dato ausente en la oferta (por ejemplo, el salario) da `unknown` en ese criterio y no descarta la oferta. | M |
+| RF-20 | El usuario configura sus preferencias: roles objetivo (palabras clave de inclusión y de exclusión para el título), modalidades aceptadas en orden de preferencia, ubicaciones aceptadas (ciudades o estados de EE. UU.), salario mínimo anual en USD y seniorities aceptados. | M |
+| RF-21 | Los filtros duros se evalúan sin IA, según las reglas de la sección 6.1, y devuelven `pass`, `fail` o `unknown` con el motivo de cada criterio. La oferta se descarta si algún criterio da `fail`. | M |
+| RF-22 | Un dato ausente en la oferta da `unknown` en ese criterio y no descarta la oferta. | M |
 | RF-23 | Solo las ofertas con resultado `pass` o `unknown` reciben puntaje automáticamente. El usuario puede pedir el puntaje de una oferta descartada. | M |
-| RF-24 | La IA devuelve, con respuesta estructurada: puntaje de 0 a 100, etiqueta (`strong`, `good`, `weak`, `poor`), fortalezas, brechas y evidencia citada de la oferta y del currículum. | M |
+| RF-24 | La IA devuelve, con respuesta estructurada: puntaje de 0 a 100, fortalezas, brechas y evidencia (fragmentos de la oferta y del currículum). La etiqueta se deriva del puntaje: `strong` ≥ 80, `good` 60-79, `weak` 40-59, `poor` < 40. | M |
+| RF-24a | Cada fragmento de evidencia se verifica contra el texto original; los que no aparecen literalmente (ignorando mayúsculas y espacios) se descartan y no se muestran. | M |
 | RF-25 | El sistema guarda con cada análisis el modelo, la versión del prompt, la versión del currículum y la fecha. | M |
-| RF-26 | El sistema no repite un análisis si no cambiaron la oferta, el currículum ni la versión del prompt. | M |
+| RF-26 | El sistema no repite un análisis si no cambiaron la oferta, el currículum, la versión del prompt ni el modelo. | M |
 | RF-27 | El usuario recalcula el puntaje de una oferta a demanda. | S |
-| RF-28 | La preferencia por modalidad suma al puntaje pero no descarta: híbrido > remoto > presencial. | S |
+| RF-28 | La preferencia por modalidad se aplica como un ajuste determinista sobre el puntaje de la IA (por defecto: híbrido +5, remoto 0, presencial −5), calculado fuera de la IA y de su caché. | S |
+
+### 6.1 Reglas de los filtros duros
+
+| Criterio | `pass` | `fail` | `unknown` |
+| --- | --- | --- | --- |
+| Rol | El título contiene alguna palabra de inclusión y ninguna de exclusión (sin lista de inclusión, siempre `pass`) | El título contiene una palabra de exclusión o ninguna de inclusión | — |
+| Modalidad | La modalidad está entre las aceptadas | La modalidad no está entre las aceptadas | La oferta no indica modalidad |
+| Ubicación | Remoto en EE. UU.; o híbrido/presencial con alguna ubicación de la oferta que coincide (ciudad o estado normalizado) con las aceptadas | El país no es EE. UU.; o ninguna ubicación híbrida/presencial coincide | No se puede determinar país ni ciudad |
+| Salario | El máximo del rango, anualizado, es ≥ el mínimo del usuario (hora × 2080; mes × 12) | El máximo anualizado es menor que el mínimo | La oferta no publica salario |
+| Seniority | El seniority normalizado está entre los aceptados | No está entre los aceptados | No se puede normalizar |
+
+Seniority normalizado: `junior`, `mid`, `senior`, `staff`, `principal`. El mapeo de títulos y niveles propios de empresas (por ejemplo, L5, E5, SDE II, IC4) vive en una tabla de configuración versionada en el repositorio.
 
 ### HU4 — Pipeline de candidaturas
 
 | Id | Requisito | Prioridad |
 | --- | --- | --- |
-| RF-30 | El usuario crea una candidatura a partir de una oferta. | M |
-| RF-31 | Estados de la candidatura: `saved`, `applied`, `interviewing`, `offer`, `rejected`, `withdrawn`. Cualquier estado activo puede pasar a `rejected` (la empresa descarta) o a `withdrawn` (el usuario se retira). | M |
+| RF-30 | El usuario crea una candidatura a partir de una oferta (decisión `apply`). | M |
+| RF-31 | Estados de la candidatura: `saved`, `applied`, `interviewing`, `offer`, `rejected`, `withdrawn`. Cualquier estado activo puede pasar a `rejected` (la empresa descarta) o a `withdrawn` (el usuario se retira); ambos son finales. | M |
 | RF-32 | Cada cambio de estado crea un evento en el historial con fecha y nota opcional. | M |
-| RF-33 | El usuario ve las candidaturas en un tablero por estado (Kanban) y mueve una candidatura entre columnas. | M |
+| RF-33 | El usuario ve las candidaturas en un tablero por estado y cambia el estado con un selector, usable con teclado. | M |
+| RF-33a | El usuario mueve las candidaturas entre columnas arrastrándolas. | C |
 | RF-34 | El usuario ve el detalle de una candidatura: oferta, puntaje, estado e historial. | M |
 | RF-35 | El usuario agrega notas libres al historial. | S |
 
@@ -124,7 +151,7 @@ Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 | RF-40 | El usuario pega un correo en una candidatura (remitente, fecha, asunto y cuerpo). | S |
 | RF-41 | La IA clasifica el correo (`confirmation`, `interview_invite`, `rejection`, `offer`, `other`) y extrae la fecha relevante y el siguiente paso. | S |
 | RF-42 | El sistema sugiere el cambio de estado que corresponde a la clasificación; el usuario lo confirma. | S |
-| RF-43 | El sistema marca las candidaturas `applied` o `interviewing` sin actividad durante N días (valor configurable; por defecto 10). | S |
+| RF-43 | El sistema marca las candidaturas `applied` o `interviewing` sin actividad durante N días (configurable; por defecto 10). Cuenta como actividad un cambio de estado, una nota o un correo. | S |
 
 ### HU6 — Interfaz en español (should-have)
 
@@ -136,66 +163,43 @@ Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 
 > RF-50 es must-have aunque pertenece a HU6, porque externalizar las cadenas desde el walking skeleton cuesta poco y evita retrabajo.
 
-## 7. Criterios de aceptación de alto nivel
+## 7. Criterios de aceptación
 
-Los criterios detallados (Given/When/Then) se escriben al pasar cada historia a un cambio de OpenSpec.
-
-**HU1**
-- Dado el texto de una oferta con salario y modalidad, cuando lo pego, entonces veo los campos extraídos y puedo corregirlos antes de guardar.
-- Dada una oferta sin salario, cuando se extrae, entonces el salario queda como desconocido.
-- Dada una oferta ya importada, cuando la importo otra vez, entonces no se crea un duplicado.
-
-**HU2**
-- Dado un PDF válido, cuando lo cargo, entonces veo un perfil con mis habilidades y experiencia que puedo editar.
-- Dado un PDF sin texto legible, cuando lo cargo, entonces el sistema me pide pegar el texto.
-
-**HU3**
-- Dada una oferta presencial en una ciudad no aceptada, cuando se evalúa, entonces queda descartada con el motivo "ubicación" y no se llama a la IA.
-- Dada una oferta sin salario que cumple los demás criterios, cuando se evalúa, entonces recibe puntaje y el criterio de salario aparece como desconocido.
-- Dado un puntaje calculado, cuando abro la oferta, entonces veo el puntaje, la etiqueta, las fortalezas, las brechas y la evidencia citada.
-
-**HU4**
-- Dada una oferta con puntaje, cuando creo una candidatura, entonces aparece en la columna `saved`.
-- Dada una candidatura, cuando la muevo a `applied`, entonces el historial registra el cambio con la fecha.
-
-**HU5**
-- Dado un correo de rechazo pegado en una candidatura, cuando se clasifica, entonces el sistema sugiere moverla a `rejected` y espera mi confirmación.
-- Dada una candidatura `applied` sin actividad durante 10 días, cuando abro el tablero, entonces aparece marcada para seguimiento.
-
-**HU6**
-- Dada la interfaz en inglés, cuando cambio a español, entonces todos los textos de la interfaz aparecen en español y la elección se mantiene al volver a entrar.
+Los criterios detallados (Dado/Cuando/Entonces) están en [`docs/user-stories.md`](./user-stories.md) y se convierten en escenarios de las specs de OpenSpec.
 
 ## 8. Requisitos no funcionales
 
 | Id | Categoría | Requisito |
 | --- | --- | --- |
-| RNF-01 | Seguridad | Autenticación de un solo usuario con sesión; todas las rutas de la API requieren sesión salvo el login. |
-| RNF-02 | Seguridad | Secretos (clave de Claude API, base de datos, fuentes de ofertas) solo en variables de entorno; nunca en el repositorio. |
-| RNF-03 | Seguridad | Validación de todas las entradas en el servidor; límite de tamaño y tipo en la carga de PDF. |
+| RNF-01 | Seguridad | Autenticación de un solo usuario con sesión; todas las rutas de la API requieren sesión salvo el login. Limitador de intentos en el login: could-have. |
+| RNF-02 | Seguridad | Secretos (clave de Claude API, base de datos, agregador) solo en variables de entorno; nunca en el repositorio. |
+| RNF-03 | Seguridad | Validación de todas las entradas en el servidor; límite de tamaño y tipo en la carga del currículum. |
 | RNF-04 | Seguridad | Si se implementa RF-08, protección contra SSRF (solo `http`/`https`, sin direcciones internas). |
 | RNF-05 | Privacidad | El currículum y los correos solo se comparten con la API de Claude; no se registran completos en los logs. |
-| RNF-06 | Rendimiento | La extracción de una oferta y el cálculo del puntaje terminan en menos de 20 s cada uno; la interfaz muestra el progreso. |
-| RNF-07 | Costo | Los filtros duros se aplican antes de la IA y los análisis se guardan en caché (RF-26). Presupuesto de API objetivo: < 10 USD/mes; se verifica con el uso real del primer mes. |
-| RNF-08 | Calidad de la IA | Conjunto de referencia de al menos 10 ofertas evaluadas a mano y un comando que mide el acuerdo con el puntaje (OBJ-2). Los prompts se versionan en el repositorio. |
+| RNF-06 | Rendimiento | Percentil 90 del tiempo de extracción y de puntaje < 30 s, medido en los logs de producción; la interfaz muestra el progreso. |
+| RNF-07 | Costo | Filtros duros (incluido el de roles) antes de la IA, tope de ofertas por sincronización (RF-04b) y caché de análisis (RF-26). Presupuesto de API objetivo: < 10 USD/mes, verificado con el uso real del primer mes. La caché de prompts de Claude es could-have. |
+| RNF-08 | Calidad de la IA | Golden set de puntaje con al menos 20 ofertas etiquetadas a mano antes de ver la IA, separadas en ajuste (10) y prueba (10); golden set de extracción con al menos 10 ofertas. Comandos que miden OBJ-2 y la calidad de RF-02. Prompts versionados en el repositorio. |
 | RNF-09 | Robustez de la IA | Las respuestas de la IA se validan con un esquema; si fallan, el sistema reintenta una vez y luego muestra un error claro sin perder la oferta. |
-| RNF-10 | Pruebas | Pruebas unitarias y de integración con cobertura ≥ 80 % en la lógica de dominio, y al menos una prueba E2E del flujo principal. Las pruebas no llaman a la API real de Claude. |
+| RNF-10 | Pruebas | Cobertura ≥ 80 % en la lógica de dominio (`apps/api/app/services/`, `apps/api/app/filters/`, normalizadores de `apps/api/app/job_sources/` y parsers de `apps/api/app/ai/`) y al menos una prueba E2E del flujo principal. Las pruebas no llaman a la API real de Claude ni a las plataformas externas. |
 | RNF-11 | Idioma del código | Código, clases, tablas y campos en inglés. Documentación del curso en español. |
 | RNF-12 | Despliegue | Aplicación desplegada con URL pública y credenciales de prueba documentadas en `readme.md`. |
-| RNF-13 | Accesibilidad | Navegación por teclado en el tablero y contraste suficiente (WCAG 2.2 AA como referencia). |
+| RNF-13 | Accesibilidad | La prueba E2E ejecuta `axe-core` en las pantallas principales sin violaciones de impacto `serious` o `critical`. |
+| RNF-14 | Medición | El sistema registra `first_viewed_at`, `decided_at` y `source` de cada oferta para calcular OBJ-1 y OBJ-5. |
 
 ## 9. Entidades del dominio
 
-Vista conceptual; el modelo de datos detallado se define en la arquitectura. Los nombres siguen la convención de código en inglés.
+Vista conceptual; el modelo de datos detallado está en `docs/architecture.md`. Los nombres siguen la convención de código en inglés.
 
 | Entidad | Descripción |
 | --- | --- |
 | `User` | El único usuario del sistema. |
-| `Resume` | Versión del currículum: archivo, texto extraído y perfil estructurado. |
-| `JobPreferences` | Filtros duros y preferencias del usuario. |
+| `Resume` | Versión del currículum: Markdown, archivo original opcional y perfil estructurado. |
+| `JobPreferences` | Filtros duros, roles objetivo, tope por sincronización y preferencias. |
 | `TargetCompany` | Empresa objetivo: nombre, tipo, plataforma de empleo e identificador del job board. |
-| `JobPosting` | Oferta con sus campos estructurados, fuente y texto original. |
+| `JobSearch` | Búsqueda guardada que se ejecuta en el agregador: palabras clave, ubicación y última sincronización. |
+| `JobPosting` | Oferta con sus campos estructurados, fuente, texto original, decisión y marcas de tiempo de medición. |
 | `FilterResult` | Resultado de los filtros duros para una oferta. |
-| `MatchAnalysis` | Puntaje, etiqueta, fortalezas, brechas y evidencia; con modelo y versión del prompt. |
+| `MatchAnalysis` | Puntaje, etiqueta, fortalezas, brechas y evidencia verificada; con modelo y versión del prompt. |
 | `Application` | Candidatura asociada a una oferta, con su estado actual. |
 | `ApplicationEvent` | Evento del historial: cambio de estado, nota o correo clasificado. |
 
@@ -203,42 +207,47 @@ Vista conceptual; el modelo de datos detallado se define en la arquitectura. Los
 
 | Dependencia | Uso | Riesgo |
 | --- | --- | --- |
-| Claude API | Extracción de ofertas y currículum, puntaje de encaje, clasificación de correos | Costo y latencia; se mitigan con RNF-07 y RNF-09 |
-| Greenhouse Job Board API (pública, sin clave) | Importación (RF-04) | Solo cubre empresas que usan Greenhouse; la mayoría de las empresas grandes de la lista no lo usan |
+| Claude API | Extracción, puntaje y clasificación de correos | Costo y latencia; se mitigan con RNF-07 y RNF-09 |
+| Job boards de Greenhouse, Ashby y Lever (APIs públicas) | Importación por empresa (RF-04) | Solo cubren empresas que usan esas plataformas |
+| Agregador de ofertas (JSearch u otro; por definir en el spike) | Búsquedas guardadas (RF-04a) | Cuota gratuita pequeña, términos de uso y cobertura sin confirmar; SerpApi se evita por litigio con Google |
 | Railway | Despliegue de la aplicación y la base de datos | Límites del plan gratuito |
 
-## 10.1 Decisiones confirmadas (2026-11-04)
+### 10.1 Decisiones confirmadas (2026-11-04)
 
 - RF-50 (cadenas externalizadas para i18n) es must-have; la traducción al español (RF-51) es should-have.
 - Un dato ausente en la oferta da `unknown` y no la descarta (RF-22).
 - Se agrega el estado `withdrawn` al pipeline (RF-31).
-- Orden de construcción: HU2 → HU1 (pegar texto) → HU3 → HU4 → RF-04 (sección 11).
 - Las metas de costo (RNF-07) y de tiempo de respuesta (RNF-06) se aceptan como objetivos.
 - Empresas objetivo: grandes (Meta, Apple, Amazon, Netflix, Google, Microsoft, Nvidia, OpenAI, Anthropic, Walmart, ServiceNow, PayPal/Venmo, eBay) y medianas aún sin definir.
-- La importación usa adaptadores por plataforma de empleo; el MVP implementa Greenhouse (RF-04). Las ofertas de empresas sin API se agregan pegando el texto (RF-01).
+- La recolección automática de ofertas es tan importante como pegar ofertas a mano (OBJ-5).
+- Fuentes automáticas del MVP: adaptadores de Greenhouse, Ashby y Lever, y un agregador por búsqueda sujeto a spike (opción A de la revisión).
+- Presupuesto: 30 horas con tope de 36.
+- Se aplican todas las correcciones de la revisión adversarial (`docs/prd-review.md`).
 
 ## 11. Riesgos y mitigaciones
 
-Ver `docs/vision.md`, sección 8. Riesgo adicional del PRD:
+Ver `docs/vision.md`, sección 8, y `docs/prd-review.md`. Riesgos adicionales del PRD:
 
 | Riesgo | Mitigación |
 | --- | --- |
-| Las 4 historias must-have no caben en las horas disponibles | Orden de construcción: HU2 → HU1 (pegar texto) → HU3 → HU4 → RF-04 (importación). Si falta tiempo, la importación se reduce a una sola empresa o búsqueda fija. |
+| El MVP imprescindible (~33 h) no cabe en el tope de 36 h, sobre todo por la curva de aprendizaje de AdonisJS v7 | Orden de construcción: walking skeleton → HU2 → HU1 (pegar) → HU3 → HU4 → importación. Orden de recorte: agregador (queda solo en job boards) → adaptador de Lever → recálculo masivo (RF-14 a pedido ya lo limita). |
+| El agregador no cubre las empresas grandes o sus términos no lo permiten | Spike de 30 minutos antes de implementarlo; plan B: adaptador de SmartRecruiters. |
+| El filtro de roles por palabras clave descarta ofertas buenas o deja pasar irrelevantes | Las ofertas descartadas siguen visibles con su motivo; el usuario ajusta las palabras clave. |
 
 ## 12. Decisiones pendientes
 
 | Decisión | Se resuelve en |
 | --- | --- |
-| ~~Diseño de la interfaz de adaptadores~~ | Resuelta en `docs/adr/0002-importacion-por-adaptadores.md` |
-| ~~Modelo de Claude para extracción y para el puntaje~~ | Resuelta en `docs/adr/0003-modelos-claude-por-entorno.md` |
-| Fórmula del puntaje: peso de habilidades, experiencia y preferencias | Cambio de OpenSpec de HU3 |
-| ~~Versión de AdonisJS~~ | Resuelta: AdonisJS v7 (`docs/adr/0001-monorepo-api-spa-un-contenedor.md`) |
+| Proveedor del agregador de ofertas | Spike del ticket T-27 |
+| Fórmula del puntaje: peso de habilidades, experiencia y seniority | Cambio de OpenSpec de HU3 |
+| Tabla de mapeo de seniority | Cambio de OpenSpec de HU3 |
 
 ## 13. Trazabilidad
 
 ```text
-OBJ-1 ──▶ HU1, HU3 ──▶ RF-01…RF-06, RF-20…RF-26
-OBJ-2 ──▶ HU3      ──▶ RF-24, RF-25, RNF-08
+OBJ-1 ──▶ HU1, HU3 ──▶ RF-01…RF-07, RF-20…RF-26, RNF-14
+OBJ-2 ──▶ HU3      ──▶ RF-24, RF-24a, RF-25, RNF-08
 OBJ-3 ──▶ HU4, HU5 ──▶ RF-30…RF-34, RF-40…RF-43
-OBJ-4 ──▶ todas    ──▶ RNF-10, RNF-12
+OBJ-4 ──▶ todas    ──▶ RNF-10, RNF-12, RNF-13
+OBJ-5 ──▶ HU1      ──▶ RF-04, RF-04a, RF-04b, RF-09, RNF-14
 ```
