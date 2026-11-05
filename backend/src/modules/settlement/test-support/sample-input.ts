@@ -16,11 +16,19 @@ import {
   text4,
 } from '../../../../prisma/synthetic.js'
 import { ACCOUNT_IDS, type AccountName } from '../../catalog/application/__fakes__/in-memory.js'
+import { type StoredBatch, validationWorld } from '../../validation/application/__fakes__/in-memory.js'
 import { computeRanges } from '../../validation/domain/ranges.js'
 import { runValidations } from '../../validation/domain/run-validations.js'
 import { expectedOf, STATUSES } from '../../validation/test-support/builders.js'
 import { SAMPLES, type SampleName, sampleInput } from '../../validation/test-support/sample-input.js'
-import type { AccountFeeConfig, SettlementFeeType, SettlementInput, SettlementRow } from '../domain/types.js'
+import { Decimal } from '../domain/money.js'
+import type {
+  AccountFeeConfig,
+  PriorReserveState,
+  SettlementFeeType,
+  SettlementInput,
+  SettlementRow,
+} from '../domain/types.js'
 
 const world = buildWorld()
 const codeOf = new Map<number, TransactionStatusCode>(TRANSACTION_STATUSES.map((s) => [s.statusId, s.code]))
@@ -51,12 +59,16 @@ export function accountFeesOf(name: AccountName): AccountFeeConfig[] {
   }))
 }
 
-/** The batch fees pre-filled from the sample's Other Fees sheet, as the analyst confirms them. */
+/**
+ * The batch fees pre-filled from the sample's Other Fees sheet, as the analyst confirms them. A fee type outside the
+ * catalog (expected.warnings.unknownFeeTypes) is not pre-filled.
+ */
 export function prefilledBatchFees(name: SampleName): BatchFeeInput[] {
   const prefilled = (expectedOf(name).batchFeesPrefilled ?? []) as { feeType: string; amount: number }[]
-  return prefilled.map((p) => {
-    const type = SETTLEMENT_FEE_TYPES.find((t) => t.title === p.feeType)!
-    return { feeTypeId: type.feeTypeId, feeId: null, amount: text4(p.amount), description: p.feeType, source: 'file' }
+  return prefilled.flatMap((p) => {
+    const type = SETTLEMENT_FEE_TYPES.find((t) => t.title === p.feeType)
+    if (type === undefined) return []
+    return [{ feeTypeId: type.feeTypeId, feeId: null, amount: text4(p.amount), description: p.feeType, source: 'file' }]
   })
 }
 
@@ -146,6 +158,12 @@ export async function settlementSampleInput(
     inclusions,
     channels,
     previousE: new Set(input.history.filter((m) => m.cycle === 'E').map((m) => m.transactionId)),
+    reserveStates: reserveStatesOf(
+      validationWorld().batches,
+      account.providerId,
+      rows.flatMap((r) => (r.transaction !== null && r.cycle !== 'E' ? [r.transaction.transactionId] : [])),
+      importId,
+    ),
     fees: accountFeesOf(accountName),
     feeTypes: SETTLEMENT_FEE_TYPES,
     attempts: world.batches
@@ -164,6 +182,46 @@ export async function settlementSampleInput(
 }
 
 export { STATUS }
+
+/** Sheet id → sheet name of the analyzed sample, to find a movement by the sheet of the oracle. */
+export async function sampleSheetNames(name: SampleName): Promise<Map<string, string>> {
+  const { importId, imports } = await sampleInput(name)
+  return new Map(imports.stored(importId).files.flatMap((f) => f.sheets.map((s) => [s.sheetId, s.sheetName] as const)))
+}
+
+const SUCCESSFUL: number = STATUS.Successful
+const providerOfAccount = new Map<string, number>(
+  ACCOUNTS.map((a) => [ACCOUNT_IDS[a.name as AccountName], a.providerId]),
+)
+
+/**
+ * The prior state of the reserves of some transactions (settlement-reserve-chargeback D2) over stored batches: the
+ * first Successful E with a held reserve, an R, and an I with an early release, in non-undone attempts of the
+ * provider other than the excluded import. A transaction without movements is left out.
+ */
+export function reserveStatesOf(
+  batches: readonly StoredBatch[],
+  providerId: number,
+  transactionIds: readonly bigint[],
+  excludeImportId: string,
+): Map<bigint, PriorReserveState> {
+  const wanted = new Set(transactionIds)
+  const states = new Map<bigint, PriorReserveState>()
+  for (const b of batches) {
+    if (b.status === 'undone' || b.importId === excludeImportId || providerOfAccount.get(b.accountId) !== providerId)
+      continue
+    for (const m of b.movements) {
+      if (!wanted.has(m.transactionId)) continue
+      const state = states.get(m.transactionId) ?? { held: null, releasedInR: false, releasedByAdjustment: false }
+      if (m.cycle === 'E' && m.statusId === SUCCESSFUL && state.held === null && new Decimal(m.reserveHeldAmt).gt(0))
+        state.held = { amount: text4(m.reserveHeldAmt), batchId: b.batchId }
+      if (m.cycle === 'R') state.releasedInR = true
+      if (m.cycle === 'I' && new Decimal(m.reserveEarlyReleasedAmt).gt(0)) state.releasedByAdjustment = true
+      states.set(m.transactionId, state)
+    }
+  }
+  return states
+}
 
 /** The merchant of a synthetic account, through its provider. */
 function merchantOf(account: string): number {

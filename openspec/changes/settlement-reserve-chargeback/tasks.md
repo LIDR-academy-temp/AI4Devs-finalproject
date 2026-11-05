@@ -28,7 +28,7 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
 
 ## 2. Dominio: liberación ante un ajuste (TDD)
 
-- [ ] 2.1 Escribir `backend/src/modules/settlement/domain/adjustment-reserve.test.ts` con builders (`test-support/builders.ts`, ampliado con `reserveStates`) y comprobar que falla porque el módulo no existe. Debe cubrir cada escenario de "Política de reserva ante chargeback" y de "Reserva ya liberada por un ajuste":
+- [x] 2.1 Escribir `backend/src/modules/settlement/domain/adjustment-reserve.test.ts` con builders (`test-support/builders.ts`, ampliado con `reserveStates`) y comprobar que falla porque el módulo no existe. Debe cubrir cada escenario de "Política de reserva ante chargeback" y de "Reserva ya liberada por un ajuste":
   - `Chargeback`, `Refund` y `RDR` de ronda 2 liberados, cada uno con su `heldInBatchId`;
   - ronda 1 (E del mismo batch, `heldInBatchId = null`, retenida y liberada que se compensan);
   - refund parcial (50.0000 de 200.0000) que libera toda la reserva (20.0000);
@@ -40,19 +40,21 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
   - R vigente o R en el batch → `released_in_r`, con la R entera (P3);
   - RR de una reserva liberada → R a 0 y `reserve_already_released` con transacción, hoja y fila;
   - sin estado previo (intento deshecho) → `released`.
-- [ ] 2.2 Ampliar `compute-settlement.test.ts`:
+- [x] 2.2 Ampliar `compute-settlement.test.ts`:
   - con `settlementSampleInput('batch-issues')`: cada fila de `expected.reserveEarlyRelease.released` (por ID y hoja) con su importe, las de `notReleased` en 0 con su `outcome`, `summary.reserveEarlyReleasedAmt` igual al total, la línea `reserve_early_released` con ese importe, la suma con signo del desglose igual a `amountPayable`, y sin `chargeback_reserve_policy_not_applied`;
   - `batch-clean` y `legacy-provider` sin cambios en `expected.summary`.
 
   `settlementSampleInput` construye `reserveStates` con la historia sembrada (D6). Ajustar en `movements.test.ts` la expectativa del snapshot del I, que ya no lo escribe `buildMovements`. Comprobar que fallan.
-- [ ] 2.3 Commit: test(settlement): liberación de la reserva ante un ajuste con el oráculo de batch-issues
+
+  Hecho: `prefilledBatchFees` deja fuera los tipos de fee fuera de catálogo ("Fraud Monitoring Fee" de `batch-issues`), que antes hacían fallar la carga de la muestra.
+- [x] 2.3 Commit: test(settlement): liberación de la reserva ante un ajuste con el oráculo de batch-issues
 - [ ] 2.4 Implementar (D1–D3):
   - `PriorReserveState` y `reserveStates` en `domain/types.ts`;
   - `ReservePolicyOutcome` y el snapshot `{ policy, applied: true, outcome, heldInBatchId }`;
   - `domain/adjustment-reserve.ts`;
   - la llamada desde `compute-settlement.ts`, que deja de emitir `chargeback_reserve_policy_not_applied`;
   - `movements.ts` sin snapshot en el I;
-  - en `sample-input.ts` y en el fake, `reserveStates` vacío hasta el grupo 3.
+  - en el fake de la aplicación y en `load-settlement-input.ts`, `reserveStates` vacío hasta el grupo 3 (`sample-input.ts` ya lo construye con la historia sembrada en 2.2, con `reserveStatesOf`).
 
   Verificar con `pnpm --filter @recon/backend test` en verde. Romper el test a propósito una vez (no marcar la reserva como liberada en el batch, para que el segundo ajuste también libere), comprobar que falla y restaurarlo.
 - [ ] 2.5 Commit: feat(settlement): liberar la reserva ante chargeback, refund o RDR con release_on_chargeback, y `git push`.

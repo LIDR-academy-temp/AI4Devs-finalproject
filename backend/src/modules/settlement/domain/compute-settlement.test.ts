@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Prisma } from '../../../generated/prisma/client.js'
 import { expectedOf } from '../../validation/test-support/builders.js'
 import { fee, input, row, txn } from '../test-support/builders.js'
-import { settlementSampleInput } from '../test-support/sample-input.js'
+import { sampleSheetNames, settlementSampleInput } from '../test-support/sample-input.js'
 import { computeSettlement } from './compute-settlement.js'
 
 // The settlement engine over the samples, against their expected.json (README §2.6, design D2, D20). The transactional
@@ -83,6 +83,69 @@ describe('batch-clean against its expected.json', async () => {
   it('carries the nine lines of the payable breakdown, the batch fees line at 40.0000', () => {
     expect(plan.summary.payableBreakdown).toHaveLength(9)
     expect(plan.summary.payableBreakdown.find((l) => l.code === 'batch_fees')?.amount).toBe('40.0000')
+  })
+})
+
+describe('batch-issues (release_on_chargeback) against expected.reserveEarlyRelease', async () => {
+  interface ReserveEarlyRelease {
+    released: { id: string; sheet: string; amount: string; heldInBatchNo: number | null }[]
+    notReleased: { id: string; sheet: string; outcome: string }[]
+    reserveEarlyReleasedAmt: string
+  }
+  const expected = expectedOf('batch-issues').reserveEarlyRelease as unknown as ReserveEarlyRelease
+  const sample = await settlementSampleInput('batch-issues')
+  const plan = computeSettlement(sample)
+  const sheetName = await sampleSheetNames('batch-issues')
+  const adjustments = plan.movements.filter((m) => m.cycle === 'I')
+  const adjustment = (id: string, sheet: string) => {
+    const found = adjustments.filter((m) => m.sourceTransactionId === id && sheetName.get(m.sheetId) === sheet)
+    expect(found, `${sheet} ${id}`).toHaveLength(1)
+    return found[0]!
+  }
+  const snapshotOf = (m: (typeof adjustments)[number]) => JSON.parse(m.reservePolicySnapshot!)
+  const cents = (amount: string) => BigInt(amount.replace('.', '').replace('-', ''))
+
+  it('has one I movement per row of the oracle, released or not', () => {
+    expect(adjustments).toHaveLength(expected.released.length + expected.notReleased.length)
+  })
+
+  it('releases the whole reserve of each released adjustment, with the batch that held it', () => {
+    for (const r of expected.released) {
+      const m = adjustment(r.id, r.sheet)
+      expect(m.reserveEarlyReleasedAmt, `${r.sheet} ${r.id}`).toBe(r.amount)
+      expect(snapshotOf(m), `${r.sheet} ${r.id}`).toEqual({
+        policy: 'release_on_chargeback',
+        applied: true,
+        outcome: 'released',
+        heldInBatchId: r.heldInBatchNo === null ? null : `batch:ProviderB-Main:${r.heldInBatchNo}:1`,
+      })
+    }
+  })
+
+  it('releases 0 for the others, with their outcome (RAM-13: no_held_reserve)', () => {
+    expect(expected.notReleased.length).toBeGreaterThan(0)
+    for (const r of expected.notReleased) {
+      const m = adjustment(r.id, r.sheet)
+      expect(m.reserveEarlyReleasedAmt).toBe('0.0000')
+      expect(snapshotOf(m).outcome).toBe(r.outcome)
+    }
+  })
+
+  it('totals the release in the summary and in the reserve_early_released line, and the breakdown sums to amountPayable', () => {
+    expect(plan.summary.reserveEarlyReleasedAmt).toBe(expected.reserveEarlyReleasedAmt)
+    const line = plan.summary.payableBreakdown.find((l) => l.code === 'reserve_early_released')!
+    expect(line).toMatchObject({ amount: expected.reserveEarlyReleasedAmt, sign: '+' })
+    const signed = plan.summary.payableBreakdown.reduce(
+      (s, l) => (l.sign === '+' ? s + cents(l.amount) : s - cents(l.amount)),
+      0n,
+    )
+    const payable = plan.summary.amountPayable
+    expect(signed).toBe(payable.startsWith('-') ? -cents(payable) : cents(payable))
+  })
+
+  it('no longer warns chargeback_reserve_policy_not_applied, nor reserve_already_released', () => {
+    expect(plan.warnings.map((w) => w.code)).not.toContain('chargeback_reserve_policy_not_applied')
+    expect(plan.warnings.map((w) => w.code)).not.toContain('reserve_already_released')
   })
 })
 
@@ -205,7 +268,7 @@ describe('computeSettlement', () => {
     expect(plan.batchFeeError).toEqual({ index: 0, reason: 'free_amount_not_allowed' })
   })
 
-  it('warns reserve_cap_not_applied for an account with a cap and chargeback_reserve_policy_not_applied with a chargeback', () => {
+  it('warns reserve_cap_not_applied for an account with a cap, and no longer chargeback_reserve_policy_not_applied (#62)', () => {
     const changed = new Date('2026-10-03T08:00:00.000Z')
     const chargeback = txn({ transactionId: 5n, statusCode: 'Chargeback', lastStatusChangedAt: changed })
     const plan = computeSettlement(
@@ -219,11 +282,24 @@ describe('computeSettlement', () => {
       }),
     )
 
-    expect(plan.warnings.map((w) => w.code)).toEqual([
-      'transactional_fees_not_computed',
-      'reserve_cap_not_applied',
-      'chargeback_reserve_policy_not_applied',
+    expect(plan.warnings.map((w) => w.code)).toEqual(['transactional_fees_not_computed', 'reserve_cap_not_applied'])
+  })
+
+  it('applies the reserve policy after building the movements: the I releases the reserve its E held (round 1)', () => {
+    const changed = new Date('2026-10-03T08:00:00.000Z')
+    const refunded = txn({ transactionId: 5n, statusCode: 'Refund', amount: '123.4565', lastStatusChangedAt: changed })
+    const plan = computeSettlement(
+      input({
+        account: { ...input().account, chargebackReservePolicy: 'release_on_chargeback' },
+        rows: [row(2, {}, refunded), row(3, { cycle: 'I', statusCode: 'Refund' }, refunded)],
+      }),
+    )
+
+    expect(plan.movements.map((m) => [m.cycle, m.reserveHeldAmt, m.reserveEarlyReleasedAmt])).toEqual([
+      ['E', '12.3457', '0.0000'],
+      ['I', '0.0000', '12.3457'],
     ])
+    expect(plan.summary.reserveEarlyReleasedAmt).toBe('12.3457')
   })
 
   it('carries the date ranges of the run and the channel label of the movements', () => {
