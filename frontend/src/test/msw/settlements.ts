@@ -37,7 +37,7 @@ import { auditInstant, businessDate } from '@/lib/format'
 import { feeTypeOf } from './fee-fixtures'
 import { ACCOUNT_IDS, ACCOUNTS, PROVIDERS, USERS, type UserName } from './fixtures'
 import type { AccountName } from './import-fixtures'
-import { type FakeImport, importRecord, visibleImport } from './imports'
+import { emptyBatchOf, type FakeImport, importRecord, visibleImport } from './imports'
 import { currentRunId, supersedeRunOnUndo } from './validations'
 
 const API = '*/api/v1'
@@ -61,7 +61,7 @@ export interface PreviewFixture extends Omit<SettlementFigures, 'batchFees'> {
   attemptNo: number
   requiresChannelConfirmation: boolean
   channelsToAssign: ChannelToAssign[]
-  /** Set when the import has no matched rows: the preview reports it, processing asks confirmEmptyBatch (#92). */
+  /** Forces an empty batch; otherwise it is the import's own (`emptyBatchOf`): the preview reports it (#92). */
   emptyBatch?: EmptyBatch | null
   /** What the attempt reports once processed (without its runId, filled in from the body). */
   validationSummary: Omit<ValidationSummary, 'runId'> | null
@@ -803,8 +803,8 @@ export function createSettlementHandlers(caller: (request: Request) => UserName 
             batchNoAvailable: !activeAttempt(record.accountId, batchNo),
             requiresChannelConfirmation: fixture.requiresChannelConfirmation,
             channelsToAssign: fixture.channelsToAssign,
-            requiresEmptyBatchConfirmation: fixture.emptyBatch != null,
-            emptyBatch: fixture.emptyBatch ?? null,
+            requiresEmptyBatchConfirmation: (fixture.emptyBatch ?? emptyBatchOf(record)) !== null,
+            emptyBatch: fixture.emptyBatch ?? emptyBatchOf(record),
           }
           return HttpResponse.json(preview)
         },
@@ -824,12 +824,13 @@ export function createSettlementHandlers(caller: (request: Request) => UserName 
           const fixture = fixtureOf(record)
           const batchNo = request.batchNo ?? proposedNumber(record.accountId).batchNo
           // The API checks it right after the run and the review, before the number (#92, design D2).
-          if (fixture.emptyBatch && request.confirmEmptyBatch !== true) {
+          const empty = fixture.emptyBatch ?? emptyBatchOf(record)
+          if (empty && request.confirmEmptyBatch !== true) {
             return error(
               409,
               'no_matched_rows',
               'No row of the import matches a transaction of this account; confirm a batch with batch fees only',
-              fixture.emptyBatch,
+              empty,
             )
           }
           const taken = activeAttempt(record.accountId, batchNo)

@@ -24,7 +24,7 @@ import type {
 } from '@/features/validations/contract'
 import { auditInstant, businessDate } from '@/lib/format'
 import { ACCOUNT_IDS, USERS, type UserName } from './fixtures'
-import { type FakeImport, importRecord, visibleImport } from './imports'
+import { emptyBatchOf, type FakeImport, importRecord, visibleImport } from './imports'
 
 const API = '*/api/v1'
 
@@ -1042,8 +1042,11 @@ export function createValidationHandlers(caller: (request: Request) => UserName 
           const record = visibleImport(user, params.importId)
           if (!canProcess(user)) return record ? forbidden() : notFound('Import')
           if (!record) return notFound('Import')
-          const body = (await request.json()) as { runId?: unknown }
+          const body = (await request.json()) as { runId?: unknown; confirmEmptyBatch?: unknown }
           if (typeof body.runId !== 'number' || !Number.isInteger(body.runId) || body.runId < 1) {
+            return error(400, 'validation_error', 'Invalid body')
+          }
+          if (body.confirmEmptyBatch !== undefined && typeof body.confirmEmptyBatch !== 'boolean') {
             return error(400, 'validation_error', 'Invalid body')
           }
           if (record.status !== 'analyzed') {
@@ -1073,6 +1076,16 @@ export function createValidationHandlers(caller: (request: Request) => UserName 
                 validationCodes: [...new Set(blocking.map((i) => i.validationCode))],
                 issueIds: blocking.map((i) => i.issueId),
               },
+            )
+          }
+          // After the run and the block, as the API does (README §3.3 "Batch sin filas asociadas", #92).
+          const empty = emptyBatchOf(record)
+          if (empty && body.confirmEmptyBatch !== true) {
+            return error(
+              409,
+              'no_matched_rows',
+              'No row of the import matches a transaction of this account; confirm a batch with batch fees only',
+              empty,
             )
           }
           run.review = { reviewedBy: userRef(user), reviewedAt: auditInstant(now()) }

@@ -1,12 +1,13 @@
 import type { ValidationCode } from '@recon/shared'
 import { Link } from '@tanstack/react-router'
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { CancelImportDialog } from '@/features/imports/CancelImportDialog'
 import { useImportAccess } from '@/features/imports/permissions'
 import type { ImportDetail } from '@/lib/api/types'
 import { formatAuditDateTime } from '@/lib/format'
 import type { ValidationRunView } from './contract'
+import { EmptyBatchConfirmation } from './EmptyBatchConfirmation'
 import type { Review } from './mutations'
 import { settlementReviewRoute, settlementSummaryRoute } from './next-step'
 import { strings } from './strings'
@@ -38,7 +39,17 @@ export function DecisionBar({
   const { canProcess, cancellable } = useImportAccess(detail.status)
   const reasonId = useId()
   const run = view.run
-  const reason = !run ? s.noRun : run.blocked ? s.blocked : null
+  // A batch without matched rows of the account is confirmed by hand (#92); the API decides when it is one.
+  const emptyBatch = detail.analysis?.requiresEmptyBatchConfirmation === true
+  const [emptyConfirmed, setEmptyConfirmed] = useState(false)
+  const reason = !run ? s.noRun : run.blocked ? s.blocked : emptyBatch && !emptyConfirmed ? s.emptyBatch.reason : null
+
+  async function onContinue() {
+    if (!run) return
+    const refused = await reviewer.review(run.runId, emptyBatch && emptyConfirmed)
+    // The API says the confirmation is still missing: the box goes back to unticked with its text.
+    if (refused === 'no_matched_rows') setEmptyConfirmed(false)
+  }
 
   // A cancelled or processed import has nothing left to decide: the section says so instead of standing empty.
   // The API does not say who cancelled, so the text names only the status; a processed one links to its attempt.
@@ -62,11 +73,19 @@ export function DecisionBar({
 
   return (
     <section aria-label={s.label} className="flex flex-col gap-2 border-t pt-3">
+      {view.importStatus === 'analyzed' && canProcess && emptyBatch && run && !run.blocked && (
+        <EmptyBatchConfirmation
+          likelyWrongAccount={detail.analysis?.likelyWrongAccount === true}
+          confirmed={emptyConfirmed}
+          onConfirmedChange={setEmptyConfirmed}
+          disabled={busy}
+        />
+      )}
       <div className="flex flex-wrap items-start gap-3">
         {view.importStatus === 'analyzed' && canProcess && (
           <Button
             size="sm"
-            onClick={() => run && void reviewer.review(run.runId)}
+            onClick={() => void onContinue()}
             disabled={reason !== null || busy}
             aria-describedby={[reason && reasonId, busy && busyId].filter(Boolean).join(' ') || undefined}
           >

@@ -180,22 +180,26 @@ export function useReview(importId: string) {
   const [error, setError] = useState<string | null>(null)
   const e = strings.decision.errors
 
-  async function review(runId: number) {
-    if (guard.current) return
+  /** Answers the error code of a refused review, or null; the caller unticks its confirmation on no_matched_rows. */
+  async function review(runId: number, confirmEmptyBatch = false): Promise<string | null> {
+    if (guard.current) return null
     guard.current = true
     setPending(true)
     setError(null)
     try {
-      storeRun(queryClient, await reviewImport(importId, runId))
+      storeRun(queryClient, await reviewImport(importId, runId, confirmEmptyBatch))
+      return null
     } catch (failure) {
       const code = failure instanceof ApiError ? failure.code : undefined
       if (code === 'validation_run_superseded') setError(e.superseded)
+      else if (code === 'no_matched_rows') setError(e.noMatchedRows)
       else if (code === 'blocking_validation_issue') setError(e.blocking)
       else if (code === 'validation_run_required') setError(e.required)
       else if (code === 'import_not_analyzed')
         setError(e.notAnalyzed(((failure as ApiError).details as ErrorDetails['import_not_analyzed']).status))
       else setError(failure instanceof ApiError && failure.status === 403 ? e.forbidden : e.failed)
       if (code) reloadRunAndImport(queryClient, importId)
+      return code ?? null
     } finally {
       guard.current = false
       setPending(false)

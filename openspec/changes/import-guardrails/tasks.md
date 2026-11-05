@@ -169,7 +169,7 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
 
 ## 9. Frontend: Analysis & Validations (`features/validations`)
 
-- [ ] 9.1 `DecisionBar` y `useReview` según D8:
+- [x] 9.1 `DecisionBar` y `useReview` según D8:
   - el aviso de batch vacío y el de cuenta equivocada;
   - la casilla **Continue with batch fees only**;
   - Continue deshabilitado con `Confirm that this batch has batch fees only.`;
@@ -177,8 +177,8 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
   - el `409 no_matched_rows` (texto, relectura y casilla desmarcada).
 
   Textos en `strings.ts`, en inglés, tal como los dan los escenarios. MSW (`frontend/src/test/msw`) con `batch-wrong-account`.
-- [ ] 9.2 Tests RTL de cada escenario de "Pantalla Analysis & Validations: batch sin filas asociadas", y que los de "continuar o cancelar" siguen igual. Verificar con `pnpm --filter @recon/frontend test` y `pnpm lint`. Comprobar con `git diff --stat` que no se tocó `features/imports/analysis`.
-- [ ] 9.3 Commit: feat(web): confirmación del batch sin filas asociadas al continuar tras las validaciones (#92), y `git push`.
+- [x] 9.2 Tests RTL de cada escenario de "Pantalla Analysis & Validations: batch sin filas asociadas", y que los de "continuar o cancelar" siguen igual. Verificar con `pnpm --filter @recon/frontend test` y `pnpm lint`. Comprobar con `git diff --stat` que no se tocó `features/imports/analysis`.
+- [x] 9.3 Commit: feat(web): confirmación del batch sin filas asociadas al continuar tras las validaciones (#92), y `git push`.
 
 ## 10. Frontend: Settlement Review y Upload Files
 

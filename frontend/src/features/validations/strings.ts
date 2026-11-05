@@ -211,6 +211,15 @@ export const strings = {
     settlementReview: 'Settlement Review',
     viewSummary: 'View settlement summary',
     reviewing: 'Saving the review…',
+    /** An import without matched rows of the account (#92): a batch with batch fees only, confirmed by hand. */
+    emptyBatch: {
+      label: 'Batch without matched rows',
+      noMatchedRows: 'No row of the files matches a transaction of this account.',
+      wrongAccount:
+        'The IDs do not fit any gateway of this account: the files may belong to another account. Cancel and reprocess under the right account.',
+      confirm: 'Continue with batch fees only',
+      reason: 'Confirm that this batch has batch fees only.',
+    },
     /** One text per status that leaves nothing to decide; the API does not say who cancelled or processed. */
     closed: {
       cancelled: 'This import is cancelled. Its run and findings are kept for reference.',
@@ -223,6 +232,7 @@ export const strings = {
       notAnalyzed: (status: ImportStatus) => `This import can no longer be reviewed (${status}).`,
       forbidden: 'You cannot review this import.',
       failed: 'The review could not be saved. Try again.',
+      noMatchedRows: 'This import has no matched rows. Confirm that the batch has batch fees only.',
     },
   },
 
