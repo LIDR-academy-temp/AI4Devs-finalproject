@@ -8,12 +8,6 @@ type Line = { key: string; sheet: string; text: string }
 const NO_ROWS = 'The sheet has no rows'
 const HIDDEN = 'The sheet is hidden in the workbook'
 
-/** Sheets whose mapping is not confirmed in a mapped import: the detail's readiness does not list them (design D7). */
-export function unconfirmedSheets(detail: ImportDetail) {
-  if (detail.status !== 'mapped') return []
-  return detail.files.flatMap((f) => f.sheets).filter((s) => !s.mappingConfirmed)
-}
-
 /** A sheet without rows, hidden or ignored by its proposal: every note it gets is informational. */
 function informational(note: Item, sheet: ImportSheet | undefined): boolean {
   return note.message === NO_ROWS || note.message === HIDDEN || sheet?.proposed.kind === 'ignore'
@@ -34,7 +28,7 @@ const noteLine = (note: Item): Line => ({
 type Group = { file: ImportFile; actionable: Line[]; informational: Line[] }
 
 /** What is missing and what to review, per file: what is not about one sheet goes first, apart. */
-function groupsOf(detail: ImportDetail, missing: Item[], unconfirmed: ImportSheet[]) {
+function groupsOf(detail: ImportDetail, missing: Item[]) {
   const fileOf = new Map(detail.files.flatMap((f) => f.sheets.map((s) => [s.sheetId, { file: f, sheet: s }] as const)))
   const own = (item: Item) => (item.sheetId === null ? undefined : fileOf.get(item.sheetId))
   const general = [
@@ -44,14 +38,10 @@ function groupsOf(detail: ImportDetail, missing: Item[], unconfirmed: ImportShee
   const groups: Group[] = detail.files.map((file) => {
     const mine = (item: Item) => own(item)?.file.fileId === file.fileId
     const notes = detail.readiness.notes.filter(mine)
-    const sheets = new Set(file.sheets.map((s) => s.sheetId))
     return {
       file,
       actionable: [
         ...missing.filter(mine).map(missingLine),
-        ...unconfirmed
-          .filter((s) => sheets.has(s.sheetId))
-          .map((s) => ({ key: `confirm:${s.sheetId}`, sheet: s.sheetName, text: strings.readiness.unconfirmed })),
         ...notes.filter((n) => !informational(n, own(n)?.sheet)).map(noteLine),
       ],
       informational: notes.filter((n) => informational(n, own(n)?.sheet)).map(noteLine),
@@ -77,8 +67,9 @@ function Lines({ lines }: { lines: Line[] }) {
 }
 
 /**
- * The readiness of the server (design D7): `Ready to analyze` or what is missing, then what to review, grouped by
- * file with the actionable lines first and the informational notes folded. `missing` can be replaced by the one of
+ * The readiness of the server (design D7), as it comes: `Ready to analyze` or what is missing, then what to review,
+ * grouped by file with the actionable lines first and the informational notes folded. Nothing is derived from
+ * `mappingConfirmed`: the API names the sheets to confirm (import-in-progress D7, #42). `missing` can be replaced by the one of
  * a `422 mapping_incomplete` until the next detail.
  */
 export function ReadinessBar({
@@ -88,9 +79,8 @@ export function ReadinessBar({
   detail: ImportDetail
   missing?: ImportDetail['readiness']['missing']
 }) {
-  const unconfirmed = unconfirmedSheets(detail).filter((s) => !missing.some((m) => m.sheetId === s.sheetId))
-  const ready = missing.length === 0 && unconfirmed.length === 0
-  const { general, groups } = groupsOf(detail, missing, unconfirmed)
+  const ready = missing.length === 0
+  const { general, groups } = groupsOf(detail, missing)
 
   return (
     <div

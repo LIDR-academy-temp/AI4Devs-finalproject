@@ -1,6 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { type ReactNode, useEffect, useEffectEvent, useId, useState } from 'react'
-import { merchantsQuery, providerQuery, providersQuery } from '@/features/accounts/queries'
+import type { ScopeSelection } from '@/features/accounts/scope-selection'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import type { FeesSearch } from './fees-search'
 import { MAX_Q } from './fees-search'
@@ -17,44 +16,6 @@ const controlClass =
 /** A change of filters: the keys that changed, undefined to clear one. */
 export type FiltersPatch = Omit<FeesSearch, 'page'>
 
-/**
- * Whether the merchant → provider → account of the address are visible to the user (web-admin-fees design D3). The
- * list is asked only once they are: an id outside the scope would be a 404 of the API, and the screen already knows.
- */
-export function useFeeScope(search: FeesSearch) {
-  const { merchantId, providerId, accountId } = search
-  const merchants = useQuery(merchantsQuery)
-  const merchantVisible = merchants.data?.some((m) => m.merchantId === merchantId) ?? false
-  const providers = useQuery({ ...providersQuery(merchantId ?? 0), enabled: merchantVisible })
-  const providerVisible = merchantVisible && (providers.data?.some((p) => p.providerId === providerId) ?? false)
-  const provider = useQuery({ ...providerQuery(providerId ?? 0), enabled: providerVisible })
-  const accountVisible = providerVisible && (provider.data?.accounts.some((a) => a.accountId === accountId) ?? false)
-
-  const levels = [
-    { asked: merchantId !== undefined, query: merchants, visible: merchantVisible },
-    { asked: providerId !== undefined, query: providers, visible: providerVisible },
-    { asked: accountId !== undefined, query: provider, visible: accountVisible },
-  ]
-  let state: 'ready' | 'checking' | 'not_available' | 'error' = 'ready'
-  for (const level of levels) {
-    if (!level.asked) break
-    if (level.query.isError) state = 'error'
-    else if (!level.query.data) state = 'checking'
-    else if (!level.visible) state = 'not_available'
-    if (state !== 'ready') break
-  }
-
-  return {
-    state,
-    merchants: merchants.data ?? [],
-    providers: merchantVisible ? (providers.data ?? []) : [],
-    accounts: providerVisible ? (provider.data?.accounts ?? []) : [],
-    retry: () => Promise.all([merchants, providers, provider].filter((q) => q.isError).map((q) => q.refetch())),
-  }
-}
-
-export type FeeScope = ReturnType<typeof useFeeScope>
-
 /** Merchant, provider, account, kind, status and search of the global view; each change goes to the address. */
 export function FeeFilters({
   search,
@@ -62,7 +23,7 @@ export function FeeFilters({
   onChange,
 }: {
   search: FeesSearch
-  scope: FeeScope
+  scope: ScopeSelection
   onChange: (patch: FiltersPatch) => void
 }) {
   const ids = { merchant: useId(), provider: useId(), account: useId(), kind: useId(), status: useId(), q: useId() }

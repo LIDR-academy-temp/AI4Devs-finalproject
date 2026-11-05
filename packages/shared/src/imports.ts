@@ -6,6 +6,7 @@ import {
   ChannelAssignment,
   Cycle,
   ImportStatus,
+  IntId,
   MatchResult,
   Money,
   ReadinessField,
@@ -222,6 +223,43 @@ export const ImportsQuery = z.object({
   status: ImportStatus.optional(),
 })
 export type ImportsQuery = z.infer<typeof ImportsQuery>
+
+/**
+ * GET /imports (spec "Filtros" and "Paginación de imports en curso"): the imports of every account in scope. Without
+ * `status`, the open ones; `mine=true` keeps those the caller created.
+ */
+export const ImportListQuery = z.strictObject({
+  status: ImportStatus.optional(),
+  merchantId: IntId.optional(),
+  providerId: IntId.optional(),
+  accountId: z.uuid().optional(),
+  mine: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(500).default(50),
+})
+export type ImportListQuery = z.infer<typeof ImportListQuery>
+
+const NamedIntRef = z.object({ id: z.number().int().positive(), name: z.string() })
+
+/** An import of GET /imports, with the hierarchy it belongs to (the same `{ id, name }` keys as a fee of GET /fees). */
+export const ImportListItem = ImportSummary.extend({
+  account: z.object({ id: z.uuid(), name: z.string() }),
+  provider: NamedIntRef,
+  merchant: NamedIntRef,
+})
+export type ImportListItem = z.infer<typeof ImportListItem>
+
+/** GET /imports: newest `updatedAt` first, then by `importId`, stable between pages. */
+export const ImportListPage = z.object({
+  items: z.array(ImportListItem),
+  page: z.number().int().positive(),
+  pageSize: z.number().int().positive(),
+  total: nonNegativeInt,
+})
+export type ImportListPage = z.infer<typeof ImportListPage>
 
 /** A transaction an ambiguous row could be (spec: import, D4). */
 export const VisibleRowCandidate = z.object({

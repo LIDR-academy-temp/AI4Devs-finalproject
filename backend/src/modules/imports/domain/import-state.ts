@@ -15,6 +15,12 @@ export const EDITABLE_STATUSES: ReadonlySet<ImportStatus> = new Set(['uploaded',
 /** Cancelling keeps everything as evidence; only `processed` and `cancelled` refuse it (spec: import, D13). */
 export const CANCELLABLE_STATUSES: ReadonlySet<ImportStatus> = new Set(['uploaded', 'mapped', 'analyzed', 'validated'])
 
+/**
+ * Imports In Progress lists by default (spec "Imports en curso", design D2): from upload until processed or cancelled.
+ * The same statuses as CANCELLABLE_STATUSES today, but another rule: "in progress" against "can be cancelled".
+ */
+export const OPEN_IMPORT_STATUSES: readonly ImportStatus[] = ['uploaded', 'mapped', 'analyzed', 'validated']
+
 /** `PUT /imports/{id}/mapping`: `uploaded` or `mapped`. */
 export function assertCanConfirmMapping(status: ImportStatus): void {
   if (!EDITABLE_STATUSES.has(status)) throw new ImportNotEditableError(status)

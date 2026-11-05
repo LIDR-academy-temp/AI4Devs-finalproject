@@ -17,7 +17,9 @@ import {
   assertCanResolveRow,
   assertCanReview,
   assertCanValidate,
+  CANCELLABLE_STATUSES,
   EDITABLE_STATUSES,
+  OPEN_IMPORT_STATUSES,
   UNDO_ATTEMPT_MOVE,
 } from './import-state.js'
 
@@ -114,5 +116,15 @@ describe('UNDO_ATTEMPT_MOVE', () => {
     expect(() => assertCanValidate(UNDO_ATTEMPT_MOVE.to)).not.toThrow()
     expect(() => assertCanCancel(UNDO_ATTEMPT_MOVE.to)).not.toThrow()
     expect(() => assertCanValidate(UNDO_ATTEMPT_MOVE.from)).toThrow()
+  })
+})
+
+describe('OPEN_IMPORT_STATUSES (spec "Imports en curso", design D2)', () => {
+  it('are the four statuses before processed, the ones In Progress lists by default', () => {
+    expect([...OPEN_IMPORT_STATUSES]).toEqual(['uploaded', 'mapped', 'analyzed', 'validated'])
+  })
+
+  it('coincide today with the cancellable ones: a change to either rule must look at the other', () => {
+    expect(new Set(OPEN_IMPORT_STATUSES)).toEqual(CANCELLABLE_STATUSES)
   })
 })

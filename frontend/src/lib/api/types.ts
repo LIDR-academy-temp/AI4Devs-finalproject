@@ -31,6 +31,10 @@ export type ChannelNoticeItem = NonNullable<ImportDetail['channels']>[number]
 export type ImportRowsPage = ApiResponse<'/api/v1/imports/{importId}/rows', 'get'>
 export type ImportRowItem = ImportRowsPage['items'][number]
 export type ImportRowsQuery = NonNullable<paths['/api/v1/imports/{importId}/rows']['get']['parameters']['query']>
+/** GET /imports: the imports in progress of every account in scope (spec "Imports en curso"). */
+export type ImportListPage = ApiResponse<'/api/v1/imports', 'get'>
+export type ImportListItem = ImportListPage['items'][number]
+export type ImportListQuery = NonNullable<paths['/api/v1/imports']['get']['parameters']['query']>
 /** Body of `PUT /imports/{id}/mapping`. */
 export type MappingConfirmationBody =
   paths['/api/v1/imports/{importId}/mapping']['put']['requestBody']['content']['application/json']

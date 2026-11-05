@@ -9,12 +9,18 @@ meta {
 
 post {
   url: {{baseUrl}}/api/v1/imports/:importId/cancel
-  body: none
+  body: json
   auth: bearer
 }
 
 params:path {
   importId: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "reason": "Not mine"
+  }
 }
 
 auth:bearer {
@@ -26,7 +32,7 @@ vars:pre-request {
 }
 
 tests {
-  test('viewer lacks settlement.process: 403 forbidden', () => {
+  test('viewer lacks settlement.process: 403 forbidden, even with a valid reason', () => {
     expect(res.status).to.equal(403);
     expect(res.body.code).to.equal('forbidden');
   });

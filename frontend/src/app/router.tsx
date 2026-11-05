@@ -19,9 +19,17 @@ import { AccountFeesPanel } from '@/features/fees/AccountFeesPanel'
 import { FeesPage } from '@/features/fees/FeesPage'
 import { validateFeesSearch } from '@/features/fees/fees-search'
 import { ImportPage } from '@/features/imports/ImportPage'
+import { InProgressPage } from '@/features/imports/in-progress/InProgressPage'
 import { NewReconciliationPage } from '@/features/imports/NewReconciliationPage'
 import { strings as importStrings } from '@/features/imports/strings'
-import { validateImportSearch, validateNewReconciliationSearch } from '@/features/imports/validate-search'
+import {
+  validateImportSearch,
+  validateInProgressSearch,
+  validateNewReconciliationSearch,
+} from '@/features/imports/validate-search'
+import { GlobalRulesPage } from '@/features/matching/GlobalRulesPage'
+import { MatchingRulesPage } from '@/features/matching/MatchingRulesPage'
+import { RuleSetPage } from '@/features/matching/RuleSetPage'
 import { validateSettlementListSearch } from '@/features/settlements/list-search'
 import { SettlementListPage } from '@/features/settlements/SettlementListPage'
 import { SettlementReviewPage } from '@/features/settlements/SettlementReviewPage'
@@ -138,6 +146,32 @@ const channelAssignmentRoute = createRoute({
   component: ChannelAssignmentPage,
 })
 
+// No permission required: reading rules needs only a token; the writes are offered by permission and decided by the
+// API. The static segment `global` wins over `$ruleSetId` (web-admin-matching design D2).
+const matchingCrumbs = [strings.groups.administration, strings.screens.matchingRules] as const
+
+const matchingRulesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/matching-rules',
+  validateSearch: validateAccountsSearch,
+  staticData: { crumbs: matchingCrumbs },
+  component: MatchingRulesPage,
+})
+
+const globalRulesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/matching-rules/global',
+  staticData: { crumbs: matchingCrumbs },
+  component: GlobalRulesPage,
+})
+
+const ruleSetRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/matching-rules/$ruleSetId',
+  staticData: { crumbs: matchingCrumbs },
+  component: RuleSetPage,
+})
+
 const newReconciliationRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/reconciliations/new',
@@ -147,6 +181,18 @@ const newReconciliationRoute = createRoute({
     crumbs: [strings.groups.reconciliation, strings.screens.newReconciliation],
   },
   component: NewReconciliationPage,
+})
+
+// The imports to resume or cancel: settlement.process, like New Reconciliation (import-in-progress design D5).
+const inProgressRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/reconciliations/in-progress',
+  validateSearch: validateInProgressSearch,
+  staticData: {
+    requires: 'settlement.process',
+    crumbs: [strings.groups.reconciliation, strings.screens.inProgress],
+  },
+  component: InProgressPage,
 })
 
 // No permission required: the API decides the scope and viewer may read an import (design D2, D10).
@@ -197,8 +243,12 @@ function buildRouteTree(extraRoutes: AnyRoute[]) {
       accountsRoute,
       accountDetailRoute.addChildren([accountOverviewRoute, accountFeesRoute]),
       channelAssignmentRoute,
+      matchingRulesRoute,
+      globalRulesRoute,
+      ruleSetRoute,
       feesRoute,
       newReconciliationRoute,
+      inProgressRoute,
       importRoute,
       settlementReviewRoute,
       settlementListRoute,

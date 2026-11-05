@@ -5,7 +5,15 @@ import { strings } from './strings'
 
 export interface NavItem {
   label: string
-  to?: '/' | '/accounts' | '/channel-assignment' | '/fees' | '/reconciliations/new' | '/settlements'
+  to?:
+    | '/'
+    | '/accounts'
+    | '/channel-assignment'
+    | '/fees'
+    | '/matching-rules'
+    | '/reconciliations/new'
+    | '/reconciliations/in-progress'
+    | '/settlements'
   /** Other paths where the entry is also the active one (the screens it leads to); `to` itself is matched exactly. */
   activeWhen?: (pathname: string) => boolean
   requires?: Permission
@@ -30,7 +38,7 @@ export const NAV: readonly NavGroup[] = [
         activeWhen: (pathname) => pathname.startsWith('/imports/'),
         requires: 'settlement.process',
       },
-      { label: s.inProgress, requires: 'settlement.process' },
+      { label: s.inProgress, to: '/reconciliations/in-progress', requires: 'settlement.process' },
     ],
   },
   {
@@ -54,7 +62,12 @@ export const NAV: readonly NavGroup[] = [
       },
       { label: s.fees, to: '/fees', requires: 'fee.view' },
       { label: s.channelAssignment, to: '/channel-assignment' },
-      { label: s.matchingRules },
+      // No permission: every role reads the rules (web-admin-matching design D2).
+      {
+        label: s.matchingRules,
+        to: '/matching-rules',
+        activeWhen: (pathname) => pathname.startsWith('/matching-rules/'),
+      },
       { label: s.usersRoles, requires: 'user.manage' },
       { label: s.auditLog, requires: 'user.manage' },
     ],

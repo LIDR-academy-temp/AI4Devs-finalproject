@@ -394,15 +394,19 @@ describe('PATCH /api/v1/imports/{importId}/rows/{sheetId}/{rowNo}', () => {
   })
 })
 
+const REASON = { reason: 'Wrong file from the provider' }
+
 describe('POST /api/v1/imports/{importId}/cancel', () => {
   it('answers 401, 403 for viewer (permission before scope) and 404 for an unknown import', async () => {
     const detail = await uploadBatchClean()
 
-    expect((await request('POST', `/imports/${detail.importId}/cancel`, { user: null })).statusCode).toBe(401)
-    const forbidden = await request('POST', `/imports/${detail.importId}/cancel`, { user: 'viewer' })
+    expect((await request('POST', `/imports/${detail.importId}/cancel`, { user: null, body: REASON })).statusCode).toBe(
+      401,
+    )
+    const forbidden = await request('POST', `/imports/${detail.importId}/cancel`, { user: 'viewer', body: REASON })
     expect(forbidden.statusCode).toBe(403)
     expect(forbidden.json().code).toBe('forbidden')
-    const unknown = await request('POST', `/imports/${UNKNOWN_UUID}/cancel`)
+    const unknown = await request('POST', `/imports/${UNKNOWN_UUID}/cancel`, { body: REASON })
     expect(unknown.statusCode).toBe(404)
     expect(unknown.json().code).toBe('not_found')
   })
@@ -410,15 +414,45 @@ describe('POST /api/v1/imports/{importId}/cancel', () => {
   it('answers 200 with the import cancelled, then 409 import_not_cancellable', async () => {
     const detail = await analyzedImport()
 
-    const res = await request('POST', `/imports/${detail.importId}/cancel`)
+    const res = await request('POST', `/imports/${detail.importId}/cancel`, { body: REASON })
 
     expect(res.statusCode).toBe(200)
     const cancelled = ImportDetail.parse(res.json())
     expect(cancelled).toMatchObject({ status: 'cancelled', analysis: detail.analysis })
     expect(audit.entries.map((e) => e.action)).toEqual(['import.cancel'])
 
-    const again = await request('POST', `/imports/${detail.importId}/cancel`)
+    const again = await request('POST', `/imports/${detail.importId}/cancel`, { body: REASON })
     expect(again.statusCode).toBe(409)
     expect(again.json()).toMatchObject({ code: 'import_not_cancellable', details: { status: 'cancelled' } })
+  })
+})
+
+describe('POST /api/v1/imports/{importId}/cancel: the reason (spec "Motivo de la cancelación", #47)', () => {
+  it.each([
+    ['no body', undefined],
+    ['an empty object', {}],
+    ['a blank reason', { reason: '   ' }],
+    ['a reason over 500 characters', { reason: 'x'.repeat(501) }],
+    ['another field', { reason: 'x', note: 'y' }],
+  ])('answers 400 validation_error with %s, without cancelling nor auditing', async (_, body) => {
+    const detail = await uploadBatchClean()
+
+    const res = await request('POST', `/imports/${detail.importId}/cancel`, body === undefined ? {} : { body })
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('validation_error')
+    expect(ImportDetail.parse((await request('GET', `/imports/${detail.importId}`)).json()).status).toBe('uploaded')
+    expect(audit.entries).toEqual([])
+  })
+
+  it('audits the reason without the spaces of its ends', async () => {
+    const detail = await uploadBatchClean()
+
+    const res = await request('POST', `/imports/${detail.importId}/cancel`, {
+      body: { reason: `  ${'r'.repeat(500)}  ` },
+    })
+
+    expect(res.statusCode).toBe(200)
+    expect(audit.entries.at(-1)?.detail).toMatchObject({ previousStatus: 'uploaded', reason: 'r'.repeat(500) })
   })
 })

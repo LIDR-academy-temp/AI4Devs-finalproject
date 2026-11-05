@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { ImportDetail, ImportSummary } from '@recon/shared'
+import { ImportDetail, ImportListPage, ImportSummary } from '@recon/shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { buildTestApp, PASSWORD } from '../../../test-support/build-test-app.js'
@@ -428,5 +428,59 @@ describe('GET /api/v1/imports/{importId} and GET /api/v1/accounts/{accountId}/im
     expect(outside.body).toBe(unknown.body)
     expect(account.statusCode).toBe(404)
     expect(account.json().code).toBe('not_found')
+  })
+})
+
+describe('GET /api/v1/imports (spec "Imports en curso", "Filtros" and "Paginación de imports en curso")', () => {
+  it('answers 200 with the page of open imports in scope, each with its hierarchy', async () => {
+    const created = ImportDetail.parse((await upload(`/accounts/${A_USD}/imports`, [sample('part1')])).json())
+
+    const res = await call('GET', '/imports', 'viewer')
+
+    expect(res.statusCode).toBe(200)
+    const page = ImportListPage.parse(res.json())
+    expect(page).toMatchObject({ page: 1, pageSize: 50, total: 1 })
+    expect(page.items[0]).toMatchObject({
+      importId: created.importId,
+      account: { id: A_USD, name: 'ProviderA-USD' },
+      provider: { id: 101, name: 'Provider A' },
+      merchant: { id: 1, name: 'Merchant A' },
+    })
+  })
+
+  it('answers 401 without a token', async () => {
+    const res = await call('GET', '/imports', null)
+
+    expect(res.statusCode).toBe(401)
+    expect(res.json().code).toBe('unauthorized')
+  })
+
+  it.each([
+    '?status=weird',
+    '?mine=yes',
+    '?merchantId=abc',
+    '?accountId=123',
+    '?page=0',
+    '?pageSize=0',
+    '?pageSize=501',
+    '?q=anything',
+  ])('answers 400 validation_error for %s', async (query) => {
+    const res = await call('GET', `/imports${query}`)
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('validation_error')
+  })
+
+  it('answers 404 not_found for a filter outside the scope, with the same body as an unknown account', async () => {
+    const merchant = await call('GET', '/imports?merchantId=2', 'viewer')
+    const provider = await call('GET', '/imports?providerId=201', 'viewer')
+    const account = await call('GET', `/imports?accountId=${ACCOUNT_IDS['ProviderC-Alt']}`, 'viewer')
+    const unknown = await call('GET', `/imports?accountId=${UNKNOWN_UUID}`, 'viewer')
+
+    for (const res of [merchant, provider, account]) {
+      expect(res.statusCode).toBe(404)
+      expect(res.body).toBe(unknown.body)
+    }
+    expect(unknown.json().code).toBe('not_found')
   })
 })

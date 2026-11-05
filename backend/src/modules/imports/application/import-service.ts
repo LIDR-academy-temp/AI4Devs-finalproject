@@ -8,6 +8,8 @@ import type {
   ChannelNotice,
   ImportDetail,
   ImportFileDetail,
+  ImportListPage,
+  ImportListQuery,
   ImportRowItem,
   ImportRowsPage,
   ImportRowsQuery,
@@ -58,6 +60,7 @@ import {
   assertCanConfirmMapping,
   assertCanEditFiles,
   assertCanResolveRow,
+  OPEN_IMPORT_STATUSES,
 } from '../domain/import-state.js'
 import {
   assertKnownStatuses,
@@ -211,6 +214,33 @@ export class ImportService {
     return records.map(toSummary)
   }
 
+  /**
+   * GET /imports (spec "Imports en curso", design D1): the imports of every account in scope. Without a status, the
+   * open ones; a merchant, provider or account filter unknown or outside the scope is a 404, the same for all three.
+   */
+  async listImportsInScope(scope: Scope, userId: number, query: ImportListQuery): Promise<ImportListPage> {
+    const hierarchy = { merchantId: query.merchantId, providerId: query.providerId, accountId: query.accountId }
+    if ((await this.deps.imports.missingFilter(scope, hierarchy)) !== null) throw new NotFoundError(FILTER_ENTITY)
+    const { items, total } = await this.deps.imports.searchImports(scope, {
+      ...hierarchy,
+      statuses: query.status === undefined ? OPEN_IMPORT_STATUSES : [query.status],
+      createdByUserId: query.mine ? userId : undefined,
+      page: query.page,
+      pageSize: query.pageSize,
+    })
+    return {
+      items: items.map((record) => ({
+        ...toSummary(record),
+        account: record.account,
+        provider: record.provider,
+        merchant: record.merchant,
+      })),
+      page: query.page,
+      pageSize: query.pageSize,
+      total,
+    }
+  }
+
   /** README HU1 CA4; spec: import, D6: the whole mapping, validated against the import, replaces the previous one. */
   async confirmMapping(scope: Scope, importId: string, input: MappingConfirmation): Promise<ImportDetail> {
     const record = await this.requireImport(scope, importId)
@@ -362,8 +392,8 @@ export class ImportService {
     return toRowItem(after, rules, scope, await this.candidateMerchants([after]))
   }
 
-  /** README HU1 CA8, HU2 CA8; spec: import, D13: everything is kept as evidence. */
-  async cancel(scope: Scope, userId: number, importId: string): Promise<ImportDetail> {
+  /** README HU1 CA8, HU2 CA8; spec: import, D13: everything is kept as evidence. The reason is required and audited (#47). */
+  async cancel(scope: Scope, userId: number, importId: string, reason: string): Promise<ImportDetail> {
     const record = await this.requireImport(scope, importId)
     assertCanCancel(record.status)
     // The status the write replaced, not the one read above: an analysis may have committed in between.
@@ -375,7 +405,7 @@ export class ImportService {
       action: 'import.cancel',
       entityType: 'Import',
       entityId: importId,
-      detail: { previousStatus, runId },
+      detail: { previousStatus, runId, reason },
     })
     return this.detailOf(scope, importId)
   }
@@ -561,9 +591,11 @@ export class ImportService {
       uploadedAt: file.uploadedAt.toISOString(),
       sheets: loaded.filter((l) => l.file.fileId === file.fileId).map((l) => sheetDetail(l, rules)),
     }))
+    // Only a mapped import asks every sheet to be confirmed: before, the readiness describes the proposal (design D4).
     const readiness = assessReadiness(
       loaded.map((l) => readinessSheet(l, rules)),
       rules.statuses,
+      { requireConfirmation: record.status === 'mapped' },
     )
     // Once analyzed (rowsTotal set) there is always a summary: zeros when the analysis produced no rows (L1).
     const analysis =
@@ -593,6 +625,9 @@ export class ImportService {
     return prefillBatchFees(sheets, feeTypes)
   }
 }
+
+/** One entity for the three filters of GET /imports: which level is missing is not told (spec "Filtro fuera del alcance"). */
+const FILTER_ENTITY = 'Merchant, provider or account'
 
 /**
  * Candidates as the caller may see them (spec: import, D11): one of a merchant outside the scope keeps its gateway,
@@ -705,6 +740,7 @@ function readinessSheet(l: LoadedSheet, rules: MatchingRules): ReadinessSheet {
     sheetName: description.name,
     hidden: description.hidden,
     rowCount: description.rowCount,
+    mappingConfirmed: l.sheet.mappingConfirmed,
     proposed,
     columns,
     columnStats,

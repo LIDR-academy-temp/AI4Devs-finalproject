@@ -1,6 +1,8 @@
 import {
   ErrorResponse,
   ImportDetail,
+  ImportListPage,
+  ImportListQuery,
   ImportRowItem,
   ImportRowsPage,
   ImportRowsQuery,
@@ -8,6 +10,7 @@ import {
   ImportsQuery,
   IntId,
   MappingConfirmation,
+  ReasonRequest,
   ResolveRowBody,
 } from '@recon/shared'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
@@ -126,6 +129,23 @@ export const importRoutes: FastifyPluginAsyncZod<ImportRoutesOptions> = async (a
   )
 
   app.get(
+    '/imports',
+    {
+      preHandler: app.authenticate,
+      schema: {
+        ...imports,
+        summary: 'Imports of every account in scope, the open ones by default, latest update first',
+        description:
+          'Without status, uploaded, mapped, analyzed and validated. A merchant, provider or account unknown or outside the ' +
+          'scope answers 404, the same for the three. mine=true keeps the imports the caller created.',
+        querystring: ImportListQuery,
+        response: { 200: ImportListPage, 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse },
+      },
+    },
+    async (request) => service.listImportsInScope(scopeOf(request.auth), request.auth.userId, request.query),
+  )
+
+  app.get(
     '/accounts/:accountId/imports',
     {
       preHandler: app.authenticate,
@@ -241,9 +261,18 @@ export const importRoutes: FastifyPluginAsyncZod<ImportRoutesOptions> = async (a
         ...imports,
         summary: 'Cancel an import that is not processed, keeping its files, rows and findings',
         params: ImportParams,
-        response: { 200: ImportDetail, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse, 409: ErrorResponse },
+        body: ReasonRequest,
+        response: {
+          200: ImportDetail,
+          400: ErrorResponse,
+          401: ErrorResponse,
+          403: ErrorResponse,
+          404: ErrorResponse,
+          409: ErrorResponse,
+        },
       },
     },
-    async (request) => service.cancel(scopeOf(request.auth), request.auth.userId, request.params.importId),
+    async (request) =>
+      service.cancel(scopeOf(request.auth), request.auth.userId, request.params.importId, request.body.reason),
   )
 }

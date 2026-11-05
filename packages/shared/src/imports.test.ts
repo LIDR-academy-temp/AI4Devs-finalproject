@@ -6,6 +6,9 @@ import {
   ChannelNotice,
   ColumnProposal,
   ImportDetail,
+  ImportListItem,
+  ImportListPage,
+  ImportListQuery,
   ImportRowItem,
   ImportRowsPage,
   ImportRowsQuery,
@@ -201,6 +204,70 @@ describe('ImportsQuery', () => {
     expect(ImportsQuery.safeParse({}).success).toBe(true)
     expect(ImportsQuery.safeParse({ status: 'uploaded' }).success).toBe(true)
     expect(ImportsQuery.safeParse({ status: 'nope' }).success).toBe(false)
+  })
+})
+
+describe('ImportListQuery (spec "Filtros" and "Paginación de imports en curso")', () => {
+  it('defaults to page 1 of 50 and leaves every filter out', () => {
+    expect(ImportListQuery.parse({})).toEqual({ page: 1, pageSize: 50 })
+  })
+
+  it('reads the filters from the query string and mine as a boolean', () => {
+    expect(
+      ImportListQuery.parse({
+        status: 'cancelled',
+        merchantId: '2',
+        providerId: '201',
+        accountId: ACCOUNT_ID,
+        mine: 'true',
+        page: '2',
+        pageSize: '500',
+      }),
+    ).toEqual({
+      status: 'cancelled',
+      merchantId: 2,
+      providerId: 201,
+      accountId: ACCOUNT_ID,
+      mine: true,
+      page: 2,
+      pageSize: 500,
+    })
+    expect(ImportListQuery.parse({ mine: 'false' }).mine).toBe(false)
+  })
+
+  it.each([
+    { status: 'weird' },
+    { mine: 'yes' },
+    { merchantId: 'abc' },
+    { providerId: '0' },
+    { accountId: '123' },
+    { page: '0' },
+    { pageSize: '0' },
+    { pageSize: '501' },
+    { q: 'unknown key' },
+  ])('rejects %o', (query) => {
+    expect(ImportListQuery.safeParse(query).success).toBe(false)
+  })
+})
+
+describe('ImportListPage (spec "Imports en curso")', () => {
+  const item = {
+    ...summary,
+    account: { id: ACCOUNT_ID, name: 'ProviderC-Alt' },
+    provider: { id: 201, name: 'Provider C' },
+    merchant: { id: 2, name: 'Merchant B' },
+  }
+
+  it('is the summary of the import with its account, provider and merchant', () => {
+    expect(ImportListItem.safeParse(item).success).toBe(true)
+    expect(ImportListItem.safeParse({ ...item, merchant: { merchantId: 2, name: 'Merchant B' } }).success).toBe(false)
+    expect(ImportListItem.safeParse({ ...item, account: { id: 'x', name: 'ProviderC-Alt' } }).success).toBe(false)
+    expect(ImportListItem.safeParse({ ...item, provider: undefined }).success).toBe(false)
+  })
+
+  it('is a page with its total', () => {
+    expect(ImportListPage.safeParse({ items: [item], page: 1, pageSize: 50, total: 1 }).success).toBe(true)
+    expect(ImportListPage.safeParse({ items: [], page: 1, pageSize: 50, total: -1 }).success).toBe(false)
   })
 })
 

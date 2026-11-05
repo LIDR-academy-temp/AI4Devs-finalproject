@@ -1,0 +1,27 @@
+meta {
+  name: 9 List cancelled
+  type: http
+  seq: 9
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports?accountId={{providerCAltAccountId}}&status=cancelled&pageSize=500
+  body: none
+  auth: inherit
+}
+
+params:query {
+  accountId: {{providerCAltAccountId}}
+  status: cancelled
+  pageSize: 500
+}
+
+tests {
+  test('with status=cancelled it is listed again', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.items.map((i) => i.importId)).to.include(bru.getVar('inProgressImportId'));
+  });
+}

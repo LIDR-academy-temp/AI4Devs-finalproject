@@ -9,12 +9,18 @@ meta {
 
 post {
   url: {{baseUrl}}/api/v1/imports/:importId/cancel
-  body: none
+  body: json
   auth: inherit
 }
 
 params:path {
   importId: {{blkImportId}}
+}
+
+body:json {
+  {
+    "reason": "Bruno flow cleanup"
+  }
 }
 
 tests {

@@ -1,0 +1,26 @@
+meta {
+  name: 8 List open
+  type: http
+  seq: 8
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports?accountId={{providerCAltAccountId}}&pageSize=500
+  body: none
+  auth: inherit
+}
+
+params:query {
+  accountId: {{providerCAltAccountId}}
+  pageSize: 500
+}
+
+tests {
+  test('without a status the cancelled import is no longer listed', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.items.map((i) => i.importId)).to.not.include(bru.getVar('inProgressImportId'));
+  });
+}

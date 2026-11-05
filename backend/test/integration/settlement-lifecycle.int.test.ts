@@ -659,7 +659,7 @@ describe('after undoing, the import is open again', () => {
     })
     expect(inclusion.statusCode, inclusion.body).toBe(200)
 
-    const cancel = await flow.call('POST', `/imports/${validated.importId}/cancel`)
+    const cancel = await flow.call('POST', `/imports/${validated.importId}/cancel`, { reason: 'Cancelled by the test' })
     expect(cancel.statusCode, cancel.body).toBe(200)
     expect((await ctx.prisma.import.findUniqueOrThrow({ where: { importId: validated.importId } })).status).toBe(
       'cancelled',
