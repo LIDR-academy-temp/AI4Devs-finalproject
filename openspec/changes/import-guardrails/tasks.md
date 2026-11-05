@@ -109,12 +109,17 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
   - nada queda en el almacén tras el 409.
 
   Verificar con `pnpm --filter @recon/backend test`.
-- [ ] 6.4 Integración (pedir turno a la persona):
+- [x] 6.4 Integración (pedir turno a la persona):
   - `imports.int.test.ts`: tope de archivos con once `.xlsx` distintos generados en el test;
   - `import-analyze.int.test.ts`: `batch-wrong-account` según su `expected.json`, `batch-clean` con los campos nuevos en `false`/0, `batch-blocked` con RAM-01 `otherProvider = true` y la `note` exacta, y el escenario de capacidad sigue por debajo de 3 s.
 
   Verificar con `vitest run --project integration` sobre cada archivo.
-- [ ] 6.5 Commit: feat(imports): detalle con el batch sin filas asociadas, canal de otro proveedor y tope de 10 archivos por import (#92, #40), y `git push`.
+
+  Resultado (turno de base de la persona):
+  - `imports.int.test.ts` e `import-analyze.int.test.ts`: 48 pasan y 1 se salta (el bench de 100 000 filas, que solo corre con `RECON_BENCH=1`). `batch-clean` analiza en 1830 ms (< 3 s).
+  - Las comparaciones exactas de `analysis.rows` siguen en `toEqual`, con su `unmatchedByReason` determinado por el propio test: ambigua, pérdida de precisión, `batch-clean` reanalizado, 20 000 filas, bench y sin filas. Ninguna depende de algo ajeno al test, así que no queda ningún `toMatchObject` nuevo.
+
+- [x] 6.5 Commit: feat(imports): detalle con el batch sin filas asociadas, canal de otro proveedor y tope de 10 archivos por import (#92, #40), y `git push`.
 
 ## 7. Validación: confirmación en el review
 
