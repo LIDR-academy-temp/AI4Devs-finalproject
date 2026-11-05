@@ -868,6 +868,8 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
                 (!mine || record.createdBy.userId === USERS[user].userId)
               )
             })
+            // The tie-break is by importId as text; SQL Server orders uniqueidentifier otherwise. Seeded imports never
+            // share an updatedAt, so no test of the screens may depend on it (review-diff B3).
             .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.importId.localeCompare(b.importId))
           const items = matches.slice((page - 1) * pageSize, page * pageSize).map((record) => {
             const {
