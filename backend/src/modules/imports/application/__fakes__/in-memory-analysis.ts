@@ -2,10 +2,11 @@
  * In-memory doubles of the analysis ports (design D4, D9–D12): the transactions of the synthetic world, the
  * account context (channels, gateways), the fee type catalog and the rows repository.
  */
-import type { AnalysisSummary, ImportRowsQuery, MatchResult, WarningCode } from '@recon/shared'
+import type { ImportRowsQuery, MatchResult, WarningCode } from '@recon/shared'
 import { buildWorld, CHANNELS, FEE_TYPES, GATEWAYS, PROVIDERS, STATUS } from '../../../../../prisma/synthetic.js'
 import type { FeeTypeRef } from '../../domain/batch-fees.js'
 import type { ChannelFact } from '../../domain/channel-notice.js'
+import { type EmptyBatchFacts, factsOf, type RowGroup } from '../../domain/empty-batch.js'
 import { ImportNotEditableError, ImportNotMappedError, RowNotAmbiguousError } from '../../domain/errors.js'
 import type { TransactionRef } from '../../domain/match-rows.js'
 import {
@@ -17,6 +18,7 @@ import {
 import type {
   AccountContext,
   AnalysisCounters,
+  AnalysisCounts,
   FeeTypeCatalog,
   ImportRowRepository,
   NewImportRow,
@@ -284,7 +286,7 @@ export class InMemoryImportRowRepository implements ImportRowRepository {
     return { supersededRunId: this.imports.supersedeCurrentRun(importId) }
   }
 
-  async summary(importId: string): Promise<AnalysisSummary | null> {
+  async summary(importId: string): Promise<AnalysisCounts | null> {
     const rows = this.rows.get(importId)
     if (!rows || rows.length === 0) return null
     const counts = { total: rows.length, matched: 0, unmatched: 0, ambiguous: 0, ignored: 0 }
@@ -299,6 +301,19 @@ export class InMemoryImportRowRepository implements ImportRowRepository {
       }
     }
     return { rows: counts, byCycle, warnings }
+  }
+
+  async emptyBatchFacts(importId: string, providerId: number): Promise<EmptyBatchFacts> {
+    const groups = new Map<string, RowGroup>()
+    for (const row of this.rows.get(importId) ?? []) {
+      const reason = row.detailJson ? ((JSON.parse(row.detailJson) as { reason?: string }).reason ?? null) : null
+      const key = `${row.matchResult}:${reason}`
+      const group = groups.get(key) ?? { matchResult: row.matchResult, reason, n: 0, own: 0 }
+      group.n++
+      if (row.matchResult === 'matched' && row.transaction?.providerId === providerId) group.own++
+      groups.set(key, group)
+    }
+    return factsOf([...groups.values()])
   }
 
   async channelRowCounts(importId: string): Promise<Map<number, number>> {

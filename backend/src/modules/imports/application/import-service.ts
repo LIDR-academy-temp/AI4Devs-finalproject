@@ -46,11 +46,13 @@ import {
 import { type BatchFeeSheet, type FeeTypeRef, prefillBatchFees } from '../domain/batch-fees.js'
 import { buildRowDraft, type RowContext, toNewImportRow } from '../domain/build-rows.js'
 import { channelNotices } from '../domain/channel-notice.js'
+import { emptyBatchOf } from '../domain/empty-batch.js'
 import {
   AccountInactiveError,
   CandidateNotFoundError,
   DuplicateFileError,
   FileUnreadableError,
+  ImportFileLimitReachedError,
   MappingIncompleteError,
   RowNotAmbiguousError,
 } from '../domain/errors.js'
@@ -73,11 +75,12 @@ import { matchRow, type TransactionRef } from '../domain/match-rows.js'
 import { candidatesFor, type IdCandidate } from '../domain/normalize-source-id.js'
 import { assessReadiness, type ReadinessSheet } from '../domain/readiness.js'
 import { UNPROPOSED_SHEET_KIND } from '../domain/sheet-kind-marker.js'
-import { isOoxmlMagic } from '../domain/upload-policy.js'
+import { isOoxmlMagic, MAX_FILES_PER_IMPORT } from '../domain/upload-policy.js'
 import type { SheetDescription, WorkbookDescription } from '../domain/workbook.js'
 import type {
   AccountContext,
   AccountRef,
+  AnalysisCounts,
   FeeTypeCatalog,
   FileStore,
   IdGenerator,
@@ -175,6 +178,9 @@ export class ImportService {
   async addFiles(scope: Scope, importId: string, uploads: StagedUpload[]): Promise<ImportDetail> {
     await this.withStaged(uploads, async (committed) => {
       const record = await this.requireEditable(scope, importId)
+      // Before reading anything: withStaged discards the staged uploads on the way out (#40, design D7).
+      if (record.files.length + uploads.length > MAX_FILES_PER_IMPORT)
+        throw new ImportFileLimitReachedError(MAX_FILES_PER_IMPORT, record.files.length, uploads.length)
       this.rejectDuplicates(uploads, record.files)
       const read = await this.readAll(uploads)
       const rules = await this.deps.rules.rulesFor(record.matchingRuleSetId)
@@ -599,12 +605,27 @@ export class ImportService {
     )
     // Once analyzed (rowsTotal set) there is always a summary: zeros when the analysis produced no rows (L1).
     const analysis =
-      ANALYZED_STATUSES.has(record.status) && record.rowsTotal !== null
-        ? ((await this.deps.rows.summary(importId)) ?? emptyAnalysis())
-        : null
+      ANALYZED_STATUSES.has(record.status) && record.rowsTotal !== null ? await this.analysisOf(record) : null
     const channels = analysis === null ? null : await this.channelsOf(record, scope)
     const batchFees = analysis === null ? null : this.batchFeesOf(loaded, await this.deps.feeTypes.listAll())
     return { ...toSummary(record), files, readiness, analysis, channels, batchFees }
+  }
+
+  /**
+   * The counts of the rows plus the empty batch of README §3.3 (#92, design D1): what review and processing will ask
+   * to confirm, judged on the same facts they use.
+   */
+  private async analysisOf(record: ImportRecord): Promise<AnalysisSummary> {
+    const counts = (await this.deps.rows.summary(record.importId)) ?? emptyAnalysis()
+    const { requiresConfirmation, details } = emptyBatchOf(
+      await this.deps.rows.emptyBatchFacts(record.importId, record.providerId),
+    )
+    return {
+      ...counts,
+      rows: { ...counts.rows, unmatchedByReason: details.unmatchedByReason },
+      requiresEmptyBatchConfirmation: requiresConfirmation,
+      likelyWrongAccount: details.likelyWrongAccount,
+    }
   }
 
   /** Spec "Aviso de canales" (design D9). */
@@ -657,7 +678,7 @@ function visibleCandidates(
 }
 
 /** The summary of an analysis that persisted no rows (a transactions sheet with its header only). */
-function emptyAnalysis(): AnalysisSummary {
+function emptyAnalysis(): AnalysisCounts {
   return {
     rows: { total: 0, matched: 0, unmatched: 0, ambiguous: 0, ignored: 0 },
     byCycle: { E: 0, I: 0, R: 0 },

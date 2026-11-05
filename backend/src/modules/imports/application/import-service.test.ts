@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { ImportDetail } from '@recon/shared'
+import { strToU8 } from 'fflate'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NotFoundError } from '../../../shared/errors.js'
 import { InMemoryAuditLogger } from '../../../test-support/in-memory-audit-logger.js'
@@ -8,6 +9,7 @@ import {
   AccountInactiveError,
   DuplicateFileError,
   FileUnreadableError,
+  ImportFileLimitReachedError,
   ImportNotEditableError,
 } from '../domain/errors.js'
 import { UNPROPOSED_SHEET_KIND } from '../domain/sheet-kind-marker.js'
@@ -467,6 +469,67 @@ describe('addFiles and removeFile', () => {
     const record = await imports.findImport(ANALYST, importId)
     expect(record?.files).toHaveLength(2)
     expect(files.paths().sort()).toEqual(record?.files.map((f) => f.storagePath).sort())
+  })
+})
+
+describe('the file limit of an import (#40, spec import "Tope de archivos por import")', () => {
+  // Distinct bytes the reader describes as part2: an import can only hold distinct files.
+  const reader = new FakeWorkbookReader()
+  const variant = (n: number): SampleFile => {
+    const bytes = strToU8(`PKlimit-variant-${n}`)
+    reader.register(bytes, SAMPLE_FILES.part2)
+    return { ...SAMPLE_FILES.part2, fileName: `part-${n}.xlsx`, bytes }
+  }
+  let limited: ImportService
+  let importId: string
+
+  beforeEach(async () => {
+    limited = new ImportService({
+      imports,
+      files,
+      reader,
+      rules: new InMemoryMatchingRulesRepository(),
+      ids: sequentialIds(),
+      log,
+      ...analysisDeps(imports),
+    })
+    const first = await limited.createImport(ANALYST, ANALYST_ID, A_USD, [await upload(SAMPLE_FILES.part1)])
+    importId = first.importId
+    await limited.addFiles(
+      ANALYST,
+      importId,
+      await Promise.all([1, 2, 3, 4, 5, 6, 7, 8].map((n) => upload(variant(n)))),
+    )
+  })
+
+  it('9 + 2 answers 409 with limit, current and adding, keeps 9 files and leaves nothing staged', async () => {
+    const error = await caught(
+      limited.addFiles(ANALYST, importId, [await upload(variant(9)), await upload(variant(10))]),
+      ImportFileLimitReachedError,
+    )
+
+    expect(error).toMatchObject({ status: 409, code: 'import_file_limit_reached' })
+    expect(error.details).toEqual({ limit: 10, current: 9, adding: 2 })
+    expect((await limited.getImport(ANALYST, importId)).fileCount).toBe(9)
+    expect(files.paths().filter((p) => p.startsWith('tmp/'))).toEqual([])
+    expect(files.paths()).toHaveLength(9)
+  })
+
+  it('9 + 1 reaches 10, and then any addition answers 409 with current 10', async () => {
+    expect((await limited.addFiles(ANALYST, importId, [await upload(variant(9))])).fileCount).toBe(10)
+
+    const error = await caught(
+      limited.addFiles(ANALYST, importId, [await upload(variant(10))]),
+      ImportFileLimitReachedError,
+    )
+    expect(error.details).toEqual({ limit: 10, current: 10, adding: 1 })
+  })
+
+  it('removing a file frees its place', async () => {
+    const full = await limited.addFiles(ANALYST, importId, [await upload(variant(9))])
+
+    await limited.removeFile(ANALYST, importId, full.files[9]?.fileId as string)
+    expect((await limited.addFiles(ANALYST, importId, [await upload(variant(10))])).fileCount).toBe(10)
   })
 })
 

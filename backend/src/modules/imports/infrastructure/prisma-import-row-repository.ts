@@ -1,18 +1,21 @@
 // Prisma adapter of ImportRowRepository (design D1, D8, D11, D12): the analysis transaction, the paged listing
 // (unmatched and ambiguous first), the resolution of an ambiguous row and the aggregates of the detail.
-import type { AnalysisSummary, ImportRowsQuery, MatchResult, WarningCode } from '@recon/shared'
+import type { ImportRowsQuery, MatchResult, WarningCode } from '@recon/shared'
 import { Cycle, MatchResult as MatchResultSchema, WarningCode as WarningCodeSchema } from '@recon/shared'
 import type { Prisma, PrismaClient } from '../../../generated/prisma/client.js'
 import { toMoney } from '../../../infrastructure/decimal.js'
 import type {
   AnalysisCounters,
+  AnalysisCounts,
   ImportRowRepository,
   NewImportRow,
   RowPage,
   RowResolutionPatch,
   StoredImportRow,
 } from '../application/ports.js'
+import type { EmptyBatchFacts } from '../domain/empty-batch.js'
 import { ImportNotEditableError, ImportNotMappedError, RowNotAmbiguousError } from '../domain/errors.js'
+import { loadEmptyBatchFacts } from './empty-batch-facts.js'
 import { ANALYSIS_TX_MAX_WAIT_MS, ANALYSIS_TX_TIMEOUT_MS, ROWS_PER_STATEMENT } from './sql-limits.js'
 import { toTransactionRef, transactionRefSelect } from './transaction-ref.js'
 
@@ -229,7 +232,7 @@ export class PrismaImportRowRepository implements ImportRowRepository {
     })
   }
 
-  async summary(importId: string): Promise<AnalysisSummary | null> {
+  async summary(importId: string): Promise<AnalysisCounts | null> {
     const byResult = await this.prisma.importRow.groupBy({
       by: ['matchResult'],
       where: this.where(importId),
@@ -268,6 +271,10 @@ export class PrismaImportRowRepository implements ImportRowRepository {
       if (code.success) warnings[code.data] = Number(entry.n)
     }
     return { rows, byCycle, warnings }
+  }
+
+  async emptyBatchFacts(importId: string, providerId: number): Promise<EmptyBatchFacts> {
+    return loadEmptyBatchFacts(this.prisma, importId, providerId)
   }
 
   async channelRowCounts(importId: string): Promise<Map<number, number>> {

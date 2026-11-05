@@ -100,9 +100,9 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
 
 ## 6. Imports: detalle, aviso de canales y tope en el servicio y el API
 
-- [ ] 6.1 Implementar `imports/infrastructure/empty-batch-facts.ts` (D1) y su versión en los fakes en memoria. Usarla en `ImportService.detailOf`, para `analysis.rows.unmatchedByReason`, `analysis.requiresEmptyBatchConfirmation` y `analysis.likelyWrongAccount`, también en el análisis sin filas. Pasar el `providerId` de la cuenta a `channelNotices`.
-- [ ] 6.2 Implementar el tope en `addFiles` (D7) y declarar el `409 import_file_limit_reached` en el esquema de la ruta `POST /imports/{id}/files`.
-- [ ] 6.3 Tests del servicio con fakes (`import-service.test.ts` e `import-service.analysis.test.ts`):
+- [x] 6.1 Implementar `imports/infrastructure/empty-batch-facts.ts` (D1) y su versión en los fakes en memoria. Usarla en `ImportService.detailOf`, para `analysis.rows.unmatchedByReason`, `analysis.requiresEmptyBatchConfirmation` y `analysis.likelyWrongAccount`, también en el análisis sin filas. Pasar el `providerId` de la cuenta a `channelNotices`.
+- [x] 6.2 Implementar el tope en `addFiles` (D7) y declarar el `409 import_file_limit_reached` en el esquema de la ruta `POST /imports/{id}/files`.
+- [x] 6.3 Tests del servicio con fakes (`import-service.test.ts` e `import-service.analysis.test.ts`):
   - los campos nuevos de `analysis`;
   - `otherProvider` en el aviso;
   - el tope con 9 + 2 → 409, 9 + 1 → 200, 10 → 409, y quitar uno libera el hueco;

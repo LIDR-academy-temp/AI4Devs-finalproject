@@ -82,6 +82,9 @@ export const importRoutes: FastifyPluginAsyncZod<ImportRoutesOptions> = async (a
       schema: {
         ...imports,
         ...multipartBody,
+        description:
+          `${multipartBody.description} An import holds at most 10 files in total: adding past that answers ` +
+          '409 import_file_limit_reached with details { limit, current, adding }, reading and storing none (#40).',
         summary: 'Add files to an import before it is analyzed',
         params: ImportParams,
         response: { 200: ImportDetail, ...uploadErrors },
