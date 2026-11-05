@@ -104,11 +104,13 @@ Se mantiene `HeldReserve` y `missing.ts` no cambia: el motor vuelve a comprobar,
 
 ```
 expected.reserveEarlyRelease = {
-  released: [{ id, sheet, amount }],
+  released: [{ id, sheet, amount, heldInBatchNo }],
   notReleased: [{ id, sheet, outcome }],
   reserveEarlyReleasedAmt
 }
 ```
+
+`heldInBatchNo` es el número del batch sembrado que retuvo la reserva, o `null` si la retuvo el APP de la propia muestra (ronda 1). Con él, los tests sin base comprueban `heldInBatchId` a través de los intentos de la cuenta.
 
 Se calcula con el mundo sintético, con estas reglas:
 

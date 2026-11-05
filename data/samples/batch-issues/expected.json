@@ -87,5 +87,71 @@
     }
   ],
   "proposedBatchNo": 52,
-  "note": "Los totales del summary dependen de las decisiones de inclusión y de la política release_on_chargeback de la cuenta; no se fijan aquí."
+  "reserveEarlyRelease": {
+    "released": [
+      {
+        "id": "454343276094666",
+        "sheet": "CHB",
+        "amount": "34.0660",
+        "heldInBatchNo": 49
+      },
+      {
+        "id": "105071174110265",
+        "sheet": "CHB",
+        "amount": "3.9570",
+        "heldInBatchNo": 49
+      },
+      {
+        "id": "929960819826592",
+        "sheet": "CHB",
+        "amount": "18.2030",
+        "heldInBatchNo": 50
+      },
+      {
+        "id": "228815181373784",
+        "sheet": "CHB",
+        "amount": "20.3710",
+        "heldInBatchNo": 51
+      },
+      {
+        "id": "789446496106597",
+        "sheet": "CHB",
+        "amount": "3.7150",
+        "heldInBatchNo": null
+      },
+      {
+        "id": "422102002846848",
+        "sheet": "CHB",
+        "amount": "3.7950",
+        "heldInBatchNo": null
+      },
+      {
+        "id": "762555978985823",
+        "sheet": "REF",
+        "amount": "43.0620",
+        "heldInBatchNo": 49
+      },
+      {
+        "id": "655757186252493",
+        "sheet": "REF",
+        "amount": "5.4810",
+        "heldInBatchNo": 50
+      },
+      {
+        "id": "827891935072250",
+        "sheet": "REF",
+        "amount": "19.2430",
+        "heldInBatchNo": 51
+      }
+    ],
+    "notReleased": [
+      {
+        "id": "281520820250015",
+        "sheet": "CHB",
+        "outcome": "no_held_reserve"
+      }
+    ],
+    "reserveEarlyReleasedAmt": "151.8930"
+  },
+  "note": "Los totales del summary dependen de las decisiones de inclusión y no se fijan aquí; reserveEarlyRelease fija la liberación de reserva por ajuste de release_on_chargeback con las inclusiones por defecto."
 }

@@ -6,23 +6,25 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
 
 ## 0. Artefactos del change
 
-- [ ] 0.1 Revisión rápida de proposal, specs, design y tasks por la persona, con `openspec validate settlement-reserve-chargeback --strict` en verde.
-- [ ] 0.2 Commit: docs(openspec): proponer settlement-reserve-chargeback (#62), y `git push`.
+- [x] 0.1 Revisión rápida de proposal, specs, design y tasks por la persona, con `openspec validate settlement-reserve-chargeback --strict` en verde.
+- [x] 0.2 Commit: docs(openspec): proponer settlement-reserve-chargeback (#62), y `git push`.
 
 ## 1. Oráculo de `batch-issues`
 
-- [ ] 1.1 Añadir en `data/samples/plan.ts` el bloque `expected.reserveEarlyRelease` de `batch-issues` (D6): `released: [{ id, sheet, amount }]`, `notReleased: [{ id, sheet, outcome }]` y `reserveEarlyReleasedAmt`.
+- [x] 1.1 Añadir en `data/samples/plan.ts` el bloque `expected.reserveEarlyRelease` de `batch-issues` (D6): `released: [{ id, sheet, amount, heldInBatchNo }]`, `notReleased: [{ id, sheet, outcome }]` y `reserveEarlyReleasedAmt`.
   - Se recorren las hojas CHB, REF y RDR en el orden de proceso.
   - Libera la primera fila de cada transacción cuyo E `Successful` con reserva está en un batch sembrado anterior o en el APP final de la muestra, sin R previa ni en el RR de la muestra.
   - El importe es `reserveOf(t)` con `Decimal`: toda la reserva, sin prorratear.
   - `notReleased` contiene el `non_recorded_adjustment` de RAM-13 (`no_held_reserve`) y cualquier otro que no libere, con su motivo.
   - La `note` aclara que los totales siguen sin fijarse.
-- [ ] 1.2 Regenerar con `pnpm samples:plan && python data/samples/build-samples.py`. Verificar con `git diff --stat data/samples`:
+- [x] 1.2 Regenerar con `pnpm samples:plan && python data/samples/build-samples.py`. Verificar con `git diff --stat data/samples`:
   - solo cambia `batch-issues/expected.json`;
   - los demás `expected.json` no cambian: `batch-clean`, `batch-split` y `legacy-provider` son `hold_until_term`, y `batch-blocked` no se procesa.
 
   Si cambia algún `.xlsx` u otro `expected.json`, parar y preguntar a la persona.
-- [ ] 1.3 Commit: test(samples): oráculo de la liberación de reserva por ajuste en batch-issues, y `git push`.
+
+  Resultado: los `expected.json` solo cambian de formato hasta pasar Biome, y entonces solo cambia `batch-issues`. Los seis `.xlsx` cambian de bytes con el openpyxl local, pero tienen las mismas celdas que en HEAD (comparación celda a celda), así que se restauran.
+- [x] 1.3 Commit: test(samples): oráculo de la liberación de reserva por ajuste en batch-issues, y `git push`.
 
 ## 2. Dominio: liberación ante un ajuste (TDD)
 
