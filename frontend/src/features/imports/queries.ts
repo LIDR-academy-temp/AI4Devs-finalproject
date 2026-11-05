@@ -13,6 +13,9 @@ export const asDetail = (call: Parameters<typeof unwrap>[0]) => unwrap(call) as 
 
 export const importKey = (importId: string) => ['imports', importId] as const
 
+/** Root of the In Progress list: apart from `importKey`, so refreshing the list never touches a detail (D5). */
+export const IMPORT_LIST_KEY = ['import-list'] as const
+
 export const importQuery = (importId: string) =>
   queryOptions({
     queryKey: importKey(importId),

@@ -101,7 +101,7 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
   - el `409` muestra el mensaje y recarga.
 
   Verificar que fallan.
-- [ ] 8.2 Implementar D6 en `CancelImportDialog` (prop `detail` estrechada, `onCancelled`, campo `Reason`) y en `useCancelImport` (motivo e invalidación de `['import-list']`), sin tocar `DecisionBar.tsx`. Verificar con `pnpm typecheck` y los tests de `features/imports`
+- [x] 8.2 Implementar D6 en `CancelImportDialog` (prop `detail` estrechada, `onCancelled`, campo `Reason`) y en `useCancelImport` (motivo e invalidación de `['import-list']`), sin tocar `DecisionBar.tsx`. Verificar con `pnpm typecheck` y los tests de `features/imports`
 - [ ] 8.3 Smoke E2E: en `e2e/steps/import-smoke.steps.ts`, el paso de cancelar y la limpieza escriben un motivo antes de confirmar. Verificar con el comando del smoke contra la app local
 - [ ] 8.4 Commit: `test(web): motivo obligatorio en Cancel import` y `feat(web): Cancel import pide motivo (#47)`
 

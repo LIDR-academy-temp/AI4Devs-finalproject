@@ -3,7 +3,7 @@
 import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api/client'
 import type { ImportDetail, MappingConfirmationBody } from '@/lib/api/types'
-import { asDetail, importKey } from './queries'
+import { asDetail, IMPORT_LIST_KEY, importKey } from './queries'
 
 /** The contract types the multipart body as `{ files }`; it travels as the FormData itself (design D4). */
 type MultipartBody = { files: string[] }
@@ -71,10 +71,12 @@ export function useReloadImport(importId: string) {
 export function useCancelImport(importId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: () => asDetail(api.POST('/api/v1/imports/{importId}/cancel', { params: { path: { importId } } })),
+    mutationFn: (reason: string) =>
+      asDetail(api.POST('/api/v1/imports/{importId}/cancel', { params: { path: { importId } }, body: { reason } })),
     onSuccess: (detail) => {
       storeDetail(queryClient, detail)
       void queryClient.invalidateQueries({ queryKey: [...importKey(importId), 'rows'] })
+      void queryClient.invalidateQueries({ queryKey: IMPORT_LIST_KEY })
     },
   })
 }

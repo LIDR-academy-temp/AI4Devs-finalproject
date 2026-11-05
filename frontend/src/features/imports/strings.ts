@@ -190,6 +190,7 @@ export const strings = {
     body: 'Its files, mapping and analysis are kept for reference, but it can no longer be analyzed or processed. You can start a new import in the same account with the same files.',
     confirm: 'Yes, cancel the import',
     keep: 'Keep the import',
+    reason: 'Reason',
     notCancellable: (status: string) => `This import can no longer be cancelled (${status}).`,
     failed: 'The import could not be cancelled. Try again.',
     startNew: 'Start a new import',
