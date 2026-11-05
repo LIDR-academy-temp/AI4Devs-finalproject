@@ -318,6 +318,7 @@ En caso de error: `data` es `null` y `error` contiene `{ "code": "VALIDATION_ERR
 | `POST` | `/auth/login` | Iniciar sesión | RNF-01 |
 | `POST` | `/auth/logout` | Cerrar sesión | RNF-01 |
 | `GET` | `/auth/me` | Usuario actual y su idioma | RNF-01 |
+| `PATCH` | `/auth/me` | Cambiar el idioma de la interfaz del usuario | RF-51 (should-have) |
 | `GET` / `PUT` | `/preferences` | Leer o actualizar filtros duros | RF-20 |
 | `GET` | `/resumes/active` | Currículum activo con su perfil | RF-12 |
 | `POST` | `/resumes` | Cargar PDF o Markdown (multipart); devuelve `202` con `jobId` | RF-10, RF-11 |

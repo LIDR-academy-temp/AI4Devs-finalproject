@@ -232,3 +232,55 @@
   ```
 
 - **Resultado:** Se llenó `openspec/config.yaml` con el contexto del proyecto y reglas por artefacto (proposal, specs, design, tasks). Commit en la rama `feature/entrega-1-jr` junto con `CLAUDE.md` y `docs/ai-log.md`.
+
+### Prompt 18
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  sigamos con las historias de usuario
+  ```
+
+- **Resultado:** Se creó `docs/user-stories.md` con el orden de construcción y la estimación, y las historias HU1 a HU6 con contexto, criterios de aceptación en formato Dado/Cuando/Entonces, reglas de negocio y lo que queda fuera de alcance.
+
+### Prompt 19
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  registra los tickets en docs/tickets.md
+  ```
+
+- **Resultado:** Se creó `docs/tickets.md` con 24 tickets técnicos (walking skeleton, HU1 a HU6 y cierre del MVP), cada uno con tipo, estimación, requisitos, dependencias, tareas y criterios de aceptación; must-have ≈ 28 h y should-have ≈ 5 h.
+
+### Prompt 20
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Corrige los puntos 1 y 3
+  ```
+
+- **Resultado:** Se alinearon las estimaciones de `docs/user-stories.md` con `docs/tickets.md` (walking skeleton 6.5 h, HU1 6 h, HU4 3.5 h; MVP imprescindible 28 h) y se agregó `PATCH /auth/me` a la tabla de la API en `docs/architecture.md`.
+
+### Prompt 21
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con `docs/user-stories.md`, `docs/tickets.md`, `docs/architecture.md` y `docs/ai-log.md`.
