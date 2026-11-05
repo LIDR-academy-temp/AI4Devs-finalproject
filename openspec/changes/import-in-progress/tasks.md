@@ -4,9 +4,9 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 
 ## 1. Contrato compartido
 
-- [ ] 1.1 Tests primero en `packages/shared/src/imports.test.ts` para `ImportListQuery` (por defecto `page = 1` y `pageSize = 50`; `mine` `'true'`/`'false'` → booleano; rechaza `status=weird`, `mine=yes`, `merchantId=abc`, `accountId=123`, `page=0`, `pageSize=0` y `501`, y claves desconocidas), `ImportListItem` (`account`, `provider` y `merchant` con `{ id, name }`) e `ImportListPage`; comprobar que fallan
-- [ ] 1.2 Añadir los tres esquemas a `packages/shared/src/imports.ts` (design D1) y verificar que `pnpm --filter @recon/shared test` pasa
-- [ ] 1.3 Commit: `test(shared): esquemas del listado de imports en curso` y `feat(shared): consulta y página de GET /imports`
+- [x] 1.1 Tests primero en `packages/shared/src/imports.test.ts` para `ImportListQuery` (por defecto `page = 1` y `pageSize = 50`; `mine` `'true'`/`'false'` → booleano; rechaza `status=weird`, `mine=yes`, `merchantId=abc`, `accountId=123`, `page=0`, `pageSize=0` y `501`, y claves desconocidas), `ImportListItem` (`account`, `provider` y `merchant` con `{ id, name }`) e `ImportListPage`; comprobar que fallan
+- [x] 1.2 Añadir los tres esquemas a `packages/shared/src/imports.ts` (design D1) y verificar que `pnpm --filter @recon/shared test` pasa
+- [x] 1.3 Commit: `test(shared): esquemas del listado de imports en curso` y `feat(shared): consulta y página de GET /imports`
 
 ## 2. Readiness con hojas sin confirmar (#42)
 
