@@ -215,6 +215,19 @@ async function main() {
     await shot(admin, 'rule-set')
     await longNameFits(admin, 'rule-set', admin.getByRole('heading', { level: 1 }), (n) => n)
 
+    // Rename…, only measured with a long name, then cancelled.
+    await admin.getByRole('button', { name: 'Rename…' }).click()
+    const rename = admin.getByRole('dialog', { name: `Rename ${LEGACY}` })
+    await expect(rename).toBeVisible()
+    await longNameFits(
+      admin,
+      'rename-sheet',
+      rename.getByRole('heading', { name: `Rename ${LEGACY}` }),
+      (n) => `Rename ${n}`,
+    )
+    await rename.getByRole('button', { name: 'Cancel' }).click()
+    await expect(rename).toBeHidden()
+
     // Edit mode, as it opens: nothing is changed.
     await admin.getByRole('button', { name: 'Edit rules' }).click()
     await expect(admin.getByRole('button', { name: 'Save' })).toBeVisible()
@@ -239,6 +252,7 @@ async function main() {
     await deactivate.getByRole('button', { name: 'Deactivate' }).click()
     await expect(deactivate.getByRole('link', { name: ACCOUNT })).toBeVisible()
     await shot(admin, 'rule-set-in-use', { dialog: true })
+    await longNameFits(admin, 'deactivate-dialog', deactivate.getByRole('heading'), (n) => `Deactivate ${n}?`)
     await deactivate.getByRole('button', { name: 'Cancel' }).click()
     await expect(deactivate).toBeHidden()
     await expect(statusOf(admin).getByText('active', { exact: true })).toBeVisible()
@@ -249,6 +263,7 @@ async function main() {
     await expect(admin.getByRole('link', { name: LEGACY })).toBeVisible()
     await admin.waitForLoadState('networkidle')
     await shot(admin, 'account-overview')
+    await longNameFits(admin, 'overview-link', admin.getByRole('link', { name: LEGACY }), (n) => n)
 
     // The global defaults with the status aliases.
     await mainNav(admin, 'Matching Rules')
