@@ -17,8 +17,8 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 
 ## 3. Motivo obligatorio al cancelar (#47)
 
-- [ ] 3.1 Tests primero: en `http/import-routes.analysis.test.ts`, un cuerpo ausente, `{}`, solo espacios, 501 caracteres o con un campo extra responde `400 validation_error` sin llamar al servicio; en `application/import-service.test.ts`, la auditoría `import.cancel` guarda `reason` recortado junto a `previousStatus` y `runId`. Verificar que fallan
-- [ ] 3.2 Implementar D3: `body: ReasonRequest` en la ruta y `reason` en `ImportService.cancel` y su auditoría. Verificar que los tests de 3.1 pasan
+- [x] 3.1 Tests primero: en `http/import-routes.analysis.test.ts`, un cuerpo ausente, `{}`, solo espacios, 501 caracteres o con un campo extra responde `400 validation_error` sin llamar al servicio; en `application/import-service.test.ts`, la auditoría `import.cancel` guarda `reason` recortado junto a `previousStatus` y `runId`. Verificar que fallan
+- [x] 3.2 Implementar D3: `body: ReasonRequest` en la ruta y `reason` en `ImportService.cancel` y su auditoría. Verificar que los tests de 3.1 pasan
 - [ ] 3.3 Actualizar las llamadas al cancel del módulo `imports` en `backend/test/integration/import-analyze.int.test.ts` y añadir el escenario "Cancelar con motivo" (`batch-split` analizado → `detailJson.reason`) y "Sin motivo" (sin fila nueva de `AuditLog`). Verificar con el filtro de integración
 - [ ] 3.4 Commit: `test(import): motivo obligatorio al cancelar` y `feat(import): POST cancel exige y audita el motivo (#47)`
 

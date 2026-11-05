@@ -8,6 +8,7 @@ import {
   ImportsQuery,
   IntId,
   MappingConfirmation,
+  ReasonRequest,
   ResolveRowBody,
 } from '@recon/shared'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
@@ -241,9 +242,18 @@ export const importRoutes: FastifyPluginAsyncZod<ImportRoutesOptions> = async (a
         ...imports,
         summary: 'Cancel an import that is not processed, keeping its files, rows and findings',
         params: ImportParams,
-        response: { 200: ImportDetail, 401: ErrorResponse, 403: ErrorResponse, 404: ErrorResponse, 409: ErrorResponse },
+        body: ReasonRequest,
+        response: {
+          200: ImportDetail,
+          400: ErrorResponse,
+          401: ErrorResponse,
+          403: ErrorResponse,
+          404: ErrorResponse,
+          409: ErrorResponse,
+        },
       },
     },
-    async (request) => service.cancel(scopeOf(request.auth), request.auth.userId, request.params.importId),
+    async (request) =>
+      service.cancel(scopeOf(request.auth), request.auth.userId, request.params.importId, request.body.reason),
   )
 }

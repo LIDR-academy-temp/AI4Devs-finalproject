@@ -362,8 +362,8 @@ export class ImportService {
     return toRowItem(after, rules, scope, await this.candidateMerchants([after]))
   }
 
-  /** README HU1 CA8, HU2 CA8; spec: import, D13: everything is kept as evidence. */
-  async cancel(scope: Scope, userId: number, importId: string): Promise<ImportDetail> {
+  /** README HU1 CA8, HU2 CA8; spec: import, D13: everything is kept as evidence. The reason is required and audited (#47). */
+  async cancel(scope: Scope, userId: number, importId: string, reason: string): Promise<ImportDetail> {
     const record = await this.requireImport(scope, importId)
     assertCanCancel(record.status)
     // The status the write replaced, not the one read above: an analysis may have committed in between.
@@ -375,7 +375,7 @@ export class ImportService {
       action: 'import.cancel',
       entityType: 'Import',
       entityId: importId,
-      detail: { previousStatus, runId },
+      detail: { previousStatus, runId, reason },
     })
     return this.detailOf(scope, importId)
   }
