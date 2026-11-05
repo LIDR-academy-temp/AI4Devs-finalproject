@@ -2,7 +2,7 @@
 
 > Tickets derivados de [`docs/user-stories.md`](./user-stories.md). Una historia genera varios tickets. Cada ticket sigue la definition of done de `CLAUDE.md`. La implementación de cada historia se hace como un cambio de OpenSpec que agrupa sus tickets.
 
-- **Estado:** borrador v0.3 (épicas e historias reestructuradas)
+- **Estado:** borrador v0.4 (incorpora la revisión adversarial de la arquitectura y las revisiones de consistencia)
 - **Fecha:** 2026-11-04
 - **Tipos:** `infra`, `db`, `backend`, `ai`, `frontend`, `test`, `producto` (tareas que no son código)
 
@@ -19,10 +19,10 @@
 | T-04 | Cola de trabajos y cliente de IA | backend, ai | E5 / Skeleton | M | 1.5 h | T-02 |
 | T-05 | Contenedor, CI y despliegue | infra, test | E5 / Skeleton | M | 1.5 h | T-03 |
 | T-06 | Tabla de currículums | db | E2 / HU4 | M | 0.5 h | T-02 |
-| T-07 | API y extracción del currículum en Markdown | backend, ai | E2 / HU4 | M | 1.25 h | T-04, T-06 |
+| T-07 | API y extracción del currículum en Markdown | backend, ai | E2 / HU4 | M | 1.25 h | T-04, T-06, T-33 |
 | T-08 | Pantalla del currículum | frontend | E2 / HU4 | M | 1 h | T-07 |
 | T-09 | Tablas de ofertas, empresas objetivo y búsquedas | db | E1 / HU1, HU2, HU3 | M | 0.5 h | T-02 |
-| T-10 | API y extracción de ofertas, y decisión | backend, ai | E1, E3 / HU1, HU7 | M | 2.25 h | T-04, T-09 |
+| T-10 | API y extracción de ofertas, y decisión | backend, ai | E1, E3 / HU1, HU7 | M | 2.25 h | T-04, T-09, T-33 |
 | T-11 | Pantallas de ofertas y decisión | frontend | E1, E3 / HU1, HU7 | M | 2 h | T-10 |
 | T-12 | Empresas objetivo, interfaz de adaptadores y Greenhouse | backend | E1 / HU2 | M | 1.75 h | T-09, T-04, T-15 |
 | T-13 | Pantalla de empresas objetivo | frontend | E1 / HU2 | M | 0.5 h | T-12 |
@@ -34,8 +34,8 @@
 | T-14 | Tablas de preferencias, filtros y análisis | db | E3 / HU5, HU6 | M | 0.5 h | T-09 |
 | T-15 | Preferencias y filtros duros | backend | E3 / HU5 | M | 2 h | T-14 |
 | T-32 | Etiquetar los golden sets | ai, test | E3 / HU6 | M | 0.5 h | — |
-| T-16 | Puntaje de encaje con IA | backend, ai | E3 / HU6 | M | 2 h | T-07, T-15, T-32 |
-| T-17 | Script de evals | ai, test | E3 / HU6 | M | 1.25 h | T-10, T-16, T-32 |
+| T-16 | Puntaje de encaje con IA | backend, ai | E3 / HU6 | M | 2 h | T-07, T-15, T-32, T-33 |
+| T-17 | Script de evals | ai, test | E3 / HU6 | M | 1.25 h | T-10, T-16, T-32, T-33 |
 | T-18 | Pantallas de preferencias y detalle del puntaje | frontend | E3 / HU5, HU6 | M | 1 h | T-16 |
 | T-19 | Candidaturas y su historial | db, backend | E4 / HU8 | M | 1.5 h | T-10 |
 | T-20 | Tablero de candidaturas accesible | frontend | E4 / HU8 | M | 1.5 h | T-19 |
@@ -43,9 +43,9 @@
 | T-35 | Observabilidad y métricas | backend | E5 / Plataforma | M | 0.75 h | T-04, T-33 |
 | T-34 | Instancia de demostración | infra | E5 / Plataforma | M | 1 h | T-05, T-33 |
 | T-21 | Prueba E2E, accesibilidad y documentación final | test | Todas | M | 2.25 h | T-05, T-20, T-34 |
-| T-30 | Carga del currículum en PDF | backend, frontend, ai | E2 / HU4 | S | 1 h | T-07 |
+| T-30 | Carga del currículum en PDF | backend, frontend, ai | E2 / HU4 | S | 1 h | T-07, T-33 |
 | T-36 | Respaldo y restauración de la base de datos | infra | E5 / Plataforma | S | 0.5 h | T-05 |
-| T-22 | Clasificación de correos y alertas | backend, ai | E4 / HU9 | S | 1.5 h | T-19 |
+| T-22 | Clasificación de correos y alertas | backend, ai | E4 / HU9 | S | 1.5 h | T-19, T-33 |
 | T-23 | Correos y alertas en la interfaz | frontend | E4 / HU9 | S | 1.5 h | T-22 |
 | T-24 | Traducción al español y selector de idioma | frontend, backend | E5 / HU10 | S | 2 h | T-03 |
 

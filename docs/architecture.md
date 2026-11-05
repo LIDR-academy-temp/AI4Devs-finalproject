@@ -2,7 +2,7 @@
 
 > Fase 2 (Arquitectura base) del AI SDLC. Parte de [`docs/prd.md`](./prd.md) y de las decisiones registradas en [`docs/adr/`](./adr/). Alimenta las secciones 2, 3 y 4 de `readme.md`.
 
-- **Estado:** borrador v0.3 (alineado con `docs/prd.md` v0.3 y con la revisión adversarial `docs/architecture-review.md`)
+- **Estado:** borrador v0.3 (alineado con `docs/prd.md` v0.4 y con la revisión adversarial `docs/architecture-review.md`)
 - **Fecha:** 2026-11-04
 
 ---

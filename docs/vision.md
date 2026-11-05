@@ -4,7 +4,7 @@
 
 - **Nombre del proyecto:** AI Job Match
 - **Subtítulo:** Un ATS (Applicant Tracking System) personal impulsado por Inteligencia Artificial para la búsqueda y calificación automatizada de empleo.
-- **Estado:** borrador v0.2 (incorpora la revisión adversarial de `docs/prd-review.md`)
+- **Estado:** borrador v0.3 (incorpora las revisiones adversariales del PRD y de la arquitectura)
 - **Fecha:** 2026-11-04
 
 ---

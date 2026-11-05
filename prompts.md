@@ -215,7 +215,7 @@ registra los tickets en docs/tickets.md
 
 Resultado: [`docs/tickets.md`](./docs/tickets.md) con tipo, estimación, requisitos, dependencias, tareas y criterios de aceptación.
 
-**Prompt 2:** Ver el Prompt 2 de la sección 3. Resultado: 30 tickets tras la revisión adversarial; tras la revisión final de consistencia, 32 tickets con must-have ≈ 31.5 h dentro del tope de 36 h.
+**Prompt 2:** Ver el Prompt 2 de la sección 3. Resultado: 30 tickets tras la revisión adversarial del PRD; 36 tickets tras la revisión de la arquitectura, con must-have ≈ 35.5 h dentro del tope de 36 h.
 
 ---
 

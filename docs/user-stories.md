@@ -2,7 +2,7 @@
 
 > Épicas e historias del MVP definidas en [`docs/prd.md`](./prd.md) (sección 5). Cada épica corresponde a una capability de OpenSpec y cada historia a un cambio de OpenSpec. Las historias usan lenguaje de negocio; la implementación técnica está en [`docs/tickets.md`](./tickets.md). Los criterios de aceptación (Dado/Cuando/Entonces) se convierten en escenarios de las specs.
 
-- **Estado:** borrador v0.3 (épicas e historias reestructuradas)
+- **Estado:** borrador v0.4 (incorpora la revisión adversarial de la arquitectura y las revisiones de consistencia)
 - **Fecha:** 2026-11-04
 
 ---
@@ -24,17 +24,18 @@ Más 2.25 h para la prueba E2E y la documentación final (T-21). MVP imprescindi
 | Orden | Id | Épica | Historia | Prioridad | Estimación | Depende de |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0 | — | E5 | Walking skeleton (T-01 a T-05); antes, medir la línea base de OBJ-1 (T-31, contada en HU7) | Must-have | 6.25 h | — |
-| 1 | HU4 | E2 | Cargar el currículum y obtener un perfil | Must-have | 2.75 h | Walking skeleton |
-| 2 | HU1 | E1 | Agregar una oferta pegando su texto | Must-have | 3.75 h | Walking skeleton |
-| 3 | HU5 | E3 | Filtrar ofertas con mis criterios no negociables | Must-have | 3 h | HU1 |
-| 4 | HU6 | E3 | Obtener un puntaje de encaje explicado | Must-have | 4.25 h | HU4, HU5 |
-| 5 | HU7 | E3 | Registrar mi decisión sobre cada oferta | Must-have | 1.25 h (incluye medir la línea base) | HU1 |
-| 6 | HU8 | E4 | Gestionar candidaturas en un pipeline | Must-have | 3 h | HU7 |
-| 7 | HU2 | E1 | Importar ofertas de empresas objetivo desde su job board | Must-have (Lever: should-have) | 3.25 h (+1 h) | HU1, HU5 |
-| 8 | HU3 | E1 | Buscar ofertas en un agregador | Must-have | 2.5 h | HU2 |
-| 9 | — | E5 | Control de gasto de IA (T-33), observabilidad (T-35) e instancia de demostración (T-34) | Must-have | 3.25 h | Walking skeleton |
-| 10 | HU9 | E4 | Correos y alertas de seguimiento | Should-have | 3 h | HU8 |
-| 11 | HU10 | E5 | Interfaz en español | Should-have | 2 h | Walking skeleton |
+| 1 | — | E5 | Control de gasto de IA (T-33): antes de cualquier llamada a la IA | Must-have | 1.5 h | Walking skeleton |
+| 2 | HU4 | E2 | Cargar el currículum y obtener un perfil | Must-have | 2.75 h | Control de gasto |
+| 3 | HU1 | E1 | Agregar una oferta pegando su texto | Must-have | 3.75 h | Control de gasto |
+| 4 | HU5 | E3 | Filtrar ofertas con mis criterios no negociables | Must-have | 3 h | HU1 |
+| 5 | HU6 | E3 | Obtener un puntaje de encaje explicado | Must-have | 4.25 h | HU4, HU5 |
+| 6 | HU7 | E3 | Registrar mi decisión sobre cada oferta | Must-have | 1.25 h (incluye medir la línea base) | HU1 |
+| 7 | HU8 | E4 | Gestionar candidaturas en un pipeline | Must-have | 3 h | HU7 |
+| 8 | HU2 | E1 | Importar ofertas de empresas objetivo desde su job board | Must-have (Lever: should-have) | 3.25 h (+1 h) | HU1, HU5 |
+| 9 | HU3 | E1 | Buscar ofertas en un agregador | Must-have | 2.5 h | HU2 |
+| 10 | — | E5 | Observabilidad (T-35) e instancia de demostración (T-34) | Must-have | 1.75 h | Control de gasto |
+| 11 | HU9 | E4 | Correos y alertas de seguimiento | Should-have | 3 h | HU8 |
+| 12 | HU10 | E5 | Interfaz en español | Should-have | 2 h | Walking skeleton |
 
 ## Plan de entregas
 

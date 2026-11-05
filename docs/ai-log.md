@@ -705,3 +705,29 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con la segunda revisión de consistencia. Sin push.
+
+### Prompt 54
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Revisa una vez más y busca inconsistencias más a fondo en la documentación del sistema
+  ```
+
+- **Resultado:** Tercera revisión con cruces automáticos (estimaciones por historia, dependencias de tickets, versiones de documentos). Hallazgo principal: el control de gasto (T-33) iba después de todas las tareas que llaman a la IA, en contra de ADR-0008 y del plan de entregas; se movió justo después del walking skeleton y T-07, T-10, T-16, T-17, T-22 y T-30 pasaron a depender de él. También se actualizaron el orden de construcción del PRD, las versiones de visión, PRD, historias y tickets, y el conteo de tickets en `prompts.md`. Sin commit.
+
+### Prompt 55
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con la tercera revisión de consistencia. Sin push.

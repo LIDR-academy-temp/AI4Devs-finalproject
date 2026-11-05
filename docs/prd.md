@@ -2,7 +2,7 @@
 
 > Fase 1 (Producto) del AI SDLC. Detalla solo lo que entra en el MVP. El contexto, la hipótesis y el alcance completo están en [`docs/vision.md`](./vision.md). La revisión adversarial que originó la versión 0.2 está en [`docs/prd-review.md`](./prd-review.md).
 
-- **Estado:** borrador v0.3 (incorpora la revisión adversarial y las épicas)
+- **Estado:** borrador v0.4 (incorpora las revisiones adversariales del PRD y de la arquitectura, las épicas y las revisiones de consistencia)
 - **Fecha:** 2026-11-04
 - **Presupuesto de desarrollo:** 30 horas asistidas por IA, con tope aceptado de 36 horas (+20 %)
 
@@ -249,7 +249,7 @@ Ver `docs/vision.md`, sección 8, y `docs/prd-review.md`. El plan por entrega es
 
 | Riesgo | Mitigación |
 | --- | --- |
-| El MVP imprescindible (~35.5 h) no cabe en el tope de 36 h, sobre todo por la curva de aprendizaje de AdonisJS v7 | Orden de construcción: walking skeleton → HU4 → HU1 → HU5 → HU6 → HU7 → HU8 → HU2 → HU3. Orden de recorte: adaptador de Lever (ya es should-have) → reducir HU3 a una búsqueda fija sin pantalla de edición. |
+| El MVP imprescindible (~35.5 h) no cabe en el tope de 36 h, sobre todo por la curva de aprendizaje de AdonisJS v7 | Orden de construcción: walking skeleton → control de gasto de IA (T-33) → HU4 → HU1 → HU5 → HU6 → HU7 → HU8 → HU2 → HU3 → observabilidad y demostración (T-35, T-34). Orden de recorte: adaptador de Lever (ya es should-have) → reducir HU3 a una búsqueda fija sin pantalla de edición. |
 | El agregador no cubre las empresas grandes o sus términos no lo permiten | Spike de 30 minutos antes de implementarlo; plan B: adaptador de SmartRecruiters. |
 | El filtro de roles por palabras clave descarta ofertas buenas o deja pasar irrelevantes | Las ofertas descartadas siguen visibles con su motivo; el usuario ajusta las palabras clave. |
 
