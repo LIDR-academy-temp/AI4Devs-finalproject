@@ -2,10 +2,10 @@
 // uploaded → mapped → analyzed → cancelled, fingerprints of the content, the error codes and the merchant scope.
 // Test files are Files whose content starts with a sample label (see `workbookOf`).
 import { createHash } from 'node:crypto'
-import { TRANSACTION_STATUSES } from '@recon/shared'
+import { ImportListQuery, ReasonRequest, TRANSACTION_STATUSES } from '@recon/shared'
 import { HttpResponse, http, type PathParams } from 'msw'
 import type { ImportDetail, ImportRowItem, ImportStatus, MappingConfirmationBody } from '@/lib/api/types'
-import { ACCOUNT_IDS, ACCOUNTS, CHANNELS, PROVIDERS, USERS, type UserName } from './fixtures'
+import { ACCOUNT_IDS, ACCOUNTS, CHANNELS, MERCHANTS, PROVIDERS, USERS, type UserName } from './fixtures'
 import {
   type AccountName,
   ANALYSIS_FACTS,
@@ -64,7 +64,16 @@ export interface FakeImport {
 }
 
 /** Routes of the fake import API that a test can hold or make fail. */
-export type ImportRoute = 'create' | 'addFiles' | 'removeFile' | 'mapping' | 'analyze' | 'rows' | 'cancel' | 'detail'
+export type ImportRoute =
+  | 'create'
+  | 'addFiles'
+  | 'removeFile'
+  | 'mapping'
+  | 'analyze'
+  | 'rows'
+  | 'cancel'
+  | 'detail'
+  | 'list'
 
 export interface ImportRequest {
   route: ImportRoute
@@ -202,38 +211,60 @@ function readinessOf(record: FakeImport): ImportDetail['readiness'] {
     })
   }
   for (const sheet of sheets) {
-    const { sheetName, hidden, rowCount } = sheet.template
-    const item = (message: string): Item => ({ sheetId: sheet.sheetId, sheetName, message })
-    const lacking = (field: Item['field'], message: string): Item => ({ ...item(message), field })
-    const mapping = effective(sheet)
-    const has = (field: string) => mapping.columns.some((c) => c.targetField === field)
-    if (mapping.kind === null) {
-      missing.push(
-        lacking('kind', `No rule matches sheet "${sheetName}": classify it as transactions, batch_fees or ignore`),
-      )
-      continue
-    }
-    if (hidden) notes.push(item('The sheet is hidden in the workbook'))
-    if (mapping.kind === 'ignore') {
-      notes.push(item(sheet.template.proposed.note ?? `Sheet "${sheetName}" is ignored`))
-      continue
-    }
-    if (mapping.kind === 'batch_fees') {
-      if (!has('feeType')) notes.push(item('No column is proposed as feeType; no batch fees will be prefilled'))
-      else if (!has('amount')) notes.push(item('No column is proposed as amount; no batch fees will be prefilled'))
-      continue
-    }
-    if (!has('transactionId')) missing.push(lacking('transactionId', 'No column is proposed as transactionId'))
-    if (mapping.cycle === null) missing.push(lacking('cycle', 'The sheet rule has no cycle'))
-    else if (mapping.cycle !== 'R' && mapping.statusId === null && !has('status')) {
-      missing.push(lacking('status', 'No status: neither a fixed status by sheet rule nor a column proposed as status'))
-    }
-    if (rowCount === 0) notes.push(item('The sheet has no rows'))
-    if (statusName(mapping.statusId) === 'Declined' && rowCount > 0) {
-      notes.push(item('Fixed status Declined with rows: the DEC range will open at validation'))
+    const own = sheetReadiness(sheet)
+    notes.push(...own.notes)
+    // A mapped import asks every sheet to be confirmed, as its 422 does (spec "Hojas sin confirmar en la readiness").
+    if (record.status === 'mapped' && !sheet.mappingConfirmed) {
+      const { sheetName } = sheet.template
+      missing.push({
+        sheetId: sheet.sheetId,
+        sheetName,
+        field: 'confirmation',
+        message: `The mapping of sheet "${sheetName}" is not confirmed`,
+      })
+    } else {
+      missing.push(...own.missing)
     }
   }
+
   return { canAnalyze: missing.length === 0, missing, notes }
+}
+
+/** What one sheet lacks and what is worth reviewing in it (backend domain/readiness.ts, assessSheet). */
+function sheetReadiness(sheet: FakeSheet): { missing: Item[]; notes: Item[] } {
+  const missing: Item[] = []
+  const notes: Item[] = []
+  const { sheetName, hidden, rowCount } = sheet.template
+  const item = (message: string): Item => ({ sheetId: sheet.sheetId, sheetName, message })
+  const lacking = (field: Item['field'], message: string): Item => ({ ...item(message), field })
+  const mapping = effective(sheet)
+  const has = (field: string) => mapping.columns.some((c) => c.targetField === field)
+  if (mapping.kind === null) {
+    missing.push(
+      lacking('kind', `No rule matches sheet "${sheetName}": classify it as transactions, batch_fees or ignore`),
+    )
+    return { missing, notes }
+  }
+  if (hidden) notes.push(item('The sheet is hidden in the workbook'))
+  if (mapping.kind === 'ignore') {
+    notes.push(item(sheet.template.proposed.note ?? `Sheet "${sheetName}" is ignored`))
+    return { missing, notes }
+  }
+  if (mapping.kind === 'batch_fees') {
+    if (!has('feeType')) notes.push(item('No column is proposed as feeType; no batch fees will be prefilled'))
+    else if (!has('amount')) notes.push(item('No column is proposed as amount; no batch fees will be prefilled'))
+    return { missing, notes }
+  }
+  if (!has('transactionId')) missing.push(lacking('transactionId', 'No column is proposed as transactionId'))
+  if (mapping.cycle === null) missing.push(lacking('cycle', 'The sheet rule has no cycle'))
+  else if (mapping.cycle !== 'R' && mapping.statusId === null && !has('status')) {
+    missing.push(lacking('status', 'No status: neither a fixed status by sheet rule nor a column proposed as status'))
+  }
+  if (rowCount === 0) notes.push(item('The sheet has no rows'))
+  if (statusName(mapping.statusId) === 'Declined' && rowCount > 0) {
+    notes.push(item('Fixed status Declined with rows: the DEC range will open at validation'))
+  }
+  return { missing, notes }
 }
 
 /** Port of the backend's analysis preconditions (domain/analysis-preconditions.ts). */
@@ -799,11 +830,74 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
       ),
     ),
 
+    http.get(
+      `${API}/imports`,
+      route(
+        'list',
+        ({ request, user }) => {
+          const query = ImportListQuery.safeParse(Object.fromEntries(new URL(request.url).searchParams))
+          if (!query.success) return error(400, 'validation_error', 'Invalid query')
+          const { status, merchantId, providerId, accountId, mine, page, pageSize } = query.data
+          const visible = ACCOUNTS.filter((a) => canSee(user, a.accountId))
+          const merchantVisible =
+            MERCHANTS.some((m) => m.merchantId === merchantId) &&
+            USERS[user].merchants.some((m) => m.merchantId === merchantId)
+          if (
+            (merchantId !== undefined && !merchantVisible) ||
+            (providerId !== undefined && !visible.some((a) => a.providerId === providerId)) ||
+            (accountId !== undefined && !visible.some((a) => a.accountId === accountId))
+          ) {
+            return notFound('Merchant, provider or account')
+          }
+          const statuses = status === undefined ? CANCELLABLE : [status]
+          const matches = [...state.imports.values()]
+            .filter((record) => {
+              const account = accountOf(record.accountId)
+              return (
+                account !== undefined &&
+                canSee(user, record.accountId) &&
+                statuses.includes(record.status) &&
+                (merchantId === undefined || merchantOfAccount(record.accountId) === merchantId) &&
+                (providerId === undefined || account.providerId === providerId) &&
+                (accountId === undefined || record.accountId === accountId) &&
+                (!mine || record.createdBy.userId === USERS[user].userId)
+              )
+            })
+            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.importId.localeCompare(b.importId))
+          const items = matches.slice((page - 1) * pageSize, page * pageSize).map((record) => {
+            const {
+              files: _files,
+              readiness: _r,
+              analysis: _a,
+              channels: _c,
+              batchFees: _b,
+              ...summary
+            } = detailOf(record)
+            const account = accountOf(record.accountId)!
+            const provider = PROVIDERS.find((p) => p.providerId === account.providerId)!
+            const merchant = MERCHANTS.find((m) => m.merchantId === provider.merchantId)!
+            return {
+              ...summary,
+              account: { id: account.accountId, name: account.name },
+              provider: { id: provider.providerId, name: provider.name },
+              merchant: { id: merchant.merchantId, name: merchant.name },
+            }
+          })
+          return HttpResponse.json({ items, page, pageSize, total: matches.length })
+        },
+        caller,
+      ),
+    ),
+
     http.post(
       `${API}/imports/:importId/cancel`,
       route(
         'cancel',
-        ({ params, user }) => {
+        async ({ request, params, user }) => {
+          // The body is validated before anything else, as Fastify does (spec "Motivo de la cancelación").
+          const parsed = ReasonRequest.safeParse(await request.json().catch(() => undefined))
+          if (!parsed.success) return error(400, 'validation_error', 'A reason of 1 to 500 characters is required')
+          state.requests.at(-1)!.body = parsed.data
           const record = visibleImport(user, params.importId)
           if (!canProcess(user)) return record ? forbidden() : notFound('Import')
           if (!record) return notFound('Import')

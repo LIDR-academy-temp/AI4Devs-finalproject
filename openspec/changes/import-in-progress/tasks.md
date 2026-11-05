@@ -71,19 +71,19 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 
 ## 6. Fake MSW del API de imports
 
-- [ ] 6.1 Tests primero en `frontend/src/test/msw/imports.test.ts`:
+- [x] 6.1 Tests primero en `frontend/src/test/msw/imports.test.ts`:
   - `GET /imports` con filtros, alcance (`404`), orden y paginación;
   - el cancel sin motivo da `400`, y con motivo, `200`;
   - la readiness en `mapped` con hojas sin confirmar.
 
   Verificar que fallan.
-- [ ] 6.2 Implementar en `frontend/src/test/msw/imports.ts`:
+- [x] 6.2 Implementar en `frontend/src/test/msw/imports.ts`:
   - el handler de `GET /imports`, que valida con `ImportListQuery` y responde con `ImportListPage`;
   - la validación del cuerpo del cancel con `ReasonRequest`;
   - el port de D4 en `readinessOf`.
 
   Verificar que `pnpm --filter @recon/frontend test` pasa en `test/msw`.
-- [ ] 6.3 Commit: `test(web): fake MSW de GET /imports, motivo del cancel y readiness`
+- [x] 6.3 Commit: `test(web): fake MSW de GET /imports, motivo del cancel y readiness`
 
 ## 7. Column Mapping sin derivar la readiness
 
