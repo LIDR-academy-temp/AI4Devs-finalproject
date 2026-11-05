@@ -254,7 +254,9 @@ export class PrismaValidationSources implements ValidationSources {
   /**
    * E movements of current attempts that held a reserve without a current R movement, whose expiry under the channel's
    * current term is up to rMax. The predicate is written over transactionDate so the (providerId, transactionDate)
-   * index applies: transactionDate <= rMax - days ⟺ transactionDate + days <= rMax.
+   * index applies: transactionDate <= rMax - days ⟺ transactionDate + days <= rMax. reserveEarlyReleasedAmt is the
+   * release of the current I movements of the transaction, of any status and account of the provider
+   * (settlement-reserve-chargeback D4); the engine checks it again.
    */
   async heldReserves(account: AccountScope, rMax: Date): Promise<HeldReserve[]> {
     const channels = [...account.primaryChannelIds]
@@ -263,7 +265,11 @@ export class PrismaValidationSources implements ValidationSources {
       SELECT t.[transactionId], t.[sourceTransactionId], t.[channelId], t.[statusId], t.[transactionDate],
              t.[lastStatusChangedAt], LOWER(CONVERT(VARCHAR(36), st.[batchId])) AS batchId,
              CONVERT(VARCHAR(40), st.[reserveHeldAmt]) AS reserveHeldAmt,
-             CONVERT(VARCHAR(40), st.[reserveEarlyReleasedAmt]) AS reserveEarlyReleasedAmt
+             CONVERT(VARCHAR(40), ISNULL((
+               SELECT SUM(i.[reserveEarlyReleasedAmt]) FROM [SettlementTransaction] i
+               JOIN [SettlementBatch] ib ON ib.[batchId] = i.[batchId] AND ib.[status] <> 'undone'
+               JOIN [Account] ia ON ia.[accountId] = ib.[accountId] AND ia.[providerId] = ${account.providerId}
+               WHERE i.[transactionId] = t.[transactionId] AND i.[cycle] = 'I'), 0)) AS reserveEarlyReleasedAmt
       FROM [SettlementTransaction] st
       JOIN [SettlementBatch] b ON b.[batchId] = st.[batchId]
       JOIN [Account] a ON a.[accountId] = b.[accountId]

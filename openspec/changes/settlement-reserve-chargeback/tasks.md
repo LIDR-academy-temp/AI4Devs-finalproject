@@ -78,15 +78,16 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
 
 ## 4. Validación: faltantes R con la liberación en el I (TDD)
 
-- [ ] 4.1 Ampliar los tests de `validation`:
+- [x] 4.1 Ampliar los tests de `validation`:
   - `domain/missing.test.ts`: "Reserva liberada anticipadamente" (ahora con el I vigente), "Reserva liberada por un refund o un RDR", "Liberación de un intento deshecho" y "Ajuste sin liberación";
   - `application/__fakes__/in-memory.test.ts`: `heldReserves` suma la liberación de los I vigentes del proveedor, de cualquier estado, y no la de un `undone`;
   - `backend/test/integration/validation-sources.int.test.ts`: los mismos casos con datos escritos por el test.
 
   Comprobar que fallan: la integración, con turno de base.
-- [ ] 4.2 Commit: test(validation): faltantes R con la liberación por ajuste de los movimientos I
-- [ ] 4.3 Implementar D4: la subconsulta de `heldReserves` en `prisma-validation-sources.ts`, la misma regla en `InMemoryValidationSources.heldReserves` y el comentario de `HeldReserve` en `domain/types.ts`. Verificar con los unitarios y, con turno de base, con la integración de `validation-sources`.
-- [ ] 4.4 Commit: feat(validation): leer la liberación anticipada de los movimientos I vigentes, y `git push`.
+- [x] 4.2 Commit: test(validation): faltantes R con la liberación por ajuste de los movimientos I
+- [x] 4.3 Implementar D4: la subconsulta de `heldReserves` en `prisma-validation-sources.ts`, la misma regla en `InMemoryValidationSources.heldReserves` y el comentario de `HeldReserve` en `domain/types.ts`. Verificar con los unitarios y, con turno de base, con la integración de `validation-sources`.
+- [x] 4.4 Commit: feat(validation): leer la liberación anticipada de los movimientos I vigentes, y `git push`.
+Hecho: los cuatro escenarios de `missing.test.ts` pasan desde el principio, porque `missing.ts` no cambia (D4); el rojo se vio en el fake (`0.0000` en vez de `10.0000`) y en los dos casos nuevos de `validation-sources.int.test.ts`. La integración usa los batches 9104 (ZZ-ProviderB-Alt) y 9103 (`undone`) del mundo de fixtures, que limpia `removeFixtures`.
 
 ## 5. Integración del proceso
 

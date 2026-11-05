@@ -5,6 +5,7 @@
  * extended with what the world does not have: undone attempts, Pending transactions, early-released reserves and
  * registered missing findings.
  */
+import { Decimal } from '@prisma/client/runtime/client'
 import type { BatchStatus, Cycle } from '@recon/shared'
 import { buildWorld, CHANNELS, STATUS, settlementMovementsOf } from '../../../../../prisma/synthetic.js'
 import { ACCOUNT_IDS, type AccountName } from '../../../catalog/application/__fakes__/in-memory.js'
@@ -308,6 +309,17 @@ export class InMemoryValidationSources
 
   async heldReserves(account: AccountScope, rMax: Date): Promise<HeldReserve[]> {
     const processed = this.processed(account.providerId)
+    // The release of the live I movements of the provider, of any status (settlement-reserve-chargeback D4).
+    const earlyReleased = new Map<bigint, Decimal>()
+    for (const b of this.batches) {
+      if (b.status === 'undone' || this.providerOf(b.accountId) !== account.providerId) continue
+      for (const m of b.movements)
+        if (m.cycle === 'I')
+          earlyReleased.set(
+            m.transactionId,
+            (earlyReleased.get(m.transactionId) ?? new Decimal(0)).plus(m.reserveEarlyReleasedAmt),
+          )
+    }
     const out: HeldReserve[] = []
     for (const b of this.batches) {
       if (b.status === 'undone' || this.providerOf(b.accountId) !== account.providerId) continue
@@ -324,7 +336,7 @@ export class InMemoryValidationSources
           transactionDate: t.transactionDate,
           batchId: b.batchId,
           reserveHeldAmt: m.reserveHeldAmt,
-          reserveEarlyReleasedAmt: m.reserveEarlyReleasedAmt,
+          reserveEarlyReleasedAmt: (earlyReleased.get(t.transactionId) ?? new Decimal(0)).toFixed(4),
         })
       }
     }
