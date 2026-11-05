@@ -175,6 +175,9 @@ export const strings = {
       },
       candidates: 'Candidates',
       otherMerchant: 'another merchant',
+      chooseButton: 'Choose',
+      choose: (gateway: string, rowNo: number, sheet: string) => `Choose ${gateway} for row ${rowNo} of ${sheet}`,
+      validatedHint: 'Run the validations again to choose a gateway: the import goes back to Analyzed.',
       previous: 'Previous',
       next: 'Next',
       pageOf: (page: number, pages: number, total: number) =>

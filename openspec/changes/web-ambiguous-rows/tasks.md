@@ -10,9 +10,9 @@ Rama `feat/web-ambiguous-rows` creada desde `origin/feature/entrega-3-MVP` cuand
 
 ## 2. Modo de las candidatas por estado y permiso
 
-- [ ] 2.1 Tests primero en `analysis/RowsTable.test.tsx` (spec "Fila ambigua sin resolución posible", D1): el caso "offers no way to choose" pasa a `viewer` en `analyzed`; `analyst` en `validated` ve **Choose** deshabilitado, `aria-describedby` hacia `Run the validations again to choose a gateway: the import goes back to Analyzed.` y ningún `PATCH`; `analyst` en `cancelled` no ve botones; `analyst` en `analyzed` ve un **Choose** por candidata con su nombre accesible, también en la de `(another merchant)`. Verificar que fallan
-- [ ] 2.2 Implementar D1: `AmbiguousCandidates.tsx`, el contexto del modo, la prop `status` de `RowsTable` desde `AnalysisStep` y los textos en `strings.ts`. Verificar con `pnpm --filter @recon/frontend test -- src/features/imports/analysis` que 2.1 y los casos previos pasan
-- [ ] 2.3 Commit: `test(web): candidatas de una fila ambigua según estado y permiso` y `feat(web): botón Choose por candidata en las filas ambiguas (#38)`
+- [x] 2.1 Tests primero en `analysis/RowsTable.test.tsx` (spec "Fila ambigua sin resolución posible", D1): el caso "offers no way to choose" pasa a `viewer` en `analyzed`; `analyst` en `validated` ve **Choose** deshabilitado, `aria-describedby` hacia `Run the validations again to choose a gateway: the import goes back to Analyzed.` y ningún `PATCH`; `analyst` en `cancelled` no ve botones; `analyst` en `analyzed` ve un **Choose** por candidata con su nombre accesible, también en la de `(another merchant)`. Verificar que fallan
+- [x] 2.2 Implementar D1: `AmbiguousCandidates.tsx`, el contexto del modo, la prop `status` de `RowsTable` desde `AnalysisStep` y los textos en `strings.ts`. Verificar con `pnpm --filter @recon/frontend test -- src/features/imports/analysis` que 2.1 y los casos previos pasan
+- [x] 2.3 Commit: `test(web): candidatas de una fila ambigua según estado y permiso` y `feat(web): botón Choose por candidata en las filas ambiguas (#38)`
 
 ## 3. Confirmar y resolver
 

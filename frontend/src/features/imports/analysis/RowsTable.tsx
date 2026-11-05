@@ -3,11 +3,13 @@ import { useQuery } from '@tanstack/react-query'
 import { createColumnHelper, rowPaginationFeature, tableFeatures, useTable } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import type { ImportRowItem } from '@/lib/api/types'
+import type { ImportRowItem, ImportStatus } from '@/lib/api/types'
 import { formatDecimal } from '@/lib/format'
 import { ListHeading, requestListFocus } from '@/lib/list-focus'
+import { useCanProcess } from '../permissions'
 import { importRowsQuery, ROWS_PAGE_SIZE } from '../queries'
 import { strings } from '../strings'
+import { AmbiguousCandidates, ResolutionContext, type ResolutionMode } from './AmbiguousCandidates'
 
 const s = strings.analysis.rows
 
@@ -21,19 +23,6 @@ const helper = createColumnHelper<typeof features, ImportRowItem>()
 function resultText(row: ImportRowItem): string {
   const result = s.results[row.matchResult]
   return row.reason ? `${result} · ${s.reasons[row.reason]}` : result
-}
-
-function Candidates({ row }: { row: ImportRowItem }) {
-  if (row.candidates.length === 0) return null
-  return (
-    <ul className="text-xs text-muted-foreground">
-      {row.candidates.map((c) => (
-        <li key={`${c.gatewayId}:${c.transactionId}`}>
-          {'outOfScope' in c && c.outOfScope ? `${c.gatewayName} (${s.otherMerchant})` : c.gatewayName}
-        </li>
-      ))}
-    </ul>
-  )
 }
 
 const columns = helper.columns([
@@ -64,7 +53,7 @@ const columns = helper.columns([
     cell: ({ row }) => (
       <div className="flex flex-col">
         <span>{resultText(row.original)}</span>
-        <Candidates row={row.original} />
+        <AmbiguousCandidates row={row.original} />
       </div>
     ),
   }),
@@ -107,16 +96,27 @@ const columns = helper.columns([
  */
 export function RowsTable({
   importId,
+  status,
   match,
   page,
   onChange,
 }: {
   importId: string
+  /** The status of the import: whether an ambiguous row can be resolved (web-ambiguous-rows design D1). */
+  status: ImportStatus
   match: MatchResult | undefined
   page: number
   onChange: (next: { match: MatchResult | undefined; page: number }) => void
 }) {
   const query = useQuery(importRowsQuery(importId, { match, page }))
+  const canProcess = useCanProcess()
+  const mode: ResolutionMode = !canProcess
+    ? 'none'
+    : status === 'analyzed'
+      ? 'enabled'
+      : status === 'validated'
+        ? 'disabled'
+        : 'none'
   const total = query.data?.total ?? 0
   const pageCount = Math.max(1, Math.ceil(total / ROWS_PAGE_SIZE))
 
@@ -157,65 +157,67 @@ export function RowsTable({
   }
 
   return (
-    <section className="flex flex-col gap-2">
-      <ListHeading name={ROWS_LIST} focusKey={`${match}:${page}`} className="font-medium">
-        {s.title}
-      </ListHeading>
-      <div role="toolbar" aria-label={s.filterLabel} className="flex flex-wrap items-center gap-1">
-        <span className="pr-1 text-sm text-muted-foreground">{s.filterLabel}</span>
-        {filterButton(undefined, s.filters.all)}
-        {FILTERS.map((f) => filterButton(f, s.filters[f]))}
-      </div>
-      <div className="max-w-full overflow-x-auto rounded-md border bg-background">
-        <Table aria-label={s.title} className="text-xs">
-          <TableHeader>
-            {table.getHeaderGroups().map((group) => (
-              <TableRow key={group.id}>
-                {group.headers.map((header) => (
-                  <TableHead key={header.id} className="whitespace-nowrap">
-                    {header.isPlaceholder ? null : <table.FlexRender header={header} />}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                className={row.original.matchResult === 'matched' ? '' : 'bg-amber-50/60 dark:bg-amber-950/20'}
-              >
-                {row.getAllCells().map((cell) => (
-                  <TableCell key={cell.id} className="align-top">
-                    <table.FlexRender cell={cell} />
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      {query.isError && <p className="text-sm text-destructive">{s.loadError}</p>}
-      {query.isSuccess && total === 0 && <p className="text-sm text-muted-foreground">{s.empty}</p>}
-      <div className="flex items-center justify-end gap-2 text-sm">
-        <span className="text-muted-foreground">{s.pageOf(page, pageCount, total)}</span>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => turn(() => table.previousPage())}
-          disabled={!table.getCanPreviousPage()}
-        >
-          {s.previous}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => turn(() => table.nextPage())}
-          disabled={!table.getCanNextPage()}
-        >
-          {s.next}
-        </Button>
-      </div>
-    </section>
+    <ResolutionContext.Provider value={mode}>
+      <section className="flex flex-col gap-2">
+        <ListHeading name={ROWS_LIST} focusKey={`${match}:${page}`} className="font-medium">
+          {s.title}
+        </ListHeading>
+        <div role="toolbar" aria-label={s.filterLabel} className="flex flex-wrap items-center gap-1">
+          <span className="pr-1 text-sm text-muted-foreground">{s.filterLabel}</span>
+          {filterButton(undefined, s.filters.all)}
+          {FILTERS.map((f) => filterButton(f, s.filters[f]))}
+        </div>
+        <div className="max-w-full overflow-x-auto rounded-md border bg-background">
+          <Table aria-label={s.title} className="text-xs">
+            <TableHeader>
+              {table.getHeaderGroups().map((group) => (
+                <TableRow key={group.id}>
+                  {group.headers.map((header) => (
+                    <TableHead key={header.id} className="whitespace-nowrap">
+                      {header.isPlaceholder ? null : <table.FlexRender header={header} />}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className={row.original.matchResult === 'matched' ? '' : 'bg-amber-50/60 dark:bg-amber-950/20'}
+                >
+                  {row.getAllCells().map((cell) => (
+                    <TableCell key={cell.id} className="align-top">
+                      <table.FlexRender cell={cell} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        {query.isError && <p className="text-sm text-destructive">{s.loadError}</p>}
+        {query.isSuccess && total === 0 && <p className="text-sm text-muted-foreground">{s.empty}</p>}
+        <div className="flex items-center justify-end gap-2 text-sm">
+          <span className="text-muted-foreground">{s.pageOf(page, pageCount, total)}</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => turn(() => table.previousPage())}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {s.previous}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => turn(() => table.nextPage())}
+            disabled={!table.getCanNextPage()}
+          >
+            {s.next}
+          </Button>
+        </div>
+      </section>
+    </ResolutionContext.Provider>
   )
 }
