@@ -70,11 +70,13 @@ Al confirmar, el diálogo se cierra con la respuesta (como el de cancelar). Los 
 
 El foco usa el mecanismo de `ui-polish` D13 (`requestListFocus(ROWS_LIST)` y `ListHeading`), pero el encabezado solo atiende una petición cuando cambia su `focusKey`, y resolver no cambia ni filtro ni página. Por eso `RowsTable` lleva un contador de resoluciones que entra en la clave (`<match>:<page>:<resoluciones>`): cada `200` pide el foco y suma uno, y el encabezado lo toma al volver a pintarse. Alternativa descartada: enfocar el encabezado con una referencia propia, que duplicaría el mecanismo común y su desplazamiento.
 
-El foco al cerrar el diálogo lo decide `onCloseAutoFocus` del propio diálogo. El `AlertDialog` de Radix ya llama a `preventDefault` y enfoca su trigger, pero este diálogo no tiene (`AlertDialogTrigger` no se usa): por sí solo, el foco acabaría en `body`. El diálogo hace dos cosas:
+El foco al cerrar el diálogo lo decide `onCloseAutoFocus` del propio diálogo. El `AlertDialog` de Radix ya llama a `preventDefault` y enfoca su trigger, pero este diálogo no tiene (`AlertDialogTrigger` no se usa): por sí solo, el foco acabaría en `body`. El diálogo hace tres cosas:
 
 - Siempre llama a `preventDefault`.
 - Cerrado sin resolver (**Keep** o Escape), devuelve el foco al **Choose** que lo abrió (`opener`, que llega con el clic).
 - Tras un `200` (`returnFocus = false`) no enfoca nada, y el encabezado de las filas toma el foco.
+
+Lo que decide el foco tras un `200` es no devolverlo al **Choose**, no el `preventDefault`: sin él, el manejador de Radix también llama a `preventDefault` y enfoca su trigger, que no existe. El test de integración retiene el refresco de filas para que el **Choose** siga en pantalla cuando Radix lo devolvería, así que falla si el diálogo lo devuelve tras resolver.
 
 Radix llama al manejador después de desmontar el contenido, con el del último render que lo mostró. Por eso `opener` y `returnFocus` se leen de una referencia que se actualiza en cada render, también en el que cierra.
 
