@@ -322,7 +322,7 @@ APP SHALL formarse con las filas E asociadas cuya transacción no está `Decline
 - **THEN** la fila no aporta fecha al rango I y el informe la cuenta en `undatedAdjustmentCount`
 
 ### Requirement: Candidatas a faltante
-Las candidatas SHALL ser transacciones de los canales cuya cuenta principal es la del import: APP `Successful`, DEC `Declined`, I en estado de ciclo I y R movimientos E vigentes con reserva vencida, sin liberación anticipada. Una reserva vence en su creación + `rollingReserveDays` de su canal, y se compara por esa fecha con el rango R, también de vencimiento. Se excluyen las presentes en el batch o procesadas en ese ciclo en un intento vigente del proveedor y las ya registradas.
+Las candidatas SHALL ser transacciones de los canales cuya cuenta principal es la del import: APP `Successful`, DEC `Declined`, I en estado de ciclo I y R movimientos E vigentes con reserva vencida, sin liberación anticipada vigente. Una reserva vence en su creación + `rollingReserveDays` de su canal, y se compara por esa fecha con el rango R, también de vencimiento. Se excluyen las presentes en el batch o procesadas en ese ciclo en un intento vigente del proveedor y las ya registradas.
 
 #### Scenario: Canal sin asignar presente en el import
 - **GIVEN** `data/samples/batch-issues`, donde también faltan las DEC de RAM-13 (sin cuenta) del 2026-09-28
@@ -345,9 +345,24 @@ Las candidatas SHALL ser transacciones de los canales cuya cuenta principal es l
 - **THEN** no aparece como faltante: el rango R y la reserva se comparan por fecha de vencimiento
 
 #### Scenario: Reserva liberada anticipadamente
-- **GIVEN** un movimiento E vigente con `reserveHeldAmt > 0` y `reserveEarlyReleasedAmt > 0`, con vencimiento dentro del rango R
+- **GIVEN** un movimiento E vigente con `reserveHeldAmt > 0`, con vencimiento dentro del rango R, y un movimiento I de la misma transacción (`Chargeback`, `Refund` o `RDR`) en un intento vigente de cualquier cuenta del proveedor con `reserveEarlyReleasedAmt > 0`
 - **WHEN** se valida un import que no lo trae en RR
 - **THEN** no es faltante de R
+
+#### Scenario: Reserva liberada por un refund o un RDR
+- **GIVEN** dos reservas vencidas dentro del rango R, una liberada por un movimiento I `Refund` vigente y otra por un `RDR` vigente, los dos con `reserveEarlyReleasedAmt > 0`
+- **WHEN** se valida un import que no las trae en RR
+- **THEN** ninguna es faltante de R
+
+#### Scenario: Liberación de un intento deshecho
+- **GIVEN** la misma reserva, cuya liberación por un ajuste está en un intento `undone`
+- **WHEN** se valida un import que no la trae en RR
+- **THEN** es faltante de R, porque una liberación deshecha no cuenta
+
+#### Scenario: Ajuste sin liberación
+- **GIVEN** la misma reserva con un movimiento I vigente (`Chargeback`, `Refund` o `RDR`) de `reserveEarlyReleasedAmt = 0` (cuenta `hold_until_term` o intento anterior a la política)
+- **WHEN** se valida un import que no la trae en RR
+- **THEN** es faltante de R
 
 #### Scenario: Posterior al máximo
 - **GIVEN** una transacción `Successful` sin liquidar con fecha posterior al máximo del rango APP
