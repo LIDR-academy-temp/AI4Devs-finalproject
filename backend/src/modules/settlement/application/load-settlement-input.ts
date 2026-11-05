@@ -19,10 +19,15 @@ export async function loadSettlementInput(source: SettlementSource, load: LoadRe
   const matched = rows.flatMap((r) => (r.transaction ? [r.transaction] : []))
   const channelIds = [...new Set(matched.map((t) => t.channelId))]
   const transactionIds = [...new Set(matched.map((t) => t.transactionId))]
+  // Only an I or an R can release a reserve (settlement-reserve-chargeback D2).
+  const adjustedOrReleased = [
+    ...new Set(rows.flatMap((r) => (r.transaction && r.cycle !== 'E' ? [r.transaction.transactionId] : []))),
+  ]
   // One after another: inside an interactive transaction the reads share one connection.
   const inclusions = await source.inclusions(run.runId)
   const channels = await source.channels(account.accountId, channelIds)
   const previousE = await source.previousE(account.providerId, transactionIds, importId)
+  const reserveStates = await source.reserveStates(account.providerId, adjustedOrReleased, importId)
   const fees = await source.accountFees(account.accountId)
   const feeTypes = await source.feeTypes()
   const attempts = await source.attempts(account.accountId)
@@ -35,8 +40,7 @@ export async function loadSettlementInput(source: SettlementSource, load: LoadRe
     inclusions,
     channels,
     previousE,
-    // Read from the source in group 3 of settlement-reserve-chargeback; empty: no prior reserve state.
-    reserveStates: new Map(),
+    reserveStates,
     fees,
     feeTypes,
     attempts,

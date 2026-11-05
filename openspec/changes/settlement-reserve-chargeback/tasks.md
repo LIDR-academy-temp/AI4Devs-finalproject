@@ -71,8 +71,10 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
 
   Comprobar que fallan: los unitarios sin base, y la integración en el turno de base que se pide a la persona.
 - [x] 3.2 Commit: test(settlement): estado previo de las reservas en la fuente del proceso
-- [ ] 3.3 Implementar `reserveStates` en `prisma-settlement-source.ts` (D2): una consulta por lote con `chunks`, sumas en `CONVERT(VARCHAR(40), …)` y el primer E por `processedAt` y `settlementTxnId`. Cargarlo en `load-settlement-input.ts`. Verificar con los tests unitarios y, con turno de base, con `pnpm --filter @recon/backend test:integration -- settlement-source`.
-- [ ] 3.4 Commit: feat(settlement): leer el estado previo de las reservas al procesar, y `git push`.
+- [x] 3.3 Implementar `reserveStates` en `prisma-settlement-source.ts` (D2): una consulta por lote con `chunks`, sumas en `CONVERT(VARCHAR(40), …)` y el primer E por `processedAt` y `settlementTxnId`. Cargarlo en `load-settlement-input.ts`. Verificar con los tests unitarios y, con turno de base, con `pnpm --filter @recon/backend test:integration -- settlement-source`.
+- [x] 3.4 Commit: feat(settlement): leer el estado previo de las reservas al procesar, y `git push`.
+
+  Hecho: `pnpm --filter @recon/backend test:integration -- settlement-source` no filtra (corre la suite entera); el archivo solo se ejecuta con `pnpm --filter @recon/backend exec vitest run --project integration test/integration/settlement-source.int.test.ts`. El test de igualdad con el mundo en memoria compara también `reserveStates` (sin los `batchId`, que en la base son otros). Sin sumas: cada estado es el primer E y dos existencias.
 
 ## 4. Validación: faltantes R con la liberación en el I (TDD)
 
