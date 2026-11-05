@@ -5,7 +5,8 @@
 | **Fecha** | 2 de noviembre de 2026 |
 | **Actividad** | A14 del [plan](../plan/plan-implementacion-entrega-2.md): revisión corta de secretos, autorización, sesión y entradas |
 | **Realizada por** | Claude (asistente de IA), con supervisión del responsable |
-| **Resultado** | Sin hallazgos críticos abiertos. Se corrigieron 11 hallazgos y quedan 6 riesgos aceptados |
+| **Resultado** | Sin hallazgos críticos abiertos. Se corrigieron 11 hallazgos; quedan 7 riesgos aceptados y R1 está resuelto |
+| **Actualización** | 4 de noviembre de 2026: registro público, recupero y bajas del cambio [`weather-track-registro-cuentas`](../../openspec/changes/weather-track-registro-cuentas/proposal.md). Ver la [sección 6](#6-actualización-cuentas-autogestionadas) |
 
 **Alcance y límites.** Es una revisión corta, no una auditoría ni una prueba de penetración independiente. Tampoco es una verificación completa de OWASP ASVS, que queda como la extensión X4 del plan. Se hizo sobre la **configuración de producción en una pila local aislada** con datos ficticios, porque el despliegue en la nube está pospuesto ([ADR-0002](../decisions/0002-proveedor-del-servidor.md)). Cuando exista un servidor real, hay que repetirla allí.
 
@@ -27,13 +28,13 @@ Las 5 coincidencias de Gitleaks, y los 5 JWT que aparecen con ellas, están en e
 
 ## 2. Pruebas negativas
 
-Son 77 comprobaciones, reproducibles con [`backend/herramientas/pruebas_negativas.py`](../../backend/herramientas/pruebas_negativas.py). Todas pasan tras las correcciones.
+Son 115 comprobaciones, reproducibles con [`backend/herramientas/pruebas_negativas.py`](../../backend/herramientas/pruebas_negativas.py). Todas pasan tras las correcciones.
 
 | Área | Qué se comprobó | Resultado inicial |
 |---|---|---|
 | **Sesión** | Atributos `Secure`, `HttpOnly`, `SameSite` y `Path` de la cookie. El cierre de sesión, restablecer la clave y desactivar la cuenta cortan la sesión en el servidor | Correcto |
 | **Autenticación** | Todas las rutas del contrato responden 401 sin sesión, y también con cookies inventadas, vacías, largas o con inyección | Correcto |
-| **Autorización** | Otra cuenta recibe 403 en la estación ajena, y no se puede leer un sensor ajeno a través de una estación propia | Correcto |
+| **Autorización** | Sin niveles de usuario, toda cuenta ve todas las estaciones; una inexistente da 404 sin datos, y no se puede leer el sensor de otra estación a través de una estación. Hasta el 3 de noviembre se comprobaba el 403 en la estación ajena | Correcto |
 | **Bloqueo y enumeración** | Bloqueo tras 5 fallos, incluso con la clave correcta y con mayúsculas o espacios en el correo. Mismo mensaje y tiempos comparables exista o no la cuenta | Correcto |
 | **Entradas** | Inyección SQL, tipos erróneos, JSON roto, identificadores y fechas fuera de rango, cuerpos enormes | **Con hallazgos** |
 | **Archivos** | `.env`, `.git/config` y recorrido de rutas: el proxy no entrega nada de eso | Correcto |
@@ -65,16 +66,33 @@ H9, H10 y H11 se corrigieron en A13, durante la preparación de la configuració
 
 | # | Riesgo | Por qué se acepta | Cuándo revisarlo |
 |---|---|---|---|
-| R1 | **Sin límite por dirección IP.** Quien envíe muchos correos distintos evita el bloqueo y consume CPU, aunque ya no agota la memoria | Las claves son aleatorias, de 96 bits, y no hay registro ni cambio de clave por el usuario, así que adivinarlas no es viable. Caddy requiere un módulo adicional para limitar por IP | Antes de exponerlo a internet |
+| R1 | ~~**Sin límite por dirección IP.**~~ **Resuelto el 4 de noviembre de 2026**, ver la sección 6 | — | — |
 | R2 | **Bloqueo ajeno.** Quien conozca un correo puede bloquear esa cuenta 15 minutos con 5 intentos | Molestia acotada. Es el costo del bloqueo por cuenta | Si ocurre en la práctica |
 | R3 | **`/api/docs` es público** y carga recursos de un CDN | No expone datos, y el contrato ya está en el repositorio público | Antes del uso comercial |
 | R4 | **La API usa el usuario propietario de la base** y no uno con permisos mínimos | Una sola aplicación, sin puerto publicado, y consultas parametrizadas | Con el pipeline o más servicios |
 | R5 | **Imágenes por etiqueta y no por digest**, y `pip` en la imagen de Python con avisos conocidos (`PYSEC-2026-196`, `PYSEC-2026-3721`) | `pip` solo se usa al construir la imagen, para instalar `uv`, y no al ejecutar la aplicación | Con el pipeline |
 | R6 | **Caddy y PostgreSQL corren como root** dentro de sus contenedores | Son las imágenes oficiales, y el contenedor limita el alcance | Con el pipeline |
+| R7 | **Correos a terceros.** Cualquiera puede registrar un correo ajeno y hacer que reciba la confirmación | Como máximo 3 correos del mismo tipo por hora a cada dirección y 5 registros por hora desde cada IP. Sin confirmar, la cuenta se borra a las 48 horas. Un CAPTCHA se evalúa solo si aparece abuso | Si ocurre en la práctica |
+| R8 | **Entrega de correo real sin probar.** En local, Mailpit atrapa los correos; falta el proveedor de producción con SPF, DKIM y DMARC | No hay servidor público todavía | Al retomar el despliegue (línea B) |
 
 ## 5. Pendiente
 
 - Repetir las pruebas negativas sobre el servidor real cuando se retome el despliegue.
 - Comprobar por fuera de esta revisión que el `.env` real no se filtró, comparando sus valores con el historial.
 - Rotar las credenciales que estén en el repositorio privado del prototipo, como ya está anotado.
-- Antes de un uso comercial: la extensión X4 (OWASP ASVS, nivel 1), una revisión independiente y los riesgos R1 y R3.
+- Antes de un uso comercial: la extensión X4 (OWASP ASVS, nivel 1), una revisión independiente, el riesgo R3 y la revisión legal de los términos y la política de privacidad, hoy en borrador.
+
+## 6. Actualización: cuentas autogestionadas
+
+El 4 de noviembre de 2026 se agregaron el registro público, la confirmación por correo, el recupero de la contraseña, «Mi cuenta» y la baja. Se repitieron las pruebas negativas sobre la misma pila aislada, con la configuración de producción, y se sumaron 31 comprobaciones. Todas pasan.
+
+| Área | Qué se comprobó | Resultado |
+|---|---|---|
+| **Enumeración** | El registro, el recupero y el reenvío de la confirmación responden igual exista o no la cuenta. Un registro con un correo existente no cambia esa cuenta. Una cuenta sin confirmar recibe 403 solo con la contraseña correcta; con una incorrecta, el mismo 401 que cualquiera | Correcto |
+| **Enlaces** | Cada código sirve una sola vez y solo para su propósito: uno de confirmación no sirve para elegir contraseña. Los códigos inventados, vacíos, largos o con inyección se rechazan | Correcto |
+| **Baja** | Abrir la baja de un clic o la baja con enlace con `GET`, como haría un programa que revisa enlaces, no borra nada. Con `POST` se borran la cuenta y sus correos pendientes, y el código no se puede reutilizar | Correcto |
+| **Asignación masiva** | Un registro con campos de más, como `confirmado_en`, no confirma la cuenta | Correcto |
+| **Límite por IP** | 5 registros por hora, 10 pedidos de recupero por hora y 30 usos de enlaces cada 15 minutos; el siguiente recibe 429 con `Retry-After` | Correcto |
+| **Respuestas** | Los errores de validación nombran el campo sin repetir lo enviado, incluida la contraseña | Correcto |
+
+Las pruebas de extremo a extremo recorren los mismos flujos en el navegador, leyendo los correos en Mailpit, y verifican que el código se borra de la barra de direcciones y que el correo trae la cabecera `List-Unsubscribe`. Con esto **R1 queda resuelto**: el límite por IP se aplica en la API con la dirección que fija Caddy, en el ingreso y en todos los flujos públicos.

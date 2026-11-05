@@ -6,7 +6,7 @@
 | **Entrega final** | 9 de diciembre de 2026 |
 | **Punto de partida** | Entrega 2 presentada en forma anticipada ([pull request](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14)) |
 | **Responsable** | Pablo Guillermo Di Nanno |
-| **Versión** | 1.1, 3 de noviembre de 2026 |
+| **Versión** | 1.2, 4 de noviembre de 2026 |
 
 Este documento registra qué línea de trabajo está activa, cuál está en pausa y qué falta decidir, para no perder el hilo entre sesiones.
 
@@ -21,7 +21,7 @@ Este documento registra qué línea de trabajo está activa, cuál está en paus
 
 ## 2. Línea A: cuentas propias con registro, ingreso y recupero
 
-Hoy las cuentas las crea un administrador por línea de comandos y no hay registro público (requisito "Alta de cuentas sin registro público" de la especificación `account-access`). El responsable decidió cambiarlo. Esto **reemplaza ese requisito** y se tramitará como un cambio nuevo de OpenSpec antes de escribir código.
+Hasta el 3 de noviembre de 2026 las cuentas las creaba un administrador por línea de comandos (requisito "Alta de cuentas sin registro público" de la especificación `account-access`). El responsable decidió cambiarlo, y el cambio de OpenSpec `weather-track-registro-cuentas` **reemplaza ese requisito**. Desde el 4 de noviembre hay registro público; la especificación principal se actualiza al archivar el cambio.
 
 ### Objetivos
 
@@ -60,8 +60,8 @@ Ya se cumple y debe seguir así:
 
 ### Seguridad que exige el registro público
 
-- **El límite por IP deja de ser opcional.** Hoy es un riesgo aceptado (R1 en la [revisión de seguridad](../seguridad/revision-entrega-2.md)). Con registro y recupero abiertos, se aplica a ingreso, registro, recupero y reenvío de verificación.
-- Campo trampa contra robots simples. Un CAPTCHA se evalúa solo si aparece abuso.
+- **El límite por IP deja de ser opcional.** Era un riesgo aceptado (R1 en la [revisión de seguridad](../seguridad/revision-entrega-2.md)) y quedó resuelto: se aplica a ingreso, registro, recupero, reenvío de la confirmación y uso de enlaces.
+- El campo trampa contra robots simples no entró en el cambio aprobado: el límite por IP y el tope de 3 correos por hora a cada dirección cubren ese abuso (riesgo R7). Un campo trampa o un CAPTCHA se evalúan solo si aparece abuso.
 - Los enlaces de verificación y recupero se guardan como hash, igual que las sesiones.
 - Se amplían las pruebas negativas y las de extremo a extremo con los flujos nuevos.
 
@@ -83,7 +83,7 @@ Una estación es solo una central meteorológica que llega de SAT2, un "equipo".
 - [x] Responder las preguntas abiertas (sección 5)
 - [x] Proponer los cambios de OpenSpec de cuentas y de estaciones
 - [x] El responsable aprueba los cambios (3 de noviembre de 2026)
-- [ ] Implementar las tareas, cada grupo con sus pruebas y su documentación. `weather-track-estaciones`: 20 de 20, el 4 de noviembre de 2026. `weather-track-registro-cuentas`: pendiente
+- [x] Implementar las tareas, cada grupo con sus pruebas y su documentación. `weather-track-estaciones`: 20 de 20, el 4 de noviembre de 2026. `weather-track-registro-cuentas`: 33 de 34 el 4 de noviembre de 2026; falta la verificación del responsable (tarea 8.4)
 - [ ] **El responsable verifica la aplicación local** y la aprueba
 
 ## 3. Línea B: despliegue público en Google Cloud, en pausa
@@ -102,7 +102,7 @@ El 2 de noviembre de 2026 se revisó, en modo solo lectura y sin credenciales, e
 | Tipo | Pendiente |
 |---|---|
 | Revisar | Facturación, servicios y regiones, disparadores, registros, permisos y reglas, con la sesión de `gcloud` y `firebase` del responsable |
-| Hacer | Corregir el hallazgo del sistema existente; decidir la lógica de referencia; confirmar el dominio; aplicar el límite por IP; crear la máquina virtual y desplegar; repetir las pruebas negativas sobre el servidor real |
+| Hacer | Corregir el hallazgo del sistema existente; decidir la lógica de referencia; confirmar el dominio; elegir el proveedor de correo y configurar SPF, DKIM y DMARC; crear la máquina virtual y desplegar; repetir las pruebas negativas sobre el servidor real |
 | Documentar | Actualizar el ADR-0002 y la [guía de despliegue](../despliegue/despliegue-gcp.md) con lo que se haga |
 | Inventariar | Completar el inventario privado con lo que muestre la consola |
 
@@ -114,7 +114,7 @@ LIDR revisó la Entrega 1 el 2 de noviembre de 2026 con el resultado **"Luz verd
 
 | Observación | Cómo quedó |
 |---|---|
-| Cómo se crean las cuentas | Comando de administración (F1). Cambia con el registro público de la línea A |
+| Cómo se crean las cuentas | Registro público con confirmación por correo (F1), desde el 4 de noviembre de 2026. El comando de administración queda para cuentas de demostración |
 | Cómo se carga el histórico | Carga inicial de 31 días (F6) |
 | Umbral de 30 minutos en un solo lugar | `ANTIGUEDAD_MAXIMA` en `backend/app/dominio/vigencia.py`, usado por la recomendación y las condiciones actuales |
 | Tests | Backend, frontend y extremo a extremo; el motor con 100 % de cobertura |
@@ -158,3 +158,4 @@ Respuestas del responsable del 3 de noviembre de 2026:
 | 3 nov 2026 | Estación = equipo de SAT2; selector siempre visible; equipos inactivos con solo históricos; modo de prueba en lugar de `escenarios` |
 | 3 nov 2026 | Se aprueban los cambios `weather-track-registro-cuentas` y `weather-track-estaciones` |
 | 3 nov 2026 | Se suman los pendientes de la devolución de la Entrega 1 como línea D; D1 a D3 van primero |
+| 4 nov 2026 | Implementados el registro público, el recupero, «Mi cuenta», las bajas y la exportación de clientes; R1 resuelto. Queda la verificación del responsable |

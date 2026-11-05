@@ -1,7 +1,7 @@
 """Operaciones administrativas sobre cuentas. Las crea ya confirmadas.
 
     python -m app.administracion crear-usuario --email a@b.example --nombre "Nombre"
-    python -m app.administracion asignar-estacion --email a@b.example --id-equipo 1
+    python -m app.administracion asignar-estacion --email a@b.example --id-equipo 1   # hoy sin efecto: no hay niveles
     python -m app.administracion restablecer-clave --email a@b.example
     python -m app.administracion desactivar-usuario --email a@b.example
     python -m app.administracion exportar-clientes > clientes.csv

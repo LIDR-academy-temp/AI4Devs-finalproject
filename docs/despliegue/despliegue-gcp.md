@@ -156,19 +156,13 @@ Buscar el número de equipo de la estación:
 docker compose exec db psql -U weather_track -d weather_track -c "select id_equipo_sat2, nombre from estacion"
 ```
 
-Crear la cuenta. La clave aparece una sola vez:
+Las personas crean su cuenta desde **Crear una cuenta** y la confirman con el correo que envía el proveedor configurado en `SMTP_*`. Toda cuenta confirmada ve todas las estaciones. Para una cuenta de demostración sin correo, el administrador la crea ya confirmada; la clave aparece una sola vez:
 
 ```bash
 docker compose exec api python -m app.administracion crear-usuario --email persona@ejemplo.com --nombre "Nombre Apellido"
 ```
 
-Asignarle la estación:
-
-```bash
-docker compose exec api python -m app.administracion asignar-estacion --email persona@ejemplo.com --id-equipo NUMERO
-```
-
-No hay registro público: solo entra quien tenga una cuenta creada así. Para que alguien "visite" la aplicación, hay que crearle una cuenta.
+La base de clientes se exporta con `docker compose exec -T api python -m app.administracion exportar-clientes > clientes.csv`. Ese archivo tiene datos personales: no se sube al repositorio.
 
 ## 7. Verificar
 

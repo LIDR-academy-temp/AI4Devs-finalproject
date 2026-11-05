@@ -48,3 +48,21 @@ export function sql(consulta: string): string {
     'exec', '-T', 'db', 'psql', '-U', 'weather_track', '-d', 'weather_track', '-tAc', consulta,
   ).trim()
 }
+
+/** Crea una cuenta ya confirmada, como el administrador, y devuelve su clave. */
+export function crearCuentaConfirmada(email: string, nombre = 'Prueba E2E'): string {
+  const salida = compose(
+    'exec', '-T', 'api', 'python', '-m', 'app.administracion',
+    'crear-usuario', '--email', email, '--nombre', nombre,
+  )
+  const clave = /se muestra una sola vez: (\S+)/.exec(salida)?.[1]
+  if (!clave) {
+    throw new Error('La administración no informó la clave de la cuenta')
+  }
+  return clave
+}
+
+/** Las pruebas de cuentas registran e ingresan seguido desde la misma IP. */
+export function vaciarLimitesPorIp() {
+  sql('DELETE FROM limite_ip')
+}

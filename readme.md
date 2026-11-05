@@ -62,12 +62,13 @@ https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp
 
 | ID | Funcionalidad | Descripción |
 |---|---|---|
-| F1 | Acceso | Inicio y cierre de sesión con cuentas propias de Weather Track. Las cuentas las crea un administrador; no hay registro público. |
+| F1 | Cuentas | Registro público con confirmación por correo, ingreso, recupero de la contraseña, «Mi cuenta» y baja, que borra la cuenta con todos sus datos. Las cuentas sin confirmar en 48 horas también se borran. Sin niveles de usuario: toda cuenta confirmada ve todas las estaciones. Las credenciales de SAT2 nunca se relacionan con las cuentas. |
 | F2 | Estación | Selector siempre visible con las estaciones: cada una es un equipo de SAT2, hoy INTA Pergamino. Un equipo que deja de llegar de SAT2 queda inactivo y muestra solo sus históricos. |
 | F3 | Condiciones actuales | Una tarjeta por sensor con valor, unidad, calidad del dato y antigüedad. |
 | F4 | Recomendación | Estado de aplicación, índice TIS (Índice de Inversión Térmica), diferencia térmica y motivos. |
 | F5 | Históricos | Serie por sensor de los últimos 7 o 31 días, con resumen estadístico. |
 | F6 | Ingesta automática | Carga inicial de los últimos 31 días y proceso programado que cada 10 minutos obtiene datos, los normaliza, los guarda y calcula la recomendación. |
+| F7 | Base de clientes | El administrador exporta a CSV las cuentas confirmadas, con su consentimiento para recibir novedades, sin datos de acceso. |
 
 #### Sistema de unidades
 
@@ -126,7 +127,11 @@ La recomendación es **orientativa** y la pantalla lo indica siempre. Los pesos 
 
 ```mermaid
 flowchart LR
+    R["Registro"] --> M["Correo de confirmación"]
+    M --> A
+    P["Recupero de la contraseña"] --> A
     A["Acceso"] --> C["Pantalla de decisión<br/>de la primera estación activa"]
+    C --> K["Mi cuenta:<br/>datos, contraseña y baja"]
     B["Selector de estación<br/>en el encabezado"] --> C
     B --> G["Equipo inactivo:<br/>solo históricos"]
     C --> D["Motivos de la recomendación"]
@@ -137,7 +142,9 @@ flowchart LR
 
 La **pantalla de decisión** es el centro de la experiencia. Muestra primero el estado de aplicación con su color, debajo los motivos y el aviso de que es orientativa, y al final las tarjetas de sensores. Se actualiza sola cada 60 segundos. Si los datos no son vigentes, el estado pasa a `DATOS_INSUFICIENTES` y explica por qué.
 
-El encabezado tiene siempre el selector de estación, aunque haya una sola. En los modos con datos ficticios, una franja lo avisa en todas las pantallas.
+El encabezado tiene siempre el selector de estación, aunque haya una sola, y el enlace a «Mi cuenta». En los modos con datos ficticios, una franja lo avisa en todas las pantallas.
+
+La **pantalla de acceso** ofrece crear una cuenta y recuperar la contraseña. Los enlaces de los correos abren pantallas propias: confirmar la cuenta, elegir una contraseña nueva o darse de baja, que solo borra al tocar el botón. Los términos de uso y la política de privacidad son un borrador pendiente de revisión legal.
 
 Capturas del MVP, con datos ficticios. Las primeras cuatro son del modo `simulado`, con el nombre de la estación real; las demás, del modo `prueba`, con las situaciones cargadas en "Caso de prueba - 1":
 
@@ -166,13 +173,13 @@ docker compose up --build -d --wait
 docker compose exec api python -m app.semillas
 ```
 
-El último comando muestra el usuario de demostración y su clave, que aparece una sola vez. La aplicación queda en `http://localhost:8080`.
+El último comando muestra el usuario de demostración y su clave, que aparece una sola vez. La aplicación queda en `http://localhost:8080`. También se puede crear una cuenta desde «Crear una cuenta»: el correo de confirmación llega a Mailpit, en `http://localhost:8025`, y no sale a internet.
 
 - **[Guía de instalación local](docs/despliegue/instalacion-local.md):** paso a paso desde cero, uso con datos reales de SAT2, actualización, desinstalación y problemas frecuentes.
 - **[Guion de la demostración](docs/demo/guion-demo.md):** recorre los cinco estados y las reglas en unos 7 minutos, en modo `prueba`, cargando cada situación en "Caso de prueba - 1" con `python -m herramientas.situaciones`.
 - **[Despliegue en Google Cloud](docs/despliegue/despliegue-gcp.md) (pospuesto):** guía preparada para publicar en internet con HTTPS y dominio propio. Todavía no se ejecutó.
 - **Modos de datos:** `simulado` por defecto, `real` con una cuenta de SAT2 y `prueba` para ver el selector con dos casos. La base recuerda con qué modo se llenó y no arranca con otro, así que los datos reales y los ficticios nunca se mezclan. Para probar con datos reales hay un comando que copia la base a un proyecto aislado. Detalle en la [sección 5 de la guía](docs/despliegue/instalacion-local.md#5-modos-de-datos).
-- Las cuentas se administran con `docker compose exec api python -m app.administracion`, con los comandos `crear-usuario`, `asignar-estacion`, `restablecer-clave` y `desactivar-usuario`.
+- El administrador puede operar con `docker compose exec api python -m app.administracion`: `crear-usuario` (la crea ya confirmada), `restablecer-clave`, `desactivar-usuario` y `exportar-clientes`, que escribe el CSV de la base de clientes en la salida estándar.
 - Para detenerla sin perder datos, usar `docker compose stop`. `docker compose down -v` borra la base.
 - La documentación de la API está en `http://localhost:8080/api/docs`.
 
@@ -366,8 +373,9 @@ Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-ent
 | Credenciales de terceros aisladas | La cuenta de servicio de SAT2 solo existe en el worker. Nunca llega al navegador ni a la API de lectura. |
 | Contraseñas | Solo se guarda un hash con Argon2id, con un tope de cálculos simultáneos para que una ráfaga no agote la memoria. |
 | Sesión | Identificador opaco en cookie `HttpOnly` y `SameSite`, y `Secure` en el servidor. Vence a las 8 horas y se invalida al salir. |
-| Autorización | Todas las rutas se protegen en el servidor. Un usuario solo accede a sus estaciones; de lo contrario recibe 403. |
-| Abuso | Bloqueo por cuenta tras 5 intentos fallidos, y límite por dirección IP: 30 inicios de sesión cada 15 minutos. Caddy reemplaza `X-Forwarded-For` con la dirección real, así que una cabecera falsa no lo evade. Los flujos de registro y recupero tendrán su propio límite. |
+| Autorización | Todas las rutas se protegen en el servidor. Sin niveles de usuario, toda cuenta confirmada consulta todas las estaciones; una estación inexistente da 404 y un sensor solo se lee a través de su propia estación. |
+| Cuentas | Códigos de un solo uso de 256 bits, guardados como hash y enviados después de `#`, para que no lleguen al servidor en la dirección. La baja de un clic de los programas de correo sí lleva el código en la dirección, como exige su norma, y los registros lo ocultan. Las mismas respuestas exista o no la cuenta. Contraseñas de 15 a 128 caracteres, sin las más comunes, según NIST SP 800-63B-4. La baja por enlace exige `POST`. |
+| Abuso | Bloqueo por cuenta tras 5 intentos fallidos, y límite por dirección IP: 30 inicios de sesión cada 15 minutos, 5 registros por hora, 10 pedidos de recupero o reenvío por hora y 30 usos de enlaces cada 15 minutos. Caddy reemplaza `X-Forwarded-For` con la dirección real, así que una cabecera falsa no lo evade. Además, cada correo recibe como máximo 3 mensajes del mismo tipo por hora. |
 | Transporte | HTTPS en el servidor. En local, HTTP solo desde la misma computadora. El navegador y la API comparten dominio, así que CORS no está habilitado. |
 | Cabeceras | HSTS, política de contenido, `nosniff`, protección contra marcos y sin cabecera `Server`. |
 | Entrada | Validación con Pydantic, consultas parametrizadas por el ORM y límite de 64 KB en el cuerpo. |
@@ -380,10 +388,10 @@ Resultado de la última ejecución, el 4 de noviembre de 2026: todas pasan.
 
 | Nivel | Herramienta | Qué cubre | Pruebas |
 |---|---|---|---|
-| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, permisos, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba y situaciones | 428 |
-| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo y flujos de acceso e históricos | 52 |
-| Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el selector y el equipo inactivo | 17 |
-| Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras y carga | 77 |
+| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones y el ciclo de vida de las cuentas: registro, códigos, correo, contraseñas, límites por IP y exportación | 551 |
+| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos, y las pantallas de cuentas con sus errores por campo | 71 |
+| Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el selector, el equipo inactivo y las cuentas leyendo los correos en Mailpit: registro, confirmación, recupero y las tres formas de baja | 21 |
+| Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras, carga, enumeración de correos, enlaces de un solo uso, baja por `GET` y límites por IP | 115 |
 
 Además, la ingesta se probó una vez contra SAT2 real, durante 38 minutos y con 48.427 lecturas. Los comandos están en la [sección 1.4](#14-instrucciones-de-instalación).
 

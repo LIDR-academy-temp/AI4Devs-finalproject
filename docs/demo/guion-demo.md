@@ -60,11 +60,23 @@ Ese último comando muestra el correo y la clave de demostración. Abrir <http:/
 | 6:30 | | Herramientas del navegador, ancho 360 | La pantalla de decisión | Pensada para usarse en el lote, con el celular |
 | 6:45 | | Salir | Cerrar sesión | La sesión se invalida en el servidor |
 
+## Cuentas, si hay tiempo (2 minutos)
+
+Se puede mostrar antes de empezar o al final, en otra pestaña:
+
+1. En la pantalla de acceso, **Crear una cuenta**: nombre, apellido, correo, una contraseña de al menos 15 caracteres, localidad y provincia, y aceptar los términos.
+2. Abrir <http://localhost:8025>, el Mailpit local: llegó el correo de confirmación, con la leyenda para darse de baja. Ningún correo sale a internet.
+3. Abrir el enlace: la cuenta queda confirmada y la dirección ya no muestra el código. Ingresar.
+4. **Mi cuenta**, en el encabezado: corregir un dato, cambiar la contraseña o darse de baja, que borra la cuenta con todos sus datos.
+
+Qué decir: la cuenta del sitio no tiene relación con la cuenta de SAT2, que solo usa el servidor; quien no confirma en 48 horas se borra.
+
 ## Si preguntan
 
 - **¿Y con datos reales?** El worker ya se probó contra SAT2 durante 38 minutos, con 48.427 lecturas. Hoy la estación real no llega a "Apto", porque el sensor de humedad a 2 m informa 0 % y la regla R4 lo impide. El sistema está haciendo lo que debe.
 - **¿El índice está validado?** Todavía no. La bibliografía respalda las variables, pero no los pesos ni los cortes: ver el [contraste bibliográfico](../tis/contraste-bibliografico.md). La validación agronómica es para la Entrega 3.
 - **¿Está en internet?** Todavía no: el despliegue público está pospuesto ([ADR-0002](../decisions/0002-proveedor-del-servidor.md)).
+- **¿Quién puede crear una cuenta?** Cualquiera, con un correo propio que confirme. Las cuentas confirmadas forman la base de clientes, que el administrador exporta a CSV.
 
 ## Al terminar
 

@@ -43,12 +43,13 @@ Ese comando muestra el correo y la clave. **La clave aparece una sola vez:** cop
 
 ## 2. Usar la aplicación
 
-Abrí <http://localhost:8080> e ingresá con esos datos.
+Abrí <http://localhost:8080> e ingresá con esos datos. También podés crear tu propia cuenta desde **Crear una cuenta**: el correo de confirmación llega a Mailpit, en <http://localhost:8025>.
 
 La aplicación solo responde en tu computadora: no queda expuesta a otros equipos de tu red, porque en local no usa HTTPS.
 
 1. **Decisión:** el estado de aplicación, sus motivos y las condiciones actuales. Se actualiza sola cada minuto.
 2. **Detalle de sensor:** tocá una tarjeta para ver el gráfico y el resumen de 7 o 31 días.
+3. **Mi cuenta:** en el encabezado. Corregí tus datos, cambiá la contraseña o date de baja, que borra la cuenta con todos sus datos.
 
 Los históricos ficticios se cargan en segundo plano y pueden tardar un par de minutos en aparecer completos. La documentación de la API está en <http://localhost:8080/api/docs>.
 
@@ -110,16 +111,10 @@ Buscá el número de equipo de tu estación. Si todavía no aparece, esperá un 
 docker compose exec db psql -U weather_track -d weather_track -c "select id_equipo_sat2, nombre from estacion"
 ```
 
-Creá tu cuenta con tu correo y tu nombre. La clave aparece una sola vez:
+Creá tu cuenta desde **Crear una cuenta**, en <http://localhost:8080>, y confirmala con el correo que llega a Mailpit. Toda cuenta confirmada ve todas las estaciones. Si preferís crearla sin correo, como administrador, la clave aparece una sola vez:
 
 ```bash
 docker compose exec api python -m app.administracion crear-usuario --email tu@correo.com --nombre "Tu nombre"
-```
-
-Asignale la estación, reemplazando `NUMERO`:
-
-```bash
-docker compose exec api python -m app.administracion asignar-estacion --email tu@correo.com --id-equipo NUMERO
 ```
 
 El sistema consulta SAT2 cada 10 minutos. La carga de los últimos 31 días tarda unos 40 minutos y avanza en segundo plano, con pausas para no sobrecargar a SAT2.

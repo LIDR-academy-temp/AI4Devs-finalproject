@@ -86,15 +86,10 @@ def admin(archivo, *args):
     return compose(archivo, "exec", "-T", "api", "python", "-m", "app.administracion", *args)
 
 
-def crear(archivo, email, *equipos):
+def crear(archivo, email):
+    """Una cuenta ya confirmada, como la crea el administrador. Ve todas las estaciones."""
     salida = admin(archivo, "crear-usuario", "--email", email, "--nombre", "Prueba").stdout
-    clave = re.search(r"una sola vez: (\S+)", salida).group(1)
-    for equipo in equipos:
-        for _ in range(30):
-            if admin(archivo, "asignar-estacion", "--email", email, "--id-equipo", str(equipo)).returncode == 0:
-                break
-            time.sleep(1)
-    return clave
+    return re.search(r"una sola vez: (\S+)", salida).group(1)
 
 
 def entrar(email, clave):
@@ -119,8 +114,8 @@ try:
         print(arriba.stderr[-500:])
         raise SystemExit(1)
 
-    clave_a = crear(E, "a@ejemplo.com", 1)
-    clave_b = crear(E, "b@ejemplo.com", 2)
+    clave_a = crear(E, "a@ejemplo.com")
+    clave_b = crear(E, "b@ejemplo.com")
     codigo, galleta_cruda = entrar("a@ejemplo.com", clave_a)
     galleta_a = galleta_cruda.split(";")[0]
     atributos = galleta_cruda.lower()
@@ -222,7 +217,7 @@ try:
     comprobar(f"cuerpo de 3 MB rechazado por el proxy ({codigo})", codigo in (413, 0), str(codigo))
 
     print("\n== Bloqueo y enumeracion")
-    clave_v = crear(E, "victima@ejemplo.com", 1)
+    clave_v = crear(E, "victima@ejemplo.com")
     t0 = time.perf_counter(); pedir("/api/v1/auth/login", "POST", {"email": "victima@ejemplo.com", "contrasena": "mala"}); t_existe = time.perf_counter() - t0
     t0 = time.perf_counter(); r_no = pedir("/api/v1/auth/login", "POST", {"email": "noexiste@ejemplo.com", "contrasena": "mala"}); t_no = time.perf_counter() - t0
     r_si = pedir("/api/v1/auth/login", "POST", {"email": "victima@ejemplo.com", "contrasena": "mala"})
@@ -257,7 +252,7 @@ try:
     vaciar_contadores_de_ip()
 
     print("\n== Vida de la sesion")
-    clave_c = crear(E, "ciclo@ejemplo.com", 1)
+    clave_c = crear(E, "ciclo@ejemplo.com")
     galleta_c = entrar("ciclo@ejemplo.com", clave_c)[1].split(";")[0]
     comprobar("sesion activa", pedir("/api/v1/estaciones", galleta=galleta_c)[0] == 200)
     pedir("/api/v1/auth/logout", "POST", galleta=galleta_c)
@@ -270,6 +265,82 @@ try:
     admin(E, "desactivar-usuario", "--email", "ciclo@ejemplo.com")
     comprobar("desactivar corta la sesion", pedir("/api/v1/estaciones", galleta=galleta_c)[0] == 401)
     comprobar("cuenta inactiva no entra", entrar("ciclo@ejemplo.com", nueva)[0] == 401)
+
+    print("\n== Cuentas: enumeracion de correos")
+
+    def sql(consulta):
+        return compose(E, "exec", "-T", "db", "psql", "-U", "weather_track", "-d", "weather_track", "-tAc", consulta).stdout.strip()
+
+    def codigo_del_correo(email, tipo, ruta):
+        """El worker no puede enviar (el servidor de correo no existe): el enlace sigue en la bandeja."""
+        texto = sql(f"select cuerpo_texto from correo_saliente where destinatario = '{email}' and tipo = '{tipo}' order by id desc limit 1")
+        encontrado = re.search(rf"{ruta}#codigo=([A-Za-z0-9_-]+)", texto)
+        return encontrado.group(1) if encontrado else ""
+
+    def registrar(email, extra=None):
+        datos = {
+            "nombre": "Prueba", "apellido": "Negativa", "email": email,
+            "contrasena": "una frase larga " + secrets.token_hex(6), "localidad": "Pergamino",
+            "provincia": "Buenos Aires", "acepta_terminos": True, "acepta_novedades": False, **(extra or {}),
+        }
+        return pedir("/api/v1/auth/registro", "POST", datos), datos["contrasena"]
+
+    vaciar_contadores_de_ip()
+    (r_nuevo, _), (r_existente, _) = registrar("nuevo@ejemplo.com"), registrar("a@ejemplo.com")
+    comprobar("registro: misma respuesta con correo nuevo o existente", r_nuevo[0] == r_existente[0] == 202 and r_nuevo[2] == r_existente[2], f"{r_nuevo[0]} {r_existente[0]}")
+    comprobar("registro existente no cambia la cuenta", entrar("a@ejemplo.com", clave_a)[0] == 200)
+    for ruta in ("/api/v1/auth/recupero", "/api/v1/auth/confirmacion/reenvio"):
+        si = pedir(ruta, "POST", {"email": "a@ejemplo.com"})
+        no = pedir(ruta, "POST", {"email": "nadie@ejemplo.com"})
+        comprobar(f"{ruta}: misma respuesta exista o no", si[0] == no[0] == 202 and si[2] == no[2], f"{si[0]} {no[0]}")
+    _, clave_n = registrar("pendiente@ejemplo.com")
+    comprobar("cuenta sin confirmar no entra con la clave correcta", entrar("pendiente@ejemplo.com", clave_n)[0] == 403)
+    comprobar("cuenta sin confirmar con clave mala: 401 como cualquiera", entrar("pendiente@ejemplo.com", "mala")[0] == 401)
+    r_extra, clave_x = registrar("extra@ejemplo.com", {"confirmado_en": "2026-01-01T00:00:00+00:00", "id": 1, "activo": True})
+    comprobar(f"registro con campos de mas no confirma la cuenta ({r_extra[0]})", r_extra[0] in (202, 422) and entrar("extra@ejemplo.com", clave_x)[0] in (401, 403))
+    r_malo, clave_mala = registrar("sin-arroba")
+    comprobar(f"el error de registro no repite la contrasena ({r_malo[0]})", r_malo[0] == 422 and clave_mala.encode() not in r_malo[2])
+
+    print("\n== Cuentas: enlaces de un solo uso")
+    vaciar_contadores_de_ip()
+    codigo_c = codigo_del_correo("pendiente@ejemplo.com", "CONFIRMACION", "/confirmar")
+    comprobar("el correo de confirmacion trae el codigo", bool(codigo_c))
+    comprobar("confirmar con el codigo", pedir("/api/v1/auth/confirmacion", "POST", {"codigo": codigo_c})[0] == 200)
+    comprobar("el mismo codigo no sirve dos veces", pedir("/api/v1/auth/confirmacion", "POST", {"codigo": codigo_c})[0] == 400)
+    comprobar("la cuenta confirmada entra", entrar("pendiente@ejemplo.com", clave_n)[0] == 200)
+    pedir("/api/v1/auth/recupero", "POST", {"email": "pendiente@ejemplo.com"})
+    codigo_r = codigo_del_correo("pendiente@ejemplo.com", "RECUPERO", "/restablecer")
+    nueva_n = "otra frase larga " + secrets.token_hex(6)
+    comprobar("nueva contrasena con el codigo", pedir("/api/v1/auth/recupero/nueva-contrasena", "POST", {"codigo": codigo_r, "contrasena": nueva_n})[0] == 200)
+    comprobar("el codigo de recupero no sirve dos veces", pedir("/api/v1/auth/recupero/nueva-contrasena", "POST", {"codigo": codigo_r, "contrasena": nueva_n + "x"})[0] == 400)
+    comprobar("el codigo de confirmacion no sirve para recuperar", pedir("/api/v1/auth/recupero/nueva-contrasena", "POST", {"codigo": codigo_c, "contrasena": nueva_n})[0] == 400)
+    for nombre, codigo in [("inventado", secrets.token_urlsafe(32)), ("vacio", ""), ("inyeccion", "' OR '1'='1"), ("largo", "a" * 5000)]:
+        r = pedir("/api/v1/auth/confirmacion", "POST", {"codigo": codigo})[0]
+        comprobar(f"codigo {nombre} rechazado ({r})", r in (400, 422), str(r))
+
+    print("\n== Cuentas: baja")
+    codigo_b = codigo_del_correo("pendiente@ejemplo.com", "RECUPERO", "/baja")
+    consulta = urllib.parse.urlencode({"codigo": codigo_b})
+    comprobar("GET de la baja de un clic no se acepta", pedir(f"/api/v1/cuenta/baja-un-clic?{consulta}")[0] == 405)
+    comprobar("GET de la baja con enlace no se acepta", pedir("/api/v1/cuenta/baja-con-enlace")[0] == 405)
+    comprobar("abrir la pagina de baja responde", pedir("/baja")[0] == 200)
+    comprobar("tras los GET la cuenta sigue", entrar("pendiente@ejemplo.com", nueva_n)[0] == 200)
+    comprobar("baja de un clic con POST", pedir(f"/api/v1/cuenta/baja-un-clic?{consulta}", "POST", b"List-Unsubscribe=One-Click", tipo="application/x-www-form-urlencoded")[0] == 200)
+    comprobar("tras la baja la cuenta no entra", entrar("pendiente@ejemplo.com", nueva_n)[0] == 401)
+    comprobar("el codigo de baja no sirve dos veces", pedir("/api/v1/cuenta/baja-con-enlace", "POST", {"codigo": codigo_b})[0] == 400)
+    comprobar("la baja borra los correos pendientes", sql("select count(*) from correo_saliente where destinatario = 'pendiente@ejemplo.com'") == "0")
+
+    print("\n== Cuentas: limite por IP")
+    vaciar_contadores_de_ip()
+    codigos = [registrar(f"lote{n}@ejemplo.com")[0][0] for n in range(5)]
+    comprobar("5 registros por hora desde una IP", set(codigos) == {202}, str(codigos))
+    codigo, cabeceras, _ = registrar("lote9@ejemplo.com")[0]
+    comprobar("el sexto registro recibe 429", codigo == 429 and cabeceras.get("Retry-After") is not None, str(codigo))
+    codigos = [pedir("/api/v1/auth/recupero", "POST", {"email": f"r{n}@ejemplo.com"})[0] for n in range(11)]
+    comprobar("recupero: 10 por hora y despues 429", codigos[:10] == [202] * 10 and codigos[10] == 429, str(codigos))
+    codigos = [pedir("/api/v1/auth/confirmacion", "POST", {"codigo": secrets.token_urlsafe(32)})[0] for _ in range(31)]
+    comprobar("enlaces: 30 intentos por 15 minutos y despues 429", set(codigos[:30]) == {400} and codigos[30] == 429, str(sorted(set(codigos))))
+    vaciar_contadores_de_ip()
 
     print("\n== Archivos y cabeceras")
     for ruta in ("/.env", "/.git/config", "/../../etc/passwd", "/..%2f..%2fetc%2fpasswd", "/api/../.env", "/backend/app/semillas.py", "/docker-compose.yml"):
