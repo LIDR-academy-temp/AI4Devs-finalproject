@@ -169,6 +169,8 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
       expect(file!.textContent).toMatch(/^Recon_Template_ProviderA-USD_batch-split_part[12]\.xlsx$/)
       expect(file).toHaveAttribute('title', file!.textContent)
       expect(file).not.toHaveClass('truncate')
+      // The cell does not wrap (whitespace-nowrap), and without whitespace-normal overflow-wrap does nothing (#132).
+      expect(file).toHaveClass('whitespace-normal')
     }
   })
 
