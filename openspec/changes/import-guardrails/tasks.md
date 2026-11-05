@@ -90,8 +90,13 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
 
 - [x] 5.1 Ampliar `inclusion.test.ts` (y `compute-settlement.test.ts`) con una fila `matched` de otro proveedor: `classifyRows` lanza un error que nombra `sheetId:rowNo` y "another provider", y no hay movimientos ni `toAssign`. Comprobar que falla.
 - [x] 5.2 Commit: test(settlement): invariante de filas de otro proveedor en rojo (#92), y `git push`.
-- [ ] 5.3 Implementar D5 (`classifyRows(rows, inclusions, providerId)` y su llamada en `computeSettlement`). Verificar que el test pasa y que los tests de dominio de settlement siguen en verde, con `Skipped` sin cambios.
-- [ ] 5.4 Commit: feat(settlement): una fila de otro proveedor nunca se procesa (#92), y `git push`.
+- [x] 5.3 Implementar D5 (`classifyRows(rows, inclusions, providerId)` y su llamada en `computeSettlement`). Verificar que el test pasa y que los tests de dominio de settlement siguen en verde, con `Skipped` sin cambios.
+
+  Resultado:
+  - El invariante va en una función propia, `assertOwnProviderRows(rows, providerId)` en `inclusion.ts`, que `computeSettlement` llama antes de `classifyRows`. La firma de `classifyRows` y sus llamadas no cambian; la regla es la de D5.
+  - Los tests de dominio pasan.
+  - Siguen fallando 2 tests de la vista previa (servicio y ruta) porque falta `requiresEmptyBatchConfirmation`/`emptyBatch`, del contrato del grupo 1. Se arreglan en 8.1.
+- [x] 5.4 Commit: feat(settlement): una fila de otro proveedor nunca se procesa (#92), y `git push`.
 
 ## 6. Imports: detalle, aviso de canales y tope en el servicio y el API
 
