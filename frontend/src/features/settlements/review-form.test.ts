@@ -19,6 +19,7 @@ const values = (overrides: Partial<ReviewFormValues> = {}): ReviewFormValues => 
   settlementDate: '2026-10-24',
   fees: [fileRow()],
   confirmChannels: false,
+  confirmEmptyBatch: false,
   ...overrides,
 })
 
@@ -151,6 +152,8 @@ describe('Settlement Review form: the body', () => {
     expect(toRequest(values({ confirmChannels: true }), 12, false)).not.toHaveProperty('confirmChannelAssignment')
     expect(toRequest(values({ confirmChannels: false }), 12, true)).not.toHaveProperty('confirmChannelAssignment')
     expect(toRequest(values({ confirmChannels: true }), 12, true)).toMatchObject({ confirmChannelAssignment: true })
+    // The box of an empty batch never goes in the preview body: Process adds confirmEmptyBatch itself (#92).
+    expect(toRequest(values({ confirmEmptyBatch: true }), 12, true)).not.toHaveProperty('confirmEmptyBatch')
   })
 
   it('sends no batch fees as an empty list', () => {

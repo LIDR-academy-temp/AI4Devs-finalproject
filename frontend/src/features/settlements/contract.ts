@@ -101,6 +101,7 @@ export interface ErrorDetails {
   import_not_validated: ImportNotValidatedDetails
   batch_no_taken: BatchNoTakenDetails
   channel_assignment_not_confirmed: ChannelAssignmentNotConfirmedDetails
+  no_matched_rows: EmptyBatch
   batch_fee_invalid: BatchFeeInvalidDetails
   settlement_not_processed: SettlementStateDetails
   settlement_not_paid: SettlementStateDetails

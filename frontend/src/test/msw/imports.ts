@@ -750,6 +750,14 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
           if (!EDITABLE.includes(record.status)) return notEditable(record)
           const uploads = await readUploads(request)
           if (uploads instanceof Response) return uploads
+          // 10 files per import in total, before the duplicates, as the API checks it (#40).
+          if (record.files.length + uploads.length > MAX_FILES) {
+            return error(409, 'import_file_limit_reached', `An import holds at most ${MAX_FILES} files`, {
+              limit: MAX_FILES,
+              current: record.files.length,
+              adding: uploads.length,
+            })
+          }
           for (const upload of uploads) {
             const original = record.files.find((f) => f.sha256 === upload.sha256)
             if (original) {

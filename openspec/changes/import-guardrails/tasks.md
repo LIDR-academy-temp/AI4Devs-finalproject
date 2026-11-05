@@ -182,15 +182,15 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
 
 ## 10. Frontend: Settlement Review y Upload Files
 
-- [ ] 10.1 Settlement Review según D8: `review-form` (`confirmEmptyBatch`), `toRequest` (solo en process), `EmptyBatchConfirmation.tsx` en `PreSummary`, el motivo de Process deshabilitado, y `no_matched_rows` en `mutations.ts` y `STALE_PREVIEW`. Textos en `settlements/strings.ts`.
-- [ ] 10.2 Upload Files: `import_file_limit_reached` en `features/imports/files/upload-queue.ts` con el texto del escenario, en `imports/strings.ts` (sección de rechazos, fuera de `analysis`). Ampliar el handler MSW de `POST files` con el tope.
-- [ ] 10.3 Tests RTL:
+- [x] 10.1 Settlement Review según D8: `review-form` (`confirmEmptyBatch`), `toRequest` (solo en process), `EmptyBatchConfirmation.tsx` en `PreSummary`, el motivo de Process deshabilitado, y `no_matched_rows` en `mutations.ts` y `STALE_PREVIEW`. Textos en `settlements/strings.ts`.
+- [x] 10.2 Upload Files: `import_file_limit_reached` en `features/imports/files/upload-queue.ts` con el texto del escenario, en `imports/strings.ts` (sección de rechazos, fuera de `analysis`). Ampliar el handler MSW de `POST files` con el tope.
+- [x] 10.3 Tests RTL:
   - los escenarios de "Pantalla Settlement Review: batch sin filas asociadas", en `process.test.tsx` y `preview.test.tsx`;
   - `review-form.test.ts`: la vista previa nunca lleva `confirmEmptyBatch`;
   - "Pantalla Upload Files: tope de archivos del import".
 
   Verificar con `pnpm --filter @recon/frontend test`, `pnpm lint` y `git diff --stat` sin `features/imports/analysis`.
-- [ ] 10.4 Commit: feat(web): batch sin filas asociadas en Settlement Review y tope de archivos en Upload Files (#92, #40), y `git push`.
+- [x] 10.4 Commit: feat(web): batch sin filas asociadas en Settlement Review y tope de archivos en Upload Files (#92, #40), y `git push`.
 
 ## 11. Colección Bruno
 
