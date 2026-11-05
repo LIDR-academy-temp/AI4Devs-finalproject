@@ -26,3 +26,7 @@ Una sincronización puede agregar hasta 50 ofertas (RF-04b). Si todas reciben pu
 
 - Positivas: costo acotado y visible; la instancia de demostración (ADR-0007) usa topes bajos sin cambiar código; RNF-07 se vuelve medible.
 - Negativas: el usuario debe pedir el puntaje de las ofertas importadas; un paso más en el flujo de ofertas automáticas.
+
+## Historial de cambios
+
+- 2026-11-05: registrada en el log de decisiones del PRD como D-12 (puntaje a pedido), D-13 (topes de gasto) y D-20 (el control de gasto se construye antes que cualquier ticket que llame a la IA). La decisión no cambia.

@@ -41,3 +41,4 @@ Datos relevantes:
 ## Historial de cambios
 
 - 2026-11-04: deduplicación entre fuentes con `dedupe_key` (hash normalizado de empresa, título y ubicación principal) y URL canónica (hallazgo AA1 de `docs/architecture-review.md`). Las ofertas importadas se puntúan a pedido (ADR-0008). La decisión no cambia.
+- 2026-11-05: registrada en el log de decisiones del PRD como D-07 (fuentes automáticas), D-09 (Lever should-have) y D-14 (deduplicación entre fuentes). La decisión no cambia.

@@ -835,3 +835,29 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con las seis mejoras al AI SDLC (decisiones D-xx, propagación bidireccional, contratos de ticket, orden verificado, criterio de parada y pruebas de mutación) y el ticket T-37. Sin push.
+
+### Prompt 64
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Revisa una vez más y busca inconsistencias en la documentación
+  ```
+
+- **Resultado:** Revisión con el criterio de parada nuevo (guía §5.3): `check_docs.py` en verde, búsqueda de las decisiones y nombres cambiados en el último commit y lectura de los documentos más antiguos (ADRs, revisiones, arquitectura, `openspec/config.yaml`, plantillas). Se corrigieron: la resolución AB2 de `docs/architecture-review.md` (T-10 → T-37) y citas D-xx en sus resoluciones, el historial de ADR-0006, 0007 y 0008 con sus D-xx, la numeración de la plantilla de consistencia y las reglas de `openspec/config.yaml` (D-xx, contratos y propagación). Sin commit.
+
+### Prompt 65
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con la revisión de consistencia hecha con el criterio de parada. Sin push.

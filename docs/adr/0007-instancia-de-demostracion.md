@@ -27,3 +27,7 @@ El curso exige incluir en `readme.md` credenciales de prueba para el evaluador y
 
 - Positivas: el evaluador prueba el flujo completo sin acceso a datos reales; el costo de la demostración queda acotado.
 - Negativas: dos servicios y dos bases de datos que operar y pagar (AB1); la semilla de demostración debe mantenerse al día con el modelo de datos.
+
+## Historial de cambios
+
+- 2026-11-05: registrada en el log de decisiones del PRD como D-11. La decisión no cambia.

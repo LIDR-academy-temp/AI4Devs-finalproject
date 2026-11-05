@@ -26,9 +26,11 @@ rules:
     - Escenarios en formato WHEN/THEN derivados de los criterios de aceptación del PRD.
     - Cada escenario debe poder verificarse con una prueba automatizada sin llamar a la API real de Claude.
   design:
-    - Respetar los ADRs de docs/adr/; si el cambio requiere una decisión nueva, proponer un ADR.
+    - Respetar los ADRs de docs/adr/; si el cambio requiere una decisión nueva, proponer un ADR y registrarla en el log de decisiones del PRD con un D-xx.
+    - Indicar el contrato del ticket (Expone / Consume, como en docs/tickets.md) y verificar que lo consumido venga de una dependencia.
     - Para trabajo con IA, indicar el esquema de salida, la versión del prompt y cómo se evalúa.
   tasks:
     - Orden TDD - primero la prueba que falla, luego la implementación.
+    - Si el cambio altera una decisión, un contrato o una dependencia, incluir la tarea de propagación (guía §5.1) y ejecutar python3 scripts/check_docs.py.
     - Máximo unas 15 tareas; si son más, dividir el cambio.
     - Incluir tareas de i18n para textos nuevos de la interfaz y de actualización de documentación.
