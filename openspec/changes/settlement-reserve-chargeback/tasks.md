@@ -132,8 +132,10 @@ Hecho: los casos pasan a la primera, porque la implementación es de los grupos 
 
 ## 8. Verificación de conjunto
 
-- [ ] 8.1 `pnpm lint`, `pnpm typecheck`, `pnpm test` y, con turno de base, la integración completa, todo en verde, y `openspec validate settlement-reserve-chargeback --strict` en verde. Verificación: salida de los comandos en el PR.
-- [x] 8.2 `/review-diff` del PR con los cinco focos (README §7):
+- [x] 8.1 `pnpm lint`, `pnpm typecheck`, `pnpm test` y, con turno de base, la integración completa, todo en verde, y `openspec validate settlement-reserve-chargeback --strict` en verde. Verificación: salida de los comandos en el PR.
+  Hecho (8.1): `pnpm lint`, `pnpm typecheck`, `openspec validate --strict` y `openapi:check` limpios. `pnpm test`: 1363 en verde, 3 saltados y 1 timeout por carga (`argon2-password-hasher`, 5045 ms; solo pasa en 344 ms). Integración completa sobre la base recién sembrada: 39 archivos y 468 tests en verde (bench saltado). Restos: conteos por tabla iguales antes y después, salvo 89 filas de `AuditLog` de `auth.login.*` de los tests, como antes del change.
+
+- [ ] 8.2 `/review-diff` del PR con los cinco focos (README §7):
   - dinero nunca `number`, ni siquiera al comparar `reserveHeldAmt`;
   - ningún movimiento Settled al procesar;
   - ningún comentario en español en `.ts`/`.sql`;
@@ -141,7 +143,7 @@ Hecho: los casos pasan a la primera, porque la implementación es de los grupos 
   - snapshot y advertencias con el vocabulario fijo.
 
   Verificación: hallazgos resueltos o anotados en el PR.
-  Hecho (8.2): sin hallazgos en dinero (`Decimal` y texto; `Number()` solo en las banderas 0/1 del SQL), Settled (procesar no toca `settled`), `console.log` ni vocabulario. Hallazgo menor corregido: cuatro nombres de test de `missing.test.ts` empezaban en español; pasan a inglés con el título del escenario entre comillas, como los comentarios del repo.
+  Pendiente: el `/review-diff` lo pide la persona en una sesión nueva (una revisión del propio trabajo no cuenta). Antes se corrigió un detalle visto al repasar: cuatro nombres de test de `missing.test.ts` empezaban en español; pasan a inglés con el título del escenario entre comillas.
 - [ ] 8.3 Commit: chore(settlement): arreglos de la verificación de settlement-reserve-chargeback, y `git push`.
 
 ## Workflow follow-up
