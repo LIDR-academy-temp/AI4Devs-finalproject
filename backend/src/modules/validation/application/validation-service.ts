@@ -71,10 +71,16 @@ export class ValidationService {
    * `POST /imports/{id}/review` (D7): the decision on the run the analyst saw. The repository re-reads the current run
    * inside its guarded transaction, so a run confirmed meanwhile makes it answer validation_run_superseded.
    */
-  async review(scope: Scope, userId: number, importId: string, runId: number): Promise<ValidationRunView> {
+  async review(
+    scope: Scope,
+    userId: number,
+    importId: string,
+    runId: number,
+    confirmEmptyBatch = false,
+  ): Promise<ValidationRunView> {
     const ref = await this.requireImport(scope, importId)
     assertCanReview(ref.status)
-    await this.deps.runs.review(importId, runId, userId, this.now())
+    await this.deps.runs.review(importId, runId, userId, this.now(), confirmEmptyBatch)
     return this.viewOf(await this.requireImport(scope, importId))
   }
 

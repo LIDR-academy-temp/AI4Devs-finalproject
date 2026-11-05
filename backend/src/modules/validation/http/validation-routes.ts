@@ -117,14 +117,21 @@ export const validationRoutes: FastifyPluginAsyncZod<ValidationRoutesOptions> = 
         description:
           'Only in analyzed and on the current run (runId). 409 validation_run_required without a run, ' +
           'validation_run_superseded for another runId, blocking_validation_issue when provider_mismatch blocks it ' +
-          '(no override: cancel the import).',
+          '(no override: cancel the import), no_matched_rows when no row matches a transaction of the account and ' +
+          'confirmEmptyBatch is not true (details { rowsTotal, rowsUnmatched, unmatchedByReason, likelyWrongAccount }; #92).',
         params: ImportParams,
         body: ReviewBody,
         response: { 200: ValidationRunView, ...writeErrors },
       },
     },
     async (request) =>
-      service.review(scopeOf(request.auth), request.auth.userId, request.params.importId, request.body.runId),
+      service.review(
+        scopeOf(request.auth),
+        request.auth.userId,
+        request.params.importId,
+        request.body.runId,
+        request.body.confirmEmptyBatch === true,
+      ),
   )
 
   app.patch(

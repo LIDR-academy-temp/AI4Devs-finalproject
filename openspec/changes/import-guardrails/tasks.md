@@ -123,8 +123,8 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
 
 ## 7. Validación: confirmación en el review
 
-- [ ] 7.1 Añadir `confirmEmptyBatch` a `ValidationService.review` y a `ValidationRunRepository.review`, en Prisma y en memoria, según D2: dentro de la transacción, tras el bloqueo, `NoMatchedRowsError` y `emptyBatchConfirmed` en la auditoría. Declarar el `409 no_matched_rows` en la ruta `POST /imports/{id}/review`.
-- [ ] 7.2 Tests con fakes (`validation-service.review.test.ts` y `validation-routes.test.ts`):
+- [x] 7.1 Añadir `confirmEmptyBatch` a `ValidationService.review` y a `ValidationRunRepository.review`, en Prisma y en memoria, según D2: dentro de la transacción, tras el bloqueo, `NoMatchedRowsError` y `emptyBatchConfirmed` en la auditoría. Declarar el `409 no_matched_rows` en la ruta `POST /imports/{id}/review`.
+- [x] 7.2 Tests con fakes (`validation-service.review.test.ts` y `validation-routes.test.ts`):
   - sin confirmar → 409 con `details`;
   - confirmado → 200 y auditoría;
   - confirmación de más → 200 sin la clave;

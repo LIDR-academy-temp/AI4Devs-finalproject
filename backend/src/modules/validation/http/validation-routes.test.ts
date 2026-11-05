@@ -316,4 +316,29 @@ describe('POST /imports/:importId/review', () => {
     expect(required.statusCode).toBe(409)
     expect(errorCode(required.json())).toBe('validation_run_required')
   })
+
+  it('409 no_matched_rows with its details without confirmEmptyBatch, 200 with it (#92)', async () => {
+    const unmatchedByReason = { no_match: 0, id_format: 12, lossy_numeric_id: 0, no_gateways: 0 }
+    runs.setEmptyBatchFacts(importId, { rowsTotal: 12, matchedOwn: 0, unmatchedByReason })
+    const run = ValidationRunView.parse((await request('POST', `/imports/${importId}/validations`)).json())
+
+    const refused = await request('POST', `/imports/${importId}/review`, { body: { runId: run.run!.runId } })
+    expect(refused.statusCode).toBe(409)
+    expect(refused.json()).toMatchObject({
+      code: 'no_matched_rows',
+      details: { rowsTotal: 12, rowsUnmatched: 12, unmatchedByReason, likelyWrongAccount: true },
+    })
+
+    const body = { runId: run.run!.runId, confirmEmptyBatch: true }
+    const confirmed = await request('POST', `/imports/${importId}/review`, { body })
+    expect(confirmed.statusCode).toBe(200)
+    expect(ValidationRunView.parse(confirmed.json()).importStatus).toBe('validated')
+  })
+
+  it('400 validation_error for a confirmEmptyBatch that is not a boolean', async () => {
+    const res = await request('POST', `/imports/${importId}/review`, { body: { runId: 1, confirmEmptyBatch: 'yes' } })
+
+    expect(res.statusCode).toBe(400)
+    expect(errorCode(res.json())).toBe('validation_error')
+  })
 })

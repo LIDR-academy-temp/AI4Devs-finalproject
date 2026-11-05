@@ -22,7 +22,9 @@ import {
 } from '@recon/shared'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import type { Scope } from '../../catalog/domain/scope.js'
-import { ImportNotEditableError } from '../../imports/domain/errors.js'
+import { emptyBatchOf } from '../../imports/domain/empty-batch.js'
+import { ImportNotEditableError, NoMatchedRowsError } from '../../imports/domain/errors.js'
+import { loadEmptyBatchFacts } from '../../imports/infrastructure/empty-batch-facts.js'
 import {
   BlockingValidationIssueError,
   ImportChangedError,
@@ -220,7 +222,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
     throw new ImportNotEditableError(current?.status ?? 'unknown')
   }
 
-  async review(importId: string, runId: number, userId: number, now: Date): Promise<void> {
+  async review(importId: string, runId: number, userId: number, now: Date, confirmEmptyBatch: boolean): Promise<void> {
     await this.prisma.$transaction(
       async (tx) => {
         // Keep the hook right before the guard: a read placed between the two would not be caught by any test.
@@ -256,6 +258,13 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
             issues.map((i) => i.issueId),
           )
         }
+        // After the run checks, so an import with rows of another provider says provider_mismatch (#92, design D2).
+        const { account } = await tx.import.findUniqueOrThrow({
+          where: { importId },
+          select: { account: { select: { providerId: true } } },
+        })
+        const empty = emptyBatchOf(await loadEmptyBatchFacts(tx, importId, account.providerId))
+        if (empty.requiresConfirmation && !confirmEmptyBatch) throw new NoMatchedRowsError(empty.details)
         const [changed] = await tx.$queryRaw<{ n: number | bigint }[]>`
           SELECT COUNT(*) AS n FROM [ConflictOccurrence] o
           JOIN [ValidationIssue] i ON i.[issueId] = o.[issueId]
@@ -278,6 +287,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
                 ]),
               ),
               changedOccurrences: Number(changed?.n ?? 0),
+              ...(empty.requiresConfirmation ? { emptyBatchConfirmed: true } : {}),
             }),
           },
         })
