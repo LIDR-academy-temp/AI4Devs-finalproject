@@ -45,7 +45,7 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
 
 ## 3. Dominio de imports: batch vacío, canales y tope (TDD)
 
-- [ ] 3.1 Escribir `backend/src/modules/imports/domain/empty-batch.test.ts` y comprobar que falla porque el módulo no existe. Debe cubrir cada escenario de "Import sin filas asociadas":
+- [x] 3.1 Escribir `backend/src/modules/imports/domain/empty-batch.test.ts` y comprobar que falla porque el módulo no existe. Debe cubrir cada escenario de "Import sin filas asociadas":
   - archivo de otra cuenta, con `rows` de `batch-wrong-account/expected.json` como oráculo;
   - batch con filas asociadas;
   - mezcla `id_format` + `no_match`;
@@ -53,14 +53,14 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
   - solo filas de otro proveedor (`matchedOwn = 0`).
 
   Romperlo a propósito una vez (por ejemplo, `likelyWrongAccount` sin `rowsUnmatched > 0`) y ver que falla el caso de solo ignoradas.
-- [ ] 3.2 Ampliar `channel-notice.test.ts` con:
+- [x] 3.2 Ampliar `channel-notice.test.ts` con:
   - el canal de otro proveedor (`otherProvider: true`, `note` de canal ajeno, `assignment` sin cambiar);
   - el canal de otro merchant (también `otherProvider`);
   - un canal del mismo proveedor principal en otra cuenta, sin `otherProvider` (escenario RAM-03).
 
   Comprobar que fallan.
-- [ ] 3.3 Ampliar `upload-policy.test.ts` y `errors.test.ts` con `MAX_FILES_PER_IMPORT = 10` y `ImportFileLimitReachedError` (409, `import_file_limit_reached`, `details = { limit, current, adding }`). Ampliar `errors.test.ts` también con `NoMatchedRowsError` (409, `no_matched_rows`, mensaje en inglés). Comprobar que fallan.
-- [ ] 3.4 Commit: test(imports): batch sin filas asociadas, canal de otro proveedor y tope de archivos en rojo, y `git push`.
+- [x] 3.3 Ampliar `upload-policy.test.ts` y `errors.test.ts` con `MAX_FILES_PER_IMPORT = 10` y `ImportFileLimitReachedError` (409, `import_file_limit_reached`, `details = { limit, current, adding }`). Ampliar `errors.test.ts` también con `NoMatchedRowsError` (409, `no_matched_rows`, mensaje en inglés). Comprobar que fallan.
+- [x] 3.4 Commit: test(imports): batch sin filas asociadas, canal de otro proveedor y tope de archivos en rojo, y `git push`.
 - [ ] 3.5 Implementar `empty-batch.ts`, `channelNotices(accountId, providerId, …)` (D4), la constante y los dos errores. Verificar que los tests de 3.1–3.3 pasan con `pnpm --filter @recon/backend test`.
 - [ ] 3.6 Commit: feat(imports): regla del batch sin filas asociadas, aviso de canal de otro proveedor y errores nuevos, y `git push`.
 

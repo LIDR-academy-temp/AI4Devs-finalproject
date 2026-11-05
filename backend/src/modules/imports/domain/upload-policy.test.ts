@@ -5,6 +5,7 @@ import {
   isOoxmlMagic,
   MAX_FILE_BYTES,
   MAX_FILE_NAME_LENGTH,
+  MAX_FILES_PER_IMPORT,
   MAX_FILES_PER_REQUEST,
   sanitizeFileName,
 } from './upload-policy.js'
@@ -65,5 +66,9 @@ describe('limits', () => {
   it('fixes 20 MiB per file and 10 files per request (README §4.2, design D3)', () => {
     expect(MAX_FILE_BYTES).toBe(20 * 1024 * 1024)
     expect(MAX_FILES_PER_REQUEST).toBe(10)
+  })
+
+  it('fixes 10 files per import in total, however many requests bring them (#40)', () => {
+    expect(MAX_FILES_PER_IMPORT).toBe(10)
   })
 })
