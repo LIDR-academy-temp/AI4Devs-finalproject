@@ -11,6 +11,7 @@ de la base de datos, así que **los archivos solo tienen sentido sobre una base 
 | `batch-split/` | ProviderA-USD · batch 123 | El mismo batch en dos archivos (E en `part1`; I, R y fees en `part2`) | Idéntico a `batch-clean` |
 | `batch-issues/` | ProviderB-Main · batch 52 | Una incidencia de cada validación no bloqueante, canal nuevo (RAM-13), ID desconocido, importe negativo, tipo de fee fuera de catálogo | Conteos por validación e IDs afectados en `expected.json` |
 | `batch-blocked/` | ProviderB-Main · batch 52 | Una transacción de un canal de otro proveedor | `provider_mismatch` = 1, import bloqueado |
+| `batch-wrong-account/` | ProviderA-USD · batch 123 | Un archivo de otra cuenta: IDs UUID de ProviderC-USD en una cuenta con solo gateway numérico, más un fee en `Other Fees` | 0 filas asociadas, todas `id_format`; aviso de cuenta equivocada; procesar exige `confirmEmptyBatch` y da un batch solo de fees (`amountPayable` −25.0000) |
 | `legacy-provider/` | ProviderC-Alt · batch 7 | Nombres de hoja y columna antiguos resueltos por el conjunto de reglas "Provider C legacy"; gateway UUID; alias `CHB 2` con importe excluido | 0 hallazgos; un movimiento con `excludeAmount` |
 
 `excel-real/excel-real-sample.xlsx` (sin `expected.json`) es la plantilla guardada por Excel de
@@ -31,3 +32,12 @@ python data/samples/build-samples.py      # requiere openpyxl
 
 `plan.json` es un intermedio y no se versiona. Cambiar la semilla o los parámetros de
 `synthetic.ts` obliga a volver a sembrar la base y a regenerar las muestras a la vez.
+
+Los `expected.json` regenerados se pasan por `pnpm exec biome format --write data/samples/*/expected.json`
+para que queden con el formato del repositorio.
+
+openpyxl local reescribe los bytes de los .xlsx existentes sin cambiar celdas; se restauran
+tras comprobarlo celda a celda. Cambian las fechas de `docProps/core.xml` y la serialización
+del XML. Si se conservaran, cambiaría el `sha256` de `batch-clean`, que fijan los tests. Así que,
+cuando el cambio no toca las celdas de una muestra existente, sus `.xlsx` se restauran con
+`git checkout` y solo se versionan los archivos nuevos.

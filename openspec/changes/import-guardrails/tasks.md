@@ -27,14 +27,21 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
 
 ## 2. Muestra `batch-wrong-account`
 
-- [ ] 2.1 Añadir en `data/samples/plan.ts` el bloque de D9, al final y sin consumir `rng`:
+- [x] 2.1 Añadir en `data/samples/plan.ts` el bloque de D9, al final y sin consumir `rng`:
   - `ProviderA-USD`, batch 123;
   - APP con 10 `Successful` y DEC con 2 `Declined` de RAM-U1 (`ProviderC-USD`), elegidas de forma determinista (las primeras por `transactionDate`);
   - las hojas CHB, REF, RDR y RR vacías, y `Other Fees` con `Wire Fee 25 USD`;
   - en `expected`: `rows` con `unmatchedByReason`, `requiresEmptyBatchConfirmation`, `likelyWrongAccount`, `channels: []`, `batchFees`, los resultados de las ocho validaciones y el `summary` del batch solo de fees (`amountPayable = -25.0000`).
-- [ ] 2.2 Regenerar con `pnpm samples:plan && python data/samples/build-samples.py`. Verificar con `git status --short data/samples` que **solo** aparece `batch-wrong-account/`, con su `.xlsx` y su `expected.json`. Si cambia cualquier otro archivo (un `.xlsx` o un `expected.json` existentes), **parar y preguntar a la persona** (P7). En `settlement-reserve-chargeback` el openpyxl local cambió los bytes de los `.xlsx` sin cambiar sus celdas: si pasa, se informa con la comparación celda a celda y se espera su decisión.
-- [ ] 2.3 Añadir la fila de la muestra a `data/samples/README.md`. Añadir `batch-wrong-account` a `SampleName` y `SAMPLE_FILES` en `backend/test/integration/import-flow.ts`. Verificar con `pnpm lint` y `pnpm typecheck` en `backend`.
-- [ ] 2.4 Commit: test(samples): muestra batch-wrong-account de un archivo de otra cuenta (#92), y `git push`.
+- [x] 2.2 Regenerar con `pnpm samples:plan && python data/samples/build-samples.py`. Verificar con `git status --short data/samples` que **solo** aparece `batch-wrong-account/`, con su `.xlsx` y su `expected.json`. Si cambia cualquier otro archivo (un `.xlsx` o un `expected.json` existentes), **parar y preguntar a la persona** (P7). En `settlement-reserve-chargeback` el openpyxl local cambió los bytes de los `.xlsx` sin cambiar sus celdas: si pasa, se informa con la comparación celda a celda y se espera su decisión.
+
+  Resultado:
+  - Los cinco `expected.json` existentes solo cambian de formato y quedan iguales tras `biome format`.
+  - Los seis `.xlsx` existentes cambian de bytes con el openpyxl local (3.1.5): fechas de `docProps/core.xml` y la serialización de los espacios de nombres. Tienen las mismas celdas que en HEAD (valores, formato numérico, orden y visibilidad de las hojas).
+  - Con el visto bueno de la persona, se restauran con `git checkout`. El `sha256` de `batch-clean` vuelve a ser `c46857d3…`, y `import-routes.test.ts` pasa.
+  - Queda solo `batch-wrong-account/` (12 filas `id_format`, `amountPayable = -25.0000`) más `plan.ts`.
+  - **openpyxl local reescribe los bytes de los .xlsx existentes sin cambiar celdas; se restauran tras comprobarlo celda a celda.**
+- [x] 2.3 Añadir la fila de la muestra a `data/samples/README.md`. Añadir `batch-wrong-account` a `SampleName` y `SAMPLE_FILES` en `backend/test/integration/import-flow.ts`. Verificar con `pnpm lint` y `pnpm typecheck` en `backend`.
+- [x] 2.4 Commit: test(samples): muestra batch-wrong-account de un archivo de otra cuenta (#92), y `git push`.
 
 ## 3. Dominio de imports: batch vacío, canales y tope (TDD)
 
