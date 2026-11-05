@@ -6,7 +6,7 @@
 | **Actividad** | A14 del [plan](../plan/plan-implementacion-entrega-2.md): revisión corta de secretos, autorización, sesión y entradas |
 | **Realizada por** | Claude (asistente de IA), con supervisión del responsable |
 | **Resultado** | Sin hallazgos críticos abiertos. Se corrigieron 11 hallazgos; quedan 7 riesgos aceptados y R1 está resuelto |
-| **Actualización** | 4 de noviembre de 2026: registro público, recupero y bajas del cambio [`weather-track-registro-cuentas`](../../openspec/changes/weather-track-registro-cuentas/proposal.md). Ver la [sección 6](#6-actualización-cuentas-autogestionadas) |
+| **Actualización** | 4 de noviembre de 2026: registro público, recupero y bajas del cambio [`weather-track-registro-cuentas`](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md). Ver la [sección 6](#6-actualización-cuentas-autogestionadas) |
 
 **Alcance y límites.** Es una revisión corta, no una auditoría ni una prueba de penetración independiente. Tampoco es una verificación completa de OWASP ASVS, que queda como la extensión X4 del plan. Se hizo sobre la **configuración de producción en una pila local aislada** con datos ficticios, porque el despliegue en la nube está pospuesto ([ADR-0002](../decisions/0002-proveedor-del-servidor.md)). Cuando exista un servidor real, hay que repetirla allí.
 

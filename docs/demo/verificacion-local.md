@@ -1,6 +1,6 @@
 # Verificación de la aplicación local
 
-Lista corta para que el responsable revise la aplicación local antes de aprobarla (tarea 8.4 del cambio [`weather-track-registro-cuentas`](../../openspec/changes/weather-track-registro-cuentas/tasks.md) y tarea 3.3 de [`weather-track-historicos-rangos`](../../openspec/changes/weather-track-historicos-rangos/tasks.md)). Usa datos simulados y no toca la instalación con datos reales.
+Lista corta para que el responsable revise la aplicación local antes de aprobarla (tarea 8.4 del cambio [`weather-track-registro-cuentas`](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/tasks.md) y tarea 3.3 de [`weather-track-historicos-rangos`](../../openspec/changes/archive/2026-11-05-weather-track-historicos-rangos/tasks.md)). Usa datos simulados y no toca la instalación con datos reales.
 
 ## Levantarla
 

@@ -513,7 +513,7 @@ erDiagram
 
 > Se guarda en UTC. La interfaz muestra la hora de Argentina (`America/Argentina/Buenos_Aires`).
 >
-> Las tablas de soporte `SESION` e `INTENTO_ACCESO` se detallan en el [diseño del cambio](openspec/changes/archive/2026-11-03-weather-track-mvp-nucleo/design.md). La tabla `CONFIGURACION_BASE`, de una sola fila, registra si la base guarda datos reales o ficticios para que nunca se mezclen; se detalla en el [diseño de `weather-track-estaciones`](openspec/changes/weather-track-estaciones/design.md). `CORREO_SALIENTE`, la bandeja de salida de los correos de las cuentas, y `LIMITE_IP`, los contadores del límite de pedidos por dirección IP, se detallan en el [diseño de `weather-track-registro-cuentas`](openspec/changes/weather-track-registro-cuentas/design.md).
+> Las tablas de soporte `SESION` e `INTENTO_ACCESO` se detallan en el [diseño del cambio](openspec/changes/archive/2026-11-03-weather-track-mvp-nucleo/design.md). La tabla `CONFIGURACION_BASE`, de una sola fila, registra si la base guarda datos reales o ficticios para que nunca se mezclen; se detalla en el [diseño de `weather-track-estaciones`](openspec/changes/archive/2026-11-05-weather-track-estaciones/design.md). `CORREO_SALIENTE`, la bandeja de salida de los correos de las cuentas, y `LIMITE_IP`, los contadores del límite de pedidos por dirección IP, se detallan en el [diseño de `weather-track-registro-cuentas`](openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/design.md).
 
 **USUARIO.** Persona con acceso al sistema.
 
@@ -624,7 +624,7 @@ Esta sección muestra el acceso, la lista de estaciones y los tres endpoints de 
 
 El registro, la confirmación, el recupero y las bajas por enlace no usan sesión: los protegen sus códigos de un solo uso y el límite por dirección IP. Las demás rutas exigen la sesión del usuario. Sin niveles de usuario, toda cuenta consulta todas las estaciones. Los valores de los ejemplos son ficticios.
 
-Los flujos de cuentas vienen del cambio [`weather-track-registro-cuentas`](openspec/changes/weather-track-registro-cuentas/proposal.md), y el estado de los equipos, de [`weather-track-estaciones`](openspec/changes/weather-track-estaciones/proposal.md).
+Los flujos de cuentas vienen del cambio [`weather-track-registro-cuentas`](openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), y el estado de los equipos, de [`weather-track-estaciones`](openspec/changes/archive/2026-11-05-weather-track-estaciones/proposal.md).
 
 ```yaml
 openapi: 3.0.3

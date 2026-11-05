@@ -59,7 +59,7 @@ Las decisiones están en `design.md` (D1 a D12) y el comportamiento en las specs
 - [x] 8.1 Agregar pruebas de extremo a extremo que lean los correos desde Mailpit: registro, confirmación, ingreso, recupero, baja desde el correo y baja desde la aplicación, y verificar que pasan junto con las existentes
 - [x] 8.2 Ampliar las pruebas negativas con enumeración de correos, reutilización de enlaces, límite por IP y baja por `GET`, y verificar que no quedan hallazgos críticos
 - [x] 8.3 Actualizar la revisión de seguridad (R1 resuelto), la guía de la demo, la F1 del README y la hoja de ruta, y verificar que ningún documento dice que no hay registro público
-- [ ] 8.4 Levantar la aplicación local en modo `simulado` con una guía corta para el responsable, y verificar con él que la aplicación está como la quiere
+- [x] 8.4 Levantar la aplicación local en modo `simulado` con una guía corta para el responsable, y verificar con él que la aplicación está como la quiere. Aprobada por el responsable el 5 de noviembre de 2026
 
 ## Workflow follow-up
 

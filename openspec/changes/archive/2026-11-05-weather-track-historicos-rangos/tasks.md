@@ -13,4 +13,4 @@
 
 - [x] 3.1 Actualizar la E2E de HU3 con Semana, Mes y un rango manual, y verificar que pasa con las demás
 - [x] 3.2 Actualizar F5 y HU3 del README y la guía de la demo, y verificar que ningún documento ofrece solo 7 y 31 días
-- [ ] 3.3 El responsable verifica los históricos en la aplicación local de revisión
+- [x] 3.3 El responsable verifica los históricos en la aplicación local de revisión. Aprobada por el responsable el 5 de noviembre de 2026

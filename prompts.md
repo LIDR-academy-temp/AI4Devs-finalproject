@@ -336,7 +336,7 @@ Dejemos todo este proceso documentado para no perder el hilo.
 5. dado el punto 4 obtendremos una base de clientes para futuro
 ```
 
-**Prompt 2:** respuesta a las preguntas del asistente. Generó el cambio [`weather-track-registro-cuentas`](openspec/changes/weather-track-registro-cuentas/proposal.md).
+**Prompt 2:** respuesta a las preguntas del asistente. Generó el cambio [`weather-track-registro-cuentas`](openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md).
 
 ```text
 Si, solo servidor porque el contrato con SAT2 es privado nuestro y nosotros damos prestación de los datos cosechados. Definir los accesos como se exige en la industria de software. El ingreso público queda en base local y pueden administrar la inscripción o recupero. Luego del registro Reciben correo de confirmación con leyenda para desuscribirse. si no confirman o se desuscriben, se borran de la base. Luego ingresan a la aplicación funcional. Por ahora no hay criterio de niveles o clasificación de usuario
@@ -367,7 +367,7 @@ D. La llamamos como la real
 
 Como la respuesta A admitía más de una lectura, el asistente preguntó antes de seguir. El autor eligió: "Caso 1 con datos reales", "Siempre visible" para el selector y "Lista de sensores" para llegar a los históricos de un equipo inactivo.
 
-**Prompt 3:** aprobó pasar la resolución al cambio [`weather-track-estaciones`](openspec/changes/weather-track-estaciones/proposal.md).
+**Prompt 3:** aprobó pasar la resolución al cambio [`weather-track-estaciones`](openspec/changes/archive/2026-11-05-weather-track-estaciones/proposal.md).
 
 ```text
 Sí, pásala

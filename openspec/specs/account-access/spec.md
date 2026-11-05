@@ -7,12 +7,12 @@ Permite que solo las personas con una cuenta activa de Weather Track ingresen al
 
 ### Requirement: Inicio de sesión con cuenta propia
 
-El sistema SHALL iniciar una sesión cuando una persona ingresa un correo y una contraseña válidos de una cuenta activa. El correo MUST compararse sin distinguir mayúsculas de minúsculas.
+El sistema SHALL iniciar una sesión cuando una persona ingresa un correo y una contraseña válidos de una cuenta activa y confirmada. El correo MUST compararse sin distinguir mayúsculas de minúsculas.
 
 #### Scenario: Credenciales válidas
 
-- **WHEN** una persona con una cuenta activa ingresa su correo y contraseña correctos
-- **THEN** el sistema inicia la sesión y muestra sus estaciones asignadas
+- **WHEN** una persona con una cuenta activa y confirmada ingresa su correo y contraseña correctos
+- **THEN** el sistema inicia la sesión y abre la primera estación activa
 
 #### Scenario: Credenciales inválidas
 
@@ -24,19 +24,10 @@ El sistema SHALL iniciar una sesión cuando una persona ingresa un correo y una 
 - **WHEN** el titular de una cuenta desactivada ingresa sus credenciales correctas
 - **THEN** el sistema no inicia la sesión y responde con el mismo mensaje genérico
 
-### Requirement: Alta de cuentas sin registro público
+#### Scenario: Cuenta sin confirmar
 
-El sistema SHALL permitir crear cuentas y asignar estaciones solo mediante una operación administrativa, y SHALL NOT ofrecer registro público.
-
-#### Scenario: Pantalla de acceso
-
-- **WHEN** una persona sin cuenta abre la aplicación
-- **THEN** no encuentra ninguna opción para registrarse
-
-#### Scenario: Alta administrativa
-
-- **WHEN** un administrador crea una cuenta y le asigna una estación
-- **THEN** esa persona puede iniciar sesión y consultar esa estación
+- **WHEN** el titular de una cuenta sin confirmar ingresa sus credenciales correctas
+- **THEN** el sistema no inicia la sesión, indica que falta confirmar el correo y ofrece reenviar el enlace
 
 ### Requirement: Límite de intentos de inicio de sesión
 
@@ -72,12 +63,17 @@ El sistema SHALL invalidar la sesión de inmediato cuando la persona elige cerra
 
 ### Requirement: Autorización por estación
 
-El sistema MUST comprobar en el servidor, en cada consulta, que la persona tenga asignada la estación pedida.
+El sistema MUST comprobar en el servidor, en cada consulta, que la persona tenga una sesión válida y que la estación pedida exista. Una estación es un equipo de SAT2, no un permiso: mientras no haya niveles de usuario, toda cuenta confirmada MUST poder consultar todas las estaciones, activas e inactivas.
 
 #### Scenario: Estación no asignada
 
-- **WHEN** una persona con sesión consulta una estación existente que no tiene asignada
-- **THEN** la API responde con estado 403 y no entrega ningún dato de esa estación
+- **WHEN** una persona con sesión consulta una estación existente que no figura en ninguna asignación a su cuenta
+- **THEN** la API entrega sus datos, porque el acceso no depende de asignaciones por persona
+
+#### Scenario: Estación inexistente
+
+- **WHEN** una persona con sesión consulta una estación que no existe
+- **THEN** la API responde con estado 404 y no entrega ningún dato
 
 #### Scenario: Sin sesión
 
@@ -87,7 +83,7 @@ El sistema MUST comprobar en el servidor, en cada consulta, que la persona tenga
 #### Scenario: Listado de estaciones
 
 - **WHEN** una persona con sesión pide sus estaciones
-- **THEN** recibe únicamente las estaciones que tiene asignadas
+- **THEN** recibe todas las estaciones, con su estado activo o inactivo
 
 ### Requirement: Protección de credenciales de usuario
 
@@ -97,3 +93,17 @@ El sistema MUST guardar las contraseñas solo como un hash con sal, y MUST NOT r
 
 - **WHEN** se registra un intento de inicio de sesión
 - **THEN** el registro no contiene la contraseña ni el token de sesión
+
+### Requirement: Límite por dirección IP
+
+El sistema MUST limitar por dirección IP de origen la cantidad de pedidos de inicio de sesión, registro, recupero, reenvío de confirmación y uso de enlaces, y MUST responder con estado 429 y la cabecera `Retry-After` al superarla. Este límite se suma al límite por correo.
+
+#### Scenario: Muchos registros desde una misma IP
+
+- **WHEN** una misma dirección IP supera el límite de pedidos de registro
+- **THEN** el sistema responde 429 con `Retry-After` y no crea cuentas ni envía correos
+
+#### Scenario: Otra IP
+
+- **WHEN** una dirección IP está limitada y llega un pedido válido desde otra dirección
+- **THEN** el sistema lo atiende con normalidad

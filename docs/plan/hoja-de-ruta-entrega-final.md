@@ -6,7 +6,7 @@
 | **Entrega final** | 9 de diciembre de 2026 |
 | **Punto de partida** | Entrega 2 presentada en forma anticipada ([pull request](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14)) |
 | **Responsable** | Pablo Guillermo Di Nanno |
-| **Versión** | 1.2, 4 de noviembre de 2026 |
+| **Versión** | 1.3, 5 de noviembre de 2026 |
 
 Este documento registra qué línea de trabajo está activa, cuál está en pausa y qué falta decidir, para no perder el hilo entre sesiones.
 
@@ -14,10 +14,10 @@ Este documento registra qué línea de trabajo está activa, cuál está en paus
 
 | Línea | Estado | Condición para avanzar |
 |---|---|---|
-| **D. Pendientes de la devolución de la Entrega 1** | **Activa, primero** | Los puntos rápidos (D1 a D3) van antes de implementar la línea A |
-| **A. Instalación local, como la quiere el responsable** | **Activa** | Que el responsable verifique la aplicación local y la apruebe |
-| **B. Despliegue público en Google Cloud (opción plus)** | **En pausa** desde el 2 de noviembre de 2026 | Terminar la línea A |
-| C. Pipeline, monitoreo y documentación para clientes | Sin empezar | Se ordenan después de la línea A. Incluye D4 y D5 |
+| **A. Instalación local, como la quiere el responsable** | **Terminada** el 5 de noviembre de 2026 | El responsable aprobó la aplicación local y se archivaron sus cambios |
+| **D. Pendientes de la devolución de la Entrega 1** | D1 a D3 hechos; **D4 a D7 pendientes** | D4 y D5 van con la línea C; D7 espera la decisión del responsable; D6 es opcional |
+| **B. Despliegue público en Google Cloud (opción plus)** | **En pausa** desde el 2 de noviembre de 2026 | La línea A ya terminó: se retoma cuando lo decida el responsable |
+| C. Pipeline, monitoreo y documentación para clientes | Sin empezar | Incluye D4 y D5 |
 
 ## 2. Línea A: cuentas propias con registro, ingreso y recupero
 
@@ -31,7 +31,7 @@ Hasta el 3 de noviembre de 2026 las cuentas las creaba un administrador por lín
 
 ### Definición
 
-El contrato, el diseño y las tareas están en el cambio de OpenSpec [`weather-track-registro-cuentas`](../../openspec/changes/weather-track-registro-cuentas/proposal.md). Resumen:
+El contrato, el diseño y las tareas están en el cambio de OpenSpec [`weather-track-registro-cuentas`](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md). Resumen:
 
 | Tema | Definición |
 |---|---|
@@ -67,7 +67,7 @@ Ya se cumple y debe seguir así:
 
 ### Estaciones
 
-Una estación es solo una central meteorológica que llega de SAT2, un "equipo". Hoy hay una, INTA Pergamino. El cambio [`weather-track-estaciones`](../../openspec/changes/weather-track-estaciones/proposal.md) ajusta la aplicación a esa definición:
+Una estación es solo una central meteorológica que llega de SAT2, un "equipo". Hoy hay una, INTA Pergamino. El cambio [`weather-track-estaciones`](../../openspec/changes/archive/2026-11-05-weather-track-estaciones/proposal.md) ajusta la aplicación a esa definición:
 
 | Tema | Definición |
 |---|---|
@@ -83,8 +83,9 @@ Una estación es solo una central meteorológica que llega de SAT2, un "equipo".
 - [x] Responder las preguntas abiertas (sección 5)
 - [x] Proponer los cambios de OpenSpec de cuentas y de estaciones
 - [x] El responsable aprueba los cambios (3 de noviembre de 2026)
-- [x] Implementar las tareas, cada grupo con sus pruebas y su documentación. `weather-track-estaciones`: 20 de 20, el 4 de noviembre de 2026. `weather-track-registro-cuentas`: 33 de 34 el 4 de noviembre de 2026; falta la verificación del responsable (tarea 8.4)
-- [ ] **El responsable verifica la aplicación local** y la aprueba
+- [x] Implementar las tareas, cada grupo con sus pruebas y su documentación. `weather-track-estaciones`: 20 de 20, el 4 de noviembre de 2026. `weather-track-registro-cuentas`: 35 de 35 y `weather-track-historicos-rangos`: 6 de 6, el 5 de noviembre de 2026
+- [x] **El responsable verifica la aplicación local** y la aprueba (5 de noviembre de 2026). En la revisión pidió repetir la contraseña y sumar Día, Semana, Mes y un rango con calendario a los históricos, que se hicieron antes de aprobar
+- [x] Archivar los tres cambios y actualizar las especificaciones principales (5 de noviembre de 2026)
 
 ## 3. Línea B: despliegue público en Google Cloud, en pausa
 
@@ -159,3 +160,5 @@ Respuestas del responsable del 3 de noviembre de 2026:
 | 3 nov 2026 | Se aprueban los cambios `weather-track-registro-cuentas` y `weather-track-estaciones` |
 | 3 nov 2026 | Se suman los pendientes de la devolución de la Entrega 1 como línea D; D1 a D3 van primero |
 | 4 nov 2026 | Implementados el registro público, el recupero, «Mi cuenta», las bajas y la exportación de clientes; R1 resuelto. Queda la verificación del responsable |
+| 5 nov 2026 | Ajustes de la revisión: contraseña repetida e históricos con Día, Semana, Mes y rango con calendario (hasta 31 días, último año, sin futuro) |
+| 5 nov 2026 | El responsable aprueba la aplicación local; se archivan `weather-track-estaciones`, `weather-track-registro-cuentas` y `weather-track-historicos-rangos`. La línea A queda terminada |
