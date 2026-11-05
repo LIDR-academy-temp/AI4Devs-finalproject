@@ -521,3 +521,16 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con las mejoras al AI SDLC (guía, checklist de compuertas, regla `sdlc-gates`, plantillas de prompts y `scripts/check_docs.py`).
+
+### Prompt 40
+
+- **Categoría:** `📏 Reglas del proyecto`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  sí, incluye el .gitignore y haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con `.gitignore` (sistemas operativos, lenguajes, editores, archivos temporales y secretos) y `docs/ai-log.md`.
