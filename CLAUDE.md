@@ -73,7 +73,7 @@ python3 -m unittest discover -s scripts        # pruebas de check_docs.py
 - El texto externo (ofertas, correos, currículum) va delimitado como dato, nunca como instrucción.
 - Envía Markdown a la IA, no PDF ni HTML, salvo la conversión inicial del currículum en PDF (ADR-0004).
 - Revisa `stop_reason` antes de leer la respuesta.
-- Toda llamada a la IA pasa por el control de gasto (`ai_usage` y topes `AI_DAILY_BUDGET_USD` / `AI_MONTHLY_BUDGET_USD`, ADR-0008). Las ofertas importadas solo se puntúan a pedido.
+- Toda llamada a la IA pasa por el control de gasto (`ai_usage` y topes `AI_DAILY_BUDGET_USD` / `AI_MONTHLY_BUDGET_USD`, D-13, ADR-0008). Las ofertas importadas solo se puntúan a pedido (D-12).
 - Nunca uses datos reales en la instancia de demostración (ADR-0007).
 
 **Seguridad**
@@ -95,10 +95,11 @@ python3 -m unittest discover -s scripts        # pruebas de check_docs.py
 1. Cada épica es una capability de OpenSpec (`openspec/specs/<capability>/`) y cada historia es un cambio de OpenSpec: `/opsx:propose` → aprobación humana → `/opsx:apply` → PR → `/opsx:archive`.
 2. Un cambio = una rama = un PR. Si `tasks.md` supera unas 15 tareas, divide el cambio.
 3. Inicia `/opsx:apply` en una sesión nueva, con contexto limpio.
-4. Las decisiones de arquitectura nuevas se registran como ADR en `docs/adr/`; no se toman como ediciones sueltas.
-5. Commits en formato Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`, `ci:`). Haz commit o push solo cuando el usuario lo pida.
-6. Registra cada prompt en `docs/ai-log.md` según `.claude/rules/ai-log.md`.
-7. Respeta las compuertas y la gestión de cambios de `.claude/rules/sdlc-gates.md` y `docs/sdlc-checklist.md`. `readme.md` se genera; no lo edites a mano, edita `scripts/readme.template.md` o `docs/`.
+4. Las decisiones de arquitectura nuevas se registran como ADR en `docs/adr/`; no se toman como ediciones sueltas. Toda decisión de producto o de alcance entra al log del PRD con un `D-xx`, que se cita en cada frase que la aplica.
+5. Cada ticket declara `Expone` y `Consume`; `check_docs.py` verifica que cada consumo venga de una dependencia y que el orden de construcción respete las dependencias.
+6. Commits en formato Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`, `ci:`). Haz commit o push solo cuando el usuario lo pida.
+7. Registra cada prompt en `docs/ai-log.md` según `.claude/rules/ai-log.md`.
+8. Respeta las compuertas y la gestión de cambios de `.claude/rules/sdlc-gates.md` y `docs/sdlc-checklist.md`. `readme.md` se genera; no lo edites a mano, edita `scripts/readme.template.md` o `docs/`.
 
 ## Definition of done (por cambio)
 

@@ -35,6 +35,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 - Correos y alertas y la traducción al español pasan a should-have (hoy HU9 y HU10).
 - El usuario detectó que faltaban las épicas y pidió reestructurar las historias en 5 épicas y 10 historias.
 - A partir de los errores del proceso, el usuario pidió mejorar el AI SDLC: se agregaron compuertas G0-G3, revisiones adversariales, ciclo de vida de los ADR, propagación de cambios y el script `scripts/check_docs.py`.
+- Tras cinco revisiones de consistencia que no convergían, el usuario eligió seis mejoras más: identificadores de decisión (D-xx), propagación hacia los documentos de origen, contratos de ticket, orden de construcción derivado de las dependencias, criterio de parada y pruebas de mutación del verificador. Los contratos revelaron dependencias ocultas y dos ciclos, que llevaron a crear el ticket T-37.
 - Arquitectura: se rechazó el monolito con Inertia recomendado por la IA a favor de un monorepo con API REST y SPA separadas en un solo contenedor.
 - Modelos de Claude: económicos en desarrollo y pruebas, de mayor calidad en producción.
 - Idea propia de usar Markdown como representación del currículum para reducir costos.

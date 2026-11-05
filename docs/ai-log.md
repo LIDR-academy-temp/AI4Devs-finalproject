@@ -796,3 +796,42 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con la quinta revisión de consistencia y los conteos automáticos del `readme.md`. Sin push.
+
+### Prompt 61
+
+- **Categoría:** `📏 Reglas del proyecto`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Basado en los últimos cambios, qué se añadiría o cambiaría en el AI SDLC?
+  ```
+
+- **Resultado:** Propuesta de cambios al AI SDLC a partir de las cinco revisiones de consistencia: identificadores de decisión para propagar cambios, propagación también hacia documentos de origen, contratos de tickets (expone/consume), orden de construcción derivado de dependencias, criterio de parada de las revisiones, verificación del propio verificador, quitar versiones manuales de los documentos y verificar la publicación antes de entregar. Respuesta en el chat; sin cambios en archivos.
+
+### Prompt 62
+
+- **Categoría:** `📏 Reglas del proyecto`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Aplica los cambios 1, 2, 3, 4, 5 y 6 solamente
+  ```
+
+- **Resultado:** Se aplicaron seis mejoras al AI SDLC: log de decisiones con identificadores D-01 a D-21 citados en PRD, visión, historias, tickets y `CLAUDE.md`; propagación hacia arriba y abajo (guía §5.1); contratos `Expone` / `Consume` en los 37 tickets; orden de construcción verificado contra las dependencias; criterio de parada (guía §5.3); y 20 pruebas de mutación en `scripts/test_check_docs.py`. Los contratos revelaron dependencias ocultas y dos ciclos (decisión ↔ pipeline y filtros ↔ puntaje), resueltos con el nuevo ticket T-37 y moviendo el encolado del puntaje a T-16. Totales sin cambio (must-have 35.5 h). Sin commit.
+
+### Prompt 63
+
+- **Categoría:** `📏 Reglas del proyecto`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con las seis mejoras al AI SDLC (decisiones D-xx, propagación bidireccional, contratos de ticket, orden verificado, criterio de parada y pruebas de mutación) y el ticket T-37. Sin push.

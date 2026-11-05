@@ -17,7 +17,7 @@
 - [x] Cada métrica indica el evento o campo que la registra (RNF-14).
 - [x] Épicas (3 a 5) definidas en el PRD, cada una con su capability de OpenSpec. *Se agregaron tarde, después de los tickets.*
 - [x] Cada requisito pertenece a una épica.
-- [x] Log de decisiones en el PRD (§10.1).
+- [x] Log de decisiones en el PRD (§10.1) con identificadores `D-xx` citados en los documentos que los aplican.
 - [x] Revisión adversarial con `docs/prompts/adversarial-prd.md`; cada hallazgo resuelto en `docs/prd-review.md`. *Se hizo tarde, después de los tickets.*
 
 ## G2 — Arquitectura cerrada
@@ -32,11 +32,14 @@
 ## G3 — Backlog y entrega consistentes
 
 - [x] Historias por épica, cada una del tamaño de un cambio de OpenSpec, con criterios Given/When/Then.
-- [x] Tickets técnicos y de producto con estimación y dependencias.
+- [x] Tickets técnicos y de producto con estimación, dependencias y contrato (`Expone` / `Consume`).
+- [x] Orden de construcción derivado de las dependencias (verificado por `scripts/check_docs.py`).
 - [x] Plan de entregas.
 - [x] Prioridades revisadas tras dividir historias.
 - [x] Ningún ADR aceptado contradice al PRD; los ADR reemplazados apuntan a su sustituto.
 - [x] `python3 scripts/check_docs.py` en verde (totales, referencias y `readme.md` al día).
 - [x] Revisión de consistencia con `docs/prompts/consistency-review.md` antes de la entrega (2026-11-04).
+- [x] Criterio de parada (guía §5.3): `check_docs.py` en verde, decisiones cambiadas revisadas por su `D-xx` y una lectura completa por documento.
+- [x] Cada comprobación de `check_docs.py` tiene una prueba de mutación en `scripts/test_check_docs.py`.
 - [x] Contenido obligatorio de la Entrega 1 completo: ficha, descripción, arquitectura, modelo de datos, historias, tickets, stack y `prompts.md`. La URL del despliegue se agrega en la entrega final.
 - [x] Formulario de Typeform enviado con el enlace a la rama (confirmado por el usuario el 2026-11-04).

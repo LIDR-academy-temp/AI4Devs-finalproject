@@ -102,13 +102,13 @@ Restricciones y datos externos → Idea → Problema/hipótesis → Visión y al
 2. **Problema e hipótesis**: quién tiene el problema, qué tan grave es y qué crees que lo resuelve, de forma verificable. Ejemplo: "Los freelancers pierden horas cobrando facturas; creemos que recordatorios automáticos reducen el tiempo de cobro 30%". Si no puedes escribir la hipótesis, no estás listo para el alcance.
 3. **Visión y alcance**: perímetro completo del producto a mediano plazo. Qué hará, para quién y, sobre todo, qué **no** hará. Lista amplia de capacidades sin detalle; evita diseñar algo que no pueda crecer.
 4. **MVP**: corte del alcance con el mínimo de capacidades para validar la hipótesis. Pregunta clave: "¿qué necesito para aprender si esto funciona?", no "¿qué necesito para que esté completo?". Va antes del PRD detallado porque no vale la pena especificar a fondo lo que aún no se construirá.
-5. **PRD del MVP + épicas**: detalle solo de lo del MVP: personas, flujos principales, requisitos funcionales y no funcionales, métricas de éxito, riesgos y un log de decisiones. Lo que quedó fuera aparece solo como "futuro" (una línea cada cosa). El PRD termina con las **épicas** (3 a 5): bloques de valor que agrupan los requisitos y que mapean cada uno a una capability de OpenSpec. Cada métrica indica qué evento o campo la registra.
+5. **PRD del MVP + épicas**: detalle solo de lo del MVP: personas, flujos principales, requisitos funcionales y no funcionales, métricas de éxito, riesgos y un log de decisiones. Lo que quedó fuera aparece solo como "futuro" (una línea cada cosa). Cada decisión entra al **log de decisiones** con un identificador `D-xx` (sección 5.1). El PRD termina con las **épicas** (3 a 5): bloques de valor que agrupan los requisitos y que mapean cada uno a una capability de OpenSpec. Cada métrica indica qué evento o campo la registra.
    - **Revisión adversarial del PRD (G1)**: la IA, en el rol de revisor de producto adversarial, busca requisitos ambiguos o no comprobables, suposiciones que tumban el MVP, alcance escondido y métricas que no se pueden medir. Plantilla: `docs/prompts/adversarial-prd.md`. Salida: `docs/prd-review.md` con la resolución de cada hallazgo.
 6. **Arquitectura base**: después del PRD, porque este aporta los NFRs (escala, seguridad, integraciones) que la condicionan. Stack, estilo, modelo de datos inicial, ADRs clave y el mapeo de cada épica a sus módulos. Diseñada para el MVP sin cerrar puertas al alcance.
    - **Revisión adversarial de la arquitectura (G2)**: qué ADR depende de una suposición no verificada, qué no se puede probar en CI, qué cuesta más de lo presupuestado. Plantilla: `docs/prompts/adversarial-architecture.md`.
 7. **Épicas**: ya definidas en el PRD (paso 5). Aquí solo se verifica que la arquitectura las soporte; si una épica cambia, se aplica la propagación de cambios (sección 5.1).
 8. **Historias de usuario + criterios de aceptación**: cada épica se rompe en historias ("Como freelancer quiero programar un recordatorio para…") con criterios Given/When/Then. Es BDD y es el puente directo a OpenSpec: los criterios se convierten en escenarios de las specs.
-9. **Backlog priorizado, tickets y plan de entregas**: historias ordenadas por dependencia y valor (la primera siempre es infraestructura), tickets técnicos con estimación y un plan que asigna historias a cada entrega o release. Incluye las **tareas que no son código** (medir la línea base de las métricas, etiquetar golden sets antes de ver la IA, confirmar plazos) como tickets con dependencias. Después de dividir o fusionar historias, se revisan las prioridades: ningún must-have debe ser lo primero que se recorte.
+9. **Backlog priorizado, tickets y plan de entregas**: historias ordenadas por dependencia y valor (la primera siempre es infraestructura), tickets técnicos con estimación, un **contrato** por ticket (qué expone y qué consume) y un plan que asigna historias a cada entrega o release. El orden de construcción se deriva de las dependencias de los tickets: nada se construye antes que aquello que consume. Incluye las **tareas que no son código** (medir la línea base de las métricas, etiquetar golden sets antes de ver la IA, confirmar plazos) como tickets con dependencias. Después de dividir o fusionar historias, se revisan las prioridades: ningún must-have debe ser lo primero que se recorte.
    - **Revisión de consistencia (G3)**: trazabilidad completa, referencias válidas, totales calculados y ADRs vigentes. Plantilla: `docs/prompts/consistency-review.md`; script `scripts/check_docs.py`.
 10. **Walking skeleton**: primer cambio de OpenSpec (repo, tests, CI, entorno local, despliegue trivial).
 11. **Ciclo OpenSpec por historia**: cada historia (o 2-3 muy relacionadas) es un cambio: `/opsx:propose` → revisión → `/opsx:apply` → PR → `/opsx:archive`.
@@ -142,7 +142,7 @@ Una compuerta es una lista de verificación con criterios de salida. No se inici
 | G0 | Descubrimiento | Restricciones, hipótesis medible y spike de datos externos documentados |
 | G1 | PRD | Épicas definidas y revisión adversarial del PRD resuelta |
 | G2 | Arquitectura | ADRs aceptados, épicas mapeadas a módulos y revisión adversarial resuelta |
-| G3 | Backlog y cada entrega | Revisión de consistencia y `scripts/check_docs.py` en verde |
+| G3 | Backlog y cada entrega | `scripts/check_docs.py` en verde, decisiones cambiadas revisadas por su `D-xx` y una lectura completa (criterio de parada, sección 5.3) |
 
 ## 4. OpenSpec en resumen
 
@@ -260,9 +260,9 @@ Aquí vive la mayor parte del trabajo. Por cada requisito del MVP:
 
 Cuando una decisión cambia en cualquier fase (alcance, prioridad, técnica):
 
-1. Registrarla en el log de decisiones del PRD, con fecha.
-2. Buscar todos los artefactos que la mencionan (`grep` del identificador: RF, HU, épica, ADR o ticket).
-3. Actualizarlos en el mismo commit.
+1. Registrarla en el log de decisiones del PRD con un identificador `D-xx` y fecha. Si reemplaza a otra, el estado de la anterior pasa a "reemplazada por D-xx".
+2. Buscar todos los artefactos que la mencionan: `grep` del `D-xx` (cada frase que aplica una decisión la cita entre paréntesis) y de los identificadores afectados (RF, HU, épica, ADR o ticket).
+3. Actualizarlos en el mismo commit, **hacia abajo** (historias, tickets, `readme.md`) y **hacia arriba** (PRD y visión). Revisar primero el documento más antiguo de la cadena: es el que más se desactualiza.
 4. Ejecutar la revisión de consistencia (G3).
 
 | Si cambia… | Revisar |
@@ -271,6 +271,8 @@ Cuando una decisión cambia en cualquier fase (alcance, prioridad, técnica):
 | Decisión técnica | ADR (sección 5.2), arquitectura, tickets, `CLAUDE.md` |
 | Historia o épica | Escenarios, tickets, plan de entregas, capabilities de OpenSpec, `readme.md` |
 | Métrica | PRD, visión, requisitos de medición y tickets de producto |
+| Decisión de arquitectura que cambia alcance, riesgo o costo | PRD y visión (hacia arriba), además de tickets y `CLAUDE.md` |
+| Dependencia o contrato de un ticket | Tickets que lo consumen, orden de construcción y plan de entregas |
 
 ### 5.2 Ciclo de vida de los ADR
 
@@ -279,10 +281,31 @@ Cuando una decisión cambia en cualquier fase (alcance, prioridad, técnica):
 - Una aclaración de alcance que no cambia la decisión se anota en una sección "Historial de cambios" del ADR, con fecha.
 - G2 y G3 verifican que ningún ADR aceptado contradiga al PRD vigente.
 
-### 5.3 Una sola fuente para cada número
+### 5.3 Criterio de parada de la revisión de consistencia
+
+La revisión manual no converge por sí sola: cada pasada encuentra errores nuevos. G3 se da por cerrada cuando se cumplen las tres condiciones:
+
+1. `python3 scripts/check_docs.py` sin errores.
+2. Cada decisión cambiada desde la última entrega se revisó buscando su `D-xx`.
+3. Una sola lectura completa de cada documento, empezando por el que lleva más tiempo sin actualizarse, con un foco distinto por documento.
+
+Si la lectura encuentra un tipo de error que se puede detectar con un script, el siguiente paso es automatizarlo (sección 5.5), no hacer otra pasada manual.
+
+### 5.4 Contratos de ticket
+
+- Cada ticket declara `Expone` (endpoints, tablas, trabajos, servicios y pantallas que crea) y `Consume` (lo que usa de otros), con los mismos nombres entre comillas invertidas.
+- Todo lo consumido lo expone el propio ticket o una de sus dependencias, directa o indirecta; cada elemento lo expone un solo ticket.
+- El orden de construcción respeta las dependencias. Un contrato que no cumple revela una dependencia oculta o un ticket que hay que dividir.
+
+### 5.5 Verificar el verificador
+
+- Cada comprobación automática tiene una prueba que introduce el error a propósito y confirma que se detecta (prueba de mutación).
+- Una comprobación nueva se escribe con TDD: primero la prueba que falla, después la implementación.
+
+### 5.6 Una sola fuente para cada número
 
 - Horas, totales y conteos se calculan desde su fuente (`docs/tickets.md`) con un script; nunca se escriben a mano en otros documentos.
-- Los documentos de entrega que repiten contenido (por ejemplo, `readme.md`) se generan desde `docs/` con `scripts/check_docs.py --build-readme`.
+- Los documentos de entrega que repiten contenido (por ejemplo, `readme.md`) se generan desde `docs/` con `scripts/check_docs.py --build-readme`; los conteos (escenarios, tickets) también se calculan.
 
 ## 6. Dónde vive cada cosa
 
@@ -348,7 +371,8 @@ my-app/
 - **`CLAUDE.md` como contrato**: comandos exactos, estructura, convenciones, definition of done.
 - **Compuertas como regla del agente**: `.claude/rules/sdlc-gates.md` hace que el agente verifique la compuerta anterior antes de iniciar una fase, sin que el usuario lo pida.
 - **Revisar con un sombrero distinto**: después de producir un artefacto clave, pedir a la IA que lo critique como revisor adversarial antes de construir encima.
-- **Cambios tardíos con propagación**: nunca editar un solo documento cuando cambia una decisión; aplicar la sección 5.1.
+- **Cambios tardíos con propagación**: nunca editar un solo documento cuando cambia una decisión; aplicar la sección 5.1, con su `D-xx`, hacia abajo y hacia arriba.
+- **Automatizar antes de repetir**: si una revisión manual encuentra un tipo de error que un script puede detectar, se agrega la comprobación con su prueba de mutación antes de la siguiente pasada.
 
 ## 10. Definition of done sugerida (por cambio)
 

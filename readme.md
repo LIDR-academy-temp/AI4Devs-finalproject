@@ -25,7 +25,7 @@
 | [`docs/architecture-review.md`](./docs/architecture-review.md) | Revisión adversarial de la arquitectura |
 | [`docs/sdlc-checklist.md`](./docs/sdlc-checklist.md) | Compuertas del AI SDLC |
 | [`docs/user-stories.md`](./docs/user-stories.md) | 5 épicas y 10 historias con 50 escenarios de aceptación |
-| [`docs/tickets.md`](./docs/tickets.md) | 36 tickets de trabajo |
+| [`docs/tickets.md`](./docs/tickets.md) | 37 tickets de trabajo |
 | [`docs/ai-log.md`](./docs/ai-log.md) | Registro completo de prompts |
 | [`CLAUDE.md`](./CLAUDE.md) | Convenciones para los agentes de IA |
 
@@ -826,10 +826,10 @@ Las 10 historias del MVP se agrupan en 5 épicas, cada una mapeada a una capabil
 
 | Épica | Capability | Valor | Historias | Estimación |
 | --- | --- | --- | --- | --- |
-| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 9.25 h (+1 h should-have) |
+| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 9.5 h (+1 h should-have) |
 | E2 Perfil profesional | `resume-profile` | El sistema conoce la experiencia real del usuario | HU4 | 2.75 h (+1 h should-have) |
-| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8.75 h |
-| E4 Seguimiento de candidaturas | `application-tracking` | Saber en qué va cada proceso y no perder seguimientos | HU8, HU9 | 3 h (+3 h should-have) |
+| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 + T-31 | 8.75 h |
+| E4 Seguimiento de candidaturas | `application-tracking` | Saber en qué va cada proceso y no perder seguimientos | HU8, HU9 | 2.75 h (+3 h should-have) |
 | E5 Plataforma | `platform` | Acceso seguro, despliegue, control de gasto, observabilidad, demostración e idioma | HU10, walking skeleton y T-33 a T-36 | 9.5 h (+2.5 h should-have) |
 
 Selección de tres historias must-have, una de cada épica principal:
@@ -878,7 +878,7 @@ Escenario: No duplicar ofertas
 
 - **Épica:** E3
 - **Prioridad:** must-have
-- **Estimación:** 4.5 h
+- **Estimación:** 5 h
 - **Requisitos:** RF-23 a RF-28, RNF-07, RNF-08
 - **Objetivos:** OBJ-2
 
@@ -908,7 +908,7 @@ Escenario: No repetir un análisis sin cambios
 
 - **Épica:** E4
 - **Prioridad:** must-have
-- **Estimación:** 3 h
+- **Estimación:** 2.75 h
 - **Requisitos:** RF-30 a RF-35
 - **Objetivos:** OBJ-3
 
@@ -935,11 +935,13 @@ Escenario: Ver el detalle de una candidatura
 
 ## 6. Tickets de Trabajo
 
-Selección de tres tickets (base de datos, backend y frontend). Los 36 tickets están en [`docs/tickets.md`](./docs/tickets.md).
+Selección de tres tickets (base de datos, backend y frontend). Los 37 tickets están en [`docs/tickets.md`](./docs/tickets.md).
 
 **Ticket — T-09 — Tablas de ofertas, empresas objetivo y búsquedas**
 
 - **Tipo:** db · **Estimación:** 0.5 h · **Requisitos:** RF-05, RF-07, RF-04a, RF-09, RNF-14
+- **Expone:** `tabla job_postings`, `tabla target_companies`, `tabla job_searches`
+- **Consume:** `tabla users`
 
 **Tareas**
 - Migraciones `target_companies`, `job_searches` y `job_postings` según `docs/architecture.md`, incluidas `decision`, `skip_reason`, `first_viewed_at` y `decided_at`.
@@ -952,6 +954,8 @@ Selección de tres tickets (base de datos, backend y frontend). Los 36 tickets e
 **Ticket — T-15 — Preferencias y filtros duros**
 
 - **Tipo:** backend · **Estimación:** 2 h · **Requisitos:** RF-20 a RF-23, `docs/prd.md` sección 6.1
+- **Expone:** `GET /preferences`, `PUT /preferences`, `filtros duros`
+- **Consume:** `tabla job_preferences`, `tabla filter_results`, `POST /job-postings`
 
 **Tareas**
 - `GET` / `PUT /preferences` con validación.
@@ -959,23 +963,23 @@ Selección de tres tickets (base de datos, backend y frontend). Los 36 tickets e
 - Normalización de ubicaciones (ciudad y estado de EE. UU.) y anualización del salario (hora × 2080, mes × 12).
 - Tabla de mapeo de seniority versionada en el repositorio (incluye niveles como L5, E5, SDE II, IC4).
 - Aplicar los filtros al guardar o importar una oferta y al cambiar las preferencias.
-- Encolar `score_match` solo para ofertas pegadas (`source = manual`) con resultado `pass` o `unknown`; las importadas se puntúan a pedido (ADR-0008).
 
 **Criterios de aceptación**
 - Pruebas unitarias por tabla de casos para cada criterio (incluidos remoto fuera de EE. UU., salario por hora, varias ubicaciones y seniority sin mapeo), con cobertura ≥ 90 % del servicio.
 
-**Ticket — T-11 — Pantallas de ofertas y decisión**
+**Ticket — T-11 — Pantallas de ofertas**
 
-- **Tipo:** frontend · **Estimación:** 1.75 h · **Requisitos:** RF-01, RF-03, RF-06, RF-07
+- **Tipo:** frontend · **Estimación:** 1.5 h · **Requisitos:** RF-01, RF-03, RF-06
+- **Expone:** `pantalla de ofertas`
+- **Consume:** `POST /job-postings/extractions`, `POST /job-postings`, `GET /job-postings`, `GET /job-postings/{id}`, `PATCH /job-postings/{id}`, `GET /jobs/{id}`, `i18n`
 
 **Tareas**
 - Formulario para pegar el texto, progreso de la extracción y opción de guardar directo o revisar los campos (los desconocidos marcados como tales).
 - Edición de campos desde el detalle de la oferta.
 - Lista de ofertas con título, empresa, origen, resultado del filtro, puntaje y decisión; orden por puntaje o fecha.
-- Botones "aplicar" y "descartar" (con motivo opcional) en el detalle de la oferta.
 
 **Criterios de aceptación**
-- Cumple los escenarios de HU1 y HU7.
+- Cumple los escenarios de HU1.
 
 ---
 

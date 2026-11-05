@@ -36,7 +36,7 @@ Como el autor es el usuario real, la hipótesis se valida con su propia búsqued
 
 | Métrica | Línea base | Objetivo |
 | --- | --- | --- |
-| Tiempo entre abrir una oferta y registrar la decisión de aplicar o descartar | ~15 min (**supuesto**; se mide con 5 ofertas reales antes del desarrollo) | < 2 min (mediana) |
+| Tiempo entre abrir una oferta y registrar la decisión de aplicar o descartar | ~15 min (**supuesto**; se mide con 5 ofertas reales antes del desarrollo, D-17) | < 2 min (mediana) |
 | Seguimientos olvidados en 4 semanas de uso (revisados contra el correo) | Desconocido (**supuesto**) | 0 |
 | Ofertas nuevas que llegan por importación automática | 0 % | ≥ 50 % |
 | Tiempo para encontrar el historial de una candidatura (indicador secundario; no es objetivo del PRD) | Búsqueda manual en el correo | < 30 s desde el panel |
@@ -82,17 +82,17 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 | Registrar ofertas pegando el texto; la IA extrae los campos estructurados (descargar desde una URL: could-have) | `MVP` |
 | Lista de empresas objetivo (grandes y medianas) con su plataforma de empleo | `MVP` |
 | Importar ofertas de las empresas objetivo mediante adaptadores: Greenhouse y Ashby | `MVP` |
-| Adaptador de Lever | `MVP (should-have)` |
+| Adaptador de Lever (D-09) | `MVP (should-have)` |
 | Búsquedas guardadas en un agregador de ofertas para empresas sin API (sujeto a spike; plan B: SmartRecruiters) | `MVP` |
 | Adaptador para SmartRecruiters (si el agregador es viable) | `v1.1` |
 | Convertir los correos de alertas de empleo de los portales en ofertas | `v1.1` |
 | Adaptador para Workday (endpoint no documentado; requiere revisar sus términos de uso) | `futuro` |
 | Descubrir empresas medianas nuevas según el perfil | `futuro` |
 | Cargar el currículum en Markdown; la IA lo convierte en un perfil estructurado | `MVP` |
-| Cargar el currículum en PDF y convertirlo a Markdown | `MVP (should-have)` |
+| Cargar el currículum en PDF y convertirlo a Markdown (D-18) | `MVP (should-have)` |
 | Configurar filtros duros: roles objetivo, modalidad, ubicación, salario mínimo y seniority | `MVP` |
 | Registrar la decisión de aplicar o descartar cada oferta | `MVP` |
-| Calcular un puntaje de encaje (0-100) con fortalezas, brechas y evidencia (automático para ofertas pegadas; a pedido para importadas) | `MVP` |
+| Calcular un puntaje de encaje (0-100) con fortalezas, brechas y evidencia (automático para ofertas pegadas; a pedido para importadas, D-12) | `MVP` |
 | Gestionar candidaturas en un pipeline (guardada, aplicada, entrevista, oferta, rechazada, retirada) | `MVP` |
 | Interfaz en inglés (idioma principal), preparada para i18n | `MVP` |
 | Pegar un correo en una candidatura; la IA lo clasifica y extrae fecha y siguiente paso | `MVP (should-have)` |
@@ -133,10 +133,10 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 | Supuesto | La línea base de tiempo por oferta (~15 min) es representativa | Medirla con 5 ofertas reales antes del desarrollo (T-31) |
 | Riesgo | La fuente pública elegida tiene poca cobertura en mis roles o ubicación | Validar la cobertura con una prueba rápida (spike) en la arquitectura; mantener el ingreso manual |
 | Riesgo | El puntaje de la IA no coincide con mi criterio | Golden set de al menos 20 ofertas etiquetadas a mano antes de ver la IA, separadas en ajuste y prueba (RNF-08) |
-| Riesgo | El costo de la API de Claude crece con el volumen de ofertas | Filtros duros antes de la IA, puntaje a pedido de las ofertas importadas, caché de análisis y topes de gasto diario y mensual (ADR-0008) |
-| Riesgo | 30 horas no alcanzan para todo el MVP | Tope aceptado de 36 h; orden de construcción y de recorte en `docs/user-stories.md`; correos, alertas y traducción como should-have |
+| Riesgo | El costo de la API de Claude crece con el volumen de ofertas | Filtros duros antes de la IA, puntaje a pedido de las ofertas importadas (D-12), caché de análisis y topes de gasto diario y mensual (D-13, ADR-0008) |
+| Riesgo | 30 horas no alcanzan para todo el MVP | Tope aceptado de 36 h (D-08); orden de construcción y de recorte en `docs/user-stories.md`; correos, alertas y traducción como should-have |
 | Riesgo | Los currículums en PDF no se leen bien | Permitir revisar y corregir el perfil extraído |
-| Riesgo | Datos personales (currículum, correos) en la nube | Un solo usuario autenticado, secretos en variables de entorno, sin compartir datos con terceros salvo la API de Claude; el evaluador usa una instancia de demostración con datos sintéticos (ADR-0007) |
+| Riesgo | Datos personales (currículum, correos) en la nube | Un solo usuario autenticado, secretos en variables de entorno, sin compartir datos con terceros salvo la API de Claude; el evaluador usa una instancia de demostración con datos sintéticos (D-11, ADR-0007) |
 
 ## 9. Preguntas abiertas para las siguientes fases
 
