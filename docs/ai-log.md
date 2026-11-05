@@ -482,3 +482,42 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con ADR-0006, la restauración de ADR-0002, el historial de cambios de ADR-0004 y ADR-0005, y las referencias actualizadas.
+
+### Prompt 37
+
+- **Categoría:** `📏 Reglas del proyecto`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Basado en lo que hemos trabajado hasta ahora, qué cambiarías o añadirías al AI SDLC para que no nos saltemos pasos como las épicas, las modificaciones a los ADR, etc. También ten en cuenta el PRD adversarial.
+  ```
+
+- **Resultado:** Propuesta de mejoras al AI SDLC basada en los errores de la sesión: compuertas con criterios de salida por fase, revisiones adversariales, épicas dentro del PRD, ciclo de vida de los ADR, propagación de cambios, plan de entregas, tareas de producto y una regla de Claude Code que haga cumplir las compuertas. Respuesta en el chat; sin cambios en archivos.
+
+### Prompt 38
+
+- **Categoría:** `📏 Reglas del proyecto`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Sí, aplica los cambios pero no hagas commit
+  ```
+
+- **Resultado:** Se actualizó `docs/ai-sdlc-claude-code-openspec.md` (diagrama con compuertas, paso 0 de restricciones, épicas en el PRD, revisiones adversariales, plan de entregas, secciones 3.1, 5.1, 5.2 y 5.3). Se crearon `docs/sdlc-checklist.md`, `.claude/rules/sdlc-gates.md`, tres plantillas en `docs/prompts/`, `scripts/check_docs.py` y `scripts/readme.template.md`; se actualizaron `CLAUDE.md` y `prompts.md`. `check_docs.py` en verde. Queda abierta la revisión adversarial de la arquitectura (G2). Sin commit.
+
+### Prompt 39
+
+- **Categoría:** `📏 Reglas del proyecto`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con las mejoras al AI SDLC (guía, checklist de compuertas, regla `sdlc-gates`, plantillas de prompts y `scripts/check_docs.py`).

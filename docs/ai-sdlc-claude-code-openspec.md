@@ -4,23 +4,26 @@
 
 ## Diagrama general
 
-Vista de alto nivel del flujo completo. Los pasos 1 y 2 se hacen al inicio y se revisan con el feedback; el paso 3 se hace una vez; el paso 4 se repite por cada historia; el paso 5 retroalimenta el alcance y el PRD.
+Vista de alto nivel del flujo completo. Los pasos 1 y 2 se hacen al inicio y se revisan con el feedback; el paso 3 se hace una vez; el paso 4 se repite por cada historia; el paso 5 retroalimenta el alcance y el PRD. Las compuertas G0 a G3 (sección 3.1) impiden avanzar con pasos incompletos.
 
 ![Diagrama general del AI SDLC con Claude Code y OpenSpec](ai-sdlc-diagrama.png)
 
-> La imagen requiere que `ai-sdlc-diagrama.png` (o el `.svg`) esté en la misma carpeta que este documento. La versión Mermaid de abajo es equivalente y no depende de archivos externos.
+> La imagen requiere que `ai-sdlc-diagrama.png` (o el `.svg`) esté en la misma carpeta que este documento y puede no reflejar las compuertas. La versión Mermaid de abajo es la vigente.
 
 ```mermaid
 flowchart TD
     subgraph P1["1. Producto (por qué y qué)"]
         direction LR
-        A1["Idea"] --> A2["Hipótesis"] --> A3["Alcance"] --> A4["MVP"] --> A5["PRD del MVP"]
+        A0["Restricciones<br/>y datos externos"] --> A1["Idea e<br/>hipótesis"] --> A3["Alcance<br/>y MVP"] --> A5["PRD + épicas"]
     end
+    G0{{"G0"}}
+    G1{{"G1 revisión<br/>adversarial del PRD"}}
 
     subgraph P2["2. Sistema y backlog (cómo)"]
         direction LR
-        B1["Arquitectura<br/>ADRs, CLAUDE.md"] --> B2["Épicas<br/>Capabilities"] --> B3["Historias<br/>Given/When/Then"] --> B4["Backlog<br/>Priorizado"]
+        B1["Arquitectura<br/>ADRs, CLAUDE.md"] --> G2{{"G2 revisión<br/>adversarial"}} --> B3["Historias<br/>Given/When/Then"] --> B4["Backlog, tickets<br/>y plan de entregas"]
     end
+    G3{{"G3 revisión de<br/>consistencia"}}
 
     C1["3. Walking skeleton<br/>Repo, tests, CI, entorno local"]
 
@@ -34,17 +37,23 @@ flowchart TD
         E1["Release"] --> E2["Producción"] --> E3["Feedback"]
     end
 
-    P1 --> P2 --> C1 --> P4
+    CH["Cambio de decisión<br/>→ propagación + G3"]
+
+    A0 -.-> G0
+    P1 --> G1 --> P2 --> G3 --> C1 --> P4
     D4 -. "siguiente historia" .-> D1
     P4 --> P5
     E3 -. "vuelve a alcance y PRD" .-> A3
+    CH -.-> G3
 
     classDef producto fill:#EEEDFE,stroke:#534AB7,color:#3C3489
     classDef openspec fill:#FAECE7,stroke:#993C1D,color:#712B13
     classDef neutral fill:#F1EFE8,stroke:#5F5E5A,color:#444441
-    class A1,A2,A3,A4,A5,B1,B2,B3,B4 producto
+    classDef gate fill:#FFF4D6,stroke:#8A6D1B,color:#5C4813
+    class A0,A1,A3,A5,B1,B3,B4 producto
     class D1,D2,D3,D4 openspec
-    class C1,E1,E2,E3 neutral
+    class C1,E1,E2,E3,CH neutral
+    class G0,G1,G2,G3 gate
 ```
 
 ## 1. Idea central
@@ -77,23 +86,30 @@ Relación con OpenSpec:
 El orden va de lo más incierto y estratégico a lo más concreto y verificable. Cada paso reduce incertidumbre y da insumos al siguiente.
 
 ```text
-Idea → Problema/hipótesis → Visión y alcance → MVP → PRD del MVP
-     → Arquitectura base → Épicas → Historias + criterios de aceptación
-     → Backlog priorizado → Walking skeleton → Cambios OpenSpec (1 por historia/grupo)
+Restricciones y datos externos → Idea → Problema/hipótesis → Visión y alcance → MVP   [G0]
+     → PRD del MVP + épicas → Revisión adversarial del PRD                          [G1]
+     → Arquitectura base + ADRs → Revisión adversarial de la arquitectura          [G2]
+     → Historias + criterios de aceptación → Backlog, tickets y plan de entregas
+     → Revisión de consistencia                                                     [G3]
+     → Walking skeleton → Cambios OpenSpec (1 por historia)
      → Implementación + pruebas → Release → Feedback → (vuelve a alcance/PRD)
 ```
 
 ### Paso a paso
 
+0. **Restricciones y datos externos**: tiempo disponible y holgura aceptada, fechas de entrega, presupuesto (incluida la API de IA) y datos de dominio que condicionan el diseño (por ejemplo, la lista de empresas objetivo). Si el producto depende de datos externos, un spike corto verifica qué APIs existen y qué permiten sus términos de uso, antes de escribir requisitos que dependan de ellas.
 1. **Idea**: una frase ("una app para X"). Todavía no es accionable.
 2. **Problema e hipótesis**: quién tiene el problema, qué tan grave es y qué crees que lo resuelve, de forma verificable. Ejemplo: "Los freelancers pierden horas cobrando facturas; creemos que recordatorios automáticos reducen el tiempo de cobro 30%". Si no puedes escribir la hipótesis, no estás listo para el alcance.
 3. **Visión y alcance**: perímetro completo del producto a mediano plazo. Qué hará, para quién y, sobre todo, qué **no** hará. Lista amplia de capacidades sin detalle; evita diseñar algo que no pueda crecer.
 4. **MVP**: corte del alcance con el mínimo de capacidades para validar la hipótesis. Pregunta clave: "¿qué necesito para aprender si esto funciona?", no "¿qué necesito para que esté completo?". Va antes del PRD detallado porque no vale la pena especificar a fondo lo que aún no se construirá.
-5. **PRD del MVP**: detalle solo de lo del MVP: personas, flujos principales, requisitos funcionales y no funcionales, métricas de éxito, riesgos. Lo que quedó fuera aparece solo como "futuro" (una línea cada cosa).
-6. **Arquitectura base**: después del PRD, porque este aporta los NFRs (escala, seguridad, integraciones) que la condicionan. Stack, estilo, modelo de datos inicial y ADRs clave. Diseñada para el MVP sin cerrar puertas al alcance.
-7. **Épicas**: agrupan requisitos del PRD en bloques de valor ("Autenticación", "Gestión de facturas", "Recordatorios"). Suelen mapear a una capability de OpenSpec.
+5. **PRD del MVP + épicas**: detalle solo de lo del MVP: personas, flujos principales, requisitos funcionales y no funcionales, métricas de éxito, riesgos y un log de decisiones. Lo que quedó fuera aparece solo como "futuro" (una línea cada cosa). El PRD termina con las **épicas** (3 a 5): bloques de valor que agrupan los requisitos y que mapean cada uno a una capability de OpenSpec. Cada métrica indica qué evento o campo la registra.
+   - **Revisión adversarial del PRD (G1)**: la IA, en el rol de revisor de producto adversarial, busca requisitos ambiguos o no comprobables, suposiciones que tumban el MVP, alcance escondido y métricas que no se pueden medir. Plantilla: `docs/prompts/adversarial-prd.md`. Salida: `docs/prd-review.md` con la resolución de cada hallazgo.
+6. **Arquitectura base**: después del PRD, porque este aporta los NFRs (escala, seguridad, integraciones) que la condicionan. Stack, estilo, modelo de datos inicial, ADRs clave y el mapeo de cada épica a sus módulos. Diseñada para el MVP sin cerrar puertas al alcance.
+   - **Revisión adversarial de la arquitectura (G2)**: qué ADR depende de una suposición no verificada, qué no se puede probar en CI, qué cuesta más de lo presupuestado. Plantilla: `docs/prompts/adversarial-architecture.md`.
+7. **Épicas**: ya definidas en el PRD (paso 5). Aquí solo se verifica que la arquitectura las soporte; si una épica cambia, se aplica la propagación de cambios (sección 5.1).
 8. **Historias de usuario + criterios de aceptación**: cada épica se rompe en historias ("Como freelancer quiero programar un recordatorio para…") con criterios Given/When/Then. Es BDD y es el puente directo a OpenSpec: los criterios se convierten en escenarios de las specs.
-9. **Backlog priorizado / plan de releases**: historias ordenadas por dependencia y valor. La primera siempre es infraestructura.
+9. **Backlog priorizado, tickets y plan de entregas**: historias ordenadas por dependencia y valor (la primera siempre es infraestructura), tickets técnicos con estimación y un plan que asigna historias a cada entrega o release. Incluye las **tareas que no son código** (medir la línea base de las métricas, etiquetar golden sets antes de ver la IA, confirmar plazos) como tickets con dependencias. Después de dividir o fusionar historias, se revisan las prioridades: ningún must-have debe ser lo primero que se recorte.
+   - **Revisión de consistencia (G3)**: trazabilidad completa, referencias válidas, totales calculados y ADRs vigentes. Plantilla: `docs/prompts/consistency-review.md`; script `scripts/check_docs.py`.
 10. **Walking skeleton**: primer cambio de OpenSpec (repo, tests, CI, entorno local, despliegue trivial).
 11. **Ciclo OpenSpec por historia**: cada historia (o 2-3 muy relacionadas) es un cambio: `/opsx:propose` → revisión → `/opsx:apply` → PR → `/opsx:archive`.
 
@@ -115,7 +131,18 @@ Idea → Problema/hipótesis → Visión y alcance → MVP → PRD del MVP
 - **No es cascada estricta.** Escribir historias suele revelar huecos en el PRD, y la arquitectura puede forzar recortar el MVP. Volver uno o dos pasos atrás es normal; saltarse pasos hacia adelante (historias sin MVP definido) no lo es.
 - **Arquitectura e historias se retroalimentan.** Épicas antes de la arquitectura; historias detalladas después, para que reflejen restricciones técnicas reales.
 - **El detalle es proporcional a la cercanía.** Historias del próximo sprint: muy detalladas. Historias del final del MVP: apenas un título. Igual con OpenSpec: generar propuestas solo para lo que se implementará pronto, porque las specs cambian conforme se aprende.
-- **Decisiones humanas clave**: la hipótesis (paso 2), el corte del MVP (paso 4), los ADRs (paso 6) y la aprobación de cada propuesta de OpenSpec.
+- **Decisiones humanas clave**: las restricciones (paso 0), la hipótesis (paso 2), el corte del MVP (paso 4), la resolución de cada hallazgo adversarial (G1, G2), los ADRs (paso 6) y la aprobación de cada propuesta de OpenSpec.
+
+### 3.1 Compuertas
+
+Una compuerta es una lista de verificación con criterios de salida. No se inicia la fase siguiente con una compuerta abierta. Las listas completas están en [`docs/sdlc-checklist.md`](./sdlc-checklist.md).
+
+| Compuerta | Cierra | Criterio de salida principal |
+| --- | --- | --- |
+| G0 | Descubrimiento | Restricciones, hipótesis medible y spike de datos externos documentados |
+| G1 | PRD | Épicas definidas y revisión adversarial del PRD resuelta |
+| G2 | Arquitectura | ADRs aceptados, épicas mapeadas a módulos y revisión adversarial resuelta |
+| G3 | Backlog y cada entrega | Revisión de consistencia y `scripts/check_docs.py` en verde |
 
 ## 4. OpenSpec en resumen
 
@@ -161,21 +188,36 @@ openspec/changes/<change-id>/
 
 ### Fase 0 — Descubrimiento (fuera de OpenSpec)
 
-- Problema, usuarios, competencia, hipótesis.
+- Restricciones: tiempo y holgura, fechas de entrega, presupuesto de IA y datos de dominio que condicionan el diseño.
+- Problema, usuarios, competencia, hipótesis con métricas medibles.
+- Spike de datos externos si el producto depende de ellos (APIs disponibles y términos de uso).
 - Claude como copiloto de investigación y cuestionamiento.
-- Salida: `docs/vision.md`.
+- Salida: `docs/vision.md`. Compuerta: **G0**.
 
 ### Fase 1 — Producto
 
-- PRD + definición del MVP + criterios de aceptación de alto nivel.
-- Claude ayuda a redactar y detectar huecos; las decisiones son humanas.
-- Salida: `docs/prd.md`.
+- PRD + definición del MVP + criterios de aceptación de alto nivel + épicas (3 a 5, cada una con su capability).
+- Log de decisiones dentro del PRD.
+- Revisión adversarial del PRD con la plantilla `docs/prompts/adversarial-prd.md`.
+- Claude ayuda a redactar, detectar huecos y criticar; las decisiones son humanas.
+- Salidas: `docs/prd.md`, `docs/prd-review.md`. Compuerta: **G1**.
 
 ### Fase 2 — Arquitectura base
 
 - Estilo arquitectónico, stack, modelo de datos inicial, integraciones, NFRs (seguridad, rendimiento, costo, observabilidad).
 - Decisiones relevantes como ADRs.
-- Salidas: `docs/architecture.md`, `docs/adr/*.md`, `CLAUDE.md` (comandos de build/test, estructura, estilo, definition of done).
+- Mapeo de épicas a módulos.
+- Revisión adversarial con la plantilla `docs/prompts/adversarial-architecture.md`.
+- Salidas: `docs/architecture.md`, `docs/adr/*.md`, `CLAUDE.md` (comandos de build/test, estructura, estilo, definition of done). Compuerta: **G2**.
+
+### Fase 2b — Historias, tickets y plan de entregas
+
+- Historias por épica con criterios Given/When/Then (cada historia del tamaño de un cambio de OpenSpec).
+- Tickets técnicos y de producto con estimación y dependencias.
+- Plan de entregas o releases.
+- Revisión de prioridades tras dividir o fusionar historias.
+- Revisión de consistencia con `docs/prompts/consistency-review.md` y `scripts/check_docs.py`.
+- Salidas: `docs/user-stories.md`, `docs/tickets.md`. Compuerta: **G3** (se repite antes de cada entrega).
 
 ### Fase 3 — Inicializar repo y OpenSpec
 
@@ -214,11 +256,43 @@ Aquí vive la mayor parte del trabajo. Por cada requisito del MVP:
 - Métricas y feedback de usuarios → actualizar el PRD → nuevos cambios de OpenSpec.
 - El ciclo vuelve a la Fase 5.
 
+### 5.1 Propagación de cambios
+
+Cuando una decisión cambia en cualquier fase (alcance, prioridad, técnica):
+
+1. Registrarla en el log de decisiones del PRD, con fecha.
+2. Buscar todos los artefactos que la mencionan (`grep` del identificador: RF, HU, épica, ADR o ticket).
+3. Actualizarlos en el mismo commit.
+4. Ejecutar la revisión de consistencia (G3).
+
+| Si cambia… | Revisar |
+| --- | --- |
+| Alcance o prioridad | Visión, PRD, historias, tickets, plan de entregas, `readme.md` |
+| Decisión técnica | ADR (sección 5.2), arquitectura, tickets, `CLAUDE.md` |
+| Historia o épica | Escenarios, tickets, plan de entregas, capabilities de OpenSpec, `readme.md` |
+| Métrica | PRD, visión, requisitos de medición y tickets de producto |
+
+### 5.2 Ciclo de vida de los ADR
+
+- Estados: `propuesta` → `aceptada` → `reemplazada por ADR-X` (total o parcialmente) u `obsoleta`.
+- Un ADR aceptado **no se reescribe**. Una decisión nueva va en un ADR nuevo con "Reemplaza a: ADR-X", y el estado del anterior cambia a "reemplazada".
+- Una aclaración de alcance que no cambia la decisión se anota en una sección "Historial de cambios" del ADR, con fecha.
+- G2 y G3 verifican que ningún ADR aceptado contradiga al PRD vigente.
+
+### 5.3 Una sola fuente para cada número
+
+- Horas, totales y conteos se calculan desde su fuente (`docs/tickets.md`) con un script; nunca se escriben a mano en otros documentos.
+- Los documentos de entrega que repiten contenido (por ejemplo, `readme.md`) se generan desde `docs/` con `scripts/check_docs.py --build-readme`.
+
 ## 6. Dónde vive cada cosa
 
 | Tema | Dónde se define | Dónde se ejecuta / verifica |
 | --- | --- | --- |
-| Alcance, PRD, MVP | `docs/prd.md` | Revisión humana |
+| Restricciones, visión e hipótesis | `docs/vision.md` | G0 |
+| Alcance, PRD, MVP, épicas y log de decisiones | `docs/prd.md` | Revisión humana + G1 |
+| Revisiones adversariales | `docs/prd-review.md`, `docs/architecture-review.md` | Resolución humana de cada hallazgo |
+| Historias, tickets y plan de entregas | `docs/user-stories.md`, `docs/tickets.md` | G3 |
+| Compuertas | `docs/sdlc-checklist.md`, `.claude/rules/sdlc-gates.md` | Revisión humana + `scripts/check_docs.py` |
 | Arquitectura global | `docs/architecture.md` + `docs/adr/` | `CLAUDE.md` la hace visible al agente |
 | Arquitectura de una feature | `design.md` del cambio | Code review |
 | Comportamiento (fuente de verdad) | `openspec/specs/` | Pruebas de aceptación |
@@ -242,8 +316,14 @@ my-app/
 ├── docs/
 │   ├── vision.md
 │   ├── prd.md              # alcance + MVP marcado
+│   ├── prd-review.md       # revisión adversarial del PRD (G1)
 │   ├── architecture.md
-│   └── adr/
+│   ├── adr/
+│   ├── user-stories.md     # épicas, historias y plan de entregas
+│   ├── tickets.md
+│   ├── sdlc-checklist.md   # compuertas G0-G3
+│   └── prompts/            # plantillas de revisiones adversariales y de consistencia
+├── scripts/check_docs.py   # totales, referencias y generación del readme
 ├── openspec/
 │   ├── specs/              # verdad del comportamiento actual
 │   └── changes/            # cambios en curso + archive/
@@ -266,6 +346,9 @@ my-app/
 - **Subagentes** para revisión (p. ej. uno que verifique que cada escenario tiene su test).
 - **Hooks** para lint/test automáticos.
 - **`CLAUDE.md` como contrato**: comandos exactos, estructura, convenciones, definition of done.
+- **Compuertas como regla del agente**: `.claude/rules/sdlc-gates.md` hace que el agente verifique la compuerta anterior antes de iniciar una fase, sin que el usuario lo pida.
+- **Revisar con un sombrero distinto**: después de producir un artefacto clave, pedir a la IA que lo critique como revisor adversarial antes de construir encima.
+- **Cambios tardíos con propagación**: nunca editar un solo documento cuando cambia una decisión; aplicar la sección 5.1.
 
 ## 10. Definition of done sugerida (por cambio)
 
@@ -277,6 +360,7 @@ my-app/
 - [ ] ADR creado si hubo una decisión arquitectónica.
 - [ ] PR revisado y mergeado.
 - [ ] Cambio archivado con `/opsx:archive` y specs actualizadas.
+- [ ] Si cambió una decisión: propagación aplicada (sección 5.1) y `scripts/check_docs.py` en verde.
 
 ## 11. Fuentes
 

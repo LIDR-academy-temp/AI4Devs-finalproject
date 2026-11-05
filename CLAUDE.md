@@ -40,6 +40,8 @@ pnpm --filter web test               # pruebas de la SPA
 pnpm e2e                             # Playwright (requiere la app en marcha)
 pnpm --filter api evals              # golden set contra la API real de Claude (cuesta dinero; solo a mano)
 pnpm build                           # build de producción de ambas apps
+python3 scripts/check_docs.py        # compuerta G3: totales, referencias, ADRs y readme al día
+python3 scripts/check_docs.py --build-readme   # regenera readme.md desde docs/
 ```
 
 ## Convenciones
@@ -89,6 +91,7 @@ pnpm build                           # build de producción de ambas apps
 4. Las decisiones de arquitectura nuevas se registran como ADR en `docs/adr/`; no se toman como ediciones sueltas.
 5. Commits en formato Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`, `ci:`). Haz commit o push solo cuando el usuario lo pida.
 6. Registra cada prompt en `docs/ai-log.md` según `.claude/rules/ai-log.md`.
+7. Respeta las compuertas y la gestión de cambios de `.claude/rules/sdlc-gates.md` y `docs/sdlc-checklist.md`. `readme.md` se genera; no lo edites a mano, edita `scripts/readme.template.md` o `docs/`.
 
 ## Definition of done (por cambio)
 

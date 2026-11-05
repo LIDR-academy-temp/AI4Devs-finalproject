@@ -24,7 +24,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 | Modelo | Claude Opus 5.5, esfuerzo medio: descubrimiento, PRD, arquitectura, historias, tickets y revisiones |
 | Skills | `/opsx:explore` (entrevista de descubrimiento), `claude-api` (modelos, precios y capacidades de Claude API) |
 | Búsqueda web | Verificación de AdonisJS v7, plataformas de empleo de las empresas objetivo, API de Greenhouse, Adzuna, SmartRecruiters, JSearch y SerpApi |
-| Reglas | `.claude/rules/ai-log.md` (registrar cada prompt en `docs/ai-log.md`) |
+| Reglas | `.claude/rules/ai-log.md` (registrar cada prompt en `docs/ai-log.md`) y `.claude/rules/sdlc-gates.md` (compuertas del AI SDLC y gestión de cambios) |
 | Contexto | `CLAUDE.md` (convenciones, comandos y definition of done) y `openspec/config.yaml` (contexto y reglas por artefacto de OpenSpec) |
 | Proceso | AI SDLC con OpenSpec: visión → PRD → revisión adversarial → arquitectura y ADRs → historias → tickets (ver `docs/ai-sdlc-claude-code-openspec.md`) |
 
@@ -34,6 +34,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 - Convención de idioma: código y base de datos en inglés, interfaz en inglés con i18n, documentación en español y "currículum" en lugar de "CV".
 - Correos y alertas y la traducción al español pasan a should-have (hoy HU9 y HU10).
 - El usuario detectó que faltaban las épicas y pidió reestructurar las historias en 5 épicas y 10 historias.
+- A partir de los errores del proceso, el usuario pidió mejorar el AI SDLC: se agregaron compuertas G0-G3, revisiones adversariales, ciclo de vida de los ADR, propagación de cambios y el script `scripts/check_docs.py`.
 - Arquitectura: se rechazó el monolito con Inertia recomendado por la IA a favor de un monorepo con API REST y SPA separadas en un solo contenedor.
 - Modelos de Claude: económicos en desarrollo y pruebas, de mayor calidad en producción.
 - Idea propia de usar Markdown como representación del currículum para reducir costos.
