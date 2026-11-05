@@ -66,7 +66,13 @@ export const SettlementMovement = z.object({
   reserveHeldAmt: Money4,
   reserveReleasedAmt: Money4,
   reserveEarlyReleasedAmt: Money4,
-  reservePolicySnapshot: Snapshot,
+  /** The reserve policy applied to an I movement (settlement-reserve-chargeback D3). */
+  reservePolicySnapshot: Snapshot.describe(
+    'The reserve policy applied to an I movement; null on E and R. Before #62: { policy, applied: false }. Since #62: ' +
+      '{ policy, applied: true, outcome, heldInBatchId }, outcome one of released, held_until_term, no_held_reserve, ' +
+      'already_released, released_in_r; heldInBatchId is the attempt that held the reserve, null when this batch ' +
+      'held it, there is none or the policy is hold_until_term.',
+  ),
   /** The attempt is paid; never read from settlementStatusId. */
   settled: z.boolean(),
   /** Ordered by appliedFeeId. */

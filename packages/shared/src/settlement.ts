@@ -129,12 +129,23 @@ const RowRef = { transactionId: BigIntId, sheetId: z.uuid(), rowNo: positiveInt 
 
 export const SettlementWarning = z.discriminatedUnion('code', [
   z.object({ code: z.literal('undated_adjustment'), ...RowRef, feeSkipped: z.boolean() }),
-  /** Emitted once the chargeback reserve policy exists (#62). */
-  z.object({ code: z.literal('reserve_already_released'), ...RowRef }),
+  /** An R whose reserve an adjustment of a current attempt already released: released 0 (#62). */
+  z
+    .object({ code: z.literal('reserve_already_released'), ...RowRef })
+    .describe(
+      'An RR row of a transaction whose reserve a Chargeback, Refund or RDR of a current attempt already released: ' +
+        'its R movement releases 0.0000 and still counts in reservesReleasedQty and in the RR export.',
+    ),
   z.object({ code: z.literal('no_transactional_fees') }),
   z.object({ code: z.literal('reserve_cap_not_applied') }),
   z.object({ code: z.literal('transactional_fees_not_computed') }),
-  z.object({ code: z.literal('chargeback_reserve_policy_not_applied') }),
+  /** No longer emitted: kept for the attempts processed before #62, read back from their audit. */
+  z
+    .object({ code: z.literal('chargeback_reserve_policy_not_applied') })
+    .describe(
+      'No longer emitted. Attempts processed before the reserve policy applied (#62) keep it in their view and ' +
+        'summary; their I movements keep reserveEarlyReleasedAmt = 0.0000.',
+    ),
   z.object({ code: z.literal('fee_variant_not_applied'), feeId: z.uuid() }),
 ])
 export type SettlementWarning = z.infer<typeof SettlementWarning>

@@ -117,7 +117,7 @@ Hecho: los casos pasan a la primera, porque la implementación es de los grupos 
 
 ## 7. Documentación y contrato
 
-- [ ] 7.1 Actualizar la documentación:
+- [x] 7.1 Actualizar la documentación:
   - README §1.2: la fila de #62 del recorte pasa a hecha, y "Reserva por cuenta" lleva la regla exacta: aplica a `Chargeback`, `Refund` y `RDR`, el primer ajuste libera toda la reserva retenida de un E vigente, gana la R, y manda la política de la cuenta que procesa;
   - README §3: `chargebackReservePolicy` (`release_on_chargeback` aplica a los tres ajustes, el nombre se mantiene), `reserveEarlyReleasedAmt` sin "En la Entrega 2 vale 0" y `reservePolicySnapshot` con sus dos formas;
   - README §3.3: candidatas R "sin liberación anticipada en un movimiento I vigente";
@@ -126,7 +126,9 @@ Hecho: los casos pasan a la primera, porque la implementación es de los grupos 
   - el comentario de `reserve_already_released` en `packages/shared/src/settlement.ts`.
 
   La etiqueta "Reserve released on chargeback" no cambia (P8). Verificar con `pnpm openapi:check` (o el export si la descripción sale del código) y con Grep de `#62` y `Refund` en `readme.md`.
-- [ ] 7.2 Commit: docs(settlement): regla de la reserva ante un ajuste en README y OpenAPI, y `git push`.
+- [x] 7.2 Commit: docs(settlement): regla de la reserva ante un ajuste en README y OpenAPI, y `git push`.
+
+  Hecho: el ejemplo del §4 no cambia (es `batch-clean`, de ProviderA-USD con `hold_until_term`, y sigue a 0). Las descripciones de `docs/openapi.yaml` salen del código: `.describe()` en `reservePolicySnapshot` (`settlement-reads.ts`) y en las dos advertencias (`settlement.ts`), regenerado con `pnpm openapi:export` y `api:generate` del frontend.
 
 ## 8. Verificación de conjunto
 
