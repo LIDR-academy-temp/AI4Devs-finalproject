@@ -4,8 +4,9 @@ import type { ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useScopeSelection } from '@/features/accounts/scope-selection'
 import { ListHeading } from '@/lib/list-focus'
-import { FeeFilters, type FiltersPatch, useFeeScope } from './FeeFilters'
+import { FeeFilters, type FiltersPatch } from './FeeFilters'
 import { FEES_LIST, FeesTable } from './FeesTable'
 import { type FeesSearch, feesQueryOf } from './fees-search'
 import { feesQuery, feeTypesQuery } from './queries'
@@ -20,7 +21,7 @@ const s = strings.global
 export function FeesPage() {
   const search = useSearch({ from: '/app/fees' })
   const navigate = useNavigate({ from: '/fees' })
-  const scope = useFeeScope(search)
+  const scope = useScopeSelection(search)
   const query = feesQueryOf(search)
   const fees = useQuery(feesQuery(query, scope.state === 'ready'))
   const feeTypes = useQuery(feeTypesQuery())
