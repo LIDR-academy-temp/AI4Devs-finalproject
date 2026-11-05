@@ -255,11 +255,9 @@ export class PrismaImportRepository implements ImportRepository {
       ...(filter.accountId === undefined ? {} : { accountId: filter.accountId }),
       ...(filter.createdByUserId === undefined ? {} : { createdByUserId: filter.createdByUserId }),
       account: {
-        ...visibleAccount(scope),
         ...(filter.providerId === undefined ? {} : { providerId: filter.providerId }),
-        ...(filter.merchantId === undefined
-          ? {}
-          : { provider: { merchantId: { in: [...scope.merchantIds].filter((id) => id === filter.merchantId) } } }),
+        // The scope, or the one merchant asked for: the service has already checked it is in scope (missingFilter).
+        provider: { merchantId: filter.merchantId ?? { in: [...scope.merchantIds] } },
       },
     }
     const [rows, total] = await Promise.all([
