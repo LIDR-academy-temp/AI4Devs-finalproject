@@ -63,6 +63,8 @@ export interface ConfirmedSheet {
 export interface ImportSummaryRecord {
   importId: string
   accountId: string
+  /** Provider of the account: the channel notice marks the channels of another one (#92). */
+  providerId: number
   matchingRuleSetId: number | null
   status: ImportStatus
   createdBy: { userId: number; userName: string }

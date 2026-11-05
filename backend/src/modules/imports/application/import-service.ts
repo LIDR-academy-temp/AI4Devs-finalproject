@@ -611,7 +611,7 @@ export class ImportService {
   private async channelsOf(record: ImportRecord, scope: Scope): Promise<ChannelNotice[]> {
     const counts = await this.deps.rows.channelRowCounts(record.importId)
     const facts = await this.deps.accounts.channelAssignments(record.accountId, [...counts.keys()])
-    return channelNotices(record.accountId, counts, facts, scope)
+    return channelNotices(record.accountId, record.providerId, counts, facts, scope)
   }
 
   /** Spec "Fees por batch prellenados…" (design D10): the batch_fees sheets with a confirmed mapping, re-read from the file. */

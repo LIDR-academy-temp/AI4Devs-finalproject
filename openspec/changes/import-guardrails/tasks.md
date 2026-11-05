@@ -61,8 +61,13 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
   Comprobar que fallan.
 - [x] 3.3 Ampliar `upload-policy.test.ts` y `errors.test.ts` con `MAX_FILES_PER_IMPORT = 10` y `ImportFileLimitReachedError` (409, `import_file_limit_reached`, `details = { limit, current, adding }`). Ampliar `errors.test.ts` también con `NoMatchedRowsError` (409, `no_matched_rows`, mensaje en inglés). Comprobar que fallan.
 - [x] 3.4 Commit: test(imports): batch sin filas asociadas, canal de otro proveedor y tope de archivos en rojo, y `git push`.
-- [ ] 3.5 Implementar `empty-batch.ts`, `channelNotices(accountId, providerId, …)` (D4), la constante y los dos errores. Verificar que los tests de 3.1–3.3 pasan con `pnpm --filter @recon/backend test`.
-- [ ] 3.6 Commit: feat(imports): regla del batch sin filas asociadas, aviso de canal de otro proveedor y errores nuevos, y `git push`.
+- [x] 3.5 Implementar `empty-batch.ts`, `channelNotices(accountId, providerId, …)` (D4), la constante y los dos errores. Verificar que los tests de 3.1–3.3 pasan con `pnpm --filter @recon/backend test`.
+
+  Resultado:
+  - Se adelanta de 6.1 el `providerId` de la cuenta en `ImportSummaryRecord` (repositorio Prisma y fake) y su paso a `channelNotices`, para que la llamada del servicio no quede con los argumentos desplazados.
+  - Los tests de 3.1–3.3 pasan.
+  - Siguen fallando 8 tests de imports que leen el detalle analizado (`500` del serializador, o `ImportDetail.safeParse` falso), porque `analysis` aún no trae los campos que el grupo 1 hizo obligatorios. Se arreglan en 6.1.
+- [x] 3.6 Commit: feat(imports): regla del batch sin filas asociadas, aviso de canal de otro proveedor y errores nuevos, y `git push`.
 
 ## 4. Validación: `status_mismatch` con el gateway `Pending` (#63, TDD)
 

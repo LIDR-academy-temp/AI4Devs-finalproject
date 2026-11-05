@@ -37,7 +37,7 @@ const summarySelect = {
   rowsUnmatched: true,
   currentBatchId: true,
   createdBy: { select: { userId: true, userName: true } },
-  account: { select: { matchingRuleSetId: true } },
+  account: { select: { matchingRuleSetId: true, providerId: true } },
 } satisfies Prisma.ImportSelect
 
 const sheetSelect = {
@@ -70,6 +70,7 @@ const listSelect = {
       accountId: true,
       name: true,
       matchingRuleSetId: true,
+      providerId: true,
       provider: { select: { providerId: true, name: true, merchant: { select: { merchantId: true, name: true } } } },
     },
   },
@@ -83,6 +84,7 @@ function toSummary(row: SummaryRow, fileCount: number): ImportSummaryRecord {
     ...rest,
     // The CHECK constraint guarantees the value; an unexpected one is a data error, not a 200.
     status: ImportStatus.parse(row.status),
+    providerId: account.providerId,
     matchingRuleSetId: account.matchingRuleSetId,
     fileCount,
   }
@@ -274,7 +276,10 @@ export class PrismaImportRepository implements ImportRepository {
       this.prisma.import.count({ where }),
     ])
     const items = rows.map(({ _count, account, ...row }) => ({
-      ...toSummary({ ...row, account: { matchingRuleSetId: account.matchingRuleSetId } }, _count.files),
+      ...toSummary(
+        { ...row, account: { matchingRuleSetId: account.matchingRuleSetId, providerId: account.providerId } },
+        _count.files,
+      ),
       account: { id: account.accountId, name: account.name },
       provider: { id: account.provider.providerId, name: account.provider.name },
       merchant: { id: account.provider.merchant.merchantId, name: account.provider.merchant.name },

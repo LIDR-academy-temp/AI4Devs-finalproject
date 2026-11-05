@@ -769,6 +769,7 @@ export class InMemoryImportRepository implements ImportRepository {
     this.imports.set(data.importId, {
       importId: data.importId,
       accountId: data.accountId,
+      providerId: account.providerId,
       matchingRuleSetId: account.matchingRuleSetId,
       status: 'uploaded',
       createdBy: { userId: data.createdByUserId, userName: USER_NAMES.get(data.createdByUserId) ?? 'unknown' },
