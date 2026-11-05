@@ -60,8 +60,10 @@ export function accountFeesOf(name: AccountName): AccountFeeConfig[] {
 }
 
 /**
- * The batch fees pre-filled from the sample's Other Fees sheet, as the analyst confirms them. A fee type outside the
- * catalog (expected.warnings.unknownFeeTypes) is not pre-filled.
+ * The batch fees pre-filled from the sample's Other Fees sheet, as the analyst confirms them. Test support only: the
+ * analysis keeps a fee type outside the catalog (expected.warnings.unknownFeeTypes) with feeTypeId null and a warning
+ * (imports/domain/batch-fees.ts), and the review rejects it unconfirmed (400 batch_fee_invalid, unknown_fee_type).
+ * This helper leaves it out, as an analyst who dropped it, so the settlement samples load.
  */
 export function prefilledBatchFees(name: SampleName): BatchFeeInput[] {
   const prefilled = (expectedOf(name).batchFeesPrefilled ?? []) as { feeType: string; amount: number }[]

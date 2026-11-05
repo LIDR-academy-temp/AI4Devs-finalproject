@@ -46,7 +46,7 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
 
   `settlementSampleInput` construye `reserveStates` con la historia sembrada (D6). Ajustar en `movements.test.ts` la expectativa del snapshot del I, que ya no lo escribe `buildMovements`. Comprobar que fallan.
 
-  Hecho: `prefilledBatchFees` deja fuera los tipos de fee fuera de catálogo ("Fraud Monitoring Fee" de `batch-issues`), que antes hacían fallar la carga de la muestra.
+  Hecho: `prefilledBatchFees` (`backend/src/modules/settlement/test-support/sample-input.ts:68`) deja fuera los tipos de fee fuera de catálogo ("Fraud Monitoring Fee" de `batch-issues`), que antes hacían fallar la carga de la muestra. Es solo montaje de test: el helper simula la confirmación del analista, y `BatchFeeInput` exige un `feeTypeId`. Producción no cambia y no pierde el fee en silencio. El análisis lo conserva como importe libre con `feeTypeId: null` y la advertencia "Fee type not in the catalog" (`imports/domain/batch-fees.ts`, cubierto en `batch-fees.test.ts` e `import-service.analysis.test.ts`). Si se envía sin tipo, la revisión lo rechaza con `400 batch_fee_invalid` (`unknown_fee_type`).
 - [x] 2.3 Commit: test(settlement): liberación de la reserva ante un ajuste con el oráculo de batch-issues
 - [x] 2.4 Implementar (D1–D3):
   - `PriorReserveState` y `reserveStates` en `domain/types.ts`;
