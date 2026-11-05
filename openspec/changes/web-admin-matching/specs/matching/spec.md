@@ -17,7 +17,7 @@ Administration › Matching Rules (`/matching-rules`) SHALL abrirse para todo ro
 - **THEN** ve `This merchant or provider is not available.` y ninguna lista de conjuntos
 
 #### Scenario: Migas
-- **WHEN** `viewer` abre Matching Rules, las reglas globales o el detalle de un conjunto
+- **WHEN** `analyst` abre Matching Rules, las reglas globales o el detalle de "Provider C legacy" (`analyst` y no `viewer`, que no ve el conjunto del merchant 2)
 - **THEN** ve `Dashboard › Administration › Matching Rules`
 
 ### Requirement: Pantalla Matching Rules: detalle de un conjunto

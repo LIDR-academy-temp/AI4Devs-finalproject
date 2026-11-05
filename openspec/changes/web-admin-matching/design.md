@@ -147,12 +147,13 @@ frontend/src/test/msw/matching.ts (+ matching.test.ts)
 
 ### D6. `rule-errors.ts`: errores del API
 
-- **`ruleProblemOf(error, values)`** devuelve `{ fields: Record<path, message>, general: string | null, invalidate }`.
+- **`ruleProblemOf(error, shape)`** devuelve `{ fields: Record<path, message>, general: string | null, invalidate }`. `shape` (`RuleFormShape`) dice cuántas filas tiene cada lista, si el formulario tiene campo de nombre y qué campos oculta el tipo de hoja (`hiddenFields`, con la misma regla `showsSheetField` que pinta la tabla).
 - **Qué va a un campo:**
-  - `400` con `details.field` cuya ruta existe en `values` (`sheetRules[i].campo`, `columnRules[i].campo`, `statusAliases[i].campo`, `name`) → el `message` del API en ese campo. Los mensajes del API están en inglés y son legibles ("Chargeback is a cycle I status").
-  - `409 rule_set_name_taken` → `name`, con `A rule set of this provider already uses this name.`
+  - `400` con `details.field` cuya ruta se ve en el formulario (`sheetRules[i].campo`, `columnRules[i].campo`, `statusAliases[i].campo`, `name`) → el `message` del API en ese campo. Los mensajes del API están en inglés y son legibles ("Chargeback is a cycle I status"). Las casillas (`isRegex`, `isActive`, `excludeAmount`, `isLegacy`) también pintan su error junto a ellas.
+  - `409 rule_set_name_taken` → `name`, con `A rule set of this provider already uses this name.`, en Rename y New rule set.
 - **Qué es mensaje general:**
-  - un `400` con una ruta que no existe en el formulario, o con la lista de Fastify → `The rules were not saved. Check the values and try again.`;
+  - un `400` con una ruta que no existe en el formulario, o con la lista de Fastify → `The rules were not saved. Check the values and try again.`. También un `400` en `cycle` o `statusId` que el tipo de hoja oculta (`batch_fees`/`ignore`, o el estado con ciclo `R`): no hay control junto al que pintarlo;
+  - `409 rule_set_name_taken` en el modo edición, que no tiene campo de nombre → el mismo texto como mensaje general;
   - `403` → `You don't have permission to change these rules.`;
   - `404` → `This rule set is no longer available.`, que invalida el detalle;
   - `5xx` → `Could not save the rules. Try again.`;

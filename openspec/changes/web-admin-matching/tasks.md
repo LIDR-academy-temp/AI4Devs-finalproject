@@ -168,7 +168,7 @@ Requiere que `admin-matching` haya terminado y turno de base.
 
 ## 10. Revisión
 
-- [ ] 10.1 `review-diff` en una sesión nueva, que pide la persona, antes del PR. Lo que encuentre se arregla con su test y su commit en esta rama.
+- [x] 10.1 `review-diff` en una sesión nueva, que pide la persona, antes del PR. Lo que encuentre se arregla con su test y su commit en esta rama.
 
 ## Workflow follow-up
 

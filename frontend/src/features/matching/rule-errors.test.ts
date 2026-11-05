@@ -45,6 +45,13 @@ describe('ruleProblemOf', () => {
     expect(ruleProblemOf(error, FORM)).toEqual({ fields: { name: e.nameTaken }, general: null, invalidate: null })
   })
 
+  it('without a name field (edit mode), rule_set_name_taken and a 400 on the name are general messages', () => {
+    const noName = { ...FORM, name: false }
+    const taken = new ApiError(409, 'rule_set_name_taken', 'The name is already used')
+    expect(ruleProblemOf(taken, noName)).toEqual({ fields: {}, general: e.nameTaken, invalidate: null })
+    expect(ruleProblemOf(domain400('name'), noName)).toEqual({ fields: {}, general: e.invalid, invalidate: null })
+  })
+
   it.each([
     [new ApiError(403, 'forbidden', 'Forbidden'), e.forbidden, null],
     [new ApiError(404, 'not_found', 'Not found'), e.notFound, 'detail'],
