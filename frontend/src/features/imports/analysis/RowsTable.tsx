@@ -1,15 +1,26 @@
 import type { MatchResult } from '@recon/shared'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createColumnHelper, rowPaginationFeature, tableFeatures, useTable } from '@tanstack/react-table'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { validationRunKey } from '@/features/validations/queries'
+import { ApiError } from '@/lib/api/client'
 import type { ImportRowItem, ImportStatus } from '@/lib/api/types'
 import { formatDecimal } from '@/lib/format'
 import { ListHeading, requestListFocus } from '@/lib/list-focus'
+import { useReloadImport, useResolveRow } from '../mutations'
 import { useCanProcess } from '../permissions'
-import { importRowsQuery, ROWS_PAGE_SIZE } from '../queries'
+import { importKey, importRowsQuery, ROWS_PAGE_SIZE } from '../queries'
 import { strings } from '../strings'
-import { AmbiguousCandidates, ResolutionContext, type ResolutionMode } from './AmbiguousCandidates'
+import {
+  AmbiguousCandidates,
+  type Candidate,
+  candidateLabel,
+  ResolutionContext,
+  type ResolutionMode,
+} from './AmbiguousCandidates'
+import { ResolveRowDialog, type RowChoice } from './ResolveRowDialog'
 
 const s = strings.analysis.rows
 
@@ -120,6 +131,63 @@ export function RowsTable({
   const total = query.data?.total ?? 0
   const pageCount = Math.max(1, Math.ceil(total / ROWS_PAGE_SIZE))
 
+  // Resolving an ambiguous row (web-ambiguous-rows design D2–D4).
+  const queryClient = useQueryClient()
+  const resolver = useResolveRow(importId)
+  const reloadImport = useReloadImport(importId)
+  const [choice, setChoice] = useState<RowChoice | null>(null)
+  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
+  // Each resolution changes the key of the heading, so it takes the focus the success asked for.
+  const [resolutions, setResolutions] = useState(0)
+  const [afterResolve, setAfterResolve] = useState(false)
+
+  const choose = (row: ImportRowItem, candidate: Candidate) => {
+    // Known only from what the validations section already read: unknown warns as well (design D2).
+    const view = queryClient.getQueryData<{ run: unknown }>(validationRunKey(importId))
+    setMessage(null)
+    setChoice({ row, candidate, warnRun: view === undefined || view.run !== null })
+  }
+  const askRows = () => void queryClient.invalidateQueries({ queryKey: [...importKey(importId), 'rows'] })
+  const confirm = ({ row, candidate }: RowChoice) =>
+    resolver.mutate(
+      { sheetId: row.sheetId, rowNo: row.rowNo, gatewayId: candidate.gatewayId },
+      {
+        onSuccess: () => {
+          setChoice(null)
+          setMessage({ text: s.resolve.resolved(row.rowNo, row.sheetName, candidateLabel(candidate)), error: false })
+          requestListFocus(ROWS_LIST)
+          setResolutions((n) => n + 1)
+          setAfterResolve(true)
+        },
+        onError: (failure) => {
+          setChoice(null)
+          const code = failure instanceof ApiError ? failure.code : undefined
+          if (code === 'import_not_editable') {
+            const current = (failure as ApiError).details as { status?: string } | undefined
+            setMessage({ text: s.resolve.notEditable(current?.status ?? ''), error: true })
+            void reloadImport()
+          } else if (code === 'row_not_ambiguous') {
+            setMessage({ text: s.resolve.notAmbiguous, error: true })
+            void reloadImport()
+            askRows()
+          } else if (code === 'validation_error') {
+            setMessage({ text: s.resolve.notCandidate, error: true })
+            askRows()
+          } else {
+            setMessage({ text: s.resolve.failed, error: true })
+          }
+        },
+      },
+    )
+  const resolution = { mode, pending: resolver.isPending, onChoose: choose }
+
+  // The resolved row may leave the last page of a filter empty: show the last page there is instead (design D4).
+  useEffect(() => {
+    if (!afterResolve || query.isFetching || !query.isSuccess) return
+    setAfterResolve(false)
+    if (page > pageCount) onChange({ match, page: pageCount })
+  }, [afterResolve, query.isFetching, query.isSuccess, page, pageCount, match, onChange])
+
   const table = useTable({
     features,
     columns,
@@ -157,15 +225,18 @@ export function RowsTable({
   }
 
   return (
-    <ResolutionContext.Provider value={mode}>
+    <ResolutionContext.Provider value={resolution}>
       <section className="flex flex-col gap-2">
-        <ListHeading name={ROWS_LIST} focusKey={`${match}:${page}`} className="font-medium">
+        <ListHeading name={ROWS_LIST} focusKey={`${match}:${page}:${resolutions}`} className="font-medium">
           {s.title}
         </ListHeading>
         <div role="toolbar" aria-label={s.filterLabel} className="flex flex-wrap items-center gap-1">
           <span className="pr-1 text-sm text-muted-foreground">{s.filterLabel}</span>
           {filterButton(undefined, s.filters.all)}
           {FILTERS.map((f) => filterButton(f, s.filters[f]))}
+        </div>
+        <div aria-live="polite" className="text-sm">
+          {message && <p className={message.error ? 'text-destructive' : undefined}>{message.text}</p>}
         </div>
         <div className="max-w-full overflow-x-auto rounded-md border bg-background">
           <Table aria-label={s.title} className="text-xs">
@@ -217,6 +288,12 @@ export function RowsTable({
             {s.next}
           </Button>
         </div>
+        <ResolveRowDialog
+          choice={choice}
+          pending={resolver.isPending}
+          onConfirm={confirm}
+          onClose={() => setChoice(null)}
+        />
       </section>
     </ResolutionContext.Provider>
   )

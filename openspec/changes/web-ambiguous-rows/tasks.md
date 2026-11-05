@@ -16,7 +16,7 @@ Rama `feat/web-ambiguous-rows` creada desde `origin/feature/entrega-3-MVP` cuand
 
 ## 3. Confirmar y resolver
 
-- [ ] 3.1 Tests primero en `analysis/resolve-row.test.tsx` (spec "Resolver una fila ambigua desde la pantalla", "Confirmación al resolver una fila ambigua" y "Después de resolver una fila ambigua"; D2–D4):
+- [x] 3.1 Tests primero en `analysis/resolve-row.test.tsx` (spec "Resolver una fila ambigua desde la pantalla", "Confirmación al resolver una fila ambigua" y "Después de resolver una fila ambigua"; D2–D4):
   - elegir y confirmar: cuerpo `{ gatewayId }` del `PATCH`, la fila sale como `Matched`, el contador `Ambiguous` baja en 1, mensaje de éxito y foco en el encabezado de filas;
   - sin corrida (`run = null`) el diálogo no menciona la corrida; con `seedValidationRun` la menciona y, tras confirmar, la sección muestra `No validation run yet.`;
   - candidata `outOfScope`: el diálogo la nombra `(another merchant)` sin canal, estado ni importe, y el `PATCH` lleva su `gatewayId`;
@@ -26,8 +26,8 @@ Rama `feat/web-ambiguous-rows` creada desde `origin/feature/entrega-3-MVP` cuand
   - con `match=ambiguous` y la única ambigua en la última página, tras resolver se va a la página anterior.
 
   Verificar que fallan.
-- [ ] 3.2 Implementar `useResolveRow` en `mutations.ts` (D3), `ResolveRowDialog.tsx` con el aviso leído de la caché (D2), la región de mensajes, el foco y el ajuste de página en `RowsTable` (D4). Verificar con `pnpm lint`, `pnpm typecheck` y `pnpm test` que todo pasa
-- [ ] 3.3 Commit: `test(web): resolver una fila ambigua desde la tabla` y `feat(web): resolver filas ambiguas con confirmación y aviso de la corrida (#38)`
+- [x] 3.2 Implementar `useResolveRow` en `mutations.ts` (D3), `ResolveRowDialog.tsx` con el aviso leído de la caché (D2), la región de mensajes, el foco y el ajuste de página en `RowsTable` (D4). Verificar con `pnpm lint`, `pnpm typecheck` y `pnpm test` que todo pasa
+- [x] 3.3 Commit: `test(web): resolver una fila ambigua desde la tabla` y `feat(web): resolver filas ambiguas con confirmación y aviso de la corrida (#38)`
 
 ## 4. Capturas
 

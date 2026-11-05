@@ -178,6 +178,21 @@ export const strings = {
       chooseButton: 'Choose',
       choose: (gateway: string, rowNo: number, sheet: string) => `Choose ${gateway} for row ${rowNo} of ${sheet}`,
       validatedHint: 'Run the validations again to choose a gateway: the import goes back to Analyzed.',
+      /** Resolving an ambiguous row (spec "Confirmación al resolver una fila ambigua"). */
+      resolve: {
+        title: 'Resolve this ambiguous row?',
+        body: (rowNo: number, sheet: string, id: string, gateway: string) =>
+          `Row ${rowNo} of ${sheet} (${id}) will be matched to ${gateway}. The choice is recorded.`,
+        candidate: (channel: string, status: string, amount: string) => `${channel} · ${status} · ${amount}`,
+        runWarning: 'The current validation run is discarded: run the validations again before continuing.',
+        confirm: 'Yes, match the row',
+        keep: 'Keep',
+        resolved: (rowNo: number, sheet: string, gateway: string) => `Row ${rowNo} of ${sheet} matched to ${gateway}.`,
+        notEditable: (status: string) => `This row can no longer be resolved (${status}).`,
+        notAmbiguous: 'This row is no longer ambiguous.',
+        notCandidate: 'That gateway is no longer a candidate for this row.',
+        failed: 'The row could not be resolved. Try again.',
+      },
       previous: 'Previous',
       next: 'Next',
       pageOf: (page: number, pages: number, total: number) =>

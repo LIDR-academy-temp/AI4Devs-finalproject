@@ -5,7 +5,7 @@ import { strings } from '../strings'
 
 const s = strings.analysis.rows
 
-type Candidate = ImportRowItem['candidates'][number]
+export type Candidate = ImportRowItem['candidates'][number]
 
 /**
  * What the candidates of an ambiguous row offer (web-ambiguous-rows design D1): `enabled` with settlement.process in
@@ -14,7 +14,15 @@ type Candidate = ImportRowItem['candidates'][number]
  */
 export type ResolutionMode = 'enabled' | 'disabled' | 'none'
 
-export const ResolutionContext = createContext<ResolutionMode>('none')
+export interface Resolution {
+  mode: ResolutionMode
+  /** A PATCH is on its way: one write at a time, so every Choose waits (design D4). */
+  pending: boolean
+  /** Opens the confirmation for this candidate of this row. */
+  onChoose: (row: ImportRowItem, candidate: Candidate) => void
+}
+
+export const ResolutionContext = createContext<Resolution>({ mode: 'none', pending: false, onChoose: () => {} })
 
 export const isOutOfScope = (c: Candidate) => 'outOfScope' in c && c.outOfScope === true
 
@@ -24,7 +32,7 @@ export const candidateLabel = (c: Candidate) =>
 
 /** The gateways of an ambiguous row, each with Choose when the mode allows it (spec "Fila ambigua"). */
 export function AmbiguousCandidates({ row }: { row: ImportRowItem }) {
-  const mode = useContext(ResolutionContext)
+  const { mode, pending, onChoose } = useContext(ResolutionContext)
   const hintId = useId()
   if (row.candidates.length === 0) return null
   const withControl = mode !== 'none' && row.matchResult === 'ambiguous'
@@ -41,7 +49,8 @@ export function AmbiguousCandidates({ row }: { row: ImportRowItem }) {
                 className="h-6 px-2 text-xs"
                 aria-label={s.choose(candidateLabel(c), row.rowNo, row.sheetName)}
                 aria-describedby={mode === 'disabled' ? hintId : undefined}
-                disabled={mode === 'disabled'}
+                disabled={mode === 'disabled' || pending}
+                onClick={() => onChoose(row, c)}
               >
                 {s.chooseButton}
               </Button>
