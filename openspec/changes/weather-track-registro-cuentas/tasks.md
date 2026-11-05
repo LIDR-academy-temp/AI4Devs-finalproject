@@ -52,6 +52,7 @@ Las decisiones están en `design.md` (D1 a D12) y el comportamiento en las specs
 - [x] 7.3 Crear "Mi cuenta" y la pantalla de baja con botón de confirmación, y verificar con pruebas de componentes
 - [x] 7.4 Crear las páginas de privacidad y términos con su versión, marcadas como borrador para revisión legal, y verificar que el registro enlaza a ellas
 - [x] 7.5 Agregar el enlace de registro y de recupero en la pantalla de acceso y verificar el escenario "Pantalla de acceso"
+- [x] 7.6 Pedir dos veces la contraseña nueva en el registro y en "Mi cuenta", como ya lo hace el recupero, y verificar con pruebas de componentes que no se envía si no coinciden (D13)
 
 ## 8. Integración
 

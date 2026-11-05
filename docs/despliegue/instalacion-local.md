@@ -48,7 +48,7 @@ Abrí <http://localhost:8080> e ingresá con esos datos. También podés crear t
 La aplicación solo responde en tu computadora: no queda expuesta a otros equipos de tu red, porque en local no usa HTTPS.
 
 1. **Decisión:** el estado de aplicación, sus motivos y las condiciones actuales. Se actualiza sola cada minuto.
-2. **Detalle de sensor:** tocá una tarjeta para ver el gráfico y el resumen de 7 o 31 días.
+2. **Detalle de sensor:** tocá una tarjeta para ver el gráfico y el resumen del último día, la semana o el mes, o elegí las fechas en el calendario.
 3. **Mi cuenta:** en el encabezado. Corregí tus datos, cambiá la contraseña o date de baja, que borra la cuenta con todos sus datos.
 
 Los históricos ficticios se cargan en segundo plano y pueden tardar un par de minutos en aparecer completos. La documentación de la API está en <http://localhost:8080/api/docs>.

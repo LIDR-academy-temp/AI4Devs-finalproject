@@ -55,7 +55,7 @@ Ese último comando muestra el correo y la clave de demostración. Abrir <http:/
 | 4:00 | `desactualizada` | Caso 1 | "Datos insuficientes", con la antigüedad | Regla R2: un dato viejo nunca se muestra como vigente |
 | 4:30 | `sospechosa` | Caso 1 | "Precaución" y tarjetas marcadas | Regla R4: humedades incoherentes entre 2 m y 10 m. **Es lo que hoy ocurre en la estación real** |
 | 5:00 | `fuente_caida` | Caso 1 | Aviso "Sin conexión con la fuente de datos" | El sistema distingue una falla de la fuente de la falta de datos |
-| 5:30 | `con_historicos` | Caso 1, tocar *Temp Amb. a 2 Mts* | Gráfico y resumen; cambiar a 31 días | La línea se corta en los huecos, sin inventar datos |
+| 5:30 | `con_historicos` | Caso 1, tocar *Temp Amb. a 2 Mts* | Gráfico y resumen; cambiar a Mes y luego **Elegir fechas** | La línea se corta en los huecos, sin inventar datos. El calendario llega hasta un año atrás, sin fechas futuras |
 | 6:15 | | **Caso de prueba - 2**, desde el selector | "Datos insuficientes", sin mediciones | Un equipo sin lecturas nunca muestra una recomendación. Si un equipo deja de llegar de SAT2, queda como "Equipo inactivo - solo históricos" |
 | 6:30 | | Herramientas del navegador, ancho 360 | La pantalla de decisión | Pensada para usarse en el lote, con el celular |
 | 6:45 | | Salir | Cerrar sesión | La sesión se invalida en el servidor |

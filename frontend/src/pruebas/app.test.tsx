@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -12,6 +12,7 @@ import {
   simularApi,
 } from './ayudantes'
 import type { Simulada } from './ayudantes'
+import { fechaDeArgentina, formatearFecha, primerDiaPermitido } from '../servicios/serie'
 
 vi.mock('../componentes/GraficoSerie', () => ({
   GraficoSerie: ({ puntos, titulo }: { puntos: unknown[]; titulo: string }) => (
@@ -263,18 +264,18 @@ describe('detalle e históricos', () => {
     expect(screen.getByRole('img')).toHaveAccessibleName(
       'Temp Amb. a 2 Mts: últimos 7 días, en °C',
     )
-    expect(screen.getByRole('button', { name: 'Últimos 7 días' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Semana' })).toHaveAttribute(
       'aria-pressed',
       'true',
     )
   })
 
-  it('consulta 31 días al elegir ese rango', async () => {
+  it('consulta 31 días al elegir Mes', async () => {
     const llamadas = simularApi(rutasDetalle())
     const usuario = userEvent.setup()
     abrir('/estaciones/1/sensores/6')
     await screen.findByText('29,5')
-    await usuario.click(screen.getByRole('button', { name: 'Últimos 31 días' }))
+    await usuario.click(screen.getByRole('button', { name: 'Mes' }))
 
     await waitFor(() =>
       expect(screen.getByRole('img')).toHaveAccessibleName(
@@ -289,6 +290,64 @@ describe('detalle e históricos', () => {
     )
     expect(dias[0]).toBeCloseTo(7)
     expect(dias.at(-1)).toBeCloseTo(31)
+  })
+
+  it('consulta las últimas 24 horas al elegir Día', async () => {
+    const llamadas = simularApi(rutasDetalle())
+    const usuario = userEvent.setup()
+    abrir('/estaciones/1/sensores/6')
+    await screen.findByText('29,5')
+    await usuario.click(screen.getByRole('button', { name: 'Día' }))
+    await waitFor(() =>
+      expect(screen.getByRole('img')).toHaveAccessibleName(
+        'Temp Amb. a 2 Mts: últimas 24 horas, en °C',
+      ),
+    )
+    const ultima = new URLSearchParams(llamadas.filter((l) => l.includes('/historico')).at(-1)!.split('?')[1])
+    expect((Date.parse(ultima.get('hasta')!) - Date.parse(ultima.get('desde')!)) / 3_600_000).toBeCloseTo(24)
+  })
+
+  it('consulta un rango manual de días completos en hora de Argentina', async () => {
+    const llamadas = simularApi(rutasDetalle())
+    const usuario = userEvent.setup()
+    abrir('/estaciones/1/sensores/6')
+    await screen.findByText('29,5')
+    await usuario.click(screen.getByRole('button', { name: 'Elegir fechas' }))
+    const hace = (dias: number) => fechaDeArgentina(new Date(Date.now() - dias * 86_400_000))
+    const desde = screen.getByLabelText('Desde')
+    expect(desde).toHaveAttribute('min', primerDiaPermitido(new Date()))
+    expect(desde).toHaveAttribute('max', fechaDeArgentina(new Date()))
+    fireEvent.change(desde, { target: { value: hace(10) } })
+    fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: hace(4) } })
+    await usuario.click(screen.getByRole('button', { name: 'Ver el período' }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('img')).toHaveAccessibleName(
+        `Temp Amb. a 2 Mts: del ${formatearFecha(hace(10))} al ${formatearFecha(hace(4))}, en °C`,
+      ),
+    )
+    const ultima = new URLSearchParams(llamadas.filter((l) => l.includes('/historico')).at(-1)!.split('?')[1])
+    expect(new Date(ultima.get('desde')!)).toEqual(new Date(`${hace(10)}T00:00:00-03:00`))
+    expect(new Date(ultima.get('hasta')!)).toEqual(new Date(`${hace(4)}T23:59:59.999-03:00`))
+  })
+
+  it.each([
+    ['más de 31 días', 40, 0, 'Hasta', '31 días'],
+    ['el fin antes del inicio', 3, 5, 'Hasta', 'anterior'],
+    ['más de un año atrás', 400, 390, 'Desde', 'un año'],
+  ])('un rango manual con %s se explica y no se consulta', async (_caso, inicio, fin, campo, texto) => {
+    const llamadas = simularApi(rutasDetalle())
+    const usuario = userEvent.setup()
+    abrir('/estaciones/1/sensores/6')
+    await screen.findByText('29,5')
+    const antes = llamadas.length
+    await usuario.click(screen.getByRole('button', { name: 'Elegir fechas' }))
+    const hace = (dias: number) => fechaDeArgentina(new Date(Date.now() - dias * 86_400_000))
+    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: hace(inicio) } })
+    fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: hace(fin) } })
+    await usuario.click(screen.getByRole('button', { name: 'Ver el período' }))
+    expect(screen.getByLabelText(campo)).toHaveAccessibleDescription(new RegExp(texto))
+    expect(llamadas.slice(antes).filter((l) => l.includes('/historico'))).toEqual([])
   })
 
   it('avisa cuando el período no tiene datos válidos', async () => {

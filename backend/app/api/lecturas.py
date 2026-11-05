@@ -1,6 +1,6 @@
 """Endpoints de lectura de la sección 4 del README."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Annotated, Literal
 
@@ -30,11 +30,27 @@ from app.dominio.vigencia import (
 )
 
 RANGO_MAXIMO = timedelta(days=31)
+# Diferencia admitida entre el reloj del navegador, que arma los rangos, y el del servidor.
+TOLERANCIA_FUTURO = timedelta(minutes=5)
 # Fuera de estos años no hay datos, y convertir fechas extremas a otra zona desborda.
 FECHA_MINIMA = datetime(2000, 1, 1, tzinfo=UTC)
 FECHA_MAXIMA = datetime(2100, 1, 1, tzinfo=UTC)
 
 Calidad = Literal["OK", "FALTANTE", "SOSPECHOSO"]
+MENSAJE_RANGO = (
+    "La fecha final debe ser posterior a la inicial, con un máximo de 31 días, "
+    "sin fechas futuras ni anteriores a un año."
+)
+
+
+def primer_instante_permitido(ahora: datetime) -> datetime:
+    """Las 00:00 de Argentina del mismo día del año anterior, como el calendario de la pantalla."""
+    hoy = ahora.astimezone(ZONA_ARGENTINA).date()
+    try:
+        dia = hoy.replace(year=hoy.year - 1)
+    except ValueError:  # 29 de febrero
+        dia = date(hoy.year - 1, 2, 28)
+    return datetime.combine(dia, time(0), tzinfo=ZONA_ARGENTINA).astimezone(UTC)
 
 router = APIRouter(
     prefix="/api/v1/estaciones",
@@ -272,7 +288,9 @@ def obtener_condiciones_actuales(
 @router.get(
     "/{estacionId}/sensores/{sensorId}/historico",
     operation_id="obtenerHistorico",
-    responses={422: {"description": "Rango de fechas inválido o mayor a 31 días"}},
+    responses={
+        422: {"description": "Rango de fechas inválido, mayor a 31 días, futuro o anterior a un año"}
+    },
 )
 def obtener_historico(
     estacion: EstacionAutorizada,
@@ -280,6 +298,7 @@ def obtener_historico(
     desde: Annotated[AwareDatetime, Query()],
     hasta: Annotated[AwareDatetime, Query()],
     sesion: SesionBd,
+    ahora: Ahora,
 ) -> Historico:
     sensor = sesion.scalar(
         select(Sensor).where(Sensor.id == sensorId, Sensor.estacion_id == estacion.id)
@@ -291,12 +310,10 @@ def obtener_historico(
         or hasta > FECHA_MAXIMA
         or hasta <= desde
         or hasta - desde > RANGO_MAXIMO
+        or desde < primer_instante_permitido(ahora)
+        or hasta > ahora + TOLERANCIA_FUTURO
     ):
-        raise ErrorApi(
-            status.HTTP_422_UNPROCESSABLE_CONTENT,
-            "RANGO_INVALIDO",
-            "La fecha final debe ser posterior a la inicial, con un máximo de 31 días.",
-        )
+        raise ErrorApi(status.HTTP_422_UNPROCESSABLE_CONTENT, "RANGO_INVALIDO", MENSAJE_RANGO)
 
     filas = sesion.execute(
         select(Observacion.medido_en, Observacion.valor, Observacion.calidad)

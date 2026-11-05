@@ -128,12 +128,17 @@ function Datos({ cuenta }: { cuenta: Cuenta }) {
 function Contrasena() {
   const [actual, setActual] = useState('')
   const [nueva, setNueva] = useState('')
+  const [repetida, setRepetida] = useState('')
   const [resultado, setResultado] = useState<Resultado>({})
   const [enviando, setEnviando] = useState(false)
 
   async function cambiar(evento: FormEvent) {
     evento.preventDefault()
     setResultado({})
+    if (nueva !== repetida) {
+      setResultado({ campos: { repetida: 'Las dos contraseñas no coinciden.' } })
+      return
+    }
     setEnviando(true)
     try {
       await cambiarContrasena(actual, nueva)
@@ -143,6 +148,7 @@ function Contrasena() {
     } finally {
       setActual('')
       setNueva('')
+      setRepetida('')
       setEnviando(false)
     }
   }
@@ -170,6 +176,16 @@ function Contrasena() {
         value={nueva}
         error={resultado.campos?.nueva}
         onChange={(evento) => setNueva(evento.target.value)}
+      />
+      <Campo
+        etiqueta="Repetir la contraseña nueva"
+        type="password"
+        autoComplete="new-password"
+        required
+        maxLength={128}
+        value={repetida}
+        error={resultado.campos?.repetida}
+        onChange={(evento) => setRepetida(evento.target.value)}
       />
       <Mensajes resultado={resultado} />
       <button type="submit" disabled={enviando}>

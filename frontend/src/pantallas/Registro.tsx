@@ -20,6 +20,7 @@ const VACIO = {
 
 export function Registro() {
   const [datos, setDatos] = useState(VACIO)
+  const [repetida, setRepetida] = useState('')
   const [aceptaTerminos, setAceptaTerminos] = useState(false)
   const [aceptaNovedades, setAceptaNovedades] = useState(false)
   const [campos, setCampos] = useState<Record<string, string>>({})
@@ -40,6 +41,10 @@ export function Registro() {
     evento.preventDefault()
     setError(null)
     setCampos({})
+    if (datos.contrasena !== repetida) {
+      setCampos({ repetida: 'Las dos contraseñas no coinciden.' })
+      return
+    }
     setEnviando(true)
     try {
       const respuesta = await registrarCuenta({
@@ -54,6 +59,7 @@ export function Registro() {
       setError(mensajeDeError(fallo))
       setCampos(erroresDeCampos(fallo))
       setDatos((anteriores) => ({ ...anteriores, contrasena: '' }))
+      setRepetida('')
     } finally {
       setEnviando(false)
     }
@@ -96,6 +102,16 @@ export function Registro() {
           maxLength={128}
           ayuda={AYUDA_CONTRASENA}
           {...campo('contrasena')}
+        />
+        <Campo
+          etiqueta="Repetir la contraseña"
+          type="password"
+          autoComplete="new-password"
+          required
+          maxLength={128}
+          value={repetida}
+          error={campos.repetida}
+          onChange={(evento) => setRepetida(evento.target.value)}
         />
         <Campo etiqueta="Localidad" autoComplete="address-level2" required maxLength={120} {...campo('localidad')} />
         <div className="campo">

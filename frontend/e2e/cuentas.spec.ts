@@ -41,6 +41,7 @@ test.describe('Cuentas: registro, recupero y bajas con los correos de Mailpit', 
     await page.getByLabel('Apellido').fill('Pérez')
     await page.getByLabel('Correo').fill(email)
     await page.getByLabel('Contraseña', { exact: true }).fill(contrasena)
+    await page.getByLabel('Repetir la contraseña').fill(contrasena)
     await page.getByLabel('Localidad').fill('Pergamino')
     await page.getByLabel('Provincia').selectOption('Buenos Aires')
     await page.getByRole('checkbox', { name: /Acepto los términos/ }).check()

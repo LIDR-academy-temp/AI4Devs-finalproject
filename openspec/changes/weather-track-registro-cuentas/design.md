@@ -126,6 +126,10 @@ La baja y el vencimiento borran la fila de `usuario`. Las sesiones y los enlaces
 
 Rutas públicas nuevas: `/registro`, `/confirmar`, `/recuperar`, `/restablecer`, `/baja`, `/privacidad` y `/terminos`. Ruta protegida nueva: `/cuenta`. Los textos de privacidad y términos son un borrador con su versión (`2026-11`), marcado para revisión legal. Los formularios muestran los errores por campo y los avisos genéricos de D7.
 
+### D13. Repetición de la contraseña
+
+Pedido del responsable al revisar la aplicación local, el 5 de noviembre de 2026. El registro, "Mi cuenta" y el recupero piden la contraseña nueva dos veces y comparan en la pantalla, antes de enviar. La API no recibe la repetición: compararla allí no agrega seguridad, porque quien llama a la API ya conoce lo que envía.
+
 ## Risks / Trade-offs
 
 - [Los correos locales no prueban la entrega real] → Las pruebas cubren la bandeja y el SMTP contra Mailpit. La entrega real, SPF, DKIM y DMARC se verifican con el proveedor, en el despliegue público.

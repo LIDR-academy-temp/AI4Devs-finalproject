@@ -341,6 +341,21 @@ input[aria-invalid='true'] {
   gap: 0.5rem;
 }
 
+.rango-manual {
+  margin-top: 0.75rem;
+  max-width: 28rem;
+}
+
+.rango-manual .fechas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+}
+
+.rango-manual .ayuda {
+  margin: 0;
+}
+
 .resumen {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));

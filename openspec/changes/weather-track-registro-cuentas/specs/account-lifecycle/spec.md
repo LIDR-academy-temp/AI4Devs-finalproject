@@ -25,6 +25,20 @@ El sistema SHALL permitir que cualquier persona cree una cuenta con nombre, apel
 - **WHEN** una persona sin cuenta abre la aplicación
 - **THEN** encuentra una opción para registrarse
 
+### Requirement: Repetición de la contraseña
+
+La pantalla SHALL pedir dos veces la contraseña nueva al registrarse, al cambiarla desde "Mi cuenta" y al elegirla con el enlace de recupero, y MUST NOT enviar el formulario si las dos no coinciden. La API recibe la contraseña una sola vez.
+
+#### Scenario: Contraseñas distintas
+
+- **WHEN** la persona escribe dos contraseñas distintas en el registro
+- **THEN** la pantalla señala el campo de repetición y no envía el formulario
+
+#### Scenario: Contraseñas iguales
+
+- **WHEN** la persona escribe la misma contraseña en los dos campos y el resto de los datos es válido
+- **THEN** la pantalla envía el formulario
+
 ### Requirement: Registro sin revelar correos existentes
 
 El sistema MUST responder al registro con el mismo mensaje y estado tanto si el correo es nuevo como si ya pertenece a una cuenta. Si ya pertenece a una cuenta confirmada, MUST enviar a ese correo un aviso con el enlace para recuperar la contraseña, sin modificar la cuenta.

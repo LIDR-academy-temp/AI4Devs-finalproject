@@ -49,7 +49,7 @@ test.describe('Estaciones: selector y equipo inactivo', () => {
       const sensores = page.getByRole('list', { name: 'Sensores' })
       await sensores.getByRole('link', { name: 'Temp Amb. a 2 Mts', exact: true }).click()
       await expect(page.getByRole('heading', { name: 'Temp Amb. a 2 Mts' })).toBeVisible()
-      await expect(page.getByRole('button', { name: 'Últimos 31 días' })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Mes' })).toBeVisible()
     })
   })
 })

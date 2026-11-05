@@ -11,6 +11,7 @@ import yaml
 from fastapi.testclient import TestClient
 
 from app.api.dependencias import obtener_ahora, obtener_sesion_bd, obtener_usuario_actual
+from app.api.lecturas import primer_instante_permitido
 from app.api.principal import app
 from app.datos.modelos import (
     EjecucionIngesta,
@@ -418,6 +419,53 @@ def test_rango_invalido(cliente, estacion, sensor, desde, hasta):
     respuesta = consultar_historico(cliente, estacion, sensor.id, desde, hasta)
     assert respuesta.status_code == 422
     assert respuesta.json()["codigo"] == "RANGO_INVALIDO"
+
+
+# AHORA son las 12:00 del 2 de noviembre de 2026 en Argentina: el primer instante permitido es
+# el 2 de noviembre de 2025 a las 00:00 de Argentina, las 03:00 UTC.
+PRIMER_INSTANTE = datetime(2025, 11, 2, 3, 0, tzinfo=UTC)
+
+
+@pytest.mark.parametrize(
+    ("ahora", "primero"),
+    [
+        (AHORA, PRIMER_INSTANTE),
+        # A las 23:00 del 2 de noviembre en Argentina ya es 3 de noviembre en UTC: cuenta el día local.
+        (datetime(2026, 11, 3, 2, 0, tzinfo=UTC), PRIMER_INSTANTE),
+        (datetime(2026, 11, 3, 3, 0, tzinfo=UTC), datetime(2025, 11, 3, 3, 0, tzinfo=UTC)),
+        # Sin 29 de febrero el año anterior, el primer día es el 28.
+        (datetime(2028, 2, 29, 15, 0, tzinfo=UTC), datetime(2027, 2, 28, 3, 0, tzinfo=UTC)),
+    ],
+)
+def test_primer_instante_permitido(ahora, primero):
+    assert primer_instante_permitido(ahora) == primero
+
+
+@pytest.mark.parametrize(
+    ("desde", "hasta", "codigo"),
+    [
+        (PRIMER_INSTANTE, PRIMER_INSTANTE + timedelta(days=7), 200),
+        (PRIMER_INSTANTE - timedelta(seconds=1), PRIMER_INSTANTE + timedelta(days=7), 422),
+        (AHORA - timedelta(days=1), AHORA + timedelta(minutes=5), 200),
+        (AHORA - timedelta(days=1), AHORA + timedelta(minutes=5, seconds=1), 422),
+        (AHORA + timedelta(minutes=1), AHORA + timedelta(minutes=2), 200),
+        (AHORA + timedelta(days=1), AHORA + timedelta(days=2), 422),
+    ],
+)
+def test_el_rango_no_va_mas_alla_de_un_anio_ni_al_futuro(cliente, estacion, sensor, desde, hasta, codigo):
+    respuesta = consultar_historico(cliente, estacion, sensor.id, desde, hasta)
+    assert respuesta.status_code == codigo
+    if codigo == 422:
+        assert respuesta.json()["codigo"] == "RANGO_INVALIDO"
+        assert "un año" in respuesta.json()["mensaje"]
+
+
+def test_el_limite_del_anio_usa_la_hora_del_servidor(cliente, estacion, sensor):
+    app.dependency_overrides[obtener_ahora] = lambda: datetime(2026, 11, 3, 3, 0, tzinfo=UTC)
+    respuesta = consultar_historico(
+        cliente, estacion, sensor.id, PRIMER_INSTANTE, PRIMER_INSTANTE + timedelta(days=1)
+    )
+    assert respuesta.status_code == 422
 
 
 @pytest.mark.parametrize(

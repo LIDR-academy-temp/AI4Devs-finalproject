@@ -69,6 +69,7 @@ describe('registro', () => {
     await usuario.type(screen.getByLabelText('Apellido'), 'Pérez')
     await usuario.type(screen.getByLabelText('Correo'), 'ana@campo.example')
     await usuario.type(screen.getByLabelText(/^Contraseña/), 'una frase larga de prueba')
+    await usuario.type(screen.getByLabelText('Repetir la contraseña'), 'una frase larga de prueba')
     await usuario.type(screen.getByLabelText('Localidad'), 'Pergamino')
     await usuario.selectOptions(screen.getByRole('combobox'), 'Buenos Aires')
     return usuario
@@ -132,6 +133,17 @@ describe('registro', () => {
     expect(contrasena).toHaveValue('')
     expect(screen.getByText('Debe aceptar los términos.')).toBeInTheDocument()
     expect(screen.getByLabelText('Nombre')).not.toHaveAttribute('aria-invalid')
+  })
+
+  it('si las dos contraseñas no coinciden no envía el formulario', async () => {
+    const llamadas = simularApi({ 'GET /estaciones': NO_AUTENTICADO })
+    abrir('/registro')
+    const usuario = await completar()
+    await usuario.type(screen.getByLabelText('Repetir la contraseña'), ' distinta')
+    await usuario.click(screen.getByRole('checkbox', { name: /Acepto los términos/ }))
+    await usuario.click(screen.getByRole('button', { name: 'Crear la cuenta' }))
+    expect(screen.getByLabelText('Repetir la contraseña')).toHaveAccessibleDescription('Las dos contraseñas no coinciden.')
+    expect(llamadas.filter((llamada) => llamada.startsWith('POST'))).toEqual([])
   })
 
   it('enlaza los términos y la política de privacidad', async () => {
@@ -324,6 +336,7 @@ describe('Mi cuenta', () => {
     const usuario = userEvent.setup()
     await usuario.type(await screen.findByLabelText('Contraseña actual'), 'equivocada')
     await usuario.type(screen.getByLabelText('Contraseña nueva'), 'una frase larga de prueba')
+    await usuario.type(screen.getByLabelText('Repetir la contraseña nueva'), 'una frase larga de prueba')
     await usuario.click(screen.getByRole('button', { name: 'Cambiar la contraseña' }))
     await waitFor(() =>
       expect(screen.getByLabelText('Contraseña actual')).toHaveAccessibleDescription(
@@ -331,6 +344,20 @@ describe('Mi cuenta', () => {
       ),
     )
     expect(screen.getByLabelText('Contraseña actual')).toHaveValue('')
+  })
+
+  it('no cambia la contraseña si la repetición no coincide', async () => {
+    const llamadas = simularApi(CON_SESION)
+    abrir('/cuenta')
+    const usuario = userEvent.setup()
+    await usuario.type(await screen.findByLabelText('Contraseña actual'), 'la actual de prueba')
+    await usuario.type(screen.getByLabelText('Contraseña nueva'), 'una frase larga de prueba')
+    await usuario.type(screen.getByLabelText('Repetir la contraseña nueva'), 'otra frase larga de prueba')
+    await usuario.click(screen.getByRole('button', { name: 'Cambiar la contraseña' }))
+    expect(screen.getByLabelText('Repetir la contraseña nueva')).toHaveAccessibleDescription(
+      'Las dos contraseñas no coinciden.',
+    )
+    expect(llamadas.filter((llamada) => llamada.startsWith('POST'))).toEqual([])
   })
 
   it('al darse de baja vuelve al ingreso con el aviso', async () => {

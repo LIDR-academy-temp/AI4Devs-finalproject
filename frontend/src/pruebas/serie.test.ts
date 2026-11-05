@@ -4,8 +4,11 @@ import {
   armarSerie,
   formatearFechaHora,
   formatearNumero,
+  fechaDeArgentina,
   horaLocal,
+  primerDiaPermitido,
   rangoDeDias,
+  rangoManual,
 } from '../servicios/serie'
 
 function punto(hora: string, valor: number | null = 1): Punto {
@@ -60,5 +63,60 @@ describe('fechas y números', () => {
     const { desde, hasta } = rangoDeDias(31, ahora)
     expect(hasta).toBe(ahora)
     expect(desde.toISOString()).toBe('2026-10-02T00:00:00.000Z')
+  })
+})
+
+describe('rangos del calendario', () => {
+  // 12:00 del 5 de noviembre de 2026 en Argentina.
+  const AHORA = new Date('2026-11-05T15:00:00Z')
+
+  it('la fecha es la de Argentina, no la del navegador ni la de UTC', () => {
+    expect(fechaDeArgentina(new Date('2026-11-06T02:00:00Z'))).toBe('2026-11-05')
+    expect(fechaDeArgentina(new Date('2026-11-06T03:00:00Z'))).toBe('2026-11-06')
+  })
+
+  it.each([
+    ['2026-11-05T15:00:00Z', '2025-11-05'],
+    ['2028-02-29T15:00:00Z', '2027-02-28'],
+  ])('a las %s el primer día permitido es %s', (ahora, primero) => {
+    expect(primerDiaPermitido(new Date(ahora))).toBe(primero)
+  })
+
+  it('va de las 00:00 del inicio a las 23:59:59 del fin, en Argentina', () => {
+    const resultado = rangoManual('2026-10-01', '2026-10-07', AHORA)
+    expect(resultado).toEqual({
+      rango: {
+        desde: new Date('2026-10-01T03:00:00Z'),
+        hasta: new Date('2026-10-08T02:59:59.999Z'),
+      },
+    })
+  })
+
+  it('si termina hoy, termina ahora', () => {
+    expect(rangoManual('2026-11-01', '2026-11-05', AHORA)).toEqual({
+      rango: { desde: new Date('2026-11-01T03:00:00Z'), hasta: AHORA },
+    })
+  })
+
+  it.each([
+    ['2025-11-05', '2025-11-05'],
+    ['2026-10-06', '2026-11-05'],
+    ['2026-11-05', '2026-11-05'],
+  ])('acepta del %s al %s', (desde, hasta) => {
+    expect(rangoManual(desde, hasta, AHORA)).toHaveProperty('rango')
+  })
+
+  it.each([
+    ['2025-11-04', '2025-11-10', 'desde', 'un año'],
+    ['2026-11-01', '2026-11-06', 'hasta', 'futura'],
+    ['2026-11-06', '2026-11-07', 'hasta', 'futura'],
+    ['2026-10-10', '2026-10-09', 'hasta', 'anterior'],
+    ['2026-10-05', '2026-11-05', 'hasta', '31 días'],
+    ['', '2026-11-05', 'desde', 'inicio'],
+    ['2026-11-01', '', 'hasta', 'fin'],
+  ])('rechaza del %s al %s en el campo %s', (desde, hasta, campo, texto) => {
+    const resultado = rangoManual(desde, hasta, AHORA)
+    expect(resultado).toMatchObject({ campo })
+    expect('error' in resultado && resultado.error).toContain(texto)
   })
 })

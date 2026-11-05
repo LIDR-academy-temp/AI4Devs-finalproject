@@ -66,7 +66,7 @@ https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp
 | F2 | Estación | Selector siempre visible con las estaciones: cada una es un equipo de SAT2, hoy INTA Pergamino. Un equipo que deja de llegar de SAT2 queda inactivo y muestra solo sus históricos. |
 | F3 | Condiciones actuales | Una tarjeta por sensor con valor, unidad, calidad del dato y antigüedad. |
 | F4 | Recomendación | Estado de aplicación, índice TIS (Índice de Inversión Térmica), diferencia térmica y motivos. |
-| F5 | Históricos | Serie por sensor de los últimos 7 o 31 días, con resumen estadístico. |
+| F5 | Históricos | Serie por sensor del último día, la última semana o el último mes, o de un rango elegido en el calendario: hasta 31 días, dentro del último año y sin fechas futuras. Con resumen estadístico. |
 | F6 | Ingesta automática | Carga inicial de los últimos 31 días y proceso programado que cada 10 minutos obtiene datos, los normaliza, los guarda y calcula la recomendación. |
 | F7 | Base de clientes | El administrador exporta a CSV las cuentas confirmadas, con su consentimiento para recibir novedades, sin datos de acceso. |
 
@@ -384,13 +384,13 @@ Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-ent
 
 ### **2.6. Tests**
 
-Resultado de la última ejecución, el 4 de noviembre de 2026: todas pasan.
+Resultado de la última ejecución, el 5 de noviembre de 2026: todas pasan.
 
 | Nivel | Herramienta | Qué cubre | Pruebas |
 |---|---|---|---|
-| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones y el ciclo de vida de las cuentas: registro, códigos, correo, contraseñas, límites por IP y exportación | 551 |
-| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos, y las pantallas de cuentas con sus errores por campo | 71 |
-| Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el selector, el equipo inactivo y las cuentas leyendo los correos en Mailpit: registro, confirmación, recupero y las tres formas de baja | 21 |
+| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos y el ciclo de vida de las cuentas: registro, códigos, correo, contraseñas, límites por IP y exportación | 562 |
+| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos con sus rangos y el calendario, y las pantallas de cuentas con sus errores por campo | 93 |
+| Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el rango manual de históricos, el selector, el equipo inactivo y las cuentas leyendo los correos en Mailpit: registro, confirmación, recupero y las tres formas de baja | 22 |
 | Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras, carga, enumeración de correos, enlaces de un solo uso, baja por `GET` y límites por IP | 115 |
 
 Además, la ingesta se probó una vez contra SAT2 real, durante 38 minutos y con 48.427 lecturas. Los comandos están en la [sección 1.4](#14-instrucciones-de-instalación).
@@ -1051,7 +1051,7 @@ paths:
         - name: hasta
           in: query
           required: true
-          description: Debe ser posterior a desde, con un rango máximo de 31 días.
+          description: Debe ser posterior a desde, con un rango máximo de 31 días. Desde no puede ser anterior a las 00:00, hora de Argentina, del mismo día del año anterior, y hasta no puede superar en más de 5 minutos la hora del servidor.
           schema:
             type: string
             format: date-time
@@ -1083,7 +1083,7 @@ paths:
         '404':
           $ref: '#/components/responses/NoEncontrado'
         '422':
-          description: Rango de fechas inválido o mayor a 31 días
+          description: Rango de fechas inválido, mayor a 31 días, futuro o anterior a un año
           content:
             application/json:
               schema:
@@ -1586,9 +1586,19 @@ Como productor o aplicador, quiero consultar la evolución de un sensor en un pe
 ```gherkin
 Escenario: Consulta de un período válido
   Dado que estoy en el detalle de un sensor
-  Cuando elijo los últimos 7 o 31 días
+  Cuando elijo Día, Semana o Mes
   Entonces veo un gráfico de la serie
   Y veo máximo, mínimo, promedio y cantidad de registros
+
+Escenario: Rango elegido en el calendario
+  Dado que estoy en el detalle de un sensor
+  Cuando elijo una fecha de inicio y una de fin dentro del último año, con hasta 31 días
+  Entonces veo el gráfico desde las 00:00 del inicio hasta las 23:59 del fin, en hora de Argentina
+
+Escenario: Rango fuera de los límites
+  Dado que estoy en el detalle de un sensor
+  Cuando elijo más de 31 días, una fecha futura o una de hace más de un año
+  Entonces la pantalla explica el error junto a las fechas y no consulta los datos
 
 Escenario: Huecos en la serie
   Dado que faltan lecturas en el período

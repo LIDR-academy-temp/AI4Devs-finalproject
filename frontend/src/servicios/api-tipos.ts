@@ -1196,7 +1196,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Rango de fechas inválido o mayor a 31 días */
+            /** @description Rango de fechas inválido, mayor a 31 días, futuro o anterior a un año */
             422: {
                 headers: {
                     [name: string]: unknown;

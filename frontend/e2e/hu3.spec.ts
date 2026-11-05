@@ -19,7 +19,7 @@ async function registros(page: Page): Promise<number> {
 }
 
 test.describe('HU3: revisar el comportamiento histórico', () => {
-  test('consulta de 7 y 31 días con gráfico y resumen', async ({ page }) => {
+  test('consulta de Semana y Mes con gráfico y resumen', async ({ page }) => {
     const bloqueos = vigilarPoliticaDeContenido(page)
     await abrirDetalle(page)
 
@@ -34,11 +34,35 @@ test.describe('HU3: revisar el comportamiento histórico', () => {
     const deSieteDias = await registros(page)
     expect(deSieteDias).toBeGreaterThan(0)
 
-    await page.getByRole('button', { name: 'Últimos 31 días' }).click()
+    await page.getByRole('button', { name: 'Mes' }).click()
 
     await expect(page.getByRole('img', { name: /últimos 31 días/ })).toBeVisible()
     await expect.poll(() => registros(page)).toBeGreaterThan(deSieteDias)
     expect(bloqueos).toEqual([])
+  })
+
+  test('rango manual con calendario, limitado al último año y a hoy', async ({ page }) => {
+    await abrirDetalle(page)
+    await page.getByRole('button', { name: 'Elegir fechas' }).click()
+    const desde = page.getByLabel('Desde')
+    const hasta = page.getByLabel('Hasta')
+    const hoy = await hasta.getAttribute('max')
+    expect(await desde.getAttribute('min')).toBe(`${Number(hoy!.slice(0, 4)) - 1}${hoy!.slice(4)}`)
+
+    // Los últimos tres días completos más hoy, que tienen datos simulados.
+    const inicio = new Date(Date.parse(`${hoy}T12:00:00-03:00`) - 3 * 86_400_000)
+    const fechaInicio = inicio.toISOString().slice(0, 10)
+    await desde.fill(fechaInicio)
+    await page.getByRole('button', { name: 'Ver el período' }).click()
+    const [anio, mes, dia] = fechaInicio.split('-')
+    await expect(page.getByRole('img', { name: new RegExp(`del ${dia}/${mes}/${anio}`) })).toBeVisible()
+    await expect.poll(() => registros(page)).toBeGreaterThan(0)
+
+    // Más de 31 días no se consulta.
+    const viejo = new Date(Date.parse(`${hoy}T12:00:00-03:00`) - 40 * 86_400_000).toISOString().slice(0, 10)
+    await desde.fill(viejo)
+    await page.getByRole('button', { name: 'Ver el período' }).click()
+    await expect(page.getByText('El rango puede abarcar como máximo 31 días.')).toBeVisible()
   })
 
   test.describe('a 360 píxeles', () => {
