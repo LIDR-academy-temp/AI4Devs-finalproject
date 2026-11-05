@@ -10,8 +10,8 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 
 ## 2. Readiness con hojas sin confirmar (#42)
 
-- [ ] 2.1 Tests primero en `domain/readiness.test.ts`: en `mapped`, una hoja sin confirmar da un solo `missing` `confirmation` en su posición, sin sus otros `missing`, conservando sus `notes`, y `canAnalyze = false`; en `uploaded` el resultado no cambia; con todo confirmado, `missing = []`. Romper uno a propósito y verlo fallar
-- [ ] 2.2 Implementar D4 en `readiness.ts` y extraer `unconfirmedSheetMessage`, compartida con `analysis-preconditions.ts`; pasar `mappingConfirmed` y `requireConfirmation` desde `detailOf` en `import-service.ts`. Verificar con `pnpm --filter @recon/backend test` que los tests de dominio y servicio pasan
+- [x] 2.1 Tests primero en `domain/readiness.test.ts`: en `mapped`, una hoja sin confirmar da un solo `missing` `confirmation` en su posición, sin sus otros `missing`, conservando sus `notes`, y `canAnalyze = false`; en `uploaded` el resultado no cambia; con todo confirmado, `missing = []`. Romper uno a propósito y verlo fallar
+- [x] 2.2 Implementar D4 en `readiness.ts` y extraer `unconfirmedSheetMessage`, compartida con `analysis-preconditions.ts`; pasar `mappingConfirmed` y `requireConfirmation` desde `detailOf` en `import-service.ts`. Verificar con `pnpm --filter @recon/backend test` que los tests de dominio y servicio pasan
 - [ ] 2.3 Integración en `backend/test/integration/import-analyze.int.test.ts` (o `imports.int.test.ts`, donde viva "Archivo añadido tras confirmar"): con `batch-split` part1 confirmado y part2 añadido, el `200` de añadir y el `GET` detalle traen `canAnalyze = false` y los mismos elementos `confirmation` que el `422` de analyze; tras confirmar todo, `missing = []`. Verificar con el filtro de integración
 - [ ] 2.4 Commit: `test(import): readiness con hojas sin confirmar` y `feat(import): la readiness del detalle nombra las hojas sin confirmar (#42)`
 

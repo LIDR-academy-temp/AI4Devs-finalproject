@@ -18,6 +18,11 @@ export interface AnalysisLimits {
   maxRowsPerImport: number
 }
 
+/** What the readiness and the 422 of the analysis say about a sheet whose mapping is not confirmed (design D4). */
+export function unconfirmedSheetMessage(sheetName: string): string {
+  return `The mapping of sheet "${sheetName}" is not confirmed`
+}
+
 function lacking(
   sheet: Pick<PreconditionSheet, 'sheetId' | 'sheetName'> | null,
   field: ReadinessField,
@@ -34,7 +39,7 @@ export function analysisPreconditions(sheets: PreconditionSheet[], statuses: Sta
   }
   for (const sheet of sheets) {
     if (!sheet.mappingConfirmed) {
-      missing.push(lacking(sheet, 'confirmation', `The mapping of sheet "${sheet.sheetName}" is not confirmed`))
+      missing.push(lacking(sheet, 'confirmation', unconfirmedSheetMessage(sheet.sheetName)))
       continue
     }
     if (sheet.kind !== 'transactions') continue

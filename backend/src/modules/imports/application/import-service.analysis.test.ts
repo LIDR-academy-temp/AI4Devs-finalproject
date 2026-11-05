@@ -280,6 +280,30 @@ describe('analyze: state and preconditions', () => {
     expect(missing.missing[0]?.sheetName).toBe('APP')
   })
 
+  it('the detail names those same sheets in its readiness and cannot analyze (spec "Hojas sin confirmar en la readiness")', async () => {
+    const detail = await mapped(A_USD, [SAMPLE_FILES.part1])
+    const added = await service.addFiles(ANALYST, detail.importId, [await upload(SAMPLE_FILES.part2)])
+    const reread = await service.getImport(ANALYST, detail.importId)
+    const error = await caught(service.analyze(ANALYST, detail.importId), MappingIncompleteError)
+    const expected = (error.details as { missing: unknown[] }).missing
+
+    for (const answer of [added, reread]) {
+      expect(answer.readiness.canAnalyze).toBe(false)
+      expect(answer.readiness.missing).toEqual(expected)
+    }
+
+    const confirmed = await service.confirmMapping(ANALYST, detail.importId, confirmation(reread))
+    expect(confirmed.readiness).toMatchObject({ canAnalyze: true, missing: [] })
+  })
+
+  it('an uploaded import keeps describing the proposal: no confirmation items (spec "Recién subido")', async () => {
+    const detail = await uploaded(A_USD, [SAMPLE_FILES.part1])
+
+    expect(detail.status).toBe('uploaded')
+    expect(detail.readiness.canAnalyze).toBe(true)
+    expect(detail.readiness.missing.some((m) => m.field === 'confirmation')).toBe(false)
+  })
+
   it('refuses an import over the per-import row cap before reading any row (design D1)', async () => {
     service = build({ maxRowsPerImport: 500 })
     const detail = await mapped(A_USD, [SAMPLE_FILES.batchClean])

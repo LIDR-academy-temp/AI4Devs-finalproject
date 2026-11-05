@@ -561,9 +561,11 @@ export class ImportService {
       uploadedAt: file.uploadedAt.toISOString(),
       sheets: loaded.filter((l) => l.file.fileId === file.fileId).map((l) => sheetDetail(l, rules)),
     }))
+    // Only a mapped import asks every sheet to be confirmed: before, the readiness describes the proposal (design D4).
     const readiness = assessReadiness(
       loaded.map((l) => readinessSheet(l, rules)),
       rules.statuses,
+      { requireConfirmation: record.status === 'mapped' },
     )
     // Once analyzed (rowsTotal set) there is always a summary: zeros when the analysis produced no rows (L1).
     const analysis =
@@ -705,6 +707,7 @@ function readinessSheet(l: LoadedSheet, rules: MatchingRules): ReadinessSheet {
     sheetName: description.name,
     hidden: description.hidden,
     rowCount: description.rowCount,
+    mappingConfirmed: l.sheet.mappingConfirmed,
     proposed,
     columns,
     columnStats,
