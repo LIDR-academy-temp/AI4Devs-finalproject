@@ -46,6 +46,7 @@ pnpm --filter api exec node ace metrics        # OBJ-1, OBJ-5, p90 de trabajos y
 pnpm --filter api exec node ace db:seed --demo # datos sintéticos de la instancia de demostración
 python3 scripts/check_docs.py        # compuerta G3: totales, referencias, ADRs y readme al día
 python3 scripts/check_docs.py --build-readme   # regenera readme.md desde docs/
+python3 -m unittest discover -s scripts        # pruebas de check_docs.py
 ```
 
 ## Convenciones

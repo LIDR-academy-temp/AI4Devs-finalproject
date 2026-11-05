@@ -5,6 +5,7 @@
 - **Estado:** borrador v0.4 (incorpora la revisión adversarial de la arquitectura y las revisiones de consistencia)
 - **Fecha:** 2026-11-04
 - **Tipos:** `infra`, `db`, `backend`, `ai`, `frontend`, `test`, `producto` (tareas que no son código)
+- **Convenciones que verifica `scripts/check_docs.py`:** las dependencias existen y no forman ciclos; todo ticket `ai` depende de T-33 (salvo T-04, T-32 y T-33); un ticket que usa un endpoint escrito como `` `MÉTODO /ruta` `` en sus tareas depende del ticket que lo define. Para una referencia adelantada a propósito, se anota el dueño entre paréntesis: `` `POST /job-postings/match` (T-16) ``.
 
 ---
 
@@ -204,7 +205,7 @@
 - **Tipo:** frontend · **Estimación:** 1 h · **Requisitos:** RF-10, RF-12 a RF-14
 
 **Tareas**
-- Carga del archivo con progreso del trabajo (polling a `/jobs/{id}`).
+- Carga del archivo con progreso del trabajo (polling a `GET /jobs/{id}`).
 - Vista y edición del perfil (habilidades, experiencia, años, seniority, formación, idiomas) y del Markdown.
 - Aviso de puntajes desactualizados con el número de ofertas (el botón de recalcular llega con T-18).
 
@@ -424,7 +425,7 @@
 **Tareas**
 - Formulario de preferencias (palabras de rol de inclusión y exclusión, modalidades en orden, ubicaciones, salario mínimo, seniorities, tope por sincronización).
 - Detalle de la oferta: resultado del filtro por criterio, puntaje, etiqueta, fortalezas, brechas y evidencia; botón para recalcular.
-- Selección múltiple en la lista y botón "puntuar seleccionadas", que muestra el costo estimado antes de confirmar (ADR-0008); el mismo flujo recalcula los puntajes desactualizados por un currículum nuevo (RF-14).
+- Selección múltiple en la lista y botón "puntuar seleccionadas" con `POST /job-postings/match`, que muestra el costo estimado antes de confirmar (ADR-0008); el mismo flujo recalcula los puntajes desactualizados por un currículum nuevo (RF-14).
 
 **Criterios de aceptación**
 - Cumple los escenarios de HU5 y HU6 en `docs/user-stories.md`, y el recálculo del escenario "Reemplazar el currículum" de HU4.

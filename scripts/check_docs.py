@@ -9,6 +9,9 @@ Checks:
   - ticket totals in docs/tickets.md match the ticket table
   - every RF/RNF/OBJ/HU/E/T/ADR reference points to an existing definition
   - every ADR has a status; superseded ADRs point to an existing ADR
+  - ticket dependencies exist and have no cycles; AI tickets depend on the budget guard (T-33)
+  - a ticket that uses another ticket's endpoint depends on it (annotate "(T-xx)" for a deliberate forward reference)
+  - story estimates match between each story section and the order table
   - readme.md is up to date with scripts/readme.template.md and docs/
 """
 import re
@@ -98,6 +101,106 @@ def check_adrs(defs):
             if not targets or targets - defs["ADR"]:
                 errors.append(f"{path.relative_to(ROOT)}: superseded without a valid replacing ADR")
     return errors
+
+
+# ---------- ticket dependencies, AI budget guard and endpoints ----------
+
+AI_GUARD = "T-33"
+AI_GUARD_EXEMPT = {"T-04", "T-32", "T-33"}  # AI client itself, golden-set labeling, the guard
+ENDPOINT = r"`((?:GET|POST|PUT|PATCH|DELETE)) (/[^`\s]+)`"
+
+
+def parse_ticket_table(text):
+    tickets = {}
+    for row in re.findall(r"^\| T-\d{2} \|.*$", text, re.M):
+        cells = [x.strip() for x in row.split("|")]
+        deps = set(re.findall(r"T-\d{2}", cells[7]))
+        tickets[cells[1]] = {"types": {t.strip() for t in cells[3].split(",")}, "deps": deps}
+    return tickets
+
+
+def transitive_deps(tickets, tid, seen=None):
+    seen = set() if seen is None else seen
+    for dep in tickets.get(tid, {}).get("deps", set()):
+        if dep not in seen:
+            seen.add(dep)
+            transitive_deps(tickets, dep, seen)
+    return seen
+
+
+def check_dependencies(tickets):
+    errors = []
+    for tid, info in sorted(tickets.items()):
+        errors += [f"docs/tickets.md: {tid} depends on unknown ticket {d}" for d in sorted(info["deps"] - tickets.keys())]
+        if tid in transitive_deps(tickets, tid):
+            errors.append(f"docs/tickets.md: dependency cycle through {tid}")
+    return errors
+
+
+def check_ai_tickets(tickets, guard=AI_GUARD, exempt=AI_GUARD_EXEMPT):
+    return [f"docs/tickets.md: AI ticket {tid} does not depend on {guard} (budget guard)"
+            for tid, info in sorted(tickets.items())
+            if "ai" in info["types"] and tid not in exempt and guard not in transitive_deps(tickets, tid)]
+
+
+def ticket_sections(text):
+    return {m.group(1): m.group(0) for m in re.finditer(r"### (T-\d{2}) — .*?(?=\n### T-|\n---\n|\Z)", text, re.S)}
+
+
+def endpoint_mentions(body):
+    """Yield (endpoint, annotated_owner) for each endpoint in the ticket's task lines."""
+    tasks = body.split("**Tareas**", 1)[-1].split("**Criterios", 1)[0]
+    for line in tasks.splitlines():
+        for method, path in re.findall(ENDPOINT, line):
+            endpoint = f"{method} {re.sub(r'^/api/v1', '', path)}"
+            annotated = re.search(re.escape(f"`{method} {path}`") + r"[^.;]*?\((T-\d{2})\)", line)
+            yield endpoint, annotated.group(1) if annotated else None
+
+
+def endpoint_owners(sections):
+    owners = {}
+    for tid, body in sections.items():
+        for endpoint, annotated in endpoint_mentions(body):
+            if annotated is None:
+                owners.setdefault(endpoint, tid)
+    return owners
+
+
+def check_endpoint_usage(tickets, sections):
+    owners, errors = endpoint_owners(sections), []
+    for tid, body in sections.items():
+        for endpoint, annotated in endpoint_mentions(body):
+            owner = owners.get(endpoint)
+            if annotated or owner in (None, tid) or owner in transitive_deps(tickets, tid):
+                continue
+            errors.append(f"docs/tickets.md: {tid} uses {endpoint} (owned by {owner}) without depending on it")
+    return sorted(set(errors))
+
+
+# ---------- story hours ----------
+
+def first_hours(text):
+    match = re.search(r"([\d.]+) h", text)
+    return float(match.group(1)) if match else None
+
+
+def check_story_hours(stories):
+    order = {m[0]: first_hours(m[1]) for m in re.findall(r"^\| \d+ \| (HU\d+) \| E\d \|(?: [^|]+ \|){2} ([^|]+) \|", stories, re.M)}
+    errors = []
+    for hid, est in re.findall(r"^### (HU\d+) — .*?- \*\*Estimación:\*\* ([^\n]+)", stories, re.M | re.S):
+        section, table = first_hours(est), order.get(hid)
+        if table is None:
+            errors.append(f"docs/user-stories.md: {hid} missing from the order table")
+        elif abs(section - table) > 0.01:
+            errors.append(f"docs/user-stories.md: {hid} estimate differs (section {section:g} h, order table {table:g} h)")
+    return errors
+
+
+def check_backlog():
+    tickets_text = read("docs/tickets.md")
+    tickets = parse_ticket_table(tickets_text)
+    return (check_dependencies(tickets) + check_ai_tickets(tickets)
+            + check_endpoint_usage(tickets, ticket_sections(tickets_text)) + check_story_hours(read("docs/user-stories.md")))
 
 
 # ---------- readme generation ----------
@@ -214,7 +317,7 @@ def main(argv):
         print("readme.md regenerated")
         return 0
     defs = definitions()
-    errors = check_totals() + check_references(defs) + check_adrs(defs) + check_readme()
+    errors = check_totals() + check_references(defs) + check_adrs(defs) + check_backlog() + check_readme()
     for error in errors:
         print(f"ERROR {error}")
     totals = ticket_totals(read("docs/tickets.md"))

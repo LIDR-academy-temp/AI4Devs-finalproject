@@ -757,3 +757,16 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con la cuarta revisión de consistencia; después se agregaron a `scripts/check_docs.py` las comprobaciones de dependencias, tickets de IA, uso de endpoints y horas por historia, con pruebas en `scripts/test_check_docs.py`.
+
+### Prompt 58
+
+- **Categoría:** `🧪 Pruebas`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Sí
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con las comprobaciones nuevas de `scripts/check_docs.py` (dependencias, control de gasto, uso de endpoints y horas por historia), sus 7 pruebas en `scripts/test_check_docs.py`, las convenciones en `docs/tickets.md` y el comando de pruebas en `CLAUDE.md`.
