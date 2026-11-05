@@ -818,9 +818,9 @@ Las 10 historias del MVP se agrupan en 5 épicas, cada una mapeada a una capabil
 
 | Épica | Capability | Valor | Historias | Estimación |
 | --- | --- | --- | --- | --- |
-| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 9.5 h (+1 h should-have) |
+| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 9.25 h (+1 h should-have) |
 | E2 Perfil profesional | `resume-profile` | El sistema conoce la experiencia real del usuario | HU4 | 2.75 h (+1 h should-have) |
-| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8.5 h |
+| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8.75 h |
 | E4 Seguimiento de candidaturas | `application-tracking` | Saber en qué va cada proceso y no perder seguimientos | HU8, HU9 | 3 h (+3 h should-have) |
 | E5 Plataforma | `platform` | Acceso seguro, despliegue, control de gasto, observabilidad, demostración e idioma | HU10, walking skeleton y T-33 a T-36 | 9.5 h (+2.5 h should-have) |
 
@@ -870,7 +870,7 @@ Escenario: No duplicar ofertas
 
 - **Épica:** E3
 - **Prioridad:** must-have
-- **Estimación:** 4.25 h
+- **Estimación:** 4.5 h
 - **Requisitos:** RF-23 a RF-28, RNF-07, RNF-08
 - **Objetivos:** OBJ-2
 
@@ -958,14 +958,13 @@ Selección de tres tickets (base de datos, backend y frontend). Los 36 tickets e
 
 **Ticket — T-11 — Pantallas de ofertas y decisión**
 
-- **Tipo:** frontend · **Estimación:** 2 h · **Requisitos:** RF-01, RF-03, RF-06, RF-07, RF-23
+- **Tipo:** frontend · **Estimación:** 1.75 h · **Requisitos:** RF-01, RF-03, RF-06, RF-07
 
 **Tareas**
 - Formulario para pegar el texto, progreso de la extracción y opción de guardar directo o revisar los campos (los desconocidos marcados como tales).
 - Edición de campos desde el detalle de la oferta.
 - Lista de ofertas con título, empresa, origen, resultado del filtro, puntaje y decisión; orden por puntaje o fecha.
 - Botones "aplicar" y "descartar" (con motivo opcional) en el detalle de la oferta.
-- Selección múltiple en la lista y botón "puntuar seleccionadas", que muestra el costo estimado antes de confirmar (ADR-0008).
 
 **Criterios de aceptación**
 - Cumple los escenarios de HU1 y HU7.

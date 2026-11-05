@@ -55,7 +55,7 @@ Un único usuario: el autor, profesional del software que busca empleo en EE. UU
  8. La candidatura avanza por el pipeline
 ```
 
-El flujo E2E obligatorio para la entrega final cubre los pasos 1, 4b, 5, 6, 7 y 8.
+El flujo E2E obligatorio para la entrega final cubre los pasos 1, 2, 4b, 5, 6, 7 y 8.
 
 ## 5. Alcance del MVP
 
@@ -127,7 +127,7 @@ Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 | RF-20 | El usuario configura sus preferencias: roles objetivo (palabras clave de inclusión y de exclusión para el título), modalidades aceptadas en orden de preferencia, ubicaciones aceptadas (ciudades o estados de EE. UU.), salario mínimo anual en USD y seniorities aceptados. | M |
 | RF-21 | Los filtros duros se evalúan sin IA, según las reglas de la sección 6.1, y devuelven `pass`, `fail` o `unknown` con el motivo de cada criterio. La oferta se descarta si algún criterio da `fail`. | M |
 | RF-22 | Un dato ausente en la oferta da `unknown` en ese criterio y no descarta la oferta. | M |
-| RF-23 | Las ofertas pegadas con resultado `pass` o `unknown` reciben puntaje automáticamente. Las ofertas importadas (job boards y agregador) se puntúan a pedido, una o varias seleccionadas, mostrando antes el costo estimado. El usuario también puede pedir el puntaje de una oferta descartada (ADR-0008). | M |
+| RF-23 | Las ofertas pegadas con resultado `pass` o `unknown` reciben puntaje automáticamente. Las ofertas importadas (job boards y agregador) se puntúan a pedido, una o varias seleccionadas, mostrando antes el costo estimado. El usuario también puede pedir el puntaje de una oferta descartada (ADR-0008). Sin currículum activo no se calcula ningún puntaje y el sistema lo indica. | M |
 | RF-24 | La IA devuelve, con respuesta estructurada: puntaje de 0 a 100, fortalezas, brechas y evidencia (fragmentos de la oferta y del currículum). La etiqueta se deriva del puntaje: `strong` ≥ 80, `good` 60-79, `weak` 40-59, `poor` < 40. | M |
 | RF-24a | Cada fragmento de evidencia se verifica contra el texto original; los que no aparecen literalmente (ignorando mayúsculas y espacios) se descartan y no se muestran. | M |
 | RF-25 | El sistema guarda con cada análisis el modelo, la versión del prompt, la versión del currículum y la fecha. | M |
@@ -219,6 +219,7 @@ Vista conceptual; el modelo de datos detallado está en `docs/architecture.md`. 
 | `MatchAnalysis` | Puntaje, etiqueta, fortalezas, brechas y evidencia verificada; con modelo y versión del prompt. |
 | `Application` | Candidatura asociada a una oferta, con su estado actual. |
 | `ApplicationEvent` | Evento del historial: cambio de estado, nota o correo clasificado. |
+| `AiUsage` | Registro de cada llamada a la IA: tarea, modelo, tokens y costo estimado (ADR-0008). |
 
 ## 10. Dependencias externas
 
@@ -227,7 +228,7 @@ Vista conceptual; el modelo de datos detallado está en `docs/architecture.md`. 
 | Claude API | Extracción, puntaje y clasificación de correos | Costo y latencia; se mitigan con RNF-07 y RNF-09 |
 | Job boards de Greenhouse y Ashby, y de Lever como should-have (APIs públicas) | Importación por empresa (RF-04) | Solo cubren empresas que usan esas plataformas |
 | Agregador de ofertas (JSearch u otro; por definir en el spike) | Búsquedas guardadas (RF-04a) | Cuota gratuita pequeña, términos de uso y cobertura sin confirmar; SerpApi se evita por litigio con Google |
-| Railway | Despliegue de la aplicación y la base de datos | Límites del plan gratuito |
+| Railway | Despliegue de las dos instancias y sus bases de datos (ADR-0007) | Costo de ~5 USD/mes por instancia (supuesto) y límites del plan |
 
 ### 10.1 Decisiones confirmadas (2026-11-04)
 
@@ -237,7 +238,7 @@ Vista conceptual; el modelo de datos detallado está en `docs/architecture.md`. 
 - Las metas de costo (RNF-07) y de tiempo de respuesta (RNF-06) se aceptan como objetivos.
 - Empresas objetivo: grandes (Meta, Apple, Amazon, Netflix, Google, Microsoft, Nvidia, OpenAI, Anthropic, Walmart, ServiceNow, PayPal/Venmo, eBay) y medianas aún sin definir.
 - La recolección automática de ofertas es tan importante como pegar ofertas a mano (OBJ-5).
-- Fuentes automáticas del MVP: adaptadores de Greenhouse, Ashby y Lever, y un agregador por búsqueda sujeto a spike (opción A de la revisión).
+- Fuentes automáticas del MVP: adaptadores de Greenhouse, Ashby y Lever, y un agregador por búsqueda sujeto a spike (opción A de la revisión). Lever pasó después a should-have (ver más abajo).
 - Presupuesto: 30 horas con tope de 36.
 - Tras dividir las historias: el adaptador de Lever baja a should-have y el agregador (HU3) deja de ser lo primero en recortarse, porque es la única vía automática hacia las empresas grandes.
 - Se aplican todas las correcciones de la revisión adversarial (`docs/prd-review.md`).
@@ -269,4 +270,5 @@ OBJ-2 ──▶ E3     ──▶ HU6                ──▶ RF-24, RF-24a, RF-
 OBJ-3 ──▶ E4     ──▶ HU8, HU9           ──▶ RF-30…RF-34, RF-40…RF-43
 OBJ-4 ──▶ todas  ──▶ todas              ──▶ RNF-10, RNF-12, RNF-13
 OBJ-5 ──▶ E1     ──▶ HU2, HU3           ──▶ RF-04, RF-04a, RF-04b, RF-09, RNF-14
+Costo y operación ──▶ E5 ──▶ T-33, T-34, T-35 ──▶ RNF-07, RNF-12, RNF-15
 ```

@@ -11,9 +11,9 @@
 
 | Épica | Capability | Valor | Historias | Estimación |
 | --- | --- | --- | --- | --- |
-| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 9.5 h (+1 h should-have) |
+| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 9.25 h (+1 h should-have) |
 | E2 Perfil profesional | `resume-profile` | El sistema conoce la experiencia real del usuario | HU4 | 2.75 h (+1 h should-have) |
-| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8.5 h |
+| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8.75 h |
 | E4 Seguimiento de candidaturas | `application-tracking` | Saber en qué va cada proceso y no perder seguimientos | HU8, HU9 | 3 h (+3 h should-have) |
 | E5 Plataforma | `platform` | Acceso seguro, despliegue, control de gasto, observabilidad, demostración e idioma | HU10, walking skeleton y T-33 a T-36 | 9.5 h (+2.5 h should-have) |
 
@@ -26,9 +26,9 @@ Más 2.25 h para la prueba E2E y la documentación final (T-21). MVP imprescindi
 | 0 | — | E5 | Walking skeleton (T-01 a T-05); antes, medir la línea base de OBJ-1 (T-31, contada en HU7) | Must-have | 6.25 h | — |
 | 1 | — | E5 | Control de gasto de IA (T-33): antes de cualquier llamada a la IA | Must-have | 1.5 h | Walking skeleton |
 | 2 | HU4 | E2 | Cargar el currículum y obtener un perfil | Must-have | 2.75 h | Control de gasto |
-| 3 | HU1 | E1 | Agregar una oferta pegando su texto | Must-have | 3.75 h | Control de gasto |
+| 3 | HU1 | E1 | Agregar una oferta pegando su texto | Must-have | 3.5 h | Control de gasto |
 | 4 | HU5 | E3 | Filtrar ofertas con mis criterios no negociables | Must-have | 3 h | HU1 |
-| 5 | HU6 | E3 | Obtener un puntaje de encaje explicado | Must-have | 4.25 h | HU4, HU5 |
+| 5 | HU6 | E3 | Obtener un puntaje de encaje explicado | Must-have | 4.5 h | HU4, HU5 |
 | 6 | HU7 | E3 | Registrar mi decisión sobre cada oferta | Must-have | 1.25 h (incluye medir la línea base) | HU1 |
 | 7 | HU8 | E4 | Gestionar candidaturas en un pipeline | Must-have | 3 h | HU7 |
 | 8 | HU2 | E1 | Importar ofertas de empresas objetivo desde su job board | Must-have (Lever: should-have) | 3.25 h (+1 h) | HU1, HU5 |
@@ -61,7 +61,7 @@ Capability `job-intake`. La recolección automática es tan importante como pega
 
 - **Épica:** E1
 - **Prioridad:** must-have
-- **Estimación:** 3.75 h
+- **Estimación:** 3.5 h
 - **Requisitos:** RF-01 a RF-03, RF-05, RF-06
 - **Objetivos:** OBJ-1
 
@@ -263,7 +263,7 @@ Escenario: Reemplazar el currículum
   Cuando subo un currículum nuevo
   Entonces el nuevo pasa a ser el activo
   Y los puntajes anteriores aparecen marcados como desactualizados
-  Y puedo pedir recalcularlos después de ver que son 30 ofertas
+  Y puedo pedir recalcularlos después de ver que son 30 ofertas (el recálculo se construye con HU6)
 
 Escenario: Cargar el currículum en PDF (should-have)
   Dado que no tengo un currículum cargado
@@ -369,7 +369,7 @@ Radio de distancia a una ubicación y ponderación configurable por el usuario.
 
 - **Épica:** E3
 - **Prioridad:** must-have
-- **Estimación:** 4.25 h
+- **Estimación:** 4.5 h
 - **Requisitos:** RF-23 a RF-28, RNF-07, RNF-08
 - **Objetivos:** OBJ-2
 

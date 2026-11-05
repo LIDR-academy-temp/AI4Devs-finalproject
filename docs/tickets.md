@@ -18,12 +18,13 @@
 | T-03 | Autenticación por sesión e i18n base | backend, frontend | E5 / Skeleton | M | 1.25 h | T-02 |
 | T-04 | Cola de trabajos y cliente de IA | backend, ai | E5 / Skeleton | M | 1.5 h | T-02 |
 | T-05 | Contenedor, CI y despliegue | infra, test | E5 / Skeleton | M | 1.5 h | T-03 |
+| T-33 | Control de gasto de IA | backend, frontend, ai | E5 / Plataforma | M | 1.5 h | T-04 |
 | T-06 | Tabla de currículums | db | E2 / HU4 | M | 0.5 h | T-02 |
 | T-07 | API y extracción del currículum en Markdown | backend, ai | E2 / HU4 | M | 1.25 h | T-04, T-06, T-33 |
 | T-08 | Pantalla del currículum | frontend | E2 / HU4 | M | 1 h | T-07 |
 | T-09 | Tablas de ofertas, empresas objetivo y búsquedas | db | E1 / HU1, HU2, HU3 | M | 0.5 h | T-02 |
 | T-10 | API y extracción de ofertas, y decisión | backend, ai | E1, E3 / HU1, HU7 | M | 2.25 h | T-04, T-09, T-33 |
-| T-11 | Pantallas de ofertas y decisión | frontend | E1, E3 / HU1, HU7 | M | 2 h | T-10 |
+| T-11 | Pantallas de ofertas y decisión | frontend | E1, E3 / HU1, HU7 | M | 1.75 h | T-10 |
 | T-12 | Empresas objetivo, interfaz de adaptadores y Greenhouse | backend | E1 / HU2 | M | 1.75 h | T-09, T-04, T-15 |
 | T-13 | Pantalla de empresas objetivo | frontend | E1 / HU2 | M | 0.5 h | T-12 |
 | T-25 | Adaptador de Ashby | backend | E1 / HU2 | M | 1 h | T-12 |
@@ -36,10 +37,9 @@
 | T-32 | Etiquetar los golden sets | ai, test | E3 / HU6 | M | 0.5 h | — |
 | T-16 | Puntaje de encaje con IA | backend, ai | E3 / HU6 | M | 2 h | T-07, T-15, T-32, T-33 |
 | T-17 | Script de evals | ai, test | E3 / HU6 | M | 1.25 h | T-10, T-16, T-32, T-33 |
-| T-18 | Pantallas de preferencias y detalle del puntaje | frontend | E3 / HU5, HU6 | M | 1 h | T-16 |
+| T-18 | Pantallas de preferencias, detalle y puntaje a pedido | frontend | E3 / HU5, HU6 | M | 1.25 h | T-16 |
 | T-19 | Candidaturas y su historial | db, backend | E4 / HU8 | M | 1.5 h | T-10 |
 | T-20 | Tablero de candidaturas accesible | frontend | E4 / HU8 | M | 1.5 h | T-19 |
-| T-33 | Control de gasto de IA | backend, frontend, ai | E5 / Plataforma | M | 1.5 h | T-04 |
 | T-35 | Observabilidad y métricas | backend | E5 / Plataforma | M | 0.75 h | T-04, T-33 |
 | T-34 | Instancia de demostración | infra | E5 / Plataforma | M | 1 h | T-05, T-33 |
 | T-21 | Prueba E2E, accesibilidad y documentación final | test | Todas | M | 2.25 h | T-05, T-20, T-34 |
@@ -70,7 +70,7 @@
 
 ---
 
-## E5 — Plataforma: walking skeleton
+## E5 — Plataforma: walking skeleton y control de gasto
 
 ### T-01 — Monorepo con API y SPA
 
@@ -149,8 +149,23 @@
 - Playwright configurado en `e2e/` con una prueba de humo: login y cierre de sesión.
 
 **Criterios de aceptación**
-- La URL pública de Railway muestra la pantalla de login y permite entrar con el usuario único.
+- La URL de Railway de la instancia personal muestra la pantalla de login y permite entrar con el usuario único (la URL pública para el evaluador es la de demostración, T-34).
 - CI en verde en el PR del walking skeleton.
+
+
+### T-33 — Control de gasto de IA
+
+- **Tipo:** backend, frontend, ai · **Estimación:** 1.5 h · **Requisitos:** RNF-07, ADR-0008
+
+**Tareas**
+- Migración `ai_usage` y tabla de precios por modelo versionada en el repositorio.
+- Registrar cada llamada del cliente de IA (tarea, modelo, tokens, costo estimado).
+- Antes de cada llamada, comparar el gasto del día y del mes con `AI_DAILY_BUDGET_USD` y `AI_MONTHLY_BUDGET_USD`; si se superaría, terminar el trabajo en `failed` con `AI_BUDGET_EXCEEDED`.
+- `GET /ai-usage/summary` e indicador de gasto en la SPA.
+
+**Criterios de aceptación**
+- Con el tope alcanzado, ningún trabajo llama al doble de prueba del cliente de IA y la interfaz muestra un mensaje claro.
+- Pruebas unitarias del cálculo de costo y del control de topes.
 
 ---
 
@@ -177,7 +192,7 @@
 - Trabajo `extract_resume`: extrae el perfil estructurado desde el Markdown.
 - Esquema `resume_profile` y prompt `extract_resume` v1 versionados.
 - `GET /resumes/active` y `PATCH /resumes/{id}` (corregir Markdown o perfil).
-- Al activar una versión nueva, marcar `match_analyses.is_stale = true`; endpoint para recalcular a pedido que primero informa cuántas ofertas afectará (RF-14).
+- Al activar una versión nueva, marcar `match_analyses.is_stale = true` e informar cuántas ofertas quedaron desactualizadas (RF-14). El recálculo a pedido usa `POST /job-postings/match` (T-16) y su pantalla está en T-18.
 
 **Criterios de aceptación**
 - Archivo de otro tipo o mayor a 5 MB: `422` con mensaje claro.
@@ -191,7 +206,7 @@
 **Tareas**
 - Carga del archivo con progreso del trabajo (polling a `/jobs/{id}`).
 - Vista y edición del perfil (habilidades, experiencia, años, seniority, formación, idiomas) y del Markdown.
-- Aviso de puntajes desactualizados con el número de ofertas y botón para recalcular.
+- Aviso de puntajes desactualizados con el número de ofertas (el botón de recalcular llega con T-18).
 
 **Criterios de aceptación**
 - Cumple los escenarios must-have de HU4 en `docs/user-stories.md`.
@@ -233,14 +248,13 @@
 
 ### T-11 — Pantallas de ofertas y decisión
 
-- **Tipo:** frontend · **Estimación:** 2 h · **Requisitos:** RF-01, RF-03, RF-06, RF-07, RF-23
+- **Tipo:** frontend · **Estimación:** 1.75 h · **Requisitos:** RF-01, RF-03, RF-06, RF-07
 
 **Tareas**
 - Formulario para pegar el texto, progreso de la extracción y opción de guardar directo o revisar los campos (los desconocidos marcados como tales).
 - Edición de campos desde el detalle de la oferta.
 - Lista de ofertas con título, empresa, origen, resultado del filtro, puntaje y decisión; orden por puntaje o fecha.
 - Botones "aplicar" y "descartar" (con motivo opcional) en el detalle de la oferta.
-- Selección múltiple en la lista y botón "puntuar seleccionadas", que muestra el costo estimado antes de confirmar (ADR-0008).
 
 **Criterios de aceptación**
 - Cumple los escenarios de HU1 y HU7.
@@ -371,6 +385,7 @@
 - Verificar cada fragmento de evidencia contra la oferta y el currículum (coincidencia literal ignorando mayúsculas y espacios) y descartar los que no aparecen (RF-24a).
 - Trabajo `score_match`: calcula `input_hash` (oferta, currículum, prompt, modelo); si existe, reutiliza el análisis; si no, llama a Claude y guarda modelo, versión del prompt, uso de tokens y duración.
 - Ajuste por modalidad (RF-28, should-have) calculado al leer, fuera de la caché.
+- Sin currículum activo, el trabajo no llama a la IA y termina con el código `NO_ACTIVE_RESUME`.
 - `POST /job-postings/{id}/match` (incluye ofertas descartadas, a pedido) y `POST /job-postings/match` para varias ofertas, con `dryRun` que devuelve el costo estimado.
 - Un reintento ante respuesta inválida; después, `failed` con mensaje claro.
 
@@ -402,16 +417,17 @@
 - Con el modelo de producción: acuerdo ≥ 80 % en el conjunto de prueba; extracción ≥ 90 % de campos correctos y 0 salarios inventados.
 - El prompt se ajusta solo con el conjunto de ajuste.
 
-### T-18 — Pantallas de preferencias y detalle del puntaje
+### T-18 — Pantallas de preferencias, detalle y puntaje a pedido
 
-- **Tipo:** frontend · **Estimación:** 1 h · **Requisitos:** RF-20, RF-24, RF-27
+- **Tipo:** frontend · **Estimación:** 1.25 h · **Requisitos:** RF-14, RF-20, RF-23, RF-24, RF-27
 
 **Tareas**
 - Formulario de preferencias (palabras de rol de inclusión y exclusión, modalidades en orden, ubicaciones, salario mínimo, seniorities, tope por sincronización).
 - Detalle de la oferta: resultado del filtro por criterio, puntaje, etiqueta, fortalezas, brechas y evidencia; botón para recalcular.
+- Selección múltiple en la lista y botón "puntuar seleccionadas", que muestra el costo estimado antes de confirmar (ADR-0008); el mismo flujo recalcula los puntajes desactualizados por un currículum nuevo (RF-14).
 
 **Criterios de aceptación**
-- Cumple los escenarios de HU5 y HU6 en `docs/user-stories.md`.
+- Cumple los escenarios de HU5 y HU6 en `docs/user-stories.md`, y el recálculo del escenario "Reemplazar el currículum" de HU4.
 
 ---
 
@@ -448,20 +464,6 @@
 
 ## Cierre del MVP
 
-### T-33 — Control de gasto de IA
-
-- **Tipo:** backend, frontend, ai · **Estimación:** 1.5 h · **Requisitos:** RNF-07, ADR-0008
-
-**Tareas**
-- Migración `ai_usage` y tabla de precios por modelo versionada en el repositorio.
-- Registrar cada llamada del cliente de IA (tarea, modelo, tokens, costo estimado).
-- Antes de cada llamada, comparar el gasto del día y del mes con `AI_DAILY_BUDGET_USD` y `AI_MONTHLY_BUDGET_USD`; si se superaría, terminar el trabajo en `failed` con `AI_BUDGET_EXCEEDED`.
-- `GET /ai-usage/summary` e indicador de gasto en la SPA.
-
-**Criterios de aceptación**
-- Con el tope alcanzado, ningún trabajo llama al doble de prueba del cliente de IA y la interfaz muestra un mensaje claro.
-- Pruebas unitarias del cálculo de costo y del control de topes.
-
 ### T-35 — Observabilidad y métricas
 
 - **Tipo:** backend · **Estimación:** 0.75 h · **Requisitos:** RNF-06, RNF-14, RNF-15
@@ -491,7 +493,7 @@
 - **Tipo:** test · **Estimación:** 2.25 h · **Requisitos:** RNF-10, RNF-12, RNF-13, OBJ-4
 
 **Tareas**
-- Prueba Playwright: login → pegar oferta → guardar → ver filtro y puntaje → decisión "aplicar" → mover la candidatura a "Applied".
+- Prueba Playwright: login → cargar currículum en Markdown → pegar oferta → guardar → ver filtro y puntaje → decisión "aplicar" → mover la candidatura a "Applied".
 - La prueba corre con `AI_DRIVER=fake` para no depender de la API real.
 - `axe-core` en las pantallas de ofertas, detalle y tablero.
 - Actualizar `readme.md` con la URL y las credenciales de la instancia de demostración (T-34) y los pasos de verificación; actualizar `prompts.md`.

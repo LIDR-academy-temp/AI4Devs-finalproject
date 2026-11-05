@@ -731,3 +731,29 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con la tercera revisión de consistencia. Sin push.
+
+### Prompt 56
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Revisa una vez más y busca inconsistencias más a fondo y minuciosamente en la documentación del sistema en general
+  ```
+
+- **Resultado:** Cuarta revisión, con lectura completa del PRD y de los tickets. Se corrigieron dependencias ocultas (el botón "puntuar seleccionadas" de T-11 y el recálculo de T-07/T-08 dependían del endpoint de T-16 y pasaron a T-18), la prueba E2E sin currículum (pasos del flujo y T-21), el caso sin currículum activo (RF-23, T-16), la URL "pública" de la instancia personal en T-05, la entidad `AiUsage` en el PRD, el riesgo de costo de Railway, la nota de Lever en el log de decisiones, la trazabilidad de costo y operación, y la ubicación de T-33 en `docs/tickets.md`. Horas: HU1 3.5 h, HU6 4.5 h; totales sin cambio (35.5 h). Sin commit.
+
+### Prompt 57
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit de los cambios existentes para podernos enfocar las comprobaciones recomendadas
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con la cuarta revisión de consistencia; después se agregaron a `scripts/check_docs.py` las comprobaciones de dependencias, tickets de IA, uso de endpoints y horas por historia, con pruebas en `scripts/test_check_docs.py`.
