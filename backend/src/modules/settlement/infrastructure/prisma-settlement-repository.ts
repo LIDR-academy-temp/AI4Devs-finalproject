@@ -155,10 +155,11 @@ export class PrismaSettlementRepository implements SettlementRepository {
           // The channels as they are under lock (design D7, D14): another account may have taken one since the load.
           await this.phase('channelLock')
           const lockedChannels = await this.lockChannels(tx, context.account.accountId, input.channels)
-          // A transaction belongs to one channel, so another process of the provider that adjusted or released the
-          // same transaction held this lock and has committed by now: the reserve states are read again under it and
-          // the plan recomputed with them, so a reserve is never released twice (settlement-reserve-chargeback, #67).
-          // Only the reserves change: the number, the channels and the batch fees come from the same input.
+          // Past the lock of the number and of the channels, another process of the provider that adjusted or released
+          // the same transaction has committed (it held one of them: the number one, as the tests see, or the channel
+          // one, since a transaction belongs to one channel). The reserve states are read again and the plan recomputed
+          // with them, so a reserve is never released twice (settlement-reserve-chargeback, #67). Only the reserves
+          // change: the number, the channels and the batch fees come from the same input.
           const reserveStates = await source.reserveStates(
             context.account.providerId,
             reserveTransactionIds(input.rows),

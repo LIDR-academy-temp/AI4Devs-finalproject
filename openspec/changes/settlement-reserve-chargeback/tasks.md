@@ -149,7 +149,11 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
 - [x] 8.3 Commit: chore(settlement): arreglos de la verificación de settlement-reserve-chargeback, y `git push`.
 
   Hecho: los arreglos del `/opsx:verify` y del `/review-diff` van en una sola ronda.
-  - **Doble liberación (#67).** Se cierra sin migración: tras `lockChannels`, el proceso vuelve a leer `reserveStates` y recalcula el plan. Dentro de una cuenta el punto de serialización es el bloqueo del número, y entre cuentas del proveedor el de canales; la segunda lectura va detrás de ambos. Lo cubre un test de concurrencia con compuertas. Con la rotura deliberada (usar el estado de la carga) el proceso que esperaba vuelve a liberar 18.2030.
+  - **Doble liberación (#67).** Se cierra sin migración: después de `lockNumber` y `lockChannels`, el proceso vuelve a leer `reserveStates` y recalcula el plan. Hay dos tests de concurrencia con compuertas, y en los dos el segundo proceso espera en el bloqueo del número:
+    - ajuste + ajuste en la misma cuenta. Con la rotura deliberada (usar el estado de la carga), el proceso que esperaba vuelve a liberar 18.2030;
+    - RR + ajuste en dos cuentas del proveedor, con una cuenta de fixture `it-acc-rr-`. Ese bloqueo ya retiene un proceso de otra cuenta, como mostraron los logs de fase. Con la rotura deliberada, libera 25.1150.
+
+    No queda probado que el bloqueo de canales retenga por sí solo. Aislarlo exigiría cambiar la consulta o los índices de `lockNumber` (design, "Risks / Trade-offs").
   - **RDR.** Caso de integración con liberación, y corregido el texto que decía que `batch-issues` trae RDR.
   - **Tests.** `heldAdjustmentIdOf` exige un E vigente con reserva. La limpieza cuenta `AuditLog` y `ValidationIssue`. Los títulos de test describen lo que prueban.
   - **Fake y oráculo.** `Decimal` desde `settlement/domain/money.js`. La guarda de `release_on_chargeback` en `plan.ts` no cambia `data/samples`.
