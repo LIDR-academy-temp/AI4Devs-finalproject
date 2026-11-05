@@ -163,7 +163,7 @@ function InProgressRow({
   return (
     <TableRow>
       <TableCell className={WRAP}>
-        <div className="font-medium">{item.account.name}</div>
+        <div className="whitespace-nowrap font-medium">{item.account.name}</div>
         <div className="text-xs text-muted-foreground">{s.hierarchy(item.merchant.name, item.provider.name)}</div>
       </TableCell>
       <TableCell>{item.fileCount}</TableCell>
@@ -172,8 +172,12 @@ function InProgressRow({
         <Badge variant={toneOf(IMPORT_STATUS_TONE, item.status)}>{item.status}</Badge>
       </TableCell>
       <TableCell className={WRAP}>{item.createdBy.userName}</TableCell>
-      <TableCell className={WRAP}>{formatAuditDateTime(auditInstant(item.createdAt))}</TableCell>
-      <TableCell className={WRAP}>{formatAuditDateTime(auditInstant(item.updatedAt))}</TableCell>
+      <TableCell className={WRAP}>
+        <DateTime value={item.createdAt} />
+      </TableCell>
+      <TableCell className={WRAP}>
+        <DateTime value={item.updatedAt} />
+      </TableCell>
       <TableCell>
         <div className="flex flex-wrap items-start gap-2">
           <Button asChild variant="outline" size="sm">
@@ -185,5 +189,18 @@ function InProgressRow({
         </div>
       </TableCell>
     </TableRow>
+  )
+}
+
+/** A date and time that may wrap only between the date and the time, never inside the date. */
+function DateTime({ value }: { value: string }) {
+  const text = formatAuditDateTime(auditInstant(value))
+  const space = text.indexOf(' ')
+  if (space === -1) return <span className="whitespace-nowrap">{text}</span>
+  return (
+    <>
+      <span className="whitespace-nowrap">{text.slice(0, space)}</span>{' '}
+      <span className="whitespace-nowrap">{text.slice(space + 1)}</span>
+    </>
   )
 }
