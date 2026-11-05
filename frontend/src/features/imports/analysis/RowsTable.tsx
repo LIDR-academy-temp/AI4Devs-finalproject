@@ -1,13 +1,26 @@
 import type { MatchResult } from '@recon/shared'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createColumnHelper, rowPaginationFeature, tableFeatures, useTable } from '@tanstack/react-table'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import type { ImportRowItem } from '@/lib/api/types'
+import { validationRunKey } from '@/features/validations/queries'
+import { ApiError } from '@/lib/api/client'
+import type { ImportRowItem, ImportStatus } from '@/lib/api/types'
 import { formatDecimal } from '@/lib/format'
 import { ListHeading, requestListFocus } from '@/lib/list-focus'
-import { importRowsQuery, ROWS_PAGE_SIZE } from '../queries'
+import { useReloadImport, useResolveRow } from '../mutations'
+import { useCanProcess } from '../permissions'
+import { importKey, importRowsQuery, ROWS_PAGE_SIZE } from '../queries'
 import { strings } from '../strings'
+import {
+  AmbiguousCandidates,
+  type Candidate,
+  candidateLabel,
+  ResolutionContext,
+  type ResolutionMode,
+} from './AmbiguousCandidates'
+import { ResolveRowDialog, type RowChoice } from './ResolveRowDialog'
 
 const s = strings.analysis.rows
 
@@ -21,19 +34,6 @@ const helper = createColumnHelper<typeof features, ImportRowItem>()
 function resultText(row: ImportRowItem): string {
   const result = s.results[row.matchResult]
   return row.reason ? `${result} · ${s.reasons[row.reason]}` : result
-}
-
-function Candidates({ row }: { row: ImportRowItem }) {
-  if (row.candidates.length === 0) return null
-  return (
-    <ul className="text-xs text-muted-foreground">
-      {row.candidates.map((c) => (
-        <li key={`${c.gatewayId}:${c.transactionId}`}>
-          {'outOfScope' in c && c.outOfScope ? `${c.gatewayName} (${s.otherMerchant})` : c.gatewayName}
-        </li>
-      ))}
-    </ul>
-  )
 }
 
 const columns = helper.columns([
@@ -64,7 +64,7 @@ const columns = helper.columns([
     cell: ({ row }) => (
       <div className="flex flex-col">
         <span>{resultText(row.original)}</span>
-        <Candidates row={row.original} />
+        <AmbiguousCandidates row={row.original} />
       </div>
     ),
   }),
@@ -107,18 +107,97 @@ const columns = helper.columns([
  */
 export function RowsTable({
   importId,
+  status,
   match,
   page,
   onChange,
 }: {
   importId: string
+  /** The status of the import: whether an ambiguous row can be resolved (web-ambiguous-rows design D1). */
+  status: ImportStatus
   match: MatchResult | undefined
   page: number
   onChange: (next: { match: MatchResult | undefined; page: number }) => void
 }) {
   const query = useQuery(importRowsQuery(importId, { match, page }))
+  const canProcess = useCanProcess()
+  const mode: ResolutionMode = !canProcess
+    ? 'none'
+    : status === 'analyzed'
+      ? 'enabled'
+      : status === 'validated'
+        ? 'disabled'
+        : 'none'
   const total = query.data?.total ?? 0
   const pageCount = Math.max(1, Math.ceil(total / ROWS_PAGE_SIZE))
+
+  // Resolving an ambiguous row (web-ambiguous-rows design D2–D4).
+  const queryClient = useQueryClient()
+  const resolver = useResolveRow(importId)
+  const reloadImport = useReloadImport(importId)
+  const [choice, setChoice] = useState<RowChoice | null>(null)
+  // False once the rows change under the dialog (a 200, a 400 or row_not_ambiguous): its Choose goes with the next
+  // rows, so the heading of the rows takes the focus, not the Choose (design D4).
+  const [returnFocus, setReturnFocus] = useState(true)
+  const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
+  // Each of those answers changes the key of the heading, so it takes the focus they asked for.
+  const [rowChanges, setRowChanges] = useState(0)
+  const [afterResolve, setAfterResolve] = useState(false)
+
+  const choose = (row: ImportRowItem, candidate: Candidate, opener: HTMLElement) => {
+    // Known only from what the validations section already read: unknown warns as well (design D2).
+    const view = queryClient.getQueryData<{ run: unknown }>(validationRunKey(importId))
+    setMessage(null)
+    setReturnFocus(true)
+    setChoice({ row, candidate, warnRun: view === undefined || view.run !== null, opener })
+  }
+  const askRows = () => void queryClient.invalidateQueries({ queryKey: [...importKey(importId), 'rows'] })
+  // The Choose that opened the dialog will not survive the rows that come next: the focus goes to their heading.
+  const focusRows = () => {
+    setReturnFocus(false)
+    requestListFocus(ROWS_LIST)
+    setRowChanges((n) => n + 1)
+  }
+  const confirm = ({ row, candidate }: RowChoice) =>
+    resolver.mutate(
+      { sheetId: row.sheetId, rowNo: row.rowNo, gatewayId: candidate.gatewayId },
+      {
+        onSuccess: () => {
+          focusRows()
+          setChoice(null)
+          setMessage({ text: s.resolve.resolved(row.rowNo, row.sheetName, candidateLabel(candidate)), error: false })
+          setAfterResolve(true)
+        },
+        onError: (failure) => {
+          setChoice(null)
+          const code = failure instanceof ApiError ? failure.code : undefined
+          if (code === 'import_not_editable') {
+            const current = (failure as ApiError).details as { status?: string } | undefined
+            setMessage({ text: s.resolve.notEditable(current?.status ?? ''), error: true })
+            void reloadImport()
+          } else if (code === 'row_not_ambiguous') {
+            focusRows()
+            setMessage({ text: s.resolve.notAmbiguous, error: true })
+            void reloadImport()
+            askRows()
+          } else if (code === 'validation_error') {
+            focusRows()
+            setMessage({ text: s.resolve.notCandidate, error: true })
+            askRows()
+          } else {
+            setMessage({ text: s.resolve.failed, error: true })
+          }
+        },
+      },
+    )
+  const resolution = { mode, pending: resolver.isPending, onChoose: choose }
+
+  // The resolved row may leave the last page of a filter empty: show the last page there is instead (design D4).
+  useEffect(() => {
+    if (!afterResolve || query.isFetching || !query.isSuccess) return
+    setAfterResolve(false)
+    if (page > pageCount) onChange({ match, page: pageCount })
+  }, [afterResolve, query.isFetching, query.isSuccess, page, pageCount, match, onChange])
 
   const table = useTable({
     features,
@@ -157,65 +236,77 @@ export function RowsTable({
   }
 
   return (
-    <section className="flex flex-col gap-2">
-      <ListHeading name={ROWS_LIST} focusKey={`${match}:${page}`} className="font-medium">
-        {s.title}
-      </ListHeading>
-      <div role="toolbar" aria-label={s.filterLabel} className="flex flex-wrap items-center gap-1">
-        <span className="pr-1 text-sm text-muted-foreground">{s.filterLabel}</span>
-        {filterButton(undefined, s.filters.all)}
-        {FILTERS.map((f) => filterButton(f, s.filters[f]))}
-      </div>
-      <div className="max-w-full overflow-x-auto rounded-md border bg-background">
-        <Table aria-label={s.title} className="text-xs">
-          <TableHeader>
-            {table.getHeaderGroups().map((group) => (
-              <TableRow key={group.id}>
-                {group.headers.map((header) => (
-                  <TableHead key={header.id} className="whitespace-nowrap">
-                    {header.isPlaceholder ? null : <table.FlexRender header={header} />}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                className={row.original.matchResult === 'matched' ? '' : 'bg-amber-50/60 dark:bg-amber-950/20'}
-              >
-                {row.getAllCells().map((cell) => (
-                  <TableCell key={cell.id} className="align-top">
-                    <table.FlexRender cell={cell} />
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      {query.isError && <p className="text-sm text-destructive">{s.loadError}</p>}
-      {query.isSuccess && total === 0 && <p className="text-sm text-muted-foreground">{s.empty}</p>}
-      <div className="flex items-center justify-end gap-2 text-sm">
-        <span className="text-muted-foreground">{s.pageOf(page, pageCount, total)}</span>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => turn(() => table.previousPage())}
-          disabled={!table.getCanPreviousPage()}
-        >
-          {s.previous}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => turn(() => table.nextPage())}
-          disabled={!table.getCanNextPage()}
-        >
-          {s.next}
-        </Button>
-      </div>
-    </section>
+    <ResolutionContext.Provider value={resolution}>
+      <section className="flex flex-col gap-2">
+        <ListHeading name={ROWS_LIST} focusKey={`${match}:${page}:${rowChanges}`} className="font-medium">
+          {s.title}
+        </ListHeading>
+        <div role="toolbar" aria-label={s.filterLabel} className="flex flex-wrap items-center gap-1">
+          <span className="pr-1 text-sm text-muted-foreground">{s.filterLabel}</span>
+          {filterButton(undefined, s.filters.all)}
+          {FILTERS.map((f) => filterButton(f, s.filters[f]))}
+        </div>
+        <div aria-live="polite" className="text-sm">
+          {message && <p className={message.error ? 'text-destructive' : undefined}>{message.text}</p>}
+        </div>
+        <div className="max-w-full overflow-x-auto rounded-md border bg-background">
+          <Table aria-label={s.title} className="text-xs">
+            <TableHeader>
+              {table.getHeaderGroups().map((group) => (
+                <TableRow key={group.id}>
+                  {group.headers.map((header) => (
+                    <TableHead key={header.id} className="whitespace-nowrap">
+                      {header.isPlaceholder ? null : <table.FlexRender header={header} />}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className={row.original.matchResult === 'matched' ? '' : 'bg-amber-50/60 dark:bg-amber-950/20'}
+                >
+                  {row.getAllCells().map((cell) => (
+                    <TableCell key={cell.id} className="align-top">
+                      <table.FlexRender cell={cell} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        {query.isError && <p className="text-sm text-destructive">{s.loadError}</p>}
+        {query.isSuccess && total === 0 && <p className="text-sm text-muted-foreground">{s.empty}</p>}
+        <div className="flex items-center justify-end gap-2 text-sm">
+          <span className="text-muted-foreground">{s.pageOf(page, pageCount, total)}</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => turn(() => table.previousPage())}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {s.previous}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => turn(() => table.nextPage())}
+            disabled={!table.getCanNextPage()}
+          >
+            {s.next}
+          </Button>
+        </div>
+        <ResolveRowDialog
+          choice={choice}
+          pending={resolver.isPending}
+          returnFocus={returnFocus}
+          onConfirm={confirm}
+          onClose={() => setChoice(null)}
+        />
+      </section>
+    </ResolutionContext.Provider>
   )
 }

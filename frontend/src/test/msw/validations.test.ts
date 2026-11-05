@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest'
 import type { ValidationIssueDetail, ValidationIssuesPage, ValidationRunView } from '@/features/validations/contract'
 import type { UserName } from './fixtures'
 import { issueTokens } from './handlers'
-import { importRecord, seedImport } from './imports'
+import { importRecord, seedAmbiguousRow, seedImport } from './imports'
 import {
   batchBlockedFixture,
   batchIssuesFixture,
@@ -52,6 +52,22 @@ async function findingOf(importId: string, validationCode: string, transactionId
   const summary = page.items.find((i) => i.transactionIdRaw === transactionIdRaw)!
   return issue(summary.issueId)
 }
+
+describe('fake validations API: resolving an ambiguous row (README P7; web-ambiguous-rows D5)', () => {
+  it('supersedes the current run without a replacement', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    const row = seedAmbiguousRow(importId)
+    expect((await current(importId)).run).not.toBeNull()
+
+    const res = await call('analyst', 'PATCH', `/imports/${importId}/rows/${row.sheetId}/${row.rowNo}`, {
+      gatewayId: 1,
+    })
+
+    expect(res.status).toBe(200)
+    expect(await current(importId)).toMatchObject({ importStatus: 'analyzed', run: null })
+  })
+})
 
 describe('fake validations API', () => {
   it('has no run until one is started, then answers the fixture of the sample', async () => {

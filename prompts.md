@@ -690,3 +690,26 @@ Los comandos del §1.4 y los enlaces relativos estaban bien. El agente no pudo l
 *Resultado.* El gate partió #38 en dos changes: este y `web-ambiguous-rows`, solo frontend porque el `PATCH` de la fila ya existe. Fijó el contrato de `GET /imports` (filtros, alcance con el mismo `404` para merchant, proveedor o cuenta, abiertos por defecto) y el motivo obligatorio solo en `AuditLog`, sin migración. Antes del apply, el agente vio que el motivo obligatorio rompía cinco cancelaciones en tests de `settlement` y `validation` y una en `decision.test.tsx`; la persona aprobó cambiarlas en un commit aparte de solo tests (D8). Faltaron en ese inventario los dos cancel de los flujos de validations de Bruno, porque la búsqueda no casaba con su sintaxis; los encontró la primera pasada de `pnpm test:api`. Durante el apply salieron dos desvíos del design: el diálogo conserva la prop `detail` para no tocar `DecisionBar.tsx`, y el aviso de un import ya cancelado lo da la página de In Progress, porque la fila desaparece con su diálogo. Las capturas mostraron el nombre de la cuenta y la fecha partidos a mitad a 1024 px, y se corrigió.
 
 *Ajuste humano.* La persona aprobó el gate y D8, y marcó tres fallos del agente: un `cd`, un commit con `--no-verify` (rehecho con los hooks antes del push; los hooks son parte del proceso) y un commit que no recogió el README porque Git lo tiene como `readme.md`. La base se compartió por turnos con la otra sesión: integración con `pnpm dev` parado, y Bruno, smoke E2E y capturas con `pnpm dev` levantado. El review-diff queda para una sesión nueva.
+
+**Prompt 18:**
+
+*Contexto.* `web-ambiguous-rows` (#38, lo último que quedaba): resolver filas ambiguas desde la tabla de filas del paso Analysis. Solo frontend: el `PATCH` de la fila existe desde #36/#37 y no cambia. El gate ya se había aprobado en `import-in-progress`: solo en `analyzed`, deshabilitado y explicado en `validated`, aviso de la corrida que se descarta y capturas con `GET rows` interceptado.
+
+*Prompt.* Explorar el endpoint (solo lectura), el README §1.2 y §1.3, la spec de import y `RowsTable`. Traer lo que el gate no cubre, con recomendación; si no hay nada, escribir proposal, delta specs, design y tasks, validarlos con `--strict` y enseñarlos antes del commit. Después, apply grupo a grupo con MSW, test primero, rotura deliberada y push al cerrar cada grupo. Las capturas, con turno de base. Más restricciones:
+- Sin `cd` ni rutas absolutas ni código en línea; Grep y Read; no leer los `.env`.
+- No migrar ni sembrar.
+- Review-diff en una sesión nueva.
+
+*Resultado.* La exploración trajo cuatro puntos que el gate no cubría. La persona aceptó las cuatro recomendaciones:
+- El aviso de la corrida es condicional: se lee de la caché con `validationRunKey` y, si aún no se conoce, también se avisa.
+- Las capturas usan una corrida real.
+- Las candidatas de otro merchant se pueden elegir.
+- La rama sale de la de entrega tras #129.
+
+Durante el apply aparecieron cuatro cosas:
+- **Foco.** `requestListFocus` no movía el foco tras resolver, porque ni el filtro ni la página cambian. La `focusKey` del encabezado incluye ahora un contador de resoluciones (D4).
+- **Fake del `PATCH`.** El fake de MSW se había escrito con la convención de los demás handlers (`404` sin permiso si el import no es visible). La persona pidió el orden del API: permiso antes que alcance. Los otros cinco handlers con la misma convención pasaron a #94.
+- **Desborde de la tabla de filas.** Las capturas midieron por primera vez esa tabla: a 1024 px ya desbordaba sin este change (167 px, #132). Además, el nombre de la candidata y el texto de `validated` se salían de su celda porque la celda no parte líneas. Se partieron y la fila ambigua pasó a sumar solo 17 px.
+- **Gateway sintético.** El seed no tiene dos gateways del mismo formato, así que la candidata de otro merchant usa uno sintético.
+
+*Ajuste humano.* La persona aprobó los artefactos tal cual. Decidió versionar solo las capturas de 1280 px: el desborde de 1024 px queda en el log hasta #132, y el script sigue fallando por todo lo demás. Marcó tres fallos del agente: un `cd`, un script de Python en línea y varios `sed` para editar archivos; la regla es Edit y `pnpm --filter`. La base la dio por turnos (`pnpm dev` levantado para las capturas) y el agente le avisó al terminar con ella para volver a sembrar. El review-diff queda para una sesión nueva.

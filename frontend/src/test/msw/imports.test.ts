@@ -1,9 +1,10 @@
 // The fake import API on its own, without screens (design D12): state machine, fingerprint, error codes and scope.
+import { ImportRowItem } from '@recon/shared'
 import { describe, expect, it } from 'vitest'
 import type { ImportDetail, ImportListPage, ImportRowsPage } from '@/lib/api/types'
 import { ACCOUNT_IDS, type UserName } from './fixtures'
 import { issueTokens } from './handlers'
-import { holdNext, importRecord, importRequests, sampleFile, seedImport } from './imports'
+import { holdNext, importRecord, importRequests, sampleFile, seedAmbiguousRow, seedImport } from './imports'
 
 const MiB20 = 20 * 1024 * 1024
 const REASON = { reason: 'Wrong file from the provider' }
@@ -261,6 +262,126 @@ describe('fake import API: the reason of a cancel (spec "Motivo de la cancelaciÃ
     const res = await call('analyst', 'POST', `/imports/${detail.importId}/cancel`, { reason: '  Duplicate upload ' })
     expect(res.status).toBe(200)
     expect(importRequests('cancel').at(-1)?.body).toEqual({ reason: '  Duplicate upload ' })
+  })
+})
+
+describe('fake import API: PATCH rows (spec "ResoluciÃ³n de una fila ambigua"; web-ambiguous-rows D5)', () => {
+  const resolve = (as: UserName, importId: string, sheetId: string, rowNo: number | string, body: object) =>
+    call(as, 'PATCH', `/imports/${importId}/rows/${sheetId}/${rowNo}`, body)
+
+  it('answers 200 with the row the API resolves, in the contract, and GET rows shows it matched', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    const row = seedAmbiguousRow(importId)
+
+    const res = await resolve('analyst', importId, row.sheetId, row.rowNo, { gatewayId: 1 })
+
+    expect(res.status).toBe(200)
+    expect(ImportRowItem.parse(res.body)).toMatchObject({
+      matchResult: 'matched',
+      gatewayId: 1,
+      transactionId: '9001',
+      transaction: { channelName: 'RAM-01' },
+      candidates: row.candidates,
+    })
+    expect(importRequests('resolveRow').at(-1)?.body).toEqual({ gatewayId: 1 })
+    const page = (await call('analyst', 'GET', `/imports/${importId}/rows?match=matched&page=1&pageSize=500`))
+      .body as ImportRowsPage
+    expect(page.items.find((r) => r.rowNo === row.rowNo)).toMatchObject({ matchResult: 'matched', gatewayId: 1 })
+    expect((await call('analyst', 'GET', `/imports/${importId}`)).body.analysis.rows.ambiguous).toBe(0)
+  })
+
+  it('resolves to a candidate of another merchant without its transaction', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    const row = seedAmbiguousRow(importId)
+
+    const res = await resolve('analyst', importId, row.sheetId, row.rowNo, { gatewayId: 3 })
+
+    expect(res.status).toBe(200)
+    expect(ImportRowItem.parse(res.body)).toMatchObject({
+      matchResult: 'matched',
+      gatewayId: 3,
+      transaction: null,
+      warnings: ['out_of_scope_transaction'],
+    })
+  })
+
+  it('answers 403 to viewer even for an import it cannot see (permission before scope, as the API), 404 for an unknown import and 409 import_not_editable outside analyzed', async () => {
+    const own = seedImport('batch-clean', { status: 'analyzed' })
+    const row = seedAmbiguousRow(own.importId)
+    const foreign = seedImport('legacy-provider', { account: 'ProviderC-Alt', status: 'analyzed' })
+    const foreignRow = seedAmbiguousRow(foreign.importId)
+    const validated = seedImport('batch-clean', { status: 'validated' })
+    const validatedRow = seedAmbiguousRow(validated.importId)
+
+    const forbidden = await resolve('viewer', own.importId, row.sheetId, row.rowNo, { gatewayId: 1 })
+    expect(forbidden.status).toBe(403)
+    expect(forbidden.body.code).toBe('forbidden')
+    const hidden = await resolve('viewer', foreign.importId, foreignRow.sheetId, foreignRow.rowNo, { gatewayId: 1 })
+    expect(hidden.status).toBe(403)
+    expect(hidden.body.code).toBe('forbidden')
+    const unknownImport = await resolve('analyst', '00000000-0000-4000-8000-ffffffffffff', row.sheetId, row.rowNo, {
+      gatewayId: 1,
+    })
+    expect(unknownImport.status).toBe(404)
+    expect(unknownImport.body.code).toBe('not_found')
+    const notEditable = await resolve('analyst', validated.importId, validatedRow.sheetId, validatedRow.rowNo, {
+      gatewayId: 1,
+    })
+    expect(notEditable.status).toBe(409)
+    expect(notEditable.body).toMatchObject({ code: 'import_not_editable', details: { status: 'validated' } })
+    expect(importRecord(own.importId).rows!.find((r) => r.rowNo === row.rowNo)?.matchResult).toBe('ambiguous')
+  })
+
+  it('answers 400 for a bad rowNo or body, 404 for an unknown row, 409 row_not_ambiguous and 400 with the candidates', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    const row = seedAmbiguousRow(importId)
+    const matched = importRecord(importId).rows!.find((r) => r.matchResult === 'matched')!
+
+    expect((await resolve('analyst', importId, row.sheetId, 'abc', { gatewayId: 1 })).status).toBe(400)
+    const zero = await resolve('analyst', importId, row.sheetId, row.rowNo, { gatewayId: 0 })
+    expect(zero.status).toBe(400)
+    expect(zero.body.code).toBe('validation_error')
+    const unknown = await resolve('analyst', importId, row.sheetId, 99999, { gatewayId: 1 })
+    expect(unknown.status).toBe(404)
+    expect(unknown.body.code).toBe('not_found')
+    const notAmbiguous = await resolve('analyst', importId, matched.sheetId, matched.rowNo, { gatewayId: 1 })
+    expect(notAmbiguous.status).toBe(409)
+    expect(notAmbiguous.body).toMatchObject({ code: 'row_not_ambiguous', details: { matchResult: 'matched' } })
+    const notCandidate = await resolve('analyst', importId, row.sheetId, row.rowNo, { gatewayId: 2 })
+    expect(notCandidate.status).toBe(400)
+    expect(notCandidate.body).toMatchObject({
+      code: 'validation_error',
+      details: { gatewayId: 2, candidates: row.candidates },
+    })
+    expect(importRecord(importId).rows!.find((r) => r.rowNo === row.rowNo)?.matchResult).toBe('ambiguous')
+  })
+
+  it('answers the 400 of the schema before the permission, as Fastify validates before the preHandler (#72)', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    const row = seedAmbiguousRow(importId)
+
+    const badRowNo = await resolve('viewer', importId, row.sheetId, 'abc', { gatewayId: 1 })
+    expect(badRowNo.status).toBe(400)
+    expect(badRowNo.body.code).toBe('validation_error')
+    const badBody = await resolve('viewer', importId, row.sheetId, row.rowNo, { gatewayId: 0 })
+    expect(badBody.status).toBe(400)
+    expect(badBody.body.code).toBe('validation_error')
+  })
+
+  it('decides with the candidates of the stored row, as the API: one taken out of it is no longer accepted', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    const row = seedAmbiguousRow(importId)
+    const stored = importRecord(importId).rows!.find((r) => r.rowNo === row.rowNo && r.sheetId === row.sheetId)!
+    stored.candidates = stored.candidates.filter((c) => c.gatewayId !== 1)
+
+    const res = await resolve('analyst', importId, row.sheetId, row.rowNo, { gatewayId: 1 })
+
+    expect(res.status).toBe(400)
+    expect(res.body).toMatchObject({
+      code: 'validation_error',
+      details: { gatewayId: 1, candidates: stored.candidates },
+    })
+    expect(importRecord(importId).rows!.find((r) => r.rowNo === row.rowNo)?.matchResult).toBe('ambiguous')
   })
 })
 

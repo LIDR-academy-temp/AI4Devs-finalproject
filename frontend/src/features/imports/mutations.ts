@@ -1,8 +1,9 @@
 // Writes of the import workspace (design D3): every answer is the full detail, written into the cache instead of
 // invalidating it (a GET re-reads the files on the server). The account's import list is invalidated for In Progress.
 import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api/client'
-import type { ImportDetail, MappingConfirmationBody } from '@/lib/api/types'
+import { validationRunKey } from '@/features/validations/queries'
+import { api, unwrap } from '@/lib/api/client'
+import type { ImportDetail, ImportRowItem, MappingConfirmationBody } from '@/lib/api/types'
 import { asDetail, IMPORT_LIST_KEY, importKey } from './queries'
 
 /** The contract types the multipart body as `{ files }`; it travels as the FormData itself (design D4). */
@@ -66,6 +67,34 @@ export function useConfirmMapping(importId: string) {
 export function useReloadImport(importId: string) {
   const queryClient = useQueryClient()
   return () => queryClient.invalidateQueries({ queryKey: importKey(importId), exact: true })
+}
+
+export interface ResolveRowInput {
+  sheetId: string
+  rowNo: number
+  gatewayId: number
+}
+
+/**
+ * Resolves an ambiguous row (web-ambiguous-rows design D3). The answer is the row, not the detail, so the detail, the
+ * rows and the validations (the current run is superseded, README P7) are asked again instead of written.
+ */
+export function useResolveRow(importId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sheetId, rowNo, gatewayId }: ResolveRowInput) =>
+      unwrap(
+        api.PATCH('/api/v1/imports/{importId}/rows/{sheetId}/{rowNo}', {
+          params: { path: { importId, sheetId, rowNo: String(rowNo) } },
+          body: { gatewayId },
+        }),
+      ) as Promise<ImportRowItem>,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: importKey(importId), exact: true })
+      void queryClient.invalidateQueries({ queryKey: [...importKey(importId), 'rows'] })
+      void queryClient.invalidateQueries({ queryKey: validationRunKey(importId) })
+    },
+  })
 }
 
 export function useCancelImport(importId: string) {
