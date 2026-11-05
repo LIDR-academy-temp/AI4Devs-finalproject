@@ -1,8 +1,8 @@
 # PRD del MVP — AI Job Match
 
-> Fase 1 (Producto) del AI SDLC. Detalla solo lo que entra en el MVP. El contexto, la hipótesis y el alcance completo están en [`docs/vision.md`](./vision.md). La revisión adversarial que originó la versión 0.2 está en [`docs/prd-review.md`](./prd-review.md).
+> Fase 1 (Producto) del AI SDLC. Detalla solo lo que entra en el MVP. El contexto, la hipótesis y el alcance completo están en [`docs/vision.md`](./vision.md). La revisión adversarial del PRD está en [`docs/prd-review.md`](./prd-review.md) y la de la arquitectura en [`docs/architecture-review.md`](./architecture-review.md).
 
-- **Estado:** borrador v0.5 (log de decisiones con identificadores D-xx)
+- **Historial:** sin versión manual; los cambios se consultan con `git log -- docs/prd.md`.
 - **Fecha:** 2026-11-04
 - **Presupuesto de desarrollo:** 30 horas asistidas por IA, con tope aceptado de 36 horas (+20 %) (D-08)
 

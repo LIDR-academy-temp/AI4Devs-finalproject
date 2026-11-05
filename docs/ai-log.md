@@ -861,3 +861,57 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con la revisión de consistencia hecha con el criterio de parada. Sin push.
+
+### Prompt 66
+
+- **Categoría:** `🔍 Investigación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Cuál es el estado de estos dos puntos:
+  7. Quitar las versiones manuales de los documentos
+  8. Verificar la publicación antes de entregar
+  ```
+
+- **Resultado:** Se confirmó que los puntos 7 y 8 no se aplicaron (el usuario eligió solo del 1 al 6). Evidencia: `docs/architecture.md` dice estar alineado con el PRD v0.4, pero el PRD ya está en v0.5; y ni el checklist ni `check_docs.py` verifican la publicación de la rama. Respuesta en el chat; sin cambios en archivos.
+
+### Prompt 67
+
+- **Categoría:** `📏 Reglas del proyecto`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Sí, aplica el 7 y el 8 pero no hagas commit
+  ```
+
+- **Resultado:** Punto 7: se quitaron los encabezados "borrador v0.x" de visión, PRD, arquitectura, historias y tickets (ahora remiten a `git log`), las referencias a versiones anteriores citan commits y `check_docs.py` rechaza encabezados de versión manual. Punto 8: nueva opción `python3 scripts/check_docs.py --release` (rama en origin, igual a HEAD y árbol limpio) y paso en G3, la guía, el checklist, la plantilla de consistencia, la regla `sdlc-gates` y `CLAUDE.md`. Seis pruebas nuevas escritas antes de la implementación (26 en total). Sin commit.
+
+### Prompt 68
+
+- **Categoría:** `📏 Reglas del proyecto`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Deshaz el cambio 8
+  ```
+
+- **Resultado:** Se deshizo el punto 8 (verificar la publicación antes de entregar): se quitaron la opción `--release` y sus 4 pruebas de `scripts/check_docs.py` y `scripts/test_check_docs.py`, y el paso correspondiente de la guía, el checklist, la regla `sdlc-gates`, la plantilla de consistencia y `CLAUDE.md`. El punto 7 (sin versiones manuales) se mantiene. Sin commit.
+
+### Prompt 69
+
+- **Categoría:** `📏 Reglas del proyecto`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con el punto 7 (sin versiones manuales en los documentos y su comprobación en `check_docs.py`). Sin push.

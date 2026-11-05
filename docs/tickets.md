@@ -2,7 +2,7 @@
 
 > Tickets derivados de [`docs/user-stories.md`](./user-stories.md). Una historia genera varios tickets. Cada ticket sigue la definition of done de `CLAUDE.md`. La implementación de cada historia se hace como un cambio de OpenSpec que agrupa sus tickets.
 
-- **Estado:** borrador v0.4 (incorpora la revisión adversarial de la arquitectura y las revisiones de consistencia)
+- **Historial:** sin versión manual; los cambios se consultan con `git log -- docs/tickets.md`.
 - **Fecha:** 2026-11-04
 - **Tipos:** `infra`, `db`, `backend`, `ai`, `frontend`, `test`, `producto` (tareas que no son código)
 - **Contrato de cada ticket:** `Expone` lista lo que el ticket crea (endpoints, tablas, trabajos, servicios, pantallas) y `Consume` lo que usa de otros tickets, con el mismo nombre entre comillas invertidas.

@@ -306,6 +306,7 @@ Si la lectura encuentra un tipo de error que se puede detectar con un script, el
 
 - Horas, totales y conteos se calculan desde su fuente (`docs/tickets.md`) con un script; nunca se escriben a mano en otros documentos.
 - Los documentos de entrega que repiten contenido (por ejemplo, `readme.md`) se generan desde `docs/` con `scripts/check_docs.py --build-readme`; los conteos (escenarios, tickets) también se calculan.
+- Los documentos no llevan versión manual ("borrador v0.x"): se desactualiza con cada cambio. El historial vive en git (`git log -- <archivo>`) y las referencias a un estado anterior citan el commit.
 
 ## 6. Dónde vive cada cosa
 

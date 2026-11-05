@@ -1,6 +1,6 @@
 # Revisión adversarial del PRD
 
-> Revisión de `docs/prd.md` v0.1 hecha con IA en el rol de revisor de producto adversarial (2026-11-04). Los hallazgos se priorizan por riesgo. La columna "Resolución" indica cómo quedó cada uno en la v0.2.
+> Revisión de `docs/prd.md` en su primera versión (commit `5ae3990`), hecha con IA en el rol de revisor de producto adversarial (2026-11-04). Los hallazgos se priorizan por riesgo. La columna "Resolución" indica cómo quedó cada uno tras las correcciones (commit `d3cb5ae`).
 
 **Prompt usado:** "Cambia de sombrero: sé un revisor de producto adversarial. Critica el PRD: ¿qué requerimientos están ambiguos o no se pueden probar? ¿Qué suposición, si resulta ser falsa, se trae abajo todo el MVP? ¿En dónde hay desviación del alcance escondida? ¿Qué métrica no hay forma de medir bien en la vida real? Priorízalo todo por nivel de riesgo."
 

@@ -155,5 +155,14 @@ class ReadmeCheck(unittest.TestCase):
             self.assertEqual(c.check_readme(), ["readme.md: out of date; run python3 scripts/check_docs.py --build-readme"])
 
 
+class ManualVersionCheck(unittest.TestCase):
+    def test_manual_version_header_is_reported(self):
+        self.assertEqual(c.manual_version_errors("docs/prd.md", "- **Estado:** borrador v0.5 (algo)"),
+                         ["docs/prd.md: manual version header; use git history instead"])
+
+    def test_adr_status_is_not_a_manual_version(self):
+        self.assertEqual(c.manual_version_errors("docs/adr/0001.md", "- **Estado:** aceptada"), [])
+
+
 if __name__ == "__main__":
     unittest.main()

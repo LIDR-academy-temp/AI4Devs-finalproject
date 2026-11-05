@@ -59,7 +59,7 @@ Resultado: proceso por fases alineado con las entregas del curso. Después, una 
 HU5 se queda como should-have, i18n también pero usando el inglés como lenguaje principal; arranca el PRD
 ```
 
-Resultado: [`docs/prd.md`](./docs/prd.md) v0.1 con objetivos, flujo principal, historias y requisitos funcionales y no funcionales.
+Resultado: primera versión de [`docs/prd.md`](./docs/prd.md) (commit `5ae3990`) con objetivos, flujo principal, historias y requisitos funcionales y no funcionales.
 
 **Prompt 3:** Revisión adversarial del PRD
 
@@ -70,7 +70,7 @@ PRD adversarial
 Cambia de sombrero: sé un revisor de producto adversarial. Critíca el PRD: ¿qué requerimientos están ambiguos o nomás no se pueden probar? ¿Qué suposición, si resulta ser falsa, se trae abajo todo el MVP? ¿En dónde hay desviación del alcance escondido? ¿Qué métrica nomás no hay forma de medir bien en la vida real? Priorízalo todo por nivel de riesgo.
 ```
 
-Resultado: 4 hallazgos críticos, 8 altos y 11 medios o bajos ([`docs/prd-review.md`](./docs/prd-review.md)). Tras las decisiones del usuario ("A, y aplica el resto de las correcciones"), el PRD pasó a la v0.2.
+Resultado: 4 hallazgos críticos, 8 altos y 11 medios o bajos ([`docs/prd-review.md`](./docs/prd-review.md)). Tras las decisiones del usuario ("A, y aplica el resto de las correcciones"), se corrigió el PRD (commit `d3cb5ae`).
 
 ---
 

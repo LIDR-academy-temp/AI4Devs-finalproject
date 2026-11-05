@@ -18,7 +18,7 @@
 | Documento | Contenido |
 | --- | --- |
 | [`docs/vision.md`](./docs/vision.md) | Problema, hipótesis, alcance y exclusiones |
-| [`docs/prd.md`](./docs/prd.md) | Requisitos del MVP (v0.2) |
+| [`docs/prd.md`](./docs/prd.md) | Requisitos, épicas y log de decisiones del MVP |
 | [`docs/prd-review.md`](./docs/prd-review.md) | Revisión adversarial del PRD |
 | [`docs/architecture.md`](./docs/architecture.md) | Arquitectura, modelo de datos y API |
 | [`docs/adr/`](./docs/adr/) | Decisiones de arquitectura (ADR-0001 a ADR-0008) |

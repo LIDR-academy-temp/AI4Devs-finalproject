@@ -15,6 +15,7 @@ Checks (each one has a mutation test in scripts/test_check_docs.py):
     and each element has a single exposing ticket
   - the build order in docs/user-stories.md respects ticket dependencies and lists every ticket
   - story estimates match the order table and the sum of their tickets
+  - no document keeps a manual version header (history lives in git)
   - readme.md is up to date with scripts/readme.template.md and docs/
 """
 import re
@@ -274,6 +275,18 @@ def check_backlog():
             + check_build_order(tickets, stories) + check_story_hours(stories, tickets))
 
 
+# ---------- manual versions ----------
+
+def manual_version_errors(label, text):
+    if re.search(r"^- \*\*Estado:\*\* borrador v\d", text, re.M):
+        return [f"{label}: manual version header; use git history instead"]
+    return []
+
+
+def check_manual_versions():
+    return [e for path in scanned_files() for e in manual_version_errors(str(path.relative_to(ROOT)), path.read_text(encoding="utf-8"))]
+
+
 # ---------- readme generation ----------
 
 def md_block(text, after_heading, lang):
@@ -390,7 +403,7 @@ def main(argv):
         print("readme.md regenerated")
         return 0
     defs = definitions()
-    errors = check_totals() + check_references(defs) + check_adrs(defs) + check_backlog() + check_readme()
+    errors = check_totals() + check_references(defs) + check_adrs(defs) + check_backlog() + check_manual_versions() + check_readme()
     for error in errors:
         print(f"ERROR {error}")
     totals = ticket_totals(read("docs/tickets.md"))

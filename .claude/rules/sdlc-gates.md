@@ -12,3 +12,4 @@ Sigue `docs/ai-sdlc-claude-code-openspec.md` y `docs/sdlc-checklist.md` sin espe
 - **Contratos de ticket**: cada ticket nuevo o modificado declara `Expone` y `Consume`; si consume algo, depende del ticket que lo expone. El orden de construcción se ajusta a las dependencias, no al revés.
 - **Revisión de consistencia**: aplica el criterio de parada de la sección 5.3 de la guía. Si encuentras un tipo de error que un script puede detectar, agrega la comprobación a `scripts/check_docs.py` con una prueba de mutación en `scripts/test_check_docs.py` antes de otra pasada manual.
 - **Antes de cada entrega**, ejecuta la revisión de consistencia con `docs/prompts/consistency-review.md`.
+- **Versiones**: no agregues encabezados de versión manual ("borrador v0.x") a los documentos; para referirte a un estado anterior, cita el commit.
