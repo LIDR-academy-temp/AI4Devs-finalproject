@@ -88,8 +88,8 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
 
 ## 5. Settlement: invariante de filas de otro proveedor (TDD)
 
-- [ ] 5.1 Ampliar `inclusion.test.ts` (y `compute-settlement.test.ts`) con una fila `matched` de otro proveedor: `classifyRows` lanza un error que nombra `sheetId:rowNo` y "another provider", y no hay movimientos ni `toAssign`. Comprobar que falla.
-- [ ] 5.2 Commit: test(settlement): invariante de filas de otro proveedor en rojo (#92), y `git push`.
+- [x] 5.1 Ampliar `inclusion.test.ts` (y `compute-settlement.test.ts`) con una fila `matched` de otro proveedor: `classifyRows` lanza un error que nombra `sheetId:rowNo` y "another provider", y no hay movimientos ni `toAssign`. Comprobar que falla.
+- [x] 5.2 Commit: test(settlement): invariante de filas de otro proveedor en rojo (#92), y `git push`.
 - [ ] 5.3 Implementar D5 (`classifyRows(rows, inclusions, providerId)` y su llamada en `computeSettlement`). Verificar que el test pasa y que los tests de dominio de settlement siguen en verde, con `Skipped` sin cambios.
 - [ ] 5.4 Commit: feat(settlement): una fila de otro proveedor nunca se procesa (#92), y `git push`.
 

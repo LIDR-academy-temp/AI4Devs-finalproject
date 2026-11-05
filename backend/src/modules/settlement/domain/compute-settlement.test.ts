@@ -310,3 +310,24 @@ describe('computeSettlement', () => {
     expect(plan.channels).toEqual({ names: ['RAM-01'], label: 'RAM-01', toAssign: [] })
   })
 })
+
+describe('a row of another provider in the engine input (#92, design D5)', () => {
+  it('makes the computation fail: no movement and no channel to assign is planned', () => {
+    const foreign = row(3, {}, txn({ transactionId: 30n, providerId: 102, channelId: 1011 }))
+
+    expect(() => computeSettlement(input({ rows: [row(2), foreign] }))).toThrow(/another provider/)
+  })
+
+  it('batch-clean has none: it computes as always, with the six reasons of skipped', async () => {
+    const plan = computeSettlement(await settlementSampleInput('batch-clean'))
+
+    expect(Object.keys(plan.skipped)).toEqual([
+      'ignored',
+      'unmatched',
+      'ambiguous',
+      'excluded',
+      'unresolvedStatus',
+      'pending',
+    ])
+  })
+})
