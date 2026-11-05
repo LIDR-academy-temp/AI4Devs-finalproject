@@ -2,7 +2,7 @@
 
 > Fase 1 (Producto) del AI SDLC. Detalla solo lo que entra en el MVP. El contexto, la hipótesis y el alcance completo están en [`docs/vision.md`](./vision.md). La revisión adversarial que originó la versión 0.2 está en [`docs/prd-review.md`](./prd-review.md).
 
-- **Estado:** borrador v0.2 (incorpora la revisión adversarial)
+- **Estado:** borrador v0.3 (incorpora la revisión adversarial y las épicas)
 - **Fecha:** 2026-11-04
 - **Presupuesto de desarrollo:** 30 horas asistidas por IA, con tope aceptado de 36 horas (+20 %)
 
@@ -58,16 +58,30 @@ El flujo E2E obligatorio para la entrega final cubre los pasos 1, 4b, 5, 6, 7 y 
 
 ## 5. Alcance del MVP
 
-### 5.1 Historias de usuario
+### 5.1 Épicas e historias de usuario
 
-| Id | Historia | Prioridad |
-| --- | --- | --- |
-| HU1 | Como buscador de empleo, quiero que las ofertas de mis empresas objetivo y de mis búsquedas lleguen automáticamente, y poder agregar otras pegando su texto, para tenerlas todas en un solo lugar. | Must-have |
-| HU2 | Como buscador de empleo, quiero cargar mi currículum y obtener un perfil estructurado que pueda corregir, para que el sistema me conozca. | Must-have |
-| HU3 | Como buscador de empleo, quiero que cada oferta pase por mis filtros duros, reciba un puntaje de encaje explicado y pueda registrar mi decisión, para decidir rápido si aplico. | Must-have |
-| HU4 | Como buscador de empleo, quiero gestionar mis candidaturas en un pipeline con historial de cambios, para saber en qué estado va cada una. | Must-have |
-| HU5 | Como buscador de empleo, quiero pegar un correo en una candidatura y que la IA lo clasifique, y recibir alertas de seguimiento, para no perder ningún proceso. | Should-have |
-| HU6 | Como buscador de empleo, quiero usar la interfaz en español, para trabajar en mi idioma cuando lo prefiera. | Should-have |
+Las épicas agrupan los requisitos en bloques de valor y corresponden a capabilities de OpenSpec (`openspec/specs/<capability>/`). Cada historia se implementa como un cambio de OpenSpec. Detalle y criterios de aceptación en [`docs/user-stories.md`](./user-stories.md).
+
+| Épica | Capability | Historias | Prioridad |
+| --- | --- | --- | --- |
+| E1 Ingreso de ofertas | `job-intake` | HU1, HU2, HU3 | Must-have |
+| E2 Perfil profesional | `resume-profile` | HU4 | Must-have |
+| E3 Evaluación de ofertas | `job-matching` | HU5, HU6, HU7 | Must-have |
+| E4 Seguimiento de candidaturas | `application-tracking` | HU8, HU9 | Must-have (HU9 should-have) |
+| E5 Plataforma | `platform` | HU10 y el walking skeleton | Must-have (HU10 should-have) |
+
+| Id | Épica | Historia | Requisitos | Prioridad |
+| --- | --- | --- | --- | --- |
+| HU1 | E1 | Como buscador de empleo, quiero agregar una oferta pegando su texto, para registrar ofertas de cualquier portal. | RF-01 a RF-03, RF-05, RF-06 | Must-have |
+| HU2 | E1 | Como buscador de empleo, quiero importar automáticamente las ofertas de mis empresas objetivo desde su job board, para no revisarlas portal por portal. | RF-04, RF-04b, RF-05, RF-09 | Must-have |
+| HU3 | E1 | Como buscador de empleo, quiero guardar búsquedas que se ejecuten en un agregador de ofertas, para recibir ofertas de empresas sin API propia. | RF-04a, RF-04b, RF-05 | Must-have |
+| HU4 | E2 | Como buscador de empleo, quiero cargar mi currículum y obtener un perfil estructurado que pueda corregir, para que el sistema me conozca. | RF-10 a RF-14 | Must-have (PDF: should-have) |
+| HU5 | E3 | Como buscador de empleo, quiero que cada oferta pase por mis criterios no negociables, para descartar sin esfuerzo las que no me sirven. | RF-20 a RF-23 | Must-have |
+| HU6 | E3 | Como buscador de empleo, quiero un puntaje de encaje explicado y verificable, para saber por qué una oferta encaja o no con mi perfil. | RF-24 a RF-28, RNF-08 | Must-have |
+| HU7 | E3 | Como buscador de empleo, quiero registrar si aplico o descarto cada oferta, para cerrar la evaluación y medir cuánto tardo en decidir. | RF-07, RNF-14 | Must-have |
+| HU8 | E4 | Como buscador de empleo, quiero gestionar mis candidaturas en un pipeline con historial de cambios, para saber en qué estado va cada una. | RF-30 a RF-35 | Must-have |
+| HU9 | E4 | Como buscador de empleo, quiero pegar un correo en una candidatura y que la IA lo clasifique, y recibir alertas de seguimiento, para no perder ningún proceso. | RF-40 a RF-43 | Should-have |
+| HU10 | E5 | Como buscador de empleo, quiero usar la interfaz en español, para trabajar en mi idioma cuando lo prefiera. | RF-50 a RF-52 | Should-have |
 
 La autenticación de un solo usuario es un requisito técnico del walking skeleton, no una historia (ver RNF-01).
 
@@ -79,7 +93,7 @@ Todo lo etiquetado `v1.1` o `futuro` en `docs/vision.md` (sección 6), entre otr
 
 Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 
-### HU1 — Ofertas
+### E1 — Ingreso de ofertas (HU1, HU2, HU3)
 
 | Id | Requisito | Prioridad |
 | --- | --- | --- |
@@ -95,7 +109,7 @@ Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 | RF-08 | El sistema descarga y lee el contenido a partir de una URL pegada. | C |
 | RF-09 | El usuario gestiona su lista de empresas objetivo: nombre, tipo (`big` o `mid`), plataforma de empleo y, si la plataforma tiene API, el identificador de su job board. Las empresas sin API se registran igual. | M |
 
-### HU2 — Currículum
+### E2 — Perfil profesional (HU4)
 
 | Id | Requisito | Prioridad |
 | --- | --- | --- |
@@ -105,7 +119,7 @@ Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 | RF-13 | El usuario revisa y corrige el perfil. El perfil corregido es la fuente para el puntaje. | M |
 | RF-14 | Hay un solo currículum activo. Cargar uno nuevo crea una nueva versión y marca los puntajes anteriores como desactualizados. Los puntajes se recalculan solo a pedido del usuario, quien ve antes cuántas ofertas se recalcularán. | M |
 
-### HU3 — Filtros duros, puntaje y decisión
+### E3 — Evaluación de ofertas (HU5, HU6, HU7)
 
 | Id | Requisito | Prioridad |
 | --- | --- | --- |
@@ -132,7 +146,7 @@ Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 
 Seniority normalizado: `junior`, `mid`, `senior`, `staff`, `principal`. El mapeo de títulos y niveles propios de empresas (por ejemplo, L5, E5, SDE II, IC4) vive en una tabla de configuración versionada en el repositorio.
 
-### HU4 — Pipeline de candidaturas
+### E4 — Seguimiento de candidaturas (HU8)
 
 | Id | Requisito | Prioridad |
 | --- | --- | --- |
@@ -144,7 +158,7 @@ Seniority normalizado: `junior`, `mid`, `senior`, `staff`, `principal`. El mapeo
 | RF-34 | El usuario ve el detalle de una candidatura: oferta, puntaje, estado e historial. | M |
 | RF-35 | El usuario agrega notas libres al historial. | S |
 
-### HU5 — Correos y alertas (should-have)
+### E4 — Correos y alertas (HU9, should-have)
 
 | Id | Requisito | Prioridad |
 | --- | --- | --- |
@@ -153,7 +167,7 @@ Seniority normalizado: `junior`, `mid`, `senior`, `staff`, `principal`. El mapeo
 | RF-42 | El sistema sugiere el cambio de estado que corresponde a la clasificación; el usuario lo confirma. | S |
 | RF-43 | El sistema marca las candidaturas `applied` o `interviewing` sin actividad durante N días (configurable; por defecto 10). Cuenta como actividad un cambio de estado, una nota o un correo. | S |
 
-### HU6 — Interfaz en español (should-have)
+### E5 — Interfaz en español (HU10, should-have)
 
 | Id | Requisito | Prioridad |
 | --- | --- | --- |
@@ -161,7 +175,7 @@ Seniority normalizado: `junior`, `mid`, `senior`, `staff`, `principal`. El mapeo
 | RF-51 | El usuario cambia el idioma de la interfaz entre inglés y español; la elección se recuerda. | S |
 | RF-52 | Los análisis de la IA se generan en el idioma de la interfaz. | C |
 
-> RF-50 es must-have aunque pertenece a HU6, porque externalizar las cadenas desde el walking skeleton cuesta poco y evita retrabajo.
+> RF-50 es must-have aunque pertenece a HU10, porque externalizar las cadenas desde el walking skeleton cuesta poco y evita retrabajo.
 
 ## 7. Criterios de aceptación
 
@@ -230,7 +244,7 @@ Ver `docs/vision.md`, sección 8, y `docs/prd-review.md`. Riesgos adicionales de
 
 | Riesgo | Mitigación |
 | --- | --- |
-| El MVP imprescindible (~33 h) no cabe en el tope de 36 h, sobre todo por la curva de aprendizaje de AdonisJS v7 | Orden de construcción: walking skeleton → HU2 → HU1 (pegar) → HU3 → HU4 → importación. Orden de recorte: agregador (queda solo en job boards) → adaptador de Lever → recálculo masivo (RF-14 a pedido ya lo limita). |
+| El MVP imprescindible (~33 h) no cabe en el tope de 36 h, sobre todo por la curva de aprendizaje de AdonisJS v7 | Orden de construcción: walking skeleton → HU4 → HU1 → HU5 → HU6 → HU7 → HU8 → HU2 → HU3. Orden de recorte: HU3 (agregador) → adaptador de Lever dentro de HU2. |
 | El agregador no cubre las empresas grandes o sus términos no lo permiten | Spike de 30 minutos antes de implementarlo; plan B: adaptador de SmartRecruiters. |
 | El filtro de roles por palabras clave descarta ofertas buenas o deja pasar irrelevantes | Las ofertas descartadas siguen visibles con su motivo; el usuario ajusta las palabras clave. |
 
@@ -239,15 +253,15 @@ Ver `docs/vision.md`, sección 8, y `docs/prd-review.md`. Riesgos adicionales de
 | Decisión | Se resuelve en |
 | --- | --- |
 | Proveedor del agregador de ofertas | Spike del ticket T-27 |
-| Fórmula del puntaje: peso de habilidades, experiencia y seniority | Cambio de OpenSpec de HU3 |
-| Tabla de mapeo de seniority | Cambio de OpenSpec de HU3 |
+| Fórmula del puntaje: peso de habilidades, experiencia y seniority | Cambio de OpenSpec de HU6 |
+| Tabla de mapeo de seniority | Cambio de OpenSpec de HU5 |
 
 ## 13. Trazabilidad
 
 ```text
-OBJ-1 ──▶ HU1, HU3 ──▶ RF-01…RF-07, RF-20…RF-26, RNF-14
-OBJ-2 ──▶ HU3      ──▶ RF-24, RF-24a, RF-25, RNF-08
-OBJ-3 ──▶ HU4, HU5 ──▶ RF-30…RF-34, RF-40…RF-43
-OBJ-4 ──▶ todas    ──▶ RNF-10, RNF-12, RNF-13
-OBJ-5 ──▶ HU1      ──▶ RF-04, RF-04a, RF-04b, RF-09, RNF-14
+OBJ-1 ──▶ E1, E3 ──▶ HU1, HU5, HU6, HU7 ──▶ RF-01…RF-07, RF-20…RF-26, RNF-14
+OBJ-2 ──▶ E3     ──▶ HU6                ──▶ RF-24, RF-24a, RF-25, RNF-08
+OBJ-3 ──▶ E4     ──▶ HU8, HU9           ──▶ RF-30…RF-34, RF-40…RF-43
+OBJ-4 ──▶ todas  ──▶ todas              ──▶ RNF-10, RNF-12, RNF-13
+OBJ-5 ──▶ E1     ──▶ HU2, HU3           ──▶ RF-04, RF-04a, RF-04b, RF-09, RNF-14
 ```

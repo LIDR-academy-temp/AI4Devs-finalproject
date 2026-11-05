@@ -1,46 +1,65 @@
 # Historias de usuario — ATS personal
 
-> Detalle de las historias del MVP definidas en [`docs/prd.md`](./prd.md) (sección 5). Cada historia usa lenguaje de negocio; la implementación técnica se describe en [`docs/tickets.md`](./tickets.md). Los criterios de aceptación (Dado/Cuando/Entonces) se convierten en escenarios de las specs de OpenSpec.
+> Épicas e historias del MVP definidas en [`docs/prd.md`](./prd.md) (sección 5). Cada épica corresponde a una capability de OpenSpec y cada historia a un cambio de OpenSpec. Las historias usan lenguaje de negocio; la implementación técnica está en [`docs/tickets.md`](./tickets.md). Los criterios de aceptación (Dado/Cuando/Entonces) se convierten en escenarios de las specs.
 
-- **Estado:** borrador v0.2 (incorpora la revisión adversarial de `docs/prd-review.md`)
+- **Estado:** borrador v0.3 (épicas e historias reestructuradas)
 - **Fecha:** 2026-11-04
 
 ---
 
-## Resumen y orden de construcción
+## Épicas
 
-| Orden | Id | Historia | Prioridad | Estimación | Depende de |
-| --- | --- | --- | --- | --- | --- |
-| 0 | — | Walking skeleton (infraestructura, ver tickets) | Must-have | 6.25 h | — |
-| 1 | HU2 | Cargar el currículum y obtener un perfil | Must-have | 2.75 h (+1 h PDF, should-have) | Walking skeleton |
-| 2 | HU1 | Recolectar, importar y agregar ofertas | Must-have | 11 h | Walking skeleton |
-| 3 | HU3 | Filtros duros, puntaje y decisión | Must-have | 7 h | HU1, HU2 |
-| 4 | HU4 | Pipeline de candidaturas | Must-have | 3 h | HU3 |
-| 5 | HU5 | Correos y alertas de seguimiento | Should-have | 3 h | HU4 |
-| 6 | HU6 | Interfaz en español | Should-have | 2 h | Walking skeleton |
+| Épica | Capability | Valor | Historias | Estimación |
+| --- | --- | --- | --- | --- |
+| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 10 h |
+| E2 Perfil profesional | `resume-profile` | El sistema conoce la experiencia real del usuario | HU4 | 2.75 h (+1 h should-have) |
+| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8 h |
+| E4 Seguimiento de candidaturas | `application-tracking` | Saber en qué va cada proceso y no perder seguimientos | HU8, HU9 | 3 h (+3 h should-have) |
+| E5 Plataforma | `platform` | Acceso seguro, despliegue e idioma | HU10 y walking skeleton | 6.25 h (+2 h should-have) |
 
-Estimación del MVP imprescindible: ~30 h (walking skeleton + HU1 a HU4) más 2.25 h para la prueba E2E y la documentación final: ~33 h, dentro del tope de 36 h. Las historias y requisitos should-have se construyen solo si queda tiempo. El detalle por ticket está en `docs/tickets.md`.
+Más 2.25 h para la prueba E2E y la documentación final (T-21). MVP imprescindible: ~32 h, dentro del tope de 36 h.
 
-Dentro de HU1, el orden es: pegar el texto → adaptador de Greenhouse → adaptadores de Ashby y Lever → spike y búsquedas en el agregador. Orden de recorte si falta tiempo: agregador → Lever.
+## Historias y orden de construcción
+
+| Orden | Id | Épica | Historia | Prioridad | Estimación | Depende de |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0 | — | E5 | Walking skeleton (ver tickets T-01 a T-05) | Must-have | 6.25 h | — |
+| 1 | HU4 | E2 | Cargar el currículum y obtener un perfil | Must-have | 2.75 h | Walking skeleton |
+| 2 | HU1 | E1 | Agregar una oferta pegando su texto | Must-have | 3.5 h | Walking skeleton |
+| 3 | HU5 | E3 | Filtrar ofertas con mis criterios no negociables | Must-have | 3 h | HU1 |
+| 4 | HU6 | E3 | Obtener un puntaje de encaje explicado | Must-have | 4 h | HU4, HU5 |
+| 5 | HU7 | E3 | Registrar mi decisión sobre cada oferta | Must-have | 1 h | HU1 |
+| 6 | HU8 | E4 | Gestionar candidaturas en un pipeline | Must-have | 3 h | HU7 |
+| 7 | HU2 | E1 | Importar ofertas de empresas objetivo desde su job board | Must-have | 4 h | HU1, HU5 |
+| 8 | HU3 | E1 | Buscar ofertas en un agregador | Must-have | 2.5 h | HU2 |
+| 9 | HU9 | E4 | Correos y alertas de seguimiento | Should-have | 3 h | HU8 |
+| 10 | HU10 | E5 | Interfaz en español | Should-have | 2 h | Walking skeleton |
+
+Orden de recorte si falta tiempo: HU3 → adaptador de Lever dentro de HU2.
 
 ---
 
-## HU1 — Recolectar, importar y agregar ofertas
+## E1 — Ingreso de ofertas
+
+Capability `job-intake`. La recolección automática es tan importante como pegar ofertas a mano. En todos los casos, la oferta se guarda con campos estructurados para poder filtrarla y compararla con el currículum.
+
+### HU1 — Agregar una oferta pegando su texto
 
 **Como** buscador de empleo,
-**quiero** que las ofertas de mis empresas objetivo y de mis búsquedas lleguen automáticamente, y poder agregar otras pegando su texto,
-**para** tener todas las ofertas que me interesan en un solo lugar sin buscarlas portal por portal.
+**quiero** agregar una oferta pegando su texto,
+**para** registrar ofertas de cualquier portal, incluidos los que no tienen API.
 
+- **Épica:** E1
 - **Prioridad:** must-have
-- **Estimación:** 11 h
-- **Requisitos:** RF-01 a RF-06, RF-04a, RF-04b, RF-09
-- **Objetivos:** OBJ-1, OBJ-5
+- **Estimación:** 3.5 h
+- **Requisitos:** RF-01 a RF-03, RF-05, RF-06
+- **Objetivos:** OBJ-1
 
-### Contexto
+#### Contexto
 
-La recolección automática es tan importante como pegar ofertas. Las empresas que publican en Greenhouse, Ashby o Lever se importan desde su job board. Para las empresas grandes sin API propia, el sistema ejecuta búsquedas guardadas en un agregador de ofertas. Cualquier otra oferta se agrega pegando su texto. En todos los casos, la oferta se guarda con campos estructurados para poder filtrarla y compararla con el currículum.
+Las empresas grandes de la lista publican en portales propios sin API. Pegar el texto es la vía universal: la IA extrae los campos y el usuario puede corregirlos antes o después de guardar.
 
-### Criterios de aceptación
+#### Criterios de aceptación
 
 ```gherkin
 Escenario: Extraer los campos de una oferta pegada
@@ -59,6 +78,41 @@ Escenario: Un dato ausente queda como desconocido
   Cuando el sistema extrae los campos
   Entonces el salario aparece como "desconocido"
 
+Escenario: Ver y ordenar la lista de ofertas
+  Dado que tengo varias ofertas guardadas
+  Cuando abro la lista de ofertas
+  Entonces veo para cada una su título, empresa, origen, resultado del filtro, puntaje y decisión
+  Y puedo ordenarlas por puntaje o por fecha
+```
+
+#### Reglas de negocio
+
+- Los campos ausentes quedan como desconocidos; la calidad de la extracción se mide con el golden set (RF-02).
+- Una oferta pegada con la misma URL que otra ya guardada se rechaza como duplicada.
+
+#### Fuera de alcance
+
+Descargar una oferta a partir de su URL (RF-08, could-have).
+
+### HU2 — Importar ofertas de empresas objetivo desde su job board
+
+**Como** buscador de empleo,
+**quiero** importar automáticamente las ofertas de mis empresas objetivo desde su job board,
+**para** no revisar sus portales uno por uno.
+
+- **Épica:** E1
+- **Prioridad:** must-have
+- **Estimación:** 4 h
+- **Requisitos:** RF-04, RF-04b, RF-05, RF-09
+- **Objetivos:** OBJ-5
+
+#### Contexto
+
+Las empresas que publican en Greenhouse (por ejemplo, Anthropic), Ashby (por ejemplo, OpenAI) o Lever se importan desde la API pública de su job board. Las empresas sin API se registran igual y sus ofertas llegan por HU1 o HU3.
+
+#### Criterios de aceptación
+
+```gherkin
 Escenario: Registrar una empresa objetivo
   Dado que estoy en la pantalla de empresas objetivo
   Cuando registro una empresa con su nombre, su tipo y su plataforma de empleo
@@ -77,11 +131,6 @@ Esquema del escenario: Importar las ofertas de una empresa desde su job board
     | Ashby      |
     | Lever      |
 
-Escenario: Guardar y ejecutar una búsqueda en el agregador
-  Dado que guardé una búsqueda con las palabras "software engineer" y la ubicación "Seattle, WA"
-  Cuando pido ejecutarla
-  Entonces las ofertas encontradas aparecen en mi lista con la búsqueda como origen
-
 Escenario: Tope de ofertas por sincronización
   Dado un tope de 50 ofertas nuevas por sincronización
   Cuando una importación encuentra 140 ofertas nuevas
@@ -92,42 +141,86 @@ Escenario: No duplicar ofertas
   Dada una oferta que ya importé
   Cuando importo otra vez las ofertas de la misma fuente
   Entonces la oferta no aparece duplicada
-
-Escenario: Ver y ordenar la lista de ofertas
-  Dado que tengo varias ofertas guardadas
-  Cuando abro la lista de ofertas
-  Entonces veo para cada una su título, empresa, origen, resultado del filtro, puntaje y decisión
-  Y puedo ordenarlas por puntaje o por fecha
 ```
 
-### Reglas de negocio
+#### Reglas de negocio
 
-- Los campos ausentes en la oferta quedan como desconocidos; la calidad de la extracción se mide con el golden set (RF-02).
 - Una oferta se identifica por su fuente y su identificador externo, o por su URL.
-- Las empresas sin API se registran igual; sus ofertas llegan por búsquedas en el agregador o pegando el texto.
+- Cada sincronización respeta el tope de ofertas nuevas (RF-04b) y aplica los filtros duros antes de la IA.
 
-### Fuera de alcance
+#### Fuera de alcance
 
-Descargar una oferta a partir de su URL (RF-08, could-have), adaptador de Workday (futuro), alertas de empleo por Gmail (v1.1) y SmartRecruiters (v1.1, salvo que reemplace al agregador).
+Adaptadores de SmartRecruiters (v1.1) y Workday (futuro); alertas de empleo por Gmail (v1.1).
+
+### HU3 — Buscar ofertas en un agregador
+
+**Como** buscador de empleo,
+**quiero** guardar búsquedas que se ejecuten en un agregador de ofertas,
+**para** recibir ofertas de las empresas grandes que no tienen API propia.
+
+- **Épica:** E1
+- **Prioridad:** must-have (primera en recortarse)
+- **Estimación:** 2.5 h
+- **Requisitos:** RF-04a, RF-04b, RF-05
+- **Objetivos:** OBJ-5
+
+#### Contexto
+
+El proveedor del agregador se elige con un spike (T-27). Si ninguno es viable por cobertura, cuota o términos de uso, esta historia se reemplaza por un adaptador de SmartRecruiters dentro de HU2.
+
+#### Criterios de aceptación
+
+```gherkin
+Escenario: Guardar y ejecutar una búsqueda en el agregador
+  Dado que guardé una búsqueda con las palabras "software engineer" y la ubicación "Seattle, WA"
+  Cuando pido ejecutarla
+  Entonces las ofertas encontradas aparecen en mi lista con la búsqueda como origen
+
+Escenario: Tope de ofertas en una búsqueda
+  Dado un tope de 50 ofertas nuevas por sincronización
+  Cuando una búsqueda encuentra 80 ofertas nuevas
+  Entonces solo se agregan 50
+  Y veo cuántas se omitieron por el tope
+
+Escenario: Cuota del agregador agotada
+  Dado que la cuota mensual del agregador se agotó
+  Cuando pido ejecutar una búsqueda
+  Entonces la búsqueda termina con un mensaje claro sobre la cuota
+  Y las ofertas ya guardadas no se modifican
+```
+
+#### Reglas de negocio
+
+- Las ofertas de una búsqueda se deduplican contra todas las fuentes.
+- La clave del agregador vive en una variable de entorno.
+
+#### Fuera de alcance
+
+Búsquedas programadas automáticamente (v1.1).
 
 ---
 
-## HU2 — Cargar el currículum y obtener un perfil
+## E2 — Perfil profesional
+
+Capability `resume-profile`. El perfil es la base del puntaje de encaje.
+
+### HU4 — Cargar el currículum y obtener un perfil
 
 **Como** buscador de empleo,
 **quiero** cargar mi currículum y obtener un perfil estructurado que pueda corregir,
 **para** que el sistema compare cada oferta con mi experiencia real.
 
-- **Prioridad:** must-have (carga en PDF: should-have)
+- **Épica:** E2
+- **Prioridad:** must-have (PDF: should-have)
 - **Estimación:** 2.75 h (+1 h para PDF)
 - **Requisitos:** RF-10 a RF-14
 - **Objetivos:** OBJ-1, OBJ-2
 
-### Contexto
+#### Contexto
 
-El perfil es la base del puntaje de encaje. El currículum se guarda en Markdown, que es más barato de enviar a la IA que un PDF. La carga en PDF, con conversión única a Markdown, es should-have.
+El currículum se guarda en Markdown, que es más barato de enviar a la IA que un PDF. La carga en PDF, con conversión única a Markdown, es should-have.
 
-### Criterios de aceptación
+#### Criterios de aceptación
 
 ```gherkin
 Escenario: Cargar el currículum en Markdown
@@ -162,34 +255,39 @@ Escenario: PDF que no se puede leer (should-have)
   Entonces el sistema me pide pegar el contenido como texto
 ```
 
-### Reglas de negocio
+#### Reglas de negocio
 
 - Solo hay un currículum activo.
 - El perfil corregido por el usuario prevalece sobre el generado.
 - Un currículum nuevo no recalcula puntajes automáticamente.
 
-### Fuera de alcance
+#### Fuera de alcance
 
 Varios currículums por tipo de rol (futuro) y análisis del currículum como lo haría el ATS de una empresa (futuro).
 
 ---
 
-## HU3 — Filtros duros, puntaje y decisión
+## E3 — Evaluación de ofertas
+
+Capability `job-matching`. Primero filtros sin IA, luego puntaje explicado y, al final, la decisión del usuario.
+
+### HU5 — Filtrar ofertas con mis criterios no negociables
 
 **Como** buscador de empleo,
-**quiero** que cada oferta pase por mis criterios no negociables, reciba un puntaje de encaje explicado y pueda registrar mi decisión,
-**para** decidir en menos de 2 minutos si vale la pena aplicar.
+**quiero** que cada oferta pase por mis criterios no negociables,
+**para** descartar sin esfuerzo, y sin gastar IA, las ofertas que no me sirven.
 
+- **Épica:** E3
 - **Prioridad:** must-have
-- **Estimación:** 7 h (más la decisión, incluida en los tickets de ofertas)
-- **Requisitos:** RF-07, RF-20 a RF-28, RNF-08, RNF-14
-- **Objetivos:** OBJ-1, OBJ-2
+- **Estimación:** 3 h
+- **Requisitos:** RF-20 a RF-23, `docs/prd.md` sección 6.1
+- **Objetivos:** OBJ-1
 
-### Contexto
+#### Contexto
 
-Los filtros duros se evalúan sin IA, con las reglas de la sección 6.1 del PRD: son rápidos, gratuitos y predecibles. Solo las ofertas que los pasan, o que tienen datos desconocidos, reciben el puntaje de la IA. El puntaje siempre se explica con fortalezas, brechas y evidencia verificada. La decisión del usuario cierra el ciclo y permite medir OBJ-1.
+Los filtros duros (rol, modalidad, ubicación, salario y seniority) se evalúan sin IA con las reglas de la sección 6.1 del PRD: son rápidos, gratuitos y predecibles.
 
-### Criterios de aceptación
+#### Criterios de aceptación
 
 ```gherkin
 Escenario: Configurar mis preferencias
@@ -230,7 +328,37 @@ Escenario: Seniority que no se puede normalizar
   Dada una oferta cuyo nivel no está en la tabla de mapeo
   Cuando el sistema la evalúa
   Entonces el criterio de seniority aparece como "desconocido"
+```
 
+#### Reglas de negocio
+
+- La oferta se descarta solo si algún criterio da `fail`.
+- Las ofertas descartadas siguen visibles con su motivo.
+- La tabla de mapeo de seniority se define en el cambio de OpenSpec de esta historia.
+
+#### Fuera de alcance
+
+Radio de distancia a una ubicación y ponderación configurable por el usuario.
+
+### HU6 — Obtener un puntaje de encaje explicado
+
+**Como** buscador de empleo,
+**quiero** un puntaje de encaje explicado y verificable,
+**para** saber por qué una oferta encaja o no con mi perfil.
+
+- **Épica:** E3
+- **Prioridad:** must-have
+- **Estimación:** 4 h
+- **Requisitos:** RF-23 a RF-28, RNF-08
+- **Objetivos:** OBJ-2
+
+#### Contexto
+
+Solo las ofertas que pasan los filtros, o que tienen datos desconocidos, reciben el puntaje de la IA. El puntaje siempre se explica con fortalezas, brechas y evidencia verificada, y su calidad se mide con el golden set.
+
+#### Criterios de aceptación
+
+```gherkin
 Escenario: Ver el puntaje explicado
   Dada una oferta con puntaje calculado de 72
   Cuando abro su detalle
@@ -257,7 +385,37 @@ Escenario: Error en el cálculo del puntaje
   Cuando el sistema intenta calcular un puntaje
   Entonces reintenta una vez
   Y si vuelve a fallar, muestra un mensaje claro y la oferta sigue guardada
+```
 
+#### Reglas de negocio
+
+- Etiquetas: `strong` ≥ 80, `good` 60-79, `weak` 40-59, `poor` < 40.
+- La preferencia por modalidad se aplica como ajuste determinista fuera de la IA (should-have, RF-28).
+- La fórmula del puntaje se define en el cambio de OpenSpec de esta historia y se valida con el golden set (≥ 80 % de acuerdo en el conjunto de prueba).
+
+#### Fuera de alcance
+
+Puntaje en lote con la Message Batches API.
+
+### HU7 — Registrar mi decisión sobre cada oferta
+
+**Como** buscador de empleo,
+**quiero** registrar si aplico o descarto cada oferta,
+**para** cerrar la evaluación y medir cuánto tardo en decidir.
+
+- **Épica:** E3
+- **Prioridad:** must-have
+- **Estimación:** 1 h
+- **Requisitos:** RF-07, RF-30, RNF-14
+- **Objetivos:** OBJ-1
+
+#### Contexto
+
+La decisión convierte la oferta en candidatura o la archiva, y permite medir OBJ-1 con la primera apertura de la oferta y la hora de la decisión.
+
+#### Criterios de aceptación
+
+```gherkin
 Escenario: Decidir aplicar
   Dada una oferta que abrí por primera vez a las 10:00
   Cuando elijo "aplicar" a las 10:01
@@ -270,36 +428,38 @@ Escenario: Decidir descartar
   Entonces la oferta se archiva con la decisión "skip" y su motivo
 ```
 
-### Reglas de negocio
+#### Reglas de negocio
 
-- Reglas de cada criterio: `docs/prd.md`, sección 6.1. La oferta se descarta solo si algún criterio da `fail`.
-- Etiquetas: `strong` ≥ 80, `good` 60-79, `weak` 40-59, `poor` < 40.
-- La preferencia por modalidad se aplica como ajuste determinista fuera de la IA (should-have, RF-28).
 - El puntaje es una recomendación; la decisión siempre es del usuario.
-- La fórmula del puntaje y la tabla de seniority se definen en el cambio de OpenSpec de esta historia y se validan con el golden set.
+- Una oferta tiene como máximo una candidatura.
 
-### Fuera de alcance
+#### Fuera de alcance
 
-Radio de distancia a una ubicación, ponderación configurable por el usuario y puntaje en lote con la Message Batches API.
+Deshacer una decisión (v1.1).
 
 ---
 
-## HU4 — Pipeline de candidaturas
+## E4 — Seguimiento de candidaturas
+
+Capability `application-tracking`. Hoy el historial de cada candidatura está disperso en el correo.
+
+### HU8 — Gestionar candidaturas en un pipeline
 
 **Como** buscador de empleo,
 **quiero** gestionar mis candidaturas en un tablero por estado con su historial,
 **para** saber en todo momento en qué va cada proceso.
 
+- **Épica:** E4
 - **Prioridad:** must-have
 - **Estimación:** 3 h
 - **Requisitos:** RF-30 a RF-35
-- **Objetivo:** OBJ-3
+- **Objetivos:** OBJ-3
 
-### Contexto
+#### Contexto
 
-Hoy el historial de cada candidatura está disperso en el correo. El tablero muestra el estado de todas las candidaturas y conserva cada cambio con su fecha. Las candidaturas nacen de la decisión "aplicar" (HU3).
+Las candidaturas nacen de la decisión "aplicar" (HU7). El tablero muestra el estado de todas y conserva cada cambio con su fecha.
 
-### Criterios de aceptación
+#### Criterios de aceptación
 
 ```gherkin
 Escenario: Cambiar el estado con el selector
@@ -341,30 +501,32 @@ Escenario: Agregar una nota (should-have)
   Entonces la nota aparece en el historial con su fecha
 ```
 
-### Reglas de negocio
+#### Reglas de negocio
 
 - Estados: `saved`, `applied`, `interviewing`, `offer`, `rejected`, `withdrawn`. `rejected` y `withdrawn` son finales.
-- Una oferta tiene como máximo una candidatura.
 - Cada cambio de estado queda en el historial; el historial no se edita.
 
-### Fuera de alcance
+#### Fuera de alcance
 
 Mover candidaturas arrastrándolas (RF-33a, could-have), recordatorios por correo, calendario de entrevistas y métricas del pipeline (v1.1).
 
----
-
-## HU5 — Correos y alertas de seguimiento (should-have)
+### HU9 — Correos y alertas de seguimiento
 
 **Como** buscador de empleo,
 **quiero** pegar los correos de cada proceso en su candidatura y recibir alertas cuando una candidatura lleve días sin actividad,
 **para** no perder ningún seguimiento.
 
+- **Épica:** E4
 - **Prioridad:** should-have
 - **Estimación:** 3 h
 - **Requisitos:** RF-40 a RF-43
-- **Objetivo:** OBJ-3
+- **Objetivos:** OBJ-3
 
-### Criterios de aceptación
+#### Contexto
+
+La IA clasifica cada correo y sugiere el cambio de estado, que el usuario confirma.
+
+#### Criterios de aceptación
 
 ```gherkin
 Escenario: Clasificar un correo pegado
@@ -388,28 +550,38 @@ Escenario: Configurar los días de la alerta
   Entonces las alertas usan el nuevo valor
 ```
 
-### Reglas de negocio
+#### Reglas de negocio
 
 - Cuenta como actividad un cambio de estado, una nota o un correo (RF-43).
 - La IA nunca cambia el estado sin confirmación del usuario.
 
-### Fuera de alcance
+#### Fuera de alcance
 
 Leer el correo directamente desde Gmail (v1.1) y enviar correos (excluido en la visión).
 
 ---
 
-## HU6 — Interfaz en español (should-have)
+## E5 — Plataforma
+
+Capability `platform`. Incluye el walking skeleton (autenticación, i18n base, cola de trabajos, cliente de IA, contenedor, CI y despliegue; tickets T-01 a T-05), que no es una historia de usuario.
+
+### HU10 — Interfaz en español
 
 **Como** buscador de empleo,
 **quiero** cambiar el idioma de la interfaz entre inglés y español,
 **para** trabajar en el idioma que prefiera en cada momento.
 
+- **Épica:** E5
 - **Prioridad:** should-have
 - **Estimación:** 2 h
 - **Requisitos:** RF-50 a RF-52
+- **Objetivos:** —
 
-### Criterios de aceptación
+#### Contexto
+
+Las cadenas de la interfaz se externalizan desde el walking skeleton (RF-50, must-have); esta historia solo agrega la traducción y el selector de idioma.
+
+#### Criterios de aceptación
 
 ```gherkin
 Escenario: Idioma por defecto
@@ -427,6 +599,10 @@ Escenario: Recordar el idioma
   Entonces la interfaz sigue en español
 ```
 
-### Notas
+#### Reglas de negocio
 
-Las cadenas de la interfaz se externalizan desde el walking skeleton (RF-50, must-have); esta historia solo agrega la traducción y el selector de idioma.
+- El inglés es el idioma por defecto.
+
+#### Fuera de alcance
+
+Generar los análisis de la IA en el idioma elegido (RF-52, could-have).

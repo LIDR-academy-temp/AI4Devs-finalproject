@@ -6,7 +6,7 @@ context: |
   Proyecto: ATS personal, panel web para buscar empleo en EE. UU. (proyecto final Master AI4Devs).
   Un solo usuario. Filtros duros sin IA + puntaje de encaje con Claude + pipeline de candidaturas.
 
-  Fuentes de verdad: docs/vision.md (alcance), docs/prd.md (HU1-HU6, RF-xx, RNF-xx),
+  Fuentes de verdad: docs/vision.md (alcance), docs/prd.md (épicas E1-E5, HU1-HU10, RF-xx, RNF-xx),
   docs/architecture.md (componentes, modelo de datos, API), docs/adr/ (decisiones), CLAUDE.md (convenciones).
 
   Stack: monorepo pnpm. apps/api = AdonisJS v7, Node.js 24, Lucid, PostgreSQL, VineJS, Japa.
@@ -21,7 +21,7 @@ rules:
   proposal:
     - Referenciar las historias (HU-x) y requisitos (RF-xx, RNF-xx) de docs/prd.md que cubre el cambio.
     - Incluir una sección "Fuera de alcance"; no incluir nada etiquetado v1.1 o futuro en docs/vision.md.
-    - Un cambio cubre una historia o 2-3 historias muy relacionadas.
+    - Un cambio cubre una historia (HU-x); la capability corresponde a su épica (E1 job-intake, E2 resume-profile, E3 job-matching, E4 application-tracking, E5 platform).
   specs:
     - Escenarios en formato WHEN/THEN derivados de los criterios de aceptación del PRD.
     - Cada escenario debe poder verificarse con una prueba automatizada sin llamar a la API real de Claude.

@@ -18,7 +18,7 @@
 | [`docs/prd-review.md`](./docs/prd-review.md) | Revisión adversarial del PRD |
 | [`docs/architecture.md`](./docs/architecture.md) | Arquitectura, modelo de datos y API |
 | [`docs/adr/`](./docs/adr/) | Decisiones de arquitectura (ADR-0001 a ADR-0005) |
-| [`docs/user-stories.md`](./docs/user-stories.md) | Historias HU1-HU6 con 42 escenarios de aceptación |
+| [`docs/user-stories.md`](./docs/user-stories.md) | 5 épicas y 10 historias con 44 escenarios de aceptación |
 | [`docs/tickets.md`](./docs/tickets.md) | 30 tickets de trabajo |
 | [`docs/ai-log.md`](./docs/ai-log.md) | Registro completo de prompts |
 | [`CLAUDE.md`](./CLAUDE.md) | Convenciones para los agentes de IA |
@@ -29,11 +29,11 @@
 
 ### **0.1. Tu nombre completo:**
 
-Juan Reyes
+[PENDIENTE]
 
 ### **0.2. Nombre del proyecto:**
 
-ATS (Applicant Tracking System) personal
+ATS personal (nombre provisional) [PENDIENTE: nombre final]
 
 ### **0.3. Descripción breve del proyecto:**
 
@@ -762,13 +762,29 @@ Content-Type: application/json
 
 ## 5. Historias de Usuario
 
-Selección de tres historias must-have. Las seis historias con sus 42 escenarios están en [`docs/user-stories.md`](./docs/user-stories.md).
+Las 10 historias del MVP se agrupan en 5 épicas, cada una mapeada a una capability de OpenSpec. Las historias completas, con sus 44 escenarios, están en [`docs/user-stories.md`](./docs/user-stories.md).
 
-**Historia de Usuario 1 — HU1: Recolectar, importar y agregar ofertas** (must-have, 11 h)
+| Épica | Capability | Valor | Historias | Estimación |
+| --- | --- | --- | --- | --- |
+| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 10 h |
+| E2 Perfil profesional | `resume-profile` | El sistema conoce la experiencia real del usuario | HU4 | 2.75 h (+1 h should-have) |
+| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8 h |
+| E4 Seguimiento de candidaturas | `application-tracking` | Saber en qué va cada proceso y no perder seguimientos | HU8, HU9 | 3 h (+3 h should-have) |
+| E5 Plataforma | `platform` | Acceso seguro, despliegue e idioma | HU10 y walking skeleton | 6.25 h (+2 h should-have) |
 
-> **Como** buscador de empleo, **quiero** que las ofertas de mis empresas objetivo y de mis búsquedas lleguen automáticamente, y poder agregar otras pegando su texto, **para** tener todas las ofertas que me interesan en un solo lugar sin buscarlas portal por portal.
+Selección de tres historias must-have, una de cada épica principal:
 
-Requisitos: RF-01 a RF-06, RF-04a, RF-04b, RF-09. Criterios de aceptación (extracto):
+**Historia de Usuario — HU2: Importar ofertas de empresas objetivo desde su job board**
+
+> **Como** buscador de empleo, **quiero** importar automáticamente las ofertas de mis empresas objetivo desde su job board, **para** no revisar sus portales uno por uno.
+
+- **Épica:** E1
+- **Prioridad:** must-have
+- **Estimación:** 4 h
+- **Requisitos:** RF-04, RF-04b, RF-05, RF-09
+- **Objetivos:** OBJ-5
+
+Criterios de aceptación (extracto):
 
 ```gherkin
 Esquema del escenario: Importar las ofertas de una empresa desde su job board
@@ -776,6 +792,7 @@ Esquema del escenario: Importar las ofertas de una empresa desde su job board
   Cuando pido importar sus ofertas
   Entonces veo el progreso de la importación
   Y al terminar, sus ofertas aparecen en mi lista con la empresa como origen
+
   Ejemplos:
     | plataforma |
     | Greenhouse |
@@ -788,48 +805,53 @@ Escenario: Tope de ofertas por sincronización
   Entonces solo se agregan 50
   Y veo cuántas se agregaron, cuántas se omitieron por duplicadas y cuántas por el tope
 
-Escenario: Un dato ausente queda como desconocido
-  Dado el texto de una oferta que no menciona el salario
-  Cuando el sistema extrae los campos
-  Entonces el salario aparece como "desconocido"
+Escenario: No duplicar ofertas
+  Dada una oferta que ya importé
+  Cuando importo otra vez las ofertas de la misma fuente
+  Entonces la oferta no aparece duplicada
 ```
 
-**Historia de Usuario 2 — HU3: Filtros duros, puntaje y decisión** (must-have, 7 h)
+**Historia de Usuario — HU6: Obtener un puntaje de encaje explicado**
 
-> **Como** buscador de empleo, **quiero** que cada oferta pase por mis criterios no negociables, reciba un puntaje de encaje explicado y pueda registrar mi decisión, **para** decidir en menos de 2 minutos si vale la pena aplicar.
+> **Como** buscador de empleo, **quiero** un puntaje de encaje explicado y verificable, **para** saber por qué una oferta encaja o no con mi perfil.
 
-Requisitos: RF-07, RF-20 a RF-28, RNF-08, RNF-14. Criterios de aceptación (extracto):
+- **Épica:** E3
+- **Prioridad:** must-have
+- **Estimación:** 4 h
+- **Requisitos:** RF-23 a RF-28, RNF-08
+- **Objetivos:** OBJ-2
+
+Criterios de aceptación (extracto):
 
 ```gherkin
-Escenario: Descartar una oferta de otro rol
-  Dada una oferta con el título "Revenue Accounting Manager"
-  Cuando el sistema la evalúa
-  Entonces la oferta queda descartada con el motivo "rol"
-  Y no se calcula su puntaje
-
-Escenario: Comparar un salario por hora
-  Dado un salario mínimo de 150 000 USD al año
-  Y una oferta que paga entre 60 y 80 USD por hora
-  Cuando el sistema la evalúa
-  Entonces el criterio de salario es "pass", porque 80 × 2080 = 166 400
+Escenario: Ver el puntaje explicado
+  Dada una oferta con puntaje calculado de 72
+  Cuando abro su detalle
+  Entonces veo el puntaje 72 con la etiqueta "good"
+  Y veo mis fortalezas, mis brechas y los fragmentos de la oferta y de mi currículum que las respaldan
 
 Escenario: Descartar evidencia inventada
   Dado que la IA devuelve un fragmento de evidencia que no aparece en la oferta ni en el currículum
   Cuando el sistema guarda el análisis
   Entonces ese fragmento no se guarda ni se muestra
 
-Escenario: Decidir aplicar
-  Dada una oferta que abrí por primera vez a las 10:00
-  Cuando elijo "aplicar" a las 10:01
-  Entonces se crea una candidatura en "Saved"
-  Y la oferta registra la decisión "apply" con su hora
+Escenario: No repetir un análisis sin cambios
+  Dada una oferta con puntaje calculado
+  Cuando la abro otra vez sin haber cambiado la oferta, el currículum, el prompt ni el modelo
+  Entonces veo el mismo puntaje sin esperar un nuevo cálculo
 ```
 
-**Historia de Usuario 3 — HU4: Pipeline de candidaturas** (must-have, 3 h)
+**Historia de Usuario — HU8: Gestionar candidaturas en un pipeline**
 
 > **Como** buscador de empleo, **quiero** gestionar mis candidaturas en un tablero por estado con su historial, **para** saber en todo momento en qué va cada proceso.
 
-Requisitos: RF-30 a RF-35. Criterios de aceptación (extracto):
+- **Épica:** E4
+- **Prioridad:** must-have
+- **Estimación:** 3 h
+- **Requisitos:** RF-30 a RF-35
+- **Objetivos:** OBJ-3
+
+Criterios de aceptación (extracto):
 
 ```gherkin
 Escenario: Cambiar el estado solo con el teclado
@@ -892,7 +914,7 @@ Selección de tres tickets (base de datos, backend y frontend). Los 30 tickets e
 - Botones "aplicar" y "descartar" (con motivo opcional) en el detalle de la oferta.
 
 **Criterios de aceptación**
-- Cumple los escenarios de HU1 sobre pegar, corregir y listar, y los de HU3 sobre la decisión.
+- Cumple los escenarios de HU1 y HU7.
 
 ---
 

@@ -365,3 +365,29 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con `readme.md`, `prompts.md` y `docs/ai-log.md`; el nombre completo y el nombre final del proyecto siguen marcados como pendientes.
+
+### Prompt 28
+
+- **Categoría:** `🔍 Investigación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Dónde quedaron las épicas?
+  ```
+
+- **Resultado:** Se confirmó que las épicas se omitieron, aunque la guía (`docs/ai-sdlc-claude-code-openspec.md`, paso 7) y las reglas del curso (3 a 5 épicas) las piden. Propuesta de 5 épicas mapeadas a capabilities de OpenSpec y a las historias existentes, con dos opciones de incorporación. Respuesta en el chat; sin cambios en archivos.
+
+### Prompt 29
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  B, y haz commit
+  ```
+
+- **Resultado:** Se reestructuraron las historias en 5 épicas (E1 `job-intake`, E2 `resume-profile`, E3 `job-matching`, E4 `application-tracking`, E5 `platform`) y 10 historias con 44 escenarios. Se actualizaron `docs/prd.md` (v0.3), `docs/user-stories.md`, `docs/tickets.md`, `readme.md`, `prompts.md`, `CLAUDE.md` y `openspec/config.yaml`, y se hizo commit en la rama `feature/entrega-1-jr`.

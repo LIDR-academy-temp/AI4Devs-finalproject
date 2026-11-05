@@ -11,7 +11,8 @@ Lee antes de proponer o implementar:
 | Documento | Contenido |
 | --- | --- |
 | `docs/vision.md` | Problema, hipótesis, alcance `MVP` / `v1.1` / `futuro` y lo que el producto no hará |
-| `docs/prd.md` | Historias HU1-HU6, requisitos RF-xx y RNF-xx, criterios de aceptación |
+| `docs/prd.md` | Épicas E1-E5, historias HU1-HU10, requisitos RF-xx y RNF-xx |
+| `docs/user-stories.md` y `docs/tickets.md` | Criterios de aceptación y tickets técnicos |
 | `docs/architecture.md` | Componentes, estructura, modelo de datos y API |
 | `docs/adr/` | Decisiones de arquitectura aceptadas |
 | `openspec/specs/` | Comportamiento vigente (fuente de verdad) |
@@ -81,7 +82,7 @@ pnpm build                           # build de producción de ambas apps
 
 ## Flujo de trabajo
 
-1. Cada historia o grupo de 2-3 historias relacionadas es un cambio de OpenSpec: `/opsx:propose` → aprobación humana → `/opsx:apply` → PR → `/opsx:archive`.
+1. Cada épica es una capability de OpenSpec (`openspec/specs/<capability>/`) y cada historia es un cambio de OpenSpec: `/opsx:propose` → aprobación humana → `/opsx:apply` → PR → `/opsx:archive`.
 2. Un cambio = una rama = un PR. Si `tasks.md` supera unas 15 tareas, divide el cambio.
 3. Inicia `/opsx:apply` en una sesión nueva, con contexto limpio.
 4. Las decisiones de arquitectura nuevas se registran como ADR en `docs/adr/`; no se toman como ediciones sueltas.

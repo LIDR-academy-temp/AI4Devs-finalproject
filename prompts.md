@@ -32,7 +32,8 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 - Elección del lado del ATS (candidato), mercado (EE. UU., híbrido preferido) y empresas objetivo (FAANG/MANGO, Walmart, ServiceNow, PayPal/Venmo, eBay y medianas).
 - Convención de idioma: código y base de datos en inglés, interfaz en inglés con i18n, documentación en español y "currículum" en lugar de "CV".
-- Correos y alertas (HU5) y la traducción al español (HU6) pasan a should-have.
+- Correos y alertas y la traducción al español pasan a should-have (hoy HU9 y HU10).
+- El usuario detectó que faltaban las épicas y pidió reestructurar las historias en 5 épicas y 10 historias.
 - Arquitectura: se rechazó el monolito con Inertia recomendado por la IA a favor de un monorepo con API REST y SPA separadas en un solo contenedor.
 - Modelos de Claude: económicos en desarrollo y pruebas, de mayor calidad en producción.
 - Idea propia de usar Markdown como representación del currículum para reducir costos.
@@ -181,9 +182,17 @@ Resultado: se agregó `PATCH /auth/me` a la API, detectado al revisar los ticket
 sigamos con las historias de usuario
 ```
 
-Resultado: [`docs/user-stories.md`](./docs/user-stories.md) con HU1 a HU6, criterios Dado/Cuando/Entonces, reglas de negocio y fuera de alcance.
+Resultado: primera versión de [`docs/user-stories.md`](./docs/user-stories.md) con seis historias, criterios Dado/Cuando/Entonces, reglas de negocio y fuera de alcance.
 
 **Prompt 2:** Ver el Prompt 2 de la sección 3. Resultado: 42 escenarios tras la revisión adversarial.
+
+**Prompt 3:** Épicas omitidas
+
+```markdown
+Dónde quedaron las épicas?
+```
+
+Resultado: la IA reconoció que se había saltado el paso de épicas que piden la guía y las reglas del curso. Con "B, y haz commit" se reestructuraron las historias en 5 épicas (mapeadas a capabilities de OpenSpec) y 10 historias con 44 escenarios.
 
 ---
 

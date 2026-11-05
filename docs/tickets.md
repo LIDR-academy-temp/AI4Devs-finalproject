@@ -2,7 +2,7 @@
 
 > Tickets técnicos derivados de [`docs/user-stories.md`](./user-stories.md). Una historia genera varios tickets. Cada ticket sigue la definition of done de `CLAUDE.md`. La implementación de cada historia se hace como un cambio de OpenSpec que agrupa sus tickets.
 
-- **Estado:** borrador v0.2 (incorpora la revisión adversarial de `docs/prd-review.md`)
+- **Estado:** borrador v0.3 (épicas e historias reestructuradas)
 - **Fecha:** 2026-11-04
 - **Tipos:** `infra`, `db`, `backend`, `ai`, `frontend`, `test`
 
@@ -10,38 +10,38 @@
 
 ## Resumen
 
-| Id | Título | Tipo | Historia | Prioridad | Estimación | Depende de |
+| Id | Título | Tipo | Épica / historia | Prioridad | Estimación | Depende de |
 | --- | --- | --- | --- | --- | --- | --- |
-| T-01 | Monorepo con API y SPA | infra | Skeleton | M | 1 h | — |
-| T-02 | Base de datos local y usuario único | db | Skeleton | M | 1 h | T-01 |
-| T-03 | Autenticación por sesión e i18n base | backend, frontend | Skeleton | M | 1.25 h | T-02 |
-| T-04 | Cola de trabajos y cliente de IA | backend, ai | Skeleton | M | 1.5 h | T-02 |
-| T-05 | Contenedor, CI y despliegue | infra, test | Skeleton | M | 1.5 h | T-03 |
-| T-06 | Tabla de currículums | db | HU2 | M | 0.5 h | T-02 |
-| T-07 | API y extracción del currículum en Markdown | backend, ai | HU2 | M | 1.25 h | T-04, T-06 |
-| T-08 | Pantalla del currículum | frontend | HU2 | M | 1 h | T-07 |
-| T-09 | Tablas de ofertas, empresas objetivo y búsquedas | db | HU1 | M | 0.5 h | T-02 |
-| T-10 | API y extracción de ofertas, y decisión | backend, ai | HU1, HU3 | M | 2.25 h | T-04, T-09 |
-| T-11 | Pantallas de ofertas y decisión | frontend | HU1, HU3 | M | 1.75 h | T-10 |
-| T-12 | Empresas objetivo, interfaz de adaptadores y Greenhouse | backend | HU1 | M | 1.5 h | T-09, T-04 |
-| T-13 | Pantalla de empresas objetivo | frontend | HU1 | M | 0.5 h | T-12 |
-| T-25 | Adaptador de Ashby | backend | HU1 | M | 1 h | T-12 |
-| T-26 | Adaptador de Lever | backend | HU1 | M | 1 h | T-12 |
-| T-27 | Spike del agregador de ofertas | backend | HU1 | M | 0.5 h | T-12 |
-| T-28 | Búsquedas guardadas y adaptador del agregador | backend | HU1 | M | 1.5 h | T-27 |
-| T-29 | Pantalla de búsquedas guardadas | frontend | HU1 | M | 0.5 h | T-28 |
-| T-14 | Tablas de preferencias, filtros y análisis | db | HU3 | M | 0.5 h | T-09 |
-| T-15 | Preferencias y filtros duros | backend | HU3 | M | 2 h | T-14 |
-| T-16 | Puntaje de encaje con IA | backend, ai | HU3 | M | 2 h | T-07, T-15 |
-| T-17 | Golden sets y evals | ai, test | HU3 | M | 1.5 h | T-10, T-16 |
-| T-18 | Pantallas de preferencias y detalle del puntaje | frontend | HU3 | M | 1 h | T-16 |
-| T-19 | Candidaturas y su historial | db, backend | HU4 | M | 1.5 h | T-10 |
-| T-20 | Tablero de candidaturas accesible | frontend | HU4 | M | 1.5 h | T-19 |
+| T-01 | Monorepo con API y SPA | infra | E5 / Skeleton | M | 1 h | — |
+| T-02 | Base de datos local y usuario único | db | E5 / Skeleton | M | 1 h | T-01 |
+| T-03 | Autenticación por sesión e i18n base | backend, frontend | E5 / Skeleton | M | 1.25 h | T-02 |
+| T-04 | Cola de trabajos y cliente de IA | backend, ai | E5 / Skeleton | M | 1.5 h | T-02 |
+| T-05 | Contenedor, CI y despliegue | infra, test | E5 / Skeleton | M | 1.5 h | T-03 |
+| T-06 | Tabla de currículums | db | E2 / HU4 | M | 0.5 h | T-02 |
+| T-07 | API y extracción del currículum en Markdown | backend, ai | E2 / HU4 | M | 1.25 h | T-04, T-06 |
+| T-08 | Pantalla del currículum | frontend | E2 / HU4 | M | 1 h | T-07 |
+| T-09 | Tablas de ofertas, empresas objetivo y búsquedas | db | E1 / HU1, HU2, HU3 | M | 0.5 h | T-02 |
+| T-10 | API y extracción de ofertas, y decisión | backend, ai | E1, E3 / HU1, HU7 | M | 2.25 h | T-04, T-09 |
+| T-11 | Pantallas de ofertas y decisión | frontend | E1, E3 / HU1, HU7 | M | 1.75 h | T-10 |
+| T-12 | Empresas objetivo, interfaz de adaptadores y Greenhouse | backend | E1 / HU2 | M | 1.5 h | T-09, T-04 |
+| T-13 | Pantalla de empresas objetivo | frontend | E1 / HU2 | M | 0.5 h | T-12 |
+| T-25 | Adaptador de Ashby | backend | E1 / HU2 | M | 1 h | T-12 |
+| T-26 | Adaptador de Lever | backend | E1 / HU2 | M | 1 h | T-12 |
+| T-27 | Spike del agregador de ofertas | backend | E1 / HU3 | M | 0.5 h | T-12 |
+| T-28 | Búsquedas guardadas y adaptador del agregador | backend | E1 / HU3 | M | 1.5 h | T-27 |
+| T-29 | Pantalla de búsquedas guardadas | frontend | E1 / HU3 | M | 0.5 h | T-28 |
+| T-14 | Tablas de preferencias, filtros y análisis | db | E3 / HU5, HU6 | M | 0.5 h | T-09 |
+| T-15 | Preferencias y filtros duros | backend | E3 / HU5 | M | 2 h | T-14 |
+| T-16 | Puntaje de encaje con IA | backend, ai | E3 / HU6 | M | 2 h | T-07, T-15 |
+| T-17 | Golden sets y evals | ai, test | E3 / HU6 | M | 1.5 h | T-10, T-16 |
+| T-18 | Pantallas de preferencias y detalle del puntaje | frontend | E3 / HU5, HU6 | M | 1 h | T-16 |
+| T-19 | Candidaturas y su historial | db, backend | E4 / HU8 | M | 1.5 h | T-10 |
+| T-20 | Tablero de candidaturas accesible | frontend | E4 / HU8 | M | 1.5 h | T-19 |
 | T-21 | Prueba E2E, accesibilidad y documentación final | test | Todas | M | 2.25 h | T-05, T-20 |
-| T-30 | Carga del currículum en PDF | backend, frontend, ai | HU2 | S | 1 h | T-07 |
-| T-22 | Clasificación de correos y alertas | backend, ai | HU5 | S | 1.5 h | T-19 |
-| T-23 | Correos y alertas en la interfaz | frontend | HU5 | S | 1.5 h | T-22 |
-| T-24 | Traducción al español y selector de idioma | frontend, backend | HU6 | S | 2 h | T-03 |
+| T-30 | Carga del currículum en PDF | backend, frontend, ai | E2 / HU4 | S | 1 h | T-07 |
+| T-22 | Clasificación de correos y alertas | backend, ai | E4 / HU9 | S | 1.5 h | T-19 |
+| T-23 | Correos y alertas en la interfaz | frontend | E4 / HU9 | S | 1.5 h | T-22 |
+| T-24 | Traducción al español y selector de idioma | frontend, backend | E5 / HU10 | S | 2 h | T-03 |
 
 **Totales:** must-have ≈ 33 h (tope: 36 h); should-have ≈ 6 h. Could-have sin ticket: arrastrar en el tablero (RF-33a), caché de prompts, limitador de intentos en el login y RF-08.
 
@@ -49,7 +49,7 @@
 
 ---
 
-## Walking skeleton
+## E5 — Plataforma: walking skeleton
 
 ### T-01 — Monorepo con API y SPA
 
@@ -130,7 +130,7 @@
 
 ---
 
-## HU2 — Currículum
+## E2 — Perfil profesional (HU4)
 
 ### T-06 — Tabla de currículums
 
@@ -170,12 +170,12 @@
 - Aviso de puntajes desactualizados con el número de ofertas y botón para recalcular.
 
 **Criterios de aceptación**
-- Cumple los escenarios must-have de HU2 en `docs/user-stories.md`.
+- Cumple los escenarios must-have de HU4 en `docs/user-stories.md`.
 - Todos los textos en los archivos de i18n.
 
 ---
 
-## HU1 — Ofertas
+## E1 — Ingreso de ofertas (HU1, HU2, HU3)
 
 ### T-09 — Tablas de ofertas, empresas objetivo y búsquedas
 
@@ -217,7 +217,7 @@
 - Botones "aplicar" y "descartar" (con motivo opcional) en el detalle de la oferta.
 
 **Criterios de aceptación**
-- Cumple los escenarios de HU1 sobre pegar, corregir y listar, y los de HU3 sobre la decisión.
+- Cumple los escenarios de HU1 y HU7.
 
 ### T-12 — Empresas objetivo, interfaz de adaptadores y Greenhouse
 
@@ -244,7 +244,7 @@
 - Botón de importar (para Greenhouse, Ashby o Lever con `board_token`) con progreso y resumen (agregadas, duplicadas, omitidas por el tope).
 
 **Criterios de aceptación**
-- Cumple los escenarios de HU1 sobre empresas objetivo e importación.
+- Cumple los escenarios de HU2.
 
 ### T-25 — Adaptador de Ashby
 
@@ -301,11 +301,11 @@
 - Lista, alta, edición y baja de búsquedas; botón de ejecutar con progreso y resumen.
 
 **Criterios de aceptación**
-- Cumple el escenario de HU1 sobre búsquedas en el agregador.
+- Cumple los escenarios de HU3.
 
 ---
 
-## HU3 — Filtros duros y puntaje
+## E3 — Evaluación de ofertas (HU5, HU6, HU7)
 
 ### T-14 — Tablas de preferencias, filtros y análisis
 
@@ -371,11 +371,11 @@
 - Detalle de la oferta: resultado del filtro por criterio, puntaje, etiqueta, fortalezas, brechas y evidencia; botón para recalcular.
 
 **Criterios de aceptación**
-- Cumple los escenarios de HU3 en `docs/user-stories.md`.
+- Cumple los escenarios de HU5 y HU6 en `docs/user-stories.md`.
 
 ---
 
-## HU4 — Pipeline de candidaturas
+## E4 — Seguimiento de candidaturas (HU8)
 
 ### T-19 — Candidaturas y su historial
 
@@ -402,7 +402,7 @@
 - Could-have: arrastrar tarjetas entre columnas (RF-33a).
 
 **Criterios de aceptación**
-- Cumple los escenarios de HU4, incluido el uso solo con teclado.
+- Cumple los escenarios de HU8, incluido el uso solo con teclado.
 
 ---
 
@@ -424,7 +424,7 @@
 
 ---
 
-## Should-have de HU2
+## Should-have de E2 (HU4)
 
 ### T-30 — Carga del currículum en PDF
 
@@ -435,11 +435,11 @@
 - PDF sin texto legible: el trabajo termina en `failed` con el código `UNREADABLE_PDF`; la SPA ofrece pegar el texto.
 
 **Criterios de aceptación**
-- Cumple los escenarios should-have de HU2.
+- Cumple los escenarios should-have de HU4.
 
 ---
 
-## Should-have
+## Should-have (HU9, HU10)
 
 ### T-22 — Clasificación de correos y alertas
 
@@ -462,7 +462,7 @@
 - Marca de seguimiento en el tablero y campo de días en preferencias.
 
 **Criterios de aceptación**
-- Cumple los escenarios de HU5.
+- Cumple los escenarios de HU9.
 
 ### T-24 — Traducción al español y selector de idioma
 
@@ -474,4 +474,4 @@
 - Opcional (could-have): generar los análisis de la IA en el idioma elegido.
 
 **Criterios de aceptación**
-- Cumple los escenarios de HU6; ninguna cadena sin traducir en español.
+- Cumple los escenarios de HU10; ninguna cadena sin traducir en español.
