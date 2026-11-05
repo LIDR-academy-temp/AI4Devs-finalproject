@@ -12,14 +12,14 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 
 - [x] 2.1 Tests primero en `domain/readiness.test.ts`: en `mapped`, una hoja sin confirmar da un solo `missing` `confirmation` en su posición, sin sus otros `missing`, conservando sus `notes`, y `canAnalyze = false`; en `uploaded` el resultado no cambia; con todo confirmado, `missing = []`. Romper uno a propósito y verlo fallar
 - [x] 2.2 Implementar D4 en `readiness.ts` y extraer `unconfirmedSheetMessage`, compartida con `analysis-preconditions.ts`; pasar `mappingConfirmed` y `requireConfirmation` desde `detailOf` en `import-service.ts`. Verificar con `pnpm --filter @recon/backend test` que los tests de dominio y servicio pasan
-- [ ] 2.3 Integración en `backend/test/integration/import-analyze.int.test.ts` (o `imports.int.test.ts`, donde viva "Archivo añadido tras confirmar"): con `batch-split` part1 confirmado y part2 añadido, el `200` de añadir y el `GET` detalle traen `canAnalyze = false` y los mismos elementos `confirmation` que el `422` de analyze; tras confirmar todo, `missing = []`. Verificar con el filtro de integración
+- [x] 2.3 Integración en `backend/test/integration/import-analyze.int.test.ts` (o `imports.int.test.ts`, donde viva "Archivo añadido tras confirmar"): con `batch-split` part1 confirmado y part2 añadido, el `200` de añadir y el `GET` detalle traen `canAnalyze = false` y los mismos elementos `confirmation` que el `422` de analyze; tras confirmar todo, `missing = []`. Verificar con el filtro de integración
 - [ ] 2.4 Commit: `test(import): readiness con hojas sin confirmar` y `feat(import): la readiness del detalle nombra las hojas sin confirmar (#42)`
 
 ## 3. Motivo obligatorio al cancelar (#47)
 
 - [x] 3.1 Tests primero: en `http/import-routes.analysis.test.ts`, un cuerpo ausente, `{}`, solo espacios, 501 caracteres o con un campo extra responde `400 validation_error` sin llamar al servicio; en `application/import-service.test.ts`, la auditoría `import.cancel` guarda `reason` recortado junto a `previousStatus` y `runId`. Verificar que fallan
 - [x] 3.2 Implementar D3: `body: ReasonRequest` en la ruta y `reason` en `ImportService.cancel` y su auditoría. Verificar que los tests de 3.1 pasan
-- [ ] 3.3 Actualizar las llamadas al cancel del módulo `imports` en `backend/test/integration/import-analyze.int.test.ts` y añadir el escenario "Cancelar con motivo" (`batch-split` analizado → `detailJson.reason`) y "Sin motivo" (sin fila nueva de `AuditLog`). Verificar con el filtro de integración
+- [x] 3.3 Actualizar las llamadas al cancel del módulo `imports` en `backend/test/integration/import-analyze.int.test.ts` y añadir el escenario "Cancelar con motivo" (`batch-split` analizado → `detailJson.reason`) y "Sin motivo" (sin fila nueva de `AuditLog`). Verificar con el filtro de integración
 - [ ] 3.4 Commit: `test(import): motivo obligatorio al cancelar` y `feat(import): POST cancel exige y audita el motivo (#47)`
 
 ## 4. GET /imports
@@ -41,7 +41,7 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 
   Verificar que los tests unitarios pasan.
 - [x] 4.3 Tests de rutas en `http/import-routes.test.ts`: `400` para los valores no válidos del escenario "Valores no válidos" y de paginación, y `401` sin token. Verificar que pasan
-- [ ] 4.4 Integración nueva `backend/test/integration/import-list.int.test.ts`, con los escenarios de los requisitos "Imports en curso", "Filtros de imports en curso" y "Paginación de imports en curso":
+- [x] 4.4 Integración nueva `backend/test/integration/import-list.int.test.ts`, con los escenarios de los requisitos "Imports en curso", "Filtros de imports en curso" y "Paginación de imports en curso":
   - abiertos por defecto (`batch-split_part1` en `ProviderA-USD`, legacy en `ProviderC-Alt` y uno cancelado);
   - jerarquía, alcance de `viewer`, por cuenta y por estado, `mine` con un import de `admin`;
   - `404` iguales;
@@ -107,8 +107,8 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 
 ## 9. Llamadas al cancel en tests de otras áreas (D8, con aviso a la sesión de #62)
 
-- [ ] 9.1 Añadir `{ reason }` a las cinco llamadas al cancel de `settlement-lifecycle.int.test.ts`, `validation-review.int.test.ts` y `validation-runs.int.test.ts`, y el paso de escribir el motivo en `features/validations/decision.test.tsx`. Sin otros cambios. Verificar con el filtro de integración de cada archivo y con los tests de `features/validations`
-- [ ] 9.2 Commit: `test: motivo en las cancelaciones de los tests de settlement y validation`
+- [x] 9.1 Añadir `{ reason }` a las cinco llamadas al cancel de `settlement-lifecycle.int.test.ts`, `validation-review.int.test.ts` y `validation-runs.int.test.ts`, y el paso de escribir el motivo en `features/validations/decision.test.tsx`. Sin otros cambios. Verificar con el filtro de integración de cada archivo y con los tests de `features/validations`
+- [x] 9.2 Commit: `test: motivo en las cancelaciones de los tests de settlement y validation`
 
 ## 10. Pantalla In Progress y menú
 

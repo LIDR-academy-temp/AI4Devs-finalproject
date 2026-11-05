@@ -257,7 +257,7 @@ describe('batch-blocked (HU2 CA5, CA8)', () => {
     })
     expect((await current(importId)).importStatus).toBe('analyzed')
 
-    const cancelled = await flow.call('POST', `/imports/${importId}/cancel`)
+    const cancelled = await flow.call('POST', `/imports/${importId}/cancel`, { reason: 'Cancelled by the test' })
     expect(cancelled.statusCode).toBe(200)
     const after = await current(importId)
     expect(after.importStatus).toBe('cancelled')
@@ -269,7 +269,9 @@ describe('batch-blocked (HU2 CA5, CA8)', () => {
   it('cancel without a run records runId null', async () => {
     const { importId } = await flow.analyzedSample('batch-blocked')
 
-    expect((await flow.call('POST', `/imports/${importId}/cancel`)).statusCode).toBe(200)
+    expect(
+      (await flow.call('POST', `/imports/${importId}/cancel`, { reason: 'Cancelled by the test' })).statusCode,
+    ).toBe(200)
 
     const audit = await ctx.prisma.auditLog.findFirstOrThrow({ where: { action: 'import.cancel', entityId: importId } })
     expect(JSON.parse(audit.detailJson ?? '{}')).toMatchObject({ previousStatus: 'analyzed', runId: null })

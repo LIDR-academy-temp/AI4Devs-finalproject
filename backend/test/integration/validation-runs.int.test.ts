@@ -527,7 +527,7 @@ describe('the whole cycle analyze → validations → review (task 9.1)', () => 
     expect(third.lastInvalidatedReview).toMatchObject({ reason: 'rerun', runId: second.run!.runId })
     expect(third.run!.manualChangeCount).toBe(0)
 
-    const cancelled = await flow.call('POST', `/imports/${importId}/cancel`)
+    const cancelled = await flow.call('POST', `/imports/${importId}/cancel`, { reason: 'Cancelled by the test' })
     expect(cancelled.statusCode).toBe(200)
     expect((await viewOf()).importStatus).toBe('cancelled')
   })
@@ -541,7 +541,9 @@ describe('the whole cycle analyze → validations → review (task 9.1)', () => 
     expect(mismatch.map((i) => i.transactionIdRaw)).toEqual(['252570479111759'])
     const refused = await flow.call('POST', `/imports/${importId}/review`, { runId: view.run!.runId })
     expect(refused.json().code).toBe('blocking_validation_issue')
-    expect((await flow.call('POST', `/imports/${importId}/cancel`)).statusCode).toBe(200)
+    expect(
+      (await flow.call('POST', `/imports/${importId}/cancel`, { reason: 'Cancelled by the test' })).statusCode,
+    ).toBe(200)
 
     const after = ValidationRunView.parse((await flow.call('GET', `/imports/${importId}/validations`)).json())
     expect(after.importStatus).toBe('cancelled')
