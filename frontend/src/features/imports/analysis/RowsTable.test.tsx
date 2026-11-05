@@ -1,14 +1,15 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import type { UserName } from '@/test/msw/fixtures'
 import { makeRow } from '@/test/msw/import-fixtures'
-import { importRecord, importRequests, seedImport } from '@/test/msw/imports'
+import { importRecord, importRequests, seedAmbiguousRow, seedImport } from '@/test/msw/imports'
 import { renderApp } from '@/test/render'
 import { strings } from '../strings'
 
 const s = strings.analysis.rows
 
-async function openRows(path: string) {
-  const view = renderApp(path, { as: 'analyst' })
+async function openRows(path: string, as: UserName = 'analyst') {
+  const view = renderApp(path, { as })
   const table = await screen.findByRole('table', { name: s.title })
   await waitFor(() => expect(within(table).getAllByRole('row').length).toBeGreaterThan(1))
   return view
@@ -98,41 +99,10 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
     expect(cell(first, s.columns.amount).textContent).toBe('')
   })
 
-  it('an ambiguous row lists the gateways of its candidates and offers no way to choose', async () => {
+  it('an ambiguous row lists the gateways of its candidates and offers viewer no way to choose', async () => {
     const { importId } = seedImport('batch-clean', { status: 'analyzed' })
-    importRecord(importId).rows!.push(
-      makeRow({
-        matchResult: 'ambiguous',
-        transactionId: null,
-        gatewayId: null,
-        transaction: null,
-        transactionIdRaw: '222222222222222',
-        candidates: [
-          {
-            gatewayId: 1,
-            gatewayName: 'Gateway Numeric',
-            transactionId: '9001',
-            channelId: 1001,
-            channelName: 'RAM-01',
-            statusId: 2,
-            statusName: 'Successful',
-            amount: '10.0000',
-          },
-          {
-            gatewayId: 3,
-            gatewayName: 'Gateway Shared',
-            transactionId: '9002',
-            channelId: null,
-            channelName: null,
-            statusId: null,
-            statusName: null,
-            amount: null,
-            outOfScope: true,
-          },
-        ],
-      }),
-    )
-    await openRows(`/imports/${importId}?step=analysis`)
+    seedAmbiguousRow(importId)
+    await openRows(`/imports/${importId}?step=analysis`, 'viewer')
 
     const first = bodyRows()[0]!
     expect(cell(first, s.columns.result)).toHaveTextContent('Ambiguous')
@@ -140,6 +110,49 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
     expect(first).toHaveTextContent('Gateway Shared (another merchant)')
     expect(within(first).queryByRole('button')).not.toBeInTheDocument()
     expect(within(first).queryByRole('combobox')).not.toBeInTheDocument()
+  })
+
+  describe('choosing a candidate by status and permission (spec "Fila ambigua sin resolución posible"; D1)', () => {
+    it('analyst in analyzed gets one Choose per candidate, the one of another merchant included', async () => {
+      const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+      const row = seedAmbiguousRow(importId)
+      await openRows(`/imports/${importId}?step=analysis`)
+
+      const first = bodyRows()[0]!
+      const buttons = within(first).getAllByRole('button')
+      expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([
+        s.choose('Gateway Numeric', row.rowNo, row.sheetName),
+        s.choose('Gateway Shared (another merchant)', row.rowNo, row.sheetName),
+      ])
+      expect(buttons.every((b) => !b.hasAttribute('disabled'))).toBe(true)
+      expect(first).not.toHaveTextContent(s.validatedHint)
+    })
+
+    it('analyst in validated sees Choose disabled with the reason, and nothing is sent', async () => {
+      const { importId } = seedImport('batch-clean', { status: 'validated' })
+      seedAmbiguousRow(importId)
+      const { user } = await openRows(`/imports/${importId}?step=analysis`)
+
+      const first = bodyRows()[0]!
+      const buttons = within(first).getAllByRole('button')
+      expect(buttons).toHaveLength(2)
+      for (const button of buttons) {
+        expect(button).toBeDisabled()
+        expect(button).toHaveAccessibleDescription(s.validatedHint)
+      }
+      await user.click(buttons[0]!)
+      expect(importRequests('resolveRow')).toHaveLength(0)
+    })
+
+    it('analyst in a cancelled import sees the candidates without any control', async () => {
+      const { importId } = seedImport('batch-clean', { status: 'cancelled' })
+      seedAmbiguousRow(importId)
+      await openRows(`/imports/${importId}?step=analysis`)
+
+      const first = bodyRows()[0]!
+      expect(first).toHaveTextContent('Gateway Shared (another merchant)')
+      expect(within(first).queryByRole('button')).not.toBeInTheDocument()
+    })
   })
 
   // jsdom does not lay out: whether the browser wraps the name is seen in the screenshots (design D7).

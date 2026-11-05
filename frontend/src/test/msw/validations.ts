@@ -691,6 +691,15 @@ export function supersedeRunOnUndo(importId: string, by: UserName) {
   run.review = null
 }
 
+/**
+ * Resolving an ambiguous row (README P7; web-ambiguous-rows D5): the current run is superseded without a replacement.
+ * It only happens in analyzed, so there is no review to invalidate. Called by the fake import API.
+ */
+export function supersedeCurrentRun(importId: string) {
+  const run = currentRun(importId)
+  if (run) run.isCurrent = false
+}
+
 /** The review of the import is no longer valid: it goes back to analyzed and the invalidation is kept. */
 function invalidate(
   record: FakeImport,

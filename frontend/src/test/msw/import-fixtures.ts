@@ -238,6 +238,83 @@ export function makeRow(overrides: Partial<ImportRowItem> = {}): ImportRowItem {
   }
 }
 
+/** The candidates of an ambiguous row when a test does not give its own: one of the user's, one of another merchant. */
+export const AMBIGUOUS_CANDIDATES: ImportRowItem['candidates'] = [
+  {
+    gatewayId: 1,
+    gatewayName: 'Gateway Numeric',
+    transactionId: '9001',
+    channelId: 1001,
+    channelName: 'RAM-01',
+    statusId: 2,
+    statusName: 'Successful',
+    amount: '10.0000',
+  },
+  {
+    gatewayId: 3,
+    gatewayName: 'Gateway Shared',
+    transactionId: '9002',
+    channelId: null,
+    channelName: null,
+    statusId: null,
+    statusName: null,
+    amount: null,
+    outOfScope: true,
+  },
+]
+
+/**
+ * An ambiguous row and, for each of its candidates, the row the API answers once that gateway is chosen (web-ambiguous-
+ * rows design D5): the fake PATCH copies it and decides nothing. A candidate of another merchant resolves to a row
+ * without its transaction and with `out_of_scope_transaction`, as GET rows shows a matched row of another merchant.
+ */
+export function makeAmbiguousRow(
+  overrides: Partial<ImportRowItem> = {},
+  candidates: ImportRowItem['candidates'] = AMBIGUOUS_CANDIDATES,
+): { row: ImportRowItem; resolved: Map<number, ImportRowItem> } {
+  const row = makeRow({
+    transactionIdRaw: '222222222222222',
+    rawData: { ID: '222222222222222', Amount: '10', Currency: 'USD' },
+    amount: '10.0000',
+    ...overrides,
+    matchResult: 'ambiguous',
+    transactionId: null,
+    gatewayId: null,
+    transaction: null,
+    candidates,
+  })
+  const resolved = new Map(
+    candidates.map((c): [number, ImportRowItem] => {
+      const hidden = 'outOfScope' in c && c.outOfScope === true
+      const status = row.cycle === 'R' ? { statusId: c.statusId, statusName: c.statusName } : {}
+      return [
+        c.gatewayId,
+        {
+          ...row,
+          ...status,
+          matchResult: 'matched',
+          transactionId: c.transactionId,
+          gatewayId: c.gatewayId,
+          warnings: hidden ? [...row.warnings, 'out_of_scope_transaction'] : row.warnings,
+          transaction:
+            hidden || c.channelId === null
+              ? null
+              : {
+                  transactionId: c.transactionId,
+                  channelId: c.channelId,
+                  channelName: c.channelName!,
+                  statusId: c.statusId!,
+                  statusName: c.statusName!,
+                  amount: c.amount!,
+                  transactionDate: '2026-09-28T12:00:00.000Z',
+                },
+        },
+      ]
+    }),
+  )
+  return { row, resolved }
+}
+
 /**
  * The rows of an analysis: one per data row of each transactions sheet, matched unless the facts say otherwise;
  * matched rows take their channel from `facts.channels` in order (or from `fallbackChannel`).

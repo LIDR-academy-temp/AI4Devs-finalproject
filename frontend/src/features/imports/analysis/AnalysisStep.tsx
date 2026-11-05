@@ -24,6 +24,7 @@ export function AnalysisStep({ detail }: { detail: ImportDetail }) {
       <ValidationsSection detail={detail} />
       <RowsTable
         importId={detail.importId}
+        status={detail.status}
         match={search.match}
         page={search.page ?? 1}
         onChange={({ match, page }) =>
