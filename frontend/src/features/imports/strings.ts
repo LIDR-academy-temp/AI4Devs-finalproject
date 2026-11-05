@@ -54,7 +54,6 @@ export const strings = {
     importSheet: 'Import',
     separator: ': ',
     item: (field: string | undefined, message: string) => `${field ?? 'note'}: ${message}`,
-    unconfirmed: 'confirmation: the mapping of this sheet is not confirmed',
   },
   mapping: {
     kind: 'Type',

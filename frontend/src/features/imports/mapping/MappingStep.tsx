@@ -11,7 +11,7 @@ import { useConfirmMapping, useReloadImport } from '../mutations'
 import { useImportAccess } from '../permissions'
 import { strings } from '../strings'
 import { type MappingValues, toMappingConfirmation, valuesFromDetail } from './mapping-form'
-import { ReadinessBar, unconfirmedSheets } from './ReadinessBar'
+import { ReadinessBar } from './ReadinessBar'
 import { SheetCard } from './SheetCard'
 
 /** Column Mapping: one card per file and one section per sheet, the readiness and the confirmation (design D5). */
@@ -42,7 +42,8 @@ export function MappingStep({ detail, analysis }: { detail: ImportDetail; analys
 
   const dirty = form.formState.isDirty
   const missing = analysis.missing ?? detail.readiness.missing
-  const confirmFirst = detail.status !== 'mapped' || dirty || unconfirmedSheets(detail).length > 0
+  // The readiness of a mapped import already names its unconfirmed sheets (import-in-progress D7).
+  const confirmFirst = detail.status !== 'mapped' || dirty
   const canAnalyze = !confirmFirst && missing.length === 0 && !analysis.running && !confirm.isPending
   const whyNot = analysis.running
     ? null

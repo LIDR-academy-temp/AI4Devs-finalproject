@@ -88,8 +88,8 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 ## 7. Column Mapping sin derivar la readiness
 
 - [x] 7.1 Ajustar los tests de `mapping/MappingStep.test.tsx` y `mapping/analyze.test.tsx` al escenario "Archivo añadido tras confirmar" modificado: las hojas de `part2` salen de `readiness.missing` del detalle. Verificar que fallan mientras siga la derivación
-- [ ] 7.2 Implementar D7 (borrar `unconfirmedSheets` y su texto; habilitar Analyze con `mapped && canAnalyze && !dirty`) y verificar que pasan los tests de `features/imports`
-- [ ] 7.3 Commit: `test(web): readiness de Column Mapping tomada del API` y `refactor(web): la barra de readiness deja de derivar las hojas sin confirmar (#42)`
+- [x] 7.2 Implementar D7 (borrar `unconfirmedSheets` y su texto; habilitar Analyze con `mapped && canAnalyze && !dirty`) y verificar que pasan los tests de `features/imports`
+- [x] 7.3 Commit: `test(web): readiness de Column Mapping tomada del API` y `refactor(web): la barra de readiness deja de derivar las hojas sin confirmar (#42)`
 
 ## 8. Cancelar con motivo en el espacio del import
 
