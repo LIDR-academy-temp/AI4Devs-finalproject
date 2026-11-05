@@ -4,7 +4,7 @@
 
 - **Estado:** borrador v0.3 (épicas e historias reestructuradas)
 - **Fecha:** 2026-11-04
-- **Tipos:** `infra`, `db`, `backend`, `ai`, `frontend`, `test`
+- **Tipos:** `infra`, `db`, `backend`, `ai`, `frontend`, `test`, `producto` (tareas que no son código)
 
 ---
 
@@ -109,7 +109,7 @@
 
 **Tareas**
 - Endpoints `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` con el guard de sesión de AdonisJS.
-- Middleware de autenticación en todas las rutas `/api/v1/*` salvo el login.
+- Middleware de autenticación en todas las rutas `/api/v1/*` salvo el login y `/health`.
 - Protección CSRF (Shield).
 - Formato de respuesta `{ data, error, meta }` y manejador global de errores.
 - SPA: pantalla de login, rutas protegidas y cierre de sesión.
@@ -316,7 +316,7 @@
 **Tareas**
 - CRUD `/job-searches` y `POST /job-searches/{id}/sync` (`202` con `jobId`).
 - `AggregatorAdapter` en modo búsqueda, con la clave del proveedor en variable de entorno.
-- Trabajo `sync_job_search` con el mismo flujo que `sync_target_company` (normalizar, omitir duplicados, tope, filtros).
+- Trabajo `sync_job_search` con el mismo flujo que `sync_target_company` (normalizar, omitir duplicados, tope, filtros); las ofertas encontradas no se puntúan automáticamente (ADR-0008).
 - Respetar la cuota del proveedor: si se agota, el trabajo termina en `failed` con un mensaje claro.
 
 **Criterios de aceptación**

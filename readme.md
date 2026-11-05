@@ -237,7 +237,7 @@ flowchart LR
 
 | Riesgo | Medida |
 | --- | --- |
-| Acceso no autorizado | Sesión con cookie `HttpOnly`, `Secure` y `SameSite=Lax`; todas las rutas `/api/v1/*` requieren sesión salvo el login (RNF-01). Usuario único creado por seed con contraseña desde variable de entorno. |
+| Acceso no autorizado | Sesión con cookie `HttpOnly`, `Secure` y `SameSite=Lax`; todas las rutas `/api/v1/*` requieren sesión salvo el login y `/health` (RNF-01). Usuario único creado por seed con contraseña desde variable de entorno. |
 | CSRF | Protección CSRF de AdonisJS (Shield); la SPA envía el token en cada petición que modifica datos. |
 | Entradas maliciosas | Validación con VineJS en cada endpoint; carga de currículum limitada a PDF o Markdown, máximo 5 MB, con verificación del tipo real del archivo (RNF-03). |
 | Inyección de prompts desde ofertas o correos | El texto externo va siempre como dato dentro del mensaje de usuario, delimitado; el prompt de sistema indica que nunca contiene instrucciones. La salida se valida con el esquema y no ejecuta acciones automáticas: cualquier cambio de estado lo confirma el usuario. |

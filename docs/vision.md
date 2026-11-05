@@ -39,7 +39,7 @@ Como el autor es el usuario real, la hipótesis se valida con su propia búsqued
 | Tiempo entre abrir una oferta y registrar la decisión de aplicar o descartar | ~15 min (**supuesto**; se mide con 5 ofertas reales antes del desarrollo) | < 2 min (mediana) |
 | Seguimientos olvidados en 4 semanas de uso (revisados contra el correo) | Desconocido (**supuesto**) | 0 |
 | Ofertas nuevas que llegan por importación automática | 0 % | ≥ 50 % |
-| Tiempo para encontrar el historial de una candidatura | Búsqueda manual en el correo | < 30 s desde el panel |
+| Tiempo para encontrar el historial de una candidatura (indicador secundario; no es objetivo del PRD) | Búsqueda manual en el correo | < 30 s desde el panel |
 | Acuerdo entre la etiqueta de la IA y mi etiqueta manual (±1 nivel) | — | ≥ 80 % en el conjunto de prueba del golden set |
 
 > Los valores marcados como **supuesto** se medirán durante la primera semana de uso para fijar la línea base real.
@@ -120,7 +120,7 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 
 - **Tiempo:** 30 horas de desarrollo asistido por IA (recomendación del curso AI4Devs), con tope aceptado de 36 horas.
 - **Entregas:** documentación (Entrega 1), código funcional con el flujo principal (Entrega 2) y entrega final con pruebas y despliegue.
-- **Stack tecnológico (preferido, alineado con el curso):** TypeScript, AdonisJS, PostgreSQL con Lucid, React 19, Vite, Tuyau y despliegue en Railway. La versión de AdonisJS se confirma en la fase de arquitectura.
+- **Stack tecnológico (preferido, alineado con el curso):** TypeScript, AdonisJS, PostgreSQL con Lucid, React 19, Vite, Tuyau y despliegue en Railway. Versión: AdonisJS v7 (ADR-0001).
 - **Proveedor de IA:** Claude API.
 - **Idioma:**
   - Código, clases, tablas y campos en inglés.

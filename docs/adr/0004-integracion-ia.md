@@ -36,3 +36,4 @@ El puntaje debe ser explicable, medible y barato. Claude API ofrece respuestas e
 
 - 2026-11-04: aclaración de alcance. La carga del currículum en PDF pasó a should-have (RF-11) tras la revisión adversarial del PRD; en el MVP la entrada es Markdown. La decisión no cambia.
 - 2026-11-04: la caché de prompts de Claude (punto 6) es could-have según el PRD v0.2 (RNF-07); la caché por `input_hash` sigue siendo obligatoria (hallazgo AM2 de `docs/architecture-review.md`). La decisión no cambia.
+- 2026-11-04: el golden set del punto 7 crece por la revisión adversarial del PRD (RNF-08): al menos 20 ofertas para el puntaje, separadas en ajuste (10) y prueba (10) y etiquetadas antes de ver la IA, más un golden set de extracción de al menos 10 ofertas. La decisión no cambia.

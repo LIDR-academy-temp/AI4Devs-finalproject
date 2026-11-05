@@ -679,3 +679,29 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con la revisión de consistencia (G3), el cierre del checklist y la nota del fork. Sin push: la rama sigue sin publicarse en GitHub.
+
+### Prompt 52
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Revisa una vez más y busca inconsistencias con la documentación del sistema
+  ```
+
+- **Resultado:** Segunda revisión de consistencia, con verificación cruzada de endpoints entre tickets y arquitectura. Se corrigieron: golden set de ADR-0004 (historial), versión de AdonisJS e indicador secundario en `docs/vision.md`, tipo `producto` en `docs/tickets.md`, puntaje a pedido en T-28, comandos `metrics` y `db:seed --demo` y `AI_DRIVER=fake` en `CLAUDE.md`, resumen de la arquitectura (instancias y control de gasto) y el endpoint `/health` sin sesión en arquitectura, PRD (RNF-01) y T-03. `check_docs.py` en verde. Sin commit.
+
+### Prompt 53
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con la segunda revisión de consistencia. Sin push.

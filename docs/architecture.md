@@ -9,7 +9,7 @@
 
 ## 1. Resumen
 
-Monorepo con dos aplicaciones: una **API REST** en AdonisJS v7 y una **SPA** en React 19 con Vite. En producción, ambas se despliegan en **un solo contenedor**: la API sirve los archivos estáticos de la SPA desde el mismo origen. La base de datos es PostgreSQL, que también aloja la cola de trabajos en segundo plano. La IA se integra con Claude API mediante respuestas estructuradas.
+Monorepo con dos aplicaciones: una **API REST** en AdonisJS v7 y una **SPA** en React 19 con Vite. En producción, ambas se despliegan en **un solo contenedor**: la API sirve los archivos estáticos de la SPA desde el mismo origen. La base de datos es PostgreSQL, que también aloja la cola de trabajos en segundo plano. La IA se integra con Claude API mediante respuestas estructuradas, con control de gasto (ADR-0008). La misma imagen se despliega en dos instancias: personal y de demostración (ADR-0007).
 
 | Decisión | ADR |
 | --- | --- |
@@ -177,7 +177,7 @@ flowchart LR
 
 | Riesgo | Medida |
 | --- | --- |
-| Acceso no autorizado | Sesión con cookie `HttpOnly`, `Secure` y `SameSite=Lax`; todas las rutas `/api/v1/*` requieren sesión salvo el login (RNF-01). Usuario único creado por seed con contraseña desde variable de entorno. |
+| Acceso no autorizado | Sesión con cookie `HttpOnly`, `Secure` y `SameSite=Lax`; todas las rutas `/api/v1/*` requieren sesión salvo el login y `/health` (RNF-01). Usuario único creado por seed con contraseña desde variable de entorno. |
 | CSRF | Protección CSRF de AdonisJS (Shield); la SPA envía el token en cada petición que modifica datos. |
 | Entradas maliciosas | Validación con VineJS en cada endpoint; carga de currículum limitada a PDF o Markdown, máximo 5 MB, con verificación del tipo real del archivo (RNF-03). |
 | Inyección de prompts desde ofertas o correos | El texto externo va siempre como dato dentro del mensaje de usuario, delimitado; el prompt de sistema indica que nunca contiene instrucciones. La salida se valida con el esquema y no ejecuta acciones automáticas: cualquier cambio de estado lo confirma el usuario. |
@@ -382,6 +382,7 @@ En caso de error: `data` es `null` y `error` contiene `{ "code": "VALIDATION_ERR
 
 | Método | Ruta | Descripción | Req. |
 | --- | --- | --- | --- |
+| `GET` | `/health` | Estado del servicio (sin sesión; lo usan Railway y el walking skeleton) | RNF-12 |
 | `POST` | `/auth/login` | Iniciar sesión | RNF-01 |
 | `POST` | `/auth/logout` | Cerrar sesión | RNF-01 |
 | `GET` | `/auth/me` | Usuario actual y su idioma | RNF-01 |

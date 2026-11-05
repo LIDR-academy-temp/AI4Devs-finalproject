@@ -186,7 +186,7 @@ Los criterios detallados (Dado/Cuando/Entonces) están en [`docs/user-stories.md
 
 | Id | Categoría | Requisito |
 | --- | --- | --- |
-| RNF-01 | Seguridad | Autenticación de un solo usuario con sesión; todas las rutas de la API requieren sesión salvo el login. Limitador de intentos en el login: could-have. El evaluador usa una instancia de demostración con datos sintéticos, nunca la instancia personal (ADR-0007). |
+| RNF-01 | Seguridad | Autenticación de un solo usuario con sesión; todas las rutas de la API requieren sesión salvo el login y el chequeo de salud (`/health`). Limitador de intentos en el login: could-have. El evaluador usa una instancia de demostración con datos sintéticos, nunca la instancia personal (ADR-0007). |
 | RNF-02 | Seguridad | Secretos (clave de Claude API, base de datos, agregador) solo en variables de entorno; nunca en el repositorio. |
 | RNF-03 | Seguridad | Validación de todas las entradas en el servidor; límite de tamaño y tipo en la carga del currículum. |
 | RNF-04 | Seguridad | Si se implementa RF-08, protección contra SSRF (solo `http`/`https`, sin direcciones internas). |

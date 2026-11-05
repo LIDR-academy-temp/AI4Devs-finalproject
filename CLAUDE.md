@@ -42,6 +42,8 @@ pnpm --filter web test               # pruebas de la SPA
 pnpm e2e                             # Playwright (requiere la app en marcha)
 pnpm --filter api evals              # golden set contra la API real de Claude (cuesta dinero; solo a mano)
 pnpm build                           # build de producción de ambas apps
+pnpm --filter api exec node ace metrics        # OBJ-1, OBJ-5, p90 de trabajos y gasto de IA
+pnpm --filter api exec node ace db:seed --demo # datos sintéticos de la instancia de demostración
 python3 scripts/check_docs.py        # compuerta G3: totales, referencias, ADRs y readme al día
 python3 scripts/check_docs.py --build-readme   # regenera readme.md desde docs/
 ```
@@ -83,7 +85,7 @@ python3 scripts/check_docs.py --build-readme   # regenera readme.md desde docs/
 - TDD: escribe primero la prueba que falla, luego el código mínimo, luego refactoriza.
 - Cada escenario de una spec de OpenSpec tiene una prueba de aceptación con el mismo nombre.
 - Cobertura mínima del 80 % en la lógica de dominio (`apps/api/app/services/`, filtros, pipeline).
-- Las pruebas nunca llaman a la API real de Claude ni a Greenhouse: usa el doble de prueba del cliente de IA y respuestas grabadas.
+- Las pruebas nunca llaman a la API real de Claude ni a las plataformas de empleo: usa el doble de prueba del cliente de IA (`AI_DRIVER=fake`) y respuestas grabadas.
 - Patrón Arrange-Act-Assert y nombres que describan el comportamiento.
 - Un hook de Claude Code ejecuta lint y pruebas después de cada edición (se configura en T-01).
 
