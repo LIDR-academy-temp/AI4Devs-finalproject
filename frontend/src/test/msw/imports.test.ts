@@ -355,6 +355,34 @@ describe('fake import API: PATCH rows (spec "Resolución de una fila ambigua"; w
     })
     expect(importRecord(importId).rows!.find((r) => r.rowNo === row.rowNo)?.matchResult).toBe('ambiguous')
   })
+
+  it('answers the 400 of the schema before the permission, as Fastify validates before the preHandler (#72)', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    const row = seedAmbiguousRow(importId)
+
+    const badRowNo = await resolve('viewer', importId, row.sheetId, 'abc', { gatewayId: 1 })
+    expect(badRowNo.status).toBe(400)
+    expect(badRowNo.body.code).toBe('validation_error')
+    const badBody = await resolve('viewer', importId, row.sheetId, row.rowNo, { gatewayId: 0 })
+    expect(badBody.status).toBe(400)
+    expect(badBody.body.code).toBe('validation_error')
+  })
+
+  it('decides with the candidates of the stored row, as the API: one taken out of it is no longer accepted', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    const row = seedAmbiguousRow(importId)
+    const stored = importRecord(importId).rows!.find((r) => r.rowNo === row.rowNo && r.sheetId === row.sheetId)!
+    stored.candidates = stored.candidates.filter((c) => c.gatewayId !== 1)
+
+    const res = await resolve('analyst', importId, row.sheetId, row.rowNo, { gatewayId: 1 })
+
+    expect(res.status).toBe(400)
+    expect(res.body).toMatchObject({
+      code: 'validation_error',
+      details: { gatewayId: 1, candidates: stored.candidates },
+    })
+    expect(importRecord(importId).rows!.find((r) => r.rowNo === row.rowNo)?.matchResult).toBe('ambiguous')
+  })
 })
 
 describe('fake import API: sheets not confirmed in the readiness (spec "Hojas sin confirmar en la readiness")', () => {

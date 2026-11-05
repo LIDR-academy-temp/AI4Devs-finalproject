@@ -29,7 +29,8 @@ async function open(importId: string, search = '') {
 describe('Resolve an ambiguous row from the table', () => {
   it('choosing and confirming sends the gateway, matches the row and moves the focus to the rows', async () => {
     const { importId } = seedImport('batch-clean', { status: 'analyzed' })
-    const row = seedAmbiguousRow(importId)
+    // Row 1 of APP: once matched it is the first row of the Matched filter.
+    const row = seedAmbiguousRow(importId, { rowNo: 1 })
     const { user } = await open(importId)
     await screen.findByText(NO_RUN)
     expect(counter(c.ambiguous)).toHaveTextContent('1')
@@ -47,7 +48,19 @@ describe('Resolve an ambiguous row from the table', () => {
     await waitFor(() => expect(counter(c.ambiguous)).toHaveTextContent('0'))
     await waitFor(() => expect(within(table()).queryByRole('button', { name: /^Choose / })).not.toBeInTheDocument())
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-    await waitFor(() => expect(document.activeElement).toHaveTextContent(s.title))
+    // The exact element: the heading of the rows, not the Choose that is gone nor the body (review 1).
+    const heading = screen.getByRole('heading', { name: s.title })
+    expect(heading).toHaveAttribute('data-list-heading')
+    await waitFor(() => expect(document.activeElement).toBe(heading))
+
+    // The row itself is now Matched: first of the Matched filter.
+    await user.click(screen.getByRole('button', { name: s.filters.matched }))
+    await waitFor(() => {
+      const first = within(table()).getAllByRole('row')[1]!
+      expect(first).toHaveTextContent(row.transactionIdRaw!)
+      expect(first).toHaveTextContent(s.results.matched)
+      expect(first).not.toHaveTextContent(s.results.ambiguous)
+    })
   })
 
   it('warns that the current run is discarded and, once resolved, there is no run', async () => {
@@ -62,6 +75,8 @@ describe('Resolve an ambiguous row from the table', () => {
     await user.click(within(dialog()).getByRole('button', { name: s.resolve.confirm }))
 
     await screen.findByText(NO_RUN)
+    // And the decision asks to validate again before continuing.
+    expect(screen.getByText('Run the validations before continuing.')).toBeInTheDocument()
   })
 
   it('warns as well while the run is not known yet', async () => {
@@ -103,6 +118,8 @@ describe('Resolve an ambiguous row from the table', () => {
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
     expect(importRequests('resolveRow')).toHaveLength(0)
     expect(chooseButton('Gateway Numeric', row)).toBeEnabled()
+    // The focus goes back to the Choose that opened the dialog, not to the body.
+    await waitFor(() => expect(document.activeElement).toBe(chooseButton('Gateway Numeric', row)))
   })
 
   it('409 import_not_editable says so with the status and reloads the import: Choose is disabled', async () => {
@@ -127,22 +144,36 @@ describe('Resolve an ambiguous row from the table', () => {
     const stored = importRecord(importId).rows!
     const index = stored.findIndex((r) => r.rowNo === row.rowNo && r.sheetId === row.sheetId)
     stored[index] = { ...stored[index]!, matchResult: 'matched' }
+    const rowsBefore = importRequests('rows').length
+    const detailBefore = importRequests('detail').length
     await user.click(within(dialog()).getByRole('button', { name: s.resolve.confirm }))
 
     await screen.findByText(s.resolve.notAmbiguous)
     await waitFor(() => expect(within(table()).queryByRole('button', { name: /^Choose / })).not.toBeInTheDocument())
+    // Both the rows and the detail are asked again (review 2).
+    await waitFor(() => expect(importRequests('rows').length).toBeGreaterThan(rowsBefore))
+    await waitFor(() => expect(importRequests('detail').length).toBeGreaterThan(detailBefore))
   })
 
-  it('400 says the gateway is no longer a candidate', async () => {
+  it('400 says the gateway is no longer a candidate and asks the rows again', async () => {
     const { importId } = seedImport('batch-clean', { status: 'analyzed' })
     const row = seedAmbiguousRow(importId)
     const { user } = await open(importId)
 
     await user.click(chooseButton('Gateway Numeric', row))
-    importRecord(importId).resolutions.get(`${row.sheetId}:${row.rowNo}`)!.delete(1)
+    // The candidate leaves the stored row, as the API decides with the row's own candidates (review 3).
+    const stored = importRecord(importId).rows!.find((r) => r.rowNo === row.rowNo && r.sheetId === row.sheetId)!
+    stored.candidates = stored.candidates.filter((c) => c.gatewayId !== 1)
+    const rowsBefore = importRequests('rows').length
     await user.click(within(dialog()).getByRole('button', { name: s.resolve.confirm }))
 
     await screen.findByText(s.resolve.notCandidate)
+    await waitFor(() => expect(importRequests('rows').length).toBeGreaterThan(rowsBefore))
+    await waitFor(() =>
+      expect(
+        within(table()).queryByRole('button', { name: s.choose('Gateway Numeric', row.rowNo, row.sheetName) }),
+      ).not.toBeInTheDocument(),
+    )
   })
 
   it('a network failure gives the generic message', async () => {
