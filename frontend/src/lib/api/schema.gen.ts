@@ -2434,6 +2434,133 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Imports of every account in scope, the open ones by default, latest update first
+         * @description Without status, uploaded, mapped, analyzed and validated. A merchant, provider or account unknown or outside the scope answers 404, the same for the three. mine=true keeps the imports the caller created.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                    merchantId?: string;
+                    providerId?: string;
+                    accountId?: string;
+                    mine?: "true" | "false";
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: {
+                                /** Format: uuid */
+                                importId: string;
+                                /** Format: uuid */
+                                accountId: string;
+                                /** @enum {string} */
+                                status: "uploaded" | "mapped" | "analyzed" | "validated" | "processed" | "cancelled";
+                                createdBy: {
+                                    userId: number;
+                                    userName: string;
+                                };
+                                /** Format: date-time */
+                                createdAt: string;
+                                /** Format: date-time */
+                                updatedAt: string;
+                                /** Format: date-time */
+                                analyzedAt: string | null;
+                                rowsTotal: number | null;
+                                rowsMatched: number | null;
+                                rowsUnmatched: number | null;
+                                /** Format: uuid */
+                                currentBatchId: string | null;
+                                fileCount: number;
+                                account: {
+                                    /** Format: uuid */
+                                    id: string;
+                                    name: string;
+                                };
+                                provider: {
+                                    id: number;
+                                    name: string;
+                                };
+                                merchant: {
+                                    id: number;
+                                    name: string;
+                                };
+                            }[];
+                            page: number;
+                            pageSize: number;
+                            total: number;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/imports/{importId}/mapping": {
         parameters: {
             query?: never;
@@ -3307,7 +3434,13 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
             responses: {
                 /** @description Default Response */
                 200: {
@@ -3465,6 +3598,19 @@ export interface paths {
                                 source: "file";
                                 warning?: string;
                             }[] | null;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            code: string;
+                            message: string;
+                            details?: unknown;
                         };
                     };
                 };

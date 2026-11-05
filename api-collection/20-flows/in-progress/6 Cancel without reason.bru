@@ -1,0 +1,25 @@
+meta {
+  name: 6 Cancel without reason
+  type: http
+  seq: 6
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/cancel
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{inProgressImportId}}
+}
+
+tests {
+  test('a cancel without a reason answers 400 validation_error (#47)', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+  });
+}

@@ -1,0 +1,33 @@
+meta {
+  name: Imports in progress - viewer out of scope
+  type: http
+  seq: 119
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports?merchantId=2
+  body: none
+  auth: bearer
+}
+
+params:query {
+  merchantId: 2
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer gets 404 not_found when filtering by merchant 2, outside the scope', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

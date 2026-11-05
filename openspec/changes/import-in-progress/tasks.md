@@ -53,8 +53,8 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 
 ## 5. Contrato publicado, README y colección Bruno
 
-- [ ] 5.1 `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`; verificar que `pnpm openapi:check` queda limpio tras el commit y que `docs/openapi.yaml` trae `GET /imports` y el cuerpo obligatorio del cancel
-- [ ] 5.2 README §4:
+- [x] 5.1 `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`; verificar que `pnpm openapi:check` queda limpio tras el commit y que `docs/openapi.yaml` trae `GET /imports` y el cuerpo obligatorio del cancel
+- [x] 5.2 README §4:
   - fila nueva `GET /imports?status=&merchantId=&providerId=&accountId=&mine=&page=&pageSize=`;
   - fila del cancel con el cuerpo `{ reason }`, `400 validation_error` y `409 import_not_cancellable`.
 
