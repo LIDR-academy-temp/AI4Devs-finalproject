@@ -14,7 +14,7 @@ Lee antes de proponer o implementar:
 | `docs/prd.md` | Épicas E1-E5, historias HU1-HU10, requisitos RF-xx y RNF-xx |
 | `docs/user-stories.md` y `docs/tickets.md` | Criterios de aceptación y tickets técnicos |
 | `docs/architecture.md` | Componentes, estructura, modelo de datos y API |
-| `docs/adr/` | Decisiones de arquitectura aceptadas |
+| `docs/adr/` | Decisiones de arquitectura (un ADR aceptado no se reescribe: se reemplaza con uno nuevo) |
 | `openspec/specs/` | Comportamiento vigente (fuente de verdad) |
 
 No implementes nada etiquetado `v1.1` o `futuro` sin un cambio de OpenSpec aprobado.

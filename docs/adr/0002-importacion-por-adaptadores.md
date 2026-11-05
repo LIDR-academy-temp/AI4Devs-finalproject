@@ -1,6 +1,6 @@
 # ADR-0002: Importación de ofertas mediante adaptadores por plataforma de empleo
 
-- **Estado:** aceptada (actualizada el 2026-11-04 tras la revisión adversarial)
+- **Estado:** reemplazada parcialmente por [ADR-0006](./0006-fuentes-automaticas-y-agregador.md) (2026-11-04). Sigue vigente la interfaz común de adaptadores, la entidad `TargetCompany` y la conversión de HTML a Markdown; los adaptadores del MVP y el alcance de la importación los define ADR-0006.
 - **Fecha:** 2026-11-04
 
 ## Contexto
@@ -26,13 +26,3 @@ Las empresas objetivo grandes (Meta, Apple, Amazon, Netflix, Google, Microsoft, 
 
 - Positivas: agregar Ashby, Lever o SmartRecruiters (v1.1) es implementar un adaptador nuevo sin tocar el resto.
 - Negativas: en el MVP, la importación solo cubre las empresas en Greenhouse; las grandes dependen del texto pegado y, en v1.1, de las alertas por correo.
-
-## Actualización (2026-11-04)
-
-La revisión adversarial del PRD (`docs/prd-review.md`, hallazgo C3) y el usuario confirmaron que la recolección automática es tan importante como pegar ofertas. Cambios:
-
-- La interfaz `JobSourceAdapter` tiene dos modos:
-  - **Por job board** de una empresa objetivo: `GreenhouseAdapter` y `AshbyAdapter` en el MVP; `LeverAdapter` como should-have, porque ninguna empresa objetivo conocida usa Lever.
-  - **Por búsqueda** guardada (`JobSearch`: palabras clave y ubicación): `AggregatorAdapter`, para llegar a las empresas grandes sin API propia.
-- El proveedor del agregador se elige con un spike (cobertura de las empresas objetivo, cuota gratuita y términos de uso). JSearch es el primer candidato; SerpApi se evita por el litigio con Google (diciembre de 2025). Si ningún proveedor es viable, se implementa `SmartRecruitersAdapter` en su lugar.
-- Cada sincronización respeta un tope de ofertas nuevas (por defecto 50) y aplica los filtros duros, incluido el de roles, antes de cualquier llamada a la IA.

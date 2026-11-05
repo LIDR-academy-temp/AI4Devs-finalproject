@@ -5,7 +5,7 @@
 
 ## Contexto
 
-La extracción y el puntaje tardan hasta 20 segundos, y la importación de una empresa puede generar decenas de llamadas a la IA. No caben en una petición HTTP. La infraestructura debe ser mínima: un contenedor y PostgreSQL en Railway.
+La extracción y el puntaje pueden tardar decenas de segundos (meta: percentil 90 menor a 30 s, RNF-06), y la importación de una empresa puede generar decenas de llamadas a la IA. No caben en una petición HTTP. La infraestructura debe ser mínima: un contenedor y PostgreSQL en Railway.
 
 ## Decisión
 
@@ -28,3 +28,7 @@ La extracción y el puntaje tardan hasta 20 segundos, y la importación de una e
 
 - Positivas: sin infraestructura extra; trabajos persistentes que sobreviven a reinicios; estado visible para la UI.
 - Negativas: el polling agrega peticiones; el worker en el mismo proceso compite por CPU con la API.
+
+## Historial de cambios
+
+- 2026-11-04: se agregó el tipo de trabajo `sync_job_search` para el agregador de ofertas (ADR-0006) y se alineó el tiempo de respuesta con RNF-06 (percentil 90 menor a 30 s). La decisión no cambia.

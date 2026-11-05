@@ -112,7 +112,7 @@ Resultado: tras investigar qué plataforma de empleo usa cada empresa, la IA pro
 El recolectar ofertas de diferentes portales automáticamente es tan importante como copiar y pegar la oferta. Se tienen 30 hrs pero no hay problema si nos pasamos un 20% más.
 ```
 
-Resultado: adaptadores de Greenhouse, Ashby y Lever más un agregador por búsqueda sujeto a spike (ADR-0002 actualizado). Al dividir las historias, Lever pasó a should-have porque ninguna empresa objetivo lo usa.
+Resultado: adaptadores de Greenhouse, Ashby y Lever más un agregador por búsqueda sujeto a spike (ADR-0006, que reemplaza parcialmente a ADR-0002). Al dividir las historias, Lever pasó a should-have porque ninguna empresa objetivo lo usa.
 
 ### **2.3. Descripción de alto nivel del proyecto y estructura de ficheros**
 

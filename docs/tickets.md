@@ -239,7 +239,7 @@
 
 ### T-12 — Empresas objetivo, interfaz de adaptadores y Greenhouse
 
-- **Tipo:** backend · **Estimación:** 1.5 h · **Requisitos:** RF-04, RF-04b, RF-05, RF-09, ADR-0002
+- **Tipo:** backend · **Estimación:** 1.5 h · **Requisitos:** RF-04, RF-04b, RF-05, RF-09, ADR-0002, ADR-0006
 
 **Tareas**
 - CRUD `/target-companies` con validación de `ats_provider` y `board_token`.
@@ -266,7 +266,7 @@
 
 ### T-25 — Adaptador de Ashby
 
-- **Tipo:** backend · **Estimación:** 1 h · **Requisitos:** RF-04, ADR-0002
+- **Tipo:** backend · **Estimación:** 1 h · **Requisitos:** RF-04, ADR-0006
 
 **Tareas**
 - `AshbyAdapter` sobre el job board público de Ashby; verificar el endpoint y su formato en la documentación oficial.
@@ -277,7 +277,7 @@
 
 ### T-26 — Adaptador de Lever (should-have)
 
-- **Tipo:** backend · **Estimación:** 1 h · **Requisitos:** RF-04, ADR-0002
+- **Tipo:** backend · **Estimación:** 1 h · **Requisitos:** RF-04, ADR-0006
 
 **Tareas**
 - `LeverAdapter` sobre la API pública de postings de Lever; verificar el endpoint y su formato en la documentación oficial.
@@ -288,12 +288,12 @@
 
 ### T-27 — Spike del agregador de ofertas
 
-- **Tipo:** backend · **Estimación:** 0.5 h · **Requisitos:** RF-04a, ADR-0002
+- **Tipo:** backend · **Estimación:** 0.5 h · **Requisitos:** RF-04a, ADR-0006
 
 **Tareas**
 - Probar JSearch (primer candidato) con 3 búsquedas reales: "software engineer" en Seattle, en remoto y con el nombre de una empresa grande.
 - Revisar cuota gratuita, términos de uso y si los resultados incluyen ofertas de las empresas grandes de la lista.
-- Registrar la decisión en ADR-0002.
+- Registrar el resultado en ADR-0006.
 
 **Criterios de aceptación**
 - Decisión documentada: proveedor elegido, o reemplazo por el adaptador de SmartRecruiters.

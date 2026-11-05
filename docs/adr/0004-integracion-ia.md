@@ -31,3 +31,7 @@ El puntaje debe ser explicable, medible y barato. Claude API ofrece respuestas e
 
 - Positivas: menor costo por llamada; el usuario puede revisar y corregir el Markdown; resultados medibles y reproducibles.
 - Negativas: la conversión de PDF a Markdown puede perder detalles; se mitiga con la revisión del usuario (RF-13).
+
+## Historial de cambios
+
+- 2026-11-04: aclaración de alcance. La carga del currículum en PDF pasó a should-have (RF-11) tras la revisión adversarial del PRD; en el MVP la entrada es Markdown. La decisión no cambia.

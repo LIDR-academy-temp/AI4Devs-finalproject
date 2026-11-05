@@ -443,3 +443,42 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con el cambio de prioridad de Lever (prompt 31) y la revisión de consistencia contra el AI SDLC (prompt 32).
+
+### Prompt 34
+
+- **Categoría:** `🔍 Investigación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Muéstrame los ADR que se han modificado desde que se les hizo check in por primera vez.
+  ```
+
+- **Resultado:** Diff de `docs/adr/` desde el commit `a01be6c`: se modificaron ADR-0002, ADR-0004 y ADR-0005. Se señaló que ADR-0002 quedó con contradicciones internas y que la práctica recomendada es no reescribir un ADR aceptado sino reemplazarlo con uno nuevo. Respuesta en el chat; sin cambios en archivos.
+
+### Prompt 35
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Sí, aplíca los cambios propuestos
+  ```
+
+- **Resultado:** ADR-0002 se restauró a su texto original con el estado "reemplazada parcialmente por ADR-0006"; se creó `docs/adr/0006-fuentes-automaticas-y-agregador.md`; ADR-0004 y ADR-0005 recibieron una sección "Historial de cambios" (y ADR-0005 alineó el tiempo con RNF-06). Se actualizaron las referencias en `docs/architecture.md`, `docs/tickets.md`, `prompts.md`, `CLAUDE.md` y `readme.md`. Sin commit.
+
+### Prompt 36
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con ADR-0006, la restauración de ADR-0002, el historial de cambios de ADR-0004 y ADR-0005, y las referencias actualizadas.

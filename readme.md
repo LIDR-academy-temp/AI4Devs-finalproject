@@ -17,7 +17,7 @@
 | [`docs/prd.md`](./docs/prd.md) | Requisitos del MVP (v0.2) |
 | [`docs/prd-review.md`](./docs/prd-review.md) | Revisión adversarial del PRD |
 | [`docs/architecture.md`](./docs/architecture.md) | Arquitectura, modelo de datos y API |
-| [`docs/adr/`](./docs/adr/) | Decisiones de arquitectura (ADR-0001 a ADR-0005) |
+| [`docs/adr/`](./docs/adr/) | Decisiones de arquitectura (ADR-0001 a ADR-0006) |
 | [`docs/user-stories.md`](./docs/user-stories.md) | 5 épicas y 10 historias con 44 escenarios de aceptación |
 | [`docs/tickets.md`](./docs/tickets.md) | 32 tickets de trabajo |
 | [`docs/ai-log.md`](./docs/ai-log.md) | Registro completo de prompts |

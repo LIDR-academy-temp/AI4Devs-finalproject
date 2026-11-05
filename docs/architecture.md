@@ -14,7 +14,8 @@ Monorepo con dos aplicaciones: una **API REST** en AdonisJS v7 y una **SPA** en 
 | Decisión | ADR |
 | --- | --- |
 | Monorepo con API AdonisJS + SPA React en un solo contenedor | [ADR-0001](./adr/0001-monorepo-api-spa-un-contenedor.md) |
-| Importación de ofertas mediante adaptadores (Greenhouse y Ashby; Lever should-have) y búsquedas en un agregador | [ADR-0002](./adr/0002-importacion-por-adaptadores.md) |
+| Importación de ofertas mediante una interfaz de adaptadores | [ADR-0002](./adr/0002-importacion-por-adaptadores.md) (reemplazada parcialmente) |
+| Fuentes automáticas: job boards (Greenhouse y Ashby; Lever should-have) y agregador por búsqueda | [ADR-0006](./adr/0006-fuentes-automaticas-y-agregador.md) |
 | Modelos de Claude por entorno y por tarea | [ADR-0003](./adr/0003-modelos-claude-por-entorno.md) |
 | Integración de IA: Markdown canónico, respuestas estructuradas, prompts versionados y evals | [ADR-0004](./adr/0004-integracion-ia.md) |
 | Cola de trabajos en PostgreSQL | [ADR-0005](./adr/0005-cola-de-trabajos-postgresql.md) |
@@ -431,7 +432,7 @@ Content-Type: application/json
 ## 6. Pendiente para el walking skeleton
 
 - Confirmar la librería de la cola de trabajos (ADR-0005).
-- Spike del agregador de ofertas: cobertura de las empresas objetivo, cuota y términos de uso (ADR-0002).
+- Spike del agregador de ofertas: cobertura de las empresas objetivo, cuota y términos de uso (ADR-0006).
 - Confirmar la integración de Tuyau con una SPA separada en AdonisJS v7.
 - Medir el costo real por oferta con cada modelo (ADR-0003).
 - Crear `CLAUDE.md` con comandos, estructura y definition of done.
