@@ -128,8 +128,8 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
   - `app/layout/AppLayout.test.tsx`: In Progress como enlace para `analyst` y `admin`, y entrada activa solo en su ruta.
 
   Verificar que fallan.
-- [ ] 10.3 Implementar la ruta `/reconciliations/in-progress` (permiso, migas, `validateInProgressSearch`), `importListQuery`, `InProgressPage` con filtros, tabla, `Pager` y estado vacío, los textos en `features/imports/strings.ts` y el `to` de In Progress en `nav-config.ts`. Verificar con `pnpm lint`, `pnpm typecheck` y `pnpm test`
-- [ ] 10.4 Commit: `test(web): pantalla In Progress` y `feat(web): pantalla In Progress con filtros, Resume y Cancel (#38)`
+- [x] 10.3 Implementar la ruta `/reconciliations/in-progress` (permiso, migas, `validateInProgressSearch`), `importListQuery`, `InProgressPage` con filtros, tabla, `Pager` y estado vacío, los textos en `features/imports/strings.ts` y el `to` de In Progress en `nav-config.ts`. Verificar con `pnpm lint`, `pnpm typecheck` y `pnpm test`
+- [x] 10.4 Commit: `test(web): pantalla In Progress` y `feat(web): pantalla In Progress con filtros, Resume y Cancel (#38)`
 
 ## 11. Capturas
 

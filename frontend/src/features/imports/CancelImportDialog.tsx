@@ -43,8 +43,11 @@ export function CancelImportDialog({
   describedBy?: string
   /** Text of the button: Cancel and reprocess in the decision of Analysis & Validations (web-validations D9). */
   label?: string
-  /** Called once the import is cancelled, or found no longer cancellable: In Progress asks its list again. */
-  onCancelled?: () => void
+  /**
+   * Called once the import is cancelled, or with its status when it is no longer cancellable: In Progress asks its
+   * list again and says so itself, since the row (and this component) leaves the list.
+   */
+  onCancelled?: (notCancellableStatus?: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
@@ -73,7 +76,7 @@ export function CancelImportDialog({
           const status = (failure.details as { status?: string } | undefined)?.status ?? ''
           setError(s.notCancellable(status))
           void reload()
-          onCancelled?.()
+          onCancelled?.(status)
         } else {
           setError(s.failed)
         }

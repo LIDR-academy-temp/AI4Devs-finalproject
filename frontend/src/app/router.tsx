@@ -19,9 +19,14 @@ import { AccountFeesPanel } from '@/features/fees/AccountFeesPanel'
 import { FeesPage } from '@/features/fees/FeesPage'
 import { validateFeesSearch } from '@/features/fees/fees-search'
 import { ImportPage } from '@/features/imports/ImportPage'
+import { InProgressPage } from '@/features/imports/in-progress/InProgressPage'
 import { NewReconciliationPage } from '@/features/imports/NewReconciliationPage'
 import { strings as importStrings } from '@/features/imports/strings'
-import { validateImportSearch, validateNewReconciliationSearch } from '@/features/imports/validate-search'
+import {
+  validateImportSearch,
+  validateInProgressSearch,
+  validateNewReconciliationSearch,
+} from '@/features/imports/validate-search'
 import { GlobalRulesPage } from '@/features/matching/GlobalRulesPage'
 import { MatchingRulesPage } from '@/features/matching/MatchingRulesPage'
 import { RuleSetPage } from '@/features/matching/RuleSetPage'
@@ -178,6 +183,18 @@ const newReconciliationRoute = createRoute({
   component: NewReconciliationPage,
 })
 
+// The imports to resume or cancel: settlement.process, like New Reconciliation (import-in-progress design D5).
+const inProgressRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/reconciliations/in-progress',
+  validateSearch: validateInProgressSearch,
+  staticData: {
+    requires: 'settlement.process',
+    crumbs: [strings.groups.reconciliation, strings.screens.inProgress],
+  },
+  component: InProgressPage,
+})
+
 // No permission required: the API decides the scope and viewer may read an import (design D2, D10).
 const importRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -231,6 +248,7 @@ function buildRouteTree(extraRoutes: AnyRoute[]) {
       ruleSetRoute,
       feesRoute,
       newReconciliationRoute,
+      inProgressRoute,
       importRoute,
       settlementReviewRoute,
       settlementListRoute,
