@@ -24,7 +24,7 @@
 | [`docs/adr/`](./docs/adr/) | Decisiones de arquitectura (ADR-0001 a ADR-0008) |
 | [`docs/architecture-review.md`](./docs/architecture-review.md) | Revisión adversarial de la arquitectura |
 | [`docs/sdlc-checklist.md`](./docs/sdlc-checklist.md) | Compuertas del AI SDLC |
-| [`docs/user-stories.md`](./docs/user-stories.md) | 5 épicas y 10 historias con 49 escenarios de aceptación |
+| [`docs/user-stories.md`](./docs/user-stories.md) | 5 épicas y 10 historias con 50 escenarios de aceptación |
 | [`docs/tickets.md`](./docs/tickets.md) | 36 tickets de trabajo |
 | [`docs/ai-log.md`](./docs/ai-log.md) | Registro completo de prompts |
 | [`CLAUDE.md`](./CLAUDE.md) | Convenciones para los agentes de IA |
@@ -198,9 +198,13 @@ flowchart LR
 │   │   │   ├── filters/        # filtros duros y mapeo de seniority
 │   │   │   ├── ai/             # cliente Claude, prompts/, schemas/
 │   │   │   ├── job_sources/    # JobSourceAdapter y adaptadores (Greenhouse, Ashby, agregador; Lever should-have)
-│   │   │   └── jobs/           # handlers de la cola
+│   │   │   ├── jobs/           # handlers de la cola
+│   │   │   └── usage/          # control de gasto de IA (ai_usage, topes, precios)
+│   │   ├── commands/           # node ace metrics
+│   │   ├── config/             # incluye la tabla de precios por modelo
 │   │   ├── database/migrations/
-│   │   ├── evals/              # golden set y script de evaluación
+│   │   ├── database/seeders/   # usuario único y datos sintéticos de demostración (--demo)
+│   │   ├── evals/              # golden sets, script de evaluación y results/
 │   │   └── tests/              # Japa: unit/ y functional/
 │   └── web/                    # React 19 + Vite
 │       └── src/
@@ -208,7 +212,11 @@ flowchart LR
 │           ├── lib/            # cliente Tuyau, TanStack Query
 │           └── locales/        # en/ (es/ en should-have)
 ├── e2e/                        # Playwright
-├── docs/                       # visión, PRD, arquitectura, ADRs
+├── docs/                       # visión, PRD, revisiones, arquitectura, ADRs, historias, tickets
+├── scripts/                    # check_docs.py (compuerta G3) y plantilla del readme
+├── .github/workflows/          # CI
+├── docker-compose.yml          # PostgreSQL local
+├── CLAUDE.md
 ├── openspec/                   # specs y cambios
 ├── Dockerfile                  # build multi-etapa: web + api en una imagen
 └── pnpm-workspace.yaml
@@ -227,7 +235,7 @@ flowchart LR
 - **Imagen única** construida con un Dockerfile multi-etapa: compila `apps/web` (Vite) y `apps/api` (build de AdonisJS), y copia los estáticos de la SPA dentro de la API.
 - **Servir la SPA:** la API sirve `apps/web/dist` como estáticos y devuelve `index.html` para cualquier ruta que no empiece con `/api/`.
 - **Migraciones:** se ejecutan al desplegar (`node ace migration:run --force`).
-- **Configuración:** solo variables de entorno (`DATABASE_URL`, `APP_KEY`, `ANTHROPIC_API_KEY`, `CLAUDE_MODEL_*`, etc.). Ningún secreto en el repositorio.
+- **Configuración:** solo variables de entorno (`DATABASE_URL`, `APP_KEY`, `ANTHROPIC_API_KEY`, `CLAUDE_MODEL_*`, `AI_DRIVER`, `AI_DAILY_BUDGET_USD`, `AI_MONTHLY_BUDGET_USD`, clave del agregador, etc.). Ningún secreto en el repositorio.
 - **Entornos:** `development` (local con Docker Compose para PostgreSQL), `test` (CI) y `production` (Railway).
 - **Instancias de producción (ADR-0007):** `personal` (privada, datos reales) y `demo` (URL pública, datos sintéticos cargados con `node ace db:seed --demo`, topes de IA bajos). Misma imagen; cada una con su PostgreSQL y sus variables de entorno.
 - **Servicio sin suspensión por inactividad**, para que el worker no se detenga; los trabajos interrumpidos por un redespliegue se recuperan con los reintentos de la cola (ADR-0005).
@@ -253,7 +261,7 @@ flowchart LR
 | --- | --- | --- |
 | Unitarias | Japa | Filtros duros, transiciones del pipeline, normalización de ofertas, parseo de respuestas de IA. |
 | Integración | Japa (pruebas funcionales con base de datos de prueba) | Endpoints de la API, adaptadores con respuestas grabadas, handlers de la cola. |
-| E2E | Playwright + `axe-core` | Flujo principal: login → pegar oferta → filtro → puntaje → decisión `apply` → mover la candidatura; revisión de accesibilidad sin violaciones `serious` o `critical` (RNF-13). |
+| E2E | Playwright + `axe-core` | Flujo principal: login → cargar currículum → pegar oferta → filtro → puntaje → decisión `apply` → mover la candidatura; revisión de accesibilidad sin violaciones `serious` o `critical` (RNF-13). |
 | Calidad de la IA | Script de evals | Golden set de puntaje (≥ 20 ofertas, ajuste y prueba) y de extracción (≥ 10 ofertas); llama a la API real y se ejecuta a mano, no en CI. |
 
 En las pruebas automatizadas, el cliente de Claude se sustituye por un doble de prueba con respuestas fijas; ninguna prueba de CI llama a la API real (RNF-10). Cada ejecución de evals guarda su resultado en `apps/api/evals/results/<prompt>-<versión>.json`; un chequeo de CI falla si un prompt cambia de versión sin su archivo de resultados.
@@ -814,7 +822,7 @@ Content-Type: application/json
 
 ## 5. Historias de Usuario
 
-Las 10 historias del MVP se agrupan en 5 épicas, cada una mapeada a una capability de OpenSpec. Las historias completas, con sus 49 escenarios, están en [`docs/user-stories.md`](./docs/user-stories.md).
+Las 10 historias del MVP se agrupan en 5 épicas, cada una mapeada a una capability de OpenSpec. Las historias completas, con sus 50 escenarios, están en [`docs/user-stories.md`](./docs/user-stories.md).
 
 | Épica | Capability | Valor | Historias | Estimación |
 | --- | --- | --- | --- | --- |

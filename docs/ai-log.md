@@ -770,3 +770,29 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con las comprobaciones nuevas de `scripts/check_docs.py` (dependencias, control de gasto, uso de endpoints y horas por historia), sus 7 pruebas en `scripts/test_check_docs.py`, las convenciones en `docs/tickets.md` y el comando de pruebas en `CLAUDE.md`.
+
+### Prompt 59
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Revisa una vez más y busca inconsistencias más a fondo y minuciosamente en la documentación del sistema en general. Veamos si ésta vez no hay errores
+  ```
+
+- **Resultado:** Quinta revisión, con lectura completa de visión e historias y cruce de la tabla de la API contra los tickets. Se encontraron 13 inconsistencias, sobre todo en `docs/vision.md` (filtro de rol, estado retirada, fila obsoleta "segunda fuente", línea base, golden set, riesgos de costo y tiempo, pregunta resuelta desactualizada), además del escenario faltante "sin currículum activo" (HU6), el flujo E2E y las variables de entorno en la arquitectura, la estructura del proyecto, el plan de entregas y el contexto de OpenSpec. El conteo de escenarios (50) y de tickets del `readme.md` ahora lo calcula `check_docs.py`. Sin commit.
+
+### Prompt 60
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con la quinta revisión de consistencia y los conteos automáticos del `readme.md`. Sin push.

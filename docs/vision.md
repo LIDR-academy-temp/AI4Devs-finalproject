@@ -42,7 +42,7 @@ Como el autor es el usuario real, la hipótesis se valida con su propia búsqued
 | Tiempo para encontrar el historial de una candidatura (indicador secundario; no es objetivo del PRD) | Búsqueda manual en el correo | < 30 s desde el panel |
 | Acuerdo entre la etiqueta de la IA y mi etiqueta manual (±1 nivel) | — | ≥ 80 % en el conjunto de prueba del golden set |
 
-> Los valores marcados como **supuesto** se medirán durante la primera semana de uso para fijar la línea base real.
+> La línea base del tiempo por oferta se mide con 5 ofertas reales antes del desarrollo (ticket T-31). La de seguimientos olvidados solo se puede medir con uso real.
 
 ## 4. Propuesta de valor
 
@@ -56,7 +56,7 @@ Fuentes de ofertas ──▶ Filtros duros ──▶ Puntaje de encaje (IA) ─�
 
 **Principios de diseño:**
 
-- **Determinista primero, IA después.** Los filtros duros (modalidad, ubicación, salario, seniority) se resuelven sin IA: son baratos, rápidos y verificables con pruebas unitarias. La IA se reserva para el juicio semántico.
+- **Determinista primero, IA después.** Los filtros duros (rol, modalidad, ubicación, salario, seniority) se resuelven sin IA: son baratos, rápidos y verificables con pruebas unitarias. La IA se reserva para el juicio semántico.
 - **IA explicable.** Todo puntaje muestra fortalezas, brechas y la evidencia citada de la oferta y del currículum.
 - **IA medible.** Las salidas de la IA usan respuestas estructuradas y se evalúan contra un conjunto de referencia.
 - **El usuario decide.** El sistema recomienda; la decisión de aplicar siempre es humana.
@@ -92,13 +92,12 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 | Cargar el currículum en PDF y convertirlo a Markdown | `MVP (should-have)` |
 | Configurar filtros duros: roles objetivo, modalidad, ubicación, salario mínimo y seniority | `MVP` |
 | Registrar la decisión de aplicar o descartar cada oferta | `MVP` |
-| Calcular un puntaje de encaje (0-100) con fortalezas, brechas y evidencia | `MVP` |
-| Gestionar candidaturas en un pipeline (guardada, aplicada, entrevista, oferta, rechazada) | `MVP` |
+| Calcular un puntaje de encaje (0-100) con fortalezas, brechas y evidencia (automático para ofertas pegadas; a pedido para importadas) | `MVP` |
+| Gestionar candidaturas en un pipeline (guardada, aplicada, entrevista, oferta, rechazada, retirada) | `MVP` |
 | Interfaz en inglés (idioma principal), preparada para i18n | `MVP` |
 | Pegar un correo en una candidatura; la IA lo clasifica y extrae fecha y siguiente paso | `MVP (should-have)` |
 | Alertas de seguimiento para candidaturas sin actividad | `MVP (should-have)` |
 | Traducción de la interfaz al español | `MVP (should-have)` |
-| Segunda fuente de ofertas | `v1.1` |
 | Lectura directa de Gmail (OAuth, solo lectura) para vincular hilos automáticamente | `v1.1` |
 | Dashboard de métricas (tasa de respuesta, tiempo por etapa) | `v1.1` |
 | Carta de presentación o currículum adaptado a una oferta | `v1.1` |
@@ -131,17 +130,17 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 
 | Tipo | Descripción | Mitigación |
 | --- | --- | --- |
-| Supuesto | La línea base de tiempo por oferta (~15 min) es representativa | Medirla durante la primera semana |
+| Supuesto | La línea base de tiempo por oferta (~15 min) es representativa | Medirla con 5 ofertas reales antes del desarrollo (T-31) |
 | Riesgo | La fuente pública elegida tiene poca cobertura en mis roles o ubicación | Validar la cobertura con una prueba rápida (spike) en la arquitectura; mantener el ingreso manual |
-| Riesgo | El puntaje de la IA no coincide con mi criterio | Conjunto de referencia de unas 10 ofertas evaluadas a mano; iterar el prompt con evaluaciones |
-| Riesgo | El costo de la API de Claude crece con el volumen de ofertas | Aplicar los filtros duros antes de la IA; guardar en caché los análisis por oferta y currículum |
-| Riesgo | 30 horas no alcanzan para todo el MVP | Priorizar: puntaje de encaje y pipeline primero; correos y alertas después |
+| Riesgo | El puntaje de la IA no coincide con mi criterio | Golden set de al menos 20 ofertas etiquetadas a mano antes de ver la IA, separadas en ajuste y prueba (RNF-08) |
+| Riesgo | El costo de la API de Claude crece con el volumen de ofertas | Filtros duros antes de la IA, puntaje a pedido de las ofertas importadas, caché de análisis y topes de gasto diario y mensual (ADR-0008) |
+| Riesgo | 30 horas no alcanzan para todo el MVP | Tope aceptado de 36 h; orden de construcción y de recorte en `docs/user-stories.md`; correos, alertas y traducción como should-have |
 | Riesgo | Los currículums en PDF no se leen bien | Permitir revisar y corregir el perfil extraído |
 | Riesgo | Datos personales (currículum, correos) en la nube | Un solo usuario autenticado, secretos en variables de entorno, sin compartir datos con terceros salvo la API de Claude; el evaluador usa una instancia de demostración con datos sintéticos (ADR-0007) |
 
 ## 9. Preguntas abiertas para las siguientes fases
 
-- ~~¿Qué fuente de ofertas entra al MVP?~~ Resuelta: adaptadores por plataforma de empleo, con Greenhouse en el MVP (ver `docs/prd.md`, RF-04 y RF-09).
+- ~~¿Qué fuente de ofertas entra al MVP?~~ Resuelta: adaptadores de Greenhouse y Ashby (Lever como should-have) y un agregador por búsqueda (ADR-0006; `docs/prd.md`, RF-04, RF-04a y RF-09).
 - ~~¿Qué modelo de Claude se usa para extracción y cuál para el puntaje?~~ Resuelta en ADR-0003.
 - ~~¿Cuántos días sin actividad disparan una alerta de seguimiento?~~ Resuelta: 10 por defecto, configurable (RF-43).
 - ¿Cómo se ponderan habilidades, experiencia y seniority dentro del puntaje? Se resuelve en el cambio de OpenSpec de HU6. La preferencia por híbrido ya quedó fuera de la IA (RF-28).

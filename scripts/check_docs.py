@@ -296,6 +296,8 @@ def build_readme():
         "EPICS": re.search(r"## Épicas\n\n(.*?)\n\nMás ", stories, re.S).group(1),
         "STORIES": "\n\n".join(story_md(stories, hid, titles) for hid, titles in README_STORIES),
         "TICKETS": "\n\n".join(ticket_md(tickets, tid) for tid in README_TICKETS),
+        "SCENARIOS": str(len(re.findall(r"^(?:Escenario|Esquema del escenario):", stories, re.M))),
+        "TICKET_COUNT": str(len(re.findall(r"^### T-\d{2} —", tickets, re.M))),
     }
     out = TEMPLATE.read_text(encoding="utf-8")
     for key, value in values.items():

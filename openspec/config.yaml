@@ -11,7 +11,7 @@ context: |
 
   Stack: monorepo pnpm. apps/api = AdonisJS v7, Node.js 24, Lucid, PostgreSQL, VineJS, Japa.
   apps/web = React 19, Vite, TanStack Query, Tuyau, react-i18next. e2e/ = Playwright.
-  Claude API (@anthropic-ai/sdk), modelos por variable de entorno. Cola de trabajos en PostgreSQL.
+  Claude API (@anthropic-ai/sdk), modelos por variable de entorno; toda llamada pasa por el control de gasto (ADR-0008). Cola de trabajos en PostgreSQL.
   Despliegue: un solo contenedor en Railway (la API sirve la SPA).
 
   Idioma: artefactos de OpenSpec en español; código, tablas, campos y rutas de API en inglés;

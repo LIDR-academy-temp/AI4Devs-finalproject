@@ -41,7 +41,7 @@ Más 2.25 h para la prueba E2E y la documentación final (T-21). MVP imprescindi
 
 | Entrega | Requisito del curso | Contenido planeado | Horas |
 | --- | --- | --- | --- |
-| 1. Documentación | 100 % documentación, sin código | Visión, PRD, revisión adversarial, arquitectura y ADRs, épicas, historias, tickets, `readme.md` y `prompts.md` | — |
+| 1. Documentación | 100 % documentación, sin código | Visión, PRD, revisiones adversariales del PRD y de la arquitectura, arquitectura y ADRs, épicas, historias, tickets, checklist de compuertas, `readme.md` y `prompts.md` | — |
 | 2. Código funcional | Frontend, backend y base de datos conectados; flujo principal casi completo | T-31, walking skeleton, control de gasto (T-33), HU4, HU1, HU5, HU6 y HU7 (pegar oferta → filtro → puntaje → decisión) | ~22.75 h |
 | Final | 3 a 5 funcionalidades operativas, pruebas (incluida una E2E) y evidencia de despliegue | HU8, HU2, HU3, observabilidad (T-35), instancia de demostración (T-34), prueba E2E y documentación final (T-21); should-have si queda tiempo | ~12.75 h |
 
@@ -402,6 +402,12 @@ Escenario: Tope de gasto de IA alcanzado
   Cuando pido calcular un puntaje
   Entonces el sistema no llama a la IA
   Y muestra un mensaje claro sobre el tope
+
+Escenario: Pedir un puntaje sin currículum activo
+  Dado que todavía no cargué mi currículum
+  Cuando pido calcular el puntaje de una oferta
+  Entonces el sistema no llama a la IA
+  Y me indica que primero debo cargar mi currículum
 
 Escenario: Pedir el puntaje de una oferta descartada
   Dada una oferta descartada por los filtros
