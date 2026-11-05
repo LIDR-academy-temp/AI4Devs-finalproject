@@ -59,14 +59,14 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
   - fila del cancel con el cuerpo `{ reason }`, `400 validation_error` y `409 import_not_cancellable`.
 
   Verificar releyendo la tabla contra el delta spec.
-- [ ] 5.3 Bruno `10-smoke` (D9):
+- [x] 5.3 Bruno `10-smoke` (D9):
   - `Imports in progress`;
   - `Imports in progress - bad status`, `- bad page size`, `- no token` y `- viewer out of scope`;
   - `Cancel - no reason`;
   - `Cancel - viewer` con motivo.
 
   Verificar con `pnpm test:api:smoke` (con `pnpm dev` levantado).
-- [ ] 5.4 Bruno: `20-flows/imports/17 Cancel` con motivo, y flujo nuevo `20-flows/in-progress` (pasos de D9, cancela al final). Verificar con `pnpm test:api` dos veces seguidas sin sembrar entre medias
+- [x] 5.4 Bruno: `20-flows/imports/17 Cancel` con motivo, y flujo nuevo `20-flows/in-progress` (pasos de D9, cancela al final). Verificar con `pnpm test:api` dos veces seguidas sin sembrar entre medias
 - [ ] 5.5 Commit: `docs(api): GET /imports y motivo del cancel en el contrato, README y colección Bruno`
 
 ## 6. Fake MSW del API de imports
