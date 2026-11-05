@@ -22,6 +22,7 @@ import type {
   BatchFeeView,
   ChannelToAssign,
   Cycle as CycleCode,
+  EmptyBatch,
   ImportSettlementAttempt,
   ImportSettlements,
   NextBatchNumber,
@@ -60,6 +61,8 @@ export interface PreviewFixture extends Omit<SettlementFigures, 'batchFees'> {
   attemptNo: number
   requiresChannelConfirmation: boolean
   channelsToAssign: ChannelToAssign[]
+  /** Set when the import has no matched rows: the preview reports it, processing asks confirmEmptyBatch (#92). */
+  emptyBatch?: EmptyBatch | null
   /** What the attempt reports once processed (without its runId, filled in from the body). */
   validationSummary: Omit<ValidationSummary, 'runId'> | null
 }
@@ -336,6 +339,7 @@ function figuresOf(fixture: PreviewFixture): Omit<SettlementFigures, 'batchFees'
     attemptNo: _a,
     requiresChannelConfirmation: _r,
     channelsToAssign: _c,
+    emptyBatch: _e,
     validationSummary: _v,
     ...figures
   } = fixture
@@ -799,6 +803,8 @@ export function createSettlementHandlers(caller: (request: Request) => UserName 
             batchNoAvailable: !activeAttempt(record.accountId, batchNo),
             requiresChannelConfirmation: fixture.requiresChannelConfirmation,
             channelsToAssign: fixture.channelsToAssign,
+            requiresEmptyBatchConfirmation: fixture.emptyBatch != null,
+            emptyBatch: fixture.emptyBatch ?? null,
           }
           return HttpResponse.json(preview)
         },
@@ -817,6 +823,15 @@ export function createSettlementHandlers(caller: (request: Request) => UserName 
           const request = body as SettlementRequest
           const fixture = fixtureOf(record)
           const batchNo = request.batchNo ?? proposedNumber(record.accountId).batchNo
+          // The API checks it right after the run and the review, before the number (#92, design D2).
+          if (fixture.emptyBatch && request.confirmEmptyBatch !== true) {
+            return error(
+              409,
+              'no_matched_rows',
+              'No row of the import matches a transaction of this account; confirm a batch with batch fees only',
+              fixture.emptyBatch,
+            )
+          }
           const taken = activeAttempt(record.accountId, batchNo)
           if (taken) {
             return error(409, 'batch_no_taken', `Batch ${batchNo} already has an active attempt for this account`, {

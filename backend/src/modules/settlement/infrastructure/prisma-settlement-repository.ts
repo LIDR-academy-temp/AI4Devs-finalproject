@@ -5,6 +5,8 @@ import { randomUUID } from 'node:crypto'
 import type { ChannelAssigned } from '@recon/shared'
 import type { FastifyBaseLogger } from 'fastify'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
+import { emptyBatchOf } from '../../imports/domain/empty-batch.js'
+import { NoMatchedRowsError } from '../../imports/domain/errors.js'
 import type { MissingResolution } from '../../validation/application/ports.js'
 import { reviewIsValid } from '../../validation/infrastructure/review-events.js'
 import {
@@ -136,6 +138,10 @@ export class PrismaSettlementRepository implements SettlementRepository {
             throw new BlockingValidationIssueError(run.runId, run.blocked.validationCodes, run.blocked.issueIds)
           if (!(await reviewIsValid(tx, importId, run.runId)))
             throw new ValidationRunSupersededError(request.runId, run.runId)
+          // After the run, the block and the review, before anything is computed or written (#92, design D2).
+          const empty = emptyBatchOf(await source.emptyBatchFacts(importId, context.account.providerId))
+          if (empty.requiresConfirmation && request.confirmEmptyBatch !== true)
+            throw new NoMatchedRowsError(empty.details)
 
           const input = await loadSettlementInput(source, {
             importId,
@@ -231,6 +237,7 @@ export class PrismaSettlementRepository implements SettlementRepository {
                 batchFees: plan.batchFees.length,
                 resolvedMissing,
                 channelsAssigned,
+                ...(empty.requiresConfirmation ? { emptyBatchConfirmed: true } : {}),
                 note: request.note ?? null,
               }),
             },

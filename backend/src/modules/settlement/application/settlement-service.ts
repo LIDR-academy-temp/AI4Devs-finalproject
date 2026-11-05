@@ -2,6 +2,7 @@
 import type { NextBatchNumber, SettlementPreview, SettlementRequest, SettlementView } from '@recon/shared'
 import { NotFoundError } from '../../../shared/errors.js'
 import type { Scope } from '../../catalog/domain/scope.js'
+import { type EmptyBatch, emptyBatchOf } from '../../imports/domain/empty-batch.js'
 import { assertCanProcess } from '../../imports/domain/import-state.js'
 import { proposeBatchNumber } from '../domain/batch-number.js'
 import { channelsToAssignFor } from '../domain/channels.js'
@@ -54,6 +55,8 @@ export class SettlementService {
     if (run.runId !== request.runId) throw new ValidationRunSupersededError(request.runId, run.runId)
     if (run.blocked)
       throw new BlockingValidationIssueError(run.runId, run.blocked.validationCodes, run.blocked.issueIds)
+    // Reported, never refused: the preview says what processing would ask to confirm (#92, design D2).
+    const empty = emptyBatchOf(await this.deps.source.emptyBatchFacts(importId, context.account.providerId))
     const plan = computeSettlement(
       await loadSettlementInput(this.deps.source, {
         importId,
@@ -65,7 +68,7 @@ export class SettlementService {
       }),
     )
     if (plan.batchFeeError) throw new BatchFeeInvalidError(plan.batchFeeError.index, plan.batchFeeError.reason)
-    return previewOf(plan, importId, context.account.accountId, run.runId, scope)
+    return previewOf(plan, importId, context.account.accountId, run.runId, scope, empty)
   }
 
   /** Processing in one transaction (the repository); answers the attempt read back from what was written. */
@@ -97,6 +100,7 @@ export function previewOf(
   accountId: string,
   runId: number,
   scope?: Scope,
+  empty?: EmptyBatch,
 ): SettlementPreview {
   const { summary } = plan
   const count = (cycle: string) => plan.movements.filter((m) => m.cycle === cycle).length
@@ -132,5 +136,7 @@ export function previewOf(
     payableBreakdown: summary.payableBreakdown,
     skipped: plan.skipped,
     warnings: plan.warnings,
+    requiresEmptyBatchConfirmation: empty?.requiresConfirmation ?? false,
+    emptyBatch: empty?.requiresConfirmation ? empty.details : null,
   }
 }

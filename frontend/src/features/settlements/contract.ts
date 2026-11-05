@@ -61,6 +61,8 @@ export type SettlementFigures = Omit<
   | 'batchNoAvailable'
   | 'requiresChannelConfirmation'
   | 'channelsToAssign'
+  | 'requiresEmptyBatchConfirmation'
+  | 'emptyBatch'
 >
 
 /** Decimal string with 4 decimals ("1234.5600"); negative only in batch fees. */
@@ -80,6 +82,8 @@ export type SettlementWarning = SettlementFigures['warnings'][number]
 export type PayableLine = SettlementFigures['payableBreakdown'][number]
 export type PayableLineCode = PayableLine['code']
 export type ChannelToAssign = SettlementPreview['channelsToAssign'][number]
+/** The details of 409 no_matched_rows, which the preview reports as `emptyBatch` (#92). */
+export type EmptyBatch = NonNullable<SettlementPreview['emptyBatch']>
 /** The other account of a channel: named, or only `outOfScope` when its merchant is outside the caller's scope. */
 export type OtherAccount = NonNullable<ChannelToAssign['otherAccount']>
 export type ChannelAssigned = SettlementView['channelsAssigned'][number]

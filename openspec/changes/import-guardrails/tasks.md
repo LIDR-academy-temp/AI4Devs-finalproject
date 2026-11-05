@@ -141,19 +141,25 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
 
 ## 8. Settlement: vista previa y procesar
 
-- [ ] 8.1 Vista previa: `requiresEmptyBatchConfirmation` y `emptyBatch` en `SettlementService.preview` y `previewOf` (D2), sin 409. Process: la comprobación dentro de `processOnce`, tras `reviewIsValid`, más `emptyBatchConfirmed` en `settlement.process`. Declarar el `409 no_matched_rows` en la ruta. Actualizar el fake `__fakes__/in-memory.ts` con el mismo orden.
-- [ ] 8.2 Tests con fakes (`settlement-service.test.ts` y `settlement-routes.test.ts`):
+- [x] 8.1 Vista previa: `requiresEmptyBatchConfirmation` y `emptyBatch` en `SettlementService.preview` y `previewOf` (D2), sin 409. Process: la comprobación dentro de `processOnce`, tras `reviewIsValid`, más `emptyBatchConfirmed` en `settlement.process`. Declarar el `409 no_matched_rows` en la ruta. Actualizar el fake `__fakes__/in-memory.ts` con el mismo orden.
+- [x] 8.2 Tests con fakes (`settlement-service.test.ts` y `settlement-routes.test.ts`):
   - vista previa de un batch vacío y de `batch-clean`;
   - process sin confirmar → 409 sin escribir;
   - process confirmado → 201 con `movements` 0 y el fee;
   - `import_not_validated` antes que `no_matched_rows`.
+
+  Resultado:
+  - `InMemorySettlementRepository` solo registra los comandos (las reglas transaccionales son de integración), así que el `409 no_matched_rows` de process sin confirmar, el `201` confirmado y su auditoría se prueban en 8.3 contra la base.
+  - Con fakes: la vista previa de `batch-clean` (`false` / `null`) y la de `batch-wrong-account` (`emptyBatch`, movimientos 0, payable -25.0000), `import_not_validated` antes de mirar el batch vacío y el `400` de un `confirmEmptyBatch` que no es booleano.
+  - El contrato del frontend (`SettlementFigures` sin los dos campos de la vista previa, tipo `EmptyBatch`) y los fixtures MSW (vista previa con `emptyBatch` opcional, process con `409 no_matched_rows`, análisis con el batch vacío calculado) se ajustan ya, para que el typecheck y la suite del frontend sigan en verde. Las pantallas siguen en los grupos 9 y 10.
+
 - [ ] 8.3 Integración en `settlement-process.int.test.ts` (pedir turno):
   - `batch-wrong-account` sin confirmar → 409, sin intento y con `batch-number/next` sin cambiar;
   - confirmado con `batchNo` 98xx → 201, `amountPayable` de `expected.summary`, `channelsAssigned = []` y auditoría con `emptyBatchConfirmed`;
   - vista previa con `emptyBatch` igual a los `details`.
 
   Limpiar con `removeSettlementsFrom` y `removeImportsFrom`.
-- [ ] 8.4 Regenerar el contrato con `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`. Verificar con `pnpm openapi:check` en verde y `pnpm typecheck` en el backend.
+- [x] 8.4 Regenerar el contrato con `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`. Verificar con `pnpm openapi:check` en verde y `pnpm typecheck` en el backend.
 - [ ] 8.5 Commit: feat(settlement): confirmación del batch sin filas asociadas en la vista previa y al procesar (#92), y `git push`.
 
 ## 9. Frontend: Analysis & Validations (`features/validations`)

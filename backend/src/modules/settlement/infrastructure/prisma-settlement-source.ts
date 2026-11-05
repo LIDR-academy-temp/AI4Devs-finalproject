@@ -13,6 +13,8 @@ import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import { toMoney, toPercentage } from '../../../infrastructure/decimal.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import { businessDay } from '../../fees/domain/fee-selection.js'
+import type { EmptyBatchFacts } from '../../imports/domain/empty-batch.js'
+import { loadEmptyBatchFacts } from '../../imports/infrastructure/empty-batch-facts.js'
 import { MAX_SQL_PARAMETERS } from '../../imports/infrastructure/sql-limits.js'
 import type { CurrentRun, ImportContext, SettlementSource } from '../application/ports.js'
 import { channelStateOf } from '../domain/channels.js'
@@ -100,6 +102,11 @@ export class PrismaSettlementSource implements SettlementSource {
       chargebackReservePolicy: ChargebackReservePolicy.parse(account.chargebackReservePolicy),
       rollingReserveCapAmt: toMoney(account.rollingReserveCapAmt),
     }
+  }
+
+  /** Inside the processing transaction when built with it: the facts the guard decides on (#92, design D2). */
+  async emptyBatchFacts(importId: string, providerId: number): Promise<EmptyBatchFacts> {
+    return loadEmptyBatchFacts(this.db, importId, providerId)
   }
 
   async currentRun(importId: string): Promise<CurrentRun | null> {
