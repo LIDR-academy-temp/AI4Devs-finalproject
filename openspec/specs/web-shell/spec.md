@@ -177,12 +177,12 @@ La barra lateral SHALL mostrar el mapa de pantallas MVP de README §1.3 en sus g
 #### Scenario: analyst
 - **GIVEN** el usuario `analyst` (`settlement.process`, `fee.view`, `reports.view`)
 - **WHEN** entra
-- **THEN** ve New Reconciliation como enlace a `/reconciliations/new`, Settlement List como enlace a `/settlements`, Fees como enlace a `/fees`, Channel Assignment como enlace a `/channel-assignment`, Matching Rules como enlace a `/matching-rules`, In Progress deshabilitada mientras no exista, y no ve Payments ni Users & Roles
+- **THEN** ve New Reconciliation como enlace a `/reconciliations/new`, In Progress como enlace a `/reconciliations/in-progress`, Settlement List como enlace a `/settlements`, Fees como enlace a `/fees`, Channel Assignment como enlace a `/channel-assignment`, Matching Rules como enlace a `/matching-rules`, y no ve Payments ni Users & Roles
 
 #### Scenario: admin
 - **GIVEN** el usuario `admin` (los siete permisos)
 - **WHEN** entra
-- **THEN** ve todas las entradas MVP de §1.3; solo Dashboard, New Reconciliation, Settlement List, Accounts, Fees, Channel Assignment y Matching Rules son enlaces en este tramo
+- **THEN** ve todas las entradas MVP de §1.3; solo Dashboard, New Reconciliation, In Progress, Settlement List, Accounts, Fees, Channel Assignment y Matching Rules son enlaces en este tramo
 
 #### Scenario: Sin fee.view
 - **GIVEN** un rol sin `fee.view`
@@ -197,6 +197,11 @@ La barra lateral SHALL mostrar el mapa de pantallas MVP de README §1.3 en sus g
 - **GIVEN** `analyst` en `/imports/<importId>`
 - **WHEN** mira la barra lateral
 - **THEN** New Reconciliation aparece como la entrada activa
+
+#### Scenario: Entrada activa en In Progress
+- **GIVEN** `analyst` en `/reconciliations/in-progress?status=mapped&mine=true`
+- **WHEN** mira la barra lateral
+- **THEN** In Progress aparece como la entrada activa, y New Reconciliation no
 
 #### Scenario: Entrada activa en la lista de settlements
 - **GIVEN** `viewer` en `/settlements?accountId=<ProviderA-USD>&status=paid`
