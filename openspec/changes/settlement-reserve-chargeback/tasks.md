@@ -149,11 +149,11 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
 - [x] 8.3 Commit: chore(settlement): arreglos de la verificación de settlement-reserve-chargeback, y `git push`.
 
   Hecho: los arreglos del `/opsx:verify` y del `/review-diff` van en una sola ronda.
-  - **Doble liberación (#67).** Se cierra sin migración: después de `lockNumber` y `lockChannels`, el proceso vuelve a leer `reserveStates` y recalcula el plan. Hay dos tests de concurrencia con compuertas, y en los dos el segundo proceso espera en el bloqueo del número:
-    - ajuste + ajuste en la misma cuenta. Con la rotura deliberada (usar el estado de la carga), el proceso que esperaba vuelve a liberar 18.2030;
-    - RR + ajuste en dos cuentas del proveedor, con una cuenta de fixture `it-acc-rr-`. Ese bloqueo ya retiene un proceso de otra cuenta, como mostraron los logs de fase. Con la rotura deliberada, libera 25.1150.
+  - **Doble liberación (#67).** Se cierra sin migración: después de `lockNumber` y `lockChannels`, el proceso vuelve a leer `reserveStates` y recalcula el plan. Hay dos tests de concurrencia con compuertas:
+    - ajuste + ajuste en la misma cuenta. El segundo proceso espera en el bloqueo del número. Con la rotura deliberada (usar el estado de la carga), el proceso que esperaba vuelve a liberar 18.2030;
+    - RR + ajuste en dos cuentas, con una cuenta de fixture `it-acc-rr-`. El test exige 0.0000 y `released_in_r`, sin mirar dónde espera el segundo proceso. Con la rotura deliberada, libera 25.1150.
 
-    No queda probado que el bloqueo de canales retenga por sí solo. Aislarlo exigiría cambiar la consulta o los índices de `lockNumber` (design, "Risks / Trade-offs").
+    Entre dos cuentas, en los tests el segundo proceso esperó en el bloqueo del número, pero es incidental: `lockNumber` filtra por cuenta y número, y que retenga a otra cuenta depende del plan de ejecución. Fuera de los tests, la protección entre cuentas es el bloqueo de canales, que no queda probado por sí solo. Con solo datos no se aísla: con batches vigentes propios de la cuenta de fixture en 9823 y 9825, el segundo proceso siguió esperando en el número. Aislarlo pide cambiar la consulta de `lockNumber` en producción (`FORCESEEK`), sin migración, y queda fuera de este change (design, "Risks / Trade-offs").
   - **RDR.** Caso de integración con liberación, y corregido el texto que decía que `batch-issues` trae RDR.
   - **Tests.** `heldAdjustmentIdOf` exige un E vigente con reserva. La limpieza cuenta `AuditLog` y `ValidationIssue`. Los títulos de test describen lo que prueban.
   - **Fake y oráculo.** `Decimal` desde `settlement/domain/money.js`. La guarda de `release_on_chargeback` en `plan.ts` no cambia `data/samples`.

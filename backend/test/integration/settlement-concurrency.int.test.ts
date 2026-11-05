@@ -518,11 +518,12 @@ describe('two processes adjusting the same transaction of a release_on_chargebac
 
 // The other variant (#67), between two accounts of Provider B: the RR of a transaction in ProviderB-Main and an
 // adjustment of the same transaction in a fixture account it-acc-rr-… (release_on_chargeback, with the channels of
-// ProviderB-Main). A pauses past both locks (the number and the channels). B, of another account, waits at the lock
-// of the number: that lock already holds a process of another account of the provider (seen with phase logs, also
-// with undone attempts of B's account around the number), so B never reaches the lock of the channels while A holds
-// it. The reserve states are read again past both locks. The account and its channels are removed after, with the
-// imports.
+// ProviderB-Main). A pauses past both locks (the number and the channels). B, of another account, has loaded its input
+// and then waits. In these runs it waits at the lock of the number, but that is incidental: lockNumber filters by
+// account and number, and whether it holds another account depends on the execution plan (a scan of the small seeded
+// table locks it all). Outside the tests the lock of the channels is what holds another account. The test checks that
+// B does not release, not where it waits. The reserve states are read again past both locks. The account and its
+// channels are removed after, with the imports.
 describe('an RR and an adjustment of the same transaction in two accounts of the provider', () => {
   const PREFIX = 'it-acc-rr-'
   const created: string[] = []
@@ -543,8 +544,8 @@ describe('an RR and an adjustment of the same transaction in two accounts of the
     })
     await removeImportsFrom(ctx.prisma, [...new Set([...created, ...imports.map((i) => i.importId)])])
     if (accountIds.length === 0) return
+    // Also removes the AccountChannel rows of the fixture account, which are not in the snapshot.
     await restoreAccountChannels(ctx.prisma, channels)
-    await ctx.prisma.accountChannel.deleteMany({ where: { accountId: { in: fixtureIds(accountIds, 'accounts') } } })
     await ctx.prisma.auditLog.deleteMany({ where: { entityId: { in: accountIds.map((id) => id.toLowerCase()) } } })
     await ctx.prisma.account.deleteMany({ where: { accountId: { in: fixtureIds(accountIds, 'accounts') } } })
   }
@@ -649,7 +650,7 @@ describe('an RR and an adjustment of the same transaction in two accounts of the
     const [i] = await ctx.prisma.settlementTransaction.findMany({ where: { batchId: bResult.batchId, cycle: 'I' } })
     expect(r!.reserveReleasedAmt.gt(0)).toBe(true)
     expect(i!.reserveEarlyReleasedAmt.toFixed(4)).toBe('0.0000')
-    expect(['released_in_r', 'already_released']).toContain(JSON.parse(i!.reservePolicySnapshot!).outcome)
+    expect(JSON.parse(i!.reservePolicySnapshot!).outcome).toBe('released_in_r')
     expect(bResult.plan.summary.reserveEarlyReleasedAmt).toBe('0.0000')
   })
 })
