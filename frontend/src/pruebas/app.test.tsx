@@ -43,11 +43,13 @@ async function completarAcceso(contrasena = 'clave') {
 }
 
 describe('acceso', () => {
-  it('sin sesión muestra la pantalla de acceso y no ofrece registrarse', async () => {
+  it('sin sesión muestra la pantalla de acceso con registro y recupero', async () => {
     simularApi({ 'GET /estaciones': NO_AUTENTICADO })
     abrir()
     expect(await screen.findByRole('button', { name: 'Ingresar' })).toBeInTheDocument()
-    expect(screen.queryByText(/registr/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Crear una cuenta' })).toHaveAttribute('href', '/registro')
+    expect(screen.getByRole('link', { name: '¿Olvidó su contraseña?' })).toHaveAttribute('href', '/recuperar')
+    expect(screen.queryByRole('link', { name: /confirmación/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 

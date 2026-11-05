@@ -9,7 +9,8 @@ export interface Simulada {
   cuerpo?: unknown
 }
 
-export type Rutas = Record<string, Simulada | (() => Simulada | Promise<Simulada>)>
+/** La función recibe el cuerpo JSON enviado, si lo hay. */
+export type Rutas = Record<string, Simulada | ((cuerpo: unknown) => Simulada | Promise<Simulada>)>
 
 export const ESTACION = {
   id: 1,
@@ -93,7 +94,8 @@ export function simularApi(rutas: Rutas) {
       if (!entrada) {
         throw new TypeError(`Sin respuesta simulada: ${clave}`)
       }
-      const { estado = 200, cuerpo } = typeof entrada === 'function' ? await entrada() : entrada
+      const enviado: unknown = typeof opciones?.body === 'string' ? JSON.parse(opciones.body) : undefined
+      const { estado = 200, cuerpo } = typeof entrada === 'function' ? await entrada(enviado) : entrada
       return new Response(estado === 204 ? null : JSON.stringify(cuerpo), { status: estado })
     }),
   )

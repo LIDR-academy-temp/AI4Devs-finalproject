@@ -17,6 +17,8 @@ interface Sesion {
   aviso: string | null
   ingresar: (email: string, contrasena: string) => Promise<void>
   salir: () => Promise<void>
+  /** La sesión ya terminó en el servidor, por ejemplo tras una baja: solo se informa. */
+  terminar: (aviso: string) => void
 }
 
 const ContextoSesion = createContext<Sesion | null>(null)
@@ -56,9 +58,14 @@ export function ProveedorDeSesion({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const terminar = useCallback((mensaje: string) => {
+    setAviso(mensaje)
+    setEstado('sin_sesion')
+  }, [])
+
   const valor = useMemo(
-    () => ({ estado, aviso, ingresar, salir }),
-    [estado, aviso, ingresar, salir],
+    () => ({ estado, aviso, ingresar, salir, terminar }),
+    [estado, aviso, ingresar, salir, terminar],
   )
   return <ContextoSesion value={valor}>{children}</ContextoSesion>
 }

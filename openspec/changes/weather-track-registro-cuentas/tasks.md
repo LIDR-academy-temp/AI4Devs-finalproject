@@ -42,16 +42,16 @@ Las decisiones están en `design.md` (D1 a D12) y el comportamiento en las specs
 
 ## 6. Base de clientes
 
-- [ ] 6.1 Agregar el comando `exportar-clientes` a la administración y verificar que el CSV solo tiene cuentas confirmadas y ningún dato de acceso
+- [x] 6.1 Agregar el comando `exportar-clientes` a la administración y verificar que el CSV solo tiene cuentas confirmadas y ningún dato de acceso
 - [x] 6.2 Hacer que `crear-usuario` deje la cuenta confirmada y verificar con una prueba que puede iniciar sesión
 
 ## 7. Frontend (D6, D12)
 
-- [ ] 7.1 Crear las pantallas de registro, aviso de correo enviado y confirmación, con el código leído del fragmento y borrado de la barra, y verificar con pruebas de componentes los errores por campo y el aviso genérico
-- [ ] 7.2 Crear las pantallas de recupero y nueva contraseña, con la indicación de que el usuario es el correo, y verificar con pruebas de componentes
-- [ ] 7.3 Crear "Mi cuenta" y la pantalla de baja con botón de confirmación, y verificar con pruebas de componentes
-- [ ] 7.4 Crear las páginas de privacidad y términos con su versión, marcadas como borrador para revisión legal, y verificar que el registro enlaza a ellas
-- [ ] 7.5 Agregar el enlace de registro y de recupero en la pantalla de acceso y verificar el escenario "Pantalla de acceso"
+- [x] 7.1 Crear las pantallas de registro, aviso de correo enviado y confirmación, con el código leído del fragmento y borrado de la barra, y verificar con pruebas de componentes los errores por campo y el aviso genérico
+- [x] 7.2 Crear las pantallas de recupero y nueva contraseña, con la indicación de que el usuario es el correo, y verificar con pruebas de componentes
+- [x] 7.3 Crear "Mi cuenta" y la pantalla de baja con botón de confirmación, y verificar con pruebas de componentes
+- [x] 7.4 Crear las páginas de privacidad y términos con su versión, marcadas como borrador para revisión legal, y verificar que el registro enlaza a ellas
+- [x] 7.5 Agregar el enlace de registro y de recupero en la pantalla de acceso y verificar el escenario "Pantalla de acceso"
 
 ## 8. Integración
 

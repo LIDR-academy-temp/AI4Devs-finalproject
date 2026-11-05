@@ -8,6 +8,7 @@
   --acento: #1f6f9f;
   --acento-texto: #ffffff;
   --error: #b42318;
+  --peligro-texto: #ffffff;
   --aviso-fondo: #fff4ce;
   --aviso-texto: #6b5200;
   --apto-fondo: #e3f4e6;
@@ -34,6 +35,7 @@
     --acento: #5fb0e0;
     --acento-texto: #0d1a24;
     --error: #ff8a80;
+    --peligro-texto: #2a0805;
     --aviso-fondo: #3d3200;
     --aviso-texto: #ffe08a;
     --apto-fondo: #123a1f;
@@ -141,6 +143,44 @@ a {
   margin: 0 0 0.25rem;
 }
 
+.acceso-amplia {
+  max-width: 40rem;
+}
+
+.marca-publica {
+  margin: 0 0 1rem;
+}
+
+.enlaces-acceso,
+.pie-legal {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.enlace-cuenta {
+  color: var(--texto);
+}
+
+.cuenta {
+  display: grid;
+  gap: 1rem;
+  max-width: 40rem;
+}
+
+.cuenta h2,
+.cuenta h3 {
+  margin: 0;
+}
+
+.texto-legal h2 {
+  margin: 1.25rem 0 0.25rem;
+  font-size: 1.1rem;
+}
+
+.texto-legal p {
+  margin: 0;
+}
+
 .tarjeta {
   display: block;
   padding: 1rem;
@@ -170,7 +210,13 @@ label {
   font-weight: 600;
 }
 
-input {
+.campo {
+  display: grid;
+  gap: 0.25rem;
+}
+
+input,
+.formulario select {
   width: 100%;
   padding: 0.6rem;
   font: inherit;
@@ -209,6 +255,40 @@ button:disabled {
 .error {
   margin: 0;
   color: var(--error);
+}
+
+.ayuda {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--texto-suave);
+}
+
+.error-campo {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--error);
+}
+
+input[aria-invalid='true'] {
+  border-color: var(--error);
+}
+
+.casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-weight: 400;
+}
+
+.casilla input {
+  width: auto;
+  margin-top: 0.2rem;
+}
+
+.peligro {
+  color: var(--peligro-texto);
+  background: var(--error);
+  border-color: var(--error);
 }
 
 .aviso {

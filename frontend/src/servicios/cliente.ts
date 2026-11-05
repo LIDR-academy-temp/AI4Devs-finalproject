@@ -8,6 +8,10 @@ export type Historico = components['schemas']['Historico']
 export type Punto = components['schemas']['Punto']
 export type Estacion = components['schemas']['EstacionResumen']
 export type UsuarioPublico = components['schemas']['UsuarioPublico']
+export type SolicitudRegistro = components['schemas']['SolicitudRegistro']
+export type Cuenta = components['schemas']['Cuenta']
+export type DatosPersonales = components['schemas']['DatosPersonales']
+export type Aviso = components['schemas']['Aviso']
 
 const BASE = '/api/v1'
 const NO_AUTENTICADO = 401
@@ -15,11 +19,14 @@ const NO_AUTENTICADO = 401
 export class ErrorDeApi extends Error {
   readonly estado: number
   readonly codigo: string
+  /** Campo del formulario: mensaje para mostrar junto a él. */
+  readonly campos: Record<string, string>
 
-  constructor(estado: number, codigo: string, mensaje: string) {
+  constructor(estado: number, codigo: string, mensaje: string, campos: Record<string, string> = {}) {
     super(mensaje)
     this.estado = estado
     this.codigo = codigo
+    this.campos = campos
   }
 }
 
@@ -36,7 +43,7 @@ export function registrarAlVencerSesion(accion: () => void): void {
 }
 
 interface Opciones {
-  metodo?: 'GET' | 'POST'
+  metodo?: 'GET' | 'POST' | 'PUT'
   cuerpo?: unknown
   /** Un 401 es un resultado esperado, no una sesión que venció. */
   sinAvisoDeVencimiento?: boolean
@@ -62,11 +69,16 @@ async function pedir<T>(ruta: string, opciones: Opciones = {}): Promise<T> {
     if (respuesta.status === NO_AUTENTICADO && !opciones.sinAvisoDeVencimiento) {
       alVencerSesion()
     }
-    const error = (datos ?? {}) as { codigo?: string; mensaje?: string }
+    const error = (datos ?? {}) as {
+      codigo?: string
+      mensaje?: string
+      campos?: Record<string, string>
+    }
     throw new ErrorDeApi(
       respuesta.status,
       error.codigo ?? 'ERROR',
       error.mensaje ?? 'Ocurrió un error inesperado.',
+      error.campos ?? {},
     )
   }
   return datos as T
@@ -115,6 +127,58 @@ export function obtenerHistorico(
   return pedir(
     `/estaciones/${encodeURIComponent(estacionId)}/sensores/${encodeURIComponent(sensorId)}/historico?${consulta}`,
   )
+}
+
+// Registro, confirmación, recupero y bajas por enlace: no usan sesión.
+const PUBLICA = { sinAvisoDeVencimiento: true }
+
+export function registrarCuenta(datos: SolicitudRegistro): Promise<Aviso> {
+  return pedir('/auth/registro', { metodo: 'POST', cuerpo: datos, ...PUBLICA })
+}
+
+export function confirmarCuenta(codigo: string): Promise<Aviso> {
+  return pedir('/auth/confirmacion', { metodo: 'POST', cuerpo: { codigo }, ...PUBLICA })
+}
+
+export function reenviarConfirmacion(email: string): Promise<Aviso> {
+  return pedir('/auth/confirmacion/reenvio', { metodo: 'POST', cuerpo: { email }, ...PUBLICA })
+}
+
+export function pedirRecupero(email: string): Promise<Aviso> {
+  return pedir('/auth/recupero', { metodo: 'POST', cuerpo: { email }, ...PUBLICA })
+}
+
+export function elegirNuevaContrasena(codigo: string, contrasena: string): Promise<Aviso> {
+  return pedir('/auth/recupero/nueva-contrasena', {
+    metodo: 'POST',
+    cuerpo: { codigo, contrasena },
+    ...PUBLICA,
+  })
+}
+
+export function darDeBajaConEnlace(codigo: string): Promise<Aviso> {
+  return pedir('/cuenta/baja-con-enlace', { metodo: 'POST', cuerpo: { codigo }, ...PUBLICA })
+}
+
+export function obtenerCuenta(): Promise<Cuenta> {
+  return pedir('/cuenta')
+}
+
+export function actualizarCuenta(datos: DatosPersonales): Promise<Cuenta> {
+  return pedir('/cuenta', { metodo: 'PUT', cuerpo: datos })
+}
+
+export function cambiarContrasena(actual: string, nueva: string): Promise<void> {
+  return pedir('/cuenta/contrasena', { metodo: 'POST', cuerpo: { actual, nueva } })
+}
+
+export function darDeBaja(contrasena: string): Promise<void> {
+  return pedir('/cuenta/baja', { metodo: 'POST', cuerpo: { contrasena } })
+}
+
+/** Los mensajes por campo de un error de la API, o ninguno. */
+export function erroresDeCampos(error: unknown): Record<string, string> {
+  return error instanceof ErrorDeApi ? error.campos : {}
 }
 
 export function mensajeDeError(error: unknown): string {

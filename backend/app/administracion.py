@@ -4,11 +4,14 @@
     python -m app.administracion asignar-estacion --email a@b.example --id-equipo 1
     python -m app.administracion restablecer-clave --email a@b.example
     python -m app.administracion desactivar-usuario --email a@b.example
+    python -m app.administracion exportar-clientes > clientes.csv
 """
 
 import argparse
+import csv
 import sys
 from datetime import UTC, datetime
+from typing import TextIO
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
@@ -81,6 +84,46 @@ def desactivar_usuario(sesion: Session, email: str) -> None:
     sesion.flush()
 
 
+COLUMNAS_CLIENTES = (
+    "email",
+    "nombre",
+    "apellido",
+    "organizacion",
+    "telefono",
+    "localidad",
+    "provincia",
+    "acepta_novedades",
+    "terminos_version",
+    "terminos_aceptados_en",
+    "confirmado_en",
+    "creado_en",
+)
+
+
+def _celda(valor: object) -> str:
+    """Una planilla ejecuta como fórmula el texto que empieza con =, +, - o @: se lo anula."""
+    if valor is None:
+        return ""
+    if isinstance(valor, datetime):
+        return valor.isoformat()
+    if isinstance(valor, bool):
+        return "si" if valor else "no"
+    texto = str(valor)
+    return "'" + texto if texto[:1] in ("=", "+", "-", "@") else texto
+
+
+def exportar_clientes(sesion: Session, salida: TextIO) -> int:
+    """Base de clientes: solo cuentas confirmadas y sin datos de acceso. Devuelve cuántas filas."""
+    escritor = csv.writer(salida)
+    escritor.writerow(COLUMNAS_CLIENTES)
+    usuarios = sesion.scalars(
+        select(Usuario).where(Usuario.confirmado_en.is_not(None)).order_by(Usuario.creado_en)
+    ).all()
+    for usuario in usuarios:
+        escritor.writerow([_celda(getattr(usuario, columna)) for columna in COLUMNAS_CLIENTES])
+    return len(usuarios)
+
+
 def _analizador() -> argparse.ArgumentParser:
     analizador = argparse.ArgumentParser(description="Administración de cuentas")
     comandos = analizador.add_subparsers(dest="comando", required=True)
@@ -92,11 +135,18 @@ def _analizador() -> argparse.ArgumentParser:
     asignar.add_argument("--id-equipo", required=True, type=int)
     for nombre in ("restablecer-clave", "desactivar-usuario"):
         comandos.add_parser(nombre).add_argument("--email", required=True)
+    comandos.add_parser("exportar-clientes")
     return analizador
 
 
 def principal(argumentos: list[str] | None = None) -> int:
     args = _analizador().parse_args(argumentos)
+    if args.comando == "exportar-clientes":
+        # Solo el CSV va a la salida estándar, para poder redirigirla a un archivo.
+        with Session(obtener_motor()) as sesion:
+            filas = exportar_clientes(sesion, sys.stdout)
+        print(f"Cuentas exportadas: {filas}", file=sys.stderr)
+        return 0
     clave = None
     with Session(obtener_motor()) as sesion:
         try:

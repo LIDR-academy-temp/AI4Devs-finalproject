@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Navigate } from 'react-router'
-import { mensajeDeError } from '../servicios/cliente'
+import { Link, Navigate } from 'react-router'
+import { ErrorDeApi, mensajeDeError } from '../servicios/cliente'
 import { useSesion } from '../servicios/sesion'
 
 export function Acceso() {
@@ -9,6 +9,7 @@ export function Acceso() {
   const [email, setEmail] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [sinConfirmar, setSinConfirmar] = useState(false)
   const [enviando, setEnviando] = useState(false)
 
   if (estado === 'activa') {
@@ -18,11 +19,13 @@ export function Acceso() {
   async function enviar(evento: FormEvent) {
     evento.preventDefault()
     setError(null)
+    setSinConfirmar(false)
     setEnviando(true)
     try {
       await ingresar(email, contrasena)
     } catch (fallo) {
       setError(mensajeDeError(fallo))
+      setSinConfirmar(fallo instanceof ErrorDeApi && fallo.codigo === 'CUENTA_SIN_CONFIRMAR')
       setContrasena('')
     } finally {
       setEnviando(false)
@@ -64,10 +67,24 @@ export function Acceso() {
             {error}
           </p>
         )}
+        {sinConfirmar && (
+          <p>
+            <Link to="/reenviar-confirmacion">Volver a enviar el correo de confirmación</Link>
+          </p>
+        )}
         <button type="submit" disabled={enviando}>
           {enviando ? 'Ingresando…' : 'Ingresar'}
         </button>
+        <p className="enlaces-acceso">
+          <Link to="/recuperar">¿Olvidó su contraseña?</Link>
+        </p>
       </form>
+      <p>
+        ¿No tiene cuenta? <Link to="/registro">Crear una cuenta</Link>
+      </p>
+      <p className="secundario pie-legal">
+        <Link to="/terminos">Términos de uso</Link> · <Link to="/privacidad">Política de privacidad</Link>
+      </p>
     </main>
   )
 }
