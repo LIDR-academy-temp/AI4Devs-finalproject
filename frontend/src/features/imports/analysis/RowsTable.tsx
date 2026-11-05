@@ -45,7 +45,11 @@ const columns = helper.columns([
     cell: ({ row }) => (
       <div className="flex max-w-40 flex-col">
         <span className="whitespace-nowrap font-medium">{row.original.sheetName}</span>
-        <span className="text-muted-foreground [overflow-wrap:anywhere]" title={row.original.fileName}>
+        {/* whitespace-normal: the cell does not wrap, and overflow-wrap does nothing under it (#132). */}
+        <span
+          className="whitespace-normal text-muted-foreground [overflow-wrap:anywhere]"
+          title={row.original.fileName}
+        >
           {row.original.fileName}
         </span>
       </div>
