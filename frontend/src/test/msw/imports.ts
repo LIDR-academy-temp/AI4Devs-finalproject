@@ -572,6 +572,12 @@ function route(
     state.requests.push(log)
     if (log.contentType?.startsWith('multipart/form-data')) {
       log.parts = (await fileParts(request.clone())).map((p) => ({ name: p.name, size: p.size }))
+    } else if (log.contentType?.includes('json')) {
+      // The body as the screen sent it, before any validation, in the log of this very request (review-diff M2).
+      log.body = await request
+        .clone()
+        .json()
+        .catch(() => undefined)
     }
     const hold = state.holds.get(name)?.shift()
     if (hold) {
@@ -759,7 +765,6 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
           if (!canProcess(user)) return record ? forbidden() : notFound('Import')
           if (!record) return notFound('Import')
           const body = (await request.json()) as MappingConfirmationBody
-          state.requests.at(-1)!.body = body
           if (!EDITABLE.includes(record.status)) return notEditable(record)
           const invalid = shapeError(record, body)
           if (invalid) return invalid
@@ -897,7 +902,6 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
           // The body is validated before anything else, as Fastify does (spec "Motivo de la cancelación").
           const parsed = ReasonRequest.safeParse(await request.json().catch(() => undefined))
           if (!parsed.success) return error(400, 'validation_error', 'A reason of 1 to 500 characters is required')
-          state.requests.at(-1)!.body = parsed.data
           const record = visibleImport(user, params.importId)
           if (!canProcess(user)) return record ? forbidden() : notFound('Import')
           if (!record) return notFound('Import')
