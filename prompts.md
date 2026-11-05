@@ -112,7 +112,7 @@ Resultado: tras investigar qué plataforma de empleo usa cada empresa, la IA pro
 El recolectar ofertas de diferentes portales automáticamente es tan importante como copiar y pegar la oferta. Se tienen 30 hrs pero no hay problema si nos pasamos un 20% más.
 ```
 
-Resultado: adaptadores de Greenhouse, Ashby y Lever más un agregador por búsqueda sujeto a spike (ADR-0002 actualizado).
+Resultado: adaptadores de Greenhouse, Ashby y Lever más un agregador por búsqueda sujeto a spike (ADR-0002 actualizado). Al dividir las historias, Lever pasó a should-have porque ninguna empresa objetivo lo usa.
 
 ### **2.3. Descripción de alto nivel del proyecto y estructura de ficheros**
 
@@ -206,7 +206,7 @@ registra los tickets en docs/tickets.md
 
 Resultado: [`docs/tickets.md`](./docs/tickets.md) con tipo, estimación, requisitos, dependencias, tareas y criterios de aceptación.
 
-**Prompt 2:** Ver el Prompt 2 de la sección 3. Resultado: 30 tickets, must-have ≈ 33 h dentro del tope de 36 h.
+**Prompt 2:** Ver el Prompt 2 de la sección 3. Resultado: 30 tickets tras la revisión adversarial; tras la revisión final de consistencia, 32 tickets con must-have ≈ 31.5 h dentro del tope de 36 h.
 
 ---
 

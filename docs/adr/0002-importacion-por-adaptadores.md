@@ -32,7 +32,7 @@ Las empresas objetivo grandes (Meta, Apple, Amazon, Netflix, Google, Microsoft, 
 La revisión adversarial del PRD (`docs/prd-review.md`, hallazgo C3) y el usuario confirmaron que la recolección automática es tan importante como pegar ofertas. Cambios:
 
 - La interfaz `JobSourceAdapter` tiene dos modos:
-  - **Por job board** de una empresa objetivo: `GreenhouseAdapter`, `AshbyAdapter` y `LeverAdapter` en el MVP.
+  - **Por job board** de una empresa objetivo: `GreenhouseAdapter` y `AshbyAdapter` en el MVP; `LeverAdapter` como should-have, porque ninguna empresa objetivo conocida usa Lever.
   - **Por búsqueda** guardada (`JobSearch`: palabras clave y ubicación): `AggregatorAdapter`, para llegar a las empresas grandes sin API propia.
 - El proveedor del agregador se elige con un spike (cobertura de las empresas objetivo, cuota gratuita y términos de uso). JSearch es el primer candidato; SerpApi se evita por el litigio con Google (diciembre de 2025). Si ningún proveedor es viable, se implementa `SmartRecruitersAdapter` en su lugar.
 - Cada sincronización respeta un tope de ofertas nuevas (por defecto 50) y aplica los filtros duros, incluido el de roles, antes de cualquier llamada a la IA.

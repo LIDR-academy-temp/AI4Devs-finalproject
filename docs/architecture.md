@@ -14,7 +14,7 @@ Monorepo con dos aplicaciones: una **API REST** en AdonisJS v7 y una **SPA** en 
 | Decisión | ADR |
 | --- | --- |
 | Monorepo con API AdonisJS + SPA React en un solo contenedor | [ADR-0001](./adr/0001-monorepo-api-spa-un-contenedor.md) |
-| Importación de ofertas mediante adaptadores (Greenhouse, Ashby, Lever) y búsquedas en un agregador | [ADR-0002](./adr/0002-importacion-por-adaptadores.md) |
+| Importación de ofertas mediante adaptadores (Greenhouse y Ashby; Lever should-have) y búsquedas en un agregador | [ADR-0002](./adr/0002-importacion-por-adaptadores.md) |
 | Modelos de Claude por entorno y por tarea | [ADR-0003](./adr/0003-modelos-claude-por-entorno.md) |
 | Integración de IA: Markdown canónico, respuestas estructuradas, prompts versionados y evals | [ADR-0004](./adr/0004-integracion-ia.md) |
 | Cola de trabajos en PostgreSQL | [ADR-0005](./adr/0005-cola-de-trabajos-postgresql.md) |
@@ -45,7 +45,7 @@ flowchart LR
     api --> data
     worker --> data
     worker -->|Messages API| claude["Claude API"]
-    worker -->|Job Board APIs| gh["Greenhouse / Ashby / Lever"]
+    worker -->|Job Board APIs| gh["Greenhouse / Ashby<br/>(Lever: should-have)"]
     worker -->|Búsquedas| agg["Agregador de ofertas<br/>(por definir en spike)"]
 ```
 
@@ -71,7 +71,7 @@ flowchart LR
 | Persistencia | PostgreSQL + Lucid ORM | Datos de la aplicación y migraciones. |
 | Cola de trabajos | PostgreSQL (librería por confirmar en el walking skeleton; ver ADR-0005) | Extracción, puntaje e importación en segundo plano. |
 | Módulo de IA | `@anthropic-ai/sdk` | Cliente de Claude, prompts versionados, esquemas de salida, registro de uso. |
-| Adaptadores de empleo | `JobSourceAdapter` con dos modos: por job board (`GreenhouseAdapter`, `AshbyAdapter`, `LeverAdapter`) y por búsqueda (`AggregatorAdapter`) | Traer ofertas de plataformas externas, normalizarlas y respetar el tope por sincronización. |
+| Adaptadores de empleo | `JobSourceAdapter` con dos modos: por job board (`GreenhouseAdapter`, `AshbyAdapter`; `LeverAdapter` como should-have) y por búsqueda (`AggregatorAdapter`) | Traer ofertas de plataformas externas, normalizarlas y respetar el tope por sincronización. |
 | Filtros duros | TypeScript puro en `app/filters/`, sin dependencias | Evaluar `pass`/`fail`/`unknown` por criterio (rol, modalidad, ubicación, salario, seniority) según `docs/prd.md` 6.1; tabla de mapeo de seniority versionada. |
 | Evals | Script de Node + golden sets en el repositorio | Medir el acuerdo del puntaje (ajuste/prueba) y la precisión de la extracción (RNF-08). |
 
@@ -122,14 +122,14 @@ sequenceDiagram
 │   │   │   ├── services/       # reglas de dominio (pipeline, decisiones)
 │   │   │   ├── filters/        # filtros duros y mapeo de seniority
 │   │   │   ├── ai/             # cliente Claude, prompts/, schemas/
-│   │   │   ├── job_sources/    # JobSourceAdapter y adaptadores (Greenhouse, Ashby, Lever, agregador)
+│   │   │   ├── job_sources/    # JobSourceAdapter y adaptadores (Greenhouse, Ashby, agregador; Lever should-have)
 │   │   │   └── jobs/           # handlers de la cola
 │   │   ├── database/migrations/
 │   │   ├── evals/              # golden set y script de evaluación
 │   │   └── tests/              # Japa: unit/ y functional/
 │   └── web/                    # React 19 + Vite
 │       └── src/
-│           ├── features/       # job-postings, resume, preferences, applications
+│           ├── features/       # job-postings, target-companies, job-searches, resume, preferences, applications
 │           ├── lib/            # cliente Tuyau, TanStack Query
 │           └── locales/        # en/ (es/ en should-have)
 ├── e2e/                        # Playwright
@@ -138,6 +138,18 @@ sequenceDiagram
 ├── Dockerfile                  # build multi-etapa: web + api en una imagen
 └── pnpm-workspace.yaml
 ```
+
+### 2.4.1 Épicas y módulos
+
+Cada épica del PRD es una capability de OpenSpec y se implementa en estos módulos:
+
+| Épica | Capability | Backend (`apps/api/app/`) | Frontend (`apps/web/src/features/`) |
+| --- | --- | --- | --- |
+| E1 Ingreso de ofertas | `job-intake` | `job_sources/`, controladores de `job-postings`, `target-companies` y `job-searches` | `job-postings`, `target-companies`, `job-searches` |
+| E2 Perfil profesional | `resume-profile` | controlador de `resumes`, `ai/` (extracción) | `resume` |
+| E3 Evaluación de ofertas | `job-matching` | `filters/`, `ai/` (puntaje), servicio de decisiones | `preferences`, detalle de `job-postings` |
+| E4 Seguimiento de candidaturas | `application-tracking` | servicio de pipeline, controlador de `applications` | `applications` |
+| E5 Plataforma | `platform` | auth, cola de trabajos, cliente de IA, servir la SPA | login, i18n, layout |
 
 ### 2.5 Infraestructura y despliegue
 
@@ -346,7 +358,7 @@ En caso de error: `data` es `null` y `error` contiene `{ "code": "VALIDATION_ERR
 | `PATCH` | `/auth/me` | Cambiar el idioma de la interfaz del usuario | RF-51 (should-have) |
 | `GET` / `PUT` | `/preferences` | Leer o actualizar filtros duros | RF-20 |
 | `GET` | `/resumes/active` | Currículum activo con su perfil | RF-12 |
-| `POST` | `/resumes` | Cargar PDF o Markdown (multipart); devuelve `202` con `jobId` | RF-10, RF-11 |
+| `POST` | `/resumes` | Cargar Markdown (PDF como should-have) en multipart; devuelve `202` con `jobId` | RF-10, RF-11 |
 | `PATCH` | `/resumes/{id}` | Corregir el Markdown o el perfil | RF-13 |
 | `GET` / `POST` | `/target-companies` | Listar o registrar empresas objetivo | RF-09 |
 | `PATCH` / `DELETE` | `/target-companies/{id}` | Editar o eliminar | RF-09 |

@@ -1,6 +1,6 @@
 # Tickets de trabajo — ATS personal
 
-> Tickets técnicos derivados de [`docs/user-stories.md`](./user-stories.md). Una historia genera varios tickets. Cada ticket sigue la definition of done de `CLAUDE.md`. La implementación de cada historia se hace como un cambio de OpenSpec que agrupa sus tickets.
+> Tickets derivados de [`docs/user-stories.md`](./user-stories.md). Una historia genera varios tickets. Cada ticket sigue la definition of done de `CLAUDE.md`. La implementación de cada historia se hace como un cambio de OpenSpec que agrupa sus tickets.
 
 - **Estado:** borrador v0.3 (épicas e historias reestructuradas)
 - **Fecha:** 2026-11-04
@@ -12,6 +12,7 @@
 
 | Id | Título | Tipo | Épica / historia | Prioridad | Estimación | Depende de |
 | --- | --- | --- | --- | --- | --- | --- |
+| T-31 | Medir la línea base de OBJ-1 | producto | E3 / HU7 | M | 0.25 h | — |
 | T-01 | Monorepo con API y SPA | infra | E5 / Skeleton | M | 1 h | — |
 | T-02 | Base de datos local y usuario único | db | E5 / Skeleton | M | 1 h | T-01 |
 | T-03 | Autenticación por sesión e i18n base | backend, frontend | E5 / Skeleton | M | 1.25 h | T-02 |
@@ -23,17 +24,18 @@
 | T-09 | Tablas de ofertas, empresas objetivo y búsquedas | db | E1 / HU1, HU2, HU3 | M | 0.5 h | T-02 |
 | T-10 | API y extracción de ofertas, y decisión | backend, ai | E1, E3 / HU1, HU7 | M | 2.25 h | T-04, T-09 |
 | T-11 | Pantallas de ofertas y decisión | frontend | E1, E3 / HU1, HU7 | M | 1.75 h | T-10 |
-| T-12 | Empresas objetivo, interfaz de adaptadores y Greenhouse | backend | E1 / HU2 | M | 1.5 h | T-09, T-04 |
+| T-12 | Empresas objetivo, interfaz de adaptadores y Greenhouse | backend | E1 / HU2 | M | 1.5 h | T-09, T-04, T-15 |
 | T-13 | Pantalla de empresas objetivo | frontend | E1 / HU2 | M | 0.5 h | T-12 |
 | T-25 | Adaptador de Ashby | backend | E1 / HU2 | M | 1 h | T-12 |
-| T-26 | Adaptador de Lever | backend | E1 / HU2 | M | 1 h | T-12 |
+| T-26 | Adaptador de Lever | backend | E1 / HU2 | S | 1 h | T-12 |
 | T-27 | Spike del agregador de ofertas | backend | E1 / HU3 | M | 0.5 h | T-12 |
 | T-28 | Búsquedas guardadas y adaptador del agregador | backend | E1 / HU3 | M | 1.5 h | T-27 |
 | T-29 | Pantalla de búsquedas guardadas | frontend | E1 / HU3 | M | 0.5 h | T-28 |
 | T-14 | Tablas de preferencias, filtros y análisis | db | E3 / HU5, HU6 | M | 0.5 h | T-09 |
 | T-15 | Preferencias y filtros duros | backend | E3 / HU5 | M | 2 h | T-14 |
-| T-16 | Puntaje de encaje con IA | backend, ai | E3 / HU6 | M | 2 h | T-07, T-15 |
-| T-17 | Golden sets y evals | ai, test | E3 / HU6 | M | 1.5 h | T-10, T-16 |
+| T-32 | Etiquetar los golden sets | ai, test | E3 / HU6 | M | 0.5 h | — |
+| T-16 | Puntaje de encaje con IA | backend, ai | E3 / HU6 | M | 2 h | T-07, T-15, T-32 |
+| T-17 | Script de evals | ai, test | E3 / HU6 | M | 1 h | T-10, T-16, T-32 |
 | T-18 | Pantallas de preferencias y detalle del puntaje | frontend | E3 / HU5, HU6 | M | 1 h | T-16 |
 | T-19 | Candidaturas y su historial | db, backend | E4 / HU8 | M | 1.5 h | T-10 |
 | T-20 | Tablero de candidaturas accesible | frontend | E4 / HU8 | M | 1.5 h | T-19 |
@@ -43,9 +45,24 @@
 | T-23 | Correos y alertas en la interfaz | frontend | E4 / HU9 | S | 1.5 h | T-22 |
 | T-24 | Traducción al español y selector de idioma | frontend, backend | E5 / HU10 | S | 2 h | T-03 |
 
-**Totales:** must-have ≈ 33 h (tope: 36 h); should-have ≈ 6 h. Could-have sin ticket: arrastrar en el tablero (RF-33a), caché de prompts, limitador de intentos en el login y RF-08.
+**Totales:** must-have ≈ 31.5 h (tope: 36 h); should-have ≈ 7 h. Could-have sin ticket: arrastrar en el tablero (RF-33a), caché de prompts, limitador de intentos en el login y RF-08.
 
-**Orden de recorte si falta tiempo:** T-28 y T-29 (agregador) → T-26 (Lever). Si el spike T-27 descarta el agregador, T-28 se reemplaza por un adaptador de SmartRecruiters (1 h).
+**Orden de recorte si falta tiempo:** T-26 (Lever) ya es should-have; después, T-29 (pantalla de búsquedas) se reemplaza por una búsqueda fija configurada por variable de entorno. Si el spike T-27 descarta el agregador, T-28 se reemplaza por un adaptador de SmartRecruiters (1 h).
+
+---
+
+## Antes del desarrollo
+
+### T-31 — Medir la línea base de OBJ-1
+
+- **Tipo:** producto · **Estimación:** 0.25 h · **Requisitos:** OBJ-1
+
+**Tareas**
+- Con 5 ofertas reales, medir el tiempo desde que se abre la oferta hasta decidir si aplicar, con el proceso actual (sin el sistema).
+- Registrar la mediana en `docs/prd.md` (sección 2) y en `docs/vision.md` (sección 3), en lugar del supuesto de 15 min.
+
+**Criterios de aceptación**
+- Línea base medida y documentada antes del walking skeleton.
 
 ---
 
@@ -61,6 +78,7 @@
 - `apps/web`: React 19 + Vite + TypeScript, TanStack Query.
 - ESLint, Prettier y scripts raíz: `dev`, `lint`, `typecheck`, `test`, `build`.
 - Configurar Tuyau para generar el cliente tipado que usa `apps/web`.
+- Hook de Claude Code (`.claude/settings.json`) que ejecute lint y pruebas después de cada edición.
 
 **Criterios de aceptación**
 - `pnpm install`, `pnpm lint`, `pnpm typecheck` y `pnpm build` terminan sin errores.
@@ -257,7 +275,7 @@
 **Criterios de aceptación**
 - Pruebas con respuestas grabadas del job board de OpenAI; ninguna llamada real en CI.
 
-### T-26 — Adaptador de Lever
+### T-26 — Adaptador de Lever (should-have)
 
 - **Tipo:** backend · **Estimación:** 1 h · **Requisitos:** RF-04, ADR-0002
 
@@ -348,13 +366,23 @@
 **Criterios de aceptación**
 - Pruebas con el doble de prueba: análisis nuevo, reutilización por hash, evidencia inventada descartada, umbrales de etiqueta, respuesta inválida y reintento.
 
-### T-17 — Golden sets y evals
+### T-32 — Etiquetar los golden sets
 
-- **Tipo:** ai, test · **Estimación:** 1.5 h · **Requisitos:** RNF-08, RF-02, OBJ-2
+- **Tipo:** ai, test · **Estimación:** 0.5 h · **Requisitos:** RNF-08, RF-02, OBJ-2
 
 **Tareas**
-- Golden set de puntaje en `apps/api/evals/match/`: al menos 20 ofertas reales etiquetadas a mano antes de ver la IA, separadas en ajuste (10) y prueba (10).
+- Golden set de puntaje en `apps/api/evals/match/`: al menos 20 ofertas reales etiquetadas a mano, separadas en ajuste (10) y prueba (10).
 - Golden set de extracción en `apps/api/evals/extraction/`: al menos 10 ofertas con los campos esperados.
+- Se hace antes de implementar T-16, para que las etiquetas no se vean influidas por las respuestas de la IA.
+
+**Criterios de aceptación**
+- Ambos golden sets versionados en el repositorio antes de iniciar T-16.
+
+### T-17 — Script de evals
+
+- **Tipo:** ai, test · **Estimación:** 1 h · **Requisitos:** RNF-08, RF-02, OBJ-2
+
+**Tareas**
 - Script `pnpm --filter api evals` que reporta el acuerdo del puntaje en el conjunto de prueba (tolerancia ±1 nivel) y la precisión por campo de la extracción, incluidos salarios inventados.
 - Documentar los resultados con los modelos de desarrollo y de producción.
 

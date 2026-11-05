@@ -78,9 +78,10 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 
 | Capacidad | Etapa |
 | --- | --- |
-| Registrar ofertas pegando el texto o la URL; la IA extrae los campos estructurados | `MVP` |
+| Registrar ofertas pegando el texto; la IA extrae los campos estructurados (descargar desde una URL: could-have) | `MVP` |
 | Lista de empresas objetivo (grandes y medianas) con su plataforma de empleo | `MVP` |
-| Importar ofertas de las empresas objetivo mediante adaptadores: Greenhouse, Ashby y Lever | `MVP` |
+| Importar ofertas de las empresas objetivo mediante adaptadores: Greenhouse y Ashby | `MVP` |
+| Adaptador de Lever | `MVP (should-have)` |
 | Búsquedas guardadas en un agregador de ofertas para empresas sin API (sujeto a spike; plan B: SmartRecruiters) | `MVP` |
 | Adaptador para SmartRecruiters (si el agregador es viable) | `v1.1` |
 | Convertir los correos de alertas de empleo de los portales en ofertas | `v1.1` |
@@ -140,6 +141,6 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 ## 9. Preguntas abiertas para las siguientes fases
 
 - ~~¿Qué fuente de ofertas entra al MVP?~~ Resuelta: adaptadores por plataforma de empleo, con Greenhouse en el MVP (ver `docs/prd.md`, RF-04 y RF-09).
-- ¿Qué modelo de Claude se usa para extracción y cuál para el puntaje (costo frente a calidad)?
-- ¿Cuántos días sin actividad disparan una alerta de seguimiento?
-- ¿Cómo se ponderan habilidades, experiencia y preferencias blandas (por ejemplo, la preferencia por híbrido) dentro del puntaje?
+- ~~¿Qué modelo de Claude se usa para extracción y cuál para el puntaje?~~ Resuelta en ADR-0003.
+- ~~¿Cuántos días sin actividad disparan una alerta de seguimiento?~~ Resuelta: 10 por defecto, configurable (RF-43).
+- ¿Cómo se ponderan habilidades, experiencia y seniority dentro del puntaje? Se resuelve en el cambio de OpenSpec de HU6. La preferencia por híbrido ya quedó fuera de la IA (RF-28).

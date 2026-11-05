@@ -38,7 +38,7 @@ Un único usuario: el autor, profesional del software que busca empleo en EE. UU
  2. Cargar el currículum (Markdown) ──▶ la IA extrae el perfil ──▶ el usuario lo revisa
  3. Definir filtros duros (roles, modalidad, ubicación, salario mínimo, seniority)
  4. Llegan ofertas:
-      a) automáticas: job boards de empresas objetivo (Greenhouse, Ashby, Lever) y búsquedas guardadas en un agregador
+      a) automáticas: job boards de empresas objetivo (Greenhouse, Ashby; Lever como should-have) y búsquedas guardadas en un agregador
       b) manuales: pegar el texto de la oferta
           │
           ▼
@@ -77,8 +77,8 @@ Las épicas agrupan los requisitos en bloques de valor y corresponden a capabili
 | HU3 | E1 | Como buscador de empleo, quiero guardar búsquedas que se ejecuten en un agregador de ofertas, para recibir ofertas de empresas sin API propia. | RF-04a, RF-04b, RF-05 | Must-have |
 | HU4 | E2 | Como buscador de empleo, quiero cargar mi currículum y obtener un perfil estructurado que pueda corregir, para que el sistema me conozca. | RF-10 a RF-14 | Must-have (PDF: should-have) |
 | HU5 | E3 | Como buscador de empleo, quiero que cada oferta pase por mis criterios no negociables, para descartar sin esfuerzo las que no me sirven. | RF-20 a RF-23 | Must-have |
-| HU6 | E3 | Como buscador de empleo, quiero un puntaje de encaje explicado y verificable, para saber por qué una oferta encaja o no con mi perfil. | RF-24 a RF-28, RNF-08 | Must-have |
-| HU7 | E3 | Como buscador de empleo, quiero registrar si aplico o descarto cada oferta, para cerrar la evaluación y medir cuánto tardo en decidir. | RF-07, RNF-14 | Must-have |
+| HU6 | E3 | Como buscador de empleo, quiero un puntaje de encaje explicado y verificable, para saber por qué una oferta encaja o no con mi perfil. | RF-23 a RF-28, RNF-08 | Must-have |
+| HU7 | E3 | Como buscador de empleo, quiero registrar si aplico o descarto cada oferta, para cerrar la evaluación y medir cuánto tardo en decidir. | RF-07, RF-30, RNF-14 | Must-have |
 | HU8 | E4 | Como buscador de empleo, quiero gestionar mis candidaturas en un pipeline con historial de cambios, para saber en qué estado va cada una. | RF-30 a RF-35 | Must-have |
 | HU9 | E4 | Como buscador de empleo, quiero pegar un correo en una candidatura y que la IA lo clasifique, y recibir alertas de seguimiento, para no perder ningún proceso. | RF-40 a RF-43 | Should-have |
 | HU10 | E5 | Como buscador de empleo, quiero usar la interfaz en español, para trabajar en mi idioma cuando lo prefiera. | RF-50 a RF-52 | Should-have |
@@ -100,7 +100,7 @@ Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 | RF-01 | El usuario pega el texto de una oferta y, opcionalmente, su URL de origen. | M |
 | RF-02 | La IA extrae los campos estructurados de la oferta: título, empresa, ubicaciones, país, modalidad (`remote`, `hybrid`, `onsite`, `unknown`), salario (mínimo, máximo, moneda, periodo), seniority, habilidades requeridas y deseables, y años de experiencia pedidos. Los campos ausentes quedan como desconocidos. Calidad exigida en el golden set de extracción: ≥ 90 % de campos correctos y 0 salarios inventados. | M |
 | RF-03 | El usuario puede guardar la oferta directamente o corregir los campos extraídos antes o después de guardar. | M |
-| RF-04 | El sistema importa las ofertas de las empresas objetivo desde la API pública de su job board. Adaptadores del MVP: Greenhouse, Ashby y Lever. | M |
+| RF-04 | El sistema importa las ofertas de las empresas objetivo desde la API pública de su job board. Adaptadores must-have: Greenhouse y Ashby. El adaptador de Lever es should-have, porque ninguna empresa objetivo conocida lo usa. | M |
 | RF-04a | El usuario guarda búsquedas (palabras clave y ubicación) que el sistema ejecuta en un agregador de ofertas para traer ofertas de empresas sin API propia. El proveedor se elige con un spike de cobertura, cuota y términos de uso; si ninguno es viable, se reemplaza por el adaptador de SmartRecruiters. | M |
 | RF-04b | Cada sincronización agrega como máximo N ofertas nuevas (configurable; por defecto 50) y reporta cuántas trajo, cuántas omitió por duplicadas y cuántas por el tope. | M |
 | RF-05 | El sistema evita duplicados por fuente e identificador externo, o por URL. | M |
@@ -222,7 +222,7 @@ Vista conceptual; el modelo de datos detallado está en `docs/architecture.md`. 
 | Dependencia | Uso | Riesgo |
 | --- | --- | --- |
 | Claude API | Extracción, puntaje y clasificación de correos | Costo y latencia; se mitigan con RNF-07 y RNF-09 |
-| Job boards de Greenhouse, Ashby y Lever (APIs públicas) | Importación por empresa (RF-04) | Solo cubren empresas que usan esas plataformas |
+| Job boards de Greenhouse y Ashby, y de Lever como should-have (APIs públicas) | Importación por empresa (RF-04) | Solo cubren empresas que usan esas plataformas |
 | Agregador de ofertas (JSearch u otro; por definir en el spike) | Búsquedas guardadas (RF-04a) | Cuota gratuita pequeña, términos de uso y cobertura sin confirmar; SerpApi se evita por litigio con Google |
 | Railway | Despliegue de la aplicación y la base de datos | Límites del plan gratuito |
 
@@ -236,15 +236,16 @@ Vista conceptual; el modelo de datos detallado está en `docs/architecture.md`. 
 - La recolección automática de ofertas es tan importante como pegar ofertas a mano (OBJ-5).
 - Fuentes automáticas del MVP: adaptadores de Greenhouse, Ashby y Lever, y un agregador por búsqueda sujeto a spike (opción A de la revisión).
 - Presupuesto: 30 horas con tope de 36.
+- Tras dividir las historias: el adaptador de Lever baja a should-have y el agregador (HU3) deja de ser lo primero en recortarse, porque es la única vía automática hacia las empresas grandes.
 - Se aplican todas las correcciones de la revisión adversarial (`docs/prd-review.md`).
 
 ## 11. Riesgos y mitigaciones
 
-Ver `docs/vision.md`, sección 8, y `docs/prd-review.md`. Riesgos adicionales del PRD:
+Ver `docs/vision.md`, sección 8, y `docs/prd-review.md`. El plan por entrega está en `docs/user-stories.md` (sección "Plan de entregas"). Riesgos adicionales del PRD:
 
 | Riesgo | Mitigación |
 | --- | --- |
-| El MVP imprescindible (~33 h) no cabe en el tope de 36 h, sobre todo por la curva de aprendizaje de AdonisJS v7 | Orden de construcción: walking skeleton → HU4 → HU1 → HU5 → HU6 → HU7 → HU8 → HU2 → HU3. Orden de recorte: HU3 (agregador) → adaptador de Lever dentro de HU2. |
+| El MVP imprescindible (~31.5 h) no cabe en el tope de 36 h, sobre todo por la curva de aprendizaje de AdonisJS v7 | Orden de construcción: walking skeleton → HU4 → HU1 → HU5 → HU6 → HU7 → HU8 → HU2 → HU3. Orden de recorte: adaptador de Lever (ya es should-have) → reducir HU3 a una búsqueda fija sin pantalla de edición. |
 | El agregador no cubre las empresas grandes o sus términos no lo permiten | Spike de 30 minutos antes de implementarlo; plan B: adaptador de SmartRecruiters. |
 | El filtro de roles por palabras clave descarta ofertas buenas o deja pasar irrelevantes | Las ofertas descartadas siguen visibles con su motivo; el usuario ajusta las palabras clave. |
 

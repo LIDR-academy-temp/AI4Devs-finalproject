@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | C1 | No hay filtro por rol: una sincronización trae ofertas de contabilidad, ventas, etc., que pasan los filtros como `unknown`, llegan a la IA y rompen el presupuesto. | Filtro de roles por palabras clave en RF-20 y tope de ofertas por sincronización (RF-04b). |
 | C2 | OBJ-1 no se puede medir: no se registra ninguna decisión, archivar era should-have y la revisión obligatoria de campos añade fricción. La línea base de 15 min es un supuesto. | Decisión `apply`/`skip` con `first_viewed_at` y `decided_at` (RF-07 must-have, RNF-14); revisión de campos opcional (RF-03); línea base medida con 5 ofertas antes del desarrollo. |
-| C3 | El dolor "encontrar ofertas" quedaba casi sin resolver: solo una empresa importable. | El usuario confirmó que la recolección automática es tan importante como pegar. Se agregan adaptadores de Ashby y Lever y un agregador por búsqueda sujeto a spike (RF-04, RF-04a); nueva métrica OBJ-5. |
+| C3 | El dolor "encontrar ofertas" quedaba casi sin resolver: solo una empresa importable. | El usuario confirmó que la recolección automática es tan importante como pegar. Se agregan adaptadores de Ashby y Lever y un agregador por búsqueda sujeto a spike (RF-04, RF-04a); nueva métrica OBJ-5. Después de dividir las historias, Lever pasó a should-have. |
 | C4 | 28 h sin margen y sin contar la curva de aprendizaje de AdonisJS v7. | Tope aceptado de 36 h; orden de construcción y de recorte explícitos en el PRD (sección 11). |
 
 ## Alto: ambiguo o no comprobable

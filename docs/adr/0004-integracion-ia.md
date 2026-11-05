@@ -10,7 +10,7 @@ El puntaje debe ser explicable, medible y barato. Claude API ofrece respuestas e
 ## Decisión
 
 1. **Markdown como representación canónica.**
-   - Currículum: el usuario puede subir Markdown directamente (costo cero de conversión). Si sube un PDF, una sola llamada a Claude lo convierte a Markdown y extrae el perfil estructurado. Las llamadas siguientes usan el Markdown y el perfil, nunca el PDF.
+   - Currículum: el usuario puede subir Markdown directamente (costo cero de conversión). Si sube un PDF (should-have, RF-11), una sola llamada a Claude lo convierte a Markdown y extrae el perfil estructurado. Las llamadas siguientes usan el Markdown y el perfil, nunca el PDF.
    - Ofertas: el HTML de las plataformas se convierte a Markdown localmente, sin IA.
 2. **Respuestas estructuradas** con esquemas versionados en `apps/api/app/ai/schemas/`. La salida se valida; si falla, un reintento y luego error claro (RNF-09).
 3. **Evidencia como campos del esquema:** fragmentos citados de la oferta y del currículum dentro de la respuesta estructurada, no con la función de citas de la API.

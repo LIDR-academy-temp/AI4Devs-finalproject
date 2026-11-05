@@ -391,3 +391,55 @@
   ```
 
 - **Resultado:** Se reestructuraron las historias en 5 épicas (E1 `job-intake`, E2 `resume-profile`, E3 `job-matching`, E4 `application-tracking`, E5 `platform`) y 10 historias con 44 escenarios. Se actualizaron `docs/prd.md` (v0.3), `docs/user-stories.md`, `docs/tickets.md`, `readme.md`, `prompts.md`, `CLAUDE.md` y `openspec/config.yaml`, y se hizo commit en la rama `feature/entrega-1-jr`.
+
+### Prompt 30
+
+- **Categoría:** `🔍 Investigación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Dado que las historias quedaron del tamaño de un cambio de OpenSpec, no hay necesidad de cambiarles de prioridad o sí?
+  ```
+
+- **Resultado:** Análisis de prioridades tras dividir las historias: el tamaño no cambia la prioridad, pero se detectaron dos inconsistencias (HU3 must-have marcada como la primera en recortarse; adaptador de Lever sin empresas objetivo conocidas). Propuesta de bajar el adaptador de Lever a should-have y cambiar el orden de recorte. Respuesta en el chat; sin cambios en archivos.
+
+### Prompt 31
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Sí, aplícalo y pero no hagas commit
+  ```
+
+- **Resultado:** El adaptador de Lever (T-26) pasó a should-have y cambió el orden de recorte (Lever primero; después, HU3 se reduce a una búsqueda fija). Se actualizaron `docs/prd.md`, `docs/vision.md`, ADR-0002, `docs/user-stories.md`, `docs/tickets.md` (must-have ≈ 31.25 h, should-have ≈ 7 h) y `readme.md`. Sin commit, por indicación del usuario.
+
+### Prompt 32
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Dado que se han hecho cambios a destiempo, revisa toda la documentación en búsqueda de inconsistencias o cambios que se tengan que hacer. Compáralo con el AI SDLC de nuevo y asegúrate que no nos hayamos saltado ningún paso.
+  ```
+
+- **Resultado:** Revisión de consistencia contra `docs/ai-sdlc-claude-code-openspec.md` y las reglas del curso. Se corrigieron referencias a Lever, el endpoint de currículum, los trabajos de la cola (ADR-0005), preguntas abiertas de la visión, requisitos de HU6 y HU7 y dependencias de tickets. Se agregaron los pasos faltantes: plan de entregas, mapeo de épicas a módulos, medición de la línea base (T-31), etiquetado previo de golden sets (T-32) y hook de lint y pruebas. Total: 32 tickets, must-have ≈ 31.5 h. Sin commit.
+
+### Prompt 33
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con el cambio de prioridad de Lever (prompt 31) y la revisión de consistencia contra el AI SDLC (prompt 32).

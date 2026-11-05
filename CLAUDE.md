@@ -79,6 +79,7 @@ pnpm build                           # build de producción de ambas apps
 - Cobertura mínima del 80 % en la lógica de dominio (`apps/api/app/services/`, filtros, pipeline).
 - Las pruebas nunca llaman a la API real de Claude ni a Greenhouse: usa el doble de prueba del cliente de IA y respuestas grabadas.
 - Patrón Arrange-Act-Assert y nombres que describan el comportamiento.
+- Un hook de Claude Code ejecuta lint y pruebas después de cada edición (se configura en T-01).
 
 ## Flujo de trabajo
 

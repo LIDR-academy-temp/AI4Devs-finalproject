@@ -10,7 +10,7 @@ La extracción y el puntaje tardan hasta 20 segundos, y la importación de una e
 ## Decisión
 
 - Cola de trabajos persistida en PostgreSQL, sin Redis.
-- Tipos de trabajo: `extract_resume`, `extract_job_posting`, `score_match`, `sync_target_company` y `classify_email` (should-have).
+- Tipos de trabajo: `extract_resume`, `extract_job_posting`, `score_match`, `sync_target_company`, `sync_job_search` y `classify_email` (should-have).
 - La API encola y responde `202` con un `jobId`; la SPA consulta `GET /api/v1/jobs/{id}` hasta que termina.
 - En el MVP, el worker corre dentro del mismo proceso que la API; se puede mover a un proceso separado con la misma imagen.
 - Reintentos con espera exponencial para errores transitorios (429, 5xx de Claude o de Greenhouse).

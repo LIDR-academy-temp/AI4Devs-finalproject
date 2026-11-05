@@ -19,7 +19,7 @@
 | [`docs/architecture.md`](./docs/architecture.md) | Arquitectura, modelo de datos y API |
 | [`docs/adr/`](./docs/adr/) | Decisiones de arquitectura (ADR-0001 a ADR-0005) |
 | [`docs/user-stories.md`](./docs/user-stories.md) | 5 épicas y 10 historias con 44 escenarios de aceptación |
-| [`docs/tickets.md`](./docs/tickets.md) | 30 tickets de trabajo |
+| [`docs/tickets.md`](./docs/tickets.md) | 32 tickets de trabajo |
 | [`docs/ai-log.md`](./docs/ai-log.md) | Registro completo de prompts |
 | [`CLAUDE.md`](./CLAUDE.md) | Convenciones para los agentes de IA |
 
@@ -37,7 +37,7 @@ ATS personal (nombre provisional) [PENDIENTE: nombre final]
 
 ### **0.3. Descripción breve del proyecto:**
 
-Panel web personal para buscar empleo en Estados Unidos. Recolecta ofertas automáticamente de los job boards de las empresas objetivo (Greenhouse, Ashby, Lever) y de búsquedas guardadas en un agregador, y también acepta ofertas pegadas a mano. Descarta las que no cumplen los criterios no negociables, calcula con Claude un puntaje de encaje explicado contra el currículum y gestiona cada candidatura en un pipeline con su historial.
+Panel web personal para buscar empleo en Estados Unidos. Recolecta ofertas automáticamente de los job boards de las empresas objetivo (Greenhouse y Ashby) y de búsquedas guardadas en un agregador, y también acepta ofertas pegadas a mano. Descarta las que no cumplen los criterios no negociables, calcula con Claude un puntaje de encaje explicado contra el currículum y gestiona cada candidatura en un pipeline con su historial.
 
 ### **0.4. URL del proyecto:**
 
@@ -63,7 +63,7 @@ Buscar empleo exige revisar ofertas en muchos portales, decidir una por una si e
 
 | Funcionalidad | Descripción | Prioridad |
 | --- | --- | --- |
-| Recolección automática de ofertas | Importa ofertas de los job boards de Greenhouse, Ashby y Lever de las empresas objetivo, y ejecuta búsquedas guardadas en un agregador; evita duplicados y respeta un tope por sincronización. | Must-have |
+| Recolección automática de ofertas | Importa ofertas de los job boards de Greenhouse y Ashby (Lever como should-have) de las empresas objetivo, y ejecuta búsquedas guardadas en un agregador; evita duplicados y respeta un tope por sincronización. | Must-have |
 | Ofertas pegadas a mano | La IA extrae título, empresa, ubicación, modalidad, salario, seniority y habilidades; el usuario puede corregirlos. | Must-have |
 | Perfil del currículum | El currículum en Markdown se convierte en un perfil estructurado editable (PDF como should-have). | Must-have |
 | Filtros duros sin IA | Rol, modalidad, ubicación, salario y seniority con reglas explícitas; un dato desconocido no descarta la oferta. | Must-have |
@@ -154,7 +154,7 @@ flowchart LR
     api --> data
     worker --> data
     worker -->|Messages API| claude["Claude API"]
-    worker -->|Job Board APIs| gh["Greenhouse / Ashby / Lever"]
+    worker -->|Job Board APIs| gh["Greenhouse / Ashby<br/>(Lever: should-have)"]
     worker -->|Búsquedas| agg["Agregador de ofertas<br/>(por definir en spike)"]
 ```
 
@@ -173,7 +173,7 @@ flowchart LR
 | Persistencia | PostgreSQL + Lucid ORM | Datos de la aplicación y migraciones. |
 | Cola de trabajos | PostgreSQL (librería por confirmar en el walking skeleton; ver ADR-0005) | Extracción, puntaje e importación en segundo plano. |
 | Módulo de IA | `@anthropic-ai/sdk` | Cliente de Claude, prompts versionados, esquemas de salida, registro de uso. |
-| Adaptadores de empleo | `JobSourceAdapter` con dos modos: por job board (`GreenhouseAdapter`, `AshbyAdapter`, `LeverAdapter`) y por búsqueda (`AggregatorAdapter`) | Traer ofertas de plataformas externas, normalizarlas y respetar el tope por sincronización. |
+| Adaptadores de empleo | `JobSourceAdapter` con dos modos: por job board (`GreenhouseAdapter`, `AshbyAdapter`; `LeverAdapter` como should-have) y por búsqueda (`AggregatorAdapter`) | Traer ofertas de plataformas externas, normalizarlas y respetar el tope por sincronización. |
 | Filtros duros | TypeScript puro en `app/filters/`, sin dependencias | Evaluar `pass`/`fail`/`unknown` por criterio (rol, modalidad, ubicación, salario, seniority) según `docs/prd.md` 6.1; tabla de mapeo de seniority versionada. |
 | Evals | Script de Node + golden sets en el repositorio | Medir el acuerdo del puntaje (ajuste/prueba) y la precisión de la extracción (RNF-08). |
 
@@ -190,14 +190,14 @@ flowchart LR
 │   │   │   ├── services/       # reglas de dominio (pipeline, decisiones)
 │   │   │   ├── filters/        # filtros duros y mapeo de seniority
 │   │   │   ├── ai/             # cliente Claude, prompts/, schemas/
-│   │   │   ├── job_sources/    # JobSourceAdapter y adaptadores (Greenhouse, Ashby, Lever, agregador)
+│   │   │   ├── job_sources/    # JobSourceAdapter y adaptadores (Greenhouse, Ashby, agregador; Lever should-have)
 │   │   │   └── jobs/           # handlers de la cola
 │   │   ├── database/migrations/
 │   │   ├── evals/              # golden set y script de evaluación
 │   │   └── tests/              # Japa: unit/ y functional/
 │   └── web/                    # React 19 + Vite
 │       └── src/
-│           ├── features/       # job-postings, resume, preferences, applications
+│           ├── features/       # job-postings, target-companies, job-searches, resume, preferences, applications
 │           ├── lib/            # cliente Tuyau, TanStack Query
 │           └── locales/        # en/ (es/ en should-have)
 ├── e2e/                        # Playwright
@@ -766,9 +766,9 @@ Las 10 historias del MVP se agrupan en 5 épicas, cada una mapeada a una capabil
 
 | Épica | Capability | Valor | Historias | Estimación |
 | --- | --- | --- | --- | --- |
-| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 10 h |
+| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 9 h (+1 h should-have) |
 | E2 Perfil profesional | `resume-profile` | El sistema conoce la experiencia real del usuario | HU4 | 2.75 h (+1 h should-have) |
-| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8 h |
+| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8.25 h |
 | E4 Seguimiento de candidaturas | `application-tracking` | Saber en qué va cada proceso y no perder seguimientos | HU8, HU9 | 3 h (+3 h should-have) |
 | E5 Plataforma | `platform` | Acceso seguro, despliegue e idioma | HU10 y walking skeleton | 6.25 h (+2 h should-have) |
 
@@ -779,8 +779,8 @@ Selección de tres historias must-have, una de cada épica principal:
 > **Como** buscador de empleo, **quiero** importar automáticamente las ofertas de mis empresas objetivo desde su job board, **para** no revisar sus portales uno por uno.
 
 - **Épica:** E1
-- **Prioridad:** must-have
-- **Estimación:** 4 h
+- **Prioridad:** must-have (adaptador de Lever: should-have)
+- **Estimación:** 3 h (+1 h para Lever)
 - **Requisitos:** RF-04, RF-04b, RF-05, RF-09
 - **Objetivos:** OBJ-5
 
@@ -797,6 +797,7 @@ Esquema del escenario: Importar las ofertas de una empresa desde su job board
     | plataforma |
     | Greenhouse |
     | Ashby      |
+    # Lever (should-have)
     | Lever      |
 
 Escenario: Tope de ofertas por sincronización
@@ -874,7 +875,7 @@ Escenario: Ver el detalle de una candidatura
 
 ## 6. Tickets de Trabajo
 
-Selección de tres tickets (base de datos, backend y frontend). Los 30 tickets están en [`docs/tickets.md`](./docs/tickets.md).
+Selección de tres tickets (base de datos, backend y frontend). Los 32 tickets están en [`docs/tickets.md`](./docs/tickets.md).
 
 **Ticket — T-09 — Tablas de ofertas, empresas objetivo y búsquedas**
 
