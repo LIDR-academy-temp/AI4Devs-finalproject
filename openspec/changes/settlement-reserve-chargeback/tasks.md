@@ -91,7 +91,7 @@ Hecho: los cuatro escenarios de `missing.test.ts` pasan desde el principio, porq
 
 ## 5. Integración del proceso
 
-- [ ] 5.1 En `backend/test/integration/settlement-process.int.test.ts`:
+- [x] 5.1 En `backend/test/integration/settlement-process.int.test.ts`:
   - reescribir "ProviderB-Main releases on chargeback, a policy not applied yet (#62)": con el oráculo de `batch-issues`, los movimientos `type=I` de las tres hojas con su `reserveEarlyReleasedAmt` y su snapshot, la vista y el desglose, y sin la advertencia antigua;
   - añadir la vista previa igual que procesar;
   - ronda 1 con un `xlsx` APP + REF en ProviderB-Main;
@@ -101,7 +101,8 @@ Hecho: los cuatro escenarios de `missing.test.ts` pasan desde el principio, porq
   - el summary CSV con la advertencia y el ID de origen.
 
   Verificar, con turno de base, con `pnpm --filter @recon/backend test:integration -- settlement-process`.
-- [ ] 5.2 Commit: test(settlement): integración de la liberación de reserva ante un ajuste, y `git push`.
+- [x] 5.2 Commit: test(settlement): integración de la liberación de reserva ante un ajuste, y `git push`.
+Hecho: los casos pasan a la primera, porque la implementación es de los grupos 2 y 3; el rojo se vio rompiendo a propósito el loader (`reserveStates` vacío): fallan 4 (oráculo, vista, P12 y reprocesar), con 7.5100 en lugar de 151.8930, y se restauró. El describe procesa `batch-issues` de verdad y comprueba al final que quedan los mismos batches, imports y movimientos que encontró; `removeSettlementsFrom` borra también la auditoría de los batches y de `AccountChannel`, y `restoreAccountChannels` deja los canales como estaban. Deshacer se marca en la base, como en "attempts". El RR después de deshacer queda cubierto en el dominio.
 
 ## 6. Colección Bruno
 
