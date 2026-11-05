@@ -31,9 +31,9 @@ Rama `feat/web-ambiguous-rows` creada desde `origin/feature/entrega-3-MVP` cuand
 
 ## 4. Capturas
 
-- [ ] 4.1 Script `e2e/screenshots/web-ambiguous-rows.ts` y `screenshots:web-ambiguous-rows` en `e2e/package.json` y en la raíz (D6): `batch-split` en ProviderA-USD, solo `GET rows` interceptado con `page.route`, capturas `ambiguous-row`, `resolve-dialog-no-run`, `resolve-dialog` y `ambiguous-row-validated` a 1280 y 1024 px, diálogo cerrado siempre con **Keep**, import cancelado con motivo al final. Verificar ejecutándolo contra la app local (`pnpm db:up`, `pnpm db:seed` y `pnpm dev` los levanta la persona): deja las ocho capturas en `docs/wireframes/web-ambiguous-rows/`, sin desbordes, y ningún import queda abierto
-- [ ] 4.2 Añadir la carpeta a `docs/wireframes/README.md`: qué muestra cada captura, que la fila ambigua es sintética e inyectada en `GET rows` (el seed no produce ambiguas) y que por eso el contador `Ambiguous` marca `0`. Verificar a ojo cada captura y anotarlo en el PR
-- [ ] 4.3 Commit: `docs(web): capturas de la resolución de filas ambiguas`
+- [x] 4.1 Script `e2e/screenshots/web-ambiguous-rows.ts` y `screenshots:web-ambiguous-rows` en `e2e/package.json` y en la raíz (D6): `batch-split` en ProviderA-USD, solo `GET rows` interceptado con `page.route`, capturas `ambiguous-row`, `resolve-dialog-no-run`, `resolve-dialog` y `ambiguous-row-validated` a 1280 px, medidas también a 1024 px (la tabla de filas, desborde conocido hasta #132, solo al log), diálogo cerrado siempre con **Keep**, import cancelado con motivo al final. Verificar ejecutándolo contra la app local (`pnpm db:up`, `pnpm db:seed` y `pnpm dev` los levanta la persona): deja las cuatro capturas en `docs/wireframes/web-ambiguous-rows/`, sin más desbordes, y ningún import queda abierto
+- [x] 4.2 Añadir la carpeta a `docs/wireframes/README.md`: qué muestra cada captura, que la fila ambigua es sintética e inyectada en `GET rows` (el seed no produce ambiguas), que por eso el contador `Ambiguous` marca `0`, y la excepción a 1024 px con #132. Verificar a ojo cada captura y anotarlo en el PR
+- [x] 4.3 Commit: `docs(web): capturas de la resolución de filas ambiguas`
 
 ## 5. Cierre
 

@@ -84,11 +84,21 @@ Lo que la fila pasa a ser no lo calcula el fake: `makeAmbiguousRow` (nuevo en `i
 
 `e2e/screenshots/web-ambiguous-rows.ts`, con la cabecera y protecciones de los otros scripts (contraseña desde el `.env` raíz puesta desde la página, sin traza ni vídeo, medición a 1280 y 1024 px que falla con desplazamiento horizontal o tabla recortada). `analyst`, ProviderA-USD, `batch-split` (las dos partes) subido, confirmado y analizado desde las pantallas; nunca `batch-clean`.
 
-`page.route('**/api/v1/imports/*/rows?*')` pide la respuesta real (`route.fetch()`) y, sin filtro o con `match=ambiguous`, antepone una fila ambigua sintética: `fileId` y `sheetId` de la primera fila real, `rowNo` y `transactionIdRaw` sintéticos que no existen en el seed, y dos candidatas con gateways del seed (una visible y otra `outOfScope`) y transacciones sintéticas. Suma uno a `total`. Ninguna otra petición se intercepta.
+`page.route('**/api/v1/imports/*/rows?*')` pide la respuesta real (`route.fetch()`) y, sin filtro o con `match=ambiguous`, antepone una fila ambigua sintética: `fileId` y `sheetId` de la primera fila real, `rowNo` y `transactionIdRaw` sintéticos que no existen en el seed, y dos candidatas con transacciones sintéticas: una visible en `Gateway Numeric` (del seed) y otra `outOfScope` en `Gateway Shared`, un gateway que el seed no tiene (solo siembra `Gateway Numeric` y `Gateway UUID`, y una candidata UUID para un ID numérico no sería creíble). Suma uno a `total`. Ninguna otra petición se intercepta.
+
+En la tabla, cada candidata lleva el nombre encima de su **Choose**, y tanto el nombre como el texto de `validated` se parten en varias líneas (`max-w-32` y `whitespace-normal`, porque la celda es `whitespace-nowrap`). Si fueran en la misma línea, la columna Result se ensancharía y la tabla desbordaría su tarjeta ya a 1280 px.
+
+**Excepción a 1024 px hasta #132.** La tabla de filas de Analysis ya desborda su tarjeta a 1024 px sin la fila ambigua (167 px; ningún script la medía antes). Con la fila ambigua mide 184 px. Hasta que se arregle #132, el script:
+
+- mide a 1024 px y deja el desborde de la tabla de filas en el log como conocido, sin fallar;
+- sigue fallando por cualquier otro desborde (la página, otra tabla, el diálogo con su aviso);
+- solo guarda las capturas de 1280 px.
+
+Cuando se cierre #132, la excepción desaparece y se versionan las capturas `-1024`.
 
 Capturas: `ambiguous-row` y `resolve-dialog-no-run` (antes de validar), `resolve-dialog` (tras **Run validations**, con el aviso de la corrida), `ambiguous-row-validated` (tras **Continue**: control deshabilitado con su texto). El diálogo se cierra siempre con **Keep** (nunca se confirma: el `PATCH` de una fila sintética respondería `404`). Al terminar cancela el import con motivo; se puede repetir sin sembrar.
 
-El README de wireframes dice que la fila es sintética e inyectada en `GET rows`, y que por eso el contador `Ambiguous` de las capturas marca `0`.
+El README de wireframes dice que la fila es sintética e inyectada en `GET rows`, y que por eso el contador `Ambiguous` de las capturas marca `0`. También cita #132.
 
 ### D7. Pruebas
 
@@ -102,6 +112,7 @@ Vitest + Testing Library + MSW, escritas antes del código de cada pieza:
 
 - [Resolver mientras corre **Run validations** en la misma pantalla] → El backend serializa ambos; si la ejecución termina después, su corrida queda vigente y la invalidación de D3 la muestra. No se bloquea la tabla desde `ValidationsSection` para no acoplar las features más allá de la clave.
 - [El aviso se decide con lo que hay en caché al abrir] → Si otra pestaña valida mientras el diálogo está abierto, el aviso puede faltar; el efecto real (validar de nuevo) se ve tras confirmar, porque D3 vuelve a pedir la corrida.
+- [La tabla de filas desborda a 1024 px desde antes de este change] → #132; el script lo registra sin fallar y solo se versionan las capturas de 1280 px (D6).
 - [Contador `Ambiguous` en `0` en las capturas] → Solo `GET rows` se intercepta, por decisión del gate; se dice en el README de wireframes.
 - [Validar en el script depende del historial (#111)] → Las capturas no muestran resultados de validación más allá de la cabecera; si **Continue** quedara bloqueado, el script falla con un mensaje que lo dice.
 - [`(another merchant)` elegible] → Es lo que permite la spec ("necesarios para resolver la fila"); el diálogo no revela más datos que la tabla.

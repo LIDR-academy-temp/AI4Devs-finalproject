@@ -40,8 +40,10 @@ export function AmbiguousCandidates({ row }: { row: ImportRowItem }) {
     <div className="flex flex-col gap-1">
       <ul className="flex flex-col gap-1 text-xs text-muted-foreground">
         {row.candidates.map((c) => (
-          <li key={`${c.gatewayId}:${c.transactionId}`} className="flex items-center gap-2">
-            <span>{candidateLabel(c)}</span>
+          // Name above its Choose, wrapping: the Result column stays narrow and the table fits its card (design D6).
+          <li key={`${c.gatewayId}:${c.transactionId}`} className="flex max-w-32 flex-col items-start gap-0.5">
+            {/* The cells of the table do not wrap (whitespace-nowrap): the name and the hint do. */}
+            <span className="whitespace-normal">{candidateLabel(c)}</span>
             {withControl && (
               <Button
                 size="sm"
@@ -59,7 +61,7 @@ export function AmbiguousCandidates({ row }: { row: ImportRowItem }) {
         ))}
       </ul>
       {withControl && mode === 'disabled' && (
-        <p id={hintId} className="max-w-64 text-xs text-muted-foreground">
+        <p id={hintId} className="max-w-32 whitespace-normal text-xs text-muted-foreground">
           {s.validatedHint}
         </p>
       )}
