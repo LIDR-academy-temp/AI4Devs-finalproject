@@ -614,3 +614,29 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con el nombre del proyecto "AI Job Match" y su subtítulo en la documentación.
+
+### Prompt 47
+
+- **Categoría:** `🔍 Investigación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Si quiero hacer el cambio de mi nombre completo, donde tengo que hacer el cambio?
+  ```
+
+- **Resultado:** Se indicó que el nombre se edita en `scripts/readme.template.md` (sección 0.1) y que después se regenera `readme.md` con `python3 scripts/check_docs.py --build-readme`. Respuesta en el chat; sin cambios en archivos.
+
+### Prompt 48
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con el nombre completo que el usuario agregó a la ficha (sección 0.1) en `scripts/readme.template.md` y `readme.md`.

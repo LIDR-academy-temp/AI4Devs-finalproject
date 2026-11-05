@@ -35,7 +35,7 @@
 
 ### **0.1. Tu nombre completo:**
 
-[PENDIENTE]
+Juan Reyes
 
 ### **0.2. Nombre del proyecto:**
 
