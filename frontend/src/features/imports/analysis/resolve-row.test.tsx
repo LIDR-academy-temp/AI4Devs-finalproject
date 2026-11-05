@@ -167,10 +167,21 @@ describe('Resolve an ambiguous row from the table', () => {
     stored[index] = { ...stored[index]!, matchResult: 'matched' }
     const rowsBefore = importRequests('rows').length
     const detailBefore = importRequests('detail').length
+    // The rows are held, so the Choose is still there when the dialog closes: the heading takes the focus anyway,
+    // as the Choose goes once the rows arrive (re-review).
+    const rowsHold = holdNext('rows')
     await user.click(within(dialog()).getByRole('button', { name: s.resolve.confirm }))
 
     await screen.findByText(s.resolve.notAmbiguous)
+    await rowsHold.arrived
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(chooseButton('Gateway Numeric', row)).toBeInTheDocument()
+    const heading = screen.getByRole('heading', { name: s.title })
+    expect(heading).toHaveAttribute('data-list-heading')
+    expect(document.activeElement).toBe(heading)
+    rowsHold.release()
     await waitFor(() => expect(within(table()).queryByRole('button', { name: /^Choose / })).not.toBeInTheDocument())
+    expect(document.activeElement).toBe(heading)
     // Both the rows and the detail are asked again (review 2).
     await waitFor(() => expect(importRequests('rows').length).toBeGreaterThan(rowsBefore))
     await waitFor(() => expect(importRequests('detail').length).toBeGreaterThan(detailBefore))
@@ -186,15 +197,25 @@ describe('Resolve an ambiguous row from the table', () => {
     const stored = importRecord(importId).rows!.find((r) => r.rowNo === row.rowNo && r.sheetId === row.sheetId)!
     stored.candidates = stored.candidates.filter((c) => c.gatewayId !== 1)
     const rowsBefore = importRequests('rows').length
+    // As with row_not_ambiguous: the Choose is still there while the rows are held, and goes after (re-review).
+    const rowsHold = holdNext('rows')
     await user.click(within(dialog()).getByRole('button', { name: s.resolve.confirm }))
 
     await screen.findByText(s.resolve.notCandidate)
+    await rowsHold.arrived
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(chooseButton('Gateway Numeric', row)).toBeInTheDocument()
+    const heading = screen.getByRole('heading', { name: s.title })
+    expect(heading).toHaveAttribute('data-list-heading')
+    expect(document.activeElement).toBe(heading)
+    rowsHold.release()
     await waitFor(() => expect(importRequests('rows').length).toBeGreaterThan(rowsBefore))
     await waitFor(() =>
       expect(
         within(table()).queryByRole('button', { name: s.choose('Gateway Numeric', row.rowNo, row.sheetName) }),
       ).not.toBeInTheDocument(),
     )
+    expect(document.activeElement).toBe(heading)
   })
 
   it('a network failure gives the generic message', async () => {
