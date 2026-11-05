@@ -12,11 +12,9 @@
 //
 // It creates one import as analyst through the screens (batch-split, both parts, in ProviderA-USD), analyzes it,
 // validates it and continues, and at the end cancels it with a reason, so the run can repeat without seeding. It never
-// uses batch-clean (#111). Every screen is captured at 1280 px and measured at 1280 and 1024 px: the run fails if the
-// page scrolls sideways, a table scrolls inside its card, or an open dialog is wider or taller than what it shows. One
-// exception until #132: at 1024 px the rows table of Analysis is wider than its card even without the synthetic row,
-// so there it is logged as a known overflow and no 1024 px screenshot is saved. Once #132 is fixed, that exception goes
-// and the run fails at 1024 px again.
+// uses batch-clean (#111). Every screen is captured and measured at 1280 and at 1024 px, and so is the rows table before
+// the synthetic row: the run fails if the page scrolls sideways, a table scrolls inside its card (the rows table of
+// Analysis included, #132), or an open dialog is wider or taller than what it shows.
 import { existsSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { type Browser, chromium, expect, type Page } from '@playwright/test'
@@ -85,21 +83,17 @@ async function newPage(browser: Browser) {
   return context.newPage()
 }
 
-/**
- * What does not fit at the current width: the page sideways, a table inside its card, an open dialog. The rows table
- * of Analysis is reported apart (`rowsTable`), so that its known overflow at 1024 px (#132) can be told from the rest.
- */
-async function overflows(page: Page): Promise<{ found: string[]; rowsTable: string | null }> {
+/** What does not fit at the current width: the page sideways, a table inside its card, an open dialog. */
+async function overflows(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const found: string[] = []
-    let rowsTable: string | null = null
     const pagePx = document.documentElement.scrollWidth - window.innerWidth
     if (pagePx > 0) found.push(`page ${pagePx} px wider`)
     for (const table of document.querySelectorAll<HTMLElement>('[data-slot="table-container"]')) {
       const px = table.scrollWidth - table.clientWidth
       if (px <= 0) continue
-      if (table.querySelector('table[aria-label="Rows"]')) rowsTable = `rows table ${px} px wider than its card`
-      else found.push(`table ${px} px wider than its card`)
+      const which = table.querySelector('table[aria-label="Rows"]') ? 'rows table' : 'table'
+      found.push(`${which} ${px} px wider than its card`)
     }
     for (const dialog of document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]')) {
       const box = dialog.getBoundingClientRect()
@@ -107,30 +101,24 @@ async function overflows(page: Page): Promise<{ found: string[]; rowsTable: stri
       if (box.left < -0.5 || box.right > window.innerWidth + 0.5) found.push('dialog outside the viewport sideways')
       if (box.top < 0 || box.bottom > window.innerHeight) found.push('dialog cut at the bottom')
     }
-    return { found, rowsTable }
+    return found
   })
 }
 
 /** The measurements that found something; any of them makes the run fail. */
 const problems: string[] = []
 
-/**
- * Captures the screen at 1280 px and measures it at 1280 and 1024 px, leaving the page at 1280. At 1024 px the rows
- * table is a known overflow until #132: logged, not a problem, and no screenshot is saved at that width.
- */
+/** Captures the screen at 1280 and at 1024 px, measures both, and leaves the page at 1280. */
 async function shot(page: Page, name: string, { dialog = false } = {}) {
   for (const size of WIDTHS) {
     await page.setViewportSize(size)
     // The layout settles after a resize (the sidebar and the tables reflow).
     await page.waitForTimeout(300)
-    const wide = size.width === 1280
-    if (wide) await page.screenshot({ path: `${OUT}${name}.png`, fullPage: !dialog })
-    const { found, rowsTable } = await overflows(page)
-    const label = wide ? `saved ${FOLDER}${name}.png` : `measured ${name} at ${size.width} px`
-    const known = !wide && rowsTable ? ` · known (#132): ${rowsTable}` : ''
-    const failing = wide && rowsTable ? [...found, rowsTable] : found
-    console.log(`${label} · ${failing.length === 0 ? 'fits' : failing.join(', ')}${known}`)
-    if (failing.length > 0) problems.push(`${name} at ${size.width} px: ${failing.join(', ')}`)
+    const file = size.width === 1280 ? name : `${name}-1024`
+    await page.screenshot({ path: `${OUT}${file}.png`, fullPage: !dialog })
+    const found = await overflows(page)
+    console.log(`saved ${FOLDER}${file}.png · ${found.length === 0 ? 'fits' : found.join(', ')}`)
+    if (found.length > 0) problems.push(`${name} at ${size.width} px: ${found.join(', ')}`)
   }
   await page.setViewportSize(WIDTHS[0])
 }
@@ -300,13 +288,14 @@ async function main() {
     })
     const importId = created.at(-1) as string
 
-    // Before the synthetic row: what the rows table measures on its own (#132), logged to tell it apart from what the
-    // candidates add. Not a problem of this run.
+    // Before the synthetic row: the rows table on its own has to fit too (#132), so an overflow there is told apart
+    // from what the candidates add.
     for (const size of WIDTHS) {
       await analyst.setViewportSize(size)
       await analyst.waitForTimeout(300)
-      const { rowsTable } = await overflows(analyst)
-      console.log(`baseline ${size.width} px without the synthetic row · ${rowsTable ?? 'rows table fits'}`)
+      const found = await overflows(analyst)
+      console.log(`measured without the synthetic row at ${size.width} px · ${found.join(', ') || 'fits'}`)
+      if (found.length > 0) problems.push(`without the synthetic row at ${size.width} px: ${found.join(', ')}`)
     }
     await analyst.setViewportSize(WIDTHS[0])
 

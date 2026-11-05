@@ -41,9 +41,9 @@ const columns = helper.columns([
     id: 'file',
     header: s.columns.file,
     // The sheet always shows; the file, long and shared by many rows, wraps where it does not fit (the names of the
-    // template have no spaces) and keeps its whole name as tooltip (design D7).
+    // template have no spaces) and keeps its whole name as tooltip (design D7). Narrow, so the table fits at 1024 px.
     cell: ({ row }) => (
-      <div className="flex max-w-64 flex-col">
+      <div className="flex max-w-40 flex-col">
         <span className="whitespace-nowrap font-medium">{row.original.sheetName}</span>
         <span className="text-muted-foreground [overflow-wrap:anywhere]" title={row.original.fileName}>
           {row.original.fileName}
@@ -61,9 +61,10 @@ const columns = helper.columns([
   helper.display({
     id: 'result',
     header: s.columns.result,
+    // Texts wrap between words in a bounded width, as wide as the candidates below; figures and IDs never wrap (#132).
     cell: ({ row }) => (
       <div className="flex flex-col">
-        <span>{resultText(row.original)}</span>
+        <span className="max-w-32 whitespace-normal">{resultText(row.original)}</span>
         <AmbiguousCandidates row={row.original} />
       </div>
     ),
@@ -97,7 +98,12 @@ const columns = helper.columns([
   helper.display({
     id: 'warnings',
     header: s.columns.warnings,
-    cell: ({ row }) => row.original.warnings.map((w) => strings.analysis.warnings.labels[w]).join(', '),
+    cell: ({ row }) =>
+      row.original.warnings.length === 0 ? null : (
+        <span className="block max-w-40 whitespace-normal">
+          {row.original.warnings.map((w) => strings.analysis.warnings.labels[w]).join(', ')}
+        </span>
+      ),
   }),
 ])
 
