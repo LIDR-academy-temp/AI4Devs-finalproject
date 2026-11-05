@@ -1,4 +1,4 @@
-# Tickets de trabajo — ATS personal
+# Tickets de trabajo — AI Job Match
 
 > Tickets derivados de [`docs/user-stories.md`](./user-stories.md). Una historia genera varios tickets. Cada ticket sigue la definition of done de `CLAUDE.md`. La implementación de cada historia se hace como un cambio de OpenSpec que agrupa sus tickets.
 

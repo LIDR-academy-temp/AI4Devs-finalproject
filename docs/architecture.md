@@ -1,4 +1,4 @@
-# Arquitectura — ATS personal
+# Arquitectura — AI Job Match
 
 > Fase 2 (Arquitectura base) del AI SDLC. Parte de [`docs/prd.md`](./prd.md) y de las decisiones registradas en [`docs/adr/`](./adr/). Alimenta las secciones 2, 3 y 4 de `readme.md`.
 

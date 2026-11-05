@@ -573,3 +573,44 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con la revisión adversarial de la arquitectura, ADR-0007, ADR-0008 y la propagación de sus decisiones.
+
+### Prompt 44
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  nombre del proyecto: ATS (Applicant Tracking System) personal
+  ```
+
+- **Resultado:** Se registró el nombre del proyecto en la ficha del `readme.md` (sección 0.2, vía `scripts/readme.template.md`) y en `docs/vision.md`. Sin commit.
+
+### Prompt 45
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Para nombre del proyecto
+  - Título: AI Job Match
+  - Subtítulo: Un ATS (Applicant Tracking System) personal impulsado por Inteligencia Artificial para la búsqueda y calificación automatizada de empleo.
+  ```
+
+- **Resultado:** Se aplicó el nombre "AI Job Match" y su subtítulo en el encabezado y la sección 0.2 del `readme.md` (vía `scripts/readme.template.md`), el título de la OpenAPI, los títulos de visión, PRD, arquitectura, historias y tickets, `CLAUDE.md` y `openspec/config.yaml`. Sin commit.
+
+### Prompt 46
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con el nombre del proyecto "AI Job Match" y su subtítulo en la documentación.

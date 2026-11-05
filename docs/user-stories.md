@@ -1,4 +1,4 @@
-# Historias de usuario — ATS personal
+# Historias de usuario — AI Job Match
 
 > Épicas e historias del MVP definidas en [`docs/prd.md`](./prd.md) (sección 5). Cada épica corresponde a una capability de OpenSpec y cada historia a un cambio de OpenSpec. Las historias usan lenguaje de negocio; la implementación técnica está en [`docs/tickets.md`](./tickets.md). Los criterios de aceptación (Dado/Cuando/Entonces) se convierten en escenarios de las specs.
 

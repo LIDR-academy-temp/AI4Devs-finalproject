@@ -3,7 +3,7 @@ schema: spec-driven
 # Project context shown to AI when creating artifacts.
 # Full conventions live in CLAUDE.md and docs/; keep this summary short.
 context: |
-  Proyecto: ATS personal, panel web para buscar empleo en EE. UU. (proyecto final Master AI4Devs).
+  Proyecto: AI Job Match, un ATS personal: panel web para buscar empleo en EE. UU. (proyecto final Master AI4Devs).
   Un solo usuario. Filtros duros sin IA + puntaje de encaje con Claude + pipeline de candidaturas.
 
   Fuentes de verdad: docs/vision.md (alcance), docs/prd.md (épicas E1-E5, HU1-HU10, RF-xx, RNF-xx),

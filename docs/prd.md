@@ -1,4 +1,4 @@
-# PRD del MVP — ATS personal
+# PRD del MVP — AI Job Match
 
 > Fase 1 (Producto) del AI SDLC. Detalla solo lo que entra en el MVP. El contexto, la hipótesis y el alcance completo están en [`docs/vision.md`](./vision.md). La revisión adversarial que originó la versión 0.2 está en [`docs/prd-review.md`](./prd-review.md).
 

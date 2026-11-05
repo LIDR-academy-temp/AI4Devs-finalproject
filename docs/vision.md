@@ -1,8 +1,9 @@
-# Visión del producto — ATS personal
+# Visión del producto — AI Job Match
 
 > Fase 0 (Descubrimiento) del AI SDLC. Este documento fija el problema, el usuario, la hipótesis y el perímetro del producto. El detalle de requisitos vive en `docs/prd.md`.
 
-- **Nombre provisional:** ATS personal (panel inteligente de búsqueda de empleo)
+- **Nombre del proyecto:** AI Job Match
+- **Subtítulo:** Un ATS (Applicant Tracking System) personal impulsado por Inteligencia Artificial para la búsqueda y calificación automatizada de empleo.
 - **Estado:** borrador v0.2 (incorpora la revisión adversarial de `docs/prd-review.md`)
 - **Fecha:** 2026-11-04
 

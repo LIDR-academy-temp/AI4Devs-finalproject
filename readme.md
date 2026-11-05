@@ -1,3 +1,7 @@
+# AI Job Match
+
+> Un ATS (Applicant Tracking System) personal impulsado por Inteligencia Artificial para la búsqueda y calificación automatizada de empleo.
+
 ## Índice
 
 0. [Ficha del proyecto](#0-ficha-del-proyecto)
@@ -35,7 +39,7 @@
 
 ### **0.2. Nombre del proyecto:**
 
-ATS personal (nombre provisional) [PENDIENTE: nombre final]
+**AI Job Match**: Un ATS (Applicant Tracking System) personal impulsado por Inteligencia Artificial para la búsqueda y calificación automatizada de empleo.
 
 ### **0.3. Descripción breve del proyecto:**
 
@@ -632,7 +636,7 @@ API REST bajo `/api/v1`, autenticada con cookie de sesión. Formato de respuesta
 ```yaml
 openapi: 3.1.0
 info:
-  title: ATS personal API
+  title: AI Job Match API
   version: 0.1.0
 servers:
   - url: /api/v1

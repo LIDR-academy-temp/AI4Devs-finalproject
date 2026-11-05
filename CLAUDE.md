@@ -4,7 +4,7 @@ Contrato de trabajo para agentes de IA en este repositorio. Si una instrucción 
 
 ## Proyecto
 
-ATS personal: panel web para buscar empleo en EE. UU. Concentra ofertas, aplica filtros duros sin IA, calcula con Claude un puntaje de encaje explicado contra el currículum y gestiona las candidaturas en un pipeline. Proyecto final del Master AI4Devs; un solo usuario.
+AI Job Match, un ATS (Applicant Tracking System) personal: panel web para buscar empleo en EE. UU. Concentra ofertas, aplica filtros duros sin IA, calcula con Claude un puntaje de encaje explicado contra el currículum y gestiona las candidaturas en un pipeline. Proyecto final del Master AI4Devs; un solo usuario.
 
 Lee antes de proponer o implementar:
 
