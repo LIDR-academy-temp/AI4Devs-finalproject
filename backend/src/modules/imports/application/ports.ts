@@ -76,6 +76,30 @@ export interface ImportSummaryRecord {
   fileCount: number
 }
 
+/** A named level of the hierarchy an import belongs to. */
+export interface NamedRef<Id> {
+  id: Id
+  name: string
+}
+
+/** An import of GET /imports with its hierarchy (spec "Imports en curso"). */
+export interface ImportListRecord extends ImportSummaryRecord {
+  account: NamedRef<string>
+  provider: NamedRef<number>
+  merchant: NamedRef<number>
+}
+
+/** The filters of GET /imports once resolved by the service: the statuses are never empty (design D1). */
+export interface ImportListFilter {
+  statuses: readonly ImportStatus[]
+  merchantId?: number
+  providerId?: number
+  accountId?: string
+  createdByUserId?: number
+  page: number
+  pageSize: number
+}
+
 export interface ImportRecord extends ImportSummaryRecord {
   /** Ordered by uploadedAt, then fileName. */
   files: ImportFileRecord[]
@@ -119,6 +143,13 @@ export interface ImportRepository {
   findImport(scope: Scope, importId: string): Promise<ImportRecord | null>
   /** Newest first. */
   listImports(scope: Scope, accountId: string, status?: ImportStatus): Promise<ImportSummaryRecord[]>
+  /** The level of a merchant, provider or account filter that is unknown or outside the scope, or null (design D1). */
+  missingFilter(
+    scope: Scope,
+    filter: Pick<ImportListFilter, 'merchantId' | 'providerId' | 'accountId'>,
+  ): Promise<'Merchant' | 'Provider' | 'Account' | null>
+  /** A page of the imports in scope, latest `updatedAt` first, then `importId`; `total` counts every match. */
+  searchImports(scope: Scope, filter: ImportListFilter): Promise<{ items: ImportListRecord[]; total: number }>
   createImport(data: NewImport): Promise<void>
   /**
    * The three edits below are guarded writes (spec: import, D2; same pattern as the claim of D1): they apply only

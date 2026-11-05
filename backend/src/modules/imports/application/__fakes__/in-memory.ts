@@ -36,6 +36,8 @@ import type {
   FileStore,
   IdGenerator,
   ImportFileRecord,
+  ImportListFilter,
+  ImportListRecord,
   ImportRecord,
   ImportRepository,
   ImportSheetRecord,
@@ -533,6 +535,18 @@ export const IMPORT_ACCOUNTS: AccountRow[] = [
   },
 ]
 
+/** Names of the fixture hierarchy, as the seed has them (backend/prisma/synthetic.ts). */
+const MERCHANT_NAMES = new Map<number, string>([
+  [1, 'Merchant A'],
+  [2, 'Merchant B'],
+])
+const PROVIDER_NAMES = new Map<number, string>([
+  [101, 'Provider A'],
+  [102, 'Provider B'],
+  [201, 'Provider C'],
+  [PROVIDER_WITHOUT_CHANNELS, 'Provider Z'],
+])
+
 const USER_NAMES = new Map<number, string>([
   [1, 'admin'],
   [2, 'analyst'],
@@ -672,6 +686,51 @@ export class InMemoryImportRepository implements ImportRepository {
         const { files, ...summary } = this.toRecord(i)
         return { ...summary, fileCount: files.length }
       })
+  }
+
+  async missingFilter(
+    scope: Scope,
+    filter: Pick<ImportListFilter, 'merchantId' | 'providerId' | 'accountId'>,
+  ): Promise<'Merchant' | 'Provider' | 'Account' | null> {
+    const visible = IMPORT_ACCOUNTS.filter((a) => scope.merchantIds.includes(a.merchantId))
+    if (filter.merchantId !== undefined && !MERCHANT_NAMES.has(filter.merchantId)) return 'Merchant'
+    if (filter.merchantId !== undefined && !scope.merchantIds.includes(filter.merchantId)) return 'Merchant'
+    if (filter.providerId !== undefined && !visible.some((a) => a.providerId === filter.providerId)) return 'Provider'
+    if (filter.accountId !== undefined && !visible.some((a) => a.accountId === filter.accountId)) return 'Account'
+    return null
+  }
+
+  async searchImports(scope: Scope, filter: ImportListFilter): Promise<{ items: ImportListRecord[]; total: number }> {
+    const matches = [...this.imports.values()]
+      .flatMap((stored) => {
+        const account = this.visible(scope, stored.accountId)
+        return account ? [{ stored, account }] : []
+      })
+      .filter(
+        ({ stored, account }) =>
+          filter.statuses.includes(stored.status) &&
+          (filter.merchantId === undefined || account.merchantId === filter.merchantId) &&
+          (filter.providerId === undefined || account.providerId === filter.providerId) &&
+          (filter.accountId === undefined || account.accountId === filter.accountId) &&
+          (filter.createdByUserId === undefined || stored.createdBy.userId === filter.createdByUserId),
+      )
+      .sort(
+        (a, b) =>
+          b.stored.updatedAt.getTime() - a.stored.updatedAt.getTime() ||
+          a.stored.importId.localeCompare(b.stored.importId),
+      )
+    const start = (filter.page - 1) * filter.pageSize
+    const items = matches.slice(start, start + filter.pageSize).map(({ stored, account }) => {
+      const { files, sheets: _, ...summary } = this.toRecord(stored)
+      return {
+        ...summary,
+        fileCount: files.length,
+        account: { id: account.accountId, name: account.name },
+        provider: { id: account.providerId, name: PROVIDER_NAMES.get(account.providerId) ?? 'unknown' },
+        merchant: { id: account.merchantId, name: MERCHANT_NAMES.get(account.merchantId) ?? 'unknown' },
+      }
+    })
+    return { items, total: matches.length }
   }
 
   private storedFile(file: NewImportFile): StoredFile {

@@ -6,6 +6,8 @@ import type { Scope } from '../../catalog/domain/scope.js'
 import type {
   AccountRef,
   ConfirmedSheet,
+  ImportListFilter,
+  ImportListRecord,
   ImportRecord,
   ImportRepository,
   ImportSummaryRecord,
@@ -59,6 +61,19 @@ const fileSelect = {
   uploadedAt: true,
   sheets: { select: sheetSelect },
 } satisfies Prisma.ImportFileSelect
+
+/** The summary plus the hierarchy of the account, for GET /imports. */
+const listSelect = {
+  ...summarySelect,
+  account: {
+    select: {
+      accountId: true,
+      name: true,
+      matchingRuleSetId: true,
+      provider: { select: { providerId: true, name: true, merchant: { select: { merchantId: true, name: true } } } },
+    },
+  },
+} satisfies Prisma.ImportSelect
 
 type SummaryRow = Prisma.ImportGetPayload<{ select: typeof summarySelect }>
 
@@ -202,6 +217,68 @@ export class PrismaImportRepository implements ImportRepository {
       orderBy: { createdAt: 'desc' },
     })
     return rows.map(({ _count, ...row }) => toSummary(row, _count.files))
+  }
+
+  async missingFilter(
+    scope: Scope,
+    filter: Pick<ImportListFilter, 'merchantId' | 'providerId' | 'accountId'>,
+  ): Promise<'Merchant' | 'Provider' | 'Account' | null> {
+    const merchantIds = [...scope.merchantIds]
+    if (
+      filter.merchantId !== undefined &&
+      (!merchantIds.includes(filter.merchantId) ||
+        (await this.prisma.merchant.count({ where: { merchantId: filter.merchantId } })) === 0)
+    )
+      return 'Merchant'
+    if (
+      filter.providerId !== undefined &&
+      (await this.prisma.provider.count({
+        where: { providerId: filter.providerId, merchantId: { in: merchantIds } },
+      })) === 0
+    )
+      return 'Provider'
+    if (
+      filter.accountId !== undefined &&
+      (await this.prisma.account.count({ where: { accountId: filter.accountId, ...visibleAccount(scope) } })) === 0
+    )
+      return 'Account'
+    return null
+  }
+
+  /**
+   * GET /imports (design D1): one findMany and one count over the same filter. No dedicated index: the volume is a
+   * few hundred imports a year and (accountId, createdAt) already narrows by account (design, Risks).
+   */
+  async searchImports(scope: Scope, filter: ImportListFilter): Promise<{ items: ImportListRecord[]; total: number }> {
+    const where: Prisma.ImportWhereInput = {
+      status: { in: [...filter.statuses] },
+      ...(filter.accountId === undefined ? {} : { accountId: filter.accountId }),
+      ...(filter.createdByUserId === undefined ? {} : { createdByUserId: filter.createdByUserId }),
+      account: {
+        ...visibleAccount(scope),
+        ...(filter.providerId === undefined ? {} : { providerId: filter.providerId }),
+        ...(filter.merchantId === undefined
+          ? {}
+          : { provider: { merchantId: { in: [...scope.merchantIds].filter((id) => id === filter.merchantId) } } }),
+      },
+    }
+    const [rows, total] = await Promise.all([
+      this.prisma.import.findMany({
+        where,
+        select: { ...listSelect, _count: { select: { files: true } } },
+        orderBy: [{ updatedAt: 'desc' }, { importId: 'asc' }],
+        skip: (filter.page - 1) * filter.pageSize,
+        take: filter.pageSize,
+      }),
+      this.prisma.import.count({ where }),
+    ])
+    const items = rows.map(({ _count, account, ...row }) => ({
+      ...toSummary({ ...row, account: { matchingRuleSetId: account.matchingRuleSetId } }, _count.files),
+      account: { id: account.accountId, name: account.name },
+      provider: { id: account.provider.providerId, name: account.provider.name },
+      merchant: { id: account.provider.merchant.merchantId, name: account.provider.merchant.name },
+    }))
+    return { items, total }
   }
 
   async createImport(data: NewImport): Promise<void> {

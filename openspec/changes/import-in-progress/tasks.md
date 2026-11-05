@@ -24,7 +24,7 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 
 ## 4. GET /imports
 
-- [ ] 4.1 Tests primero:
+- [x] 4.1 Tests primero:
   - en `domain/import-state.test.ts`, `OPEN_IMPORT_STATUSES` coincide con `CANCELLABLE_STATUSES` (D2);
   - en `application/import-service.test.ts`, con el fake en memoria:
     - sin `status` solo salen los estados abiertos;
@@ -32,7 +32,7 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
     - un merchant, proveedor o cuenta fuera del alcance da `NotFoundError`.
 
   Verificar que fallan.
-- [ ] 4.2 Implementar D1 y D2:
+- [x] 4.2 Implementar D1 y D2:
   - `OPEN_IMPORT_STATUSES`;
   - puertos `missingFilter` y `searchImports` en `application/ports.ts`, con su versión en el fake en memoria;
   - servicio `listImportsInScope`;
@@ -40,7 +40,7 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
   - ruta `GET /imports` con `app.authenticate`.
 
   Verificar que los tests unitarios pasan.
-- [ ] 4.3 Tests de rutas en `http/import-routes.test.ts`: `400` para los valores no válidos del escenario "Valores no válidos" y de paginación, y `401` sin token. Verificar que pasan
+- [x] 4.3 Tests de rutas en `http/import-routes.test.ts`: `400` para los valores no válidos del escenario "Valores no válidos" y de paginación, y `401` sin token. Verificar que pasan
 - [ ] 4.4 Integración nueva `backend/test/integration/import-list.int.test.ts`, con los escenarios de los requisitos "Imports en curso", "Filtros de imports en curso" y "Paginación de imports en curso":
   - abiertos por defecto (`batch-split_part1` en `ProviderA-USD`, legacy en `ProviderC-Alt` y uno cancelado);
   - jerarquía, alcance de `viewer`, por cuenta y por estado, `mine` con un import de `admin`;

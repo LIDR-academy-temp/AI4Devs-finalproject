@@ -8,6 +8,8 @@ import type {
   ChannelNotice,
   ImportDetail,
   ImportFileDetail,
+  ImportListPage,
+  ImportListQuery,
   ImportRowItem,
   ImportRowsPage,
   ImportRowsQuery,
@@ -58,6 +60,7 @@ import {
   assertCanConfirmMapping,
   assertCanEditFiles,
   assertCanResolveRow,
+  OPEN_IMPORT_STATUSES,
 } from '../domain/import-state.js'
 import {
   assertKnownStatuses,
@@ -209,6 +212,33 @@ export class ImportService {
     await this.requireAccount(scope, accountId)
     const records = await this.deps.imports.listImports(scope, accountId, status)
     return records.map(toSummary)
+  }
+
+  /**
+   * GET /imports (spec "Imports en curso", design D1): the imports of every account in scope. Without a status, the
+   * open ones; a merchant, provider or account filter unknown or outside the scope is a 404, the same for all three.
+   */
+  async listImportsInScope(scope: Scope, userId: number, query: ImportListQuery): Promise<ImportListPage> {
+    const hierarchy = { merchantId: query.merchantId, providerId: query.providerId, accountId: query.accountId }
+    if ((await this.deps.imports.missingFilter(scope, hierarchy)) !== null) throw new NotFoundError(FILTER_ENTITY)
+    const { items, total } = await this.deps.imports.searchImports(scope, {
+      ...hierarchy,
+      statuses: query.status === undefined ? OPEN_IMPORT_STATUSES : [query.status],
+      createdByUserId: query.mine ? userId : undefined,
+      page: query.page,
+      pageSize: query.pageSize,
+    })
+    return {
+      items: items.map((record) => ({
+        ...toSummary(record),
+        account: record.account,
+        provider: record.provider,
+        merchant: record.merchant,
+      })),
+      page: query.page,
+      pageSize: query.pageSize,
+      total,
+    }
   }
 
   /** README HU1 CA4; spec: import, D6: the whole mapping, validated against the import, replaces the previous one. */
@@ -595,6 +625,9 @@ export class ImportService {
     return prefillBatchFees(sheets, feeTypes)
   }
 }
+
+/** One entity for the three filters of GET /imports: which level is missing is not told (spec "Filtro fuera del alcance"). */
+const FILTER_ENTITY = 'Merchant, provider or account'
 
 /**
  * Candidates as the caller may see them (spec: import, D11): one of a merchant outside the scope keeps its gateway,

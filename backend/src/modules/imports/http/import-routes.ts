@@ -1,6 +1,8 @@
 import {
   ErrorResponse,
   ImportDetail,
+  ImportListPage,
+  ImportListQuery,
   ImportRowItem,
   ImportRowsPage,
   ImportRowsQuery,
@@ -124,6 +126,23 @@ export const importRoutes: FastifyPluginAsyncZod<ImportRoutesOptions> = async (a
       },
     },
     async (request) => service.getImport(scopeOf(request.auth), request.params.importId),
+  )
+
+  app.get(
+    '/imports',
+    {
+      preHandler: app.authenticate,
+      schema: {
+        ...imports,
+        summary: 'Imports of every account in scope, the open ones by default, latest update first',
+        description:
+          'Without status, uploaded, mapped, analyzed and validated. A merchant, provider or account unknown or outside the ' +
+          'scope answers 404, the same for the three. mine=true keeps the imports the caller created.',
+        querystring: ImportListQuery,
+        response: { 200: ImportListPage, 400: ErrorResponse, 401: ErrorResponse, 404: ErrorResponse },
+      },
+    },
+    async (request) => service.listImportsInScope(scopeOf(request.auth), request.auth.userId, request.query),
   )
 
   app.get(
