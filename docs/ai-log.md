@@ -640,3 +640,42 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con el nombre completo que el usuario agregó a la ficha (sección 0.1) en `scripts/readme.template.md` y `readme.md`.
+
+### Prompt 49
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  hagamos la revisión de consistencia
+  ```
+
+- **Resultado:** Revisión de consistencia (G3) con `docs/prompts/consistency-review.md` y `scripts/check_docs.py`. Se corrigieron el conteo de escenarios (49; los conteos informados en las entradas 18, 24, 29 y 42 omitían el "Esquema del escenario"), la doble cuenta de T-31 en el orden de construcción, los requisitos de HU1 y HU6 en el PRD, el paso 6 del flujo principal (puntaje a pedido), la tabla de funcionalidades del `readme.md` y la tabla de documentos de `CLAUDE.md`. Se marcó G3 en `docs/sdlc-checklist.md`. Se detectó que el fork apunta a `LIDR-academy-temp/AI4Devs-finalproject`, no al repositorio oficial que citan las reglas. Sin commit.
+
+### Prompt 50
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  El fork de `LIDR-academy-temp/AI4Devs-finalproject` es correcto y aceptado debido a los problemas que LIDR tiene con GitHub y su organización original; cierra la casilla del formulario de Typeform. Ya se completó
+  ```
+
+- **Resultado:** Se cerró la casilla del formulario de Typeform en `docs/sdlc-checklist.md` y se agregó una nota en `docs/reglas-proyecto-final-ai4devs.md` sobre el fork aceptado de `LIDR-academy-temp`. Sin commit.
+
+### Prompt 51
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con la revisión de consistencia (G3), el cierre del checklist y la nota del fork. Sin push: la rama sigue sin publicarse en GitHub.

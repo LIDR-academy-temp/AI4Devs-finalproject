@@ -61,6 +61,7 @@
 ## 4. Mecánica de entrega
 
 1. Hacer un **fork** del repositorio oficial: <https://github.com/LIDR-academy/AI4Devs-finalproject>
+   > Nota: por problemas de LIDR con GitHub y su organización original, también se acepta el fork de <https://github.com/LIDR-academy-temp/AI4Devs-finalproject> (confirmado el 2026-11-04). Este proyecto usa ese fork.
 2. Crear la rama de cada entrega con el formato de la sección 3.
 3. Completar el **formulario de Typeform** después de cada entrega: <https://lidr.typeform.com/proyectoai4devs>
 

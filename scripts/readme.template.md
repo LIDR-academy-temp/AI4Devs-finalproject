@@ -24,7 +24,7 @@
 | [`docs/adr/`](./docs/adr/) | Decisiones de arquitectura (ADR-0001 a ADR-0008) |
 | [`docs/architecture-review.md`](./docs/architecture-review.md) | Revisión adversarial de la arquitectura |
 | [`docs/sdlc-checklist.md`](./docs/sdlc-checklist.md) | Compuertas del AI SDLC |
-| [`docs/user-stories.md`](./docs/user-stories.md) | 5 épicas y 10 historias con 48 escenarios de aceptación |
+| [`docs/user-stories.md`](./docs/user-stories.md) | 5 épicas y 10 historias con 49 escenarios de aceptación |
 | [`docs/tickets.md`](./docs/tickets.md) | 36 tickets de trabajo |
 | [`docs/ai-log.md`](./docs/ai-log.md) | Registro completo de prompts |
 | [`CLAUDE.md`](./CLAUDE.md) | Convenciones para los agentes de IA |
@@ -73,7 +73,8 @@ Buscar empleo exige revisar ofertas en muchos portales, decidir una por una si e
 | Ofertas pegadas a mano | La IA extrae título, empresa, ubicación, modalidad, salario, seniority y habilidades; el usuario puede corregirlos. | Must-have |
 | Perfil del currículum | El currículum en Markdown se convierte en un perfil estructurado editable (PDF como should-have). | Must-have |
 | Filtros duros sin IA | Rol, modalidad, ubicación, salario y seniority con reglas explícitas; un dato desconocido no descarta la oferta. | Must-have |
-| Puntaje de encaje explicado | Puntaje de 0 a 100, etiqueta, fortalezas, brechas y evidencia verificada literalmente contra la oferta y el currículum. | Must-have |
+| Puntaje de encaje explicado | Puntaje de 0 a 100, etiqueta, fortalezas, brechas y evidencia verificada literalmente contra la oferta y el currículum. Automático para las ofertas pegadas y a pedido para las importadas. | Must-have |
+| Control de gasto de IA | Registro del costo de cada llamada y topes diario y mensual configurables. | Must-have |
 | Decisión por oferta | Aplicar (crea la candidatura) o descartar (con motivo); se mide el tiempo hasta la decisión. | Must-have |
 | Pipeline de candidaturas | Tablero por estado accesible con teclado e historial inmutable. | Must-have |
 | Correos y alertas | Clasificación de correos pegados y alertas de seguimiento. | Should-have |
@@ -338,7 +339,7 @@ Content-Type: application/json
 
 ## 5. Historias de Usuario
 
-Las 10 historias del MVP se agrupan en 5 épicas, cada una mapeada a una capability de OpenSpec. Las historias completas, con sus 48 escenarios, están en [`docs/user-stories.md`](./docs/user-stories.md).
+Las 10 historias del MVP se agrupan en 5 épicas, cada una mapeada a una capability de OpenSpec. Las historias completas, con sus 49 escenarios, están en [`docs/user-stories.md`](./docs/user-stories.md).
 
 @@EPICS@@
 

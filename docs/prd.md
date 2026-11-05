@@ -46,6 +46,7 @@ Un único usuario: el autor, profesional del software que busca empleo en EE. UU
           │ cumple o hay datos desconocidos
           ▼
  6. Puntaje de encaje (IA): 0-100, etiqueta, fortalezas, brechas y evidencia verificada
+    (automático para ofertas pegadas; a pedido para importadas; con topes de gasto)
           │
           ▼
  7. El usuario decide: aplicar (crea la candidatura) o descartar (archiva la oferta)
@@ -72,12 +73,12 @@ Las épicas agrupan los requisitos en bloques de valor y corresponden a capabili
 
 | Id | Épica | Historia | Requisitos | Prioridad |
 | --- | --- | --- | --- | --- |
-| HU1 | E1 | Como buscador de empleo, quiero agregar una oferta pegando su texto, para registrar ofertas de cualquier portal. | RF-01 a RF-03, RF-05, RF-06 | Must-have |
+| HU1 | E1 | Como buscador de empleo, quiero agregar una oferta pegando su texto, para registrar ofertas de cualquier portal. | RF-01 a RF-03, RF-05, RF-06 (RF-08, could-have) | Must-have |
 | HU2 | E1 | Como buscador de empleo, quiero importar automáticamente las ofertas de mis empresas objetivo desde su job board, para no revisarlas portal por portal. | RF-04, RF-04b, RF-05, RF-09 | Must-have |
 | HU3 | E1 | Como buscador de empleo, quiero guardar búsquedas que se ejecuten en un agregador de ofertas, para recibir ofertas de empresas sin API propia. | RF-04a, RF-04b, RF-05 | Must-have |
 | HU4 | E2 | Como buscador de empleo, quiero cargar mi currículum y obtener un perfil estructurado que pueda corregir, para que el sistema me conozca. | RF-10 a RF-14 | Must-have (PDF: should-have) |
 | HU5 | E3 | Como buscador de empleo, quiero que cada oferta pase por mis criterios no negociables, para descartar sin esfuerzo las que no me sirven. | RF-20 a RF-23 | Must-have |
-| HU6 | E3 | Como buscador de empleo, quiero un puntaje de encaje explicado y verificable, para saber por qué una oferta encaja o no con mi perfil. | RF-23 a RF-28, RNF-08 | Must-have |
+| HU6 | E3 | Como buscador de empleo, quiero un puntaje de encaje explicado y verificable, para saber por qué una oferta encaja o no con mi perfil. | RF-23 a RF-28, RNF-07, RNF-08 | Must-have |
 | HU7 | E3 | Como buscador de empleo, quiero registrar si aplico o descarto cada oferta, para cerrar la evaluación y medir cuánto tardo en decidir. | RF-07, RF-30, RNF-14 | Must-have |
 | HU8 | E4 | Como buscador de empleo, quiero gestionar mis candidaturas en un pipeline con historial de cambios, para saber en qué estado va cada una. | RF-30 a RF-35 | Must-have |
 | HU9 | E4 | Como buscador de empleo, quiero pegar un correo en una candidatura y que la IA lo clasifique, y recibir alertas de seguimiento, para no perder ningún proceso. | RF-40 a RF-43 | Should-have |

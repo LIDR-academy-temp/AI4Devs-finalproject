@@ -37,5 +37,6 @@
 - [x] Prioridades revisadas tras dividir historias.
 - [x] Ningún ADR aceptado contradice al PRD; los ADR reemplazados apuntan a su sustituto.
 - [x] `python3 scripts/check_docs.py` en verde (totales, referencias y `readme.md` al día).
-- [ ] Revisión de consistencia con `docs/prompts/consistency-review.md` antes de la entrega.
-- [ ] Contenido obligatorio de la entrega completo (para la Entrega 1: ficha del `readme.md` con nombre y nombre del proyecto).
+- [x] Revisión de consistencia con `docs/prompts/consistency-review.md` antes de la entrega (2026-11-04).
+- [x] Contenido obligatorio de la Entrega 1 completo: ficha, descripción, arquitectura, modelo de datos, historias, tickets, stack y `prompts.md`. La URL del despliegue se agrega en la entrega final.
+- [x] Formulario de Typeform enviado con el enlace a la rama (confirmado por el usuario el 2026-11-04).

@@ -193,7 +193,7 @@ sigamos con las historias de usuario
 
 Resultado: primera versión de [`docs/user-stories.md`](./docs/user-stories.md) con seis historias, criterios Dado/Cuando/Entonces, reglas de negocio y fuera de alcance.
 
-**Prompt 2:** Ver el Prompt 2 de la sección 3. Resultado: 42 escenarios tras la revisión adversarial.
+**Prompt 2:** Ver el Prompt 2 de la sección 3. Resultado: 43 escenarios tras la revisión adversarial.
 
 **Prompt 3:** Épicas omitidas
 
@@ -201,7 +201,7 @@ Resultado: primera versión de [`docs/user-stories.md`](./docs/user-stories.md) 
 Dónde quedaron las épicas?
 ```
 
-Resultado: la IA reconoció que se había saltado el paso de épicas que piden la guía y las reglas del curso. Con "B, y haz commit" se reestructuraron las historias en 5 épicas (mapeadas a capabilities de OpenSpec) y 10 historias con 44 escenarios.
+Resultado: la IA reconoció que se había saltado el paso de épicas que piden la guía y las reglas del curso. Con "B, y haz commit" se reestructuraron las historias en 5 épicas (mapeadas a capabilities de OpenSpec) y 10 historias con 45 escenarios (49 tras la revisión de la arquitectura).
 
 ---
 

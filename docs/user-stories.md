@@ -23,7 +23,7 @@ Más 2.25 h para la prueba E2E y la documentación final (T-21). MVP imprescindi
 
 | Orden | Id | Épica | Historia | Prioridad | Estimación | Depende de |
 | --- | --- | --- | --- | --- | --- | --- |
-| 0 | — | E3 / E5 | Medir la línea base de OBJ-1 (T-31) y walking skeleton (T-01 a T-05) | Must-have | 6.5 h | — |
+| 0 | — | E5 | Walking skeleton (T-01 a T-05); antes, medir la línea base de OBJ-1 (T-31, contada en HU7) | Must-have | 6.25 h | — |
 | 1 | HU4 | E2 | Cargar el currículum y obtener un perfil | Must-have | 2.75 h | Walking skeleton |
 | 2 | HU1 | E1 | Agregar una oferta pegando su texto | Must-have | 3.75 h | Walking skeleton |
 | 3 | HU5 | E3 | Filtrar ofertas con mis criterios no negociables | Must-have | 3 h | HU1 |

@@ -15,6 +15,8 @@ Lee antes de proponer o implementar:
 | `docs/user-stories.md` y `docs/tickets.md` | Criterios de aceptación y tickets técnicos |
 | `docs/architecture.md` | Componentes, estructura, modelo de datos y API |
 | `docs/adr/` | Decisiones de arquitectura (un ADR aceptado no se reescribe: se reemplaza con uno nuevo) |
+| `docs/prd-review.md`, `docs/architecture-review.md` | Revisiones adversariales y su resolución |
+| `docs/sdlc-checklist.md` | Estado de las compuertas G0-G3 |
 | `openspec/specs/` | Comportamiento vigente (fuente de verdad) |
 
 No implementes nada etiquetado `v1.1` o `futuro` sin un cambio de OpenSpec aprobado.
