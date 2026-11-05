@@ -280,7 +280,8 @@ def check_backlog():
 def manual_version_errors(label, text):
     if re.search(r"^- \*\*Estado:\*\* borrador v\d", text, re.M):
         return [f"{label}: manual version header; use git history instead"]
-    return []
+    return [f"{label}: reference to manual version {v}; cite the commit instead"
+            for v in sorted(set(re.findall(r"\bv0\.\d+\b", text)))]
 
 
 def check_manual_versions():

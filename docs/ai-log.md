@@ -915,3 +915,29 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con el punto 7 (sin versiones manuales en los documentos y su comprobación en `check_docs.py`). Sin push.
+
+### Prompt 70
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Revisa una vez más y busca inconsistencias en la documentación
+  ```
+
+- **Resultado:** Revisión con el criterio de parada: `check_docs.py` en verde, ninguna decisión D-xx cambió desde la revisión anterior y búsqueda de residuos de los puntos 7 y 8. Se encontró una referencia a "PRD v0.2" en el historial de ADR-0004 que la comprobación de encabezados no detectaba; se corrigió (cita el commit `d3cb5ae`) y, según el criterio de parada, se automatizó: `check_docs.py` ahora rechaza cualquier referencia a versiones manuales, con su prueba escrita antes (23 pruebas). Sin commit.
+
+### Prompt 71
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con la corrección de ADR-0004 y la comprobación de referencias a versiones manuales. Sin push.

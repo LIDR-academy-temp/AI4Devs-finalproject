@@ -160,6 +160,10 @@ class ManualVersionCheck(unittest.TestCase):
         self.assertEqual(c.manual_version_errors("docs/prd.md", "- **Estado:** borrador v0.5 (algo)"),
                          ["docs/prd.md: manual version header; use git history instead"])
 
+    def test_reference_to_a_manual_version_is_reported(self):
+        self.assertEqual(c.manual_version_errors("docs/adr/0004.md", "según el PRD v0.2 (RNF-07)"),
+                         ["docs/adr/0004.md: reference to manual version v0.2; cite the commit instead"])
+
     def test_adr_status_is_not_a_manual_version(self):
         self.assertEqual(c.manual_version_errors("docs/adr/0001.md", "- **Estado:** aceptada"), [])
 
