@@ -32,3 +32,4 @@ La extracción y el puntaje pueden tardar decenas de segundos (meta: percentil 9
 ## Historial de cambios
 
 - 2026-11-04: se agregó el tipo de trabajo `sync_job_search` para el agregador de ofertas (ADR-0006) y se alineó el tiempo de respuesta con RNF-06 (percentil 90 menor a 30 s). La decisión no cambia.
+- 2026-11-04: plan B si pg-boss no es compatible con AdonisJS v7: tabla propia con `SELECT … FOR UPDATE SKIP LOCKED` (hallazgo AA2). El servicio de Railway se configura sin suspensión por inactividad; un redespliegue interrumpe los trabajos en curso, que se recuperan con los reintentos de la cola (hallazgo AM5). La decisión no cambia.

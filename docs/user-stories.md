@@ -11,13 +11,13 @@
 
 | Épica | Capability | Valor | Historias | Estimación |
 | --- | --- | --- | --- | --- |
-| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 9 h (+1 h should-have) |
+| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 9.5 h (+1 h should-have) |
 | E2 Perfil profesional | `resume-profile` | El sistema conoce la experiencia real del usuario | HU4 | 2.75 h (+1 h should-have) |
-| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8.25 h |
+| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8.5 h |
 | E4 Seguimiento de candidaturas | `application-tracking` | Saber en qué va cada proceso y no perder seguimientos | HU8, HU9 | 3 h (+3 h should-have) |
-| E5 Plataforma | `platform` | Acceso seguro, despliegue e idioma | HU10 y walking skeleton | 6.25 h (+2 h should-have) |
+| E5 Plataforma | `platform` | Acceso seguro, despliegue, control de gasto, observabilidad, demostración e idioma | HU10, walking skeleton y T-33 a T-36 | 9.5 h (+2.5 h should-have) |
 
-Más 2.25 h para la prueba E2E y la documentación final (T-21). MVP imprescindible: ~31.5 h, con unas 4.5 h de margen sobre el tope de 36 h.
+Más 2.25 h para la prueba E2E y la documentación final (T-21). MVP imprescindible: ~35.5 h, con 0.5 h de margen sobre el tope de 36 h (ver orden de recorte).
 
 ## Historias y orden de construcción
 
@@ -25,25 +25,26 @@ Más 2.25 h para la prueba E2E y la documentación final (T-21). MVP imprescindi
 | --- | --- | --- | --- | --- | --- | --- |
 | 0 | — | E3 / E5 | Medir la línea base de OBJ-1 (T-31) y walking skeleton (T-01 a T-05) | Must-have | 6.5 h | — |
 | 1 | HU4 | E2 | Cargar el currículum y obtener un perfil | Must-have | 2.75 h | Walking skeleton |
-| 2 | HU1 | E1 | Agregar una oferta pegando su texto | Must-have | 3.5 h | Walking skeleton |
+| 2 | HU1 | E1 | Agregar una oferta pegando su texto | Must-have | 3.75 h | Walking skeleton |
 | 3 | HU5 | E3 | Filtrar ofertas con mis criterios no negociables | Must-have | 3 h | HU1 |
-| 4 | HU6 | E3 | Obtener un puntaje de encaje explicado | Must-have | 4 h | HU4, HU5 |
+| 4 | HU6 | E3 | Obtener un puntaje de encaje explicado | Must-have | 4.25 h | HU4, HU5 |
 | 5 | HU7 | E3 | Registrar mi decisión sobre cada oferta | Must-have | 1.25 h (incluye medir la línea base) | HU1 |
 | 6 | HU8 | E4 | Gestionar candidaturas en un pipeline | Must-have | 3 h | HU7 |
-| 7 | HU2 | E1 | Importar ofertas de empresas objetivo desde su job board | Must-have (Lever: should-have) | 3 h (+1 h) | HU1, HU5 |
+| 7 | HU2 | E1 | Importar ofertas de empresas objetivo desde su job board | Must-have (Lever: should-have) | 3.25 h (+1 h) | HU1, HU5 |
 | 8 | HU3 | E1 | Buscar ofertas en un agregador | Must-have | 2.5 h | HU2 |
-| 9 | HU9 | E4 | Correos y alertas de seguimiento | Should-have | 3 h | HU8 |
-| 10 | HU10 | E5 | Interfaz en español | Should-have | 2 h | Walking skeleton |
+| 9 | — | E5 | Control de gasto de IA (T-33), observabilidad (T-35) e instancia de demostración (T-34) | Must-have | 3.25 h | Walking skeleton |
+| 10 | HU9 | E4 | Correos y alertas de seguimiento | Should-have | 3 h | HU8 |
+| 11 | HU10 | E5 | Interfaz en español | Should-have | 2 h | Walking skeleton |
 
 ## Plan de entregas
 
 | Entrega | Requisito del curso | Contenido planeado | Horas |
 | --- | --- | --- | --- |
 | 1. Documentación | 100 % documentación, sin código | Visión, PRD, revisión adversarial, arquitectura y ADRs, épicas, historias, tickets, `readme.md` y `prompts.md` | — |
-| 2. Código funcional | Frontend, backend y base de datos conectados; flujo principal casi completo | T-31, walking skeleton, HU4, HU1, HU5, HU6 y HU7 (pegar oferta → filtro → puntaje → decisión) | ~20.75 h |
-| Final | 3 a 5 funcionalidades operativas, pruebas (incluida una E2E) y evidencia de despliegue | HU8, HU2, HU3, prueba E2E y documentación final (T-21); should-have si queda tiempo | ~10.75 h |
+| 2. Código funcional | Frontend, backend y base de datos conectados; flujo principal casi completo | T-31, walking skeleton, control de gasto (T-33), HU4, HU1, HU5, HU6 y HU7 (pegar oferta → filtro → puntaje → decisión) | ~22.75 h |
+| Final | 3 a 5 funcionalidades operativas, pruebas (incluida una E2E) y evidencia de despliegue | HU8, HU2, HU3, observabilidad (T-35), instancia de demostración (T-34), prueba E2E y documentación final (T-21); should-have si queda tiempo | ~12.75 h |
 
-Orden de recorte si falta tiempo: el adaptador de Lever ya es should-have; después, HU3 se reduce a una búsqueda fija sin pantalla de edición. HU3 no se elimina, porque es la única vía automática hacia las empresas grandes de la lista.
+Con el control de gasto, la observabilidad y la instancia de demostración, el MVP imprescindible llega a ~35.5 h y deja solo 0.5 h de margen. Orden de recorte si falta tiempo: el adaptador de Lever ya es should-have; después, HU3 se reduce a una búsqueda fija sin pantalla de edición. HU3 no se elimina, porque es la única vía automática hacia las empresas grandes de la lista.
 
 ---
 
@@ -59,7 +60,7 @@ Capability `job-intake`. La recolección automática es tan importante como pega
 
 - **Épica:** E1
 - **Prioridad:** must-have
-- **Estimación:** 3.5 h
+- **Estimación:** 3.75 h
 - **Requisitos:** RF-01 a RF-03, RF-05, RF-06
 - **Objetivos:** OBJ-1
 
@@ -110,7 +111,7 @@ Descargar una oferta a partir de su URL (RF-08, could-have).
 
 - **Épica:** E1
 - **Prioridad:** must-have (adaptador de Lever: should-have)
-- **Estimación:** 3 h (+1 h para Lever)
+- **Estimación:** 3.25 h (+1 h para Lever)
 - **Requisitos:** RF-04, RF-04b, RF-05, RF-09
 - **Objetivos:** OBJ-5
 
@@ -145,6 +146,16 @@ Escenario: Tope de ofertas por sincronización
   Cuando una importación encuentra 140 ofertas nuevas
   Entonces solo se agregan 50
   Y veo cuántas se agregaron, cuántas se omitieron por duplicadas y cuántas por el tope
+
+Escenario: Una oferta pegada no se duplica al importarla
+  Dada una oferta que pegué a mano
+  Cuando importo las ofertas del job board de su empresa
+  Entonces la oferta no aparece duplicada
+
+Escenario: Las ofertas importadas no se puntúan solas
+  Dada una importación que agrega 20 ofertas que pasan los filtros
+  Cuando termina la importación
+  Entonces ninguna oferta tiene puntaje hasta que yo lo pida
 
 Escenario: No duplicar ofertas
   Dada una oferta que ya importé
@@ -200,7 +211,7 @@ Escenario: Cuota del agregador agotada
 
 #### Reglas de negocio
 
-- Las ofertas de una búsqueda se deduplican contra todas las fuentes.
+- Las ofertas de una búsqueda se deduplican contra todas las fuentes con la URL canónica y una clave normalizada de empresa, título y ubicación principal (ADR-0006).
 - La clave del agregador vive en una variable de entorno.
 
 #### Fuera de alcance
@@ -357,8 +368,8 @@ Radio de distancia a una ubicación y ponderación configurable por el usuario.
 
 - **Épica:** E3
 - **Prioridad:** must-have
-- **Estimación:** 4 h
-- **Requisitos:** RF-23 a RF-28, RNF-08
+- **Estimación:** 4.25 h
+- **Requisitos:** RF-23 a RF-28, RNF-07, RNF-08
 - **Objetivos:** OBJ-2
 
 #### Contexto
@@ -378,6 +389,18 @@ Escenario: Descartar evidencia inventada
   Dado que la IA devuelve un fragmento de evidencia que no aparece en la oferta ni en el currículum
   Cuando el sistema guarda el análisis
   Entonces ese fragmento no se guarda ni se muestra
+
+Escenario: Puntuar varias ofertas importadas a pedido
+  Dadas 5 ofertas importadas sin puntaje
+  Cuando las selecciono y pido puntuarlas
+  Entonces veo el costo estimado antes de confirmar
+  Y al confirmar, las 5 reciben su puntaje
+
+Escenario: Tope de gasto de IA alcanzado
+  Dado que el gasto de IA del día alcanzó el tope
+  Cuando pido calcular un puntaje
+  Entonces el sistema no llama a la IA
+  Y muestra un mensaje claro sobre el tope
 
 Escenario: Pedir el puntaje de una oferta descartada
   Dada una oferta descartada por los filtros

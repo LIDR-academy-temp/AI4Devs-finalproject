@@ -136,7 +136,7 @@ Cada capacidad se etiqueta como `MVP`, `v1.1` o `futuro`. Solo las capacidades `
 | Riesgo | El costo de la API de Claude crece con el volumen de ofertas | Aplicar los filtros duros antes de la IA; guardar en caché los análisis por oferta y currículum |
 | Riesgo | 30 horas no alcanzan para todo el MVP | Priorizar: puntaje de encaje y pipeline primero; correos y alertas después |
 | Riesgo | Los currículums en PDF no se leen bien | Permitir revisar y corregir el perfil extraído |
-| Riesgo | Datos personales (currículum, correos) en la nube | Un solo usuario autenticado, secretos en variables de entorno, sin compartir datos con terceros salvo la API de Claude |
+| Riesgo | Datos personales (currículum, correos) en la nube | Un solo usuario autenticado, secretos en variables de entorno, sin compartir datos con terceros salvo la API de Claude; el evaluador usa una instancia de demostración con datos sintéticos (ADR-0007) |
 
 ## 9. Preguntas abiertas para las siguientes fases
 

@@ -27,7 +27,7 @@
 - [x] Mapeo de épicas a módulos (`docs/architecture.md` §2.4.1).
 - [x] `CLAUDE.md` con comandos, convenciones y definition of done.
 - [x] Contexto de OpenSpec (`openspec/config.yaml`).
-- [ ] Revisión adversarial con `docs/prompts/adversarial-architecture.md`; hallazgos resueltos en `docs/architecture-review.md`. **Pendiente.**
+- [x] Revisión adversarial con `docs/prompts/adversarial-architecture.md`; hallazgos resueltos en `docs/architecture-review.md`. *Se hizo después de las historias y los tickets; obligó a propagar cambios.*
 
 ## G3 — Backlog y entrega consistentes
 

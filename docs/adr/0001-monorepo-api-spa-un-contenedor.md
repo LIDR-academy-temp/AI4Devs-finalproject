@@ -26,3 +26,7 @@ El MVP necesita backend, frontend y base de datos conectados (requisito del curs
 - Positivas: frontera clara entre interfaz y API; API reutilizable para clientes futuros; sin CORS; un solo servicio que operar.
 - Negativas: API y SPA se despliegan y escalan juntas; el Dockerfile multi-etapa es algo más complejo.
 - Pendiente: confirmar en el walking skeleton cómo se integra Tuyau con una SPA separada en AdonisJS v7.
+
+## Historial de cambios
+
+- 2026-11-04: plan B para Tuyau (hallazgo AA2 de `docs/architecture-review.md`). Si Tuyau no se integra con la SPA separada en AdonisJS v7 durante T-01, se usa un cliente `fetch` tipado a mano con los tipos de las respuestas compartidos desde `apps/api`. La decisión no cambia. Los despliegues de la imagen se definen en ADR-0007.

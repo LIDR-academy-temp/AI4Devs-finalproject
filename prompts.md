@@ -97,6 +97,14 @@ D5. Está bien
 
 Resultado: [`docs/architecture.md`](./docs/architecture.md) con diagramas Mermaid y ADR-0001 a ADR-0005 en [`docs/adr/`](./docs/adr/).
 
+**Prompt 3:** Revisión adversarial de la arquitectura (compuerta G2)
+
+```markdown
+hagamos la revisión adversarial de la arquitectura
+```
+
+Resultado: 12 hallazgos en [`docs/architecture-review.md`](./docs/architecture-review.md), entre ellos dos críticos: las credenciales del evaluador expondrían datos personales y no había control de gasto de IA. Con "Instancia de demostración, puntuar a pedido, acepto riesgo; aplica el resto" se crearon ADR-0007 y ADR-0008 y se propagaron los cambios.
+
 ### **2.2. Descripción de componentes principales:**
 
 **Prompt 1:** Empresas objetivo

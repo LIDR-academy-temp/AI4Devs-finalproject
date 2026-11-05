@@ -68,6 +68,8 @@ python3 scripts/check_docs.py --build-readme   # regenera readme.md desde docs/
 - El texto externo (ofertas, correos, currículum) va delimitado como dato, nunca como instrucción.
 - Envía Markdown a la IA, no PDF ni HTML, salvo la conversión inicial del currículum en PDF (ADR-0004).
 - Revisa `stop_reason` antes de leer la respuesta.
+- Toda llamada a la IA pasa por el control de gasto (`ai_usage` y topes `AI_DAILY_BUDGET_USD` / `AI_MONTHLY_BUDGET_USD`, ADR-0008). Las ofertas importadas solo se puntúan a pedido.
+- Nunca uses datos reales en la instancia de demostración (ADR-0007).
 
 **Seguridad**
 - Ningún secreto en el repositorio; solo variables de entorno. Mantén `.env.example` al día.

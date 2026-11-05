@@ -37,3 +37,7 @@ Datos relevantes:
 
 - Positivas: recolección automática para empresas medianas (job boards) y para las grandes (agregador); OBJ-5 se vuelve alcanzable; agregar fuentes no toca el resto del sistema.
 - Negativas: dependencia de un proveedor externo con cuota limitada; la cobertura real del agregador se conoce solo tras el spike; aumenta el alcance de E1 (≈ 9 h must-have).
+
+## Historial de cambios
+
+- 2026-11-04: deduplicación entre fuentes con `dedupe_key` (hash normalizado de empresa, título y ubicación principal) y URL canónica (hallazgo AA1 de `docs/architecture-review.md`). Las ofertas importadas se puntúan a pedido (ADR-0008). La decisión no cambia.

@@ -534,3 +534,42 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con `.gitignore` (sistemas operativos, lenguajes, editores, archivos temporales y secretos) y `docs/ai-log.md`.
+
+### Prompt 41
+
+- **Categoría:** `🔍 Investigación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  hagamos la revisión adversarial de la arquitectura
+  ```
+
+- **Resultado:** Se creó `docs/architecture-review.md` con 12 hallazgos priorizados (2 críticos: credenciales del evaluador sobre datos personales y falta de control de gasto de IA; 3 altos; 5 medios; 2 bajos), cada uno con evidencia y corrección propuesta. Resoluciones pendientes de la decisión del usuario; G2 sigue abierta. Sin commit.
+
+### Prompt 42
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  Instancia de demostración, puntuar a pedido, acepto riesgo; aplica el resto
+  ```
+
+- **Resultado:** Se crearon ADR-0007 (instancia de demostración) y ADR-0008 (control de gasto de IA y puntaje a pedido, topes de 1 USD/día y 10 USD/mes), con notas de historial en ADR-0001, 0003, 0004, 0005 y 0006. Se propagaron los cambios a PRD (RF-05, RF-23, RNF-01, RNF-07, RNF-12, RNF-15, RNF-16), arquitectura (v0.3: `ai_usage`, `dedupe_key`, observabilidad, instancias), historias (48 escenarios), tickets (T-33 a T-36; must-have 35.5 h, should-have 7.5 h), visión, `CLAUDE.md`, `prompts.md` y `readme.md`. Todos los hallazgos de `docs/architecture-review.md` resueltos; G2 cerrada. `check_docs.py` en verde. Sin commit.
+
+### Prompt 43
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con la revisión adversarial de la arquitectura, ADR-0007, ADR-0008 y la propagación de sus decisiones.

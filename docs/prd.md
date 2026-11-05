@@ -103,7 +103,7 @@ Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 | RF-04 | El sistema importa las ofertas de las empresas objetivo desde la API pública de su job board. Adaptadores must-have: Greenhouse y Ashby. El adaptador de Lever es should-have, porque ninguna empresa objetivo conocida lo usa. | M |
 | RF-04a | El usuario guarda búsquedas (palabras clave y ubicación) que el sistema ejecuta en un agregador de ofertas para traer ofertas de empresas sin API propia. El proveedor se elige con un spike de cobertura, cuota y términos de uso; si ninguno es viable, se reemplaza por el adaptador de SmartRecruiters. | M |
 | RF-04b | Cada sincronización agrega como máximo N ofertas nuevas (configurable; por defecto 50) y reporta cuántas trajo, cuántas omitió por duplicadas y cuántas por el tope. | M |
-| RF-05 | El sistema evita duplicados por fuente e identificador externo, o por URL. | M |
+| RF-05 | El sistema evita duplicados por fuente e identificador externo, por URL canónica y, entre fuentes distintas, por una clave normalizada de empresa, título y ubicación principal. | M |
 | RF-06 | El usuario ve la lista de ofertas con su estado de filtro, su puntaje y su decisión, y la ordena por puntaje o fecha. | M |
 | RF-07 | El usuario registra su decisión sobre cada oferta: `apply` (crea la candidatura, RF-30) o `skip` (archiva la oferta, con motivo opcional). El sistema guarda la decisión, su fecha (`decided_at`) y la primera vez que el usuario abrió la oferta (`first_viewed_at`). | M |
 | RF-08 | El sistema descarga y lee el contenido a partir de una URL pegada. | C |
@@ -126,7 +126,7 @@ Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 | RF-20 | El usuario configura sus preferencias: roles objetivo (palabras clave de inclusión y de exclusión para el título), modalidades aceptadas en orden de preferencia, ubicaciones aceptadas (ciudades o estados de EE. UU.), salario mínimo anual en USD y seniorities aceptados. | M |
 | RF-21 | Los filtros duros se evalúan sin IA, según las reglas de la sección 6.1, y devuelven `pass`, `fail` o `unknown` con el motivo de cada criterio. La oferta se descarta si algún criterio da `fail`. | M |
 | RF-22 | Un dato ausente en la oferta da `unknown` en ese criterio y no descarta la oferta. | M |
-| RF-23 | Solo las ofertas con resultado `pass` o `unknown` reciben puntaje automáticamente. El usuario puede pedir el puntaje de una oferta descartada. | M |
+| RF-23 | Las ofertas pegadas con resultado `pass` o `unknown` reciben puntaje automáticamente. Las ofertas importadas (job boards y agregador) se puntúan a pedido, una o varias seleccionadas, mostrando antes el costo estimado. El usuario también puede pedir el puntaje de una oferta descartada (ADR-0008). | M |
 | RF-24 | La IA devuelve, con respuesta estructurada: puntaje de 0 a 100, fortalezas, brechas y evidencia (fragmentos de la oferta y del currículum). La etiqueta se deriva del puntaje: `strong` ≥ 80, `good` 60-79, `weak` 40-59, `poor` < 40. | M |
 | RF-24a | Cada fragmento de evidencia se verifica contra el texto original; los que no aparecen literalmente (ignorando mayúsculas y espacios) se descartan y no se muestran. | M |
 | RF-25 | El sistema guarda con cada análisis el modelo, la versión del prompt, la versión del currículum y la fecha. | M |
@@ -185,20 +185,22 @@ Los criterios detallados (Dado/Cuando/Entonces) están en [`docs/user-stories.md
 
 | Id | Categoría | Requisito |
 | --- | --- | --- |
-| RNF-01 | Seguridad | Autenticación de un solo usuario con sesión; todas las rutas de la API requieren sesión salvo el login. Limitador de intentos en el login: could-have. |
+| RNF-01 | Seguridad | Autenticación de un solo usuario con sesión; todas las rutas de la API requieren sesión salvo el login. Limitador de intentos en el login: could-have. El evaluador usa una instancia de demostración con datos sintéticos, nunca la instancia personal (ADR-0007). |
 | RNF-02 | Seguridad | Secretos (clave de Claude API, base de datos, agregador) solo en variables de entorno; nunca en el repositorio. |
 | RNF-03 | Seguridad | Validación de todas las entradas en el servidor; límite de tamaño y tipo en la carga del currículum. |
 | RNF-04 | Seguridad | Si se implementa RF-08, protección contra SSRF (solo `http`/`https`, sin direcciones internas). |
 | RNF-05 | Privacidad | El currículum y los correos solo se comparten con la API de Claude; no se registran completos en los logs. |
 | RNF-06 | Rendimiento | Percentil 90 del tiempo de extracción y de puntaje < 30 s, medido en los logs de producción; la interfaz muestra el progreso. |
-| RNF-07 | Costo | Filtros duros (incluido el de roles) antes de la IA, tope de ofertas por sincronización (RF-04b) y caché de análisis (RF-26). Presupuesto de API objetivo: < 10 USD/mes, verificado con el uso real del primer mes. La caché de prompts de Claude es could-have. |
+| RNF-07 | Costo | Filtros duros (incluido el de roles) antes de la IA, tope de ofertas por sincronización (RF-04b), puntaje a pedido de las ofertas importadas (RF-23) y caché de análisis (RF-26). Cada llamada a la IA se registra con su costo estimado y se rechaza si supera el tope diario (1 USD) o mensual (10 USD), configurables (ADR-0008). Presupuesto de API objetivo: < 10 USD/mes por instancia, verificado con el uso real del primer mes. Infraestructura en Railway: ~5 USD/mes por instancia (**supuesto**, por verificar). La caché de prompts de Claude es could-have. |
 | RNF-08 | Calidad de la IA | Golden set de puntaje con al menos 20 ofertas etiquetadas a mano antes de ver la IA, separadas en ajuste (10) y prueba (10); golden set de extracción con al menos 10 ofertas. Comandos que miden OBJ-2 y la calidad de RF-02. Prompts versionados en el repositorio. |
 | RNF-09 | Robustez de la IA | Las respuestas de la IA se validan con un esquema; si fallan, el sistema reintenta una vez y luego muestra un error claro sin perder la oferta. |
 | RNF-10 | Pruebas | Cobertura ≥ 80 % en la lógica de dominio (`apps/api/app/services/`, `apps/api/app/filters/`, normalizadores de `apps/api/app/job_sources/` y parsers de `apps/api/app/ai/`) y al menos una prueba E2E del flujo principal. Las pruebas no llaman a la API real de Claude ni a las plataformas externas. |
 | RNF-11 | Idioma del código | Código, clases, tablas y campos en inglés. Documentación del curso en español. |
-| RNF-12 | Despliegue | Aplicación desplegada con URL pública y credenciales de prueba documentadas en `readme.md`. |
+| RNF-12 | Despliegue | Dos instancias de la misma imagen (ADR-0007): personal (privada) y demostración (URL pública, datos sintéticos y credenciales de prueba en `readme.md`). |
 | RNF-13 | Accesibilidad | La prueba E2E ejecuta `axe-core` en las pantallas principales sin violaciones de impacto `serious` o `critical`. |
 | RNF-14 | Medición | El sistema registra `first_viewed_at`, `decided_at` y `source` de cada oferta para calcular OBJ-1 y OBJ-5. |
+| RNF-15 | Observabilidad | Logs estructurados con la duración y el resultado de cada trabajo en segundo plano; un comando calcula OBJ-1, OBJ-5, el percentil 90 de RNF-06 y el gasto de IA del mes. |
+| RNF-16 | Respaldo | Respaldo periódico de la base de datos de la instancia personal y una restauración probada al menos una vez (should-have). |
 
 ## 9. Entidades del dominio
 
@@ -238,6 +240,7 @@ Vista conceptual; el modelo de datos detallado está en `docs/architecture.md`. 
 - Presupuesto: 30 horas con tope de 36.
 - Tras dividir las historias: el adaptador de Lever baja a should-have y el agregador (HU3) deja de ser lo primero en recortarse, porque es la única vía automática hacia las empresas grandes.
 - Se aplican todas las correcciones de la revisión adversarial (`docs/prd-review.md`).
+- Revisión adversarial de la arquitectura (`docs/architecture-review.md`): instancia de demostración separada (ADR-0007), puntaje a pedido de las ofertas importadas con topes de gasto de 1 USD/día y 10 USD/mes (ADR-0008), deduplicación entre fuentes, observabilidad y respaldo. Se acepta el riesgo de la estimación del walking skeleton.
 
 ## 11. Riesgos y mitigaciones
 
@@ -245,7 +248,7 @@ Ver `docs/vision.md`, sección 8, y `docs/prd-review.md`. El plan por entrega es
 
 | Riesgo | Mitigación |
 | --- | --- |
-| El MVP imprescindible (~31.5 h) no cabe en el tope de 36 h, sobre todo por la curva de aprendizaje de AdonisJS v7 | Orden de construcción: walking skeleton → HU4 → HU1 → HU5 → HU6 → HU7 → HU8 → HU2 → HU3. Orden de recorte: adaptador de Lever (ya es should-have) → reducir HU3 a una búsqueda fija sin pantalla de edición. |
+| El MVP imprescindible (~35.5 h) no cabe en el tope de 36 h, sobre todo por la curva de aprendizaje de AdonisJS v7 | Orden de construcción: walking skeleton → HU4 → HU1 → HU5 → HU6 → HU7 → HU8 → HU2 → HU3. Orden de recorte: adaptador de Lever (ya es should-have) → reducir HU3 a una búsqueda fija sin pantalla de edición. |
 | El agregador no cubre las empresas grandes o sus términos no lo permiten | Spike de 30 minutos antes de implementarlo; plan B: adaptador de SmartRecruiters. |
 | El filtro de roles por palabras clave descarta ofertas buenas o deja pasar irrelevantes | Las ofertas descartadas siguen visibles con su motivo; el usuario ajusta las palabras clave. |
 

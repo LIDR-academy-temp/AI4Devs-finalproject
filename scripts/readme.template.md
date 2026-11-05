@@ -17,9 +17,11 @@
 | [`docs/prd.md`](./docs/prd.md) | Requisitos del MVP (v0.2) |
 | [`docs/prd-review.md`](./docs/prd-review.md) | Revisión adversarial del PRD |
 | [`docs/architecture.md`](./docs/architecture.md) | Arquitectura, modelo de datos y API |
-| [`docs/adr/`](./docs/adr/) | Decisiones de arquitectura (ADR-0001 a ADR-0006) |
-| [`docs/user-stories.md`](./docs/user-stories.md) | 5 épicas y 10 historias con 44 escenarios de aceptación |
-| [`docs/tickets.md`](./docs/tickets.md) | 32 tickets de trabajo |
+| [`docs/adr/`](./docs/adr/) | Decisiones de arquitectura (ADR-0001 a ADR-0008) |
+| [`docs/architecture-review.md`](./docs/architecture-review.md) | Revisión adversarial de la arquitectura |
+| [`docs/sdlc-checklist.md`](./docs/sdlc-checklist.md) | Compuertas del AI SDLC |
+| [`docs/user-stories.md`](./docs/user-stories.md) | 5 épicas y 10 historias con 48 escenarios de aceptación |
+| [`docs/tickets.md`](./docs/tickets.md) | 36 tickets de trabajo |
 | [`docs/ai-log.md`](./docs/ai-log.md) | Registro completo de prompts |
 | [`CLAUDE.md`](./CLAUDE.md) | Convenciones para los agentes de IA |
 
@@ -41,7 +43,7 @@ Panel web personal para buscar empleo en Estados Unidos. Recolecta ofertas autom
 
 ### **0.4. URL del proyecto:**
 
-[PENDIENTE: se publica en Railway en la Entrega 2]
+[PENDIENTE: URL de la instancia de demostración en Railway, con datos sintéticos (ADR-0007). Se publica en la entrega final.]
 
 ### 0.5. URL o archivo comprimido del repositorio
 
@@ -332,7 +334,7 @@ Content-Type: application/json
 
 ## 5. Historias de Usuario
 
-Las 10 historias del MVP se agrupan en 5 épicas, cada una mapeada a una capability de OpenSpec. Las historias completas, con sus 44 escenarios, están en [`docs/user-stories.md`](./docs/user-stories.md).
+Las 10 historias del MVP se agrupan en 5 épicas, cada una mapeada a una capability de OpenSpec. Las historias completas, con sus 48 escenarios, están en [`docs/user-stories.md`](./docs/user-stories.md).
 
 @@EPICS@@
 
@@ -344,7 +346,7 @@ Selección de tres historias must-have, una de cada épica principal:
 
 ## 6. Tickets de Trabajo
 
-Selección de tres tickets (base de datos, backend y frontend). Los 32 tickets están en [`docs/tickets.md`](./docs/tickets.md).
+Selección de tres tickets (base de datos, backend y frontend). Los 36 tickets están en [`docs/tickets.md`](./docs/tickets.md).
 
 @@TICKETS@@
 

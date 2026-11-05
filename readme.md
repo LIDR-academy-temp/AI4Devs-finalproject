@@ -17,9 +17,11 @@
 | [`docs/prd.md`](./docs/prd.md) | Requisitos del MVP (v0.2) |
 | [`docs/prd-review.md`](./docs/prd-review.md) | Revisión adversarial del PRD |
 | [`docs/architecture.md`](./docs/architecture.md) | Arquitectura, modelo de datos y API |
-| [`docs/adr/`](./docs/adr/) | Decisiones de arquitectura (ADR-0001 a ADR-0006) |
-| [`docs/user-stories.md`](./docs/user-stories.md) | 5 épicas y 10 historias con 44 escenarios de aceptación |
-| [`docs/tickets.md`](./docs/tickets.md) | 32 tickets de trabajo |
+| [`docs/adr/`](./docs/adr/) | Decisiones de arquitectura (ADR-0001 a ADR-0008) |
+| [`docs/architecture-review.md`](./docs/architecture-review.md) | Revisión adversarial de la arquitectura |
+| [`docs/sdlc-checklist.md`](./docs/sdlc-checklist.md) | Compuertas del AI SDLC |
+| [`docs/user-stories.md`](./docs/user-stories.md) | 5 épicas y 10 historias con 48 escenarios de aceptación |
+| [`docs/tickets.md`](./docs/tickets.md) | 36 tickets de trabajo |
 | [`docs/ai-log.md`](./docs/ai-log.md) | Registro completo de prompts |
 | [`CLAUDE.md`](./CLAUDE.md) | Convenciones para los agentes de IA |
 
@@ -41,7 +43,7 @@ Panel web personal para buscar empleo en Estados Unidos. Recolecta ofertas autom
 
 ### **0.4. URL del proyecto:**
 
-[PENDIENTE: se publica en Railway en la Entrega 2]
+[PENDIENTE: URL de la instancia de demostración en Railway, con datos sintéticos (ADR-0007). Se publica en la entrega final.]
 
 ### 0.5. URL o archivo comprimido del repositorio
 
@@ -100,7 +102,7 @@ sequenceDiagram
     U->>W: Revisa y guarda
     W->>A: POST /api/v1/job-postings
     A->>A: Filtros duros (sin IA)
-    alt pass o unknown
+    alt oferta pegada con pass o unknown
         A->>Q: Encola score_match
         K->>C: Puntaje (perfil + oferta)
         C-->>K: score, label, strengths, gaps, evidence
@@ -172,7 +174,7 @@ flowchart LR
 | `apps/api` | AdonisJS v7 (kit API), Node.js 24, TypeScript | API REST, autenticación por sesión, validación (VineJS), reglas de dominio, servir la SPA. |
 | Persistencia | PostgreSQL + Lucid ORM | Datos de la aplicación y migraciones. |
 | Cola de trabajos | PostgreSQL (librería por confirmar en el walking skeleton; ver ADR-0005) | Extracción, puntaje e importación en segundo plano. |
-| Módulo de IA | `@anthropic-ai/sdk` | Cliente de Claude, prompts versionados, esquemas de salida, registro de uso. |
+| Módulo de IA | `@anthropic-ai/sdk` | Cliente de Claude, prompts versionados, esquemas de salida, registro de cada llamada en `ai_usage` y control de topes de gasto antes de llamar (ADR-0008). |
 | Adaptadores de empleo | `JobSourceAdapter` con dos modos: por job board (`GreenhouseAdapter`, `AshbyAdapter`; `LeverAdapter` como should-have) y por búsqueda (`AggregatorAdapter`) | Traer ofertas de plataformas externas, normalizarlas y respetar el tope por sincronización. |
 | Filtros duros | TypeScript puro en `app/filters/`, sin dependencias | Evaluar `pass`/`fail`/`unknown` por criterio (rol, modalidad, ubicación, salario, seniority) según `docs/prd.md` 6.1; tabla de mapeo de seniority versionada. |
 | Evals | Script de Node + golden sets en el repositorio | Medir el acuerdo del puntaje (ajuste/prueba) y la precisión de la extracción (RNF-08). |
@@ -222,6 +224,9 @@ flowchart LR
 - **Migraciones:** se ejecutan al desplegar (`node ace migration:run --force`).
 - **Configuración:** solo variables de entorno (`DATABASE_URL`, `APP_KEY`, `ANTHROPIC_API_KEY`, `CLAUDE_MODEL_*`, etc.). Ningún secreto en el repositorio.
 - **Entornos:** `development` (local con Docker Compose para PostgreSQL), `test` (CI) y `production` (Railway).
+- **Instancias de producción (ADR-0007):** `personal` (privada, datos reales) y `demo` (URL pública, datos sintéticos cargados con `node ace db:seed --demo`, topes de IA bajos). Misma imagen; cada una con su PostgreSQL y sus variables de entorno.
+- **Servicio sin suspensión por inactividad**, para que el worker no se detenga; los trabajos interrumpidos por un redespliegue se recuperan con los reintentos de la cola (ADR-0005).
+- **Respaldo (should-have, RNF-16):** respaldos de PostgreSQL de Railway o `pg_dump` programado de la instancia personal, con una restauración probada.
 
 ### **2.5. Seguridad**
 
@@ -233,7 +238,8 @@ flowchart LR
 | Inyección de prompts desde ofertas o correos | El texto externo va siempre como dato dentro del mensaje de usuario, delimitado; el prompt de sistema indica que nunca contiene instrucciones. La salida se valida con el esquema y no ejecuta acciones automáticas: cualquier cambio de estado lo confirma el usuario. |
 | SSRF | Solo si se implementa RF-08: esquemas `http`/`https`, resolución de DNS y bloqueo de rangos privados (RNF-04). El adaptador de Greenhouse solo llama a su dominio fijo. |
 | Fuga de datos personales | El currículum y los correos no se registran completos en los logs (RNF-05). |
-| Abuso de costo | Filtro de roles antes de la IA, tope de ofertas nuevas por sincronización, caché de análisis y límite diario de trabajos de IA configurable (RNF-07). |
+| Abuso de costo | Filtro de roles antes de la IA, tope de ofertas nuevas por sincronización, puntaje a pedido de las importadas, caché de análisis y topes de gasto diario y mensual verificados antes de cada llamada (RNF-07, ADR-0008). |
+| Exposición de datos al evaluador | Instancia de demostración separada con datos sintéticos; las credenciales del `readme.md` nunca dan acceso a la instancia personal (ADR-0007). |
 | Fuerza bruta en el login | Limitador de intentos en `/api/v1/auth/login` (could-have; la contraseña del usuario único es larga y aleatoria). |
 
 ### **2.6. Tests**
@@ -245,7 +251,16 @@ flowchart LR
 | E2E | Playwright + `axe-core` | Flujo principal: login → pegar oferta → filtro → puntaje → decisión `apply` → mover la candidatura; revisión de accesibilidad sin violaciones `serious` o `critical` (RNF-13). |
 | Calidad de la IA | Script de evals | Golden set de puntaje (≥ 20 ofertas, ajuste y prueba) y de extracción (≥ 10 ofertas); llama a la API real y se ejecuta a mano, no en CI. |
 
-En las pruebas automatizadas, el cliente de Claude se sustituye por un doble de prueba con respuestas fijas; ninguna prueba de CI llama a la API real (RNF-10).
+En las pruebas automatizadas, el cliente de Claude se sustituye por un doble de prueba con respuestas fijas; ninguna prueba de CI llama a la API real (RNF-10). Cada ejecución de evals guarda su resultado en `apps/api/evals/results/<prompt>-<versión>.json`; un chequeo de CI falla si un prompt cambia de versión sin su archivo de resultados.
+
+### 2.8 Observabilidad
+
+| Señal | Cómo se obtiene | Para qué |
+| --- | --- | --- |
+| Logs estructurados | Logger de AdonisJS en JSON, con `jobId`, tipo de trabajo, duración y resultado; sin contenido completo del currículum ni de los correos | RNF-06 (percentil 90), diagnóstico de errores |
+| Uso de IA | Tabla `ai_usage` (tarea, modelo, tokens, costo estimado) | RNF-07, topes de gasto (ADR-0008) |
+| Métricas de producto | `first_viewed_at`, `decided_at` y `source` en `job_postings` | OBJ-1, OBJ-5 (RNF-14) |
+| Reporte | Comando `node ace metrics` que calcula OBJ-1, OBJ-5, el percentil 90 de los trabajos y el gasto de IA del día y del mes | RNF-15 |
 
 ---
 
@@ -259,6 +274,7 @@ erDiagram
     users ||--|| job_preferences : has
     users ||--o{ target_companies : tracks
     users ||--o{ job_searches : saves
+    users ||--o{ ai_usage : spends
     job_searches ||--o{ job_postings : finds
     users ||--o{ job_postings : owns
     target_companies ||--o{ job_postings : publishes
@@ -339,6 +355,7 @@ erDiagram
         int min_years_experience "nullable"
         text description_markdown
         string content_hash
+        string dedupe_key "hash de empresa, título y ubicación principal"
         string status "active | archived"
         string decision "apply | skip | null"
         string skip_reason "nullable"
@@ -366,6 +383,17 @@ erDiagram
         boolean is_stale
         jsonb usage "tokens y costo"
     }
+    ai_usage {
+        int id PK
+        int user_id FK
+        string task "extract_resume | extract_job_posting | score_match | classify_email"
+        string model
+        int input_tokens
+        int output_tokens
+        int cost_usd_micros "costo estimado en millonésimas de USD"
+        string job_id "nullable"
+        timestamp occurred_at
+    }
     applications {
         int id PK
         int user_id FK
@@ -388,11 +416,12 @@ erDiagram
 
 **Reglas de integridad:**
 
-- `job_postings`: único por (`user_id`, `source`, `external_id`) y por (`user_id`, `source_url`) cuando no son nulos (RF-05).
+- `job_postings`: único por (`user_id`, `source`, `external_id`), por (`user_id`, `source_url`) con la URL canónica (sin parámetros de seguimiento) y por (`user_id`, `dedupe_key`), para evitar duplicados entre fuentes (RF-05, ADR-0006).
 - `resumes`: solo uno con `is_active = true` por usuario (índice único parcial) (RF-14).
 - `match_analyses.input_hash` = hash de (contenido de la oferta, versión del currículum, versión del prompt, modelo). Si existe, no se vuelve a llamar a la IA (RF-26). Las preferencias no forman parte del hash: el ajuste por modalidad (RF-28) se calcula al leer, fuera de la caché. Al activar un currículum nuevo, los análisis anteriores se marcan `is_stale = true` y se recalculan solo a pedido (RF-14).
 - `job_postings.first_viewed_at` se fija la primera vez que el usuario abre el detalle; `decided_at` al registrar la decisión. Ambos alimentan OBJ-1 (RNF-14).
 - `match_analyses.evidence` solo guarda fragmentos verificados literalmente contra la oferta o el currículum (RF-24a).
+- `ai_usage`: una fila por llamada a la IA; la suma del día y del mes se compara con los topes antes de cada llamada (ADR-0008).
 - `applications`: una por oferta. Cada cambio de `status` inserta un `application_events` en la misma transacción y actualiza `last_activity_at` (RF-32).
 - Las tablas de la cola las gestiona la librería elegida en ADR-0005.
 
@@ -506,6 +535,7 @@ Ofertas con campos estructurados, origen, decisión y marcas de medición.
 | `min_years_experience` | integer | NULL |  |
 | `description_markdown` | text | NOT NULL |  |
 | `content_hash` | varchar | NOT NULL |  |
+| `dedupe_key` | varchar | NOT NULL | hash de empresa, título y ubicación principal |
 | `status` | varchar | NOT NULL | active \| archived |
 | `decision` | varchar | NULL | apply \| skip \| null |
 | `skip_reason` | varchar | NULL |  |
@@ -544,6 +574,23 @@ Puntajes de encaje calculados por la IA.
 | `evidence` | jsonb | NOT NULL |  |
 | `is_stale` | boolean | NOT NULL |  |
 | `usage` | jsonb | NULL | tokens y costo |
+| `created_at`, `updated_at` | timestamptz | NOT NULL | Marcas de tiempo |
+
+#### `ai_usage`
+
+
+
+| Atributo | Tipo | Restricciones | Descripción |
+| --- | --- | --- | --- |
+| `id` | integer | PK, NOT NULL |  |
+| `user_id` | integer | FK → `users.id`, NOT NULL |  |
+| `task` | varchar | NOT NULL | extract_resume \| extract_job_posting \| score_match \| classify_email |
+| `model` | varchar | NOT NULL |  |
+| `input_tokens` | integer | NOT NULL |  |
+| `output_tokens` | integer | NOT NULL |  |
+| `cost_usd_micros` | integer | NOT NULL | costo estimado en millonésimas de USD |
+| `job_id` | varchar | NULL |  |
+| `occurred_at` | timestamptz | NOT NULL |  |
 | `created_at`, `updated_at` | timestamptz | NOT NULL | Marcas de tiempo |
 
 #### `applications`
@@ -762,15 +809,15 @@ Content-Type: application/json
 
 ## 5. Historias de Usuario
 
-Las 10 historias del MVP se agrupan en 5 épicas, cada una mapeada a una capability de OpenSpec. Las historias completas, con sus 44 escenarios, están en [`docs/user-stories.md`](./docs/user-stories.md).
+Las 10 historias del MVP se agrupan en 5 épicas, cada una mapeada a una capability de OpenSpec. Las historias completas, con sus 48 escenarios, están en [`docs/user-stories.md`](./docs/user-stories.md).
 
 | Épica | Capability | Valor | Historias | Estimación |
 | --- | --- | --- | --- | --- |
-| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 9 h (+1 h should-have) |
+| E1 Ingreso de ofertas | `job-intake` | Todas las ofertas relevantes en un solo lugar, automáticas o pegadas | HU1, HU2, HU3 | 9.5 h (+1 h should-have) |
 | E2 Perfil profesional | `resume-profile` | El sistema conoce la experiencia real del usuario | HU4 | 2.75 h (+1 h should-have) |
-| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8.25 h |
+| E3 Evaluación de ofertas | `job-matching` | Decidir en menos de 2 minutos si conviene aplicar | HU5, HU6, HU7 | 8.5 h |
 | E4 Seguimiento de candidaturas | `application-tracking` | Saber en qué va cada proceso y no perder seguimientos | HU8, HU9 | 3 h (+3 h should-have) |
-| E5 Plataforma | `platform` | Acceso seguro, despliegue e idioma | HU10 y walking skeleton | 6.25 h (+2 h should-have) |
+| E5 Plataforma | `platform` | Acceso seguro, despliegue, control de gasto, observabilidad, demostración e idioma | HU10, walking skeleton y T-33 a T-36 | 9.5 h (+2.5 h should-have) |
 
 Selección de tres historias must-have, una de cada épica principal:
 
@@ -780,7 +827,7 @@ Selección de tres historias must-have, una de cada épica principal:
 
 - **Épica:** E1
 - **Prioridad:** must-have (adaptador de Lever: should-have)
-- **Estimación:** 3 h (+1 h para Lever)
+- **Estimación:** 3.25 h (+1 h para Lever)
 - **Requisitos:** RF-04, RF-04b, RF-05, RF-09
 - **Objetivos:** OBJ-5
 
@@ -818,8 +865,8 @@ Escenario: No duplicar ofertas
 
 - **Épica:** E3
 - **Prioridad:** must-have
-- **Estimación:** 4 h
-- **Requisitos:** RF-23 a RF-28, RNF-08
+- **Estimación:** 4.25 h
+- **Requisitos:** RF-23 a RF-28, RNF-07, RNF-08
 - **Objetivos:** OBJ-2
 
 Criterios de aceptación (extracto):
@@ -875,7 +922,7 @@ Escenario: Ver el detalle de una candidatura
 
 ## 6. Tickets de Trabajo
 
-Selección de tres tickets (base de datos, backend y frontend). Los 32 tickets están en [`docs/tickets.md`](./docs/tickets.md).
+Selección de tres tickets (base de datos, backend y frontend). Los 36 tickets están en [`docs/tickets.md`](./docs/tickets.md).
 
 **Ticket — T-09 — Tablas de ofertas, empresas objetivo y búsquedas**
 
@@ -883,7 +930,7 @@ Selección de tres tickets (base de datos, backend y frontend). Los 32 tickets e
 
 **Tareas**
 - Migraciones `target_companies`, `job_searches` y `job_postings` según `docs/architecture.md`, incluidas `decision`, `skip_reason`, `first_viewed_at` y `decided_at`.
-- Índices únicos: (`user_id`, `source`, `external_id`) y (`user_id`, `source_url`) cuando no son nulos.
+- Índices únicos: (`user_id`, `source`, `external_id`), (`user_id`, `source_url`) y (`user_id`, `dedupe_key`) cuando no son nulos.
 - Modelos Lucid `TargetCompany`, `JobSearch` y `JobPosting`.
 
 **Criterios de aceptación**
@@ -899,20 +946,21 @@ Selección de tres tickets (base de datos, backend y frontend). Los 32 tickets e
 - Normalización de ubicaciones (ciudad y estado de EE. UU.) y anualización del salario (hora × 2080, mes × 12).
 - Tabla de mapeo de seniority versionada en el repositorio (incluye niveles como L5, E5, SDE II, IC4).
 - Aplicar los filtros al guardar o importar una oferta y al cambiar las preferencias.
-- Encolar `score_match` solo si el resultado es `pass` o `unknown`.
+- Encolar `score_match` solo para ofertas pegadas (`source = manual`) con resultado `pass` o `unknown`; las importadas se puntúan a pedido (ADR-0008).
 
 **Criterios de aceptación**
 - Pruebas unitarias por tabla de casos para cada criterio (incluidos remoto fuera de EE. UU., salario por hora, varias ubicaciones y seniority sin mapeo), con cobertura ≥ 90 % del servicio.
 
 **Ticket — T-11 — Pantallas de ofertas y decisión**
 
-- **Tipo:** frontend · **Estimación:** 1.75 h · **Requisitos:** RF-01, RF-03, RF-06, RF-07
+- **Tipo:** frontend · **Estimación:** 2 h · **Requisitos:** RF-01, RF-03, RF-06, RF-07, RF-23
 
 **Tareas**
 - Formulario para pegar el texto, progreso de la extracción y opción de guardar directo o revisar los campos (los desconocidos marcados como tales).
 - Edición de campos desde el detalle de la oferta.
 - Lista de ofertas con título, empresa, origen, resultado del filtro, puntaje y decisión; orden por puntaje o fecha.
 - Botones "aplicar" y "descartar" (con motivo opcional) en el detalle de la oferta.
+- Selección múltiple en la lista y botón "puntuar seleccionadas", que muestra el costo estimado antes de confirmar (ADR-0008).
 
 **Criterios de aceptación**
 - Cumple los escenarios de HU1 y HU7.

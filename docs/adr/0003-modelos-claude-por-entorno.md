@@ -32,3 +32,7 @@ El modelo de cada tarea se configura por variable de entorno:
 - Positivas: desarrollo barato; producción con la mejor calidad; cambiar de modelo no requiere tocar código.
 - Negativas: los resultados de desarrollo no anticipan exactamente los de producción. El golden set (RNF-08) se ejecuta también con los modelos de producción antes de cada entrega.
 - Estimación inicial (por medir): unos 0.10 USD por oferta con Opus 5.5 en producción, cerca de 10 USD al mes para 100 ofertas.
+
+## Historial de cambios
+
+- 2026-11-04: complementada por ADR-0008 (control de gasto y puntaje a pedido de las ofertas importadas). La elección de modelos no cambia.
