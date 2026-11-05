@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useScopeSelection } from '@/features/accounts/scope-selection'
 import type { ImportListItem, ImportListPage, ImportListQuery } from '@/lib/api/types'
 import { auditInstant, formatAuditDateTime } from '@/lib/format'
+import { ListHeading, requestListFocus } from '@/lib/list-focus'
 import { IMPORT_STATUS_TONE, toneOf } from '@/lib/status-tone'
 import { CancelImportDialog } from '../CancelImportDialog'
 import { importListQuery } from '../queries'
@@ -19,6 +20,8 @@ import { InProgressFilters, type InProgressFiltersPatch } from './InProgressFilt
 
 const s = strings.inProgress
 const PAGE_SIZE = 50
+/** The name of the In Progress list for requestListFocus. */
+const IN_PROGRESS_LIST = 'imports-in-progress'
 /** A text cell that may wrap: the shadcn cell does not by default. */
 const WRAP = 'whitespace-normal'
 
@@ -56,8 +59,11 @@ export function InProgressPage() {
       resetScroll: false,
     })
   // The list is asked again by the mutation (useCancelImport invalidates it); here only the notice changes.
-  const onCancelled = (notCancellableStatus?: string) =>
+  // The row and its button leave the list either way: the focus goes to the heading of the list (review-diff M4).
+  const onCancelled = (notCancellableStatus?: string) => {
     setNotice(notCancellableStatus === undefined ? null : strings.cancel.notCancellable(notCancellableStatus))
+    requestListFocus(IN_PROGRESS_LIST)
+  }
 
   let body: ReactNode
   if (scope.state === 'not_available') body = <p className="text-sm">{s.notAvailable}</p>
@@ -84,7 +90,15 @@ export function InProgressPage() {
       <Card>
         <CardContent className="flex flex-col gap-4">
           <InProgressFilters search={search} scope={scope} onChange={onFilters} />
-          <h2 className="font-medium">{s.heading}</h2>
+          {/* Above the table, so it is there while the next page loads (ui-polish design D13). */}
+          <ListHeading
+            name={IN_PROGRESS_LIST}
+            focusKey={`${JSON.stringify(listQueryOf(search))}|${list.dataUpdatedAt}`}
+            as="h2"
+            className="font-medium"
+          >
+            {s.heading}
+          </ListHeading>
           {notice && (
             <p role="status" className="text-sm text-destructive">
               {notice}
@@ -145,8 +159,14 @@ function InProgressTable({
         summary={s.summary(page, pageCount, data.total)}
         canPrevious={page > 1}
         canNext={page < pageCount}
-        onPrevious={() => onPage(page - 1)}
-        onNext={() => onPage(page + 1)}
+        onPrevious={() => {
+          requestListFocus(IN_PROGRESS_LIST)
+          onPage(page - 1)
+        }}
+        onNext={() => {
+          requestListFocus(IN_PROGRESS_LIST)
+          onPage(page + 1)
+        }}
       />
     </section>
   )

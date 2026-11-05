@@ -75,8 +75,9 @@ export function CancelImportDialog({
         if (failure instanceof ApiError && failure.code === 'import_not_cancellable') {
           const status = (failure.details as { status?: string } | undefined)?.status ?? ''
           setError(s.notCancellable(status))
-          void reload()
-          onCancelled?.(status)
+          // In Progress says so itself and asks its list again; the detail is reloaded only in the import (B4).
+          if (onCancelled) onCancelled(status)
+          else void reload()
         } else {
           setError(s.failed)
         }
