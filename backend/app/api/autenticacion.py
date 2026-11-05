@@ -91,6 +91,13 @@ def iniciar_sesion(
             status.HTTP_401_UNAUTHORIZED, "CREDENCIALES_INVALIDAS", MENSAJE_CREDENCIALES
         )
 
+    if usuario.confirmado_en is None:
+        raise ErrorApi(
+            status.HTTP_403_FORBIDDEN,
+            "CUENTA_SIN_CONFIRMAR",
+            "Falta confirmar el correo. Revise su bandeja de entrada o pida un enlace nuevo.",
+        )
+
     sesion.execute(delete(IntentoAcceso).where(IntentoAcceso.email == email))
     identificador = generar_identificador_de_sesion()
     sesion.add(

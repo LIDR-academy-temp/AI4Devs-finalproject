@@ -14,6 +14,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.cuentas.ciclo_de_vida import borrar_cuentas_sin_confirmar
 from app.cuentas.envio import (
     Enviador,
     cargar_configuracion_smtp,
@@ -134,6 +135,9 @@ def _limpiar_vencidos(sesion: Session, ahora: datetime) -> None:
     )
     # La ventana más larga del límite por IP es de una hora.
     sesion.execute(delete(LimiteIp).where(LimiteIp.ventana_inicio < ahora - timedelta(hours=2)))
+    borradas = borrar_cuentas_sin_confirmar(sesion, ahora)
+    if borradas:
+        registro.info("Cuentas sin confirmar borradas: %s", borradas)
     sesion.commit()
 
 

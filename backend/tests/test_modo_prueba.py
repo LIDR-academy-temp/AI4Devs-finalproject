@@ -15,7 +15,6 @@ from app.datos.modelos import (
     Recomendacion,
     Sensor,
     Usuario,
-    UsuarioEstacion,
 )
 from app.ingesta import worker
 from app.ingesta.modo_prueba import NOMBRE_CASO_1, NOMBRE_CASO_2, preparar_modo_prueba
@@ -109,19 +108,6 @@ def test_se_puede_repetir_sin_duplicar(sesion):
     assert contar(sesion, Estacion) == 2
     assert contar(sesion, Sensor) == 2
     assert contar(sesion, Observacion) == 1
-
-
-def test_quien_ve_el_caso_1_tambien_ve_el_caso_2(sesion):
-    estacion = base_con_lecturas(sesion)
-    usuario = Usuario(email="a@b.example", nombre="N", password_hash="h")
-    sesion.add(usuario)
-    sesion.flush()
-    sesion.add(UsuarioEstacion(usuario_id=usuario.id, estacion_id=estacion.id))
-    sesion.commit()
-
-    _, caso_2 = preparar_modo_prueba(sesion, AHORA)
-
-    assert sesion.get(UsuarioEstacion, (usuario.id, caso_2.id)) is not None
 
 
 class PlanificadorFalso:

@@ -477,14 +477,13 @@ FINALES = ("recomendacion", "condiciones-actuales", "sensores/1/historico")
 PARAMETROS = {"desde": AHORA.isoformat(), "hasta": (AHORA + timedelta(hours=1)).isoformat()}
 
 
-@pytest.mark.parametrize("final", FINALES)
-def test_estacion_ajena_responde_403(cliente, sesion, final):
-    ajena = Estacion(id_equipo_sat2=9, nombre="Ajena", latitud=D("0"), longitud=D("0"))
-    sesion.add(ajena)
+@pytest.mark.parametrize("final", ["recomendacion", "condiciones-actuales"])
+def test_una_estacion_sin_asignar_entrega_sus_datos(cliente, sesion, final):
+    # Sin niveles de usuario, el acceso no depende de asignaciones.
+    otra = Estacion(id_equipo_sat2=9, nombre="Otra", latitud=D("0"), longitud=D("0"))
+    sesion.add(otra)
     sesion.commit()
-    respuesta = cliente.get(ruta(ajena, final), params=PARAMETROS)
-    assert respuesta.status_code == 403
-    assert "Ajena" not in respuesta.text
+    assert cliente.get(ruta(otra, final), params=PARAMETROS).status_code == 200
 
 
 @pytest.mark.parametrize("final", FINALES)
@@ -541,7 +540,12 @@ def test_las_rutas_coinciden_con_el_contrato(contrato):
 
 @pytest.mark.parametrize(
     "esquema",
-    ["Recomendacion", "CondicionesActuales", "Historico", "LecturaSensor", "Punto", "Resumen", "Motivo", "EstacionResumen"],
+    [
+        "Recomendacion", "CondicionesActuales", "Historico", "LecturaSensor", "Punto", "Resumen",
+        "Motivo", "EstacionResumen", "DatosPersonales", "Cuenta", "SolicitudCorreo", "SolicitudCodigo",
+        "SolicitudNuevaContrasena", "SolicitudCambioContrasena", "SolicitudBaja", "SolicitudBajaConEnlace",
+        "Aviso",
+    ],
 )
 def test_los_campos_coinciden_con_el_contrato(contrato, esquema):
     del_contrato = contrato["components"]["schemas"][esquema]

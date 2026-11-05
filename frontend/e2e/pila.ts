@@ -8,8 +8,6 @@ const RAIZ = resolve(import.meta.dirname, '../..')
 
 export const URL_E2E = `http://localhost:${PUERTO}`
 export const EMAIL_E2E = 'e2e@weathertrack.example'
-/** Ve los dos casos: para el selector y el equipo inactivo. */
-export const EMAIL_E2E_DOS = 'e2e-dos@weathertrack.example'
 
 /**
  * Siempre sobre el proyecto `wt-e2e`, con su propia base: `cierre-global` la borra, y así

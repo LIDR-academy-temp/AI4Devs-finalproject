@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { CASO_1, CASO_2, ingresar, ingresarConDosCasos } from './ayudantes.ts'
+import { CASO_1, CASO_2, ingresar } from './ayudantes.ts'
 import { cargarSituacion, sql } from './pila.ts'
 
 function selector(page: import('@playwright/test').Page) {
@@ -9,16 +9,16 @@ function selector(page: import('@playwright/test').Page) {
 test.describe('Estaciones: selector y equipo inactivo', () => {
   test.beforeEach(() => cargarSituacion('favorables'))
 
-  test('el selector está siempre visible, aunque haya una sola estación', async ({ page }) => {
+  test('el selector está en el encabezado con todas las estaciones', async ({ page }) => {
     await ingresar(page)
     await expect(selector(page)).toHaveValue(/\d+/)
-    await expect(selector(page).getByRole('option')).toHaveText([CASO_1])
+    // Sin niveles de usuario, toda cuenta ve todas las estaciones, sin asignaciones.
+    await expect(selector(page).getByRole('option')).toHaveText([CASO_1, CASO_2])
     await expect(page.getByRole('note')).toContainText('Modo de prueba')
   })
 
-  test('con dos estaciones se cambia desde el selector', async ({ page }) => {
-    await ingresarConDosCasos(page)
-    await expect(selector(page).getByRole('option')).toHaveText([CASO_1, CASO_2])
+  test('se cambia de estación desde el selector', async ({ page }) => {
+    await ingresar(page)
 
     await selector(page).selectOption({ label: CASO_2 })
 
@@ -38,7 +38,7 @@ test.describe('Estaciones: selector y equipo inactivo', () => {
     })
 
     test('muestra solo sus históricos', async ({ page }) => {
-      await ingresarConDosCasos(page)
+      await ingresar(page)
       await selector(page).selectOption({ label: `${CASO_2} (Equipo inactivo)` })
 
       await expect(page.getByRole('heading', { name: CASO_2, exact: true })).toBeVisible()

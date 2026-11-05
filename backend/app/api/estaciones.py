@@ -1,4 +1,4 @@
-"""Estaciones asignadas a la persona con sesión, activas e inactivas."""
+"""Estaciones: todos los equipos de SAT2, activos e inactivos. Sin niveles, todos ven todas."""
 
 from datetime import datetime
 from decimal import Decimal
@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from app.api.dependencias import SesionBd, UsuarioActual
-from app.datos.modelos import Estacion, UsuarioEstacion
+from app.datos.modelos import Estacion
 from app.dominio.normalizacion import ZONA_ARGENTINA
 
 router = APIRouter(prefix="/api/v1/estaciones", tags=["estaciones"])
@@ -31,10 +31,7 @@ def _en_argentina(momento: datetime | None) -> datetime | None:
 @router.get("", operation_id="listarEstaciones")
 def listar_estaciones(sesion: SesionBd, usuario: UsuarioActual) -> list[EstacionResumen]:
     estaciones = sesion.scalars(
-        select(Estacion)
-        .join(UsuarioEstacion, UsuarioEstacion.estacion_id == Estacion.id)
-        .where(UsuarioEstacion.usuario_id == usuario.id)
-        .order_by(Estacion.nombre)
+        select(Estacion).order_by(Estacion.nombre)
     )
     return [
         EstacionResumen(

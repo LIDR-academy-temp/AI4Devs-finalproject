@@ -34,6 +34,7 @@ def _asegurar_usuario(sesion: Session, estaciones: list[Estacion]) -> str | None
             email=EMAIL_DEMO,
             nombre=NOMBRE_DEMO,
             password_hash=calcular_hash_contrasena(clave_generada),
+            confirmado_en=datetime.now(UTC),
         )
         sesion.add(usuario)
         sesion.flush()

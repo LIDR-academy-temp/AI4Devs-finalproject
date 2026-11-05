@@ -614,9 +614,9 @@ erDiagram
 
 Esta sección muestra el acceso, la lista de estaciones y los tres endpoints de lectura. El contrato completo, que suma la ruta de salud, se genera desde el código: está en [`frontend/openapi.json`](frontend/openapi.json) y en `/api/docs`. Una prueba falla si difiere de la API.
 
-Salvo el inicio y el cierre de sesión, todas las rutas exigen la sesión del usuario, y las de una estación comprueban que tenga acceso a ella. Los valores de los ejemplos son ficticios.
+El registro, la confirmación, el recupero y las bajas por enlace no usan sesión: los protegen sus códigos de un solo uso y el límite por dirección IP. Las demás rutas exigen la sesión del usuario. Sin niveles de usuario, toda cuenta consulta todas las estaciones. Los valores de los ejemplos son ficticios.
 
-Es el contrato vigente de la Entrega 2. Los cambios aprobados [`weather-track-registro-cuentas`](openspec/changes/weather-track-registro-cuentas/proposal.md) y [`weather-track-estaciones`](openspec/changes/weather-track-estaciones/proposal.md) lo amplían con registro, recupero y estado de los equipos.
+Los flujos de cuentas vienen del cambio [`weather-track-registro-cuentas`](openspec/changes/weather-track-registro-cuentas/proposal.md), y el estado de los equipos, de [`weather-track-estaciones`](openspec/changes/weather-track-estaciones/proposal.md).
 
 ```yaml
 openapi: 3.0.3
@@ -702,6 +702,227 @@ paths:
       responses:
         '204':
           description: Sesión cerrada
+  /auth/registro:
+    post:
+      summary: Crea una cuenta sin confirmar y envía el correo de confirmación
+      description: >-
+        Responde lo mismo exista o no el correo. Si ya pertenece a una cuenta
+        confirmada, esa cuenta no cambia y su titular recibe un aviso. Si
+        pertenece a una cuenta sin confirmar, sus datos se reemplazan y se
+        envía un enlace nuevo, que anula el anterior.
+      operationId: registrarCuenta
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudRegistro'
+      responses:
+        '202':
+          $ref: '#/components/responses/Aviso'
+        '422':
+          description: >-
+            Datos inválidos (SOLICITUD_INVALIDA), contraseña que no cumple la
+            política (CONTRASENA_RECHAZADA) o términos sin aceptar
+            (TERMINOS_NO_ACEPTADOS). `campos` indica qué revisar.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                codigo: CONTRASENA_RECHAZADA
+                mensaje: La contraseña debe tener al menos 15 caracteres. Una frase de varias palabras sirve.
+                campos:
+                  contrasena: La contraseña debe tener al menos 15 caracteres. Una frase de varias palabras sirve.
+        '429':
+          $ref: '#/components/responses/DemasiadosPedidos'
+  /auth/confirmacion:
+    post:
+      summary: Confirma la cuenta con el código del correo, válido 48 horas
+      operationId: confirmarCuenta
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudCodigo'
+      responses:
+        '200':
+          $ref: '#/components/responses/Aviso'
+        '400':
+          $ref: '#/components/responses/EnlaceInvalido'
+        '429':
+          $ref: '#/components/responses/DemasiadosPedidos'
+  /auth/confirmacion/reenvio:
+    post:
+      summary: Envía un enlace de confirmación nuevo si la cuenta no está confirmada
+      operationId: reenviarConfirmacion
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudCorreo'
+      responses:
+        '202':
+          $ref: '#/components/responses/Aviso'
+        '429':
+          $ref: '#/components/responses/DemasiadosPedidos'
+  /auth/recupero:
+    post:
+      summary: Envía un enlace para elegir una contraseña nueva, válido 30 minutos
+      description: Responde lo mismo exista o no una cuenta con ese correo.
+      operationId: pedirRecupero
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudCorreo'
+      responses:
+        '202':
+          $ref: '#/components/responses/Aviso'
+        '429':
+          $ref: '#/components/responses/DemasiadosPedidos'
+  /auth/recupero/nueva-contrasena:
+    post:
+      summary: Elige una contraseña nueva con el código del correo
+      description: >-
+        Cierra todas las sesiones, levanta el bloqueo por intentos fallidos y
+        avisa al titular. Si la contraseña no cumple la política, el código no
+        se consume.
+      operationId: elegirNuevaContrasena
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudNuevaContrasena'
+      responses:
+        '200':
+          $ref: '#/components/responses/Aviso'
+        '400':
+          $ref: '#/components/responses/EnlaceInvalido'
+        '422':
+          $ref: '#/components/responses/SolicitudInvalida'
+        '429':
+          $ref: '#/components/responses/DemasiadosPedidos'
+  /cuenta:
+    get:
+      summary: Datos de la cuenta con sesión
+      operationId: obtenerCuenta
+      responses:
+        '200':
+          description: Datos de la cuenta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cuenta'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+    put:
+      summary: Modifica los datos de la cuenta; el correo no se cambia
+      operationId: actualizarCuenta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatosPersonales'
+      responses:
+        '200':
+          description: Datos guardados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cuenta'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '422':
+          $ref: '#/components/responses/SolicitudInvalida'
+  /cuenta/contrasena:
+    post:
+      summary: Cambia la contraseña; exige la actual y cierra las demás sesiones
+      operationId: cambiarContrasena
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudCambioContrasena'
+      responses:
+        '204':
+          description: Contraseña cambiada; el titular recibe un aviso
+        '400':
+          $ref: '#/components/responses/ContrasenaIncorrecta'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+        '422':
+          $ref: '#/components/responses/SolicitudInvalida'
+  /cuenta/baja:
+    post:
+      summary: Borra la cuenta y todos sus datos; exige la contraseña
+      operationId: darDeBaja
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudBaja'
+      responses:
+        '204':
+          description: Cuenta borrada y sesión cerrada
+        '400':
+          $ref: '#/components/responses/ContrasenaIncorrecta'
+        '401':
+          $ref: '#/components/responses/NoAutenticado'
+  /cuenta/baja-con-enlace:
+    post:
+      summary: Borra la cuenta con el código de baja de un correo
+      description: >-
+        La pantalla de baja la llama solo cuando la persona confirma con un
+        botón: abrir el enlace nunca borra nada.
+      operationId: darDeBajaConEnlace
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudBajaConEnlace'
+      responses:
+        '200':
+          $ref: '#/components/responses/Aviso'
+        '400':
+          $ref: '#/components/responses/EnlaceInvalido'
+        '429':
+          $ref: '#/components/responses/DemasiadosPedidos'
+  /cuenta/baja-un-clic:
+    post:
+      summary: Baja en un clic desde el programa de correo (RFC 8058)
+      description: >-
+        Dirección de la cabecera List-Unsubscribe. Solo acepta POST: un GET no
+        borra nada. El código es el único que viaja en la dirección, y el
+        registro de accesos lo oculta.
+      operationId: darDeBajaEnUnClic
+      security: []
+      parameters:
+        - name: codigo
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 200
+      responses:
+        '200':
+          $ref: '#/components/responses/Aviso'
+        '400':
+          $ref: '#/components/responses/EnlaceInvalido'
   /estaciones:
     get:
       summary: Lista las estaciones a las que accede el usuario
@@ -892,6 +1113,42 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    Aviso:
+      description: >-
+        Pedido recibido. En registro, reenvío y recupero el mensaje es siempre
+        el mismo, para no revelar qué correos están registrados.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Aviso'
+          example:
+            mensaje: Si los datos son correctos, en unos minutos recibirá un correo para confirmar la cuenta.
+    EnlaceInvalido:
+      description: Código usado, vencido, de otro propósito o inexistente. No dice de qué cuenta era
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            codigo: ENLACE_INVALIDO
+            mensaje: El enlace no es válido o ya venció. Puede pedir uno nuevo.
+    ContrasenaIncorrecta:
+      description: La contraseña ingresada para confirmar el cambio no es la de la cuenta
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    DemasiadosPedidos:
+      description: Límite de pedidos por dirección IP superado
+      headers:
+        Retry-After:
+          description: Segundos que faltan para volver a intentar
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     SolicitudInvalida:
       description: El cuerpo o los parámetros no cumplen el contrato
       content:
@@ -902,6 +1159,128 @@ components:
             codigo: SOLICITUD_INVALIDA
             mensaje: La solicitud no es válida.
   schemas:
+    DatosPersonales:
+      type: object
+      required: [nombre, apellido, localidad, provincia]
+      properties:
+        nombre:
+          type: string
+          maxLength: 120
+        apellido:
+          type: string
+          maxLength: 120
+        localidad:
+          type: string
+          maxLength: 120
+        provincia:
+          type: string
+          maxLength: 60
+        organizacion:
+          type: string
+          maxLength: 160
+          nullable: true
+        telefono:
+          type: string
+          maxLength: 40
+          nullable: true
+        acepta_novedades:
+          type: boolean
+          default: false
+          description: Permiso para recibir novedades, que se ofrece sin marcar
+    SolicitudRegistro:
+      allOf:
+        - $ref: '#/components/schemas/DatosPersonales'
+        - type: object
+          required: [email, contrasena, acepta_terminos]
+          properties:
+            email:
+              type: string
+              maxLength: 254
+            contrasena:
+              type: string
+              description: De 15 a 128 caracteres, sin contraseñas comunes ni el correo
+            acepta_terminos:
+              type: boolean
+              description: Términos y política de privacidad. Tiene que ser verdadero
+    SolicitudCorreo:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          maxLength: 254
+    SolicitudCodigo:
+      type: object
+      required: [codigo]
+      properties:
+        codigo:
+          type: string
+          maxLength: 200
+          description: El código del enlace, que viaja después de `#`
+    SolicitudNuevaContrasena:
+      type: object
+      required: [codigo, contrasena]
+      properties:
+        codigo:
+          type: string
+          maxLength: 200
+        contrasena:
+          type: string
+    Cuenta:
+      type: object
+      required: [email, nombre, acepta_novedades]
+      properties:
+        email:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+          nullable: true
+        localidad:
+          type: string
+          nullable: true
+        provincia:
+          type: string
+          nullable: true
+        organizacion:
+          type: string
+          nullable: true
+        telefono:
+          type: string
+          nullable: true
+        acepta_novedades:
+          type: boolean
+        terminos_version:
+          type: string
+          nullable: true
+    SolicitudCambioContrasena:
+      type: object
+      required: [actual, nueva]
+      properties:
+        actual:
+          type: string
+        nueva:
+          type: string
+    SolicitudBaja:
+      type: object
+      required: [contrasena]
+      properties:
+        contrasena:
+          type: string
+    SolicitudBajaConEnlace:
+      type: object
+      required: [codigo]
+      properties:
+        codigo:
+          type: string
+          maxLength: 200
+    Aviso:
+      type: object
+      required: [mensaje]
+      properties:
+        mensaje:
+          type: string
     SolicitudInicio:
       type: object
       required: [email, contrasena]
@@ -1118,6 +1497,11 @@ components:
           type: string
         mensaje:
           type: string
+        campos:
+          type: object
+          description: Campo del formulario y mensaje para mostrar junto a él. Nunca repite lo enviado
+          additionalProperties:
+            type: string
 ```
 
 ---

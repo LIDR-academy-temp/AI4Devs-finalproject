@@ -1,4 +1,4 @@
-"""Operaciones administrativas sobre cuentas. No hay registro público.
+"""Operaciones administrativas sobre cuentas. Las crea ya confirmadas.
 
     python -m app.administracion crear-usuario --email a@b.example --nombre "Nombre"
     python -m app.administracion asignar-estacion --email a@b.example --id-equipo 1
@@ -8,6 +8,7 @@
 
 import argparse
 import sys
+from datetime import UTC, datetime
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
@@ -43,7 +44,12 @@ def crear_usuario(sesion: Session, email: str, nombre: str) -> str:
         raise ErrorAdministracion(f"Ya existe el usuario {limpio}.")
     clave = generar_contrasena()
     sesion.add(
-        Usuario(email=limpio, nombre=nombre.strip(), password_hash=calcular_hash_contrasena(clave))
+        Usuario(
+            email=limpio,
+            nombre=nombre.strip(),
+            password_hash=calcular_hash_contrasena(clave),
+            confirmado_en=datetime.now(UTC),
+        )
     )
     sesion.flush()
     return clave

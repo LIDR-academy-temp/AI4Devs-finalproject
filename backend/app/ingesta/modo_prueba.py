@@ -10,7 +10,7 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.datos.modelos import Estacion, Observacion, Sensor, UsuarioEstacion
+from app.datos.modelos import Estacion, Observacion, Sensor
 from app.ingesta.carga_inicial import ejecutar_carga_inicial
 from app.ingesta.catalogo import sincronizar_catalogo
 from app.ingesta.ciclo import ejecutar_ciclo
@@ -82,13 +82,5 @@ def preparar_modo_prueba(sesion: Session, ahora: datetime) -> tuple[Estacion, Es
     caso_2.nombre = NOMBRE_CASO_2
     sesion.flush()
     _copiar_sensores(sesion, caso_1, caso_2)
-
-    # Mientras el acceso dependa de asignaciones, quien ve el caso 1 también ve el caso 2.
-    usuarios = sesion.scalars(
-        select(UsuarioEstacion.usuario_id).where(UsuarioEstacion.estacion_id == caso_1.id)
-    ).all()
-    for usuario_id in usuarios:
-        if sesion.get(UsuarioEstacion, (usuario_id, caso_2.id)) is None:
-            sesion.add(UsuarioEstacion(usuario_id=usuario_id, estacion_id=caso_2.id))
     sesion.commit()
     return caso_1, caso_2

@@ -65,7 +65,10 @@ def cliente(sesion, reloj, monkeypatch):
 @pytest.fixture
 def usuario(sesion):
     registro = Usuario(
-        email=EMAIL, nombre="Persona", password_hash=calcular_hash_contrasena(CLAVE)
+        email=EMAIL,
+        nombre="Persona",
+        password_hash=calcular_hash_contrasena(CLAVE),
+        confirmado_en=INICIO,
     )
     sesion.add(registro)
     sesion.commit()
@@ -223,7 +226,10 @@ def test_fallos_espaciados_no_bloquean(cliente, usuario, reloj):
 
 def test_el_bloqueo_es_por_correo_y_no_distingue_mayusculas(cliente, sesion, usuario):
     otra = Usuario(
-        email="otra@ejemplo.example", nombre="Otra", password_hash=calcular_hash_contrasena(CLAVE)
+        email="otra@ejemplo.example",
+        nombre="Otra",
+        password_hash=calcular_hash_contrasena(CLAVE),
+        confirmado_en=INICIO,
     )
     sesion.add(otra)
     sesion.commit()
@@ -295,24 +301,20 @@ def _ruta_de_prueba(estacion: EstacionAutorizada) -> dict[str, int]:
     return {"id": estacion.id}
 
 
-def test_lista_solo_las_estaciones_asignadas(cliente, sesion, usuario):
-    propia = crear_estacion(sesion, 1, "Propia")
-    crear_estacion(sesion, 2, "Ajena")
-    sesion.add(UsuarioEstacion(usuario_id=usuario.id, estacion_id=propia.id))
-    sesion.commit()
+def test_lista_todas_las_estaciones_sin_asignaciones(cliente, sesion, usuario):
+    norte = crear_estacion(sesion, 1, "Norte")
+    sur = crear_estacion(sesion, 2, "Sur")
     ingresar(cliente)
 
     datos = cliente.get(ESTACIONES).json()
 
-    assert [e["nombre"] for e in datos] == ["Propia"]
-    assert datos[0]["id"] == propia.id
+    assert [(e["id"], e["nombre"]) for e in datos] == [(norte.id, "Norte"), (sur.id, "Sur")]
 
 
 def test_lista_las_estaciones_inactivas_con_su_estado(cliente, sesion, usuario):
     estacion = crear_estacion(sesion, 1)
     estacion.activa = False
     estacion.inactiva_desde = datetime(2026, 11, 1, tzinfo=UTC)
-    sesion.add(UsuarioEstacion(usuario_id=usuario.id, estacion_id=estacion.id))
     sesion.commit()
     ingresar(cliente)
     [listada] = cliente.get(ESTACIONES).json()
@@ -320,25 +322,27 @@ def test_lista_las_estaciones_inactivas_con_su_estado(cliente, sesion, usuario):
     assert listada["inactiva_desde"] == "2026-10-31T21:00:00-03:00"
 
 
-def test_estacion_no_asignada_responde_403(cliente, sesion, usuario):
-    ajena = crear_estacion(sesion, 2)
+def test_una_estacion_no_asignada_se_puede_consultar(cliente, sesion, usuario):
+    # El acceso no depende de asignaciones: una estación es un equipo de SAT2, no un permiso.
+    estacion = crear_estacion(sesion, 2)
     ingresar(cliente)
-    respuesta = cliente.get(f"/api/v1/_prueba/estaciones/{ajena.id}")
-    assert respuesta.status_code == 403
-    assert respuesta.json()["codigo"] == "SIN_ACCESO"
+    assert cliente.get(f"/api/v1/_prueba/estaciones/{estacion.id}").json() == {"id": estacion.id}
 
 
-def test_estacion_asignada_se_autoriza(cliente, sesion, usuario):
-    propia = crear_estacion(sesion, 1)
-    sesion.add(UsuarioEstacion(usuario_id=usuario.id, estacion_id=propia.id))
+def test_una_estacion_inactiva_se_puede_consultar(cliente, sesion, usuario):
+    estacion = crear_estacion(sesion, 3)
+    estacion.activa = False
+    estacion.inactiva_desde = INICIO
     sesion.commit()
     ingresar(cliente)
-    assert cliente.get(f"/api/v1/_prueba/estaciones/{propia.id}").json() == {"id": propia.id}
+    assert cliente.get(f"/api/v1/_prueba/estaciones/{estacion.id}").status_code == 200
 
 
 def test_estacion_inexistente_responde_404(cliente, usuario):
     ingresar(cliente)
-    assert cliente.get("/api/v1/_prueba/estaciones/999999").status_code == 404
+    respuesta = cliente.get("/api/v1/_prueba/estaciones/999999")
+    assert respuesta.status_code == 404
+    assert respuesta.json() == {"codigo": "NO_ENCONTRADO", "mensaje": "La estación no existe."}
 
 
 def test_estacion_sin_sesion_responde_401(cliente, sesion):
@@ -346,10 +350,25 @@ def test_estacion_sin_sesion_responde_401(cliente, sesion):
     assert cliente.get(f"/api/v1/_prueba/estaciones/{estacion.id}").status_code == 401
 
 
-def test_no_existe_registro_publico(cliente):
-    assert cliente.post("/api/v1/auth/registro", json={}).status_code == 404
-    rutas = app.openapi()["paths"]
-    assert not [r for r in rutas if "regist" in r or "signup" in r]
+def test_una_cuenta_sin_confirmar_no_inicia_sesion(cliente, sesion, usuario):
+    usuario.confirmado_en = None
+    sesion.commit()
+
+    respuesta = ingresar(cliente)
+
+    assert respuesta.status_code == 403
+    assert respuesta.json()["codigo"] == "CUENTA_SIN_CONFIRMAR"
+    assert "set-cookie" not in respuesta.headers
+    # Con la contraseña equivocada no revela nada: el mismo mensaje genérico de siempre.
+    incorrecta = ingresar(cliente, contrasena="otra-cosa")
+    assert (incorrecta.status_code, incorrecta.json()["mensaje"]) == (401, GENERICO)
+
+
+def test_crear_usuario_deja_la_cuenta_confirmada_y_puede_ingresar(cliente, sesion):
+    clave = administracion.crear_usuario(sesion, "admin@ejemplo.example", "Cuenta del administrador")
+    sesion.commit()
+    assert sesion.scalar(select(Usuario.confirmado_en)) is not None
+    assert ingresar(cliente, "admin@ejemplo.example", clave).status_code == 200
 
 
 # Administración

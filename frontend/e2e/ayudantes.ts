@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
-import { EMAIL_E2E, EMAIL_E2E_DOS, cargarSituacion } from './pila.ts'
+import { EMAIL_E2E, cargarSituacion } from './pila.ts'
 
 export const FECHA_Y_HORA = /\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}/
 export const MINUTO_Y_MEDIO_MS = 90_000
@@ -8,23 +8,13 @@ export const CASO_1 = 'Caso de prueba - 1'
 
 export const CASO_2 = 'Caso de prueba - 2'
 
-/** Las dos cuentas abren primero el caso 1, la primera estación activa. */
-async function ingresarCon(page: Page, email: string, clave: string) {
+/** La aplicación abre la primera estación activa: el caso 1. */
+export async function ingresar(page: Page) {
   await page.goto('/')
-  await page.getByLabel('Correo').fill(email)
-  await page.getByLabel('Contraseña').fill(clave)
+  await page.getByLabel('Correo').fill(EMAIL_E2E)
+  await page.getByLabel('Contraseña').fill(process.env.E2E_CLAVE ?? '')
   await page.getByRole('button', { name: 'Ingresar' }).click()
   await expect(page.getByRole('heading', { name: CASO_1, exact: true })).toBeVisible()
-}
-
-/** La cuenta principal solo ve el caso 1. */
-export async function ingresar(page: Page) {
-  await ingresarCon(page, EMAIL_E2E, process.env.E2E_CLAVE ?? '')
-}
-
-/** La segunda cuenta ve los dos casos. */
-export async function ingresarConDosCasos(page: Page) {
-  await ingresarCon(page, EMAIL_E2E_DOS, process.env.E2E_CLAVE_DOS ?? '')
 }
 
 /** Carga la situación en el caso 1 y lo abre. */

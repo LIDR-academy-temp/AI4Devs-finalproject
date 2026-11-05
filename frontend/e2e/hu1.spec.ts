@@ -29,13 +29,12 @@ test.describe('HU1: ver si puedo aplicar ahora', () => {
     await expect(tarjeta(page, 'Pluviometro')).toContainText('En alarma')
   })
 
-  test('estación sin acceso', async ({ page }) => {
+  test('estación inexistente', async ({ page }) => {
     await ingresar(page)
 
-    await page.goto(`/estaciones/${process.env.E2E_CASO_2}`)
+    await page.goto('/estaciones/999999')
 
-    await expect(page.getByRole('alert')).toContainText('No tiene acceso')
-    await expect(page.getByText('Caso de prueba - 2')).toHaveCount(0)
+    await expect(page.getByRole('alert')).toContainText('La estación no existe')
     await expect(bloqueDeEstado(page)).toHaveCount(0)
     await expect(page.locator('.grilla')).toHaveCount(0)
   })

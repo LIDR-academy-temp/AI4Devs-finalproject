@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/api/v1/auth/confirmacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirmar Cuenta */
+        post: operations["confirmarCuenta"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/confirmacion/reenvio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reenviar */
+        post: operations["reenviarConfirmacion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -32,6 +66,146 @@ export interface paths {
         put?: never;
         /** Cerrar Sesion */
         post: operations["cerrarSesion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/recupero": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recuperar */
+        post: operations["pedirRecupero"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/recupero/nueva-contrasena": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Nueva Contrasena */
+        post: operations["elegirNuevaContrasena"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/registro": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Registrar Cuenta */
+        post: operations["registrarCuenta"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cuenta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener Cuenta */
+        get: operations["obtenerCuenta"];
+        /** Actualizar Cuenta */
+        put: operations["actualizarCuenta"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cuenta/baja": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Baja */
+        post: operations["darDeBaja"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cuenta/baja-con-enlace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Baja Con Enlace */
+        post: operations["darDeBajaConEnlace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cuenta/baja-un-clic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Baja Un Clic
+         * @description RFC 8058: el programa de correo envía `List-Unsubscribe=One-Click`, que no hace falta leer.
+         */
+        post: operations["darDeBajaEnUnClic"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cuenta/contrasena": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cambiar */
+        post: operations["cambiarContrasena"];
         delete?: never;
         options?: never;
         head?: never;
@@ -127,6 +301,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Aviso */
+        Aviso: {
+            /** Mensaje */
+            mensaje: string;
+        };
         /** CondicionesActuales */
         CondicionesActuales: {
             /** Activa */
@@ -152,6 +331,47 @@ export interface components {
             ultima_ingesta_con_error: boolean;
             /** Ultima Ingesta Exitosa En */
             ultima_ingesta_exitosa_en: string | null;
+        };
+        /** Cuenta */
+        Cuenta: {
+            /** Acepta Novedades */
+            acepta_novedades: boolean;
+            /** Apellido */
+            apellido: string | null;
+            /** Email */
+            email: string;
+            /** Localidad */
+            localidad: string | null;
+            /** Nombre */
+            nombre: string;
+            /** Organizacion */
+            organizacion: string | null;
+            /** Provincia */
+            provincia: string | null;
+            /** Telefono */
+            telefono: string | null;
+            /** Terminos Version */
+            terminos_version: string | null;
+        };
+        /** DatosPersonales */
+        DatosPersonales: {
+            /**
+             * Acepta Novedades
+             * @default false
+             */
+            acepta_novedades: boolean;
+            /** Apellido */
+            apellido: string;
+            /** Localidad */
+            localidad: string;
+            /** Nombre */
+            nombre: string;
+            /** Organizacion */
+            organizacion?: string | null;
+            /** Provincia */
+            provincia: string;
+            /** Telefono */
+            telefono?: string | null;
         };
         /** EstacionResumen */
         EstacionResumen: {
@@ -271,12 +491,72 @@ export interface components {
             /** Promedio */
             promedio: number | null;
         };
+        /** SolicitudBaja */
+        SolicitudBaja: {
+            /** Contrasena */
+            contrasena: string;
+        };
+        /** SolicitudBajaConEnlace */
+        SolicitudBajaConEnlace: {
+            /** Codigo */
+            codigo: string;
+        };
+        /** SolicitudCambioContrasena */
+        SolicitudCambioContrasena: {
+            /** Actual */
+            actual: string;
+            /** Nueva */
+            nueva: string;
+        };
+        /** SolicitudCodigo */
+        SolicitudCodigo: {
+            /** Codigo */
+            codigo: string;
+        };
+        /** SolicitudCorreo */
+        SolicitudCorreo: {
+            /** Email */
+            email: string;
+        };
         /** SolicitudInicio */
         SolicitudInicio: {
             /** Contrasena */
             contrasena: string;
             /** Email */
             email: string;
+        };
+        /** SolicitudNuevaContrasena */
+        SolicitudNuevaContrasena: {
+            /** Codigo */
+            codigo: string;
+            /** Contrasena */
+            contrasena: string;
+        };
+        /** SolicitudRegistro */
+        SolicitudRegistro: {
+            /**
+             * Acepta Novedades
+             * @default false
+             */
+            acepta_novedades: boolean;
+            /** Acepta Terminos */
+            acepta_terminos: boolean;
+            /** Apellido */
+            apellido: string;
+            /** Contrasena */
+            contrasena: string;
+            /** Email */
+            email: string;
+            /** Localidad */
+            localidad: string;
+            /** Nombre */
+            nombre: string;
+            /** Organizacion */
+            organizacion?: string | null;
+            /** Provincia */
+            provincia: string;
+            /** Telefono */
+            telefono?: string | null;
         };
         /** UsuarioPublico */
         UsuarioPublico: {
@@ -307,6 +587,72 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    confirmarCuenta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudCodigo"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Aviso"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reenviarConfirmacion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudCorreo"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Aviso"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     iniciarSesion: {
         parameters: {
             query?: never;
@@ -350,6 +696,301 @@ export interface operations {
             };
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pedirRecupero: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudCorreo"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Aviso"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    elegirNuevaContrasena: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudNuevaContrasena"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Aviso"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    registrarCuenta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudRegistro"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Aviso"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    obtenerCuenta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                wt_sesion?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cuenta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    actualizarCuenta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                wt_sesion?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DatosPersonales"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Cuenta"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    darDeBaja: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                wt_sesion?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudBaja"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    darDeBajaConEnlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudBajaConEnlace"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Aviso"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    darDeBajaEnUnClic: {
+        parameters: {
+            query: {
+                codigo: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Aviso"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cambiarContrasena: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                wt_sesion?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudCambioContrasena"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             204: {

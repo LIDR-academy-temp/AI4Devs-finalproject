@@ -1,31 +1,11 @@
 import { request } from '@playwright/test'
-import { setTimeout as esperar } from 'node:timers/promises'
-import { EMAIL_E2E, EMAIL_E2E_DOS, URL_E2E, compose, sql } from './pila.ts'
+import { EMAIL_E2E, URL_E2E, compose } from './pila.ts'
 
-/**
- * La cuenta principal ve solo "Caso de prueba - 1", donde cada prueba carga su situación, y así el
- * caso 2 sirve para probar el acceso denegado. La segunda cuenta ve los dos casos, para el selector.
- */
-const EQUIPO_CASO_1 = 1
-const EQUIPO_CASO_2 = 2
-const LIMITE_MS = 120_000
-
-async function reintentar<T>(descripcion: string, intento: () => Promise<T | null>): Promise<T> {
-  const limite = Date.now() + LIMITE_MS
-  while (Date.now() < limite) {
-    const resultado = await intento().catch(() => null)
-    if (resultado !== null) {
-      return resultado
-    }
-    await esperar(1000)
-  }
-  throw new Error(`Se agotó el tiempo esperando: ${descripcion}`)
-}
-
-function crearCuenta(email = EMAIL_E2E): string {
+/** El administrador crea la cuenta ya confirmada. Ve los dos casos de prueba. */
+function crearCuenta(): string {
   const salida = compose(
     'exec', '-T', 'api', 'python', '-m', 'app.administracion',
-    'crear-usuario', '--email', email, '--nombre', 'Prueba E2E',
+    'crear-usuario', '--email', EMAIL_E2E, '--nombre', 'Prueba E2E',
   )
   const clave = /se muestra una sola vez: (\S+)/.exec(salida)?.[1]
   if (!clave) {
@@ -34,29 +14,12 @@ function crearCuenta(email = EMAIL_E2E): string {
   return clave
 }
 
-function asignarEstacion(idEquipo: number, email = EMAIL_E2E) {
-  compose(
-    'exec', '-T', 'api', 'python', '-m', 'app.administracion',
-    'asignar-estacion', '--email', email, '--id-equipo', String(idEquipo),
-  )
-}
-
-function idDeEstacion(idEquipo: number): string {
-  return sql(`select id from estacion where id_equipo_sat2 = ${idEquipo}`)
-}
-
 export default async function preparacionGlobal() {
   try {
-    // El worker de prueba queda saludable recién después de sembrar los 31 días del caso 1.
+    // El worker de prueba queda saludable recién después de sembrar los 31 días del caso 1,
+    // y cada prueba carga su situación en ese caso.
     compose('up', '--build', '-d', '--wait', '--wait-timeout', '300')
     const clave = crearCuenta()
-    await reintentar('el caso de prueba 1', async () => {
-      asignarEstacion(EQUIPO_CASO_1)
-      return true
-    })
-    const claveDos = crearCuenta(EMAIL_E2E_DOS)
-    asignarEstacion(EQUIPO_CASO_1, EMAIL_E2E_DOS)
-    asignarEstacion(EQUIPO_CASO_2, EMAIL_E2E_DOS)
 
     const api = await request.newContext({ baseURL: URL_E2E })
     const acceso = await api.post('/api/v1/auth/login', {
@@ -67,10 +30,8 @@ export default async function preparacionGlobal() {
     }
     await api.dispose()
 
-    // Playwright hereda estas variables en los procesos que corren las pruebas.
+    // Playwright hereda esta variable en los procesos que corren las pruebas.
     process.env.E2E_CLAVE = clave
-    process.env.E2E_CLAVE_DOS = claveDos
-    process.env.E2E_CASO_2 = idDeEstacion(EQUIPO_CASO_2)
   } catch (error) {
     // Si la preparación falla, Playwright no ejecuta el cierre global.
     compose('down', '-v')

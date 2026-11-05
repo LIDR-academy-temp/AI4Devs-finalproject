@@ -54,8 +54,8 @@ def emitir_enlace(sesion: Session, usuario: Usuario, proposito: str, ahora: date
     return codigo
 
 
-def usar_enlace(sesion: Session, codigo: str, proposito: str, ahora: datetime) -> Usuario:
-    """Valida el código y lo marca como usado en la misma transacción. No hace commit."""
+def buscar_enlace(sesion: Session, codigo: str, proposito: str, ahora: datetime) -> EnlaceCuenta:
+    """Devuelve el enlace vigente, bloqueado hasta el fin de la transacción, sin usarlo."""
     enlace = sesion.scalar(
         select(EnlaceCuenta)
         .where(EnlaceCuenta.hash_codigo == hash_de_identificador(codigo))
@@ -68,6 +68,12 @@ def usar_enlace(sesion: Session, codigo: str, proposito: str, ahora: datetime) -
         or enlace.vence_en <= ahora
     ):
         raise EnlaceInvalido()
+    return enlace
+
+
+def usar_enlace(sesion: Session, codigo: str, proposito: str, ahora: datetime) -> Usuario:
+    """Valida el código y lo marca como usado en la misma transacción. No hace commit."""
+    enlace = buscar_enlace(sesion, codigo, proposito, ahora)
     enlace.usado_en = ahora
     sesion.flush()
     return sesion.get(Usuario, enlace.usuario_id)

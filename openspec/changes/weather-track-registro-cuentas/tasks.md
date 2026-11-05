@@ -31,19 +31,19 @@ Las decisiones están en `design.md` (D1 a D12) y el comportamiento en las specs
 
 ## 5. API de cuentas (D7, D10, D11)
 
-- [ ] 5.1 Implementar registro, confirmación y reenvío de confirmación con respuestas uniformes, y verificar los escenarios de "Registro público", "Registro sin revelar correos existentes" y "Confirmación por correo"
-- [ ] 5.2 Exigir cuenta confirmada en el inicio de sesión y responder `CUENTA_SIN_CONFIRMAR`, y verificar los escenarios modificados de "Inicio de sesión con cuenta propia"
-- [ ] 5.3 Implementar solicitud de recupero y nueva contraseña, con cierre de sesiones, desbloqueo y aviso, y verificar los escenarios de `account-recovery`
-- [ ] 5.4 Implementar "Mi cuenta": consultar y editar datos, cambiar la contraseña y darse de baja, y verificar los escenarios de autogestión, cambio de contraseña y baja desde la aplicación
-- [ ] 5.5 Implementar la baja desde el correo y la baja en un clic, y verificar que un `GET` no borra nada y que el `POST` de un clic sí
-- [ ] 5.6 Cambiar la autorización a cualquier estación existente, sin asignaciones, y verificar los escenarios de "Autorización por estación" con un identificador inexistente
-- [ ] 5.7 Implementar la tarea del worker que borra cuentas sin confirmar vencidas y ventanas de límite vencidas, y verificar el escenario "Plazo vencido"
-- [ ] 5.8 Regenerar `openapi.json` y los tipos del frontend, actualizar la sección 4 del README y verificar que la prueba de contrato pasa
+- [x] 5.1 Implementar registro, confirmación y reenvío de confirmación con respuestas uniformes, y verificar los escenarios de "Registro público", "Registro sin revelar correos existentes" y "Confirmación por correo"
+- [x] 5.2 Exigir cuenta confirmada en el inicio de sesión y responder `CUENTA_SIN_CONFIRMAR`, y verificar los escenarios modificados de "Inicio de sesión con cuenta propia"
+- [x] 5.3 Implementar solicitud de recupero y nueva contraseña, con cierre de sesiones, desbloqueo y aviso, y verificar los escenarios de `account-recovery`
+- [x] 5.4 Implementar "Mi cuenta": consultar y editar datos, cambiar la contraseña y darse de baja, y verificar los escenarios de autogestión, cambio de contraseña y baja desde la aplicación
+- [x] 5.5 Implementar la baja desde el correo y la baja en un clic, y verificar que un `GET` no borra nada y que el `POST` de un clic sí
+- [x] 5.6 Cambiar la autorización a cualquier estación existente, sin asignaciones, y verificar los escenarios de "Autorización por estación" con un identificador inexistente
+- [x] 5.7 Implementar la tarea del worker que borra cuentas sin confirmar vencidas y ventanas de límite vencidas, y verificar el escenario "Plazo vencido"
+- [x] 5.8 Regenerar `openapi.json` y los tipos del frontend, actualizar la sección 4 del README y verificar que la prueba de contrato pasa
 
 ## 6. Base de clientes
 
 - [ ] 6.1 Agregar el comando `exportar-clientes` a la administración y verificar que el CSV solo tiene cuentas confirmadas y ningún dato de acceso
-- [ ] 6.2 Hacer que `crear-usuario` deje la cuenta confirmada y verificar con una prueba que puede iniciar sesión
+- [x] 6.2 Hacer que `crear-usuario` deje la cuenta confirmada y verificar con una prueba que puede iniciar sesión
 
 ## 7. Frontend (D6, D12)
 

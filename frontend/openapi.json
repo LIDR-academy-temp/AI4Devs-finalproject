@@ -1,6 +1,19 @@
 {
   "components": {
     "schemas": {
+      "Aviso": {
+        "properties": {
+          "mensaje": {
+            "title": "Mensaje",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mensaje"
+        ],
+        "title": "Aviso",
+        "type": "object"
+      },
       "CondicionesActuales": {
         "properties": {
           "activa": {
@@ -96,6 +109,172 @@
           "sensores"
         ],
         "title": "CondicionesActuales",
+        "type": "object"
+      },
+      "Cuenta": {
+        "properties": {
+          "acepta_novedades": {
+            "title": "Acepta Novedades",
+            "type": "boolean"
+          },
+          "apellido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apellido"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "localidad": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Localidad"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          },
+          "organizacion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organizacion"
+          },
+          "provincia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provincia"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "terminos_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terminos Version"
+          }
+        },
+        "required": [
+          "email",
+          "nombre",
+          "apellido",
+          "localidad",
+          "provincia",
+          "organizacion",
+          "telefono",
+          "acepta_novedades",
+          "terminos_version"
+        ],
+        "title": "Cuenta",
+        "type": "object"
+      },
+      "DatosPersonales": {
+        "properties": {
+          "acepta_novedades": {
+            "default": false,
+            "title": "Acepta Novedades",
+            "type": "boolean"
+          },
+          "apellido": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Apellido",
+            "type": "string"
+          },
+          "localidad": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Localidad",
+            "type": "string"
+          },
+          "nombre": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Nombre",
+            "type": "string"
+          },
+          "organizacion": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organizacion"
+          },
+          "provincia": {
+            "maxLength": 60,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Provincia",
+            "type": "string"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "pattern": "^[0-9+()\\- ]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          }
+        },
+        "required": [
+          "nombre",
+          "apellido",
+          "localidad",
+          "provincia"
+        ],
+        "title": "DatosPersonales",
         "type": "object"
       },
       "EstacionResumen": {
@@ -473,6 +652,90 @@
         "title": "Resumen",
         "type": "object"
       },
+      "SolicitudBaja": {
+        "properties": {
+          "contrasena": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Contrasena",
+            "type": "string"
+          }
+        },
+        "required": [
+          "contrasena"
+        ],
+        "title": "SolicitudBaja",
+        "type": "object"
+      },
+      "SolicitudBajaConEnlace": {
+        "properties": {
+          "codigo": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Codigo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo"
+        ],
+        "title": "SolicitudBajaConEnlace",
+        "type": "object"
+      },
+      "SolicitudCambioContrasena": {
+        "properties": {
+          "actual": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Actual",
+            "type": "string"
+          },
+          "nueva": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Nueva",
+            "type": "string"
+          }
+        },
+        "required": [
+          "actual",
+          "nueva"
+        ],
+        "title": "SolicitudCambioContrasena",
+        "type": "object"
+      },
+      "SolicitudCodigo": {
+        "properties": {
+          "codigo": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Codigo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo"
+        ],
+        "title": "SolicitudCodigo",
+        "type": "object"
+      },
+      "SolicitudCorreo": {
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "pattern": "^[^\\s@\\x00-\\x1f\\x7f]+@[^\\s@\\x00-\\x1f\\x7f]+\\.[^\\s@\\x00-\\x1f\\x7f]+$",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "SolicitudCorreo",
+        "type": "object"
+      },
       "SolicitudInicio": {
         "properties": {
           "contrasena": {
@@ -494,6 +757,119 @@
           "contrasena"
         ],
         "title": "SolicitudInicio",
+        "type": "object"
+      },
+      "SolicitudNuevaContrasena": {
+        "properties": {
+          "codigo": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Codigo",
+            "type": "string"
+          },
+          "contrasena": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Contrasena",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo",
+          "contrasena"
+        ],
+        "title": "SolicitudNuevaContrasena",
+        "type": "object"
+      },
+      "SolicitudRegistro": {
+        "properties": {
+          "acepta_novedades": {
+            "default": false,
+            "title": "Acepta Novedades",
+            "type": "boolean"
+          },
+          "acepta_terminos": {
+            "title": "Acepta Terminos",
+            "type": "boolean"
+          },
+          "apellido": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Apellido",
+            "type": "string"
+          },
+          "contrasena": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Contrasena",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 254,
+            "pattern": "^[^\\s@\\x00-\\x1f\\x7f]+@[^\\s@\\x00-\\x1f\\x7f]+\\.[^\\s@\\x00-\\x1f\\x7f]+$",
+            "title": "Email",
+            "type": "string"
+          },
+          "localidad": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Localidad",
+            "type": "string"
+          },
+          "nombre": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Nombre",
+            "type": "string"
+          },
+          "organizacion": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organizacion"
+          },
+          "provincia": {
+            "maxLength": 60,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Provincia",
+            "type": "string"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "pattern": "^[0-9+()\\- ]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          }
+        },
+        "required": [
+          "nombre",
+          "apellido",
+          "localidad",
+          "provincia",
+          "email",
+          "contrasena",
+          "acepta_terminos"
+        ],
+        "title": "SolicitudRegistro",
         "type": "object"
       },
       "UsuarioPublico": {
@@ -562,6 +938,88 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/auth/confirmacion": {
+      "post": {
+        "operationId": "confirmarCuenta",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudCodigo"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirmar Cuenta",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/auth/confirmacion/reenvio": {
+      "post": {
+        "operationId": "reenviarConfirmacion",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudCorreo"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reenviar",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "iniciarSesion",
@@ -642,6 +1100,426 @@
         "summary": "Cerrar Sesion",
         "tags": [
           "acceso"
+        ]
+      }
+    },
+    "/api/v1/auth/recupero": {
+      "post": {
+        "operationId": "pedirRecupero",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudCorreo"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Recuperar",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/auth/recupero/nueva-contrasena": {
+      "post": {
+        "operationId": "elegirNuevaContrasena",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudNuevaContrasena"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Nueva Contrasena",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/auth/registro": {
+      "post": {
+        "operationId": "registrarCuenta",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudRegistro"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Registrar Cuenta",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/cuenta": {
+      "get": {
+        "operationId": "obtenerCuenta",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cuenta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obtener Cuenta",
+        "tags": [
+          "cuenta"
+        ]
+      },
+      "put": {
+        "operationId": "actualizarCuenta",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatosPersonales"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cuenta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Actualizar Cuenta",
+        "tags": [
+          "cuenta"
+        ]
+      }
+    },
+    "/api/v1/cuenta/baja": {
+      "post": {
+        "operationId": "darDeBaja",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudBaja"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Baja",
+        "tags": [
+          "cuenta"
+        ]
+      }
+    },
+    "/api/v1/cuenta/baja-con-enlace": {
+      "post": {
+        "operationId": "darDeBajaConEnlace",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudBajaConEnlace"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Baja Con Enlace",
+        "tags": [
+          "cuenta"
+        ]
+      }
+    },
+    "/api/v1/cuenta/baja-un-clic": {
+      "post": {
+        "description": "RFC 8058: el programa de correo envía `List-Unsubscribe=One-Click`, que no hace falta leer.",
+        "operationId": "darDeBajaEnUnClic",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "codigo",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Codigo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Baja Un Clic",
+        "tags": [
+          "cuenta"
+        ]
+      }
+    },
+    "/api/v1/cuenta/contrasena": {
+      "post": {
+        "operationId": "cambiarContrasena",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudCambioContrasena"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cambiar",
+        "tags": [
+          "cuenta"
         ]
       }
     },

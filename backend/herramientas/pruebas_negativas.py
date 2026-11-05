@@ -14,6 +14,7 @@ import os
 import pathlib
 import re
 import secrets
+import socket
 import ssl
 import subprocess
 import tempfile
@@ -23,6 +24,18 @@ import urllib.parse
 import urllib.request
 
 RAIZ = pathlib.Path(__file__).resolve().parents[2]
+
+# En Windows, Docker Desktop a veces deja colgado el reenvío IPv6 del puerto 443, y Python prueba
+# primero ::1 para "localhost": se usa solo IPv4, que es lo que se está probando.
+_resolver = socket.getaddrinfo
+
+
+def _solo_ipv4(host, *argumentos, **opciones):
+    direcciones = _resolver(host, *argumentos, **opciones)
+    return [d for d in direcciones if d[0] == socket.AF_INET] or direcciones
+
+
+socket.getaddrinfo = _solo_ipv4
 BASE = "https://localhost"
 CONTEXTO = ssl.create_default_context()
 CONTEXTO.check_hostname = False
@@ -118,12 +131,12 @@ try:
     comprobar("cookie SameSite", "samesite=lax" in atributos)
     comprobar("cookie Path=/api", "path=/api" in atributos)
 
+    # Sin niveles de usuario, toda cuenta ve todas las estaciones: los dos casos de prueba.
     estaciones = json.loads(pedir("/api/v1/estaciones", galleta=galleta_a)[2])
-    propia = estaciones[0]["id"]
-    comprobar("solo ve su estacion", len(estaciones) == 1)
+    comprobar("ve todas las estaciones", len(estaciones) == 2)
+    propia, ajena = estaciones[0]["id"], estaciones[1]["id"]
     codigo_b, galleta_b_cruda = entrar("b@ejemplo.com", clave_b)
     galleta_b = galleta_b_cruda.split(";")[0]
-    ajena = json.loads(pedir("/api/v1/estaciones", galleta=galleta_b)[2])[0]["id"]
     sensores_a = json.loads(pedir(f"/api/v1/estaciones/{propia}/condiciones-actuales", galleta=galleta_a)[2])["sensores"]
     sensores_b = json.loads(pedir(f"/api/v1/estaciones/{ajena}/condiciones-actuales", galleta=galleta_b)[2])["sensores"]
     sensor_a, sensor_b = sensores_a[0]["sensor_id"], sensores_b[0]["sensor_id"]
@@ -131,7 +144,13 @@ try:
 
     print("\n== Sin sesion: todas las rutas del contrato")
     contrato = json.loads(pedir("/api/openapi.json")[2])
-    publicas = {"/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/salud"}
+    # Las rutas del registro, el recupero y las bajas por enlace no usan sesion: las protegen sus codigos.
+    publicas = {
+        "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/salud",
+        "/api/v1/auth/registro", "/api/v1/auth/confirmacion", "/api/v1/auth/confirmacion/reenvio",
+        "/api/v1/auth/recupero", "/api/v1/auth/recupero/nueva-contrasena",
+        "/api/v1/cuenta/baja-con-enlace", "/api/v1/cuenta/baja-un-clic",
+    }
     for ruta, metodos in contrato["paths"].items():
         if ruta in publicas:
             continue
@@ -142,11 +161,12 @@ try:
     for nombre, valor in [("inventada", "wt_sesion=" + secrets.token_urlsafe(32)), ("vacia", "wt_sesion="), ("sqli", "wt_sesion=' OR '1'='1"), ("larga", "wt_sesion=" + "a" * 4000)]:
         comprobar(f"cookie {nombre}", pedir("/api/v1/estaciones", galleta=valor)[0] == 401)
 
-    print("\n== Autorizacion entre cuentas")
-    for sufijo in ("recomendacion", "condiciones-actuales", f"sensores/{sensor_b}/historico?{rango}"):
-        codigo, _, cuerpo = pedir(f"/api/v1/estaciones/{ajena}/{sufijo}", galleta=galleta_a)
-        comprobar(f"estacion ajena {sufijo.split('?')[0]}", codigo == 403 and b"sensores" not in cuerpo, str(codigo))
-    comprobar("sensor ajeno por estacion propia", pedir(f"/api/v1/estaciones/{propia}/sensores/{sensor_b}/historico?{rango}", galleta=galleta_a)[0] == 404)
+    print("\n== Acceso a estaciones")
+    for sufijo in ("recomendacion", "condiciones-actuales"):
+        comprobar(f"otra estacion {sufijo}", pedir(f"/api/v1/estaciones/{ajena}/{sufijo}", galleta=galleta_a)[0] == 200)
+        codigo, _, cuerpo = pedir(f"/api/v1/estaciones/999999/{sufijo}", galleta=galleta_a)
+        comprobar(f"estacion inexistente {sufijo}", codigo == 404 and b"sensores" not in cuerpo, str(codigo))
+    comprobar("sensor de otra estacion por la propia", pedir(f"/api/v1/estaciones/{propia}/sensores/{sensor_b}/historico?{rango}", galleta=galleta_a)[0] == 404)
 
     print("\n== Entradas en rutas")
     for nombre, ruta in [

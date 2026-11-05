@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.api.errores import ErrorApi
 from app.datos.conexion import obtener_motor
-from app.datos.modelos import Estacion, Sesion, Usuario, UsuarioEstacion
+from app.datos.modelos import Estacion, Sesion, Usuario
 from app.seguridad import hash_de_identificador
 
 NOMBRE_COOKIE = "wt_sesion"
@@ -73,14 +73,13 @@ def obtener_estacion_autorizada(
     sesion: SesionBd,
     usuario: UsuarioActual,
 ) -> Estacion:
-    """Se comprueba en el servidor, en cada consulta."""
+    """Se comprueba en el servidor, en cada consulta: sesión válida y estación existente.
+
+    Sin niveles de usuario, toda cuenta consulta todas las estaciones, activas e inactivas.
+    """
     estacion = sesion.get(Estacion, estacionId)
     if estacion is None:
         raise ErrorApi(status.HTTP_404_NOT_FOUND, "NO_ENCONTRADO", "La estación no existe.")
-    if sesion.get(UsuarioEstacion, (usuario.id, estacion.id)) is None:
-        raise ErrorApi(
-            status.HTTP_403_FORBIDDEN, "SIN_ACCESO", "No tiene acceso a esta estación."
-        )
     return estacion
 
 
