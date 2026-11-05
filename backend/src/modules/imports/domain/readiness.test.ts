@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ColumnProposalResult, SheetProposalResult } from '../../matching/domain/propose-mapping.js'
 import { RULES_FOR_PROVIDER_A } from '../application/__fakes__/in-memory.js'
+import { unconfirmedSheetMessage } from './analysis-preconditions.js'
 import { assessReadiness, type ReadinessSheet } from './readiness.js'
 import type { ColumnStats } from './workbook.js'
 
@@ -44,6 +45,7 @@ function transactions(
     hidden: false,
     rowCount: 10,
     proposed,
+    mappingConfirmed: false,
     columns: TEMPLATE_COLUMNS,
     columnStats: [
       stat({ distinctValues: null }),
@@ -68,6 +70,7 @@ function ignored(name: string, hidden = false): ReadinessSheet {
       source: 'global',
       note: `Sheet "${name}" is ignored by rule "${name}"`,
     },
+    mappingConfirmed: false,
     columns: [],
     columnStats: [],
   }
@@ -80,6 +83,7 @@ function batchFees(columns: ColumnProposalResult[]): ReadinessSheet {
     hidden: false,
     rowCount: 2,
     proposed: { kind: 'batch_fees', cycle: null, statusId: null, statusName: null, source: 'global' },
+    mappingConfirmed: false,
     columns,
     columnStats: columns.map(() => stat()),
   }
@@ -175,6 +179,7 @@ describe('assessReadiness: what blocks the analysis', () => {
       hidden: false,
       rowCount: 2,
       proposed: { kind: null, cycle: null, statusId: null, statusName: null, source: 'none' },
+      mappingConfirmed: false,
       columns: [column('Reference', null), column('Importe', null)],
       columnStats: [stat(), stat()],
     }
@@ -295,6 +300,7 @@ describe('assessReadiness: the field of each missing item (import-analyze, spec 
       hidden: false,
       rowCount: 2,
       proposed: { kind: null, cycle: null, statusId: null, statusName: null, source: 'none' },
+      mappingConfirmed: false,
       columns: [column('Reference', null)],
       columnStats: [stat()],
     }
@@ -307,5 +313,65 @@ describe('assessReadiness: the field of each missing item (import-analyze, spec 
       ['Bonus', 'kind'],
     ])
     expect(assessReadiness([], STATUSES).missing[0]?.field).toBe('transactions')
+  })
+})
+
+describe('assessReadiness: sheets not confirmed in a mapped import (spec "Hojas sin confirmar en la readiness", #42)', () => {
+  const PART1 = '11111111-1111-4111-8111-111111111111'
+  const PART2 = '22222222-2222-4222-8222-222222222222'
+  const confirmedApp = transactions('APP', 'E', 2, { sheetId: PART1, mappingConfirmed: true })
+  const addedChb = transactions('CHB', 'I', 4, { sheetId: PART2 })
+  const addedWithoutId = transactions('REF', 'I', 5, {
+    sheetId: PART2,
+    columns: TEMPLATE_COLUMNS.slice(1),
+    rowCount: 0,
+  })
+
+  it('names each unconfirmed sheet once with field confirmation, in sheet order, and cannot analyze', () => {
+    const result = assessReadiness([confirmedApp, addedChb, addedWithoutId], STATUSES, { requireConfirmation: true })
+
+    expect(result.canAnalyze).toBe(false)
+    expect(result.missing).toEqual([
+      {
+        sheetId: PART2,
+        sheetName: 'CHB',
+        field: 'confirmation',
+        message: 'The mapping of sheet "CHB" is not confirmed',
+      },
+      {
+        sheetId: PART2,
+        sheetName: 'REF',
+        field: 'confirmation',
+        message: 'The mapping of sheet "REF" is not confirmed',
+      },
+    ])
+  })
+
+  it('keeps the notes of an unconfirmed sheet, which help to review its proposal', () => {
+    const result = assessReadiness([confirmedApp, addedWithoutId], STATUSES, { requireConfirmation: true })
+
+    expect(messagesOf(result.notes)).toContainEqual(expect.stringMatching(/^REF: .*no rows/))
+  })
+
+  it('says the same as the analysis preconditions about an unconfirmed sheet', () => {
+    const result = assessReadiness([addedChb], STATUSES, { requireConfirmation: true })
+
+    expect(result.missing[0]?.message).toBe(unconfirmedSheetMessage('CHB'))
+  })
+
+  it('can analyze once every sheet is confirmed', () => {
+    const confirmedChb = { ...addedChb, mappingConfirmed: true }
+
+    expect(assessReadiness([confirmedApp, confirmedChb], STATUSES, { requireConfirmation: true })).toMatchObject({
+      canAnalyze: true,
+      missing: [],
+    })
+  })
+
+  it('leaves an uploaded import as it is: the readiness describes the proposal, without confirmation items', () => {
+    const result = assessReadiness([addedChb, addedWithoutId], STATUSES)
+
+    expect(result.missing.map((m) => [m.sheetName, m.field])).toEqual([['REF', 'transactionId']])
+    expect(assessReadiness(TEMPLATE, STATUSES).canAnalyze).toBe(true)
   })
 })
