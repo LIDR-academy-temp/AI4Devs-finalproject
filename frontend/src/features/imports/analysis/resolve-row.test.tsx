@@ -41,9 +41,17 @@ describe('Resolve an ambiguous row from the table', () => {
     )
     expect(dialog()).toHaveTextContent('RAM-01')
     expect(dialog()).not.toHaveTextContent(s.resolve.runWarning)
+    // The rows are held after the PATCH, so the Choose is still there when Radix would give the focus back to it:
+    // the heading must keep the focus anyway (review 1).
+    const rowsHold = holdNext('rows')
     await user.click(within(dialog()).getByRole('button', { name: s.resolve.confirm }))
 
     await screen.findByText(s.resolve.resolved(row.rowNo, row.sheetName, 'Gateway Numeric'))
+    await rowsHold.arrived
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(chooseButton('Gateway Numeric', row)).toBeInTheDocument()
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: s.title }))
+    rowsHold.release()
     expect(importRequests('resolveRow').map((r) => r.body)).toEqual([{ gatewayId: 1 }])
     await waitFor(() => expect(counter(c.ambiguous)).toHaveTextContent('0'))
     await waitFor(() => expect(within(table()).queryByRole('button', { name: /^Choose / })).not.toBeInTheDocument())
@@ -120,6 +128,19 @@ describe('Resolve an ambiguous row from the table', () => {
     expect(chooseButton('Gateway Numeric', row)).toBeEnabled()
     // The focus goes back to the Choose that opened the dialog, not to the body.
     await waitFor(() => expect(document.activeElement).toBe(chooseButton('Gateway Numeric', row)))
+  })
+
+  it('closing with Escape sends nothing and gives the focus back to the Choose that opened it', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    const row = seedAmbiguousRow(importId)
+    const { user } = await open(importId)
+
+    await user.click(chooseButton('Gateway Shared (another merchant)', row))
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(importRequests('resolveRow')).toHaveLength(0)
+    await waitFor(() => expect(document.activeElement).toBe(chooseButton('Gateway Shared (another merchant)', row)))
   })
 
   it('409 import_not_editable says so with the status and reloads the import: Choose is disabled', async () => {
