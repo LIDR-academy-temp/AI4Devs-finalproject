@@ -448,6 +448,8 @@ describe('the reserve of an adjusted transaction (#62)', () => {
     batches: await ctx.prisma.settlementBatch.count(),
     imports: await ctx.prisma.import.count(),
     movements: await ctx.prisma.settlementTransaction.count(),
+    audit: await ctx.prisma.auditLog.count(),
+    issues: await ctx.prisma.validationIssue.count(),
   })
   let before: Awaited<ReturnType<typeof counts>>
   let importId: string
@@ -619,7 +621,7 @@ describe('the reserve of an adjusted transaction (#62)', () => {
   })
 
   it('hold_until_term (ProviderA-USD): a refund of a held reserve releases 0, outcome held_until_term', async () => {
-    const id = await adjustmentIdOf(
+    const id = await heldAdjustmentIdOf(
       Prisma.sql`t.[providerId] = 101 AND t.[channelId] = 1001 AND t.[statusId] = 5 AND t.[lastStatusChangedAt] IS NOT NULL`,
     )
     const detail = await flow.analyzed(flow.accountIds['ProviderA-USD']!, [
@@ -640,7 +642,43 @@ describe('the reserve of an adjusted transaction (#62)', () => {
     await flow.removeImports([detail.importId])
   })
 
-  it('leaves the batches, imports and movements it found once its imports are removed', async () => {
+  // batch-issues has no RDR rows (spec "Refund y RDR liberan como un chargeback"): an RDR row of ProviderB-Main whose E a
+  // seeded paid batch held. The seed settles the adjustments of its history, so no RDR of RAM-11 is left unadjusted:
+  // the sheet sets the status (RDR), and a Successful transaction of RAM-11 is a non_recorded_adjustment, a warning.
+  it('an RDR of ProviderB-Main releases the reserve its E held in a seeded batch, outcome released', async () => {
+    const id = await heldAdjustmentIdOf(Prisma.sql`t.[providerId] = 102 AND t.[channelId] = 1011 AND t.[statusId] = 2`)
+    const t = await transactionOf(102, id)
+    const [e] = await ctx.prisma.settlementTransaction.findMany({
+      where: { transactionId: t.transactionId, cycle: 'E', statusId: 2, batch: { status: { not: 'undone' } } },
+      orderBy: { settlementTxnId: 'asc' },
+    })
+    const detail = await flow.analyzed(flow.accountIds['ProviderB-Main']!, [
+      { name: 'rdr-release.xlsx', bytes: xlsx('RDR', [id]) },
+    ])
+    created.push(detail.importId)
+    const runId = await flow.validateAndReview(detail.importId)
+
+    const { batchId } = await process(detail.importId, { runId })
+
+    expect(await adjustmentsOf(batchId)).toEqual([
+      {
+        id,
+        sheet: 'RDR',
+        amount: e!.reserveHeldAmt.toFixed(4),
+        snapshot: {
+          policy: 'release_on_chargeback',
+          applied: true,
+          outcome: 'released',
+          heldInBatchId: lower(e!.batchId),
+        },
+      },
+    ])
+    expect(e!.reserveHeldAmt.gt(0)).toBe(true)
+    expect((await view(batchId)).reserveEarlyReleasedAmt).toBe(e!.reserveHeldAmt.toFixed(4))
+    await flow.removeImports([detail.importId])
+  })
+
+  it('leaves the batches, imports, movements, audit and findings it found once its imports are removed', async () => {
     await flow.removeImports(created)
     await restoreAccountChannels(ctx.prisma, channels)
 
@@ -701,6 +739,19 @@ async function adjustmentIdOf(where: Prisma.Sql): Promise<string> {
     SELECT TOP 1 t.[sourceTransactionId] FROM [Transaction] t WHERE ${where}
       AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st
                       WHERE st.[transactionId] = t.[transactionId] AND st.[cycle] = 'I')
+    ORDER BY t.[transactionId] DESC`
+  return found!.sourceTransactionId
+}
+
+/** As adjustmentIdOf, with a Successful E of a current attempt that held a reserve, and no R nor I movement. */
+async function heldAdjustmentIdOf(where: Prisma.Sql): Promise<string> {
+  const [found] = await ctx.prisma.$queryRaw<{ sourceTransactionId: string }[]>`
+    SELECT TOP 1 t.[sourceTransactionId] FROM [Transaction] t WHERE ${where}
+      AND EXISTS (SELECT 1 FROM [SettlementTransaction] e JOIN [SettlementBatch] b ON b.[batchId] = e.[batchId]
+                  WHERE e.[transactionId] = t.[transactionId] AND e.[cycle] = 'E' AND e.[statusId] = 2
+                    AND e.[reserveHeldAmt] > 0 AND b.[status] <> 'undone')
+      AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st
+                      WHERE st.[transactionId] = t.[transactionId] AND st.[cycle] IN ('I', 'R'))
     ORDER BY t.[transactionId] DESC`
   return found!.sourceTransactionId
 }

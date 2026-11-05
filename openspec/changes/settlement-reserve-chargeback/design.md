@@ -71,6 +71,8 @@ El puerto `SettlementSource.reserveStates(providerId, transactionIds, excludeImp
 
 Una transacción sin movimientos previos no aparece en el mapa, y eso equivale a no tener estado previo.
 
+La consulta no suma importes: cada estado es el importe del primer E, como texto, y dos existencias. La única suma del change es la de D4 (`heldReserves`).
+
 - *Alternativa descartada:* ampliar `previousE`. Responde otra pregunta (la ronda, incluidas las `Declined`) y lo usan sus propios tests.
 
 ### D3. Forma del snapshot
@@ -136,7 +138,7 @@ Para regenerar se usa `pnpm samples:plan && python data/samples/build-samples.py
   - El test se rompe a propósito una vez para comprobar que falla: por ejemplo, no marcar la reserva como liberada en el batch, para que el segundo ajuste también libere.
 - **Integración** (`backend/test/integration`):
   - `settlement-process.int.test.ts`: el test de ProviderB-Main pasa a comprobar la liberación con el oráculo y la ausencia de la advertencia antigua;
-  - casos nuevos: ronda 1 con APP + CHB, `hold_until_term` en ProviderA-USD, P12 (procesar `batch-issues`, después un import con la RR de un liberado) y deshacer (deshacer y reprocesar);
+  - casos nuevos: ronda 1 con APP + REF (la ronda 1 con CHB queda en el dominio, `adjustment-reserve.test.ts`), `hold_until_term` en ProviderA-USD, P12 (procesar `batch-issues`, después un import con la RR de un liberado) y deshacer (deshacer y reprocesar);
   - `settlement-source.int.test.ts`: `reserveStates` con más de 2 000 IDs;
   - `validation-sources.int.test.ts`: `heldReserves` con una liberación vigente por `Refund` y con una deshecha.
 - **Bruno** (`20-flows/validations/batch-issues`), tras `17 Review again`, con el import en `validated`:
@@ -147,7 +149,7 @@ Para regenerar se usa `pnpm samples:plan && python data/samples/build-samples.py
 
 ## Risks / Trade-offs
 
-- **[Riesgo aceptado] Dos imports del proveedor procesados a la vez con un ajuste de la misma transacción podrían liberar la misma reserva dos veces.** Las lecturas del proceso no bloquean `SettlementTransaction` de otros batches. → Es la misma clase de riesgo que dos duplicados *across* procesados a la vez, y se acepta igual (casilla en #67). El siguiente batch lo deja visible: el ajuste repetido sale como duplicado o colisión *across*. Un bloqueo por transacción exigiría una tabla o un índice nuevos, es decir, una migración.
+- **[Riesgo cerrado tras el review-diff] Dos imports del proveedor procesados a la vez sobre la misma transacción podían liberar su reserva dos veces.** Pasaba en dos variantes: un ajuste en cada import, o una RR en un import y un ajuste en el otro. Las lecturas del proceso no bloquean `SettlementTransaction` de otros batches. Ninguna validación lo deja visible: el proceso que esperaba no vuelve a validar, y el siguiente batch no repara lo que ya se escribió. → Se cierra sin migración. Una transacción pertenece a un solo canal, y `lockChannels` (`prisma-settlement-repository.ts`) bloquea con `UPDLOCK, HOLDLOCK` las filas `AccountChannel` de los canales del batch, de cualquier cuenta. Por eso el segundo proceso espera ahí a que el primero confirme. Después de ese bloqueo el proceso vuelve a leer `reserveStates` y recalcula el plan con ellos. Solo cambian las reservas: el número, los canales y los fees por batch salen de la misma entrada. Lo cubre `settlement-concurrency.int.test.ts` ("two processes adjusting the same transaction…"), y la casilla de #67 queda cerrada en este punto.
 - **[Riesgo] Un R sembrado o antiguo de una transacción ajustada se sigue liberando entero.** → Es lo correcto según P6: esos ajustes no liberaron nada (`reserveEarlyReleasedAmt = 0`).
 - **[Trade-off] Un refund parcial libera toda la reserva (P1).** Es la decisión de negocio. Prorratear necesitaría una regla para el resto, que seguiría esperándose en R.
 - **[Trade-off] La etiqueta "Reserve released on chargeback" también cubre refunds y RDR (P8).** Se documenta en el README, y el renombrado queda en un issue de roadmap.

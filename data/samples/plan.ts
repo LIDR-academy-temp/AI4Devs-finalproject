@@ -187,7 +187,13 @@ const txnBySourceId = new Map(world.txns.map((t) => [t.sourceTransactionId, t]))
  * batch or the sample's RR sheet releases it in R. Seeded adjustments released nothing (P6).
  */
 function adjustmentReserveRelease(plan: BatchPlan, sheets: Record<string, SheetDef>) {
-  const providerId = ACCOUNTS_BY_NAME.get(plan.account)!.providerId
+  const account = ACCOUNTS_BY_NAME.get(plan.account)!
+  // The rules below are those of release_on_chargeback: with hold_until_term every adjustment is held_until_term.
+  if (account.policy !== 'release_on_chargeback')
+    throw new Error(
+      `${plan.account} is ${account.policy}: the reserve early release oracle is for release_on_chargeback`,
+    )
+  const providerId = account.providerId
   const previous = world.batches.filter((b) => ACCOUNTS_BY_NAME.get(b.account)!.providerId === providerId)
   const heldIn = new Map<string, number>()
   for (const b of previous)

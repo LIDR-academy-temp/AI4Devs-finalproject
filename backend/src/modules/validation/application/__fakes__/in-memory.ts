@@ -5,12 +5,12 @@
  * extended with what the world does not have: undone attempts, Pending transactions, early-released reserves and
  * registered missing findings.
  */
-import { Decimal } from '@prisma/client/runtime/client'
 import type { BatchStatus, Cycle } from '@recon/shared'
 import { buildWorld, CHANNELS, STATUS, settlementMovementsOf } from '../../../../../prisma/synthetic.js'
 import { ACCOUNT_IDS, type AccountName } from '../../../catalog/application/__fakes__/in-memory.js'
 import { IMPORT_ACCOUNTS, type InMemoryImportRepository } from '../../../imports/application/__fakes__/in-memory.js'
 import type { InMemoryImportRowRepository } from '../../../imports/application/__fakes__/in-memory-analysis.js'
+import { Decimal } from '../../../settlement/domain/money.js'
 import { reserveExpiry } from '../../domain/ranges.js'
 import type {
   AccountScope,

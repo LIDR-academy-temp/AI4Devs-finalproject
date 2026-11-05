@@ -34,10 +34,10 @@ beforeAll(async () => {
   ctx = await createTestApp({ UPLOAD_DIR: uploadDir })
   flow = new ImportFlow(ctx)
   await flow.init()
-  // What an interrupted run left behind: attempts with the numbers of this file (9811–9821), with their imports.
+  // What an interrupted run left behind: attempts with the numbers of this file (9811–9823), with their imports.
   const leftovers = await ctx.prisma.settlementBatch.findMany({
     where: {
-      batchNo: { gte: 9811, lte: 9821 },
+      batchNo: { gte: 9811, lte: 9823 },
       accountId: {
         in: fixtureIds(
           [flow.accountIds['ProviderA-USD'], flow.accountIds['ProviderA-EUR'], flow.accountIds['ProviderB-Main']],
@@ -433,6 +433,86 @@ describe('two accounts of the provider processing a shared channel', () => {
     expect(JSON.parse(audit.detailJson!).previousAccountId.toLowerCase()).toBe(eurAccount.accountId)
     const primary = await ctx.prisma.accountChannel.findFirstOrThrow({ where: { channelId: 1007, isPrimary: true } })
     expect(primary.accountId.toLowerCase()).toBe(flow.accountIds['ProviderA-USD']!.toLowerCase())
+  })
+})
+
+// settlement-reserve-chargeback (#67): two imports of ProviderB-Main (release_on_chargeback) adjust the same transaction,
+// whose reserve a seeded paid E of RAM-11 holds. A pauses before its first write, holding the lock of the channels;
+// B loads meanwhile (it sees no release yet), waits for that lock, and reads the reserve states again under it.
+describe('two processes adjusting the same transaction of a release_on_chargeback account', () => {
+  it('the one that waited does not release the reserve again: 0.0000 and already_released', async () => {
+    const [found] = await ctx.prisma.$queryRaw<{ sourceTransactionId: string }[]>(Prisma.sql`
+      SELECT TOP 1 t.[sourceTransactionId] FROM [Transaction] t
+      WHERE t.[providerId] = 102 AND t.[channelId] = 1011 AND t.[statusId] = 4
+        AND EXISTS (SELECT 1 FROM [SettlementTransaction] e JOIN [SettlementBatch] b ON b.[batchId] = e.[batchId]
+                    WHERE e.[transactionId] = t.[transactionId] AND e.[cycle] = 'E' AND e.[statusId] = 2
+                      AND e.[reserveHeldAmt] > 0 AND b.[status] <> 'undone')
+        AND NOT EXISTS (SELECT 1 FROM [SettlementTransaction] st
+                        WHERE st.[transactionId] = t.[transactionId] AND st.[cycle] IN ('I', 'R'))
+      ORDER BY t.[transactionId] DESC`)
+    const id = found!.sourceTransactionId
+    const adjusted = async (sheet: string) => {
+      const bytes = buildXlsx({
+        sheets: [
+          {
+            name: sheet,
+            rows: [
+              ['ID', 'Amount', 'Currency'],
+              [id, { v: '10' }, 'USD'],
+            ],
+          },
+        ],
+      })
+      const detail = await flow.analyzed(flow.accountIds['ProviderB-Main']!, [{ name: `r-${sheet}-${id}.xlsx`, bytes }])
+      return { importId: detail.importId, runId: await flow.validateAndReview(detail.importId) }
+    }
+    const a = await adjusted('CHB')
+    const b = await adjusted('REF')
+    const g = gate()
+    const first = process(
+      repository(undefined, async (phase) => {
+        if (phase === 'batch') await g.beforeClaim()
+      }),
+      a.importId,
+      { runId: a.runId, batchNo: 9822 },
+    )
+    await g.reached
+
+    // B has loaded its input by the time it reaches the lock of the number: it saw no release of A. Of the same account
+    // as A, it waits there (the range lock of A); another account of the provider would wait at the lock of RAM-11. The
+    // reserve states are read again past both locks.
+    let bAtNumber!: () => void
+    const bLoaded = new Promise<void>((resolve) => {
+      bAtNumber = resolve
+    })
+    const state = { settled: false }
+    const second = process(
+      repository(undefined, async (phase) => {
+        if (phase === 'number') bAtNumber()
+      }),
+      b.importId,
+      { runId: b.runId, batchNo: 9823 },
+    ).finally(() => {
+      state.settled = true
+    })
+    second.catch(() => undefined)
+    try {
+      await bLoaded
+      await new Promise((resolve) => setTimeout(resolve, 1_000))
+      expect(state.settled).toBe(false)
+    } finally {
+      g.open()
+    }
+
+    const [aResult, bResult] = [await first, await second]
+    const iOf = async (batchId: string) =>
+      ctx.prisma.settlementTransaction.findFirstOrThrow({ where: { batchId, cycle: 'I' } })
+    const [aI, bI] = [await iOf(aResult.batchId), await iOf(bResult.batchId)]
+    expect(aI.reserveEarlyReleasedAmt.gt(0)).toBe(true)
+    expect(JSON.parse(aI.reservePolicySnapshot!)).toMatchObject({ outcome: 'released' })
+    expect(bI.reserveEarlyReleasedAmt.toFixed(4)).toBe('0.0000')
+    expect(JSON.parse(bI.reservePolicySnapshot!)).toMatchObject({ outcome: 'already_released' })
+    expect(bResult.plan.summary.reserveEarlyReleasedAmt).toBe('0.0000')
   })
 })
 

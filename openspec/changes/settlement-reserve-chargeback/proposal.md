@@ -47,9 +47,9 @@ Así, en ProviderB-Main la reserva de una transacción ajustada sigue retenida y
 
 - No hace falta sembrar nada:
   - ProviderB-Main ya es `release_on_chargeback`;
-  - `batch-issues` trae ajustes CHB, REF y RDR de transacciones liquidadas en E en batches sembrados anteriores;
+  - `batch-issues` trae ajustes CHB y REF de transacciones liquidadas en E en batches sembrados anteriores. No trae RDR, y la muestra no se toca (decisión de K en el grupo 1): el RDR lo cubren los builders del dominio y un caso de integración que procesa un RDR con liberación;
   - y trae uno sin reserva: el `non_recorded_adjustment` de RAM-13.
-- Al oráculo de `batch-issues` se le **añade** el bloque `expected.reserveEarlyRelease`, calculado en `plan.ts`. Cubre las hojas CHB, REF y RDR: movimientos liberados con su ID, su hoja y su importe; no liberados con su motivo; y el total `reserveEarlyReleasedAmt`.
+- Al oráculo de `batch-issues` se le **añade** el bloque `expected.reserveEarlyRelease`, calculado en `plan.ts`. Recorre las hojas CHB, REF y RDR (la muestra no trae filas RDR): movimientos liberados con su ID, su hoja y su importe; no liberados con su motivo; y el total `reserveEarlyReleasedAmt`.
 - Los `.xlsx` no deberían cambiar. Si cambian al regenerar, se para y se pregunta.
 - El resto de oráculos no cambia, y se comprueba al regenerar: `batch-clean`, `batch-split` y `legacy-provider` son `hold_until_term`, y `batch-blocked` no se procesa.
 
@@ -63,7 +63,7 @@ Así, en ProviderB-Main la reserva de una transacción ajustada sigue retenida y
 - **P6. Historia sembrada de ProviderB-Main.** No se reescribe: sus I sembrados tienen `reserveEarlyReleasedAmt = 0`, como un intento de la Entrega 2. Por eso sus R sembradas siguen siendo coherentes y `batch-issues` no trae ningún `reserve_already_released`.
 - **P7. Advertencia antigua.** `chargeback_reserve_policy_not_applied` se queda en el enum y en el texto del frontend para los intentos ya procesados, y no se emite más.
 - **P8. Nombres.** Se mantienen el nombre de la política (`release_on_chargeback`), el requisito "Política de reserva ante chargeback" y la etiqueta **Reserve released on chargeback**. El README explica que aplican a los tres ajustes. Renombrar la etiqueta (por ejemplo, a "Reserve released on adjustment") queda en el issue de roadmap #125.
-- **Riesgo aceptado.** Dos imports simultáneos con el mismo ajuste podrían liberar dos veces. Queda como casilla en #67.
+- **Riesgo cerrado tras el review-diff.** Dos imports del proveedor procesados a la vez podían liberar dos veces la misma reserva. Pasaba con un ajuste en cada import, o con una RR en uno y un ajuste en el otro, y ninguna validación lo dejaba visible. Se cierra sin migración: después del bloqueo de canales (`UPDLOCK, HOLDLOCK` sobre `AccountChannel`), el proceso vuelve a leer las reservas y recalcula el plan (design, "Risks / Trade-offs").
 
 ## Capabilities
 

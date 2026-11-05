@@ -147,7 +147,8 @@ describe('applyAdjustmentReserve with release_on_chargeback', () => {
     expect(plan.warnings).toEqual([])
   })
 
-  it('a reserve released in an undone attempt has no prior state and is released again', () => {
+  // What the source reads when the releasing attempt was undone (its I is left out): held, with no R nor release.
+  it('a prior held reserve with no R nor adjustment release is released', () => {
     const plan = release([adjustment(2, 5n)], states([[5n, held('12.3457')]]))
 
     expect(snapshotOf(plan.movements[0]!).outcome).toBe('released')

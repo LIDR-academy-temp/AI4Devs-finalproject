@@ -232,10 +232,8 @@ describe('missing candidates', () => {
       ).toEqual([])
     })
 
-    it('the source leaves out a release of an undone attempt, so the reserve is missing ("Liberación de un intento deshecho")', () => {
-      expect(missingR({ transactionId: 10n, status: 'Chargeback', earlyReleased: '0.0000' })).toEqual([10n])
-    })
-
+    // A release of an undone attempt reaches the engine as 0.0000 too: the source leaves it out (spec "Liberación de un
+    // intento deshecho", covered in in-memory.test.ts and validation-sources.int.test.ts).
     it('a live I that released 0 (hold_until_term, or before the policy) is missing ("Ajuste sin liberación")', () => {
       expect(
         missingR(

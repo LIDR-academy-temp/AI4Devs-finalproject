@@ -4,7 +4,7 @@
 Con `release_on_chargeback`, el primer movimiento I (`Chargeback`, también `CHB 2`, `Refund` o `RDR`) de una transacción con reserva retenida en un E vigente, sin R ni liberación anticipada vigentes, SHALL guardar en `reserveEarlyReleasedAmt` todo el `reserveHeldAmt` de ese E, sin prorratear, y sumarlo en `amountPayable`. Con `hold_until_term` o sin reserva retenida SHALL valer 0. Todo movimiento I SHALL guardar en `reservePolicySnapshot` la política y su resultado.
 
 #### Scenario: Liberación inmediata
-- GIVEN `data/samples/batch-issues` validado en ProviderB-Main (`release_on_chargeback`) con las inclusiones por defecto, cuyos ajustes CHB, REF y RDR tienen la reserva retenida en batches `paid` anteriores
+- GIVEN `data/samples/batch-issues` validado en ProviderB-Main (`release_on_chargeback`) con las inclusiones por defecto, cuyos ajustes CHB y REF tienen la reserva retenida en batches `paid` anteriores (la muestra no trae RDR: lo cubre "Refund y RDR liberan como un chargeback")
 - WHEN se procesa
 - THEN cada movimiento I de `expected.reserveEarlyRelease.released` tiene `reserveEarlyReleasedAmt` igual a su `amount` del oráculo y `reservePolicySnapshot = { policy: "release_on_chargeback", applied: true, outcome: "released", heldInBatchId: <batch que lo retuvo> }`
 - AND la vista trae `reserveEarlyReleasedAmt = expected.reserveEarlyRelease.reserveEarlyReleasedAmt`, la línea `reserve_early_released` de `payableBreakdown` con ese importe y signo `+`, y la suma con signo del desglose sigue siendo `amountPayable`

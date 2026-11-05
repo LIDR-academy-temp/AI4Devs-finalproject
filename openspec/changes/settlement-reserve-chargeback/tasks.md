@@ -71,10 +71,10 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
 
   Comprobar que fallan: los unitarios sin base, y la integración en el turno de base que se pide a la persona.
 - [x] 3.2 Commit: test(settlement): estado previo de las reservas en la fuente del proceso
-- [x] 3.3 Implementar `reserveStates` en `prisma-settlement-source.ts` (D2): una consulta por lote con `chunks`, sumas en `CONVERT(VARCHAR(40), …)` y el primer E por `processedAt` y `settlementTxnId`. Cargarlo en `load-settlement-input.ts`. Verificar con los tests unitarios y, con turno de base, con `pnpm --filter @recon/backend test:integration -- settlement-source`.
+- [x] 3.3 Implementar `reserveStates` en `prisma-settlement-source.ts` (D2): una consulta por lote con `chunks`, importes como texto con `CONVERT(VARCHAR(40), …)` y el primer E por `processedAt` y `settlementTxnId`. Cargarlo en `load-settlement-input.ts`. Verificar con los tests unitarios y, con turno de base, con `pnpm --filter @recon/backend exec vitest run --project integration test/integration/settlement-source.int.test.ts`.
 - [x] 3.4 Commit: feat(settlement): leer el estado previo de las reservas al procesar, y `git push`.
 
-  Hecho: `pnpm --filter @recon/backend test:integration -- settlement-source` no filtra (corre la suite entera); el archivo solo se ejecuta con `pnpm --filter @recon/backend exec vitest run --project integration test/integration/settlement-source.int.test.ts`. El test de igualdad con el mundo en memoria compara también `reserveStates` (sin los `batchId`, que en la base son otros). Sin sumas: cada estado es el primer E y dos existencias.
+  Hecho: el comando que esta tarea citaba antes, `test:integration -- settlement-source`, no filtra (corre la suite entera); por eso la tarea ya cita `vitest run --project integration <archivo>`. El test de igualdad con el mundo en memoria compara también `reserveStates` (sin los `batchId`, que en la base son otros). Sin sumas: cada estado es el primer E y dos existencias.
 
 ## 4. Validación: faltantes R con la liberación en el I (TDD)
 
@@ -87,7 +87,8 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
 - [x] 4.2 Commit: test(validation): faltantes R con la liberación por ajuste de los movimientos I
 - [x] 4.3 Implementar D4: la subconsulta de `heldReserves` en `prisma-validation-sources.ts`, la misma regla en `InMemoryValidationSources.heldReserves` y el comentario de `HeldReserve` en `domain/types.ts`. Verificar con los unitarios y, con turno de base, con la integración de `validation-sources`.
 - [x] 4.4 Commit: feat(validation): leer la liberación anticipada de los movimientos I vigentes, y `git push`.
-Hecho: los cuatro escenarios de `missing.test.ts` pasan desde el principio, porque `missing.ts` no cambia (D4); el rojo se vio en el fake (`0.0000` en vez de `10.0000`) y en los dos casos nuevos de `validation-sources.int.test.ts`. La integración usa los batches 9104 (ZZ-ProviderB-Alt) y 9103 (`undone`) del mundo de fixtures, que limpia `removeFixtures`.
+
+  Hecho: los cuatro escenarios de `missing.test.ts` pasan desde el principio, porque `missing.ts` no cambia (D4); el rojo se vio en el fake (`0.0000` en vez de `10.0000`) y en los dos casos nuevos de `validation-sources.int.test.ts`. La integración usa los batches 9104 (ZZ-ProviderB-Alt) y 9103 (`undone`) del mundo de fixtures, que limpia `removeFixtures`.
 
 ## 5. Integración del proceso
 
@@ -100,9 +101,10 @@ Hecho: los cuatro escenarios de `missing.test.ts` pasan desde el principio, porq
   - deshacer el intento y reprocesar, para que vuelva a liberar;
   - el summary CSV con la advertencia y el ID de origen.
 
-  Verificar, con turno de base, con `pnpm --filter @recon/backend test:integration -- settlement-process`.
+  Verificar, con turno de base, con `pnpm --filter @recon/backend exec vitest run --project integration test/integration/settlement-process.int.test.ts`.
 - [x] 5.2 Commit: test(settlement): integración de la liberación de reserva ante un ajuste, y `git push`.
-Hecho: los casos pasan a la primera, porque la implementación es de los grupos 2 y 3; el rojo se vio rompiendo a propósito el loader (`reserveStates` vacío): fallan 4 (oráculo, vista, P12 y reprocesar), con 7.5100 en lugar de 151.8930, y se restauró. El describe procesa `batch-issues` de verdad y comprueba al final que quedan los mismos batches, imports y movimientos que encontró; `removeSettlementsFrom` borra también la auditoría de los batches y de `AccountChannel`, y `restoreAccountChannels` deja los canales como estaban. Deshacer se marca en la base, como en "attempts". El RR después de deshacer queda cubierto en el dominio.
+
+  Hecho: los casos pasan a la primera, porque la implementación es de los grupos 2 y 3; el rojo se vio rompiendo a propósito el loader (`reserveStates` vacío): fallan 4 (oráculo, vista, P12 y reprocesar), con 7.5100 en lugar de 151.8930, y se restauró. El describe procesa `batch-issues` de verdad y comprueba al final que quedan los mismos batches, imports y movimientos que encontró; `removeSettlementsFrom` borra también la auditoría de los batches y de `AccountChannel`, y `restoreAccountChannels` deja los canales como estaban. Deshacer se marca en la base, como en "attempts". El RR después de deshacer queda cubierto en el dominio.
 
 ## 6. Colección Bruno
 
@@ -143,8 +145,22 @@ Hecho: los casos pasan a la primera, porque la implementación es de los grupos 
   - snapshot y advertencias con el vocabulario fijo.
 
   Verificación: hallazgos resueltos o anotados en el PR.
-  Pendiente: el `/review-diff` lo pide la persona en una sesión nueva (una revisión del propio trabajo no cuenta). Antes se corrigió un detalle visto al repasar: cuatro nombres de test de `missing.test.ts` empezaban en español; pasan a inglés con el título del escenario entre comillas.
-- [ ] 8.3 Commit: chore(settlement): arreglos de la verificación de settlement-reserve-chargeback, y `git push`.
+  Hecho en una sesión nueva: APROBAR CON CAMBIOS MENORES. Los arreglos están en 8.3. Queda sin marcar hasta que se apruebe la re-revisión. Antes se había corregido un detalle visto al repasar: cuatro nombres de test de `missing.test.ts` empezaban en español; pasan a inglés con el título del escenario entre comillas.
+- [x] 8.3 Commit: chore(settlement): arreglos de la verificación de settlement-reserve-chargeback, y `git push`.
+
+  Hecho: los arreglos del `/opsx:verify` y del `/review-diff` van en una sola ronda.
+  - **Doble liberación (#67).** Se cierra sin migración: tras `lockChannels`, el proceso vuelve a leer `reserveStates` y recalcula el plan. Dentro de una cuenta el punto de serialización es el bloqueo del número, y entre cuentas del proveedor el de canales; la segunda lectura va detrás de ambos. Lo cubre un test de concurrencia con compuertas. Con la rotura deliberada (usar el estado de la carga) el proceso que esperaba vuelve a liberar 18.2030.
+  - **RDR.** Caso de integración con liberación, y corregido el texto que decía que `batch-issues` trae RDR.
+  - **Tests.** `heldAdjustmentIdOf` exige un E vigente con reserva. La limpieza cuenta `AuditLog` y `ValidationIssue`. Los títulos de test describen lo que prueban.
+  - **Fake y oráculo.** `Decimal` desde `settlement/domain/money.js`. La guarda de `release_on_chargeback` en `plan.ts` no cambia `data/samples`.
+  - **Frontend.** Texto de la advertencia antigua: "…was not applied to this attempt."
+  - **Del verify.** Caso de la vista y el summary de un intento con `chargeback_reserve_policy_not_applied`. Frase de D2, nota de D7 y comandos de 3.3 y 5.1.
+
+  Integración completa sobre la base recién sembrada, en dos pasadas:
+  - en la primera, `import-rows` (20 000 filas) tardó 34 s y superó los 20 s; solo pasa en 16,5 s;
+  - la segunda sale en verde: 39 archivos y 470 tests.
+
+  Los conteos por tabla son iguales antes y después, salvo los `auth.login.*` de los tests.
 
 ## Workflow follow-up
 
