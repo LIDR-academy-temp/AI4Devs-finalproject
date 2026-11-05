@@ -137,7 +137,7 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
 - [x] 8.1 `pnpm lint`, `pnpm typecheck`, `pnpm test` y, con turno de base, la integración completa, todo en verde, y `openspec validate settlement-reserve-chargeback --strict` en verde. Verificación: salida de los comandos en el PR.
   Hecho (8.1): `pnpm lint`, `pnpm typecheck`, `openspec validate --strict` y `openapi:check` limpios. `pnpm test`: 1363 en verde, 3 saltados y 1 timeout por carga (`argon2-password-hasher`, 5045 ms; solo pasa en 344 ms). Integración completa sobre la base recién sembrada: 39 archivos y 468 tests en verde (bench saltado). Restos: conteos por tabla iguales antes y después, salvo 89 filas de `AuditLog` de `auth.login.*` de los tests, como antes del change.
 
-- [ ] 8.2 `/review-diff` del PR con los cinco focos (README §7):
+- [x] 8.2 `/review-diff` del PR con los cinco focos (README §7):
   - dinero nunca `number`, ni siquiera al comparar `reserveHeldAmt`;
   - ningún movimiento Settled al procesar;
   - ningún comentario en español en `.ts`/`.sql`;
@@ -145,7 +145,7 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
   - snapshot y advertencias con el vocabulario fijo.
 
   Verificación: hallazgos resueltos o anotados en el PR.
-  Hecho en una sesión nueva: APROBAR CON CAMBIOS MENORES. Los arreglos están en 8.3. Queda sin marcar hasta que se apruebe la re-revisión. Antes se había corregido un detalle visto al repasar: cuatro nombres de test de `missing.test.ts` empezaban en español; pasan a inglés con el título del escenario entre comillas.
+  Hecho en una sesión nueva: APROBAR CON CAMBIOS MENORES. Los arreglos están en 8.3. Dos re-revisiones (CAMBIOS): el test de concurrencia RR + ajuste entre dos cuentas (`c2a7ef6`) y `released_in_r` estricto con la espera entre cuentas descrita como incidental (`e906c45`). Re-revisión aprobada y #127 fusionada; se marca al archivar (punto 9 del review-diff). Antes se había corregido un detalle visto al repasar: cuatro nombres de test de `missing.test.ts` empezaban en español; pasan a inglés con el título del escenario entre comillas.
 - [x] 8.3 Commit: chore(settlement): arreglos de la verificación de settlement-reserve-chargeback, y `git push`.
 
   Hecho: los arreglos del `/opsx:verify` y del `/review-diff` van en una sola ronda.
