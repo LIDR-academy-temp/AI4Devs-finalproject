@@ -255,9 +255,12 @@ export class PrismaImportRepository implements ImportRepository {
       ...(filter.accountId === undefined ? {} : { accountId: filter.accountId }),
       ...(filter.createdByUserId === undefined ? {} : { createdByUserId: filter.createdByUserId }),
       account: {
+        // The scope always applies on its own; a merchant filter narrows it, never replaces it (review-diff B2).
+        AND: [
+          visibleAccount(scope),
+          ...(filter.merchantId === undefined ? [] : [{ provider: { merchantId: filter.merchantId } }]),
+        ],
         ...(filter.providerId === undefined ? {} : { providerId: filter.providerId }),
-        // The scope, or the one merchant asked for: the service has already checked it is in scope (missingFilter).
-        provider: { merchantId: filter.merchantId ?? { in: [...scope.merchantIds] } },
       },
     }
     const [rows, total] = await Promise.all([
