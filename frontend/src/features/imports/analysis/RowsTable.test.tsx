@@ -172,6 +172,44 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
     }
   })
 
+  // jsdom does not lay out: the widths at 1024 px are measured by the screenshots of web-ambiguous-rows (#132). Here,
+  // only that texts may wrap between words in a bounded width and that figures may not wrap at all.
+  it('wraps the result and the warnings between words, never the ID nor the amount (#132)', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    importRecord(importId).rows!.push(
+      makeRow({
+        matchResult: 'unmatched',
+        reason: 'id_format',
+        transactionId: null,
+        transaction: null,
+        rowNo: 900,
+        transactionIdRaw: '12345678901234567',
+        amount: '1234567.8900',
+        warnings: ['status_differs_from_sheet', 'cycle_mismatch', 'id_length'],
+      }),
+    )
+    await openRows(`/imports/${importId}?step=analysis&match=unmatched`)
+
+    const row = bodyRows().find((r) => cell(r, s.columns.id).textContent === '12345678901234567')!
+    const wrapsBetweenWords = (text: string, where: HTMLElement) => {
+      const element = within(where).getByText(text)
+      expect(element).toHaveClass('whitespace-normal')
+      expect(element.className).toMatch(/\bmax-w-/)
+      expect(element.className).not.toMatch(/overflow-wrap:anywhere|break-all/)
+    }
+    wrapsBetweenWords('Unmatched · ID does not fit any gateway', cell(row, s.columns.result))
+    wrapsBetweenWords(
+      'Status different from the sheet, Status of another cycle, ID of unusual length',
+      cell(row, s.columns.warnings),
+    )
+    for (const name of [s.columns.id, s.columns.amount]) {
+      const where = cell(row, name)
+      expect(where).toHaveClass('whitespace-nowrap')
+      expect(where.querySelector('.whitespace-normal')).toBeNull()
+    }
+    expect(cell(row, s.columns.amount).textContent).not.toBe('')
+  })
+
   it('shows a 17-digit ID and a UUID whole', async () => {
     const { importId } = seedImport('batch-clean', { status: 'analyzed' })
     const unmatched = { matchResult: 'unmatched', reason: 'no_match', transactionId: null, transaction: null } as const
