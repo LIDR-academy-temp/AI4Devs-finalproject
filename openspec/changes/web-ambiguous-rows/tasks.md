@@ -37,9 +37,9 @@ Rama `feat/web-ambiguous-rows` creada desde `origin/feature/entrega-3-MVP` cuand
 
 ## 5. Cierre
 
-- [ ] 5.1 README §1.5: la resolución de ambiguas (#38) pasa a hecha; §1.3 si el mapa de pantallas lo menciona. `prompts.md` con las sesiones del change. Verificar releyendo
-- [ ] 5.2 Comprobación integral: `pnpm lint`, `pnpm typecheck`, `pnpm test` y `openspec validate web-ambiguous-rows --strict`, en verde; `git diff --stat origin/feature/entrega-3-MVP` no toca `backend/`, `packages/` ni `api-collection/`
-- [ ] 5.3 Commit: `docs: README y prompts de web-ambiguous-rows`
+- [x] 5.1 README §1.5: la resolución de ambiguas (#38) pasa a hecha; §1.3 si el mapa de pantallas lo menciona. `prompts.md` con las sesiones del change. Verificar releyendo
+- [x] 5.2 Comprobación integral: `pnpm lint`, `pnpm typecheck`, `pnpm test` y `openspec validate web-ambiguous-rows --strict`, en verde; `git diff --stat origin/feature/entrega-3-MVP` no toca `backend/`, `packages/` ni `api-collection/`
+- [x] 5.3 Commit: `docs: README y prompts de web-ambiguous-rows`
 
 ## Workflow follow-up
 
