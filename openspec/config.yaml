@@ -1,32 +1,34 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+# Project context shown to AI when creating artifacts.
+# Full conventions live in CLAUDE.md and docs/; keep this summary short.
+context: |
+  Proyecto: ATS personal, panel web para buscar empleo en EE. UU. (proyecto final Master AI4Devs).
+  Un solo usuario. Filtros duros sin IA + puntaje de encaje con Claude + pipeline de candidaturas.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Fuentes de verdad: docs/vision.md (alcance), docs/prd.md (HU1-HU6, RF-xx, RNF-xx),
+  docs/architecture.md (componentes, modelo de datos, API), docs/adr/ (decisiones), CLAUDE.md (convenciones).
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+  Stack: monorepo pnpm. apps/api = AdonisJS v7, Node.js 24, Lucid, PostgreSQL, VineJS, Japa.
+  apps/web = React 19, Vite, TanStack Query, Tuyau, react-i18next. e2e/ = Playwright.
+  Claude API (@anthropic-ai/sdk), modelos por variable de entorno. Cola de trabajos en PostgreSQL.
+  Despliegue: un solo contenedor en Railway (la API sirve la SPA).
+
+  Idioma: artefactos de OpenSpec en español; código, tablas, campos y rutas de API en inglés;
+  interfaz en inglés con i18n. Escribir "currículum", nunca "CV".
+
+rules:
+  proposal:
+    - Referenciar las historias (HU-x) y requisitos (RF-xx, RNF-xx) de docs/prd.md que cubre el cambio.
+    - Incluir una sección "Fuera de alcance"; no incluir nada etiquetado v1.1 o futuro en docs/vision.md.
+    - Un cambio cubre una historia o 2-3 historias muy relacionadas.
+  specs:
+    - Escenarios en formato WHEN/THEN derivados de los criterios de aceptación del PRD.
+    - Cada escenario debe poder verificarse con una prueba automatizada sin llamar a la API real de Claude.
+  design:
+    - Respetar los ADRs de docs/adr/; si el cambio requiere una decisión nueva, proponer un ADR.
+    - Para trabajo con IA, indicar el esquema de salida, la versión del prompt y cómo se evalúa.
+  tasks:
+    - Orden TDD - primero la prueba que falla, luego la implementación.
+    - Máximo unas 15 tareas; si son más, dividir el cambio.
+    - Incluir tareas de i18n para textos nuevos de la interfaz y de actualización de documentación.

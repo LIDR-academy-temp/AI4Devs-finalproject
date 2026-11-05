@@ -206,3 +206,29 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con `docs/architecture.md`, los cinco ADRs de `docs/adr/`, `docs/prd.md` y `docs/ai-log.md`.
+
+### Prompt 16
+
+- **Categoría:** `📏 Reglas del proyecto`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  sigamos con CLAUDE.md
+  ```
+
+- **Resultado:** Se creó `CLAUDE.md` en la raíz con el contexto del proyecto, los documentos de referencia, el stack, los comandos previstos, las convenciones (idioma, código, IA, seguridad), las reglas de pruebas, el flujo de trabajo con OpenSpec y la definition of done.
+
+### Prompt 17
+
+- **Categoría:** `📏 Reglas del proyecto`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  llena openspec/config.yaml y haz commit
+  ```
+
+- **Resultado:** Se llenó `openspec/config.yaml` con el contexto del proyecto y reglas por artefacto (proposal, specs, design, tasks). Commit en la rama `feature/entrega-1-jr` junto con `CLAUDE.md` y `docs/ai-log.md`.
