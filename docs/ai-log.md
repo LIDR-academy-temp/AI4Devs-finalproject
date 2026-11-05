@@ -163,3 +163,46 @@
   ```
 
 - **Resultado:** Commit en la rama `feature/entrega-1-jr` con los cambios de `docs/prd.md`, `docs/vision.md` y `docs/ai-log.md` (empresas objetivo e importación por adaptadores).
+
+### Prompt 13
+
+- **Categoría:** `🔍 Investigación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code (skill `claude-api`, WebSearch)
+- **Prompt:**
+
+  ```markdown
+  Empecemos con la fase 2
+  ```
+
+- **Resultado:** Investigación para la arquitectura: AdonisJS v7 estable (kits de inicio, Node.js 24), modelos y precios actuales de Claude, structured outputs y entrada PDF nativa. Propuesta de decisiones (estilo de aplicación, modelos de Claude, procesamiento en segundo plano, lectura del PDF) con estimación de costo, pendiente de aprobación. Respuesta en el chat.
+
+### Prompt 14
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  D1. Opción B - Monorepo, 2 apps separadas: API REST + SPA con despliegue en un solo contenedor (backend + frontend)
+  D2. Opción económica por defecto durante desarrollo y pruebas, y la opción de calidad para productivo.
+  D3. Está bien
+  D4. Está bien. Como nota adicional pudieramos considerar el uso de un documento markdown para reducir costos
+  D5. Está bien
+  ```
+
+- **Resultado:** Se creó `docs/architecture.md` (diagramas, componentes, estructura, despliegue, seguridad, pruebas, modelo de datos y API) y cinco ADRs en `docs/adr/` (monorepo en un contenedor, adaptadores, modelos por entorno, integración de IA con Markdown canónico y cola en PostgreSQL). Se actualizó `docs/prd.md` (currículum en PDF o Markdown; decisiones pendientes resueltas).
+
+### Prompt 15
+
+- **Categoría:** `📝 Documentación`
+- **Modelo:** Claude Opus 5.5 (esfuerzo medio)
+- **Herramienta:** Claude Code
+- **Prompt:**
+
+  ```markdown
+  haz commit
+  ```
+
+- **Resultado:** Commit en la rama `feature/entrega-1-jr` con `docs/architecture.md`, los cinco ADRs de `docs/adr/`, `docs/prd.md` y `docs/ai-log.md`.

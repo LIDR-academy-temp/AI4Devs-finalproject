@@ -1,0 +1,393 @@
+# Arquitectura — ATS personal
+
+> Fase 2 (Arquitectura base) del AI SDLC. Parte de [`docs/prd.md`](./prd.md) y de las decisiones registradas en [`docs/adr/`](./adr/). Alimenta las secciones 2, 3 y 4 de `readme.md`.
+
+- **Estado:** borrador v0.1
+- **Fecha:** 2026-11-04
+
+---
+
+## 1. Resumen
+
+Monorepo con dos aplicaciones: una **API REST** en AdonisJS v7 y una **SPA** en React 19 con Vite. En producción, ambas se despliegan en **un solo contenedor**: la API sirve los archivos estáticos de la SPA desde el mismo origen. La base de datos es PostgreSQL, que también aloja la cola de trabajos en segundo plano. La IA se integra con Claude API mediante respuestas estructuradas.
+
+| Decisión | ADR |
+| --- | --- |
+| Monorepo con API AdonisJS + SPA React en un solo contenedor | [ADR-0001](./adr/0001-monorepo-api-spa-un-contenedor.md) |
+| Importación de ofertas mediante adaptadores (Greenhouse en el MVP) | [ADR-0002](./adr/0002-importacion-por-adaptadores.md) |
+| Modelos de Claude por entorno y por tarea | [ADR-0003](./adr/0003-modelos-claude-por-entorno.md) |
+| Integración de IA: Markdown canónico, respuestas estructuradas, prompts versionados y evals | [ADR-0004](./adr/0004-integracion-ia.md) |
+| Cola de trabajos en PostgreSQL | [ADR-0005](./adr/0005-cola-de-trabajos-postgresql.md) |
+
+## 2. Arquitectura del sistema
+
+### 2.1 Diagrama de arquitectura
+
+```mermaid
+flowchart LR
+    user([Usuario]) -->|HTTPS| container
+
+    subgraph container["Contenedor único (Railway)"]
+        direction TB
+        spa["SPA React 19 + Vite<br/>(archivos estáticos)"]
+        api["API REST AdonisJS v7<br/>/api/v1/*"]
+        worker["Worker de trabajos<br/>(mismo proceso en el MVP)"]
+        spa -. "Tuyau (tipos compartidos)" .-> api
+        api -->|encola| queue
+        worker -->|consume| queue
+    end
+
+    subgraph db["PostgreSQL (Railway)"]
+        queue[("Cola de trabajos")]
+        data[("Datos de la aplicación")]
+    end
+
+    api --> data
+    worker --> data
+    worker -->|Messages API| claude["Claude API"]
+    worker -->|Job Board API| gh["Greenhouse"]
+```
+
+**Patrón:** monolito modular por capas en el backend (controladores → servicios de dominio → modelos Lucid), con puertos y adaptadores en las integraciones externas (Claude y plataformas de empleo). El frontend es una SPA que consume la API con un cliente tipado.
+
+**Por qué:**
+
+- Separar API y SPA mantiene una frontera clara y deja la API lista para otros clientes (por ejemplo, la extensión de navegador futura).
+- Servir ambas desde el mismo origen elimina CORS y permite autenticación por cookie de sesión.
+- Un solo contenedor y PostgreSQL como único servicio externo de infraestructura mantienen el costo y la operación al mínimo.
+
+**Sacrificios:**
+
+- La API y la SPA escalan juntas. Es aceptable para un solo usuario.
+- El worker corre en el mismo proceso que la API en el MVP; un trabajo pesado compite por CPU con las peticiones. Se puede separar en otro proceso sin cambiar el código (ver ADR-0005).
+
+### 2.2 Componentes principales
+
+| Componente | Tecnología | Responsabilidad |
+| --- | --- | --- |
+| `apps/web` | React 19, Vite, TypeScript, TanStack Query, cliente Tuyau, react-i18next | Interfaz: ofertas, currículum, preferencias, tablero Kanban. Textos en inglés con i18n. |
+| `apps/api` | AdonisJS v7 (kit API), Node.js 24, TypeScript | API REST, autenticación por sesión, validación (VineJS), reglas de dominio, servir la SPA. |
+| Persistencia | PostgreSQL + Lucid ORM | Datos de la aplicación y migraciones. |
+| Cola de trabajos | PostgreSQL (librería por confirmar en el walking skeleton; ver ADR-0005) | Extracción, puntaje e importación en segundo plano. |
+| Módulo de IA | `@anthropic-ai/sdk` | Cliente de Claude, prompts versionados, esquemas de salida, registro de uso. |
+| Adaptadores de empleo | `JobSourceAdapter` + `GreenhouseAdapter` | Traer ofertas de plataformas externas y normalizarlas. |
+| Filtros duros | TypeScript puro, sin dependencias | Evaluar `pass`/`fail`/`unknown` por criterio. |
+| Evals | Script de Node + golden set en el repositorio | Medir el acuerdo entre el puntaje y el juicio manual (RNF-08). |
+
+### 2.3 Flujo principal de datos
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuario
+    participant W as SPA
+    participant A as API
+    participant Q as Cola (PostgreSQL)
+    participant K as Worker
+    participant C as Claude API
+
+    U->>W: Pega el texto de una oferta
+    W->>A: POST /api/v1/job-postings/extractions
+    A->>Q: Encola extract_job_posting
+    A-->>W: 202 { jobId }
+    K->>Q: Toma el trabajo
+    K->>C: Extracción (respuesta estructurada)
+    C-->>K: Campos de la oferta
+    K->>Q: Guarda el resultado
+    W->>A: GET /api/v1/jobs/{jobId} (polling)
+    A-->>W: Campos extraídos
+    U->>W: Revisa y guarda
+    W->>A: POST /api/v1/job-postings
+    A->>A: Filtros duros (sin IA)
+    alt pass o unknown
+        A->>Q: Encola score_match
+        K->>C: Puntaje (perfil + oferta)
+        C-->>K: score, label, strengths, gaps, evidence
+    end
+    W->>A: GET /api/v1/job-postings/{id}
+    A-->>W: Oferta + filtro + puntaje
+```
+
+### 2.4 Estructura del proyecto
+
+```text
+.
+├── apps/
+│   ├── api/                    # AdonisJS v7
+│   │   ├── app/
+│   │   │   ├── controllers/
+│   │   │   ├── models/         # Lucid
+│   │   │   ├── validators/     # VineJS
+│   │   │   ├── services/       # reglas de dominio (filtros, pipeline)
+│   │   │   ├── ai/             # cliente Claude, prompts/, schemas/
+│   │   │   ├── job_sources/    # JobSourceAdapter, GreenhouseAdapter
+│   │   │   └── jobs/           # handlers de la cola
+│   │   ├── database/migrations/
+│   │   ├── evals/              # golden set y script de evaluación
+│   │   └── tests/              # Japa: unit/ y functional/
+│   └── web/                    # React 19 + Vite
+│       └── src/
+│           ├── features/       # job-postings, resume, preferences, applications
+│           ├── lib/            # cliente Tuyau, TanStack Query
+│           └── locales/        # en/ (es/ en should-have)
+├── e2e/                        # Playwright
+├── docs/                       # visión, PRD, arquitectura, ADRs
+├── openspec/                   # specs y cambios
+├── Dockerfile                  # build multi-etapa: web + api en una imagen
+└── pnpm-workspace.yaml
+```
+
+### 2.5 Infraestructura y despliegue
+
+```mermaid
+flowchart LR
+    dev[Push a main] --> ci["GitHub Actions<br/>lint · typecheck · tests"]
+    ci --> rw["Railway<br/>build del Dockerfile"]
+    rw --> app["Servicio app<br/>(API + SPA + worker)"]
+    app --> pg[("Railway PostgreSQL")]
+```
+
+- **Imagen única** construida con un Dockerfile multi-etapa: compila `apps/web` (Vite) y `apps/api` (build de AdonisJS), y copia los estáticos de la SPA dentro de la API.
+- **Servir la SPA:** la API sirve `apps/web/dist` como estáticos y devuelve `index.html` para cualquier ruta que no empiece con `/api/`.
+- **Migraciones:** se ejecutan al desplegar (`node ace migration:run --force`).
+- **Configuración:** solo variables de entorno (`DATABASE_URL`, `APP_KEY`, `ANTHROPIC_API_KEY`, `CLAUDE_MODEL_*`, etc.). Ningún secreto en el repositorio.
+- **Entornos:** `development` (local con Docker Compose para PostgreSQL), `test` (CI) y `production` (Railway).
+
+### 2.6 Seguridad
+
+| Riesgo | Medida |
+| --- | --- |
+| Acceso no autorizado | Sesión con cookie `HttpOnly`, `Secure` y `SameSite=Lax`; todas las rutas `/api/v1/*` requieren sesión salvo el login (RNF-01). Usuario único creado por seed con contraseña desde variable de entorno. |
+| CSRF | Protección CSRF de AdonisJS (Shield); la SPA envía el token en cada petición que modifica datos. |
+| Entradas maliciosas | Validación con VineJS en cada endpoint; carga de currículum limitada a PDF o Markdown, máximo 5 MB, con verificación del tipo real del archivo (RNF-03). |
+| Inyección de prompts desde ofertas o correos | El texto externo va siempre como dato dentro del mensaje de usuario, delimitado; el prompt de sistema indica que nunca contiene instrucciones. La salida se valida con el esquema y no ejecuta acciones automáticas: cualquier cambio de estado lo confirma el usuario. |
+| SSRF | Solo si se implementa RF-08: esquemas `http`/`https`, resolución de DNS y bloqueo de rangos privados (RNF-04). El adaptador de Greenhouse solo llama a su dominio fijo. |
+| Fuga de datos personales | El currículum y los correos no se registran completos en los logs (RNF-05). |
+| Abuso de costo | Límite de trabajos de IA por día configurable y caché de análisis (RNF-07). |
+| Fuerza bruta en el login | Limitador de intentos en `/api/v1/auth/login`. |
+
+### 2.7 Pruebas
+
+| Nivel | Herramienta | Alcance |
+| --- | --- | --- |
+| Unitarias | Japa | Filtros duros, transiciones del pipeline, normalización de ofertas, parseo de respuestas de IA. |
+| Integración | Japa (pruebas funcionales con base de datos de prueba) | Endpoints de la API, adaptador de Greenhouse con respuestas grabadas, handlers de la cola. |
+| E2E | Playwright | Flujo principal: login → pegar oferta → filtro → puntaje → crear candidatura → moverla en el tablero. |
+| Calidad de la IA | Script de evals | Golden set de al menos 10 ofertas; llama a la API real y se ejecuta a mano, no en CI. |
+
+En las pruebas automatizadas, el cliente de Claude se sustituye por un doble de prueba con respuestas fijas; ninguna prueba de CI llama a la API real (RNF-10).
+
+## 3. Modelo de datos
+
+Convención: tablas y columnas en inglés, `snake_case`; claves primarias `id` (entero autoincremental); marcas de tiempo `created_at` y `updated_at` en todas las tablas.
+
+```mermaid
+erDiagram
+    users ||--o{ resumes : has
+    users ||--|| job_preferences : has
+    users ||--o{ target_companies : tracks
+    users ||--o{ job_postings : owns
+    target_companies ||--o{ job_postings : publishes
+    job_postings ||--o| filter_results : "evaluated by"
+    job_postings ||--o{ match_analyses : "scored by"
+    resumes ||--o{ match_analyses : "used in"
+    job_postings ||--o| applications : "becomes"
+    applications ||--o{ application_events : logs
+
+    users {
+        int id PK
+        string email UK
+        string password_hash
+        string locale "en | es"
+    }
+    resumes {
+        int id PK
+        int user_id FK
+        int version
+        string source_type "pdf | markdown"
+        string file_name
+        bytea file_data "PDF original (nullable)"
+        text markdown "representación canónica"
+        jsonb profile "perfil estructurado"
+        boolean is_active
+    }
+    job_preferences {
+        int id PK
+        int user_id FK,UK
+        jsonb work_modes "orden de preferencia"
+        jsonb locations
+        int min_salary_usd "nullable"
+        jsonb seniorities
+        int follow_up_days "por defecto 10"
+    }
+    target_companies {
+        int id PK
+        int user_id FK
+        string name
+        string tier "big | mid"
+        string ats_provider "greenhouse | lever | ashby | smartrecruiters | workday | other | unknown"
+        string board_token "nullable"
+        timestamp last_synced_at
+    }
+    job_postings {
+        int id PK
+        int user_id FK
+        int target_company_id FK "nullable"
+        string source "manual | greenhouse"
+        string external_id "nullable"
+        string source_url "nullable"
+        string title
+        string company_name
+        string location_text
+        string work_mode "remote | hybrid | onsite | unknown"
+        int salary_min "nullable"
+        int salary_max "nullable"
+        string salary_currency
+        string salary_period "year | month | hour"
+        string seniority
+        jsonb required_skills
+        jsonb nice_to_have_skills
+        int min_years_experience "nullable"
+        text description_markdown
+        string content_hash
+        string status "active | archived"
+    }
+    filter_results {
+        int id PK
+        int job_posting_id FK,UK
+        string outcome "pass | fail | unknown"
+        jsonb criteria "resultado y motivo por criterio"
+    }
+    match_analyses {
+        int id PK
+        int job_posting_id FK
+        int resume_id FK
+        string model
+        string prompt_version
+        string input_hash UK
+        int score "0-100"
+        string label "strong | good | weak | poor"
+        jsonb strengths
+        jsonb gaps
+        jsonb evidence
+        boolean is_stale
+        jsonb usage "tokens y costo"
+    }
+    applications {
+        int id PK
+        int user_id FK
+        int job_posting_id FK,UK
+        string status "saved | applied | interviewing | offer | rejected | withdrawn"
+        timestamp applied_at
+        timestamp last_activity_at
+    }
+    application_events {
+        int id PK
+        int application_id FK
+        string type "status_change | note | email"
+        string from_status
+        string to_status
+        text body
+        jsonb email_meta "remitente, asunto, fecha, clasificación"
+        timestamp occurred_at
+    }
+```
+
+**Reglas de integridad:**
+
+- `job_postings`: único por (`user_id`, `source`, `external_id`) y por (`user_id`, `source_url`) cuando no son nulos (RF-05).
+- `resumes`: solo uno con `is_active = true` por usuario (índice único parcial) (RF-14).
+- `match_analyses.input_hash` = hash de (contenido de la oferta, versión del currículum, versión del prompt, modelo). Si existe, no se vuelve a llamar a la IA (RF-26). Al activar un currículum nuevo, los análisis anteriores se marcan `is_stale = true`.
+- `applications`: una por oferta. Cada cambio de `status` inserta un `application_events` en la misma transacción y actualiza `last_activity_at` (RF-32).
+- Las tablas de la cola las gestiona la librería elegida en ADR-0005.
+
+## 4. Especificación de la API
+
+API REST bajo `/api/v1`, JSON, autenticada por cookie de sesión. La especificación OpenAPI completa se genera en el walking skeleton; aquí se fija el contrato de alto nivel.
+
+**Formato de respuesta:**
+
+```json
+{ "data": {}, "error": null, "meta": { "page": 1, "perPage": 20, "total": 57 } }
+```
+
+En caso de error: `data` es `null` y `error` contiene `{ "code": "VALIDATION_ERROR", "message": "...", "details": [] }`. `meta` solo aparece en listados paginados.
+
+| Método | Ruta | Descripción | Req. |
+| --- | --- | --- | --- |
+| `POST` | `/auth/login` | Iniciar sesión | RNF-01 |
+| `POST` | `/auth/logout` | Cerrar sesión | RNF-01 |
+| `GET` | `/auth/me` | Usuario actual y su idioma | RNF-01 |
+| `GET` / `PUT` | `/preferences` | Leer o actualizar filtros duros | RF-20 |
+| `GET` | `/resumes/active` | Currículum activo con su perfil | RF-12 |
+| `POST` | `/resumes` | Cargar PDF o Markdown (multipart); devuelve `202` con `jobId` | RF-10, RF-11 |
+| `PATCH` | `/resumes/{id}` | Corregir el Markdown o el perfil | RF-13 |
+| `GET` / `POST` | `/target-companies` | Listar o registrar empresas objetivo | RF-09 |
+| `PATCH` / `DELETE` | `/target-companies/{id}` | Editar o eliminar | RF-09 |
+| `POST` | `/target-companies/{id}/sync` | Importar ofertas; devuelve `202` con `jobId` | RF-04 |
+| `POST` | `/job-postings/extractions` | Extraer campos de un texto pegado; devuelve `202` con `jobId` | RF-01, RF-02 |
+| `GET` | `/job-postings` | Listar con filtro de estado y orden por puntaje o fecha; paginado | RF-06 |
+| `POST` | `/job-postings` | Guardar una oferta revisada; aplica filtros y encola el puntaje | RF-03, RF-21, RF-23 |
+| `GET` / `PATCH` | `/job-postings/{id}` | Detalle (con filtro y puntaje) o corrección de campos | RF-03 |
+| `POST` | `/job-postings/{id}/archive` | Archivar | RF-07 |
+| `POST` | `/job-postings/{id}/match` | Calcular o recalcular el puntaje; devuelve `202` con `jobId` | RF-23, RF-27 |
+| `GET` | `/jobs/{id}` | Estado y resultado de un trabajo en segundo plano | — |
+| `GET` / `POST` | `/applications` | Listar (agrupadas por estado) o crear desde una oferta | RF-30, RF-33 |
+| `GET` | `/applications/{id}` | Detalle con oferta, puntaje e historial | RF-34 |
+| `PATCH` | `/applications/{id}/status` | Cambiar de estado; registra el evento | RF-31, RF-32 |
+| `POST` | `/applications/{id}/notes` | Agregar una nota | RF-35 |
+| `POST` | `/applications/{id}/emails` | Pegar un correo y clasificarlo; devuelve `202` con `jobId` | RF-40, RF-41 (should-have) |
+
+**Ejemplo — crear una oferta revisada:**
+
+```http
+POST /api/v1/job-postings
+Content-Type: application/json
+
+{
+  "source": "manual",
+  "sourceUrl": "https://example.com/jobs/123",
+  "title": "Senior Software Engineer",
+  "companyName": "Example Corp",
+  "locationText": "Seattle, WA",
+  "workMode": "hybrid",
+  "salary": { "min": 150000, "max": 190000, "currency": "USD", "period": "year" },
+  "seniority": "senior",
+  "requiredSkills": ["TypeScript", "Node.js", "PostgreSQL"],
+  "niceToHaveSkills": ["AWS"],
+  "minYearsExperience": 5,
+  "descriptionMarkdown": "..."
+}
+```
+
+```http
+201 Created
+
+{
+  "data": {
+    "id": 42,
+    "filterResult": { "outcome": "pass", "criteria": { "workMode": "pass", "location": "pass", "salary": "pass", "seniority": "pass" } },
+    "match": { "status": "queued", "jobId": "b7f1…" }
+  },
+  "error": null
+}
+```
+
+## 5. Requisitos no funcionales en la arquitectura
+
+| RNF | Cómo se cumple |
+| --- | --- |
+| RNF-06 (< 20 s) | Trabajos en segundo plano con estado consultable; la UI muestra el progreso. |
+| RNF-07 (costo) | Filtros antes de la IA, caché por `input_hash`, Markdown en lugar de PDF o HTML, modelos económicos fuera de producción, caché de prompts de Claude para el perfil. |
+| RNF-08 (evals) | `apps/api/evals/` con golden set y script; prompts versionados en `apps/api/app/ai/prompts/`. |
+| RNF-09 (robustez) | Respuestas estructuradas validadas con esquema; un reintento; el trabajo queda en `failed` con mensaje claro. |
+| RNF-10 (pruebas) | Doble de prueba del cliente de Claude; Japa y Playwright en CI. |
+| RNF-11 (idioma) | Código y base de datos en inglés; documentación en español. |
+| RNF-12 (despliegue) | Railway con URL pública. |
+
+## 6. Pendiente para el walking skeleton
+
+- Confirmar la librería de la cola de trabajos (ADR-0005).
+- Confirmar la integración de Tuyau con una SPA separada en AdonisJS v7.
+- Medir el costo real por oferta con cada modelo (ADR-0003).
+- Crear `CLAUDE.md` con comandos, estructura y definition of done.

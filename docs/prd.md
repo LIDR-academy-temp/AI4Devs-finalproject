@@ -86,8 +86,8 @@ Prioridad según MoSCoW: **M** = must, **S** = should, **C** = could.
 
 | Id | Requisito | Prioridad |
 | --- | --- | --- |
-| RF-10 | El usuario carga su currículum en PDF (máximo 5 MB). | M |
-| RF-11 | El sistema extrae el texto del PDF; si no puede, pide pegarlo como texto. | M |
+| RF-10 | El usuario carga su currículum en PDF o en Markdown (máximo 5 MB). | M |
+| RF-11 | Si el currículum es PDF, el sistema lo convierte una sola vez a Markdown, que pasa a ser la representación usada en todos los análisis. Si la conversión falla, pide pegar el texto. | M |
 | RF-12 | La IA genera un perfil estructurado: habilidades (con años cuando se puedan inferir), experiencia laboral, años totales de experiencia, seniority estimado, formación e idiomas. | M |
 | RF-13 | El usuario revisa y corrige el perfil. El perfil corregido es la fuente para el puntaje. | M |
 | RF-14 | Hay un solo currículum activo. Cargar uno nuevo crea una nueva versión y marca los puntajes anteriores como desactualizados. | M |
@@ -229,10 +229,10 @@ Ver `docs/vision.md`, sección 8. Riesgo adicional del PRD:
 
 | Decisión | Se resuelve en |
 | --- | --- |
-| Diseño de la interfaz de adaptadores y validación con Greenhouse | Arquitectura (ADR y spike) |
-| Modelo de Claude para extracción y para el puntaje | Arquitectura (ADR) |
+| ~~Diseño de la interfaz de adaptadores~~ | Resuelta en `docs/adr/0002-importacion-por-adaptadores.md` |
+| ~~Modelo de Claude para extracción y para el puntaje~~ | Resuelta en `docs/adr/0003-modelos-claude-por-entorno.md` |
 | Fórmula del puntaje: peso de habilidades, experiencia y preferencias | Cambio de OpenSpec de HU3 |
-| Versión de AdonisJS | Arquitectura (ADR) |
+| ~~Versión de AdonisJS~~ | Resuelta: AdonisJS v7 (`docs/adr/0001-monorepo-api-spa-un-contenedor.md`) |
 
 ## 13. Trazabilidad
 
