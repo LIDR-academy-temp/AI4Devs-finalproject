@@ -975,7 +975,11 @@ describe('writes that read the import before a concurrent request commits (spec:
     expect(cancelled.status).toBe('cancelled')
     const audit = await ctx.prisma.auditLog.findMany({ where: { action: 'import.cancel', entityId: detail.importId } })
     expect(audit).toHaveLength(1)
-    expect(JSON.parse(audit[0]?.detailJson ?? '{}')).toEqual({ previousStatus: 'analyzed', runId: null })
+    expect(JSON.parse(audit[0]?.detailJson ?? '{}')).toEqual({
+      previousStatus: 'analyzed',
+      runId: null,
+      reason: CANCEL_REASON.reason,
+    })
   })
 
   it('a cancel that read analyzed still cancels, and a second cancel is refused by the guarded write', async () => {
