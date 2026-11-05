@@ -139,13 +139,13 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 
 ## 12. Cierre
 
-- [ ] 12.1 README:
+- [x] 12.1 README:
   - §1.5: marcar como hechos In Progress (#38), el motivo al cancelar (#47) y la readiness (#42), y dejar abierta la resolución de ambiguas (change `web-ambiguous-rows`);
   - §1.3: mapa de pantallas si algo cambia.
 
   `prompts.md` con las sesiones del change. Verificar releyendo.
 - [ ] 12.2 Comprobación integral: `pnpm lint`, `pnpm typecheck`, `pnpm test`, la suite de integración completa, `pnpm openapi:check`, `pnpm test:api` y `openspec validate import-in-progress --strict`, todo en verde
-- [ ] 12.3 Commit: `docs: README y prompts de import-in-progress`
+- [x] 12.3 Commit: `docs: README y prompts de import-in-progress`
 
 ## Workflow follow-up
 
