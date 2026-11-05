@@ -2,7 +2,13 @@
 // uploaded → mapped → analyzed → cancelled, fingerprints of the content, the error codes and the merchant scope.
 // Test files are Files whose content starts with a sample label (see `workbookOf`).
 import { createHash } from 'node:crypto'
-import { ImportListQuery, ReasonRequest, TRANSACTION_STATUSES } from '@recon/shared'
+import {
+  ImportListQuery,
+  ImportRowItem as ImportRowItemSchema,
+  ReasonRequest,
+  ResolveRowBody,
+  TRANSACTION_STATUSES,
+} from '@recon/shared'
 import { HttpResponse, http, type PathParams } from 'msw'
 import type { ImportDetail, ImportRowItem, ImportStatus, MappingConfirmationBody } from '@/lib/api/types'
 import { ACCOUNT_IDS, ACCOUNTS, CHANNELS, MERCHANTS, PROVIDERS, USERS, type UserName } from './fixtures'
@@ -11,6 +17,7 @@ import {
   ANALYSIS_FACTS,
   buildRows,
   defaultFileName,
+  makeAmbiguousRow,
   type RowSheet,
   SAMPLE_ACCOUNTS,
   SAMPLE_LABELS,
@@ -61,6 +68,8 @@ export interface FakeImport {
   batchFees: ImportDetail['batchFees']
   /** The current attempt once processed; the fake settlement API writes it. */
   currentBatchId: string | null
+  /** Per ambiguous row (`<sheetId>:<rowNo>`), the row the API answers for each gateway (web-ambiguous-rows D5). */
+  resolutions: Map<string, Map<number, ImportRowItem>>
 }
 
 /** Routes of the fake import API that a test can hold or make fail. */
@@ -71,6 +80,7 @@ export type ImportRoute =
   | 'mapping'
   | 'analyze'
   | 'rows'
+  | 'resolveRow'
   | 'cancel'
   | 'detail'
   | 'list'
@@ -486,6 +496,7 @@ export function seedImport(
     channels: null,
     batchFees: null,
     currentBatchId: null,
+    resolutions: new Map(),
   }
   state.imports.set(record.importId, record)
   if (status !== 'uploaded') confirm(record, proposalBody(record))
@@ -494,6 +505,35 @@ export function seedImport(
     record.status = status
   }
   return detailOf(record)
+}
+
+/**
+ * Adds an ambiguous row to an analyzed import, in its first transactions sheet unless the overrides say otherwise,
+ * with what the API answers for each candidate (`makeAmbiguousRow`). Returns the row as GET rows shows it.
+ */
+export function seedAmbiguousRow(
+  importId: string,
+  overrides: Partial<ImportRowItem> = {},
+  candidates?: ImportRowItem['candidates'],
+): ImportRowItem {
+  const record = importRecord(importId)
+  if (record.rows === null) throw new Error(`fake import ${importId} is not analyzed`)
+  const file = record.files.find((f) => f.sheets.some((s) => s.mapping?.kind === 'transactions'))!
+  const sheet = file.sheets.find((s) => s.mapping?.kind === 'transactions')!
+  const { row, resolved } = makeAmbiguousRow(
+    {
+      fileId: file.fileId,
+      fileName: file.fileName,
+      sheetId: sheet.sheetId,
+      sheetName: sheet.template.sheetName,
+      rowNo: 9001,
+      ...overrides,
+    },
+    candidates,
+  )
+  record.rows.push(row)
+  record.resolutions.set(`${row.sheetId}:${row.rowNo}`, resolved)
+  return row
 }
 
 const fingerprint = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex')
@@ -660,7 +700,12 @@ function shapeError(record: FakeImport, body: MappingConfirmationBody): Response
   return null
 }
 
-export function createImportHandlers(caller: (request: Request) => UserName | null) {
+export interface ImportHandlerDeps {
+  /** A row was resolved: the current run of the import is superseded without a replacement (README P7). */
+  onRowResolved: (importId: string) => void
+}
+
+export function createImportHandlers(caller: (request: Request) => UserName | null, deps: ImportHandlerDeps) {
   const notEditable = (record: FakeImport) =>
     error(409, 'import_not_editable', 'The import cannot be edited in its status', { status: record.status })
 
@@ -689,6 +734,7 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
             channels: null,
             batchFees: null,
             currentBatchId: null,
+            resolutions: new Map(),
           }
           state.imports.set(record.importId, record)
           return HttpResponse.json(detailOf(record), { status: 201 })
@@ -830,6 +876,42 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
             pageSize,
             total: all.length,
           })
+        },
+        caller,
+      ),
+    ),
+
+    // The checks in the order of ImportService.resolveRow; what the row becomes is the fixture's (design D5).
+    http.patch(
+      `${API}/imports/:importId/rows/:sheetId/:rowNo`,
+      route(
+        'resolveRow',
+        async ({ request, params, user }) => {
+          const record = visibleImport(user, params.importId)
+          if (!canProcess(user)) return record ? forbidden() : notFound('Import')
+          if (!record) return notFound('Import')
+          const rowNo = Number(params.rowNo)
+          if (!/^\d+$/.test(String(params.rowNo)) || rowNo < 1) return error(400, 'validation_error', 'Invalid rowNo')
+          const body = ResolveRowBody.safeParse(await request.json().catch(() => undefined))
+          if (!body.success) return error(400, 'validation_error', 'Invalid body')
+          if (record.status !== 'analyzed') return notEditable(record)
+          const rows = record.rows ?? []
+          const index = rows.findIndex((r) => r.sheetId === params.sheetId && r.rowNo === rowNo)
+          if (index === -1) return notFound('Row')
+          const row = rows[index]!
+          if (row.matchResult !== 'ambiguous') {
+            return error(409, 'row_not_ambiguous', 'The row is not ambiguous', { matchResult: row.matchResult })
+          }
+          const resolved = record.resolutions.get(`${row.sheetId}:${row.rowNo}`)?.get(body.data.gatewayId)
+          if (!resolved) {
+            return error(400, 'validation_error', 'The gateway is not a candidate of the row', {
+              gatewayId: body.data.gatewayId,
+              candidates: row.candidates,
+            })
+          }
+          rows[index] = resolved
+          deps.onRowResolved(record.importId)
+          return HttpResponse.json(ImportRowItemSchema.parse(resolved))
         },
         caller,
       ),

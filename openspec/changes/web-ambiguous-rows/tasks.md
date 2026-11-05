@@ -4,9 +4,9 @@ Rama `feat/web-ambiguous-rows` creada desde `origin/feature/entrega-3-MVP` cuand
 
 ## 1. Fake MSW del PATCH
 
-- [ ] 1.1 Tests primero en `frontend/src/test/msw/imports.test.ts` (design D5): con una fila de `makeAmbiguousRow`, el `PATCH` responde `200` con un cuerpo que pasa `ImportRowItem.parse` y la fila queda `matched` en `GET rows`; `viewer` → `403`; import invisible → `404`; import `validated` → `409 import_not_editable` con `details.status`; `rowNo=abc` o `{ gatewayId: 0 }` → `400`; fila inexistente → `404`; fila `matched` → `409 row_not_ambiguous` con `details.matchResult`; gateway que no es candidato → `400 validation_error` con `details.candidates`. En `validations.test.ts`: tras el `PATCH`, `GET validations` responde `run: null`. Verificar que fallan
-- [ ] 1.2 Implementar `makeAmbiguousRow` en `import-fixtures.ts` (la fila y, por candidata, el `ImportRowItem` resuelto), el handler `resolveRow` en `imports.ts` con `ResolveRowBody` y `ImportRowItem` de `@recon/shared`, y `supersedeCurrentRun` en `validations.ts`. Verificar con `pnpm --filter @recon/frontend test -- src/test/msw` que 1.1 pasa
-- [ ] 1.3 Commit: `test(web): fake del PATCH de filas ambiguas` y `test(web): el fake resuelve la fila y supera la corrida`
+- [x] 1.1 Tests primero en `frontend/src/test/msw/imports.test.ts` (design D5): con una fila de `makeAmbiguousRow`, el `PATCH` responde `200` con un cuerpo que pasa `ImportRowItem.parse` y la fila queda `matched` en `GET rows`; `viewer` → `403`; import invisible → `404`; import `validated` → `409 import_not_editable` con `details.status`; `rowNo=abc` o `{ gatewayId: 0 }` → `400`; fila inexistente → `404`; fila `matched` → `409 row_not_ambiguous` con `details.matchResult`; gateway que no es candidato → `400 validation_error` con `details.candidates`. En `validations.test.ts`: tras el `PATCH`, `GET validations` responde `run: null`. Verificar que fallan
+- [x] 1.2 Implementar `makeAmbiguousRow` en `import-fixtures.ts` (la fila y, por candidata, el `ImportRowItem` resuelto), el handler `resolveRow` en `imports.ts` con `ResolveRowBody` y `ImportRowItem` de `@recon/shared`, y `supersedeCurrentRun` en `validations.ts`. Verificar con `pnpm --filter @recon/frontend test -- src/test/msw` que 1.1 pasa
+- [x] 1.3 Commit: `test(web): fake del PATCH de filas ambiguas` y `test(web): el fake resuelve la fila y supera la corrida`
 
 ## 2. Modo de las candidatas por estado y permiso
 

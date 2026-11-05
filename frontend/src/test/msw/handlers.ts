@@ -22,7 +22,7 @@ import {
 import { createImportHandlers, resetImports } from './imports'
 import { createMatchingHandlers, resetMatching } from './matching'
 import { createSettlementHandlers, resetSettlements } from './settlements'
-import { createValidationHandlers, resetValidations } from './validations'
+import { createValidationHandlers, resetValidations, supersedeCurrentRun } from './validations'
 
 const API = '*/api/v1'
 
@@ -222,7 +222,7 @@ export const handlers = [
     }),
   ),
 
-  ...createImportHandlers(caller),
+  ...createImportHandlers(caller, { onRowResolved: supersedeCurrentRun }),
   ...createValidationHandlers(caller),
   ...createSettlementHandlers(caller),
   ...createFeeHandlers(caller),
