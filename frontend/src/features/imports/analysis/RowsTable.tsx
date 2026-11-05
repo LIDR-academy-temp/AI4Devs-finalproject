@@ -43,9 +43,14 @@ const columns = helper.columns([
     // The sheet always shows; the file, long and shared by many rows, wraps where it does not fit (the names of the
     // template have no spaces) and keeps its whole name as tooltip (design D7). A fixed width: narrow, so the table fits
     // at 1024 px, but not less, since overflow-wrap:anywhere would let the table squeeze it to a letter a line (#132).
+    // The row number goes after the sheet, in one piece, not as a column of its own (web-rows-table-compact D1); the
+    // sheet keeps an element of its own.
     cell: ({ row }) => (
       <div className="flex w-28 flex-col">
-        <span className="whitespace-nowrap font-medium">{row.original.sheetName}</span>
+        <div className="whitespace-nowrap">
+          <span className="font-medium">{row.original.sheetName}</span>
+          <span className="text-muted-foreground">{s.rowNo(row.original.rowNo)}</span>
+        </div>
         {/* whitespace-normal: the cell does not wrap, and overflow-wrap does nothing under it (#132). */}
         <span
           className="whitespace-normal text-muted-foreground [overflow-wrap:anywhere]"
@@ -56,7 +61,6 @@ const columns = helper.columns([
       </div>
     ),
   }),
-  helper.accessor('rowNo', { header: s.columns.row }),
   helper.accessor('transactionIdRaw', {
     header: s.columns.id,
     // IDs are text exactly as read: never parsed, never shortened.

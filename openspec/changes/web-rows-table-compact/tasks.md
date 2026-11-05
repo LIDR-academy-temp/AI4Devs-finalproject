@@ -11,14 +11,14 @@ En la rama `fix/web-rows-table-1024` (#132), con PR hacia `feature/entrega-3-MVP
 
 ## 2. La fila con la hoja (D1)
 
-- [ ] 2.1 Tests primero en `RowsTable.test.tsx` (spec "Hoja y archivo de cada fila"):
+- [x] 2.1 Tests primero en `RowsTable.test.tsx` (spec "Hoja y archivo de cada fila"):
   - la tabla no tiene cabecera `Row`;
   - la celda `Sheet · file` muestra `APP · row 2` en una pieza `whitespace-nowrap`, con la hoja en su propio elemento;
   - el archivo sigue debajo, entero y con tooltip.
 
   Ajustar el test de hoja y archivo a la nueva estructura. Verificar que fallan
-- [ ] 2.2 Implementar D1 en `RowsTable.tsx` y en `strings.ts`: sale `columns.row` y entra el texto de la fila. Verificar con `pnpm --filter frontend exec vitest run src/features/imports` y con `pnpm lint` y `pnpm typecheck`
-- [ ] 2.3 Commit: `test(web): el número de fila va con la hoja en la tabla de filas` y `fix(web): la fila con la hoja y sin columna propia (#132)`
+- [x] 2.2 Implementar D1 en `RowsTable.tsx` y en `strings.ts`: sale `columns.row` y entra el texto de la fila. Verificar con `pnpm --filter frontend exec vitest run src/features/imports` y con `pnpm lint` y `pnpm typecheck`
+- [x] 2.3 Commit: `test(web): el número de fila va con la hoja en la tabla de filas` y `fix(web): la fila con la hoja y sin columna propia (#132)`
 
 ## 3. Capturas y margen
 
