@@ -61,7 +61,7 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
 
 ## 3. Fuente del proceso: `reserveStates`
 
-- [ ] 3.1 Ampliar `application/load-settlement-input.test.ts`: `reserveStates` se pide después de `previousE`, una lectura tras otra, solo con los IDs de las filas asociadas I y R. Añadir el puerto a `ports.ts` y al fake `__fakes__/in-memory.ts`, y añadir en `backend/test/integration/settlement-source.int.test.ts` los casos de `reserveStates`:
+- [x] 3.1 Ampliar `application/load-settlement-input.test.ts`: `reserveStates` se pide después de `previousE`, una lectura tras otra, solo con los IDs de las filas asociadas I y R. Añadir el puerto a `ports.ts` y al fake `__fakes__/in-memory.ts`, y añadir en `backend/test/integration/settlement-source.int.test.ts` los casos de `reserveStates`:
   - un E retenido de un batch sembrado `paid`, con su `batchId` y su importe como texto;
   - `releasedInR` de una R sembrada;
   - `releasedByAdjustment` de un I `Refund` con liberación;
@@ -70,7 +70,7 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
   - más de 2 000 IDs por lotes.
 
   Comprobar que fallan: los unitarios sin base, y la integración en el turno de base que se pide a la persona.
-- [ ] 3.2 Commit: test(settlement): estado previo de las reservas en la fuente del proceso
+- [x] 3.2 Commit: test(settlement): estado previo de las reservas en la fuente del proceso
 - [ ] 3.3 Implementar `reserveStates` en `prisma-settlement-source.ts` (D2): una consulta por lote con `chunks`, sumas en `CONVERT(VARCHAR(40), …)` y el primer E por `processedAt` y `settlementTxnId`. Cargarlo en `load-settlement-input.ts`. Verificar con los tests unitarios y, con turno de base, con `pnpm --filter @recon/backend test:integration -- settlement-source`.
 - [ ] 3.4 Commit: feat(settlement): leer el estado previo de las reservas al procesar, y `git push`.
 

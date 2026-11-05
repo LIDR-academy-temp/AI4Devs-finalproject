@@ -7,6 +7,7 @@ import type {
   AccountAttempt,
   AccountFeeConfig,
   BusinessRange,
+  PriorReserveState,
   RowInclusion,
   SettlementAccount,
   SettlementChannel,
@@ -45,6 +46,16 @@ export interface SettlementSource {
   channels(accountId: string, channelIds: readonly number[]): Promise<SettlementChannel[]>
   /** Of the given transactions, those with an E movement in a non-undone attempt of the provider, the import excluded. */
   previousE(providerId: number, transactionIds: readonly bigint[], excludeImportId: string): Promise<Set<bigint>>
+  /**
+   * The reserve state of the given transactions in non-undone attempts of the provider, the import excluded
+   * (settlement-reserve-chargeback D2): the first Successful E that held, an R, an I that released. A transaction
+   * without previous movements is not in the map.
+   */
+  reserveStates(
+    providerId: number,
+    transactionIds: readonly bigint[],
+    excludeImportId: string,
+  ): Promise<Map<bigint, PriorReserveState>>
   accountFees(accountId: string): Promise<AccountFeeConfig[]>
   feeTypes(): Promise<SettlementFeeType[]>
   /** Every attempt of the account, in any status. */

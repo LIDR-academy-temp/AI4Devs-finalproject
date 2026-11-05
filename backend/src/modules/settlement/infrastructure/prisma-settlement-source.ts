@@ -19,6 +19,7 @@ import { channelStateOf } from '../domain/channels.js'
 import type {
   AccountAttempt,
   AccountFeeConfig,
+  PriorReserveState,
   RowInclusion,
   SettlementAccount,
   SettlementChannel,
@@ -301,6 +302,15 @@ export class PrismaSettlementSource implements SettlementSource {
       for (const r of rows) found.add(BigInt(String(r.transactionId)))
     }
     return found
+  }
+
+  async reserveStates(
+    _providerId: number,
+    _transactionIds: readonly bigint[],
+    _excludeImportId: string,
+  ): Promise<Map<bigint, PriorReserveState>> {
+    // Red step of task 3.1: read in task 3.3.
+    return new Map()
   }
 
   async accountFees(accountId: string): Promise<AccountFeeConfig[]> {
