@@ -157,22 +157,35 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
   })
 
   // jsdom does not lay out: whether the browser wraps the name is seen in the screenshots (design D7).
-  it('shows the sheet of each row first and its whole file name, without truncate and also as tooltip', async () => {
+  it('shows the sheet and row of each row in one line, then its whole file name, also as tooltip', async () => {
     const { importId } = seedImport('batch-split', { status: 'analyzed' })
     await openRows(`/imports/${importId}?step=analysis`)
 
+    // The row number is not a column of its own (web-rows-table-compact D1).
+    const headers = within(screen.getByRole('table', { name: s.title })).getAllByRole('columnheader')
+    expect(headers.map((h) => h.textContent)).not.toContain('Row')
+
     const sheets = new Set(importRecord(importId).files.flatMap((f) => f.sheets.map((x) => x.template.sheetName)))
+    const lines: string[] = []
     for (const row of bodyRows()) {
       const where = cell(row, 'Sheet · file')
-      const [sheet, file] = Array.from(where.querySelectorAll('span'))
-      expect(sheets.has(sheet!.textContent ?? '')).toBe(true)
+      // The first line: the sheet in an element of its own (the screenshot script reads it) and its row, in one piece.
+      const line = where.firstElementChild!.firstElementChild as HTMLElement
+      const sheet = where.querySelector('span')!
+      expect(sheets.has(sheet.textContent ?? '')).toBe(true)
       expect(sheet).not.toHaveClass('truncate')
-      expect(file!.textContent).toMatch(/^Recon_Template_ProviderA-USD_batch-split_part[12]\.xlsx$/)
-      expect(file).toHaveAttribute('title', file!.textContent)
+      expect(line.textContent).toMatch(new RegExp(`^${sheet.textContent} · row \\d+$`))
+      expect(line).toHaveClass('whitespace-nowrap')
+      lines.push(line.textContent ?? '')
+
+      const file = within(where).getByTitle(/^Recon_Template_/)
+      expect(file.textContent).toMatch(/^Recon_Template_ProviderA-USD_batch-split_part[12]\.xlsx$/)
+      expect(file).toHaveAttribute('title', file.textContent)
       expect(file).not.toHaveClass('truncate')
       // The cell does not wrap (whitespace-nowrap), and without whitespace-normal overflow-wrap does nothing (#132).
       expect(file).toHaveClass('whitespace-normal')
     }
+    expect(lines[0]).toBe('APP · row 2')
   })
 
   // jsdom does not lay out: the widths at 1024 px are measured by the screenshots of web-ambiguous-rows (#132). Here,
