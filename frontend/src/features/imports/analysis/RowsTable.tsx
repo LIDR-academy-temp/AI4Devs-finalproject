@@ -272,7 +272,7 @@ export function RowsTable({
               {table.getHeaderGroups().map((group) => (
                 <TableRow key={group.id}>
                   {group.headers.map((header) => (
-                    <TableHead key={header.id} className="whitespace-nowrap">
+                    <TableHead key={header.id} className="whitespace-nowrap px-1.5 xl:px-2">
                       {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                     </TableHead>
                   ))}
@@ -286,7 +286,7 @@ export function RowsTable({
                   className={row.original.matchResult === 'matched' ? '' : 'bg-amber-50/60 dark:bg-amber-950/20'}
                 >
                   {row.getAllCells().map((cell) => (
-                    <TableCell key={cell.id} className="align-top">
+                    <TableCell key={cell.id} className="align-top px-1.5 xl:px-2">
                       <table.FlexRender cell={cell} />
                     </TableCell>
                   ))}
