@@ -378,6 +378,139 @@ describe('adapters over fixtures with exact limits', () => {
   })
 })
 
+// settlement-reserve-chargeback D4: reserveEarlyReleasedAmt is the sum of the release of the live I movements of the
+// transaction, of any status and any account of the provider. Same fixture world, plus five reserves held in 9101
+// expiring exactly at R_MAX and their I movements in 9104 (ZZ-ProviderB-Alt, processed) and 9103 (undone).
+describe('heldReserves: the early release of the live I movements', () => {
+  const released: Record<'refund' | 'rdr' | 'split' | 'undone' | 'none', bigint> = {
+    refund: 0n,
+    rdr: 0n,
+    split: 0n,
+    undone: 0n,
+    none: 0n,
+  }
+
+  beforeAll(async () => {
+    fixture = await createFixtures()
+    const { prisma } = ctx
+    const analystId = flow.userIds.analyst
+    const statusOf = { refund: 5, rdr: 6, split: 4, undone: 4, none: 4 } as const
+    for (const [i, key] of (['refund', 'rdr', 'split', 'undone', 'none'] as const).entries())
+      released[key] = (
+        await prisma.transaction.create({
+          data: {
+            sourceTransactionId: `91010000000${String(21 + i).padStart(4, '0')}`,
+            gatewayId: 1,
+            merchantId: 1,
+            providerId: PROVIDER_B,
+            channelId: CHANNEL_120,
+            amount: '100.0000',
+            statusId: statusOf[key],
+            transactionDate: EXACT_DATE,
+            appliedReservePct: '0.050000',
+          },
+        })
+      ).transactionId
+    const importId = randomUUID()
+    await prisma.import.create({
+      data: { importId, accountId: ALT_ACCOUNT_ID, createdByUserId: analystId, status: 'processed' },
+    })
+    const adjusted = randomUUID()
+    await prisma.settlementBatch.create({
+      data: {
+        batchId: adjusted,
+        accountId: ALT_ACCOUNT_ID,
+        batchNo: 9104,
+        importId,
+        status: 'processed',
+        approvedByUserId: analystId,
+      },
+    })
+    const batchIdOf = async (batchNo: number) =>
+      (await prisma.settlementBatch.findFirstOrThrow({ where: { batchNo, accountId: fixture.mainAccountId } })).batchId
+    const history = await batchIdOf(9101)
+    const undone = await batchIdOf(9103)
+    const movement = (
+      batchId: string,
+      transactionId: bigint,
+      cycle: 'E' | 'I',
+      statusId: number,
+      amounts: { held?: string; early?: string },
+    ) => ({
+      batchId,
+      transactionId,
+      cycle,
+      statusId,
+      settlementStatusId: 0,
+      amount: '100.0000',
+      eventDate: EXACT_DATE,
+      appliedReservePct: '0.050000',
+      reserveDaysUsed: 120,
+      reserveHeldAmt: amounts.held ?? '0.0000',
+      reserveEarlyReleasedAmt: amounts.early ?? '0.0000',
+    })
+    await prisma.settlementTransaction.createMany({
+      data: [
+        ...Object.values(released).map((id) => movement(history, id, 'E', 2, { held: '5.0000' })),
+        movement(adjusted, released.refund, 'I', 5, { early: '5.0000' }),
+        movement(adjusted, released.rdr, 'I', 6, { early: '5.0000' }),
+        movement(adjusted, released.split, 'I', 4, { early: '2.0000' }),
+        movement(adjusted, released.split, 'I', 5, { early: '3.0000' }),
+        movement(undone, released.undone, 'I', 4, { early: '5.0000' }),
+        movement(adjusted, released.none, 'I', 4, { early: '0.0000' }),
+      ],
+    })
+  })
+
+  afterAll(async () => {
+    await removeFixtures()
+  })
+
+  it('sums the release of the live I movements of any status and account of the provider, not that of an undone attempt', async () => {
+    const held = await sources.heldReserves(await scopeOf(), R_MAX)
+    const ids = new Set(Object.values(released))
+
+    expect(
+      new Map(held.filter((h) => ids.has(h.transactionId)).map((h) => [h.transactionId, h.reserveEarlyReleasedAmt])),
+    ).toEqual(
+      new Map([
+        [released.refund, '5.0000'],
+        [released.rdr, '5.0000'],
+        [released.split, '5.0000'],
+        [released.undone, '0.0000'],
+        [released.none, '0.0000'],
+      ]),
+    )
+  })
+
+  it('with the engine: only the reserve released by an undone attempt and the one of an adjustment without release are missing in R', async () => {
+    const account = await scopeOf()
+    const ids = new Set(Object.values(released))
+    const reserveCandidates = (await sources.heldReserves(account, R_MAX)).filter((h) => ids.has(h.transactionId))
+
+    const report = runValidations({
+      account,
+      rows: [
+        builtRow({ transactionId: 1n, cycle: 'R', status: 'Successful', channelId: CHANNEL_120, date: EXACT_DATE }),
+      ],
+      history: [],
+      hasPreviousBatches: true,
+      candidates: [],
+      reserveCandidates,
+      registeredMissing: new Set(),
+      statuses: await sources.statuses(),
+    })
+
+    const missing = report.results.find((r) => r.code === 'missing_in_range')!
+    expect(missing.issues.map((i) => [i.transactionId, i.cycle]).sort()).toEqual(
+      [
+        [released.undone, 'R'],
+        [released.none, 'R'],
+      ].sort(),
+    )
+  })
+})
+
 // ───────────────────────── The samples: database input equals the in-memory one ─────────────────────────
 
 /** A report without the ids each side generates (sheets, files, batches, transactions), comparable across sides. */
