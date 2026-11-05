@@ -13,14 +13,14 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 - [x] 2.1 Tests primero en `domain/readiness.test.ts`: en `mapped`, una hoja sin confirmar da un solo `missing` `confirmation` en su posición, sin sus otros `missing`, conservando sus `notes`, y `canAnalyze = false`; en `uploaded` el resultado no cambia; con todo confirmado, `missing = []`. Romper uno a propósito y verlo fallar
 - [x] 2.2 Implementar D4 en `readiness.ts` y extraer `unconfirmedSheetMessage`, compartida con `analysis-preconditions.ts`; pasar `mappingConfirmed` y `requireConfirmation` desde `detailOf` en `import-service.ts`. Verificar con `pnpm --filter @recon/backend test` que los tests de dominio y servicio pasan
 - [x] 2.3 Integración en `backend/test/integration/import-analyze.int.test.ts` (o `imports.int.test.ts`, donde viva "Archivo añadido tras confirmar"): con `batch-split` part1 confirmado y part2 añadido, el `200` de añadir y el `GET` detalle traen `canAnalyze = false` y los mismos elementos `confirmation` que el `422` de analyze; tras confirmar todo, `missing = []`. Verificar con el filtro de integración
-- [ ] 2.4 Commit: `test(import): readiness con hojas sin confirmar` y `feat(import): la readiness del detalle nombra las hojas sin confirmar (#42)`
+- [x] 2.4 Commit: `test(import): readiness con hojas sin confirmar` y `feat(import): la readiness del detalle nombra las hojas sin confirmar (#42)`
 
 ## 3. Motivo obligatorio al cancelar (#47)
 
 - [x] 3.1 Tests primero: en `http/import-routes.analysis.test.ts`, un cuerpo ausente, `{}`, solo espacios, 501 caracteres o con un campo extra responde `400 validation_error` sin llamar al servicio; en `application/import-service.test.ts`, la auditoría `import.cancel` guarda `reason` recortado junto a `previousStatus` y `runId`. Verificar que fallan
 - [x] 3.2 Implementar D3: `body: ReasonRequest` en la ruta y `reason` en `ImportService.cancel` y su auditoría. Verificar que los tests de 3.1 pasan
 - [x] 3.3 Actualizar las llamadas al cancel del módulo `imports` en `backend/test/integration/import-analyze.int.test.ts` y añadir el escenario "Cancelar con motivo" (`batch-split` analizado → `detailJson.reason`) y "Sin motivo" (sin fila nueva de `AuditLog`). Verificar con el filtro de integración
-- [ ] 3.4 Commit: `test(import): motivo obligatorio al cancelar` y `feat(import): POST cancel exige y audita el motivo (#47)`
+- [x] 3.4 Commit: `test(import): motivo obligatorio al cancelar` y `feat(import): POST cancel exige y audita el motivo (#47)`
 
 ## 4. GET /imports
 
@@ -49,7 +49,7 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
   - el analizado con `rowsTotal = 783`.
 
   Las aserciones van sobre los `importId` creados en el test, nunca sobre la lista entera. Verificar con el filtro de integración.
-- [ ] 4.5 Commit: `test(import): listado de imports en curso` y `feat(import): GET /imports con filtros, alcance y paginación (#38)`
+- [x] 4.5 Commit: `test(import): listado de imports en curso` y `feat(import): GET /imports con filtros, alcance y paginación (#38)`
 
 ## 5. Contrato publicado, README y colección Bruno
 
@@ -67,7 +67,7 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 
   Verificar con `pnpm test:api:smoke` (con `pnpm dev` levantado).
 - [x] 5.4 Bruno: `20-flows/imports/17 Cancel` con motivo, y flujo nuevo `20-flows/in-progress` (pasos de D9, cancela al final). Verificar con `pnpm test:api` dos veces seguidas sin sembrar entre medias
-- [ ] 5.5 Commit: `docs(api): GET /imports y motivo del cancel en el contrato, README y colección Bruno`
+- [x] 5.5 Commit: `docs(api): GET /imports y motivo del cancel en el contrato, README y colección Bruno`
 
 ## 6. Fake MSW del API de imports
 
@@ -103,7 +103,7 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
   Verificar que fallan.
 - [x] 8.2 Implementar D6 en `CancelImportDialog` (prop `detail` estrechada, `onCancelled`, campo `Reason`) y en `useCancelImport` (motivo e invalidación de `['import-list']`), sin tocar `DecisionBar.tsx`. Verificar con `pnpm typecheck` y los tests de `features/imports`
 - [x] 8.3 Smoke E2E: en `e2e/steps/import-smoke.steps.ts`, el paso de cancelar y la limpieza escriben un motivo antes de confirmar. Verificar con el comando del smoke contra la app local
-- [ ] 8.4 Commit: `test(web): motivo obligatorio en Cancel import` y `feat(web): Cancel import pide motivo (#47)`
+- [x] 8.4 Commit: `test(web): motivo obligatorio en Cancel import` y `feat(web): Cancel import pide motivo (#47)`
 
 ## 9. Llamadas al cancel en tests de otras áreas (D8, con aviso a la sesión de #62)
 
