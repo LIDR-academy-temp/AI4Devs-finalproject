@@ -201,7 +201,7 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
   Resultado (pasadas lanzadas por la persona tras `pnpm db:seed`):
   - Primera pasada: 256 peticiones y 271 de 271 tests en verde, incluidos `batch-wrong-account` (las 9), `batch-blocked/3 Analyze` (`otherProvider`), `imports/13 Analyze` (corregido para `unmatchedByReason`) y la vista previa de `batch-clean`.
   - Segunda pasada sin sembrar: `batch-wrong-account` y `batch-issues` pasan otra vez, pero fallan 27 peticiones (34 tests) que no se vieron en la salida recortada.
-  - **No se identificó cuáles fallan.** La hipótesis es el flujo `settlements/batch-clean`, que ya avisaba antes de este change de que necesita un seed recién hecho (número 123, RAM-07 sin asignar), pero no está comprobada. Queda pendiente confirmarlo con `pnpm test:api 2>&1 | grep -B3 "✕" | grep -E "^(00|10|20)-"`.
+  - Son los mismos 27 de #111, con el recuento de los changes anteriores: `Channels unassigned` 1, `imports/13 Analyze` 1 y `settlements/batch-clean` 6–30, 25. Estos flujos necesitan un seed recién hecho (número 123, RAM-07 sin asignar); no son de este change, y no hace falta repetir Bruno (decisión de la persona).
   - CLAUDE.md ("Colección de la API") documenta el import `cancelled` que deja cada pasada del flujo nuevo.
 
 - [x] 11.4 Commit: test(api): flujo de un archivo de otra cuenta en la colección (#92), y `git push`.

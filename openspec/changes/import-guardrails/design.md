@@ -71,7 +71,7 @@ Motivación y decisiones del gate en `proposal.md`. El estado actual que condici
   - `SettlementRequest.confirmEmptyBatch?: boolean`;
   - `SettlementPreview.requiresEmptyBatchConfirmation` y `SettlementPreview.emptyBatch: EmptyBatchDetails | null`;
   - `ReviewBody.confirmEmptyBatch?: boolean`. Sigue siendo `strictObject`.
-- **Detalles de error:** `NoMatchedRowsDetails = EmptyBatchDetails` e `ImportFileLimitReachedDetails = { limit, current, adding }`. Se declaran junto a los existentes y entran en el OpenAPI de las rutas: `409` de review, process y `POST files`.
+- **Detalles de error:** `NoMatchedRowsDetails = EmptyBatchDetails` e `ImportFileLimitReachedDetails = { limit, current, adding }`. Se tipan desde `@recon/shared`, de donde los lee el frontend. En el OpenAPI van en la descripción de cada ruta (`409` de review, process y `POST files`), como el resto de `details` del proyecto (`batch_no_taken`, `channel_assignment_not_confirmed`); no hay esquema propio por código.
 - `docs/openapi.yaml` y `schema.gen.ts` se regeneran (`pnpm openapi:check` verde).
 
 ### D4. Aviso de canales
@@ -86,8 +86,8 @@ Motivación y decisiones del gate en `proposal.md`. El estado actual que condici
 
 ### D5. Invariante de filas ajenas en el settlement
 
-- `classifyRows(rows, inclusions, providerId)`: antes de clasificar, una fila `matched` con `transaction.providerId !== providerId` lanza `Error("row <sheetId>:<rowNo> belongs to another provider (provider_mismatch); it is never processed")`.
-- `computeSettlement` pasa `input.account.providerId`. No es un `DomainError`: llega como `500` y, dentro de process, deshace la transacción.
+- `assertOwnProviderRows(rows, providerId)`, en `inclusion.ts`: una fila `matched` con `transaction.providerId !== providerId` lanza `Error("row <sheetId>:<rowNo> belongs to another provider (provider_mismatch); it is never processed")`.
+- `computeSettlement` la llama con `input.account.providerId` justo antes de `classifyRows`, cuya firma y llamadas no cambian. No es un `DomainError`: llega como `500` y, dentro de process, deshace la transacción.
 - Así ni la fila ni su canal entran en `movements` ni en `toAssign`. `Skipped` no cambia (P5).
 
 ### D6. `status_mismatch` con gateway `Pending` y `pendingInRangeCount`
@@ -145,7 +145,7 @@ Motivación y decisiones del gate en `proposal.md`. El estado actual que condici
 ### D10. Tests de integración sin efectos en otros flujos
 
 - Procesar `batch-wrong-account` usa un `batchNo` de la serie 98xx, como `settlement-process.int.test.ts`, y limpia con `removeSettlementsFrom` y `removeImportsFrom` en `afterAll`. Así no mueve el número propuesto de `ProviderA-USD` (123) que esperan `batch-clean` y la colección.
-- La transacción `Pending` de #63 la crea el test en RAM-01, con un `sourceTransactionId` sintético fuera del rango del seed, y la borra al terminar, con sus filas de import, corrida e intento.
+- La transacción `Pending` de #63 la crea el test sobre un proveedor, un canal y una cuenta aislados (9502), como el describe de contadores de `validation-edges.int.test.ts`: una `Pending` en un canal sembrado (RAM-01) alteraría `pendingInRangeCount` y los faltantes de las suites que corren a la vez. El test lo borra todo al terminar (transacciones, filas de import, corrida e intento). Al ser una cuenta aislada, procesar no consume números de ProviderA-USD.
 - La colección Bruno no procesa el batch vacío (proposal, Impact).
 
 ## Risks / Trade-offs
