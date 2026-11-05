@@ -521,3 +521,107 @@ describe('getImport and listImports', () => {
     expect(outside.message).toBe(unknown.message)
   })
 })
+
+describe('listImportsInScope (spec "Imports en curso", "Filtros" and "Paginación de imports en curso")', () => {
+  const ADMIN: Scope = { merchantIds: [1, 2] }
+  const ADMIN_ID = 1
+  const page = { page: 1, pageSize: 50 }
+
+  async function create(scope: Scope, userId: number, accountId: string, sample = SAMPLE_FILES.part1) {
+    return service.createImport(scope, userId, accountId, [await upload(sample)])
+  }
+
+  it('lists the open imports of the scope, latest update first, with their hierarchy', async () => {
+    const uploaded = await create(ANALYST, ANALYST_ID, A_USD)
+    const legacy = await create(ANALYST, ANALYST_ID, C_ALT, SAMPLE_FILES.legacy)
+    const cancelled = await create(ANALYST, ANALYST_ID, A_USD)
+    await imports.setStatus(cancelled.importId, 'cancelled')
+    await imports.setStatus(legacy.importId, 'mapped')
+
+    const list = await service.listImportsInScope(ANALYST, ANALYST_ID, page)
+
+    expect(list).toMatchObject({ page: 1, pageSize: 50, total: 2 })
+    expect(list.items.map((i) => i.importId)).toEqual([legacy.importId, uploaded.importId])
+    expect(list.items[0]).toMatchObject({
+      status: 'mapped',
+      fileCount: 1,
+      createdBy: { userId: ANALYST_ID, userName: 'analyst' },
+      account: { id: C_ALT, name: 'ProviderC-Alt' },
+      provider: { id: 201, name: 'Provider C' },
+      merchant: { id: 2, name: 'Merchant B' },
+    })
+    expect(list.items[0]).not.toHaveProperty('matchingRuleSetId')
+  })
+
+  it('keeps the imports of merchants outside the scope out', async () => {
+    const own = await create(ANALYST, ANALYST_ID, A_USD)
+    await create(ANALYST, ANALYST_ID, C_ALT, SAMPLE_FILES.legacy)
+
+    const list = await service.listImportsInScope(VIEWER, 3, page)
+
+    expect(list.items.map((i) => i.importId)).toEqual([own.importId])
+    expect(list.total).toBe(1)
+  })
+
+  it('filters by status (any of the six), merchant, provider and account', async () => {
+    const usd = await create(ANALYST, ANALYST_ID, A_USD)
+    const legacy = await create(ANALYST, ANALYST_ID, C_ALT, SAMPLE_FILES.legacy)
+    const cancelled = await create(ANALYST, ANALYST_ID, A_USD)
+    await imports.setStatus(cancelled.importId, 'cancelled')
+    const ids = async (query: Parameters<ImportService['listImportsInScope']>[2]) =>
+      (await service.listImportsInScope(ANALYST, ANALYST_ID, query)).items.map((i) => i.importId)
+
+    expect(await ids({ ...page, status: 'cancelled' })).toEqual([cancelled.importId])
+    expect(await ids({ ...page, accountId: C_ALT })).toEqual([legacy.importId])
+    expect(await ids({ ...page, merchantId: 2 })).toEqual([legacy.importId])
+    expect(await ids({ ...page, providerId: 101 })).toEqual([usd.importId])
+    expect(await ids({ ...page, merchantId: 1, providerId: 201 })).toEqual([])
+  })
+
+  it('mine keeps the imports the caller created', async () => {
+    const mine = await create(ANALYST, ANALYST_ID, A_USD)
+    const admins = await create(ADMIN, ADMIN_ID, A_USD)
+
+    const ids = async (mineOnly?: boolean) =>
+      (await service.listImportsInScope(ANALYST, ANALYST_ID, { ...page, mine: mineOnly })).items.map((i) => i.importId)
+
+    expect(await ids(true)).toEqual([mine.importId])
+    expect((await ids(false)).sort()).toEqual([mine.importId, admins.importId].sort())
+    expect((await ids()).sort()).toEqual([mine.importId, admins.importId].sort())
+  })
+
+  it('pages over a stable order without repeating an import, with the total of every match', async () => {
+    const created = [
+      await create(ANALYST, ANALYST_ID, A_USD),
+      await create(ANALYST, ANALYST_ID, A_USD),
+      await create(ANALYST, ANALYST_ID, A_USD),
+    ]
+
+    const first = await service.listImportsInScope(ANALYST, ANALYST_ID, { page: 1, pageSize: 2, accountId: A_USD })
+    const second = await service.listImportsInScope(ANALYST, ANALYST_ID, { page: 2, pageSize: 2, accountId: A_USD })
+
+    expect(first).toMatchObject({ page: 1, pageSize: 2, total: 3 })
+    expect(first.items).toHaveLength(2)
+    expect(second.items).toHaveLength(1)
+    expect([...first.items, ...second.items].map((i) => i.importId).sort()).toEqual(
+      created.map((c) => c.importId).sort(),
+    )
+  })
+
+  it('answers not found for a merchant, provider or account outside the scope or unknown, with the same message', async () => {
+    const messages = await Promise.all(
+      [
+        { merchantId: 2 },
+        { providerId: 201 },
+        { accountId: C_ALT },
+        { accountId: UNKNOWN_UUID },
+        { merchantId: 999 },
+      ].map(
+        async (filter) =>
+          (await caught(service.listImportsInScope(VIEWER, 3, { ...page, ...filter }), NotFoundError)).message,
+      ),
+    )
+
+    expect(new Set(messages).size).toBe(1)
+  })
+})
