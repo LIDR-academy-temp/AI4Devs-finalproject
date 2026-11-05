@@ -887,8 +887,9 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
       route(
         'resolveRow',
         async ({ request, params, user }) => {
+          // Permission before scope, as the requirePermission preHandler of the API: viewer gets 403 for any import.
+          if (!canProcess(user)) return forbidden()
           const record = visibleImport(user, params.importId)
-          if (!canProcess(user)) return record ? forbidden() : notFound('Import')
           if (!record) return notFound('Import')
           const rowNo = Number(params.rowNo)
           if (!/^\d+$/.test(String(params.rowNo)) || rowNo < 1) return error(400, 'validation_error', 'Invalid rowNo')

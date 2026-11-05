@@ -62,11 +62,13 @@ Al confirmar, el diálogo se cierra con la respuesta (como el de cancelar). Los 
 
 | Respuesta | Mensaje | Además |
 |---|---|---|
-| `200` | `Row <rowNo> of <hoja> matched to <gateway>.` | D3; foco al encabezado de las filas (`requestListFocus(ROWS_LIST)`), porque el botón pulsado desaparece |
+| `200` | `Row <rowNo> of <hoja> matched to <gateway>.` | D3; foco al encabezado de las filas, porque el botón pulsado desaparece (ver abajo) |
 | `409 import_not_editable` | `This row can no longer be resolved (<status>).` | se recarga el detalle (`useReloadImport`); el modo cambia solo |
 | `409 row_not_ambiguous` | `This row is no longer ambiguous.` | detalle y filas, como en D3 sin las validaciones |
 | `400 validation_error` | `That gateway is no longer a candidate for this row.` | filas |
 | otro | `The row could not be resolved. Try again.` | — |
+
+El foco usa el mecanismo de `ui-polish` D13 (`requestListFocus(ROWS_LIST)` y `ListHeading`), pero el encabezado solo atiende una petición cuando cambia su `focusKey`, y resolver no cambia ni filtro ni página. Por eso `RowsTable` lleva un contador de resoluciones que entra en la clave (`<match>:<page>:<resoluciones>`): cada `200` pide el foco y suma uno, y el encabezado lo toma al volver a pintarse. Alternativa descartada: enfocar el encabezado con una referencia propia, que duplicaría el mecanismo común y su desplazamiento.
 
 Mientras el `PATCH` está en vuelo, todos los **Choose** y el botón de confirmar quedan deshabilitados: una escritura a la vez.
 
@@ -74,7 +76,7 @@ Si tras el refresco la página pedida queda más allá de la última (se resolvi
 
 ### D5. Fake MSW: aplica, no decide
 
-Handler `http.patch(\`${API}/imports/:importId/rows/:sheetId/:rowNo\`, route('resolveRow', …))` en `imports.ts`, con el mismo orden que el servicio: alcance y permiso (`403` si el import es visible, `404` si no), estado (`409 import_not_editable`), `rowNo` y cuerpo con `ResolveRowBody.safeParse` (`400`), fila (`404`), `ambiguous` (`409 row_not_ambiguous`), candidata (`400` con `details.candidates`).
+Handler `http.patch(\`${API}/imports/:importId/rows/:sheetId/:rowNo\`, route('resolveRow', …))` en `imports.ts`, con el mismo orden que la ruta y el servicio: permiso antes que alcance, como el `preHandler` `requirePermission` (`viewer` recibe `403` aunque el import no sea visible), después alcance (`404`), estado (`409 import_not_editable`), `rowNo` y cuerpo con `ResolveRowBody.safeParse` (`400`), fila (`404`), `ambiguous` (`409 row_not_ambiguous`), candidata (`400` con `details.candidates`).
 
 Lo que la fila pasa a ser no lo calcula el fake: `makeAmbiguousRow` (nuevo en `import-fixtures.ts`) construye la fila ambigua y, por cada candidata, el `ImportRowItem` resuelto que respondería el API (con `transaction` o, si es `outOfScope`, `transaction: null` y `out_of_scope_transaction`). El handler copia ese resultado en la fila guardada, lo valida con `ImportRowItem.parse` antes de responder y llama a `supersedeCurrentRun(importId)`, una función nueva de `validations.ts` que marca la corrida vigente como no vigente sin sustituta (lo que `supersedeRunOnUndo` hace sin la parte de la revisión, que en `analyzed` no existe). Los contadores del detalle salen de las filas (`summarize`), así que bajan solos.
 

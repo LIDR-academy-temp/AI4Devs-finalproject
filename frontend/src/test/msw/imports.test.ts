@@ -305,7 +305,7 @@ describe('fake import API: PATCH rows (spec "Resolución de una fila ambigua"; w
     })
   })
 
-  it('answers 403 to viewer, 404 for an import out of scope and 409 import_not_editable outside analyzed', async () => {
+  it('answers 403 to viewer even for an import it cannot see (permission before scope, as the API), 404 for an unknown import and 409 import_not_editable outside analyzed', async () => {
     const own = seedImport('batch-clean', { status: 'analyzed' })
     const row = seedAmbiguousRow(own.importId)
     const foreign = seedImport('legacy-provider', { account: 'ProviderC-Alt', status: 'analyzed' })
@@ -317,8 +317,13 @@ describe('fake import API: PATCH rows (spec "Resolución de una fila ambigua"; w
     expect(forbidden.status).toBe(403)
     expect(forbidden.body.code).toBe('forbidden')
     const hidden = await resolve('viewer', foreign.importId, foreignRow.sheetId, foreignRow.rowNo, { gatewayId: 1 })
-    expect(hidden.status).toBe(404)
-    expect(hidden.body.code).toBe('not_found')
+    expect(hidden.status).toBe(403)
+    expect(hidden.body.code).toBe('forbidden')
+    const unknownImport = await resolve('analyst', '00000000-0000-4000-8000-ffffffffffff', row.sheetId, row.rowNo, {
+      gatewayId: 1,
+    })
+    expect(unknownImport.status).toBe(404)
+    expect(unknownImport.body.code).toBe('not_found')
     const notEditable = await resolve('analyst', validated.importId, validatedRow.sheetId, validatedRow.rowNo, {
       gatewayId: 1,
     })
