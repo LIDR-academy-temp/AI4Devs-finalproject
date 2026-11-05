@@ -240,7 +240,7 @@ describe('fake import API: GET /imports (spec "Imports en curso", "Filtros" and 
 })
 
 describe('fake import API: the reason of a cancel (spec "Motivo de la cancelaciÃ³n")', () => {
-  it('answers 400 validation_error without a valid reason and records the trimmed one', async () => {
+  it('answers 400 validation_error without a valid reason, and logs every body as it was sent (review-diff M2)', async () => {
     const detail = seedImport('batch-split', { labels: ['batch-split_part1'] })
 
     for (const body of [undefined, {}, { reason: '   ' }, { reason: 'x'.repeat(501) }, { reason: 'x', note: 'y' }]) {
@@ -249,10 +249,18 @@ describe('fake import API: the reason of a cancel (spec "Motivo de la cancelaciÃ
       expect(res.body.code).toBe('validation_error')
     }
     expect(importRecord(detail.importId).status).toBe('uploaded')
+    // The raw body, before any validation: a test of the screen sees exactly what the screen sent.
+    expect(importRequests('cancel').map((r) => r.body)).toEqual([
+      undefined,
+      {},
+      { reason: '   ' },
+      { reason: 'x'.repeat(501) },
+      { reason: 'x', note: 'y' },
+    ])
 
     const res = await call('analyst', 'POST', `/imports/${detail.importId}/cancel`, { reason: '  Duplicate upload ' })
     expect(res.status).toBe(200)
-    expect(importRequests('cancel').at(-1)?.body).toEqual({ reason: 'Duplicate upload' })
+    expect(importRequests('cancel').at(-1)?.body).toEqual({ reason: '  Duplicate upload ' })
   })
 })
 
