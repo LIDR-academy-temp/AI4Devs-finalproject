@@ -136,11 +136,12 @@ export function RowsTable({
   const resolver = useResolveRow(importId)
   const reloadImport = useReloadImport(importId)
   const [choice, setChoice] = useState<RowChoice | null>(null)
-  // False once a resolution closes the dialog: the heading of the rows takes the focus, not the Choose (design D4).
+  // False once the rows change under the dialog (a 200, a 400 or row_not_ambiguous): its Choose goes with the next
+  // rows, so the heading of the rows takes the focus, not the Choose (design D4).
   const [returnFocus, setReturnFocus] = useState(true)
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null)
-  // Each resolution changes the key of the heading, so it takes the focus the success asked for.
-  const [resolutions, setResolutions] = useState(0)
+  // Each of those answers changes the key of the heading, so it takes the focus they asked for.
+  const [rowChanges, setRowChanges] = useState(0)
   const [afterResolve, setAfterResolve] = useState(false)
 
   const choose = (row: ImportRowItem, candidate: Candidate, opener: HTMLElement) => {
@@ -151,16 +152,20 @@ export function RowsTable({
     setChoice({ row, candidate, warnRun: view === undefined || view.run !== null, opener })
   }
   const askRows = () => void queryClient.invalidateQueries({ queryKey: [...importKey(importId), 'rows'] })
+  // The Choose that opened the dialog will not survive the rows that come next: the focus goes to their heading.
+  const focusRows = () => {
+    setReturnFocus(false)
+    requestListFocus(ROWS_LIST)
+    setRowChanges((n) => n + 1)
+  }
   const confirm = ({ row, candidate }: RowChoice) =>
     resolver.mutate(
       { sheetId: row.sheetId, rowNo: row.rowNo, gatewayId: candidate.gatewayId },
       {
         onSuccess: () => {
-          setReturnFocus(false)
+          focusRows()
           setChoice(null)
           setMessage({ text: s.resolve.resolved(row.rowNo, row.sheetName, candidateLabel(candidate)), error: false })
-          requestListFocus(ROWS_LIST)
-          setResolutions((n) => n + 1)
           setAfterResolve(true)
         },
         onError: (failure) => {
@@ -171,10 +176,12 @@ export function RowsTable({
             setMessage({ text: s.resolve.notEditable(current?.status ?? ''), error: true })
             void reloadImport()
           } else if (code === 'row_not_ambiguous') {
+            focusRows()
             setMessage({ text: s.resolve.notAmbiguous, error: true })
             void reloadImport()
             askRows()
           } else if (code === 'validation_error') {
+            focusRows()
             setMessage({ text: s.resolve.notCandidate, error: true })
             askRows()
           } else {
@@ -231,7 +238,7 @@ export function RowsTable({
   return (
     <ResolutionContext.Provider value={resolution}>
       <section className="flex flex-col gap-2">
-        <ListHeading name={ROWS_LIST} focusKey={`${match}:${page}:${resolutions}`} className="font-medium">
+        <ListHeading name={ROWS_LIST} focusKey={`${match}:${page}:${rowChanges}`} className="font-medium">
           {s.title}
         </ListHeading>
         <div role="toolbar" aria-label={s.filterLabel} className="flex flex-wrap items-center gap-1">

@@ -31,8 +31,9 @@ export interface RowChoice {
  * without calling the API; it closes on its own once the PATCH answers.
  *
  * The focus when it closes (design D4): Radix's AlertDialog returns it to its trigger and this dialog has none, so by
- * itself it would end on the body. Closed without resolving, it goes back to the Choose that opened the dialog; after a
- * resolution that Choose disappears and the heading of the rows takes it, so nothing is focused here.
+ * itself it would end on the body. Closed without resolving, it goes back to the Choose that opened the dialog; after an
+ * answer that asks the rows again (a 200, a 400 or row_not_ambiguous) that Choose disappears and the heading of the rows
+ * takes it, so nothing is focused here.
  */
 export function ResolveRowDialog({
   choice,
@@ -43,7 +44,8 @@ export function ResolveRowDialog({
 }: {
   choice: RowChoice | null
   pending: boolean
-  /** False when the dialog closes after a resolution (a 200): the focus is left to the heading of the rows. */
+  /** False when the dialog closes on an answer that asks the rows again (a 200, a 400 or row_not_ambiguous): the
+   * focus is left to the heading of the rows. */
   returnFocus: boolean
   onConfirm: (choice: RowChoice) => void
   onClose: () => void
