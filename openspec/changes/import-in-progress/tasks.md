@@ -133,9 +133,9 @@ Rama `feat/import-in-progress` hacia `feature/entrega-3-MVP`. Sin migración ni 
 
 ## 11. Capturas
 
-- [ ] 11.1 Script `e2e/screenshots/import-in-progress.ts` y `screenshots:import-in-progress` en `e2e/package.json` y en la raíz (D10). Verificar ejecutándolo contra la app local: deja las capturas a 1280 y 1024 px en `docs/wireframes/import-in-progress/`, sin desbordes, y ningún import que creó queda abierto
-- [ ] 11.2 Añadir la carpeta a `docs/wireframes/README.md` y revisar cada captura contra el prototipo `png/InProgress.png` (sin "Recently closed"). Verificar a ojo y anotarlo en el PR
-- [ ] 11.3 Commit: `docs(web): capturas de In Progress, cancelar con motivo y readiness`
+- [x] 11.1 Script `e2e/screenshots/import-in-progress.ts` y `screenshots:import-in-progress` en `e2e/package.json` y en la raíz (D10). Verificar ejecutándolo contra la app local: deja las capturas a 1280 y 1024 px en `docs/wireframes/import-in-progress/`, sin desbordes, y ningún import que creó queda abierto
+- [x] 11.2 Añadir la carpeta a `docs/wireframes/README.md` y revisar cada captura contra el prototipo `png/InProgress.png` (sin "Recently closed"). Verificar a ojo y anotarlo en el PR
+- [x] 11.3 Commit: `docs(web): capturas de In Progress, cancelar con motivo y readiness`
 
 ## 12. Cierre
 
