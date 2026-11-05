@@ -90,7 +90,7 @@ En `uploaded`, `requireConfirmation = false` y el resultado es el de hoy: el esc
 
 ### D6. `CancelImportDialog` con motivo y reutilizable
 
-- **Props.** La prop `detail: ImportDetail` pasa a `target: Pick<ImportDetail, 'importId' | 'accountId' | 'status'>`. Como `ImportDetail` cumple ese tipo, `DecisionBar.tsx` (validations) sigue compilando sin cambios.
+- **Props.** La prop `detail` conserva su nombre y su tipo se estrecha a `Pick<ImportDetail, 'importId' | 'accountId' | 'status'>`. Como `ImportDetail` cumple ese tipo, `DecisionBar.tsx` (validations) sigue compilando sin cambios; renombrarla a `target` habría obligado a tocar esa llamada.
 - **Callback.** Se añade `onCancelled?` para que In Progress vuelva a pedir su lista.
 - **Campo `Reason`.** Es un `Textarea` con `maxLength` 500 que empieza vacío cada vez que se abre. **Yes, cancel the import** está deshabilitado mientras el motivo recortado esté vacío. Se envía recortado.
 - **Errores.** Se mantiene el tratamiento de hoy: el diálogo se cierra, se muestra el mensaje y, ante `409`, se recarga.
