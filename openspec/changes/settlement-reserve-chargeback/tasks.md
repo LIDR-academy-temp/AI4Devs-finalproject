@@ -48,7 +48,7 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
 
   Hecho: `prefilledBatchFees` deja fuera los tipos de fee fuera de catálogo ("Fraud Monitoring Fee" de `batch-issues`), que antes hacían fallar la carga de la muestra.
 - [x] 2.3 Commit: test(settlement): liberación de la reserva ante un ajuste con el oráculo de batch-issues
-- [ ] 2.4 Implementar (D1–D3):
+- [x] 2.4 Implementar (D1–D3):
   - `PriorReserveState` y `reserveStates` en `domain/types.ts`;
   - `ReservePolicyOutcome` y el snapshot `{ policy, applied: true, outcome, heldInBatchId }`;
   - `domain/adjustment-reserve.ts`;
@@ -57,7 +57,7 @@ Liberan los tres ajustes I: `Chargeback` (con `CHB 2`), `Refund` y `RDR` (P4). C
   - en el fake de la aplicación y en `load-settlement-input.ts`, `reserveStates` vacío hasta el grupo 3 (`sample-input.ts` ya lo construye con la historia sembrada en 2.2, con `reserveStatesOf`).
 
   Verificar con `pnpm --filter @recon/backend test` en verde. Romper el test a propósito una vez (no marcar la reserva como liberada en el batch, para que el segundo ajuste también libere), comprobar que falla y restaurarlo.
-- [ ] 2.5 Commit: feat(settlement): liberar la reserva ante chargeback, refund o RDR con release_on_chargeback, y `git push`.
+- [x] 2.5 Commit: feat(settlement): liberar la reserva ante chargeback, refund o RDR con release_on_chargeback, y `git push`.
 
 ## 3. Fuente del proceso: `reserveStates`
 

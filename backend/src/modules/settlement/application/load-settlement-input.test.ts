@@ -20,7 +20,8 @@ describe('loadSettlementInput', async () => {
       options: expected.options,
     })
 
-    expect(loaded).toEqual(expected)
+    // The source reads no reserve state until group 3 of settlement-reserve-chargeback.
+    expect(loaded).toEqual({ ...expected, reserveStates: new Map() })
   })
 
   it('asks only for the channels and the previous E movements of the matched transactions', async () => {

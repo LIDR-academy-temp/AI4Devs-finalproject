@@ -11,7 +11,6 @@ const ctx: MovementContext = {
     [RAM_120.channelId, RAM_120],
   ]),
   previousE: new Set<bigint>(),
-  policy: 'hold_until_term',
 }
 const one = (r: Parameters<typeof buildMovements>[0][number], context = ctx) =>
   buildMovements([r], context).movements[0]!
@@ -105,10 +104,7 @@ describe('I movements', () => {
   })
 
   it('hold no reserve and leave the reserve policy to applyAdjustmentReserve (#62)', () => {
-    const m = one(row(2, { cycle: 'I', statusCode: 'Chargeback' }, chargeback()), {
-      ...ctx,
-      policy: 'release_on_chargeback',
-    })
+    const m = one(row(2, { cycle: 'I', statusCode: 'Chargeback' }, chargeback()))
 
     expect(m).toMatchObject({
       reserveHeldAmt: '0.0000',

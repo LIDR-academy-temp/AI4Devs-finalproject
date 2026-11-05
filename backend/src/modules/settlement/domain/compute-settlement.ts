@@ -1,5 +1,6 @@
 // The settlement engine (settlement-process design D2): one pure calculation for the preview and for processing.
 import { businessDay } from '../../fees/domain/fee-selection.js'
+import { applyAdjustmentReserve } from './adjustment-reserve.js'
 import { validateBatchFees } from './batch-fees.js'
 import { attemptFor, proposeBatchNumber } from './batch-number.js'
 import { type BatchChannels, batchChannels } from './channels.js'
@@ -43,15 +44,16 @@ export function computeSettlement(input: SettlementInput): SettlementPlan {
 
   const channels = new Map(input.channels.map((c) => [c.channelId, c]))
   const { processed, skipped } = classifyRows(input.rows, input.inclusions)
-  const built = buildMovements(processed, {
-    channels,
-    previousE: input.previousE,
+  const built = buildMovements(processed, { channels, previousE: input.previousE })
+  // The reserve policy crosses rows (the first adjustment, the R of the batch), so it runs after the movements (D1).
+  const reserved = applyAdjustmentReserve(built.movements, {
     policy: input.account.chargebackReservePolicy,
+    reserveStates: input.reserveStates,
   })
   // The transactional fees are an optional step (design D17): without it every fee is 0 and the plan says so.
   const priced = input.options.transactionalFees
-    ? applyTransactionalFees(built.movements, { fees: input.fees, feeTypes: input.feeTypes })
-    : { movements: built.movements, skipped: [], warnings: [{ code: 'transactional_fees_not_computed' } as const] }
+    ? applyTransactionalFees(reserved.movements, { fees: input.fees, feeTypes: input.feeTypes })
+    : { movements: reserved.movements, skipped: [], warnings: [{ code: 'transactional_fees_not_computed' } as const] }
   const skippedFee = new Set(priced.skipped.map((s) => `${s.sheetId}:${s.rowNo}`))
   const movementWarnings = built.warnings.map((w) =>
     w.code === 'undated_adjustment' && skippedFee.has(`${w.sheetId}:${w.rowNo}`) ? { ...w, feeSkipped: true } : w,
@@ -65,13 +67,8 @@ export function computeSettlement(input: SettlementInput): SettlementPlan {
     referenceDay: referenceDay(input),
   })
 
-  const warnings: SettlementWarning[] = [...priced.warnings, ...movementWarnings]
+  const warnings: SettlementWarning[] = [...priced.warnings, ...movementWarnings, ...reserved.warnings]
   if (input.account.rollingReserveCapAmt !== null) warnings.push({ code: 'reserve_cap_not_applied' })
-  if (
-    input.account.chargebackReservePolicy === 'release_on_chargeback' &&
-    movements.some((m) => m.cycle === 'I' && m.statusCode === 'Chargeback')
-  )
-    warnings.push({ code: 'chargeback_reserve_policy_not_applied' })
 
   return {
     batchNo,

@@ -160,6 +160,7 @@ export function input(overrides: Partial<SettlementInput> = {}): SettlementInput
     inclusions: [],
     channels: [RAM_01],
     previousE: new Set(),
+    reserveStates: new Map(),
     fees: [],
     feeTypes: FEE_TYPES,
     attempts: [],

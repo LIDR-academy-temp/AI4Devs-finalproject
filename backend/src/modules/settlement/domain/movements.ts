@@ -1,6 +1,5 @@
 // One movement per processed row (settlement-process design D4, D12; spec settlement "Importe, estado y fecha de cada
 // movimiento", "Reserva retenida y liberada", "Ronda del movimiento I").
-import type { ChargebackReservePolicy } from '@recon/shared'
 import { percentOf, plusDays, text4, ZERO } from './money.js'
 import type {
   MovementPlan,
@@ -14,7 +13,6 @@ export interface MovementContext {
   channels: ReadonlyMap<number, SettlementChannel>
   /** Transactions with an E movement in a non-undone attempt of the provider (round 2). */
   previousE: ReadonlySet<bigint>
-  policy: ChargebackReservePolicy
 }
 
 /** Rows already processed and in first-appearance order (classifyRows). */
@@ -80,8 +78,8 @@ export function buildMovements(
         eventDate,
         roundNo: eInBatch.has(t.transactionId) ? 1 : ctx.previousE.has(t.transactionId) ? 2 : null,
         expectedReserveReleaseAt: null,
-        // The policy of the account is recorded, not applied yet (#62).
-        reservePolicySnapshot: JSON.stringify({ policy: ctx.policy, applied: false }),
+        // The reserve policy and its snapshot are applied afterwards, across rows (adjustment-reserve.ts).
+        reservePolicySnapshot: null,
       } satisfies MovementPlan
     }
     return {

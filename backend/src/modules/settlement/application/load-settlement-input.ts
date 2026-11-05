@@ -35,6 +35,8 @@ export async function loadSettlementInput(source: SettlementSource, load: LoadRe
     inclusions,
     channels,
     previousE,
+    // Read from the source in group 3 of settlement-reserve-chargeback; empty: no prior reserve state.
+    reserveStates: new Map(),
     fees,
     feeTypes,
     attempts,

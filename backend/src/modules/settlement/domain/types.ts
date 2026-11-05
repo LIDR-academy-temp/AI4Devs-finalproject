@@ -125,6 +125,33 @@ export interface AccountAttempt {
   importId: string
 }
 
+/**
+ * The reserve of a transaction in non-undone attempts of any account of the provider (settlement-reserve-chargeback
+ * D2): the first Successful E that held one, whether an R released it, and whether an I released it early.
+ */
+export interface PriorReserveState {
+  held: { amount: string; batchId: string } | null
+  releasedInR: boolean
+  releasedByAdjustment: boolean
+}
+
+/** What the reserve policy did with an I movement, the same for Chargeback, Refund and RDR (D3). */
+export type ReservePolicyOutcome =
+  | 'released'
+  | 'held_until_term'
+  | 'no_held_reserve'
+  | 'already_released'
+  | 'released_in_r'
+
+/** reservePolicySnapshot of an I movement since #62; earlier attempts stored { policy, applied: false }. */
+export interface ReservePolicySnapshot {
+  policy: ChargebackReservePolicy
+  applied: true
+  outcome: ReservePolicyOutcome
+  /** The attempt whose E held the reserve; null when it is this batch or there is none. */
+  heldInBatchId: string | null
+}
+
 export interface BusinessRange {
   min: Date
   max: Date
@@ -142,6 +169,8 @@ export interface SettlementInput {
   channels: readonly SettlementChannel[]
   /** Transactions with an E movement in a non-undone attempt of any account of the provider (this import excluded). */
   previousE: ReadonlySet<bigint>
+  /** Prior state of the reserve of the I and R transactions (same attempts); a transaction without one is left out. */
+  reserveStates: ReadonlyMap<bigint, PriorReserveState>
   fees: readonly AccountFeeConfig[]
   feeTypes: readonly SettlementFeeType[]
   attempts: readonly AccountAttempt[]
