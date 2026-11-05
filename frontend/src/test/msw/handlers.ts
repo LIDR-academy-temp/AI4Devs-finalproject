@@ -20,6 +20,7 @@ import {
   type UserName,
 } from './fixtures'
 import { createImportHandlers, resetImports } from './imports'
+import { createMatchingHandlers, resetMatching } from './matching'
 import { createSettlementHandlers, resetSettlements } from './settlements'
 import { createValidationHandlers, resetValidations } from './validations'
 
@@ -48,6 +49,7 @@ export function resetDb() {
   resetSettlements()
   resetFees()
   resetAccounts()
+  resetMatching()
 }
 
 /** Issues a token pair for a user, as a successful login would. */
@@ -225,4 +227,5 @@ export const handlers = [
   ...createSettlementHandlers(caller),
   ...createFeeHandlers(caller),
   ...createAccountHandlers(caller, { accounts: () => db.accounts, visibleProvider }),
+  ...createMatchingHandlers(caller, { accounts: () => db.accounts, visibleProvider }),
 ]

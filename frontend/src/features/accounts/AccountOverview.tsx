@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useParams } from '@tanstack/react-router'
+import { Link, useParams } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -10,6 +10,7 @@ import { accountQuery, matchingRuleSetsQuery } from './queries'
 import { strings } from './strings'
 
 const g = strings.detail.general
+const linkClass = 'text-primary underline underline-offset-4'
 
 /**
  * The rule set by its name. Without it (the read failed or the set is not listed) the id is enough: the Overview
@@ -18,9 +19,20 @@ const g = strings.detail.general
 function RuleSetName({ account }: { account: AccountDetail }) {
   const ruleSetId = account.matchingRuleSetId
   const ruleSets = useQuery({ ...matchingRuleSetsQuery(account.providerId), enabled: ruleSetId !== null })
-  if (ruleSetId === null) return g.globalRules
+  // A link, not a tab: the set belongs to the provider and its accounts share it (web-admin-matching design D9).
+  if (ruleSetId === null) {
+    return (
+      <Link to="/matching-rules/global" className={linkClass}>
+        {g.globalRules}
+      </Link>
+    )
+  }
   if (ruleSets.isPending) return <Skeleton className="inline-block h-4 w-32 align-middle" />
-  return ruleSets.data?.find((r) => r.ruleSetId === ruleSetId)?.name ?? g.ruleSet(ruleSetId)
+  return (
+    <Link to="/matching-rules/$ruleSetId" params={{ ruleSetId: String(ruleSetId) }} className={linkClass}>
+      {ruleSets.data?.find((r) => r.ruleSetId === ruleSetId)?.name ?? g.ruleSet(ruleSetId)}
+    </Link>
+  )
 }
 
 function General({ account }: { account: AccountDetail }) {

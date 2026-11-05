@@ -9,16 +9,12 @@ import { HttpResponse, http, type PathParams } from 'msw'
 import type { AccountSummary, ProviderSummary } from '@/lib/api/types'
 import { fixed } from './fees'
 import { ACCOUNT_CREATOR, MERCHANTS, USERS, type UserName } from './fixtures'
+import { ruleSetRows } from './matching'
 
 const API = '*/api/v1'
 
-/** The rule sets of the fake: Provider C legacy is the one of the seed; the retired one is inactive. */
-export const RULE_SET_IDS = { legacy: 3, retired: 4 } as const
-
-const RULE_SETS = [
-  { ruleSetId: RULE_SET_IDS.legacy, providerId: 201, name: 'Provider C legacy', isActive: true },
-  { ruleSetId: RULE_SET_IDS.retired, providerId: 201, name: 'Provider C retired', isActive: false },
-]
+// The rule sets live in the fake of matching.ts, so a set created in Matching Rules is offered by the account forms.
+export { RULE_SET_IDS } from './matching-fixtures'
 
 export type AccountRoute = 'create' | 'patch' | 'ruleSets'
 
@@ -194,12 +190,16 @@ export function createAccountHandlers(caller: (request: Request) => UserName | n
         const provider = catalog.visibleProvider(user, Number(params.providerId))
         if (!provider) return notFound('Provider')
         const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name)
-        const sets = RULE_SETS.filter((r) => r.providerId === provider.providerId)
-          .map((r) => ({
-            ...r,
+        const sets = ruleSetRows()
+          .filter((r) => r.providerId === provider.providerId)
+          .map(({ ruleSetId, providerId, name, isActive }) => ({
+            ruleSetId,
+            providerId,
+            name,
+            isActive,
             accounts: catalog
               .accounts()
-              .filter((a) => a.matchingRuleSetId === r.ruleSetId)
+              .filter((a) => a.matchingRuleSetId === ruleSetId)
               .map((a) => ({ accountId: a.accountId, name: a.name, isActive: a.isActive }))
               .sort(byName),
           }))
