@@ -55,10 +55,9 @@ export function InProgressPage() {
       replace: options?.replace,
       resetScroll: false,
     })
-  const onCancelled = (notCancellableStatus?: string) => {
+  // The list is asked again by the mutation (useCancelImport invalidates it); here only the notice changes.
+  const onCancelled = (notCancellableStatus?: string) =>
     setNotice(notCancellableStatus === undefined ? null : strings.cancel.notCancellable(notCancellableStatus))
-    void list.refetch()
-  }
 
   let body: ReactNode
   if (scope.state === 'not_available') body = <p className="text-sm">{s.notAvailable}</p>

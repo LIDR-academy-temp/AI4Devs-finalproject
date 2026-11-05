@@ -76,7 +76,8 @@ export function useCancelImport(importId: string) {
     onSuccess: (detail) => {
       storeDetail(queryClient, detail)
       void queryClient.invalidateQueries({ queryKey: [...importKey(importId), 'rows'] })
-      void queryClient.invalidateQueries({ queryKey: IMPORT_LIST_KEY })
     },
+    // Cancelled or no longer cancellable, the import has left In Progress: its list is asked again either way (D6).
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: IMPORT_LIST_KEY }),
   })
 }

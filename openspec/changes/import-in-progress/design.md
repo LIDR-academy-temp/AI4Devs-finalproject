@@ -91,10 +91,10 @@ En `uploaded`, `requireConfirmation = false` y el resultado es el de hoy: el esc
 ### D6. `CancelImportDialog` con motivo y reutilizable
 
 - **Props.** La prop `detail` conserva su nombre y su tipo se estrecha a `Pick<ImportDetail, 'importId' | 'accountId' | 'status'>`. Como `ImportDetail` cumple ese tipo, `DecisionBar.tsx` (validations) sigue compilando sin cambios; renombrarla a `target` habría obligado a tocar esa llamada.
-- **Callback.** Se añade `onCancelled?` para que In Progress vuelva a pedir su lista.
+- **Callback.** Se añade `onCancelled?(notCancellableStatus?)`. La lista de In Progress se vuelve a pedir por la invalidación de `['import-list']` que hace la mutación al terminar (`onSettled`: cancelado o `409`); el callback no la pide otra vez. Ante `409 import_not_cancellable` recibe el estado actual, y la página de In Progress muestra `This import can no longer be cancelled (<estado>).` como aviso propio: la fila desaparece al volver a pedirse la lista, y con ella el mensaje del diálogo.
 - **Campo `Reason`.** Es un `Textarea` con `maxLength` 500 que empieza vacío cada vez que se abre. **Yes, cancel the import** está deshabilitado mientras el motivo recortado esté vacío. Se envía recortado.
 - **Errores.** Se mantiene el tratamiento de hoy: el diálogo se cierra, se muestra el mensaje y, ante `409`, se recarga.
-- **Mutación.** `useCancelImport(importId)` recibe el motivo e invalida además `['import-list']`.
+- **Mutación.** `useCancelImport(importId)` recibe el motivo e invalida además `['import-list']` al terminar, con éxito o con error.
 
 No se reutiliza `features/settlements/ReasonDialog.tsx`: es de settlements, y moverlo tocaría la otra sesión.
 
@@ -104,7 +104,7 @@ No se reutiliza `features/settlements/ReasonDialog.tsx`: es de settlements, y mo
 - **Analyze** se habilita con `status === 'mapped' && readiness.canAnalyze && !dirty`.
 - El fake MSW porta D4 (`readinessOf` recibe el estado y `mappingConfirmed`).
 
-### D8. Llamadas al cancel fuera del módulo (pendiente de confirmar)
+### D8. Llamadas al cancel fuera del módulo
 
 El cuerpo obligatorio rompe cinco llamadas que hoy cancelan sin cuerpo, en archivos de las áreas de la otra sesión:
 
@@ -113,13 +113,15 @@ El cuerpo obligatorio rompe cinco llamadas que hoy cancelan sin cuerpo, en archi
 - `backend/test/integration/validation-runs.int.test.ts:530` y `:544`
 - `frontend/src/features/validations/decision.test.tsx:201` (el test confirma el diálogo sin escribir motivo)
 
-Propuesta:
+Aprobado en el gate. Lo hecho:
 
 - añadir el cuerpo `{ reason }` en cada llamada (una línea en cada una) y el paso de escribir el motivo en `decision.test.tsx`;
 - todo en un commit aparte (`test: …`) al final, para rebasar fácil;
 - avisar a la sesión de #62 de qué líneas toca.
 
-No cambia ningún código de producción de esos módulos.
+No cambia ningún código de producción de esos módulos. Commit `238828c`.
+
+**Lo que se escapó al inventario.** La búsqueda de llamadas casaba con la sintaxis de TypeScript, no con la de Bruno. Faltaron dos peticiones de `api-collection/20-flows/validations` que cancelaban sin cuerpo: `batch-blocked/6 Cancel.bru` y `batch-issues/19 Cancel.bru`. Las encontró la primera pasada de `pnpm test:api`, y van con motivo en un commit aparte (`9832cd3`).
 
 *Alternativa descartada:* aceptar la cancelación sin cuerpo durante una transición. Contradice el gate (motivo obligatorio).
 
@@ -144,7 +146,7 @@ No cambia ningún código de producción de esos módulos.
 
 `e2e/screenshots/import-in-progress.ts` (`pnpm screenshots:import-in-progress`), con las protecciones de los scripts anteriores: contraseña del `.env` de la raíz en tiempo de ejecución, sin traza ni vídeo, y medición de desbordes a 1280 y 1024 px.
 
-Crea sus imports por el API:
+Crea sus imports desde las pantallas (New Reconciliation, Files y Mapping), como los demás scripts de capturas:
 
 - `batch-split_part1` en `ProviderA-USD` (se queda en `uploaded`);
 - `legacy-provider` en `ProviderC-Alt`, confirmado y con `part2` añadido (`mapped` con hojas sin confirmar);
