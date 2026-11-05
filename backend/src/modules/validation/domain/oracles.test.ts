@@ -13,9 +13,18 @@ interface Expected {
   affectedIds?: Record<string, string[] | string>
   blocked?: boolean
   ranges?: Record<string, [string, string]>
+  /** The outcome of each validation, where the oracle fixes it (batch-wrong-account: nothing matched, #92). */
+  outcomes?: Record<string, string>
 }
 
-const SAMPLES: SampleName[] = ['batch-clean', 'batch-split', 'batch-issues', 'batch-blocked', 'legacy-provider']
+const SAMPLES: SampleName[] = [
+  'batch-clean',
+  'batch-split',
+  'batch-issues',
+  'batch-blocked',
+  'legacy-provider',
+  'batch-wrong-account',
+]
 const NOT_VALIDATIONS = new Set(['unmatched', 'negativeAmount', 'foreignChannel'])
 const CYCLES = new Set(['E', 'I', 'R'])
 
@@ -70,6 +79,14 @@ describe.each(SAMPLES)('%s against its expected.json', (name) => {
     expect(report.blocked).toBe(expected.blocked ?? false)
     expect(report.results.filter((r) => r.outcome === 'not_implemented')).toEqual([])
     if (!expected.blocked) expect(report.results.filter((r) => r.outcome === 'blocked')).toEqual([])
+  })
+
+  it.runIf(expected.outcomes !== undefined)('has the outcomes of expected.outcomes', async () => {
+    const report = runValidations((await sampleInput(name)).input)
+
+    for (const [code, outcome] of Object.entries(expected.outcomes ?? {})) {
+      expect(resultOf(report, code as ValidationCode).outcome, code).toBe(outcome)
+    }
   })
 
   it.runIf(expected.ranges !== undefined)('has the ranges of expected.ranges', async () => {

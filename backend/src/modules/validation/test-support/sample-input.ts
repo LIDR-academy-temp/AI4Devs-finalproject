@@ -28,7 +28,13 @@ import { computeRanges } from '../domain/ranges.js'
 import type { ValidationInput } from '../domain/types.js'
 import { STATUSES } from './builders.js'
 
-export type SampleName = 'batch-clean' | 'batch-split' | 'batch-issues' | 'batch-blocked' | 'legacy-provider'
+export type SampleName =
+  | 'batch-clean'
+  | 'batch-split'
+  | 'batch-issues'
+  | 'batch-blocked'
+  | 'legacy-provider'
+  | 'batch-wrong-account'
 
 export const SAMPLES: Record<SampleName, { account: AccountName; files: SampleFile[] }> = {
   'batch-clean': { account: 'ProviderA-USD', files: [SAMPLE_FILES.batchClean] },
@@ -36,6 +42,7 @@ export const SAMPLES: Record<SampleName, { account: AccountName; files: SampleFi
   'batch-issues': { account: 'ProviderB-Main', files: [SAMPLE_FILES.batchIssues] },
   'batch-blocked': { account: 'ProviderB-Main', files: [SAMPLE_FILES.batchBlocked] },
   'legacy-provider': { account: 'ProviderC-Alt', files: [SAMPLE_FILES.legacy] },
+  'batch-wrong-account': { account: 'ProviderA-USD', files: [SAMPLE_FILES.wrongAccount] },
 }
 
 const ANALYST = { merchantIds: [1, 2] }

@@ -346,6 +346,11 @@ export const SAMPLE_FILES = {
     bytes: fakeXlsxBytes('batch-blocked'),
     realFile: 'batch-blocked/Recon_Template_ProviderB-Main_batch-blocked.xlsx',
   },
+  wrongAccount: {
+    fileName: 'Recon_Template_ProviderA-USD_batch-wrong-account.xlsx',
+    bytes: fakeXlsxBytes('batch-wrong-account'),
+    realFile: 'batch-wrong-account/Recon_Template_ProviderA-USD_batch-wrong-account.xlsx',
+  },
   unruled: {
     fileName: 'bonus.xlsx',
     bytes: fakeXlsxBytes('unruled'),
