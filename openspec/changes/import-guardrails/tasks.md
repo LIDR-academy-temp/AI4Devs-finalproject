@@ -153,14 +153,19 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
   - Con fakes: la vista previa de `batch-clean` (`false` / `null`) y la de `batch-wrong-account` (`emptyBatch`, movimientos 0, payable -25.0000), `import_not_validated` antes de mirar el batch vacío y el `400` de un `confirmEmptyBatch` que no es booleano.
   - El contrato del frontend (`SettlementFigures` sin los dos campos de la vista previa, tipo `EmptyBatch`) y los fixtures MSW (vista previa con `emptyBatch` opcional, process con `409 no_matched_rows`, análisis con el batch vacío calculado) se ajustan ya, para que el typecheck y la suite del frontend sigan en verde. Las pantallas siguen en los grupos 9 y 10.
 
-- [ ] 8.3 Integración en `settlement-process.int.test.ts` (pedir turno):
+- [x] 8.3 Integración en `settlement-process.int.test.ts` (pedir turno):
   - `batch-wrong-account` sin confirmar → 409, sin intento y con `batch-number/next` sin cambiar;
   - confirmado con `batchNo` 98xx → 201, `amountPayable` de `expected.summary`, `channelsAssigned = []` y auditoría con `emptyBatchConfirmed`;
   - vista previa con `emptyBatch` igual a los `details`.
 
   Limpiar con `removeSettlementsFrom` y `removeImportsFrom`.
+
+  Resultado (turno de base de la persona):
+  - `settlement-process.int.test.ts`: 37 de 37. Incluye la vista previa, process sin confirmar (por el repositorio y por HTTP), confirmado con el 9803, `import_not_validated` antes que `no_matched_rows` y la auditoría de `batch-clean` sin `emptyBatchConfirmed`.
+  - Sin restos: ningún intento 9803, ningún import del archivo de `batch-wrong-account` y ninguna auditoría con `emptyBatchConfirmed`. El mayor `batchNo` de ProviderA-USD sigue siendo 122, así que el propuesto sigue siendo 123.
+
 - [x] 8.4 Regenerar el contrato con `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`. Verificar con `pnpm openapi:check` en verde y `pnpm typecheck` en el backend.
-- [ ] 8.5 Commit: feat(settlement): confirmación del batch sin filas asociadas en la vista previa y al procesar (#92), y `git push`.
+- [x] 8.5 Commit: feat(settlement): confirmación del batch sin filas asociadas en la vista previa y al procesar (#92), y `git push`.
 
 ## 9. Frontend: Analysis & Validations (`features/validations`)
 

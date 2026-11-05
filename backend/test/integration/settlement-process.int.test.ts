@@ -256,7 +256,108 @@ describe('batch-clean end to end', () => {
       movements: { E: 450, I: 10, R: 320 },
       batchFees: 2,
     })
+    // A batch with matched rows needs no confirmation and records none (#92).
+    expect(JSON.parse(processAudit.detailJson!)).not.toHaveProperty('emptyBatchConfirmed')
     expect(audit.some((a) => a.action === 'account_channel.assign' && a.detailJson?.includes(batchId))).toBe(true)
+  })
+})
+
+// Spec settlement "Batch sin filas asociadas al procesar" and "Vista previa de un batch sin filas asociadas" (#92,
+// design D2, D10): a number of the 98xx series, so the proposed number of ProviderA-USD (123) never moves.
+describe('batch-wrong-account: a batch with batch fees only', () => {
+  const expected = expectedOf('batch-wrong-account') as {
+    rows: { read: number; unmatched: number; unmatchedByReason: Record<string, number> }
+    summary: { otherFeeAmt: string; amountPayable: string }
+  }
+  const WIRE_FEE: SettlementRequest['batchFees'] = [
+    { feeTypeId: 121, feeId: null, amount: '25.0000', description: 'Wire Fee', source: 'file' },
+  ]
+  const details = {
+    rowsTotal: expected.rows.read,
+    rowsUnmatched: expected.rows.unmatched,
+    unmatchedByReason: expected.rows.unmatchedByReason,
+    likelyWrongAccount: true,
+  }
+  let importId: string
+  let runId: number
+
+  beforeAll(async () => {
+    const detail = await flow.analyzedSample('batch-wrong-account')
+    importId = detail.importId
+    const run = await flow.call('POST', `/imports/${importId}/validations`)
+    expect(run.statusCode, run.body).toBe(201)
+    runId = run.json().run.runId as number
+    const review = await flow.call('POST', `/imports/${importId}/review`, { runId, confirmEmptyBatch: true })
+    expect(review.statusCode, review.body).toBe(200)
+  })
+
+  const nextNumber = async () =>
+    (await flow.call('GET', `/accounts/${flow.accountIds['ProviderA-USD']}/batch-number/next`)).json()
+
+  it('the preview reports the empty batch with the details of no_matched_rows, and answers 200', async () => {
+    const res = await flow.call('POST', `/imports/${importId}/settlements/preview`, { runId, batchFees: WIRE_FEE })
+
+    expect(res.statusCode, res.body).toBe(200)
+    expect(SettlementPreview.parse(res.json())).toMatchObject({
+      requiresEmptyBatchConfirmation: true,
+      emptyBatch: details,
+      movements: { E: 0, I: 0, R: 0 },
+      channelsToAssign: [],
+      otherFeeAmt: expected.summary.otherFeeAmt,
+      amountPayable: expected.summary.amountPayable,
+    })
+  })
+
+  it('without confirmEmptyBatch: 409 no_matched_rows, nothing written and the proposed number unchanged', async () => {
+    const before = await nextNumber()
+
+    await expect(process(importId, { runId, batchNo: 9803, batchFees: WIRE_FEE }, [121])).rejects.toMatchObject({
+      status: 409,
+      code: 'no_matched_rows',
+      details,
+    })
+    const res = await flow.call('POST', `/imports/${importId}/settlements`, {
+      runId,
+      batchNo: 9803,
+      batchFees: WIRE_FEE,
+    })
+    expect(res.statusCode).toBe(409)
+    expect(res.json()).toMatchObject({ code: 'no_matched_rows', details })
+
+    expect(await ctx.prisma.settlementBatch.count({ where: { importId } })).toBe(0)
+    expect((await ctx.prisma.import.findUniqueOrThrow({ where: { importId } })).status).toBe('validated')
+    expect(await nextNumber()).toEqual(before)
+  })
+
+  it('with confirmEmptyBatch: 201, no movement, the batch fee alone in the payable, and audited', async () => {
+    const { batchId } = await process(
+      importId,
+      { runId, batchNo: 9803, batchFees: WIRE_FEE, confirmEmptyBatch: true },
+      [121],
+    )
+
+    const processed = await view(batchId)
+    expect(processed).toMatchObject({
+      batchNo: 9803,
+      movements: { E: 0, I: 0, R: 0 },
+      otherFeeAmt: expected.summary.otherFeeAmt,
+      amountPayable: expected.summary.amountPayable,
+      channelsAssigned: [],
+    })
+    expect(processed.skipped.unmatched).toBe(expected.rows.unmatched)
+    expect(signedSum(processed)).toBe(expected.summary.amountPayable)
+    const audit = await ctx.prisma.auditLog.findFirstOrThrow({
+      where: { action: 'settlement.process', entityType: 'SettlementBatch', entityId: batchId },
+    })
+    expect(JSON.parse(audit.detailJson!)).toMatchObject({ emptyBatchConfirmed: true })
+  })
+})
+
+describe('an analyzed batch-wrong-account processed (spec "Import no validado antes que batch vacío")', () => {
+  it('answers import_not_validated, not no_matched_rows', async () => {
+    const detail = await flow.analyzedSample('batch-wrong-account')
+
+    await expect(process(detail.importId, { runId: 1 })).rejects.toMatchObject({ code: 'import_not_validated' })
   })
 })
 
