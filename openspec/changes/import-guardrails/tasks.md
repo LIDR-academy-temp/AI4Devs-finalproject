@@ -115,7 +115,7 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
   - confirmación de más → 200 sin la clave;
   - bloqueante antes que batch vacío;
   - `false` equivale a omitirlo.
-- [ ] 7.3 Integración en `validation-review.int.test.ts` (pedir turno): los escenarios de "Decisión de conjunto" con `batch-wrong-account` y `batch-issues`, y la auditoría leída de `AuditLog`. Limpiar los imports creados (`removeImportsFrom`).
+- [ ] 7.3 Integración en `validation-review.int.test.ts` (pedir turno): los escenarios de "Batch sin filas asociadas al revisar" con `batch-wrong-account` y `batch-issues`, y la auditoría leída de `AuditLog`. Limpiar los imports creados (`removeImportsFrom`).
 - [ ] 7.4 Integración #63 en `validation-edges.int.test.ts` (pedir turno). El test crea una transacción `Pending` en RAM-01 con un `sourceTransactionId` sintético y un import de `ProviderA-USD` que la trae en APP. Luego valida, lee el hallazgo, lo resuelve con nota, revisa y procesa con `batchNo` 98xx (D10): el movimiento es E `Successful`. En `afterAll` borra el intento (`removeSettlementsFrom`), el import y la transacción.
 - [ ] 7.5 Commit: feat(validation): confirmación del batch sin filas asociadas en el review (#92), y `git push`.
 
@@ -146,7 +146,7 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
   - el `409 no_matched_rows` (texto, relectura y casilla desmarcada).
 
   Textos en `strings.ts`, en inglés, tal como los dan los escenarios. MSW (`frontend/src/test/msw`) con `batch-wrong-account`.
-- [ ] 9.2 Tests RTL de cada escenario de "Pantalla Analysis & Validations: continuar o cancelar" (los nuevos, y que `batch-issues` sigue igual). Verificar con `pnpm --filter @recon/frontend test` y `pnpm lint`. Comprobar con `git diff --stat` que no se tocó `features/imports/analysis`.
+- [ ] 9.2 Tests RTL de cada escenario de "Pantalla Analysis & Validations: batch sin filas asociadas", y que los de "continuar o cancelar" siguen igual. Verificar con `pnpm --filter @recon/frontend test` y `pnpm lint`. Comprobar con `git diff --stat` que no se tocó `features/imports/analysis`.
 - [ ] 9.3 Commit: feat(web): confirmación del batch sin filas asociadas al continuar tras las validaciones (#92), y `git push`.
 
 ## 10. Frontend: Settlement Review y Upload Files

@@ -64,24 +64,18 @@ Ninguna.
 
 ### Modified Capabilities
 
+Cada regla nueva va en su propio requisito ADDED. Los MODIFIED conservan su descripción y solo añaden o ajustan escenarios. La excepción es "status_mismatch en ciclo E", cuya frase sobre `Pending` contradecía #63. Así ningún requisito pasa de 500 caracteres al archivar.
+
 - `import`:
-  - "Añadir y quitar archivos antes de analizar": el tope total;
-  - "Detalle de un import": `unmatchedByReason`, `requiresEmptyBatchConfirmation`, `likelyWrongAccount`;
-  - "Aviso de canales" y "Canal de otro merchant en el aviso de canales": `otherProvider` y su `note`;
-  - nuevo requisito "Import sin filas asociadas";
-  - nuevo requisito "Pantalla Upload Files: tope de archivos del import".
+  - ADDED: "Import sin filas asociadas", "Tope de archivos por import", "Canal de otro proveedor en el aviso de canales" y "Pantalla Upload Files: tope de archivos del import";
+  - MODIFIED: "Detalle de un import", solo el escenario del import analizado.
 - `validation`:
-  - "status_mismatch en ciclo E": gateway `Pending`;
-  - "Pending aparte": exclusión de las transacciones que ya son hallazgo;
-  - "Decisión de conjunto": `confirmEmptyBatch` y `409 no_matched_rows`;
-  - "Pantalla Analysis & Validations: continuar o cancelar": la casilla y el aviso.
+  - ADDED: "status_mismatch con el gateway en Pending", "Batch sin filas asociadas al revisar" y "Pantalla Analysis & Validations: batch sin filas asociadas";
+  - MODIFIED: "status_mismatch en ciclo E" (la frase de `Pending` y su escenario) y "Pending aparte" (la exclusión de las que ya son hallazgo).
 - `settlement`:
-  - "Precondición de procesar": `confirmEmptyBatch`;
-  - "Filas que no se procesan": invariante de filas de otro proveedor;
-  - "Vista previa del procesamiento": `requiresEmptyBatchConfirmation` y `emptyBatch`;
-  - "Procesamiento atómico y auditado": `emptyBatchConfirmed`;
-  - nuevo requisito "Pantalla Settlement Review: batch sin filas asociadas".
-- `api-collection`: peticiones nuevas del flujo y negativos (ver Impact).
+  - ADDED: "Batch sin filas asociadas al procesar", "Vista previa de un batch sin filas asociadas", "Filas de otro proveedor nunca se procesan" y "Pantalla Settlement Review: batch sin filas asociadas".
+- `api-collection`:
+  - ADDED: "Batch sin filas asociadas en la colección".
 
 ## Impact
 
