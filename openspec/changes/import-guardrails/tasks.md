@@ -208,8 +208,16 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
 
 ## 12. Cierre
 
-- [ ] 12.1 Comprobación completa: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check` y la suite de integración entera (pedir turno). Releer README §1.2/§3.3/§4 contra lo implementado y corregir cualquier diferencia en el mismo PR.
-- [ ] 12.2 Abrir el PR hacia `feature/entrega-3-MVP` con la plantilla. Debe enlazar #92, #63, #40 (solo la casilla del tope) y #131, e incluir la nota de coordinación. Vigilar el CI con `gh run list --branch feat/import-guardrails --json status,conclusion --jq '.[0]'` hasta verde.
+- [x] 12.1 Comprobación completa: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check` y la suite de integración entera (pedir turno). Releer README §1.2/§3.3/§4 contra lo implementado y corregir cualquier diferencia en el mismo PR.
+
+  Resultado:
+  - `pnpm lint`, `pnpm typecheck` y `pnpm openapi:check` en verde.
+  - Suites unitarias en verde: backend 1434, frontend 1133, shared 296. `pnpm test` desde la raíz dio dos timeouts de 5 s con todos los paquetes en paralelo (`argon2-password-hasher.test.ts`, `in-batch.test.ts`); aislados pasan.
+  - Suite de integración completa (turno de la persona): 39 archivos, 492 tests en verde (8 saltados: bench), sin restos en la base y con ProviderA-USD todavía en el batch 122.
+  - Se añade la integración de "Ambigua resuelta", que `/opsx:verify` señaló sin cobertura de punta a punta: un import cuya única fila es ambigua pide confirmación hasta que se resuelve.
+  - README §1.2, §3.3 y §4 releídos contra lo implementado, sin diferencias. `design.md` (D3, D5, D10) se ajustó a lo implementado.
+
+- [x] 12.2 Abrir el PR hacia `feature/entrega-3-MVP` con la plantilla. Debe enlazar #92, #63, #40 (solo la casilla del tope) y #131, e incluir la nota de coordinación. Vigilar el CI con `gh run list --branch feat/import-guardrails --json status,conclusion --jq '.[0]'` hasta verde. PR #135.
 
 ## Workflow follow-up
 

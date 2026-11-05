@@ -490,6 +490,34 @@ describe('an ambiguous row and its resolution (issue #5, criterion 6; temporary 
     })
   })
 
+  it('an import whose only row is ambiguous asks to confirm an empty batch until the row is resolved (#92, "Ambigua resuelta")', async () => {
+    const bytes = buildXlsx({
+      sheets: [
+        {
+          name: 'APP',
+          rows: [
+            ['ID', 'Amount', 'Currency'],
+            [FIRST_APP_ID, { v: '16.22' }, 'USD'],
+          ],
+        },
+      ],
+    })
+    const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [{ name: 'only-ambiguous.xlsx', bytes }])
+    fixtureImports.push(detail.importId)
+    expect(detail.analysis?.rows).toMatchObject({ total: 1, matched: 0, ambiguous: 1 })
+    // Ambiguous is not matched: nothing of the account yet, and nothing says it is another account's.
+    expect(detail.analysis).toMatchObject({ requiresEmptyBatchConfirmation: true, likelyWrongAccount: false })
+
+    const res = await call('PATCH', `/imports/${detail.importId}/rows/${sheetNamed(detail, 'APP').sheetId}/2`, {
+      gatewayId: GATEWAY_TEST,
+    })
+    expect(res.statusCode, res.body).toBe(200)
+
+    const after = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
+    expect(after.analysis?.rows).toMatchObject({ matched: 1, ambiguous: 0 })
+    expect(after.analysis?.requiresEmptyBatchConfirmation).toBe(false)
+  })
+
   it('analyzes batch-clean with one ambiguous row, resolves it with the chosen gateway and records it in AuditLog', async () => {
     const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
     fixtureImports.push(detail.importId)
