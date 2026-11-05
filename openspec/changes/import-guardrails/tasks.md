@@ -71,14 +71,14 @@ Rama `feat/import-guardrails`, PR hacia `feature/entrega-3-MVP`. Las decisiones 
 
 ## 4. Validación: `status_mismatch` con el gateway `Pending` (#63, TDD)
 
-- [ ] 4.1 Ampliar `non-recorded-adjustment.test.ts` con builders y comprobar que fallan:
+- [x] 4.1 Ampliar `non-recorded-adjustment.test.ts` con builders y comprobar que fallan:
   - APP y DEC con el gateway `Pending` → dos `status_mismatch` con estado reportado, `gatewayStatusId = Pending` e incluidos;
   - E con estado `Refund` por columna y el gateway `Pending` → `status_mismatch`;
   - fila `Pending` y fila sin estado con el gateway `Pending` → ningún hallazgo.
 
   Sustituir el caso actual "Gateway Pending en E", que esperaba 0.
-- [ ] 4.2 Ampliar `missing.test.ts` (`pendingInRangeCount`) con los escenarios de "Pending aparte": la del batch con otro estado no cuenta, y la del batch reportada `Pending` sí. Comprobar que fallan.
-- [ ] 4.3 Commit: test(validation): status_mismatch con el gateway Pending en rojo (#63), y `git push`.
+- [x] 4.2 Ampliar `missing.test.ts` (`pendingInRangeCount`) con los escenarios de "Pending aparte": la del batch con otro estado no cuenta, y la del batch reportada `Pending` sí. Comprobar que fallan.
+- [x] 4.3 Commit: test(validation): status_mismatch con el gateway Pending en rojo (#63), y `git push`.
 - [ ] 4.4 Implementar D6 en `non-recorded-adjustment.ts` (con `mismatchOf` exportada) y en `missing.ts`. Verificar:
   - los tests de 4.1–4.2 pasan;
   - `oracles.test.ts` y `sample-input.test.ts` siguen en verde con los `expected.json` sin cambios (ninguna muestra trae `Pending`);
