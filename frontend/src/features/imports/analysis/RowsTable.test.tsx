@@ -96,6 +96,7 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
     expect(cell(first, s.columns.result)).toHaveTextContent('Matched')
     expect(cell(first, s.columns.warnings)).toHaveTextContent('Transaction of another merchant')
     expect(cell(first, s.columns.channel).textContent).toBe('')
+    // Neither the amount nor the currency, which share the Amount column (#132).
     expect(cell(first, s.columns.amount).textContent).toBe('')
   })
 
@@ -209,7 +210,29 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
       expect(where).toHaveClass('whitespace-nowrap')
       expect(where.querySelector('.whitespace-normal')).toBeNull()
     }
-    expect(cell(row, s.columns.amount).textContent).not.toBe('')
+    expect(cell(row, s.columns.amount).textContent).toBe('1,234,567.8900 USD')
+  })
+
+  it('shows the amount and its currency in one column, as one piece that never wraps (#132)', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    const unmatched = { matchResult: 'unmatched', reason: 'no_match', transactionId: null, transaction: null } as const
+    importRecord(importId).rows!.push(
+      makeRow({ ...unmatched, rowNo: 900, transactionIdRaw: '900', amount: '50000.0000', currency: 'EUR' }),
+      makeRow({ ...unmatched, rowNo: 901, transactionIdRaw: '901', amount: null, currency: 'EUR' }),
+    )
+    await openRows(`/imports/${importId}?step=analysis&match=unmatched`)
+
+    expect(column(s.columns.currency)).toBe(-1)
+    const byId = (id: string) => bodyRows().find((r) => cell(r, s.columns.id).textContent === id)!
+    const amount = cell(byId('900'), s.columns.amount)
+    expect(amount.textContent).toBe('50,000.0000 EUR')
+    const piece = within(amount).getByText('50,000.0000', { exact: false })
+    expect(piece).toHaveClass('whitespace-nowrap')
+    expect(piece).toHaveTextContent('50,000.0000 EUR')
+    expect(within(piece).getByText('EUR')).toHaveClass('text-muted-foreground')
+    expect(amount.querySelector('.whitespace-normal')).toBeNull()
+    // Without an amount the currency still shows, as the sheet had it.
+    expect(cell(byId('901'), s.columns.amount).textContent).toBe('EUR')
   })
 
   it('shows a 17-digit ID and a UUID whole', async () => {
