@@ -68,6 +68,7 @@ export interface ErrorDetails {
   validation_run_required: Record<string, never>
   blocking_validation_issue: { runId: number; validationCodes: ValidationCode[]; issueIds: number[] }
   no_matched_rows: EmptyBatchDetails
+  inclusions_changed: { runId: number; inclusionVersion: number; currentInclusionVersion: number }
   occurrence_not_editable: { sourceType: OccurrenceSource }
   /** A reason this screen does not know yet gets a generic text. */
   occurrence_not_includable: { reason: 'reserve_already_included' | 'reserve_already_released' | (string & {}) }
@@ -114,11 +115,20 @@ export const setOccurrenceInclusion = (occurrenceId: string, includeInSettlement
     }),
   ) as Promise<ValidationIssueDetail>
 
-/** `confirmEmptyBatch` only goes in the body when the analyst confirmed a batch without matched rows (#92). */
-export const reviewImport = (importId: string, runId: number, confirmEmptyBatch = false) =>
-  unwrap(
+/**
+ * The run and the version of its inclusions the screen shows (#53); `confirmEmptyBatch` only goes in the body when the
+ * analyst confirmed a batch without matched rows (#92).
+ */
+export const reviewImport = (
+  importId: string,
+  run: { runId: number; inclusionVersion: number },
+  confirmEmptyBatch = false,
+) => {
+  const seen = { runId: run.runId, inclusionVersion: run.inclusionVersion }
+  return unwrap(
     api.POST('/api/v1/imports/{importId}/review', {
       params: { path: { importId } },
-      body: confirmEmptyBatch ? { runId, confirmEmptyBatch: true } : { runId },
+      body: confirmEmptyBatch ? { ...seen, confirmEmptyBatch: true } : seen,
     }),
   ) as Promise<ValidationRunView>
+}

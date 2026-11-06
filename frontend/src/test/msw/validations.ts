@@ -462,6 +462,8 @@ interface StoredRun {
   /** Manual changes the scenario declares on top of the applied ones. */
   seededChanges: number
   issues: StoredIssue[]
+  /** Applied inclusion changes of the run (#53); POST review compares it with the one sent. */
+  inclusionVersion: number
 }
 
 export type ValidationRoute = 'get' | 'run' | 'list' | 'issue' | 'resolve' | 'inclusion' | 'review'
@@ -575,6 +577,7 @@ function createRun(record: FakeImport, fixture: RunFixture, runBy: UserName, see
     review: null,
     seededChanges,
     issues: instantiate(record, fixture, runId),
+    inclusionVersion: 0,
   }
   state.runs.push(run)
   return run
@@ -611,6 +614,7 @@ function viewOf(record: FakeImport): ValidationRunView {
       undatedCandidateCount: run.fixture.undatedCandidateCount,
       results: run.fixture.results,
       manualChangeCount: manualChangeCount(run),
+      inclusionVersion: run.inclusionVersion,
       review: run.review,
     },
     lastInvalidatedReview: state.invalidated.get(record.importId) ?? null,
@@ -753,6 +757,13 @@ export function seedValidationRun(importId: string, fixture?: RunFixture, option
     run.review = { reviewedBy: userRef(options.reviewedBy), reviewedAt: auditInstant(options.reviewedAt ?? now()) }
   }
   return { runId: run.runId, issues: run.issues.map((i) => detailOf(run, i)) }
+}
+
+/** Another analyst changed an inclusion of the current run: its inclusionVersion goes up, nothing else changes. */
+export function bumpInclusionVersion(importId: string) {
+  const run = currentRun(importId)
+  if (!run) throw new Error(`no current run for ${importId}`)
+  run.inclusionVersion += 1
 }
 
 /** Stores the last invalidated review of an import, as the API would answer it. */
@@ -1035,6 +1046,7 @@ export function createValidationHandlers(caller: (request: Request) => UserName 
               history: [...issue.detail.history, entry],
               ...counts(occurrences),
             })
+            run.inclusionVersion += 1
             invalidate(record, run, user, 'inclusion_change', { newRunId: null, occurrenceId })
           }
           return HttpResponse.json(afterScript(run, issue, script))
@@ -1051,8 +1063,16 @@ export function createValidationHandlers(caller: (request: Request) => UserName 
           const record = visibleImport(user, params.importId)
           if (!canProcess(user)) return record ? forbidden() : notFound('Import')
           if (!record) return notFound('Import')
-          const body = (await request.json()) as { runId?: unknown; confirmEmptyBatch?: unknown }
+          const body = (await request.json()) as {
+            runId?: unknown
+            inclusionVersion?: unknown
+            confirmEmptyBatch?: unknown
+          }
           if (typeof body.runId !== 'number' || !Number.isInteger(body.runId) || body.runId < 1) {
+            return error(400, 'validation_error', 'Invalid body')
+          }
+          const sent = body.inclusionVersion
+          if (typeof sent !== 'number' || !Number.isInteger(sent) || sent < 0) {
             return error(400, 'validation_error', 'Invalid body')
           }
           if (body.confirmEmptyBatch !== undefined && typeof body.confirmEmptyBatch !== 'boolean') {
@@ -1072,6 +1092,15 @@ export function createValidationHandlers(caller: (request: Request) => UserName 
                 runId: body.runId,
                 currentRunId: run.runId,
               },
+            )
+          }
+          // After the run and before the block, as the API does (review-inclusion-version D4).
+          if (sent !== run.inclusionVersion) {
+            return error(
+              409,
+              'inclusions_changed',
+              'The inclusions of the run changed since they were read; review them again',
+              { runId: run.runId, inclusionVersion: sent, currentInclusionVersion: run.inclusionVersion },
             )
           }
           if (run.fixture.blocked) {

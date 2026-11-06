@@ -46,9 +46,10 @@ export function DecisionBar({
 
   async function onContinue() {
     if (!run) return
-    const refused = await reviewer.review(run.runId, emptyBatch && emptyConfirmed)
-    // The API says the confirmation is still missing: the box goes back to unticked with its text.
-    if (refused === 'no_matched_rows') setEmptyConfirmed(false)
+    const refused = await reviewer.review(run, emptyBatch && emptyConfirmed)
+    // The confirmation is still missing, or was made on inclusions that changed since (#53): the box goes back to
+    // unticked with its text. The run is the same, so the key of the bar does not reset it.
+    if (refused === 'no_matched_rows' || refused === 'inclusions_changed') setEmptyConfirmed(false)
   }
 
   // A cancelled or processed import has nothing left to decide: the section says so instead of standing empty.
