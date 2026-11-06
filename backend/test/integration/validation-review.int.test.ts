@@ -446,3 +446,98 @@ describe('resolving an ambiguous row after validating (P7)', () => {
     )
   })
 })
+
+// Spec "El review exige las inclusiones que se vieron" (review-inclusion-version D3, D4): the review pauses inside its
+// transaction right before its guard (beforeClaim) while an inclusion change commits. A review that compared the
+// version it was sent with one read before its guard, or did not compare it at all, would approve what nobody saw.
+describe('an inclusion changed while the review waits (#53)', () => {
+  const reviewAudit = (importId: string) =>
+    ctx.prisma.auditLog.findMany({ where: { action: 'import.review', entityId: importId } })
+
+  /** An excluded occurrence of the current import outside cycle R (the reserve rule cannot refuse to include it). */
+  async function excludedOccurrence(runId: number): Promise<string> {
+    const occurrence = await ctx.prisma.conflictOccurrence.findFirstOrThrow({
+      where: {
+        sourceType: 'current_import',
+        includeInSettlement: false,
+        issue: { cycle: { not: 'R' }, result: { runId } },
+      },
+      select: { occurrenceId: true },
+      orderBy: { occurrenceId: 'asc' },
+    })
+    return String(occurrence.occurrenceId)
+  }
+
+  function pausedReview(g: ReturnType<typeof gate>) {
+    return new ValidationService({
+      sources: new PrismaValidationSources(ctx.prisma),
+      runs: new PrismaValidationRunRepository(ctx.prisma, {
+        beforeClaim: async (operation) => {
+          if (operation !== 'review') return
+          g.arrive()
+          await g.released
+        },
+      }),
+      log: { info: () => {} },
+    })
+  }
+
+  it('read at version 0, a change commits version 1: 409 inclusions_changed, still analyzed, no review and no audit', async () => {
+    const { importId } = await flow.analyzedSample('batch-issues')
+    const read = await run(importId)
+    const runId = read.run!.runId
+    expect(read.run!.inclusionVersion).toBe(0)
+    const occurrenceId = await excludedOccurrence(runId)
+
+    const g = gate()
+    const pending = pausedReview(g)
+      .review(ANALYST_SCOPE, flow.userIds.analyst, importId, { runId, inclusionVersion: 0 })
+      .catch((e: unknown) => e)
+    await g.arrived
+    const changed = await flow.call('PATCH', `/conflict-occurrences/${occurrenceId}`, { includeInSettlement: true })
+    expect(changed.statusCode, changed.body).toBe(200)
+    g.release()
+
+    expect(await pending).toMatchObject({
+      code: 'inclusions_changed',
+      details: { runId, inclusionVersion: 0, currentInclusionVersion: 1 },
+    })
+    const after = await current(importId)
+    expect(after.importStatus).toBe('analyzed')
+    expect(after.run!.runId).toBe(runId)
+    expect(after.run!.review).toBeNull()
+    expect(after.run!.inclusionVersion).toBe(1)
+    expect(await reviewAudit(importId)).toEqual([])
+    const change = await ctx.prisma.auditLog.findFirstOrThrow({
+      where: { action: 'validation.occurrence.set_inclusion', entityId: occurrenceId },
+      orderBy: { auditId: 'desc' },
+    })
+    expect(JSON.parse(change.detailJson ?? '{}')).toMatchObject({ runId, inclusionVersion: 1 })
+  })
+
+  it('the same value again does not move the version; the review with the current one validates and audits it', async () => {
+    const { importId } = await flow.analyzedSample('batch-issues')
+    const { run: fresh } = await run(importId)
+    const occurrenceId = await excludedOccurrence(fresh!.runId)
+    for (let i = 0; i < 2; i++) {
+      const res = await flow.call('PATCH', `/conflict-occurrences/${occurrenceId}`, { includeInSettlement: true })
+      expect(res.statusCode, res.body).toBe(200)
+    }
+    const seen = await current(importId)
+    expect(seen.run!.inclusionVersion).toBe(1)
+
+    const res = await flow.call('POST', `/imports/${importId}/review`, {
+      runId: seen.run!.runId,
+      inclusionVersion: seen.run!.inclusionVersion,
+    })
+
+    expect(res.statusCode, res.body).toBe(200)
+    expect(ValidationRunView.parse(res.json()).importStatus).toBe('validated')
+    const [audit] = await reviewAudit(importId)
+    expect(JSON.parse(audit?.detailJson ?? '{}')).toMatchObject({
+      runId: seen.run!.runId,
+      inclusionVersion: 1,
+      changedOccurrences: 1,
+    })
+  })
+})

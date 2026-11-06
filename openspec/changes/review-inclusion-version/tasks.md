@@ -13,7 +13,7 @@ Rama `feat/review-inclusion-version` (desde `origin/feature/entrega-3-MVP`), PR 
 
 - [x] 1.1 Escribir a mano `backend/prisma/migrations/0009_validation_run_inclusion_version/migration.sql` (D2): `ALTER TABLE [dbo].[ValidationRun] ADD [inclusionVersion] INT NOT NULL CONSTRAINT [ValidationRun_inclusionVersion_df] DEFAULT 0` y `CONSTRAINT [CK_ValidationRun_inclusionVersion] CHECK ([inclusionVersion] >= 0)`, con el esqueleto `BEGIN TRY / TRAN` de `0008` y comentarios en inglés. Verificar leyéndola junto a `0006` (nombres y forma).
 - [x] 1.2 Añadir `inclusionVersion Int @default(0)` a `model ValidationRun` en `schema.prisma`, con un comentario `///` en inglés, y regenerar el cliente (`pnpm --filter @recon/backend exec prisma generate`). Verificar con `pnpm typecheck` que el cliente expone el campo.
-- [ ] 1.3 Cuando la persona dé turno, la persona aplica la migración con `! pnpm db:migrate` dentro de la sesión. Verificar en su salida que `0009` queda aplicada sin drift.
+- [x] 1.3 Cuando la persona dé turno, la persona aplica la migración con `! pnpm db:migrate` dentro de la sesión. Verificar en su salida que `0009` queda aplicada sin drift.
 - [x] 1.4 Commit: feat(validation): columna inclusionVersion en ValidationRun (migración 0009), y `git push`.
 
 ## 2. Contrato compartido (`@recon/shared`), test-first
@@ -40,9 +40,9 @@ Rama `feat/review-inclusion-version` (desde `origin/feature/entrega-3-MVP`), PR 
 
 ## 5. Integración de la carrera, test-first (con turno de la persona)
 
-- [ ] 5.1 En `backend/test/integration/validation-review.int.test.ts`, con el gancho `beforeClaim('review')`: el review lee la corrida, se pausa antes de la guarda, un `PATCH` de otro usuario confirma un cambio de inclusión, el review continúa y recibe `409 inclusions_changed` con `currentInclusionVersion = 1`; el import sigue `analyzed`, sin revisión y sin fila `import.review`. Otro caso: el review con la versión vigente tras el cambio da `200` y su auditoría lleva `inclusionVersion = 1`. Romper a propósito (por ejemplo, comentar la comprobación de versión en el repositorio) para ver que el test falla con `200`, y restaurar.
-- [ ] 5.2 Cuando la persona dé turno (y tras `! pnpm db:seed` si Bruno ensució la base), ejecutar `pnpm --filter @recon/backend exec vitest run --project integration test/integration/validation-review.int.test.ts` y después `pnpm test:integration` completo. Verificar en verde, incluidos los llamadores actualizados en 4.4.
-- [ ] 5.3 Commit: test(validation): carrera entre un cambio de inclusión y el review, y `git push`.
+- [x] 5.1 En `backend/test/integration/validation-review.int.test.ts`, con el gancho `beforeClaim('review')`: el review lee la corrida, se pausa antes de la guarda, un `PATCH` de otro usuario confirma un cambio de inclusión, el review continúa y recibe `409 inclusions_changed` con `currentInclusionVersion = 1`; el import sigue `analyzed`, sin revisión y sin fila `import.review`. Otro caso: el review con la versión vigente tras el cambio da `200` y su auditoría lleva `inclusionVersion = 1`. Romper a propósito (por ejemplo, comentar la comprobación de versión en el repositorio) para ver que el test falla con `200`, y restaurar.
+- [x] 5.2 Cuando la persona dé turno (y tras `! pnpm db:seed` si Bruno ensució la base), ejecutar `pnpm --filter @recon/backend exec vitest run --project integration test/integration/validation-review.int.test.ts` y después `pnpm test:integration` completo. Verificar en verde, incluidos los llamadores actualizados en 4.4.
+- [x] 5.3 Commit: test(validation): carrera entre un cambio de inclusión y el review, y `git push`.
 
 ## 6. Frontend, test-first
 
