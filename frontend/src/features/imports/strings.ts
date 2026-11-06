@@ -129,6 +129,11 @@ export const strings = {
       byCycle: 'By cycle',
       cycles: (e: number, i: number, r: number) => `E ${e} · I ${i} · R ${r}`,
       showRows: (counter: string) => `Show ${counter.toLowerCase()} rows`,
+      /** The breakdown of the Unmatched counter, with the reasons of the rows table (web-analysis-guardrails D1). */
+      byReason: 'Unmatched by reason',
+      wrongAccountLabel: 'Wrong account?',
+      /** The text of Settlement Review, copied so imports does not depend on settlements (D2; to unify in #139). */
+      wrongAccount: 'The IDs do not fit any gateway of this account: the files may belong to another account.',
     },
     channels: {
       title: 'Channels to review',

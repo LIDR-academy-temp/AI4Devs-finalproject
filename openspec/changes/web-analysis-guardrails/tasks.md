@@ -22,8 +22,8 @@ Comando de tests de la carpeta: `pnpm --filter frontend exec vitest run src/feat
 
   Verificar que fallan
 - [x] 2.2 Commit: `test(web): desglose de no asociadas y aviso de cuenta equivocada en Analysis`
-- [ ] 2.3 Implementar D1 y D2 en `Counters.tsx` y `strings.ts` (`analysis.counters.byReason`, `wrongAccountLabel`, `wrongAccount`). Verificar con el comando de la carpeta, `pnpm lint` y `pnpm typecheck`. Romper a propósito el orden de los motivos una vez y comprobar que el test falla
-- [ ] 2.4 Commit: `feat(web): desglose de no asociadas por motivo y aviso de cuenta equivocada en Analysis (#131)`
+- [x] 2.3 Implementar D1 y D2 en `Counters.tsx` y `strings.ts` (`analysis.counters.byReason`, `wrongAccountLabel`, `wrongAccount`). Verificar con el comando de la carpeta, `pnpm lint` y `pnpm typecheck`. Romper a propósito el orden de los motivos una vez y comprobar que el test falla
+- [x] 2.4 Commit: `feat(web): desglose de no asociadas por motivo y aviso de cuenta equivocada en Analysis (#131)`
 
 ## 3. Canales de otro proveedor (D3, D4)
 
