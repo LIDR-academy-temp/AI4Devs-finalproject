@@ -35,8 +35,8 @@ Comando de tests de la carpeta: `pnpm --filter frontend exec vitest run src/feat
 
   Mover a este archivo los casos del aviso de canales de `AnalysisStep.test.tsx` y dejar allí solo el montaje del paso. Verificar que los nuevos fallan
 - [x] 3.2 Commit: `test(web): canales de otro proveedor en el aviso de canales`
-- [ ] 3.3 Implementar D3 y D4 en `ChannelNotice.tsx` y `strings.ts` (`analysis.channels.otherProvider`). Verificar con el comando de la carpeta, `pnpm lint` y `pnpm typecheck`
-- [ ] 3.4 Commit: `feat(web): el aviso de canales distingue los canales de otro proveedor (#131)`
+- [x] 3.3 Implementar D3 y D4 en `ChannelNotice.tsx` y `strings.ts` (`analysis.channels.otherProvider`). Verificar con el comando de la carpeta, `pnpm lint` y `pnpm typecheck`
+- [x] 3.4 Commit: `feat(web): el aviso de canales distingue los canales de otro proveedor (#131)`
 
 ## 4. Capturas (D7)
 
