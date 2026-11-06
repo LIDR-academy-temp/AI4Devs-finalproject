@@ -1101,7 +1101,7 @@ El paso Analysis SHALL listar cada código de `analysis.warnings` con conteo may
 - **THEN** ve `No warnings`
 
 ### Requirement: Resultado del análisis: tabla de filas
-El paso Analysis SHALL mostrar las filas de `GET rows` paginadas en el servidor (50 por página), en el orden del API, con hoja y archivo (la hoja primero y siempre visible; el archivo entero, partido en líneas si no cabe, y con su nombre completo también como tooltip), fila, ID leído como texto, ciclo, resultado y motivo, estado, importe, canal y advertencias. SHALL permitir filtrar por resultado. Una fila ambigua SHALL mostrar el nombre de gateway de cada candidata; elegir una es la resolución desde la pantalla, que solo se ofrece con permiso y en `analyzed`.
+El paso Analysis SHALL mostrar las filas de `GET rows` paginadas en el servidor (50 por página), en el orden del API, con: hoja y número de fila en una línea, y el archivo entero, partido en líneas y con tooltip; ID como texto; ciclo; resultado y motivo; estado; importe y moneda sin partirse; canal; advertencias. SHALL permitir filtrar por resultado. Una fila ambigua SHALL mostrar el gateway de cada candidata; elegir una solo se ofrece con permiso y en `analyzed`.
 
 #### Scenario: No asociadas primero
 - **GIVEN** el import de `batch-issues` analizado
@@ -1115,7 +1115,7 @@ El paso Analysis SHALL mostrar las filas de `GET rows` paginadas en el servidor 
 
 #### Scenario: Transacción de otro merchant
 - **WHEN** una fila trae `transaction = null` y `out_of_scope_transaction` en `warnings`
-- **THEN** la fila muestra `Matched` y `Transaction of another merchant`, sin canal ni importe
+- **THEN** la fila muestra `Matched` y `Transaction of another merchant`, sin canal, importe ni moneda
 
 #### Scenario: Fila ambigua
 - **WHEN** una fila es `ambiguous` con candidatas en dos gateways
@@ -1124,7 +1124,11 @@ El paso Analysis SHALL mostrar las filas de `GET rows` paginadas en el servidor 
 #### Scenario: Hoja y archivo de cada fila
 - **GIVEN** el import de `batch-split` analizado
 - **WHEN** abre el paso Analysis
-- **THEN** cada fila muestra primero el nombre de su hoja y después el nombre entero de su archivo, sin cortar, partido en líneas dentro de su columna y con el nombre completo como tooltip
+- **THEN** cada fila muestra primero su hoja con su número de fila (`APP · row 2`) en una línea y después el nombre entero de su archivo, sin cortar, partido en líneas dentro de su columna y con el nombre completo como tooltip; la tabla no tiene columna `Row`
+
+#### Scenario: Importe con su moneda
+- **WHEN** una fila trae `amount = "50000.0000"` y `currency = "EUR"`
+- **THEN** la columna `Amount` muestra `50,000.0000 EUR` en una pieza que no se parte, y la tabla no tiene columna `Currency`
 
 ### Requirement: Cancelación del import desde la pantalla
 Con permiso y el import en `uploaded`, `mapped`, `analyzed` o `validated`, el espacio del import SHALL ofrecer **Cancel import**, que abre un diálogo con un campo `Reason` obligatorio (1–500 caracteres) y llama a `POST cancel` con el motivo, sin los espacios de los extremos, solo al confirmar. Cancelado, el import SHALL mostrarse en solo lectura con su estado y un enlace para empezar un import nuevo en la misma cuenta.
