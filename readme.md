@@ -29,7 +29,7 @@ Sustituye la cadena actual de hojas de cálculo en OneDrive, descargas manuales 
 
 ### **0.4. URL del proyecto:**
 
-Pendiente de despliegue
+**Sin despliegue en una instancia real en esta entrega.** La aplicación se demuestra en un **vídeo con datos de demostración**, compartido de forma segura con alvaro@lidr.co, y puede levantarse en local con `docker compose` (§1.4). Las imágenes de producción, el proxy HTTPS y la guía de despliegue (`docs/deploy.md`) están verificados con `scripts/verify_prod_images.sh`; la verificación en una instancia de AWS queda pendiente (§7).
 
 > Puede ser pública o privada, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/).
 
