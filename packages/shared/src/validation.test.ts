@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  InclusionsChangedDetails,
   IssueHistoryEntry,
   IssueScope,
   IssueType,
@@ -94,6 +95,7 @@ const runViewExample = {
       result('missing_in_range', 'warning', 6, { APP: 3, DEC: 0, I: 0, R: 3 }),
     ],
     manualChangeCount: 0,
+    inclusionVersion: 0,
     review: null,
   },
   lastInvalidatedReview: {
@@ -229,6 +231,20 @@ describe('ValidationRunView', () => {
     expect(ValidationRunView.safeParse({ ...runViewExample, run: { ...run, manualChangeCount: -1 } }).success).toBe(
       false,
     )
+  })
+
+  it('the run carries inclusionVersion, a non-negative integer (review-inclusion-version D7)', () => {
+    const { inclusionVersion: _, ...withoutVersion } = runViewExample.run
+    expect(ValidationRunView.safeParse({ ...runViewExample, run: withoutVersion }).success).toBe(false)
+    expect(
+      ValidationRunView.safeParse({ ...runViewExample, run: { ...runViewExample.run, inclusionVersion: 3 } }).success,
+    ).toBe(true)
+    for (const bad of [-1, 1.5, '1']) {
+      expect(
+        ValidationRunView.safeParse({ ...runViewExample, run: { ...runViewExample.run, inclusionVersion: bad } })
+          .success,
+      ).toBe(false)
+    }
   })
 })
 
@@ -386,17 +402,32 @@ describe('request bodies', () => {
   })
 
   it('ReviewBody takes a positive integer runId, strictly', () => {
-    expect(ReviewBody.safeParse({ runId: 7 }).success).toBe(true)
-    expect(ReviewBody.safeParse({}).success).toBe(false)
-    expect(ReviewBody.safeParse({ runId: 0 }).success).toBe(false)
-    expect(ReviewBody.safeParse({ runId: 1.5 }).success).toBe(false)
-    expect(ReviewBody.safeParse({ runId: '7' }).success).toBe(false)
-    expect(ReviewBody.safeParse({ runId: 7, decision: 'cancel' }).success).toBe(false)
+    expect(ReviewBody.safeParse({ runId: 7, inclusionVersion: 0 }).success).toBe(true)
+    expect(ReviewBody.safeParse({ inclusionVersion: 0 }).success).toBe(false)
+    expect(ReviewBody.safeParse({ runId: 0, inclusionVersion: 0 }).success).toBe(false)
+    expect(ReviewBody.safeParse({ runId: 1.5, inclusionVersion: 0 }).success).toBe(false)
+    expect(ReviewBody.safeParse({ runId: '7', inclusionVersion: 0 }).success).toBe(false)
+    expect(ReviewBody.safeParse({ runId: 7, inclusionVersion: 0, decision: 'cancel' }).success).toBe(false)
+  })
+
+  it('ReviewBody requires the inclusionVersion the analyst saw, a non-negative integer (#53, D7)', () => {
+    expect(ReviewBody.safeParse({ runId: 7 }).success).toBe(false)
+    expect(ReviewBody.safeParse({ runId: 7, inclusionVersion: 12 }).success).toBe(true)
+    expect(ReviewBody.safeParse({ runId: 7, inclusionVersion: -1 }).success).toBe(false)
+    expect(ReviewBody.safeParse({ runId: 7, inclusionVersion: 1.5 }).success).toBe(false)
+    expect(ReviewBody.safeParse({ runId: 7, inclusionVersion: '1' }).success).toBe(false)
+  })
+
+  it('InclusionsChangedDetails: the run, the version sent and the current one (409 inclusions_changed, D6)', () => {
+    expect(
+      InclusionsChangedDetails.safeParse({ runId: 7, inclusionVersion: 0, currentInclusionVersion: 1 }).success,
+    ).toBe(true)
+    expect(InclusionsChangedDetails.safeParse({ runId: 7, inclusionVersion: 0 }).success).toBe(false)
   })
 
   it('ReviewBody takes confirmEmptyBatch as an optional boolean (#92)', () => {
-    expect(ReviewBody.safeParse({ runId: 7, confirmEmptyBatch: true }).success).toBe(true)
-    expect(ReviewBody.safeParse({ runId: 7, confirmEmptyBatch: false }).success).toBe(true)
-    expect(ReviewBody.safeParse({ runId: 7, confirmEmptyBatch: 'true' }).success).toBe(false)
+    expect(ReviewBody.safeParse({ runId: 7, inclusionVersion: 0, confirmEmptyBatch: true }).success).toBe(true)
+    expect(ReviewBody.safeParse({ runId: 7, inclusionVersion: 0, confirmEmptyBatch: false }).success).toBe(true)
+    expect(ReviewBody.safeParse({ runId: 7, inclusionVersion: 0, confirmEmptyBatch: 'true' }).success).toBe(false)
   })
 })
