@@ -44,12 +44,12 @@ beforeAll(async () => {
   ctx = await createTestApp({ UPLOAD_DIR: uploadDir })
   flow = new ImportFlow(ctx)
   await flow.init()
-  // What an interrupted run left behind: attempts with the numbers of this file (9801–9803), with their imports
-  // (review-diff #135, point 6; the same as settlement-concurrency with 9811–9824).
+  // What an interrupted run left behind: attempts with the numbers of this file (9801–9803, all of them in
+  // ProviderA-USD), with their imports (review-diff #135, point 6; the same as settlement-concurrency with 9811–9824).
   const leftovers = await ctx.prisma.settlementBatch.findMany({
     where: {
       batchNo: { gte: 9801, lte: 9803 },
-      accountId: { in: fixtureIds([flow.accountIds['ProviderA-USD'], flow.accountIds['ProviderB-Main']], 'accounts') },
+      accountId: fixtureId(flow.accountIds['ProviderA-USD'], 'accounts'),
     },
     select: { importId: true },
   })
