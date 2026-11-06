@@ -11,7 +11,13 @@ import { fixtureIds, SEED_PASSWORD } from './helpers.js'
 // their runs, findings, occurrences and audit entries). Shared by the validation-runs suites.
 export const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../data/samples')
 
-export type SampleName = 'batch-clean' | 'batch-split' | 'batch-issues' | 'batch-blocked' | 'legacy-provider'
+export type SampleName =
+  | 'batch-clean'
+  | 'batch-split'
+  | 'batch-issues'
+  | 'batch-blocked'
+  | 'legacy-provider'
+  | 'batch-wrong-account'
 
 export const SAMPLE_FILES: Record<SampleName, { account: string; files: string[] }> = {
   'batch-clean': { account: 'ProviderA-USD', files: ['batch-clean/Recon_Template_ProviderA-USD_batch-clean.xlsx'] },
@@ -31,6 +37,10 @@ export const SAMPLE_FILES: Record<SampleName, { account: string; files: string[]
     files: ['batch-blocked/Recon_Template_ProviderB-Main_batch-blocked.xlsx'],
   },
   'legacy-provider': { account: 'ProviderC-Alt', files: ['legacy-provider/Legacy_ProviderC-Alt_batch.xlsx'] },
+  'batch-wrong-account': {
+    account: 'ProviderA-USD',
+    files: ['batch-wrong-account/Recon_Template_ProviderA-USD_batch-wrong-account.xlsx'],
+  },
 }
 
 export function expectedOf(sample: SampleName): Record<string, unknown> {

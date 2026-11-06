@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { ImportDetail, ImportSummary } from '@recon/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { z } from 'zod'
+import { buildXlsx, templateRows } from '../../src/modules/imports/infrastructure/xlsx/test-support.js'
 import { createTestApp, fixtureIds, SEED_PASSWORD } from './helpers.js'
 import { confirmProposal, removeImportsFrom } from './import-flow.js'
 
@@ -221,6 +222,48 @@ describe('batch-split in two files (criterion 2)', () => {
     expect(ImportDetail.parse(removed.json()).files.map((f) => f.fileId)).toEqual([detail.files[0]?.fileId])
     expect(existsSync(part2Path)).toBe(false)
     expect(await ctx.prisma.importSheet.count({ where: { fileId: part2?.fileId } })).toBe(0)
+  })
+})
+
+describe('the file limit of an import (spec import "Tope de archivos por import", #40)', () => {
+  /** A distinct small template workbook: an import only holds distinct files. */
+  const generated = (n: number): Part => ({
+    name: `limit-${n}.xlsx`,
+    bytes: buildXlsx({
+      sheets: [{ name: 'APP', rows: [['ID', 'Amount', 'Currency'], ...templateRows([`9${n}0000000000001`])] }],
+    }),
+  })
+  const filesOnDisk = async (importId: string) =>
+    (await readdir(path.join(uploadDir, 'imports', importId)).catch(() => [] as string[])).length
+
+  it('9 + 2 answers 409 import_file_limit_reached storing nothing; 9 + 1 reaches 10, and one more is 409 again', async () => {
+    const created = await upload(
+      `/accounts/${accountIds['ProviderA-USD']}/imports`,
+      [1, 2, 3, 4, 5, 6, 7, 8, 9].map(generated),
+    )
+    expect(created.statusCode).toBe(201)
+    const { importId } = created.json() as { importId: string }
+
+    const twoMore = await upload(`/imports/${importId}/files`, [generated(10), generated(11)])
+    expect(twoMore.statusCode).toBe(409)
+    expect(twoMore.json()).toMatchObject({
+      code: 'import_file_limit_reached',
+      details: { limit: 10, current: 9, adding: 2 },
+    })
+    expect(await ctx.prisma.importFile.count({ where: { importId } })).toBe(9)
+    expect(await filesOnDisk(importId)).toBe(9)
+    // Nothing of the refused request stays staged either (review-diff #135, point 2).
+    expect(await readdir(path.join(uploadDir, 'tmp'))).toEqual([])
+
+    const oneMore = await upload(`/imports/${importId}/files`, [generated(10)])
+    expect(oneMore.statusCode).toBe(200)
+    expect(ImportDetail.parse(oneMore.json()).fileCount).toBe(10)
+
+    const eleventh = await upload(`/imports/${importId}/files`, [generated(11)])
+    expect(eleventh.statusCode).toBe(409)
+    expect(eleventh.json()).toMatchObject({ code: 'import_file_limit_reached', details: { current: 10, adding: 1 } })
+    expect(await readdir(path.join(uploadDir, 'tmp'))).toEqual([])
+    expect(await filesOnDisk(importId)).toBe(10)
   })
 })
 

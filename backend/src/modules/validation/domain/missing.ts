@@ -1,4 +1,5 @@
 import type { Cycle } from '@recon/shared'
+import { mismatchOf } from './non-recorded-adjustment.js'
 import { reserveExpiry } from './ranges.js'
 import type { SlotOutput, ValidationContext } from './run-validations.js'
 import type { DateRange, Issue, MissingRange, MissingType } from './types.js'
@@ -125,13 +126,23 @@ export function missingInRange(ctx: ValidationContext): SlotOutput {
   return { applicable: anyRange(ctx), issues: ctx.missingIssues.filter((i) => i.missingType === 'in_range') }
 }
 
-/** Pending transactions of the account's channels created within the APP or the DEC range, once each (question 10). */
+/**
+ * Pending transactions of the account's channels created within the APP or the DEC range, once each (question 10),
+ * except those already a status_mismatch of the run: an E row of the batch reports them with another status (#63),
+ * so each one is told once. One that comes reported Pending still counts.
+ */
 export function pendingInRangeCount(ctx: ValidationContext): number {
   const pending = ctx.catalog.idOf('Pending')
   const within = (date: Date, range: DateRange | null) => range !== null && date >= range.min && date <= range.max
+  const findings = new Set(
+    ctx.partition.own
+      .filter((r) => r.transaction.statusId === pending && mismatchOf(r, ctx.catalog) === 'status_mismatch')
+      .map((r) => r.transaction.transactionId),
+  )
   const counted = new Set<bigint>()
   for (const c of ctx.input.candidates) {
     if (c.statusId !== pending || !ctx.input.account.primaryChannelIds.has(c.channelId)) continue
+    if (findings.has(c.transactionId)) continue
     if (within(c.transactionDate, ctx.ranges.APP) || within(c.transactionDate, ctx.ranges.DEC))
       counted.add(c.transactionId)
   }

@@ -21,7 +21,8 @@ import type {
 import { TRANSACTION_STATUSES } from '../../../../../prisma/synthetic.js'
 import { ACCOUNT_IDS } from '../../../catalog/application/__fakes__/in-memory.js'
 import type { Scope } from '../../../catalog/domain/scope.js'
-import { ImportNotEditableError } from '../../../imports/domain/errors.js'
+import { type EmptyBatchFacts, emptyBatchOf } from '../../../imports/domain/empty-batch.js'
+import { ImportNotEditableError, NoMatchedRowsError } from '../../../imports/domain/errors.js'
 import type { CycleRanges, Occurrence, ValidationReport } from '../../domain/types.js'
 import {
   BlockingValidationIssueError,
@@ -116,8 +117,16 @@ export interface FakeAuditEntry {
   at: Date
 }
 
+/** The facts of an import with matched rows of its provider: no empty batch to confirm (the default). */
+const WITH_MATCHED_ROWS: EmptyBatchFacts = {
+  rowsTotal: 1,
+  matchedOwn: 1,
+  unmatchedByReason: { no_match: 0, id_format: 0, lossy_numeric_id: 0, no_gateways: 0 },
+}
+
 export class InMemoryRunRepository implements ValidationRunRepository {
   private readonly imports = new Map<string, FakeImport>()
+  private readonly emptyBatchFacts = new Map<string, EmptyBatchFacts>()
   private readonly runs: FakeRun[] = []
   readonly audit: FakeAuditEntry[] = []
   private nextRunId = 1
@@ -495,7 +504,7 @@ export class InMemoryRunRepository implements ValidationRunRepository {
     })
   }
 
-  async review(importId: string, runId: number, userId: number, now: Date): Promise<void> {
+  async review(importId: string, runId: number, userId: number, now: Date, confirmEmptyBatch: boolean): Promise<void> {
     this.beforeSave?.()
     const imported = this.requireImport(importId)
     if (imported.status !== 'analyzed') throw new ImportNotAnalyzedError(imported.status)
@@ -509,6 +518,9 @@ export class InMemoryRunRepository implements ValidationRunRepository {
         blocked.map((r) => r.validationCode),
         current.issues.filter((i) => i.blocking).map((i) => i.issueId),
       )
+    // Same order as the database: after the run checks (#92, design D2).
+    const empty = emptyBatchOf(this.emptyBatchFacts.get(importId) ?? WITH_MATCHED_ROWS)
+    if (empty.requiresConfirmation && !confirmEmptyBatch) throw new NoMatchedRowsError(empty.details)
     imported.status = 'validated'
     imported.updatedAt = now
     this.audit.push({
@@ -522,9 +534,15 @@ export class InMemoryRunRepository implements ValidationRunRepository {
         changedOccurrences: current.issues
           .flatMap((i) => i.occurrences)
           .filter((o) => o.includeInSettlement !== o.defaultIncluded).length,
+        ...(empty.requiresConfirmation ? { emptyBatchConfirmed: true } : {}),
       },
       at: now,
     })
+  }
+
+  /** What the rows of an import say about an empty batch; an import not set has matched rows of its provider. */
+  setEmptyBatchFacts(importId: string, facts: EmptyBatchFacts): void {
+    this.emptyBatchFacts.set(importId, facts)
   }
 
   // ── helpers ──

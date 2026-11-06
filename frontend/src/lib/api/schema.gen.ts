@@ -1544,6 +1544,12 @@ export interface paths {
                                     unmatched: number;
                                     ambiguous: number;
                                     ignored: number;
+                                    unmatchedByReason: {
+                                        no_match: number;
+                                        id_format: number;
+                                        lossy_numeric_id: number;
+                                        no_gateways: number;
+                                    };
                                 };
                                 byCycle: {
                                     E: number;
@@ -1553,6 +1559,8 @@ export interface paths {
                                 warnings: {
                                     [key: string]: number;
                                 };
+                                requiresEmptyBatchConfirmation: boolean;
+                                likelyWrongAccount: boolean;
                             } | null;
                             channels: {
                                 channelId: number;
@@ -1577,6 +1585,8 @@ export interface paths {
                                 note: string | null;
                                 /** @enum {boolean} */
                                 outOfScope?: true;
+                                /** @enum {boolean} */
+                                otherProvider?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -1688,7 +1698,7 @@ export interface paths {
         put?: never;
         /**
          * Add files to an import before it is analyzed
-         * @description multipart/form-data with 1 to 10 `files` parts, each a `.xlsx` of at most 20 MiB. Rejected as a whole when any part fails: 400 (type, size, count), 409 (same bytes already in the import), 422 (unreadable workbook).
+         * @description multipart/form-data with 1 to 10 `files` parts, each a `.xlsx` of at most 20 MiB. Rejected as a whole when any part fails: 400 (type, size, count), 409 (same bytes already in the import), 422 (unreadable workbook). An import holds at most 10 files in total: adding past that answers 409 import_file_limit_reached with details { limit, current, adding }, reading and storing none (#40).
          */
         post: {
             parameters: {
@@ -1820,6 +1830,12 @@ export interface paths {
                                     unmatched: number;
                                     ambiguous: number;
                                     ignored: number;
+                                    unmatchedByReason: {
+                                        no_match: number;
+                                        id_format: number;
+                                        lossy_numeric_id: number;
+                                        no_gateways: number;
+                                    };
                                 };
                                 byCycle: {
                                     E: number;
@@ -1829,6 +1845,8 @@ export interface paths {
                                 warnings: {
                                     [key: string]: number;
                                 };
+                                requiresEmptyBatchConfirmation: boolean;
+                                likelyWrongAccount: boolean;
                             } | null;
                             channels: {
                                 channelId: number;
@@ -1853,6 +1871,8 @@ export interface paths {
                                 note: string | null;
                                 /** @enum {boolean} */
                                 outOfScope?: true;
+                                /** @enum {boolean} */
+                                otherProvider?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -2088,6 +2108,12 @@ export interface paths {
                                     unmatched: number;
                                     ambiguous: number;
                                     ignored: number;
+                                    unmatchedByReason: {
+                                        no_match: number;
+                                        id_format: number;
+                                        lossy_numeric_id: number;
+                                        no_gateways: number;
+                                    };
                                 };
                                 byCycle: {
                                     E: number;
@@ -2097,6 +2123,8 @@ export interface paths {
                                 warnings: {
                                     [key: string]: number;
                                 };
+                                requiresEmptyBatchConfirmation: boolean;
+                                likelyWrongAccount: boolean;
                             } | null;
                             channels: {
                                 channelId: number;
@@ -2121,6 +2149,8 @@ export interface paths {
                                 note: string | null;
                                 /** @enum {boolean} */
                                 outOfScope?: true;
+                                /** @enum {boolean} */
+                                otherProvider?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -2338,6 +2368,12 @@ export interface paths {
                                     unmatched: number;
                                     ambiguous: number;
                                     ignored: number;
+                                    unmatchedByReason: {
+                                        no_match: number;
+                                        id_format: number;
+                                        lossy_numeric_id: number;
+                                        no_gateways: number;
+                                    };
                                 };
                                 byCycle: {
                                     E: number;
@@ -2347,6 +2383,8 @@ export interface paths {
                                 warnings: {
                                     [key: string]: number;
                                 };
+                                requiresEmptyBatchConfirmation: boolean;
+                                likelyWrongAccount: boolean;
                             } | null;
                             channels: {
                                 channelId: number;
@@ -2371,6 +2409,8 @@ export interface paths {
                                 note: string | null;
                                 /** @enum {boolean} */
                                 outOfScope?: true;
+                                /** @enum {boolean} */
+                                otherProvider?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -2712,6 +2752,12 @@ export interface paths {
                                     unmatched: number;
                                     ambiguous: number;
                                     ignored: number;
+                                    unmatchedByReason: {
+                                        no_match: number;
+                                        id_format: number;
+                                        lossy_numeric_id: number;
+                                        no_gateways: number;
+                                    };
                                 };
                                 byCycle: {
                                     E: number;
@@ -2721,6 +2767,8 @@ export interface paths {
                                 warnings: {
                                     [key: string]: number;
                                 };
+                                requiresEmptyBatchConfirmation: boolean;
+                                likelyWrongAccount: boolean;
                             } | null;
                             channels: {
                                 channelId: number;
@@ -2745,6 +2793,8 @@ export interface paths {
                                 note: string | null;
                                 /** @enum {boolean} */
                                 outOfScope?: true;
+                                /** @enum {boolean} */
+                                otherProvider?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -2969,6 +3019,12 @@ export interface paths {
                                     unmatched: number;
                                     ambiguous: number;
                                     ignored: number;
+                                    unmatchedByReason: {
+                                        no_match: number;
+                                        id_format: number;
+                                        lossy_numeric_id: number;
+                                        no_gateways: number;
+                                    };
                                 };
                                 byCycle: {
                                     E: number;
@@ -2978,6 +3034,8 @@ export interface paths {
                                 warnings: {
                                     [key: string]: number;
                                 };
+                                requiresEmptyBatchConfirmation: boolean;
+                                likelyWrongAccount: boolean;
                             } | null;
                             channels: {
                                 channelId: number;
@@ -3002,6 +3060,8 @@ export interface paths {
                                 note: string | null;
                                 /** @enum {boolean} */
                                 outOfScope?: true;
+                                /** @enum {boolean} */
+                                otherProvider?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -3554,6 +3614,12 @@ export interface paths {
                                     unmatched: number;
                                     ambiguous: number;
                                     ignored: number;
+                                    unmatchedByReason: {
+                                        no_match: number;
+                                        id_format: number;
+                                        lossy_numeric_id: number;
+                                        no_gateways: number;
+                                    };
                                 };
                                 byCycle: {
                                     E: number;
@@ -3563,6 +3629,8 @@ export interface paths {
                                 warnings: {
                                     [key: string]: number;
                                 };
+                                requiresEmptyBatchConfirmation: boolean;
+                                likelyWrongAccount: boolean;
                             } | null;
                             channels: {
                                 channelId: number;
@@ -3587,6 +3655,8 @@ export interface paths {
                                 note: string | null;
                                 /** @enum {boolean} */
                                 outOfScope?: true;
+                                /** @enum {boolean} */
+                                otherProvider?: true;
                             }[] | null;
                             batchFees: {
                                 feeTypeId: number | null;
@@ -4584,7 +4654,7 @@ export interface paths {
         put?: never;
         /**
          * Continue with the current run: the import moves to validated (no decision per finding)
-         * @description Only in analyzed and on the current run (runId). 409 validation_run_required without a run, validation_run_superseded for another runId, blocking_validation_issue when provider_mismatch blocks it (no override: cancel the import).
+         * @description Only in analyzed and on the current run (runId). 409 validation_run_required without a run, validation_run_superseded for another runId, blocking_validation_issue when provider_mismatch blocks it (no override: cancel the import), no_matched_rows when no row matches a transaction of the account and confirmEmptyBatch is not true (details { rowsTotal, rowsUnmatched, unmatchedByReason, likelyWrongAccount }; #92).
          */
         post: {
             parameters: {
@@ -4599,6 +4669,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         runId: number;
+                        confirmEmptyBatch?: boolean;
                     };
                 };
             };
@@ -7058,7 +7129,7 @@ export interface paths {
         put?: never;
         /**
          * Process the validated import as a batch attempt (processed, pending payment)
-         * @description runId is the reviewed validation run. 409 import_not_validated, validation_run_required, validation_run_superseded, blocking_validation_issue, batch_no_taken, channel_assignment_not_confirmed, settlement_busy (chosen three times as a deadlock victim; retry); 400 batch_fee_invalid. No movement is Settled until the batch is paid.
+         * @description runId is the reviewed validation run. 409 import_not_validated, validation_run_required, validation_run_superseded, blocking_validation_issue, no_matched_rows (no row matches a transaction of the account and confirmEmptyBatch is not true; details { rowsTotal, rowsUnmatched, unmatchedByReason, likelyWrongAccount }, #92), batch_no_taken, channel_assignment_not_confirmed, settlement_busy (chosen three times as a deadlock victim; retry); 400 batch_fee_invalid. No movement is Settled until the batch is paid.
          */
         post: {
             parameters: {
@@ -7077,6 +7148,7 @@ export interface paths {
                         settlementDate?: string;
                         note?: string;
                         confirmChannelAssignment?: boolean;
+                        confirmEmptyBatch?: boolean;
                         batchFees?: {
                             feeTypeId: number;
                             /** Format: uuid */
@@ -7588,7 +7660,7 @@ export interface paths {
         put?: never;
         /**
          * What processing would do, without writing anything
-         * @description Same body as processing; answers 200 with a SettlementPreview. 409 import_not_validated, validation_run_required, validation_run_superseded, blocking_validation_issue; 400 batch_fee_invalid. batch_no_taken and channel_assignment_not_confirmed are not errors here: a number with an active attempt is batchNoAvailable: false, and channels to assign are requiresChannelConfirmation: true with channelsToAssign.
+         * @description Same body as processing; answers 200 with a SettlementPreview. 409 import_not_validated, validation_run_required, validation_run_superseded, blocking_validation_issue; 400 batch_fee_invalid. batch_no_taken, channel_assignment_not_confirmed and no_matched_rows are not errors here: a number with an active attempt is batchNoAvailable: false, and channels to assign are requiresChannelConfirmation: true with channelsToAssign, and an import without matched rows is requiresEmptyBatchConfirmation: true with emptyBatch (the details of that 409); the preview takes no confirmation (#92).
          */
         post: {
             parameters: {
@@ -7607,6 +7679,7 @@ export interface paths {
                         settlementDate?: string;
                         note?: string;
                         confirmChannelAssignment?: boolean;
+                        confirmEmptyBatch?: boolean;
                         batchFees?: {
                             feeTypeId: number;
                             /** Format: uuid */
@@ -7773,6 +7846,18 @@ export interface paths {
                                     outOfScope: true;
                                 }) | null;
                             }[];
+                            requiresEmptyBatchConfirmation: boolean;
+                            emptyBatch: {
+                                rowsTotal: number;
+                                rowsUnmatched: number;
+                                unmatchedByReason: {
+                                    no_match: number;
+                                    id_format: number;
+                                    lossy_numeric_id: number;
+                                    no_gateways: number;
+                                };
+                                likelyWrongAccount: boolean;
+                            } | null;
                         };
                     };
                 };

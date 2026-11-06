@@ -38,6 +38,11 @@ export const strings = {
     unsupported_file_type: 'Only .xlsx files are accepted.',
     file_too_large: 'The file exceeds the 20 MB limit.',
     too_many_files: 'Select at most 10 files at a time.',
+    /** The import already holds its 10 files, whatever the requests that brought them (#40). */
+    import_file_limit_reached: (current: number, limit: number) =>
+      current >= limit
+        ? `This import already has ${current} files, the most it can hold. Remove one before adding another.`
+        : `This import has ${current} of its ${limit} files: these do not fit. Remove one before adding more.`,
     file_unreadable: 'The file cannot be read as an Excel workbook.',
     duplicate_file: (fileName: string) => `This file is already in the import as ${fileName}.`,
     duplicateInSelection: 'This file appears twice in the selection.',

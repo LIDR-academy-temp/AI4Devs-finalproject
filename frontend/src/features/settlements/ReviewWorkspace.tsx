@@ -10,7 +10,8 @@ import type { ImportDetail } from '@/lib/api/types'
 import { BatchFees } from './BatchFees'
 import { BatchSection } from './BatchSection'
 import { ChannelsToAssign } from './ChannelsToAssign'
-import type { ChannelToAssign, ErrorDetails, NextBatchNumber } from './contract'
+import type { ChannelToAssign, EmptyBatch, ErrorDetails, NextBatchNumber } from './contract'
+import { EmptyBatchConfirmation } from './EmptyBatchConfirmation'
 import type { RowApiError } from './FeeRow'
 import { useProcessSettlement } from './mutations'
 import { PreSummary } from './PreSummary'
@@ -73,6 +74,7 @@ function ReviewForm({
       settlementDate: '',
       fees: fileRows(detail),
       confirmChannels: false,
+      confirmEmptyBatch: false,
     },
   })
   const values = useWatch({ control: form.control }) as ReviewFormValues
@@ -151,6 +153,20 @@ function ReviewForm({
   const channelsToAssign = channelsOverride ?? (preview?.requiresChannelConfirmation ? preview.channelsToAssign : [])
   const unconfirmed = confirmationRequired && !values.confirmChannels
 
+  // A batch without matched rows (#92): what a 409 said until the next preview, then the preview's.
+  const [emptyOverride, setEmptyOverride] = useState<EmptyBatch | null>(null)
+  useEffect(() => {
+    if (preview) setEmptyOverride(null)
+  }, [preview])
+  // What was confirmed was this preview's empty batch: when the preview stops or starts asking, the box goes back.
+  const emptyRequired = preview?.requiresEmptyBatchConfirmation ?? false
+  useEffect(() => {
+    void emptyRequired
+    form.setValue('confirmEmptyBatch', false)
+  }, [emptyRequired, form])
+  const emptyBatch = emptyOverride ?? (preview?.requiresEmptyBatchConfirmation ? preview.emptyBatch : null)
+  const emptyUnconfirmed = emptyBatch !== null && !values.confirmEmptyBatch
+
   const r = strings.process.reasons
   const reasons: string[] = []
   if (!values.settlementDate) reasons.push(r.chooseDate)
@@ -164,6 +180,7 @@ function ReviewForm({
   if (valid && error && !activeFeeError) reasons.push(r.previewFailed)
   else if (valid && !isCurrent) reasons.push(r.waiting)
   if (unconfirmed) reasons.push(r.confirmChannels)
+  if (emptyUnconfirmed) reasons.push(r.confirmEmptyBatch)
 
   const hint = valid ? null : !values.settlementDate ? strings.preSummary.chooseDate : strings.preSummary.fixFields
 
@@ -189,6 +206,12 @@ function ReviewForm({
           onRetry={retry}
           disabled={processor.processing}
         >
+          {emptyBatch && (
+            <EmptyBatchConfirmation
+              likelyWrongAccount={emptyBatch.likelyWrongAccount}
+              disabled={processor.processing}
+            />
+          )}
           {channelsToAssign.length > 0 && (
             <ChannelsToAssign channels={channelsToAssign} disabled={processor.processing} />
           )}
@@ -203,6 +226,11 @@ function ReviewForm({
           lastRequest &&
           void processor.process(lastRequest, {
             confirmChannels: confirmationRequired && values.confirmChannels,
+            confirmEmptyBatch: emptyBatch !== null && values.confirmEmptyBatch,
+            onEmptyBatch: (details) => {
+              if (details) setEmptyOverride(details)
+              form.setValue('confirmEmptyBatch', false)
+            },
             onFeeInvalid: recordFeeError,
             onChannels: (channels) => {
               setChannelsOverride(channels)

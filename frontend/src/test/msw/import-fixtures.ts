@@ -449,6 +449,14 @@ export function summarize(rows: ImportRowItem[]): NonNullable<ImportDetail['anal
       'cycle_mismatch',
     ].map((code) => [code, rows.filter((r) => r.warnings.includes(code as ImportRowItem['warnings'][number])).length]),
   )
+  const reasons = ['no_match', 'id_format', 'lossy_numeric_id', 'no_gateways'] as const
+  const unmatchedRows = rows.filter((r) => r.matchResult === 'unmatched')
+  const unmatchedByReason = Object.fromEntries(
+    reasons.map((reason) => [reason, unmatchedRows.filter((r) => r.reason === reason).length]),
+  ) as Record<(typeof reasons)[number], number>
+  const unmatched = unmatchedRows.length
+  // The fixtures' matched rows are of the account's provider (another provider's would be provider_mismatch).
+  const requiresEmpty = count('matched') === 0
   return {
     rows: {
       total: rows.length,
@@ -456,6 +464,7 @@ export function summarize(rows: ImportRowItem[]): NonNullable<ImportDetail['anal
       unmatched: count('unmatched'),
       ambiguous: count('ambiguous'),
       ignored: count('ignored'),
+      unmatchedByReason: unmatchedByReason,
     },
     byCycle: {
       E: counted.filter((r) => r.cycle === 'E').length,
@@ -463,5 +472,8 @@ export function summarize(rows: ImportRowItem[]): NonNullable<ImportDetail['anal
       R: counted.filter((r) => r.cycle === 'R').length,
     },
     warnings,
+    // The rule of the API (README §3.3 #92): no matched row of the account, and a wrong account when all are id_format.
+    requiresEmptyBatchConfirmation: requiresEmpty,
+    likelyWrongAccount: requiresEmpty && unmatched > 0 && unmatchedByReason.id_format === unmatched,
   }
 }

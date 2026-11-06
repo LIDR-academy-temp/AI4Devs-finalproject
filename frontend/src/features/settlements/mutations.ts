@@ -7,7 +7,13 @@ import { useCallback, useRef, useState } from 'react'
 import { importKey } from '@/features/imports/queries'
 import { validationRunKey } from '@/features/validations/queries'
 import { ApiError } from '@/lib/api/client'
-import { type ChannelToAssign, type ErrorDetails, processSettlement, type SettlementRequest } from './contract'
+import {
+  type ChannelToAssign,
+  type EmptyBatch,
+  type ErrorDetails,
+  processSettlement,
+  type SettlementRequest,
+} from './contract'
 import { previewErrorOf } from './preview'
 import { accountSettlementsPrefix, settlementKey, settlementPreviewKey, settlementPreviewsKey } from './queries'
 import { strings } from './strings'
@@ -19,6 +25,7 @@ const STALE_PREVIEW = new Set([
   'validation_run_superseded',
   'validation_run_required',
   'blocking_validation_issue',
+  'no_matched_rows',
 ])
 
 export interface ProcessError {
@@ -33,6 +40,10 @@ export interface ProcessHandlers {
   onFeeInvalid?: (e: unknown) => boolean
   /** The channels the API says need the confirmation (409 channel_assignment_not_confirmed). */
   onChannels?: (channels: ChannelToAssign[]) => void
+  /** A batch without matched rows required by the preview and confirmed by the analyst (#92). */
+  confirmEmptyBatch?: boolean
+  /** What the API says when the confirmation of an empty batch is missing (409 no_matched_rows). */
+  onEmptyBatch?: (details: EmptyBatch | null) => void
 }
 
 /** `onNotValidated` receives what to say when the import stopped being validated; the page keeps it. */
@@ -52,13 +63,17 @@ export function useProcessSettlement(importId: string, onNotValidated?: (text: s
   /** `preview` is the body of the preview on screen: what is sent, plus the confirmation of the channels. */
   async function process(
     preview: SettlementRequest,
-    { confirmChannels, onFeeInvalid, onChannels }: ProcessHandlers = {},
+    { confirmChannels, onFeeInvalid, onChannels, confirmEmptyBatch, onEmptyBatch }: ProcessHandlers = {},
   ) {
     if (guard.current) return
     guard.current = true
     setError(null)
     setTakenBatchNo(null)
-    const request = confirmChannels ? { ...preview, confirmChannelAssignment: true } : preview
+    const request: SettlementRequest = {
+      ...preview,
+      ...(confirmChannels ? { confirmChannelAssignment: true } : {}),
+      ...(confirmEmptyBatch ? { confirmEmptyBatch: true } : {}),
+    }
     try {
       const view = await mutation.mutateAsync(request)
       queryClient.setQueryData(settlementKey(view.batchId), view)
@@ -77,6 +92,9 @@ export function useProcessSettlement(importId: string, onNotValidated?: (text: s
       } else if (e instanceof ApiError && e.code === 'channel_assignment_not_confirmed') {
         const details = e.details as ErrorDetails['channel_assignment_not_confirmed'] | undefined
         onChannels?.(details?.channels ?? [])
+      } else if (e instanceof ApiError && e.code === 'no_matched_rows') {
+        setError({ text: strings.errors.noMatchedRows, retry: false })
+        onEmptyBatch?.((e.details as ErrorDetails['no_matched_rows'] | undefined) ?? null)
       } else if (e instanceof ApiError && e.code === 'import_not_validated') {
         // The form goes away when the import is read again: the page says why (spec "Import que ya no está validado").
         const text = previewErrorOf(e).text

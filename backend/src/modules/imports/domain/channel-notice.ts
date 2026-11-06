@@ -19,13 +19,18 @@ export interface ChannelFact {
 
 const UNASSIGNED_NOTE = 'Not assigned yet: it will be associated to this account as primary when the batch is processed'
 const OTHER_ACCOUNT_NOTE = 'This account will become the primary account of the channel when the batch is processed'
+/** Its rows are provider_mismatch: processing never assigns the channel (#92). */
+const OTHER_PROVIDER_NOTE = 'Channel of another provider: its rows are not processed in this account'
 
 /**
  * Only channels with matched rows; ordered by channelId. The other account is named only to a caller whose scope
  * includes its merchant; otherwise only its existence is said (README §1.2: a merchant does not see another's).
+ * A channel of another provider than the account's (`providerId`) keeps its assignment and carries `otherProvider`
+ * with its own note; the comparison uses the fact, so another merchant's channel, shown without provider, is one too.
  */
 export function channelNotices(
   accountId: string,
+  providerId: number,
   rowCounts: Map<number, number>,
   facts: ChannelFact[],
   scope: Scope,
@@ -38,13 +43,16 @@ export function channelNotices(
     const base = scope.merchantIds.includes(fact.merchantId)
       ? { channelId, name: fact.name, gatewayId: fact.gatewayId, providerId: fact.providerId, rowCount }
       : { channelId, name: null, gatewayId: fact.gatewayId, providerId: null, rowCount, outOfScope: true as const }
+    const foreign = fact.providerId !== providerId
+    const noteOf = (own: string | null) => (foreign ? OTHER_PROVIDER_NOTE : own)
+    const marked = foreign ? { ...base, otherProvider: true as const } : base
     if (fact.primaryAccount?.accountId === accountId) {
-      notices.push({ ...base, assignment: 'assigned', otherAccount: null, note: null })
+      notices.push({ ...marked, assignment: 'assigned', otherAccount: null, note: noteOf(null) })
     } else if (fact.primaryAccount === null && !fact.assignedToThisAccount) {
-      notices.push({ ...base, assignment: 'unassigned', otherAccount: null, note: UNASSIGNED_NOTE })
+      notices.push({ ...marked, assignment: 'unassigned', otherAccount: null, note: noteOf(UNASSIGNED_NOTE) })
     } else {
       notices.push({
-        ...base,
+        ...marked,
         assignment: 'assigned_to_other_account',
         otherAccount:
           fact.primaryAccount === null
@@ -52,7 +60,7 @@ export function channelNotices(
             : scope.merchantIds.includes(fact.primaryAccount.merchantId)
               ? { accountId: fact.primaryAccount.accountId, name: fact.primaryAccount.name }
               : { accountId: null, name: null, outOfScope: true },
-        note: OTHER_ACCOUNT_NOTE,
+        note: noteOf(OTHER_ACCOUNT_NOTE),
       })
     }
   }

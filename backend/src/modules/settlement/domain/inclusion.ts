@@ -17,6 +17,20 @@ export function compareRows(a: SettlementRow, b: SettlementRow): number {
 }
 
 /**
+ * A matched row of another provider never becomes a movement nor assigns its channel (spec settlement "Filas de otro
+ * proveedor nunca se procesan", #92, design D5). provider_mismatch blocks before, so reaching here is a bug: the
+ * computation fails (a 500 that rolls the processing back) instead of settling the row. `Skipped` keeps its shape.
+ */
+export function assertOwnProviderRows(rows: readonly SettlementRow[], providerId: number): void {
+  for (const row of rows) {
+    if (row.transaction !== null && row.transaction.providerId !== providerId)
+      throw new Error(
+        `row ${row.sheetId}:${row.rowNo} belongs to another provider (provider_mismatch); it is never processed`,
+      )
+  }
+}
+
+/**
  * A matched row is processed unless one of its current_import occurrences of the current run excludes it: a row in
  * several findings is excluded when any of them excludes it (AND), so no movement counts twice by default. Every row
  * that is not processed is counted under exactly one reason, in the order of `Skipped`.

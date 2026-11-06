@@ -5,7 +5,9 @@ import {
   BatchFeeProposal,
   ChannelNotice,
   ColumnProposal,
+  EmptyBatchDetails,
   ImportDetail,
+  ImportFileLimitReachedDetails,
   ImportListItem,
   ImportListPage,
   ImportListQuery,
@@ -18,7 +20,9 @@ import {
   ReadinessItem,
   ResolveRowBody,
   SheetProposal,
+  UnmatchedByReason,
 } from './imports.js'
+import { UnmatchedReason } from './vocabulary.js'
 
 const IMPORT_ID = '0f1c1e2a-3b4c-4d5e-8f60-718293a4b5c6'
 const ACCOUNT_ID = '7b1f3c7e-5d2a-4e9b-9c1d-2f3a4b5c6d7e'
@@ -305,9 +309,18 @@ describe('ImportDetail after the analysis', () => {
     rowsUnmatched: 0,
     files: [{ ...detail.files[0], sheets: [confirmedSheet] }],
     analysis: {
-      rows: { total: 783, matched: 780, unmatched: 0, ambiguous: 0, ignored: 3 },
+      rows: {
+        total: 783,
+        matched: 780,
+        unmatched: 0,
+        ambiguous: 0,
+        ignored: 3,
+        unmatchedByReason: { no_match: 0, id_format: 0, lossy_numeric_id: 0, no_gateways: 0 },
+      },
       byCycle: { E: 450, I: 10, R: 320 },
       warnings,
+      requiresEmptyBatchConfirmation: false,
+      likelyWrongAccount: false,
     },
     channels: [
       {
@@ -373,6 +386,46 @@ describe('ImportDetail after the analysis', () => {
     expect(AnalysisSummary.safeParse(analyzed.analysis).success).toBe(true)
     expect(ChannelNotice.safeParse(analyzed.channels[1]).success).toBe(true)
     expect(BatchFeeProposal.safeParse(analyzed.batchFees[1]).success).toBe(true)
+  })
+
+  it('requires the empty batch flags in the analysis (#92)', () => {
+    const { requiresEmptyBatchConfirmation: _r, ...withoutFlag } = analyzed.analysis
+    expect(AnalysisSummary.safeParse(withoutFlag).success).toBe(false)
+    const { likelyWrongAccount: _l, ...withoutWarning } = analyzed.analysis
+    expect(AnalysisSummary.safeParse(withoutWarning).success).toBe(false)
+  })
+
+  it('marks a channel of another provider only with otherProvider: true', () => {
+    const foreign = { ...analyzed.channels[1], otherProvider: true }
+    expect(ChannelNotice.safeParse(foreign).success).toBe(true)
+    expect(ChannelNotice.safeParse({ ...foreign, otherProvider: false }).success).toBe(false)
+    expect(ChannelNotice.safeParse({ ...foreign, assignment: 'other_provider' }).success).toBe(false)
+  })
+})
+
+describe('Empty batch and file limit (README §3.3 "Batch sin filas asociadas", #92, #40)', () => {
+  const byReason = { no_match: 0, id_format: 12, lossy_numeric_id: 0, no_gateways: 0 }
+
+  it('UnmatchedByReason has exactly the four unmatched reasons, zeros explicit', () => {
+    expect(Object.keys(UnmatchedByReason.shape)).toEqual(UnmatchedReason.options)
+    expect(UnmatchedByReason.safeParse(byReason).success).toBe(true)
+    const { no_gateways: _dropped, ...partial } = byReason
+    expect(UnmatchedByReason.safeParse(partial).success).toBe(false)
+    expect(UnmatchedByReason.safeParse({ ...byReason, empty_id: 0 }).success).toBe(false)
+    expect(UnmatchedByReason.safeParse({ ...byReason, id_format: -1 }).success).toBe(false)
+  })
+
+  it('EmptyBatchDetails carries the counts and likelyWrongAccount', () => {
+    const details = { rowsTotal: 12, rowsUnmatched: 12, unmatchedByReason: byReason, likelyWrongAccount: true }
+    expect(EmptyBatchDetails.safeParse(details).success).toBe(true)
+    const { likelyWrongAccount: _l, ...partial } = details
+    expect(EmptyBatchDetails.safeParse(partial).success).toBe(false)
+  })
+
+  it('ImportFileLimitReachedDetails names the limit, the files the import has and the ones being added', () => {
+    expect(ImportFileLimitReachedDetails.safeParse({ limit: 10, current: 9, adding: 2 }).success).toBe(true)
+    expect(ImportFileLimitReachedDetails.safeParse({ limit: 10, current: 9 }).success).toBe(false)
+    expect(ImportFileLimitReachedDetails.safeParse({ limit: 10, current: 9, adding: 0 }).success).toBe(false)
   })
 })
 

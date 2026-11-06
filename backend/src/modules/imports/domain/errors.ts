@@ -1,4 +1,5 @@
 // Errors of the import module (design D10). Codes in lowercase snake_case (README §4).
+import type { EmptyBatchDetails } from '@recon/shared'
 import { DomainError } from '../../../shared/errors.js'
 
 /** The part is not a `.xlsx` by name (README §4.2: 400, "tipo no permitido"). */
@@ -28,6 +29,33 @@ export class TooManyFilesError extends DomainError {
 
   constructor(limit: number) {
     super(`At most ${limit} files per request`, { limit })
+  }
+}
+
+/** Adding the files would take the import past its total (#40): a conflict with the import, not with the request. */
+export class ImportFileLimitReachedError extends DomainError {
+  readonly status = 409
+  readonly code = 'import_file_limit_reached'
+
+  constructor(limit: number, current: number, adding: number) {
+    super(`An import holds at most ${limit} files; it has ${current} and the request adds ${adding}`, {
+      limit,
+      current,
+      adding,
+    })
+  }
+}
+
+/**
+ * An import without matched rows of the account's provider reviewed or processed without confirmEmptyBatch
+ * (README §3.3 "Batch sin filas asociadas", #92). Not a validation: a batch with batch fees only is legitimate.
+ */
+export class NoMatchedRowsError extends DomainError {
+  readonly status = 409
+  readonly code = 'no_matched_rows'
+
+  constructor(details: EmptyBatchDetails) {
+    super('No row of the import matches a transaction of this account; confirm a batch with batch fees only', details)
   }
 }
 

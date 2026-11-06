@@ -33,6 +33,8 @@ export interface ReviewFormValues {
   settlementDate: string
   fees: FeeRow[]
   confirmChannels: boolean
+  /** The box of a batch without matched rows (#92); only Process carries it. */
+  confirmEmptyBatch: boolean
 }
 
 export const formMessages = {
@@ -101,6 +103,8 @@ export const reviewFormSchema = z.object({
     .refine((value) => value.length === 0 || isCalendarDay(value), formMessages.invalidDate),
   fees: z.array(feeRowSchema),
   confirmChannels: z.boolean(),
+  /** The box of a batch without matched rows (#92); never in the preview body, only added to Process. */
+  confirmEmptyBatch: z.boolean(),
 })
 
 /**

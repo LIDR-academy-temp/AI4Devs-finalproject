@@ -132,6 +132,8 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
       )}
       {view && (
         <DecisionBar
+          // One per run: what the analyst confirmed (the empty batch box) belongs to the run shown (#92).
+          key={view.run?.runId ?? 'none'}
           detail={detail}
           view={view}
           reviewer={reviewer}

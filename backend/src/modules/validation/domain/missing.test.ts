@@ -149,6 +149,43 @@ describe('missing candidates', () => {
     expect(report.pendingInRangeCount).toBe(2)
   })
 
+  it('a Pending transaction that comes in an APP row with another status is a status_mismatch, not counted (#63)', () => {
+    const pendingInBatch = at('2026-10-01T00:00:00.000Z')
+    const report = runValidations(
+      withCandidates({
+        rows: [
+          ...APP_ROWS,
+          row({ transactionId: 20n, rowNo: 4, status: 'Successful', gateway: 'Pending', date: pendingInBatch }),
+        ],
+        candidates: [
+          candidate({ transactionId: 20n, status: 'Pending', date: pendingInBatch }),
+          candidate({ transactionId: 21n, status: 'Pending', date: at('2026-10-02T00:00:00.000Z') }),
+        ],
+      }),
+    )
+
+    expect(resultOf(report, 'non_recorded_adjustment').issues.map((i) => [i.issueType, i.transactionId])).toEqual([
+      ['status_mismatch', 20n],
+    ])
+    expect(report.pendingInRangeCount).toBe(1)
+  })
+
+  it('a Pending transaction that comes in an E row reported Pending is no finding and still counts', () => {
+    const pendingInBatch = at('2026-10-01T00:00:00.000Z')
+    const report = runValidations(
+      withCandidates({
+        rows: [
+          ...APP_ROWS,
+          row({ transactionId: 20n, rowNo: 4, status: 'Pending', gateway: 'Pending', date: pendingInBatch }),
+        ],
+        candidates: [candidate({ transactionId: 20n, status: 'Pending', date: pendingInBatch })],
+      }),
+    )
+
+    expect(resultOf(report, 'non_recorded_adjustment').issues).toEqual([])
+    expect(report.pendingInRangeCount).toBe(1)
+  })
+
   it('I candidates are compared by the date of the status change', () => {
     const i = input({
       rows: [row({ transactionId: 1n, cycle: 'I', status: 'Refund', gateway: 'Refund', changedAt: MIN })],

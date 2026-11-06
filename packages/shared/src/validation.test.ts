@@ -393,4 +393,10 @@ describe('request bodies', () => {
     expect(ReviewBody.safeParse({ runId: '7' }).success).toBe(false)
     expect(ReviewBody.safeParse({ runId: 7, decision: 'cancel' }).success).toBe(false)
   })
+
+  it('ReviewBody takes confirmEmptyBatch as an optional boolean (#92)', () => {
+    expect(ReviewBody.safeParse({ runId: 7, confirmEmptyBatch: true }).success).toBe(true)
+    expect(ReviewBody.safeParse({ runId: 7, confirmEmptyBatch: false }).success).toBe(true)
+    expect(ReviewBody.safeParse({ runId: 7, confirmEmptyBatch: 'true' }).success).toBe(false)
+  })
 })

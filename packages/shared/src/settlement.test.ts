@@ -109,6 +109,8 @@ const preview = {
   batchNoAvailable: true,
   requiresChannelConfirmation: true,
   channelsToAssign: [{ channelId: 1007, name: 'RAM-07', assignment: 'unassigned', otherAccount: null }],
+  requiresEmptyBatchConfirmation: false,
+  emptyBatch: null,
 }
 
 describe('SettlementRequest (README §4.3, runId required)', () => {
@@ -151,6 +153,12 @@ describe('SettlementRequest (README §4.3, runId required)', () => {
     const fee = body.batchFees[0]
     expect(SettlementRequest.safeParse({ ...body, batchFees: Array(100).fill(fee) }).success).toBe(true)
     expect(SettlementRequest.safeParse({ ...body, batchFees: Array(101).fill(fee) }).success).toBe(false)
+  })
+
+  it('takes confirmEmptyBatch as an optional boolean (#92)', () => {
+    expect(SettlementRequest.safeParse({ ...body, confirmEmptyBatch: true }).success).toBe(true)
+    expect(SettlementRequest.safeParse({ ...body, confirmEmptyBatch: false }).success).toBe(true)
+    expect(SettlementRequest.safeParse({ ...body, confirmEmptyBatch: 'yes' }).success).toBe(false)
   })
 
   it('caps the note at 500 characters', () => {
@@ -242,6 +250,22 @@ describe('SettlementView and SettlementPreview', () => {
   it('know the three statuses of an attempt and their settled status', () => {
     expect(SettlementView.safeParse({ ...view, status: 'paid', settledStatus: 'settled' }).success).toBe(true)
     expect(SettlementView.safeParse({ ...view, status: 'pending' }).success).toBe(false)
+  })
+
+  it('the preview says whether an empty batch must be confirmed, with the details of no_matched_rows (#92)', () => {
+    const emptyBatch = {
+      rowsTotal: 12,
+      rowsUnmatched: 12,
+      unmatchedByReason: { no_match: 0, id_format: 12, lossy_numeric_id: 0, no_gateways: 0 },
+      likelyWrongAccount: true,
+    }
+    expect(SettlementPreview.safeParse({ ...preview, requiresEmptyBatchConfirmation: true, emptyBatch }).success).toBe(
+      true,
+    )
+    const { requiresEmptyBatchConfirmation: _r, ...withoutFlag } = preview
+    expect(SettlementPreview.safeParse(withoutFlag).success).toBe(false)
+    const { emptyBatch: _e, ...withoutDetails } = preview
+    expect(SettlementPreview.safeParse(withoutDetails).success).toBe(false)
   })
 
   it('accept a null validation summary for an attempt without a process audit', () => {

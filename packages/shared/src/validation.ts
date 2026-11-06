@@ -251,5 +251,9 @@ export const ResolveIssueBody = z.strictObject({
 export type ResolveIssueBody = z.infer<typeof ResolveIssueBody>
 
 /** Body of `POST /imports/{id}/review`: the decision is about the run the analyst saw. */
-export const ReviewBody = z.strictObject({ runId: z.number().int().positive() })
+export const ReviewBody = z.strictObject({
+  runId: z.number().int().positive(),
+  /** Required true when the import has no matched row of the account's provider (#92); ignored otherwise. */
+  confirmEmptyBatch: z.boolean().optional(),
+})
 export type ReviewBody = z.infer<typeof ReviewBody>

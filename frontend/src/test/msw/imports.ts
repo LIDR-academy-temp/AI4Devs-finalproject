@@ -3,11 +3,13 @@
 // Test files are Files whose content starts with a sample label (see `workbookOf`).
 import { createHash } from 'node:crypto'
 import {
+  type EmptyBatchDetails,
   ImportListQuery,
   ImportRowItem as ImportRowItemSchema,
   ReasonRequest,
   ResolveRowBody,
   TRANSACTION_STATUSES,
+  type UnmatchedReason,
 } from '@recon/shared'
 import { HttpResponse, http, type PathParams } from 'msw'
 import type { ImportDetail, ImportRowItem, ImportStatus, MappingConfirmationBody } from '@/lib/api/types'
@@ -472,12 +474,17 @@ export interface SeedOptions {
   /** Labels of the files, when not the sample's own (e.g. only `batch-split_part1`). */
   labels?: string[]
   createdBy?: UserName
+  /**
+   * Leaves every row of the analysis unmatched with this reason and no channel: a file of another account
+   * (`id_format`, like batch-wrong-account) or one whose ids the gateway does not know (`no_match`) (#92).
+   */
+  unmatched?: UnmatchedReason
 }
 
 /** Stores an import of a sample directly, as if created through the API, and returns its detail. */
 export function seedImport(
   sample: SampleKey,
-  { account, status = 'uploaded', labels, createdBy = 'analyst' }: SeedOptions = {},
+  { account, status = 'uploaded', labels, createdBy = 'analyst', unmatched }: SeedOptions = {},
 ) {
   const user = USERS[createdBy]
   const created = now()
@@ -502,9 +509,40 @@ export function seedImport(
   if (status !== 'uploaded') confirm(record, proposalBody(record))
   if (status !== 'uploaded' && status !== 'mapped') {
     analyze(record)
+    if (unmatched) {
+      record.rows = record.rows!.map((row) =>
+        row.matchResult === 'matched'
+          ? {
+              ...row,
+              matchResult: 'unmatched',
+              reason: unmatched,
+              transactionId: null,
+              gatewayId: null,
+              transaction: null,
+            }
+          : row,
+      )
+      record.channels = []
+    }
     record.status = status
   }
   return detailOf(record)
+}
+
+/**
+ * The details of 409 no_matched_rows when the import has no matched row (README §3.3 #92), as the analysis of the
+ * fake counts them; null when it has matched rows or is not analyzed. The review and the preview of the fakes use it.
+ */
+export function emptyBatchOf(record: FakeImport): EmptyBatchDetails | null {
+  if (!record.rows) return null
+  const analysis = summarize(record.rows)
+  if (!analysis.requiresEmptyBatchConfirmation) return null
+  return {
+    rowsTotal: analysis.rows.total,
+    rowsUnmatched: analysis.rows.unmatched,
+    unmatchedByReason: analysis.rows.unmatchedByReason,
+    likelyWrongAccount: analysis.likelyWrongAccount,
+  }
 }
 
 /**
@@ -754,6 +792,14 @@ export function createImportHandlers(caller: (request: Request) => UserName | nu
           if (!EDITABLE.includes(record.status)) return notEditable(record)
           const uploads = await readUploads(request)
           if (uploads instanceof Response) return uploads
+          // 10 files per import in total, before the duplicates, as the API checks it (#40).
+          if (record.files.length + uploads.length > MAX_FILES) {
+            return error(409, 'import_file_limit_reached', `An import holds at most ${MAX_FILES} files`, {
+              limit: MAX_FILES,
+              current: record.files.length,
+              adding: uploads.length,
+            })
+          }
           for (const upload of uploads) {
             const original = record.files.find((f) => f.sha256 === upload.sha256)
             if (original) {

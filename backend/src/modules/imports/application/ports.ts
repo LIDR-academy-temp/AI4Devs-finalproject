@@ -13,11 +13,19 @@ import type {
 import type { Scope } from '../../catalog/domain/scope.js'
 import type { FeeTypeRef } from '../domain/batch-fees.js'
 import type { ChannelFact } from '../domain/channel-notice.js'
+import type { EmptyBatchFacts } from '../domain/empty-batch.js'
 import type { TransactionRef } from '../domain/match-rows.js'
 import type { GatewayFormat, IdCandidate } from '../domain/normalize-source-id.js'
 import type { SheetRows, WorkbookDescription } from '../domain/workbook.js'
 
 export type { Scope }
+
+/** The analysis summary as the rows count it; the empty batch fields are added by the service (design D1). */
+export interface AnalysisCounts {
+  rows: Omit<AnalysisSummary['rows'], 'unmatchedByReason'>
+  byCycle: AnalysisSummary['byCycle']
+  warnings: AnalysisSummary['warnings']
+}
 
 export interface AccountRef {
   accountId: string
@@ -63,6 +71,8 @@ export interface ConfirmedSheet {
 export interface ImportSummaryRecord {
   importId: string
   accountId: string
+  /** Provider of the account: the channel notice marks the channels of another one (#92). */
+  providerId: number
   matchingRuleSetId: number | null
   status: ImportStatus
   createdBy: { userId: number; userName: string }
@@ -250,7 +260,9 @@ export interface ImportRowRepository {
     patch: RowResolutionPatch,
   ): Promise<{ supersededRunId: number | null }>
   /** Counts over the persisted rows; null when the import has no rows. */
-  summary(importId: string): Promise<AnalysisSummary | null>
+  summary(importId: string): Promise<AnalysisCounts | null>
+  /** What an empty batch is judged on (README §3.3 #92): rows, matched rows of `providerId`, unmatched per reason. */
+  emptyBatchFacts(importId: string, providerId: number): Promise<EmptyBatchFacts>
   /** Matched rows per channel of their transactions. */
   channelRowCounts(importId: string): Promise<Map<number, number>>
 }

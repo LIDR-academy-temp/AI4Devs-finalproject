@@ -181,7 +181,11 @@ export interface ValidationRunRepository {
    * In one transaction (D7): guard on Import (analyzed), current run read under the lock (none → required; another →
    * superseded), no blocked result, `validated` and the AuditLog `import.review` with the counts.
    */
-  review(importId: string, runId: number, userId: number, now: Date): Promise<void>
+  /**
+   * The decision on the run; inside its transaction, after the run and blocking checks, an import without matched
+   * rows of the account's provider needs `confirmEmptyBatch` (409 no_matched_rows otherwise, #92).
+   */
+  review(importId: string, runId: number, userId: number, now: Date, confirmEmptyBatch: boolean): Promise<void>
 }
 
 /** An occurrence as stored; the service adds what the caller may do with it. */

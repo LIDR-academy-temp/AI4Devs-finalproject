@@ -32,7 +32,9 @@ export const settlementRoutes: FastifyPluginAsyncZod<SettlementRoutesOptions> = 
         summary: 'Process the validated import as a batch attempt (processed, pending payment)',
         description:
           'runId is the reviewed validation run. 409 import_not_validated, validation_run_required, ' +
-          'validation_run_superseded, blocking_validation_issue, batch_no_taken, channel_assignment_not_confirmed, ' +
+          'validation_run_superseded, blocking_validation_issue, no_matched_rows (no row matches a transaction of the ' +
+          'account and confirmEmptyBatch is not true; details { rowsTotal, rowsUnmatched, unmatchedByReason, ' +
+          'likelyWrongAccount }, #92), batch_no_taken, channel_assignment_not_confirmed, ' +
           'settlement_busy (chosen three times as a deadlock victim; retry); ' +
           '400 batch_fee_invalid. No movement is Settled until the batch is paid.',
         params: ImportParams,
@@ -61,8 +63,10 @@ export const settlementRoutes: FastifyPluginAsyncZod<SettlementRoutesOptions> = 
         description:
           'Same body as processing; answers 200 with a SettlementPreview. 409 import_not_validated, ' +
           'validation_run_required, validation_run_superseded, blocking_validation_issue; 400 batch_fee_invalid. ' +
-          'batch_no_taken and channel_assignment_not_confirmed are not errors here: a number with an active attempt is ' +
-          'batchNoAvailable: false, and channels to assign are requiresChannelConfirmation: true with channelsToAssign.',
+          'batch_no_taken, channel_assignment_not_confirmed and no_matched_rows are not errors here: a number with an active attempt is ' +
+          'batchNoAvailable: false, and channels to assign are requiresChannelConfirmation: true with channelsToAssign, ' +
+          'and an import without matched rows is requiresEmptyBatchConfirmation: true with ' +
+          'emptyBatch (the details of that 409); the preview takes no confirmation (#92).',
         params: ImportParams,
         body: SettlementRequest,
         response: { 200: SettlementPreview, ...writeErrors },

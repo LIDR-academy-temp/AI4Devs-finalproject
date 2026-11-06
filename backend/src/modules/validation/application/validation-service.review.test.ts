@@ -2,6 +2,8 @@ import { ValidationRunView } from '@recon/shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NotFoundError } from '../../../shared/errors.js'
 import type { Scope } from '../../catalog/domain/scope.js'
+import { NoMatchedRowsError } from '../../imports/domain/errors.js'
+import { expectedOf } from '../test-support/builders.js'
 import { sampleInput } from '../test-support/sample-input.js'
 import { InMemoryRunRepository } from './__fakes__/in-memory-runs.js'
 import {
@@ -21,7 +23,7 @@ const NOW = new Date('2026-10-18T10:30:00.000Z')
 
 let runs: InMemoryRunRepository
 
-async function serviceFor(sample: 'batch-issues' | 'batch-blocked') {
+async function serviceFor(sample: 'batch-issues' | 'batch-blocked' | 'batch-wrong-account') {
   const input = await sampleInput(sample)
   runs.addImport({ importId: input.importId, merchantId: 1, status: 'analyzed' })
   const service = new ValidationService({ sources: input.sources, runs, log: { info: vi.fn() }, now: () => NOW })
@@ -147,5 +149,76 @@ describe('review (POST review)', () => {
     runs.setMerchant(importId, 2)
 
     await caught(service.review(VIEWER, ANALYST_ID, importId, 1), NotFoundError)
+  })
+})
+
+// Spec validation "Batch sin filas asociadas al revisar" (#92, design D2): not a validation, a confirmation.
+describe('review of an import without matched rows (batch-wrong-account)', () => {
+  const expected = expectedOf('batch-wrong-account') as {
+    rows: { read: number; unmatched: number; unmatchedByReason: Record<string, number> }
+  }
+  const facts = {
+    rowsTotal: expected.rows.read,
+    matchedOwn: 0,
+    unmatchedByReason: expected.rows.unmatchedByReason as {
+      no_match: number
+      id_format: number
+      lossy_numeric_id: number
+      no_gateways: number
+    },
+  }
+
+  async function emptyImport(sample: 'batch-wrong-account' | 'batch-blocked' = 'batch-wrong-account') {
+    const { service, importId } = await serviceFor(sample)
+    runs.setEmptyBatchFacts(importId, facts)
+    const { run } = await service.run(ANALYST, ANALYST_ID, importId)
+    return { service, importId, runId: run!.runId }
+  }
+
+  it.each([undefined, false])(
+    'confirmEmptyBatch %s: 409 no_matched_rows with the details, still analyzed, no audit',
+    async (confirm) => {
+      const { service, importId, runId } = await emptyImport()
+
+      const error = await caught(service.review(ANALYST, ANALYST_ID, importId, runId, confirm), NoMatchedRowsError)
+
+      expect(error).toMatchObject({ status: 409, code: 'no_matched_rows' })
+      expect(error.details).toEqual({
+        rowsTotal: expected.rows.read,
+        rowsUnmatched: expected.rows.unmatched,
+        unmatchedByReason: expected.rows.unmatchedByReason,
+        likelyWrongAccount: true,
+      })
+      expect((await service.getCurrentRun(ANALYST, importId)).importStatus).toBe('analyzed')
+      expect(runs.auditOf(importId).some((e) => e.action === 'import.review')).toBe(false)
+    },
+  )
+
+  it('confirmed: validated, and the review audit carries emptyBatchConfirmed', async () => {
+    const { service, importId, runId } = await emptyImport()
+
+    const view = await service.review(ANALYST, ANALYST_ID, importId, runId, true)
+
+    expect(view.importStatus).toBe('validated')
+    expect(runs.auditOf(importId).find((e) => e.action === 'import.review')?.detail).toMatchObject({
+      emptyBatchConfirmed: true,
+    })
+  })
+
+  it('a confirmation on an import with matched rows is ignored: validated, no emptyBatchConfirmed', async () => {
+    const { service, importId } = await serviceFor('batch-issues')
+    const { run } = await service.run(ANALYST, ANALYST_ID, importId)
+
+    await service.review(ANALYST, ANALYST_ID, importId, run!.runId, true)
+
+    expect(runs.auditOf(importId).find((e) => e.action === 'import.review')?.detail).not.toHaveProperty(
+      'emptyBatchConfirmed',
+    )
+  })
+
+  it('a blocked run answers blocking_validation_issue before no_matched_rows', async () => {
+    const { service, importId, runId } = await emptyImport('batch-blocked')
+
+    await caught(service.review(ANALYST, ANALYST_ID, importId, runId), BlockingValidationIssueError)
   })
 })

@@ -48,6 +48,8 @@ describe('preview', () => {
       requiresChannelConfirmation: true,
       channelsToAssign: [{ name: 'RAM-07', assignment: 'unassigned' }],
       movements: { E: 450, I: 10, R: 320 },
+      requiresEmptyBatchConfirmation: false,
+      emptyBatch: null,
     })
     expect(preview.batchFees.map((f) => [f.code, f.batchFeeId, f.enteredBy])).toEqual([
       ['Wire Fee', null, null],
@@ -87,6 +89,52 @@ describe('preview', () => {
         batchFees: [{ feeTypeId: 119, feeId: null, amount: '-1', source: 'manual' }],
       }),
     ).rejects.toMatchObject({ code: 'batch_fee_invalid', details: { index: 0, reason: 'description_required' } })
+  })
+})
+
+// Spec settlement "Vista previa de un batch sin filas asociadas" (#92, design D2): reported, never refused.
+describe('preview of batch-wrong-account (nothing matched, all id_format)', async () => {
+  const wrong = await settlementSampleInput('batch-wrong-account')
+  const wrongFees = prefilledBatchFees('batch-wrong-account')
+  const previewOf = (options: InMemorySourceOptions = {}) => {
+    const source = new InMemorySettlementSource(wrong, { unmatchedReason: 'id_format', ...options })
+    const s = new SettlementService({
+      source,
+      prefilled: new InMemoryPrefilledBatchFees(wrong.prefilledFeeTypeIds),
+      repository: new InMemorySettlementRepository(),
+      reader: new InMemorySettlementReader(new Map()),
+      clock: () => NOW,
+    })
+    return { s, source }
+  }
+
+  it('answers 200 with requiresEmptyBatchConfirmation, the details of no_matched_rows and a batch of fees only', async () => {
+    const { s } = previewOf()
+
+    const preview = await s.preview(ANALYST, wrong.importId, { runId: wrong.runId, batchFees: wrongFees })
+
+    expect(SettlementPreview.parse(preview)).toMatchObject({
+      requiresEmptyBatchConfirmation: true,
+      emptyBatch: {
+        rowsTotal: 12,
+        rowsUnmatched: 12,
+        unmatchedByReason: { no_match: 0, id_format: 12, lossy_numeric_id: 0, no_gateways: 0 },
+        likelyWrongAccount: true,
+      },
+      movements: { E: 0, I: 0, R: 0 },
+      channelsToAssign: [],
+      otherFeeAmt: '25.0000',
+      amountPayable: '-25.0000',
+    })
+  })
+
+  it('answers import_not_validated before it judges the empty batch', async () => {
+    const { s, source } = previewOf({ status: 'analyzed' })
+
+    await expect(s.preview(ANALYST, wrong.importId, { runId: wrong.runId })).rejects.toMatchObject({
+      code: 'import_not_validated',
+    })
+    expect(source.calls).not.toContain('emptyBatchFacts')
   })
 })
 

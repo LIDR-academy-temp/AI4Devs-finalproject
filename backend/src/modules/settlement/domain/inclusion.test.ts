@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { row, SHEET, txn } from '../test-support/builders.js'
-import { classifyRows } from './inclusion.js'
+import { assertOwnProviderRows, classifyRows } from './inclusion.js'
 
 // Spec settlement "Inclusión de las apariciones al procesar" and "Filas que no se procesan" (design D8, D9).
 const keys = (rows: { rowNo: number }[]) => rows.map((r) => r.rowNo)
@@ -103,5 +103,21 @@ describe('order of the processed rows', () => {
       [1, 0, 2],
       [1, 0, 5],
     ])
+  })
+})
+
+// Spec settlement "Filas de otro proveedor nunca se procesan" (#92, design D5): provider_mismatch blocks before, so
+// a foreign row reaching the engine is a bug, never a movement nor a channel to assign.
+describe('rows of another provider', () => {
+  it('fails naming the sheet and the row of a matched row of another provider', () => {
+    const foreign = row(4, {}, txn({ transactionId: 40n, providerId: 102, channelId: 1011 }))
+
+    expect(() => assertOwnProviderRows([row(2), foreign], 101)).toThrow(
+      new RegExp(`row ${SHEET}:4 belongs to another provider`),
+    )
+  })
+
+  it('lets through the rows of the provider and the unmatched ones, which have no transaction', () => {
+    expect(() => assertOwnProviderRows([row(2), row(3, {}, null)], 101)).not.toThrow()
   })
 })

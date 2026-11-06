@@ -40,7 +40,13 @@ const importKey = (importId: string) => `import:${importId}`
 /** What the screen says about a rejection of the API or of the client checks. */
 export function rejectionText(error: unknown): string {
   if (!(error instanceof ApiError)) return strings.rejections.failed
-  const details = (error.details ?? {}) as { fileName?: string; fileId?: string | null; status?: string }
+  const details = (error.details ?? {}) as {
+    fileName?: string
+    fileId?: string | null
+    status?: string
+    limit?: number
+    current?: number
+  }
   switch (error.code) {
     case 'unsupported_file_type':
       return strings.rejections.unsupported_file_type
@@ -48,6 +54,9 @@ export function rejectionText(error: unknown): string {
       return strings.rejections.file_too_large
     case 'too_many_files':
       return strings.rejections.too_many_files
+    // The import holds its files in total, not per request (#40).
+    case 'import_file_limit_reached':
+      return strings.rejections.import_file_limit_reached(details.current ?? 10, details.limit ?? 10)
     case 'file_unreadable':
       return strings.rejections.file_unreadable
     case 'duplicate_file':

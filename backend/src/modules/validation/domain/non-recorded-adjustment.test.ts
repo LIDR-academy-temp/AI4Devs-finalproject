@@ -97,9 +97,36 @@ describe('non_recorded_adjustment', () => {
     },
   )
 
-  it('APP or DEC rows with the gateway Pending are not compared', () => {
+  it('APP and DEC rows with the gateway Pending are status_mismatch, included and non-blocking (#63)', () => {
+    const result = nra([
+      row({ transactionId: 1n, status: 'Successful', gateway: 'Pending' }),
+      row({ transactionId: 2n, rowNo: 3, status: 'Declined', gateway: 'Pending' }),
+    ])
+
+    expect(result).toMatchObject({ outcome: 'warning', issueCount: 2 })
+    expect(result.issues.map((i) => [i.issueType, i.statusId, i.gatewayStatusId, i.blocking])).toEqual([
+      ['status_mismatch', STATUS.Successful, STATUS.Pending, false],
+      ['status_mismatch', STATUS.Declined, STATUS.Pending, false],
+    ])
+    expect(result.issues.every((i) => i.cycle === 'E' && i.occurrences.length === 0)).toBe(true)
+  })
+
+  it('an E row reported with an adjustment status by column and the gateway Pending is a status_mismatch (#63)', () => {
+    expect(nra([row({ status: 'Refund', gateway: 'Pending' })]).issues).toEqual([
+      expect.objectContaining({
+        issueType: 'status_mismatch',
+        statusId: STATUS.Refund,
+        gatewayStatusId: STATUS.Pending,
+      }),
+    ])
+  })
+
+  it('an E row reported Pending, or without a resolved status, is not compared with a Pending gateway', () => {
     expect(
-      nra([row({ status: 'Successful', gateway: 'Pending' }), row({ status: 'Declined', gateway: 'Pending' })]).issues,
+      nra([
+        row({ transactionId: 1n, status: 'Pending', gateway: 'Pending' }),
+        row({ transactionId: 2n, rowNo: 3, status: null, gateway: 'Pending' }),
+      ]).issues,
     ).toEqual([])
   })
 

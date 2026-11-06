@@ -3,12 +3,13 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { ValidationIssueDetail, ValidationIssuesPage, ValidationRunView } from '@recon/shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { buildXlsx } from '../../src/modules/imports/infrastructure/xlsx/test-support.js'
 import type { ValidationRunRepository } from '../../src/modules/validation/application/ports.js'
 import { ValidationService } from '../../src/modules/validation/application/validation-service.js'
 import { PrismaValidationRunRepository } from '../../src/modules/validation/infrastructure/prisma-validation-run-repository.js'
 import { PrismaValidationSources } from '../../src/modules/validation/infrastructure/prisma-validation-sources.js'
 import { createTestApp } from './helpers.js'
-import { ImportFlow, SAMPLE_FILES, samplePart } from './import-flow.js'
+import { expectedOf, ImportFlow, SAMPLE_FILES, samplePart } from './import-flow.js'
 
 // The decision on the whole and the state machine of the import against SQL Server (validation-runs design D7, D12,
 // D16): review, review and run overlapping (made deterministic by pausing one side), a row resolved after validating
@@ -161,6 +162,91 @@ describe('review of batch-issues (D7)', () => {
       details: { runId: first.run!.runId, currentRunId: second.run!.runId },
     })
     expect((await current(importId)).importStatus).toBe('analyzed')
+  })
+})
+
+// Spec validation "Batch sin filas asociadas al revisar" (#92, design D2) against SQL Server: the facts come from the
+// grouped query over the persisted rows, inside the transaction of the review.
+describe('review of an import without matched rows (batch-wrong-account)', () => {
+  const expected = expectedOf('batch-wrong-account') as {
+    rows: { read: number; unmatched: number; unmatchedByReason: Record<string, number> }
+  }
+  const reviewAudit = (importId: string) =>
+    ctx.prisma.auditLog.findMany({ where: { action: 'import.review', entityId: importId } })
+
+  it('409 no_matched_rows without confirmEmptyBatch, with the details of the oracle; still analyzed and no audit', async () => {
+    const detail = await flow.analyzedSample('batch-wrong-account')
+    const { run: fresh } = await run(detail.importId)
+
+    for (const body of [{ runId: fresh!.runId }, { runId: fresh!.runId, confirmEmptyBatch: false }]) {
+      const res = await flow.call('POST', `/imports/${detail.importId}/review`, body)
+      expect(res.statusCode, res.body).toBe(409)
+      expect(res.json()).toMatchObject({
+        code: 'no_matched_rows',
+        details: {
+          rowsTotal: expected.rows.read,
+          rowsUnmatched: expected.rows.unmatched,
+          unmatchedByReason: expected.rows.unmatchedByReason,
+          likelyWrongAccount: true,
+        },
+      })
+    }
+    expect((await current(detail.importId)).importStatus).toBe('analyzed')
+    expect(await reviewAudit(detail.importId)).toEqual([])
+  })
+
+  it('200 validated with confirmEmptyBatch, and import.review records emptyBatchConfirmed', async () => {
+    const detail = await flow.analyzedSample('batch-wrong-account')
+    const { run: fresh } = await run(detail.importId)
+
+    const res = await flow.call('POST', `/imports/${detail.importId}/review`, {
+      runId: fresh!.runId,
+      confirmEmptyBatch: true,
+    })
+
+    expect(res.statusCode, res.body).toBe(200)
+    expect(ValidationRunView.parse(res.json()).importStatus).toBe('validated')
+    const [audit] = await reviewAudit(detail.importId)
+    expect(JSON.parse(audit?.detailJson ?? '{}')).toMatchObject({ runId: fresh!.runId, emptyBatchConfirmed: true })
+  })
+
+  it('a confirmation on batch-issues is ignored: 200, and the audit has no emptyBatchConfirmed', async () => {
+    const detail = await flow.analyzedSample('batch-issues')
+    const { run: fresh } = await run(detail.importId)
+
+    const res = await flow.call('POST', `/imports/${detail.importId}/review`, {
+      runId: fresh!.runId,
+      confirmEmptyBatch: true,
+    })
+
+    expect(res.statusCode, res.body).toBe(200)
+    const [audit] = await reviewAudit(detail.importId)
+    expect(JSON.parse(audit?.detailJson ?? '{}')).not.toHaveProperty('emptyBatchConfirmed')
+  })
+
+  it('only rows of another provider: blocking_validation_issue, not no_matched_rows', async () => {
+    // The batch-blocked row of RAM-01 (Provider A) alone, in ProviderB-Main: no matched row of Provider B.
+    const bytes = buildXlsx({
+      sheets: [
+        {
+          name: 'APP',
+          rows: [
+            ['ID', 'Amount', 'Currency'],
+            [FIRST_APP_ID, '16.22', 'USD'],
+          ],
+        },
+      ],
+    })
+    const detail = await flow.analyzed(flow.accountIds['ProviderB-Main'] as string, [
+      { name: 'only-foreign.xlsx', bytes },
+    ])
+    expect(detail.analysis).toMatchObject({ rows: { matched: 1 }, requiresEmptyBatchConfirmation: true })
+    const { run: fresh } = await run(detail.importId)
+
+    const res = await review(detail.importId, fresh!.runId)
+
+    expect(res.statusCode, res.body).toBe(409)
+    expect(res.json().code).toBe('blocking_validation_issue')
   })
 })
 

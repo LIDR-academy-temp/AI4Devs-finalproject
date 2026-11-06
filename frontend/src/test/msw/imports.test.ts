@@ -92,7 +92,15 @@ describe('fake import API', () => {
     const analyzed = await call('analyst', 'POST', `/imports/${id}/analyze`)
     expect(analyzed.status).toBe(200)
     expect(analyzed.body.status).toBe('analyzed')
-    expect(analyzed.body.analysis.rows).toEqual({ total: 783, matched: 780, unmatched: 0, ambiguous: 0, ignored: 3 })
+    expect(analyzed.body.analysis.rows).toEqual({
+      total: 783,
+      matched: 780,
+      unmatched: 0,
+      ambiguous: 0,
+      ignored: 3,
+      unmatchedByReason: { no_match: 0, id_format: 0, lossy_numeric_id: 0, no_gateways: 0 },
+    })
+    expect(analyzed.body.analysis).toMatchObject({ requiresEmptyBatchConfirmation: false, likelyWrongAccount: false })
 
     const rows = await call('analyst', 'GET', `/imports/${id}/rows?match=matched&page=16&pageSize=50`)
     const page = rows.body as ImportRowsPage

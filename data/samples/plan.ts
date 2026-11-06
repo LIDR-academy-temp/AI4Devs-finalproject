@@ -601,6 +601,99 @@ const samples: Sample[] = []
   })
 }
 
+// ───────── 6. batch-wrong-account (ProviderA-USD, a file of another account: #92) ─────────
+// Last, and without drawing from rng, so the samples above keep their bytes. The IDs are UUIDs of RAM-U1
+// (ProviderC-USD, merchant 2) and ProviderA-USD only has channels of the numeric gateway: every row is `id_format`.
+{
+  const plan = world.sampleBatch['ProviderA-USD']!
+  const foreignChannel = CHANNELS.find((c) => c.name === 'RAM-U1')!
+  const firstOf = (status: Txn['status'], n: number) =>
+    world.txns
+      .filter((t) => t.channelId === foreignChannel.channelId && t.status === status)
+      .sort(
+        (a, b) =>
+          a.transactionDate.getTime() - b.transactionDate.getTime() ||
+          (a.sourceTransactionId < b.sourceTransactionId ? -1 : 1),
+      )
+      .slice(0, n)
+  const app = firstOf('Successful', 10)
+  const dec = firstOf('Declined', 2)
+  if (app.length !== 10 || dec.length !== 2) throw new Error('RAM-U1 lacks the transactions batch-wrong-account needs')
+  const s = { APP: app, DEC: dec, CHB: [], REF: [], RDR: [], RR: [] }
+  const otherFees: Row[] = [['Wire Fee', 25, 'USD']]
+  const read = app.length + dec.length
+  const sheets = templateSheets(s, otherFees)
+  samples.push({
+    name: 'batch-wrong-account',
+    account: plan.account,
+    batchNo: plan.batchNo,
+    description:
+      'Archivo de otra cuenta: IDs UUID de ProviderC-USD subidos a ProviderA-USD (solo gateway numérico). Ninguna fila se asocia (todas id_format), así que continuar y procesar exigen confirmar un batch solo de fees.',
+    files: [
+      {
+        fileName: 'Recon_Template_ProviderA-USD_batch-wrong-account.xlsx',
+        // No leftover =SUM rows: every row read is unmatched, none ignored.
+        sheets: {
+          ...sheets,
+          CHB: { columns: sheets.CHB!.columns, rows: [] },
+          REF: { columns: sheets.REF!.columns, rows: [] },
+          RDR: { columns: sheets.RDR!.columns, rows: [] },
+        },
+      },
+    ],
+    expected: {
+      import: {
+        files: 1,
+        sheets: {
+          transactions: ['APP', 'DEC', 'CHB', 'REF', 'RDR', 'RR'],
+          batch_fees: ['Other Fees'],
+          ignored: ['Duplicate Corrections', 'CHB Alerts', 'Settings'],
+        },
+      },
+      rows: {
+        read,
+        ignoredEmptyId: 0,
+        matched: 0,
+        unmatched: read,
+        ambiguous: 0,
+        unmatchedByReason: { no_match: 0, id_format: read, lossy_numeric_id: 0, no_gateways: 0 },
+      },
+      requiresEmptyBatchConfirmation: true,
+      likelyWrongAccount: true,
+      channels: [],
+      foreignChannel: foreignChannel.name,
+      validations: {
+        provider_mismatch: 0,
+        non_recorded_adjustment: { non_recorded_adjustment: 0, status_mismatch: 0 },
+        duplicate_in_batch: 0,
+        status_collision_in_batch: 0,
+        duplicate_across_batches: 0,
+        status_collision_across_batches: 0,
+        missing_previous_to_batch: { E: 0, I: 0, R: 0 },
+        missing_in_range: { E: 0, I: 0, R: 0 },
+      },
+      // No matched row: 1–4 have nothing to run on, the across ones run against Provider A's attempts, and no cycle
+      // has a range for the missing ones.
+      outcomes: {
+        provider_mismatch: 'not_applicable',
+        non_recorded_adjustment: 'not_applicable',
+        duplicate_in_batch: 'not_applicable',
+        status_collision_in_batch: 'not_applicable',
+        duplicate_across_batches: 'passed',
+        status_collision_across_batches: 'passed',
+        missing_previous_to_batch: 'not_applicable',
+        missing_in_range: 'not_applicable',
+      },
+      batchFeesPrefilled: otherFees.map(([type, amount]) => ({ feeType: type, amount })),
+      proposedBatchNo: plan.batchNo,
+      skipped: { ignored: 0, unmatched: read, ambiguous: 0, excluded: 0, unresolvedStatus: 0, pending: 0 },
+      // No row becomes a movement: only the batch fee counts.
+      summary: totals(plan.account, { APP: [], DEC: [], CHB: [], REF: [], RDR: [], RR: [] }, otherFees),
+      note: 'Procesar con confirmEmptyBatch crea un batch solo con el fee de Other Fees: amountPayable = -25.0000.',
+    },
+  })
+}
+
 process.stdout.write(
   JSON.stringify({ generatedFrom: 'backend/prisma/synthetic.ts', anchorDate: iso(ANCHOR), samples }, null, 1),
 )

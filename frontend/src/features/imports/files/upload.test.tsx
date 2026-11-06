@@ -20,6 +20,8 @@ const MiB20 = 20 * 1024 * 1024
 const PART1 = 'Recon_Template_ProviderA-USD_batch-split_part1.xlsx'
 const PART2 = 'Recon_Template_ProviderA-USD_batch-split_part2.xlsx'
 const CLEAN = 'Recon_Template_ProviderA-USD_batch-clean.xlsx'
+/** The file name a generic workbook of the fake carries (`generic-<n>`). */
+const defaultFileNameOf = (label: string) => `Recon_Template_ProviderA-USD_${label}.xlsx`
 
 const sheetLine = (name: string, rows: number) => strings.files.sheet(name, rows)
 
@@ -229,6 +231,22 @@ describe('Upload Files: rejected files (spec "Pantalla Upload Files: archivos re
     ).toBeInTheDocument()
     expect(importRecord(importId).files).toHaveLength(2)
     expect(fileEntry(PART1).getByText(sheetLine('APP', 340))).toBeInTheDocument()
+  })
+  it('an import that already holds ten files: the eleventh is rejected with the limit and the import keeps its ten (#40)', async () => {
+    // Spec import "Pantalla Upload Files: tope de archivos del import".
+    const labels = Array.from({ length: 10 }, (_, i) => `generic-${i + 1}`)
+    const { importId } = seedImport('batch-clean', { labels })
+    const { user } = renderApp(`/imports/${importId}?step=files`, { as: 'analyst' })
+    await findFileEntry(defaultFileNameOf('generic-10'))
+
+    await user.upload(fileInput(), sampleFile('generic-11'))
+
+    expect(
+      (await findFileEntry(defaultFileNameOf('generic-11'))).getByText(
+        'This import already has 10 files, the most it can hold. Remove one before adding another.',
+      ),
+    ).toBeInTheDocument()
+    expect(importRecord(importId).files).toHaveLength(10)
   })
 })
 

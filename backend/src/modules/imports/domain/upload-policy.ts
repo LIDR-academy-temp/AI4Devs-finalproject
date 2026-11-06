@@ -4,6 +4,8 @@ import { UnsupportedFileTypeError } from './errors.js'
 /** README §4.2: "hasta 20 MB cada uno", read as MiB. */
 export const MAX_FILE_BYTES = 20 * 1024 * 1024
 export const MAX_FILES_PER_REQUEST = 10
+/** Files an import holds in total, whatever the requests that brought them (#40). */
+export const MAX_FILES_PER_IMPORT = 10
 /** ImportFile.fileName is NVARCHAR(255). */
 export const MAX_FILE_NAME_LENGTH = 255
 

@@ -8,6 +8,7 @@ import {
   RowReason,
   TRANSACTION_STATUSES,
   TransactionStatusCode,
+  UnmatchedReason,
   WarningCode,
 } from './vocabulary.js'
 
@@ -49,6 +50,10 @@ describe('analysis vocabulary (spec "Resumen del análisis", "Resultado del cruc
 
   it('RowReason lists why a row is unmatched or ignored', () => {
     expect(RowReason.options).toEqual(['no_match', 'id_format', 'lossy_numeric_id', 'empty_id', 'no_gateways'])
+  })
+
+  it('UnmatchedReason is RowReason without empty_id, which only an ignored row has', () => {
+    expect(UnmatchedReason.options).toEqual(RowReason.options.filter((reason) => reason !== 'empty_id'))
   })
 
   it('ChannelAssignment and ReadinessField are closed lists', () => {

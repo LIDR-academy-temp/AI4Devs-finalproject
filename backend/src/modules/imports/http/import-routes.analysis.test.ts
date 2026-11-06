@@ -286,7 +286,16 @@ describe('POST /api/v1/imports/{importId}/analyze', () => {
     expect(res.statusCode).toBe(200)
     const analyzed = ImportDetail.parse(res.json())
     expect(analyzed.status).toBe('analyzed')
-    expect(analyzed.analysis?.rows).toEqual({ total: 783, matched: 0, unmatched: 779, ambiguous: 1, ignored: 3 })
+    expect(analyzed.analysis?.rows).toEqual({
+      total: 783,
+      matched: 0,
+      unmatched: 779,
+      ambiguous: 1,
+      ignored: 3,
+      unmatchedByReason: { no_match: 779, id_format: 0, lossy_numeric_id: 0, no_gateways: 0 },
+    })
+    // Nothing matched, but the IDs fit the gateway: an empty batch to confirm, not a wrong account (#92).
+    expect(analyzed.analysis).toMatchObject({ requiresEmptyBatchConfirmation: true, likelyWrongAccount: false })
     expect(analyzed.channels).toEqual([])
     expect(analyzed.batchFees).toHaveLength(2)
     expect((await request('GET', `/imports/${detail.importId}`)).json()).toEqual(res.json())

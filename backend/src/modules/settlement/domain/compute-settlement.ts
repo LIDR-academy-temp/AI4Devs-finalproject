@@ -4,7 +4,7 @@ import { applyAdjustmentReserve } from './adjustment-reserve.js'
 import { validateBatchFees } from './batch-fees.js'
 import { attemptFor, proposeBatchNumber } from './batch-number.js'
 import { type BatchChannels, batchChannels } from './channels.js'
-import { classifyRows } from './inclusion.js'
+import { assertOwnProviderRows, classifyRows } from './inclusion.js'
 import { ZERO } from './money.js'
 import { buildMovements } from './movements.js'
 import { type BatchSummary, summarize } from './totals.js'
@@ -43,6 +43,7 @@ export function computeSettlement(input: SettlementInput): SettlementPlan {
   const { attemptNo, available, holder } = attemptFor(input.attempts, batchNo)
 
   const channels = new Map(input.channels.map((c) => [c.channelId, c]))
+  assertOwnProviderRows(input.rows, input.account.providerId)
   const { processed, skipped } = classifyRows(input.rows, input.inclusions)
   const built = buildMovements(processed, { channels, previousE: input.previousE })
   // The reserve policy crosses rows (the first adjustment, the R of the batch), so it runs after the movements (D1).

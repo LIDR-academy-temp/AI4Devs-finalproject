@@ -33,6 +33,7 @@ const PART2 = 'batch-split/Recon_Template_ProviderA-USD_batch-split_part2.xlsx'
 const BATCH_ISSUES = 'batch-issues/Recon_Template_ProviderB-Main_batch-issues.xlsx'
 const BATCH_BLOCKED = 'batch-blocked/Recon_Template_ProviderB-Main_batch-blocked.xlsx'
 const LEGACY = 'legacy-provider/Legacy_ProviderC-Alt_batch.xlsx'
+const WRONG_ACCOUNT = 'batch-wrong-account/Recon_Template_ProviderA-USD_batch-wrong-account.xlsx'
 const UNKNOWN_UUID = '00000000-0000-4000-8000-00000000ffff'
 const FIRST_APP_ID = '252570479111759'
 const GATEWAY_TEST = 9001
@@ -44,11 +45,23 @@ const OTHER_MERCHANT_SOURCE_ID = '919191919191919'
 /** An own gateway of ProviderA-USD with a merchant-1 transaction that shares its id with a merchant-2 one on gateway 1. */
 const OWN_GATEWAY = 9003
 const SHARED_AMBIGUOUS_ID = '929292929292929'
+/** unmatchedByReason without unmatched rows (#92). */
+const NO_UNMATCHED = { no_match: 0, id_format: 0, lossy_numeric_id: 0, no_gateways: 0 }
 const ROW_CAP = 100_000
 const BENCH = process.env.RECON_BENCH === '1'
 
 interface Expected {
-  rows: { read: number; matched: number; unmatched: number; ambiguous?: number; ignoredEmptyId?: number }
+  rows: {
+    read: number
+    matched: number
+    unmatched: number
+    ambiguous?: number
+    ignoredEmptyId?: number
+    unmatchedByReason?: Record<string, number>
+  }
+  /** batch-wrong-account (#92); false in the samples that do not carry them. */
+  requiresEmptyBatchConfirmation?: boolean
+  likelyWrongAccount?: boolean
   byCycle?: { E: number; I: number; R: number }
   warnings?: { newChannels?: string[]; negativeAmounts?: number; nonUsdCurrency?: number; unknownFeeTypes?: string[] }
   batchFeesPrefilled?: { feeType: string; amount: number }[]
@@ -263,13 +276,14 @@ afterAll(async () => {
   if (uploadDir) await rm(uploadDir, { recursive: true, force: true })
 })
 
-describe('the five samples against their expected.json (issue #5, criteria 2, 3 and 5)', () => {
+describe('the six samples against their expected.json (issue #5, criteria 2, 3 and 5)', () => {
   const cases: [string, string, string[]][] = [
     ['batch-clean', 'ProviderA-USD', [BATCH_CLEAN]],
     ['batch-split', 'ProviderA-USD', [PART1, PART2]],
     ['batch-issues', 'ProviderB-Main', [BATCH_ISSUES]],
     ['batch-blocked', 'ProviderB-Main', [BATCH_BLOCKED]],
     ['legacy-provider', 'ProviderC-Alt', [LEGACY]],
+    ['batch-wrong-account', 'ProviderA-USD', [WRONG_ACCOUNT]],
   ]
 
   it.each(cases)('%s: rows, cycles, channels, warnings and batch fees match', async (sample, account, files) => {
@@ -285,6 +299,17 @@ describe('the five samples against their expected.json (issue #5, criteria 2, 3 
       unmatched: expected.rows.unmatched,
       ambiguous: expected.rows.ambiguous ?? 0,
       ignored: expected.rows.ignoredEmptyId ?? 0,
+      // The samples before #92 only have no_match unmatched rows (batch-issues' unknown 16-digit id).
+      unmatchedByReason: expected.rows.unmatchedByReason ?? {
+        no_match: expected.rows.unmatched,
+        id_format: 0,
+        lossy_numeric_id: 0,
+        no_gateways: 0,
+      },
+    })
+    expect(detail.analysis).toMatchObject({
+      requiresEmptyBatchConfirmation: expected.requiresEmptyBatchConfirmation ?? false,
+      likelyWrongAccount: expected.likelyWrongAccount ?? false,
     })
     expect(detail).toMatchObject({
       rowsTotal: expected.rows.read,
@@ -308,7 +333,9 @@ describe('the five samples against their expected.json (issue #5, criteria 2, 3 
       expect(unknown).toEqual(expected.warnings?.unknownFeeTypes ?? [])
     }
     const unmatched = await rows(detail.importId, '?match=unmatched')
-    expect(unmatched.items.map((r) => r.transactionIdRaw)).toEqual(expected.affectedIds?.unmatched ?? [])
+    if (expected.affectedIds?.unmatched !== undefined || expected.rows.unmatched === 0)
+      expect(unmatched.items.map((r) => r.transactionIdRaw)).toEqual(expected.affectedIds?.unmatched ?? [])
+    else expect(unmatched.total).toBe(expected.rows.unmatched)
     if (expected.excludeAmountRows) {
       const all = await rows(detail.importId, '?pageSize=500')
       expect(all.items.filter((r) => r.excludeAmount).map((r) => r.transactionIdRaw)).toEqual(
@@ -389,7 +416,11 @@ describe('the five samples against their expected.json (issue #5, criteria 2, 3 
       otherAccount: { accountId: accountIds['ProviderA-USD'], name: 'ProviderA-USD' },
       providerId: 101,
       rowCount: 1,
+      otherProvider: true,
+      note: 'Channel of another provider: its rows are not processed in this account',
     })
+    // Provider B's own channels are not marked (#92).
+    expect(detail.channels?.filter((c) => c.otherProvider).map((c) => c.name)).toEqual(['RAM-01'])
   })
 
   it('legacy-provider: CHB 2 keeps its status and marks excludeAmount; Failed resolves to Declined', async () => {
@@ -459,10 +490,45 @@ describe('an ambiguous row and its resolution (issue #5, criterion 6; temporary 
     })
   })
 
+  it('an import whose only row is ambiguous asks to confirm an empty batch until the row is resolved (#92, "Ambigua resuelta")', async () => {
+    const bytes = buildXlsx({
+      sheets: [
+        {
+          name: 'APP',
+          rows: [
+            ['ID', 'Amount', 'Currency'],
+            [FIRST_APP_ID, { v: '16.22' }, 'USD'],
+          ],
+        },
+      ],
+    })
+    const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [{ name: 'only-ambiguous.xlsx', bytes }])
+    fixtureImports.push(detail.importId)
+    expect(detail.analysis?.rows).toMatchObject({ total: 1, matched: 0, ambiguous: 1 })
+    // Ambiguous is not matched: nothing of the account yet, and nothing says it is another account's.
+    expect(detail.analysis).toMatchObject({ requiresEmptyBatchConfirmation: true, likelyWrongAccount: false })
+
+    const res = await call('PATCH', `/imports/${detail.importId}/rows/${sheetNamed(detail, 'APP').sheetId}/2`, {
+      gatewayId: GATEWAY_TEST,
+    })
+    expect(res.statusCode, res.body).toBe(200)
+
+    const after = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
+    expect(after.analysis?.rows).toMatchObject({ matched: 1, ambiguous: 0 })
+    expect(after.analysis?.requiresEmptyBatchConfirmation).toBe(false)
+  })
+
   it('analyzes batch-clean with one ambiguous row, resolves it with the chosen gateway and records it in AuditLog', async () => {
     const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [samplePart(BATCH_CLEAN)])
     fixtureImports.push(detail.importId)
-    expect(detail.analysis?.rows).toEqual({ total: 783, matched: 779, unmatched: 0, ambiguous: 1, ignored: 3 })
+    expect(detail.analysis?.rows).toEqual({
+      total: 783,
+      matched: 779,
+      unmatched: 0,
+      ambiguous: 1,
+      ignored: 3,
+      unmatchedByReason: NO_UNMATCHED,
+    })
     const ambiguous = await rows(detail.importId, '?match=ambiguous')
     const row = ambiguous.items[0]
     expect(row).toMatchObject({ sheetName: 'APP', rowNo: 2, transactionIdRaw: FIRST_APP_ID, transactionId: null })
@@ -646,7 +712,14 @@ describe('what the analysis refuses (issue #5, criteria 1 and 4)', () => {
 
     const { detail } = await analyzed(accountIds['ProviderA-USD'] as string, [{ name: 'lossy.xlsx', bytes }])
 
-    expect(detail.analysis?.rows).toEqual({ total: 3, matched: 1, unmatched: 2, ambiguous: 0, ignored: 0 })
+    expect(detail.analysis?.rows).toEqual({
+      total: 3,
+      matched: 1,
+      unmatched: 2,
+      ambiguous: 0,
+      ignored: 0,
+      unmatchedByReason: { ...NO_UNMATCHED, lossy_numeric_id: 2 },
+    })
     expect(detail.analysis?.warnings.lossy_numeric_id).toBe(2)
     const unmatched = await rows(detail.importId, '?match=unmatched')
     expect(unmatched.items.map((r) => [r.transactionIdRaw, r.reason, r.transactionId])).toEqual([
@@ -806,7 +879,14 @@ describe('two overlapping analyses (spec: import, D1 claim)', () => {
     expect(analyzedDetail).toMatchObject({ status: 'analyzed', rowsTotal: 783 })
     expect(await ctx.prisma.importRow.count({ where: { sheet: { file: { importId: detail.importId } } } })).toBe(783)
     const after = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
-    expect(after.analysis?.rows).toEqual({ total: 783, matched: 780, unmatched: 0, ambiguous: 0, ignored: 3 })
+    expect(after.analysis?.rows).toEqual({
+      total: 783,
+      matched: 780,
+      unmatched: 0,
+      ambiguous: 0,
+      ignored: 3,
+      unmatchedByReason: NO_UNMATCHED,
+    })
   })
 })
 
@@ -825,7 +905,15 @@ describe('twenty thousand rows end to end (spec: import, Capacidad de análisis)
     ])
     console.info(`[D1] analyze 20 000 rows end to end: ${ms.toFixed(0)} ms`)
 
-    expect(detail.analysis?.rows).toEqual({ total: 20_000, matched: 0, unmatched: 20_000, ambiguous: 0, ignored: 0 })
+    expect(detail.analysis?.rows).toEqual({
+      total: 20_000,
+      matched: 0,
+      unmatched: 20_000,
+      ambiguous: 0,
+      ignored: 0,
+      // Numeric ids the seed does not have: they fit the gateway and match nothing.
+      unmatchedByReason: { ...NO_UNMATCHED, no_match: 20_000 },
+    })
     expect(await ctx.prisma.importRow.count({ where: { sheet: { file: { importId: detail.importId } } } })).toBe(20_000)
     expect(ms).toBeLessThan(20_000)
   }, 120_000)
@@ -852,6 +940,7 @@ describe('twenty thousand rows end to end (spec: import, Capacidad de análisis)
         unmatched: ROW_CAP,
         ambiguous: 0,
         ignored: 0,
+        unmatchedByReason: { ...NO_UNMATCHED, no_match: ROW_CAP },
       })
       expect(await ctx.prisma.importRow.count({ where: { sheet: { file: { importId: detail.importId } } } })).toBe(
         ROW_CAP,
@@ -926,7 +1015,14 @@ describe('writes that read the import before a concurrent request commits (spec:
     expect((error as ImportNotEditableError).details).toEqual({ status: 'analyzed' })
     const after = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
     expect(after).toMatchObject({ status: 'analyzed', rowsTotal: 783 })
-    expect(after.analysis?.rows).toEqual({ total: 783, matched: 780, unmatched: 0, ambiguous: 0, ignored: 3 })
+    expect(after.analysis?.rows).toEqual({
+      total: 783,
+      matched: 780,
+      unmatched: 0,
+      ambiguous: 0,
+      ignored: 3,
+      unmatchedByReason: NO_UNMATCHED,
+    })
     expect(await rowCount(detail.importId)).toBe(783)
   })
 
@@ -1190,8 +1286,10 @@ describe('a transaction of another merchant on a shared gateway (review of the P
         rowCount: 1,
         assignment: 'assigned_to_other_account',
         otherAccount: { accountId: null, name: null, outOfScope: true },
-        note: expect.any(String),
+        note: 'Channel of another provider: its rows are not processed in this account',
         outOfScope: true,
+        // Another merchant's channel is always another provider's (#92).
+        otherProvider: true,
       },
     ])
     const res = await call('GET', `/imports/${detail.importId}/rows?match=ambiguous`, undefined, 'viewer')
@@ -1277,7 +1375,16 @@ describe('an analyzed import without rows (review of the PR, L1)', () => {
 
     expect(detail).toMatchObject({ status: 'analyzed', rowsTotal: 0, rowsMatched: 0, rowsUnmatched: 0 })
     expect(detail.analysis).not.toBeNull()
-    expect(detail.analysis?.rows).toEqual({ total: 0, matched: 0, unmatched: 0, ambiguous: 0, ignored: 0 })
+    expect(detail.analysis?.rows).toEqual({
+      total: 0,
+      matched: 0,
+      unmatched: 0,
+      ambiguous: 0,
+      ignored: 0,
+      unmatchedByReason: NO_UNMATCHED,
+    })
+    // No row at all: an empty batch to confirm, but nothing says it is another account's (#92, design D2).
+    expect(detail.analysis).toMatchObject({ requiresEmptyBatchConfirmation: true, likelyWrongAccount: false })
     expect(detail.analysis?.byCycle).toEqual({ E: 0, I: 0, R: 0 })
     expect(Object.values(detail.analysis?.warnings ?? { x: 1 }).every((n) => n === 0)).toBe(true)
     expect(detail.channels).toEqual([])

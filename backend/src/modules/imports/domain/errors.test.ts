@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { DomainError } from '../../../shared/errors.js'
 import {
   CandidateNotFoundError,
+  ImportFileLimitReachedError,
   ImportNotCancellableError,
   ImportNotMappedError,
   ImportTooLargeError,
   MappingIncompleteError,
   MappingShapeError,
+  NoMatchedRowsError,
   RowNotAmbiguousError,
 } from './errors.js'
 
@@ -84,5 +86,34 @@ describe('analysis errors', () => {
     const error = new CandidateNotFoundError(2, candidates)
 
     expect(error).toMatchObject({ status: 400, code: 'validation_error', details: { gatewayId: 2, candidates } })
+  })
+})
+
+// README §3.3 "Batch sin filas asociadas" (#92) and §4.2 file limit (#40).
+describe('guardrail errors', () => {
+  it('ImportFileLimitReachedError is 409 import_file_limit_reached with the limit, the current files and the added ones', () => {
+    const error = new ImportFileLimitReachedError(10, 9, 2)
+
+    expect(error).toBeInstanceOf(DomainError)
+    expect(error).toMatchObject({
+      status: 409,
+      code: 'import_file_limit_reached',
+      details: { limit: 10, current: 9, adding: 2 },
+    })
+    expect(error.message).toMatch(/10 files/)
+  })
+
+  it('NoMatchedRowsError is 409 no_matched_rows carrying the empty batch details, in English', () => {
+    const details = {
+      rowsTotal: 12,
+      rowsUnmatched: 12,
+      unmatchedByReason: { no_match: 0, id_format: 12, lossy_numeric_id: 0, no_gateways: 0 },
+      likelyWrongAccount: true,
+    }
+    const error = new NoMatchedRowsError(details)
+
+    expect(error).toBeInstanceOf(DomainError)
+    expect(error).toMatchObject({ status: 409, code: 'no_matched_rows', details })
+    expect(error.message).toMatch(/confirm/i)
   })
 })

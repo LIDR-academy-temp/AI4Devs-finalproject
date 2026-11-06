@@ -126,7 +126,24 @@ describe('POST /imports/{id}/settlements/preview', () => {
     const res = await call('POST', `/imports/${input.importId}/settlements/preview`, 'analyst', body)
 
     expect(res.statusCode, res.body).toBe(200)
-    expect(SettlementPreview.parse(res.json())).toMatchObject({ batchNo: 123, otherFeeAmt: '40.0000' })
+    expect(SettlementPreview.parse(res.json())).toMatchObject({
+      batchNo: 123,
+      otherFeeAmt: '40.0000',
+      requiresEmptyBatchConfirmation: false,
+      emptyBatch: null,
+    })
+  })
+
+  it('answers 400 validation_error for a confirmEmptyBatch that is not a boolean (#92)', async () => {
+    await app()
+
+    const res = await call('POST', `/imports/${input.importId}/settlements`, 'analyst', {
+      ...body,
+      confirmEmptyBatch: 'yes',
+    })
+
+    expect(res.statusCode).toBe(400)
+    expect(res.json().code).toBe('validation_error')
   })
 
   it('answers 403 to viewer and 400 batch_fee_invalid with the index and the reason', async () => {

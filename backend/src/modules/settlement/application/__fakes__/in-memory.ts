@@ -2,8 +2,9 @@
  * In-memory doubles of the settlement read ports (../ports.ts) over an engine input already built from the synthetic
  * world (test-support/sample-input.ts): the source answers from it the way the Prisma adapter answers from the base.
  */
-import type { ImportStatus, SettlementView } from '@recon/shared'
+import type { ImportStatus, SettlementView, UnmatchedReason } from '@recon/shared'
 import type { Scope } from '../../../catalog/domain/scope.js'
+import { type EmptyBatchFacts, factsOf } from '../../../imports/domain/empty-batch.js'
 import type { LifecycleAction } from '../../domain/batch-lifecycle.js'
 import type { PriorReserveState, SettlementInput } from '../../domain/types.js'
 import type {
@@ -26,6 +27,8 @@ export interface InMemorySourceOptions {
   status?: ImportStatus
   merchantId?: number
   blocked?: CurrentRun['blocked']
+  /** Why the unmatched rows of the input are unmatched (the engine rows do not carry it); no_match by default. */
+  unmatchedReason?: UnmatchedReason
 }
 
 export class InMemorySettlementSource implements SettlementSource {
@@ -99,6 +102,21 @@ export class InMemorySettlementSource implements SettlementSource {
   async attempts() {
     this.calls.push('attempts')
     return [...this.input.attempts]
+  }
+
+  /** Counted from the rows of the input, as the facts query counts the persisted ones. */
+  async emptyBatchFacts(importId: string, providerId: number): Promise<EmptyBatchFacts> {
+    this.calls.push('emptyBatchFacts')
+    const rows = importId === this.input.importId ? this.input.rows : []
+    const reason = this.options.unmatchedReason ?? 'no_match'
+    return factsOf(
+      rows.map((r) => ({
+        matchResult: r.matchResult,
+        reason: r.matchResult === 'unmatched' ? reason : null,
+        n: 1,
+        own: r.matchResult === 'matched' && r.transaction?.providerId === providerId ? 1 : 0,
+      })),
+    )
   }
 }
 

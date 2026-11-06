@@ -3,6 +3,7 @@
 // preview (outside a transaction) and processing (inside it, after the guard).
 import type { ImportStatus, SettlementRequest, SettlementView, ValidationCode } from '@recon/shared'
 import type { Scope } from '../../catalog/domain/scope.js'
+import type { EmptyBatchFacts } from '../../imports/domain/empty-batch.js'
 import type {
   AccountAttempt,
   AccountFeeConfig,
@@ -60,6 +61,8 @@ export interface SettlementSource {
   feeTypes(): Promise<SettlementFeeType[]>
   /** Every attempt of the account, in any status. */
   attempts(accountId: string): Promise<AccountAttempt[]>
+  /** What an empty batch is judged on (README §3.3 #92): the same facts as the detail and the review. */
+  emptyBatchFacts(importId: string, providerId: number): Promise<EmptyBatchFacts>
 }
 
 /** feeTypeIds of the batch fees pre-filled from the Other Fees sheet, as GET /imports/{id} proposes them. */

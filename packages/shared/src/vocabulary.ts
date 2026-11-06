@@ -73,6 +73,10 @@ export type RowWarningCode = z.infer<typeof RowWarningCode>
 export const RowReason = z.enum(['no_match', 'id_format', 'lossy_numeric_id', 'empty_id', 'no_gateways'])
 export type RowReason = z.infer<typeof RowReason>
 
+/** Why a row is `unmatched`: every RowReason but `empty_id`, which only an `ignored` row has (README §3.3 #92). */
+export const UnmatchedReason = z.enum(['no_match', 'id_format', 'lossy_numeric_id', 'no_gateways'])
+export type UnmatchedReason = z.infer<typeof UnmatchedReason>
+
 /** Situation of a channel seen in the analysis (README §4.2 `channels`, §3.2 AccountChannel). */
 export const ChannelAssignment = z.enum(['assigned', 'unassigned', 'assigned_to_other_account'])
 export type ChannelAssignment = z.infer<typeof ChannelAssignment>

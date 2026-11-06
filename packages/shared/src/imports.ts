@@ -14,6 +14,7 @@ import {
   RowWarningCode,
   SheetKind,
   TargetField,
+  type UnmatchedReason,
   WarningCode,
 } from './vocabulary.js'
 
@@ -146,14 +147,50 @@ export type ImportSummary = z.infer<typeof ImportSummary>
 
 const nonNegativeInt = z.number().int().nonnegative()
 
+/** Unmatched rows per reason; the four reasons are always present, zeros included (README §3.3 #92). */
+export const UnmatchedByReason = z.strictObject({
+  no_match: nonNegativeInt,
+  id_format: nonNegativeInt,
+  lossy_numeric_id: nonNegativeInt,
+  no_gateways: nonNegativeInt,
+} satisfies Record<UnmatchedReason, typeof nonNegativeInt>)
+export type UnmatchedByReason = z.infer<typeof UnmatchedByReason>
+
 export const AnalysisRows = z.object({
   total: nonNegativeInt,
   matched: nonNegativeInt,
   unmatched: nonNegativeInt,
   ambiguous: nonNegativeInt,
   ignored: nonNegativeInt,
+  unmatchedByReason: UnmatchedByReason,
 })
 export type AnalysisRows = z.infer<typeof AnalysisRows>
+
+/**
+ * An import without matched rows of the account's provider in its transaction sheets (README §3.3 "Batch sin filas
+ * asociadas", #92): the details of 409 no_matched_rows and the `emptyBatch` of the settlement preview.
+ */
+export const EmptyBatchDetails = z.object({
+  /** Rows read from the transaction sheets, ignored ones included. */
+  rowsTotal: nonNegativeInt,
+  rowsUnmatched: nonNegativeInt,
+  unmatchedByReason: UnmatchedByReason,
+  /** Every unmatched row is `id_format`: the IDs fit no gateway of the account, the files may be another account's. */
+  likelyWrongAccount: z.boolean(),
+})
+export type EmptyBatchDetails = z.infer<typeof EmptyBatchDetails>
+
+/** 409 no_matched_rows (POST review, POST settlements): confirmEmptyBatch was not sent. */
+export const NoMatchedRowsDetails = EmptyBatchDetails
+export type NoMatchedRowsDetails = z.infer<typeof NoMatchedRowsDetails>
+
+/** 409 import_file_limit_reached (POST /imports/{id}/files): the import would exceed its files. */
+export const ImportFileLimitReachedDetails = z.object({
+  limit: z.number().int().positive(),
+  current: nonNegativeInt,
+  adding: z.number().int().positive(),
+})
+export type ImportFileLimitReachedDetails = z.infer<typeof ImportFileLimitReachedDetails>
 
 /** Rows not ignored, per cycle. */
 export const AnalysisByCycle = z.object({ E: nonNegativeInt, I: nonNegativeInt, R: nonNegativeInt })
@@ -168,6 +205,10 @@ export const AnalysisSummary = z.object({
   rows: AnalysisRows,
   byCycle: AnalysisByCycle,
   warnings: AnalysisWarnings,
+  /** No matched row of the account's provider: review and processing ask confirmEmptyBatch (#92). */
+  requiresEmptyBatchConfirmation: z.boolean(),
+  /** requiresEmptyBatchConfirmation, some unmatched row and all of them `id_format`. */
+  likelyWrongAccount: z.boolean(),
 })
 export type AnalysisSummary = z.infer<typeof AnalysisSummary>
 
@@ -193,6 +234,11 @@ export const ChannelNotice = z.object({
   note: z.string().nullable(),
   /** Present only when the channel belongs to a merchant outside the caller's scope. */
   outOfScope: z.literal(true).optional(),
+  /**
+   * Present only when the channel belongs to another provider than the account's (always so for another merchant's):
+   * its rows are provider_mismatch and processing never assigns it (#92).
+   */
+  otherProvider: z.literal(true).optional(),
 })
 export type ChannelNotice = z.infer<typeof ChannelNotice>
 

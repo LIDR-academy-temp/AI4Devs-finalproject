@@ -2240,12 +2240,38 @@ paths:
                             type: integer
                             minimum: 0
                             maximum: 9007199254740991
+                          unmatchedByReason:
+                            type: object
+                            properties:
+                              no_match:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              id_format:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              lossy_numeric_id:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              no_gateways:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                            required:
+                              - no_match
+                              - id_format
+                              - lossy_numeric_id
+                              - no_gateways
+                            additionalProperties: false
                         required:
                           - total
                           - matched
                           - unmatched
                           - ambiguous
                           - ignored
+                          - unmatchedByReason
                         additionalProperties: false
                       byCycle:
                         type: object
@@ -2283,10 +2309,16 @@ paths:
                           - status_unresolved
                           - status_differs_from_sheet
                           - cycle_mismatch
+                      requiresEmptyBatchConfirmation:
+                        type: boolean
+                      likelyWrongAccount:
+                        type: boolean
                     required:
                       - rows
                       - byCycle
                       - warnings
+                      - requiresEmptyBatchConfirmation
+                      - likelyWrongAccount
                     additionalProperties: false
                   channels:
                     nullable: true
@@ -2360,6 +2392,10 @@ paths:
                           nullable: true
                           type: string
                         outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                        otherProvider:
                           type: boolean
                           enum:
                             - true
@@ -2695,7 +2731,9 @@ paths:
       description: "multipart/form-data with 1 to 10 `files` parts, each a `.xlsx` of
         at most 20 MiB. Rejected as a whole when any part fails: 400 (type,
         size, count), 409 (same bytes already in the import), 422 (unreadable
-        workbook)."
+        workbook). An import holds at most 10 files in total: adding past that
+        answers 409 import_file_limit_reached with details { limit, current,
+        adding }, reading and storing none (#40)."
       requestBody:
         required: true
         content:
@@ -3110,12 +3148,38 @@ paths:
                             type: integer
                             minimum: 0
                             maximum: 9007199254740991
+                          unmatchedByReason:
+                            type: object
+                            properties:
+                              no_match:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              id_format:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              lossy_numeric_id:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              no_gateways:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                            required:
+                              - no_match
+                              - id_format
+                              - lossy_numeric_id
+                              - no_gateways
+                            additionalProperties: false
                         required:
                           - total
                           - matched
                           - unmatched
                           - ambiguous
                           - ignored
+                          - unmatchedByReason
                         additionalProperties: false
                       byCycle:
                         type: object
@@ -3153,10 +3217,16 @@ paths:
                           - status_unresolved
                           - status_differs_from_sheet
                           - cycle_mismatch
+                      requiresEmptyBatchConfirmation:
+                        type: boolean
+                      likelyWrongAccount:
+                        type: boolean
                     required:
                       - rows
                       - byCycle
                       - warnings
+                      - requiresEmptyBatchConfirmation
+                      - likelyWrongAccount
                     additionalProperties: false
                   channels:
                     nullable: true
@@ -3230,6 +3300,10 @@ paths:
                           nullable: true
                           type: string
                         outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                        otherProvider:
                           type: boolean
                           enum:
                             - true
@@ -3803,12 +3877,38 @@ paths:
                             type: integer
                             minimum: 0
                             maximum: 9007199254740991
+                          unmatchedByReason:
+                            type: object
+                            properties:
+                              no_match:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              id_format:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              lossy_numeric_id:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              no_gateways:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                            required:
+                              - no_match
+                              - id_format
+                              - lossy_numeric_id
+                              - no_gateways
+                            additionalProperties: false
                         required:
                           - total
                           - matched
                           - unmatched
                           - ambiguous
                           - ignored
+                          - unmatchedByReason
                         additionalProperties: false
                       byCycle:
                         type: object
@@ -3846,10 +3946,16 @@ paths:
                           - status_unresolved
                           - status_differs_from_sheet
                           - cycle_mismatch
+                      requiresEmptyBatchConfirmation:
+                        type: boolean
+                      likelyWrongAccount:
+                        type: boolean
                     required:
                       - rows
                       - byCycle
                       - warnings
+                      - requiresEmptyBatchConfirmation
+                      - likelyWrongAccount
                     additionalProperties: false
                   channels:
                     nullable: true
@@ -3923,6 +4029,10 @@ paths:
                           nullable: true
                           type: string
                         outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                        otherProvider:
                           type: boolean
                           enum:
                             - true
@@ -4473,12 +4583,38 @@ paths:
                             type: integer
                             minimum: 0
                             maximum: 9007199254740991
+                          unmatchedByReason:
+                            type: object
+                            properties:
+                              no_match:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              id_format:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              lossy_numeric_id:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              no_gateways:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                            required:
+                              - no_match
+                              - id_format
+                              - lossy_numeric_id
+                              - no_gateways
+                            additionalProperties: false
                         required:
                           - total
                           - matched
                           - unmatched
                           - ambiguous
                           - ignored
+                          - unmatchedByReason
                         additionalProperties: false
                       byCycle:
                         type: object
@@ -4516,10 +4652,16 @@ paths:
                           - status_unresolved
                           - status_differs_from_sheet
                           - cycle_mismatch
+                      requiresEmptyBatchConfirmation:
+                        type: boolean
+                      likelyWrongAccount:
+                        type: boolean
                     required:
                       - rows
                       - byCycle
                       - warnings
+                      - requiresEmptyBatchConfirmation
+                      - likelyWrongAccount
                     additionalProperties: false
                   channels:
                     nullable: true
@@ -4593,6 +4735,10 @@ paths:
                           nullable: true
                           type: string
                         outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                        otherProvider:
                           type: boolean
                           enum:
                             - true
@@ -5450,12 +5596,38 @@ paths:
                             type: integer
                             minimum: 0
                             maximum: 9007199254740991
+                          unmatchedByReason:
+                            type: object
+                            properties:
+                              no_match:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              id_format:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              lossy_numeric_id:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              no_gateways:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                            required:
+                              - no_match
+                              - id_format
+                              - lossy_numeric_id
+                              - no_gateways
+                            additionalProperties: false
                         required:
                           - total
                           - matched
                           - unmatched
                           - ambiguous
                           - ignored
+                          - unmatchedByReason
                         additionalProperties: false
                       byCycle:
                         type: object
@@ -5493,10 +5665,16 @@ paths:
                           - status_unresolved
                           - status_differs_from_sheet
                           - cycle_mismatch
+                      requiresEmptyBatchConfirmation:
+                        type: boolean
+                      likelyWrongAccount:
+                        type: boolean
                     required:
                       - rows
                       - byCycle
                       - warnings
+                      - requiresEmptyBatchConfirmation
+                      - likelyWrongAccount
                     additionalProperties: false
                   channels:
                     nullable: true
@@ -5570,6 +5748,10 @@ paths:
                           nullable: true
                           type: string
                         outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                        otherProvider:
                           type: boolean
                           enum:
                             - true
@@ -6124,12 +6306,38 @@ paths:
                             type: integer
                             minimum: 0
                             maximum: 9007199254740991
+                          unmatchedByReason:
+                            type: object
+                            properties:
+                              no_match:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              id_format:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              lossy_numeric_id:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              no_gateways:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                            required:
+                              - no_match
+                              - id_format
+                              - lossy_numeric_id
+                              - no_gateways
+                            additionalProperties: false
                         required:
                           - total
                           - matched
                           - unmatched
                           - ambiguous
                           - ignored
+                          - unmatchedByReason
                         additionalProperties: false
                       byCycle:
                         type: object
@@ -6167,10 +6375,16 @@ paths:
                           - status_unresolved
                           - status_differs_from_sheet
                           - cycle_mismatch
+                      requiresEmptyBatchConfirmation:
+                        type: boolean
+                      likelyWrongAccount:
+                        type: boolean
                     required:
                       - rows
                       - byCycle
                       - warnings
+                      - requiresEmptyBatchConfirmation
+                      - likelyWrongAccount
                     additionalProperties: false
                   channels:
                     nullable: true
@@ -6244,6 +6458,10 @@ paths:
                           nullable: true
                           type: string
                         outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                        otherProvider:
                           type: boolean
                           enum:
                             - true
@@ -7550,12 +7768,38 @@ paths:
                             type: integer
                             minimum: 0
                             maximum: 9007199254740991
+                          unmatchedByReason:
+                            type: object
+                            properties:
+                              no_match:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              id_format:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              lossy_numeric_id:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                              no_gateways:
+                                type: integer
+                                minimum: 0
+                                maximum: 9007199254740991
+                            required:
+                              - no_match
+                              - id_format
+                              - lossy_numeric_id
+                              - no_gateways
+                            additionalProperties: false
                         required:
                           - total
                           - matched
                           - unmatched
                           - ambiguous
                           - ignored
+                          - unmatchedByReason
                         additionalProperties: false
                       byCycle:
                         type: object
@@ -7593,10 +7837,16 @@ paths:
                           - status_unresolved
                           - status_differs_from_sheet
                           - cycle_mismatch
+                      requiresEmptyBatchConfirmation:
+                        type: boolean
+                      likelyWrongAccount:
+                        type: boolean
                     required:
                       - rows
                       - byCycle
                       - warnings
+                      - requiresEmptyBatchConfirmation
+                      - likelyWrongAccount
                     additionalProperties: false
                   channels:
                     nullable: true
@@ -7670,6 +7920,10 @@ paths:
                           nullable: true
                           type: string
                         outOfScope:
+                          type: boolean
+                          enum:
+                            - true
+                        otherProvider:
                           type: boolean
                           enum:
                             - true
@@ -10046,7 +10300,10 @@ paths:
       description: "Only in analyzed and on the current run (runId). 409
         validation_run_required without a run, validation_run_superseded for
         another runId, blocking_validation_issue when provider_mismatch blocks
-        it (no override: cancel the import)."
+        it (no override: cancel the import), no_matched_rows when no row matches
+        a transaction of the account and confirmEmptyBatch is not true (details
+        { rowsTotal, rowsUnmatched, unmatchedByReason, likelyWrongAccount };
+        #92)."
       requestBody:
         required: true
         content:
@@ -10059,6 +10316,8 @@ paths:
                   minimum: 0
                   exclusiveMinimum: true
                   maximum: 9007199254740991
+                confirmEmptyBatch:
+                  type: boolean
               required:
                 - runId
               additionalProperties: false
@@ -15402,12 +15661,14 @@ paths:
         payment)
       tags: &a17
         - settlements
-      description: runId is the reviewed validation run. 409 import_not_validated,
+      description: "runId is the reviewed validation run. 409 import_not_validated,
         validation_run_required, validation_run_superseded,
-        blocking_validation_issue, batch_no_taken,
-        channel_assignment_not_confirmed, settlement_busy (chosen three times as
-        a deadlock victim; retry); 400 batch_fee_invalid. No movement is Settled
-        until the batch is paid.
+        blocking_validation_issue, no_matched_rows (no row matches a transaction
+        of the account and confirmEmptyBatch is not true; details { rowsTotal,
+        rowsUnmatched, unmatchedByReason, likelyWrongAccount }, #92),
+        batch_no_taken, channel_assignment_not_confirmed, settlement_busy
+        (chosen three times as a deadlock victim; retry); 400 batch_fee_invalid.
+        No movement is Settled until the batch is paid."
       requestBody:
         required: true
         content:
@@ -15432,6 +15693,8 @@ paths:
                   type: string
                   maxLength: 500
                 confirmChannelAssignment:
+                  type: boolean
+                confirmEmptyBatch:
                   type: boolean
                 batchFees:
                   maxItems: 100
@@ -16572,10 +16835,13 @@ paths:
       description: "Same body as processing; answers 200 with a SettlementPreview. 409
         import_not_validated, validation_run_required,
         validation_run_superseded, blocking_validation_issue; 400
-        batch_fee_invalid. batch_no_taken and channel_assignment_not_confirmed
-        are not errors here: a number with an active attempt is
+        batch_fee_invalid. batch_no_taken, channel_assignment_not_confirmed and
+        no_matched_rows are not errors here: a number with an active attempt is
         batchNoAvailable: false, and channels to assign are
-        requiresChannelConfirmation: true with channelsToAssign."
+        requiresChannelConfirmation: true with channelsToAssign, and an import
+        without matched rows is requiresEmptyBatchConfirmation: true with
+        emptyBatch (the details of that 409); the preview takes no confirmation
+        (#92)."
       requestBody:
         required: true
         content:
@@ -16600,6 +16866,8 @@ paths:
                   type: string
                   maxLength: 500
                 confirmChannelAssignment:
+                  type: boolean
+                confirmEmptyBatch:
                   type: boolean
                 batchFees:
                   maxItems: 100
@@ -17160,6 +17428,53 @@ paths:
                         - assignment
                         - otherAccount
                       additionalProperties: false
+                  requiresEmptyBatchConfirmation:
+                    type: boolean
+                  emptyBatch:
+                    nullable: true
+                    type: object
+                    properties:
+                      rowsTotal:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      rowsUnmatched:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
+                      unmatchedByReason:
+                        type: object
+                        properties:
+                          no_match:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          id_format:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          lossy_numeric_id:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                          no_gateways:
+                            type: integer
+                            minimum: 0
+                            maximum: 9007199254740991
+                        required:
+                          - no_match
+                          - id_format
+                          - lossy_numeric_id
+                          - no_gateways
+                        additionalProperties: false
+                      likelyWrongAccount:
+                        type: boolean
+                    required:
+                      - rowsTotal
+                      - rowsUnmatched
+                      - unmatchedByReason
+                      - likelyWrongAccount
+                    additionalProperties: false
                 required:
                   - dateRanges
                   - channels
@@ -17187,6 +17502,8 @@ paths:
                   - batchNoAvailable
                   - requiresChannelConfirmation
                   - channelsToAssign
+                  - requiresEmptyBatchConfirmation
+                  - emptyBatch
                 additionalProperties: false
         "400":
           description: Default Response

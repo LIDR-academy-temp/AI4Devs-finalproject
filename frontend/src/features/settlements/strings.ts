@@ -69,6 +69,14 @@ export const strings = {
     confirm: 'Assign these channels to this account as primary',
   },
 
+  /** An import without matched rows of the account (#92): a batch with batch fees only, confirmed before Process. */
+  emptyBatch: {
+    label: 'Batch without matched rows',
+    noMatchedRows: 'No row of the files matches a transaction of this account: only the batch fees will be processed.',
+    wrongAccount: 'The IDs do not fit any gateway of this account: the files may belong to another account.',
+    confirm: 'Process a batch with batch fees only',
+  },
+
   preSummary: {
     label: 'Pre-summary',
     title: 'Pre-summary · what will be processed',
@@ -112,6 +120,7 @@ export const strings = {
     forbidden: 'You cannot process this import.',
     processFailed: 'The batch could not be processed. Try again.',
     busy: 'Another settlement is being processed for this provider. Try again.',
+    noMatchedRows: 'This import has no matched rows. Confirm that the batch has batch fees only.',
     toAnalysis: 'Go to the Analysis step',
   },
 
@@ -125,6 +134,7 @@ export const strings = {
       waiting: 'Waiting for the pre-summary.',
       batchTaken: 'Choose a batch number that is not in use.',
       confirmChannels: 'Confirm the channel assignment.',
+      confirmEmptyBatch: 'Confirm that this batch has batch fees only.',
       previewFailed: 'The pre-summary is not available.',
     },
   },
