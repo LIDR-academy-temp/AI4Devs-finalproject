@@ -41,17 +41,27 @@ const columns = helper.columns([
     id: 'file',
     header: s.columns.file,
     // The sheet always shows; the file, long and shared by many rows, wraps where it does not fit (the names of the
-    // template have no spaces) and keeps its whole name as tooltip (design D7).
+    // template have no spaces) and keeps its whole name as tooltip (design D7). A fixed width: narrow, so the table fits
+    // at 1024 px, but not less, since overflow-wrap:anywhere would let the table squeeze it to a letter a line (#132).
+    // The row number goes after the sheet, not as a column of its own (web-rows-table-compact D1); the sheet keeps an
+    // element of its own. A long legacy sheet name wraps inside the fixed width instead of widening the cell, and
+    // "· row N" never parts (D3).
     cell: ({ row }) => (
-      <div className="flex max-w-64 flex-col">
-        <span className="whitespace-nowrap font-medium">{row.original.sheetName}</span>
-        <span className="text-muted-foreground [overflow-wrap:anywhere]" title={row.original.fileName}>
+      <div className="flex w-28 flex-col">
+        <div className="whitespace-normal">
+          <span className="whitespace-normal break-words font-medium">{row.original.sheetName}</span>{' '}
+          <span className="whitespace-nowrap text-muted-foreground">{s.rowNo(row.original.rowNo)}</span>
+        </div>
+        {/* whitespace-normal: the cell does not wrap, and overflow-wrap does nothing under it (#132). */}
+        <span
+          className="whitespace-normal text-muted-foreground [overflow-wrap:anywhere]"
+          title={row.original.fileName}
+        >
           {row.original.fileName}
         </span>
       </div>
     ),
   }),
-  helper.accessor('rowNo', { header: s.columns.row }),
   helper.accessor('transactionIdRaw', {
     header: s.columns.id,
     // IDs are text exactly as read: never parsed, never shortened.
@@ -61,9 +71,11 @@ const columns = helper.columns([
   helper.display({
     id: 'result',
     header: s.columns.result,
+    // Texts wrap between words in a fixed width, so the table does not squeeze them to a word a line; figures and IDs
+    // never wrap (#132).
     cell: ({ row }) => (
-      <div className="flex flex-col">
-        <span>{resultText(row.original)}</span>
+      <div className="flex w-24 flex-col">
+        <span className="whitespace-normal">{resultText(row.original)}</span>
         <AmbiguousCandidates row={row.original} />
       </div>
     ),
@@ -76,18 +88,23 @@ const columns = helper.columns([
   helper.display({
     id: 'amount',
     header: s.columns.amount,
-    cell: ({ row }) =>
-      row.original.transaction === null && row.original.warnings.includes('out_of_scope_transaction')
-        ? ''
-        : row.original.amount === null
-          ? ''
-          : formatDecimal(row.original.amount),
-  }),
-  helper.display({
-    id: 'currency',
-    header: s.columns.currency,
-    cell: ({ row }) =>
-      row.original.warnings.includes('out_of_scope_transaction') ? '' : (row.original.currency ?? ''),
+    // The figure and its currency in one column and one piece that never wraps, the currency in grey (#132).
+    cell: ({ row }) => {
+      const outOfScope = row.original.warnings.includes('out_of_scope_transaction')
+      const amount =
+        row.original.amount === null || (outOfScope && row.original.transaction === null)
+          ? null
+          : formatDecimal(row.original.amount)
+      const currency = outOfScope ? null : row.original.currency
+      if (amount === null && currency === null) return null
+      return (
+        <span className="whitespace-nowrap">
+          {amount}
+          {amount !== null && currency !== null && ' '}
+          {currency !== null && <span className="text-muted-foreground">{currency}</span>}
+        </span>
+      )
+    },
   }),
   helper.display({
     id: 'channel',
@@ -97,7 +114,12 @@ const columns = helper.columns([
   helper.display({
     id: 'warnings',
     header: s.columns.warnings,
-    cell: ({ row }) => row.original.warnings.map((w) => strings.analysis.warnings.labels[w]).join(', '),
+    cell: ({ row }) =>
+      row.original.warnings.length === 0 ? null : (
+        <span className="block max-w-40 whitespace-normal">
+          {row.original.warnings.map((w) => strings.analysis.warnings.labels[w]).join(', ')}
+        </span>
+      ),
   }),
 ])
 
@@ -255,7 +277,7 @@ export function RowsTable({
               {table.getHeaderGroups().map((group) => (
                 <TableRow key={group.id}>
                   {group.headers.map((header) => (
-                    <TableHead key={header.id} className="whitespace-nowrap">
+                    <TableHead key={header.id} className="whitespace-nowrap px-1.5 xl:px-2">
                       {header.isPlaceholder ? null : <table.FlexRender header={header} />}
                     </TableHead>
                   ))}
@@ -269,7 +291,7 @@ export function RowsTable({
                   className={row.original.matchResult === 'matched' ? '' : 'bg-amber-50/60 dark:bg-amber-950/20'}
                 >
                   {row.getAllCells().map((cell) => (
-                    <TableCell key={cell.id} className="align-top">
+                    <TableCell key={cell.id} className="align-top px-1.5 xl:px-2">
                       <table.FlexRender cell={cell} />
                     </TableCell>
                   ))}

@@ -155,16 +155,16 @@ export const strings = {
       filters: { all: 'All', unmatched: 'Unmatched', ambiguous: 'Ambiguous', matched: 'Matched', ignored: 'Ignored' },
       columns: {
         file: 'Sheet · file',
-        row: 'Row',
         id: 'ID',
         cycle: 'Cycle',
         result: 'Result',
         status: 'Status',
         amount: 'Amount',
-        currency: 'Currency',
         channel: 'Channel',
         warnings: 'Warnings',
       },
+      /** The row number, after the sheet in the Sheet · file cell (web-rows-table-compact D1). */
+      rowNo: (rowNo: number) => `· row ${rowNo}`,
       results: { matched: 'Matched', unmatched: 'Unmatched', ambiguous: 'Ambiguous', ignored: 'Ignored' },
       reasons: {
         no_match: 'No match',

@@ -96,6 +96,7 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
     expect(cell(first, s.columns.result)).toHaveTextContent('Matched')
     expect(cell(first, s.columns.warnings)).toHaveTextContent('Transaction of another merchant')
     expect(cell(first, s.columns.channel).textContent).toBe('')
+    // Neither the amount nor the currency, which share the Amount column (#132).
     expect(cell(first, s.columns.amount).textContent).toBe('')
   })
 
@@ -156,20 +157,136 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
   })
 
   // jsdom does not lay out: whether the browser wraps the name is seen in the screenshots (design D7).
-  it('shows the sheet of each row first and its whole file name, without truncate and also as tooltip', async () => {
+  it('shows the sheet and row of each row in one line, then its whole file name, also as tooltip', async () => {
     const { importId } = seedImport('batch-split', { status: 'analyzed' })
     await openRows(`/imports/${importId}?step=analysis`)
 
+    // The row number is not a column of its own (web-rows-table-compact D1).
+    const headers = within(screen.getByRole('table', { name: s.title })).getAllByRole('columnheader')
+    expect(headers.map((h) => h.textContent)).not.toContain('Row')
+
     const sheets = new Set(importRecord(importId).files.flatMap((f) => f.sheets.map((x) => x.template.sheetName)))
+    const lines: string[] = []
     for (const row of bodyRows()) {
       const where = cell(row, 'Sheet · file')
-      const [sheet, file] = Array.from(where.querySelectorAll('span'))
-      expect(sheets.has(sheet!.textContent ?? '')).toBe(true)
+      // The first line: the sheet in an element of its own (the screenshot script reads it), then its row.
+      const line = where.firstElementChild!.firstElementChild as HTMLElement
+      const sheet = where.querySelector('span')!
+      expect(sheets.has(sheet.textContent ?? '')).toBe(true)
       expect(sheet).not.toHaveClass('truncate')
-      expect(file!.textContent).toMatch(/^Recon_Template_ProviderA-USD_batch-split_part[12]\.xlsx$/)
-      expect(file).toHaveAttribute('title', file!.textContent)
+      expect(line.textContent).toMatch(new RegExp(`^${sheet.textContent} · row \\d+$`))
+      lines.push(line.textContent ?? '')
+
+      const file = within(where).getByTitle(/^Recon_Template_/)
+      expect(file.textContent).toMatch(/^Recon_Template_ProviderA-USD_batch-split_part[12]\.xlsx$/)
+      expect(file).toHaveAttribute('title', file.textContent)
       expect(file).not.toHaveClass('truncate')
+      // The cell does not wrap (whitespace-nowrap), and without whitespace-normal overflow-wrap does nothing (#132).
+      expect(file).toHaveClass('whitespace-normal')
     }
+    expect(lines[0]).toBe('APP · row 2')
+  })
+
+  // A legacy file names its sheets freely (Excel allows 31 characters). jsdom does not lay out, so these are the
+  // classes that keep such a name inside the fixed width instead of painting it over the ID (design D3).
+  it('wraps a long legacy sheet name inside the fixed width and never parts "row" from its number', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    const longName = 'Transactions approved by issuer'
+    importRecord(importId).rows!.push(
+      makeRow({
+        matchResult: 'unmatched',
+        reason: 'no_match',
+        transactionId: null,
+        transaction: null,
+        sheetName: longName,
+        rowNo: 1234,
+        transactionIdRaw: '900',
+      }),
+    )
+    await openRows(`/imports/${importId}?step=analysis&match=unmatched`)
+
+    const where = cell(bodyRows().find((r) => cell(r, s.columns.id).textContent === '900')!, s.columns.file)
+    // The width stays fixed: a wider cell would bring back the overflow at 1024 px (#132).
+    const box = where.firstElementChild as HTMLElement
+    expect(box).toHaveClass('w-28')
+    expect(box.className).not.toMatch(/\bmin-w-/)
+
+    const line = box.firstElementChild as HTMLElement
+    expect(line.textContent).toBe(`${longName} · row 1234`)
+    // The space between the sheet and its row is a place to wrap too: the line does not inherit nowrap from the cell.
+    expect(line).toHaveClass('whitespace-normal')
+    expect(line).not.toHaveClass('whitespace-nowrap')
+
+    const sheet = within(line).getByText(longName)
+    expect(sheet).toHaveClass('whitespace-normal', 'break-words')
+    const rowNo = within(line).getByText('· row 1234')
+    expect(rowNo).toHaveClass('whitespace-nowrap')
+  })
+
+  // jsdom does not lay out: the widths at 1024 px are measured by the screenshots of web-ambiguous-rows (#132). Here,
+  // only that texts may wrap between words in a bounded width and that figures may not wrap at all.
+  it('wraps the result and the warnings between words, never the ID nor the amount (#132)', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    importRecord(importId).rows!.push(
+      makeRow({
+        matchResult: 'unmatched',
+        reason: 'id_format',
+        transactionId: null,
+        transaction: null,
+        rowNo: 900,
+        transactionIdRaw: '12345678901234567',
+        amount: '1234567.8900',
+        warnings: ['status_differs_from_sheet', 'cycle_mismatch', 'id_length'],
+      }),
+    )
+    await openRows(`/imports/${importId}?step=analysis&match=unmatched`)
+
+    const row = bodyRows().find((r) => cell(r, s.columns.id).textContent === '12345678901234567')!
+    const wrapsBetweenWords = (text: string, where: HTMLElement) => {
+      const element = within(where).getByText(text)
+      expect(element).toHaveClass('whitespace-normal')
+      expect(element.className).not.toMatch(/overflow-wrap:anywhere|break-all/)
+      return element
+    }
+    // The result wraps in the fixed width of its container, shared with the candidates.
+    const result = wrapsBetweenWords('Unmatched · ID does not fit any gateway', cell(row, s.columns.result))
+    expect(result.parentElement).toHaveClass('w-24')
+    const warnings = wrapsBetweenWords(
+      'Status different from the sheet, Status of another cycle, ID of unusual length',
+      cell(row, s.columns.warnings),
+    )
+    expect(warnings).toHaveClass('max-w-40')
+    // Checked on the element that holds the figure: every TableCell already has whitespace-nowrap.
+    const id = cell(row, s.columns.id)
+    expect(within(id).getByText('12345678901234567')).toHaveClass('whitespace-nowrap')
+    expect(id.querySelector('.whitespace-normal')).toBeNull()
+    const amount = cell(row, s.columns.amount)
+    expect(within(amount).getByText('1,234,567.8900', { exact: false })).toHaveClass('whitespace-nowrap')
+    expect(amount.querySelector('.whitespace-normal')).toBeNull()
+    expect(cell(row, s.columns.amount).textContent).toBe('1,234,567.8900 USD')
+  })
+
+  it('shows the amount and its currency in one column, as one piece that never wraps (#132)', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    const unmatched = { matchResult: 'unmatched', reason: 'no_match', transactionId: null, transaction: null } as const
+    importRecord(importId).rows!.push(
+      makeRow({ ...unmatched, rowNo: 900, transactionIdRaw: '900', amount: '50000.0000', currency: 'EUR' }),
+      makeRow({ ...unmatched, rowNo: 901, transactionIdRaw: '901', amount: null, currency: 'EUR' }),
+    )
+    await openRows(`/imports/${importId}?step=analysis&match=unmatched`)
+
+    const headers = within(screen.getByRole('table', { name: s.title })).getAllByRole('columnheader')
+    expect(headers.map((h) => h.textContent)).not.toContain('Currency')
+    const byId = (id: string) => bodyRows().find((r) => cell(r, s.columns.id).textContent === id)!
+    const amount = cell(byId('900'), s.columns.amount)
+    expect(amount.textContent).toBe('50,000.0000 EUR')
+    const piece = within(amount).getByText('50,000.0000', { exact: false })
+    expect(piece).toHaveClass('whitespace-nowrap')
+    expect(piece).toHaveTextContent('50,000.0000 EUR')
+    expect(within(piece).getByText('EUR')).toHaveClass('text-muted-foreground')
+    expect(amount.querySelector('.whitespace-normal')).toBeNull()
+    // Without an amount the currency still shows, as the sheet had it.
+    expect(cell(byId('901'), s.columns.amount).textContent).toBe('EUR')
   })
 
   it('shows a 17-digit ID and a UUID whole', async () => {
