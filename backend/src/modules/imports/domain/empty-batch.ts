@@ -46,6 +46,10 @@ export function factsOf(groups: readonly RowGroup[]): EmptyBatchFacts {
   let rowsTotal = 0
   let matchedOwn = 0
   for (const g of groups) {
+    // The query counts own rows only among matched ones (empty-batch-facts.ts): anything else is a data error.
+    if (g.own > 0 && g.matchResult !== 'matched') {
+      throw new Error(`own rows outside a matched group: ${g.matchResult}`)
+    }
     rowsTotal += g.n
     matchedOwn += g.own
     if (g.matchResult !== 'unmatched') continue

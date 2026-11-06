@@ -93,6 +93,14 @@ describe('factsOf', () => {
     })
   })
 
+  // `own` counts matched rows of the provider (empty-batch-facts.ts): the query cannot give it to another group,
+  // so a group that does is a data error, not rows of the account.
+  it('own rows in an unresolved ambiguous group are a data error, not matched rows', () => {
+    expect(() => factsOf([{ matchResult: 'ambiguous', reason: null, n: 3, own: 1 }])).toThrow(
+      /own rows outside a matched group: ambiguous/,
+    )
+  })
+
   it('an ignored group (empty_id) adds to rowsTotal only: empty_id is not an unmatched reason', () => {
     expect(factsOf([{ matchResult: 'ignored', reason: 'empty_id', n: 3, own: 0 }])).toEqual({
       rowsTotal: 3,
