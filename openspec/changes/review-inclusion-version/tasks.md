@@ -6,15 +6,15 @@ Rama `feat/review-inclusion-version` (desde `origin/feature/entrega-3-MVP`), PR 
 
 ## 0. Artefactos del change
 
-- [ ] 0.1 Revisión de la persona: proposal, design (D1 contador frente a `updatedAt`, D4 orden, D6 nombre del código), specs y tasks, con `openspec validate review-inclusion-version --strict` en verde, y **confirmación expresa del cambio de esquema** (D2).
-- [ ] 0.2 Commit: docs(openspec): proponer review-inclusion-version (#53), y `git push`.
+- [x] 0.1 Revisión de la persona: proposal, design (D1 contador frente a `updatedAt`, D4 orden, D6 nombre del código), specs y tasks, con `openspec validate review-inclusion-version --strict` en verde, y **confirmación expresa del cambio de esquema** (D2).
+- [x] 0.2 Commit: docs(openspec): proponer review-inclusion-version (#53), y `git push`.
 
 ## 1. Esquema: `ValidationRun.inclusionVersion`
 
-- [ ] 1.1 Escribir a mano `backend/prisma/migrations/0009_validation_run_inclusion_version/migration.sql` (D2): `ALTER TABLE [dbo].[ValidationRun] ADD [inclusionVersion] INT NOT NULL CONSTRAINT [ValidationRun_inclusionVersion_df] DEFAULT 0` y `CONSTRAINT [CK_ValidationRun_inclusionVersion] CHECK ([inclusionVersion] >= 0)`, con el esqueleto `BEGIN TRY / TRAN` de `0008` y comentarios en inglés. Verificar leyéndola junto a `0006` (nombres y forma).
-- [ ] 1.2 Añadir `inclusionVersion Int @default(0)` a `model ValidationRun` en `schema.prisma`, con un comentario `///` en inglés, y regenerar el cliente (`pnpm --filter @recon/backend exec prisma generate`). Verificar con `pnpm typecheck` que el cliente expone el campo.
+- [x] 1.1 Escribir a mano `backend/prisma/migrations/0009_validation_run_inclusion_version/migration.sql` (D2): `ALTER TABLE [dbo].[ValidationRun] ADD [inclusionVersion] INT NOT NULL CONSTRAINT [ValidationRun_inclusionVersion_df] DEFAULT 0` y `CONSTRAINT [CK_ValidationRun_inclusionVersion] CHECK ([inclusionVersion] >= 0)`, con el esqueleto `BEGIN TRY / TRAN` de `0008` y comentarios en inglés. Verificar leyéndola junto a `0006` (nombres y forma).
+- [x] 1.2 Añadir `inclusionVersion Int @default(0)` a `model ValidationRun` en `schema.prisma`, con un comentario `///` en inglés, y regenerar el cliente (`pnpm --filter @recon/backend exec prisma generate`). Verificar con `pnpm typecheck` que el cliente expone el campo.
 - [ ] 1.3 Cuando la persona dé turno, la persona aplica la migración con `! pnpm db:migrate` dentro de la sesión. Verificar en su salida que `0009` queda aplicada sin drift.
-- [ ] 1.4 Commit: feat(validation): columna inclusionVersion en ValidationRun (migración 0009), y `git push`.
+- [x] 1.4 Commit: feat(validation): columna inclusionVersion en ValidationRun (migración 0009), y `git push`.
 
 ## 2. Contrato compartido (`@recon/shared`), test-first
 

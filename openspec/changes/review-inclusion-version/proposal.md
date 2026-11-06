@@ -31,7 +31,7 @@ Ninguna.
 
 ## Impact
 
-- **Base de datos:** columna `ValidationRun.inclusionVersion INT NOT NULL DEFAULT 0` con `CHECK (>= 0)`, en una migración escrita a mano `0009` (confirmada en el gate); la migración la aplica la persona.
+- **Base de datos:** columna `ValidationRun.inclusionVersion INT NOT NULL DEFAULT 0` con `CHECK (>= 0)`, en una migración escrita a mano, `backend/prisma/migrations/0009_validation_run_inclusion_version`, y el campo en `backend/prisma/schema.prisma` (confirmados en el gate); la migración la aplica la persona.
 - **Redespliegue del 10 de noviembre:** `0009` tiene que aplicarse también en el entorno desplegado, con `scripts/deploy.sh migrate`, que ejecuta la persona, antes de levantar el backend nuevo.
 - **Shared:** `ValidationRunSummary.inclusionVersion`, `ReviewBody.inclusionVersion`, el código `inclusions_changed` y sus `details`.
 - **Backend (`validation`):** guarda pura del review en el dominio, `PrismaValidationRunRepository.setInclusion` (sube la versión) y `review` (la compara y la audita), el fake en memoria, la ruta (descripción OpenAPI) y `docs/openapi.yaml` regenerado.

@@ -462,6 +462,8 @@ model ValidationRun {
   /// I candidates without a status change date (informative)
   undatedCandidateCount  Int    @default(0)
   isSuperseded        Boolean   @default(false)
+  /// Applied inclusion changes of the run; the review sends the one it saw (CHECK >= 0 → migration 0009)
+  inclusionVersion    Int       @default(0)
 
   import  Import             @relation(fields: [importId], references: [importId], onDelete: NoAction, onUpdate: NoAction)
   runBy   User               @relation(fields: [runByUserId], references: [userId], onDelete: NoAction, onUpdate: NoAction)
