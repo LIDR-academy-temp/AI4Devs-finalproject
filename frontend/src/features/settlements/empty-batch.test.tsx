@@ -4,9 +4,11 @@ import {
   batchCleanPreview,
   type PreviewFixture,
   respondNextSettlement,
+  scriptPreview,
   settlementRequests,
 } from '@/test/msw/settlements'
 import {
+  batchNoField,
   chooseDate,
   openReview,
   preSummary,
@@ -101,5 +103,26 @@ describe('Settlement Review: a batch without matched rows (spec "batch sin filas
     ).toBeInTheDocument()
     expect(box()).not.toBeChecked()
     await waitFor(() => expect(settlementRequests('preview').length).toBeGreaterThan(previews))
+  })
+
+  it('the box is unticked again when a preview stops and then starts asking for it (review-diff #135, point 3)', async () => {
+    const { importId } = validatedImport('batch-clean', fixture(null))
+    scriptPreview(importId, [fixture(details(true)), fixture(null), fixture(details(true))])
+    const { user } = await openReview(importId)
+    chooseDate('2026-10-24')
+    await previewShown()
+    await user.click(box())
+    expect(box()).toBeChecked()
+
+    await user.clear(batchNoField())
+    await user.type(batchNoField(), '124')
+    await previewShown()
+    expect(screen.queryByRole('checkbox', { name: CONFIRM })).not.toBeInTheDocument()
+
+    await user.clear(batchNoField())
+    await user.type(batchNoField(), '125')
+    await previewShown()
+    expect(box()).not.toBeChecked()
+    expect(processButton()).toBeDisabled()
   })
 })

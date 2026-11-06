@@ -158,6 +158,12 @@ function ReviewForm({
   useEffect(() => {
     if (preview) setEmptyOverride(null)
   }, [preview])
+  // What was confirmed was this preview's empty batch: when the preview stops or starts asking, the box goes back.
+  const emptyRequired = preview?.requiresEmptyBatchConfirmation ?? false
+  useEffect(() => {
+    void emptyRequired
+    form.setValue('confirmEmptyBatch', false)
+  }, [emptyRequired, form])
   const emptyBatch = emptyOverride ?? (preview?.requiresEmptyBatchConfirmation ? preview.emptyBatch : null)
   const emptyUnconfirmed = emptyBatch !== null && !values.confirmEmptyBatch
 
