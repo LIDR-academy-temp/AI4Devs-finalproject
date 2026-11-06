@@ -96,4 +96,23 @@ describe('Analysis & Validations: a batch without matched rows (spec "batch sin 
     expect(continueButton()).toBeDisabled()
     expect(header().getByText('analyzed')).toBeInTheDocument()
   })
+
+  it('a new run unticks the box: nothing confirmed carries over between runs (review-diff #135, point 4)', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed', unmatched: 'id_format' })
+    const { runId } = seedValidationRun(importId)
+    const { user } = await openAnalysis(importId)
+    const box = () => decision().getByRole('checkbox', { name: CONFIRM })
+    await user.click(box())
+    expect(box()).toBeChecked()
+
+    await user.click(screen.getByRole('button', { name: 'Run again' }))
+    await waitFor(() => expect(validationRequests('run')).toHaveLength(1))
+    expect(await screen.findByText(new RegExp(`^Run #${runId + 1} ·`))).toBeInTheDocument()
+
+    expect(box()).not.toBeChecked()
+    // Unticked, Continue waits for the box again: no review leaves without a confirmation made on this run.
+    expect(continueButton()).toBeDisabled()
+    expect(continueButton()).toHaveAccessibleDescription(REASON)
+    expect(validationRequests('review')).toHaveLength(0)
+  })
 })
