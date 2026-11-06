@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import type { UnmatchedByReason } from '@recon/shared'
 import { describe, expect, it } from 'vitest'
-import { type EmptyBatchFacts, emptyBatchOf } from './empty-batch.js'
+import { type EmptyBatchFacts, emptyBatchOf, factsOf } from './empty-batch.js'
 
 // README §3.3 "Batch sin filas asociadas" (#92); spec import "Import sin filas asociadas" (design D1).
 const SAMPLES = path.resolve(import.meta.dirname, '../../../../../data/samples')
@@ -71,5 +71,47 @@ describe('emptyBatchOf', () => {
 
   it('a resolved ambiguous row counts as matched', () => {
     expect(emptyBatchOf(facts({ rowsTotal: 1, matchedOwn: 1 })).requiresConfirmation).toBe(false)
+  })
+})
+
+// The counting rule of the facts query (design D1): the SQL groups rows by match result and reason, and counts
+// per group how many matched rows belong to the account's provider.
+describe('factsOf', () => {
+  it('an unmatched group without a reason is a data error, not a zero', () => {
+    expect(() => factsOf([{ matchResult: 'unmatched', reason: null, n: 2, own: 0 }])).toThrow(/unknown reason: null/)
+  })
+
+  it('an unmatched group with a reason outside the vocabulary is a data error, not a zero', () => {
+    expect(() => factsOf([{ matchResult: 'unmatched', reason: 'foo', n: 1, own: 0 }])).toThrow(/unknown reason: foo/)
+  })
+
+  it('an unresolved ambiguous group adds to rowsTotal and not to matchedOwn nor to the unmatched reasons', () => {
+    expect(factsOf([{ matchResult: 'ambiguous', reason: null, n: 3, own: 0 }])).toEqual({
+      rowsTotal: 3,
+      matchedOwn: 0,
+      unmatchedByReason: NONE,
+    })
+  })
+
+  it('an ignored group (empty_id) adds to rowsTotal only: empty_id is not an unmatched reason', () => {
+    expect(factsOf([{ matchResult: 'ignored', reason: 'empty_id', n: 3, own: 0 }])).toEqual({
+      rowsTotal: 3,
+      matchedOwn: 0,
+      unmatchedByReason: NONE,
+    })
+  })
+
+  it('a matched group counts its own rows, not all of them (own < n: rows of another provider)', () => {
+    const facts = factsOf([
+      { matchResult: 'matched', reason: null, n: 21, own: 20 },
+      { matchResult: 'unmatched', reason: 'id_format', n: 2, own: 0 },
+      { matchResult: 'unmatched', reason: 'no_match', n: 1, own: 0 },
+    ])
+
+    expect(facts).toEqual({
+      rowsTotal: 24,
+      matchedOwn: 20,
+      unmatchedByReason: { ...NONE, id_format: 2, no_match: 1 },
+    })
   })
 })
