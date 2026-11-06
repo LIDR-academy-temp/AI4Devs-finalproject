@@ -206,6 +206,7 @@ export const strings = {
     blocked: 'provider_mismatch: cancel the import and process it under the correct provider.',
     viewBlocking: 'View the blocking finding',
     noRun: 'Run the validations before continuing.',
+    reloading: 'Loading the latest results…',
     cancel: 'Cancel and reprocess',
     reviewedBy: (userName: string, at: string) => `Reviewed by ${userName} · ${at}`,
     settlementReview: 'Settlement Review',
