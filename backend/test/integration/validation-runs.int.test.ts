@@ -483,7 +483,10 @@ describe('the whole cycle analyze → validations → review (task 9.1)', () => 
       Object.fromEntries(Object.entries(expected.validations).map(([k, v]) => [k, total(v)])),
     )
     const second = await runValidations(importId)
-    const stale = await flow.call('POST', `/imports/${importId}/review`, { runId: first.run!.runId })
+    const stale = await flow.call('POST', `/imports/${importId}/review`, {
+      runId: first.run!.runId,
+      inclusionVersion: first.run!.inclusionVersion,
+    })
     expect(stale.statusCode).toBe(409)
     expect(stale.json().code).toBe('validation_run_superseded')
 
@@ -508,7 +511,10 @@ describe('the whole cycle analyze → validations → review (task 9.1)', () => 
     })
     expect(resolved.statusCode).toBe(200)
 
-    const reviewed = await flow.call('POST', `/imports/${importId}/review`, { runId: second.run!.runId })
+    const reviewed = await flow.call('POST', `/imports/${importId}/review`, {
+      runId: second.run!.runId,
+      inclusionVersion: await flow.inclusionVersionOf(importId),
+    })
     expect(reviewed.statusCode, reviewed.body).toBe(200)
     expect(reviewed.json().importStatus).toBe('validated')
     // The decision on the whole asks nothing per finding: the 22 not resolved by hand stay persistent.
@@ -521,7 +527,11 @@ describe('the whole cycle analyze → validations → review (task 9.1)', () => 
     expect(back.json().importStatus).toBe('analyzed')
     expect((await viewOf()).lastInvalidatedReview?.reason).toBe('inclusion_change')
 
-    expect((await flow.call('POST', `/imports/${importId}/review`, { runId: second.run!.runId })).statusCode).toBe(200)
+    const again = await flow.call('POST', `/imports/${importId}/review`, {
+      runId: second.run!.runId,
+      inclusionVersion: await flow.inclusionVersionOf(importId),
+    })
+    expect(again.statusCode, again.body).toBe(200)
     const third = await runValidations(importId)
     expect(third.importStatus).toBe('analyzed')
     expect(third.lastInvalidatedReview).toMatchObject({ reason: 'rerun', runId: second.run!.runId })
@@ -539,7 +549,10 @@ describe('the whole cycle analyze → validations → review (task 9.1)', () => 
     expect(view.run!.blocked).toBe(true)
     const mismatch = (await issues(importId, 'type=provider_mismatch')).items
     expect(mismatch.map((i) => i.transactionIdRaw)).toEqual(['252570479111759'])
-    const refused = await flow.call('POST', `/imports/${importId}/review`, { runId: view.run!.runId })
+    const refused = await flow.call('POST', `/imports/${importId}/review`, {
+      runId: view.run!.runId,
+      inclusionVersion: view.run!.inclusionVersion,
+    })
     expect(refused.json().code).toBe('blocking_validation_issue')
     expect(
       (await flow.call('POST', `/imports/${importId}/cancel`, { reason: 'Cancelled by the test' })).statusCode,

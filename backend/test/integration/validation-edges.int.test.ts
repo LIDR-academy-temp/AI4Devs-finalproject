@@ -496,7 +496,10 @@ describe('an APP row whose transaction is Pending in the gateway (spec "Gateway 
     })
     expect(resolved.statusCode, resolved.body).toBe(200)
 
-    const review = await flow.call('POST', `/imports/${detail.importId}/review`, { runId: posted.run!.runId })
+    const review = await flow.call('POST', `/imports/${detail.importId}/review`, {
+      runId: posted.run!.runId,
+      inclusionVersion: await flow.inclusionVersionOf(detail.importId),
+    })
     expect(review.statusCode, review.body).toBe(200)
     const processed = await flow.call('POST', `/imports/${detail.importId}/settlements`, { runId: posted.run!.runId })
     expect(processed.statusCode, processed.body).toBe(201)
@@ -730,7 +733,7 @@ describe('scope: an import of ProviderC-Alt (merchant 2) read and written by use
 
     const pairs: [string, string, object | undefined][] = [
       [`/imports/${importId}/validations`, `/imports/${UNKNOWN_UUID}/validations`, undefined],
-      [`/imports/${importId}/review`, `/imports/${UNKNOWN_UUID}/review`, { runId: currentRunId }],
+      [`/imports/${importId}/review`, `/imports/${UNKNOWN_UUID}/review`, { runId: currentRunId, inclusionVersion: 0 }],
     ]
     for (const [foreign, unknown, body] of pairs) {
       const a = await post(foreign, body)

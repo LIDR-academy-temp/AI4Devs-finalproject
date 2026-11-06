@@ -8278,6 +8278,10 @@ paths:
                         type: integer
                         minimum: 0
                         maximum: 9007199254740991
+                      inclusionVersion:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
                       review:
                         nullable: true
                         type: object
@@ -8314,6 +8318,7 @@ paths:
                       - undatedCandidateCount
                       - results
                       - manualChangeCount
+                      - inclusionVersion
                       - review
                     additionalProperties: false
                   lastInvalidatedReview:
@@ -8671,6 +8676,10 @@ paths:
                         type: integer
                         minimum: 0
                         maximum: 9007199254740991
+                      inclusionVersion:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
                       review:
                         nullable: true
                         type: object
@@ -8707,6 +8716,7 @@ paths:
                       - undatedCandidateCount
                       - results
                       - manualChangeCount
+                      - inclusionVersion
                       - review
                     additionalProperties: false
                   lastInvalidatedReview:
@@ -10297,13 +10307,16 @@ paths:
       summary: "Continue with the current run: the import moves to validated (no
         decision per finding)"
       tags: *a7
-      description: "Only in analyzed and on the current run (runId). 409
-        validation_run_required without a run, validation_run_superseded for
-        another runId, blocking_validation_issue when provider_mismatch blocks
-        it (no override: cancel the import), no_matched_rows when no row matches
-        a transaction of the account and confirmEmptyBatch is not true (details
-        { rowsTotal, rowsUnmatched, unmatchedByReason, likelyWrongAccount };
-        #92)."
+      description: "Only in analyzed, on the current run (runId) and the inclusions
+        the analyst saw (inclusionVersion). In this order: 409
+        import_not_analyzed, validation_run_required without a run,
+        validation_run_superseded for another runId, inclusions_changed for
+        another inclusionVersion (details { runId, inclusionVersion,
+        currentInclusionVersion }; #53), blocking_validation_issue when
+        provider_mismatch blocks it (no override: cancel the import),
+        no_matched_rows when no row matches a transaction of the account and
+        confirmEmptyBatch is not true (details { rowsTotal, rowsUnmatched,
+        unmatchedByReason, likelyWrongAccount }; #92)."
       requestBody:
         required: true
         content:
@@ -10316,10 +10329,15 @@ paths:
                   minimum: 0
                   exclusiveMinimum: true
                   maximum: 9007199254740991
+                inclusionVersion:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
                 confirmEmptyBatch:
                   type: boolean
               required:
                 - runId
+                - inclusionVersion
               additionalProperties: false
       parameters:
         - schema:
@@ -10517,6 +10535,10 @@ paths:
                         type: integer
                         minimum: 0
                         maximum: 9007199254740991
+                      inclusionVersion:
+                        type: integer
+                        minimum: 0
+                        maximum: 9007199254740991
                       review:
                         nullable: true
                         type: object
@@ -10553,6 +10575,7 @@ paths:
                       - undatedCandidateCount
                       - results
                       - manualChangeCount
+                      - inclusionVersion
                       - review
                     additionalProperties: false
                   lastInvalidatedReview:

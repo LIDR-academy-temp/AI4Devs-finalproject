@@ -23,21 +23,22 @@ import { ACCOUNT_IDS } from '../../../catalog/application/__fakes__/in-memory.js
 import type { Scope } from '../../../catalog/domain/scope.js'
 import { type EmptyBatchFacts, emptyBatchOf } from '../../../imports/domain/empty-batch.js'
 import { ImportNotEditableError, NoMatchedRowsError } from '../../../imports/domain/errors.js'
+import { reviewRefusal } from '../../domain/review-guard.js'
 import type { CycleRanges, Occurrence, ValidationReport } from '../../domain/types.js'
 import {
-  BlockingValidationIssueError,
   ImportChangedError,
   ImportNotAnalyzedError,
   IssueAlreadyResolvedError,
   IssueNotResolvableError,
   OccurrenceNotEditableError,
   OccurrenceNotIncludableError,
-  ValidationRunRequiredError,
+  reviewRefusalError,
   ValidationRunSupersededError,
 } from '../errors.js'
 import { compareIssueOrder } from '../issue-order.js'
 import type {
   ImportRef,
+  ReviewDecision,
   ReviewEvent,
   StoredIssueDetail,
   StoredOccurrence,
@@ -106,6 +107,7 @@ export interface FakeRun {
   undatedCandidateCount: number
   results: StoredResult[]
   issues: FakeIssue[]
+  inclusionVersion: number
 }
 
 export interface FakeAuditEntry {
@@ -193,6 +195,13 @@ export class InMemoryRunRepository implements ValidationRunRepository {
     imported.updatedAt = this.tick()
   }
 
+  /** Another analyst changed an inclusion of the current run: its inclusionVersion goes up (#53). */
+  bumpInclusionVersion(importId: string): void {
+    const run = this.currentRunOf(importId)
+    if (!run) throw new Error(`no current run for ${importId}`)
+    run.inclusionVersion += 1
+  }
+
   /** Another writer confirmed on the import: its version changes. */
   touch(importId: string): void {
     this.requireImport(importId).updatedAt = this.tick()
@@ -261,6 +270,7 @@ export class InMemoryRunRepository implements ValidationRunRepository {
       pendingInRangeCount: report.pendingInRangeCount,
       undatedAdjustmentCount: report.undatedAdjustmentCount,
       undatedCandidateCount: report.undatedCandidateCount,
+      inclusionVersion: 0,
       results: report.results.map((r) => ({
         validationCode: r.code,
         outcome: r.outcome,
@@ -338,6 +348,7 @@ export class InMemoryRunRepository implements ValidationRunRepository {
       manualChangeCount:
         occurrences.filter((o) => o.includeInSettlement !== o.defaultIncluded).length +
         run.issues.filter((i) => i.resolvedBy !== null).length,
+      inclusionVersion: run.inclusionVersion,
     }
   }
 
@@ -445,6 +456,7 @@ export class InMemoryRunRepository implements ValidationRunRepository {
     if (includeInSettlement && blocked) throw new OccurrenceNotIncludableError(blocked)
     const previousStatus = imported.status
     Object.assign(target, { includeInSettlement, changedBy: userId, changedAt: now })
+    run.inclusionVersion += 1
     imported.updatedAt = now
     this.audit.push({
       userId,
@@ -457,6 +469,7 @@ export class InMemoryRunRepository implements ValidationRunRepository {
         importId: run.importId,
         from: !includeInSettlement,
         to: includeInSettlement,
+        inclusionVersion: run.inclusionVersion,
       },
       at: now,
     })
@@ -504,20 +517,18 @@ export class InMemoryRunRepository implements ValidationRunRepository {
     })
   }
 
-  async review(importId: string, runId: number, userId: number, now: Date, confirmEmptyBatch: boolean): Promise<void> {
+  async review(importId: string, decision: ReviewDecision, userId: number, now: Date): Promise<void> {
+    const { runId, confirmEmptyBatch } = decision
     this.beforeSave?.()
     const imported = this.requireImport(importId)
     if (imported.status !== 'analyzed') throw new ImportNotAnalyzedError(imported.status)
     const current = this.currentRunOf(importId)
-    if (!current) throw new ValidationRunRequiredError()
-    if (current.runId !== runId) throw new ValidationRunSupersededError(runId, current.runId)
-    const blocked = current.results.filter((r) => r.outcome === 'blocked')
-    if (blocked.length > 0)
-      throw new BlockingValidationIssueError(
-        runId,
-        blocked.map((r) => r.validationCode),
-        current.issues.filter((i) => i.blocking).map((i) => i.issueId),
-      )
+    // The same guard and order as the database (review-inclusion-version D4).
+    const refusal = reviewRefusal(decision, current ?? null)
+    if (refusal || !current) {
+      const blocking = current?.issues.filter((i) => i.blocking).map((i) => i.issueId)
+      throw reviewRefusalError(refusal ?? { kind: 'run_required' }, decision, blocking)
+    }
     // Same order as the database: after the run checks (#92, design D2).
     const empty = emptyBatchOf(this.emptyBatchFacts.get(importId) ?? WITH_MATCHED_ROWS)
     if (empty.requiresConfirmation && !confirmEmptyBatch) throw new NoMatchedRowsError(empty.details)
@@ -534,6 +545,7 @@ export class InMemoryRunRepository implements ValidationRunRepository {
         changedOccurrences: current.issues
           .flatMap((i) => i.occurrences)
           .filter((o) => o.includeInSettlement !== o.defaultIncluded).length,
+        inclusionVersion: current.inclusionVersion,
         ...(empty.requiresConfirmation ? { emptyBatchConfirmed: true } : {}),
       },
       at: now,

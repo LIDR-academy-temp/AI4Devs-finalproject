@@ -298,7 +298,12 @@ describe('batch-wrong-account: a batch with batch fees only', () => {
     const run = await flow.call('POST', `/imports/${importId}/validations`)
     expect(run.statusCode, run.body).toBe(201)
     runId = run.json().run.runId as number
-    const review = await flow.call('POST', `/imports/${importId}/review`, { runId, confirmEmptyBatch: true })
+    const inclusionVersion = run.json().run.inclusionVersion as number
+    const review = await flow.call('POST', `/imports/${importId}/review`, {
+      runId,
+      inclusionVersion,
+      confirmEmptyBatch: true,
+    })
     expect(review.statusCode, review.body).toBe(200)
   })
 

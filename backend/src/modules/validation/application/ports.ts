@@ -105,6 +105,15 @@ export interface StoredRun {
   results: StoredResult[]
   /** Occurrences whose inclusion differs from the default plus findings resolved by hand (D16). */
   manualChangeCount: number
+  /** Applied inclusion changes of the run (#53). */
+  inclusionVersion: number
+}
+
+/** What POST review decides on: the run and the inclusions the analyst saw, and the empty batch confirmation. */
+export interface ReviewDecision {
+  runId: number
+  inclusionVersion: number
+  confirmEmptyBatch: boolean
 }
 
 /** Milliseconds of each phase of the write of a run, for the log (bench of design D14). */
@@ -171,21 +180,19 @@ export interface ValidationRunRepository {
   findOccurrence(scope: Scope, occurrenceId: string): Promise<{ occurrenceId: string; issueId: number } | null>
   /**
    * In one transaction (D9): guard on Import (analyzed or validated, advances updatedAt), current run, current_import,
-   * same value → nothing written, rule of cycle R, the change with its author, AuditLog, and back to analyzed with the
-   * review invalidated when it was validated. Any refusal rolls the whole transaction back.
+   * same value → nothing written, rule of cycle R, the change with its author, the run's inclusionVersion + 1, AuditLog,
+   * and back to analyzed with the review invalidated when it was validated. Any refusal rolls the whole transaction back.
    */
   setInclusion(occurrenceId: string, includeInSettlement: boolean, userId: number, now: Date): Promise<void>
   /** One conditioned UPDATE (persistent, resolvable type, current run) plus its AuditLog row, in one transaction. */
   resolveIssue(issueId: number, note: string, userId: number, now: Date): Promise<void>
   /**
-   * In one transaction (D7): guard on Import (analyzed), current run read under the lock (none → required; another →
-   * superseded), no blocked result, `validated` and the AuditLog `import.review` with the counts.
+   * In one transaction (D7): guard on Import (analyzed), current run read under the lock and judged by reviewRefusal
+   * (none → required; another runId → superseded; another inclusionVersion → inclusions_changed; blocked), then an
+   * import without matched rows of the account's provider needs `confirmEmptyBatch` (no_matched_rows, #92), and at last
+   * `validated` and the AuditLog `import.review` with the counts and the approved inclusionVersion.
    */
-  /**
-   * The decision on the run; inside its transaction, after the run and blocking checks, an import without matched
-   * rows of the account's provider needs `confirmEmptyBatch` (409 no_matched_rows otherwise, #92).
-   */
-  review(importId: string, runId: number, userId: number, now: Date, confirmEmptyBatch: boolean): Promise<void>
+  review(importId: string, decision: ReviewDecision, userId: number, now: Date): Promise<void>
 }
 
 /** An occurrence as stored; the service adds what the caller may do with it. */

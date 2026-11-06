@@ -61,7 +61,12 @@ async function run(importId: string) {
   return ValidationRunView.parse(res.json())
 }
 
-const review = (importId: string, runId: number) => flow.call('POST', `/imports/${importId}/review`, { runId })
+/** POST review on a run with the inclusions the screen would show now (an older runId still answers superseded). */
+const review = async (importId: string, runId: number) =>
+  flow.call('POST', `/imports/${importId}/review`, {
+    runId,
+    inclusionVersion: await flow.inclusionVersionOf(importId),
+  })
 
 async function current(importId: string) {
   return ValidationRunView.parse((await flow.call('GET', `/imports/${importId}/validations`)).json())
@@ -178,7 +183,8 @@ describe('review of an import without matched rows (batch-wrong-account)', () =>
     const detail = await flow.analyzedSample('batch-wrong-account')
     const { run: fresh } = await run(detail.importId)
 
-    for (const body of [{ runId: fresh!.runId }, { runId: fresh!.runId, confirmEmptyBatch: false }]) {
+    const seen = { runId: fresh!.runId, inclusionVersion: fresh!.inclusionVersion }
+    for (const body of [seen, { ...seen, confirmEmptyBatch: false }]) {
       const res = await flow.call('POST', `/imports/${detail.importId}/review`, body)
       expect(res.statusCode, res.body).toBe(409)
       expect(res.json()).toMatchObject({
@@ -201,6 +207,7 @@ describe('review of an import without matched rows (batch-wrong-account)', () =>
 
     const res = await flow.call('POST', `/imports/${detail.importId}/review`, {
       runId: fresh!.runId,
+      inclusionVersion: fresh!.inclusionVersion,
       confirmEmptyBatch: true,
     })
 
@@ -216,6 +223,7 @@ describe('review of an import without matched rows (batch-wrong-account)', () =>
 
     const res = await flow.call('POST', `/imports/${detail.importId}/review`, {
       runId: fresh!.runId,
+      inclusionVersion: fresh!.inclusionVersion,
       confirmEmptyBatch: true,
     })
 
@@ -288,7 +296,10 @@ describe('review and run overlapping (D4)', () => {
       log: { info: () => {} },
     })
     const pending = pausedReview
-      .review(ANALYST_SCOPE, flow.userIds.analyst, importId, first.run!.runId)
+      .review(ANALYST_SCOPE, flow.userIds.analyst, importId, {
+        runId: first.run!.runId,
+        inclusionVersion: first.run!.inclusionVersion,
+      })
       .catch((e: unknown) => e)
     await g.arrived
 
