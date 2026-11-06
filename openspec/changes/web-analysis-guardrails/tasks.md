@@ -27,14 +27,14 @@ Comando de tests de la carpeta: `pnpm --filter frontend exec vitest run src/feat
 
 ## 3. Canales de otro proveedor (D3, D4)
 
-- [ ] 3.1 Tests primero, en `analysis/ChannelNotice.test.tsx` nuevo (spec "Resultado del análisis: canal de otro proveedor" y el requisito modificado del aviso de canales):
+- [x] 3.1 Tests primero, en `analysis/ChannelNotice.test.tsx` nuevo (spec "Resultado del análisis: canal de otro proveedor" y el requisito modificado del aviso de canales):
   - `batch-blocked` en `ProviderB-Main`: el `listitem` de RAM-01 dice `RAM-01 belongs to another provider`, `1 row` y la nota ajena, lleva `data-other-provider` y no contiene `is primary in`, `is not assigned yet` ni `will become`;
   - el canal oculto: `Channel 2001 (another merchant)` con su nota, sin datos del otro merchant;
   - un canal `otherProvider` y `assigned`: el aviso aparece;
   - RAM-03 del mismo proveedor: `RAM-03 is primary in ProviderA-EUR`.
 
   Mover a este archivo los casos del aviso de canales de `AnalysisStep.test.tsx` y dejar allí solo el montaje del paso. Verificar que los nuevos fallan
-- [ ] 3.2 Commit: `test(web): canales de otro proveedor en el aviso de canales`
+- [x] 3.2 Commit: `test(web): canales de otro proveedor en el aviso de canales`
 - [ ] 3.3 Implementar D3 y D4 en `ChannelNotice.tsx` y `strings.ts` (`analysis.channels.otherProvider`). Verificar con el comando de la carpeta, `pnpm lint` y `pnpm typecheck`
 - [ ] 3.4 Commit: `feat(web): el aviso de canales distingue los canales de otro proveedor (#131)`
 

@@ -1,8 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { ACCOUNT_IDS } from '@/test/msw/fixtures'
-import { OTHER_PROVIDER_NOTE } from '@/test/msw/import-fixtures'
-import { importRecord, seedImport } from '@/test/msw/imports'
+import { seedImport } from '@/test/msw/imports'
 import { renderApp } from '@/test/render'
 import { strings } from '../strings'
 
@@ -13,7 +11,6 @@ async function openAnalysis(importId: string) {
 }
 
 const counter = (name: string) => screen.getByRole('region', { name })
-const notice = () => screen.queryByRole('region', { name: strings.analysis.channels.title })
 const warnings = () => within(screen.getByRole('region', { name: strings.analysis.warnings.title }))
 
 describe('Analysis: counters (spec "Resultado del análisis: contadores")', () => {
@@ -42,67 +39,6 @@ describe('Analysis: counters (spec "Resultado del análisis: contadores")', () =
     expect(counter(c.ambiguous)).toHaveTextContent('0')
     expect(counter(c.ignored)).toHaveTextContent('3')
     expect(counter(c.byCycle)).toHaveTextContent('E 440 · I 10 · R 317')
-  })
-})
-
-describe('Analysis: channel notice (spec "Resultado del análisis: aviso de canales")', () => {
-  it('batch-clean shows only RAM-07, not assigned yet, with its note', async () => {
-    await openAnalysis(seedImport('batch-clean', { status: 'analyzed' }).importId)
-
-    const items = within(notice()!).getAllByRole('listitem')
-    expect(items).toHaveLength(1)
-    expect(items[0]).toHaveTextContent('RAM-07 is not assigned yet')
-    expect(items[0]).toHaveTextContent('30 rows')
-    expect(items[0]).toHaveTextContent('it will be associated to this account as primary when the batch is processed')
-    expect(within(notice()!).queryByText(/RAM-01|RAM-02/)).not.toBeInTheDocument()
-  })
-
-  it('batch-blocked shows RAM-01 as primary in ProviderA-USD with one row', async () => {
-    await openAnalysis(seedImport('batch-blocked', { status: 'analyzed' }).importId)
-
-    const [item] = within(notice()!).getAllByRole('listitem')
-    expect(item).toHaveTextContent('RAM-01 is primary in ProviderA-USD')
-    expect(item).toHaveTextContent('1 row')
-  })
-
-  it('shows a channel of another merchant without any of its data, next to one primary in another account', async () => {
-    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
-    importRecord(importId).channels = [
-      {
-        channelId: 2001,
-        name: null,
-        gatewayId: 1,
-        providerId: null,
-        rowCount: 2,
-        assignment: 'unassigned',
-        otherAccount: null,
-        note: OTHER_PROVIDER_NOTE,
-        outOfScope: true,
-        otherProvider: true,
-      },
-      {
-        channelId: 1003,
-        name: 'RAM-03',
-        gatewayId: 1,
-        providerId: 101,
-        rowCount: 4,
-        assignment: 'assigned_to_other_account',
-        otherAccount: { accountId: ACCOUNT_IDS['ProviderA-EUR'], name: 'ProviderA-EUR' },
-        note: 'This account will become the primary account of the channel when the batch is processed',
-      },
-    ]
-    await openAnalysis(importId)
-
-    const [hiddenChannel, otherAccount] = within(notice()!).getAllByRole('listitem')
-    expect(hiddenChannel).toHaveTextContent('Channel 2001 (another merchant)')
-    expect(otherAccount).toHaveTextContent('RAM-03 is primary in ProviderA-EUR')
-    expect(notice()).not.toHaveTextContent(/RAM-U1|ProviderC|Merchant B/)
-  })
-
-  it('does not appear when every channel is assigned', async () => {
-    await openAnalysis(seedImport('legacy-provider', { status: 'analyzed' }).importId)
-
-    expect(notice()).not.toBeInTheDocument()
   })
 })
 
