@@ -1,5 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { ACCOUNT_IDS } from '@/test/msw/fixtures'
+import { OTHER_PROVIDER_NOTE } from '@/test/msw/import-fixtures'
 import { importRecord, seedImport } from '@/test/msw/imports'
 import { renderApp } from '@/test/render'
 import { strings } from '../strings'
@@ -63,7 +65,7 @@ describe('Analysis: channel notice (spec "Resultado del análisis: aviso de cana
     expect(item).toHaveTextContent('1 row')
   })
 
-  it('shows channels and accounts of another merchant without any of their data', async () => {
+  it('shows a channel of another merchant without any of its data, next to one primary in another account', async () => {
     const { importId } = seedImport('batch-clean', { status: 'analyzed' })
     importRecord(importId).channels = [
       {
@@ -74,8 +76,9 @@ describe('Analysis: channel notice (spec "Resultado del análisis: aviso de cana
         rowCount: 2,
         assignment: 'unassigned',
         otherAccount: null,
-        note: null,
+        note: OTHER_PROVIDER_NOTE,
         outOfScope: true,
+        otherProvider: true,
       },
       {
         channelId: 1003,
@@ -84,20 +87,20 @@ describe('Analysis: channel notice (spec "Resultado del análisis: aviso de cana
         providerId: 101,
         rowCount: 4,
         assignment: 'assigned_to_other_account',
-        otherAccount: { accountId: null, name: null, outOfScope: true },
-        note: null,
+        otherAccount: { accountId: ACCOUNT_IDS['ProviderA-EUR'], name: 'ProviderA-EUR' },
+        note: 'This account will become the primary account of the channel when the batch is processed',
       },
     ]
     await openAnalysis(importId)
 
-    const [hiddenChannel, hiddenAccount] = within(notice()!).getAllByRole('listitem')
+    const [hiddenChannel, otherAccount] = within(notice()!).getAllByRole('listitem')
     expect(hiddenChannel).toHaveTextContent('Channel 2001 (another merchant)')
-    expect(hiddenAccount).toHaveTextContent('RAM-03 is primary in an account of another merchant')
+    expect(otherAccount).toHaveTextContent('RAM-03 is primary in ProviderA-EUR')
     expect(notice()).not.toHaveTextContent(/RAM-U1|ProviderC|Merchant B/)
   })
 
   it('does not appear when every channel is assigned', async () => {
-    await openAnalysis(seedImport('legacy-provider', { status: 'analyzed', account: 'ProviderA-USD' }).importId)
+    await openAnalysis(seedImport('legacy-provider', { status: 'analyzed' }).importId)
 
     expect(notice()).not.toBeInTheDocument()
   })

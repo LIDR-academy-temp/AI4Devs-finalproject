@@ -20,6 +20,7 @@ import {
   buildRows,
   defaultFileName,
   makeAmbiguousRow,
+  OTHER_PROVIDER_NOTE,
   type RowSheet,
   SAMPLE_ACCOUNTS,
   SAMPLE_LABELS,
@@ -437,6 +438,13 @@ function analyze(record: FakeImport) {
       note: null,
     },
   ]
+  // Like the API: a channel of another provider than the account's (another merchant's included) keeps its
+  // assignment and carries otherProvider with its own note (#92).
+  record.channels = record.channels.map((c) =>
+    ('outOfScope' in c && c.outOfScope === true) || c.providerId !== account.providerId
+      ? { ...c, otherProvider: true as const, note: OTHER_PROVIDER_NOTE }
+      : c,
+  )
   record.batchFees = facts?.batchFees ?? []
   record.status = 'analyzed'
   record.analyzedAt = now()

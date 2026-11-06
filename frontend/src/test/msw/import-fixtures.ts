@@ -96,6 +96,8 @@ type RowOverride = 'empty_id' | Partial<ImportRowItem>
 
 const UNASSIGNED_NOTE = 'Not assigned yet: it will be associated to this account as primary when the batch is processed'
 const OTHER_ACCOUNT_NOTE = 'This account will become the primary account of the channel when the batch is processed'
+/** The note of a channel of another provider than the account's: its rows are provider_mismatch (#92). */
+export const OTHER_PROVIDER_NOTE = 'Channel of another provider: its rows are not processed in this account'
 
 const notice = (
   channelId: number,
