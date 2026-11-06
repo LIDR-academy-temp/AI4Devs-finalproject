@@ -252,6 +252,8 @@ describe('the file limit of an import (spec import "Tope de archivos por import"
     })
     expect(await ctx.prisma.importFile.count({ where: { importId } })).toBe(9)
     expect(await filesOnDisk(importId)).toBe(9)
+    // Nothing of the refused request stays staged either (review-diff #135, point 2).
+    expect(await readdir(path.join(uploadDir, 'tmp'))).toEqual([])
 
     const oneMore = await upload(`/imports/${importId}/files`, [generated(10)])
     expect(oneMore.statusCode).toBe(200)
@@ -260,6 +262,7 @@ describe('the file limit of an import (spec import "Tope de archivos por import"
     const eleventh = await upload(`/imports/${importId}/files`, [generated(11)])
     expect(eleventh.statusCode).toBe(409)
     expect(eleventh.json()).toMatchObject({ code: 'import_file_limit_reached', details: { current: 10, adding: 1 } })
+    expect(await readdir(path.join(uploadDir, 'tmp'))).toEqual([])
     expect(await filesOnDisk(importId)).toBe(10)
   })
 })
