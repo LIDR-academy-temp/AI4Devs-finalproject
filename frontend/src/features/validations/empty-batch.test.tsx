@@ -113,6 +113,12 @@ describe('Analysis & Validations: a batch without matched rows (spec "batch sin 
     // Unticked, Continue waits for the box again: no review leaves without a confirmation made on this run.
     expect(continueButton()).toBeDisabled()
     expect(continueButton()).toHaveAccessibleDescription(REASON)
-    expect(validationRequests('review')).toHaveLength(0)
+
+    // Confirmed again on the new run, one review leaves, for the new run.
+    await user.click(box())
+    await user.click(continueButton())
+    expect(await header().findByText('validated')).toBeInTheDocument()
+    expect(validationRequests('review')).toHaveLength(1)
+    expect(validationRequests('review')[0]?.body).toEqual({ runId: runId + 1, confirmEmptyBatch: true })
   })
 })
