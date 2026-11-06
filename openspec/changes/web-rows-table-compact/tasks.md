@@ -31,7 +31,7 @@ En la rama `fix/web-rows-table-1024` (#132), con PR hacia `feature/entrega-3-MVP
 
 ## 4. PR
 
-- [ ] 4.1 Push y PR hacia `feature/entrega-3-MVP` con "Closes #132", con este change y las medidas. Vigilar el CI con `gh --jq` hasta que esté verde
+- [x] 4.1 Push y PR hacia `feature/entrega-3-MVP` con "Closes #132", con este change y las medidas. Vigilar el CI con `gh --jq` hasta que esté verde
 
 ## Workflow follow-up
 
