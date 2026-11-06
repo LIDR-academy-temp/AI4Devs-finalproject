@@ -22,12 +22,12 @@ En la rama `fix/web-rows-table-1024` (#132), con PR hacia `feature/entrega-3-MVP
 
 ## 3. Capturas y margen
 
-- [ ] 3.1 Comprobar que `e2e/screenshots/web-ambiguous-rows.ts` sigue leyendo solo la hoja de la primera celda, y ajustarlo si no. Verificar con `pnpm --filter e2e typecheck`
-- [ ] 3.2 Con turno de base de la persona (`pnpm db:up`, `pnpm db:seed` y `pnpm dev` levantados por ella), ejecutar `pnpm screenshots:web-ambiguous-rows`. Verificar:
+- [x] 3.1 Comprobar que `e2e/screenshots/web-ambiguous-rows.ts` sigue leyendo solo la hoja de la primera celda, y ajustarlo si no. Verificar con `pnpm --filter e2e typecheck`
+- [x] 3.2 Con turno de base de la persona (`pnpm db:up`, `pnpm db:seed` y `pnpm dev` levantados por ella), ejecutar `pnpm screenshots:web-ambiguous-rows`. Verificar:
   - que todas las medidas dicen `fits`;
   - que hay al menos 20 px de margen a 1024 px en las cuatro pantallas, con la medida temporal de D2 (sin commit);
   - las ocho capturas, mirándolas una a una.
-- [ ] 3.3 Actualizar `docs/wireframes/README.md` (la fila con la hoja, la columna **Amount**) y anotar el margen medido. Commit: `docs(web): capturas de web-ambiguous-rows a 1280 y 1024 px (#132)`
+- [x] 3.3 Actualizar `docs/wireframes/README.md` (la fila con la hoja, la columna **Amount**) y anotar el margen medido. Commit: `docs(web): capturas de web-ambiguous-rows a 1280 y 1024 px (#132)`
 
 ## 4. PR
 
