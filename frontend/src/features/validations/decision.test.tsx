@@ -2,7 +2,13 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { importRequests, seedImport } from '@/test/msw/imports'
 import { seedSettlement } from '@/test/msw/settlements'
-import { holdNextValidation, respondNext, seedValidationRun, validationRequests } from '@/test/msw/validations'
+import {
+  bumpInclusionVersion,
+  holdNextValidation,
+  respondNext,
+  seedValidationRun,
+  validationRequests,
+} from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
 import { OPENING } from '@/test/validation-screens'
 
@@ -55,7 +61,7 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
     expect(validationRequests('review')[0]).toMatchObject({
       method: 'POST',
       url: `/api/v1/imports/${importId}/review`,
-      body: { runId },
+      body: { runId, inclusionVersion: 0 },
     })
     expect(screen.getByText(`Run #${runId} · 2026-10-18 07:15 ET · admin`)).toBeInTheDocument()
     expect(decision().getByText('Reviewed by analyst · 2026-10-18 10:00 ET')).toBeInTheDocument()
@@ -88,7 +94,32 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
     await waitFor(() => expect(screen.getByText(new RegExp(`^Run #${newer.runId} `))).toBeInTheDocument())
     await user.click(continueButton())
     await waitFor(() => expect(validationRequests('review')).toHaveLength(2))
-    expect(validationRequests('review')[1]!.body).toEqual({ runId: newer.runId })
+    expect(validationRequests('review')[1]!.body).toEqual({ runId: newer.runId, inclusionVersion: 0 })
+  })
+
+  // Spec "Pantalla Analysis & Validations: inclusiones cambiadas al continuar" (review-inclusion-version D9).
+  it('409 inclusions_changed (another analyst changed one): says so, reads the run again and the next click sends the new version', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const { runId } = seedValidationRun(importId)
+    const { user } = await openAnalysis(importId)
+    // Another tab includes an occurrence after this screen loaded the run.
+    bumpInclusionVersion(importId)
+    const gets = validationRequests('get').length
+
+    await user.click(continueButton())
+
+    expect(
+      await screen.findByText('The inclusions changed since you loaded them. Check them and continue again.'),
+    ).toBeInTheDocument()
+    expect(validationRequests('review')[0]!.body).toEqual({ runId, inclusionVersion: 0 })
+    expect(header().getByText('analyzed')).toBeInTheDocument()
+    await waitFor(() => expect(validationRequests('get').length).toBeGreaterThan(gets))
+    await waitFor(() => expect(continueButton()).toBeEnabled())
+
+    await user.click(continueButton())
+
+    expect(await header().findByText('validated')).toBeInTheDocument()
+    expect(validationRequests('review')[1]!.body).toEqual({ runId, inclusionVersion: 1 })
   })
 
   it('409 blocking_validation_issue says so and reads the run again', async () => {
