@@ -94,6 +94,8 @@ export const ValidationRunSummary = z.object({
   results: z.array(ValidationResultView).length(ValidationCode.options.length),
   /** Occurrences whose inclusion differs from the default plus findings resolved by hand; lost on re-run (P6). */
   manualChangeCount: nonNegativeInt,
+  /** Applied inclusion changes of this run; POST review sends the one the analyst saw (#53). */
+  inclusionVersion: nonNegativeInt,
   /** The review of this run while it is valid. */
   review: RunReview.nullable(),
 })
@@ -253,7 +255,19 @@ export type ResolveIssueBody = z.infer<typeof ResolveIssueBody>
 /** Body of `POST /imports/{id}/review`: the decision is about the run the analyst saw. */
 export const ReviewBody = z.strictObject({
   runId: z.number().int().positive(),
+  /** The inclusionVersion of the run the analyst saw; another one answers 409 inclusions_changed (#53). */
+  inclusionVersion: z.number().int().nonnegative(),
   /** Required true when the import has no matched row of the account's provider (#92); ignored otherwise. */
   confirmEmptyBatch: z.boolean().optional(),
 })
 export type ReviewBody = z.infer<typeof ReviewBody>
+
+/** 409 inclusions_changed (POST review): an inclusion of the run changed after the analyst read it. */
+export const InclusionsChangedDetails = z.object({
+  runId: z.number().int().positive(),
+  /** The version the review sent. */
+  inclusionVersion: nonNegativeInt,
+  /** The version of the run now. */
+  currentInclusionVersion: nonNegativeInt,
+})
+export type InclusionsChangedDetails = z.infer<typeof InclusionsChangedDetails>

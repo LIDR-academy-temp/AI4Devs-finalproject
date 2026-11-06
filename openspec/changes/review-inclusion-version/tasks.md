@@ -18,9 +18,9 @@ Rama `feat/review-inclusion-version` (desde `origin/feature/entrega-3-MVP`), PR 
 
 ## 2. Contrato compartido (`@recon/shared`), test-first
 
-- [ ] 2.1 Tests en `packages/shared/src/validation.test.ts`: `ReviewBody` exige `inclusionVersion` entero `>= 0` (rechaza ausente, `-1`, `1.5` y claves desconocidas); `ValidationRunSummary` exige `inclusionVersion` no negativo; `ErrorDetails['inclusions_changed']` tiene `{ runId, inclusionVersion, currentInclusionVersion }`. Romper uno a propósito, verlo fallar y comitear en rojo. Commit: test(shared): versión de inclusiones en el review, y `git push`.
-- [ ] 2.2 Añadir los campos y los `details` en `packages/shared/src/validation.ts` (D6, D7). Verificar con `pnpm --filter @recon/shared test` en verde y listar los errores de `pnpm typecheck` en backend y frontend que resuelven los grupos 4 y 6.
-- [ ] 2.3 Commit: feat(shared): inclusionVersion en la corrida y en el cuerpo del review, y `git push`.
+- [x] 2.1 Tests en `packages/shared/src/validation.test.ts`: `ReviewBody` exige `inclusionVersion` entero `>= 0` (rechaza ausente, `-1`, `1.5` y claves desconocidas); `ValidationRunSummary` exige `inclusionVersion` no negativo; `ErrorDetails['inclusions_changed']` tiene `{ runId, inclusionVersion, currentInclusionVersion }`. Romper uno a propósito, verlo fallar y comitear en rojo. Commit: test(shared): versión de inclusiones en el review, y `git push`.
+- [x] 2.2 Añadir los campos y los `details` en `packages/shared/src/validation.ts` (D6, D7). Verificar con `pnpm --filter @recon/shared test` en verde y listar los errores de `pnpm typecheck` en backend y frontend que resuelven los grupos 4 y 6.
+- [x] 2.3 Commit: feat(shared): inclusionVersion en la corrida y en el cuerpo del review, y `git push`.
 
 ## 3. Guarda pura del review (dominio), test-first
 
