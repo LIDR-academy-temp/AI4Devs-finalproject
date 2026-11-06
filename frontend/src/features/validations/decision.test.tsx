@@ -15,6 +15,7 @@ import { OPENING } from '@/test/validation-screens'
 process.env.TZ = 'Asia/Tokyo'
 
 const BLOCKED = 'provider_mismatch: cancel the import and process it under the correct provider.'
+const SECOND = 'Recon_Template_ProviderB-Main_batch-issues.xlsx · APP · row 338'
 
 async function openAnalysis(importId: string) {
   const view = renderApp(`/imports/${importId}?step=analysis`, { as: 'analyst' })
@@ -120,6 +121,38 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
 
     expect(await header().findByText('validated')).toBeInTheDocument()
     expect(validationRequests('review')[1]!.body).toEqual({ runId, inclusionVersion: 1 })
+  })
+
+  it('Continue waits while the run is read again after my own inclusion change, then sends the version read again', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const { runId, issues } = seedValidationRun(importId)
+    const duplicate = issues.find(
+      (i) => i.validationCode === 'duplicate_in_batch' && i.transactionIdRaw === '441706751475644',
+    )!
+    const { user } = renderApp(
+      `/imports/${importId}?step=analysis&validation=duplicate_in_batch&issue=${duplicate.issueId}`,
+      {
+        as: 'analyst',
+      },
+    )
+    const drawer = within(await screen.findByRole('dialog', {}, OPENING))
+    // The PATCH answers; the reading of the run it makes stale stays on its way until released.
+    const reread = holdNextValidation('get')
+
+    await user.click(drawer.getByRole('switch', { name: `Included in settlement — ${SECOND}` }))
+    await reread.arrived
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+    expect(continueButton()).toBeDisabled()
+    expect(continueButton()).toHaveAccessibleDescription('Loading the latest results…')
+    reread.release()
+    await waitFor(() => expect(continueButton()).toBeEnabled())
+    await user.click(continueButton())
+
+    expect(await header().findByText('validated')).toBeInTheDocument()
+    expect(validationRequests('review')).toHaveLength(1)
+    expect(validationRequests('review')[0]!.body).toEqual({ runId, inclusionVersion: 1 })
   })
 
   it('409 blocking_validation_issue says so and reads the run again', async () => {
