@@ -75,7 +75,7 @@ const columns = helper.columns([
     // never wrap (#132).
     cell: ({ row }) => (
       <div className="flex w-24 flex-col">
-        <span className="max-w-24 whitespace-normal">{resultText(row.original)}</span>
+        <span className="whitespace-normal">{resultText(row.original)}</span>
         <AmbiguousCandidates row={row.original} />
       </div>
     ),

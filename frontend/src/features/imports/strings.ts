@@ -160,7 +160,6 @@ export const strings = {
         result: 'Result',
         status: 'Status',
         amount: 'Amount',
-        currency: 'Currency',
         channel: 'Channel',
         warnings: 'Warnings',
       },

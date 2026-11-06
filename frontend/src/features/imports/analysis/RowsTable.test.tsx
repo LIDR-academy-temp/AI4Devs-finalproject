@@ -245,14 +245,17 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
     const wrapsBetweenWords = (text: string, where: HTMLElement) => {
       const element = within(where).getByText(text)
       expect(element).toHaveClass('whitespace-normal')
-      expect(element.className).toMatch(/\bmax-w-/)
       expect(element.className).not.toMatch(/overflow-wrap:anywhere|break-all/)
+      return element
     }
-    wrapsBetweenWords('Unmatched · ID does not fit any gateway', cell(row, s.columns.result))
-    wrapsBetweenWords(
+    // The result wraps in the fixed width of its container, shared with the candidates.
+    const result = wrapsBetweenWords('Unmatched · ID does not fit any gateway', cell(row, s.columns.result))
+    expect(result.parentElement).toHaveClass('w-24')
+    const warnings = wrapsBetweenWords(
       'Status different from the sheet, Status of another cycle, ID of unusual length',
       cell(row, s.columns.warnings),
     )
+    expect(warnings).toHaveClass('max-w-40')
     // Checked on the element that holds the figure: every TableCell already has whitespace-nowrap.
     const id = cell(row, s.columns.id)
     expect(within(id).getByText('12345678901234567')).toHaveClass('whitespace-nowrap')
@@ -272,7 +275,8 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
     )
     await openRows(`/imports/${importId}?step=analysis&match=unmatched`)
 
-    expect(column(s.columns.currency)).toBe(-1)
+    const headers = within(screen.getByRole('table', { name: s.title })).getAllByRole('columnheader')
+    expect(headers.map((h) => h.textContent)).not.toContain('Currency')
     const byId = (id: string) => bodyRows().find((r) => cell(r, s.columns.id).textContent === id)!
     const amount = cell(byId('900'), s.columns.amount)
     expect(amount.textContent).toBe('50,000.0000 EUR')
