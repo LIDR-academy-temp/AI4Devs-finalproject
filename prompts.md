@@ -11,6 +11,8 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 5. [Historias de usuario](#5-historias-de-usuario)
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
+8. [Entrega 2 — Código funcional](#entrega-2--código-funcional)
+9. [Entrega 3 — Proyecto final](#entrega-3--proyecto-final)
 
 ---
 
@@ -542,7 +544,7 @@ To continue: Use /apply rhase-order to resume fromtask 2.3, or run integratleted
 
 - **Ajuste humano:** La migración inicial la escribió Claude Code a mano, y al contrastarla con los modelos vi que omitía las tablas de identidad. La hice regenerar con `alembic revision --autogenerate` (revisión `a7cfba21a0e9`) y la revisé a mano en busca de falsos renombrados. El test `test_migration_schema_sync` comprueba ahora que modelos y migración coinciden. Además, su informe daba 10 de 64 tareas, y el resto lo fui verificando bloque a bloque en lugar de fiarme del recuento.
 
-**Prompt 3**
+**Prompt 2**
 - **Herramienta:** Claude Code
 - **Prompt:**Sí, procede con 2.3 a 2.5. Antes, dos correcciones al plan:
 1. Las fechas están desplazadas: la entrega es el viernes 23 de octubre (el lunes es
@@ -611,7 +613,7 @@ Next move: Should I continue with 5.6-5.8 (master endpoints), or shall I impleme
 
 - **Ajuste humano:** (1) El plan que propuso Claude Code tenía las fechas desplazadas y no aplazaba nada; lo corregí en el propio prompt (la entrega es el viernes 23, no el 20) y aplacé 8.1-8.2 y 4.1-4.2. (2) Su informe marcaba como completadas 5.1-5.5 («API endpoints + Cognito»), pero al final reconocía que los repositorios de SQLAlchemy no existían, que el router no estaba registrado y que no había fixtures: tareas dadas por hechas sin test de integración. Por eso el Prompt 4 le exige marcarlas solo cuando pasen sus tests contra PostgreSQL real. (3) En la capa de dominio, `PurchaseOrderVersion` estaba duplicada en `repository.py` y `service.py`; la unifiqué como `@dataclass(frozen=True)` en `domain/entities/`. `CampaignPeriod` la dejé mutable a propósito: el spec solo exige inmutabilidad en la versión de la orden de compra.
 
-**Prompt 4**
+**Prompt 3**
 **Herramienta** Claude Code
 **Prompt**
 Implementa primero los repositorios de SQLAlchemy (CampaignRepositoryImpl,
@@ -683,7 +685,7 @@ Services running, schema migrated, backend ready for frontend. Proceed with 6.1-
     servicios externos; los errores de OAuth suelen ser genéricos y hay que mirar el
     recurso, no solo el código.
 
-**Prompt 5**
+**Prompt 4**
 **Herramienta** Claude Code
 **Prompt**
 Vamos con el frontend del change register-campaign-from-purchase-order (tareas 6.x de
@@ -736,7 +738,7 @@ Ejecuta la suite completa dos veces seguidas y pega los dos resúmenes reales. C
 pequeño con git add de rutas concretas.
 
 
-**Prompt 6**
+**Prompt 5**
 **Herramienta** Claude Code
 **Prompt**
 Bloque 2 del frontend (change register-campaign-from-purchase-order). Trabaja solo en
@@ -789,7 +791,7 @@ el resumen real (no un resumen tuyo). Al final, dime qué comprobar a mano en el
 
 - **Ajuste humano:** (1) Vitest estaba en verde pero `next build` no compilaba: Vitest no comprueba tipos. El fallo estaba en `client.ts`, con `detail` tipado como `string | ValidationError[]` pasado donde se esperaba un `string`. Añadí el script `typecheck` y la regla de que un bloque solo se da por completo si pasan `typecheck`, `vitest` dos veces y `docker compose build frontend`. (2) Las pantallas de sesión caducada y acceso denegado se crearon pero no quedaron conectadas a ninguna ruta, y los tests no lo detectaban; por eso el Prompt 7 empieza preguntando dónde están montadas. (3) `npm install` introducía cambios espurios en `package-lock.json` (campo `engines`); pasé a `npm ci`.
 
-**Prompt 7**
+**Prompt 6**
 **Herramienta** Claude Code
 **Prompt**
 Bloque 3 del frontend (change register-campaign-from-purchase-order): listado de
@@ -840,7 +842,7 @@ Vitest dos veces seguidas y `docker compose build frontend`. Pega el resultado r
 
 ---
 
-### Ajustes humanos de los bloques siguientes (pendientes de colocar bajo su prompt)
+**Ajustes Humanos**
 
 **Formulario de alta: errores de validación en pantalla (Zod 4)**
 - **Ajuste humano:** Al enviar el formulario vacío salía el JSON en bruto de los issues de Zod 4, con los 52 tests en verde: solo lo vi en el navegador. El primer arreglo (`9be3c1b`) mapeó cada issue a su campo. El segundo (`0106edc`) traducía el error de `scope` buscando el texto «Invalid enum value» y su informe hablaba de `superRefine`. Ese texto es de Zod 3 y el proyecto usa Zod 4 (`^4.6.7`), donde el mensaje real es «Invalid option: expected one of...». Lo localicé con `grep` (`message.includes("Invalid enum value")`) contrastando con el error que veía en pantalla, y exigí que el mensaje saliera del propio esquema y no de un texto en inglés de la librería. Verifiqué en el navegador que `scope` muestra «Selecciona el ámbito».
@@ -1380,7 +1382,7 @@ Commits pequeños con git add de rutas concretas: (1) variables, reinicio y tipo
 
 
 
-### Ajustes humanos de los bloques siguientes (pendientes de colocar bajo su prompt)
+**Ajustes Humanos**
 
 **Cambio de modelo: líneas, flights y reparto del volumen (bloques A, B y C)**
 **Ajuste humano**
@@ -1454,7 +1456,6 @@ El informe de Claude Code daba 211 tests antes de un bloque de frontend, pero mi
 
 **Patrón común (ampliación).** En tres ocasiones el frontend dio un bloque por terminado con los tests en verde y un fallo visible en el navegador: el botón de acceso perdido, el diálogo que no era modal y la aplicación sin estilos. En los tres casos lo detecté yo probando con datos reales. Conclusión de diseño: los tests con `fetch` simulado y `jsdom` verifican la lógica, no el diseño ni el comportamiento del navegador.
 
-## Entrega 3 — Proyecto final
 ### Change: campaign-margin-and-rebate-accrual
 **Prompt 1**
 **Herramienta** Claude Code
@@ -1588,25 +1589,55 @@ Cosas que debes saber de esta tanda:
 
 
 **Ajustes Humanos**
-Margen: un change escrito sobre el modelo antiguo Ajuste humano Antes de escribir código pedí a Claude Code una lectura del spec del margen, con citas y «no especificado» donde faltara. Descubrió que las cinco especificaciones, el diseño y las tareas estaban escritos sobre el modelo antiguo (la palabra «flight» no aparecía) y que el proposal afirmaba que sus dependencias no estaban archivadas cuando la de registro ya lo estaba. Reescribí el change sobre flights y fijé, antes de tocar código, lo que el spec no cubría: la unidad de cálculo es el flight; el ingreso no depende de la versión de la orden de compra (que puede ser nula); cada importe se redondea antes de restar; los días transcurridos llegan hasta D-1; las tasas se congelan en un cierre de mes explícito, idempotente y con orden, no al leer; y la tasa de sistema es un dato, no una constante. La lectura destapó además contradicciones del propio spec (congelar frente a recalcular, «computado a demanda» frente a «escrito en cada cálculo»), que resolví con ese cierre explícito.
 
-Dominio del margen: comprobar que los tests detectan lo que dicen Ajuste humano Claude Code ejecutó los tests con una base PostgreSQL propia y valores ficticios de Cognito en lugar del flujo del proyecto; desde entonces exijo el docker compose del worktree y que pare si falta algo. Para comprobar los tests de «sin float» y «un solo modelo para todos los canales», pedí mutaciones: inyectó un float y un literal «Deal» en el código y los tests fallaron. Los tests de dominio dependen de la base de datos por una fixture de sesión global: deuda anotada para el informe de pruebas.
+**Margen: un change escrito sobre el modelo antiguo**
+**Ajuste humano**
+Antes de escribir código pedí a Claude Code una lectura del spec del margen, con citas y «no especificado» donde faltara. Descubrió que las cinco especificaciones, el diseño y las tareas estaban escritos sobre el modelo antiguo (la palabra «flight» no aparecía) y que el proposal afirmaba que sus dependencias no estaban archivadas cuando la de registro ya lo estaba. Reescribí el change sobre flights y fijé, antes de tocar código, lo que el spec no cubría: la unidad de cálculo es el flight; el ingreso no depende de la versión de la orden de compra (que puede ser nula); cada importe se redondea antes de restar; los días transcurridos llegan hasta D-1; las tasas se congelan en un cierre de mes explícito, idempotente y con orden, no al leer; y la tasa de sistema es un dato, no una constante. La lectura destapó además contradicciones del propio spec (congelar frente a recalcular, «computado a demanda» frente a «escrito en cada cálculo»), que resolví con ese cierre explícito.
 
-Motor de rebate: preguntas antes del código y una instrucción mía retirada Ajuste humano Antes de escribir, Claude Code planteó cinco puntos donde mi prompt chocaba con la especificación. El más importante: yo había pedido que el rebate de un flight en curso se calculase sobre el ingreso ya prorrateado, y el dominio ya prorrateaba, con lo que se habría aplicado dos veces. Retiré mi instrucción: el motor calcula el rebate del flight completo y el dominio lo prorratea. Decidí además que el volumen de una excepción de agencia avanza el contador de esa agencia y no el del grupo (aplazando la reexpresión de lo ya congelado), que los tramos empiezan en cero, son contiguos y el último es abierto, y que un flight sin tarifa avanza el contador del grupo, supuesto marcado «a confirmar con Finanzas». Pedí una prueba con todas las permutaciones de entrada y otra con varios contadores mezclados; la segunda no existía y se añadió.
+**Dominio del margen: comprobar que los tests detectan lo que dicen**
+**Ajuste humano**
+Claude Code ejecutó los tests con una base PostgreSQL propia y valores ficticios de Cognito en lugar del flujo del proyecto; desde entonces exijo el docker compose del worktree y que pare si falta algo. Para comprobar los tests de «sin float» y «un solo modelo para todos los canales», pedí mutaciones: inyectó un float y un literal «Deal» en el código y los tests fallaron. Los tests de dominio dependen de la base de datos por una fixture de sesión global: deuda anotada para el informe de pruebas.
 
-Persistencia, cierre de mes y API: mutaciones que no mutaban Ajuste humano La entrega se hizo en dos tandas. Exigí que el cierre y la lectura en curso usen la misma función de dominio, con un test que compara al céntimo el importe antes y después del cierre y que comprueba que cambiar una tarifa después no mueve lo cerrado. Claude Code verificó sus tests con mutaciones: una, escrita con una sintaxis de sed que macOS no soporta, no cambió nada y pasó en verde (la repitió con Python y entonces falló); y al restaurar copias sobrescribió un fichero con otro del mismo nombre, y lo detectó porque el contenedor no arrancaba. Acepté la restricción de exclusión de tarifas con btree_gist, anotando el permiso que requiere en una base gestionada.
+**Motor de rebate: preguntas antes del código y una instrucción mía retirada**
+**Ajuste humano**
+Antes de escribir, Claude Code planteó cinco puntos donde mi prompt chocaba con la especificación. El más importante: yo había pedido que el rebate de un flight en curso se calculase sobre el ingreso ya prorrateado, y el dominio ya prorrateaba, con lo que se habría aplicado dos veces. Retiré mi instrucción: el motor calcula el rebate del flight completo y el dominio lo prorratea. Decidí además que el volumen de una excepción de agencia avanza el contador de esa agencia y no el del grupo (aplazando la reexpresión de lo ya congelado), que los tramos empiezan en cero, son contiguos y el último es abierto, y que un flight sin tarifa avanza el contador del grupo, supuesto marcado «a confirmar con Finanzas». Pedí una prueba con todas las permutaciones de entrada y otra con varios contadores mezclados; la segunda no existía y se añadió.
 
-Un número del ejemplo que no era un dato, y una alarma que no era real Ajuste humano El ejemplo de la especificación usaba un coste de medios que era un marcador, y lo usé en una prueba manual sin avisar de que no era un dato real. Mi pregunta sobre su origen mezcló dos cosas y sembró una duda de doble cómputo (que el coste completo de plataforma ya incluyera el de Adform). La despejó una hoja anonimizada de un mes cerrado de compra directa que aportó Finanzas: coste total igual a compra más extraprima más infraestructura, con las tres partidas restándose. Retiré la alarma.
+**Persistencia, cierre de mes y API: mutaciones que no mutaban**
+**Ajuste humano**
+La entrega se hizo en dos tandas. Exigí que el cierre y la lectura en curso usen la misma función de dominio, con un test que compara al céntimo el importe antes y después del cierre y que comprueba que cambiar una tarifa después no mueve lo cerrado. Claude Code verificó sus tests con mutaciones: una, escrita con una sintaxis de sed que macOS no soporta, no cambió nada y pasó en verde (la repitió con Python y entonces falló); y al restaurar copias sobrescribió un fichero con otro del mismo nombre, y lo detectó porque el contenedor no arrancaba. Acepté la restricción de exclusión de tarifas con btree_gist, anotando el permiso que requiere en una base gestionada.
 
-Dos meses reales de Finanzas cambiaron tres decisiones Ajuste humano Las hojas de un mes cerrado y de uno en curso se convirtieron en pruebas de aceptación (se leen de una carpeta ignorada por Git y se saltan si no existen): el dominio reproduce, con tolerancia de céntimos y sin ajustar el código, los importes y porcentajes de las campañas comparadas, y las diferencias con la hoja quedan explicadas. Cambiaron tres cosas. (1) below_cost pasó de «coste de medios mayor que el ingreso» a «margen final negativo»: la única campaña con pérdidas del mes cerrado no la marcaba la definición antigua. (2) Clasifiqué mal las campañas sin venta como «entrega sin orden de compra», cuando eran ventas a cero; acoté el alcance: una línea con precio 0 y volumen es una excepción de precio, y las de volumen 0 no se contemplan por ahora (en el mes en curso suponen en torno a una cuarta parte del coste, la mayor diferencia con la hoja). (3) El registro aceptaba CPM negativos, y mi premisa de que los rechazaba era falsa: lo detectó Claude Code al leer la validación. Hubo además una mutación que no detectaba nada (ignorar la tasa de plataforma por línea, porque todas las filas usaban la tasa de sistema), que se arregló con una línea sintética con otra tasa, y se excluyeron dos filas con ajustes manuales en la hoja de origen.
+**Un número del ejemplo que no era un dato, y una alarma que no era real**
+**Ajuste humano**
+El ejemplo de la especificación usaba un coste de medios que era un marcador, y lo usé en una prueba manual sin avisar de que no era un dato real. Mi pregunta sobre su origen mezcló dos cosas y sembró una duda de doble cómputo (que el coste completo de plataforma ya incluyera el de Adform). La despejó una hoja anonimizada de un mes cerrado de compra directa que aportó Finanzas: coste total igual a compra más extraprima más infraestructura, con las tres partidas restándose. Retiré la alarma.
 
-Qué son los «días servidos» de la hoja Ajuste humano La hoja devenga el margen provisional por días con impresiones servidas sobre días de la orden; AdOps360, por días transcurridos del contrato hasta D-1. Coinciden mientras la campaña sirva cada día, y a mes cerrado no hay diferencia. Si una campaña se pausa, la hoja devenga menos ingreso que AdOps360. La prueba de aceptación del mes en curso construye la fecha de corte a partir de los días servidos de la hoja, así que valida la fórmula pero no esta definición. Lo documento como diferencia conocida.
+**Dos meses reales de Finanzas cambiaron tres decisiones**
+**Ajuste humano**
+Las hojas de un mes cerrado y de uno en curso se convirtieron en pruebas de aceptación (se leen de una carpeta ignorada por Git y se saltan si no existen): el dominio reproduce, con tolerancia de céntimos y sin ajustar el código, los importes y porcentajes de las campañas comparadas, y las diferencias con la hoja quedan explicadas. Cambiaron tres cosas. (1) below_cost pasó de «coste de medios mayor que el ingreso» a «margen final negativo»: la única campaña con pérdidas del mes cerrado no la marcaba la definición antigua. (2) Clasifiqué mal las campañas sin venta como «entrega sin orden de compra», cuando eran ventas a cero; acoté el alcance: una línea con precio 0 y volumen es una excepción de precio, y las de volumen 0 no se contemplan por ahora (en el mes en curso suponen en torno a una cuarta parte del coste, la mayor diferencia con la hoja). (3) El registro aceptaba CPM negativos, y mi premisa de que los rechazaba era falsa: lo detectó Claude Code al leer la validación. Hubo además una mutación que no detectaba nada (ignorar la tasa de plataforma por línea, porque todas las filas usaban la tasa de sistema), que se arregló con una línea sintética con otra tasa, y se excluyeron dos filas con ajustes manuales en la hoja de origen.
 
-Errores del asistente en esta ronda Ajuste humano Tres comandos del asistente dieron resultados engañosos y los detecté al ejecutarlos o al contar líneas: un patrón ** que zsh rechaza, una variable sin comillas que zsh no divide y un sed con un límite de 12 líneas que cortó justo lo que buscaba. Además dio por ignorada una carpeta con importes reales antes de que existiera la regla en .gitignore. Dos veces, un resumen de Claude Code contó mal los commits o los tests (dijo cuatro y eran tres); lo vi al contrastarlo con git log y con el diff.
+**Qué son los «días servidos» de la hoja**
+**Ajuste humano**
+La hoja devenga el margen provisional por días con impresiones servidas sobre días de la orden; AdOps360, por días transcurridos del contrato hasta D-1. Coinciden mientras la campaña sirva cada día, y a mes cerrado no hay diferencia. Si una campaña se pausa, la hoja devenga menos ingreso que AdOps360. La prueba de aceptación del mes en curso construye la fecha de corte a partir de los días servidos de la hoja, así que valida la fórmula pero no esta definición. Lo documento como diferencia conocida.
 
-Patrón común (historia 3). Los datos reales cambiaron el diseño más que cualquier test: dos hojas de Finanzas corrigieron tres decisiones y desmontaron una alarma. La verificación que más valió fue la independiente: identidades comprobadas fila a fila sobre las hojas, mutaciones sobre los tests, y comparación del importe leído antes y después del cierre. Lo que menos valió fueron los resúmenes: contaron mal recuentos de commits y de tests y dieron por buena una prueba manual con un número de ejemplo. Los fallos de los tests verdes siguen apareciendo donde el test no puede mirar.
+**Errores del asistente en esta ronda**
+**Ajuste humano**
+Tres comandos del asistente dieron resultados engañosos y los detecté al ejecutarlos o al contar líneas: un patrón ** que zsh rechaza, una variable sin comillas que zsh no divide y un sed con un límite de 12 líneas que cortó justo lo que buscaba. Además dio por ignorada una carpeta con importes reales antes de que existiera la regla en .gitignore. Dos veces, un resumen de Claude Code contó mal los commits o los tests (dijo cuatro y eran tres); lo vi al contrastarlo con git log y con el diff.
 
-## Test Playwright
+**La primera captura del margen parecía un error de operaciones**
+**Ajuste humano**
+Al ver la vista de margen con datos de demostración, la campaña en curso mostraba un margen del −82 % y un ingreso menor que el coste de medios, y lo leí como un posible error de operaciones. Era un dato inventado mal elegido (coste de 9 € por mil frente a un CPM de venta de 6 €), pero la duda destapó que la pantalla enseñaba solo el ingreso devengado y no la orden de compra. Pedí separar el seed en tres casos (margen positivo, negativo y sin precio) y que la API devolviera la venta contratada, los días devengados y las impresiones entregadas, para que quien vea una cifra entienda de dónde sale. Comprobé a mano los importes (3.272,73 € devengados de 4.581,82 € contratados, 10 de 14 días) antes de dar el bloque por bueno.
+
+**El ingreso es el importe de la orden de compra, y se ajusta a final de mes**
+**Ajuste humano**
+Al ver una campaña de demostración con pérdidas y el ingreso por debajo del coste, pedí que la pantalla mostrara la orden de compra completa, y Finanzas aclaró que la facturación es por el importe de la orden de compra y que puede ajustarse a final de mes por infraentrega o por campañas paradas. La especificación ya prohibía usar lo entregado en el ingreso, pero no existía dónde registrar el ajuste. Calculé con el mes cerrado real el peso máximo posible (menos del 1 % de la venta y en torno al 1,6 % del margen) y decidí no construirlo en esta entrega: queda documentado como limitación, con la mejora diseñada (ajuste por flight mientras está pendiente de cierre, que el cierre congelaría), y la vista muestra lo entregado frente a lo contratado para detectar los candidatos.
+
+**Un arreglo mío generó dos fallos: el botón «Cerrar mes»**
+**Ajuste humano**
+Pedí desactivar «Cerrar mes» cuando no quedan flights pendientes. Claude Code señaló por su cuenta que, con un filtro de campaña, la decisión usaba un margen en caché que podía ser de otra campaña o de otro mes, y que el texto de ayuda decía algo falso. Le pedí un texto distinto y salió un segundo fallo, porque la caché seguía mezclando meses. Lo resolví quitando la caché: el cierre es una acción de todo el mes, así que con un filtro de campaña el botón está siempre desactivado y el diálogo avisa de que cierra todas las campañas. Aprendí a no parchear una decisión de diseño con otra.
+
+**Patrón común (historia 3).** Los datos reales cambiaron el diseño más que cualquier test: dos hojas de Finanzas corrigieron tres decisiones y desmontaron una alarma. La verificación que más valió fue la independiente: identidades comprobadas fila a fila sobre las hojas, mutaciones sobre los tests, y comparación del importe leído antes y después del cierre. Lo que menos valió fueron los resúmenes: contaron mal recuentos de commits y de tests y dieron por buena una prueba manual con un número de ejemplo. Los fallos de los tests verdes siguen apareciendo donde el test no puede mirar.
+
+
+### Pruebas de extremo a extremo (Playwright)
 **Prompt 1**
 **Herramienta** Claude Code
 **Prompt**
@@ -1847,3 +1878,43 @@ Con tu respuesta empiezo por 12C.1. Si eliges la 1, el cambio del frontend va an
 
 **Ajuste**
 Opción 1 con este orden. (1) Sigue ahora con exceptions.spec.ts y deja campaign.spec.ts en 12C.6 como bloqueado por el formulario. Los tres casos que cambian estado van al final, tras los de solo lectura, y se saltan con el motivo si el API no muestra las filas sembradas. (2) El arreglo del formulario lo haré yo en un bloque aparte, desde una sesión de frontend; no toques frontend/. (3) Anota en 12C.6 el motivo exacto del bloqueo y la lista de controles sin nombre accesible. Continúa con 12C.1 y para al terminar con git show --stat de todos los commits y cómo ejecutarlos.
+
+
+**Ajustes Humanos**
+**Los E2E pasaron contra el stack equivocado**
+**Ajuste humano**
+Mi primera prueba manual de la vista de margen no veía nada de finanzas: en el puerto 80 respondía el stack de otra carpeta, que no tenía esa página. Más tarde, los primeros E2E pasaron en verde contra ese mismo stack, porque la comprobación de identidad solo miraba que existiera la ruta `/margin`, y un error de Docker lo delató. Corregí `reset-data.sh` para abortar si otro proyecto de Compose publica el puerto 80 y el `globalSetup` para comparar la etiqueta del proyecto de Compose del contenedor que responde. Una ejecución en verde no prueba nada si no se sabe contra qué stack se ha hecho.
+
+**Sesión inyectada y renovación silenciosa**
+**Ajuste humano**
+Para los E2E decidí no automatizar el inicio de sesión de Cognito: se inyecta en `sessionStorage` una sesión construida desde un ID token real, y un único caso opcional prueba el login real. Antes de escribir código pedí un plan, y Claude Code detectó que la renovación silenciosa de `oidc-client-ts` fallaría con un token a punto de caducar y mostraría «Sesión caducada»; por eso `globalSetup` exige al menos diez minutos de vida. Anotamos también que el `access_token` inyectado es el propio ID token, válido solo mientras la aplicación no lo use.
+
+**El script del token: un límite de la herramienta y una restricción mía**
+**Ajuste humano**
+`get-token.sh` falló con un error de JSON de la CLI de AWS que el propio script atribuía a una contraseña incorrecta. Había pedido que la contraseña no se escribiera en ficheros ni apareciera en la lista de procesos; Claude Code demostró, con un endpoint local inexistente, que `aws --cli-input-json` no lee de la entrada estándar, y propuso llamar a Cognito desde Python con la biblioteca estándar. Acepté con condiciones (contraseña por `getpass`, endpoint alternativo solo en `localhost`, TLS nunca desactivado, errores clasificados sin imprimir la respuesta) y exigí un test con un servidor falso: 34 casos que fallaban con el script anterior. Antes probé la cuenta a mano, para separar «cuenta mala» de «script malo».
+
+**Selectores ambiguos y nombres accesibles**
+**Ajuste humano**
+Los E2E encontraron lo que los tests con jsdom no ven: `getByLabel("Campaña")` coincidía con el selector y con las tarjetas, y `getByRole("alert")` con el anunciador de rutas que Next.js inserta vacío en todas las páginas. Mi regla fue no escribir selectores frágiles. Por eso, cuando Claude Code informó de que casi todos los controles del formulario de campaña no tenían nombre accesible, `campaign.spec.ts` quedó bloqueado hasta arreglar la causa: un cambio de accesibilidad con 27 tests nuevos, antes de escribir la prueba.
+
+**Bloqueos que Claude Code planteó antes de escribir el spec**
+**Ajuste humano**
+Antes de escribir `campaign.spec.ts`, Claude Code se paró con tres bloqueos: no existe `GET /campaigns/{id}`, un caso con una campaña en el pasado bloquearía el cierre de otro spec, y el caso del CPM 0 dejaba un flight pendiente que nadie limpia. Decidí validar contra la respuesta del alta y la lista, crear la campaña del CPM 0 solo si el mes anterior no está cerrado y elegir siempre los maestros `DEMO`. La lectura independiente de los flights guardados queda como mejora aplazada.
+
+**El filtro del catálogo busca nombres, no identificadores**
+**Ajuste humano**
+El spec de excepciones falló solo en su última aserción: el mapeo creado al vincular no se encontraba porque `GET /dsp-catalog?q=` busca en los nombres y los identificadores del seed son números de nueve dígitos. Lo había anticipado, y se arregló cambiando cómo se localiza el mapeo (leer el catálogo mapeado y comparar la pareja), sin tocar la aserción. Los identificadores sintéticos empiezan por 99 para que nunca coincidan con los reales de Adform, y un test lo comprueba.
+
+**Treinta y ocho pruebas saltadas en verde**
+**Ajuste humano**
+La suite del backend salió en verde dos veces con 38 pruebas de aceptación saltadas: la imagen se había construido sin los ficheros privados de los meses reales. Solo lo vi leyendo el mensaje de salto. Desde entonces copio los ficheros antes de construir y compruebo que lo único saltado es el test de maestros. La imagen de desarrollo lleva esos datos dentro y no debe publicarse; la de producción no los lleva, y `verify_prod_images.sh` lo comprueba, con una mutación que demuestra que falla.
+
+**Comandos y fechas incorrectos del asistente**
+**Ajuste humano**
+El asistente me dio varios comandos engañosos que detecté al ejecutarlos: un patrón `**` que zsh rechaza, una variable sin comillas que zsh no divide, un `sed` con un límite que cortaba justo lo buscado, y una instrucción que daba por ignorada una carpeta con importes reales antes de que existiera la regla. También confundió la fecha en varios mensajes y generó un fichero de evidencia con un nombre que sobrescribió el anterior. Desde entonces los comandos son de solo lectura o fallan sin tocar nada si una condición no se cumple, y los nombres de evidencia llevan la fecha y la hora del sistema.
+
+**El README se escribió a partir de hechos del repositorio**
+**Ajuste humano**
+Tras comprobar que §3, §4 y §7 contradecían el código, no pedí al asistente que los reescribiera de memoria: ejecuté scripts de solo lectura que sacaron del repositorio el esquema real, las rutas, los parámetros, los textos de las tareas y ejemplos de la base de demostración. Una comparación mecánica entre el diagrama y la base de datos encontró cinco discrepancias que nadie había sospechado, y los parches fallan sin tocar nada si un ancla no coincide. El bloque de la PR 3 se calcula de los `tasks.md`, de modo que se puede regenerar.
+
+**Patrón común (pruebas y cierre).** Los E2E encontraron en pocos días lo que más de quinientos tests con datos simulados no veían: selectores ambiguos, un stack equivocado, controles sin nombre accesible y un filtro que no cubría identificadores. Lo que más valió fue verificar por una vía independiente (el API real frente a la pantalla, recuentos de base de datos, mutaciones sobre los propios tests) y exigir que cada parche fallara sin tocar nada si una condición no se cumplía. Los resúmenes de Claude Code volvieron a contar mal recuentos de commits y de tests; en cambio, se paró bien ante bloqueos reales y los planteó con alternativas en lugar de resolverlos en silencio.
