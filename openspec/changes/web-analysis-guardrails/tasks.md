@@ -12,7 +12,7 @@ Comando de tests de la carpeta: `pnpm --filter frontend exec vitest run src/feat
 
 ## 2. Desglose y aviso de cuenta equivocada en los contadores (D1, D2)
 
-- [ ] 2.1 Tests primero, en `analysis/Counters.test.tsx` nuevo (spec "Resultado del análisis: filas sin asociar por motivo" y "aviso de cuenta equivocada"):
+- [x] 2.1 Tests primero, en `analysis/Counters.test.tsx` nuevo (spec "Resultado del análisis: filas sin asociar por motivo" y "aviso de cuenta equivocada"):
   - `seedImport('batch-clean', { unmatched: 'id_format' })`: dentro de la sección `Unmatched`, un solo `listitem` `ID does not fit any gateway` con el mismo número que la tarjeta;
   - `batch-issues`: solo `No match 1`;
   - una fila `no_match` y otra `id_format`: los dos en ese orden, sin motivos en 0;
@@ -21,7 +21,7 @@ Comando de tests de la carpeta: `pnpm --filter frontend exec vitest run src/feat
   - sin el aviso con `no_match` y con `batch-clean`.
 
   Verificar que fallan
-- [ ] 2.2 Commit: `test(web): desglose de no asociadas y aviso de cuenta equivocada en Analysis`
+- [x] 2.2 Commit: `test(web): desglose de no asociadas y aviso de cuenta equivocada en Analysis`
 - [ ] 2.3 Implementar D1 y D2 en `Counters.tsx` y `strings.ts` (`analysis.counters.byReason`, `wrongAccountLabel`, `wrongAccount`). Verificar con el comando de la carpeta, `pnpm lint` y `pnpm typecheck`. Romper a propósito el orden de los motivos una vez y comprobar que el test falla
 - [ ] 2.4 Commit: `feat(web): desglose de no asociadas por motivo y aviso de cuenta equivocada en Analysis (#131)`
 
