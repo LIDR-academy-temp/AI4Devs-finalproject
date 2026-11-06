@@ -33,6 +33,13 @@ En la rama `fix/web-rows-table-1024` (#132), con PR hacia `feature/entrega-3-MVP
 
 - [x] 4.1 Push y PR hacia `feature/entrega-3-MVP` con "Closes #132", con este change y las medidas. Vigilar el CI con `gh --jq` hasta que esté verde
 
+## 5. Correcciones del review-diff de la #136
+
+- [x] 5.1 Tests primero: una hoja legacy larga se parte dentro de `w-28` y `· row N` no se separa (D3); el `whitespace-nowrap` del ID se comprueba en su span, no en el `<td>`. Verificado: el primero falla sin el arreglo y el segundo, rompiendo a propósito la clase del ID. Commit: `test(web): la hoja legacy larga se parte en su ancho y el ID se comprueba en su span (#132)`
+- [x] 5.2 Implementar D3 en `RowsTable.tsx` y `strings.ts`, y anotarla en el design. Commit: `fix(web): el nombre de la hoja se parte y "· row N" no se separa (#132)`
+- [x] 5.3 Quitar `columns.currency` y el `max-w-24` sobrante del resultado; el test comprueba que no hay cabecera `Currency` y el ancho del contenedor. Commit: `refactor(web): sin el texto Currency ni el max-w-24 sobrante en la tabla de filas`
+- [x] 5.4 Push y CI en verde. Commit: `docs(openspec): web-rows-table-compact con las correcciones del review-diff`
+
 ## Workflow follow-up
 
 - Review-diff en una sesión nueva.
