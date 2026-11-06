@@ -165,7 +165,7 @@ export const strings = {
         warnings: 'Warnings',
       },
       /** The row number, after the sheet in the Sheet · file cell (web-rows-table-compact D1). */
-      rowNo: (rowNo: number) => ` · row ${rowNo}`,
+      rowNo: (rowNo: number) => `· row ${rowNo}`,
       results: { matched: 'Matched', unmatched: 'Unmatched', ambiguous: 'Ambiguous', ignored: 'Ignored' },
       reasons: {
         no_match: 'No match',
