@@ -40,8 +40,8 @@ Comando de tests de la carpeta: `pnpm --filter frontend exec vitest run src/feat
 
 ## 4. Capturas (D7)
 
-- [ ] 4.1 Escribir `e2e/screenshots/web-analysis-guardrails.ts` y su script `screenshots:web-analysis-guardrails` en `e2e/package.json` y en el `package.json` raíz. Verificar con `pnpm --filter e2e typecheck` y `pnpm lint`, sin ejecutarlo
-- [ ] 4.2 Commit: `chore(e2e): script de capturas de web-analysis-guardrails`
+- [x] 4.1 Escribir `e2e/screenshots/web-analysis-guardrails.ts` y su script `screenshots:web-analysis-guardrails` en `e2e/package.json` y en el `package.json` raíz. Verificar con `pnpm --filter e2e typecheck` y `pnpm lint`, sin ejecutarlo
+- [x] 4.2 Commit: `chore(e2e): script de capturas de web-analysis-guardrails`
 - [ ] 4.3 **Con turno de base de la persona** (ella levanta `pnpm db:up`, `pnpm db:seed` y `pnpm dev`), ejecutar `pnpm screenshots:web-analysis-guardrails`. Verificar:
   - que todas las medidas dicen `fits` a 1280 y 1024 px, incluida la tabla de filas (#132);
   - que la captura de `batch-wrong-account` muestra `Unmatched 12` e `ID does not fit any gateway 12` (de `expected.json`) y el aviso;
