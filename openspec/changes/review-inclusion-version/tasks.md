@@ -24,9 +24,9 @@ Rama `feat/review-inclusion-version` (desde `origin/feature/entrega-3-MVP`), PR 
 
 ## 3. Guarda pura del review (dominio), test-first
 
-- [ ] 3.1 Tests de `backend/src/modules/validation/domain/review-guard.test.ts` para `reviewRefusal` (D4): sin corrida → `run_required`; otro `runId` → `run_superseded` aunque la versión también difiera; mismo `runId` y otra versión → `inclusions_changed` con `currentInclusionVersion`; versión caducada en una corrida bloqueada → `inclusions_changed`, no `blocked`; corrida bloqueada con versión vigente → `blocked` con los códigos en el orden de `ValidationCode`; todo en orden → `null`. Romper uno a propósito (por ejemplo, invertir dos comprobaciones), verlo fallar y comitear en rojo. Commit: test(validation): orden de las negativas del review con la versión de inclusiones, y `git push`.
-- [ ] 3.2 Implementar `review-guard.ts`. Verificar con `pnpm --filter @recon/backend exec vitest run src/modules/validation/domain/review-guard.test.ts` en verde.
-- [ ] 3.3 Commit: feat(validation): guarda pura del review, y `git push`.
+- [x] 3.1 Tests de `backend/src/modules/validation/domain/review-guard.test.ts` para `reviewRefusal` (D4): sin corrida → `run_required`; otro `runId` → `run_superseded` aunque la versión también difiera; mismo `runId` y otra versión → `inclusions_changed` con `currentInclusionVersion`; versión caducada en una corrida bloqueada → `inclusions_changed`, no `blocked`; corrida bloqueada con versión vigente → `blocked` con los códigos en el orden de `ValidationCode`; todo en orden → `null`. Romper uno a propósito (por ejemplo, invertir dos comprobaciones), verlo fallar y comitear en rojo. Commit: test(validation): orden de las negativas del review con la versión de inclusiones, y `git push`.
+- [x] 3.2 Implementar `review-guard.ts`. Verificar con `pnpm --filter @recon/backend exec vitest run src/modules/validation/domain/review-guard.test.ts` en verde.
+- [x] 3.3 Commit: feat(validation): guarda pura del review, y `git push`.
 
 ## 4. Servicio, repositorio y API, test-first
 
