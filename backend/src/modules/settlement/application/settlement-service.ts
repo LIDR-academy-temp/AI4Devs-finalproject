@@ -68,7 +68,7 @@ export class SettlementService {
       }),
     )
     if (plan.batchFeeError) throw new BatchFeeInvalidError(plan.batchFeeError.index, plan.batchFeeError.reason)
-    return previewOf(plan, importId, context.account.accountId, run.runId, scope, empty)
+    return previewOf(plan, importId, context.account.accountId, run.runId, empty, scope)
   }
 
   /** Processing in one transaction (the repository); answers the attempt read back from what was written. */
@@ -99,8 +99,9 @@ export function previewOf(
   importId: string,
   accountId: string,
   runId: number,
+  /** Always judged: a preview that forgot it would tell an empty batch as one that needs no confirmation (#92). */
+  empty: EmptyBatch,
   scope?: Scope,
-  empty?: EmptyBatch,
 ): SettlementPreview {
   const { summary } = plan
   const count = (cycle: string) => plan.movements.filter((m) => m.cycle === cycle).length
@@ -136,7 +137,7 @@ export function previewOf(
     payableBreakdown: summary.payableBreakdown,
     skipped: plan.skipped,
     warnings: plan.warnings,
-    requiresEmptyBatchConfirmation: empty?.requiresConfirmation ?? false,
-    emptyBatch: empty?.requiresConfirmation ? empty.details : null,
+    requiresEmptyBatchConfirmation: empty.requiresConfirmation,
+    emptyBatch: empty.requiresConfirmation ? empty.details : null,
   }
 }
