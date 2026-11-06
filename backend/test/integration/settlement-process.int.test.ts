@@ -20,6 +20,7 @@ import {
   type AccountChannelRow,
   expectedOf,
   ImportFlow,
+  removeImportsFrom,
   restoreAccountChannels,
   snapshotAccountChannels,
 } from './import-flow.js'
@@ -43,6 +44,16 @@ beforeAll(async () => {
   ctx = await createTestApp({ UPLOAD_DIR: uploadDir })
   flow = new ImportFlow(ctx)
   await flow.init()
+  // What an interrupted run left behind: attempts with the numbers of this file (9801–9803), with their imports
+  // (review-diff #135, point 6; the same as settlement-concurrency with 9811–9824).
+  const leftovers = await ctx.prisma.settlementBatch.findMany({
+    where: {
+      batchNo: { gte: 9801, lte: 9803 },
+      accountId: { in: fixtureIds([flow.accountIds['ProviderA-USD'], flow.accountIds['ProviderB-Main']], 'accounts') },
+    },
+    select: { importId: true },
+  })
+  await removeImportsFrom(ctx.prisma, [...new Set(leftovers.map((b) => b.importId))])
   channels = await snapshotAccountChannels(ctx.prisma)
 })
 
