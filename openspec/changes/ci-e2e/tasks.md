@@ -4,12 +4,12 @@ Ninguna tarea usa la base local. Lo que necesita SQL Server se comprueba en la C
 
 ## 1. Configuración de Playwright
 
-- [ ] 1.1 `e2e/playwright.config.ts` (D7): `forbidOnly: !!process.env.CI` y, solo en la CI, el reporter `github` además de `list` y `html`; actualizar el comentario de cabecera. Sin `webServer` y sin cambiar `workers`, `retries`, `trace`, `video` ni `screenshot`. Verificar: `pnpm --filter @recon/e2e typecheck` y `pnpm lint` en verde.
-- [ ] 1.2 `e2e/global-setup.ts` (D7): con `CI` definido, el mensaje remite a los pasos del workflow y a sus logs; sin `CI`, el mensaje de siempre. Verificar, sin base y sin app levantada:
+- [x] 1.1 `e2e/playwright.config.ts` (D7): `forbidOnly: !!process.env.CI` y, solo en la CI, el reporter `github` además de `list` y `html`; actualizar el comentario de cabecera. Sin `webServer` y sin cambiar `workers`, `retries`, `trace`, `video` ni `screenshot`. Verificar: `pnpm --filter @recon/e2e typecheck` y `pnpm lint` en verde.
+- [x] 1.2 `e2e/global-setup.ts` (D7): con `CI` definido, el mensaje remite a los pasos del workflow y a sus logs; sin `CI`, el mensaje de siempre. Verificar, sin base y sin app levantada:
   - `pnpm test:e2e` falla antes del primer paso con el mensaje de `pnpm db:up`, `pnpm db:seed` y `pnpm dev`;
   - con `CI=1 pnpm test:e2e` sale el mensaje de la CI;
   - se rompe a propósito la condición (mensaje de la CI siempre), se ve fallar la primera comprobación y se restaura con `cp` desde el scratchpad.
-- [ ] 1.3 Commit: chore(e2e): configuración de Playwright para la CI, y `git push`.
+- [x] 1.3 Commit: chore(e2e): configuración de Playwright para la CI, y `git push`.
 
 ## 2. Job `e2e` en la CI
 
