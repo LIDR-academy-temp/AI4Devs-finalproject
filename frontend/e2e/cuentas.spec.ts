@@ -37,6 +37,7 @@ test.describe('Cuentas: registro, recupero y bajas con los correos de Mailpit', 
 
     await page.goto('/acceso')
     await page.getByRole('link', { name: 'Crear una cuenta' }).click()
+    await expect(page.getByRole('heading', { name: 'Crear una cuenta' })).toBeVisible()
     await page.getByLabel('Nombre').fill('Ana')
     await page.getByLabel('Apellido').fill('Pérez')
     await page.getByLabel('Correo').fill(email)
@@ -81,8 +82,10 @@ test.describe('Cuentas: registro, recupero y bajas con los correos de Mailpit', 
 
     await page.goto('/acceso')
     await page.getByRole('link', { name: '¿Olvidó su contraseña?' }).click()
+    // El ingreso también tiene un campo "Correo": hay que esperar a que cambie la pantalla.
+    await expect(page.getByRole('heading', { name: 'Recuperar el acceso' })).toBeVisible()
     await page.getByLabel('Correo').fill(email)
-    await page.getByRole('button').click()
+    await page.getByRole('button', { name: 'Enviarme un enlace' }).click()
     await expect(page.getByRole('status')).toBeVisible()
 
     const correo = await esperarCorreo(email, ASUNTO_RECUPERO)
