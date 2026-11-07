@@ -20,6 +20,7 @@ params:path {
 script:post-response {
   if (res.status === 201) {
     bru.setVar('setRunId', res.body.run.runId);
+    bru.setVar('setInclusionVersion', res.body.run.inclusionVersion);
   }
 }
 

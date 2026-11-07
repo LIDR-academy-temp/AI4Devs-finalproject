@@ -25,7 +25,7 @@ body:json {
 }
 
 script:pre-request {
-  req.setBody({ runId: bru.getVar('wraRunId'), inclusionVersion: 0, confirmEmptyBatch: true });
+  req.setBody({ runId: bru.getVar('wraRunId'), inclusionVersion: bru.getVar('wraInclusionVersion'), confirmEmptyBatch: true });
 }
 
 tests {
