@@ -9,7 +9,8 @@
 // (RAM-01 is a channel of another provider). Neither is validated nor processed, so no batch number is used, and both
 // are cancelled with a reason at the end, so the run can repeat without seeding. It never uses batch-clean (#111). Every
 // screen is captured and measured at 1280 and at 1024 px: the run fails if the page scrolls sideways or a table scrolls
-// inside its card (the rows table of Analysis included, #132).
+// inside its card (the rows table of Analysis included, #132), or if, at 1280 px, an ID of the rows table takes more
+// than one line (the UUIDs of batch-wrong-account may wrap after a hyphen only where the width is short, design D8).
 import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { type Browser, chromium, expect, type Page } from '@playwright/test'
@@ -91,6 +92,16 @@ async function overflows(page: Page): Promise<string[]> {
       if (px <= 0) continue
       const which = table.querySelector('table[aria-label="Rows"]') ? 'rows table' : 'table'
       found.push(`${which} ${px} px wider than its card`)
+    }
+    // An ID with hyphens may wrap after a hyphen when the width is short (design D8), but at 1280 px there is room
+    // for it on one line: wrapped there, the table would be squeezing it for nothing.
+    const rows = document.querySelector<HTMLTableElement>('table[aria-label="Rows"]')
+    if (rows && window.innerWidth >= 1280) {
+      const idColumn = [...rows.tHead!.rows[0]!.cells].findIndex((th) => th.textContent === 'ID')
+      const wrapped = [...rows.tBodies[0]!.rows].filter(
+        (tr) => (tr.cells[idColumn]?.firstElementChild?.getClientRects().length ?? 0) > 1,
+      )
+      if (wrapped.length > 0) found.push(`${wrapped.length} IDs of the rows table on more than one line`)
     }
     for (const dialog of document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]')) {
       const box = dialog.getBoundingClientRect()

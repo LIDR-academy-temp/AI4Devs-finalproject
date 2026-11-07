@@ -42,12 +42,12 @@ Comando de tests de la carpeta: `pnpm --filter frontend exec vitest run src/feat
 
 - [x] 4.1 Escribir `e2e/screenshots/web-analysis-guardrails.ts` y su script `screenshots:web-analysis-guardrails` en `e2e/package.json` y en el `package.json` raíz. Verificar con `pnpm --filter e2e typecheck` y `pnpm lint`, sin ejecutarlo
 - [x] 4.2 Commit: `chore(e2e): script de capturas de web-analysis-guardrails`
-- [ ] 4.5 (D8, tras la primera pasada de la 4.3: la tabla de filas desbordaba 79 px a 1024 px con los IDs UUID de `batch-wrong-account`) Tests primero, en `analysis/RowsTable.test.tsx` (spec "Resultado del análisis: ID con guiones en la tabla de filas"):
+- [x] 4.5 (D8, tras la primera pasada de la 4.3: la tabla de filas desbordaba 79 px a 1024 px con los IDs UUID de `batch-wrong-account`) Tests primero, en `analysis/RowsTable.test.tsx` (spec "Resultado del análisis: ID con guiones en la tabla de filas"):
   - un UUID: su `<span>` es `whitespace-normal`, sin `overflow-wrap` ni `break-all`, con `innerHTML` `df14616d-<wbr>4b26-<wbr>4ffb-<wbr>9984-<wbr>72717ebff6a6` y el texto entero;
   - un ID de 17 cifras: `whitespace-nowrap` y sin `<wbr>`.
 
   Verificar que el primero falla. Commit: `test(web): un ID con guiones se parte solo por los guiones en la tabla de filas`
-- [ ] 4.6 Implementar D8 en `RowsTable.tsx`. Verificar con el comando de la carpeta, `pnpm lint` y `pnpm typecheck`. Romper a propósito el `<wbr>` una vez y comprobar que el test falla. Añadir al script de capturas la comprobación de que a 1280 px cada ID de la tabla de filas cabe en una línea. Commit: `fix(web): los IDs con guiones se parten por los guiones y la tabla de filas cabe a 1024 px (#131)`
+- [x] 4.6 Implementar D8 en `RowsTable.tsx`. Verificar con el comando de la carpeta, `pnpm lint` y `pnpm typecheck`. Romper a propósito el `<wbr>` una vez y comprobar que el test falla. Añadir al script de capturas la comprobación de que a 1280 px cada ID de la tabla de filas cabe en una línea. Commit: `fix(web): los IDs con guiones se parten por los guiones y la tabla de filas cabe a 1024 px (#131)`
 - [ ] 4.3 **Con turno de base de la persona** (ella levanta `pnpm db:up`, `pnpm db:seed` y `pnpm dev`), ejecutar `pnpm screenshots:web-analysis-guardrails`. Verificar:
   - que todas las medidas dicen `fits` a 1280 y 1024 px, incluida la tabla de filas (#132);
   - que la captura de `batch-wrong-account` muestra `Unmatched 12` e `ID does not fit any gateway 12` (de `expected.json`) y el aviso;

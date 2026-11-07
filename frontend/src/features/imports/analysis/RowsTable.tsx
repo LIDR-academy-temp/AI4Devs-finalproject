@@ -1,7 +1,7 @@
 import type { MatchResult } from '@recon/shared'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createColumnHelper, rowPaginationFeature, tableFeatures, useTable } from '@tanstack/react-table'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { validationRunKey } from '@/features/validations/queries'
@@ -30,6 +30,30 @@ const FILTERS = ['unmatched', 'ambiguous', 'matched', 'ignored'] as const satisf
 
 const features = tableFeatures({ rowPaginationFeature })
 const helper = createColumnHelper<typeof features, ImportRowItem>()
+
+/**
+ * An ID without hyphens never wraps. One with hyphens (a UUID) may wrap only right after a hyphen, so the table fits
+ * at 1024 px (#132): <wbr> is the only break opportunity (UAX #14 does not break between a hyphen and a digit), and
+ * it adds no character, so the text and a copy are the ID as read (web-analysis-guardrails D8).
+ */
+function TransactionId({ id }: { id: string }) {
+  if (!id.includes('-')) return <span className="whitespace-nowrap font-mono">{id}</span>
+  const pieces = id.split('-')
+  return (
+    <span className="whitespace-normal font-mono">
+      {pieces.map((piece, i) =>
+        i < pieces.length - 1 ? (
+          // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one ID never move.
+          <Fragment key={i}>
+            {piece}-<wbr />
+          </Fragment>
+        ) : (
+          piece
+        ),
+      )}
+    </span>
+  )
+}
 
 function resultText(row: ImportRowItem): string {
   const result = s.results[row.matchResult]
@@ -65,7 +89,7 @@ const columns = helper.columns([
   helper.accessor('transactionIdRaw', {
     header: s.columns.id,
     // IDs are text exactly as read: never parsed, never shortened.
-    cell: ({ getValue }) => <span className="whitespace-nowrap font-mono">{getValue() ?? ''}</span>,
+    cell: ({ getValue }) => <TransactionId id={getValue() ?? ''} />,
   }),
   helper.accessor('cycle', { header: s.columns.cycle }),
   helper.display({
