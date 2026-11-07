@@ -31,8 +31,8 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
 
   Verificar que fallan
 - [x] 2.2 Commit: `test(e2e): oráculos desde expected.json y limpieza de la suite de las historias`
-- [ ] 2.3 Implementar `support/expected.ts` y `support/cleanup.ts` (cliente del API con `POST /auth/login` y `SEED_PASSWORD`, tokens solo en memoria), y el `After` de `steps/fixtures.ts` que lo usa (sustituye al del smoke). Verificar con `node --test`, el typecheck y `pnpm lint`. Romper a propósito una vez el orden intento → import y una vez `formatAmount`; comprobar que los tests fallan y restaurar con `cp` desde el scratchpad
-- [ ] 2.4 Commit: `test(e2e): lectura de los oráculos y limpieza por el API para la suite de las historias`
+- [x] 2.3 Implementar `support/expected.ts` y `support/cleanup.ts` (cliente del API con `POST /auth/login` y `SEED_PASSWORD`, tokens solo en memoria), y el `After` de `steps/fixtures.ts` que lo usa (sustituye al del smoke). Verificar con `node --test`, el typecheck y `pnpm lint`. Romper a propósito una vez el orden intento → import y una vez `formatAmount`; comprobar que los tests fallan y restaurar con `cp` desde el scratchpad
+- [x] 2.4 Commit: `test(e2e): lectura de los oráculos y limpieza por el API para la suite de las historias`
 
 ## 3. Escenarios sin procesar: provider_mismatch y batch sin filas asociadas (D1)
 
