@@ -555,7 +555,7 @@ def test_sin_sesion_responde_401(cliente, estacion, final):
 @pytest.fixture(scope="module")
 def contrato():
     texto = README.read_text(encoding="utf-8")
-    bloque = re.search(r"```yaml\n(openapi:.*?)```", texto, re.S).group(1)
+    bloque = re.search(r"```yaml\n(openapi:.*?)```", texto, re.DOTALL).group(1)
     return yaml.safe_load(bloque)
 
 

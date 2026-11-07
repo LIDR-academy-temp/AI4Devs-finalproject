@@ -11,8 +11,8 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencias import Ahora, EstacionAutorizada, IdEnRuta, SesionBd
 from app.api.errores import ErrorApi
-from app.datos.modelos import EjecucionIngesta, Estacion, Observacion, Recomendacion as Fila
-from app.datos.modelos import Sensor
+from app.datos.modelos import EjecucionIngesta, Estacion, Observacion, Sensor
+from app.datos.modelos import Recomendacion as Fila
 from app.dominio.motor_tis import (
     AVISO_ORIENTATIVO,
     CALIDAD_FALTANTE,
@@ -294,7 +294,7 @@ def obtener_condiciones_actuales(
 )
 def obtener_historico(
     estacion: EstacionAutorizada,
-    sensorId: IdEnRuta,  # noqa: N803
+    sensorId: IdEnRuta,
     desde: Annotated[AwareDatetime, Query()],
     hasta: Annotated[AwareDatetime, Query()],
     sesion: SesionBd,

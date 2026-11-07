@@ -2,7 +2,6 @@ import json
 from datetime import date
 
 import httpx
-import pytest
 
 from app.ingesta.cliente_sat2 import ClienteSat2Http, ErrorSat2
 from app.ingesta.cliente_simulado import ClienteSat2Simulado

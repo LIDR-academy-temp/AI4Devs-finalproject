@@ -2,6 +2,7 @@
 
 import logging
 from datetime import UTC, datetime, timedelta
+from typing import ClassVar
 
 import pytest
 from sqlalchemy import func, select
@@ -263,7 +264,7 @@ def test_lee_la_configuracion_sin_mostrar_la_clave():
 
 
 class ServidorFalso:
-    llamadas: list[str] = []
+    llamadas: ClassVar[list[str]] = []
 
     def __init__(self, host, puerto, timeout):
         ServidorFalso.llamadas = [f"conectar {host}:{puerto}"]

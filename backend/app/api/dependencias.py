@@ -69,7 +69,7 @@ UsuarioActual = Annotated[Usuario, Depends(obtener_usuario_actual)]
 
 
 def obtener_estacion_autorizada(
-    estacionId: IdEnRuta,  # noqa: N803
+    estacionId: IdEnRuta,
     sesion: SesionBd,
     usuario: UsuarioActual,
 ) -> Estacion:

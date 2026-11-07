@@ -36,7 +36,7 @@ def compose(proyecto: str, *argumentos: str) -> list[str]:
 
 
 def ejecutar(comando: list[str], entorno: dict[str, str], **opciones) -> subprocess.CompletedProcess:
-    resultado = subprocess.run(comando, cwd=RAIZ, env=entorno, **opciones)
+    resultado = subprocess.run(comando, cwd=RAIZ, env=entorno, check=False, **opciones)
     if resultado.returncode != 0:
         raise ErrorCopia(f"Falló: {' '.join(comando[:6])}")
     return resultado
@@ -53,7 +53,7 @@ def validar_proyectos(origen: str, destino: str) -> None:
 def base_de_origen_en_marcha(origen: str, entorno: dict[str, str]) -> bool:
     salida = subprocess.run(
         compose(origen, "ps", "--status", "running", "--services"),
-        cwd=RAIZ, env=entorno, capture_output=True, text=True,
+        cwd=RAIZ, env=entorno, capture_output=True, text=True, check=False,
     ).stdout
     return "db" in salida.split()
 
@@ -61,7 +61,7 @@ def base_de_origen_en_marcha(origen: str, entorno: dict[str, str]) -> bool:
 def destino_existe(destino: str) -> bool:
     salida = subprocess.run(
         ["docker", "volume", "ls", "-q", "--filter", f"name=^{destino}_datos_db$"],
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=False,
     ).stdout
     return bool(salida.strip())
 
@@ -77,7 +77,7 @@ def copiar(origen: str, destino: str, entorno: dict[str, str]) -> None:
             destino, "exec", "-T", "db", "pg_restore", "-U", "weather_track", "-d", "weather_track",
             "--no-owner", "--no-privileges", "--exit-on-error",
         ),
-        cwd=RAIZ, env=entorno, stdin=volcado.stdout,
+        cwd=RAIZ, env=entorno, stdin=volcado.stdout, check=False,
     )
     volcado.stdout.close()
     if volcado.wait() != 0 or restauracion.returncode != 0:

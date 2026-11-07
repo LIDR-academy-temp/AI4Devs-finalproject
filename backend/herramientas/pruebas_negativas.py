@@ -10,7 +10,6 @@ a SAT2. Nunca muestra claves ni identificadores de sesión. Termina con código 
 
 import concurrent.futures
 import json
-import os
 import pathlib
 import re
 import secrets
@@ -78,7 +77,7 @@ def pedir(ruta, metodo="GET", cuerpo=None, galleta=None, tipo="application/json"
 def compose(archivo, *args):
     return subprocess.run(
         ["docker", "compose", "-p", "wt-seg", "--env-file", archivo, "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", *args],
-        cwd=RAIZ, capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=RAIZ, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
     )
 
 
@@ -357,7 +356,7 @@ try:
     comprobar(f"ruta inexistente sin detalles ({codigo})", codigo == 404 and b"Traceback" not in cuerpo)
 
     print("\n== Aislamiento de credenciales y puertos")
-    nombres = "nombreDeUsuario clave SAT2_URL_BASE".split()
+    nombres = ["nombreDeUsuario", "clave", "SAT2_URL_BASE"]
     salida = compose(E, "exec", "-T", "api", "python", "-c", f"import os; print([n for n in {nombres!r} if n in os.environ])").stdout.strip()
     comprobar(f"la API no recibe credenciales SAT2 {salida}", salida == "[]")
     filas = [json.loads(l) for l in compose(E, "ps", "--format", "json").stdout.splitlines() if l.strip()]

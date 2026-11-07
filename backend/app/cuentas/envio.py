@@ -7,10 +7,10 @@ contenidos ni enlaces: solo el número de correo, su tipo y el tipo de error.
 import logging
 import os
 import smtplib
-from email import policy
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from email import policy
 from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
 

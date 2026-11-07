@@ -12,11 +12,11 @@ def _vacio_es_nulo(valor: object) -> object:
     return None if isinstance(valor, str) and not valor.strip() else valor
 
 
-def Texto(maximo: int):  # noqa: N802 - se usa como un tipo
+def Texto(maximo: int):  # Con mayúscula porque se usa como un tipo.
     return Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=maximo, pattern=SIN_CONTROL)]
 
 
-def TextoOpcional(maximo: int, patron: str = SIN_CONTROL):  # noqa: N802
+def TextoOpcional(maximo: int, patron: str = SIN_CONTROL):
     """Un texto vacío se guarda como nulo; las restricciones se aplican solo al texto."""
     texto = Annotated[str, StringConstraints(strip_whitespace=True, max_length=maximo, pattern=patron)]
     return Annotated[texto | None, BeforeValidator(_vacio_es_nulo)]

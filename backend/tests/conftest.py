@@ -19,6 +19,13 @@ URL_PRUEBAS = os.environ.get(
 RAIZ_BACKEND = Path(__file__).parent.parent
 
 
+def falta_la_base(mensaje: str) -> None:
+    """En una computadora se saltean las pruebas de base; en el pipeline eso daría verde sin probar nada."""
+    if os.environ.get("EXIGIR_BASE_PRUEBAS") == "1":
+        pytest.fail(mensaje, pytrace=False)
+    pytest.skip(mensaje)
+
+
 def configuracion_alembic() -> Config:
     configuracion = Config(RAIZ_BACKEND / "alembic.ini")
     configuracion.set_main_option("script_location", str(RAIZ_BACKEND / "migraciones"))
@@ -34,7 +41,7 @@ def motor() -> Engine:
             conexion.execute(text("DROP SCHEMA public CASCADE"))
             conexion.execute(text("CREATE SCHEMA public"))
     except OperationalError:
-        pytest.skip("Sin base de pruebas: docker compose up -d --wait db_pruebas")
+        falta_la_base("Sin base de pruebas: docker compose up -d --wait db_pruebas")
     command.upgrade(configuracion_alembic(), "head")
     yield motor
     motor.dispose()

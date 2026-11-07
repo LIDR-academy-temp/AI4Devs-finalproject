@@ -57,8 +57,10 @@ def _parrafos(tipo: str, nombre: str, base: str, codigo: str | None, ahora: date
     if tipo == CORREO_YA_REGISTRADO:
         return "Ya tiene una cuenta en Weather Track", [
             saludo,
-            "Alguien intentó registrarse con este correo, que ya tiene una cuenta. "
-            "Si fue usted, puede ingresar como siempre o recuperar la contraseña:",
+            (
+                "Alguien intentó registrarse con este correo, que ya tiene una cuenta. "
+                "Si fue usted, puede ingresar como siempre o recuperar la contraseña:"
+            ),
             f"{base}/recuperar",
             "Si no fue usted, puede ignorar este mensaje: su cuenta no cambió.",
         ]

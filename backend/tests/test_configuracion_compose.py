@@ -43,7 +43,7 @@ def configuracion(tmp_path, variables, *archivos):
     return subprocess.run(
         ["docker", "compose", "-p", "wt-config", "--env-file", str(archivo), *opciones,
          "config", "--format", "json"],
-        cwd=tmp_path, capture_output=True, text=True, encoding="utf-8", errors="replace",
+        cwd=tmp_path, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
     )
 
 

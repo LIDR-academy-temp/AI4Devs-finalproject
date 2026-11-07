@@ -109,10 +109,9 @@ def recomendacion(estacion, **cambios):
 
 
 def debe_rechazarse(sesion, registro):
-    with pytest.raises(IntegrityError):
-        with sesion.begin_nested():
-            sesion.add(registro)
-            sesion.flush()
+    with pytest.raises(IntegrityError), sesion.begin_nested():
+        sesion.add(registro)
+        sesion.flush()
 
 
 def test_la_migracion_crea_todas_las_tablas(motor):
@@ -275,15 +274,14 @@ def test_rechaza_dos_observaciones_del_mismo_sensor_e_instante(sesion, sensor):
     sesion.add(observacion(sensor))
     sesion.flush()
     sesion.expunge_all()
-    with pytest.raises(IntegrityError):
-        with sesion.begin_nested():
-            sesion.execute(
-                text(
-                    "INSERT INTO observacion (sensor_id, medido_en, valor, calidad, origen) "
-                    "VALUES (:sensor, :momento, 1, 'OK', 'HISTORICO')"
-                ),
-                {"sensor": sensor.id, "momento": AHORA},
-            )
+    with pytest.raises(IntegrityError), sesion.begin_nested():
+        sesion.execute(
+            text(
+                "INSERT INTO observacion (sensor_id, medido_en, valor, calidad, origen) "
+                "VALUES (:sensor, :momento, 1, 'OK', 'HISTORICO')"
+            ),
+            {"sensor": sensor.id, "momento": AHORA},
+        )
 
 
 def test_rechaza_valor_nulo_con_calidad_ok(sesion, sensor):
