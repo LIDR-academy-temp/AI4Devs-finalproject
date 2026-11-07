@@ -59,7 +59,7 @@ Comando de tests de la carpeta: `pnpm --filter frontend exec vitest run src/feat
 ## 5. PR
 
 - [x] 5.1 Issues de seguimiento abiertos y anotados en el design: #139 (unificar el texto de cuenta equivocada, D2) y #140 (canal sin principal mostrado como de otro merchant). Va en el commit de la tarea 1.3
-- [ ] 5.2 Push y PR hacia `feature/entrega-3-MVP` con la plantilla, "Closes #131", las medidas y las capturas. Vigilar el CI con `gh --jq` hasta que esté verde
+- [x] 5.2 Push y PR hacia `feature/entrega-3-MVP` con la plantilla, "Closes #131", las medidas y las capturas. Vigilar el CI con `gh --jq` hasta que esté verde
 
 ## Workflow follow-up
 
