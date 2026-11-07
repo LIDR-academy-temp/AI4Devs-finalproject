@@ -57,7 +57,7 @@ Ninguna tarea usa la base local. Lo que necesita SQL Server se comprueba en la C
 - [x] 5.3 Abrir el PR hacia `feature/entrega-3-MVP` con la plantilla, enlazando #40.
   - La descripción dice qué casilla de #40 cierra: "Job e2e en CI (Playwright) reutilizando el SQL Server del job de integración (Entrega 3)".
   - Incluye la duración medida del job y los enlaces a los runs de las roturas deliberadas.
-- [ ] 5.4 Marcar esa casilla en #40 con `gh issue edit` cuando el PR esté fusionado, o antes si la persona lo pide.
+- [x] 5.4 Marcar esa casilla en #40 con `gh issue edit` cuando el PR esté fusionado, o antes si la persona lo pide. Marcada tras fusionar #147.
 
 ## Workflow follow-up
 
