@@ -223,6 +223,7 @@ Para volver a una versión anterior, haz `git checkout` de esa versión, `script
 |---|---|---|
 | `scripts/deploy.sh ps` | Muestra el estado de los servicios | No |
 | `scripts/deploy.sh logs api` | Sigue los registros de un servicio (`Ctrl+C` para salir) | No |
+| `scripts/deploy.sh check` | Muestra los usuarios `recon_*` de la base y los 5 últimos logins auditados, con su IP. Solo lee, y solo con la base incluida (sin `DEPLOY_DB=external`) | No |
 | `scripts/deploy.sh down` | Para y elimina los contenedores; los volúmenes siguen | No |
 | `scripts/deploy.sh seed` | Recarga el mundo sintético | **Sí, toda la base** |
 | `docker compose --env-file infra/.env.deploy -f infra/docker-compose.deploy.yml down -v` | Elimina también los volúmenes | **Sí, base y archivos** |

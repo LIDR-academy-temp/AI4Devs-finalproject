@@ -203,11 +203,24 @@ jobs:
           done
 
   images:
+    # Builds the deployment images and starts them without a tunnel (deploy-hardening design D4, #107).
     name: deployment images
     runs-on: ubuntu-latest
+    # About 3–4 min when green: a hung start must not hold the runner for the default 6 hours.
+    timeout-minutes: 20
+    # Throwaway values for the smoke, never repository secrets and no TUNNEL_TOKEN. They win over the empty ones
+    # of infra/.env.deploy.example, because Compose prefers the shell environment to --env-file.
+    env:
+      DEPLOY_DEBUG: "1"
+      MSSQL_SA_PASSWORD: "Ci_Deploy_Sa!2026"
+      RECON_APP_PASSWORD: "Ci_Deploy_App!2026"
+      RECON_MIGRATOR_PASSWORD: "Ci_Deploy_Migrator!2026"
+      JWT_SECRET: "ci-only-throwaway-deploy-jwt-secret-not-real-0003"
+      SEED_PASSWORD: "Ci_Deploy_Seed!2026"
     steps:
       - uses: actions/checkout@v5
       - uses: docker/setup-buildx-action@v3
+      # load + tags: the images stay in the runner's Docker under the names the compose uses. Never pushed.
       - name: API image
         uses: docker/build-push-action@v6
         with:
@@ -215,6 +228,8 @@ jobs:
           file: backend/Dockerfile
           target: runtime
           push: false
+          load: true
+          tags: recon-api
           cache-from: type=gha,scope=api
           cache-to: type=gha,scope=api,mode=max
       - name: Migration and seed image
@@ -224,6 +239,8 @@ jobs:
           file: backend/Dockerfile
           target: ops
           push: false
+          load: true
+          tags: recon-ops
           cache-from: type=gha,scope=api
       - name: Web image
         uses: docker/build-push-action@v6
@@ -231,6 +248,8 @@ jobs:
           context: .
           file: frontend/Dockerfile
           push: false
+          load: true
+          tags: recon-web
           cache-from: type=gha,scope=web
           cache-to: type=gha,scope=web,mode=max
       - name: Deployment configuration
@@ -246,6 +265,64 @@ jobs:
           "${base[@]}" config -q
           "${base[@]}" -f infra/docker-compose.deploy.debug.yml config -q
           "${base[@]}" -f infra/docker-compose.deploy.external-db.yml config -q
+      # The real script, as on the server. DEPLOY_DEBUG=1 publishes web on 127.0.0.1:8080 and leaves cloudflared out.
+      - name: start the deployment without a tunnel
+        run: |
+          cp infra/.env.deploy.example infra/.env.deploy
+          scripts/deploy.sh up --no-build --wait --wait-timeout 240
+      - name: migrate
+        run: scripts/deploy.sh migrate
+      - name: smoke through web
+        run: |
+          set -euo pipefail
+          base=http://127.0.0.1:8080
+
+          echo "--- API health through Nginx"
+          health="$(curl -fsS --max-time 10 "$base/api/v1/health")"
+          echo "$health"
+          grep -q '"db":"ok"' <<<"$health"
+
+          echo "--- deep SPA route falls back to index.html"
+          curl -fsS --max-time 10 "$base/imports/00000000-0000-0000-0000-000000000000" | grep -q '<div id="root">'
+
+          echo "--- security headers"
+          headers="$(curl -fsS --max-time 10 -o /dev/null -D - "$base/")"
+          for header in X-Content-Type-Options X-Frame-Options Referrer-Policy Content-Security-Policy; do
+            grep -qi "^$header:" <<<"$headers" || { echo "missing $header"; exit 1; }
+          done
+
+          echo "--- failed login reaches the API and the database"
+          status="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "$base/api/v1/auth/login" \
+            -H 'Content-Type: application/json' \
+            -d '{"userName":"ghost","password":"not-the-password"}')"
+          [ "$status" = "401" ] || { echo "login answered $status, expected 401"; exit 1; }
+
+          echo "--- scripts/deploy.sh check"
+          check="$(scripts/deploy.sh check)"
+          echo "$check"
+          grep -q 'recon_app' <<<"$check"
+          grep -q '"userName":"ghost"' <<<"$check" || { echo "the failed login is not in AuditLog"; exit 1; }
+
+          echo "--- services"
+          services="$(scripts/deploy.sh ps -a --format '{{.Service}} {{.State}} {{.Health}}')"
+          echo "$services"
+          for service in mssql api web; do
+            grep -q "^$service running healthy$" <<<"$services" || { echo "$service is not healthy"; exit 1; }
+          done
+          if grep -q '^cloudflared ' <<<"$services"; then echo "cloudflared started"; exit 1; fi
+      # scripts/deploy.sh logs follows the output, so the job calls Compose directly here.
+      - name: deployment logs
+        if: ${{ failure() || cancelled() }}
+        run: |
+          compose=(docker compose --env-file infra/.env.deploy -f infra/docker-compose.deploy.yml -f infra/docker-compose.deploy.debug.yml)
+          "${compose[@]}" ps -a || true
+          "${compose[@]}" logs --no-color --tail=200 mssql api web || true
+      - name: stop the deployment
+        if: ${{ always() }}
+        run: |
+          [ -f infra/.env.deploy ] || exit 0
+          docker compose --env-file infra/.env.deploy -f infra/docker-compose.deploy.yml \
+            -f infra/docker-compose.deploy.debug.yml --profile ops down -v --remove-orphans
 
   security:
     name: gitleaks
