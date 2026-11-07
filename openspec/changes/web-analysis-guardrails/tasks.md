@@ -48,13 +48,13 @@ Comando de tests de la carpeta: `pnpm --filter frontend exec vitest run src/feat
 
   Verificar que el primero falla. Commit: `test(web): un ID con guiones se parte solo por los guiones en la tabla de filas`
 - [x] 4.6 Implementar D8 en `RowsTable.tsx`. Verificar con el comando de la carpeta, `pnpm lint` y `pnpm typecheck`. Romper a propósito el `<wbr>` una vez y comprobar que el test falla. Añadir al script de capturas la comprobación de que a 1280 px cada ID de la tabla de filas cabe en una línea. Commit: `fix(web): los IDs con guiones se parten por los guiones y la tabla de filas cabe a 1024 px (#131)`
-- [ ] 4.3 **Con turno de base de la persona** (ella levanta `pnpm db:up`, `pnpm db:seed` y `pnpm dev`), ejecutar `pnpm screenshots:web-analysis-guardrails`. Verificar:
+- [x] 4.3 **Con turno de base de la persona** (ella levanta `pnpm db:up`, `pnpm db:seed` y `pnpm dev`), ejecutar `pnpm screenshots:web-analysis-guardrails`. Verificar:
   - que todas las medidas dicen `fits` a 1280 y 1024 px, incluida la tabla de filas (#132);
   - que la captura de `batch-wrong-account` muestra `Unmatched 12` e `ID does not fit any gateway 12` (de `expected.json`) y el aviso;
   - que la de `batch-blocked` muestra `RAM-01 belongs to another provider` con la nota ajena;
   - que los dos imports quedan `cancelled`;
   - las seis capturas, mirándolas una a una.
-- [ ] 4.4 Añadir la sección de `web-analysis-guardrails` a `docs/wireframes/README.md`. Commit: `docs(web): capturas de web-analysis-guardrails a 1280 y 1024 px (#131)`
+- [x] 4.4 Añadir la sección de `web-analysis-guardrails` a `docs/wireframes/README.md`. Commit: `docs(web): capturas de web-analysis-guardrails a 1280 y 1024 px (#131)`
 
 ## 5. PR
 
