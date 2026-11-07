@@ -1653,9 +1653,9 @@ Origen: `daily-campaign-delivery-status`, grupo 8 de `tasks.md` (6 tareas).
 
 ## 7. Pull Requests
 
-> En la Entrega 1 solo existe una PR: la que recoge el trabajo de documentación de la rama `feature/entrega-1-LFMC` contra `main`. Las otras dos corresponden a código y llegan en las Entregas 2 y Final.
+> Las tres entregas se recogen en tres pull requests abiertas desde `lfmorales/AI4Devs-finalproject-temp` contra `LIDR-academy-temp/AI4Devs-finalproject` (`main`): la **PR 1** ([#3](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/3)) con la documentación técnica de la entrega 1, la **PR 2** ([#4](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/4)) con el registro de campañas desde la orden de compra, y la **PR 3**, de la entrega final, con el estado diario de entrega y el margen.
 >
-> **Estado en el momento de escribir esto:** la rama todavía **no tiene commits** por encima de `main` —`git log main..HEAD` no devuelve nada— y la PR no está abierta. El contenido que sigue describe el conjunto de cambios preparado en el árbol de trabajo, que es lo que la PR recogerá.
+> Las PR se revisan y no se fusionan, porque `main` es la plantilla compartida del curso: cada una incluye los commits de las anteriores, y por eso *Files changed* de la 2 y de la 3 muestra también el trabajo previo.
 
 ---
 
