@@ -2,7 +2,8 @@
 // of each feature of the frontend.
 import { fileURLToPath } from 'node:url'
 import { expect, type Page } from '@playwright/test'
-import { Given, Then, When } from './fixtures.js'
+import { expectedOf, sampleFile } from '../support/expected.ts'
+import { type Created, Given, Then, When } from './fixtures.ts'
 
 const repositoryFile = (path: string) => fileURLToPath(new URL(`../../${path}`, import.meta.url))
 
@@ -70,8 +71,27 @@ When(
   },
 )
 
+When('they upload {string}', async ({ page, created }, path: string) => upload(page, created, path))
+
+// The files in the order of expected.json: the first creates the import, the others are added to it.
+When('they upload the files of {string}', async ({ page, created }, sample: string) => {
+  for (const file of expectedOf(sample).files) await upload(page, created, sampleFile(sample, file))
+})
+
+Then('they see the rows of {string}', async ({ page }, sample: string) => {
+  const { rows } = expectedOf(sample)
+  // A card is its label and its number; Unmatched may add its breakdown, so its number is checked alone.
+  await expect(page.getByRole('region', { name: 'Rows read' })).toHaveText(`Rows read${rows.read}`)
+  await expect(page.getByRole('region', { name: 'Matched', exact: true })).toHaveText(`Matched${rows.matched}`)
+  await expect(cardNumber(page, 'Unmatched')).toHaveText(String(rows.unmatched))
+})
+
+/** The big number of a counter card: its second child, after the label. */
+export const cardNumber = (page: Page, card: string) =>
+  page.getByRole('region', { name: card, exact: true }).locator(':scope > span').nth(1)
+
 // The first file creates the import (POST /accounts/{id}/imports); a later one is added to it (POST /imports/{id}/files).
-When('they upload {string}', async ({ page, created }, path: string) => {
+async function upload(page: Page, created: Created, path: string) {
   const upload = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
@@ -88,7 +108,7 @@ When('they upload {string}', async ({ page, created }, path: string) => {
   await expect(page).toHaveURL(/\/imports\/[0-9a-f-]{36}/)
   const fileName = path.split('/').at(-1)!
   await expect(page.getByRole('listitem', { name: fileName })).toBeVisible()
-})
+}
 
 When('they confirm the proposed mapping', async ({ page }) => {
   await page.getByRole('tab', { name: 'Mapping' }).click()

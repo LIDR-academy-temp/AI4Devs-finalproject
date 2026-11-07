@@ -43,8 +43,8 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
   - los escenarios 1 y 3 entran en el grupo 4. No van como `@skip`: bddgen falla con pasos sin definir aunque el escenario esté saltado, y la opción que lo evita (`missingSteps`) está en `playwright.config.ts`, que es de A.
 
   Pasos nuevos en `steps/validations.steps.ts`: ejecutar las validaciones, el resultado de una validación contra `expected.json`, **Continue** deshabilitado con su motivo, **Cancel and reprocess**, el desglose y el aviso de cuenta equivocada, y **Start a new import**. Verificar con `bddgen`, el typecheck y `pnpm lint`
-- [ ] 3.2 **Con turno de base, sembrada por la persona:** `pnpm test:e2e --grep` de los dos escenarios, en verde, con los dos imports `cancelled`. Romper a propósito una vez el oráculo (por ejemplo, `affectedIds` de otra muestra), comprobar que el escenario falla con un mensaje claro y que el `After` cancela el import, y restaurar con `cp`
-- [ ] 3.3 Commit: `test(e2e): provider_mismatch y batch sin filas asociadas en la suite de las historias (#38)`
+- [x] 3.2 **Con turno de base, sembrada por la persona:** `pnpm test:e2e --grep` de los dos escenarios, en verde, con los dos imports `cancelled`. Romper a propósito una vez el oráculo (por ejemplo, `affectedIds` de otra muestra), comprobar que el escenario falla con un mensaje claro y que el `After` cancela el import, y restaurar con `cp`
+- [x] 3.3 Commit: `test(e2e): provider_mismatch y batch sin filas asociadas en la suite de las historias (#38)`
 
 ## 4. Escenarios que procesan: flujo feliz y deshacer y reprocesar (D2, D5, D6)
 
