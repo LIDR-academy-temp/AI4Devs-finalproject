@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-11-07
 decision-makers: Pablo Guillermo Di Nanno
 consulted: Claude (asistente de IA, Claude Code)
@@ -10,8 +10,8 @@ informed: Evaluadores de AI4Devs
 
 | | |
 |---|---|
-| **Estado** | Propuesto. Implementado y verificado en GitHub el 7 de noviembre de 2026; pasa a aceptado cuando el responsable revise el flujo (tarea 4.3 del cambio `weather-track-pipeline-ci`). |
-| **Alcance** | Pendiente D4 de la devolución de la Entrega 1 y punto 6 del [ADR-0001](0001-arquitectura-destino-weather-track.md). Diseño en el cambio de OpenSpec [`weather-track-pipeline-ci`](../../openspec/changes/weather-track-pipeline-ci/design.md). |
+| **Estado** | Aceptado el 7 de noviembre de 2026, tras revisar el flujo el responsable. Implementado y verificado en GitHub ese mismo día. |
+| **Alcance** | Pendiente D4 de la devolución de la Entrega 1 y punto 6 del [ADR-0001](0001-arquitectura-destino-weather-track.md). Diseño en el cambio de OpenSpec [`weather-track-pipeline-ci`](../../openspec/changes/archive/2026-11-07-weather-track-pipeline-ci/design.md). |
 | **Fuera de alcance** | Despliegue continuo y registro de imágenes (línea B de la [hoja de ruta](../plan/hoja-de-ruta-entrega-final.md)), revisión de pull requests con IA (D5), tests basados en propiedades (D6) y datos con la forma de SAT2 (D7). |
 
 ## Contexto y problema
@@ -91,7 +91,7 @@ Para que GitHub impida fusionar sin los controles en verde:
 
 Es un ajuste de la cuenta: el asistente no lo cambia.
 
-**Estado al 7 de noviembre de 2026.** El responsable creó el conjunto de reglas `main proteccion`, activo sobre la rama por defecto (`main`). Exige pull request, impide borrar la rama y bloquea el force push. La regla de controles exigidos está creada, pero sin trabajos en la lista: falta el paso 4 para que GitHub impida fusionar con el pipeline en rojo.
+**Estado al 7 de noviembre de 2026.** El responsable creó el conjunto de reglas `main proteccion`, activo sobre la rama por defecto (`main`). Exige pull request, impide borrar la rama, bloquea el force push y exige los 8 trabajos del flujo en verde antes de fusionar. Verificado leyendo el conjunto de reglas con la API de GitHub.
 
 ## Más información
 

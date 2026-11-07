@@ -21,4 +21,4 @@
 
 - [x] 4.1 Escribir el ADR-0003 del pipeline, con las etapas, las herramientas, lo que queda afuera y la guía para proteger `main` (D8)
 - [x] 4.2 Actualizar la sección 2.4 del README, `CLAUDE.md` y la hoja de ruta (D4), y verificar que ningún documento dice que el pipeline está pendiente
-- [ ] 4.3 El responsable revisa el flujo y lo aprueba
+- [x] 4.3 El responsable revisa el flujo y lo aprueba. Aprobado el 7 de noviembre de 2026

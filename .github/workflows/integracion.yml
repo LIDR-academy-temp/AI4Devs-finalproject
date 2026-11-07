@@ -1,4 +1,4 @@
-# Integración continua de Weather Track. Diseño: openspec/changes/weather-track-pipeline-ci/design.md
+# Integración continua de Weather Track. Diseño: openspec/changes/archive/2026-11-07-weather-track-pipeline-ci/design.md
 #
 # Sin secretos y con permiso de solo lectura: las pruebas usan los modos sin SAT2 y generan sus
 # propias contraseñas. Cada acción de terceros se fija por el SHA de su commit, con la versión al lado.
