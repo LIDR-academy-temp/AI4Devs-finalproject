@@ -98,6 +98,8 @@ async function overflows(page: Page): Promise<string[]> {
     const rows = document.querySelector<HTMLTableElement>('table[aria-label="Rows"]')
     if (rows && window.innerWidth >= 1280) {
       const idColumn = [...rows.tHead!.rows[0]!.cells].findIndex((th) => th.textContent === 'ID')
+      // Without the column there is nothing to measure: that is a problem, not a pass.
+      if (idColumn === -1) found.push('rows table without an ID column: its IDs were not measured')
       // One box per piece between <wbr>, even on one line: what counts is how many different lines they sit on.
       const lines = (element: Element | null | undefined) =>
         new Set([...(element?.getClientRects() ?? [])].map((box) => Math.round(box.top))).size
@@ -198,7 +200,8 @@ async function main() {
     // batch-wrong-account in ProviderA-USD: the breakdown says every row is id_format, and the notice says why.
     await analyzeFile(analyst, 'Provider A', 'ProviderA-USD', WRONG_ACCOUNT)
     const unmatched = analyst.getByRole('region', { name: 'Unmatched' })
-    await expect(unmatched).toContainText(String(expected.rows.unmatched))
+    // The big number of the card alone (its second child, after the label): the breakdown below has a number too.
+    await expect(unmatched.locator(':scope > span').nth(1)).toHaveText(new RegExp(`^${expected.rows.unmatched}$`))
     const reasons = unmatched.getByRole('list', { name: 'Unmatched by reason' }).getByRole('listitem')
     await expect(reasons).toHaveCount(1)
     await expect(reasons.first()).toHaveText(
