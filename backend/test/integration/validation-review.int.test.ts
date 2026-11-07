@@ -448,8 +448,8 @@ describe('resolving an ambiguous row after validating (P7)', () => {
 })
 
 // Spec "El review exige las inclusiones que se vieron" (review-inclusion-version D3, D4): the review pauses inside its
-// transaction right before its guard (beforeClaim) while an inclusion change commits. A review that compared the
-// version it was sent with one read before its guard, or did not compare it at all, would approve what nobody saw.
+// transaction at the hook right before its guard (beforeClaim) while an inclusion change commits. It checks that the
+// review compares the version it was sent with the current one, read after the hook.
 describe('an inclusion changed while the review waits (#53)', () => {
   const reviewAudit = (importId: string) =>
     ctx.prisma.auditLog.findMany({ where: { action: 'import.review', entityId: importId } })
