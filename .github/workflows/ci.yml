@@ -291,9 +291,11 @@ jobs:
             grep -qi "^$header:" <<<"$headers" || { echo "missing $header"; exit 1; }
           done
 
+          # As if through Cloudflare, plus a forged X-Forwarded-For that must not reach the audit (#106).
           echo "--- failed login reaches the API and the database"
           status="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "$base/api/v1/auth/login" \
             -H 'Content-Type: application/json' \
+            -H 'CF-Connecting-IP: 203.0.113.7' -H 'X-Forwarded-For: 198.51.100.66' \
             -d '{"userName":"ghost","password":"not-the-password"}')"
           [ "$status" = "401" ] || { echo "login answered $status, expected 401"; exit 1; }
 
@@ -303,6 +305,8 @@ jobs:
           grep -q 'recon_app' <<<"$check"
           if grep -q 'recon_reader' <<<"$check"; then echo "recon_reader exists in the deployment (#108)"; exit 1; fi
           grep -q '"userName":"ghost"' <<<"$check" || { echo "the failed login is not in AuditLog"; exit 1; }
+          grep -q '"ip":"203.0.113.7"' <<<"$check" || { echo "the audited IP is not CF-Connecting-IP (#106)"; exit 1; }
+          if grep -q '198.51.100.66' <<<"$check"; then echo "a forged X-Forwarded-For reached the audit (#106)"; exit 1; fi
 
           echo "--- services"
           services="$(scripts/deploy.sh ps -a --format '{{.Service}} {{.State}} {{.Health}}')"

@@ -93,6 +93,8 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       },
       ...(options.logStream ? { stream: options.logStream } : {}),
     },
+    // Only the deployment sets it (deploy-hardening design D2): request.ip then comes from Nginx's X-Forwarded-For.
+    ...(env.TRUST_PROXY ? { trustProxy: env.TRUST_PROXY } : {}),
   }).withTypeProvider<ZodTypeProvider>()
 
   app.setValidatorCompiler(validatorCompiler)

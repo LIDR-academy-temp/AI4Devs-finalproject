@@ -298,6 +298,14 @@ Con base externa la copia de seguridad y los permisos de red corren por cuenta d
 
 El plan gratuito corta las peticiones de más de 100 MB y las respuestas que tardan más de unos 100 segundos. La aplicación admite 20 MiB por archivo y hasta 200 MiB en total, así que un batch que supere los 100 MB puede fallar por la URL pública aunque el servidor lo acepte. Los archivos de `data/samples/` quedan muy por debajo de ese límite.
 
-## 16. Limitación conocida: IP en la auditoría
+## 16. IP en la auditoría
 
-La auditoría de los logins registra la IP del contenedor `web`, no la de quien entra, porque la API todavía no confía en la cabecera `X-Forwarded-For`. No uses ese dato para identificar a nadie. Para ver los intentos por IP, usa el panel de Cloudflare.
+La auditoría de los logins registra la IP pública de quien entra, la misma que muestra el panel de Cloudflare. `scripts/deploy.sh check` enseña los últimos logins con su IP.
+
+De dónde sale:
+
+1. El borde de Cloudflare escribe la IP del cliente en la cabecera `CF-Connecting-IP` y sustituye la que pudiera mandar el propio cliente.
+2. Nginx (`web`) pasa a la API un único `X-Forwarded-For` con ese valor, sin conservar el que mande el cliente. Sin Cloudflare delante, por ejemplo en modo de depuración, usa la IP de la conexión.
+3. La API solo hace caso de `X-Forwarded-For` cuando la petición llega desde una dirección privada, es decir, desde otro contenedor de la red interna (`TRUST_PROXY: uniquelocal` en `infra/docker-compose.deploy.yml`). Si el valor no es una IP, guarda la de la conexión.
+
+No hay que configurar nada: no depende de las redes de Docker ni del router. En modo de depuración, quien ya tiene acceso al servidor podría mandar su propio `CF-Connecting-IP`; ese modo no se publica.

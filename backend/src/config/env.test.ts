@@ -69,4 +69,24 @@ describe('loadEnv', () => {
     expect(env.HOST).toBe('127.0.0.1')
     expect(env.LOG_LEVEL).toBe('warn')
   })
+
+  describe('TRUST_PROXY', () => {
+    it('is undefined when absent or empty: no proxy is trusted', () => {
+      expect(loadEnv({ ...BASE_ENV, JWT_SECRET: VALID_SECRET }).TRUST_PROXY).toBeUndefined()
+      expect(loadEnv({ ...BASE_ENV, JWT_SECRET: VALID_SECRET, TRUST_PROXY: '' }).TRUST_PROXY).toBeUndefined()
+    })
+
+    it.each([
+      ['uniquelocal', 'uniquelocal'],
+      ['loopback, 10.0.0.0/8', 'loopback,10.0.0.0/8'],
+    ])('accepts the proxy-addr list %j', (value, expected) => {
+      expect(loadEnv({ ...BASE_ENV, JWT_SECRET: VALID_SECRET, TRUST_PROXY: value }).TRUST_PROXY).toBe(expected)
+    })
+
+    it('fails naming TRUST_PROXY when an element is empty', () => {
+      const error = errorOf(() => loadEnv({ ...BASE_ENV, JWT_SECRET: VALID_SECRET, TRUST_PROXY: 'uniquelocal,' }))
+
+      expect(error.message).toContain('TRUST_PROXY')
+    })
+  })
 })

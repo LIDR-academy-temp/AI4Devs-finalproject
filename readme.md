@@ -282,7 +282,7 @@ Abre el `.env` de la raíz y sustituye los valores de ejemplo, como indican sus 
 - `JWT_SECRET`: secreto de firma de las sesiones, de **32 caracteres o más**; con menos, el backend no arranca.
 - `SEED_PASSWORD`: contraseña común de los cuatro usuarios de demostración que crea el seed.
 
-Las demás tienen un valor por defecto válido para local y solo se cambian si hace falta: `MSSQL_PORT` y `DB_PORT` (1433), `DB_HOST` (`localhost`), `DB_NAME` (`ReconTool`), `DB_USER` (`recon_app`), `PORT` (3000), `HOST` (`0.0.0.0`), `LOG_LEVEL` (`info`) y `UPLOAD_DIR` (`data/uploads`, relativo al directorio del backend). `DATABASE_URL`, si se define, sustituye a la conexión que Prisma arma con las `DB_*`; solo la usa la CI.
+Las demás tienen un valor por defecto válido para local y solo se cambian si hace falta: `MSSQL_PORT` y `DB_PORT` (1433), `DB_HOST` (`localhost`), `DB_NAME` (`ReconTool`), `DB_USER` (`recon_app`), `PORT` (3000), `HOST` (`0.0.0.0`), `LOG_LEVEL` (`info`) y `UPLOAD_DIR` (`data/uploads`, relativo al directorio del backend). `TRUST_PROXY` queda vacía en local: solo el despliegue la fija, en `uniquelocal`, para auditar la IP real del cliente detrás de Nginx (`docs/deploy.md` §16). `DATABASE_URL`, si se define, sustituye a la conexión que Prisma arma con las `DB_*`; solo la usa la CI.
 
 En `api-collection/.env`, pon en `SEED_PASSWORD` **el mismo valor** que en el `.env` de la raíz; `SEED_USER` (`analyst`) y `SEED_VIEWER_USER` (`viewer`) ya vienen con los usuarios del seed.
 

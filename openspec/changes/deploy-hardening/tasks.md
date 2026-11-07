@@ -36,20 +36,22 @@ Ninguna tarea usa la base local salvo la 2.4, que necesita turno pedido antes. L
   Anotar la salida en el scratchpad.
   - `recon-mssql` recreado y `healthy`, `[init] done`, `/init/init.local.sql` montado. `recon_reader`: `db_datareader` y el `CONNECT` de todo usuario. El login ya existía en el volumen, así que el `CREATE` no se ejecutó; el script corrió sin error (`-b`).
   - Integración: 497 passed, 1 failed. El fallo es la prueba de rendimiento de 20 000 filas (23,8 s con un límite de 20 s, justo después del seed). Repetida sola, pasa, igual que los 26 tests de `auth.int.test.ts`.
-- [ ] 2.5 Commit: fix(infra): no crear recon_reader en el despliegue (#108), y `git push`. Verificar en la CI el job `images` en verde.
+- [x] 2.5 Commit: fix(infra): no crear recon_reader en el despliegue (#108), y `git push`. Verificar en la CI el job `images` en verde.
 
 ## 3. IP real del cliente (#106, D1, D2, D3)
 
-- [ ] 3.1 Pruebas primero:
+- [x] 3.1 Pruebas primero:
   - **`env.test.ts`:** `TRUST_PROXY` ausente da `undefined`; `"uniquelocal"` y `"loopback, 10.0.0.0/8"` se aceptan; un elemento vacío (`"uniquelocal,"`) falla nombrando la variable.
   - **`auth.int.test.ts`:** los cuatro escenarios nuevos de `auth`, con `inject({ remoteAddress, headers })` y la app construida con y sin `TRUST_PROXY`.
 
   Verlas en rojo.
-- [ ] 3.2 `TRUST_PROXY` en `backend/src/config/env.ts`, `trustProxy` en `buildApp` solo si está definida, y la guarda `isIP` en `auth-routes.ts`. Verificar `pnpm --filter @recon/backend test` y `typecheck`. Las de integración se verifican en la CI.
-- [ ] 3.3 `TRUST_PROXY: uniquelocal` en el servicio `api` de `infra/docker-compose.deploy.yml`, con un comentario que remita a design D2.
-- [ ] 3.4 En `frontend/nginx/default.conf`: el `map` de `$client_ip`, `X-Real-IP` y `X-Forwarded-For` con `$client_ip`, `X-Forwarded-Host` vacío y comentarios en inglés.
-- [ ] 3.5 Smoke: el login fallido manda `CF-Connecting-IP: 203.0.113.7` y `X-Forwarded-For: 198.51.100.66`, y la salida de `check` contiene `203.0.113.7` y no `198.51.100.66`.
-- [ ] 3.6 `docs/deploy.md` §16 deja de ser una "limitación conocida" y explica de dónde sale la IP.
+  - `env.test.ts`: 3 de 4 en rojo antes de implementar (el de ausente ya daba `undefined`).
+  - `auth.int.test.ts`: escritas antes del código, pero no vistas en rojo, porque necesitaban base y la implementación llegó antes del turno. En verde con el turno de la 2.4. La rotura del smoke (sin la normalización de Nginx, IP `172.x`) se vio en los runs del grupo 1 y del grupo 2.
+- [x] 3.2 `TRUST_PROXY` en `backend/src/config/env.ts`, `trustProxy` en `buildApp` solo si está definida, y la guarda `isIP` en `auth-routes.ts`. Verificar `pnpm --filter @recon/backend test` y `typecheck`. Las de integración se verifican en la CI.
+- [x] 3.3 `TRUST_PROXY: uniquelocal` en el servicio `api` de `infra/docker-compose.deploy.yml`, con un comentario que remita a design D2.
+- [x] 3.4 En `frontend/nginx/default.conf`: el `map` de `$client_ip`, `X-Real-IP` y `X-Forwarded-For` con `$client_ip`, `X-Forwarded-Host` vacío y comentarios en inglés. `nginx -t` en `nginx-unprivileged:1.30.6-alpine`: syntax is ok.
+- [x] 3.5 Smoke: el login fallido manda `CF-Connecting-IP: 203.0.113.7` y `X-Forwarded-For: 198.51.100.66`, y la salida de `check` contiene `203.0.113.7` y no `198.51.100.66`.
+- [x] 3.6 `docs/deploy.md` §16 deja de ser una "limitación conocida" y explica de dónde sale la IP.
 - [ ] 3.7 Commit: fix(auth): IP real del cliente detrás del túnel (#106), y `git push`. Verificar en la CI `integration` e `images` en verde.
 
 ## 4. Verificación de conjunto y PR
