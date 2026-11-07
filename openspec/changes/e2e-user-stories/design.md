@@ -111,7 +111,7 @@ Nada queda `processed` ni `paid`. Igual que la colección Bruno, conviene sembra
 - [La suite no se repite sin sembrar (D2).] → En la CI siempre se siembra. En local, el primer paso falla pronto y dice cómo arreglarlo.
 - [Los textos de la interfaz pueden cambiar.] → Los selectores son los de `strings.ts`, y el error de Playwright nombra el rol y el texto que no encontró.
 - [La duración depende de la máquina.] → Medida en local por escenario y en la CI de A, con aviso por encima de 5 minutos.
-- [Los tests de `support/` con `node --test` no corren en la CI, porque `e2e/package.json` no tiene script `test`.] → Se ejecutan en local en cada grupo. Añadir el script (que `pnpm -r test` recogería) toca `e2e/package.json`, así que se propone en el PR y no se hace en este change.
+- [Los tests de `support/` tienen que correr en la CI.] → `e2e/package.json` tiene un script `test` (`node --test "support/*.test.ts"`). El job `check` lo ejecuta con `pnpm test` (`pnpm -r test`) sin tocar `ci.yml`, con el Node 22 de `.node-version`, que ya quita los tipos.
 
 ## Decisiones del gate
 
@@ -124,7 +124,7 @@ Nada queda `processed` ni `paid`. Igual que la colección Bruno, conviene sembra
 3. A mantiene `workers: 1`. La cabecera del `.feature` dice que la suite depende de eso y del orden alfabético de los archivos (D1).
 4. Duración: se mide por escenario en la primera pasada entera. Si la suite pasa de 5 minutos, se avisa igualmente, porque A partirá el job en dos (sustituye el umbral de 10 minutos de D7).
 5. **D11. Test primero en la lógica propia:** `support/expected.ts` (lectura del oráculo y `formatAmount`) y la limpieza de `support/cleanup.ts` (qué acción toca según el estado, en qué orden y con qué usuario).
-   - Se prueban con el runner de Node (`node --test`), sin dependencias nuevas, con rotura deliberada.
+   - Se prueban con el runner de Node (`node --test`), sin dependencias nuevas, con rotura deliberada. El script `test` de `e2e/package.json` los ejecuta, y por tanto también `pnpm test` del job `check`.
    - La limpieza separa la decisión (una función pura del estado) de las llamadas al API, que reciben un cliente inyectable.
    - Los tests van en `e2e/support/*.test.ts`, fuera de `steps/`, para que `bddgen` no los cargue como pasos.
    - Se añade `support` al `include` de `e2e/tsconfig.json` para que el typecheck los cubra.

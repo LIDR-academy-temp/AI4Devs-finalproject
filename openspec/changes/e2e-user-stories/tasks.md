@@ -33,13 +33,14 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
 - [x] 2.2 Commit: `test(e2e): oráculos desde expected.json y limpieza de la suite de las historias`
 - [x] 2.3 Implementar `support/expected.ts` y `support/cleanup.ts` (cliente del API con `POST /auth/login` y `SEED_PASSWORD`, tokens solo en memoria), y el `After` de `steps/fixtures.ts` que lo usa (sustituye al del smoke). Verificar con `node --test`, el typecheck y `pnpm lint`. Romper a propósito una vez el orden intento → import y una vez `formatAmount`; comprobar que los tests fallan y restaurar con `cp` desde el scratchpad
 - [x] 2.4 Commit: `test(e2e): lectura de los oráculos y limpieza por el API para la suite de las historias`
+- [x] 2.5 Script `test` en `e2e/package.json` (`node --test "support/*.test.ts"`), para que `pnpm test` del job `check` ejecute los tests de `support/` sin tocar `ci.yml`. Verificar que `pnpm -r test` los ejecuta. Commit: `chore(e2e): los tests de support entran en pnpm test`
 
 ## 3. Escenarios sin procesar: provider_mismatch y batch sin filas asociadas (D1)
 
-- [ ] 3.1 Escribir `features/user-stories.feature`:
+- [x] 3.1 Escribir `features/user-stories.feature`:
   - cabecera con lo que deja una pasada (D9), la necesidad de sembrar (D2) y la dependencia de `workers: 1` y del orden alfabético de los archivos;
   - los escenarios 2 y 4 (spec "E2E de provider_mismatch" y "E2E del batch sin filas asociadas"), con pasos que nombran la muestra y no números;
-  - los escenarios 1 y 3 como `@skip` hasta el grupo 4.
+  - los escenarios 1 y 3 entran en el grupo 4. No van como `@skip`: bddgen falla con pasos sin definir aunque el escenario esté saltado, y la opción que lo evita (`missingSteps`) está en `playwright.config.ts`, que es de A.
 
   Pasos nuevos en `steps/validations.steps.ts`: ejecutar las validaciones, el resultado de una validación contra `expected.json`, **Continue** deshabilitado con su motivo, **Cancel and reprocess**, el desglose y el aviso de cuenta equivocada, y **Start a new import**. Verificar con `bddgen`, el typecheck y `pnpm lint`
 - [ ] 3.2 **Con turno de base, sembrada por la persona:** `pnpm test:e2e --grep` de los dos escenarios, en verde, con los dos imports `cancelled`. Romper a propósito una vez el oráculo (por ejemplo, `affectedIds` de otra muestra), comprobar que el escenario falla con un mensaje claro y que el `After` cancela el import, y restaurar con `cp`
@@ -53,7 +54,7 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
   - en Settlement Summary: estado, `amountPayable` y la descarga del summary (D5);
   - **Mark as paid** visible o no según el usuario, **Unpay…** y **Undo batch…** con motivo, **Go to Analysis & Validations** y el número propuesto con `attempt 2`.
 
-  Quitar los `@skip` y poner `@timeout:300000` en los escenarios 1 y 3. Verificar con `bddgen`, el typecheck y `pnpm lint`
+  Añadir los escenarios 1 y 3 al principio de `features/user-stories.feature`, con `@timeout:300000`. Verificar con `bddgen`, el typecheck y `pnpm lint`
 - [ ] 4.2 **Con turno de base, sembrada por la persona:** `pnpm test:e2e --grep` de los dos escenarios, en verde. Romper a propósito una vez la comparación del amount payable del summary descargado, comprobar que falla y que el `After` deja el intento `undone` y el import `cancelled`, y restaurar con `cp`
 - [ ] 4.3 Commit: `test(e2e): flujo feliz de HU1 a HU3 y deshacer y reprocesar en la suite de las historias (#38)`
 
@@ -76,7 +77,7 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
   - la duración por escenario;
   - lo que queda tras una pasada (D9);
   - lo que necesita el job de A: base recién sembrada, un worker, `SEED_PASSWORD` y Chromium;
-  - la propuesta de un script `test` en `e2e/package.json` para los tests de `support/`.
+  - que los tests de `support/` corren en el job `check` (tarea 2.5), comprobado en el CI del PR.
 
   Vigilar el CI con `gh --jq` hasta que esté verde
 
