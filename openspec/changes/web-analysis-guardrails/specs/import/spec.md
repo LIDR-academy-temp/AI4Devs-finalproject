@@ -86,3 +86,14 @@ En el aviso de canales, cada canal con `otherProvider: true` SHALL mostrarse, se
 - **GIVEN** un import analizado cuyo `channels` trae un canal con `otherProvider = true` y `assignment = "assigned"`
 - **WHEN** abre el paso Analysis
 - **THEN** el aviso aparece y muestra ese canal como de otro proveedor
+
+### Requirement: Resultado del análisis: ID con guiones en la tabla de filas
+En la tabla de filas, un ID que contiene guiones SHALL poder partirse en líneas, pero solo justo después de un guion y nunca dentro de un trozo. Un ID sin guiones SHALL mostrarse sin partirse. En los dos casos el ID SHALL mostrarse entero y, al copiarlo, salir igual que se leyó, sin espacios ni saltos añadidos.
+
+#### Scenario: ID con guiones
+- **WHEN** una fila trae `transactionIdRaw = "df14616d-4b26-4ffb-9984-72717ebff6a6"`
+- **THEN** la columna `ID` puede partirlo solo después de cada guion (`df14616d-` · `4b26-` · `4ffb-` · `9984-` · `72717ebff6a6`), y su texto es `df14616d-4b26-4ffb-9984-72717ebff6a6`
+
+#### Scenario: ID sin guiones
+- **WHEN** una fila trae `transactionIdRaw = "12345678901234567"`
+- **THEN** la columna `ID` lo muestra en una pieza que no se parte, como hasta ahora

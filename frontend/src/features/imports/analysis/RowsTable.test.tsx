@@ -303,3 +303,41 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
     expect(cell(second!, s.columns.id).textContent).toBe('df14616d-4b26-4ffb-9984-72717ebff6a6')
   })
 })
+
+// jsdom does not lay out: the widths at 1280 and 1024 px are measured by the screenshots of web-analysis-guardrails.
+// Here, only where the ID may break: after each hyphen and nowhere else.
+describe('Analysis: ID with hyphens (spec "Resultado del análisis: ID con guiones en la tabla de filas")', () => {
+  const unmatched = { matchResult: 'unmatched', reason: 'id_format', transactionId: null, transaction: null } as const
+  const idPiece = (id: string) => {
+    const row = bodyRows().find((r) => cell(r, s.columns.id).textContent === id)!
+    return within(cell(row, s.columns.id)).getByText(
+      (_, element) => element?.tagName === 'SPAN' && element.textContent === id,
+    )
+  }
+
+  it('an ID with hyphens may break only after each hyphen, and copies whole', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    importRecord(importId).rows!.push(
+      makeRow({ ...unmatched, rowNo: 900, transactionIdRaw: 'df14616d-4b26-4ffb-9984-72717ebff6a6' }),
+    )
+    await openRows(`/imports/${importId}?step=analysis&match=unmatched`)
+
+    const piece = idPiece('df14616d-4b26-4ffb-9984-72717ebff6a6')
+    expect(piece).toHaveClass('whitespace-normal', 'font-mono')
+    expect(piece).not.toHaveClass('whitespace-nowrap')
+    expect(piece.className).not.toMatch(/overflow-wrap|break-all|break-words/)
+    // <wbr> is a break opportunity that adds no character: the text, and so the copy, is the ID as read.
+    expect(piece.innerHTML).toBe('df14616d-<wbr>4b26-<wbr>4ffb-<wbr>9984-<wbr>72717ebff6a6')
+    expect(piece.textContent).toBe('df14616d-4b26-4ffb-9984-72717ebff6a6')
+  })
+
+  it('an ID without hyphens never breaks', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    importRecord(importId).rows!.push(makeRow({ ...unmatched, rowNo: 900, transactionIdRaw: '12345678901234567' }))
+    await openRows(`/imports/${importId}?step=analysis&match=unmatched`)
+
+    const piece = idPiece('12345678901234567')
+    expect(piece).toHaveClass('whitespace-nowrap', 'font-mono')
+    expect(piece.innerHTML).toBe('12345678901234567')
+  })
+})

@@ -10,6 +10,7 @@
 - **Aviso de cuenta equivocada**: con `analysis.likelyWrongAccount = true`, el paso Analysis muestra junto a los contadores el mismo texto que Settlement Review, a cualquier usuario y en cualquier estado del import analizado.
 - **Aviso de canales**: un canal con `otherProvider: true` se muestra como de otro proveedor, sea cual sea su `assignment`, con su `note`, y nunca con un texto que diga que se asociará a esta cuenta o que esta pasará a ser su principal. Los canales del proveedor de la cuenta siguen como hasta ahora.
 - **Fakes de MSW**: el análisis falso marca `otherProvider` y la `note` de canal ajeno como el API real (mismo proveedor que la cuenta o no), y los fixtures del aviso dejan de devolver combinaciones que el API ya no puede dar.
+- **Tabla de filas**: un ID con guiones (UUID) puede partirse, solo después de cada guion; uno sin guiones sigue sin partirse. Lo destapó la primera pasada de capturas con `batch-wrong-account`, cuyos IDs UUID hacían desbordar la tabla a 1024 px (#132).
 - **Tests RTL** de `Counters` y `ChannelNotice`, y **capturas** a 1280 y 1024 px con `batch-wrong-account` y `batch-blocked`, comprobando que la tabla de filas no vuelve a desbordarse (#132).
 
 Fuera de alcance: `features/validations` y `features/settlements` (los toca el #53), el backend, el contrato y la colección Bruno.
@@ -22,11 +23,11 @@ Ninguna.
 
 ### Modified Capabilities
 
-- `import`: el requisito "Resultado del análisis: aviso de canales" se limita a los canales del proveedor de la cuenta; se añaden "Resultado del análisis: filas sin asociar por motivo", "Resultado del análisis: aviso de cuenta equivocada" y "Resultado del análisis: canal de otro proveedor".
+- `import`: el requisito "Resultado del análisis: aviso de canales" se limita a los canales del proveedor de la cuenta; se añaden "Resultado del análisis: filas sin asociar por motivo", "Resultado del análisis: aviso de cuenta equivocada", "Resultado del análisis: canal de otro proveedor" y "Resultado del análisis: ID con guiones en la tabla de filas".
 
 ## Impact
 
-- `frontend/src/features/imports/analysis/Counters.tsx`, `ChannelNotice.tsx` y sus tests nuevos; `AnalysisStep.test.tsx` (los casos del aviso de canales que cambian).
+- `frontend/src/features/imports/analysis/Counters.tsx`, `ChannelNotice.tsx` y sus tests nuevos; `RowsTable.tsx` y `RowsTable.test.tsx` (ID con guiones); `AnalysisStep.test.tsx` (los casos del aviso de canales que cambian).
 - `frontend/src/features/imports/strings.ts` (textos nuevos en `analysis.counters` y `analysis.channels`).
 - `frontend/src/test/msw/imports.ts` y `import-fixtures.ts` (el fake comparte esos módulos con los tests de validaciones y settlements: se corre la suite entera del frontend).
 - `e2e/screenshots/web-analysis-guardrails.ts` nuevo, su script en `e2e/package.json` y en el `package.json` raíz, y `docs/wireframes/` con las capturas.

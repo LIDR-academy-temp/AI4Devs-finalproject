@@ -54,6 +54,12 @@ El caso `batch-wrong-account` se monta con `seedImport('batch-clean', { unmatche
 
 Cada pantalla se captura a 1280×900 y a 1024×768, en total seis capturas en `docs/wireframes/web-analysis-guardrails/`. Ninguno de los dos imports se valida ni se procesa (no consumen números de batch), y al final se cancelan los dos con un motivo, para poder repetir sin sembrar. No se usa `batch-clean` (#111). Solo se ejecuta con turno de base de la persona.
 
+**D8. Un ID con guiones se parte solo por los guiones.** La primera pasada de capturas (tarea 4.3) fue la primera vez que la tabla de filas mostró IDs UUID: `batch-wrong-account` trae IDs de 36 caracteres en monoespaciada, la celda del ID es `whitespace-nowrap` desde `web-rows-table-compact`, y a 1024 px la tabla salía 79 px más ancha que su tarjeta (#132). Con los IDs numéricos de las demás muestras cabía, por eso no se había visto. Se corrige en este change, y no en uno aparte, porque es la misma carpeta, son unas líneas y lo destapa la muestra que este change captura. En `RowsTable.tsx`:
+- un ID sin guiones sigue igual, en un `<span>` `whitespace-nowrap`;
+- uno con guiones pasa a `whitespace-normal` con un `<wbr>` después de cada guion, sin `overflow-wrap` ni `break-all`. Dentro de un trozo no hay ningún punto de corte, así que nunca se parte por ahí. `<wbr>` no añade ningún carácter, así que el texto y la copia son el ID tal como se leyó.
+
+No basta con `whitespace-normal` solo, porque las reglas de corte de línea (UAX #14) no cortan entre un guion y una cifra (`d-4b26`), y con `nowrap` el navegador no corta tampoco en un `<wbr>`. El requisito va en un ADDED ("Resultado del análisis: ID con guiones en la tabla de filas"), porque añadido a "Resultado del análisis: tabla de filas" el texto pasaría de 500 caracteres. Las tablas sin escasez de ancho no cambian: con sitio, la columna toma el ancho entero del ID y no lo parte. El script de capturas comprueba además que, a 1280 px, cada ID de la tabla cabe en una línea.
+
 ## Risks / Trade-offs
 
 - [El fake se comparte con los tests de `features/validations` y `features/settlements`; D5 cambia la nota de RAM-01 y los canales de `legacy-provider` fuera de su cuenta.] → Se corre la suite entera del frontend tras D5. Si falla un test de esas carpetas, se para y se avisa, sin tocarlo.
