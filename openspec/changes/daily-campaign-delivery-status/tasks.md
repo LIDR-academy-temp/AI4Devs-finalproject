@@ -191,7 +191,7 @@ A filter over the list of the active tab of `/exceptions`, in the style of the c
 
 ## 9. Review and Update Existing Unit Tests (MANDATORY)
 
-- [ ] 9.1 Review every test touched by this change and update any asserting superseded behaviour
+- [x] 9.1 Review every test touched by this change and update any asserting superseded behaviour
 - [ ] 9.2 Verify each role-guarded endpoint added here has its negative authorisation case covered
 
 ## 9A. Backend: Adform Line Catalogue, Linking and Range Loads
@@ -211,12 +211,12 @@ A filter over the list of the active tab of `/exceptions`, in the style of the c
 
 ## 10. Run Unit Tests and Verify Database State (MANDATORY)
 
-- [ ] 10.1 Capture the pre-test database baseline for delivery, batches and exceptions
-- [ ] 10.2 Run targeted unit tests for the changed modules and record passed, failed and skipped counts
-- [ ] 10.3 Run the full backend and frontend suites and record totals and runtime, including the slow tests with `pytest -m slow`
-- [ ] 10.4 Verify post-test database state against the baseline and restore it if anything changed
-- [ ] 10.5 Create the report at `specs/daily-campaign-delivery-status/reports/YYYY-MM-DD-step-10-unit-test-and-db-verification.md`
-- [ ] 10.6 Mark this step complete only once the tests pass and that report exists
+- [x] 10.1 Capture the pre-test database baseline for delivery, batches and exceptions
+- [x] 10.2 Run targeted unit tests for the changed modules and record passed, failed and skipped counts
+- [x] 10.3 Run the full backend and frontend suites and record totals and runtime, including the slow tests with `pytest -m slow`
+- [x] 10.4 Verify post-test database state against the baseline and restore it if anything changed
+- [x] 10.5 Create the report at `specs/daily-campaign-delivery-status/reports/YYYY-MM-DD-step-10-unit-test-and-db-verification.md`
+- [x] 10.6 Mark this step complete only once the tests pass and that report exists
 
 ## 11. Manual Endpoint Testing with curl (MANDATORY - AGENT MUST EXECUTE)
 
@@ -249,8 +249,8 @@ A filter over the list of the active tab of `/exceptions`, in the style of the c
 
 ## 12. E2E Testing with Playwright (MANDATORY - AGENT MUST EXECUTE)
 
-- [ ] 12.1 Start frontend and backend and verify the database is in a known state
-- [ ] 12.2 Execute the operations flow: open the daily status, identify a flagged campaign and work an ingestion exception to resolution
+- [x] 12.1 Start frontend and backend and verify the database is in a known state
+- [x] 12.2 Execute the operations flow: open the daily status, identify a flagged campaign and work an ingestion exception to resolution
 - [ ] 12.3 Execute the business flow and verify no cost or margin figure is visible anywhere in it
 - [ ] 12.4 Verify the loading and empty states render distinctly in the browser
 - [ ] 12.5 Execute the flow as a user holding several roles and verify the interface composes from all of them

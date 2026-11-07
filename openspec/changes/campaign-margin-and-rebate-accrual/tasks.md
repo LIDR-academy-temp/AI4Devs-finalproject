@@ -171,18 +171,18 @@ Controls to name (the label text stays as is): `Nombre de la campaña *`, `Nombr
 
 ## 9. Review and Update Existing Unit Tests (MANDATORY)
 
-- [ ] 9.1 Review every test touched by this change and update any asserting superseded behaviour
+- [x] 9.1 Review every test touched by this change and update any asserting superseded behaviour
 - [ ] 9.2 Verify every worked example from `docs/product-description.md` §5 is encoded as a test
 - [ ] 9.3 Verify each role-guarded endpoint added here has its negative authorisation case covered
 
 ## 10. Run Unit Tests and Verify Database State (MANDATORY)
 
-- [ ] 10.1 Capture the pre-test database baseline for schedules, brackets, accruals and applied rates
-- [ ] 10.2 Run targeted unit tests for the domain modules and record passed, failed and skipped counts
-- [ ] 10.3 Run the full backend and frontend suites and record totals and runtime
-- [ ] 10.4 Verify post-test database state against the baseline and restore it if anything changed
-- [ ] 10.5 Create the report at `specs/campaign-margin-and-rebate-accrual/reports/YYYY-MM-DD-step-10-unit-test-and-db-verification.md`
-- [ ] 10.6 Mark this step complete only once the tests pass and that report exists
+- [x] 10.1 Capture the pre-test database baseline for schedules, brackets, accruals and applied rates
+- [x] 10.2 Run targeted unit tests for the domain modules and record passed, failed and skipped counts
+- [x] 10.3 Run the full backend and frontend suites and record totals and runtime
+- [x] 10.4 Verify post-test database state against the baseline and restore it if anything changed
+- [x] 10.5 Create the report at `specs/campaign-margin-and-rebate-accrual/reports/YYYY-MM-DD-step-10-unit-test-and-db-verification.md`
+- [x] 10.6 Mark this step complete only once the tests pass and that report exists
 
 ## 11. Manual Endpoint Testing with curl (MANDATORY - AGENT MUST EXECUTE)
 
@@ -197,9 +197,9 @@ Controls to name (the label text stays as is): `Nombre de la campaña *`, `Nombr
 
 ## 12. E2E Testing with Playwright (MANDATORY - AGENT MUST EXECUTE)
 
-- [ ] 12.1 Start frontend and backend and verify the database is in a known state
-- [ ] 12.2 Execute the finance flow: read a campaign margin, drill down to its lines and flights (the roll-up view and export are deferred with 7.4 and 6.6)
-- [ ] 12.3 Verify a running-flight figure, and its line, display the provisional label in the browser
+- [x] 12.1 Start frontend and backend and verify the database is in a known state
+- [x] 12.2 Execute the finance flow: read a campaign margin, drill down to its lines and flights (the roll-up view and export are deferred with 7.4 and 6.6)
+- [x] 12.3 Verify a running-flight figure, and its line, display the provisional label in the browser
 - [ ] 12.4 Verify a user without `finance` cannot reach the margin views and sees no cost figure anywhere
 - [ ] 12.5 Execute the flow as a user holding several roles and verify the interface composes from all of them
 - [ ] 12.6 Clean up test data, restore database state and document the scenarios in a report in the change folder
