@@ -24,13 +24,13 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
 
 ## 2. Oráculos y limpieza, test primero (D3, D6, D11)
 
-- [ ] 2.1 Tests primero, en `support/expected.test.ts` y `support/cleanup.test.ts`, con `node:test`. Añadir `support` al `include` de `e2e/tsconfig.json`.
+- [x] 2.1 Tests primero, en `support/expected.test.ts` y `support/cleanup.test.ts`, con `node:test`. Añadir `support` al `include` de `e2e/tsconfig.json`.
   - `expected`: lee `batch-clean` (783 filas leídas, `proposedBatchNo`, `summary.amountPayable`) comparando con el JSON leído aparte, no con números escritos; una muestra inexistente falla con su ruta; `formatAmount("33771.3600")` es `33,771.3600`, y también con negativos, ceros y miles.
   - `cleanup`, la decisión según el estado: `paid` → `unpay` como `payments` y después `undo` como `analyst`; `processed` → `undo`; `undone` → nada; import `uploaded`, `mapped`, `analyzed` o `validated` → `cancel`; `cancelled` o `processed` → nada. Primero los intentos y después los imports.
   - `cleanup`, la ejecución con un cliente falso: los motivos, el orden de las llamadas, un fallo que no detiene las demás acciones y que se devuelve como anotación de una línea, sin cuerpo de petición ni contraseña.
 
   Verificar que fallan
-- [ ] 2.2 Commit: `test(e2e): oráculos desde expected.json y limpieza de la suite de las historias`
+- [x] 2.2 Commit: `test(e2e): oráculos desde expected.json y limpieza de la suite de las historias`
 - [ ] 2.3 Implementar `support/expected.ts` y `support/cleanup.ts` (cliente del API con `POST /auth/login` y `SEED_PASSWORD`, tokens solo en memoria), y el `After` de `steps/fixtures.ts` que lo usa (sustituye al del smoke). Verificar con `node --test`, el typecheck y `pnpm lint`. Romper a propósito una vez el orden intento → import y una vez `formatAmount`; comprobar que los tests fallan y restaurar con `cp` desde el scratchpad
 - [ ] 2.4 Commit: `test(e2e): lectura de los oráculos y limpieza por el API para la suite de las historias`
 
