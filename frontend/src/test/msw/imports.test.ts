@@ -419,3 +419,20 @@ describe('fake import API: sheets not confirmed in the readiness (spec "Hojas si
     expect(detail.readiness.missing.some((m) => m.field === 'confirmation')).toBe(false)
   })
 })
+
+describe('fake import API: channels of another provider (spec "Canal de otro proveedor en el aviso de canales")', () => {
+  const OTHER_PROVIDER = 'Channel of another provider: its rows are not processed in this account'
+
+  it('marks RAM-01 of batch-blocked in ProviderB-Main with otherProvider and its own note', () => {
+    const { channels } = seedImport('batch-blocked', { status: 'analyzed' })
+    const ram01 = channels?.find((c) => c.channelId === 1001)
+    expect(ram01).toMatchObject({ assignment: 'assigned_to_other_account', otherProvider: true, note: OTHER_PROVIDER })
+    expect(channels?.filter((c) => c.channelId !== 1001).every((c) => !('otherProvider' in c))).toBe(true)
+  })
+
+  it('marks no channel of batch-clean in ProviderA-USD', () => {
+    const { channels } = seedImport('batch-clean', { status: 'analyzed' })
+    expect(channels?.length).toBeGreaterThan(0)
+    expect(channels?.some((c) => 'otherProvider' in c)).toBe(false)
+  })
+})

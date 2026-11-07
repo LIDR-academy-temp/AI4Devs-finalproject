@@ -1,13 +1,22 @@
-import type { MatchResult } from '@recon/shared'
+import type { MatchResult, UnmatchedReason } from '@recon/shared'
 import { Link, useSearch } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import type { ImportDetail } from '@/lib/api/types'
 import { requestListFocus } from '@/lib/list-focus'
 import { strings } from '../strings'
 import { ROWS_LIST } from './RowsTable'
 
 const c = strings.analysis.counters
+const reasons = strings.analysis.rows.reasons
 
-/** Rows read, by result and by cycle (spec "Resultado del análisis: contadores"). Unmatched and ambiguous warn. */
+/** A fixed order, so the breakdown reads the same from one import to the next (design D1). */
+const REASON_ORDER: readonly UnmatchedReason[] = ['no_match', 'id_format', 'lossy_numeric_id', 'no_gateways']
+
+/**
+ * Rows read, by result and by cycle (spec "Resultado del análisis: contadores"). Unmatched and ambiguous warn, and
+ * Unmatched breaks down by reason; when every unmatched row is id_format the files probably belong to another account
+ * (specs "filas sin asociar por motivo" and "aviso de cuenta equivocada").
+ */
 export function Counters({
   importId,
   analysis,
@@ -15,9 +24,9 @@ export function Counters({
   importId: string
   analysis: NonNullable<ImportDetail['analysis']>
 }) {
-  const { rows, byCycle } = analysis
+  const { rows, byCycle, likelyWrongAccount } = analysis
   const search = useSearch({ from: '/app/imports/$importId' })
-  const card = (label: string, value: number, filter?: MatchResult) => {
+  const card = (label: string, value: number, filter?: MatchResult, detail?: ReactNode) => {
     const warn = filter !== undefined && value > 0
     return (
       <section
@@ -27,6 +36,7 @@ export function Counters({
       >
         <span className="text-xs text-muted-foreground">{label}</span>
         <span className="text-2xl font-semibold tabular-nums">{value}</span>
+        {detail}
         {warn && (
           <Link
             to="/imports/$importId"
@@ -48,17 +58,39 @@ export function Counters({
     )
   }
 
+  const shown = REASON_ORDER.filter((reason) => rows.unmatchedByReason[reason] > 0)
+  const breakdown = rows.unmatched > 0 && shown.length > 0 && (
+    <ul aria-label={c.byReason} className="flex flex-col gap-0.5 text-xs">
+      {shown.map((reason) => (
+        <li key={reason} className="flex justify-between gap-3">
+          <span>{reasons[reason]}</span>
+          <span className="font-medium tabular-nums">{rows.unmatchedByReason[reason]}</span>
+        </li>
+      ))}
+    </ul>
+  )
+
   return (
-    <div className="flex flex-wrap gap-3">
-      {card(c.read, rows.total)}
-      {card(c.matched, rows.matched)}
-      {card(c.unmatched, rows.unmatched, 'unmatched')}
-      {card(c.ambiguous, rows.ambiguous, 'ambiguous')}
-      {card(c.ignored, rows.ignored)}
-      <section aria-label={c.byCycle} className="flex min-w-32 flex-col gap-1 rounded-md border bg-background p-3">
-        <span className="text-xs text-muted-foreground">{c.byCycle}</span>
-        <span className="text-lg font-semibold tabular-nums">{c.cycles(byCycle.E, byCycle.I, byCycle.R)}</span>
-      </section>
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-3">
+        {card(c.read, rows.total)}
+        {card(c.matched, rows.matched)}
+        {card(c.unmatched, rows.unmatched, 'unmatched', breakdown)}
+        {card(c.ambiguous, rows.ambiguous, 'ambiguous')}
+        {card(c.ignored, rows.ignored)}
+        <section aria-label={c.byCycle} className="flex min-w-32 flex-col gap-1 rounded-md border bg-background p-3">
+          <span className="text-xs text-muted-foreground">{c.byCycle}</span>
+          <span className="text-lg font-semibold tabular-nums">{c.cycles(byCycle.E, byCycle.I, byCycle.R)}</span>
+        </section>
+      </div>
+      {likelyWrongAccount && (
+        <section
+          aria-label={c.wrongAccountLabel}
+          className="rounded-md border border-amber-500/60 bg-amber-50 p-3 text-sm font-medium dark:bg-amber-950/30"
+        >
+          {c.wrongAccount}
+        </section>
+      )}
     </div>
   )
 }

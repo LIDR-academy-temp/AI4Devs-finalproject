@@ -129,6 +129,11 @@ export const strings = {
       byCycle: 'By cycle',
       cycles: (e: number, i: number, r: number) => `E ${e} · I ${i} · R ${r}`,
       showRows: (counter: string) => `Show ${counter.toLowerCase()} rows`,
+      /** The breakdown of the Unmatched counter, with the reasons of the rows table (web-analysis-guardrails D1). */
+      byReason: 'Unmatched by reason',
+      wrongAccountLabel: 'Wrong account?',
+      /** The text of Settlement Review, copied so imports does not depend on settlements (D2; to unify in #139). */
+      wrongAccount: 'The IDs do not fit any gateway of this account: the files may belong to another account.',
     },
     channels: {
       title: 'Channels to review',
@@ -136,6 +141,8 @@ export const strings = {
       unassigned: (channel: string) => `${channel} is not assigned yet`,
       primaryIn: (channel: string, account: string) => `${channel} is primary in ${account}`,
       primaryElsewhere: (channel: string) => `${channel} is primary in an account of another merchant`,
+      /** Its rows are provider_mismatch: processing never assigns it (web-analysis-guardrails D3). */
+      otherProvider: (channel: string) => `${channel} belongs to another provider`,
       rows: (count: number) => `${count} ${count === 1 ? 'row' : 'rows'}`,
     },
     warnings: {

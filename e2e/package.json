@@ -14,6 +14,7 @@
     "screenshots:web-admin-matching": "node screenshots/web-admin-matching.ts",
     "screenshots:import-in-progress": "node screenshots/import-in-progress.ts",
     "screenshots:web-ambiguous-rows": "node screenshots/web-ambiguous-rows.ts",
+    "screenshots:web-analysis-guardrails": "node screenshots/web-analysis-guardrails.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
