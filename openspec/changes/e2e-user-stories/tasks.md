@@ -17,10 +17,10 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
 
 ## 1. Pasos comunes (D4)
 
-- [ ] 1.1 Mover el fixture `test` a `steps/fixtures.ts`, con `importIds` y `batchIds`. Mover a `steps/common.steps.ts` los pasos del smoke que reutilizan los escenarios nuevos: sesión, nueva conciliación, subida, pareo, análisis, cancelar y estado. Añadir `Given the {string} user is signed in` (con `the analyst is signed in` como el mismo paso) y `When they sign out`. `features/import-smoke.feature` no cambia. Verificar:
+- [x] 1.1 Mover el fixture `test` a `steps/fixtures.ts`, con `importIds` y `batchIds`. Mover a `steps/common.steps.ts` los pasos del smoke que reutilizan los escenarios nuevos: sesión, nueva conciliación, subida, pareo, análisis, cancelar y estado. Añadir `Given the {string} user is signed in` (con `the analyst is signed in` como el mismo paso) y `When they sign out`. `features/import-smoke.feature` no cambia. Verificar:
   - `bddgen`, el typecheck y `pnpm lint`;
   - que `playwright test --list` sigue dando el mismo escenario del smoke.
-- [ ] 1.2 Commit: `refactor(e2e): pasos comunes del smoke compartidos para la suite de las historias`
+- [x] 1.2 Commit: `refactor(e2e): pasos comunes del smoke compartidos para la suite de las historias`
 
 ## 2. Oráculos y limpieza, test primero (D3, D6, D11)
 
