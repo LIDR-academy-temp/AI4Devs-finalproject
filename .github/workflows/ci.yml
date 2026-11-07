@@ -166,10 +166,6 @@ jobs:
         run: pnpm --filter @recon/e2e exec playwright install-deps chromium
       - name: API collection (Bruno)
         run: pnpm test:api
-      # The collection leaves batch-clean processed and RAM-07 assigned (#111): seed again, even if it failed.
-      - name: seed again
-        if: ${{ !cancelled() }}
-        run: pnpm db:seed
       - name: E2E (Playwright)
         id: e2e
         if: ${{ !cancelled() }}
