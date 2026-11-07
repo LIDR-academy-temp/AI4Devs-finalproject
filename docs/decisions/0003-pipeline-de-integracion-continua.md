@@ -115,6 +115,8 @@ Sin el plan, la revisión se puede pedir a mano desde el pull request (**Reviewe
 
 Un comentario de Copilot se atiende con un commit o se descarta con un motivo en la conversación. La plantilla `.github/pull_request_template.md` lo pide en su lista de control.
 
+**Estado al 7 de noviembre de 2026.** El responsable activó la revisión automática en `main proteccion`, con revisión de cada push y de los borradores. Verificado leyendo el conjunto de reglas con la API de GitHub. Para probar los criterios se abrió un pull request descartable con dos errores sembrados: un corte del índice cambiado sin cambiar `VERSION_METODO` y `actions/setup-node` referenciada por etiqueta. Copilot marcó los dos como **Bloqueante**, en castellano, citando el requisito de `application-recommendation` y este ADR. El pull request se cerró sin fusionar y la rama se borró. Se abrió contra `feature/entrega-2-PDN` y con la revisión pedida a mano, porque el `main` de este repositorio todavía no tiene el código y un pull request a `main` habría arrastrado toda la rama.
+
 Es un ajuste de la cuenta: el asistente no lo cambia.
 
 ## Más información

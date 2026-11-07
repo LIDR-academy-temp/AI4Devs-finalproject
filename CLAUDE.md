@@ -38,6 +38,7 @@ Monolito modular con un worker de una sola instancia ([ADR-0001](docs/decisions/
 - **Primero los tests.** En el dominio, primero los tests parametrizados con los casos de referencia y luego la función. Revisar con cuidado los límites "menor o igual" y "mayor que".
 - Cada grupo de tareas incluye sus propios tests y su documentación; no se dejan para el final.
 - Si cambia la API, regenerar el contrato y los tipos (ver comandos). La prueba `test_contrato_frontend.py` falla si no se hace.
+- Si cambia una spec de `openspec/specs`, regenerar la guía `docs/especificaciones/README.md` (ver comandos). La prueba `test_documentar_especificaciones.py` falla si no se hace. La guía no se edita a mano.
 - Si cambia el modelo de datos, se agrega una migración de Alembic con `upgrade` y `downgrade`.
 - Seguir el estilo del código cercano: nombres en castellano, comentarios solo cuando explican un porqué.
 - Commits convencionales en castellano, por ejemplo `feat(acceso): ...` o `docs(entrega-2): ...`. **Commit, push y pull requests solo con la aprobación explícita del responsable.**
@@ -57,6 +58,7 @@ uv run ruff check
 uv run pytest
 uv run pytest --cov=app.dominio --cov-report=term-missing
 uv run python -m herramientas.exportar_openapi
+uv run python -m herramientas.documentar_especificaciones
 ```
 
 Las migraciones se aplican solas al levantar la pila, con el servicio `migraciones`. Las pruebas las aplican sobre `db_pruebas`. No ejecutar `alembic` a mano: toma `DATABASE_URL` del entorno y podría apuntar a la base real.
@@ -76,6 +78,8 @@ npm run e2e
 ### Integración continua
 
 `.github/workflows/integracion.yml` corre todo lo anterior en cada push y pull request a `main` ([ADR-0003](docs/decisions/0003-pipeline-de-integracion-continua.md)). No usa secretos: nunca agregar credenciales de SAT2 ni `pull_request_target`. Cada acción va fijada por su SHA. Un falso positivo de Gitleaks se registra en `.gitleaksignore` con su motivo; nunca se desactiva el escaneo.
+
+GitHub Copilot revisa cada pull request a `main` con `.github/copilot-instructions.md` y los criterios por zona de `.github/instructions/`. Solo comenta: no es un control exigido. Sus comentarios se atienden con un commit o se descartan con un motivo. Si cambian las reglas de este archivo, revisar que esas instrucciones sigan de acuerdo.
 
 ## Seguridad: reglas que no se rompen
 

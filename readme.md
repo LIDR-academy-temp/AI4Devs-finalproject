@@ -203,7 +203,8 @@ Existe una aplicación en R Shiny, en un repositorio privado, creada para probar
 - Niveles de uso diferenciados con roles: público general, sector productivo e investigación.
 - Más índices: Delta T psicrométrico, déficit de presión de vapor, evapotranspiración de referencia, grados-día, horas de mojado foliar, heladas y acumulados.
 - Predicción a corto y mediano plazo, y seguimiento de fenómenos macroclimáticos como El Niño.
-- Carga de toda la historia disponible en SAT2 y rango manual de fechas en históricos.
+- Carga de toda la historia disponible en SAT2. Hoy se cargan los últimos 31 días al instalar y se consulta hasta un año atrás.
+- Trazabilidad automática entre cada escenario de las especificaciones y las pruebas que lo verifican.
 - Humedad de suelos, que requiere una fuente de datos adicional.
 - Agentes de IA dentro del producto para ingesta y análisis.
 - Migración a un repositorio y una operación de producción empresarial. Este repositorio es académico y esa migración no forma parte de este trabajo.
@@ -218,6 +219,9 @@ Existe una aplicación en R Shiny, en un repositorio privado, creada para probar
 | Pruebas | Generación de tests a partir de los criterios de aceptación y de la tabla de la sección 2.6, con revisión humana | Realizado |
 | Despliegue | Configuración de producción e instalación local, probadas en copias limpias y en un clon real | Parcial: el despliegue público está pospuesto |
 | Mantenimiento y seguridad | Revisión de seguridad con pruebas negativas, y corrección de los hallazgos | Realizado para esta entrega ([informe](docs/seguridad/revision-entrega-2.md)) |
+| Integración continua | Pipeline de GitHub Actions redactado con Claude Code, con revisión humana de cada control ([ADR-0003](docs/decisions/0003-pipeline-de-integracion-continua.md)) | Realizado |
+| Revisión de código | GitHub Copilot revisa cada pull request a `main` con [instrucciones propias del proyecto](.github/copilot-instructions.md), en castellano y por zona: dominio, migraciones, flujos, API y frontend. Solo comenta: no aprueba ni bloquea, y la decisión de fusionar es humana | Realizado |
+| Documentación viva | La [guía de las especificaciones](docs/especificaciones/README.md) se genera desde OpenSpec, y una prueba del pipeline falla si queda vieja | Realizado |
 
 Los prompts reales están en [prompts.md](prompts.md).
 
@@ -304,7 +308,7 @@ AI4Devs-finalproject-temp/
 │   │   ├── administracion.py  # Comandos para administrar cuentas
 │   │   ├── seguridad.py     # Contraseñas e identificadores de sesión
 │   │   └── semillas.py      # Datos de demostración
-│   ├── herramientas/        # Prueba de límites de SAT2, contrato y pruebas negativas
+│   ├── herramientas/        # Prueba de límites de SAT2, contrato, guía de especificaciones y pruebas negativas
 │   ├── migraciones/         # Migraciones de Alembic
 │   └── tests/
 ├── frontend/
@@ -314,12 +318,18 @@ AI4Devs-finalproject-temp/
 │       ├── componentes/     # Estado, tarjetas y gráfico
 │       ├── servicios/       # Cliente de la API, sesión y actualización periódica
 │       └── pruebas/         # Pruebas con Vitest
+├── .github/
+│   ├── workflows/           # Pipeline de integración continua
+│   ├── instructions/        # Criterios de revisión de Copilot por zona
+│   ├── copilot-instructions.md  # Cómo revisa Copilot los pull requests
+│   └── pull_request_template.md
 ├── openspec/                # Especificaciones y cambios
 ├── docs/
 │   ├── capturas/            # Capturas del MVP
-│   ├── decisions/           # ADR-0001 y ADR-0002
+│   ├── decisions/           # ADR-0001 a ADR-0003
 │   ├── demo/                # Guion de la demostración
 │   ├── despliegue/          # Instalación local y despliegue en Google Cloud
+│   ├── especificaciones/    # Guía generada desde las especificaciones de OpenSpec
 │   ├── plan/                # Plan de implementación
 │   ├── prototipo/           # Capturas del prototipo
 │   ├── seguridad/           # Informe de la revisión de seguridad
@@ -345,6 +355,8 @@ El backend sigue una arquitectura en capas: `api` y `ingesta` dependen de `domin
 | Google Cloud | [Guía de despliegue](docs/despliegue/despliegue-gcp.md) y [ADR-0002](docs/decisions/0002-proveedor-del-servidor.md) | **Pospuesto.** La guía no se ejecutó en la nube |
 
 **Implementado: integración continua.** Cada push y cada pull request a `main` pasan por un flujo de GitHub Actions ([`integracion.yml`](.github/workflows/integracion.yml), decisión en el [ADR-0003](docs/decisions/0003-pipeline-de-integracion-continua.md)): lint y pruebas del backend y del frontend, contrato de la API, especificaciones de OpenSpec, escaneo de secretos de todo el historial, auditoría de dependencias y extremo a extremo con la pila completa. Antes de fusionar en `main` corren también las pruebas negativas sobre la configuración de producción. El flujo no usa secretos y fija sus acciones por SHA. Las ejecuciones son públicas en [GitHub Actions](https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp/actions/workflows/integracion.yml).
+
+**Implementado: revisión con IA y documentación viva.** GitHub Copilot revisa cada pull request a `main` y cada push nuevo, con las instrucciones del proyecto. No es un control exigido: fusionar depende del pipeline y del responsable. La [guía de las especificaciones](docs/especificaciones/README.md) se genera con `uv run python -m herramientas.documentar_especificaciones`, y el trabajo de backend falla si no coincide con `openspec/specs`.
 
 **Pendiente: despliegue continuo.** La publicación de imágenes y el despliegue en el servidor del esquema siguiente siguen en la línea B de la [hoja de ruta](docs/plan/hoja-de-ruta-entrega-final.md).
 
@@ -390,7 +402,7 @@ Resultado de la última ejecución, el 7 de noviembre de 2026: todas pasan, en l
 
 | Nivel | Herramienta | Qué cubre | Pruebas |
 |---|---|---|---|
-| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos y el ciclo de vida de las cuentas: registro, códigos, correo, contraseñas, límites por IP y exportación | 562 |
+| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones y las instrucciones de revisión | 587 |
 | Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos con sus rangos y el calendario, y las pantallas de cuentas con sus errores por campo | 93 |
 | Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el rango manual de históricos, el selector, el equipo inactivo y las cuentas leyendo los correos en Mailpit: registro, confirmación, recupero y las tres formas de baja | 22 |
 | Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras, carga, enumeración de correos, enlaces de un solo uso, baja por `GET` y límites por IP | 115 |

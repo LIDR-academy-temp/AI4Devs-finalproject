@@ -3,7 +3,7 @@
 > Este archivo se genera desde `openspec/specs` y no se edita a mano.
 > Para regenerarlo, desde `backend/`: `uv run python -m herramientas.documentar_especificaciones`.
 
-Qué hace Weather Track, según sus especificaciones de OpenSpec: 10 capacidades, 76 requisitos y 161 escenarios. Cada capacidad enlaza su especificación, donde están los escenarios completos, y el último cambio archivado que la modificó.
+Qué hace Weather Track, según sus especificaciones de OpenSpec: 12 capacidades, 84 requisitos y 172 escenarios. Cada capacidad enlaza su especificación, donde están los escenarios completos, y el último cambio archivado que la modificó.
 
 ## Índice
 
@@ -12,9 +12,11 @@ Qué hace Weather Track, según sus especificaciones de OpenSpec: 10 capacidades
 | [account-access](#account-access) | Permite que solo las personas con una cuenta activa de Weather Track ingresen al sistema y consulten únicamente las estaciones que tienen asignadas. | 7 | 15 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
 | [account-lifecycle](#account-lifecycle) | Permite que una persona cree su propia cuenta de Weather Track, la confirme por correo, la administre y la dé de baja, y que el sistema borre las cuentas que no se confirman o se dan de baja. | 10 | 20 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
 | [account-recovery](#account-recovery) | Permite que el titular de una cuenta recupere el acceso cuando olvidó su contraseña, sin que nadie pueda averiguar qué correos están registrados. | 4 | 7 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
+| [ai-code-review](#ai-code-review) | Suma a cada pull request una revisión de IA enfocada en las reglas de Weather Track, como apoyo a la decisión del responsable y sin reemplazar los controles del pipeline. | 4 | 6 | [weather-track-revision-y-documentacion-viva](../../openspec/changes/archive/2026-11-07-weather-track-revision-y-documentacion-viva/proposal.md), 2026-11-07 |
 | [application-recommendation](#application-recommendation) | Responde si conviene aplicar fitosanitarios en una estación en este momento, con un índice, un estado y sus motivos, sin presentar como favorable una condición de inversión ni datos faltantes o viejos. | 11 | 24 | [weather-track-mvp-nucleo](../../openspec/changes/archive/2026-11-03-weather-track-mvp-nucleo/proposal.md), 2026-11-03 |
-| [continuous-integration](#continuous-integration) | Verifica automáticamente cada cambio de Weather Track con las mismas pruebas que se ejecutan a mano, para que nada llegue a `main` sin pasar por ellas, y sin que el propio pipeline exponga credenciales. | 9 | 11 | [weather-track-pipeline-ci](../../openspec/changes/archive/2026-11-07-weather-track-pipeline-ci/proposal.md), 2026-11-07 |
+| [continuous-integration](#continuous-integration) | Verifica automáticamente cada cambio de Weather Track con las mismas pruebas que se ejecutan a mano, para que nada llegue a `main` sin pasar por ellas, y sin que el propio pipeline exponga credenciales. | 10 | 12 | [weather-track-revision-y-documentacion-viva](../../openspec/changes/archive/2026-11-07-weather-track-revision-y-documentacion-viva/proposal.md), 2026-11-07 |
 | [customer-base](#customer-base) | Convierte las cuentas confirmadas en una base de clientes potenciales, con el consentimiento de cada persona registrado y una exportación para el administrador. | 3 | 4 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
+| [living-documentation](#living-documentation) | Ofrece una guía legible de lo que hace Weather Track, generada a partir de las especificaciones de OpenSpec para que nunca quede vieja. | 3 | 4 | [weather-track-revision-y-documentacion-viva](../../openspec/changes/archive/2026-11-07-weather-track-revision-y-documentacion-viva/proposal.md), 2026-11-07 |
 | [sat2-ingestion](#sat2-ingestion) | Mantiene los datos de las estaciones actualizados y con su calidad identificada, obteniéndolos de SAT2 de forma automática e independiente de las sesiones de usuario. | 15 | 41 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
 | [sensor-history](#sensor-history) | Permite revisar cómo evolucionó un sensor en un período reciente, con un gráfico y un resumen estadístico, para entender las condiciones y planificar la próxima aplicación. | 5 | 14 | [weather-track-historicos-rangos](../../openspec/changes/archive/2026-11-05-weather-track-historicos-rangos/proposal.md), 2026-11-05 |
 | [station-conditions](#station-conditions) | Muestra las últimas lecturas de una estación con su calidad, sus alarmas y su antigüedad, para que la persona sepa qué se midió y cuánto puede confiar en ese dato. | 6 | 17 | [weather-track-estaciones](../../openspec/changes/archive/2026-11-05-weather-track-estaciones/proposal.md), 2026-11-05 |
@@ -227,6 +229,46 @@ Escenarios:
 
 - Persona que no recuerda su usuario
 
+## ai-code-review
+
+Suma a cada pull request una revisión de IA enfocada en las reglas de Weather Track, como apoyo a la decisión del responsable y sin reemplazar los controles del pipeline.
+
+Especificación: [openspec/specs/ai-code-review/spec.md](../../openspec/specs/ai-code-review/spec.md). Último cambio archivado: [weather-track-revision-y-documentacion-viva](../../openspec/changes/archive/2026-11-07-weather-track-revision-y-documentacion-viva/proposal.md), 2026-11-07.
+
+### Revisión automática de los pull requests
+
+Cada pull request a `main` SHALL recibir una revisión de GitHub Copilot al abrirse y en cada push nuevo, con comentarios sobre líneas concretas.
+
+Escenarios:
+
+- Pull request nuevo
+- Push nuevo
+
+### La revisión de IA no decide
+
+La revisión de Copilot MUST NOT ser un control exigido para fusionar en `main`. Fusionar SHALL depender de los controles del pipeline y de la decisión del responsable.
+
+Escenarios:
+
+- Comentario descartado
+
+### Criterios del proyecto
+
+Las instrucciones de revisión SHALL estar en castellano en el repositorio y SHALL pedir que se señalen primero los problemas de seguridad, las reglas del dominio, el contrato de la API y las migraciones, con criterios propios para el dominio, las migraciones, los flujos de GitHub Actions, la API y el frontend.
+
+Escenarios:
+
+- Cambio en el dominio
+- Cambio en un flujo
+
+### Plantilla de pull request
+
+Todo pull request SHALL partir de una plantilla que pida la tarea de OpenSpec, la verificación realizada y una lista de control que incluya pruebas, contrato, migraciones, documentación, ausencia de secretos y comentarios de Copilot atendidos.
+
+Escenarios:
+
+- Pull request nuevo
+
 ## application-recommendation
 
 Responde si conviene aplicar fitosanitarios en una estación en este momento, con un índice, un estado y sus motivos, sin presentar como favorable una condición de inversión ni datos faltantes o viejos.
@@ -338,7 +380,7 @@ Escenarios:
 
 Verifica automáticamente cada cambio de Weather Track con las mismas pruebas que se ejecutan a mano, para que nada llegue a `main` sin pasar por ellas, y sin que el propio pipeline exponga credenciales.
 
-Especificación: [openspec/specs/continuous-integration/spec.md](../../openspec/specs/continuous-integration/spec.md). Último cambio archivado: [weather-track-pipeline-ci](../../openspec/changes/archive/2026-11-07-weather-track-pipeline-ci/proposal.md), 2026-11-07.
+Especificación: [openspec/specs/continuous-integration/spec.md](../../openspec/specs/continuous-integration/spec.md). Último cambio archivado: [weather-track-revision-y-documentacion-viva](../../openspec/changes/archive/2026-11-07-weather-track-revision-y-documentacion-viva/proposal.md), 2026-11-07.
 
 ### Verificación de cada cambio
 
@@ -414,6 +456,14 @@ Escenarios:
 
 - E2E fallida
 
+### Documentación viva al día
+
+El pipeline MUST fallar si `docs/especificaciones/README.md` difiere de la guía que se genera desde `openspec/specs`, y el mensaje SHALL indicar el comando para regenerarla.
+
+Escenarios:
+
+- Especificación cambiada sin regenerar la guía
+
 ## customer-base
 
 Convierte las cuentas confirmadas en una base de clientes potenciales, con el consentimiento de cada persona registrado y una exportación para el administrador.
@@ -444,6 +494,37 @@ El sistema SHALL mostrar en el registro y en "Mi cuenta" la finalidad del uso de
 Escenarios:
 
 - Formulario de registro
+
+## living-documentation
+
+Ofrece una guía legible de lo que hace Weather Track, generada a partir de las especificaciones de OpenSpec para que nunca quede vieja.
+
+Especificación: [openspec/specs/living-documentation/spec.md](../../openspec/specs/living-documentation/spec.md). Último cambio archivado: [weather-track-revision-y-documentacion-viva](../../openspec/changes/archive/2026-11-07-weather-track-revision-y-documentacion-viva/proposal.md), 2026-11-07.
+
+### Guía generada de las especificaciones
+
+El sistema SHALL generar `docs/especificaciones/README.md` a partir de `openspec/specs`, con un índice de las capacidades y, por cada una, su propósito, sus requisitos, sus escenarios y el último cambio archivado que la modificó, con enlaces a la especificación.
+
+Escenarios:
+
+- Capacidad nueva
+- Requisito modificado
+
+### Salida determinista
+
+La guía MUST generarse siempre igual a partir de las mismas especificaciones: mismo orden y sin la fecha ni la hora de generación.
+
+Escenarios:
+
+- Dos generaciones seguidas
+
+### Aviso de archivo generado
+
+La guía SHALL empezar con un aviso de que se genera, con el comando para regenerarla, y de que no se edita a mano.
+
+Escenarios:
+
+- Lectura de la guía
 
 ## sat2-ingestion
 
