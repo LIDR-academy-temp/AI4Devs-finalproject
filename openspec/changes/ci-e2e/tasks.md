@@ -17,13 +17,13 @@ Ninguna tarea usa la base local. Lo que necesita SQL Server se comprueba en la C
   - checkout, pnpm, Node con caché e install;
   - `init.sql` con `sqlcmd -v`;
   - `db:generate`, `db:migrate` y `db:seed` como `recon_app`.
-- [x] 2.2 Mismo job (D2): build de shared, backend y frontend; `start` del backend y `preview --port 5173 --strictPort` del frontend en segundo plano, con su salida a logs del runner; espera con `curl` a `localhost:3000/api/v1/health` y `localhost:5173/api/v1/health`, con un límite de 90 s, mostrando las últimas líneas de los logs si falla.
+- [x] 2.2 Mismo job (D2): build de shared, backend y frontend; `start` del backend y `preview --port 5173 --strictPort` del frontend en segundo plano, con su salida a logs del runner; espera con `curl` a `localhost:3000/api/v1/health` y `localhost:5173/api/v1/health`, con un límite de unos 90 s y `curl --max-time 5`, mostrando las últimas líneas de los logs si falla; un último paso con `if: ${{ failure() }}` muestra las últimas 200 líneas de los dos logs; `timeout-minutes: 20` en el job.
 - [x] 2.3 Mismo job (D4): caché de `~/.cache/ms-playwright` con la versión de Playwright en la clave; `playwright install --with-deps chromium` si la caché falla y `playwright install-deps chromium` si acierta.
 - [x] 2.4 Mismo job (D1, D6), en este orden:
   1. `pnpm test:api`;
   2. `pnpm db:seed`, con `if: ${{ !cancelled() }}`;
   3. `pnpm test:e2e`, con `if: ${{ !cancelled() }}`;
-  4. `actions/upload-artifact` con `if: failure()`, nombre `playwright-report`, `e2e/playwright-report/` y `e2e/test-results/`, `retention-days: 7` e `if-no-files-found: ignore`.
+  4. `actions/upload-artifact` con `if: ${{ !cancelled() && steps.e2e.outcome == 'failure' }}` (así un fallo de Bruno no sube el informe de un E2E en verde), nombre `playwright-report`, `e2e/playwright-report/` y `e2e/test-results/`, `retention-days: 7` e `if-no-files-found: ignore`.
 - [x] 2.5 Commit: ci: job e2e con la colección Bruno y Playwright (#40), y `git push`. Verificar en la CI de la rama: el job `e2e` termina en verde, la colección pasa entera, el smoke ve `Rows read 783`, `Matched 780` y `RAM-07 is not assigned yet`, y no hay artifact `playwright-report`. Anotar la duración del job y la de cada suite.
 
 ## 3. Roturas deliberadas en la CI

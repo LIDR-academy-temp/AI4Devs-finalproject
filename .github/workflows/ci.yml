@@ -80,6 +80,8 @@ jobs:
     name: e2e (Bruno · Playwright)
     runs-on: ubuntu-latest
     needs: check
+    # About 5–6 min when green: a hung step must not hold the runner for the default 6 hours.
+    timeout-minutes: 20
     services:
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
@@ -137,21 +139,25 @@ jobs:
       - name: wait for API and web
         run: |
           for _ in $(seq 1 45); do
-            if curl -fsS -o /dev/null http://localhost:3000/api/v1/health \
-              && curl -fsS -o /dev/null http://localhost:5173/api/v1/health; then
+            if curl -fsS --max-time 5 -o /dev/null http://localhost:3000/api/v1/health \
+              && curl -fsS --max-time 5 -o /dev/null http://localhost:5173/api/v1/health; then
               echo "API and web answer"
               exit 0
             fi
             sleep 2
           done
-          echo "API or web did not answer within 90 s"
+          echo "API or web did not answer within about 90 s"
           echo "--- api.log"; tail -n 50 "$RUNNER_TEMP/api.log"
           echo "--- web.log"; tail -n 50 "$RUNNER_TEMP/web.log"
           exit 1
       # Browser cache keyed by the installed Playwright version (design D4).
       - name: Playwright version
         id: playwright
-        run: echo "version=$(pnpm --filter @recon/e2e exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+        run: |
+          v="$(pnpm --filter @recon/e2e exec playwright --version | awk '{print $2}')"
+          # An empty version would make one cache key for every Playwright release.
+          if [ -z "$v" ]; then echo "Could not read the Playwright version"; exit 1; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
       - name: Playwright browser cache
         id: browsers
         uses: actions/cache@v4
@@ -174,7 +180,8 @@ jobs:
         id: e2e
         if: ${{ !cancelled() }}
         run: pnpm test:e2e
-      # Only when the E2E fails, without trace nor video (off in playwright.config.ts), short retention (design D6).
+      # Only when the E2E fails, not when only Bruno does: a red collection must not upload the report of a green E2E.
+      # Without trace nor video (off in playwright.config.ts) and with a short retention (design D6).
       - name: Playwright report
         if: ${{ !cancelled() && steps.e2e.outcome == 'failure' }}
         uses: actions/upload-artifact@v4
@@ -185,6 +192,14 @@ jobs:
             e2e/test-results/
           retention-days: 7
           if-no-files-found: ignore
+      # The API and web logs stay in the job log, never in an artifact (design D6; global-setup.ts points here).
+      - name: API and web logs
+        if: ${{ failure() }}
+        run: |
+          for log in api web; do
+            echo "--- $log.log (last 200 lines)"
+            tail -n 200 "$RUNNER_TEMP/$log.log" 2>/dev/null || echo "(no $log.log: the step that starts it did not run)"
+          done
 
   images:
     name: deployment images

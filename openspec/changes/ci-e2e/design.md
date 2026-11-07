@@ -81,7 +81,7 @@ Y en local, `webServer` arrancaría un segundo `pnpm dev` (o lo reutilizaría co
   - el build de producción prueba además lo que se despliega (minificado, `import.meta.env` de producción).
 - **El coste** es compilar shared, backend y web, unos 60–90 s. `check` ya compila el frontend, pero pasar `dist` entre jobs como artifact ahorraría poco y acoplaría los jobs.
 
-Los dos procesos se lanzan en segundo plano con su salida a `api.log` y `web.log` en el directorio temporal del runner. Un paso espera con un bucle de `curl`, con un límite de 90 s, a que respondan `http://localhost:3000/api/v1/health` y `http://localhost:5173/api/v1/health`. Si no responden a tiempo, el paso muestra las últimas líneas de los dos logs y falla. Esos logs no se suben como artifact.
+Los dos procesos se lanzan en segundo plano con su salida a `api.log` y `web.log` en el directorio temporal del runner. Un paso espera con un bucle de `curl` (`--max-time 5` en cada intento), con un límite de unos 90 s, a que respondan `http://localhost:3000/api/v1/health` y `http://localhost:5173/api/v1/health`. Si no responden a tiempo, el paso muestra las últimas líneas de los dos logs y falla. Además, un último paso con `if: ${{ failure() }}` muestra las últimas 200 líneas de `api.log` y `web.log` cuando falla cualquier paso del job, también Bruno o el E2E. Esos logs quedan en el log del job y nunca se suben como artifact. El job lleva `timeout-minutes: 20`, para que un paso colgado no retenga el runner las 6 horas por defecto.
 
 **Descartado: Docker Compose con las imágenes del despliegue.** Es la prueba más fiel al despliegue, pero:
 - obliga a construir las imágenes otra vez (`images` no las publica);
@@ -127,7 +127,7 @@ El pull request sigue limitado por `integration` (unos 6 min tras `check`), así
 
 ### D4. Caché del navegador
 
-Se cachea `~/.cache/ms-playwright` con `actions/cache`. La clave lleva el sistema del runner y la versión instalada de Playwright, que se lee con `pnpm --filter @recon/e2e exec playwright --version`; así cambia solo cuando sube Playwright, no con cualquier cambio del lockfile.
+Se cachea `~/.cache/ms-playwright` con `actions/cache`. La clave lleva el sistema del runner y la versión instalada de Playwright, que se lee con `pnpm --filter @recon/e2e exec playwright --version`; así cambia solo cuando sube Playwright, no con cualquier cambio del lockfile. Si la versión sale vacía, el paso falla: una clave sin versión serviría la misma caché a cualquier Playwright.
 
 - **Si la caché falla:** `playwright install --with-deps chromium`.
 - **Si acierta:** solo `playwright install-deps chromium`, porque las librerías del sistema no se cachean.
@@ -148,10 +148,10 @@ No se escribe ningún `.env` ni `api-collection/.env`: el backend, el seed y Bru
 
 ### D6. Informe solo al fallar
 
-- **Cuándo se sube:** un paso con `if: failure()` y `actions/upload-artifact`, con nombre `playwright-report`, sube `e2e/playwright-report/` y `e2e/test-results/` con `retention-days: 7` e `if-no-files-found: ignore`.
+- **Cuándo se sube:** un paso con `if: ${{ !cancelled() && steps.e2e.outcome == 'failure' }}` y `actions/upload-artifact`, con nombre `playwright-report`, sube `e2e/playwright-report/` y `e2e/test-results/` con `retention-days: 7` e `if-no-files-found: ignore`. La condición mira el resultado del paso del E2E, no `failure()`: así un fallo de Bruno no sube el informe de un E2E en verde (run 42355330786).
 - **Qué lleva:** la configuración ya excluye la traza y el vídeo. Las capturas del fallo no muestran la contraseña, porque los pasos la escriben desde la página y vacían el campo.
 - **Los secretos del job** son literales de usar y tirar: aunque se vieran, no abren nada fuera del runner efímero. Aun así, la verificación del apply (tareas) busca el valor de `SEED_PASSWORD` en el artifact descargado.
-- **Lo que no se sube:** los logs del API y la web ni la salida de Bruno, que no escribe informe a archivo; solo quedan en el log del job.
+- **Lo que no se sube:** los logs del API y la web ni la salida de Bruno, que no escribe informe a archivo; solo quedan en el log del job. Al fallar cualquier paso, el último paso del job muestra las últimas 200 líneas de los dos logs, que es lo que indica el mensaje de `global-setup.ts` en la CI.
 
 ### D7. Cambios en `playwright.config.ts` y `global-setup.ts`
 
