@@ -81,7 +81,7 @@ Y en local, `webServer` arrancaría un segundo `pnpm dev` (o lo reutilizaría co
   - el build de producción prueba además lo que se despliega (minificado, `import.meta.env` de producción).
 - **El coste** es compilar shared, backend y web, unos 60–90 s. `check` ya compila el frontend, pero pasar `dist` entre jobs como artifact ahorraría poco y acoplaría los jobs.
 
-Los dos procesos se lanzan en segundo plano con su salida a `api.log` y `web.log` en el directorio temporal del runner. Un paso espera con un bucle de `curl` (`--max-time 5` en cada intento), con un límite de unos 90 s, a que respondan `http://localhost:3000/api/v1/health` y `http://localhost:5173/api/v1/health`. Si no responden a tiempo, el paso muestra las últimas líneas de los dos logs y falla. Además, un último paso con `if: ${{ failure() }}` muestra las últimas 200 líneas de `api.log` y `web.log` cuando falla cualquier paso del job, también Bruno o el E2E. Esos logs quedan en el log del job y nunca se suben como artifact. El job lleva `timeout-minutes: 20`, para que un paso colgado no retenga el runner las 6 horas por defecto.
+Los dos procesos se lanzan en segundo plano con su salida a `api.log` y `web.log` en el directorio temporal del runner. Un paso espera con un bucle de `curl` (`--max-time 5` en cada intento), con un límite de unos 90 s, a que respondan `http://localhost:3000/api/v1/health` y `http://localhost:5173/api/v1/health`. Si no responden a tiempo, el paso muestra las últimas líneas de los dos logs y falla. Además, un último paso con `if: ${{ failure() || cancelled() }}` muestra las últimas 200 líneas de `api.log` y `web.log` cuando falla cualquier paso del job, también Bruno o el E2E, o cuando el job se cancela (por ejemplo, por `timeout-minutes`). Esos logs quedan en el log del job y nunca se suben como artifact. El job lleva `timeout-minutes: 20`, para que un paso colgado no retenga el runner las 6 horas por defecto.
 
 **Descartado: Docker Compose con las imágenes del despliegue.** Es la prueba más fiel al despliegue, pero:
 - obliga a construir las imágenes otra vez (`images` no las publica);
@@ -170,6 +170,7 @@ Las comprobaciones se hacen solo en la CI de la rama del change, sin base local.
 1. **Rotura deliberada:** un commit temporal quita la siembra entre Bruno y el E2E. El smoke debe fallar porque `RAM-07` ya está asignado. Así se comprueba a la vez que la siembra hace falta, que el check falla y que el artifact se sube. Se descarga el artifact y se comprueba que no contiene `trace.zip` ni `.webm`, ni el valor de `SEED_PASSWORD`. Después se revierte con otro commit.
 2. **Bruno falla y el E2E corre igual:** un commit temporal da a Bruno un `SEED_PASSWORD` equivocado, solo en ese paso. La colección debe fallar, y la siembra y el E2E deben ejecutarse igualmente. Se revierte con otro commit.
 3. **Run en verde:** con los dos cambios revertidos, el job pasa sin artifact.
+4. **Paso de logs (review-diff de #147):** se repite la contraseña equivocada de Bruno en un commit temporal. El job falla, y el último paso muestra las últimas 200 líneas de `api.log` y `web.log`, sin contraseñas (run 42358565893). Se revierte, y el run 42359533104 sale en verde con ese paso omitido. El paso lleva `if: ${{ failure() || cancelled() }}`, para que también imprima cuando el job se corta por `timeout-minutes`.
 
 ## Risks / Trade-offs
 

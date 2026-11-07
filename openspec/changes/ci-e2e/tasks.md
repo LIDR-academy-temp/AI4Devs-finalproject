@@ -17,7 +17,7 @@ Ninguna tarea usa la base local. Lo que necesita SQL Server se comprueba en la C
   - checkout, pnpm, Node con caché e install;
   - `init.sql` con `sqlcmd -v`;
   - `db:generate`, `db:migrate` y `db:seed` como `recon_app`.
-- [x] 2.2 Mismo job (D2): build de shared, backend y frontend; `start` del backend y `preview --port 5173 --strictPort` del frontend en segundo plano, con su salida a logs del runner; espera con `curl` a `localhost:3000/api/v1/health` y `localhost:5173/api/v1/health`, con un límite de unos 90 s y `curl --max-time 5`, mostrando las últimas líneas de los logs si falla; un último paso con `if: ${{ failure() }}` muestra las últimas 200 líneas de los dos logs; `timeout-minutes: 20` en el job.
+- [x] 2.2 Mismo job (D2): build de shared, backend y frontend; `start` del backend y `preview --port 5173 --strictPort` del frontend en segundo plano, con su salida a logs del runner; espera con `curl` a `localhost:3000/api/v1/health` y `localhost:5173/api/v1/health`, con un límite de unos 90 s y `curl --max-time 5`, mostrando las últimas líneas de los logs si falla; un último paso con `if: ${{ failure() || cancelled() }}` muestra las últimas 200 líneas de los dos logs; `timeout-minutes: 20` en el job.
 - [x] 2.3 Mismo job (D4): caché de `~/.cache/ms-playwright` con la versión de Playwright en la clave; `playwright install --with-deps chromium` si la caché falla y `playwright install-deps chromium` si acierta.
 - [x] 2.4 Mismo job (D1, D6), en este orden:
   1. `pnpm test:api`;
@@ -35,6 +35,10 @@ Ninguna tarea usa la base local. Lo que necesita SQL Server se comprueba en la C
 - [x] 3.2 Revertir 3.1 con un commit (`git revert`, nunca `git checkout` sobre trabajo sin commit) y, en el mismo push, un commit temporal que da a Bruno un `SEED_PASSWORD` equivocado solo en su paso (D8.2). Verificar en la CI: la colección falla en `00-auth`, la siembra y el E2E se ejecutan igualmente, el smoke pasa y el check falla.
 - [x] 3.3 Revertir 3.2 con un commit. Verificar en la CI: el job vuelve a verde sin artifact.
 - [x] 3.4 Commit: los de 3.1–3.3, con los mensajes test(ci): rotura deliberada … y revert: …, y `git push`; quedan en el historial como prueba.
+- [x] 3.5 Rotura del paso de logs (review-diff de #147, D8.4), con un commit temporal que repite la contraseña equivocada de Bruno. Verificado en la CI:
+  - el job falla y el último paso muestra las últimas 200 líneas de `api.log` y `web.log`, sin contraseñas (run 42358565893);
+  - se revierte con `git revert` y el job vuelve a verde con ese paso omitido (run 42359533104).
+  - Commits: test(ci): rotura deliberada … y revert: …
 
 ## 4. README
 

@@ -193,8 +193,9 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
       # The API and web logs stay in the job log, never in an artifact (design D6; global-setup.ts points here).
+      # Also when cancelled, so that a job stopped by timeout-minutes still shows them.
       - name: API and web logs
-        if: ${{ failure() }}
+        if: ${{ failure() || cancelled() }}
         run: |
           for log in api web; do
             echo "--- $log.log (last 200 lines)"
