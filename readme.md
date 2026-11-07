@@ -35,7 +35,9 @@ Sustituye la cadena actual de hojas de cálculo en OneDrive, descargas manuales 
 
 ### 0.5. URL o archivo comprimido del repositorio
 
-https://github.com/lfmorales/AI4Devs-finalproject
+https://github.com/lfmorales/AI4Devs-finalproject-temp (rama `final-project-LFMC`)
+
+Las pull requests se abren desde ese repositorio contra `LIDR-academy-temp/AI4Devs-finalproject`: [PR 1](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/3), [PR 2](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/4) y la PR 3 de la entrega final.
 
 > Puedes tenerlo alojado en público o en privado, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/). También puedes compartir por correo un archivo zip con el contenido
 
