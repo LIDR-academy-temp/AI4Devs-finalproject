@@ -52,14 +52,16 @@ Ninguna tarea usa la base local salvo la 2.4, que necesita turno pedido antes. L
 - [x] 3.4 En `frontend/nginx/default.conf`: el `map` de `$client_ip`, `X-Real-IP` y `X-Forwarded-For` con `$client_ip`, `X-Forwarded-Host` vacío y comentarios en inglés. `nginx -t` en `nginx-unprivileged:1.30.6-alpine`: syntax is ok.
 - [x] 3.5 Smoke: el login fallido manda `CF-Connecting-IP: 203.0.113.7` y `X-Forwarded-For: 198.51.100.66`, y la salida de `check` contiene `203.0.113.7` y no `198.51.100.66`.
 - [x] 3.6 `docs/deploy.md` §16 deja de ser una "limitación conocida" y explica de dónde sale la IP.
-- [ ] 3.7 Commit: fix(auth): IP real del cliente detrás del túnel (#106), y `git push`. Verificar en la CI `integration` e `images` en verde.
+- [x] 3.7 Commit: fix(auth): IP real del cliente detrás del túnel (#106), y `git push`. Verificar en la CI `integration` e `images` en verde.
 
 ## 4. Verificación de conjunto y PR
 
-- [ ] 4.1 En verde:
+- [x] 4.1 En verde:
   - `pnpm lint`, `pnpm typecheck`, `pnpm test` y `openspec validate deploy-hardening --strict`;
   - todos los jobs de la CI de la rama.
-- [ ] 4.2 PR listo para revisar hacia `feature/entrega-3-MVP` con la plantilla:
+
+  Run 42423761691 (`7279c09`): los cinco jobs en verde. `check` en el runner: `recon_app` y `recon_migrator`, y el login fallido con `"ip":"203.0.113.7"`.
+- [x] 4.2 PR listo para revisar hacia `feature/entrega-3-MVP` con la plantilla:
   - un `Closes` por cada grupo que haya entrado;
   - la duración medida y los runs de la rotura;
   - en "Notas para el revisor" y en la descripción, los pasos del martes (Migration Plan de design.md).
