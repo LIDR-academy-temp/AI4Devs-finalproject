@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { expectedOf, formatAmount, sampleFile } from './expected.ts'
+import { expectedOf, formatAmount, outcomeOf, sameDecimal, sampleFile } from './expected.ts'
 
 const raw = (sample: string) =>
   JSON.parse(
@@ -26,6 +26,15 @@ describe('expectedOf', () => {
       expectedOf('batch-blocked').affectedIds?.provider_mismatch,
       raw('batch-blocked').affectedIds.provider_mismatch,
     )
+  })
+
+  it('reads the ranges, the ambiguous and empty-ID rows of batch-clean and the outcomes of batch-wrong-account', () => {
+    const clean = raw('batch-clean')
+    const expected = expectedOf('batch-clean')
+    assert.deepEqual(expected.ranges, clean.ranges)
+    assert.equal(expected.rows.ambiguous, clean.rows.ambiguous)
+    assert.equal(expected.rows.ignoredEmptyId, clean.rows.ignoredEmptyId)
+    assert.deepEqual(expectedOf('batch-wrong-account').outcomes, raw('batch-wrong-account').outcomes)
   })
 
   it('names the path of a sample that does not exist', () => {
@@ -52,5 +61,45 @@ describe('formatAmount', () => {
     assert.equal(formatAmount('0.0000'), '0.0000')
     assert.equal(formatAmount('-25.0000'), '-25.0000')
     assert.equal(formatAmount('-1234.5000'), '-1,234.5000')
+  })
+})
+
+describe('sameDecimal', () => {
+  it('compares decimal texts by their digits, whatever the trailing zeros', () => {
+    assert.ok(sameDecimal('25.0000', '25'))
+    assert.ok(sameDecimal('15.5', '15.5000'))
+    assert.ok(sameDecimal('0.0000', '0'))
+    assert.ok(sameDecimal('-25.0000', '-25'))
+  })
+
+  it('tells different amounts apart, also a sign or a digit after the fourth decimal', () => {
+    assert.ok(!sameDecimal('25.0000', '15'))
+    assert.ok(!sameDecimal('-25.0000', '25'))
+    assert.ok(!sameDecimal('25.00001', '25'))
+    assert.ok(!sameDecimal('250', '25'))
+  })
+
+  it('does not take what is not a decimal', () => {
+    assert.ok(!sameDecimal('', '0'))
+    assert.ok(!sameDecimal('25,00', '25'))
+  })
+})
+
+describe('outcomeOf', () => {
+  it('takes the outcome the oracle writes when it has one', () => {
+    const outcomes = raw('batch-wrong-account').outcomes as Record<string, string>
+    const expected = expectedOf('batch-wrong-account')
+    for (const [code, outcome] of Object.entries(outcomes)) assert.equal(outcomeOf(expected, code, 0), outcome)
+  })
+
+  it('without outcomes in the oracle: passed without findings, warning with them', () => {
+    const expected = expectedOf('batch-clean')
+    assert.equal(outcomeOf(expected, 'duplicate_in_batch', 0), 'passed')
+    assert.equal(outcomeOf(expected, 'duplicate_in_batch', 2), 'warning')
+  })
+
+  it('provider_mismatch with findings is blocked, the only blocking validation', () => {
+    assert.equal(outcomeOf(expectedOf('batch-blocked'), 'provider_mismatch', 1), 'blocked')
+    assert.equal(outcomeOf(expectedOf('batch-clean'), 'provider_mismatch', 0), 'passed')
   })
 })

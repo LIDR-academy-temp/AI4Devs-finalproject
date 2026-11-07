@@ -8,9 +8,31 @@ import {
   type CleanupAction,
   type CleanupClient,
   cleanUp,
+  createdBy,
   type ImportStatus,
   importActions,
 } from './cleanup.ts'
+
+describe('what a response of the API created, for the cleanup', () => {
+  const API = 'http://localhost:5173/api/v1'
+
+  it('the POST that creates an import: its importId', () => {
+    assert.deepEqual(createdBy('POST', `${API}/accounts/a1/imports`, 201, { importId: 'i1' }), { importId: 'i1' })
+  })
+
+  it('the POST that processes a batch: its batchId, before the summary opens', () => {
+    assert.deepEqual(createdBy('POST', `${API}/imports/i1/settlements`, 201, { batchId: 'b1', batchNo: 123 }), {
+      batchId: 'b1',
+    })
+  })
+
+  it('nothing for the preview, for adding a file, for a refused request or for a read', () => {
+    assert.equal(createdBy('POST', `${API}/imports/i1/settlements/preview`, 200, { batchNo: 123 }), undefined)
+    assert.equal(createdBy('POST', `${API}/imports/i1/files`, 201, { importId: 'i1' }), undefined)
+    assert.equal(createdBy('POST', `${API}/imports/i1/settlements`, 409, { code: 'batch_no_taken' }), undefined)
+    assert.equal(createdBy('GET', `${API}/accounts/a1/imports`, 200, { items: [] }), undefined)
+  })
+})
 
 describe('what the cleanup does for each state', () => {
   it('a paid attempt: payments unpays, then analyst undoes', () => {
@@ -110,7 +132,9 @@ describe('cleanUp', () => {
       assert.equal(notes.length, 1)
       assert.ok(!notes[0]!.includes('not-the-real-one'), notes[0])
     } finally {
-      process.env.SEED_PASSWORD = previous
+      // Assigning undefined would leave the string "undefined": a variable that did not exist is removed.
+      if (previous === undefined) delete process.env.SEED_PASSWORD
+      else process.env.SEED_PASSWORD = previous
     }
   })
 
