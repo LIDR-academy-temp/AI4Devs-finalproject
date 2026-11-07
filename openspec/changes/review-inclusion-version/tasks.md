@@ -56,7 +56,7 @@ Rama `feat/review-inclusion-version` (desde `origin/feature/entrega-3-MVP`), PR 
 
 - [x] 7.1 Las peticiones de `POST review` de `20-flows` envían la `inclusionVersion` guardada de la última corrida o lectura: `validations/batch-issues` (6, 15, 17), `validations/batch-blocked/5`, `validations/batch-wrong-account` (5, 6) y `settlements/batch-clean` (5, 29); los pasos que cambian una inclusión guardan la versión que devuelve la lectura siguiente.
 - [x] 7.2 Negativo nuevo en `batch-issues`, antes de `15 Review`: review con la versión guardada antes del último cambio de inclusión → `409 inclusions_changed` con `details.currentInclusionVersion` mayor, y lectura de validaciones con `importStatus = "analyzed"`. En `10-smoke`, `Review - missing inclusionVersion` → `400 validation_error`. Comprobar la rotura a propósito (aserción con el código equivocado) en la primera pasada.
-- [ ] 7.3 Cuando la persona dé turno, `pnpm test:api` contra el backend local. Verificar en verde; avisar de que la base queda sucia hasta el siguiente `pnpm db:seed`.
+- [x] 7.3 Cuando la persona dé turno, `pnpm test:api` contra el backend local. Verificar en verde; avisar de que la base queda sucia hasta el siguiente `pnpm db:seed`.
 - [x] 7.4 Commit: test(api-collection): review con inclusiones caducadas, y `git push`.
 
 ## 8. Verificación de conjunto
