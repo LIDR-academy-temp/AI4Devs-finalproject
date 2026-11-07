@@ -6,7 +6,7 @@
 | **Entrega final** | 9 de diciembre de 2026 |
 | **Punto de partida** | Entrega 2 presentada en forma anticipada ([pull request](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14)) |
 | **Responsable** | Pablo Guillermo Di Nanno |
-| **Versión** | 1.3, 5 de noviembre de 2026 |
+| **Versión** | 1.4, 7 de noviembre de 2026 |
 
 Este documento registra qué línea de trabajo está activa, cuál está en pausa y qué falta decidir, para no perder el hilo entre sesiones.
 
@@ -15,9 +15,9 @@ Este documento registra qué línea de trabajo está activa, cuál está en paus
 | Línea | Estado | Condición para avanzar |
 |---|---|---|
 | **A. Instalación local, como la quiere el responsable** | **Terminada** el 5 de noviembre de 2026 | El responsable aprobó la aplicación local y se archivaron sus cambios |
-| **D. Pendientes de la devolución de la Entrega 1** | D1 a D3 hechos; **D4 a D7 pendientes** | D4 y D5 van con la línea C; D7 espera la decisión del responsable; D6 es opcional |
+| **D. Pendientes de la devolución de la Entrega 1** | D1 a D4 hechos; **D5 a D7 pendientes** | D5 va con la línea C; D7 espera la decisión del responsable; D6 es opcional |
 | **B. Despliegue público en Google Cloud (opción plus)** | **En pausa** desde el 2 de noviembre de 2026 | La línea A ya terminó: se retoma cuando lo decida el responsable |
-| C. Pipeline, monitoreo y documentación para clientes | Sin empezar | Incluye D4 y D5 |
+| C. Pipeline, monitoreo y documentación para clientes | **Integración continua hecha** el 7 de noviembre de 2026 (D4) | Faltan D5, el monitoreo y la documentación para clientes |
 
 ## 2. Línea A: cuentas propias con registro, ingreso y recupero
 
@@ -129,7 +129,7 @@ LIDR revisó la Entrega 1 el 2 de noviembre de 2026 con el resultado **"Luz verd
 | D1 | **Hecho el 3 de noviembre de 2026.** [`CLAUDE.md`](../../CLAUDE.md) con el stack, la regla de que el dominio no depende de otras capas, los comandos de test y la norma de trabajar un ticket por vez. Fue el segundo de los tres pasos que pidió LIDR | Bajo | Implementación |
 | D2 | **Hecho el 3 de noviembre de 2026.** Alinear el README: dependencias de los tickets (sección 6) según el orden real, es decir motor puro, acceso y endpoints, y contratos de inicio de sesión, cierre de sesión y estaciones en la API (sección 4) | Bajo | Diseño |
 | D3 | **Hecho el 3 de noviembre de 2026.** Completar en `prompts.md` las secciones que solo remiten a la 2.1, con las propuestas aprobadas y no solo el prompt inicial | Bajo | Diseño |
-| D4 | Pipeline de GitHub Actions redactado con IA y revisado por el responsable (línea C) | Medio | Despliegue |
+| D4 | **Hecho el 7 de noviembre de 2026.** Pipeline de GitHub Actions redactado con IA: cambio `weather-track-pipeline-ci` y [ADR-0003](../decisions/0003-pipeline-de-integracion-continua.md). Verificado en GitHub, en verde y fallando ante una prueba rota. Falta la revisión del responsable | Medio | Despliegue |
 | D5 | Revisión de pull requests asistida por IA y documentación viva a partir de las specs de OpenSpec (línea C) | Medio | Mantenimiento |
 | D6 | Opcional: tests basados en propiedades con Hypothesis. Con cualquier combinación de lecturas, nunca "apto" con inversión o lectura sospechosa, y una mayor diferencia térmica nunca baja el índice | Medio | Pruebas |
 | D7 | Datos de prueba con la forma de las respuestas reales de SAT2, para detectar cambios del proveedor. **Decisión pendiente del responsable:** el contrato con SAT2 es privado, así que la propuesta es guardar solo la estructura, con valores reemplazados | Bajo | Pruebas |
@@ -162,3 +162,4 @@ Respuestas del responsable del 3 de noviembre de 2026:
 | 4 nov 2026 | Implementados el registro público, el recupero, «Mi cuenta», las bajas y la exportación de clientes; R1 resuelto. Queda la verificación del responsable |
 | 5 nov 2026 | Ajustes de la revisión: contraseña repetida e históricos con Día, Semana, Mes y rango con calendario (hasta 31 días, último año, sin futuro) |
 | 5 nov 2026 | El responsable aprueba la aplicación local; se archivan `weather-track-estaciones`, `weather-track-registro-cuentas` y `weather-track-historicos-rangos`. La línea A queda terminada |
+| 7 nov 2026 | Integración continua con GitHub Actions (D4): sin secretos, acciones fijadas por SHA, base de pruebas obligatoria y pruebas negativas antes de fusionar en `main` |

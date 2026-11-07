@@ -253,7 +253,7 @@ La implementación cumple esta decisión si:
 3. [ ] Medir los límites de rango y antigüedad de SAT2 y consultarlos con TECMES. Las credenciales ya están disponibles (A02).
 4. [x] Definir si la alarma que informa SAT2 por sensor se guarda en `OBSERVACION`: se guarda y se muestra, sin afectar la recomendación.
 5. [x] Elegir el proveedor del servidor antes de iniciar A13: ver el [ADR-0002](0002-proveedor-del-servidor.md).
-6. [ ] Abrir un ADR propio para el pipeline en el proceso final.
+6. [x] Abrir un ADR propio para el pipeline: [ADR-0003](0003-pipeline-de-integracion-continua.md), para la integración continua. El despliegue continuo sigue pendiente.
 
 ## Más información
 

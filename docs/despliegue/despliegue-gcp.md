@@ -225,7 +225,7 @@ Apagar la máquina con `gcloud compute instances stop` no alcanza: la IP fija y 
 
 ## Limitaciones conocidas
 
-- El despliegue es manual: el pipeline se decidirá en el proceso final, según el ADR-0001.
+- El despliegue es manual. La integración continua ya verifica cada cambio ([ADR-0003](../decisions/0003-pipeline-de-integracion-continua.md)); el despliegue continuo se decide al retomar esta guía.
 - Una sola máquina virtual es un punto único de falla.
 - La revisión de seguridad sobre el despliegue es la actividad A14.
 - `e2-small` es de núcleo compartido: alcanza para este uso, pero no para cargas sostenidas altas.

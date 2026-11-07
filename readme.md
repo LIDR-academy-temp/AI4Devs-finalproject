@@ -9,7 +9,7 @@
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
 
-> **Estado de este documento (Entrega 2, [presentada de forma anticipada](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14)):** describe el MVP implementado, que se instala y se prueba desde este repositorio. Lo que todavía no existe se indica como pendiente: el despliegue público, el pipeline de entrega continua y la validación agronómica del índice.
+> **Estado de este documento (Entrega 2, [presentada de forma anticipada](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14)):** describe el MVP implementado, que se instala y se prueba desde este repositorio. Lo que todavía no existe se indica como pendiente: el despliegue público, el despliegue continuo y la validación agronómica del índice.
 
 ---
 
@@ -187,7 +187,7 @@ El último comando muestra el usuario de demostración y su clave, que aparece u
 
 ```bash
 docker compose up -d --wait db_pruebas
-cd backend && uv run pytest
+cd backend && uv run ruff check && uv run pytest
 cd ../frontend && npm ci && npm test
 npx playwright install chromium && npm run e2e
 ```
@@ -344,12 +344,14 @@ El backend sigue una arquitectura en capas: `api` y `ingesta` dependen de `domin
 | Servidor | `docker-compose.prod.yml` agrega HTTPS con Caddy, exige las variables críticas y publica solo los puertos 80 y 443 | Probado en local, con certificado interno |
 | Google Cloud | [Guía de despliegue](docs/despliegue/despliegue-gcp.md) y [ADR-0002](docs/decisions/0002-proveedor-del-servidor.md) | **Pospuesto.** La guía no se ejecutó en la nube |
 
-**Pendiente: pipeline.** Este esquema es preliminar y no está implementado. Sus etapas y herramientas se evaluarán en el proceso final, en otro ADR.
+**Implementado: integración continua.** Cada push y cada pull request a `main` pasan por un flujo de GitHub Actions ([`integracion.yml`](.github/workflows/integracion.yml), decisión en el [ADR-0003](docs/decisions/0003-pipeline-de-integracion-continua.md)): lint y pruebas del backend y del frontend, contrato de la API, especificaciones de OpenSpec, escaneo de secretos de todo el historial, auditoría de dependencias y extremo a extremo con la pila completa. Antes de fusionar en `main` corren también las pruebas negativas sobre la configuración de producción. El flujo no usa secretos y fija sus acciones por SHA. Las ejecuciones son públicas en [GitHub Actions](https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp/actions/workflows/integracion.yml).
+
+**Pendiente: despliegue continuo.** La publicación de imágenes y el despliegue en el servidor del esquema siguiente siguen en la línea B de la [hoja de ruta](docs/plan/hoja-de-ruta-entrega-final.md).
 
 ```mermaid
 flowchart LR
-    G["GitHub<br/>pull request a main"] --> C["GitHub Actions<br/>tests, lint y escaneo de secretos"]
-    C --> R["GitHub Container Registry<br/>imágenes versionadas"]
+    G["GitHub<br/>push y pull request a main"] --> C["GitHub Actions<br/>lint, pruebas, contrato, secretos y dependencias<br/>(implementado)"]
+    C --> R["GitHub Container Registry<br/>imágenes versionadas<br/>(pendiente)"]
     R --> P
     R --> A
     R --> W
@@ -369,7 +371,7 @@ Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-ent
 
 | Práctica | Aplicación |
 |---|---|
-| Secretos fuera del código | Variables de entorno y `.env.example` sin valores reales. El historial se revisó con Gitleaks; el escaneo en cada pull request queda para el pipeline. |
+| Secretos fuera del código | Variables de entorno y `.env.example` sin valores reales. Gitleaks revisa todo el historial en cada push y pull request; los falsos positivos conocidos están en `.gitleaksignore` con su motivo. |
 | Credenciales de terceros aisladas | La cuenta de servicio de SAT2 solo existe en el worker. Nunca llega al navegador ni a la API de lectura. |
 | Contraseñas | Solo se guarda un hash con Argon2id, con un tope de cálculos simultáneos para que una ráfaga no agote la memoria. |
 | Sesión | Identificador opaco en cookie `HttpOnly` y `SameSite`, y `Secure` en el servidor. Vence a las 8 horas y se invalida al salir. |
@@ -384,7 +386,7 @@ Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-ent
 
 ### **2.6. Tests**
 
-Resultado de la última ejecución, el 5 de noviembre de 2026: todas pasan.
+Resultado de la última ejecución, el 7 de noviembre de 2026: todas pasan, en local y en el [pipeline](https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp/actions/workflows/integracion.yml), que las corre en cada push. El backend además pasa Ruff, y el pipeline falla si el motor baja del 100 % de cobertura o si falta la base de pruebas.
 
 | Nivel | Herramienta | Qué cubre | Pruebas |
 |---|---|---|---|
@@ -1707,7 +1709,7 @@ Cada ticket se cierra solo: depende únicamente de tickets anteriores de la tabl
 | 5 | WT-BE-02 | Endpoints de lectura: recomendación (con R2 al responder), condiciones actuales e históricos | WT-BE-01, WT-BE-04 | 1,04 | Hecho |
 | 6 | WT-FE-02 | Base del frontend, acceso, detalle de sensor e históricos | Contratos de WT-BE-04 y WT-BE-02 | 1,38 | Hecho |
 | 7 | WT-FE-01 | Pantalla de decisión | WT-FE-02 y contrato de WT-BE-02 | 1,58 | Hecho |
-| 8 | WT-OPS-01 | Docker Compose, integración continua, despliegue y escaneo de secretos | Todos los anteriores | 1,17 | Parcial: Docker Compose, configuración de producción e instalación local hechos, y escaneo manual del historial. La integración continua y el despliegue público quedan pendientes |
+| 8 | WT-OPS-01 | Docker Compose, integración continua, despliegue y escaneo de secretos | Todos los anteriores | 1,17 | Parcial: Docker Compose, configuración de producción, instalación local e integración continua con escaneo de secretos hechos ([ADR-0003](docs/decisions/0003-pipeline-de-integracion-continua.md)). El despliegue público queda pendiente |
 
 El worker contra SAT2 (WT-BE-03) era la parte con más incertidumbre. Se redujo midiendo antes los límites de la API real, en la actividad A02 del plan, y es el ticket con la estimación más alta.
 

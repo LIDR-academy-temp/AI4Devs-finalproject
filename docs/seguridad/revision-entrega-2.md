@@ -6,7 +6,7 @@
 | **Actividad** | A14 del [plan](../plan/plan-implementacion-entrega-2.md): revisión corta de secretos, autorización, sesión y entradas |
 | **Realizada por** | Claude (asistente de IA), con supervisión del responsable |
 | **Resultado** | Sin hallazgos críticos abiertos. Se corrigieron 11 hallazgos; quedan 7 riesgos aceptados y R1 está resuelto |
-| **Actualización** | 4 de noviembre de 2026: registro público, recupero y bajas del cambio [`weather-track-registro-cuentas`](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md). Ver la [sección 6](#6-actualización-cuentas-autogestionadas) |
+| **Actualización** | 4 de noviembre de 2026: registro público, recupero y bajas del cambio [`weather-track-registro-cuentas`](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md). Ver la [sección 7](#7-actualización-cuentas-autogestionadas) |
 
 **Alcance y límites.** Es una revisión corta, no una auditoría ni una prueba de penetración independiente. Tampoco es una verificación completa de OWASP ASVS, que queda como la extensión X4 del plan. Se hizo sobre la **configuración de producción en una pila local aislada** con datos ficticios, porque el despliegue en la nube está pospuesto ([ADR-0002](../decisions/0002-proveedor-del-servidor.md)). Cuando exista un servidor real, hay que repetirla allí.
 
@@ -69,9 +69,9 @@ H9, H10 y H11 se corrigieron en A13, durante la preparación de la configuració
 | R1 | ~~**Sin límite por dirección IP.**~~ **Resuelto el 4 de noviembre de 2026**, ver la sección 6 | — | — |
 | R2 | **Bloqueo ajeno.** Quien conozca un correo puede bloquear esa cuenta 15 minutos con 5 intentos | Molestia acotada. Es el costo del bloqueo por cuenta | Si ocurre en la práctica |
 | R3 | **`/api/docs` es público** y carga recursos de un CDN | No expone datos, y el contrato ya está en el repositorio público | Antes del uso comercial |
-| R4 | **La API usa el usuario propietario de la base** y no uno con permisos mínimos | Una sola aplicación, sin puerto publicado, y consultas parametrizadas | Con el pipeline o más servicios |
-| R5 | **Imágenes por etiqueta y no por digest**, y `pip` en la imagen de Python con avisos conocidos (`PYSEC-2026-196`, `PYSEC-2026-3721`) | `pip` solo se usa al construir la imagen, para instalar `uv`, y no al ejecutar la aplicación | Con el pipeline |
-| R6 | **Caddy y PostgreSQL corren como root** dentro de sus contenedores | Son las imágenes oficiales, y el contenedor limita el alcance | Con el pipeline |
+| R4 | **La API usa el usuario propietario de la base** y no uno con permisos mínimos | Una sola aplicación, sin puerto publicado, y consultas parametrizadas | Con el despliegue continuo o más servicios |
+| R5 | **Imágenes por etiqueta y no por digest**, y `pip` en la imagen de Python con avisos conocidos (`PYSEC-2026-196`, `PYSEC-2026-3721`) | `pip` solo se usa al construir la imagen, para instalar `uv`, y no al ejecutar la aplicación | Con el despliegue continuo |
+| R6 | **Caddy y PostgreSQL corren como root** dentro de sus contenedores | Son las imágenes oficiales, y el contenedor limita el alcance | Con el despliegue continuo |
 | R7 | **Correos a terceros.** Cualquiera puede registrar un correo ajeno y hacer que reciba la confirmación | Como máximo 3 correos del mismo tipo por hora a cada dirección y 5 registros por hora desde cada IP. Sin confirmar, la cuenta se borra a las 48 horas. Un CAPTCHA se evalúa solo si aparece abuso | Si ocurre en la práctica |
 | R8 | **Entrega de correo real sin probar.** En local, Mailpit atrapa los correos; falta el proveedor de producción con SPF, DKIM y DMARC | No hay servidor público todavía | Al retomar el despliegue (línea B) |
 
@@ -82,7 +82,11 @@ H9, H10 y H11 se corrigieron en A13, durante la preparación de la configuració
 - Rotar las credenciales que estén en el repositorio privado del prototipo, como ya está anotado.
 - Antes de un uso comercial: la extensión X4 (OWASP ASVS, nivel 1), una revisión independiente, el riesgo R3 y la revisión legal de los términos y la política de privacidad, hoy en borrador.
 
-## 6. Actualización: cuentas autogestionadas
+## 6. Controles automáticos
+
+Desde el 7 de noviembre de 2026, el [pipeline de integración continua](../decisions/0003-pipeline-de-integracion-continua.md) repite en cada push el escaneo de Gitleaks sobre todo el historial, con los 5 falsos positivos de la sección 1 registrados en `.gitleaksignore`, y audita las dependencias con `npm audit` y `pip-audit`. En los pull requests a `main` corre también estas pruebas negativas. El flujo no usa secretos, tiene permiso de solo lectura y fija sus acciones por SHA.
+
+## 7. Actualización: cuentas autogestionadas
 
 El 4 de noviembre de 2026 se agregaron el registro público, la confirmación por correo, el recupero de la contraseña, «Mi cuenta» y la baja. Se repitieron las pruebas negativas sobre la misma pila aislada, con la configuración de producción, y se sumaron 31 comprobaciones. Todas pasan.
 

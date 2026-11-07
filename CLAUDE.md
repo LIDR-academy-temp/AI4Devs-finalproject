@@ -53,6 +53,7 @@ docker compose up -d --wait db_pruebas
 Backend, desde `backend/`. Si `uv` no está en el `PATH`, usar el del entorno: `.venv/Scripts/uv.exe` en Windows o `.venv/bin/uv` en Linux y macOS.
 
 ```bash
+uv run ruff check
 uv run pytest
 uv run pytest --cov=app.dominio --cov-report=term-missing
 uv run python -m herramientas.exportar_openapi
@@ -71,6 +72,10 @@ npm run e2e
 ```
 
 `npm run e2e` levanta la pila completa en el proyecto aislado `wt-e2e` y lo borra al terminar.
+
+### Integración continua
+
+`.github/workflows/integracion.yml` corre todo lo anterior en cada push y pull request a `main` ([ADR-0003](docs/decisions/0003-pipeline-de-integracion-continua.md)). No usa secretos: nunca agregar credenciales de SAT2 ni `pull_request_target`. Cada acción va fijada por su SHA. Un falso positivo de Gitleaks se registra en `.gitleaksignore` con su motivo; nunca se desactiva el escaneo.
 
 ## Seguridad: reglas que no se rompen
 
