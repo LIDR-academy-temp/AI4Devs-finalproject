@@ -9,9 +9,19 @@ export interface Created {
   batchIds: string[]
 }
 
-export const test = base.extend<{ created: Created }>({
+/** What the steps of a scenario learn on the way and later steps compare with. */
+export interface Story {
+  /** The batch number processed last, as Settlement Review proposed it. */
+  batchNo?: number
+  /** The attempt shown last in the Settlement Summary. */
+  batchId?: string
+}
+
+export const test = base.extend<{ created: Created; story: Story }>({
   // biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures take their dependencies as a destructured object
   created: async ({}, use) => use({ importIds: [], batchIds: [] }),
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures take their dependencies as a destructured object
+  story: async ({}, use) => use({}),
 })
 
 export const { Given, When, Then, After } = createBdd(test)

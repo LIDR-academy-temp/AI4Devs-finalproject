@@ -59,6 +59,8 @@ Así que cada pasada entera necesita `pnpm db:seed` antes, como en la CI. El pri
 
 Los escenarios 2 y 4 no procesan, así que se pueden repetir sin sembrar con `--grep`. El 3 también, salvo por el número de batch, que se lee de la pantalla. Como el 3 procesa después del flujo feliz, RAM-07 ya es de ProviderA-USD y Settlement Review no pide asociar canales. Si se ejecuta solo sobre una base recién sembrada, sí lo pide: el paso de procesar marca la casilla de canales si está, y lo dice en su comentario. Es el único paso condicional de la suite, y no comprueba nada sobre los canales.
 
+El escenario 3 tampoco compara sus validaciones con el oráculo. El de `batch-split` vale para el batch 123 sobre una base recién sembrada, pero en la suite el flujo feliz deja el 123 `undone` y `batch-split` va al siguiente número. Como un intento deshecho no cuenta como batch anterior, `missing_previous_to_batch` encuentra sus transacciones como faltantes previas: 633 en la primera pasada, que es lo que debe pasar. Las validaciones contra el oráculo las comprueba el flujo feliz. El escenario 3 comprueba filas, número, intento y amount payable, que no dependen de eso.
+
 **D3. Cifras desde `expected.json`.** Un helper `e2e/support/expected.ts` lee `data/samples/<muestra>/expected.json` con un tipo mínimo de lo que se usa. Los pasos nombran la muestra (`Then they see the rows of "batch-clean"`), nunca un número. Los importes se comparan formateados como en la pantalla (agrupación en inglés y cuatro decimales, como `formatDecimal` del frontend) y sin formato en el CSV. El número de batch:
 - en el flujo feliz es `expected.proposedBatchNo`, garantizado por D2;
 - en el escenario 3 se lee del primer intento y se compara con el propuesto en el segundo (`<n> · attempt 2`).
@@ -120,7 +122,7 @@ Nada queda `processed` ni `paid`. Igual que la colección Bruno, conviene sembra
    - "End-to-end (Playwright)": los escenarios reales y `batch-split` en lugar de `provider-a-batch-118-*`;
    - el del smoke, que pasa a ser parte de la suite.
 
-   La tabla de comandos, §1.4, "En pipeline" y la frase de que el E2E no corre en la CI los cambia A con el job.
+   El párrafo del smoke incluye su "Todavía no corre en CI…", que deja de ser verdad con el job e2e de la #147. La tabla de comandos, §1.4 y "En pipeline" los cambia A con el job. La #147 se trae a la rama con un merge antes de abrir el PR, sin rebase.
 3. A mantiene `workers: 1`. La cabecera del `.feature` dice que la suite depende de eso y del orden alfabético de los archivos (D1).
 4. Duración: se mide por escenario en la primera pasada entera. Si la suite pasa de 5 minutos, se avisa igualmente, porque A partirá el job en dos (sustituye el umbral de 10 minutos de D7).
 5. **D11. Test primero en la lógica propia:** `support/expected.ts` (lectura del oráculo y `formatAmount`) y la limpieza de `support/cleanup.ts` (qué acción toca según el estado, en qué orden y con qué usuario).

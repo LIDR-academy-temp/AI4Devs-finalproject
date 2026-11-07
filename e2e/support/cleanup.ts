@@ -2,10 +2,10 @@
 // usable. What to do comes from the state alone (attemptActions, importActions); the calls go through a client, so the
 // decision and the order are tested without the API. Tokens live only in memory, and no note carries a request body
 // nor the password.
+import { type ApiSession, apiSession, type SeededUser } from './api.ts'
 
 export type AttemptStatus = 'processed' | 'paid' | 'undone'
 export type ImportStatus = 'uploaded' | 'mapped' | 'analyzed' | 'validated' | 'processed' | 'cancelled'
-export type SeededUser = 'analyst' | 'payments'
 
 export interface CleanupAction {
   kind: 'unpay' | 'undo' | 'cancel'
@@ -89,49 +89,15 @@ export async function cleanUp(
   return notes
 }
 
-/** The client of the real API, through the proxy of the app. Each user signs in once, on first use. */
-export function apiClient(baseUrl = 'http://localhost:5173/api/v1'): CleanupClient {
-  const tokens = new Map<SeededUser, string>()
-
-  async function call(as: SeededUser, method: 'GET' | 'POST', path: string, body?: unknown) {
-    const response = await fetch(`${baseUrl}${path}`, {
-      method,
-      headers: { authorization: `Bearer ${await token(as)}`, 'content-type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
-      signal: AbortSignal.timeout(15_000),
-    })
-    // Only the status and the code of the error: never the body that was sent.
-    if (!response.ok) {
-      const code = ((await response.json().catch(() => ({}))) as { code?: string }).code ?? ''
-      throw new Error(`${method} ${path} answered ${response.status} ${code}`.trim())
-    }
-    return response.json() as Promise<{ status: string }>
-  }
-
-  async function token(user: SeededUser): Promise<string> {
-    const known = tokens.get(user)
-    if (known) return known
-    const password = process.env.SEED_PASSWORD
-    if (!password) throw new Error('SEED_PASSWORD is not set')
-    const response = await fetch(`${baseUrl}/auth/login`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ userName: user, password }),
-      signal: AbortSignal.timeout(15_000),
-    })
-    if (!response.ok) throw new Error(`sign in of ${user} answered ${response.status}`)
-    const { accessToken } = (await response.json()) as { accessToken: string }
-    tokens.set(user, accessToken)
-    return accessToken
-  }
-
+/** The client of the real API (support/api.ts): each user signs in once, on first use. */
+export function apiClient(api: ApiSession = apiSession()): CleanupClient {
   return {
-    attemptStatus: async (id) => (await call('analyst', 'GET', `/settlements/${id}`)).status as AttemptStatus,
-    importStatus: async (id) => (await call('analyst', 'GET', `/imports/${id}`)).status as ImportStatus,
+    attemptStatus: async (id) => (await api.get<{ status: AttemptStatus }>('analyst', `/settlements/${id}`)).status,
+    importStatus: async (id) => (await api.get<{ status: ImportStatus }>('analyst', `/imports/${id}`)).status,
     run: async (action, reason) => {
       const path =
         action.kind === 'cancel' ? `/imports/${action.id}/cancel` : `/settlements/${action.id}/${action.kind}`
-      await call(action.as, 'POST', path, { reason })
+      await api.post(action.as, path, { reason })
     },
   }
 }

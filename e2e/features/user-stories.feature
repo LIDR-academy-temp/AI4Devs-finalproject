@@ -14,6 +14,83 @@
 # processed nor paid. A scenario that fails half way is cleaned up through the API (steps/fixtures.ts).
 Feature: User stories
 
+  # HU1 to HU3: analyst processes and downloads; payments pays (README §2.5). The last steps leave nothing open.
+  @timeout:300000
+  Scenario: Happy path from the upload to the payment
+    Given the database is freshly seeded for "batch-clean"
+    And the analyst is signed in
+    When they start a new reconciliation in "Merchant A" › "Provider A" › "ProviderA-USD"
+    And they upload the files of "batch-clean"
+    And they confirm the proposed mapping
+    And they analyze the import
+    Then they see the rows of "batch-clean"
+    And they see the new channels of "batch-clean" in the channel notice
+    When they run the validations
+    Then the validations find what the oracle of "batch-clean" says
+    When they continue to settlement review
+    And they choose the settlement date "2026-10-24"
+    Then Settlement Review proposes the batch number of "batch-clean"
+    And the batch fees are the prefilled fees of "batch-clean"
+    And the pre-summary shows the amount payable of "batch-clean"
+    And the channels to assign are the new channels of "batch-clean"
+    When they accept the channel assignment
+    And they process the batch
+    Then the settlement is "Processed · pending payment"
+    And the settlement summary shows the amount payable of "batch-clean"
+    When they download the merchant summary of "batch-clean" with its amount payable
+    Then the settlement is "Processed · pending payment"
+    And they cannot mark it as paid
+    When they sign out
+    And the "payments" user is signed in
+    And they open the settlement summary
+    And they mark it as paid
+    Then the settlement is "Paid"
+    And it was paid by "payments"
+    # Cleanup in sight: payments removes the payment, analyst undoes and cancels.
+    When they unpay it with a reason
+    Then the settlement is "Processed · pending payment"
+    When they sign out
+    And the "analyst" user is signed in
+    And they open the settlement summary
+    And they undo it with a reason
+    Then the settlement is "Undone"
+    When they go to Analysis & Validations
+    And they cancel the import
+    Then the import is "cancelled"
+
+  # HU3 CA1 and CA8 with the two files of batch-split (HU1 CA1): the same number comes back as attempt 2.
+  # Its validations are not compared with the oracle: that one is for batch 123 on a fresh seed, and here the happy
+  # path has left 123 undone, so batch-split goes to the next number and, an undone attempt not counting as a previous
+  # batch, finds its transactions missing previous to it. The happy path compares the validations.
+  @timeout:300000
+  Scenario: An undone batch is processed again with the same number
+    Given the analyst is signed in
+    When they start a new reconciliation in "Merchant A" › "Provider A" › "ProviderA-USD"
+    And they upload the files of "batch-split"
+    And they confirm the proposed mapping
+    And they analyze the import
+    Then they see the rows of "batch-split"
+    When they run the validations
+    And they continue to settlement review
+    And they choose the settlement date "2026-10-24"
+    And they process the batch, accepting any channel assignment it asks for
+    Then the settlement summary shows the amount payable of "batch-split"
+    When they undo it with a reason
+    Then the settlement is "Undone"
+    When they go to Analysis & Validations
+    And they run the validations
+    And they continue to settlement review
+    And they choose the settlement date "2026-10-24"
+    Then Settlement Review proposes the same batch number as attempt 2
+    When they process the batch, accepting any channel assignment it asks for
+    Then the settlement is attempt 2 of the same batch number
+    And the settlement summary shows the amount payable of "batch-split"
+    When they undo it with a reason
+    Then the settlement is "Undone"
+    When they go to Analysis & Validations
+    And they cancel the import
+    Then the import is "cancelled"
+
   Scenario: provider_mismatch blocks the batch and the import is cancelled
     Given the analyst is signed in
     When they start a new reconciliation in "Merchant A" › "Provider B" › "ProviderB-Main"

@@ -48,15 +48,15 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
 
 ## 4. Escenarios que procesan: flujo feliz y deshacer y reprocesar (D2, D5, D6)
 
-- [ ] 4.1 Pasos nuevos en `steps/settlement.steps.ts`:
+- [x] 4.1 Pasos nuevos en `steps/settlement.steps.ts`:
   - la comprobación de base recién sembrada por el API (RAM-07 sin cuenta y `proposedBatchNo`), que falla con `Run pnpm db:seed first`;
   - en Settlement Review: número propuesto, fees prellenados, resumen previo, casilla de canales con RAM-07 (y la condicional del escenario 3, comentada) y **Process batch N**;
   - en Settlement Summary: estado, `amountPayable` y la descarga del summary (D5);
   - **Mark as paid** visible o no según el usuario, **Unpay…** y **Undo batch…** con motivo, **Go to Analysis & Validations** y el número propuesto con `attempt 2`.
 
   Añadir los escenarios 1 y 3 al principio de `features/user-stories.feature`, con `@timeout:300000`. Verificar con `bddgen`, el typecheck y `pnpm lint`
-- [ ] 4.2 **Con turno de base, sembrada por la persona:** `pnpm test:e2e --grep` de los dos escenarios, en verde. Romper a propósito una vez la comparación del amount payable del summary descargado, comprobar que falla y que el `After` deja el intento `undone` y el import `cancelled`, y restaurar con `cp`
-- [ ] 4.3 Commit: `test(e2e): flujo feliz de HU1 a HU3 y deshacer y reprocesar en la suite de las historias (#38)`
+- [x] 4.2 **Con turno de base, sembrada por la persona:** `pnpm test:e2e --grep` de los dos escenarios, en verde. Romper a propósito una vez la comparación del amount payable del summary descargado, comprobar que falla y que el `After` deja el intento `undone` y el import `cancelled`, y restaurar con `cp`
+- [x] 4.3 Commit: `test(e2e): flujo feliz de HU1 a HU3 y deshacer y reprocesar en la suite de las historias (#38)`
 
 ## 5. Pasada entera, medidas y README (D7, D8, D9, D10)
 
@@ -68,11 +68,11 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
   - repetir sin sembrar y comprobar que el flujo feliz falla en su primer paso con `Run pnpm db:seed first`.
 
   Si la suite pasa de 5 minutos, avisar
-- [ ] 5.2 README §2.6: los párrafos "End-to-end (Playwright)" (los escenarios reales y `batch-split`) y del smoke, con la duración medida. No tocar la tabla de comandos, §1.4, "En pipeline" ni la frase de que el E2E no corre en la CI. Commit: `docs: estrategia E2E de README §2.6 con la suite de las historias (#38)`
+- [ ] 5.2 README §2.6: los párrafos "End-to-end (Playwright)" (los escenarios reales y `batch-split`) y del smoke, con la duración medida. El del smoke incluye su "Todavía no corre en CI…", que deja de ser verdad con el job e2e de la #147. No tocar la tabla de comandos, §1.4 ni "En pipeline". Commit: `docs: estrategia E2E de README §2.6 con la suite de las historias (#38)`
 
 ## 6. PR
 
-- [ ] 6.1 Push y PR hacia `feature/entrega-3-MVP` con la plantilla. Incluir:
+- [ ] 6.1 Con la #147 (job e2e de A) fusionada, traer `feature/entrega-3-MVP` a la rama con un merge, sin rebase, para que el CI del PR ya ejecute el job e2e con esta suite. Push y PR hacia `feature/entrega-3-MVP` con la plantilla. Incluir:
   - "Closes #38";
   - la duración por escenario;
   - lo que queda tras una pasada (D9);
