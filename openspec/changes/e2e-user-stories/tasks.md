@@ -60,7 +60,7 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
 
 ## 5. Pasada entera, medidas y README (D7, D8, D9, D10)
 
-- [ ] 5.1 **Con turno de base, sembrada por la persona:**
+- [x] 5.1 **Con turno de base, sembrada por la persona:**
   - `playwright test --list`: el smoke primero, y el flujo feliz primero dentro de `user-stories`;
   - `pnpm test:e2e` entero, en verde, con la duración de cada escenario y la total;
   - comprobar que no queda ningún import abierto ni intento `processed` o `paid` creado por la suite;
@@ -68,7 +68,7 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
   - repetir sin sembrar y comprobar que el flujo feliz falla en su primer paso con `Run pnpm db:seed first`.
 
   Si la suite pasa de 5 minutos, avisar
-- [ ] 5.2 README §2.6: los párrafos "End-to-end (Playwright)" (los escenarios reales y `batch-split`) y del smoke, con la duración medida. El del smoke incluye su "Todavía no corre en CI…", que deja de ser verdad con el job e2e de la #147. No tocar la tabla de comandos, §1.4 ni "En pipeline". Commit: `docs: estrategia E2E de README §2.6 con la suite de las historias (#38)`
+- [x] 5.2 README §2.6: los párrafos "End-to-end (Playwright)" (los escenarios reales y `batch-split`) y del smoke, con la duración medida. El del smoke incluye su "Todavía no corre en CI…", que deja de ser verdad con el job e2e de la #147. No tocar la tabla de comandos, §1.4 ni "En pipeline". Commit: `docs: estrategia E2E de README §2.6 con la suite de las historias (#38)`
 
 ## 6. PR
 
