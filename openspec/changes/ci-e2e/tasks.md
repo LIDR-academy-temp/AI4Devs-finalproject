@@ -13,18 +13,18 @@ Ninguna tarea usa la base local. Lo que necesita SQL Server se comprueba en la C
 
 ## 2. Job `e2e` en la CI
 
-- [ ] 2.1 En `.github/workflows/ci.yml`, el job `e2e` (D1, D3, D5): `needs: check`, el mismo service de SQL Server que `integration` y las variables del job con valores de usar y tirar. Pasos:
+- [x] 2.1 En `.github/workflows/ci.yml`, el job `e2e` (D1, D3, D5): `needs: check`, el mismo service de SQL Server que `integration` y las variables del job con valores de usar y tirar. Pasos:
   - checkout, pnpm, Node con caché e install;
   - `init.sql` con `sqlcmd -v`;
   - `db:generate`, `db:migrate` y `db:seed` como `recon_app`.
-- [ ] 2.2 Mismo job (D2): build de shared, backend y frontend; `start` del backend y `preview --port 5173 --strictPort` del frontend en segundo plano, con su salida a logs del runner; espera con `curl` a `localhost:3000/api/v1/health` y `localhost:5173/api/v1/health`, con un límite de 90 s, mostrando las últimas líneas de los logs si falla.
-- [ ] 2.3 Mismo job (D4): caché de `~/.cache/ms-playwright` con la versión de Playwright en la clave; `playwright install --with-deps chromium` si la caché falla y `playwright install-deps chromium` si acierta.
-- [ ] 2.4 Mismo job (D1, D6), en este orden:
+- [x] 2.2 Mismo job (D2): build de shared, backend y frontend; `start` del backend y `preview --port 5173 --strictPort` del frontend en segundo plano, con su salida a logs del runner; espera con `curl` a `localhost:3000/api/v1/health` y `localhost:5173/api/v1/health`, con un límite de 90 s, mostrando las últimas líneas de los logs si falla.
+- [x] 2.3 Mismo job (D4): caché de `~/.cache/ms-playwright` con la versión de Playwright en la clave; `playwright install --with-deps chromium` si la caché falla y `playwright install-deps chromium` si acierta.
+- [x] 2.4 Mismo job (D1, D6), en este orden:
   1. `pnpm test:api`;
   2. `pnpm db:seed`, con `if: ${{ !cancelled() }}`;
   3. `pnpm test:e2e`, con `if: ${{ !cancelled() }}`;
   4. `actions/upload-artifact` con `if: failure()`, nombre `playwright-report`, `e2e/playwright-report/` y `e2e/test-results/`, `retention-days: 7` e `if-no-files-found: ignore`.
-- [ ] 2.5 Commit: ci: job e2e con la colección Bruno y Playwright (#40), y `git push`. Verificar en la CI de la rama: el job `e2e` termina en verde, la colección pasa entera, el smoke ve `Rows read 783`, `Matched 780` y `RAM-07 is not assigned yet`, y no hay artifact `playwright-report`. Anotar la duración del job y la de cada suite.
+- [x] 2.5 Commit: ci: job e2e con la colección Bruno y Playwright (#40), y `git push`. Verificar en la CI de la rama: el job `e2e` termina en verde, la colección pasa entera, el smoke ve `Rows read 783`, `Matched 780` y `RAM-07 is not assigned yet`, y no hay artifact `playwright-report`. Anotar la duración del job y la de cada suite.
 
 ## 3. Roturas deliberadas en la CI
 
