@@ -1,0 +1,27 @@
+meta {
+  name: 14d Validations after stale review
+  type: http
+  seq: 17
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId/validations
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+tests {
+  test('the refused review wrote nothing: still analyzed, without a review and with the same version', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.importStatus).to.equal('analyzed');
+    expect(res.body.run.review).to.equal(null);
+    expect(res.body.run.inclusionVersion).to.equal(bru.getVar('inclusionVersion'));
+  });
+}

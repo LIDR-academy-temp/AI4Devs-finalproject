@@ -19,12 +19,13 @@ params:path {
 
 body:json {
   {
-    "runId": 0
+    "runId": 0,
+    "inclusionVersion": 0
   }
 }
 
 script:pre-request {
-  req.setBody({ runId: bru.getVar('blkRunId') });
+  req.setBody({ runId: bru.getVar('blkRunId'), inclusionVersion: 0 });
 }
 
 tests {

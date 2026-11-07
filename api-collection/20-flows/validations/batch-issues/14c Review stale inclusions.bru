@@ -1,0 +1,40 @@
+meta {
+  name: 14c Review stale inclusions
+  type: http
+  seq: 16
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/review
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+body:json {
+  {
+    "runId": 0,
+    "inclusionVersion": 0
+  }
+}
+
+script:pre-request {
+  // The version read before the last inclusion change: another analyst changed one since (#53).
+  req.setBody({ runId: bru.getVar('runId2'), inclusionVersion: bru.getVar('inclusionVersion') - 1 });
+}
+
+tests {
+  test('a stale inclusionVersion: 409 inclusions_changed with the current version', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('inclusions_changed');
+    expect(res.body.details.runId).to.equal(bru.getVar('runId2'));
+    expect(res.body.details.currentInclusionVersion).to.equal(bru.getVar('inclusionVersion'));
+    expect(res.body.details.currentInclusionVersion).to.be.above(res.body.details.inclusionVersion);
+  });
+}

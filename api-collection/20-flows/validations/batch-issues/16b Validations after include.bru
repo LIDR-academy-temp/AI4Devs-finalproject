@@ -1,7 +1,7 @@
 meta {
   name: 16b Validations after include
   type: http
-  seq: 17
+  seq: 20
   tags: [
     flow
   ]
@@ -15,6 +15,13 @@ get {
 
 params:path {
   importId: {{valImportId}}
+}
+
+script:post-response {
+  // "16 Include after review" moved the version: "17 Review again" sends the one read here.
+  if (res.status === 200 && res.body.run) {
+    bru.setVar('inclusionVersion', res.body.run.inclusionVersion);
+  }
 }
 
 tests {
