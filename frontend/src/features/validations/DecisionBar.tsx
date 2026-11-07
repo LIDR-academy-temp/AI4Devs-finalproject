@@ -48,12 +48,13 @@ export function DecisionBar({
   // A batch without matched rows of the account is confirmed by hand (#92); the API decides when it is one.
   const emptyBatch = detail.analysis?.requiresEmptyBatchConfirmation === true
   const [emptyConfirmed, setEmptyConfirmed] = useState(false)
-  const reason = reloading
-    ? s.reloading
-    : !run
-      ? s.noRun
-      : run.blocked
-        ? s.blocked
+  // A block does not depend on the inclusions: its reason stays while the run is read again, without flickering.
+  const reason = run?.blocked
+    ? s.blocked
+    : reloading
+      ? s.reloading
+      : !run
+        ? s.noRun
         : emptyBatch && !emptyConfirmed
           ? s.emptyBatch.reason
           : null
