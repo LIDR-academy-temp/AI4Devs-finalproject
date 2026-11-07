@@ -171,6 +171,8 @@ jobs:
         if: steps.browsers.outputs.cache-hit == 'true'
         run: pnpm --filter @recon/e2e exec playwright install-deps chromium
       - name: API collection (Bruno)
+        env:
+          SEED_PASSWORD: "deliberately-wrong-for-bruno"
         run: pnpm test:api
       # The collection leaves batch-clean processed and RAM-07 assigned (#111): seed again, even if it failed.
       - name: seed again
