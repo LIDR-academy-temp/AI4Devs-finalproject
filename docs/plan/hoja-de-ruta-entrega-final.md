@@ -15,8 +15,8 @@ Este documento registra qué línea de trabajo está activa, cuál está en paus
 | Línea | Estado | Condición para avanzar |
 |---|---|---|
 | **A. Instalación local, como la quiere el responsable** | **Terminada** el 5 de noviembre de 2026 | El responsable aprobó la aplicación local y se archivaron sus cambios |
-| **D. Pendientes de la devolución de la Entrega 1** | D1 a D4 hechos; **D5 a D7 pendientes** | D5 va con la línea C; D7 espera la decisión del responsable; D6 es opcional |
-| **B. Despliegue público en Google Cloud (opción plus)** | **En pausa** desde el 2 de noviembre de 2026 | La línea A ya terminó: se retoma cuando lo decida el responsable |
+| **D. Pendientes de la devolución de la Entrega 1** | D1 a D4 hechos; **D5 en curso**; D7 decidido; D6 opcional | D5 va con la línea C; D7 se implementa después de D5 |
+| **B. Despliegue público en Google Cloud (opción plus)** | **En pausa** desde el 2 de noviembre de 2026; el responsable la mantuvo en pausa el 7 de noviembre | Se retoma cuando lo decida el responsable |
 | C. Pipeline, monitoreo y documentación para clientes | **Integración continua hecha** el 7 de noviembre de 2026 (D4) | Faltan D5, el monitoreo y la documentación para clientes |
 
 ## 2. Línea A: cuentas propias con registro, ingreso y recupero
@@ -132,7 +132,7 @@ LIDR revisó la Entrega 1 el 2 de noviembre de 2026 con el resultado **"Luz verd
 | D4 | **Hecho el 7 de noviembre de 2026.** Pipeline de GitHub Actions redactado con IA: cambio `weather-track-pipeline-ci` y [ADR-0003](../decisions/0003-pipeline-de-integracion-continua.md). Verificado en GitHub, en verde y fallando ante una prueba rota. Aprobado por el responsable, que protegió `main` con los 8 controles exigidos | Medio | Despliegue |
 | D5 | Revisión de pull requests asistida por IA y documentación viva a partir de las specs de OpenSpec (línea C) | Medio | Mantenimiento |
 | D6 | Opcional: tests basados en propiedades con Hypothesis. Con cualquier combinación de lecturas, nunca "apto" con inversión o lectura sospechosa, y una mayor diferencia térmica nunca baja el índice | Medio | Pruebas |
-| D7 | Datos de prueba con la forma de las respuestas reales de SAT2, para detectar cambios del proveedor. **Decisión pendiente del responsable:** el contrato con SAT2 es privado, así que la propuesta es guardar solo la estructura, con valores reemplazados | Bajo | Pruebas |
+| D7 | Datos de prueba con la forma de las respuestas reales de SAT2, para detectar cambios del proveedor. **Decidido el 7 de noviembre de 2026:** se usan respuestas verdaderas obtenidas de SAT2. Las captura el responsable, porque el asistente no se autentica en SAT2; antes de versionarlas se quitan la URL, las credenciales, los tokens y cualquier dato de la cuenta, y el responsable las revisa | Bajo | Pruebas |
 
 ### Balance de alcance
 
@@ -163,3 +163,4 @@ Respuestas del responsable del 3 de noviembre de 2026:
 | 5 nov 2026 | Ajustes de la revisión: contraseña repetida e históricos con Día, Semana, Mes y rango con calendario (hasta 31 días, último año, sin futuro) |
 | 5 nov 2026 | El responsable aprueba la aplicación local; se archivan `weather-track-estaciones`, `weather-track-registro-cuentas` y `weather-track-historicos-rangos`. La línea A queda terminada |
 | 7 nov 2026 | Integración continua con GitHub Actions (D4): sin secretos, acciones fijadas por SHA, base de pruebas obligatoria y pruebas negativas antes de fusionar en `main` |
+| 7 nov 2026 | D7: datos de prueba con respuestas verdaderas de SAT2, sin URL, credenciales ni tokens. La línea B sigue en pausa. Se empieza D5 |

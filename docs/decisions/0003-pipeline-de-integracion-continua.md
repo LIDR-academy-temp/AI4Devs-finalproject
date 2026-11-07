@@ -93,8 +93,33 @@ Es un ajuste de la cuenta: el asistente no lo cambia.
 
 **Estado al 7 de noviembre de 2026.** El responsable creó el conjunto de reglas `main proteccion`, activo sobre la rama por defecto (`main`). Exige pull request, impide borrar la rama, bloquea el force push y exige los 8 trabajos del flujo en verde antes de fusionar. Verificado leyendo el conjunto de reglas con la API de GitHub.
 
+## Revisión automática con Copilot (lo hace el responsable)
+
+El cambio `weather-track-revision-y-documentacion-viva` suma una revisión de GitHub Copilot a cada pull request a `main`. Copilot comenta sobre líneas concretas; no aprueba ni bloquea, así que **no se agrega como control exigido**. Fusionar sigue dependiendo de los 8 trabajos en verde y de la decisión del responsable.
+
+Copilot lee, desde la rama del pull request:
+
+- `CLAUDE.md`, con el stack, la arquitectura y las reglas del proyecto;
+- `.github/copilot-instructions.md`, que dice cómo revisar y qué señalar primero;
+- `.github/instructions/*.instructions.md`, con criterios por zona según su campo `applyTo`: dominio, migraciones, flujos, API y frontend.
+
+Para activarla:
+
+1. Requiere un plan de Copilot que incluya la revisión de código (Pro, Pro+, Max, Business o Enterprise).
+2. En el repositorio, **Settings → Rules → Rulesets** y abrir `main proteccion`.
+3. En **Branch rules**, marcar **Automatically request Copilot code review**.
+4. Dentro de esa opción, marcar **Review new pushes**, para que vuelva a revisar con cada push al pull request.
+5. Guardar. No marcar a Copilot como revisor obligatorio ni cambiar los controles exigidos.
+
+Sin el plan, la revisión se puede pedir a mano desde el pull request (**Reviewers → Copilot**), y las mismas instrucciones aplican.
+
+Un comentario de Copilot se atiende con un commit o se descarta con un motivo en la conversación. La plantilla `.github/pull_request_template.md` lo pide en su lista de control.
+
+Es un ajuste de la cuenta: el asistente no lo cambia.
+
 ## Más información
 
 - **Formato de este ADR:** [MADR 4.0.0](https://adr.github.io/madr/).
 - [Endurecimiento de seguridad de GitHub Actions](https://docs.github.com/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions): permisos mínimos, acciones fijadas por SHA y riesgos de `pull_request_target`.
 - [Gitleaks](https://github.com/gitleaks/gitleaks), [pip-audit](https://github.com/pypa/pip-audit) y [Ruff](https://docs.astral.sh/ruff/).
+- [Configuring automatic code review by GitHub Copilot](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/request-a-code-review/configure-automatic-review) y [Support for different types of custom instructions](https://docs.github.com/en/copilot/reference/custom-instructions-support): archivos que lee Copilot code review, incluido `CLAUDE.md`.
