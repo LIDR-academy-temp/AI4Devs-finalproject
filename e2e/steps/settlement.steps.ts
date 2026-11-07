@@ -3,7 +3,8 @@
 import { readFile } from 'node:fs/promises'
 import { expect, type Page } from '@playwright/test'
 import { apiSession } from '../support/api.ts'
-import { expectedOf, formatAmount } from '../support/expected.ts'
+import { createdBy } from '../support/cleanup.ts'
+import { expectedOf, formatAmount, sameDecimal } from '../support/expected.ts'
 import { Given, Then, When } from './fixtures.ts'
 
 const CHANNELS_CONFIRM = 'Assign these channels to this account as primary'
@@ -91,9 +92,10 @@ Then('the batch fees are the prefilled fees of {string}', async ({ page }, sampl
   const fees = expectedOf(sample).batchFeesPrefilled ?? []
   const list = page.getByRole('list', { name: 'Batch fees' }).getByRole('listitem')
   await expect(list).toHaveCount(fees.length)
+  // Money as decimal text, never as a JS number: the input holds the decimal string of the API.
   for (const fee of fees) {
     const value = await page.getByLabel(`Amount — ${fee.feeType}`).inputValue()
-    expect(Number(value), `amount of ${fee.feeType}`).toBe(fee.amount)
+    expect(sameDecimal(value, String(fee.amount)), `amount of ${fee.feeType}: ${value} for ${fee.amount}`).toBe(true)
   }
 })
 
@@ -122,15 +124,39 @@ When('they process the batch, accepting any channel assignment it asks for', asy
 
 When('they process the batch', async ({ page, created, story }) => processBatch(page, created.batchIds, story))
 
+// The batchId comes from the answer of the POST that processes (createdBy), as the importId of the upload: if the
+// summary then fails to open, the After still undoes the attempt.
 async function processBatch(page: Page, batchIds: string[], story: { batchNo?: number; batchId?: string }) {
   const button = page.getByRole('button', { name: /^Process batch \d+$/ })
   await expect(button).toBeEnabled()
   story.batchNo = numberOf(await button.textContent())
+  const processed = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && /\/api\/v1\/imports\/[^/]+\/settlements$/.test(response.url()),
+    { timeout: 60_000 },
+  )
   await button.click()
-  await expect(page).toHaveURL(/\/settlements\/[0-9a-f-]{36}/, { timeout: 60_000 })
-  story.batchId = /\/settlements\/([0-9a-f-]{36})/.exec(page.url())![1]!
-  batchIds.push(story.batchId)
+  const response = await processed
+  const made = createdBy('POST', response.url(), response.status(), response.ok() ? await response.json() : {})
+  if (!made || !('batchId' in made)) throw new Error(`Processing answered ${response.status()}, no attempt created.`)
+  story.batchId = made.batchId
+  batchIds.push(made.batchId)
+  await expect(page).toHaveURL(new RegExp(`/settlements/${made.batchId}`), { timeout: 60_000 })
 }
+
+// HU3 CA5 through the API: once processed, the new channels of the sample have their primary account.
+// biome-ignore lint/correctness/noEmptyPattern: a step without fixtures takes an empty destructured object
+Then('the new channels of {string} are no longer unassigned', async ({}, sample: string) => {
+  const channels = expectedOf(sample).warnings?.newChannels ?? []
+  if (channels.length === 0) throw new Error(`The oracle of ${sample} has no new channels.`)
+  const unassigned = await apiSession().get<{ name: string }[]>('analyst', '/channels?unassigned=true')
+  for (const channel of channels) {
+    expect(
+      unassigned.map((c) => c.name),
+      `${channel} among the unassigned channels`,
+    ).not.toContain(channel)
+  }
+})
 
 Then('the settlement is {string}', async ({ page }, status: string) => {
   await expect(headerValue(page, 'Status')).toHaveText(status)

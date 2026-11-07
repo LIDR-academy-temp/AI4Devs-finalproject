@@ -2,8 +2,12 @@
 // of each feature of the frontend.
 import { fileURLToPath } from 'node:url'
 import { expect, type Page } from '@playwright/test'
+import { createdBy } from '../support/cleanup.ts'
 import { expectedOf, sampleFile } from '../support/expected.ts'
 import { type Created, Given, Then, When } from './fixtures.ts'
+
+/** The reason of every cancel the steps make, the smoke's and the stories' alike. */
+export const CANCEL_REASON = 'E2E: cancel the import'
 
 const repositoryFile = (path: string) => fileURLToPath(new URL(`../../${path}`, import.meta.url))
 
@@ -84,6 +88,11 @@ Then('they see the rows of {string}', async ({ page }, sample: string) => {
   await expect(page.getByRole('region', { name: 'Rows read' })).toHaveText(`Rows read${rows.read}`)
   await expect(page.getByRole('region', { name: 'Matched', exact: true })).toHaveText(`Matched${rows.matched}`)
   await expect(cardNumber(page, 'Unmatched')).toHaveText(String(rows.unmatched))
+  // HU1 CA6: ambiguous and ignored too, when the oracle has them (the rows with an empty ID are the ignored ones).
+  if (rows.ambiguous !== undefined) await expect(cardNumber(page, 'Ambiguous')).toHaveText(String(rows.ambiguous))
+  if (rows.ignoredEmptyId !== undefined) {
+    await expect(cardNumber(page, 'Ignored')).toHaveText(String(rows.ignoredEmptyId))
+  }
 })
 
 /** The big number of a counter card: its second child, after the label. */
@@ -102,9 +111,8 @@ async function upload(page: Page, created: Created, path: string) {
   await page.getByRole('button', { name: 'Drop .xlsx files here or choose files' }).click()
   await (await chooser).setFiles(repositoryFile(path))
   const response = await upload
-  if (response.ok() && /\/imports$/.test(response.url())) {
-    created.importIds.push(((await response.json()) as { importId: string }).importId)
-  }
+  const made = createdBy('POST', response.url(), response.status(), response.ok() ? await response.json() : {})
+  if (made && 'importId' in made) created.importIds.push(made.importId)
   await expect(page).toHaveURL(/\/imports\/[0-9a-f-]{36}/)
   const fileName = path.split('/').at(-1)!
   await expect(page.getByRole('listitem', { name: fileName })).toBeVisible()
@@ -126,7 +134,7 @@ When('they analyze the import', async ({ page }) => {
 When('they cancel the import', async ({ page }) => {
   await page.getByRole('button', { name: 'Cancel import' }).click()
   // The reason is required (spec "Cancelación del import desde la pantalla", #47).
-  await page.getByRole('alertdialog').getByLabel('Reason').fill('Smoke test cleanup')
+  await page.getByRole('alertdialog').getByLabel('Reason').fill(CANCEL_REASON)
   await page.getByRole('alertdialog').getByRole('button', { name: 'Yes, cancel the import' }).click()
 })
 

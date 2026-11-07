@@ -27,6 +27,7 @@ Feature: User stories
     And they see the new channels of "batch-clean" in the channel notice
     When they run the validations
     Then the validations find what the oracle of "batch-clean" says
+    And the validations used the date ranges of "batch-clean"
     When they continue to settlement review
     And they choose the settlement date "2026-10-24"
     Then Settlement Review proposes the batch number of "batch-clean"
@@ -36,6 +37,7 @@ Feature: User stories
     When they accept the channel assignment
     And they process the batch
     Then the settlement is "Processed · pending payment"
+    And the new channels of "batch-clean" are no longer unassigned
     And the settlement summary shows the amount payable of "batch-clean"
     When they download the merchant summary of "batch-clean" with its amount payable
     Then the settlement is "Processed · pending payment"
@@ -113,10 +115,10 @@ Feature: User stories
     And they analyze the import
     Then they see the rows of "batch-wrong-account"
     And they see the unmatched rows by reason of "batch-wrong-account"
-    And they see the wrong account notice
+    And they see the wrong account notice of "batch-wrong-account"
     When they run the validations
     Then the validations find what the oracle of "batch-wrong-account" says
-    And the decision asks to confirm a batch with batch fees only
+    And the decision of "batch-wrong-account" asks to confirm a batch with batch fees only
     And "Continue to settlement review" is disabled with "Confirm that this batch has batch fees only."
     When they cancel and reprocess
     Then the import is "cancelled"

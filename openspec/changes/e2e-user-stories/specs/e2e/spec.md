@@ -33,12 +33,14 @@ Cada escenario SHALL terminar retirando el pago, deshaciendo y cancelando lo que
 - **THEN** ningún import creado por ella está abierto y ningún intento creado por ella está `processed` ni `paid`
 
 ### Requirement: E2E del flujo feliz de HU1 a HU3
-Con `batch-clean` en ProviderA-USD, `analyst` SHALL importar, confirmar el pareo, analizar, validar sin hallazgos, continuar, procesar aceptando la asociación de RAM-07 y descargar el **Merchant summary**. Después, `payments` SHALL marcarlo pagado. `analyst` no SHALL ver **Mark as paid**.
+Con `batch-clean` en ProviderA-USD, `analyst` SHALL importar, confirmar la propuesta de pareo, analizar, validar sin hallazgos, continuar, procesar aceptando la asociación de RAM-07 y descargar el **Merchant summary**. Después, `payments` SHALL marcarlo pagado. `analyst` no SHALL ver **Mark as paid**.
 
 #### Scenario: Batch limpio procesado, descargado y pagado
 - **GIVEN** la base recién sembrada
 - **WHEN** `analyst` recorre el flujo con `batch-clean`, procesa con los fees prellenados y descarga el summary
-- **THEN** las filas, los rangos y las ocho validaciones coinciden con `expected.json`, el resumen previo y el Settlement Summary muestran su `amountPayable`, y el summary descargado se llama `ProviderA-USD_B<n>_A1_summary.csv` y trae `Amount payable` con ese importe
+- **THEN** las filas leídas, asociadas, no asociadas, ambiguas e ignoradas, los rangos APP, DEC, I y R, y el resultado, los hallazgos y si bloquea de las ocho validaciones coinciden con `expected.json`
+- **AND** tras procesar, RAM-07 ya no figura entre los canales sin cuenta del API
+- **AND** el resumen previo y el Settlement Summary muestran su `amountPayable`, y el summary descargado se llama `ProviderA-USD_B<n>_A1_summary.csv` y trae `Amount payable` con ese importe
 - **AND** `analyst` no ve **Mark as paid**; `payments` lo pulsa y ve `Paid` con `Paid by` `payments`
 - **AND** al terminar, `payments` retira el pago con motivo, `analyst` deshace con motivo y cancela el import
 
@@ -64,5 +66,6 @@ Con `batch-wrong-account` en ProviderA-USD, la suite SHALL comprobar el desglose
 #### Scenario: Archivo de otra cuenta
 - **WHEN** `analyst` importa, analiza y valida `batch-wrong-account`
 - **THEN** `Unmatched` y su desglose `ID does not fit any gateway` dan los números de `expected.json`, y se ve el aviso de cuenta equivocada
+- **AND** el resultado, los hallazgos y si bloquea de cada validación coinciden con los `outcomes` y las `validations` de `expected.json`
 - **AND** con la casilla sin marcar, **Continue to settlement review** está deshabilitado con `Confirm that this batch has batch fees only.`
 - **AND** al pulsar **Cancel and reprocess** y confirmar, el import queda `cancelled`, y **Start a new import** lleva a New Reconciliation con ProviderA-USD elegida

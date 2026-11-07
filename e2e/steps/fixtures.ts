@@ -3,7 +3,7 @@
 import { test as base, createBdd } from 'playwright-bdd'
 import { apiClient, cleanUp } from '../support/cleanup.ts'
 
-/** What a scenario created: imports from the answer of the POST that creates them, attempts from their summary URL. */
+/** What a scenario created: imports and attempts from the answer of the POST that creates them (createdBy). */
 export interface Created {
   importIds: string[]
   batchIds: string[]

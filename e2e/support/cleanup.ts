@@ -89,6 +89,25 @@ export async function cleanUp(
   return notes
 }
 
+/**
+ * What a response of the API created, so that the cleanup knows it even when the step fails right after it: the POST
+ * that creates an import (its importId) and the one that processes a batch (its batchId, before the summary opens).
+ * Adding a file, the preview, a refused request and a read create nothing.
+ */
+export function createdBy(
+  method: string,
+  url: string,
+  status: number,
+  body: unknown,
+): { importId: string } | { batchId: string } | undefined {
+  if (method !== 'POST' || status < 200 || status >= 300) return undefined
+  const path = new URL(url).pathname
+  const fields = body as { importId?: string; batchId?: string }
+  if (/\/accounts\/[^/]+\/imports$/.test(path) && fields.importId) return { importId: fields.importId }
+  if (/\/imports\/[^/]+\/settlements$/.test(path) && fields.batchId) return { batchId: fields.batchId }
+  return undefined
+}
+
 /** The client of the real API (support/api.ts): each user signs in once, on first use. */
 export function apiClient(api: ApiSession = apiSession()): CleanupClient {
   return {

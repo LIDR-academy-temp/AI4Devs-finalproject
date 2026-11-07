@@ -72,7 +72,7 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
 
 ## 6. PR
 
-- [ ] 6.1 Con la #147 (job e2e de A) fusionada, traer `feature/entrega-3-MVP` a la rama con un merge, sin rebase, para que el CI del PR ya ejecute el job e2e con esta suite. Push y PR hacia `feature/entrega-3-MVP` con la plantilla. Incluir:
+- [x] 6.1 Con la #147 (job e2e de A) fusionada, traer `feature/entrega-3-MVP` a la rama con un merge, sin rebase, para que el CI del PR ya ejecute el job e2e con esta suite. Push y PR hacia `feature/entrega-3-MVP` con la plantilla. Incluir:
   - "Closes #38";
   - la duración por escenario;
   - lo que queda tras una pasada (D9);
@@ -80,6 +80,17 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
   - que los tests de `support/` corren en el job `check` (tarea 2.5), comprobado en el CI del PR.
 
   Vigilar el CI con `gh --jq` hasta que esté verde
+
+## 7. Correcciones del review-diff de la #149
+
+- [x] 7.1 Tests primero en `support/`: `ranges`, `ambiguous`, `ignoredEmptyId` y `outcomes` leídos del oráculo; `outcomeOf`; `sameDecimal`; `createdBy` (el `batchId` de la respuesta de `POST /imports/{id}/settlements`, nada para la vista previa ni para una petición rechazada). Verificar que fallan. Commit
+- [x] 7.2 Implementar y romper a propósito una vez el ancla de la ruta de `createdBy` y el signo de `sameDecimal`, restaurando con `cp`. Además:
+  - pasos: resultado y columna Blocking de cada validación; rangos en el flujo feliz; ambiguas e ignoradas; RAM-07 por el API después de procesar; `batchId` desde la respuesta; fees como texto decimal; aviso y casilla según `likelyWrongAccount` y `requiresEmptyBatchConfirmation`; un motivo de cancelación común;
+  - `SEED_PASSWORD` borrado en el test si no existía; comentario de copia en `formatAmount`;
+  - D1 y la spec sin HU1 CA3, CA4 ni las hojas y filas por archivo; D6, D7 y el proposal con las duraciones medidas.
+
+  Verificar con `bddgen`, el typecheck, `pnpm lint`, `node --test` y `openspec validate --strict`
+- [ ] 7.3 **Con turno de base, sembrada por la persona:** `pnpm test:e2e` entero, en verde, con la duración de cada escenario. Después push, CI del PR en verde y la lista de commits
 
 ## Workflow follow-up
 

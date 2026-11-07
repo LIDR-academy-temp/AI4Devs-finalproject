@@ -26,11 +26,13 @@ describe('what a response of the API created, for the cleanup', () => {
     })
   })
 
+  // Each body carries an id, so the route, the status and the method decide, not the shape of the body.
   it('nothing for the preview, for adding a file, for a refused request or for a read', () => {
-    assert.equal(createdBy('POST', `${API}/imports/i1/settlements/preview`, 200, { batchNo: 123 }), undefined)
-    assert.equal(createdBy('POST', `${API}/imports/i1/files`, 201, { importId: 'i1' }), undefined)
-    assert.equal(createdBy('POST', `${API}/imports/i1/settlements`, 409, { code: 'batch_no_taken' }), undefined)
-    assert.equal(createdBy('GET', `${API}/accounts/a1/imports`, 200, { items: [] }), undefined)
+    const ids = { importId: 'i1', batchId: 'b1' }
+    assert.equal(createdBy('POST', `${API}/imports/i1/settlements/preview`, 200, ids), undefined)
+    assert.equal(createdBy('POST', `${API}/imports/i1/files`, 201, ids), undefined)
+    assert.equal(createdBy('POST', `${API}/imports/i1/settlements`, 409, ids), undefined)
+    assert.equal(createdBy('GET', `${API}/accounts/a1/imports`, 200, ids), undefined)
   })
 })
 

@@ -1,8 +1,8 @@
 // Steps of the validations and the decision (HU2). Selectors are roles and accessible texts, the same as
 // frontend/src/features/validations/strings.ts and frontend/src/features/imports/strings.ts.
 import { expect, type Page } from '@playwright/test'
-import { expectedOf } from '../support/expected.ts'
-import { cardNumber } from './common.steps.ts'
+import { type Expected, expectedOf, outcomeOf, type RangeKey, type ValidationOutcome } from '../support/expected.ts'
+import { CANCEL_REASON, cardNumber } from './common.steps.ts'
 import { Then, When } from './fixtures.ts'
 
 /** The labels of the validations table, in the order of the API. */
@@ -25,9 +25,30 @@ const REASONS = {
   no_gateways: 'No gateways for the account',
 } as const
 
+/** The Result column (strings.outcomes) and the Blocking column of the validations table. */
+const OUTCOMES: Record<ValidationOutcome, string> = {
+  passed: 'Passed',
+  warning: 'Warning',
+  blocked: 'Blocked',
+  not_applicable: 'n/a',
+}
+const BLOCKS = 'Blocks'
+const NOT_BLOCKING = '—'
+
+/** The row of the date ranges table that carries each range: the I range spans CHB, REF and RDR (row 0 is the head). */
+const RANGE_ROWS: Record<RangeKey, number> = { APP: 1, DEC: 2, I: 3, R: 6 }
+
 const WRONG_ACCOUNT = 'The IDs do not fit any gateway of this account: the files may belong to another account.'
 const NO_MATCHED_ROWS = 'No row of the files matches a transaction of this account.'
-const CANCEL_REASON = 'E2E: cancel and reprocess'
+
+/** A flag of the oracle that a step depends on: without it the step would check a screen the sample does not have. */
+function requireFlag(
+  sample: string,
+  expected: Expected,
+  flag: 'likelyWrongAccount' | 'requiresEmptyBatchConfirmation',
+) {
+  if (expected[flag] !== true) throw new Error(`The oracle of ${sample} does not say ${flag}.`)
+}
 
 const validationRow = (page: Page, label: string) =>
   page
@@ -40,17 +61,33 @@ When('they run the validations', async ({ page }) => {
   await expect(page.getByRole('table', { name: 'Validation results' })).toBeVisible({ timeout: 60_000 })
 })
 
-// Each validation of the oracle: a number, or a breakdown whose parts add up to the findings of its row.
+// Each validation of the oracle (HU2 CA1): its result, its findings (a number, or a breakdown whose parts add up to
+// them) and whether it blocks.
 Then('the validations find what the oracle of {string} says', async ({ page }, sample: string) => {
-  const validations = expectedOf(sample).validations ?? {}
+  const expected = expectedOf(sample)
+  const validations = expected.validations ?? {}
   if (Object.keys(validations).length === 0) throw new Error(`The oracle of ${sample} has no validations.`)
   for (const [code, value] of Object.entries(validations)) {
     const label = VALIDATIONS[code]
     if (!label) throw new Error(`Unknown validation in the oracle of ${sample}: ${code}`)
     const findings = typeof value === 'number' ? value : Object.values(value).reduce((sum, n) => sum + n, 0)
+    const outcome = outcomeOf(expected, code, findings)
     // Columns: validation, result, findings, blocking, breakdown.
-    await expect(validationRow(page, label).getByRole('cell').nth(2), `findings of ${code}`).toHaveText(
-      String(findings),
+    const cells = validationRow(page, label).getByRole('cell')
+    await expect(cells.nth(1), `result of ${code}`).toHaveText(OUTCOMES[outcome])
+    await expect(cells.nth(2), `findings of ${code}`).toHaveText(String(findings))
+    await expect(cells.nth(3), `blocking of ${code}`).toHaveText(outcome === 'blocked' ? BLOCKS : NOT_BLOCKING)
+  }
+})
+
+// HU2 CA1: the APP, DEC, I and R ranges the run used. The screen shows instants; the oracle, the first and last day.
+Then('the validations used the date ranges of {string}', async ({ page }, sample: string) => {
+  const ranges = expectedOf(sample).ranges
+  if (!ranges) throw new Error(`The oracle of ${sample} has no ranges.`)
+  const rows = page.getByRole('table', { name: 'Date ranges used by the validations' }).getByRole('row')
+  for (const [key, [first, last]] of Object.entries(ranges) as [RangeKey, [string, string]][]) {
+    await expect(rows.nth(RANGE_ROWS[key]).getByRole('cell').nth(2), `range ${key}`).toHaveText(
+      new RegExp(`^${first} \\d{2}:\\d{2} \\S+ – ${last} \\d{2}:\\d{2} \\S+$`),
     )
   }
 })
@@ -97,11 +134,13 @@ Then('they see the unmatched rows by reason of {string}', async ({ page }, sampl
   }
 })
 
-Then('they see the wrong account notice', async ({ page }) => {
+Then('they see the wrong account notice of {string}', async ({ page }, sample: string) => {
+  requireFlag(sample, expectedOf(sample), 'likelyWrongAccount')
   await expect(page.getByRole('region', { name: 'Wrong account?' })).toHaveText(WRONG_ACCOUNT)
 })
 
-Then('the decision asks to confirm a batch with batch fees only', async ({ page }) => {
+Then('the decision of {string} asks to confirm a batch with batch fees only', async ({ page }, sample: string) => {
+  requireFlag(sample, expectedOf(sample), 'requiresEmptyBatchConfirmation')
   await expect(page.getByText(NO_MATCHED_ROWS, { exact: true })).toBeVisible()
   await expect(page.getByRole('checkbox', { name: 'Continue with batch fees only' })).not.toBeChecked()
 })

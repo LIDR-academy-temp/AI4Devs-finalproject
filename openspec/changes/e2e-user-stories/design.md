@@ -41,12 +41,13 @@ Ver proposal.md. Estado actual, leído en el código:
 
 | # | Escenario | Muestra y cuenta | Usuarios | Cubre |
 |---|---|---|---|---|
-| 1 | Flujo feliz | `batch-clean`, ProviderA-USD | `analyst`, `payments` | HU1 CA1, 3, 4, 6, 7 · HU2 CA1, 6 · HU3 CA1, 2 (prellenados), 5, 6, 7 |
+| 1 | Flujo feliz | `batch-clean`, ProviderA-USD | `analyst`, `payments` | HU1 CA6 (contadores), 7 · HU2 CA1 (resultado, hallazgos, si bloquea y rangos), 6 · HU3 CA1, 2 (prellenados), 5 (también por el API), 6, 7 |
 | 2 | `provider_mismatch` | `batch-blocked`, ProviderB-Main | `analyst` | HU2 CA5, 8 |
-| 3 | Deshacer y reprocesar | `batch-split` (2 archivos), ProviderA-USD | `analyst` | HU1 CA1 (varios archivos) · HU3 CA1, 8 |
+| 3 | Deshacer y reprocesar | `batch-split` (2 archivos), ProviderA-USD | `analyst` | Un import con varios archivos · HU3 CA1, 8 |
 | 4 | Batch sin filas asociadas | `batch-wrong-account`, ProviderA-USD | `analyst` | HU2 CA8 (cancelar y reprocesar) · guardarraíles de #92 y #131 |
 
-- **Escenario 3 con `batch-split`:** cubre la subida de varios archivos, que el flujo feliz no toca, con las mismas cifras de oráculo.
+- **Escenario 3 con `batch-split`:** cubre la subida de varios archivos a un import, que el flujo feliz no toca, con las mismas cifras de oráculo.
+- **Fuera de la suite:** las hojas y filas por archivo de HU1 CA1, y la propuesta y el cambio del pareo de HU1 CA3 y CA4. La suite confirma la propuesta tal cual, sin comprobarla; eso lo cubren los tests de pantalla y la colección Bruno.
 - **Escenario 4:** es el "cancelar y reprocesar" de §2.6. Llega hasta **Start a new import**, que abre New Reconciliation con la cuenta elegida, y no sube el archivo a la cuenta correcta, porque no hay `expected.json` para ese caso.
 - **Un solo archivo:** con un worker, los escenarios de un archivo corren en orden y los archivos van por orden alfabético. `import-smoke` corre antes que `user-stories`, y dentro de este el flujo feliz es el primero (ver D2). Se comprueba con `playwright test --list`.
 
@@ -75,22 +76,23 @@ El escenario 3 tampoco compara sus validaciones con el oráculo. El de `batch-sp
 
 **D6. Limpieza: primero con los pasos del escenario, después con un `After` por el API.**
 - **En verde:** cada escenario termina con su limpieza a la vista, como pasos: `payments` retira el pago con motivo, `analyst` deshace con motivo y cancela el import. Así la limpieza también se prueba.
-- **Si falla a mitad:** el fixture guarda los `importId` (de la respuesta del `POST` que crea el import, como el smoke) y los `batchId` (de la URL del Settlement Summary). El `After` los recorre por el API: `unpay` como `payments` si está `paid`, `undo` como `analyst` si está `processed` y `cancel` si el import sigue abierto, cada uno con el motivo `E2E cleanup after a failure`.
+- **Si falla a mitad:** el fixture guarda los `importId` y los `batchId` de la respuesta del `POST` que crea el import o procesa el batch (`createdBy` de `support/cleanup.ts`), así que un intento queda registrado aunque el Settlement Summary no llegue a abrirse. El `After` los recorre por el API: `unpay` como `payments` si está `paid`, `undo` como `analyst` si está `processed` y `cancel` si el import sigue abierto, cada uno con el motivo `E2E cleanup after a failure`.
 - **Sesión del `After`:** inicia sesión con `POST /auth/login`, y el token vive solo en memoria.
 - **Errores del `After`:** un error de la limpieza se anota en el test (`annotations`) con su primera línea, sin el cuerpo de la petición, como el smoke. No sustituye al error original.
 - **Por qué por el API:** limpiar por la pantalla tras un fallo depende de la pantalla que falló.
 
-**D7. Duración y timeouts.** La primera pasada local mide cada escenario. Estimación por escenario:
+**D7. Duración y timeouts.** Se estimaron de 5 a 8 minutos con un worker. Medido, con la base recién sembrada:
 
-| Escenario | Estimación |
-|---|---|
-| Smoke | 30–45 s |
-| Flujo feliz | 90–150 s (análisis de 783 filas, validaciones, proceso, pago y limpieza) |
-| `provider_mismatch` | 20–40 s |
-| Deshacer y reprocesar | 120–200 s (dos procesos) |
-| Sin filas asociadas | 20–40 s |
+| Escenario | Estimación | Local (5.1) | CI, job `e2e` (#149) |
+|---|---|---|---|
+| Smoke | 30–45 s | 7,7 s | 2,8 s |
+| Flujo feliz | 90–150 s | 21,3 s | 7,4 s |
+| Deshacer y reprocesar | 120–200 s | 22,4 s | 9,5 s |
+| `provider_mismatch` | 20–40 s | 4,6 s | 1,9 s |
+| Sin filas asociadas | 20–40 s | 5,0 s | 1,9 s |
+| **Total** | 5–8 min | 1,0 min | 26,5 s (job entero: 5 min 14 s) |
 
-En total, de 5 a 8 minutos con un worker. Los escenarios 1 y 3 pueden pasar del `timeout` de 120 s de la configuración, así que llevan la etiqueta `@timeout:300000` de playwright-bdd en el `.feature`, sin tocar `playwright.config.ts`. Si la suite medida pasa de 5 minutos, se avisa antes de abrir el PR (gate, punto 4).
+La suite queda muy por debajo de los 5 minutos del gate, así que el job `e2e` no se parte. Los escenarios 1 y 3 conservan la etiqueta `@timeout:300000` de playwright-bdd como margen en máquinas más lentas, sin tocar `playwright.config.ts`.
 
 **D8. Credenciales y evidencia.** Igual que el smoke:
 - la contraseña sale solo de `process.env.SEED_PASSWORD`, nunca de un argumento de paso;

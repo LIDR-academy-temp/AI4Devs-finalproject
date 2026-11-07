@@ -9,7 +9,7 @@ README §2.6 pide un E2E del flujo completo en Gherkin (login → cuenta → imp
 Cuatro escenarios nuevos en Gherkin, con playwright-bdd, contra la aplicación y el API reales. Con el smoke, la suite queda en cinco:
 
 - **Flujo feliz de HU1 a HU3** con `batch-clean` en ProviderA-USD.
-  - `analyst` importa, confirma el pareo, analiza y ejecuta las validaciones (las ocho sin hallazgos), continúa, y procesa aceptando la asociación de RAM-07.
+  - `analyst` importa, confirma la propuesta de pareo, analiza y ejecuta las validaciones (las ocho sin hallazgos, con su resultado y los rangos), continúa, y procesa aceptando la asociación de RAM-07.
   - Después descarga el **Merchant summary**.
   - `payments` marca el batch como pagado (`analyst` procesa pero no paga, README §2.5).
   - Limpieza: `payments` retira el pago, `analyst` deshace y cancela el import.
@@ -46,5 +46,5 @@ Ninguna. El requisito "Smoke E2E de la importación" de `import` no cambia: el e
 - **Nuevos:** `e2e/features/user-stories.feature`; `e2e/steps/` (pasos comunes, de validaciones y de settlement, fixtures y hook de limpieza); un helper `e2e/support/` para leer los `expected.json` y para la limpieza por el API.
 - **Modificado:** `e2e/steps/import-smoke.steps.ts`, cuyos pasos comunes se mueven a los compartidos sin cambiar su comportamiento.
 - **CI (A):** la suite necesita una base recién sembrada y un solo worker, como ya está configurado. No hace falta tocar `playwright.config.ts`: los escenarios largos alargan su timeout con la etiqueta `@timeout` de playwright-bdd.
-- **Duración estimada** de la suite entera, con el smoke: entre 5 y 8 minutos. Se mide en la primera pasada local.
+- **Duración** de la suite entera, con el smoke: se estimaron entre 5 y 8 minutos y se midió 1,0 min en local y 26,5 s en el job `e2e` de la CI (design D7).
 - Sin cambios de API, esquema, migraciones ni seed.
