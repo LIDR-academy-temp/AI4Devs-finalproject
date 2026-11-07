@@ -1833,6 +1833,7 @@ Los recuentos se calculan de los `tasks.md` de cada change:
 - `openspec validate` de los dos changes: válidos.
 - `scripts/verify_prod_images.sh`: imágenes de producción construidas, `/api/health` 200 sobre HTTPS, puerto 80 redirigido, sin `pytest`, `tests/` ni semillas de desarrollo.
 - Modelo de datos: **29 tablas** más `alembic_version`, migración `439b6b8481f8` (cadena de 12 revisiones aplicada desde una base vacía).
+- Informe completo: [`docs/reports/2026-11-07-entrega-3-test-report.md`](https://github.com/lfmorales/AI4Devs-finalproject-temp/blob/final-project-LFMC/docs/reports/2026-11-07-entrega-3-test-report.md)
 
 **Cómo revisarlo**
 
