@@ -13,23 +13,29 @@ Ninguna tarea usa la base local salvo la 2.4, que necesita turno pedido antes. L
   - logs si falla y `down -v` al final;
   - secretos ficticios propios del paso, sin `TUNNEL_TOKEN`.
 - [x] 1.3 `docs/deploy.md`: `check` en la lista de órdenes (§12). El smoke de la CI se describe en el README, junto a la comprobación de imágenes, porque `docs/deploy.md` no habla de la CI.
-- [ ] 1.4 Commit: ci: arrancar las imágenes de despliegue con un smoke (#107), y `git push`. Abrir el PR en borrador para que corra la CI. Verificar en la CI: el job `images` en verde, `cloudflared` sin arrancar y ningún `docker push`.
-- [ ] 1.5 Anotar la duración del job `images` antes (1 min 12 s – 1 min 22 s) y después, y comprobar que el camino crítico del PR no cambia.
-- [ ] 1.6 Rotura deliberada (D7): un commit temporal quita `--conditions=recon-dist` del `CMD` de `backend/Dockerfile`. Verificar que `images` falla en `up --wait` y muestra los logs de la API. Revertirlo con `git revert` y ver el job en verde otra vez. Los dos commits se quedan en el historial.
+- [x] 1.4 Commit: ci: arrancar las imágenes de despliegue con un smoke (#107), y `git push`. Abrir el PR en borrador para que corra la CI. Verificar en la CI: el job `images` en verde, `cloudflared` sin arrancar y ningún `docker push`.
+- [x] 1.5 Anotar la duración del job `images` antes (1 min 12 s – 1 min 22 s) y después, y comprobar que el camino crítico del PR no cambia.
+  - Run 42417955044 (`84ddb97`): `images` 4 min 31 s. El smoke (arranque, `migrate`, comprobaciones y `down -v`) son 54 s; las construcciones, 2 min 58 s, por `load: true` y la caché de la primera pasada.
+  - Camino crítico: `check` 3 min 56 s → `e2e` termina a los 9 min 6 s. `images` termina a los 4 min 33 s, así que el PR no tarda más.
+- [x] 1.6 Rotura deliberada (D7): un commit temporal quita `--conditions=recon-dist` del `CMD` de `backend/Dockerfile`. Verificar que `images` falla en `up --wait` y muestra los logs de la API. Revertirlo con `git revert` y ver el job en verde otra vez. Los dos commits se quedan en el historial.
+  - `435a0ad`, run 42418740509: `images` falla en `start the deployment without a tunnel` (`recon-deploy-api-1 is unhealthy`) y `deployment logs` muestra `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`.
+  - `ff6bc31` (revert), run 42419574556: los cinco jobs en verde; `images` 3 min 43 s con la caché caliente.
 
 ## 2. Sin `recon_reader` en el despliegue (#108, D5)
 
-- [ ] 2.1 Mover el bloque de `recon_reader` de `infra/mssql/init.sql` a `infra/mssql/init.local.sql` (nuevo). Montarlo en `infra/docker-compose.yml` y ejecutarlo desde `entrypoint.sh` si existe. Borrado idempotente con `TRY/CATCH` en `infra/mssql/init.deploy.sql`, antes del bloque de `recon_migrator`, que sigue siendo el último. Actualizar los comentarios de los cuatro archivos.
-- [ ] 2.2 Smoke: la salida de `check` no lista `recon_reader`.
-- [ ] 2.3 Documentación:
+- [x] 2.1 Mover el bloque de `recon_reader` de `infra/mssql/init.sql` a `infra/mssql/init.local.sql` (nuevo). Montarlo en `infra/docker-compose.yml` y ejecutarlo desde `entrypoint.sh` si existe. Borrado idempotente con `TRY/CATCH` en `infra/mssql/init.deploy.sql`, antes del bloque de `recon_migrator`, que sigue siendo el último. Actualizar los comentarios de los cuatro archivos.
+- [x] 2.2 Smoke: la salida de `check` no lista `recon_reader`.
+- [x] 2.3 Documentación:
   - `docs/deploy.md`: §11 añade `down` / `up --wait` cuando cambian los scripts de `mssql`, y las menciones de los usuarios de la base;
   - README §1.4 (`recon_reader` solo en local), §2.4 si menciona los usuarios del despliegue, y el árbol de `infra/mssql/` con `init.local.sql`.
-- [ ] 2.4 **Con turno de base:**
+- [x] 2.4 **Con turno de base:**
   - `pnpm db:up` recrea el contenedor local;
   - `recon_reader` sigue existiendo con `db_datareader` y nada más;
-  - `pnpm db:migrate` no tiene cambios.
+  - `pnpm db:seed` (lo lanza la persona: el hook lo bloquea) y `pnpm test:integration` quedan igual que antes.
 
   Anotar la salida en el scratchpad.
+  - `recon-mssql` recreado y `healthy`, `[init] done`, `/init/init.local.sql` montado. `recon_reader`: `db_datareader` y el `CONNECT` de todo usuario. El login ya existía en el volumen, así que el `CREATE` no se ejecutó; el script corrió sin error (`-b`).
+  - Integración: 497 passed, 1 failed. El fallo es la prueba de rendimiento de 20 000 filas (23,8 s con un límite de 20 s, justo después del seed). Repetida sola, pasa, igual que los 26 tests de `auth.int.test.ts`.
 - [ ] 2.5 Commit: fix(infra): no crear recon_reader en el despliegue (#108), y `git push`. Verificar en la CI el job `images` en verde.
 
 ## 3. IP real del cliente (#106, D1, D2, D3)

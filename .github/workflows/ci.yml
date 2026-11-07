@@ -301,6 +301,7 @@ jobs:
           check="$(scripts/deploy.sh check)"
           echo "$check"
           grep -q 'recon_app' <<<"$check"
+          if grep -q 'recon_reader' <<<"$check"; then echo "recon_reader exists in the deployment (#108)"; exit 1; fi
           grep -q '"userName":"ghost"' <<<"$check" || { echo "the failed login is not in AuditLog"; exit 1; }
 
           echo "--- services"

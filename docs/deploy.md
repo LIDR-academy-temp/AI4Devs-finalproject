@@ -23,7 +23,7 @@ El despliegue tiene cuatro servicios siempre en marcha:
 | `api` | La API, conectada como `recon_app`, que no puede cambiar la estructura de la base | No |
 | `mssql` | SQL Server 2022 | No |
 
-Ningún servicio publica puertos en el servidor. `migrate` y `seed` solo se ejecutan cuando se les ordena, con su propia identidad de base de datos, `recon_migrator`.
+Ningún servicio publica puertos en el servidor. `migrate` y `seed` solo se ejecutan cuando se les ordena, con su propia identidad de base de datos, `recon_migrator`. La base del despliegue tiene solo dos usuarios de la aplicación: `recon_app`, para la API, y `recon_migrator`. El usuario de solo lectura `recon_reader` existe solo en local; si un despliegue anterior lo creó, `mssql` lo borra en su siguiente arranque.
 
 ## 2. Qué necesitas
 
@@ -214,6 +214,17 @@ scripts/deploy.sh up --wait
 ```
 
 La base y los archivos subidos viven en volúmenes y se conservan. No ejecutes `seed` al actualizar.
+
+**Si la versión nueva cambia los scripts de `infra/mssql/`**, `up` no basta: `mssql` solo los ejecuta al arrancar, y `up` no lo reinicia si su imagen no cambia. Después de `migrate`, reinicia todo y comprueba:
+
+```bash
+scripts/deploy.sh down
+scripts/deploy.sh up --wait
+scripts/deploy.sh ps
+scripts/deploy.sh check
+```
+
+`down` no borra los volúmenes. `ps` debe mostrar los servicios `healthy`, y `check`, solo `recon_app` y `recon_migrator`. La URL está caída uno o dos minutos.
 
 Para volver a una versión anterior, haz `git checkout` de esa versión, `scripts/deploy.sh build` y `scripts/deploy.sh up --wait`. Las migraciones no se deshacen solas: si la versión nueva aplicó alguna incompatible con la anterior, necesitas un plan propio.
 
