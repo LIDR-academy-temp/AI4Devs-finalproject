@@ -147,12 +147,20 @@ export class ImportFlow {
     return this.analyzed(this.accountIds[account] as string, files.map(samplePart))
   }
 
+  /** The inclusionVersion of the current run as GET validations answers it (0 without a run): what the screen saw. */
+  async inclusionVersionOf(importId: string): Promise<number> {
+    const res = await this.call('GET', `/imports/${importId}/validations`)
+    expect(res.statusCode, res.body).toBe(200)
+    return (res.json().run?.inclusionVersion as number | undefined) ?? 0
+  }
+
   /** Run the validations and review the run: the import ends `validated`. Returns the reviewed runId. */
   async validateAndReview(importId: string): Promise<number> {
     const run = await this.call('POST', `/imports/${importId}/validations`)
     expect(run.statusCode, run.body).toBe(201)
     const runId = run.json().run.runId as number
-    const review = await this.call('POST', `/imports/${importId}/review`, { runId })
+    const inclusionVersion = run.json().run.inclusionVersion as number
+    const review = await this.call('POST', `/imports/${importId}/review`, { runId, inclusionVersion })
     expect(review.statusCode, review.body).toBe(200)
     return runId
   }

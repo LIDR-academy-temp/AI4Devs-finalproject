@@ -44,7 +44,7 @@ describe('Analysis & Validations: a batch without matched rows (spec "batch sin 
     await user.click(continueButton())
 
     expect(await header().findByText('validated')).toBeInTheDocument()
-    expect(validationRequests('review')[0]?.body).toEqual({ runId, confirmEmptyBatch: true })
+    expect(validationRequests('review')[0]?.body).toEqual({ runId, inclusionVersion: 0, confirmEmptyBatch: true })
   })
 
   it('unmatched for another reason: the box and its notice, without the wrong-account warning', async () => {
@@ -58,7 +58,7 @@ describe('Analysis & Validations: a batch without matched rows (spec "batch sin 
     expect(notice.getByRole('checkbox', { name: CONFIRM })).toBeInTheDocument()
   })
 
-  it('batch-issues has matched rows: no box, no notice, and the body carries only the runId', async () => {
+  it('batch-issues has matched rows: no box, no notice, and the body carries only the run and its version', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const { runId } = seedValidationRun(importId)
     const { user } = await openAnalysis(importId)
@@ -67,7 +67,7 @@ describe('Analysis & Validations: a batch without matched rows (spec "batch sin 
     await user.click(continueButton())
 
     expect(await header().findByText('validated')).toBeInTheDocument()
-    expect(validationRequests('review')[0]?.body).toEqual({ runId })
+    expect(validationRequests('review')[0]?.body).toEqual({ runId, inclusionVersion: 0 })
   })
 
   it('409 no_matched_rows says so, reads the import again and unticks the box', async () => {
@@ -97,6 +97,28 @@ describe('Analysis & Validations: a batch without matched rows (spec "batch sin 
     expect(header().getByText('analyzed')).toBeInTheDocument()
   })
 
+  it('409 inclusions_changed unticks the box too: the run is the same, the confirmation is made again (#53)', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed', unmatched: 'id_format' })
+    const { runId } = seedValidationRun(importId)
+    const { user } = await openAnalysis(importId)
+    const box = () => decision().getByRole('checkbox', { name: CONFIRM })
+    respondNext('review', {
+      status: 409,
+      code: 'inclusions_changed',
+      details: { runId, inclusionVersion: 0, currentInclusionVersion: 1 },
+    })
+
+    await user.click(box())
+    await user.click(continueButton())
+
+    expect(
+      await screen.findByText('The inclusions changed since you loaded them. Check them and continue again.'),
+    ).toBeInTheDocument()
+    await waitFor(() => expect(box()).not.toBeChecked())
+    await waitFor(() => expect(continueButton()).toHaveAccessibleDescription(REASON))
+    expect(continueButton()).toBeDisabled()
+  })
+
   it('a new run unticks the box: nothing confirmed carries over between runs (review-diff #135, point 4)', async () => {
     const { importId } = seedImport('batch-clean', { status: 'analyzed', unmatched: 'id_format' })
     const { runId } = seedValidationRun(importId)
@@ -119,6 +141,10 @@ describe('Analysis & Validations: a batch without matched rows (spec "batch sin 
     await user.click(continueButton())
     expect(await header().findByText('validated')).toBeInTheDocument()
     expect(validationRequests('review')).toHaveLength(1)
-    expect(validationRequests('review')[0]?.body).toEqual({ runId: runId + 1, confirmEmptyBatch: true })
+    expect(validationRequests('review')[0]?.body).toEqual({
+      runId: runId + 1,
+      inclusionVersion: 0,
+      confirmEmptyBatch: true,
+    })
   })
 })

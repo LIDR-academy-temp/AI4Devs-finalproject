@@ -9,6 +9,7 @@ import { InMemoryRunRepository } from './__fakes__/in-memory-runs.js'
 import {
   BlockingValidationIssueError,
   ImportNotAnalyzedError,
+  InclusionsChangedError,
   ValidationRunRequiredError,
   ValidationRunSupersededError,
 } from './errors.js'
@@ -28,6 +29,12 @@ async function serviceFor(sample: 'batch-issues' | 'batch-blocked' | 'batch-wron
   runs.addImport({ importId: input.importId, merchantId: 1, status: 'analyzed' })
   const service = new ValidationService({ sources: input.sources, runs, log: { info: vi.fn() }, now: () => NOW })
   return { service, importId: input.importId }
+}
+
+/** What the analyst saw: the current run and the version of its inclusions, as GET validations answers them. */
+async function seen(service: ValidationService, importId: string) {
+  const { run } = await service.getCurrentRun(ANALYST, importId)
+  return { runId: run!.runId, inclusionVersion: run!.inclusionVersion }
 }
 
 async function caught<E>(promise: Promise<unknown>, type: new (...args: never[]) => E): Promise<E> {
@@ -50,7 +57,7 @@ describe('review (POST review)', () => {
       .find((o) => !o.defaultIncluded)!
     await service.setInclusion(ANALYST, ANALYST_ID, occurrence.occurrenceId, true)
 
-    const view = await service.review(ANALYST, ANALYST_ID, importId, run!.runId)
+    const view = await service.review(ANALYST, ANALYST_ID, importId, await seen(service, importId))
 
     expect(ValidationRunView.safeParse(view).success).toBe(true)
     expect(view.importStatus).toBe('validated')
@@ -76,6 +83,7 @@ describe('review (POST review)', () => {
           missing_in_range: 6,
         },
         changedOccurrences: 1,
+        inclusionVersion: 1,
       },
     })
   })
@@ -83,7 +91,10 @@ describe('review (POST review)', () => {
   it('without a current run: 409 validation_run_required', async () => {
     const { service, importId } = await serviceFor('batch-issues')
 
-    await caught(service.review(ANALYST, ANALYST_ID, importId, 1), ValidationRunRequiredError)
+    await caught(
+      service.review(ANALYST, ANALYST_ID, importId, { runId: 1, inclusionVersion: 0 }),
+      ValidationRunRequiredError,
+    )
   })
 
   it('an old runId: 409 validation_run_superseded with the current one, and the import stays analyzed', async () => {
@@ -92,7 +103,7 @@ describe('review (POST review)', () => {
     const second = await service.run(ANALYST, ANALYST_ID, importId)
 
     const error = await caught(
-      service.review(ANALYST, ANALYST_ID, importId, first.run!.runId),
+      service.review(ANALYST, ANALYST_ID, importId, { runId: first.run!.runId, inclusionVersion: 0 }),
       ValidationRunSupersededError,
     )
 
@@ -105,7 +116,10 @@ describe('review (POST review)', () => {
     const { run } = await service.run(ANALYST, ANALYST_ID, importId)
     const mismatch = runs.runsOf(importId)[0]!.issues.filter((i) => i.issueType === 'provider_mismatch')
 
-    const error = await caught(service.review(ANALYST, ANALYST_ID, importId, run!.runId), BlockingValidationIssueError)
+    const error = await caught(
+      service.review(ANALYST, ANALYST_ID, importId, { runId: run!.runId, inclusionVersion: 0 }),
+      BlockingValidationIssueError,
+    )
 
     expect(error.message).toBe('provider_mismatch: cancel the import and process it under the correct provider')
     expect(error.details).toEqual({
@@ -122,7 +136,10 @@ describe('review (POST review)', () => {
     const { run } = await service.run(ANALYST, ANALYST_ID, importId)
     runs.setStatus(importId, status)
 
-    const error = await caught(service.review(ANALYST, ANALYST_ID, importId, run!.runId), ImportNotAnalyzedError)
+    const error = await caught(
+      service.review(ANALYST, ANALYST_ID, importId, { runId: run!.runId, inclusionVersion: 0 }),
+      ImportNotAnalyzedError,
+    )
 
     expect(error.details).toEqual({ status })
   })
@@ -130,14 +147,14 @@ describe('review (POST review)', () => {
   it('a new review after an invalidation: the new review is shown and the invalidated one is kept', async () => {
     const { service, importId } = await serviceFor('batch-issues')
     const { run } = await service.run(ANALYST, ANALYST_ID, importId)
-    await service.review(ANALYST, ANALYST_ID, importId, run!.runId)
+    await service.review(ANALYST, ANALYST_ID, importId, { runId: run!.runId, inclusionVersion: 0 })
     const occurrence = runs
       .runsOf(importId)[0]!
       .issues.flatMap((i) => i.occurrences)
       .find((o) => !o.defaultIncluded)!
     await service.setInclusion(ANALYST, ANALYST_ID, occurrence.occurrenceId, true)
 
-    const view = await service.review(ANALYST, ANALYST_ID, importId, run!.runId)
+    const view = await service.review(ANALYST, ANALYST_ID, importId, await seen(service, importId))
 
     expect(view.importStatus).toBe('validated')
     expect(view.run!.review).not.toBeNull()
@@ -148,7 +165,7 @@ describe('review (POST review)', () => {
     const { service, importId } = await serviceFor('batch-issues')
     runs.setMerchant(importId, 2)
 
-    await caught(service.review(VIEWER, ANALYST_ID, importId, 1), NotFoundError)
+    await caught(service.review(VIEWER, ANALYST_ID, importId, { runId: 1, inclusionVersion: 0 }), NotFoundError)
   })
 })
 
@@ -180,7 +197,10 @@ describe('review of an import without matched rows (batch-wrong-account)', () =>
     async (confirm) => {
       const { service, importId, runId } = await emptyImport()
 
-      const error = await caught(service.review(ANALYST, ANALYST_ID, importId, runId, confirm), NoMatchedRowsError)
+      const error = await caught(
+        service.review(ANALYST, ANALYST_ID, importId, { runId, inclusionVersion: 0, confirmEmptyBatch: confirm }),
+        NoMatchedRowsError,
+      )
 
       expect(error).toMatchObject({ status: 409, code: 'no_matched_rows' })
       expect(error.details).toEqual({
@@ -197,7 +217,11 @@ describe('review of an import without matched rows (batch-wrong-account)', () =>
   it('confirmed: validated, and the review audit carries emptyBatchConfirmed', async () => {
     const { service, importId, runId } = await emptyImport()
 
-    const view = await service.review(ANALYST, ANALYST_ID, importId, runId, true)
+    const view = await service.review(ANALYST, ANALYST_ID, importId, {
+      runId,
+      inclusionVersion: 0,
+      confirmEmptyBatch: true,
+    })
 
     expect(view.importStatus).toBe('validated')
     expect(runs.auditOf(importId).find((e) => e.action === 'import.review')?.detail).toMatchObject({
@@ -209,7 +233,11 @@ describe('review of an import without matched rows (batch-wrong-account)', () =>
     const { service, importId } = await serviceFor('batch-issues')
     const { run } = await service.run(ANALYST, ANALYST_ID, importId)
 
-    await service.review(ANALYST, ANALYST_ID, importId, run!.runId, true)
+    await service.review(ANALYST, ANALYST_ID, importId, {
+      runId: run!.runId,
+      inclusionVersion: 0,
+      confirmEmptyBatch: true,
+    })
 
     expect(runs.auditOf(importId).find((e) => e.action === 'import.review')?.detail).not.toHaveProperty(
       'emptyBatchConfirmed',
@@ -219,6 +247,101 @@ describe('review of an import without matched rows (batch-wrong-account)', () =>
   it('a blocked run answers blocking_validation_issue before no_matched_rows', async () => {
     const { service, importId, runId } = await emptyImport('batch-blocked')
 
-    await caught(service.review(ANALYST, ANALYST_ID, importId, runId), BlockingValidationIssueError)
+    await caught(
+      service.review(ANALYST, ANALYST_ID, importId, { runId, inclusionVersion: 0 }),
+      BlockingValidationIssueError,
+    )
+  })
+})
+
+// Spec validation "Versión de las inclusiones de una corrida" and "El review exige las inclusiones que se vieron"
+// (review-inclusion-version D3, D4, D8): the review approves only the inclusions the analyst saw.
+describe('inclusionVersion of the run (#53)', () => {
+  async function withRun() {
+    const { service, importId } = await serviceFor('batch-issues')
+    const { run } = await service.run(ANALYST, ANALYST_ID, importId)
+    const excluded = runs
+      .runsOf(importId)[0]!
+      .issues.flatMap((i) => i.occurrences)
+      .find((o) => !o.defaultIncluded)!
+    return { service, importId, runId: run!.runId, occurrenceId: excluded.occurrenceId }
+  }
+
+  it('starts at 0, goes up with each applied change, not with the same value, and the change audits it', async () => {
+    const { service, importId, occurrenceId } = await withRun()
+    expect((await seen(service, importId)).inclusionVersion).toBe(0)
+
+    await service.setInclusion(ANALYST, ANALYST_ID, occurrenceId, true)
+    expect((await seen(service, importId)).inclusionVersion).toBe(1)
+    await service.setInclusion(ANALYST, ANALYST_ID, occurrenceId, true)
+    expect((await seen(service, importId)).inclusionVersion).toBe(1)
+    await service.setInclusion(ANALYST, ANALYST_ID, occurrenceId, false)
+    expect((await seen(service, importId)).inclusionVersion).toBe(2)
+
+    const changes = runs.audit.filter((e) => e.action === 'validation.occurrence.set_inclusion')
+    expect(changes.map((e) => e.detail.inclusionVersion)).toEqual([1, 2])
+  })
+
+  it('a new run starts at 0 and the superseded one keeps its version', async () => {
+    const { service, importId, occurrenceId } = await withRun()
+    await service.setInclusion(ANALYST, ANALYST_ID, occurrenceId, true)
+
+    const { run } = await service.run(ANALYST, ANALYST_ID, importId)
+
+    expect(run!.inclusionVersion).toBe(0)
+    expect(runs.runsOf(importId)[0]!.inclusionVersion).toBe(1)
+  })
+
+  it('a resolution by hand does not move it (design D5)', async () => {
+    const { service, importId } = await withRun()
+    const nra = runs.runsOf(importId)[0]!.issues.find((i) => i.issueType === 'non_recorded_adjustment')!
+
+    await service.resolveIssue(ANALYST, ANALYST_ID, nra.issueId, 'Recorded by hand')
+
+    const { run } = await service.getCurrentRun(ANALYST, importId)
+    expect(run!.inclusionVersion).toBe(0)
+    expect(run!.manualChangeCount).toBe(1)
+  })
+
+  it('another analyst changed an inclusion: 409 inclusions_changed, still analyzed, no review and no audit', async () => {
+    const { service, importId, runId, occurrenceId } = await withRun()
+    const read = await seen(service, importId)
+    await service.setInclusion(ANALYST, 3, occurrenceId, true)
+
+    const error = await caught(service.review(ANALYST, ANALYST_ID, importId, read), InclusionsChangedError)
+
+    expect(error).toMatchObject({ status: 409, code: 'inclusions_changed' })
+    expect(error.details).toEqual({ runId, inclusionVersion: 0, currentInclusionVersion: 1 })
+    const view = await service.getCurrentRun(ANALYST, importId)
+    expect(view.importStatus).toBe('analyzed')
+    expect(view.run!.review).toBeNull()
+    expect(runs.auditOf(importId).some((e) => e.action === 'import.review')).toBe(false)
+  })
+
+  it('an old run with a stale version: validation_run_superseded, not inclusions_changed', async () => {
+    const { service, importId, runId } = await withRun()
+    await service.run(ANALYST, ANALYST_ID, importId)
+    runs.bumpInclusionVersion(importId)
+
+    await caught(
+      service.review(ANALYST, ANALYST_ID, importId, { runId, inclusionVersion: 0 }),
+      ValidationRunSupersededError,
+    )
+  })
+
+  it('a blocked run or an empty batch with a stale version: inclusions_changed first', async () => {
+    const { service, importId } = await serviceFor('batch-blocked')
+    runs.setEmptyBatchFacts(importId, {
+      rowsTotal: 1,
+      matchedOwn: 0,
+      unmatchedByReason: { no_match: 1, id_format: 0, lossy_numeric_id: 0, no_gateways: 0 },
+    })
+    const { run } = await service.run(ANALYST, ANALYST_ID, importId)
+    runs.bumpInclusionVersion(importId)
+
+    await caught(
+      service.review(ANALYST, ANALYST_ID, importId, { runId: run!.runId, inclusionVersion: 0 }),
+      InclusionsChangedError,
+    )
   })
 })

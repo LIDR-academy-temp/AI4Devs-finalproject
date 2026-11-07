@@ -137,6 +137,7 @@ export function ValidationsSection({ detail }: { detail: ImportDetail }) {
           detail={detail}
           view={view}
           reviewer={reviewer}
+          reloading={query.isFetching}
           busy={busy}
           busyId={busyId}
           onShowBlocking={select}

@@ -1,5 +1,6 @@
 // Errors of the validation module (validation-runs design D9): each knows its status, code and details.
 import { DomainError } from '../../../shared/errors.js'
+import type { ReviewRefusal, ReviewRequest } from '../domain/review-guard.js'
 
 // A guard of the import state machine (import-state.ts): it lives with the other import errors.
 export { ImportNotAnalyzedError } from '../../imports/domain/errors.js'
@@ -87,5 +88,37 @@ export class IssueNotResolvableError extends DomainError {
 
   constructor(issueType: string) {
     super('Only non_recorded_adjustment and status_mismatch findings are resolved by hand', { issueType })
+  }
+}
+
+/** An inclusion of the run changed after the analyst read it (#53, review-inclusion-version D6). */
+export class InclusionsChangedError extends DomainError {
+  readonly status = 409
+  readonly code = 'inclusions_changed'
+
+  constructor(runId: number, inclusionVersion: number, currentInclusionVersion: number) {
+    super('The inclusions of the run changed since they were read; review them again', {
+      runId,
+      inclusionVersion,
+      currentInclusionVersion,
+    })
+  }
+}
+
+/** The DomainError of a refusal of the review guard; `blockingIssueIds` only matter for a blocked run. */
+export function reviewRefusalError(
+  refusal: ReviewRefusal,
+  request: ReviewRequest,
+  blockingIssueIds: number[] = [],
+): DomainError {
+  switch (refusal.kind) {
+    case 'run_required':
+      return new ValidationRunRequiredError()
+    case 'run_superseded':
+      return new ValidationRunSupersededError(request.runId, refusal.currentRunId)
+    case 'inclusions_changed':
+      return new InclusionsChangedError(request.runId, request.inclusionVersion, refusal.currentInclusionVersion)
+    case 'blocked':
+      return new BlockingValidationIssueError(request.runId, refusal.validationCodes, blockingIssueIds)
   }
 }

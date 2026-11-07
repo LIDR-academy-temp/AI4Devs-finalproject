@@ -3825,6 +3825,7 @@ export interface paths {
                                     } | null;
                                 }[];
                                 manualChangeCount: number;
+                                inclusionVersion: number;
                                 review: {
                                     reviewedBy: {
                                         userId: number;
@@ -3975,6 +3976,7 @@ export interface paths {
                                     } | null;
                                 }[];
                                 manualChangeCount: number;
+                                inclusionVersion: number;
                                 review: {
                                     reviewedBy: {
                                         userId: number;
@@ -4654,7 +4656,7 @@ export interface paths {
         put?: never;
         /**
          * Continue with the current run: the import moves to validated (no decision per finding)
-         * @description Only in analyzed and on the current run (runId). 409 validation_run_required without a run, validation_run_superseded for another runId, blocking_validation_issue when provider_mismatch blocks it (no override: cancel the import), no_matched_rows when no row matches a transaction of the account and confirmEmptyBatch is not true (details { rowsTotal, rowsUnmatched, unmatchedByReason, likelyWrongAccount }; #92).
+         * @description Only in analyzed, on the current run (runId) and the inclusions the analyst saw (inclusionVersion). In this order: 409 import_not_analyzed, validation_run_required without a run, validation_run_superseded for another runId, inclusions_changed for another inclusionVersion (details { runId, inclusionVersion, currentInclusionVersion }; #53), blocking_validation_issue when provider_mismatch blocks it (no override: cancel the import), no_matched_rows when no row matches a transaction of the account and confirmEmptyBatch is not true (details { rowsTotal, rowsUnmatched, unmatchedByReason, likelyWrongAccount }; #92).
          */
         post: {
             parameters: {
@@ -4669,6 +4671,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         runId: number;
+                        inclusionVersion: number;
                         confirmEmptyBatch?: boolean;
                     };
                 };
@@ -4736,6 +4739,7 @@ export interface paths {
                                     } | null;
                                 }[];
                                 manualChangeCount: number;
+                                inclusionVersion: number;
                                 review: {
                                     reviewedBy: {
                                         userId: number;

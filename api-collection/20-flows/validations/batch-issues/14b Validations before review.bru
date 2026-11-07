@@ -1,0 +1,33 @@
+meta {
+  name: 14b Validations before review
+  type: http
+  seq: 15
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId/validations
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+script:post-response {
+  // What the screen would send: the inclusionVersion of the current run, after "9 Include occurrence".
+  if (res.status === 200 && res.body.run) {
+    bru.setVar('inclusionVersion', res.body.run.inclusionVersion);
+  }
+}
+
+tests {
+  test('the current run counts the one applied inclusion change: inclusionVersion 1', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.run.runId).to.equal(bru.getVar('runId2'));
+    expect(res.body.run.inclusionVersion).to.equal(1);
+  });
+}

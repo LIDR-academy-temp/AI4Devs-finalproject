@@ -296,7 +296,8 @@ describe('POST /imports/:importId/review', () => {
   it('200 validated with the review of the current run', async () => {
     const run = ValidationRunView.parse((await request('POST', `/imports/${importId}/validations`)).json())
 
-    const res = await request('POST', `/imports/${importId}/review`, { body: { runId: run.run!.runId } })
+    const body = { runId: run.run!.runId, inclusionVersion: run.run!.inclusionVersion }
+    const res = await request('POST', `/imports/${importId}/review`, { body })
 
     expect(res.statusCode).toBe(200)
     const view = ValidationRunView.parse(res.json())
@@ -305,14 +306,23 @@ describe('POST /imports/:importId/review', () => {
   })
 
   it('400 validation_error without runId or with extra fields, 403 for viewer, 409 without a run', async () => {
-    for (const body of [{}, { runId: 1, decision: 'cancel' }, { runId: 'one' }]) {
+    for (const body of [
+      {},
+      { runId: 1 },
+      { runId: 1, inclusionVersion: -1 },
+      { runId: 1, inclusionVersion: 0, decision: 'cancel' },
+      { runId: 'one', inclusionVersion: 0 },
+    ]) {
       const res = await request('POST', `/imports/${importId}/review`, { body })
       expect(res.statusCode, JSON.stringify(body)).toBe(400)
       expect(errorCode(res.json())).toBe('validation_error')
     }
-    const forbidden = await request('POST', `/imports/${importId}/review`, { body: { runId: 1 }, user: 'viewer' })
+    const forbidden = await request('POST', `/imports/${importId}/review`, {
+      body: { runId: 1, inclusionVersion: 0 },
+      user: 'viewer',
+    })
     expect(forbidden.statusCode).toBe(403)
-    const required = await request('POST', `/imports/${importId}/review`, { body: { runId: 1 } })
+    const required = await request('POST', `/imports/${importId}/review`, { body: { runId: 1, inclusionVersion: 0 } })
     expect(required.statusCode).toBe(409)
     expect(errorCode(required.json())).toBe('validation_run_required')
   })
@@ -322,21 +332,40 @@ describe('POST /imports/:importId/review', () => {
     runs.setEmptyBatchFacts(importId, { rowsTotal: 12, matchedOwn: 0, unmatchedByReason })
     const run = ValidationRunView.parse((await request('POST', `/imports/${importId}/validations`)).json())
 
-    const refused = await request('POST', `/imports/${importId}/review`, { body: { runId: run.run!.runId } })
+    const seen = { runId: run.run!.runId, inclusionVersion: run.run!.inclusionVersion }
+    const refused = await request('POST', `/imports/${importId}/review`, { body: seen })
     expect(refused.statusCode).toBe(409)
     expect(refused.json()).toMatchObject({
       code: 'no_matched_rows',
       details: { rowsTotal: 12, rowsUnmatched: 12, unmatchedByReason, likelyWrongAccount: true },
     })
 
-    const body = { runId: run.run!.runId, confirmEmptyBatch: true }
+    const body = { ...seen, confirmEmptyBatch: true }
     const confirmed = await request('POST', `/imports/${importId}/review`, { body })
     expect(confirmed.statusCode).toBe(200)
     expect(ValidationRunView.parse(confirmed.json()).importStatus).toBe('validated')
   })
 
+  it('409 inclusions_changed with the version sent and the current one; still analyzed (#53)', async () => {
+    const run = ValidationRunView.parse((await request('POST', `/imports/${importId}/validations`)).json())
+    runs.bumpInclusionVersion(importId)
+
+    const body = { runId: run.run!.runId, inclusionVersion: run.run!.inclusionVersion }
+    const res = await request('POST', `/imports/${importId}/review`, { body })
+
+    expect(res.statusCode).toBe(409)
+    expect(res.json()).toMatchObject({
+      code: 'inclusions_changed',
+      details: { runId: run.run!.runId, inclusionVersion: 0, currentInclusionVersion: 1 },
+    })
+    const view = ValidationRunView.parse((await request('GET', `/imports/${importId}/validations`)).json())
+    expect(view.importStatus).toBe('analyzed')
+  })
+
   it('400 validation_error for a confirmEmptyBatch that is not a boolean', async () => {
-    const res = await request('POST', `/imports/${importId}/review`, { body: { runId: 1, confirmEmptyBatch: 'yes' } })
+    const res = await request('POST', `/imports/${importId}/review`, {
+      body: { runId: 1, inclusionVersion: 0, confirmEmptyBatch: 'yes' },
+    })
 
     expect(res.statusCode).toBe(400)
     expect(errorCode(res.json())).toBe('validation_error')

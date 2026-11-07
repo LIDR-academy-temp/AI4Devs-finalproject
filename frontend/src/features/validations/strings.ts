@@ -206,6 +206,7 @@ export const strings = {
     blocked: 'provider_mismatch: cancel the import and process it under the correct provider.',
     viewBlocking: 'View the blocking finding',
     noRun: 'Run the validations before continuing.',
+    reloading: 'Loading the latest results…',
     cancel: 'Cancel and reprocess',
     reviewedBy: (userName: string, at: string) => `Reviewed by ${userName} · ${at}`,
     settlementReview: 'Settlement Review',
@@ -227,6 +228,7 @@ export const strings = {
     },
     errors: {
       superseded: 'A newer validation run exists. Review it before continuing.',
+      inclusionsChanged: 'The inclusions changed since you loaded them. Check them and continue again.',
       blocking: 'The validations found a blocking finding. The results were reloaded.',
       required: 'There is no current validation run. The results were reloaded.',
       notAnalyzed: (status: ImportStatus) => `This import can no longer be reviewed (${status}).`,

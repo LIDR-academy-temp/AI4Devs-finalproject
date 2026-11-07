@@ -16,6 +16,7 @@ import type { CycleRanges } from '../domain/types.js'
 import { loadValidationInput } from './load-validation-input.js'
 import type {
   ImportRef,
+  ReviewDecision,
   ReviewEvent,
   StoredIssueDetail,
   StoredRun,
@@ -68,19 +69,24 @@ export class ValidationService {
   }
 
   /**
-   * `POST /imports/{id}/review` (D7): the decision on the run the analyst saw. The repository re-reads the current run
-   * inside its guarded transaction, so a run confirmed meanwhile makes it answer validation_run_superseded.
+   * `POST /imports/{id}/review` (D7): the decision on the run and the inclusions the analyst saw. The repository
+   * re-reads the current run inside its guarded transaction, so a run or an inclusion change confirmed meanwhile makes
+   * it answer validation_run_superseded or inclusions_changed (#53).
    */
   async review(
     scope: Scope,
     userId: number,
     importId: string,
-    runId: number,
-    confirmEmptyBatch = false,
+    decision: Omit<ReviewDecision, 'confirmEmptyBatch'> & { confirmEmptyBatch?: boolean },
   ): Promise<ValidationRunView> {
     const ref = await this.requireImport(scope, importId)
     assertCanReview(ref.status)
-    await this.deps.runs.review(importId, runId, userId, this.now(), confirmEmptyBatch)
+    await this.deps.runs.review(
+      importId,
+      { ...decision, confirmEmptyBatch: decision.confirmEmptyBatch === true },
+      userId,
+      this.now(),
+    )
     return this.viewOf(await this.requireImport(scope, importId))
   }
 
@@ -202,6 +208,7 @@ function runSummary(run: StoredRun, events: ReviewEvent[]): NonNullable<Validati
     undatedCandidateCount: run.undatedCandidateCount,
     results,
     manualChangeCount: run.manualChangeCount,
+    inclusionVersion: run.inclusionVersion,
     review: review === null ? null : { reviewedBy: review.by, reviewedAt: iso(review.at) },
   }
 }

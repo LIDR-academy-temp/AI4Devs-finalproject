@@ -23,6 +23,7 @@ export function DecisionBar({
   detail,
   view,
   reviewer,
+  reloading,
   busy,
   busyId,
   onShowBlocking,
@@ -31,6 +32,11 @@ export function DecisionBar({
   view: ValidationRunView
   /** The review lives in the section, so Run waits for it too. */
   reviewer: Review
+  /**
+   * The run is being read again (after a change of the drawer, a 409…): Continue waits, so it never sends the version
+   * of inclusions of the run it is replacing (#53, review-inclusion-version D9).
+   */
+  reloading: boolean
   /** A run, a review or a change of the drawer is on its way; `busyId` is the text that says which. */
   busy: boolean
   busyId: string
@@ -42,13 +48,23 @@ export function DecisionBar({
   // A batch without matched rows of the account is confirmed by hand (#92); the API decides when it is one.
   const emptyBatch = detail.analysis?.requiresEmptyBatchConfirmation === true
   const [emptyConfirmed, setEmptyConfirmed] = useState(false)
-  const reason = !run ? s.noRun : run.blocked ? s.blocked : emptyBatch && !emptyConfirmed ? s.emptyBatch.reason : null
+  // A block does not depend on the inclusions: its reason stays while the run is read again, without flickering.
+  const reason = run?.blocked
+    ? s.blocked
+    : reloading
+      ? s.reloading
+      : !run
+        ? s.noRun
+        : emptyBatch && !emptyConfirmed
+          ? s.emptyBatch.reason
+          : null
 
   async function onContinue() {
     if (!run) return
-    const refused = await reviewer.review(run.runId, emptyBatch && emptyConfirmed)
-    // The API says the confirmation is still missing: the box goes back to unticked with its text.
-    if (refused === 'no_matched_rows') setEmptyConfirmed(false)
+    const refused = await reviewer.review(run, emptyBatch && emptyConfirmed)
+    // The confirmation is still missing, or was made on inclusions that changed since (#53): the box goes back to
+    // unticked with its text. The run is the same, so the key of the bar does not reset it.
+    if (refused === 'no_matched_rows' || refused === 'inclusions_changed') setEmptyConfirmed(false)
   }
 
   // A cancelled or processed import has nothing left to decide: the section says so instead of standing empty.

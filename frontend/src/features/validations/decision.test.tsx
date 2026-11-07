@@ -2,13 +2,20 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { importRequests, seedImport } from '@/test/msw/imports'
 import { seedSettlement } from '@/test/msw/settlements'
-import { holdNextValidation, respondNext, seedValidationRun, validationRequests } from '@/test/msw/validations'
+import {
+  bumpInclusionVersion,
+  holdNextValidation,
+  respondNext,
+  seedValidationRun,
+  validationRequests,
+} from '@/test/msw/validations'
 import { renderApp } from '@/test/render'
 import { OPENING } from '@/test/validation-screens'
 
 process.env.TZ = 'Asia/Tokyo'
 
 const BLOCKED = 'provider_mismatch: cancel the import and process it under the correct provider.'
+const SECOND = 'Recon_Template_ProviderB-Main_batch-issues.xlsx · APP · row 338'
 
 async function openAnalysis(importId: string) {
   const view = renderApp(`/imports/${importId}?step=analysis`, { as: 'analyst' })
@@ -55,7 +62,7 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
     expect(validationRequests('review')[0]).toMatchObject({
       method: 'POST',
       url: `/api/v1/imports/${importId}/review`,
-      body: { runId },
+      body: { runId, inclusionVersion: 0 },
     })
     expect(screen.getByText(`Run #${runId} · 2026-10-18 07:15 ET · admin`)).toBeInTheDocument()
     expect(decision().getByText('Reviewed by analyst · 2026-10-18 10:00 ET')).toBeInTheDocument()
@@ -88,7 +95,85 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
     await waitFor(() => expect(screen.getByText(new RegExp(`^Run #${newer.runId} `))).toBeInTheDocument())
     await user.click(continueButton())
     await waitFor(() => expect(validationRequests('review')).toHaveLength(2))
-    expect(validationRequests('review')[1]!.body).toEqual({ runId: newer.runId })
+    expect(validationRequests('review')[1]!.body).toEqual({ runId: newer.runId, inclusionVersion: 0 })
+  })
+
+  // Spec "Pantalla Analysis & Validations: inclusiones cambiadas al continuar" (review-inclusion-version D9).
+  it('409 inclusions_changed (another analyst changed one): says so, reads the run again and the next click sends the new version', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const { runId } = seedValidationRun(importId)
+    const { user } = await openAnalysis(importId)
+    // Another tab includes an occurrence after this screen loaded the run.
+    bumpInclusionVersion(importId)
+    const gets = validationRequests('get').length
+
+    await user.click(continueButton())
+
+    expect(
+      await screen.findByText('The inclusions changed since you loaded them. Check them and continue again.'),
+    ).toBeInTheDocument()
+    expect(validationRequests('review')[0]!.body).toEqual({ runId, inclusionVersion: 0 })
+    expect(header().getByText('analyzed')).toBeInTheDocument()
+    await waitFor(() => expect(validationRequests('get').length).toBeGreaterThan(gets))
+    await waitFor(() => expect(continueButton()).toBeEnabled())
+
+    await user.click(continueButton())
+
+    expect(await header().findByText('validated')).toBeInTheDocument()
+    expect(validationRequests('review')[1]!.body).toEqual({ runId, inclusionVersion: 1 })
+  })
+
+  it('Continue waits while the run is read again after my own inclusion change, then sends the version read again', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const { runId, issues } = seedValidationRun(importId)
+    const duplicate = issues.find(
+      (i) => i.validationCode === 'duplicate_in_batch' && i.transactionIdRaw === '441706751475644',
+    )!
+    const { user } = renderApp(
+      `/imports/${importId}?step=analysis&validation=duplicate_in_batch&issue=${duplicate.issueId}`,
+      {
+        as: 'analyst',
+      },
+    )
+    const drawer = within(await screen.findByRole('dialog', {}, OPENING))
+    // The PATCH answers; the reading of the run it makes stale stays on its way until released.
+    const reread = holdNextValidation('get')
+
+    await user.click(drawer.getByRole('switch', { name: `Included in settlement — ${SECOND}` }))
+    await reread.arrived
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+    expect(continueButton()).toBeDisabled()
+    expect(continueButton()).toHaveAccessibleDescription('Loading the latest results…')
+    reread.release()
+    await waitFor(() => expect(continueButton()).toBeEnabled())
+    await user.click(continueButton())
+
+    expect(await header().findByText('validated')).toBeInTheDocument()
+    expect(validationRequests('review')).toHaveLength(1)
+    expect(validationRequests('review')[0]!.body).toEqual({ runId, inclusionVersion: 1 })
+  })
+
+  it('a blocked run keeps its reason while the run is read again: no Loading the latest results… flicker', async () => {
+    const { importId } = seedImport('batch-blocked', { status: 'analyzed' })
+    seedValidationRun(importId)
+    const { queryClient } = await openAnalysis(importId)
+    expect(continueButton()).toHaveAccessibleDescription(BLOCKED)
+    const reread = holdNextValidation('get')
+
+    await act(async () => {
+      void queryClient.invalidateQueries()
+      await reread.arrived
+      // TanStack Query notifies its observers on a timer: let the screen render the reading on its way.
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(continueButton()).toBeDisabled()
+    expect(continueButton()).toHaveAccessibleDescription(BLOCKED)
+    reread.release()
+    await waitFor(() => expect(validationRequests('get').length).toBeGreaterThan(1))
+    expect(continueButton()).toHaveAccessibleDescription(BLOCKED)
   })
 
   it('409 blocking_validation_issue says so and reads the run again', async () => {

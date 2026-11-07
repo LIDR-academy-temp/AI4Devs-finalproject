@@ -1,7 +1,14 @@
 // The validation routes of #9 (validation-runs), the only place of the screen that knows them (web-validations design
 // D2, D13). Types are aliases of the generated contract with the dates branded by kind (D11); the calls go through the
 // typed `api` client. The names exported are the ones the screen used with the hand-copied contract before #9.
-import type { EmptyBatchDetails, ImportStatus, IssueType, OccurrenceSource, ValidationCode } from '@recon/shared'
+import type {
+  EmptyBatchDetails,
+  ImportStatus,
+  InclusionsChangedDetails,
+  IssueType,
+  OccurrenceSource,
+  ValidationCode,
+} from '@recon/shared'
 import { api, unwrap } from '@/lib/api/client'
 import type { paths } from '@/lib/api/schema.gen'
 import type { ApiResponse } from '@/lib/api/types'
@@ -68,6 +75,7 @@ export interface ErrorDetails {
   validation_run_required: Record<string, never>
   blocking_validation_issue: { runId: number; validationCodes: ValidationCode[]; issueIds: number[] }
   no_matched_rows: EmptyBatchDetails
+  inclusions_changed: InclusionsChangedDetails
   occurrence_not_editable: { sourceType: OccurrenceSource }
   /** A reason this screen does not know yet gets a generic text. */
   occurrence_not_includable: { reason: 'reserve_already_included' | 'reserve_already_released' | (string & {}) }
@@ -114,11 +122,20 @@ export const setOccurrenceInclusion = (occurrenceId: string, includeInSettlement
     }),
   ) as Promise<ValidationIssueDetail>
 
-/** `confirmEmptyBatch` only goes in the body when the analyst confirmed a batch without matched rows (#92). */
-export const reviewImport = (importId: string, runId: number, confirmEmptyBatch = false) =>
-  unwrap(
+/**
+ * The run and the version of its inclusions the screen shows (#53); `confirmEmptyBatch` only goes in the body when the
+ * analyst confirmed a batch without matched rows (#92).
+ */
+export const reviewImport = (
+  importId: string,
+  run: { runId: number; inclusionVersion: number },
+  confirmEmptyBatch = false,
+) => {
+  const seen = { runId: run.runId, inclusionVersion: run.inclusionVersion }
+  return unwrap(
     api.POST('/api/v1/imports/{importId}/review', {
       params: { path: { importId } },
-      body: confirmEmptyBatch ? { runId, confirmEmptyBatch: true } : { runId },
+      body: confirmEmptyBatch ? { ...seen, confirmEmptyBatch: true } : seen,
     }),
   ) as Promise<ValidationRunView>
+}

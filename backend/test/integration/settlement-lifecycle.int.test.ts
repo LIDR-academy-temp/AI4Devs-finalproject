@@ -513,7 +513,10 @@ describe('undoing and reprocessing batch-clean', () => {
       lastInvalidatedReview: { runId: reviewedRunId, reason: 'settlement_undone', newRunId: null },
     })
 
-    const review = await flow.call('POST', `/imports/${importId}/review`, { runId: reviewedRunId })
+    const review = await flow.call('POST', `/imports/${importId}/review`, {
+      runId: reviewedRunId,
+      inclusionVersion: 0,
+    })
     expect(review.statusCode).toBe(409)
     expect(review.json().code).toBe('validation_run_required')
   })

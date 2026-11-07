@@ -15,6 +15,7 @@ import { importRecord, seedAmbiguousRow, seedImport } from './imports'
 import {
   batchBlockedFixture,
   batchIssuesFixture,
+  bumpInclusionVersion,
   failNextValidation,
   holdNextValidation,
   issueKey,
@@ -214,7 +215,10 @@ describe('fake validations API', () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const first = ((await run(importId)).body as ValidationRunView).run!
 
-    const reviewed = await call('analyst', 'POST', `/imports/${importId}/review`, { runId: first.runId })
+    const reviewed = await call('analyst', 'POST', `/imports/${importId}/review`, {
+      runId: first.runId,
+      inclusionVersion: 0,
+    })
     expect(reviewed.status).toBe(200)
     expect(reviewed.body).toMatchObject({
       importStatus: 'validated',
@@ -239,7 +243,7 @@ describe('fake validations API', () => {
       occurrenceId: duplicate.occurrences[1]!.occurrenceId,
     })
 
-    await call('analyst', 'POST', `/imports/${importId}/review`, { runId: first.runId })
+    await call('analyst', 'POST', `/imports/${importId}/review`, { runId: first.runId, inclusionVersion: 1 })
     const rerun = await run(importId)
     expect(rerun.status).toBe(201)
     const view = rerun.body as ValidationRunView
@@ -257,7 +261,10 @@ describe('fake validations API', () => {
     const second = ((await run(importId)).body as ValidationRunView).run!
 
     expect((await issue(old.issueId)).run).toEqual({ runId: first.runId, isCurrent: false })
-    const refused = await call('analyst', 'POST', `/imports/${importId}/review`, { runId: first.runId })
+    const refused = await call('analyst', 'POST', `/imports/${importId}/review`, {
+      runId: first.runId,
+      inclusionVersion: 0,
+    })
     expect(refused.status).toBe(409)
     expect(refused.body).toMatchObject({
       code: 'validation_run_superseded',
@@ -275,7 +282,10 @@ describe('fake validations API', () => {
     expect(view.blocked).toBe(true)
     const blocking = await issues(importId, 'validationCode=provider_mismatch&page=1&pageSize=50')
 
-    const refused = await call('analyst', 'POST', `/imports/${importId}/review`, { runId: view.runId })
+    const refused = await call('analyst', 'POST', `/imports/${importId}/review`, {
+      runId: view.runId,
+      inclusionVersion: 0,
+    })
     expect(refused.status).toBe(409)
     expect(refused.body).toMatchObject({
       code: 'blocking_validation_issue',
@@ -291,7 +301,10 @@ describe('fake validations API', () => {
     const duplicate = await findingOf(importId, 'duplicate_in_batch', '441706751475644')
 
     expect((await run(importId, 'viewer')).status).toBe(403)
-    expect((await call('viewer', 'POST', `/imports/${importId}/review`, { runId: seeded.runId })).status).toBe(403)
+    expect(
+      (await call('viewer', 'POST', `/imports/${importId}/review`, { runId: seeded.runId, inclusionVersion: 0 }))
+        .status,
+    ).toBe(403)
     expect(
       (
         await call('viewer', 'PATCH', `/conflict-occurrences/${duplicate.occurrences[1]!.occurrenceId}`, {
@@ -337,6 +350,77 @@ describe('fake validations API', () => {
     hold.release()
     expect((await pending).status).toBe(201)
     expect(validationRequests('run').map((r) => r.status)).toEqual([409, null, 201])
+  })
+})
+
+// The version of the inclusions of a run (review-inclusion-version D10): the fake keeps it and compares it in the
+// order of the API; it decides no rule.
+describe('fake validations API: inclusionVersion (#53)', () => {
+  it('starts at 0, goes up only with an applied change, and a new run starts again at 0', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    expect((await current(importId)).run!.inclusionVersion).toBe(0)
+    const duplicate = await findingOf(importId, 'duplicate_in_batch', '441706751475644')
+    const path = `/conflict-occurrences/${duplicate.occurrences[1]!.occurrenceId}`
+
+    await call('analyst', 'PATCH', path, { includeInSettlement: true })
+    expect((await current(importId)).run!.inclusionVersion).toBe(1)
+    await call('analyst', 'PATCH', path, { includeInSettlement: true })
+    expect((await current(importId)).run!.inclusionVersion).toBe(1)
+    await call('analyst', 'PATCH', path, { includeInSettlement: false })
+    expect((await current(importId)).run!.inclusionVersion).toBe(2)
+
+    expect(((await run(importId)).body as ValidationRunView).run!.inclusionVersion).toBe(0)
+  })
+
+  it('a stale version: 409 inclusions_changed with its details, still analyzed; the current one validates', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const { runId } = seedValidationRun(importId)
+    bumpInclusionVersion(importId)
+
+    const refused = await call('analyst', 'POST', `/imports/${importId}/review`, { runId, inclusionVersion: 0 })
+    expect(refused.status).toBe(409)
+    expect(refused.body).toMatchObject({
+      code: 'inclusions_changed',
+      details: { runId, inclusionVersion: 0, currentInclusionVersion: 1 },
+    })
+    expect(importRecord(importId).status).toBe('analyzed')
+
+    const reviewed = await call('analyst', 'POST', `/imports/${importId}/review`, { runId, inclusionVersion: 1 })
+    expect(reviewed.status).toBe(200)
+    expect(importRecord(importId).status).toBe('validated')
+  })
+
+  it('in the order of the API: superseded before inclusions_changed, inclusions_changed before the block', async () => {
+    const issuesImport = seedImport('batch-issues', { status: 'analyzed' })
+    const old = seedValidationRun(issuesImport.importId)
+    seedValidationRun(issuesImport.importId)
+    bumpInclusionVersion(issuesImport.importId)
+    const superseded = await call('analyst', 'POST', `/imports/${issuesImport.importId}/review`, {
+      runId: old.runId,
+      inclusionVersion: 0,
+    })
+    expect(superseded.body).toMatchObject({ code: 'validation_run_superseded' })
+
+    const blocked = seedImport('batch-blocked', { status: 'analyzed' })
+    const blockedRun = seedValidationRun(blocked.importId)
+    bumpInclusionVersion(blocked.importId)
+    const stale = await call('analyst', 'POST', `/imports/${blocked.importId}/review`, {
+      runId: blockedRun.runId,
+      inclusionVersion: 0,
+    })
+    expect(stale.body).toMatchObject({ code: 'inclusions_changed' })
+  })
+
+  it('answers 400 validation_error without inclusionVersion or with a negative one', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    const { runId } = seedValidationRun(importId)
+
+    for (const body of [{ runId }, { runId, inclusionVersion: -1 }, { runId, inclusionVersion: 1.5 }]) {
+      const res = await call('analyst', 'POST', `/imports/${importId}/review`, body)
+      expect(res.status, JSON.stringify(body)).toBe(400)
+      expect(res.body).toMatchObject({ code: 'validation_error' })
+    }
   })
 })
 
@@ -418,7 +502,10 @@ describe('fake validations API against the shared schemas of #9 (design D13)', (
     expect(resolved.status).toBe(200)
     conforms(SharedIssueDetail, resolved.body)
 
-    const reviewed = await call('analyst', 'POST', `/imports/${importId}/review`, { runId: firstRun.runId })
+    const reviewed = await call('analyst', 'POST', `/imports/${importId}/review`, {
+      runId: firstRun.runId,
+      inclusionVersion: (await current(importId)).run!.inclusionVersion,
+    })
     expect(reviewed.status).toBe(200)
     conforms(SharedRunView, reviewed.body)
 
@@ -433,7 +520,8 @@ describe('fake validations API against the shared schemas of #9 (design D13)', (
 
     // The error bodies the fake answers in that state.
     isError(
-      (await call('analyst', 'POST', `/imports/${importId}/review`, { runId: firstRun.runId })).body,
+      (await call('analyst', 'POST', `/imports/${importId}/review`, { runId: firstRun.runId, inclusionVersion: 0 }))
+        .body,
       'validation_run_superseded',
     )
     isError(
@@ -452,12 +540,12 @@ describe('fake validations API against the shared schemas of #9 (design D13)', (
     const mapped = seedImport('batch-issues', { status: 'mapped' })
     isError((await run(mapped.importId)).body, 'import_not_analyzed')
     isError(
-      (await call('analyst', 'POST', `/imports/${mapped.importId}/review`, { runId: 1 })).body,
+      (await call('analyst', 'POST', `/imports/${mapped.importId}/review`, { runId: 1, inclusionVersion: 0 })).body,
       'import_not_analyzed',
     )
     const unrun = seedImport('batch-issues', { status: 'analyzed' })
     isError(
-      (await call('analyst', 'POST', `/imports/${unrun.importId}/review`, { runId: 1 })).body,
+      (await call('analyst', 'POST', `/imports/${unrun.importId}/review`, { runId: 1, inclusionVersion: 0 })).body,
       'validation_run_required',
     )
     const cancelled = seedImport('batch-issues', { status: 'analyzed' })
@@ -475,8 +563,25 @@ describe('fake validations API against the shared schemas of #9 (design D13)', (
     const blocked = seedImport('batch-blocked', { status: 'analyzed' })
     const blockedRun = seedValidationRun(blocked.importId)
     isError(
-      (await call('analyst', 'POST', `/imports/${blocked.importId}/review`, { runId: blockedRun.runId })).body,
+      (
+        await call('analyst', 'POST', `/imports/${blocked.importId}/review`, {
+          runId: blockedRun.runId,
+          inclusionVersion: 0,
+        })
+      ).body,
       'blocking_validation_issue',
+    )
+    const changedUnder = seedImport('batch-issues', { status: 'analyzed' })
+    const changedUnderRun = seedValidationRun(changedUnder.importId)
+    bumpInclusionVersion(changedUnder.importId)
+    isError(
+      (
+        await call('analyst', 'POST', `/imports/${changedUnder.importId}/review`, {
+          runId: changedUnderRun.runId,
+          inclusionVersion: 0,
+        })
+      ).body,
+      'inclusions_changed',
     )
     // Scripted errors keep the shape too, a 422 among them.
     const scripted = seedImport('batch-issues', { status: 'analyzed' })

@@ -26,18 +26,18 @@ import { emptyBatchOf } from '../../imports/domain/empty-batch.js'
 import { ImportNotEditableError, NoMatchedRowsError } from '../../imports/domain/errors.js'
 import { loadEmptyBatchFacts } from '../../imports/infrastructure/empty-batch-facts.js'
 import {
-  BlockingValidationIssueError,
   ImportChangedError,
   ImportNotAnalyzedError,
   IssueAlreadyResolvedError,
   IssueNotResolvableError,
   OccurrenceNotEditableError,
   OccurrenceNotIncludableError,
-  ValidationRunRequiredError,
+  reviewRefusalError,
   ValidationRunSupersededError,
 } from '../application/errors.js'
 import type {
   ImportRef,
+  ReviewDecision,
   ReviewEvent,
   StoredIssueDetail,
   StoredOccurrence,
@@ -53,6 +53,7 @@ import {
   issueDetailOf,
   type StoredBreakdown,
 } from '../application/run-record.js'
+import { reviewRefusal } from '../domain/review-guard.js'
 import type { Issue, ValidationReport } from '../domain/types.js'
 import { INVALIDATE, REVIEW, recordInvalidation } from './review-events.js'
 
@@ -176,6 +177,12 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
             where: { occurrenceId: id },
             data: { includeInSettlement, changedByUserId: userId, changedAt: now },
           })
+          // Under the lock of the import, as the review reads it: a review either sees this version or waits (D3).
+          const { inclusionVersion } = await tx.validationRun.update({
+            where: { runId: run.runId },
+            data: { inclusionVersion: { increment: 1 } },
+            select: { inclusionVersion: true },
+          })
           await tx.auditLog.create({
             data: {
               userId,
@@ -189,6 +196,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
                 importId: run.importId,
                 from: target.includeInSettlement,
                 to: includeInSettlement,
+                inclusionVersion,
               }),
             },
           })
@@ -222,7 +230,8 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
     throw new ImportNotEditableError(current?.status ?? 'unknown')
   }
 
-  async review(importId: string, runId: number, userId: number, now: Date, confirmEmptyBatch: boolean): Promise<void> {
+  async review(importId: string, decision: ReviewDecision, userId: number, now: Date): Promise<void> {
+    const { runId, confirmEmptyBatch } = decision
     await this.prisma.$transaction(
       async (tx) => {
         // Keep the hook right before the guard: a read placed between the two would not be caught by any test.
@@ -240,24 +249,28 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
           where: { importId, isSuperseded: false },
           select: {
             runId: true,
+            inclusionVersion: true,
             results: { select: { validationCode: true, outcome: true, issueCount: true } },
           },
         })
-        if (!current) throw new ValidationRunRequiredError()
-        if (current.runId !== runId) throw new ValidationRunSupersededError(runId, current.runId)
-        const blocked = current.results.filter((r) => r.outcome === 'blocked')
-        if (blocked.length > 0) {
-          const issues = await tx.validationIssue.findMany({
-            where: { blocking: true, result: { runId } },
-            select: { issueId: true },
-            orderBy: { issueId: 'asc' },
-          })
-          throw new BlockingValidationIssueError(
-            runId,
-            ValidationCode.options.filter((code) => blocked.some((r) => r.validationCode === code)),
+        // The run, then its inclusions, then the block (review-inclusion-version D4).
+        const refusal = reviewRefusal(decision, current)
+        if (refusal) {
+          const issues =
+            refusal.kind === 'blocked'
+              ? await tx.validationIssue.findMany({
+                  where: { blocking: true, result: { runId } },
+                  select: { issueId: true },
+                  orderBy: { issueId: 'asc' },
+                })
+              : []
+          throw reviewRefusalError(
+            refusal,
+            decision,
             issues.map((i) => i.issueId),
           )
         }
+        if (!current) throw new Error('reviewRefusal lets no review through without a current run')
         // After the run checks, so an import with rows of another provider says provider_mismatch (#92, design D2).
         const { account } = await tx.import.findUniqueOrThrow({
           where: { importId },
@@ -287,6 +300,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
                 ]),
               ),
               changedOccurrences: Number(changed?.n ?? 0),
+              inclusionVersion: current.inclusionVersion,
               ...(empty.requiresConfirmation ? { emptyBatchConfirmed: true } : {}),
             }),
           },
@@ -604,6 +618,7 @@ export class PrismaValidationRunRepository implements ValidationRunRepository {
         breakdown: breakdownView(r.detailJson === null ? null : (JSON.parse(r.detailJson) as StoredBreakdown)),
       })),
       manualChangeCount: Number(counted?.changed ?? 0) + Number(counted?.resolved ?? 0),
+      inclusionVersion: run.inclusionVersion,
     }
   }
 
