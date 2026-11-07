@@ -1,0 +1,2 @@
+Change 'daily-campaign-delivery-status' is valid
+Change 'campaign-margin-and-rebate-accrual' is valid

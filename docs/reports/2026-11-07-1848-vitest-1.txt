@@ -1,0 +1,141 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.5 [39m[90m/Users/cristaliza/Proyectos/AI4Devs-finalproject/frontend[39m
+
+[90mstderr[2m | tests/unit/app/dsp-catalog/catalogue-page.test.tsx[2m > [22m[2mlinking a pair from the catalogue[2m > [22m[2moffers the button on unlinked rows only
+[22m[39mEncountered two children with the same key, `1/C-1/L-1`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+ [32m✓[39m tests/unit/app/exceptions/exception-filter.test.tsx [2m([22m[2m20 tests[22m[2m)[22m[33m 1922[2mms[22m[39m
+ [32m✓[39m tests/unit/app/dsp-catalog/catalogue-page.test.tsx [2m([22m[2m31 tests[22m[2m)[22m[33m 2471[2mms[22m[39m
+   [32m✓[39m linking a pair from the catalogue [2m(15)[22m
+     [33m[2m✓[22m[39m shows the validation unreachable in Spanish[33m 303[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/accessible-names.test.tsx [2m([22m[2m27 tests[22m[2m)[22m[33m 2387[2mms[22m[39m
+   [32m✓[39m the controls of the new-campaign form have an accessible name [2m(20)[22m
+     [33m[2m✓[22m[39m finds «DSP *» of the line by its exact label[33m 428[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/submit-flights.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[33m 3518[2mms[22m[39m
+   [32m✓[39m submitting lines with flights [2m(13)[22m
+     [33m[2m✓[22m[39m sends monthly_volumes for a manual split, and only then[33m 786[2mms[22m[39m
+     [33m[2m✓[22m[39m sends no monthly_volumes for a proportional split that was only calculated[33m 480[2mms[22m[39m
+     [33m[2m✓[22m[39m reports a 401 or 403 of «Calcular reparto» to the page too[33m 500[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/flight-editor.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[33m 4099[2mms[22m[39m
+   [32m✓[39m the flight editor of a line [2m(15)[22m
+     [33m[2m✓[22m[39m keeps «Calcular reparto» disabled until the dates and the total are valid[33m 685[2mms[22m[39m
+     [33m[2m✓[22m[39m stays disabled when the line's own dates fall outside the campaign[33m 454[2mms[22m[39m
+     [33m[2m✓[22m[39m invalidates the preview when an own date of the line is edited[33m 602[2mms[22m[39m
+     [33m[2m✓[22m[39m shows the table again after recalculating[33m 477[2mms[22m[39m
+ [32m✓[39m tests/unit/app/margin/margin-closing.test.tsx [2m([22m[2m23 tests[22m[2m)[22m[33m 5053[2mms[22m[39m
+   [32m✓[39m the close-month button [2m(8)[22m
+     [33m[2m✓[22m[39m cannot be confirmed twice while the request is in flight[33m 374[2mms[22m[39m
+   [32m✓[39m the errors of the closing [2m(6)[22m
+     [33m[2m✓[22m[39m answers every other code of the backend in Spanish, each with a message of its own[33m 1472[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/error-mapping.test.tsx [2m([22m[2m16 tests[22m[2m)[22m[33m 5511[2mms[22m[39m
+   [32m✓[39m backend codes of the preview, on the exact line [2m(6)[22m
+     [33m[2m✓[22m[39m shows line_dates_outside_campaign in Spanish on line 2 only, when «Calcular reparto» fails[33m 756[2mms[22m[39m
+     [33m[2m✓[22m[39m shows line_dates_invalid in Spanish on line 2 only, when «Calcular reparto» fails[33m 419[2mms[22m[39m
+     [33m[2m✓[22m[39m shows volume_too_small_for_flights in Spanish on line 2 only, when «Calcular reparto» fails[33m 309[2mms[22m[39m
+     [33m[2m✓[22m[39m shows line_dates_outside_campaign in Spanish on line 2 only, when the silent preview fails[33m 345[2mms[22m[39m
+   [32m✓[39m registration 422 codes [2m(10)[22m
+     [33m[2m✓[22m[39m shows flight_volume_not_positive in Spanish and not as generic text[33m 636[2mms[22m[39m
+     [33m[2m✓[22m[39m shows volume_too_small_for_flights in Spanish and not as generic text[33m 533[2mms[22m[39m
+     [33m[2m✓[22m[39m puts the error on the only candidate line, without the «alguna» wording[33m 435[2mms[22m[39m
+     [33m[2m✓[22m[39m puts the error on every candidate line when there are several, saying so[33m 445[2mms[22m[39m
+[90mstderr[2m | tests/unit/app/dsp-catalog/unlink.test.tsx[2m > [22m[2munlinking a pair from the catalogue[2m > [22m[2moffers «Desvincular» on linked rows only
+[22m[39mEncountered two children with the same key, `1/C-1/L-1`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+ [32m✓[39m tests/unit/app/modal-dialogs.test.tsx [2m([22m[2m16 tests[22m[2m)[22m[33m 1183[2mms[22m[39m
+ [32m✓[39m tests/unit/app/margin/margin-filters.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 1192[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/zero-price.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 1183[2mms[22m[39m
+   [32m✓[39m registering a line without a price [2m(3)[22m
+     [33m[2m✓[22m[39m sends a sale CPM of 0.00 with the volume, to register a line without a price[33m 459[2mms[22m[39m
+ [32m✓[39m tests/unit/app/dsp-catalog/unlink.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[33m 1108[2mms[22m[39m
+ [32m✓[39m tests/unit/app/exceptions/link-exception.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[33m 1749[2mms[22m[39m
+ [32m✓[39m tests/unit/app/exceptions/exceptions-page.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[33m 1129[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/line-dates.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 892[2mms[22m[39m
+ [32m✓[39m tests/unit/app/margin/margin-sale.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 634[2mms[22m[39m
+ [32m✓[39m tests/unit/features/linking/line-picker-dialog.test.tsx [2m([22m[2m11 tests[22m[2m)[22m[33m 652[2mms[22m[39m
+ [32m✓[39m tests/unit/app/status/status-page.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 777[2mms[22m[39m
+ [32m✓[39m tests/unit/app/margin/margin-page.test.tsx [2m([22m[2m21 tests[22m[2m)[22m[33m 1191[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/new.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 409[2mms[22m[39m
+ [32m✓[39m tests/unit/app/navigation.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 315[2mms[22m[39m
+ [32m✓[39m tests/unit/app/margin/margin-access.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 547[2mms[22m[39m
+ [32m✓[39m tests/unit/app/margin/margin-states.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 590[2mms[22m[39m
+   [32m✓[39m the states of the margin page [2m(6)[22m
+     [33m[2m✓[22m[39m shows only the loading state while the request is pending[33m 427[2mms[22m[39m
+ [32m✓[39m tests/unit/features/linking/mask-names.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 650[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/components/Modal.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 302[2mms[22m[39m
+ [32m✓[39m tests/unit/app/sign-out.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 179[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/new-validation.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 202[2mms[22m[39m
+ [32m✓[39m tests/unit/app/status/status-states.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 139[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/page.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 145[2mms[22m[39m
+ [32m✓[39m tests/unit/features/auth/RequireAuth.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 245[2mms[22m[39m
+ [32m✓[39m tests/unit/app/home.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 176[2mms[22m[39m
+ [32m✓[39m tests/unit/app/authenticated-layout.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 221[2mms[22m[39m
+ [32m✓[39m tests/unit/app/navigation-current.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 182[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/components/SessionExpiredPage.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 149[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/api/status-and-exceptions.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/new-duplicate-order.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 78[2mms[22m[39m
+[90mstderr[2m | tests/unit/lib/auth/AuthProvider.test.tsx[2m > [22m[2mAuthProvider session expiration[2m > [22m[2mtransitions to session_expired when userUnloaded fires from authenticated state
+[22m[39mAn update to AuthProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | tests/unit/lib/auth/AuthProvider.test.tsx[2m > [22m[2mAuthProvider session expiration[2m > [22m[2mstays unauthenticated when userUnloaded fires from unauthenticated state
+[22m[39mAn update to AuthProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | tests/unit/lib/auth/AuthProvider.test.tsx[2m > [22m[2mAuthProvider session expiration[2m > [22m[2mgoes directly to unauthenticated when signOut is called voluntarily
+[22m[39mAn update to AuthProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+Not implemented: navigation to another Document
+ [32m✓[39m tests/unit/lib/auth/AuthProvider.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 64[2mms[22m[39m
+ [32m✓[39m tests/unit/styles/globals-css.test.ts [2m([22m[2m30 tests[22m[2m)[22m[32m 81[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/new-errors.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 115[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/page-403.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/components/AccessDeniedPage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/new-403.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32m✓[39m tests/unit/features/margin/no-arithmetic.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 85[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/api/dsp-catalog.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/api/client.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/api/flights.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/api/margin.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/unit/features/campaigns/schema-flights.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/unit/features/campaigns/schema-cpm.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/unit/features/campaigns/schema.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/unit/features/exceptions/filter.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m tests/unit/features/margin/messages.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/format/integer.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/format/decimal.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/auth/cognito-config.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m54 passed[39m[22m[90m (54)[39m
+[2m      Tests [22m [1m[32m546 passed[39m[22m[90m (546)[39m
+[2m   Start at [22m 18:50:17
+[2m   Duration [22m 56.99s[2m (environment 68%, setup 13%, tests 11%, import 6%, transform 1%)[22m
+
+[2mEnvironment [22m [33mjsdom was created 54 times[39m[2m · 254.47s total, 68% of tracked time[22m
+[2m            [22m [2mcreate it once per worker with [22m[33mpool: 'vmThreads'[39m[2m (keeps per-file isolation) or [22m[33misolate: false[39m[2m (shares it across files)[22m
+[2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#test-environments[22m
+

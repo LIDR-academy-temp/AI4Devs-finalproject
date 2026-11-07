@@ -1,0 +1,168 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.5 [39m[90m/Users/cristaliza/Proyectos/AI4Devs-finalproject/frontend[39m
+
+[90mstderr[2m | tests/unit/app/dsp-catalog/catalogue-page.test.tsx[2m > [22m[2mlinking a pair from the catalogue[2m > [22m[2moffers the button on unlinked rows only
+[22m[39mEncountered two children with the same key, `1/C-1/L-1`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+ [32m✓[39m tests/unit/app/campaigns/accessible-names.test.tsx [2m([22m[2m27 tests[22m[2m)[22m[33m 2586[2mms[22m[39m
+   [32m✓[39m the errors of the form [2m(7)[22m
+     [33m[2m✓[22m[39m describes only the controls of the line that has the error[33m 390[2mms[22m[39m
+     [33m[2m✓[22m[39m shows the error of a line's preview with role alert inside that line only[33m 320[2mms[22m[39m
+     [33m[2m✓[22m[39m describes the own dates of a line with their errors[33m 371[2mms[22m[39m
+ [32m✓[39m tests/unit/app/exceptions/exception-filter.test.tsx [2m([22m[2m20 tests[22m[2m)[22m[33m 3121[2mms[22m[39m
+   [32m✓[39m the exception queue filter [2m(14)[22m
+     [33m[2m✓[22m[39m needs every term to match[33m 348[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/submit-flights.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[33m 3685[2mms[22m[39m
+   [32m✓[39m submitting lines with flights [2m(13)[22m
+     [33m[2m✓[22m[39m sends monthly_volumes for a manual split, and only then[33m 633[2mms[22m[39m
+     [33m[2m✓[22m[39m sends no monthly_volumes after the split is restored to proportional[33m 440[2mms[22m[39m
+     [33m[2m✓[22m[39m blocks a manual split with a volume that is not positive[33m 386[2mms[22m[39m
+     [33m[2m✓[22m[39m with two lines, shows a failed preview on that line only and does not register[33m 437[2mms[22m[39m
+ [32m✓[39m tests/unit/app/dsp-catalog/catalogue-page.test.tsx [2m([22m[2m31 tests[22m[2m)[22m[33m 3724[2mms[22m[39m
+   [32m✓[39m the catalogue table [2m(4)[22m
+     [33m[2m✓[22m[39m asks for the first page of 50 and shows campaign, line, dates, last impressions date and whether it is linked[33m 392[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/flight-editor.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[33m 3839[2mms[22m[39m
+   [32m✓[39m the flight editor of a line [2m(15)[22m
+     [33m[2m✓[22m[39m keeps «Calcular reparto» disabled until the dates and the total are valid[33m 428[2mms[22m[39m
+     [33m[2m✓[22m[39m asks the preview with the line's own dates when it has them[33m 330[2mms[22m[39m
+     [33m[2m✓[22m[39m shows the month, the window and the volume of every flight and the sum[33m 332[2mms[22m[39m
+     [33m[2m✓[22m[39m explains a split that does not cover positive volumes[33m 509[2mms[22m[39m
+     [33m[2m✓[22m[39m invalidates the preview when the total volume changes[33m 358[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/error-mapping.test.tsx [2m([22m[2m16 tests[22m[2m)[22m[33m 5364[2mms[22m[39m
+   [32m✓[39m backend codes of the preview, on the exact line [2m(6)[22m
+     [33m[2m✓[22m[39m shows line_dates_outside_campaign in Spanish on line 2 only, when «Calcular reparto» fails[33m 708[2mms[22m[39m
+     [33m[2m✓[22m[39m shows line_dates_invalid in Spanish on line 2 only, when «Calcular reparto» fails[33m 427[2mms[22m[39m
+     [33m[2m✓[22m[39m shows volume_too_small_for_flights in Spanish on line 2 only, when «Calcular reparto» fails[33m 391[2mms[22m[39m
+     [33m[2m✓[22m[39m shows line_dates_outside_campaign in Spanish on line 2 only, when the silent preview fails[33m 430[2mms[22m[39m
+     [33m[2m✓[22m[39m shows line_dates_invalid in Spanish on line 2 only, when the silent preview fails[33m 345[2mms[22m[39m
+     [33m[2m✓[22m[39m shows volume_too_small_for_flights in Spanish on line 2 only, when the silent preview fails[33m 365[2mms[22m[39m
+   [32m✓[39m registration 422 codes [2m(10)[22m
+     [33m[2m✓[22m[39m shows line_dates_outside_campaign in Spanish and not as generic text[33m 526[2mms[22m[39m
+     [33m[2m✓[22m[39m puts the error on the only candidate line, without the «alguna» wording[33m 305[2mms[22m[39m
+     [33m[2m✓[22m[39m puts the error on every candidate line when there are several, saying so[33m 542[2mms[22m[39m
+ [32m✓[39m tests/unit/app/margin/margin-closing.test.tsx [2m([22m[2m23 tests[22m[2m)[22m[33m 5322[2mms[22m[39m
+   [32m✓[39m the close-month button [2m(8)[22m
+     [33m[2m✓[22m[39m is off until a year and a month are chosen, and says why[33m 561[2mms[22m[39m
+     [33m[2m✓[22m[39m opens the shared native dialog that explains that closing freezes the rates and cannot be undone[33m 339[2mms[22m[39m
+     [33m[2m✓[22m[39m closes the month on confirmation, tells how many flights were closed and reads the margin again[33m 349[2mms[22m[39m
+     [33m[2m✓[22m[39m says 'Se cerró 1 flight' for a single flight[33m 342[2mms[22m[39m
+     [33m[2m✓[22m[39m cannot be confirmed twice while the request is in flight[33m 312[2mms[22m[39m
+   [32m✓[39m the errors of the closing [2m(6)[22m
+     [33m[2m✓[22m[39m answers every other code of the backend in Spanish, each with a message of its own[33m 861[2mms[22m[39m
+ [32m✓[39m tests/unit/app/margin/margin-filters.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 2586[2mms[22m[39m
+   [32m✓[39m the filters of the margin page [2m(10)[22m
+     [33m[2m✓[22m[39m asks again with the year when it is written[33m 555[2mms[22m[39m
+     [33m[2m✓[22m[39m asks with the month chosen by name, as a number[33m 435[2mms[22m[39m
+     [33m[2m✓[22m[39m offers the campaigns of the margin it loaded and asks by the id of the one chosen[33m 315[2mms[22m[39m
+     [33m[2m✓[22m[39m combines the three filters in the query, in the order of the API[33m 441[2mms[22m[39m
+ [32m✓[39m tests/unit/app/modal-dialogs.test.tsx [2m([22m[2m16 tests[22m[2m)[22m[33m 2362[2mms[22m[39m
+   [32m✓[39m the resolve dialog [2m(4)[22m
+     [33m[2m✓[22m[39m is a native, open <dialog> named by its heading[33m 735[2mms[22m[39m
+ [32m✓[39m tests/unit/app/margin/margin-page.test.tsx [2m([22m[2m21 tests[22m[2m)[22m[33m 2530[2mms[22m[39m
+   [32m✓[39m the margin page: hierarchy and totals [2m(5)[22m
+     [33m[2m✓[22m[39m shows the totals of the period, then each campaign with its totals[33m 575[2mms[22m[39m
+     [33m[2m✓[22m[39m lists the flights of a line in a table with the six figures, the period, the window and the state[33m 397[2mms[22m[39m
+   [32m✓[39m negative margin and zero sale [2m(4)[22m
+     [33m[2m✓[22m[39m labels a flight with a negative margin 'Margen negativo' and a flight without a price 'Sin venta'[33m 448[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/zero-price.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 2571[2mms[22m[39m
+   [32m✓[39m registering a line without a price [2m(3)[22m
+     [33m[2m✓[22m[39m sends a sale CPM of 0.00 with the volume, to register a line without a price[33m 1156[2mms[22m[39m
+     [33m[2m✓[22m[39m accepts a plain 0[33m 398[2mms[22m[39m
+   [32m✓[39m a negative price [2m(1)[22m
+     [33m[2m✓[22m[39m shows the error in Spanish next to the field and sends nothing[33m 325[2mms[22m[39m
+ [32m✓[39m tests/unit/app/exceptions/link-exception.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[33m 3001[2mms[22m[39m
+   [32m✓[39m linking an exception from the queue [2m(15)[22m
+     [33m[2m✓[22m[39m offers «Vincular a una línea» on open unmatched-delivery exceptions only[33m 362[2mms[22m[39m
+     [33m[2m✓[22m[39m links the chosen line, takes the row out of «Abiertas» without reloading and says so[33m 748[2mms[22m[39m
+[90mstderr[2m | tests/unit/app/dsp-catalog/unlink.test.tsx[2m > [22m[2munlinking a pair from the catalogue[2m > [22m[2moffers «Desvincular» on linked rows only
+[22m[39mEncountered two children with the same key, `1/C-1/L-1`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+ [32m✓[39m tests/unit/app/exceptions/exceptions-page.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[33m 968[2mms[22m[39m
+ [32m✓[39m tests/unit/app/dsp-catalog/unlink.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[33m 1001[2mms[22m[39m
+ [32m✓[39m tests/unit/features/linking/mask-names.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 360[2mms[22m[39m
+ [32m✓[39m tests/unit/features/linking/line-picker-dialog.test.tsx [2m([22m[2m11 tests[22m[2m)[22m[33m 653[2mms[22m[39m
+ [32m✓[39m tests/unit/app/margin/margin-sale.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 678[2mms[22m[39m
+ [32m✓[39m tests/unit/app/status/status-page.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 870[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/line-dates.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 1072[2mms[22m[39m
+ [32m✓[39m tests/unit/app/margin/margin-states.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 205[2mms[22m[39m
+ [32m✓[39m tests/unit/app/margin/margin-access.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 581[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/components/Modal.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 305[2mms[22m[39m
+ [32m✓[39m tests/unit/features/auth/RequireAuth.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 244[2mms[22m[39m
+ [32m✓[39m tests/unit/app/navigation.test.tsx [2m([22m[2m10 tests[22m[2m)[22m[33m 506[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/new.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 522[2mms[22m[39m
+ [32m✓[39m tests/unit/app/authenticated-layout.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 204[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/new-validation.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 286[2mms[22m[39m
+ [32m✓[39m tests/unit/app/navigation-current.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 192[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/components/SessionExpiredPage.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 153[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/page.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 197[2mms[22m[39m
+ [32m✓[39m tests/unit/app/home.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 216[2mms[22m[39m
+ [32m✓[39m tests/unit/app/sign-out.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 290[2mms[22m[39m
+ [32m✓[39m tests/unit/app/status/status-states.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 245[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/new-errors.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 77[2mms[22m[39m
+ [32m✓[39m tests/unit/features/margin/no-arithmetic.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m tests/unit/styles/globals-css.test.ts [2m([22m[2m30 tests[22m[2m)[22m[32m 59[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/api/status-and-exceptions.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+[90mstderr[2m | tests/unit/lib/auth/AuthProvider.test.tsx[2m > [22m[2mAuthProvider session expiration[2m > [22m[2mtransitions to session_expired when userUnloaded fires from authenticated state
+[22m[39mAn update to AuthProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | tests/unit/lib/auth/AuthProvider.test.tsx[2m > [22m[2mAuthProvider session expiration[2m > [22m[2mstays unauthenticated when userUnloaded fires from unauthenticated state
+[22m[39mAn update to AuthProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+[90mstderr[2m | tests/unit/lib/auth/AuthProvider.test.tsx[2m > [22m[2mAuthProvider session expiration[2m > [22m[2mgoes directly to unauthenticated when signOut is called voluntarily
+[22m[39mAn update to AuthProvider inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+Not implemented: navigation to another Document
+ [32m✓[39m tests/unit/lib/auth/AuthProvider.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/new-duplicate-order.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/new-403.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 64[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/components/AccessDeniedPage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m tests/unit/app/campaigns/page-403.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/api/client.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/api/dsp-catalog.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/api/flights.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m tests/unit/features/campaigns/schema-cpm.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/unit/features/campaigns/schema-flights.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/unit/features/exceptions/filter.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/api/margin.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/unit/features/margin/messages.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/format/decimal.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/unit/features/campaigns/schema.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/format/integer.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m tests/unit/lib/auth/cognito-config.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m54 passed[39m[22m[90m (54)[39m
+[2m      Tests [22m [1m[32m546 passed[39m[22m[90m (546)[39m
+[2m   Start at [22m 18:51:20
+[2m   Duration [22m 35.95s[2m (environment 59%, tests 22%, setup 13%, import 5%, transform 1%, worker 1%)[22m
+
+[2mEnvironment [22m [33mjsdom was created 54 times[39m[2m · 137.24s total, 59% of tracked time[22m
+[2m            [22m [2mcreate it once per worker with [22m[33mpool: 'vmThreads'[39m[2m (keeps per-file isolation) or [22m[33misolate: false[39m[2m (shares it across files)[22m
+[2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#test-environments[22m
+
