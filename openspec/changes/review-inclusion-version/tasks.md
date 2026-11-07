@@ -57,13 +57,13 @@ Rama `feat/review-inclusion-version` (desde `origin/feature/entrega-3-MVP`), PR 
 - [x] 7.1 Las peticiones de `POST review` de `20-flows` envían la `inclusionVersion` guardada de la última corrida o lectura: `validations/batch-issues` (6, 15, 17), `validations/batch-blocked/5`, `validations/batch-wrong-account` (5, 6) y `settlements/batch-clean` (5, 29); los pasos que cambian una inclusión guardan la versión que devuelve la lectura siguiente.
 - [x] 7.2 Negativo nuevo en `batch-issues`, antes de `15 Review`: review con la versión guardada antes del último cambio de inclusión → `409 inclusions_changed` con `details.currentInclusionVersion` mayor, y lectura de validaciones con `importStatus = "analyzed"`. En `10-smoke`, `Review - missing inclusionVersion` → `400 validation_error`. Comprobar la rotura a propósito (aserción con el código equivocado) en la primera pasada.
 - [ ] 7.3 Cuando la persona dé turno, `pnpm test:api` contra el backend local. Verificar en verde; avisar de que la base queda sucia hasta el siguiente `pnpm db:seed`.
-- [ ] 7.4 Commit: test(api-collection): review con inclusiones caducadas, y `git push`.
+- [x] 7.4 Commit: test(api-collection): review con inclusiones caducadas, y `git push`.
 
 ## 8. Verificación de conjunto
 
-- [ ] 8.1 `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check` y `openspec validate review-inclusion-version --strict` en verde; CI verde en la rama.
-- [ ] 8.2 Commit (solo si la verificación dejó correcciones): fix(validation): ajustes de la verificación de review-inclusion-version, y `git push`.
-- [ ] 8.3 Abrir el PR hacia `feature/entrega-3-MVP` con la plantilla, enlazando #53.
+- [x] 8.1 `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm openapi:check` y `openspec validate review-inclusion-version --strict` en verde; CI verde en la rama.
+- [x] 8.2 Commit (solo si la verificación dejó correcciones): fix(validation): ajustes de la verificación de review-inclusion-version, y `git push`. No hizo falta: la verificación no dejó correcciones.
+- [x] 8.3 Abrir el PR hacia `feature/entrega-3-MVP` con la plantilla, enlazando #53.
 
 ## Workflow follow-up
 
