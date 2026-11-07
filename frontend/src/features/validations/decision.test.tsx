@@ -155,6 +155,27 @@ describe('Analysis & Validations: continue or cancel (spec "continuar o cancelar
     expect(validationRequests('review')[0]!.body).toEqual({ runId, inclusionVersion: 1 })
   })
 
+  it('a blocked run keeps its reason while the run is read again: no Loading the latest results… flicker', async () => {
+    const { importId } = seedImport('batch-blocked', { status: 'analyzed' })
+    seedValidationRun(importId)
+    const { queryClient } = await openAnalysis(importId)
+    expect(continueButton()).toHaveAccessibleDescription(BLOCKED)
+    const reread = holdNextValidation('get')
+
+    await act(async () => {
+      void queryClient.invalidateQueries()
+      await reread.arrived
+      // TanStack Query notifies its observers on a timer: let the screen render the reading on its way.
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(continueButton()).toBeDisabled()
+    expect(continueButton()).toHaveAccessibleDescription(BLOCKED)
+    reread.release()
+    await waitFor(() => expect(validationRequests('get').length).toBeGreaterThan(1))
+    expect(continueButton()).toHaveAccessibleDescription(BLOCKED)
+  })
+
   it('409 blocking_validation_issue says so and reads the run again', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const { runId } = seedValidationRun(importId)
