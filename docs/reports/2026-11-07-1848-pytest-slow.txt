@@ -9,8 +9,8 @@ tests/application/test_ingestion_memory.py::test_a_million_row_run_stays_within_
     util.warn_deprecated(
 
 ../opt/venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:469
-  /opt/venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:469: PytestCacheWarning: could not create cache path /app/.pytest_cache/v/cache/nodeids: [Errno 13] Permission denied: '/app/pytest-cache-files-zv2rqwlc'
+  /opt/venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:469: PytestCacheWarning: could not create cache path /app/.pytest_cache/v/cache/nodeids: [Errno 13] Permission denied: '/app/pytest-cache-files-_n49pts9'
     config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-1 passed, 1887 deselected, 3 warnings in 27.08s
+1 passed, 1887 deselected, 3 warnings in 27.12s

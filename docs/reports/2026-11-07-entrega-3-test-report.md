@@ -1,7 +1,7 @@
 # Informe de Pruebas: Entrega 3
 
 **Fecha:** 2026-11-07  
-**Commit:** `9b65aaf` (docs(readme): point section 0.5 to the repository the pull requests come from)  
+**Commit:** `635c917` (docs(readme): update the introduction of section 7 to the three open pull requests)  
 **Rama:** `final-project-LFMC`  
 **Ejecución:** `2026-11-07-1848` (los ficheros de evidencia están en `docs/reports/2026-11-07-1848-*.txt`)
 
@@ -33,11 +33,11 @@
 
 **Pruebas saltadas:** `tests/scripts/test_load_masters.py:166: deploy/masters.example.json is outside this image: run it from a checkout`.
 
-**Tests de dominio por separado:** 802 aprobadas, 0 fallidas, 0 saltadas en 1.46s.
+**Tests de dominio por separado:** 802 aprobadas, 0 fallidas, 0 saltadas en 1.54s.
 
-**Pruebas de aceptación por separado:** 38 aprobadas, 0 fallidas, 0 saltadas en 3.87s.
+**Pruebas de aceptación por separado:** 38 aprobadas, 0 fallidas, 0 saltadas en 4.02s.
 
-**Pruebas marcadas `slow`:** 1 aprobadas, 0 fallidas, 0 saltadas en 27.08s.
+**Pruebas marcadas `slow`:** 1 aprobadas, 0 fallidas, 0 saltadas en 27.12s.
 
 **Resumen:** las suites del backend se ejecutan contra una base aislada que se recrea antes de cada ejecución; la base de desarrollo (`adops360`) permanece sin cambios (§ Estado de la base de datos).
 

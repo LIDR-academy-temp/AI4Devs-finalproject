@@ -9,8 +9,8 @@ tests/acceptance/test_closed_month_sheet.py::test_the_sheet_is_what_the_acceptan
     util.warn_deprecated(
 
 ../opt/venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:469
-  /opt/venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:469: PytestCacheWarning: could not create cache path /app/.pytest_cache/v/cache/nodeids: [Errno 13] Permission denied: '/app/pytest-cache-files-vz5vox1d'
+  /opt/venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:469: PytestCacheWarning: could not create cache path /app/.pytest_cache/v/cache/nodeids: [Errno 13] Permission denied: '/app/pytest-cache-files-naobmkza'
     config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-38 passed, 1850 deselected, 3 warnings in 3.87s
+38 passed, 1850 deselected, 3 warnings in 4.02s
