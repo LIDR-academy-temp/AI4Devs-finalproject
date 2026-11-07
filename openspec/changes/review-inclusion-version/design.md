@@ -57,7 +57,7 @@ Un ida y vuelta (A → B → A) deja la versión en `2` aunque el estado sea el 
 
 Nueva función de dominio `reviewRefusal(request, current)` en `validation/domain/review-guard.ts`:
 
-- `request = { runId, inclusionVersion }`, `current = { runId, inclusionVersion, blockedCodes } | null`.
+- `request = { runId, inclusionVersion }`, `current = { runId, inclusionVersion, results } | null`, con los resultados tal como se guardan (`validationCode` y `outcome`); la función deduce de ellos los códigos bloqueantes.
 - Devuelve la primera negativa o `null`: `run_required` → `run_superseded` (con `currentRunId`) → `inclusions_changed` (con `currentInclusionVersion`) → `blocked` (con los códigos en el orden de `ValidationCode`).
 
 El repositorio la llama bajo el candado, después de la guarda de estado (`import_not_analyzed`, que no depende de la corrida), y traduce la negativa a su `DomainError`; los `issueIds` del bloqueo solo se consultan si la negativa es `blocked`. `no_matched_rows` sigue después y fuera de la función, porque necesita cargar los hechos del batch (`loadEmptyBatchFacts`) y no hace falta si ya hay otra negativa.
@@ -82,14 +82,14 @@ Nombre: `inclusions_changed` (`409`), mensaje `The inclusions of the run changed
 
 ### D9. Pantalla
 
-- `reviewImport(importId, runId, inclusionVersion, confirmEmptyBatch)` y `useReview().review(run, confirm)` toman la versión de la corrida mostrada (`view.run.inclusionVersion`).
+- `reviewImport(importId, { runId, inclusionVersion }, confirmEmptyBatch)` y `useReview().review(run, confirm)` toman la versión de la corrida mostrada (`view.run.inclusionVersion`).
 - Ante `409 inclusions_changed`: el mensaje `The inclusions changed since you loaded them. Check them and continue again.` en la zona `aria-live` del DecisionBar, la relectura de corrida e import que ya hace `useReview` para todo `409`, y el DecisionBar desmarca la casilla del batch vacío igual que con `no_matched_rows` (la `key` por `runId` no cambia, porque la corrida es la misma). El siguiente clic usa la versión releída.
 - Descartado: `key = runId:inclusionVersion`. Desmarcaría la casilla también tras cada cambio propio del analista, que sí lo ha visto.
 - **Continue espera a la relectura.** Mientras la consulta de la corrida se recarga (`isFetching` de `validationRunQuery`, por ejemplo tras el `PATCH` propio que invalida `storeIssue`), Continue queda deshabilitado, con el motivo `Loading the latest results…` asociado al botón. Así el cambio propio del analista no puede dar un `409` falso: el clic siempre envía la versión ya releída.
 
 ### D10. Fake de MSW
 
-La corrida del fake guarda `inclusionVersion` (0 al crearla o sembrarla, con opción de sembrarla), el handler de inclusión la sube solo cuando el valor cambia, `viewOf` la devuelve y el handler de review valida el cuerpo (`400` sin ella) y comprueba en el orden de D4. El fake no decide reglas: solo compara la versión que guarda; un test puede forzar el caso de otro analista sembrando una versión mayor (`bumpInclusionVersion(importId)` o la opción de siembra).
+La corrida del fake guarda `inclusionVersion` (0 al crearla o sembrarla), el handler de inclusión la sube solo cuando el valor cambia, `viewOf` la devuelve y el handler de review valida el cuerpo (`400` sin ella) y comprueba en el orden de D4. El fake no decide reglas: solo compara la versión que guarda; un test fuerza el caso de otro analista subiendo la versión con `bumpInclusionVersion(importId)`.
 
 ## Risks / Trade-offs
 
