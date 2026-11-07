@@ -98,9 +98,10 @@ async function overflows(page: Page): Promise<string[]> {
     const rows = document.querySelector<HTMLTableElement>('table[aria-label="Rows"]')
     if (rows && window.innerWidth >= 1280) {
       const idColumn = [...rows.tHead!.rows[0]!.cells].findIndex((th) => th.textContent === 'ID')
-      const wrapped = [...rows.tBodies[0]!.rows].filter(
-        (tr) => (tr.cells[idColumn]?.firstElementChild?.getClientRects().length ?? 0) > 1,
-      )
+      // One box per piece between <wbr>, even on one line: what counts is how many different lines they sit on.
+      const lines = (element: Element | null | undefined) =>
+        new Set([...(element?.getClientRects() ?? [])].map((box) => Math.round(box.top))).size
+      const wrapped = [...rows.tBodies[0]!.rows].filter((tr) => lines(tr.cells[idColumn]?.firstElementChild) > 1)
       if (wrapped.length > 0) found.push(`${wrapped.length} IDs of the rows table on more than one line`)
     }
     for (const dialog of document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]')) {
