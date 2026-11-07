@@ -28,29 +28,29 @@ Ninguna tarea usa la base local. Lo que necesita SQL Server se comprueba en la C
 
 ## 3. Roturas deliberadas en la CI
 
-- [ ] 3.1 Commit temporal que quita el paso de la siembra entre Bruno y el E2E (D8.1). Verificar en la CI:
+- [x] 3.1 Commit temporal que quita el paso de la siembra entre Bruno y el E2E (D8.1). Verificar en la CI:
   - el smoke falla porque `RAM-07` ya está asignado, y el check falla;
   - existe el artifact `playwright-report`;
   - descargado con `gh run download`, no contiene `trace.zip` ni archivos `.webm`, y una búsqueda del valor de `SEED_PASSWORD` no encuentra nada.
-- [ ] 3.2 Revertir 3.1 con un commit (`git revert`, nunca `git checkout` sobre trabajo sin commit) y, en el mismo push, un commit temporal que da a Bruno un `SEED_PASSWORD` equivocado solo en su paso (D8.2). Verificar en la CI: la colección falla en `00-auth`, la siembra y el E2E se ejecutan igualmente, el smoke pasa y el check falla.
-- [ ] 3.3 Revertir 3.2 con un commit. Verificar en la CI: el job vuelve a verde sin artifact.
-- [ ] 3.4 Commit: los de 3.1–3.3, con los mensajes test(ci): rotura deliberada … y revert: …, y `git push`; quedan en el historial como prueba.
+- [x] 3.2 Revertir 3.1 con un commit (`git revert`, nunca `git checkout` sobre trabajo sin commit) y, en el mismo push, un commit temporal que da a Bruno un `SEED_PASSWORD` equivocado solo en su paso (D8.2). Verificar en la CI: la colección falla en `00-auth`, la siembra y el E2E se ejecutan igualmente, el smoke pasa y el check falla.
+- [x] 3.3 Revertir 3.2 con un commit. Verificar en la CI: el job vuelve a verde sin artifact.
+- [x] 3.4 Commit: los de 3.1–3.3, con los mensajes test(ci): rotura deliberada … y revert: …, y `git push`; quedan en el historial como prueba.
 
 ## 4. README
 
-- [ ] 4.1 §1.4, paso 6:
+- [x] 4.1 §1.4, paso 6:
   - la tabla de pruebas dice que `pnpm test:api` y `pnpm test:e2e` también corren en la CI;
   - el párrafo de la CI describe el job `e2e`: base efímera, colección, nueva siembra y E2E, informe solo al fallar;
   - se quita "su job de CI queda para la Entrega 3".
   - Los prerrequisitos en local no cambian.
-- [ ] 4.2 Estrategia de testing, solo la línea "En pipeline": la colección y el E2E corren en cada pull request desde la Entrega 3 (#40), y queda como pendiente lo que siga pendiente (cobertura del 80 % y mutation testing). Los párrafos "End-to-end (Playwright)" y del smoke no se tocan: los actualiza B con su suite (decisión del gate). Verificar: ni §1.4 ni "En pipeline" anuncian ya el job como futuro.
-- [ ] 4.3 Commit: docs(readme): colección Bruno y E2E en la CI (#40), y `git push`.
+- [x] 4.2 Estrategia de testing, solo la línea "En pipeline": la colección y el E2E corren en cada pull request desde la Entrega 3 (#40), y queda como pendiente lo que siga pendiente (cobertura del 80 % y mutation testing). Los párrafos "End-to-end (Playwright)" y del smoke no se tocan: los actualiza B con su suite (decisión del gate). Verificar: ni §1.4 ni "En pipeline" anuncian ya el job como futuro.
+- [x] 4.3 Commit: docs(readme): colección Bruno y E2E en la CI (#40), y `git push`.
 
 ## 5. Verificación de conjunto y PR
 
-- [ ] 5.1 En verde: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `openspec validate ci-e2e --strict` y todos los jobs de la CI de la rama, incluido `e2e`.
-- [ ] 5.2 Commit (solo si la verificación dejó correcciones): fix(ci): ajustes de la verificación de ci-e2e, y `git push`.
-- [ ] 5.3 Abrir el PR hacia `feature/entrega-3-MVP` con la plantilla, enlazando #40.
+- [x] 5.1 En verde: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `openspec validate ci-e2e --strict` y todos los jobs de la CI de la rama, incluido `e2e`.
+- [x] 5.2 Commit (solo si la verificación dejó correcciones): fix(ci): ajustes de la verificación de ci-e2e, y `git push`. No hizo falta: la verificación no dejó correcciones.
+- [x] 5.3 Abrir el PR hacia `feature/entrega-3-MVP` con la plantilla, enlazando #40.
   - La descripción dice qué casilla de #40 cierra: "Job e2e en CI (Playwright) reutilizando el SQL Server del job de integración (Entrega 3)".
   - Incluye la duración medida del job y los enlaces a los runs de las roturas deliberadas.
 - [ ] 5.4 Marcar esa casilla en #40 con `gh issue edit` cuando el PR esté fusionado, o antes si la persona lo pide.

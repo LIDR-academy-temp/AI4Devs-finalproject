@@ -110,6 +110,19 @@ Estimación del job:
 
 El pull request pasa de unos 10 minutos (`check` más `integration`) a unos 11–12 (`check` más `e2e`).
 
+**Medido en la CI de la rama** (runs 42353552930 y 42356282214): el job tarda entre 5 min 12 s y 5 min 29 s, por debajo de lo estimado.
+
+| Paso | Duración medida |
+|---|---|
+| Migración y seed | 1 min 44 s |
+| Builds | 14 s |
+| Chromium sin caché | 24 s; con caché, solo `install-deps` |
+| Bruno | 80 s |
+| Nueva siembra | 40 s |
+| Smoke | 7 s |
+
+El pull request sigue limitado por `integration` (unos 6 min tras `check`), así que este job no lo alarga.
+
 **Descartado: en paralelo con `check`.** Ahorraría unos 3 minutos de reloj, pero gastaría el job entero en los pull requests que no compilan, y dejaría de seguir la regla de `integration`.
 
 ### D4. Caché del navegador
