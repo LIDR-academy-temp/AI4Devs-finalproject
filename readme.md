@@ -1816,13 +1816,13 @@ Los recuentos se calculan de los `tasks.md` de cada change:
 
 | Change | Hechas | Aplazadas con su motivo | Abiertas |
 |---|---:|---:|---:|
-| **`daily-campaign-delivery-status`** | **126** de 161 | **9** | **26** |
-| **`campaign-margin-and-rebate-accrual`** | **105** de 155 | **23** | **27** |
+| **`daily-campaign-delivery-status`** | **135** de 161 | **9** | **17** |
+| **`campaign-margin-and-rebate-accrual`** | **115** de 155 | **23** | **17** |
 
 - ⏸️ **Aplazadas, margen:** 1.3, 2A.5, 3.5–3.6, 4.4–4.10, 6.6, 6.9, 7.4, 7.7, 7.10–7.12, 7A.4, 8.1, 8.3–8.5. Reexpresión de contadores, repetición cronológica y reajustes de extraprima, `rebate_accruals`, exportaciones, agregados por agencia y anunciante, edición de tarifas en pantalla, campañas sin volumen contratado y reconciliación con Qlik sobre todos los meses cerrados. Cada una consta con su motivo en `tasks.md`.
 - ⏸️ **Aplazadas, estado diario:** 1.6, 5.1–5.5, 6.6, 7.2, 8.6. Prueba de carga con un millón de filas, subida manual de ficheros (el formato de la exportación de Adform queda documentado en `design.md`) y los casos de visibilidad de costes y de última carga, con su motivo en `tasks.md`.
-- 📋 **Abiertas, margen:** 9.1–9.3, 10.1–10.6, 11.1–11.8, 12.1–12.6, 13.1–13.4.
-- 📋 **Abiertas, estado diario:** 9.1–9.2, 10.1–10.6, 11.1–11.8, 12.1–12.6, 13.1–13.4.
+- 📋 **Abiertas, margen:** 9.2–9.3, 11.1–11.8, 12.4–12.6, 13.1–13.4.
+- 📋 **Abiertas, estado diario:** 9.2, 11.1–11.8, 12.3–12.6, 13.1–13.4.
 
 **Pruebas ejecutadas**
 
