@@ -77,7 +77,7 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
 
 ## 5. Capturas a 1280 y 1024 px con la medida de desborde (D7)
 
-- [ ] 5.1 Escribir `e2e/screenshots/web-analysis-polish.ts` a partir de `web-analysis-guardrails.ts`. **Tope: 90 minutos.**
+- [x] 5.1 Escribir `e2e/screenshots/web-analysis-polish.ts` a partir de `web-analysis-guardrails.ts`. **Tope: 90 minutos.**
   - **flujo**: `batch-issues` en `ProviderB-Main` (analizado y validado), `batch-wrong-account` y `batch-split` en `ProviderA-USD` (analizados), cada uno cancelado antes del siguiente;
   - **imprescindible**, por este orden:
     1. desborde de la página y de cada tabla;
@@ -89,7 +89,7 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
   - **secundario**: el centrado ±1 px de la tarjeta de rangos y la misma `top` de las tres tarjetas. Si se pasa del tope, no se escriben: quedan como revisión a ojo en 5.4 y se anota en el PR.
 
   Añadir `screenshots:web-analysis-polish` a `e2e/package.json` y al `package.json` raíz. Verificar con `pnpm lint` y `pnpm typecheck`.
-- [ ] 5.2 Commit: `test(e2e): script de capturas de web-analysis-polish con medidas de desborde`
+- [x] 5.2 Commit: `test(e2e): script de capturas de web-analysis-polish con medidas de desborde`
 - [ ] 5.3 Con `pnpm db:up` y `pnpm dev` levantados, la persona ejecuta en la sesión `! pnpm screenshots:web-analysis-polish`, para que la salida quede a la vista. Verificar que termina sin hallazgos y que deja 14 capturas en `docs/wireframes/web-analysis-polish/`: siete pantallas por dos anchos (cabecera, tooltip y filas de `batch-issues`; filas de `batch-wrong-account`; filas de `batch-split`, la fila sintética y la fila ambigua con el foco en **Choose**).
 - [ ] 5.4 Revisar las capturas a ojo, a 1280 y a 1024 px:
   - rangos centrados y con el ancho de su tabla;

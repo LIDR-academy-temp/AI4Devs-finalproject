@@ -17,6 +17,7 @@
     "screenshots:web-ambiguous-rows": "node screenshots/web-ambiguous-rows.ts",
     "screenshots:web-analysis-guardrails": "node screenshots/web-analysis-guardrails.ts",
     "screenshots:web-polish-e3": "node screenshots/web-polish-e3.ts",
+    "screenshots:web-analysis-polish": "node screenshots/web-analysis-polish.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
