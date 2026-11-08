@@ -76,7 +76,11 @@ export function ValidationsTable({
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{result.issueCount}</TableCell>
                 <TableCell>{result.blocking ? s.blocks : s.none}</TableCell>
-                <TableCell className="text-muted-foreground">{breakdownOf(result)}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {/* Wraps between words in a fixed width, so the table fits its card at 1024 px; in every row, so the
+                      column keeps its width (web-analysis-polish design D8). */}
+                  <span className="block w-48 whitespace-normal">{breakdownOf(result)}</span>
+                </TableCell>
               </TableRow>
             )
           })}
