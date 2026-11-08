@@ -62,7 +62,7 @@ En la rama `fix/web-polish-e3`, con PR hacia `feature/entrega-3-MVP`.
   - la lista cargada con `status=foo`.
 
   Soltar la base y avisar. Commit: `docs(wireframes): capturas de web-polish-e3 (#110, #125)`
-- [ ] 5.2 Push y PR hacia `feature/entrega-3-MVP` con la plantilla, con "Closes #110, #140, #139, #125" y el aviso de que **cambia una etiqueta del CSV del summary** que se entrega al merchant. Vigilar el CI con `gh --jq` hasta que esté verde
+- [x] 5.2 Push y PR hacia `feature/entrega-3-MVP` con la plantilla, con "Closes #110, #140, #139, #125" y el aviso de que **cambia una etiqueta del CSV del summary** que se entrega al merchant. Vigilar el CI con `gh --jq` hasta que esté verde
 
 ## Workflow follow-up
 
