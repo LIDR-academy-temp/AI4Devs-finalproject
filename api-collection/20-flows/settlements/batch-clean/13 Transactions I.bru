@@ -50,4 +50,9 @@ tests {
       expect(sum === units(m.feeAmount)).to.equal(true);
     }
   });
+  test('each eventDate is New York wall time without a zone or milliseconds', () => {
+    const dates = res.body.items.flatMap((m) => (m.eventDate === null ? [] : [m.eventDate]));
+    expect(dates.length).to.be.above(0);
+    for (const date of dates) expect(date).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+  });
 }
