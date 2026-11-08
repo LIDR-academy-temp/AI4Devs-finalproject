@@ -67,7 +67,7 @@ La pantalla SHALL mostrar los movimientos E/I/R, los totales de las cinco catego
 
 #### Scenario: Desglose de batch-clean
 - **GIVEN** la vista del intento de `batch-clean`
-- **THEN** ve las líneas `+ Deposits`, `− Chargebacks`, `− Refunds`, `− RDR`, `− Transaction fees`, `− Batch fees`, `− Reserve held`, `+ Reserve released` y `+ Reserve released on chargeback` con los importes de la respuesta y, debajo, **Amount payable** con su `amountPayable`
+- **THEN** ve las líneas `+ Deposits`, `− Chargebacks`, `− Refunds`, `− RDR`, `− Transaction fees`, `− Batch fees`, `− Reserve held`, `+ Reserve released` y `+ Reserve released on adjustment` con los importes de la respuesta y, debajo, **Amount payable** con su `amountPayable`
 
 #### Scenario: Línea en cero
 - **GIVEN** la vista con `reserve_early_released` en `0.0000`
@@ -92,7 +92,7 @@ El Settlement Summary SHALL tener las pestañas **Summary** y **Movements**. **M
 
 #### Scenario: Reservas en una columna
 - **GIVEN** un movimiento con `reserveHeldAmt = "11.5240"`, `reserveReleasedAmt = "7.2500"`, `reserveEarlyReleasedAmt = "1.1000"` y `expectedReserveReleaseAt = "2027-03-27T00:04:11"`
-- **THEN** las columnas son **Transaction**, **Status**, **Round**, **Source row**, **Event date**, **Amount**, **Fees**, **Reserves** y **Settled**, y **Reserves** muestra `Held 11.5240`, `Released 7.2500`, `Released on chargeback 1.1000` y `Expected release 2027-03-27`, sin `ET`
+- **THEN** las columnas son **Transaction**, **Status**, **Round**, **Source row**, **Event date**, **Amount**, **Fees**, **Reserves** y **Settled**, y **Reserves** muestra `Held 11.5240`, `Released 7.2500`, `Released on adjustment 1.1000` y `Expected release 2027-03-27`, sin `ET`
 
 #### Scenario: Movimientos E de batch-clean
 - **GIVEN** `batch-clean` procesado
