@@ -222,6 +222,18 @@ describe('Analysis & Validations: the eight validations (spec "tabla de las ocho
     expect(within(resultRows()[0]!).queryByRole('button')).not.toBeInTheDocument()
   })
 
+  it('batch-issues: the breakdown wraps between words in a fixed width, so the table fits at 1024 px', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    await openAnalysis(importId)
+
+    // jsdom does not lay out: the classes that wrap it; the screenshots measure the table (web-analysis-polish D8).
+    const breakdown = within(resultRows()[1]!).getByText('1 non-recorded adjustment · 2 status mismatches')
+    expect(breakdown.tagName).not.toBe('TD')
+    expect(breakdown).toHaveClass('block', 'w-48', 'whitespace-normal')
+    expect(breakdown.className).not.toMatch(/overflow-wrap|break-all/)
+  })
+
   it('batch-blocked: Provider mismatch is Blocked, 1, Blocks', async () => {
     const { importId } = seedImport('batch-blocked', { status: 'analyzed' })
     seedValidationRun(importId, batchBlockedFixture())
