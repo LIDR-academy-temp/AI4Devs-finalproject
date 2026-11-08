@@ -6,7 +6,8 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "types": ["node"]
   },
-  "include": ["playwright.config.ts", "global-setup.ts", "steps", "screenshots"]
+  "include": ["playwright.config.ts", "global-setup.ts", "steps", "support", "screenshots"]
 }

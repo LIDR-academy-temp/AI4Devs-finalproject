@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --test \"support/*.test.ts\"",
     "test:e2e": "bddgen && playwright test",
     "screenshots:web-validations": "node screenshots/web-validations.ts",
     "screenshots:web-settlement": "node screenshots/web-settlement.ts",
