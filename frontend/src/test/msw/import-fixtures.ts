@@ -233,7 +233,7 @@ export function makeRow(overrides: Partial<ImportRowItem> = {}): ImportRowItem {
       statusId: 2,
       statusName: 'Successful',
       amount: '16.2200',
-      transactionDate: '2026-09-28T12:22:09.000Z',
+      transactionDate: '2026-09-28T12:22:09',
     },
     rawData: { ID: '252570479111759', Amount: '16.22', Currency: 'USD' },
     ...overrides,
@@ -308,7 +308,7 @@ export function makeAmbiguousRow(
                   statusId: c.statusId!,
                   statusName: c.statusName!,
                   amount: c.amount!,
-                  transactionDate: '2026-09-28T12:00:00.000Z',
+                  transactionDate: '2026-09-28T12:00:00',
                 },
         },
       ]
@@ -409,7 +409,7 @@ export function buildRows(
             statusId: row.statusId ?? 2,
             statusName: row.statusName ?? 'Successful',
             amount: row.amount ?? '0.0000',
-            transactionDate: '2026-09-28T12:00:00.000Z',
+            transactionDate: '2026-09-28T12:00:00',
           },
         }
       } else {

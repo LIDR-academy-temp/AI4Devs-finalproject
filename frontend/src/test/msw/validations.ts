@@ -240,10 +240,10 @@ export function batchIssuesFixture(): RunFixture {
     ],
     blocked: false,
     ranges: {
-      APP: range('2026-09-28T00:00:00.000Z', '2026-10-07T23:59:59.000Z'),
-      DEC: range('2026-09-29T00:00:00.000Z', '2026-10-07T23:59:59.000Z'),
-      I: range('2026-09-28T00:00:00.000Z', '2026-10-11T00:00:00.000Z'),
-      R: range('2026-03-31T00:00:00.000Z', '2026-04-09T00:00:00.000Z'),
+      APP: range('2026-09-28T00:00:00', '2026-10-07T23:59:59'),
+      DEC: range('2026-09-29T00:00:00', '2026-10-07T23:59:59'),
+      I: range('2026-09-28T00:00:00', '2026-10-11T00:00:00'),
+      R: range('2026-03-31T00:00:00', '2026-04-09T00:00:00'),
     },
     pendingInRangeCount: 0,
     undatedAdjustmentCount: 1,
@@ -327,10 +327,10 @@ export function batchIssuesFixture(): RunFixture {
         occurrences: [current('APP', 61, 'Successful', true), previous('Declined', 42)],
       }),
       ...MISSING_DEC.map((id, i) =>
-        missing('missing_previous_to_batch', 'DEC', id, `2026-09-${String(10 + i).padStart(2, '0')}T12:00:00.000Z`),
+        missing('missing_previous_to_batch', 'DEC', id, `2026-09-${String(10 + i).padStart(2, '0')}T12:00:00`),
       ),
-      ...MISSING_APP.map((id, i) => missing('missing_in_range', 'APP', id, `2026-10-0${2 + i}T09:30:00.000Z`)),
-      ...MISSING_R.map((id, i) => missing('missing_in_range', 'R', id, `2026-04-0${3 + i}T00:00:00.000Z`)),
+      ...MISSING_APP.map((id, i) => missing('missing_in_range', 'APP', id, `2026-10-0${2 + i}T09:30:00`)),
+      ...MISSING_R.map((id, i) => missing('missing_in_range', 'R', id, `2026-04-0${3 + i}T00:00:00`)),
     ],
   }
 }
@@ -366,7 +366,7 @@ export function batchBlockedFixture(): RunFixture {
       result('missing_in_range', 'warning', 10, { APP: 10, DEC: 0, I: 0, R: 0 }),
     ],
     blocked: true,
-    ranges: { APP: range('2026-09-28T00:00:00.000Z', '2026-10-07T23:59:59.000Z'), DEC: null, I: null, R: null },
+    ranges: { APP: range('2026-09-28T00:00:00', '2026-10-07T23:59:59'), DEC: null, I: null, R: null },
     pendingInRangeCount: 0,
     undatedAdjustmentCount: 0,
     undatedCandidateCount: 0,
@@ -383,7 +383,7 @@ export function batchBlockedFixture(): RunFixture {
         occurrences: [],
       }),
       ...BLOCKED_MISSING_APP.map((id, i) =>
-        missing('missing_in_range', 'APP', id, `2026-09-28T${String(1 + i).padStart(2, '0')}:00:00.000Z`),
+        missing('missing_in_range', 'APP', id, `2026-09-28T${String(1 + i).padStart(2, '0')}:00:00`),
       ),
     ],
   }

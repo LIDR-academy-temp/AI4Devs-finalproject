@@ -28,9 +28,9 @@ Corte: si el domingo por la noche el PR no está fusionado, el change vuelve a r
 
 ## 4. Frontend (D5)
 
-- [ ] 4.1 Pruebas primero en `format.test.ts`: con fechas sin `Z`, `formatBusinessDate` da `2026-09-28` y `formatBusinessDateTime` da `2026-09-28 00:04 ET`, también con el proceso en otra zona. Verlas en rojo.
-- [ ] 4.2 `formatBusinessDate` y `formatBusinessDateTime` parten el texto, sin `Date` ni `Intl`. Comentario de cabecera y tipo `BusinessDate` sin la `Z` ni el #48.
-- [ ] 4.3 Fixtures de fechas de negocio de MSW y de las pruebas de componentes de validations y settlements al formato nuevo. Comprobar con `grep` que ninguna fecha de negocio de `frontend/src` lleva `Z`; las de auditoría la conservan. Verificar `pnpm --filter @recon/frontend test` y `typecheck`.
+- [x] 4.1 Pruebas primero en `format.test.ts`: con fechas sin `Z`, `formatBusinessDate` da `2026-09-28` y `formatBusinessDateTime` da `2026-09-28 00:04 ET`, también con el proceso en otra zona. Verlas en rojo.
+- [x] 4.2 `formatBusinessDate` y `formatBusinessDateTime` parten el texto, sin `Date` ni `Intl`. Comentario de cabecera y tipo `BusinessDate` sin la `Z` ni el #48.
+- [x] 4.3 Fixtures de fechas de negocio de MSW y de las pruebas de componentes de validations y settlements al formato nuevo. Comprobar con `grep` que ninguna fecha de negocio de `frontend/src` lleva `Z`; las de auditoría la conservan. Verificar `pnpm --filter @recon/frontend test` y `typecheck`.
 
 ## 5. Bruno (D6)
 

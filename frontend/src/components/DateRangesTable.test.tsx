@@ -6,10 +6,10 @@ import { DateRangesTable } from './DateRangesTable'
 // Shared table of date ranges by cycle and status (ui-polish design D9).
 const range = (min: string, max: string) => ({ min: businessDate(min), max: businessDate(max) })
 const RANGES = {
-  APP: range('2026-09-28T00:00:00.000Z', '2026-10-07T23:59:00.000Z'),
+  APP: range('2026-09-28T00:00:00', '2026-10-07T23:59:00'),
   DEC: null,
-  I: range('2026-09-28T00:00:00.000Z', '2026-10-11T00:00:00.000Z'),
-  R: range('2026-03-31T00:00:00.000Z', '2026-04-09T00:00:00.000Z'),
+  I: range('2026-09-28T00:00:00', '2026-10-11T00:00:00'),
+  R: range('2026-03-31T00:00:00', '2026-04-09T00:00:00'),
 }
 
 const table = () => screen.getByRole('table', { name: 'Date ranges of this test' })

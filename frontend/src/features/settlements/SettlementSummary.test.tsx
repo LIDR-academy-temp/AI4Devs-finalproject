@@ -140,7 +140,7 @@ describe('Settlement Summary: totals and an auditable amount payable (spec "tota
 
 describe('Settlement Summary: date range of each type (spec "totales y amount payable auditable")', () => {
   it('a null range is —', async () => {
-    const range = { min: businessDate('2026-09-28T00:04:11.000Z'), max: businessDate('2026-10-07T23:58:40.000Z') }
+    const range = { min: businessDate('2026-09-28T00:04:11'), max: businessDate('2026-10-07T23:58:40') }
     await openSummary({ overrides: { dateRanges: { APP: range, DEC: null, I: range, R: null } } })
 
     expect(totalsRanges()).toEqual([

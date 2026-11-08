@@ -224,7 +224,7 @@ describe('Analysis & Validations: detail of a finding (spec "detalle de un halla
   it('cycle I names the status of the transaction, and R has no status', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const fixture = batchIssuesFixture()
-    fixture.issues.push(missing('missing_previous_to_batch', 'I', '900000000000001', '2026-09-20T12:00:00.000Z'))
+    fixture.issues.push(missing('missing_previous_to_batch', 'I', '900000000000001', '2026-09-20T12:00:00'))
     const { issues } = seedValidationRun(importId, fixture)
     const chargeback = issues.find((i) => i.transactionIdRaw === '900000000000001')!
     const { unmount } = await openFinding(importId, chargeback.issueId)

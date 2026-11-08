@@ -11,7 +11,8 @@ export function formatDecimal(value: string): string {
 
 // Dates (web-validations design D11). Every date on screen is New York time, whatever the browser's zone:
 // - business dates (transaction dates, ranges, relevantDate, batch dates) are New York wall-clock time stored
-//   without a zone; the API sends them with a Z only as transport format, so they are shown without converting;
+//   without a zone, and the API sends them without one ("2026-09-28T00:04:11"): their digits are shown as they
+//   arrive, without Date or Intl, so the browser's zone never moves them (business-dates-no-z D5);
 // - audit instants (runAt, changedAt, reviewedAt…) are real UTC instants and are converted to New York time.
 // Only a date with a time carries the ET suffix: a day alone (settlement date, fee validity, expected release) is
 // the same day in any zone that matters here, and the suffix added nothing (ui-polish design D12).
@@ -20,7 +21,7 @@ export function formatDecimal(value: string): string {
 export const DISPLAY_TIME_ZONE = 'America/New_York'
 export const DISPLAY_ZONE_LABEL = 'ET'
 
-/** New York wall-clock time sent with a Z that does not mean UTC (until #48 drops it). */
+/** New York wall-clock time without a zone ("2026-09-28T00:04:11"), or a day alone ("2026-10-24"). */
 export type BusinessDate = string & { readonly __kind: 'business' }
 /** A real UTC instant. */
 export type AuditInstant = string & { readonly __kind: 'audit' }
@@ -52,14 +53,14 @@ function compose(value: string, timeZone: string, withTime: boolean): string {
   return withTime ? `${date} ${p.hour}:${p.minute} ${DISPLAY_ZONE_LABEL}` : date
 }
 
-/** "2026-09-28": the digits as they arrive, read in UTC so that nothing moves. */
+/** "2026-09-28": the day digits as they arrive. */
 export function formatBusinessDate(value: BusinessDate): string {
-  return compose(value, 'UTC', false)
+  return value.slice(0, 10)
 }
 
-/** "2026-09-28 00:00 ET": the digits as they arrive, read in UTC so that nothing moves. */
+/** "2026-09-28 00:04 ET": the day, hour and minute digits as they arrive. */
 export function formatBusinessDateTime(value: BusinessDate): string {
-  return compose(value, 'UTC', true)
+  return `${value.slice(0, 10)} ${value.slice(11, 16)} ${DISPLAY_ZONE_LABEL}`
 }
 
 /** "2026-10-18 10:20 ET": the UTC instant in New York time, daylight saving included. */
