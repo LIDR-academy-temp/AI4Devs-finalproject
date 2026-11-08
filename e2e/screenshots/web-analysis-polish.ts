@@ -200,20 +200,34 @@ async function measure(page: Page, synthetic: boolean): Promise<Measure> {
 /** The measurements that found something; any of them makes the run fail. */
 const problems: string[] = []
 
-/** Captures the screen at 1280 and at 1024 px, measures both, and leaves the page at 1280. */
+/**
+ * Captures the screen at 1280 and at 1024 px, measures both, and leaves the page at 1280.
+ * `prepare` sets, at each width, what the resize may have undone; `confirm` checks it right after the capture.
+ * `viewportOnly` captures the window and not the whole page, so the capture scrolls and resizes nothing.
+ */
 async function shot(
   page: Page,
   name: string,
-  { synthetic = false, prepare }: { synthetic?: boolean; prepare?: () => Promise<void> } = {},
+  {
+    synthetic = false,
+    prepare,
+    confirm,
+    viewportOnly = false,
+  }: {
+    synthetic?: boolean
+    prepare?: () => Promise<void>
+    confirm?: () => Promise<void>
+    viewportOnly?: boolean
+  } = {},
 ) {
   for (const size of WIDTHS) {
     await page.setViewportSize(size)
     // The layout settles after a resize (the sidebar and the tables reflow).
     await page.waitForTimeout(300)
-    // What the resize may have undone, such as an open tooltip, is set again before the capture.
     await prepare?.()
     const file = size.width === 1280 ? name : `${name}-1024`
-    await page.screenshot({ path: `${OUT}${file}.png`, fullPage: true })
+    await page.screenshot({ path: `${OUT}${file}.png`, fullPage: !viewportOnly })
+    await confirm?.()
     const { found, report } = await measure(page, synthetic)
     console.log(
       `saved ${FOLDER}${file}.png · ${report.join(' · ')}${found.length > 0 ? ` · FOUND ${found.join(', ')}` : ''}`,
@@ -377,18 +391,32 @@ async function main() {
     await analyst.waitForLoadState('networkidle')
     await analyst.getByRole('region', { name: 'Validations' }).scrollIntoViewIfNeeded()
     await shot(analyst, 'validations-header')
-    // With the keyboard: the focus on the info button opens its tooltip.
+    // With the keyboard, at each width (design D7): the button in view, the focus on Run again, the element before it,
+    // without scrolling, and Tab to the button. Radix closes the tooltip when an ancestor of its button scrolls, so
+    // nothing scrolls from the Tab to the capture, which is of the window.
     const about = analyst.getByRole('button', { name: 'About Pending in range' })
+    const tooltip = analyst.getByRole('tooltip')
+    let scrollY = 0
     const openTooltip = async () => {
-      // Out and back in, so the focus opens it again if the resize closed it.
-      await about.blur()
-      await about.focus()
-      await expect(analyst.getByRole('tooltip')).toContainText('Pending on the gateway')
+      await about.scrollIntoViewIfNeeded()
+      await analyst
+        .getByRole('button', { name: 'Run again' })
+        .evaluate((button: HTMLElement) => button.focus({ preventScroll: true }))
+      await expect(tooltip).toHaveCount(0)
+      scrollY = await analyst.evaluate(() => window.scrollY)
+      await analyst.keyboard.press('Tab')
+      await expect(about, 'Tab from Run again reaches About Pending in range').toBeFocused()
+      await expect(tooltip).toContainText('Pending on the gateway')
     }
-    await openTooltip()
-    await shot(analyst, 'validations-tooltip', { prepare: openTooltip })
-    await analyst.keyboard.press('Escape')
-    await expect(analyst.getByRole('tooltip')).toHaveCount(0)
+    const tooltipStayed = async () => {
+      expect(await analyst.evaluate(() => window.scrollY), 'the page did not scroll before the capture').toBe(scrollY)
+      await expect(tooltip, 'the tooltip was open in the capture').toContainText('Pending on the gateway')
+      // Escape closes it and the focus stays on the button.
+      await analyst.keyboard.press('Escape')
+      await expect(tooltip).toHaveCount(0)
+      await expect(about).toBeFocused()
+    }
+    await shot(analyst, 'validations-tooltip', { prepare: openTooltip, confirm: tooltipStayed, viewportOnly: true })
     await analyst.getByRole('table', { name: 'Rows' }).scrollIntoViewIfNeeded()
     await shot(analyst, 'issues-rows')
     await cancelLast(analyst)

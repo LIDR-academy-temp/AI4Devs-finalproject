@@ -120,13 +120,13 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
 
 ## 7. Arreglos de la primera pasada de capturas (D8 y D7)
 
-- [ ] 7.1 Test primero, en `features/validations/ValidationsSection.test.tsx`, con `batch-issues`: el desglose `1 non-recorded adjustment · 2 status mismatches` es un elemento con `block`, `w-48` y `whitespace-normal`, sin `[overflow-wrap:anywhere]` ni `break-all`. Verificar que falla (hoy el texto va suelto en la celda).
-- [ ] 7.2 Commit: `test(web): el desglose de la tabla de validaciones se parte entre palabras en un ancho fijo`
-- [ ] 7.3 Implementar D8 en `ValidationsTable.tsx`: el desglose en un `span` `block w-48 whitespace-normal`, también en las filas sin desglose. Verificar con `pnpm --filter frontend test src/features/validations`, `pnpm lint` y `pnpm typecheck`.
-- [ ] 7.4 Commit: `fix(web): el desglose de la tabla de validaciones se parte entre palabras para caber a 1024 px`
-- [ ] 7.5 Rotura deliberada: quitar `whitespace-normal` del `span`, comprobar que falla el test de 7.1 y restaurar desde el commit de 7.4.
-- [ ] 7.6 En `e2e/screenshots/web-analysis-polish.ts`, abrir el tooltip en cada ancho como en D7: el botón a la vista, el foco en `Run again` sin desplazar, Tab hasta `About Pending in range`, captura de la ventana, y después de capturar comprobar que `scrollY` no cambió, que el tooltip sigue abierto y que Escape lo cierra con el foco en el botón. Sin tocar `InfoTip`. Verificar con `pnpm lint` y `pnpm typecheck`.
-- [ ] 7.7 Commit: `test(e2e): el script de capturas abre el tooltip con Tab y sin desplazar la página`
+- [x] 7.1 Test primero, en `features/validations/ValidationsSection.test.tsx`, con `batch-issues`: el desglose `1 non-recorded adjustment · 2 status mismatches` es un elemento con `block`, `w-48` y `whitespace-normal`, sin `[overflow-wrap:anywhere]` ni `break-all`. Verificar que falla (hoy el texto va suelto en la celda).
+- [x] 7.2 Commit: `test(web): el desglose de la tabla de validaciones se parte entre palabras en un ancho fijo`
+- [x] 7.3 Implementar D8 en `ValidationsTable.tsx`: el desglose en un `span` `block w-48 whitespace-normal`, también en las filas sin desglose. Verificar con `pnpm --filter frontend test src/features/validations`, `pnpm lint` y `pnpm typecheck`.
+- [x] 7.4 Commit: `fix(web): el desglose de la tabla de validaciones se parte entre palabras para caber a 1024 px`
+- [x] 7.5 Rotura deliberada: quitar `whitespace-normal` del `span`, comprobar que falla el test de 7.1 y restaurar desde el commit de 7.4. (Cayó solo ese test, 1 de 15; restaurado con `git restore --source=HEAD` tras ver que el diff era solo la rotura.)
+- [x] 7.6 En `e2e/screenshots/web-analysis-polish.ts`, abrir el tooltip en cada ancho como en D7: el botón a la vista, el foco en `Run again` sin desplazar, Tab hasta `About Pending in range`, captura de la ventana, y después de capturar comprobar que `scrollY` no cambió, que el tooltip sigue abierto y que Escape lo cierra con el foco en el botón. Sin tocar `InfoTip`. Verificar con `pnpm lint` y `pnpm typecheck`.
+- [x] 7.7 Commit: `test(e2e): el script de capturas abre el tooltip con Tab y sin desplazar la página`
 - [ ] 7.8 Volver a 5.3.
 
 ## Workflow follow-up
