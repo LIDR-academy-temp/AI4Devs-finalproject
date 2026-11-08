@@ -38,13 +38,13 @@ En la rama `fix/web-polish-e3`, con PR hacia `feature/entrega-3-MVP`.
   - **frontend:** `preview.test.tsx`, `SettlementSummary.test.tsx` y `SummaryMovements.test.tsx`.
 
   Verificar que fallan con la etiqueta antigua
-- [ ] 3.2 Commit: `test(settlement): etiqueta de la liberación de reserva por ajuste, en rojo (#125)`
-- [ ] 3.3 Implementar y verificar los tests de 3.1, `pnpm --filter backend test` y `pnpm --filter frontend test`:
+- [x] 3.2 Commit: `test(settlement): etiqueta de la liberación de reserva por ajuste, en rojo (#125)`
+- [x] 3.3 Implementar y verificar los tests de 3.1, `pnpm --filter backend test` y `pnpm --filter frontend test`:
   - **backend:** `payable-breakdown.ts`, `exports/summary-csv.ts` y `test-support/example-view.ts`;
   - **frontend:** `settlements/strings.ts` (`payableLines.reserve_early_released`, `summary.reserveLines.early` y la `early` de Movements) y la fixture de MSW (`test/msw/settlements.ts`);
-  - **README §4:** el ejemplo de `payableBreakdown`.
+  - **README:** el ejemplo de `payableBreakdown` de §4 y la frase de §1.2 que decía que la línea seguía llamándose "on chargeback".
 
-  Comprobar con `rg -i "released on chargeback"` que solo quedan apariciones en `openspec/changes/archive/`
+  Comprobar con `rg -i "released on chargeback"` que solo quedan apariciones en `openspec/changes/archive/`, en este change, en la spec principal (la cambia el archive), en `prompts.md` (historia) y en un test de `packages/shared` que usa la etiqueta como dato (zona del #48, sin tocar)
 - [ ] 3.4 Commit: `fix(settlement): la liberación anticipada de la reserva se llama de ajuste en el summary (#125)`
 
 ## 4. #139: una sola frase de cuenta equivocada (D3)

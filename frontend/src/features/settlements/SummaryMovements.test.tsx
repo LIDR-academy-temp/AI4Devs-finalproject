@@ -168,7 +168,7 @@ describe('Settlement Summary: the Summary and Movements tabs', () => {
     expect(reserves.map((line) => line.querySelector(':scope > .whitespace-nowrap')?.textContent)).toEqual([
       `Held${NBSP}11.5240`,
       `Released${NBSP}7.2500`,
-      `chargeback${NBSP}1.1000`,
+      `adjustment${NBSP}1.1000`,
       `release${NBSP}2027-03-27`,
     ])
     for (const line of reserves) expect(line).not.toHaveClass('whitespace-nowrap')

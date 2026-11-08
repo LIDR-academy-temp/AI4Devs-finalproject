@@ -24,7 +24,8 @@ const LINES: readonly { code: PayableLineCode; label: string; sign: '+' | '-'; p
   { code: 'batch_fees', label: 'Batch fees', sign: '-', part: 'batchFees' },
   { code: 'reserve_held', label: 'Reserve held', sign: '-', part: 'reserveHeld' },
   { code: 'reserve_released', label: 'Reserve released', sign: '+', part: 'reserveReleased' },
-  { code: 'reserve_early_released', label: 'Reserve released on chargeback', sign: '+', part: 'reserveEarlyReleased' },
+  // Any adjustment I (Chargeback, Refund or RDR) releases it early, so it is named after the adjustment (#125).
+  { code: 'reserve_early_released', label: 'Reserve released on adjustment', sign: '+', part: 'reserveEarlyReleased' },
 ]
 
 export function payableBreakdown(parts: PayableParts): { lines: PayableLine[]; amountPayable: string } {
