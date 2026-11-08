@@ -57,6 +57,8 @@ const resultRows = () =>
   within(screen.getByRole('table', { name: 'Validation results' }))
     .getAllByRole('row')
     .slice(1)
+/** The element that holds the breakdown, inside the Breakdown cell of a row of the validations. */
+const breakdownOf = (row: HTMLElement) => within(row).getAllByRole('cell')[4]!.firstElementChild as HTMLElement
 
 describe('Analysis & Validations: running the validations (spec "ejecutar la corrida")', () => {
   it('without a run invites to run them and does not run them on its own', async () => {
@@ -228,10 +230,27 @@ describe('Analysis & Validations: the eight validations (spec "tabla de las ocho
     await openAnalysis(importId)
 
     // jsdom does not lay out: the classes that wrap it; the screenshots measure the table (web-analysis-polish D8).
-    const breakdown = within(resultRows()[1]!).getByText('1 non-recorded adjustment · 2 status mismatches')
-    expect(breakdown.tagName).not.toBe('TD')
+    const breakdown = breakdownOf(resultRows()[1]!)
+    expect(breakdown).toHaveTextContent('1 non-recorded adjustment · 2 status mismatches')
     expect(breakdown).toHaveClass('block', 'w-48', 'whitespace-normal')
     expect(breakdown.className).not.toMatch(/overflow-wrap|break-all/)
+  })
+
+  it('batch-issues: each part of the breakdown stays whole, so it wraps only at the ·', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    await openAnalysis(importId)
+
+    // A figure never ends up on a line away from its text (web-analysis-polish D8).
+    const parts = (row: HTMLElement) => [...breakdownOf(row).children]
+    expect(parts(resultRows()[1]!).map((part) => part.textContent)).toEqual([
+      '1 non-recorded adjustment',
+      '2 status mismatches',
+    ])
+    expect(parts(resultRows()[7]!).map((part) => part.textContent)).toEqual(['APP 3', 'R 3'])
+    for (const part of [...parts(resultRows()[1]!), ...parts(resultRows()[7]!)]) {
+      expect(part).toHaveClass('whitespace-nowrap')
+    }
   })
 
   it('batch-blocked: Provider mismatch is Blocked, 1, Blocks', async () => {
