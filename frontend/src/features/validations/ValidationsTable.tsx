@@ -1,4 +1,5 @@
 import { MissingRange, type ValidationCode } from '@recon/shared'
+import { Fragment } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toneOf, VALIDATION_OUTCOME_TONE } from '@/lib/status-tone'
@@ -7,10 +8,10 @@ import { strings } from './strings'
 
 const s = strings.table
 
-/** The breakdown without its zeros: `1 non-recorded adjustment · 2 status mismatches`, `APP 3 · R 3`. */
-function breakdownOf(result: ValidationResultView): string {
+/** The parts of the breakdown without its zeros: `1 non-recorded adjustment`, `2 status mismatches`; `APP 3`, `R 3`. */
+function breakdownOf(result: ValidationResultView): string[] {
   const breakdown = result.breakdown
-  if (!breakdown) return ''
+  if (!breakdown) return []
   const b = strings.breakdown
   const parts =
     result.validationCode === 'non_recorded_adjustment'
@@ -19,7 +20,7 @@ function breakdownOf(result: ValidationResultView): string {
           (breakdown.status_mismatch ?? 0) > 0 && b.status_mismatch(breakdown.status_mismatch!),
         ]
       : MissingRange.options.map((range) => (breakdown[range] ?? 0) > 0 && b.range(range, breakdown[range]!))
-  return parts.filter(Boolean).join(' · ')
+  return parts.filter((part): part is string => typeof part === 'string')
 }
 
 /**
@@ -77,9 +78,16 @@ export function ValidationsTable({
                 <TableCell className="text-right tabular-nums">{result.issueCount}</TableCell>
                 <TableCell>{result.blocking ? s.blocks : s.none}</TableCell>
                 <TableCell className="text-muted-foreground">
-                  {/* Wraps between words in a fixed width, so the table fits its card at 1024 px; in every row, so the
-                      column keeps its width (web-analysis-polish design D8). */}
-                  <span className="block w-48 whitespace-normal">{breakdownOf(result)}</span>
+                  {/* Wraps in a fixed width, so the table fits its card at 1024 px; in every row, so the column keeps
+                      its width. Each part stays whole, so it wraps only at the · (web-analysis-polish design D8). */}
+                  <span className="block w-48 whitespace-normal">
+                    {breakdownOf(result).map((part, i) => (
+                      <Fragment key={part}>
+                        {i > 0 && ' · '}
+                        <span className="whitespace-nowrap">{part}</span>
+                      </Fragment>
+                    ))}
+                  </span>
                 </TableCell>
               </TableRow>
             )
