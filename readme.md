@@ -387,7 +387,6 @@ La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al
 |---|---|
 | Endurecimiento de imports (hallazgos LOW del review de #33) | [#34](https://github.com/kajirioji/AI4Devs-finalproject/issues/34) |
 | Vencimiento de reservas con el plazo aplicado al liquidar (`expectedReserveReleaseAt`) | [#44](https://github.com/kajirioji/AI4Devs-finalproject/issues/44) |
-| Serializar las fechas de negocio sin `Z` | [#48](https://github.com/kajirioji/AI4Devs-finalproject/issues/48) |
 | Carga de la corrida de validaciones: 2,2 s con 50 000 movimientos (objetivo local: 2 s) | [#50](https://github.com/kajirioji/AI4Devs-finalproject/issues/50) |
 | Estructura del repositorio de validaciones | [#51](https://github.com/kajirioji/AI4Devs-finalproject/issues/51) |
 | Tests intermitentes del frontend con las suites en paralelo | [#56](https://github.com/kajirioji/AI4Devs-finalproject/issues/56) |
@@ -1183,7 +1182,7 @@ erDiagram
 
 Convenciones: todas las tablas llevan `createdAt datetime2 NOT NULL DEFAULT SYSUTCDATETIME()` y, las que se editan, `updatedAt`; se omiten por brevedad. Los importes son `DECIMAL(19,4)`; los porcentajes, `DECIMAL(9,6)` como fracción (0.025000 = 2,5 %); las fechas, `datetime2` o `date`. Los `uniqueidentifier` se generan en la aplicación. Se listan las entidades del flujo principal con detalle completo y las de apoyo de forma resumida.
 
-**Fechas y zona horaria.** Hay dos clases de fecha y no se mezclan. Las **fechas de negocio** (`Transaction.transactionDate` y `lastStatusChangedAt`, los rangos `dateMin/Max*` de `ValidationRun` y `SettlementBatch`, `ValidationIssue.relevantDate`, `ImportRow.txnDate`, `SettlementTransaction.eventDate` y `expectedReserveReleaseAt`, `SettlementTransactionFee.eventDate` y las demás fechas de batch, como `settlementDate`) son hora de pared de America/New_York, tal como las entrega el gateway principal (comprobado contra el gateway real), y se guardan sin zona. Las **fechas de auditoría** (`createdAt`, `updatedAt`, `runAt`, `changedAt`, `resolvedAt` y la fecha de revisión que queda en `AuditLog`) son instantes UTC reales. El API serializa todas en ISO 8601 con `Z`, pero en las fechas de negocio esa `Z` es solo transporte: no indica que la hora esté en UTC. Cambiar esa serialización es la deuda registrada en el issue #48. Excepción: las columnas que son solo día (`date`: `SettlementBatch.settlementDate`, `Fee.startDate` y `endDate`, y el parámetro `asOf`) viajan como `YYYY-MM-DD`, sin hora ni `Z`.
+**Fechas y zona horaria.** Hay dos clases de fecha y no se mezclan. Las **fechas de negocio** (`Transaction.transactionDate` y `lastStatusChangedAt`, los rangos `dateMin/Max*` de `ValidationRun` y `SettlementBatch`, `ValidationIssue.relevantDate`, `ImportRow.txnDate`, `SettlementTransaction.eventDate` y `expectedReserveReleaseAt`, `SettlementTransactionFee.eventDate` y las demás fechas de batch, como `settlementDate`) son hora de pared de America/New_York, tal como las entrega el gateway principal (comprobado contra el gateway real), y se guardan sin zona. Las **fechas de auditoría** (`createdAt`, `updatedAt`, `runAt`, `changedAt`, `resolvedAt` y la fecha de revisión que queda en `AuditLog`) son instantes UTC reales. El API serializa las de auditoría en ISO 8601 con `Z` y las de negocio sin zona ni milisegundos (`YYYY-MM-DDTHH:mm:ss`, por ejemplo `2026-09-28T00:04:11`), con los dígitos guardados: no son instantes UTC y no llevan una zona que no tienen (#48). La pantalla y los CSV las muestran tal cual llegan, sin depender de la zona del navegador ni del servidor. Excepción: las columnas que son solo día (`date`: `SettlementBatch.settlementDate`, `Fee.startDate` y `endDate`, y el parámetro `asOf`) viajan como `YYYY-MM-DD`, sin hora ni `Z`.
 
 #### Catálogo
 
@@ -1502,7 +1501,7 @@ La API es REST bajo `/api/v1`, con contrato OpenAPI 3.1 en `docs/openapi.yaml` (
 
 - **Autenticación y alcance:** `Authorization: Bearer <JWT>` en todas las rutas salvo las anónimas: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout` (llevan el refresh token en el cuerpo) y `GET /health`. Cada petición resuelve los permisos del usuario y su alcance de merchants; un recurso de un merchant no visible responde `404`, no `403`, para no revelar su existencia.
 - **Errores:** cuerpo uniforme `{ code, message, details? }`. `400` datos inválidos · `401` sin sesión · `403` sin permiso · `404` no existe o no visible · `409` conflicto con el estado actual · `422` archivo que no se puede procesar.
-- **Dinero y porcentajes:** viajan como **strings** decimales (`"25.0000"`, `"0.025000"`), nunca como números JSON. Fechas en ISO 8601 con `Z` (en las de negocio la `Z` es solo transporte, ver 3.2); las columnas de solo día (`settlementDate`, `Fee.startDate`/`endDate`, `asOf`) como `YYYY-MM-DD`.
+- **Dinero y porcentajes:** viajan como **strings** decimales (`"25.0000"`, `"0.025000"`), nunca como números JSON. Fechas de auditoría en ISO 8601 con `Z`; fechas de negocio en hora de Nueva York sin zona ni milisegundos (`YYYY-MM-DDTHH:mm:ss`, ver 3.2); las columnas de solo día (`settlementDate`, `Fee.startDate`/`endDate`, `asOf`) como `YYYY-MM-DD`.
 - **Identificadores:** UUID para cuentas, imports, archivos, hojas, fees y batches; enteros para catálogos, usuarios, hallazgos y resultados; `bigint` para transacciones, movimientos y apariciones.
 
 Se documentan los tres endpoints principales, uno por cada capacidad que define el producto: administrar fees con reglas de negocio, importar con propuesta de pareo, y procesar. El inventario completo de endpoints previstos está al final de la sección.
@@ -1778,10 +1777,10 @@ Permiso `settlement.process`. Requiere un import en `validated` cuya revisión s
               processedAt: "2026-10-19T15:40:03.120Z"
               settlementDate: "2026-10-24"
               dateRanges:
-                APP: { min: "2026-09-28T00:04:11.000Z", max: "2026-10-07T23:58:40.000Z" }
-                DEC: { min: "2026-09-28T00:10:02.000Z", max: "2026-10-07T23:41:19.000Z" }
-                I:   { min: "2026-09-28T03:00:00.000Z", max: "2026-10-11T21:12:00.000Z" }
-                R:   { min: "2026-09-27T05:00:00.000Z", max: "2026-10-06T22:00:00.000Z" }
+                APP: { min: "2026-09-28T00:04:11", max: "2026-10-07T23:58:40" }
+                DEC: { min: "2026-09-28T00:10:02", max: "2026-10-07T23:41:19" }
+                I:   { min: "2026-09-28T03:00:00", max: "2026-10-11T21:12:00" }
+                R:   { min: "2026-09-27T05:00:00", max: "2026-10-06T22:00:00" }
               channels: ["RAM-01", "RAM-02", "RAM-07"]
               movements: { E: 450, I: 10, R: 320 }
               totals:

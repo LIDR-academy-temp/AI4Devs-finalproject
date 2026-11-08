@@ -75,7 +75,7 @@ Se usa en los 7 campos: `ImportRowTransaction.transactionDate`, `DateRangeView`,
 
 ### D6. Bruno
 
-- Aserción `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$` en dos peticiones: una lectura de validations con `ranges` y `20-flows/settlements/batch-clean/13 Transactions I.bru` (`eventDate`).
+- Aserción `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$` en dos peticiones: `20-flows/settlements/batch-clean/4 Run validations.bru` (`ranges`, con `runAt` en `Z`) y `20-flows/settlements/batch-clean/13 Transactions I.bru` (`eventDate`).
 - Ninguna aserción actual compara fechas de negocio.
 
 ### D7. Comprobación

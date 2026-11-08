@@ -34,11 +34,11 @@ Corte: si el domingo por la noche el PR no está fusionado, el change vuelve a r
 
 ## 5. Bruno (D6)
 
-- [ ] 5.1 Aserción `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$` en una lectura de validations con `ranges` y en `20-flows/settlements/batch-clean/13 Transactions I.bru` (`eventDate`). Se verifica en la CI.
+- [x] 5.1 Aserción `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$` en `20-flows/settlements/batch-clean/4 Run validations.bru` (`ranges`, y `runAt` con `Z`) y en `20-flows/settlements/batch-clean/13 Transactions I.bru` (`eventDate`). Se verifica en la CI.
 
 ## 6. Documentación
 
-- [ ] 6.1 README:
+- [x] 6.1 README:
   - §3.2 "Fechas y zona horaria": las fechas de negocio salen sin zona;
   - §4, la línea de formatos;
   - la fila de #48 en la tabla de pendientes.
