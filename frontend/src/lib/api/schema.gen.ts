@@ -3238,6 +3238,10 @@ export interface paths {
                                     statusId: number;
                                     statusName: string;
                                     amount: string;
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     transactionDate: string & (string);
                                 } | null;
                                 rawData: {
@@ -3396,6 +3400,10 @@ export interface paths {
                                 statusId: number;
                                 statusName: string;
                                 amount: string;
+                                /**
+                                 * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                 * @example 2026-10-24T13:05:00
+                                 */
                                 transactionDate: string & (string);
                             } | null;
                             rawData: {
@@ -3783,19 +3791,51 @@ export interface paths {
                                 blocked: boolean;
                                 ranges: {
                                     APP: {
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         min: string & (string);
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         max: string & (string);
                                     } | null;
                                     DEC: {
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         min: string & (string);
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         max: string & (string);
                                     } | null;
                                     I: {
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         min: string & (string);
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         max: string & (string);
                                     } | null;
                                     R: {
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         min: string & (string);
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         max: string & (string);
                                     } | null;
                                 };
@@ -3926,19 +3966,51 @@ export interface paths {
                                 blocked: boolean;
                                 ranges: {
                                     APP: {
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         min: string & (string);
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         max: string & (string);
                                     } | null;
                                     DEC: {
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         min: string & (string);
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         max: string & (string);
                                     } | null;
                                     I: {
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         min: string & (string);
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         max: string & (string);
                                     } | null;
                                     R: {
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         min: string & (string);
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         max: string & (string);
                                     } | null;
                                 };
@@ -4115,6 +4187,10 @@ export interface paths {
                                 missingType: "previous_to_batch" | "in_range" | null;
                                 /** @enum {string|null} */
                                 missingRange: "APP" | "DEC" | "I" | "R" | null;
+                                /**
+                                 * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                 * @example 2026-10-24T13:05:00
+                                 */
                                 relevantDate: (string & (string)) | null;
                                 status: {
                                     statusId: number;
@@ -4248,6 +4324,10 @@ export interface paths {
                             missingType: "previous_to_batch" | "in_range" | null;
                             /** @enum {string|null} */
                             missingRange: "APP" | "DEC" | "I" | "R" | null;
+                            /**
+                             * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                             * @example 2026-10-24T13:05:00
+                             */
                             relevantDate: (string & (string)) | null;
                             status: {
                                 statusId: number;
@@ -4440,6 +4520,10 @@ export interface paths {
                             missingType: "previous_to_batch" | "in_range" | null;
                             /** @enum {string|null} */
                             missingRange: "APP" | "DEC" | "I" | "R" | null;
+                            /**
+                             * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                             * @example 2026-10-24T13:05:00
+                             */
                             relevantDate: (string & (string)) | null;
                             status: {
                                 statusId: number;
@@ -4678,19 +4762,51 @@ export interface paths {
                                 blocked: boolean;
                                 ranges: {
                                     APP: {
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         min: string & (string);
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         max: string & (string);
                                     } | null;
                                     DEC: {
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         min: string & (string);
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         max: string & (string);
                                     } | null;
                                     I: {
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         min: string & (string);
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         max: string & (string);
                                     } | null;
                                     R: {
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         min: string & (string);
+                                        /**
+                                         * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                         * @example 2026-10-24T13:05:00
+                                         */
                                         max: string & (string);
                                     } | null;
                                 };
@@ -4873,6 +4989,10 @@ export interface paths {
                             missingType: "previous_to_batch" | "in_range" | null;
                             /** @enum {string|null} */
                             missingRange: "APP" | "DEC" | "I" | "R" | null;
+                            /**
+                             * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                             * @example 2026-10-24T13:05:00
+                             */
                             relevantDate: (string & (string)) | null;
                             status: {
                                 statusId: number;
@@ -6638,19 +6758,51 @@ export interface paths {
                         "application/json": {
                             dateRanges: {
                                 APP: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 DEC: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 I: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 R: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                             };
@@ -6916,9 +7068,17 @@ export interface paths {
                                 amount: string;
                                 excludeAmount: boolean;
                                 feeAmount: string;
+                                /**
+                                 * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                 * @example 2026-10-24T13:05:00
+                                 */
                                 eventDate: (string & (string)) | null;
                                 appliedReservePct: string;
                                 reserveDaysUsed: number;
+                                /**
+                                 * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                 * @example 2026-10-24T13:05:00
+                                 */
                                 expectedReserveReleaseAt: (string & (string)) | null;
                                 reserveHeldAmt: string;
                                 reserveReleasedAmt: string;
@@ -6935,6 +7095,10 @@ export interface paths {
                                     feeTypeId: number;
                                     code: string;
                                     title: string;
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     eventDate: (string & (string)) | null;
                                     amountUsd: string;
                                     configurationSnapshot: {
@@ -7134,19 +7298,51 @@ export interface paths {
                         "application/json": {
                             dateRanges: {
                                 APP: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 DEC: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 I: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 R: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                             };
@@ -7657,19 +7853,51 @@ export interface paths {
                         "application/json": {
                             dateRanges: {
                                 APP: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 DEC: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 I: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 R: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                             };
@@ -8000,19 +8228,51 @@ export interface paths {
                         "application/json": {
                             dateRanges: {
                                 APP: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 DEC: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 I: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 R: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                             };
@@ -8287,19 +8547,51 @@ export interface paths {
                         "application/json": {
                             dateRanges: {
                                 APP: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 DEC: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 I: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 R: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                             };
@@ -8574,19 +8866,51 @@ export interface paths {
                         "application/json": {
                             dateRanges: {
                                 APP: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 DEC: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 I: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                                 R: {
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     min: string & (string);
+                                    /**
+                                     * @description Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).
+                                     * @example 2026-10-24T13:05:00
+                                     */
                                     max: string & (string);
                                 } | null;
                             };

@@ -48,7 +48,7 @@ Corte: si el domingo por la noche el PR no está fusionado, el change vuelve a r
 - [x] 7.1 Commits por bloque (shared, backend, contrato, frontend, Bruno y docs) y `git push -u origin fix/business-dates-no-z`. Abrir el PR en borrador hacia `feature/entrega-3-MVP`. Verificar los cinco jobs en verde, `e2e` incluido: la tabla de rangos sigue cumpliendo `<día> HH:MM <zona>`.
 - [x] 7.2 Rotura deliberada del `serializerCompiler`: un commit temporal devuelve los rangos de `validation-service.ts` al formato con `.000Z`. Verificar en la CI que las pruebas de ruta de validaciones dan `500` en esas rutas (el job de integración no corre: depende del de unitarias, `needs: check`). Revertirlo con `git revert` y ver la CI en verde otra vez. Los dos commits se quedan en el historial.
 - [x] 7.3 En verde: `pnpm lint`, `pnpm typecheck`, `pnpm test` y `openspec validate business-dates-no-z --strict`.
-- [ ] 7.4 PR listo para revisar, con la plantilla:
+- [x] 7.4 PR listo para revisar, con la plantilla:
   - `Closes #48`;
   - **BREAKING** en "Qué cambia";
   - los runs de la rotura.

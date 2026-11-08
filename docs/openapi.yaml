@@ -6879,6 +6879,9 @@ paths:
                                   pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                 - type: string
                                   pattern: ^[^Z]+$
+                              description: "Business date: New York wall time without a zone or milliseconds
+                                (YYYY-MM-DDTHH:mm:ss)."
+                              example: 2026-10-24T13:05:00
                           required:
                             - transactionId
                             - channelId
@@ -7241,6 +7244,9 @@ paths:
                             pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                           - type: string
                             pattern: ^[^Z]+$
+                        description: "Business date: New York wall time without a zone or milliseconds
+                          (YYYY-MM-DDTHH:mm:ss)."
+                        example: 2026-10-24T13:05:00
                     required:
                       - transactionId
                       - channelId
@@ -8160,6 +8166,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               max:
                                 type: string
                                 allOf:
@@ -8167,6 +8176,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                             required:
                               - min
                               - max
@@ -8182,6 +8194,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               max:
                                 type: string
                                 allOf:
@@ -8189,6 +8204,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                             required:
                               - min
                               - max
@@ -8204,6 +8222,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               max:
                                 type: string
                                 allOf:
@@ -8211,6 +8232,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                             required:
                               - min
                               - max
@@ -8226,6 +8250,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               max:
                                 type: string
                                 allOf:
@@ -8233,6 +8260,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                             required:
                               - min
                               - max
@@ -8582,6 +8612,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               max:
                                 type: string
                                 allOf:
@@ -8589,6 +8622,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                             required:
                               - min
                               - max
@@ -8604,6 +8640,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               max:
                                 type: string
                                 allOf:
@@ -8611,6 +8650,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                             required:
                               - min
                               - max
@@ -8626,6 +8668,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               max:
                                 type: string
                                 allOf:
@@ -8633,6 +8678,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                             required:
                               - min
                               - max
@@ -8648,6 +8696,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               max:
                                 type: string
                                 allOf:
@@ -8655,6 +8706,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                             required:
                               - min
                               - max
@@ -9068,6 +9122,9 @@ paths:
                               pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                             - type: string
                               pattern: ^[^Z]+$
+                          description: "Business date: New York wall time without a zone or milliseconds
+                            (YYYY-MM-DDTHH:mm:ss)."
+                          example: 2026-10-24T13:05:00
                         status:
                           nullable: true
                           type: object
@@ -9372,6 +9429,9 @@ paths:
                         pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                       - type: string
                         pattern: ^[^Z]+$
+                    description: "Business date: New York wall time without a zone or milliseconds
+                      (YYYY-MM-DDTHH:mm:ss)."
+                    example: 2026-10-24T13:05:00
                   status:
                     nullable: true
                     type: object
@@ -9902,6 +9962,9 @@ paths:
                         pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                       - type: string
                         pattern: ^[^Z]+$
+                    description: "Business date: New York wall time without a zone or milliseconds
+                      (YYYY-MM-DDTHH:mm:ss)."
+                    example: 2026-10-24T13:05:00
                   status:
                     nullable: true
                     type: object
@@ -10474,6 +10537,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               max:
                                 type: string
                                 allOf:
@@ -10481,6 +10547,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                             required:
                               - min
                               - max
@@ -10496,6 +10565,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               max:
                                 type: string
                                 allOf:
@@ -10503,6 +10575,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                             required:
                               - min
                               - max
@@ -10518,6 +10593,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               max:
                                 type: string
                                 allOf:
@@ -10525,6 +10603,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                             required:
                               - min
                               - max
@@ -10540,6 +10621,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               max:
                                 type: string
                                 allOf:
@@ -10547,6 +10631,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                             required:
                               - min
                               - max
@@ -10932,6 +11019,9 @@ paths:
                         pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                       - type: string
                         pattern: ^[^Z]+$
+                    description: "Business date: New York wall time without a zone or milliseconds
+                      (YYYY-MM-DDTHH:mm:ss)."
+                    example: 2026-10-24T13:05:00
                   status:
                     nullable: true
                     type: object
@@ -14626,6 +14716,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -14633,6 +14726,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -14648,6 +14744,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -14655,6 +14754,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -14670,6 +14772,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -14677,6 +14782,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -14692,6 +14800,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -14699,6 +14810,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -15475,6 +15589,9 @@ paths:
                               pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                             - type: string
                               pattern: ^[^Z]+$
+                          description: "Business date: New York wall time without a zone or milliseconds
+                            (YYYY-MM-DDTHH:mm:ss)."
+                          example: 2026-10-24T13:05:00
                         appliedReservePct:
                           type: string
                           pattern: ^(0\.\d{6}|1\.0{6})$
@@ -15490,6 +15607,9 @@ paths:
                               pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                             - type: string
                               pattern: ^[^Z]+$
+                          description: "Business date: New York wall time without a zone or milliseconds
+                            (YYYY-MM-DDTHH:mm:ss)."
+                          example: 2026-10-24T13:05:00
                         reserveHeldAmt:
                           type: string
                           pattern: ^-?\d+\.\d{4}$
@@ -15543,6 +15663,9 @@ paths:
                                     pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                                   - type: string
                                     pattern: ^[^Z]+$
+                                description: "Business date: New York wall time without a zone or milliseconds
+                                  (YYYY-MM-DDTHH:mm:ss)."
+                                example: 2026-10-24T13:05:00
                               amountUsd:
                                 type: string
                                 pattern: ^-?\d+\.\d{4}$
@@ -15910,6 +16033,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -15917,6 +16043,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -15932,6 +16061,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -15939,6 +16071,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -15954,6 +16089,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -15961,6 +16099,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -15976,6 +16117,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -15983,6 +16127,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -17106,6 +17253,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -17113,6 +17263,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -17128,6 +17281,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -17135,6 +17291,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -17150,6 +17309,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -17157,6 +17319,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -17172,6 +17337,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -17179,6 +17347,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -17920,6 +18091,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -17927,6 +18101,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -17942,6 +18119,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -17949,6 +18129,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -17964,6 +18147,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -17971,6 +18157,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -17986,6 +18175,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -17993,6 +18185,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -18724,6 +18919,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -18731,6 +18929,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -18746,6 +18947,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -18753,6 +18957,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -18768,6 +18975,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -18775,6 +18985,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -18790,6 +19003,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -18797,6 +19013,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -19532,6 +19751,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -19539,6 +19761,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -19554,6 +19779,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -19561,6 +19789,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -19576,6 +19807,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -19583,6 +19817,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max
@@ -19598,6 +19835,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                           max:
                             type: string
                             allOf:
@@ -19605,6 +19845,9 @@ paths:
                                 pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:Z)|(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d)$
                               - type: string
                                 pattern: ^[^Z]+$
+                            description: "Business date: New York wall time without a zone or milliseconds
+                              (YYYY-MM-DDTHH:mm:ss)."
+                            example: 2026-10-24T13:05:00
                         required:
                           - min
                           - max

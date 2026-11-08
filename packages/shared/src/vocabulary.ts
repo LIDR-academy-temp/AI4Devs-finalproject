@@ -134,6 +134,10 @@ export const IsoDate = z
 export const BusinessDateTime = z.iso
   .datetime({ local: true, precision: 0 })
   .regex(/^[^Z]+$/, 'New York wall time without a zone expected')
+  .meta({
+    description: 'Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).',
+    example: '2026-10-24T13:05:00',
+  })
 
 /** Integer id in a path segment (catalogs, users, findings): positive and within SQL Server INT. */
 export const IntId = z

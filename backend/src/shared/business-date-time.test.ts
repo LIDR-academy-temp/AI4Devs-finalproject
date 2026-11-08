@@ -22,7 +22,8 @@ describe('businessDateTime', () => {
       else process.env.TZ = original
     })
 
-    it('does not move the date', () => {
+    // The CI runs in UTC, where local getters (getHours()…) give the UTC digits too: only this case catches them.
+    it('does not move the date (local getters would)', () => {
       expect(businessDateTime(new Date('2026-09-28T00:04:11.000Z'))).toBe('2026-09-28T00:04:11')
     })
   })

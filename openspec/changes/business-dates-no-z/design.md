@@ -100,5 +100,5 @@ Se usa en los 7 campos: `ImportRowTransaction.transactionDate`, `DateRangeView`,
 ## Migration Plan
 
 - Sin migraciones de base. El despliegue es el normal de `docs/deploy.md` §11 (`build`, `migrate`, que no aplicará ninguna, y `up --wait`).
-- Backend y frontend van en las mismas imágenes del mismo PR, así que no hay ventana con un frontend antiguo leyendo el formato nuevo, salvo una pestaña abierta durante el reinicio. Esa pestaña muestra lo mismo: el formateo actual en UTC de una fecha sin `Z` la lee como local del navegador, así que podría desplazarse hasta que se recargue.
+- Backend y frontend van en las mismas imágenes del mismo PR, así que no hay ventana con un frontend antiguo leyendo el formato nuevo, salvo una pestaña abierta durante el reinicio. En esa pestaña, el formateo antiguo lee la fecha sin `Z` como hora local del navegador, así que la fecha se desplaza hasta que se recargue.
 - **Volver atrás:** revertir el merge. Ningún dato cambia.
