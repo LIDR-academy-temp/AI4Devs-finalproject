@@ -44,7 +44,8 @@ describe('payableBreakdown', () => {
       'Batch fees',
       'Reserve held',
       'Reserve released',
-      'Reserve released on chargeback',
+      // #125: any adjustment I (Chargeback, Refund or RDR) releases it early, not only a chargeback.
+      'Reserve released on adjustment',
     ])
   })
 

@@ -29,11 +29,11 @@ En la rama `fix/web-polish-e3`, con PR hacia `feature/entrega-3-MVP`.
   Verificar que fallan
 - [x] 2.2 Commit: `test(web): canal sin cuenta principal en Analysis y Settlement Review, en rojo (#140)`
 - [x] 2.3 `noPrimary` en `imports/strings.ts` y `settlements/strings.ts`, `describeAssignment` y `describe` con el caso `null`, y `anotherAccount` borrado. Verificar los tests
-- [ ] 2.4 Commit: `fix(web): un canal sin cuenta principal ya no se atribuye a otro merchant (#140)`
+- [x] 2.4 Commit: `fix(web): un canal sin cuenta principal ya no se atribuye a otro merchant (#140)`
 
 ## 3. #125: etiqueta de la liberación por ajuste (D4)
 
-- [ ] 3.1 Tests primero, con la etiqueta nueva:
+- [x] 3.1 Tests primero, con la etiqueta nueva:
   - **backend:** `payable-breakdown.test.ts` y `summary-csv.test.ts` (`Reserve released on adjustment` en las dos filas del CSV y ninguna `on chargeback`);
   - **frontend:** `preview.test.tsx`, `SettlementSummary.test.tsx` y `SummaryMovements.test.tsx`.
 

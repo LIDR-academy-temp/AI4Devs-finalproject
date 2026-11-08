@@ -154,7 +154,7 @@ describe('Settlement Summary: the Summary and Movements tabs', () => {
     expect(reserves.map((line) => line.textContent)).toEqual([
       `Held${NBSP}11.5240`,
       `Released${NBSP}7.2500`,
-      `Released on chargeback${NBSP}1.1000`,
+      `Released on adjustment${NBSP}1.1000`,
       `Expected release${NBSP}2027-03-27`,
     ])
     for (const [line, value] of [

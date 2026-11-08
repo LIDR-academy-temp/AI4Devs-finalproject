@@ -109,7 +109,7 @@ describe('Settlement Summary: totals and an auditable amount payable (spec "tota
       ['−', 'Batch fees', '40.0000'],
       ['−', 'Reserve held', '3,918.1070'],
       ['+', 'Reserve released', '4,314.5455'],
-      ['+', 'Reserve released on chargeback', '0.0000'],
+      ['+', 'Reserve released on adjustment', '0.0000'],
       ['', 'Amount payable', '33,952.9085'],
     ])
   })
@@ -180,8 +180,10 @@ describe('Settlement Summary: fees, reserves, channels and issues (spec "fees, r
     expect(reserves.getAllByRole('row').map(cellsOf)).toEqual([
       ['Held in this batch', '3,918.1070'],
       ['Released (R)', '4,314.5455'],
-      ['Released on chargeback', '0.0000'],
+      ['Released on adjustment', '0.0000'],
     ])
+    // #125: any adjustment I releases it early, not only a chargeback.
+    expect(reserves.queryByText(/on chargeback/)).not.toBeInTheDocument()
   })
 
   it('the channels assigned in the attempt', async () => {

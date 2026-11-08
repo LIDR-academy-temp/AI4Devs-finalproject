@@ -96,7 +96,7 @@ describe('Settlement Review: pre-summary (spec "resumen previo")', () => {
     expect(payableRow('Chargebacks')).toEqual(['−', 'Chargebacks', '193.8600'])
     expect(payableRow('Batch fees')).toEqual(['−', 'Batch fees', '40.0000'])
     expect(payableRow('Reserve released')).toEqual(['+', 'Reserve released', '4,314.5455'])
-    expect(payableRow('Reserve released on chargeback')).toEqual(['+', 'Reserve released on chargeback', '0.0000'])
+    expect(payableRow('Reserve released on adjustment')).toEqual(['+', 'Reserve released on adjustment', '0.0000'])
     const lines = within(panel.getByRole('table', { name: 'Amount payable' })).getAllByRole('row')
     expect(lines.map((r) => within(r).getAllByRole('cell')[1]!.textContent)).toEqual([
       'Deposits',
@@ -107,7 +107,7 @@ describe('Settlement Review: pre-summary (spec "resumen previo")', () => {
       'Batch fees',
       'Reserve held',
       'Reserve released',
-      'Reserve released on chargeback',
+      'Reserve released on adjustment',
       'Amount payable',
     ])
     expect(payableRow('Amount payable')).toEqual(['', 'Amount payable', '33,952.9085'])
