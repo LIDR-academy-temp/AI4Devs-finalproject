@@ -138,7 +138,7 @@ La usan el smoke (D4) y la persona el martes, para no copiar a mano un `sqlcmd` 
 
 ## Risks / Trade-offs
 
-- **[Cloudflare dejara de sobrescribir `CF-Connecting-IP`]** → Es su comportamiento documentado y el que usan todas las guías de `real_ip_header CF-Connecting-IP`. El martes se comprueba en producción con un `curl` que manda su propio `CF-Connecting-IP` (Migration Plan, paso 6). Si Cloudflare rechaza esa petición en lugar de sobrescribir la cabecera, también es un resultado seguro.
+- **[Cloudflare dejara de sobrescribir `CF-Connecting-IP`]** → Es su comportamiento documentado y el que usan todas las guías de `real_ip_header CF-Connecting-IP`. El martes se comprueba en producción con un `curl` que manda su propio `CF-Connecting-IP` (Migration Plan, paso 7). Si Cloudflare rechaza esa petición en lugar de sobrescribir la cabecera, también es un resultado seguro.
 - **[`uniquelocal` confía en `cloudflared` además de en `web`]** → `cloudflared` no habla con `api`: su ruta es `http://web:8080`. Si alguien la cambiara a `api:3000`, el `X-Forwarded-For` de Cloudflare traería la IP real a la derecha, y `request.ip` seguiría siendo la del cliente.
 - **[`DROP LOGIN` falla por una sesión abierta]** → `TRY/CATCH` y un aviso en el log (D5). El siguiente arranque lo vuelve a intentar.
 - **[Tiempo de arranque de SQL Server en el runner]** → `--wait-timeout 240`, y logs de los tres servicios si falla.
@@ -148,11 +148,18 @@ La usan el smoke (D4) y la persona el martes, para no copiar a mano un `sqlcmd` 
 
 **Martes 10, en el servidor del homelab.** Son unos 10 minutos y la URL está caída 1–2 min. No hay que tocar el router, las redes de Docker ni el panel de Cloudflare: la ruta del túnel sigue siendo `http://web:8080`.
 
-1. Entra por SSH y ve a la carpeta del repositorio: `cd <ruta del repositorio>`.
-2. Trae la versión: `git pull`, en la rama que despliegas.
-3. Construye: `scripts/deploy.sh build`. Tarda unos minutos.
-4. Migra: `scripts/deploy.sh migrate`. Este change no trae migraciones, así que debe decir `No pending migrations to apply`.
-5. Reinicia todo:
+0. **Después del merge de este change a `feature/entrega-3-MVP`.** Antes del merge, el servidor no tiene nada nuevo que traer.
+1. Entra por SSH, ve a la carpeta del repositorio y comprueba la rama:
+   ```bash
+   cd <ruta del repositorio>
+   git branch --show-current
+   ```
+   Debe mostrar `feature/entrega-3-MVP`. Si no muestra nada, el servidor quedó en una versión anterior: `git checkout feature/entrega-3-MVP`.
+2. Apunta la versión actual, la que necesitas para volver atrás: `git rev-parse --short HEAD`. Es un código de 7 caracteres.
+3. Trae la versión: `git pull`.
+4. Construye: `scripts/deploy.sh build`. Tarda unos minutos.
+5. Migra: `scripts/deploy.sh migrate`. Este change no trae migraciones, así que debe decir `No pending migrations to apply`.
+6. Reinicia todo:
    ```bash
    scripts/deploy.sh down
    scripts/deploy.sh up --wait
@@ -160,11 +167,23 @@ La usan el smoke (D4) y la persona el martes, para no copiar a mano un `sqlcmd` 
    ```
    - El `down` es necesario: `mssql` solo vuelve a ejecutar sus scripts al arrancar, y así retira `recon_reader`. Los datos viven en volúmenes y `down` no los borra.
    - `ps` debe mostrar los cuatro servicios `healthy`.
-6. Comprueba la IP desde fuera de tu red, por ejemplo con el móvil sin Wi-Fi:
-   - entra por la URL pública con un usuario correcto;
-   - desde el portátil, prueba que una cabecera inventada no cuela: `curl -s -o /dev/null -w "%{http_code}\n" -X POST https://<URL pública>/api/v1/auth/login -H "Content-Type: application/json" -H "CF-Connecting-IP: 1.2.3.4" -H "X-Forwarded-For: 1.2.3.4" -d '{"userName":"ghost","password":"x"}'`. Debe dar `401`, o un bloqueo de Cloudflare.
-7. En el servidor, `scripts/deploy.sh check` debe mostrar:
+7. Comprueba la IP:
+   - con el móvil sin Wi-Fi, entra por la URL pública con un usuario correcto;
+   - en el servidor, por SSH, prueba que una cabecera inventada no cuela. Es una sola línea y va contra la URL pública, así que también pasa por Cloudflare:
+     ```bash
+     curl -s -o /dev/null -w "%{http_code}\n" -X POST https://<URL pública>/api/v1/auth/login -H "Content-Type: application/json" -H "CF-Connecting-IP: 1.2.3.4" -H "X-Forwarded-For: 1.2.3.4" -d '{"userName":"ghost","password":"x"}'
+     ```
+     Debe dar `401`, o un bloqueo de Cloudflare.
+8. En el servidor, `scripts/deploy.sh check` debe mostrar:
    - solo `recon_app` y `recon_migrator` en los logins, sin `recon_reader`;
-   - en los últimos logins, la IP pública del móvil y la del portátil, nunca `1.2.3.4` ni una `172.x.x.x`. La IP pública del móvil se ve en el panel de Cloudflare (**Security** → **Events**) o en una web como `ifconfig.me`.
+   - en los últimos logins, la IP del móvil y la IP pública del servidor, nunca `1.2.3.4` ni una `172.x.x.x`.
+   - La IP del móvil puede ser IPv6 (con `:`). Compárala con la que muestra Cloudflare en **Security** → **Events** para ese login.
+9. **Si `check` sigue mostrando `recon_reader`:** `scripts/deploy.sh logs mssql` y busca `could not be removed`, que dice el motivo (normalmente, una sesión abierta con ese usuario). `logs` no termina solo: sal con `Ctrl+C`. Después repite `scripts/deploy.sh down` y `scripts/deploy.sh up --wait`, y vuelve a mirar `check`.
 
-**Volver atrás:** `git checkout <versión anterior>`, `scripts/deploy.sh build` y `scripts/deploy.sh up --wait`. Si después `mssql` se reinicia, el `init.sql` antiguo vuelve a crear `recon_reader`. No rompe nada, solo devuelve el login de más.
+**Volver atrás**, con el código del paso 2:
+```bash
+git checkout <código del paso 2>
+scripts/deploy.sh build
+scripts/deploy.sh up --wait
+```
+Si después `mssql` se reinicia, el `init.sql` antiguo vuelve a crear `recon_reader`; no rompe nada. El servidor queda fuera de la rama: antes de la siguiente actualización, vuelve a ella con `git checkout feature/entrega-3-MVP`.
