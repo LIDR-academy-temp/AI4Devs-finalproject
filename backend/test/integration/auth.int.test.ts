@@ -197,18 +197,23 @@ describe('login audit trail', () => {
 
 // deploy-hardening, auth spec: the audited IP is the connection's unless it comes from a trusted proxy.
 describe('client IP in the login audit', () => {
+  let untrusted: Awaited<ReturnType<typeof createTestApp>>
   let trusted: Awaited<ReturnType<typeof createTestApp>>
   let attempt = 0
 
   beforeAll(async () => {
+    // An empty TRUST_PROXY is no proxy at all, whatever the environment of the run says.
+    untrusted = await createTestApp({ TRUST_PROXY: '' })
     trusted = await createTestApp({ TRUST_PROXY: 'uniquelocal' })
-    await trusted.app.ready()
+    await Promise.all([untrusted.app.ready(), trusted.app.ready()])
   })
 
   afterAll(async () => {
-    if (trusted) {
-      await trusted.app.close()
-      await trusted.prisma.$disconnect()
+    for (const built of [untrusted, trusted]) {
+      if (built) {
+        await built.app.close()
+        await built.prisma.$disconnect()
+      }
     }
   })
 
@@ -234,11 +239,17 @@ describe('client IP in the login audit', () => {
   }
 
   it('records the connection IP without a trusted proxy, ignoring X-Forwarded-For', async () => {
-    expect(await auditedIp(ctx.app, '172.18.0.5', { 'x-forwarded-for': '203.0.113.7' })).toBe('172.18.0.5')
+    expect(await auditedIp(untrusted.app, '172.18.0.5', { 'x-forwarded-for': '203.0.113.7' })).toBe('172.18.0.5')
   })
 
   it('records the forwarded IP when the connection comes from a trusted proxy', async () => {
     expect(await auditedIp(trusted.app, '172.18.0.5', { 'x-forwarded-for': '203.0.113.7' })).toBe('203.0.113.7')
+  })
+
+  it('records the rightmost untrusted hop when X-Forwarded-For carries several', async () => {
+    expect(await auditedIp(trusted.app, '172.18.0.5', { 'x-forwarded-for': '1.1.1.1, 203.0.113.7' })).toBe(
+      '203.0.113.7',
+    )
   })
 
   it('records the connection IP when a public client sends X-Forwarded-For itself', async () => {
