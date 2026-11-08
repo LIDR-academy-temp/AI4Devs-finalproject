@@ -53,6 +53,7 @@ proxy_set_header X-Forwarded-Host "";          # not forwarded
   - El único camino hasta `web` en producción es el túnel.
   - `X-Forwarded-For` se **sustituye** por un solo valor, así que una lista inventada por el cliente nunca llega a la API.
 - **Sin Cloudflare delante** (modo de depuración en `127.0.0.1:8080`), la IP es la de la conexión. Quien ya está en el servidor podría poner su propio `CF-Connecting-IP`. Es aceptable y queda documentado.
+- **Deuda: `X-Forwarded-Proto`** se sigue reenviando tal como llega (`$http_x_forwarded_proto`), así que con `TRUST_PROXY` un cliente podría fijar `request.protocol`. Hoy nada lee `request.protocol` ni `request.hostname`. Si algo empieza a usarlos, Nginx tendrá que fijar el valor en lugar de copiarlo.
 - **Alternativas descartadas:**
   - Primer elemento de `X-Forwarded-For`: lo controla el cliente.
   - Contar saltos: Fastify falla cerrado con un número, y además dependería de la longitud exacta de la cadena.
@@ -82,7 +83,7 @@ proxy_set_header X-Forwarded-Host "";          # not forwarded
 - **Por qué en el mismo job:**
   - Las imágenes ya están construidas allí, y un job aparte tendría que reconstruirlas o pasarlas como artifact (cientos de MB).
   - Corre en paralelo con `check` → `integration`/`e2e`, que tarda unos 10–11 min, así que no alarga el pull request.
-  - El job pasa de unos 1 min 15 s a unos **3–4 min**, una estimación que se mide en la tarea 4.4. Añade la carga de las imágenes en Docker (~30 s), el arranque de SQL Server con su init (~40–60 s), `migrate` (~20–30 s) y las comprobaciones (~10 s).
+  - El job pasa de unos 1 min 15 s a unos **3–4 min**, una estimación que se mide en la tarea 1.5. Añade la carga de las imágenes en Docker (~30 s), el arranque de SQL Server con su init (~40–60 s), `migrate` (~20–30 s) y las comprobaciones (~10 s).
 - **Pasos:**
   1. Las tres construcciones añaden `load: true` y `tags:` con los nombres del compose (`recon-api`, `recon-ops`, `recon-web`). `push: false` se mantiene.
   2. `cp infra/.env.deploy.example infra/.env.deploy`. Los secretos son literales ficticios en el `env:` del paso, que mandan sobre el archivo en la interpolación de Compose. No hay `TUNNEL_TOKEN`.
@@ -95,7 +96,7 @@ proxy_set_header X-Forwarded-Host "";          # not forwarded
      - `POST /api/v1/auth/login` con `ghost`, `CF-Connecting-IP: 203.0.113.7` y `X-Forwarded-For: 198.51.100.66` responde `401`.
   6. `scripts/deploy.sh check` (D6). Su salida tiene que contener `203.0.113.7`, no contener `198.51.100.66` y no listar `recon_reader`.
   7. `docker compose ps` no lista `cloudflared`.
-  8. Si algo falla, `scripts/deploy.sh logs` sin `-f` de los tres servicios (últimas 200 líneas). Al final, `down -v`.
+  8. Si algo falla, los logs de `mssql`, `api` y `web` (últimas 200 líneas) y `ps -a`. Salen con `docker compose` directamente, no con `scripts/deploy.sh logs`: esa orden sigue la salida con `-f` y el paso no terminaría. Al final, `down -v`.
 - **Por grupos:** el smoke entra con #107 y comprueba lo que ya existe. Las comprobaciones de la IP (paso 5, cabeceras inventadas; paso 6, IP) y de `recon_reader` (paso 6) entran con #106 y #108, para que cada grupo se pueda dejar fuera sin romper la CI.
 - **Sin seed:** tarda varios minutos y el login fallido ya prueba la ruta completa (Nginx → API → base → `AuditLog`). Un login correcto lo prueban `integration` y `e2e`.
 
