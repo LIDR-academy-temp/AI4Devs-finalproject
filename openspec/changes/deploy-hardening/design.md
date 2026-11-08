@@ -87,17 +87,19 @@ proxy_set_header X-Forwarded-Host "";          # not forwarded
 - **Pasos:**
   1. Las tres construcciones añaden `load: true` y `tags:` con los nombres del compose (`recon-api`, `recon-ops`, `recon-web`). `push: false` se mantiene.
   2. `cp infra/.env.deploy.example infra/.env.deploy`. Los secretos son literales ficticios en el `env:` del paso, que mandan sobre el archivo en la interpolación de Compose. No hay `TUNNEL_TOKEN`.
-  3. `DEPLOY_DEBUG=1 scripts/deploy.sh up --no-build --wait --wait-timeout 240`. El override de depuración deja `cloudflared` en el perfil `disabled`. Usar el script real prueba también `deploy.sh`.
-  4. `DEPLOY_DEBUG=1 scripts/deploy.sh migrate`.
-  5. Comprobaciones con `curl` contra `127.0.0.1:8080`:
+  3. Antes del arranque completo, un despliegue anterior a #108: solo `mssql`, con un `recon_reader` creado con `sa`, y `down` sin `-v`. Así el arranque siguiente prueba el `DROP` de D5 sobre un volumen que ya lo tiene, como el martes.
+  4. `DEPLOY_DEBUG=1 scripts/deploy.sh up --no-build --wait --wait-timeout 240`. El override de depuración deja `cloudflared` en el perfil `disabled`. Usar el script real prueba también `deploy.sh`.
+  5. `DEPLOY_DEBUG=1 scripts/deploy.sh migrate`.
+  6. Comprobaciones con `curl` contra `127.0.0.1:8080`:
      - health `200` con `"db":"ok"`;
      - `/imports/00000000-0000-0000-0000-000000000000` responde `200` con `<div id="root">`;
      - las cuatro cabeceras de `security-headers.conf`;
-     - `POST /api/v1/auth/login` con `ghost`, `CF-Connecting-IP: 203.0.113.7` y `X-Forwarded-For: 198.51.100.66` responde `401`.
-  6. `scripts/deploy.sh check` (D6). Su salida tiene que contener `203.0.113.7`, no contener `198.51.100.66` y no listar `recon_reader`.
-  7. `docker compose ps` no lista `cloudflared`.
-  8. Si algo falla, los logs de `mssql`, `api` y `web` (últimas 200 líneas) y `ps -a`. Salen con `docker compose` directamente, no con `scripts/deploy.sh logs`: esa orden sigue la salida con `-f` y el paso no terminaría. Al final, `down -v`.
-- **Por grupos:** el smoke entra con #107 y comprueba lo que ya existe. Las comprobaciones de la IP (paso 5, cabeceras inventadas; paso 6, IP) y de `recon_reader` (paso 6) entran con #106 y #108, para que cada grupo se pueda dejar fuera sin romper la CI.
+     - `POST /api/v1/auth/login` con `ghost`, `CF-Connecting-IP: 203.0.113.7` y `X-Forwarded-For: 198.51.100.66` responde `401`;
+     - otro login fallido, como `ghost-direct` y sin `CF-Connecting-IP`, responde `401`.
+  7. `scripts/deploy.sh check` (D6). La fila de `ghost` tiene que guardar `203.0.113.7`, la de `ghost-direct` una IP privada (la de la conexión con `web`), la salida no puede contener `198.51.100.66` y no puede listar `recon_reader`.
+  8. `docker compose ps` no lista `cloudflared`.
+  9. Si algo falla, los logs de `mssql`, `api` y `web` (últimas 200 líneas) y `ps -a`. Salen con `docker compose` directamente, no con `scripts/deploy.sh logs`: esa orden sigue la salida con `-f` y el paso no terminaría. Al final, `down -v`.
+- **Por grupos:** el smoke entra con #107 y comprueba lo que ya existe. Las comprobaciones de la IP (paso 6, cabeceras inventadas; paso 7, IP) y de `recon_reader` (pasos 3 y 7) entran con #106 y #108, para que cada grupo se pueda dejar fuera sin romper la CI.
 - **Sin seed:** tarda varios minutos y el login fallido ya prueba la ruta completa (Nginx → API → base → `AuditLog`). Un login correcto lo prueban `integration` y `e2e`.
 
 ### D5. `recon_reader` en un archivo propio, solo en local

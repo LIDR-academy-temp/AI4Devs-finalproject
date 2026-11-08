@@ -265,11 +265,29 @@ jobs:
           "${base[@]}" config -q
           "${base[@]}" -f infra/docker-compose.deploy.debug.yml config -q
           "${base[@]}" -f infra/docker-compose.deploy.external-db.yml config -q
+      # As on a server deployed before #108: mssql alone, plus the recon_reader the old init.sql created. The full
+      # start below recreates the container on the same volume, and init.deploy.sql must remove it.
+      - name: existing deployment with recon_reader
+        run: |
+          set -euo pipefail
+          cp infra/.env.deploy.example infra/.env.deploy
+          scripts/deploy.sh up --no-build --wait --wait-timeout 240 mssql
+          compose=(docker compose --env-file infra/.env.deploy -f infra/docker-compose.deploy.yml -f infra/docker-compose.deploy.debug.yml)
+          query="SET NOCOUNT ON;
+          CREATE LOGIN [recon_reader] WITH PASSWORD = 'Ci_Deploy_Reader!2026', CHECK_POLICY = ON;
+          CREATE USER [recon_reader] FOR LOGIN [recon_reader];
+          ALTER ROLE [db_datareader] ADD MEMBER [recon_reader];
+          SELECT COUNT(*) FROM sys.sql_logins WHERE name = 'recon_reader';"
+          # shellcheck disable=SC2016 # expanded inside the container, not here
+          created="$("${compose[@]}" exec -T mssql bash -c \
+            '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -b -h -1 -W -d "${DB_NAME:-ReconTool}" -Q "$1"' \
+            seed-reader "$query")"
+          echo "recon_reader logins: $created"
+          [ "$created" = "1" ] || { echo "could not create recon_reader"; exit 1; }
+          scripts/deploy.sh down
       # The real script, as on the server. DEPLOY_DEBUG=1 publishes web on 127.0.0.1:8080 and leaves cloudflared out.
       - name: start the deployment without a tunnel
-        run: |
-          cp infra/.env.deploy.example infra/.env.deploy
-          scripts/deploy.sh up --no-build --wait --wait-timeout 240
+        run: scripts/deploy.sh up --no-build --wait --wait-timeout 240
       - name: migrate
         run: scripts/deploy.sh migrate
       - name: smoke through web
@@ -283,7 +301,8 @@ jobs:
           grep -q '"db":"ok"' <<<"$health"
 
           echo "--- deep SPA route falls back to index.html"
-          curl -fsS --max-time 10 "$base/imports/00000000-0000-0000-0000-000000000000" | grep -q '<div id="root">'
+          spa="$(curl -fsS --max-time 10 "$base/imports/00000000-0000-0000-0000-000000000000")"
+          grep -q '<div id="root">' <<<"$spa" || { echo "the deep route did not answer index.html"; exit 1; }
 
           echo "--- security headers"
           headers="$(curl -fsS --max-time 10 -o /dev/null -D - "$base/")"
@@ -299,14 +318,26 @@ jobs:
             -d '{"userName":"ghost","password":"not-the-password"}')"
           [ "$status" = "401" ] || { echo "login answered $status, expected 401"; exit 1; }
 
+          # Without Cloudflare in front: the audit keeps the address of the connection to web (#106).
+          echo "--- failed login without CF-Connecting-IP"
+          status="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "$base/api/v1/auth/login" \
+            -H 'Content-Type: application/json' \
+            -d '{"userName":"ghost-direct","password":"not-the-password"}')"
+          [ "$status" = "401" ] || { echo "login answered $status, expected 401"; exit 1; }
+
           echo "--- scripts/deploy.sh check"
           check="$(scripts/deploy.sh check)"
           echo "$check"
           grep -q 'recon_app' <<<"$check"
-          if grep -q 'recon_reader' <<<"$check"; then echo "recon_reader exists in the deployment (#108)"; exit 1; fi
-          grep -q '"userName":"ghost"' <<<"$check" || { echo "the failed login is not in AuditLog"; exit 1; }
-          grep -q '"ip":"203.0.113.7"' <<<"$check" || { echo "the audited IP is not CF-Connecting-IP (#106)"; exit 1; }
+          if grep -q 'recon_reader' <<<"$check"; then echo "recon_reader survived the restart of mssql (#108)"; exit 1; fi
+          proxied="$(grep '"userName":"ghost"' <<<"$check" || true)"
+          [ -n "$proxied" ] || { echo "the failed login is not in AuditLog"; exit 1; }
+          grep -q '"ip":"203.0.113.7"' <<<"$proxied" || { echo "the audited IP is not CF-Connecting-IP (#106)"; exit 1; }
           if grep -q '198.51.100.66' <<<"$check"; then echo "a forged X-Forwarded-For reached the audit (#106)"; exit 1; fi
+          direct="$(grep '"userName":"ghost-direct"' <<<"$check" || true)"
+          [ -n "$direct" ] || { echo "the login without CF-Connecting-IP is not in AuditLog"; exit 1; }
+          grep -Eq '"ip":"(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)' <<<"$direct" \
+            || { echo "without CF-Connecting-IP the audited IP is not the private one of the connection (#106)"; exit 1; }
 
           echo "--- services"
           services="$(scripts/deploy.sh ps -a --format '{{.Service}} {{.State}} {{.Health}}')"
