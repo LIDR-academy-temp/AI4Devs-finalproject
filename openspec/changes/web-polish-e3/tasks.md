@@ -49,7 +49,7 @@ En la rama `fix/web-polish-e3`, con PR hacia `feature/entrega-3-MVP`.
 
 ## 4. #139: una sola frase de cuenta equivocada (D3)
 
-- [x] 4.1 Test primero en `components/strings.test.ts`: las claves de cuenta equivocada de `imports`, `settlements` y `validations` empiezan por `strings.wrongAccount` de `components/strings.ts`, y la de `validations` sigue con su frase de acción. Verificar que falla (todavía no existe `strings.wrongAccount`)
+- [x] 4.1 Test primero en `test/wrong-account-strings.test.ts` (en `src/test/`, para que `components/` no importe de las features): las claves de cuenta equivocada de `imports`, `settlements` y `validations` empiezan por `strings.wrongAccount` de `components/strings.ts`, y la de `validations` sigue con su frase de acción. Verificar que falla (todavía no existe `strings.wrongAccount`)
 - [x] 4.2 Commit: `test(web): frase común de cuenta equivocada, en rojo (#139)`
 - [x] 4.3 Añadir `wrongAccount` a `components/strings.ts`. Las tres features lo usan, y `validations` tiene la frase de acción en su propia clave. Verificar que el test de 4.1 y los RTL que comparan el literal pasan sin tocarlos
 - [x] 4.4 Commit: `refactor(web): el texto de cuenta equivocada se define una sola vez (#139)`

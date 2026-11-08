@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { strings } from '@/components/strings'
 import { strings as imports } from '@/features/imports/strings'
 import { strings as settlements } from '@/features/settlements/strings'
 import { strings as validations } from '@/features/validations/strings'
-import { strings } from './strings'
 
-// #139: the wrong-account sentence is defined once, in the shared layer, and each feature reads it from there.
+// #139: the wrong-account sentence is defined once, in the shared layer, and each feature reads it from there. The
+// test lives in src/test so that components/ never imports from the features.
 describe('the wrong-account sentence', () => {
   it('is the one of the shared components', () => {
     expect(strings.wrongAccount).toBe(
