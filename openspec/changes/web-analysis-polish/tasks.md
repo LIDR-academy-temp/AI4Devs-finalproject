@@ -128,6 +128,12 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
 - [x] 7.6 En `e2e/screenshots/web-analysis-polish.ts`, abrir el tooltip en cada ancho como en D7: el botón a la vista, el foco en `Run again` sin desplazar, Tab hasta `About Pending in range`, captura de la ventana, y después de capturar comprobar que `scrollY` no cambió, que el tooltip sigue abierto y que Escape lo cierra con el foco en el botón. Sin tocar `InfoTip`. Verificar con `pnpm lint` y `pnpm typecheck`.
 - [x] 7.7 Commit: `test(e2e): el script de capturas abre el tooltip con Tab y sin desplazar la página`
 - [x] 7.8 Volver a 5.3.
+- [ ] 7.9 Test primero, en `ValidationsSection.test.tsx`, con `batch-issues`: las partes del desglose son `span` con `whitespace-nowrap` (`1 non-recorded adjustment` y `2 status mismatches`; `APP 3` y `R 3`). El test de 7.1 deja de buscar el desglose por su texto entero, que ahora reparten varios elementos, y lo toma de la celda `Breakdown`, con las mismas aserciones. Verificar que falla solo el test nuevo.
+- [ ] 7.10 Commit: `test(web): cada parte del desglose de validaciones va entera y el corte cae en el separador`
+- [ ] 7.11 Implementar en `ValidationsTable.tsx`: cada parte en un `span` `whitespace-nowrap`, separadas por ` · `. Verificar con `pnpm --filter frontend test src/features/validations`, `pnpm lint` y `pnpm typecheck`.
+- [ ] 7.12 Commit: `fix(web): el desglose de validaciones se corta solo en el separador`
+- [ ] 7.13 Rotura deliberada: quitar `whitespace-nowrap` de las partes, comprobar que falla el test de 7.9 y restaurar desde el commit de 7.12.
+- [ ] 7.14 La persona vuelve a ejecutar `! pnpm screenshots:web-analysis-polish`: sin hallazgos y con `Validation results fits` a 1024 px. Si cambia alguna medida, se actualiza la tabla de medidas del PR. Después, commit de las capturas regeneradas: `docs(wireframes): capturas de web-analysis-polish con el desglose cortado en el separador`.
 
 ## Workflow follow-up
 
