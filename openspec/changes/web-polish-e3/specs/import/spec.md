@@ -34,7 +34,7 @@ Un valor inválido de la dirección de In Progress SHALL descartarse también en
 ## MODIFIED Requirements
 
 ### Requirement: Aviso de canales
-Tras el análisis, `channels` SHALL listar cada canal de las transacciones asociadas con `channelId`, `name`, `gatewayId`, `providerId`, `rowCount` y `assignment`: `assigned` (la cuenta del import es su principal), `unassigned` (sin fila en `AccountChannel`) o `assigned_to_other_account` (en los demás casos), con `otherAccount = { accountId, name }` si otra cuenta es la principal y `null` en `assigned` y `unassigned`, y una `note` cuando procesar cambiará la asociación. Ordenados por `channelId`.
+Tras el análisis, `channels` SHALL listar cada canal de las transacciones asociadas con `channelId`, `name`, `gatewayId`, `providerId`, `rowCount` y `assignment`: `assigned` (la cuenta del import es su principal), `unassigned` (sin fila en `AccountChannel`) o `assigned_to_other_account` (los demás), con `otherAccount = { accountId, name }` si otra cuenta es la principal y `null` en `assigned` y `unassigned`, y una `note` cuando procesar cambiará la asociación. Ordenados por `channelId`.
 
 #### Scenario: Canal nuevo en el batch limpio
 - **GIVEN** `batch-clean` analizado en `ProviderA-USD`
