@@ -2,7 +2,7 @@
 // ValidationCode and BLOCKING_VALIDATIONS stay in vocabulary.ts.
 import { z } from 'zod'
 import { UserRef } from './auth.js'
-import { Cycle, ImportStatus, TransactionStatusCode, ValidationCode } from './vocabulary.js'
+import { BusinessDateTime, Cycle, ImportStatus, TransactionStatusCode, ValidationCode } from './vocabulary.js'
 
 /** Outcome of one validation, derived from its findings. There is no `failed`. */
 export const ValidationOutcome = z.enum(['passed', 'warning', 'blocked', 'not_applicable', 'not_implemented'])
@@ -56,8 +56,8 @@ export const StatusRef = z.object({
 })
 export type StatusRef = z.infer<typeof StatusRef>
 
-/** Inclusive range of ISO datetimes. */
-export const DateRangeView = z.object({ min: z.iso.datetime(), max: z.iso.datetime() })
+/** Inclusive range of business dates (New York wall time, without a zone). */
+export const DateRangeView = z.object({ min: BusinessDateTime, max: BusinessDateTime })
 export type DateRangeView = z.infer<typeof DateRangeView>
 
 export const ValidationResultView = z.object({
@@ -148,7 +148,7 @@ export const ValidationIssueSummary = z.object({
   cycle: Cycle.nullable(),
   missingType: MissingType.nullable(),
   missingRange: MissingRange.nullable(),
-  relevantDate: z.iso.datetime().nullable(),
+  relevantDate: BusinessDateTime.nullable(),
   /** Reported status, or the expected one for a missing finding. */
   status: StatusRef.nullable(),
   /** Only non_recorded_adjustment / status_mismatch. */

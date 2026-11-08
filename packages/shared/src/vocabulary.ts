@@ -127,6 +127,18 @@ export const IsoDate = z
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .refine(isCalendarDate, 'calendar date expected')
 
+/**
+ * A business date and time: New York wall time as stored in DATETIME2, without a zone or milliseconds
+ * (YYYY-MM-DDTHH:mm:ss). Audit instants are UTC and keep z.iso.datetime() with Z.
+ */
+export const BusinessDateTime = z.iso
+  .datetime({ local: true, precision: 0 })
+  .regex(/^[^Z]+$/, 'New York wall time without a zone expected')
+  .meta({
+    description: 'Business date: New York wall time without a zone or milliseconds (YYYY-MM-DDTHH:mm:ss).',
+    example: '2026-10-24T13:05:00',
+  })
+
 /** Integer id in a path segment (catalogs, users, findings): positive and within SQL Server INT. */
 export const IntId = z
   .string()

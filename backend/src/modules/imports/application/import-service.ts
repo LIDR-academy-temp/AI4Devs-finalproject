@@ -26,6 +26,7 @@ import type {
 } from '@recon/shared'
 import { WarningCode as WarningCodeSchema } from '@recon/shared'
 import type { AuditEntry, AuditLogger } from '../../../shared/audit.js'
+import { businessDateTime } from '../../../shared/business-date-time.js'
 import { NotFoundError } from '../../../shared/errors.js'
 import type { MatchingRulesRepository } from '../../matching/application/ports.js'
 import {
@@ -818,7 +819,7 @@ function toRowItem(
             statusId: transaction.statusId,
             statusName: transaction.statusName,
             amount: transaction.amount,
-            transactionDate: transaction.transactionDate.toISOString(),
+            transactionDate: businessDateTime(transaction.transactionDate),
           },
     rawData: JSON.parse(row.rawData) as Record<string, string>,
   }

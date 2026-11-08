@@ -15,6 +15,7 @@ import {
 import type { FastifyBaseLogger } from 'fastify'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
 import { toMoney, toPercentage } from '../../../infrastructure/decimal.js'
+import { businessDateTime } from '../../../shared/business-date-time.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import type {
   BatchHeader,
@@ -31,7 +32,7 @@ const CHUNK = 500
 
 const STATUS_CODE = new Map<number, string>(TRANSACTION_STATUSES.map((s) => [s.statusId, s.code]))
 const statusOf = (statusId: number) => MovementStatus.parse(STATUS_CODE.get(statusId))
-const businessDate = (value: Date | null) => (value === null ? null : value.toISOString())
+const businessDate = (value: Date | null) => (value === null ? null : businessDateTime(value))
 
 /**
  * The day that from and to compare, from a closed map (never from the request text): the stored business date, or the

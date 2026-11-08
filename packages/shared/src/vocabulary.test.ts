@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  BusinessDateTime,
   ChannelAssignment,
   IntId,
   IsoDate,
@@ -111,5 +112,26 @@ describe('IsoDate (a calendar date)', () => {
     '24/10/2026',
   ])('rejects %s', (value) => {
     expect(IsoDate.safeParse(value).success).toBe(false)
+  })
+})
+
+describe('BusinessDateTime (New York wall time without a zone)', () => {
+  it.each(['2026-10-24T13:05:00', '2026-09-28T00:04:11', '2028-02-29T23:59:59'])('accepts %s', (value) => {
+    expect(BusinessDateTime.safeParse(value).success).toBe(true)
+  })
+
+  it('rejects a UTC instant with Z', () => {
+    expect(BusinessDateTime.safeParse('2026-10-24T13:05:00Z').success).toBe(false)
+  })
+
+  it.each([
+    '2026-10-24T13:05:00.000Z',
+    '2026-10-24T13:05:00.000',
+    '2026-10-24T13:05:00-04:00',
+    '2026-10-24T13:05',
+    '2026-02-30T00:00:00',
+    '2026-10-24',
+  ])('rejects %s', (value) => {
+    expect(BusinessDateTime.safeParse(value).success).toBe(false)
   })
 })

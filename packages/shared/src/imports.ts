@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { UserRef } from './auth.js'
 import { AccountRef } from './catalog.js'
 import {
+  BusinessDateTime,
   ChannelAssignment,
   Cycle,
   ImportStatus,
@@ -345,7 +346,7 @@ export const ImportRowTransaction = z.object({
   statusId: z.number().int(),
   statusName: z.string(),
   amount: Money,
-  transactionDate: z.iso.datetime(),
+  transactionDate: BusinessDateTime,
 })
 export type ImportRowTransaction = z.infer<typeof ImportRowTransaction>
 

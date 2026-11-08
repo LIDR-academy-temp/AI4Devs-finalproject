@@ -29,4 +29,10 @@ tests {
     expect(res.status).to.equal(201);
     expect(res.body.run.blocked).to.equal(false);
   });
+  test('the ranges are New York wall time without a zone; runAt is a UTC instant', () => {
+    const bounds = Object.values(res.body.run.ranges).flatMap((r) => (r === null ? [] : [r.min, r.max]));
+    expect(bounds.length).to.be.above(0);
+    for (const bound of bounds) expect(bound).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+    expect(res.body.run.runAt).to.match(/Z$/);
+  });
 }

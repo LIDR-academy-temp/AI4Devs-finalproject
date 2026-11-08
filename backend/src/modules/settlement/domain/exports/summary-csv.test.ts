@@ -34,7 +34,7 @@ function batchCleanView(overrides: Partial<SettlementView> = {}): SettlementView
   return exampleView({
     channels: ['RAM-01', 'RAM-07'],
     dateRanges: {
-      APP: { min: '2026-09-28T00:04:11.000Z', max: '2026-10-07T23:58:40.000Z' },
+      APP: { min: '2026-09-28T00:04:11', max: '2026-10-07T23:58:40' },
       DEC: null,
       I: null,
       R: null,

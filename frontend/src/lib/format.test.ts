@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   auditInstant,
   businessDate,
@@ -53,10 +53,32 @@ describe('dates shown in New York time (design D11)', () => {
     expect(DISPLAY_TIME_ZONE).toBe('America/New_York')
   })
 
-  it('shows a business date as it arrives: it is already New York wall-clock time despite the Z', () => {
-    const value = businessDate('2026-09-28T00:00:00.000Z')
-    expect(formatBusinessDateTime(value)).toBe('2026-09-28 00:00 ET')
+  it('shows a business date as it arrives: it is already New York wall-clock time, without a zone', () => {
+    const value = businessDate('2026-09-28T00:04:11')
+    expect(formatBusinessDateTime(value)).toBe('2026-09-28 00:04 ET')
     expect(formatBusinessDate(value)).toBe('2026-09-28')
+  })
+
+  it('shows a day alone as it arrives', () => {
+    expect(formatBusinessDate(businessDate('2026-10-24'))).toBe('2026-10-24')
+  })
+
+  describe('with the process in another zone (business-dates-no-z D5)', () => {
+    const original = process.env.TZ
+    beforeEach(() => {
+      process.env.TZ = 'Asia/Tokyo'
+    })
+    afterEach(() => {
+      if (original === undefined) delete process.env.TZ
+      else process.env.TZ = original
+    })
+
+    it('does not move a business date', () => {
+      const value = businessDate('2026-09-28T00:04:11')
+      expect(formatBusinessDateTime(value)).toBe('2026-09-28 00:04 ET')
+      expect(formatBusinessDate(value)).toBe('2026-09-28')
+      expect(formatBusinessDateTime(businessDate('2026-10-07T23:58:40'))).toBe('2026-10-07 23:58 ET')
+    })
   })
 
   it('converts an audit instant to New York daylight time (EDT, -4 h)', () => {
@@ -74,13 +96,13 @@ describe('dates shown in New York time (design D11)', () => {
 
   it('does not accept one kind of date in the formatter of the other', () => {
     const audit = auditInstant('2026-10-18T14:20:00.000Z')
-    const business = businessDate('2026-09-28T00:00:00.000Z')
+    const business = businessDate('2026-09-28T00:00:00')
     // @ts-expect-error an audit instant is not a business date
     formatBusinessDateTime(audit)
     // @ts-expect-error a business date is not an audit instant
     formatAuditDateTime(business)
     // @ts-expect-error a plain string is neither
-    formatBusinessDate('2026-09-28T00:00:00.000Z')
+    formatBusinessDate('2026-09-28T00:00:00')
   })
 })
 

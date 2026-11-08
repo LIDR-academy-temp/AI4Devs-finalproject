@@ -140,7 +140,13 @@ describe('a run of batch-issues', () => {
     const res = await flow.call('GET', `/imports/${importId}/validations`, undefined, 'viewer')
 
     expect(res.statusCode).toBe(200)
-    expect(ValidationRunView.parse(res.json()).run!.runId).toBe(view.run!.runId)
+    const run = ValidationRunView.parse(res.json()).run!
+    expect(run.runId).toBe(view.run!.runId)
+    // business-dates-no-z: the ranges are New York wall time without a zone; runAt stays a UTC instant.
+    const bounds = Object.values(run.ranges).flatMap((r) => (r === null ? [] : [r.min, r.max]))
+    expect(bounds.length).toBeGreaterThan(0)
+    for (const bound of bounds) expect(bound).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
+    expect(run.runAt).toMatch(/Z$/)
   })
 })
 
@@ -397,6 +403,7 @@ describe('findings of batch-issues (D8)', () => {
     for (const range of ['DEC', 'APP', 'R']) {
       const dates = page.items.filter((i) => i.missingRange === range).map((i) => i.relevantDate as string)
       expect(dates).toEqual([...dates].sort())
+      for (const date of dates) expect(date).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
     }
   })
 

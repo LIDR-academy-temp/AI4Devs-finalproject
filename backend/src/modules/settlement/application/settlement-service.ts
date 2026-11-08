@@ -1,5 +1,6 @@
 // Processing a batch, its preview and the proposed number (settlement-process design D5, D7, D19; README §4.3, §4.4).
 import type { NextBatchNumber, SettlementPreview, SettlementRequest, SettlementView } from '@recon/shared'
+import { businessDateTime } from '../../../shared/business-date-time.js'
 import { NotFoundError } from '../../../shared/errors.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import { type EmptyBatch, emptyBatchOf } from '../../imports/domain/empty-batch.js'
@@ -91,8 +92,8 @@ export class SettlementService {
   }
 }
 
-const iso = (range: { min: Date; max: Date } | null) =>
-  range === null ? null : { min: range.min.toISOString(), max: range.max.toISOString() }
+const businessRange = (range: { min: Date; max: Date } | null) =>
+  range === null ? null : { min: businessDateTime(range.min), max: businessDateTime(range.max) }
 
 export function previewOf(
   plan: SettlementPlan,
@@ -115,10 +116,10 @@ export function previewOf(
     requiresChannelConfirmation: plan.channels.toAssign.length > 0,
     channelsToAssign: channelsToAssignFor(scope, plan.channels.toAssign),
     dateRanges: {
-      APP: iso(plan.dateRanges.APP),
-      DEC: iso(plan.dateRanges.DEC),
-      I: iso(plan.dateRanges.I),
-      R: iso(plan.dateRanges.R),
+      APP: businessRange(plan.dateRanges.APP),
+      DEC: businessRange(plan.dateRanges.DEC),
+      I: businessRange(plan.dateRanges.I),
+      R: businessRange(plan.dateRanges.R),
     },
     channels: plan.channels.names,
     movements: { E: count('E'), I: count('I'), R: count('R') },
