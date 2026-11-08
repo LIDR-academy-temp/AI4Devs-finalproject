@@ -90,8 +90,8 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
 
   Añadir `screenshots:web-analysis-polish` a `e2e/package.json` y al `package.json` raíz. Verificar con `pnpm lint` y `pnpm typecheck`.
 - [x] 5.2 Commit: `test(e2e): script de capturas de web-analysis-polish con medidas de desborde`
-- [ ] 5.3 (La primera pasada falló: `Validation results` 65 px más ancha que su tarjeta a 1024 px, y el tooltip no se reabrió en el script. Se arregla en el grupo 7 y se repite esta tarea.) Con `pnpm db:up` y `pnpm dev` levantados, la persona ejecuta en la sesión `! pnpm screenshots:web-analysis-polish`, para que la salida quede a la vista. Verificar que termina sin hallazgos y que deja 14 capturas en `docs/wireframes/web-analysis-polish/`: siete pantallas por dos anchos (cabecera, tooltip y filas de `batch-issues`; filas de `batch-wrong-account`; filas de `batch-split`, la fila sintética y la fila ambigua con el foco en **Choose**).
-- [ ] 5.4 Revisar las capturas a ojo, a 1280 y a 1024 px:
+- [x] 5.3 (La primera pasada falló: `Validation results` 65 px más ancha que su tarjeta a 1024 px, y el tooltip no se reabrió en el script. Se arregla en el grupo 7 y se repite esta tarea.) Con `pnpm db:up` y `pnpm dev` levantados, la persona ejecuta en la sesión `! pnpm screenshots:web-analysis-polish`, para que la salida quede a la vista. Verificar que termina sin hallazgos y que deja 14 capturas en `docs/wireframes/web-analysis-polish/`: siete pantallas por dos anchos (cabecera, tooltip y filas de `batch-issues`; filas de `batch-wrong-account`; filas de `batch-split`, la fila sintética y la fila ambigua con el foco en **Choose**).
+- [x] 5.4 Revisar las capturas a ojo, a 1280 y a 1024 px:
   - rangos centrados y con el ancho de su tabla;
   - tres tarjetas en una fila, sin ámbar y separadas de los rangos y de la tabla de validaciones (si quedan pegadas a la tabla, ajustar el hueco y volver a 5.3);
   - tooltip legible;
@@ -102,7 +102,7 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
   - si las medidas secundarias de 5.1 no se escribieron: centrado de los rangos y tarjetas en una fila, a ojo.
 
   Anotar para el PR las medidas que imprimió el script: desborde de la página y de cada tabla, y el margen de la tabla de filas a 1024 px.
-- [ ] 5.5 Commit: `docs(wireframes): capturas de web-analysis-polish a 1280 y 1024 px`
+- [x] 5.5 Commit: `docs(wireframes): capturas de web-analysis-polish a 1280 y 1024 px`
 
 ## 6. Verificación y PR
 
@@ -127,7 +127,7 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
 - [x] 7.5 Rotura deliberada: quitar `whitespace-normal` del `span`, comprobar que falla el test de 7.1 y restaurar desde el commit de 7.4. (Cayó solo ese test, 1 de 15; restaurado con `git restore --source=HEAD` tras ver que el diff era solo la rotura.)
 - [x] 7.6 En `e2e/screenshots/web-analysis-polish.ts`, abrir el tooltip en cada ancho como en D7: el botón a la vista, el foco en `Run again` sin desplazar, Tab hasta `About Pending in range`, captura de la ventana, y después de capturar comprobar que `scrollY` no cambió, que el tooltip sigue abierto y que Escape lo cierra con el foco en el botón. Sin tocar `InfoTip`. Verificar con `pnpm lint` y `pnpm typecheck`.
 - [x] 7.7 Commit: `test(e2e): el script de capturas abre el tooltip con Tab y sin desplazar la página`
-- [ ] 7.8 Volver a 5.3.
+- [x] 7.8 Volver a 5.3.
 
 ## Workflow follow-up
 
