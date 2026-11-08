@@ -133,7 +133,7 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
 - [x] 7.11 Implementar en `ValidationsTable.tsx`: cada parte en un `span` `whitespace-nowrap`, separadas por ` · `. Verificar con `pnpm --filter frontend test src/features/validations`, `pnpm lint` y `pnpm typecheck`.
 - [x] 7.12 Commit: `fix(web): el desglose de validaciones se corta solo en el separador`
 - [x] 7.13 Rotura deliberada: quitar `whitespace-nowrap` de las partes, comprobar que falla el test de 7.9 y restaurar desde el commit de 7.12. (Cayó solo ese test, 1 de 16; restaurado con `git restore --source=HEAD` tras ver que el diff era solo la rotura. Suite entera después: 99 archivos y 1218 tests.)
-- [ ] 7.14 La persona vuelve a ejecutar `! pnpm screenshots:web-analysis-polish`: sin hallazgos y con `Validation results fits` a 1024 px. Si cambia alguna medida, se actualiza la tabla de medidas del PR. Después, commit de las capturas regeneradas: `docs(wireframes): capturas de web-analysis-polish con el desglose cortado en el separador`.
+- [x] 7.14 La persona vuelve a ejecutar `! pnpm screenshots:web-analysis-polish`: sin hallazgos y con `Validation results fits` a 1024 px. Si cambia alguna medida, se actualiza la tabla de medidas del PR. Después, commit de las capturas regeneradas: `docs(wireframes): capturas de web-analysis-polish con el desglose cortado en el separador`. (Sin hallazgos; las medidas no cambiaron: márgenes de 259, 288 y 265 px a 1280 y de 35, 64 y 41 px a 1024.)
 
 ## Workflow follow-up
 
