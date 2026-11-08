@@ -11,7 +11,9 @@ from sqlalchemy.exc import IntegrityError
 
 from app.datos.modelos import (
     Base,
+    CambioConfiguracionSat2,
     ConfiguracionBase,
+    ConfiguracionSat2,
     CorreoSaliente,
     EjecucionIngesta,
     EnlaceCuenta,
@@ -42,6 +44,8 @@ TABLAS = {
     "enlace_cuenta",
     "correo_saliente",
     "limite_ip",
+    "configuracion_sat2",
+    "cambio_configuracion_sat2",
 }
 MOTIVO = [{"codigo": "SIN_INVERSION", "detalle": "No hay inversión."}]
 
@@ -200,6 +204,76 @@ def test_la_migracion_0003_confirma_las_cuentas_existentes_y_se_revierte(motor):
         with motor.begin() as conexion:
             conexion.execute(text("DELETE FROM usuario WHERE email = 'antigua@ejemplo.com'"))
 
+
+
+def test_la_migracion_0004_no_hace_administradora_a_ninguna_cuenta_y_se_revierte(motor):
+    configuracion = configuracion_alembic()
+    command.downgrade(configuracion, "0003")
+    try:
+        with motor.begin() as conexion:
+            conexion.execute(
+                text(
+                    "INSERT INTO usuario (id, email, nombre, password_hash) "
+                    "VALUES (gen_random_uuid(), 'previa@ejemplo.com', 'Previa', 'h')"
+                )
+            )
+
+        command.upgrade(configuracion, "head")
+        with motor.begin() as conexion:
+            assert conexion.execute(
+                text("SELECT es_administrador FROM usuario WHERE email = 'previa@ejemplo.com'")
+            ).scalar() is False
+            conexion.execute(
+                text(
+                    "INSERT INTO configuracion_sat2 (id, contenido_cifrado, cargada_en) "
+                    "VALUES (1, decode('00', 'hex'), now())"
+                )
+            )
+
+        command.downgrade(configuracion, "0003")
+        tablas = set(inspect(motor).get_table_names())
+        assert not {"configuracion_sat2", "cambio_configuracion_sat2"} & tablas
+        columnas = {columna["name"] for columna in inspect(motor).get_columns("usuario")}
+        assert "es_administrador" not in columnas
+        with motor.connect() as conexion:
+            assert conexion.execute(
+                text("SELECT count(*) FROM usuario WHERE email = 'previa@ejemplo.com'")
+            ).scalar() == 1
+    finally:
+        command.upgrade(configuracion, "head")
+        with motor.begin() as conexion:
+            conexion.execute(text("DELETE FROM configuracion_sat2"))
+            conexion.execute(text("DELETE FROM usuario WHERE email = 'previa@ejemplo.com'"))
+
+
+def test_una_cuenta_nueva_no_es_administradora(sesion, usuario):
+    sesion.refresh(usuario)
+
+    assert usuario.es_administrador is False
+
+
+def test_la_configuracion_de_sat2_tiene_una_sola_fila(sesion):
+    debe_rechazarse(sesion, ConfiguracionSat2(id=2, contenido_cifrado=b"x", cargada_en=AHORA))
+
+
+def test_borrar_al_autor_conserva_la_configuracion_y_el_registro(sesion, usuario):
+    sesion.add(
+        ConfiguracionSat2(contenido_cifrado=b"x", cargada_en=AHORA, cargada_por=usuario.id)
+    )
+    sesion.add(
+        CambioConfiguracionSat2(ocurrido_en=AHORA, usuario_id=usuario.id, email_usuario=usuario.email)
+    )
+    sesion.flush()
+
+    sesion.delete(usuario)
+    sesion.flush()
+    sesion.expire_all()
+
+    configuracion = sesion.get(ConfiguracionSat2, 1)
+    cambio = sesion.scalar(select(CambioConfiguracionSat2))
+    assert configuracion.cargada_por is None
+    assert cambio.usuario_id is None
+    assert cambio.email_usuario == "a@b.example"
 
 def enlace(usuario, **cambios):
     datos = {

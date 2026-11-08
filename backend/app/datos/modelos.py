@@ -14,6 +14,7 @@ from sqlalchemy import (
     Identity,
     Index,
     Integer,
+    LargeBinary,
     MetaData,
     Numeric,
     String,
@@ -92,6 +93,8 @@ class Usuario(Base):
     terminos_version: Mapped[str | None] = mapped_column(String(20))
     terminos_aceptados_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     acepta_novedades: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    # Solo se otorga desde la línea de comandos del servidor (weather-track-administracion-sat2, D1).
+    es_administrador: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
 
     estaciones: Mapped[list["Estacion"]] = relationship(secondary="usuario_estacion")
 
@@ -336,3 +339,37 @@ class IntentoAcceso(Base):
     ocurrido_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class ConfiguracionSat2(Base):
+    """Una sola fila: la URL y las credenciales de SAT2 cifradas con la clave pública.
+
+    Solo el worker, con la clave privada, puede leerla (D3 y D4 de weather-track-administracion-sat2).
+    """
+
+    __tablename__ = "configuracion_sat2"
+    __table_args__ = (CheckConstraint("id = 1", name="una_sola_fila"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False, default=1)
+    contenido_cifrado: Mapped[bytes] = mapped_column(LargeBinary)
+    cargada_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    cargada_por: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("usuario.id", ondelete="SET NULL")
+    )
+
+
+class CambioConfiguracionSat2(Base):
+    """Quién y cuándo cambió la configuración de SAT2. Nunca guarda los valores."""
+
+    __tablename__ = "cambio_configuracion_sat2"
+    __table_args__ = (
+        Index("ix_cambio_configuracion_sat2_reciente", text("ocurrido_en DESC")),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    ocurrido_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    usuario_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("usuario.id", ondelete="SET NULL")
+    )
+    # Aparte del usuario, para que el registro sobreviva al borrado de la cuenta.
+    email_usuario: Mapped[str] = mapped_column(String(254))

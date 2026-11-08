@@ -54,6 +54,9 @@ services:
     environment:
       DATABASE_URL: *url-base-de-datos
       SAT2_MODO: ${SAT2_MODO:-simulado}
+      # Solo cifra la configuración de SAT2 que carga el administrador; la clave privada la tiene
+      # solo el worker, que la recibe del .env.
+      SAT2_CLAVE_PUBLICA: ${SAT2_CLAVE_PUBLICA:-}
       # false solo para el desarrollo local por HTTP; el despliegue usa HTTPS.
       COOKIE_SEGURA: ${COOKIE_SEGURA:-false}
       # Dirección con la que se arman los enlaces de los correos.

@@ -6,7 +6,7 @@
 | **Entrega final** | 9 de diciembre de 2026 |
 | **Punto de partida** | Entrega 2 presentada en forma anticipada ([pull request](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14)) |
 | **Responsable** | Pablo Guillermo Di Nanno |
-| **Versión** | 1.5, 7 de noviembre de 2026 |
+| **Versión** | 1.6, 7 de noviembre de 2026 |
 
 Este documento registra qué línea de trabajo está activa, cuál está en pausa y qué falta decidir, para no perder el hilo entre sesiones.
 
@@ -15,7 +15,7 @@ Este documento registra qué línea de trabajo está activa, cuál está en paus
 | Línea | Estado | Condición para avanzar |
 |---|---|---|
 | **A. Instalación local, como la quiere el responsable** | **Terminada** el 5 de noviembre de 2026 | El responsable aprobó la aplicación local y se archivaron sus cambios |
-| **D. Pendientes de la devolución de la Entrega 1** | D1 a D5 hechos; D7 decidido; D6 opcional | Sigue D7 |
+| **D. Pendientes de la devolución de la Entrega 1** | D1 a D5 hechos; D7 decidido; D6 opcional | Antes de D7, el administrador de SAT2 (cambio `weather-track-administracion-sat2`) |
 | **B. Despliegue público en Google Cloud (opción plus)** | **En pausa** desde el 2 de noviembre de 2026; el responsable la mantuvo en pausa el 7 de noviembre | Se retoma cuando lo decida el responsable |
 | C. Pipeline, monitoreo y documentación para clientes | **Integración continua** (D4), **revisión con IA y documentación viva** (D5) hechas el 7 de noviembre de 2026 | Faltan el monitoreo y la documentación para clientes |
 
@@ -132,7 +132,7 @@ LIDR revisó la Entrega 1 el 2 de noviembre de 2026 con el resultado **"Luz verd
 | D4 | **Hecho el 7 de noviembre de 2026.** Pipeline de GitHub Actions redactado con IA: cambio `weather-track-pipeline-ci` y [ADR-0003](../decisions/0003-pipeline-de-integracion-continua.md). Verificado en GitHub, en verde y fallando ante una prueba rota. Aprobado por el responsable, que protegió `main` con los 8 controles exigidos | Medio | Despliegue |
 | D5 | **Hecho el 7 de noviembre de 2026.** Cambio `weather-track-revision-y-documentacion-viva`. GitHub Copilot revisa cada pull request a `main` con [instrucciones del proyecto](../../.github/copilot-instructions.md) en castellano y por zona, sin ser un control exigido; un pull request de prueba con dos errores sembrados mostró que los señala a los dos. La [guía de las especificaciones](../especificaciones/README.md) se genera desde OpenSpec y una prueba del pipeline falla si queda vieja. Aprobado por el responsable | Medio | Mantenimiento |
 | D6 | Opcional: tests basados en propiedades con Hypothesis. Con cualquier combinación de lecturas, nunca "apto" con inversión o lectura sospechosa, y una mayor diferencia térmica nunca baja el índice | Medio | Pruebas |
-| D7 | Datos de prueba con la forma de las respuestas reales de SAT2, para detectar cambios del proveedor. **Decidido el 7 de noviembre de 2026:** se usan respuestas verdaderas obtenidas de SAT2. Las captura el responsable, porque el asistente no se autentica en SAT2; antes de versionarlas se quitan la URL, las credenciales, los tokens y cualquier dato de la cuenta, y el responsable las revisa | Bajo | Pruebas |
+| D7 | Datos de prueba con la forma de las respuestas reales de SAT2, para detectar cambios del proveedor. **Decidido el 7 de noviembre de 2026:** se usan respuestas verdaderas obtenidas de SAT2. Las captura el responsable, porque el asistente no se autentica en SAT2; antes de versionarlas se quitan la URL, las credenciales, los tokens y cualquier dato de la cuenta, y el responsable las revisa. **Requisito previo, pedido el 7 de noviembre de 2026:** un administrador que gestiona la URL y las credenciales de SAT2 desde la aplicación (cambio `weather-track-administracion-sat2`); la captura usará esa configuración | Bajo | Pruebas |
 
 ### Balance de alcance
 
@@ -165,3 +165,4 @@ Respuestas del responsable del 3 de noviembre de 2026:
 | 7 nov 2026 | Integración continua con GitHub Actions (D4): sin secretos, acciones fijadas por SHA, base de pruebas obligatoria y pruebas negativas antes de fusionar en `main` |
 | 7 nov 2026 | D7: datos de prueba con respuestas verdaderas de SAT2, sin URL, credenciales ni tokens. La línea B sigue en pausa. Se empieza D5 |
 | 7 nov 2026 | D5: revisión de pull requests con GitHub Copilot, que comenta y no bloquea, y documentación viva dentro del repositorio. El responsable activó la revisión automática en la regla de `main` |
+| 7 nov 2026 | Administrador de la aplicación para la configuración de SAT2, antes de D7: rol otorgado solo desde el servidor, opción invisible para el resto (404), configuración en la base cifrada con clave pública que solo el worker descifra, el `.env` como respaldo hasta la primera carga, contraseña repetida, aviso por correo y registro de cambios |

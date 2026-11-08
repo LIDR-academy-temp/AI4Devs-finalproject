@@ -28,8 +28,13 @@ COMPLETAS = {
     "SMTP_USUARIO": "cuenta",
     "SMTP_CLAVE": "clave-smtp-de-prueba",
     "CORREO_REMITENTE": "Weather Track <no-responder@ejemplo.com>",
+    # Valores ficticios con el formato de las claves de weather-track-administracion-sat2.
+    "SAT2_CLAVE_PUBLICA": "clave-publica-ficticia",
+    "SAT2_CLAVE_PRIVADA": "clave-privada-ficticia",
 }
-SECRETAS = re.compile(r"^(nombreDeUsuario|clave|SAT2_URL_BASE|SMTP_.*|CORREO_REMITENTE)$")
+SECRETAS = re.compile(
+    r"^(nombreDeUsuario|clave|SAT2_URL_BASE|SAT2_CLAVE_PRIVADA|SMTP_.*|CORREO_REMITENTE)$"
+)
 
 pytestmark = pytest.mark.skipif(shutil.which("docker") is None, reason="Sin Docker")
 
@@ -73,8 +78,17 @@ def test_la_api_no_recibe_credenciales_de_sat2_ni_del_correo(tmp_path, archivos)
 def test_la_comprobacion_detecta_una_variable_secreta():
     assert variables_secretas({"environment": {"SMTP_CLAVE": "x", "SAT2_MODO": "real"}}) == {"SMTP_CLAVE"}
     assert variables_secretas({"environment": {"clave": "x"}}) == {"clave"}
+    assert variables_secretas({"environment": {"SAT2_CLAVE_PRIVADA": "x"}}) == {"SAT2_CLAVE_PRIVADA"}
     assert variables_secretas({"environment": {}, "env_file": [{"path": ".env"}]}) == {"env_file"}
 
+
+
+@pytest.mark.parametrize("archivos", [LOCAL, PRODUCCION], ids=["local", "produccion"])
+def test_la_api_recibe_solo_la_clave_publica_de_sat2(tmp_path, archivos):
+    """La API cifra la configuración de SAT2 pero no puede descifrarla (D3)."""
+    entorno = servicios(tmp_path, *archivos)["api"]["environment"]
+    assert entorno["SAT2_CLAVE_PUBLICA"] == "clave-publica-ficticia"
+    assert "SAT2_CLAVE_PRIVADA" not in entorno
 
 @pytest.mark.parametrize("archivos", [LOCAL, PRODUCCION], ids=["local", "produccion"])
 def test_la_api_no_se_publica_y_confia_en_el_proxy(tmp_path, archivos):

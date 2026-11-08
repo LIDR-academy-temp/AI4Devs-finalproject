@@ -5,6 +5,11 @@
     python -m app.administracion restablecer-clave --email a@b.example
     python -m app.administracion desactivar-usuario --email a@b.example
     python -m app.administracion exportar-clientes > clientes.csv
+    python -m app.administracion hacer-administrador --email a@b.example
+    python -m app.administracion quitar-administrador --email a@b.example
+    python -m app.administracion generar-claves-sat2   # no usa la base
+
+El rol de administrador solo se otorga desde aquí (weather-track-administracion-sat2, D1).
 """
 
 import argparse
@@ -16,6 +21,7 @@ from typing import TextIO
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from app.cifrado_sat2 import VARIABLE_PRIVADA, VARIABLE_PUBLICA, generar_par_de_claves
 from app.datos.conexion import obtener_motor
 from app.datos.modelos import Estacion, Sesion, Usuario, UsuarioEstacion
 from app.seguridad import calcular_hash_contrasena, generar_contrasena
@@ -84,6 +90,22 @@ def desactivar_usuario(sesion: Session, email: str) -> None:
     sesion.flush()
 
 
+def hacer_administrador(sesion: Session, email: str) -> None:
+    usuario = _usuario(sesion, email)
+    if usuario.confirmado_en is None:
+        raise ErrorAdministracion(f"La cuenta {usuario.email} está sin confirmar.")
+    if not usuario.activo:
+        raise ErrorAdministracion(f"La cuenta {usuario.email} está desactivada.")
+    usuario.es_administrador = True
+    sesion.flush()
+
+
+def quitar_administrador(sesion: Session, email: str) -> None:
+    usuario = _usuario(sesion, email)
+    usuario.es_administrador = False
+    sesion.flush()
+
+
 COLUMNAS_CLIENTES = (
     "email",
     "nombre",
@@ -133,14 +155,30 @@ def _analizador() -> argparse.ArgumentParser:
     asignar = comandos.add_parser("asignar-estacion")
     asignar.add_argument("--email", required=True)
     asignar.add_argument("--id-equipo", required=True, type=int)
-    for nombre in ("restablecer-clave", "desactivar-usuario"):
+    for nombre in (
+        "restablecer-clave",
+        "desactivar-usuario",
+        "hacer-administrador",
+        "quitar-administrador",
+    ):
         comandos.add_parser(nombre).add_argument("--email", required=True)
     comandos.add_parser("exportar-clientes")
+    comandos.add_parser("generar-claves-sat2")
     return analizador
 
 
 def principal(argumentos: list[str] | None = None) -> int:
     args = _analizador().parse_args(argumentos)
+    if args.comando == "generar-claves-sat2":
+        publica, privada = generar_par_de_claves()
+        print(f"{VARIABLE_PUBLICA}={publica}")
+        print(f"{VARIABLE_PRIVADA}={privada}")
+        print(
+            "Copiar las dos líneas al .env del servidor y reiniciar la pila. "
+            "La privada no se comparte ni se versiona.",
+            file=sys.stderr,
+        )
+        return 0
     if args.comando == "exportar-clientes":
         # Solo el CSV va a la salida estándar, para poder redirigirla a un archivo.
         with Session(obtener_motor()) as sesion:
@@ -156,6 +194,10 @@ def principal(argumentos: list[str] | None = None) -> int:
                 asignar_estacion(sesion, args.email, args.id_equipo)
             elif args.comando == "restablecer-clave":
                 clave = restablecer_clave(sesion, args.email)
+            elif args.comando == "hacer-administrador":
+                hacer_administrador(sesion, args.email)
+            elif args.comando == "quitar-administrador":
+                quitar_administrador(sesion, args.email)
             else:
                 desactivar_usuario(sesion, args.email)
         except ErrorAdministracion as error:
