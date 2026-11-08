@@ -4,13 +4,13 @@
 La liberación anticipada de la reserva SHALL llamarse `Reserve released on adjustment`, porque la produce cualquier ajuste I (`Chargeback`, `Refund` o `RDR`): en la línea `reserve_early_released` de `payableBreakdown`, en toda vista del batch, y en el export `summary`, tanto en el bloque de reservas como en el del amount payable. El nombre de la política `release_on_chargeback` no cambia.
 
 #### Scenario: Etiqueta de la liberación anticipada
-- WHEN se lee la vista de cualquier intento, también uno procesado antes de este cambio
-- THEN la línea `reserve_early_released` trae `label = "Reserve released on adjustment"`
+- **WHEN** se lee la vista de cualquier intento, también uno procesado antes de este cambio
+- **THEN** la línea `reserve_early_released` trae `label = "Reserve released on adjustment"`
 
 #### Scenario: Etiqueta de la liberación anticipada en el CSV
-- GIVEN `batch-clean` procesado, sin liberación anticipada
-- WHEN se descarga el summary
-- THEN el bloque de reservas trae la fila `Reserve released on adjustment,,0.0000` y el del amount payable su línea `Reserve released on adjustment`; ninguna fila dice `on chargeback`, y las columnas, el orden y los importes no cambian
+- **GIVEN** `batch-clean` procesado, sin liberación anticipada
+- **WHEN** se descarga el summary
+- **THEN** el bloque de reservas trae la fila `Reserve released on adjustment,,0.0000` y el del amount payable su línea `Reserve released on adjustment`; ninguna fila dice `on chargeback`, y las columnas, el orden y los importes no cambian
 
 ### Requirement: Pantalla Settlement Review: canal sin cuenta principal
 Un canal de `channelsToAssign` con `assignment = "assigned_to_other_account"` y `otherAccount = null` no tiene cuenta principal, y la pantalla SHALL mostrarlo como tal, sin atribuirlo a otra cuenta ni a otro comercio.
