@@ -49,7 +49,7 @@ Con `batch-blocked` en ProviderB-Main, la suite SHALL comprobar que la validaci�
 
 #### Scenario: Batch bloqueado
 - **WHEN** `analyst` importa, analiza y valida `batch-blocked`
-- **THEN** `provider_mismatch` tiene los hallazgos de `expected.json` con el ID de `affectedIds`, y **Continue to settlement review** está deshabilitado con `provider_mismatch: cancel the import and process it under the correct provider.`
+- **THEN** `provider_mismatch` está `Blocked`, bloquea y tiene los hallazgos de `expected.json` con el ID de `affectedIds`; las otras siete validaciones no se comparan, porque el oráculo de `batch-blocked` solo trae `provider_mismatch`. Además, **Continue to settlement review** está deshabilitado con `provider_mismatch: cancel the import and process it under the correct provider.`
 - **AND** al pulsar **Cancel and reprocess** y confirmar, el import queda `cancelled`
 
 ### Requirement: E2E de deshacer y reprocesar

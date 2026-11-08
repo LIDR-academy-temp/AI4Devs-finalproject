@@ -90,7 +90,7 @@ En la rama `feat/e2e-user-stories` (#38), con PR hacia `feature/entrega-3-MVP`.
   - D1 y la spec sin HU1 CA3, CA4 ni las hojas y filas por archivo; D6, D7 y el proposal con las duraciones medidas.
 
   Verificar con `bddgen`, el typecheck, `pnpm lint`, `node --test` y `openspec validate --strict`
-- [ ] 7.3 **Con turno de base, sembrada por la persona:** `pnpm test:e2e` entero, en verde, con la duración de cada escenario. Después push, CI del PR en verde y la lista de commits
+- [x] 7.3 **Con turno de base, sembrada por la persona:** `pnpm test:e2e` entero, en verde, con la duración de cada escenario. Después push, CI del PR en verde y la lista de commits
 
 ## Workflow follow-up
 

@@ -42,7 +42,7 @@ Ver proposal.md. Estado actual, leído en el código:
 | # | Escenario | Muestra y cuenta | Usuarios | Cubre |
 |---|---|---|---|---|
 | 1 | Flujo feliz | `batch-clean`, ProviderA-USD | `analyst`, `payments` | HU1 CA6 (contadores), 7 · HU2 CA1 (resultado, hallazgos, si bloquea y rangos), 6 · HU3 CA1, 2 (prellenados), 5 (también por el API), 6, 7 |
-| 2 | `provider_mismatch` | `batch-blocked`, ProviderB-Main | `analyst` | HU2 CA5, 8 |
+| 2 | `provider_mismatch` | `batch-blocked`, ProviderB-Main | `analyst` | HU2 CA1 (solo `provider_mismatch`: resultado, hallazgos y si bloquea; su oráculo no trae las otras siete), 5, 8 |
 | 3 | Deshacer y reprocesar | `batch-split` (2 archivos), ProviderA-USD | `analyst` | Un import con varios archivos · HU3 CA1, 8 |
 | 4 | Batch sin filas asociadas | `batch-wrong-account`, ProviderA-USD | `analyst` | HU2 CA8 (cancelar y reprocesar) · guardarraíles de #92 y #131 |
 
