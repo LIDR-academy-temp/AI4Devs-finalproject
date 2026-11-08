@@ -41,7 +41,7 @@ Ver proposal.md. Estado actual, leído en el código:
 
 | # | Escenario | Muestra y cuenta | Usuarios | Cubre |
 |---|---|---|---|---|
-| 1 | Flujo feliz | `batch-clean`, ProviderA-USD | `analyst`, `payments` | HU1 CA6 (contadores), 7 · HU2 CA1 (resultado, hallazgos, si bloquea y rangos), 6 · HU3 CA1, 2 (prellenados), 5 (también por el API), 6, 7 |
+| 1 | Flujo feliz | `batch-clean`, ProviderA-USD | `analyst`, `payments` | HU1 CA6 (contadores), 7 · HU2 CA1 (resultado, hallazgos, si bloquea y rangos), 6 · HU3 CA1, 2 (prellenados), 5 (también por el API), 6 (summary), 7 |
 | 2 | `provider_mismatch` | `batch-blocked`, ProviderB-Main | `analyst` | HU2 CA1 (solo `provider_mismatch`: resultado, hallazgos y si bloquea; su oráculo no trae las otras siete), 5, 8 |
 | 3 | Deshacer y reprocesar | `batch-split` (2 archivos), ProviderA-USD | `analyst` | Un import con varios archivos · HU3 CA1, 8 |
 | 4 | Batch sin filas asociadas | `batch-wrong-account`, ProviderA-USD | `analyst` | HU2 CA8 (cancelar y reprocesar) · guardarraíles de #92 y #131 |
@@ -83,14 +83,14 @@ El escenario 3 tampoco compara sus validaciones con el oráculo. El de `batch-sp
 
 **D7. Duración y timeouts.** Se estimaron de 5 a 8 minutos con un worker. Medido, con la base recién sembrada:
 
-| Escenario | Estimación | Local (5.1) | CI, job `e2e` (#149) |
-|---|---|---|---|
-| Smoke | 30–45 s | 7,7 s | 2,8 s |
-| Flujo feliz | 90–150 s | 21,3 s | 7,4 s |
-| Deshacer y reprocesar | 120–200 s | 22,4 s | 9,5 s |
-| `provider_mismatch` | 20–40 s | 4,6 s | 1,9 s |
-| Sin filas asociadas | 20–40 s | 5,0 s | 1,9 s |
-| **Total** | 5–8 min | 1,0 min | 26,5 s (job entero: 5 min 14 s) |
+| Escenario | Estimación | Local (5.1) | CI, job `e2e` (#149) | Tras el review-diff: local / CI (run 42433370520) |
+|---|---|---|---|---|
+| Smoke | 30–45 s | 7,7 s | 2,8 s | 7,4 s / 3,6 s |
+| Flujo feliz | 90–150 s | 21,3 s | 7,4 s | 16,3 s / 8,5 s |
+| Deshacer y reprocesar | 120–200 s | 22,4 s | 9,5 s | 14,3 s / 9,2 s |
+| `provider_mismatch` | 20–40 s | 4,6 s | 1,9 s | 3,4 s / 2,2 s |
+| Sin filas asociadas | 20–40 s | 5,0 s | 1,9 s | 3,7 s / 2,1 s |
+| **Total** | 5–8 min | 1,0 min | 26,5 s (job entero: 5 min 14 s) | 46,7 s / 27,2 s (job entero: 5 min 34 s) |
 
 La suite queda muy por debajo de los 5 minutos del gate, así que el job `e2e` no se parte. Los escenarios 1 y 3 conservan la etiqueta `@timeout:300000` de playwright-bdd como margen en máquinas más lentas, sin tocar `playwright.config.ts`.
 
