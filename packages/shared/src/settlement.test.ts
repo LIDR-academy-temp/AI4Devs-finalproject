@@ -21,7 +21,7 @@ import {
 
 // Contract for #13 and #12 (settlement-process design, "Contrato para #13"): money as decimal strings, never numbers.
 const user = { userId: 2, userName: 'analyst' }
-const range = { min: '2026-09-28T00:04:11.000Z', max: '2026-10-07T23:58:40.000Z' }
+const range = { min: '2026-09-28T00:04:11', max: '2026-10-07T23:58:40' }
 const totals = [
   { category: 'deposit', qty: 340, amount: '39181.0700', feeAmount: '4139.1070', feeRate: '0.100000' },
   { category: 'declined', qty: 110, amount: '0.0000', feeAmount: '27.5000', feeRate: null },

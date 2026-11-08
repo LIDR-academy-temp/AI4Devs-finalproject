@@ -25,7 +25,7 @@ const fee = {
   feeTypeId: 4,
   code: 'Chargeback',
   title: 'Chargeback',
-  eventDate: '2026-10-03T14:12:00.000Z',
+  eventDate: '2026-10-03T14:12:00',
   amountUsd: '45.0000',
   configurationSnapshot: { fixedAmount: '45.0000', percentage: null, base: '96.9300' },
 }
@@ -44,7 +44,7 @@ const movement = {
   amount: '96.9300',
   excludeAmount: false,
   feeAmount: '45.0000',
-  eventDate: '2026-10-03T14:12:00.000Z',
+  eventDate: '2026-10-03T14:12:00',
   appliedReservePct: '0.100000',
   reserveDaysUsed: 180,
   expectedReserveReleaseAt: null,

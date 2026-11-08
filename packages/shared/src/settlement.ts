@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { UserRef } from './auth.js'
 import { AccountRef } from './catalog.js'
 import { EmptyBatchDetails, HiddenAccountRef } from './imports.js'
-import { BatchStatus, ImportStatus, IsoDate, Money } from './vocabulary.js'
+import { BatchStatus, BusinessDateTime, ImportStatus, IsoDate, Money } from './vocabulary.js'
 
 /** BIGINT ids travel as decimal strings, never as JSON numbers (README §4). */
 const BigIntId = z.string().regex(/^\d+$/)
@@ -152,7 +152,8 @@ export const SettlementWarning = z.discriminatedUnion('code', [
 ])
 export type SettlementWarning = z.infer<typeof SettlementWarning>
 
-export const BatchDateRange = z.object({ min: z.iso.datetime(), max: z.iso.datetime() })
+/** Business dates (New York wall time, without a zone). */
+export const BatchDateRange = z.object({ min: BusinessDateTime, max: BusinessDateTime })
 export type BatchDateRange = z.infer<typeof BatchDateRange>
 
 const inOrder =

@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { UserRef } from './auth.js'
 import { Money4, Rate6, SettledStatus } from './settlement.js'
-import { BatchStatus, Cycle, IsoDate, TransactionStatusCode } from './vocabulary.js'
+import { BatchStatus, BusinessDateTime, Cycle, IsoDate, TransactionStatusCode } from './vocabulary.js'
 
 /** BIGINT ids travel as decimal strings, never as JSON numbers (README §4). */
 const BigIntId = z.string().regex(/^\d+$/)
@@ -29,8 +29,8 @@ export const AppliedFee = z.object({
   feeTypeId: positiveInt,
   code: z.string(),
   title: z.string(),
-  /** Business date (New York wall time; the Z is transport only, debt #48). */
-  eventDate: z.iso.datetime().nullable(),
+  /** Business date (New York wall time, without a zone). */
+  eventDate: BusinessDateTime.nullable(),
   amountUsd: Money4,
   configurationSnapshot: Snapshot,
 })
@@ -58,11 +58,11 @@ export const SettlementMovement = z.object({
   excludeAmount: z.boolean(),
   feeAmount: Money4,
   /** Business date; null: an adjustment the source cannot date. */
-  eventDate: z.iso.datetime().nullable(),
+  eventDate: BusinessDateTime.nullable(),
   appliedReservePct: Rate6,
   reserveDaysUsed: nonNegativeInt,
   /** Business date. */
-  expectedReserveReleaseAt: z.iso.datetime().nullable(),
+  expectedReserveReleaseAt: BusinessDateTime.nullable(),
   reserveHeldAmt: Money4,
   reserveReleasedAmt: Money4,
   reserveEarlyReleasedAmt: Money4,

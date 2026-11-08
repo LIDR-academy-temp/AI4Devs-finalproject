@@ -490,7 +490,7 @@ describe('ImportRowItem and ImportRowsPage', () => {
         statusId: 2,
         statusName: 'Successful',
         amount: '120.0000',
-        transactionDate: '2026-10-01T12:00:00.000Z',
+        transactionDate: '2026-10-01T12:00:00',
       },
     }
     expect(ImportRowItem.safeParse(matched).success).toBe(true)
