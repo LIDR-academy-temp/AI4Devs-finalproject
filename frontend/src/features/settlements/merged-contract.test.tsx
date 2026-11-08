@@ -40,19 +40,22 @@ describe('Settlement Review: the contract of #11 after its merge', () => {
     expect(preSummary().getByText('RAM-08 · primary account: an account of another merchant')).toBeInTheDocument()
   })
 
-  it('a channel assigned to another account that the API does not name is not "not assigned yet"', async () => {
+  // #140: otherAccount = null with assigned_to_other_account means no account is primary (spec settlement "Pantalla
+  // Settlement Review: canal sin cuenta principal"), so it names no other account or merchant.
+  it('a channel without a primary account says so, and is not "not assigned yet"', async () => {
     const { importId } = validatedImport('batch-clean', {
       ...batchCleanPreview(),
       channelsToAssign: [
-        { channelId: 1003, name: 'RAM-03', assignment: 'assigned_to_other_account', otherAccount: null },
+        { channelId: 1007, name: 'RAM-07', assignment: 'assigned_to_other_account', otherAccount: null },
       ],
     })
     await openReview(importId)
     chooseDate('2026-10-24')
     await previewShown()
 
-    expect(preSummary().getByText('RAM-03 · primary account: another account')).toBeInTheDocument()
-    expect(preSummary().queryByText('RAM-03 · not assigned yet')).not.toBeInTheDocument()
+    expect(preSummary().getByText('RAM-07 · no primary account')).toBeInTheDocument()
+    expect(preSummary().queryByText(/another account|another merchant/)).not.toBeInTheDocument()
+    expect(preSummary().queryByText('RAM-07 · not assigned yet')).not.toBeInTheDocument()
   })
 
   it('409 settlement_busy: says so with Retry, keeps the form, and Retry sends the same body once more', async () => {

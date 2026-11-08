@@ -18,13 +18,13 @@ En la rama `fix/web-polish-e3`, con PR hacia `feature/entrega-3-MVP`.
   Verificar que cada test falla porque la petición lleva el valor inválido. Si alguno no falla, quitar ese caso del change y decirlo (design, Risks)
 - [x] 1.2 Commit: `test(web): valores inválidos de la dirección en Settlement List, Analysis e In Progress, en rojo (#110)`
 - [x] 1.3 Devolver todas las claves en los tres validadores, con el comentario de `fees-search.ts`, y borrar sus `dropUndefined`. Verificar que los tests de 1.1 y los de siempre pasan, más `pnpm lint` y `pnpm typecheck`
-- [ ] 1.4 Commit: `fix(web): los valores inválidos de la dirección no llegan a la consulta del API (#110)`
+- [x] 1.4 Commit: `fix(web): los valores inválidos de la dirección no llegan a la consulta del API (#110)`
 
 ## 2. #140: canal sin cuenta principal (D2)
 
-- [ ] 2.1 Tests primero:
+- [x] 2.1 Tests primero:
   - **`ChannelNotice.test.tsx`:** `assigned_to_other_account` con `otherAccount = null` muestra `RAM-03 has no primary account` con su nota y no `another merchant`. El caso de otro merchant (`outOfScope`) sigue diciendo `… is primary in an account of another merchant`;
-  - **`settlements/process.test.tsx`** (donde ya se prueban los canales a asociar): `channelsToAssign` con `RAM-07` `assigned_to_other_account` y `otherAccount = null` muestra `RAM-07 · no primary account`.
+  - **`settlements/merged-contract.test.tsx`** (donde ya estaba el caso `otherAccount = null`, con el texto antiguo): `channelsToAssign` con `RAM-07` `assigned_to_other_account` y `otherAccount = null` muestra `RAM-07 · no primary account`.
 
   Verificar que fallan
 - [ ] 2.2 Commit: `test(web): canal sin cuenta principal en Analysis y Settlement Review, en rojo (#140)`
