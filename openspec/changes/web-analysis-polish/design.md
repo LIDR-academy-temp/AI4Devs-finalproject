@@ -10,6 +10,7 @@ Ver proposal.md, "Why". Estado actual, leído en el código:
 - `components/ui/tooltip.tsx` (shadcn sobre `radix-ui`) existe, pero nadie lo usa, y no hay ningún `TooltipProvider` montado. `test/setup.ts` ya simula `ResizeObserver` y `hasPointerCapture`, que Radix necesita.
 - En `RowsTable.tsx`, la celda `Sheet · file` es un `div.w-28` con dos líneas: la hoja con `· row N` y el archivo con `whitespace-normal [overflow-wrap:anywhere]`, así que el nombre se parte cada pocos caracteres. Esto viene de `ui-polish` D7 y del commit `91b1f7c` (#132). Las celdas son `align-top px-1.5 xl:px-2`. El ID con guiones lleva un `<wbr>` tras cada guion (`web-analysis-guardrails` D8). Una hoja larga se parte dentro de `w-28` (`web-rows-table-compact` D3).
 - El script de capturas `web-analysis-guardrails.ts` mide el desborde de la página y de cada `table-container`, y comprueba que, a 1280 px, cada ID cabe en una línea.
+- `features/validations/ValidationsTable.tsx` pinta el desglose de cada validación como texto suelto en su `TableCell`, y las celdas de `components/ui/table.tsx` llevan `whitespace-nowrap`. Con `batch-issues`, `1 non-recorded adjustment · 2 status mismatches` va en una sola línea, y a 1024 px la tabla `Validation results` queda 65 px más ancha que su tarjeta. Este change no lo introdujo: ni `ValidationsTable`, ni `ValidationsSection`, ni `table.tsx` cambian, y `RunHeader` es un hermano en un `flex-col` que no fija el ancho de la tabla. Lo destapó la primera pasada del script de D7, la primera que mide esa tabla con una corrida a 1024 px.
 
 ## Goals / Non-Goals
 
@@ -99,9 +100,10 @@ Alternativas descartadas:
 - `ValidationsSection.test.tsx` lee cada contador por su región (`region` con el nombre de la etiqueta): valor, descripción accesible del botón `About …` y la nota a la vista. `Undated adjustments` no tiene `data-state`. Además, el texto de cada explicación aparece **una sola vez** dentro de su región (`within(region).getAllByText(explicación)` con longitud 1), con el tooltip cerrado y abierto (D3, D4).
 - `DateRangesTable.test.tsx` cambia "a la izquierda" por `mx-auto`, y conserva `w-fit`.
 - `StatCard.test.tsx` cubre el nombre de la región, el tono neutro por defecto y `data-state="warning"` solo con `tone="warning"`.
+- `ValidationsSection.test.tsx` comprueba además que el desglose de `Non-recorded adjustment` es un elemento con `block`, `w-48` y `whitespace-normal`, sin `[overflow-wrap:anywhere]` ni `break-all` (D8).
 
 **D7. Capturas: `e2e/screenshots/web-analysis-polish.ts`.** Mismas protecciones que `web-analysis-guardrails.ts`: contraseña del `.env` raíz puesta desde la página, sin traza ni vídeo, nada capturado antes de que la pantalla esté a la vista. Como `analyst`, por las pantallas y uno tras otro (cada import se cancela antes de crear el siguiente):
-1. **`batch-issues` en `ProviderB-Main`**: subir, confirmar, analizar y ejecutar las validaciones. Tres capturas: la cabecera de Validations; la misma con el tooltip de `Pending in range` abierto con el teclado (foco en `About Pending in range`); y la tabla de filas.
+1. **`batch-issues` en `ProviderB-Main`**: subir, confirmar, analizar y ejecutar las validaciones. Tres capturas: la cabecera de Validations; la misma con el tooltip de `Pending in range` abierto con el teclado (foco en `About Pending in range`); y la tabla de filas. El tooltip se abre en cada ancho como lo haría quien usa el teclado: el botón a la vista primero, el foco en el elemento anterior (`Run again`) sin desplazar la página y Tab hasta el botón. Radix cierra el tooltip cuando se desplaza un ancestro de su botón, así que desde el Tab hasta la captura no se desplaza nada: la captura es de la ventana, no de la página entera, y el script comprueba que `scrollY` no cambió y que el tooltip sigue abierto después de capturar. Después, Escape lo cierra y el foco sigue en el botón.
 2. **`batch-wrong-account` en `ProviderA-USD`**: subir, confirmar y analizar. Captura de la tabla de filas con UUID.
 3. **`batch-split` en `ProviderA-USD`**: los dos archivos; subir, confirmar y analizar. Captura de la tabla de filas con los dos nombres. Después, en la propia página, se pone en la primera fila la hoja `Transactions approved by issuer` y un nombre de archivo de 150 caracteres, se mide y se captura como `-synthetic`. Por último, con la fila ambigua interceptada (ver "Filas ambiguas" más abajo), una captura con el foco en su último **Choose**.
 
@@ -124,6 +126,14 @@ Además de las medidas que ya hace `web-analysis-guardrails.ts` (página, cada t
 El centrado de la tarjeta de rangos con ±1 px y la misma `top` de las tres tarjetas son medidas secundarias. Si alargan el trabajo más allá del tope, se quedan como revisión a ojo de las capturas y se anotan así en el PR.
 
 Cualquier hallazgo de las medidas que estén en el script hace fallar la ejecución. Además, el script **imprime siempre** el desborde de la página y de cada tabla, y el margen de la tabla de filas a 1024 px (`min-content` frente a su contenedor, `web-rows-table-compact` D2), para copiarlos al PR. Las capturas se revisan además a ojo.
+
+**D8. El desglose de la tabla de validaciones se parte entre palabras dentro de un ancho fijo.** En `ValidationsTable`, el texto de la columna `Breakdown` va en un `<span className="block w-48 whitespace-normal">`, como `Result` en la tabla de filas (`w-24`, #132). La celda conserva el `whitespace-nowrap` de `table.tsx`, pero el `span` lo anula para su texto. Así, el desglose más largo (`1 non-recorded adjustment · 2 status mismatches`) ocupa dos líneas de 192 px y la tabla deja de medir más que su tarjeta a 1024 px. Los nombres de validación, el resultado, los hallazgos y `Blocking` siguen sin partirse. El `span` está también en las filas sin desglose, así que la columna mide lo mismo en todas las corridas.
+
+Alternativas descartadas:
+- **`whitespace-normal` sin ancho**. El algoritmo automático de la tabla reparte lo que falta entre las columnas que se pueden partir. Con solo una, la estrecha hasta casi una palabra por línea, que es lo que pasó con `Result` en #132.
+- **Quitar `Breakdown` por debajo de `xl` o pasarlo bajo el nombre de la validación.** Esconde un dato o cambia la disposición de la tabla, que no es lo que pide este change.
+
+**Contrapartida**: a 1280 px, donde la tabla cabía, ese desglose también va en dos líneas. Se acepta, porque la altura de la fila es la de dos líneas de texto y el resto de la tabla no cambia.
 
 ## Risks / Trade-offs
 

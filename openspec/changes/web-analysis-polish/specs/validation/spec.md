@@ -73,3 +73,12 @@ La explicación de cada contador informativo SHALL mostrarse en un tooltip, detr
 #### Scenario: Nota a la vista
 - **WHEN** mira los contadores sin abrir ningún tooltip
 - **THEN** ve la nota `Informative: none of them is a finding.`
+
+### Requirement: Pantalla Analysis & Validations: tabla de validaciones a 1024 px
+La tabla `Validation results` SHALL caber en su tarjeta, sin desplazamiento horizontal, a 1280 y a 1024 px de ancho de ventana. El desglose de cada validación SHALL partirse entre palabras dentro de un ancho fijo, nunca a mitad de palabra. El nombre de la validación, su resultado, su número de hallazgos y si bloquea SHALL ir en una sola línea.
+
+#### Scenario: Desglose largo a 1024 px
+- **GIVEN** la corrida vigente de `batch-issues`
+- **WHEN** `analyst` mira Validations a 1024 px
+- **THEN** `1 non-recorded adjustment · 2 status mismatches` se parte entre palabras en su columna
+- **AND** la tabla `Validation results` no se desplaza en horizontal dentro de su tarjeta

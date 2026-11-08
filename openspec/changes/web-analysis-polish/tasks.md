@@ -90,7 +90,7 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
 
   Añadir `screenshots:web-analysis-polish` a `e2e/package.json` y al `package.json` raíz. Verificar con `pnpm lint` y `pnpm typecheck`.
 - [x] 5.2 Commit: `test(e2e): script de capturas de web-analysis-polish con medidas de desborde`
-- [ ] 5.3 Con `pnpm db:up` y `pnpm dev` levantados, la persona ejecuta en la sesión `! pnpm screenshots:web-analysis-polish`, para que la salida quede a la vista. Verificar que termina sin hallazgos y que deja 14 capturas en `docs/wireframes/web-analysis-polish/`: siete pantallas por dos anchos (cabecera, tooltip y filas de `batch-issues`; filas de `batch-wrong-account`; filas de `batch-split`, la fila sintética y la fila ambigua con el foco en **Choose**).
+- [ ] 5.3 (La primera pasada falló: `Validation results` 65 px más ancha que su tarjeta a 1024 px, y el tooltip no se reabrió en el script. Se arregla en el grupo 7 y se repite esta tarea.) Con `pnpm db:up` y `pnpm dev` levantados, la persona ejecuta en la sesión `! pnpm screenshots:web-analysis-polish`, para que la salida quede a la vista. Verificar que termina sin hallazgos y que deja 14 capturas en `docs/wireframes/web-analysis-polish/`: siete pantallas por dos anchos (cabecera, tooltip y filas de `batch-issues`; filas de `batch-wrong-account`; filas de `batch-split`, la fila sintética y la fila ambigua con el foco en **Choose**).
 - [ ] 5.4 Revisar las capturas a ojo, a 1280 y a 1024 px:
   - rangos centrados y con el ancho de su tabla;
   - tres tarjetas en una fila, sin ámbar y separadas de los rangos y de la tabla de validaciones (si quedan pegadas a la tabla, ajustar el hueco y volver a 5.3);
@@ -117,6 +117,17 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
   - `Refs #157`, porque el issue se cierra a mano, ya que la rama no es la principal.
 
   Verificar que la CI está en verde.
+
+## 7. Arreglos de la primera pasada de capturas (D8 y D7)
+
+- [ ] 7.1 Test primero, en `features/validations/ValidationsSection.test.tsx`, con `batch-issues`: el desglose `1 non-recorded adjustment · 2 status mismatches` es un elemento con `block`, `w-48` y `whitespace-normal`, sin `[overflow-wrap:anywhere]` ni `break-all`. Verificar que falla (hoy el texto va suelto en la celda).
+- [ ] 7.2 Commit: `test(web): el desglose de la tabla de validaciones se parte entre palabras en un ancho fijo`
+- [ ] 7.3 Implementar D8 en `ValidationsTable.tsx`: el desglose en un `span` `block w-48 whitespace-normal`, también en las filas sin desglose. Verificar con `pnpm --filter frontend test src/features/validations`, `pnpm lint` y `pnpm typecheck`.
+- [ ] 7.4 Commit: `fix(web): el desglose de la tabla de validaciones se parte entre palabras para caber a 1024 px`
+- [ ] 7.5 Rotura deliberada: quitar `whitespace-normal` del `span`, comprobar que falla el test de 7.1 y restaurar desde el commit de 7.4.
+- [ ] 7.6 En `e2e/screenshots/web-analysis-polish.ts`, abrir el tooltip en cada ancho como en D7: el botón a la vista, el foco en `Run again` sin desplazar, Tab hasta `About Pending in range`, captura de la ventana, y después de capturar comprobar que `scrollY` no cambió, que el tooltip sigue abierto y que Escape lo cierra con el foco en el botón. Sin tocar `InfoTip`. Verificar con `pnpm lint` y `pnpm typecheck`.
+- [ ] 7.7 Commit: `test(e2e): el script de capturas abre el tooltip con Tab y sin desplazar la página`
+- [ ] 7.8 Volver a 5.3.
 
 ## Workflow follow-up
 
