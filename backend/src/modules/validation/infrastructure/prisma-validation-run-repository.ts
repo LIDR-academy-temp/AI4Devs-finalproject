@@ -21,6 +21,7 @@ import {
   ValidationOutcome,
 } from '@recon/shared'
 import { Prisma, type PrismaClient } from '../../../generated/prisma/client.js'
+import { businessDateTime } from '../../../shared/business-date-time.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import { emptyBatchOf } from '../../imports/domain/empty-batch.js'
 import { ImportNotEditableError, NoMatchedRowsError } from '../../imports/domain/errors.js'
@@ -899,7 +900,7 @@ export class PrismaIssueReader {
         cycle: i.cycle === null ? null : Cycle.parse(i.cycle),
         missingType: i.missingType === null ? null : MissingType.parse(i.missingType),
         missingRange: detail.missingRange === undefined ? null : MissingRange.parse(detail.missingRange),
-        relevantDate: i.relevantDate?.toISOString() ?? null,
+        relevantDate: i.relevantDate === null ? null : businessDateTime(i.relevantDate),
         status: i.statusId === null ? null : (statuses.get(i.statusId) ?? null),
         gatewayStatus: detail.gatewayStatusId === undefined ? null : (statuses.get(detail.gatewayStatusId) ?? null),
         source:

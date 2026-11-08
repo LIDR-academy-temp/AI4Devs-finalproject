@@ -19,6 +19,7 @@ import type {
   ValidationIssuesQuery,
 } from '@recon/shared'
 import { TRANSACTION_STATUSES } from '../../../../../prisma/synthetic.js'
+import { businessDateTime } from '../../../../shared/business-date-time.js'
 import { ACCOUNT_IDS } from '../../../catalog/application/__fakes__/in-memory.js'
 import type { Scope } from '../../../catalog/domain/scope.js'
 import { type EmptyBatchFacts, emptyBatchOf } from '../../../imports/domain/empty-batch.js'
@@ -582,7 +583,7 @@ export class InMemoryRunRepository implements ValidationRunRepository {
       cycle: issue.cycle,
       missingType: issue.missingType as MissingType | null,
       missingRange: (issue.detail?.missingRange as MissingRange | undefined) ?? null,
-      relevantDate: issue.relevantDate?.toISOString() ?? null,
+      relevantDate: issue.relevantDate === null ? null : businessDateTime(issue.relevantDate),
       status: statusRef(issue.statusId),
       gatewayStatus: statusRef(issue.detail?.gatewayStatusId ?? null),
       source: source ? this.locationOf(source.sheetId, source.rowNo) : null,

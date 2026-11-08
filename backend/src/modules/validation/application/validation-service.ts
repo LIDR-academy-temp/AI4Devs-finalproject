@@ -8,6 +8,7 @@ import {
   type ValidationResultView,
   type ValidationRunView,
 } from '@recon/shared'
+import { businessDateTime } from '../../../shared/business-date-time.js'
 import { NotFoundError } from '../../../shared/errors.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import { assertCanReview, assertCanValidate, VALIDATABLE_STATUSES } from '../../imports/domain/import-state.js'
@@ -214,7 +215,8 @@ function runSummary(run: StoredRun, events: ReviewEvent[]): NonNullable<Validati
 }
 
 function rangesView(ranges: CycleRanges) {
-  const view = (r: CycleRanges[keyof CycleRanges]) => (r === null ? null : { min: iso(r.min), max: iso(r.max) })
+  const view = (r: CycleRanges[keyof CycleRanges]) =>
+    r === null ? null : { min: businessDateTime(r.min), max: businessDateTime(r.max) }
   return { APP: view(ranges.APP), DEC: view(ranges.DEC), I: view(ranges.I), R: view(ranges.R) }
 }
 

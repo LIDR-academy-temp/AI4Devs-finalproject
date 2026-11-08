@@ -17,8 +17,8 @@ Los CSV del summary SHALL escribir las fechas de negocio como hoy (`2026-10-07 2
 
 #### Scenario: CSV en un servidor fuera de UTC
 - **GIVEN** el proceso del API con `TZ = America/New_York`
-- **WHEN** `analyst` descarga el CSV de transacciones de un movimiento con `eventDate` guardada como `2026-10-07 23:58:40`
-- **THEN** la fila trae `2026-10-07 23:58:40`
+- **WHEN** `analyst` descarga el CSV del summary de un intento cuyo rango `APP` termina en `2026-10-07 23:58:40` guardado
+- **THEN** la fila `APP range (ET)` termina en `2026-10-07 23:58:40`
 
 ## MODIFIED Requirements
 

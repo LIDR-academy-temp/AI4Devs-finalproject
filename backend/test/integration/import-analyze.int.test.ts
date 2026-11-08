@@ -545,7 +545,8 @@ describe('an ambiguous row and its resolution (issue #5, criterion 6; temporary 
     expect(resolved).toMatchObject({
       matchResult: 'matched',
       gatewayId: GATEWAY_TEST,
-      transaction: { channelName: 'RAM-T1' },
+      // business-dates-no-z: the stored digits of 2026-10-01 00:00:00, without a zone or milliseconds.
+      transaction: { channelName: 'RAM-T1', transactionDate: '2026-10-01T00:00:00' },
     })
     const after = ImportDetail.parse((await call('GET', `/imports/${detail.importId}`)).json())
     expect(after).toMatchObject({ rowsMatched: 780 })

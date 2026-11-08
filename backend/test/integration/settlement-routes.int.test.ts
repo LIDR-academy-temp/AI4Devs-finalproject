@@ -99,12 +99,18 @@ describe('batch-clean through the API', () => {
 
     const processed = await flow.call('POST', `/imports/${importId}/settlements`, body)
     expect(processed.statusCode, processed.body).toBe(201)
-    expect(SettlementView.parse(processed.json())).toMatchObject({
+    const view = SettlementView.parse(processed.json())
+    expect(view).toMatchObject({
       batchNo: 123,
       status: 'processed',
       otherFeeAmt: '40.0000',
       batchFees: [{ code: 'Wire Fee' }, { code: 'Settlement Fee' }],
     })
+    // business-dates-no-z: the ranges are New York wall time without a zone; processedAt stays a UTC instant.
+    const bounds = Object.values(view.dateRanges).flatMap((r) => (r === null ? [] : [r.min, r.max]))
+    expect(bounds.length).toBeGreaterThan(0)
+    for (const bound of bounds) expect(bound).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
+    expect(view.processedAt).toMatch(/Z$/)
 
     const again = await flow.call('POST', `/imports/${importId}/settlements`, body)
     expect(again.statusCode).toBe(409)

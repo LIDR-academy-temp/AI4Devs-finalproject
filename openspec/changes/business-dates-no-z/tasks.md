@@ -13,14 +13,14 @@ Corte: si el domingo por la noche el PR no está fusionado, el change vuelve a r
 
 ## 2. Backend (D3, D4)
 
-- [ ] 2.1 Pruebas primero:
+- [x] 2.1 Pruebas primero:
   - `businessDateTime` devuelve los 19 primeros caracteres sin `Z`;
   - `businessTime` del CSV con `"2026-10-07T23:58:40"` da `"2026-10-07 23:58:40"` también con `process.env.TZ = 'America/New_York'`.
 
   Verlas en rojo.
-- [ ] 2.2 `businessDateTime` en `backend/src/shared/` y en los 7 sitios (`import-service.ts`, `validation-service.ts`, `prisma-validation-run-repository.ts` y su fake, `settlement-service.ts`, `prisma-settlement-reader.ts`, `prisma-settlement-queries.ts`). `businessTime` corta el texto. Ningún instante de auditoría cambia: `git diff` solo toca esos sitios.
-- [ ] 2.3 Actualizar las pruebas unitarias y de rutas que esperan `.000Z` en fechas de negocio. Verificar `pnpm --filter @recon/backend test` y `typecheck`.
-- [ ] 2.4 Actualizar las pruebas de integración que comparan fechas de negocio (en la CI). Verificar `pnpm --filter @recon/backend typecheck` en local.
+- [x] 2.2 `businessDateTime` en `backend/src/shared/` y en los 7 sitios (`import-service.ts`, `validation-service.ts`, `prisma-validation-run-repository.ts` y su fake, `settlement-service.ts`, `prisma-settlement-reader.ts`, `prisma-settlement-queries.ts`). `businessTime` corta el texto. Ningún instante de auditoría cambia: `git diff` solo toca esos sitios.
+- [x] 2.3 Actualizar las pruebas unitarias y de rutas que esperan `.000Z` en fechas de negocio. Verificar `pnpm --filter @recon/backend test` y `typecheck`.
+- [x] 2.4 Actualizar las pruebas de integración que comparan fechas de negocio (en la CI). Verificar `pnpm --filter @recon/backend typecheck` en local.
 
 ## 3. Contrato
 

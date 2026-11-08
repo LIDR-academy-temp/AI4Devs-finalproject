@@ -146,6 +146,10 @@ describe('batch-clean processed', () => {
       )
       expect(page.total).toBe(10)
       expect(page.items.every((m) => m.settled === false)).toBe(true)
+      // business-dates-no-z: every dated movement leaves its eventDate without a zone or milliseconds.
+      const dates = page.items.flatMap((m) => (m.eventDate === null ? [] : [m.eventDate]))
+      expect(dates.length).toBeGreaterThan(0)
+      for (const date of dates) expect(date).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
     })
 
     it('answers the attempts of the import with the current one', async () => {

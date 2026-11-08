@@ -10,6 +10,7 @@ import {
 import type { FastifyBaseLogger } from 'fastify'
 import type { PrismaClient } from '../../../generated/prisma/client.js'
 import { toMoney, toPercentage } from '../../../infrastructure/decimal.js'
+import { businessDateTime } from '../../../shared/business-date-time.js'
 import type { Scope } from '../../catalog/domain/scope.js'
 import { shownAccount } from '../domain/channels.js'
 import { payableBreakdown } from '../domain/payable-breakdown.js'
@@ -18,7 +19,7 @@ import { settledStatusOf } from '../domain/settled.js'
 const API = '/api/v1'
 const day = (value: Date | null) => (value === null ? null : value.toISOString().slice(0, 10))
 const range = (min: Date | null, max: Date | null) =>
-  min === null || max === null ? null : { min: min.toISOString(), max: max.toISOString() }
+  min === null || max === null ? null : { min: businessDateTime(min), max: businessDateTime(max) }
 
 interface ProcessAudit {
   runId: number
