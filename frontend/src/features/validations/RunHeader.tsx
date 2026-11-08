@@ -1,4 +1,6 @@
 import { DateRangesTable } from '@/components/DateRangesTable'
+import { InfoTip } from '@/components/InfoTip'
+import { StatCard } from '@/components/StatCard'
 import { Badge } from '@/components/ui/badge'
 import { formatAuditDateTime } from '@/lib/format'
 import { RUN_OVERALL_TONE, type RunOverall } from '@/lib/status-tone'
@@ -33,7 +35,10 @@ export function OverallResult({ run }: { run: ValidationRun }) {
 
 /**
  * The ranges the run used and its informative counters (spec "cabecera de la corrida"). A blocked run has no table
- * of ranges: provider_mismatch stops the import and the ranges do not help to solve it (design D9).
+ * of ranges: provider_mismatch stops the import and the ranges do not help to solve it (ui-polish design D9).
+ * Each counter goes in a card with the frame of the counters of Analysis, never as a warning: they are informative
+ * (web-analysis-polish design D3). What each one counts is in a tooltip behind its info button, and InfoTip keeps
+ * that text once in the card for screen readers (design D4); the note that none is a finding stays in view.
  */
 export function RunHeader({ run }: { run: ValidationRun }) {
   const counters = [
@@ -43,18 +48,19 @@ export function RunHeader({ run }: { run: ValidationRun }) {
   ] as const
 
   return (
-    <section aria-label={s.label} className="flex flex-col gap-3 text-sm">
+    <section aria-label={s.label} className="flex flex-col gap-4 text-sm">
       {!run.blocked && <DateRangesTable title={s.ranges} ranges={run.ranges} />}
-      <section aria-label={s.counters} className="flex flex-col gap-1">
-        <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-3">
+      <section aria-label={s.counters} className="flex flex-col gap-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           {counters.map(([label, value, explain]) => (
-            <div key={label} className="flex flex-col">
-              <dt className="text-muted-foreground">{label}</dt>
-              <dd className="font-semibold tabular-nums">{value}</dd>
-              <dd className="text-xs text-muted-foreground">{explain}</dd>
-            </div>
+            <StatCard
+              key={label}
+              label={label}
+              value={value}
+              info={<InfoTip label={s.about(label)} description={explain} />}
+            />
           ))}
-        </dl>
+        </div>
         <p className="text-xs text-muted-foreground">{s.explain.note}</p>
       </section>
     </section>

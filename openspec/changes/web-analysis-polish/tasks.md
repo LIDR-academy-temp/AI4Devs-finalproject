@@ -41,7 +41,7 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
 
 ## 3. Cabecera de Validations: rangos centrados y contadores en tarjetas (D1, D3)
 
-- [ ] 3.1 Tests primero:
+- [x] 3.1 Tests primero:
   - **`components/DateRangesTable.test.tsx`**: la tarjeta tiene `mx-auto` y conserva `w-fit`. Se sustituye la aserción de alineación a la izquierda.
   - **`features/validations/ValidationsSection.test.tsx`**, con `batch-issues`:
     - el helper `counters()` lee cada contador por su `region` (`Pending in range`, `Undated adjustments`, `Undated candidates`): el valor y la descripción accesible de su botón `About …`, que es la explicación de hoy;
@@ -52,15 +52,15 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
     - con `batch-blocked`, siguen sin aparecer los rangos.
 
   Verificar que fallan.
-- [ ] 3.2 Commit: `test(web): rangos centrados y contadores de Validations en tarjetas con tooltip`
-- [ ] 3.3 Implementar:
+- [x] 3.2 Commit: `test(web): rangos centrados y contadores de Validations en tarjetas con tooltip`
+- [x] 3.3 Implementar:
   - `mx-auto` en `DateRangesTable`;
   - en `RunHeader`: rejilla `grid gap-3 sm:grid-cols-3` de `StatCard` sin tono, cada una con `InfoTip` en `info`, que trae el único `span` `sr-only` con la explicación (`RunHeader` no pinta otra copia); nota a la vista; `gap-4`;
   - `strings.header.about(label)` en `features/validations/strings.ts`.
 
   Actualizar los comentarios que citan `ui-polish` D9 y D10 para que remitan a este design. Verificar con `pnpm --filter frontend exec vitest run src/components src/features/validations`, `pnpm lint` y `pnpm typecheck`.
-- [ ] 3.4 Correr la suite entera del frontend (`pnpm --filter frontend test`): los contadores dejaron de ser un `<dl>`. Si falla un test ajeno a este change, parar y avisar sin tocarlo.
-- [ ] 3.5 Commit: `feat(web): rangos centrados y contadores de Validations en tarjetas con tooltip`
+- [x] 3.4 Correr la suite entera del frontend (`pnpm --filter frontend test`): los contadores dejaron de ser un `<dl>`. Si falla un test ajeno a este change, parar y avisar sin tocarlo.
+- [x] 3.5 Commit: `feat(web): rangos centrados y contadores de Validations en tarjetas con tooltip`
 
 ## 4. Archivo en una línea en la tabla de filas (D5)
 

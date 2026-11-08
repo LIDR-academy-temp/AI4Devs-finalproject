@@ -26,12 +26,12 @@ function rangeText(range: DateRange): string {
 
 /**
  * The date ranges by cycle and status that the validations used (ui-polish design D9): in its own card, as wide as
- * the table and aligned to the left; the title of the card names the table.
+ * the table and centred in its section (web-analysis-polish design D1); the title of the card names the table.
  */
 export function DateRangesTable({ title, ranges }: { title: string; ranges: Record<RangeKey, DateRange> }) {
   const titleId = useId()
   return (
-    <Card className="w-fit max-w-full">
+    <Card className="mx-auto w-fit max-w-full">
       <CardHeader>
         <CardTitle id={titleId}>{title}</CardTitle>
       </CardHeader>
