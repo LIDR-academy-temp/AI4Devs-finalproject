@@ -23,7 +23,7 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
 
 ## 2. Botón de información con tooltip (D4)
 
-- [ ] 2.1 Tests primero, en `components/InfoTip.test.tsx`, con `user-event`:
+- [x] 2.1 Tests primero, en `components/InfoTip.test.tsx`, con `user-event`:
   - Tab llega a un botón con el nombre `About Pending in range`;
   - al recibir el foco, `getByRole('tooltip')` tiene la explicación;
   - Escape lo cierra y `document.activeElement` sigue siendo el botón;
@@ -31,8 +31,8 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
   - con el tooltip cerrado, el botón tiene la explicación como descripción accesible (`toHaveAccessibleDescription`).
 
   Verificar que fallan.
-- [ ] 2.2 Commit: `test(web): botón de información con tooltip accesible con teclado`
-- [ ] 2.3 Implementar `components/InfoTip.tsx` (primer uso de `components/ui/tooltip`, con `TooltipProvider` local e icono `Info` de `lucide-react`). Verificar que pasa `InfoTip.test.tsx`.
+- [x] 2.2 Commit: `test(web): botón de información con tooltip accesible con teclado`
+- [x] 2.3 Implementar `components/InfoTip.tsx` (primer uso de `components/ui/tooltip`, con `TooltipProvider` local e icono `Info` de `lucide-react`). Verificar que pasa `InfoTip.test.tsx`.
 - [ ] 2.4 Rotura deliberada, para anotarla en el PR:
   1. quitar el `aria-describedby` propio y poner `tabIndex={-1}` en el botón;
   2. comprobar que fallan los tests de descripción y de teclado;
