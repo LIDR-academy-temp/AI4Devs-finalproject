@@ -216,7 +216,7 @@ function runSummary(run: StoredRun, events: ReviewEvent[]): NonNullable<Validati
 
 function rangesView(ranges: CycleRanges) {
   const view = (r: CycleRanges[keyof CycleRanges]) =>
-    r === null ? null : { min: `${businessDateTime(r.min)}.000Z`, max: `${businessDateTime(r.max)}.000Z` }
+    r === null ? null : { min: businessDateTime(r.min), max: businessDateTime(r.max) }
   return { APP: view(ranges.APP), DEC: view(ranges.DEC), I: view(ranges.I), R: view(ranges.R) }
 }
 
