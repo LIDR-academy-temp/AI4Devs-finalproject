@@ -52,11 +52,11 @@ En la rama `fix/web-polish-e3`, con PR hacia `feature/entrega-3-MVP`.
 - [x] 4.1 Test primero en `components/strings.test.ts`: las claves de cuenta equivocada de `imports`, `settlements` y `validations` empiezan por `strings.wrongAccount` de `components/strings.ts`, y la de `validations` sigue con su frase de acción. Verificar que falla (todavía no existe `strings.wrongAccount`)
 - [x] 4.2 Commit: `test(web): frase común de cuenta equivocada, en rojo (#139)`
 - [x] 4.3 Añadir `wrongAccount` a `components/strings.ts`. Las tres features lo usan, y `validations` tiene la frase de acción en su propia clave. Verificar que el test de 4.1 y los RTL que comparan el literal pasan sin tocarlos
-- [ ] 4.4 Commit: `refactor(web): el texto de cuenta equivocada se define una sola vez (#139)`
+- [x] 4.4 Commit: `refactor(web): el texto de cuenta equivocada se define una sola vez (#139)`
 
 ## 5. Capturas, PR y CI (D5)
 
-- [ ] 5.1 **Con turno de base de la persona y `pnpm dev` levantado desde esta carpeta, sin procesar nada:** las tres capturas de D5 en `docs/wireframes/web-polish-e3/`, a 1280 px y con `analyst`. Comprobar a la vista:
+- [x] 5.1 **Con turno de base de la persona y `pnpm dev` levantado desde esta carpeta, sin procesar nada:** las tres capturas de D5 en `docs/wireframes/web-polish-e3/`, a 1280 px y con `analyst`. Comprobar a la vista:
   - `Reserve released on adjustment` en el desglose;
   - `Released on adjustment` en las reservas y en **Reserves**;
   - la lista cargada con `status=foo`.
