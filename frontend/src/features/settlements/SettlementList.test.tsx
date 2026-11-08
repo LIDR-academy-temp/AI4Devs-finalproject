@@ -239,7 +239,7 @@ describe('Settlement List: filters and pages', () => {
     expect(query).not.toHaveProperty('dateField')
     expect(query).not.toHaveProperty('from')
     expect(query).toMatchObject({ page: '1' })
-    expect(batchNos()).toEqual(['103', '102', '101'])
+    expect(batchNos()).toEqual(['122', '121', '120'])
   })
 
   it('says so when the filters leave nothing', async () => {

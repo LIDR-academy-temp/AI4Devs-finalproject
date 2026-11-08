@@ -16,8 +16,8 @@ En la rama `fix/web-polish-e3`, con PR hacia `feature/entrega-3-MVP`.
   - **`validations/IssuesList.test.tsx`:** con `?validation=foo&ipage=abc&issue=abc`, no se pide `validation-issues` con `validationCode=foo` y no hay drawer.
 
   Verificar que cada test falla porque la petición lleva el valor inválido. Si alguno no falla, quitar ese caso del change y decirlo (design, Risks)
-- [ ] 1.2 Commit: `test(web): valores inválidos de la dirección en Settlement List, Analysis e In Progress, en rojo (#110)`
-- [ ] 1.3 Devolver todas las claves en los tres validadores, con el comentario de `fees-search.ts`, y borrar sus `dropUndefined`. Verificar que los tests de 1.1 y los de siempre pasan, más `pnpm lint` y `pnpm typecheck`
+- [x] 1.2 Commit: `test(web): valores inválidos de la dirección en Settlement List, Analysis e In Progress, en rojo (#110)`
+- [x] 1.3 Devolver todas las claves en los tres validadores, con el comentario de `fees-search.ts`, y borrar sus `dropUndefined`. Verificar que los tests de 1.1 y los de siempre pasan, más `pnpm lint` y `pnpm typecheck`
 - [ ] 1.4 Commit: `fix(web): los valores inválidos de la dirección no llegan a la consulta del API (#110)`
 
 ## 2. #140: canal sin cuenta principal (D2)

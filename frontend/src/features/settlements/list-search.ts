@@ -33,7 +33,9 @@ const day = (value: unknown): string | undefined => {
 export const validateSettlementListSearch = (search: Record<string, unknown>): SettlementListSearch => {
   const status = BatchStatus.safeParse(search.status)
   const page = intId(search.page)
-  return dropUndefined({
+  // Every key is returned, undefined when invalid: the router lays this object over the raw search, so a key left
+  // out would keep its raw value.
+  return {
     merchantId: intId(search.merchantId),
     providerId: intId(search.providerId),
     accountId: uuid(search.accountId),
@@ -42,10 +44,5 @@ export const validateSettlementListSearch = (search: Record<string, unknown>): S
     from: day(search.from),
     to: day(search.to),
     page: page && page > 1 ? page : undefined,
-  })
-}
-
-/** Absent keys stay absent, so the address carries only what is set. */
-function dropUndefined<T extends object>(value: T): T {
-  return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as T
+  }
 }

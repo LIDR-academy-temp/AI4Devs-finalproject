@@ -46,14 +46,16 @@ export const validateImportSearch = (search: Record<string, unknown>): ImportSea
   const validation = ValidationCode.safeParse(search.validation)
   const ipage = intId(search.ipage)
   const issue = intId(search.issue)
-  return dropUndefined({
+  // Every key is returned, undefined when invalid: the router lays this object over the raw search, so a key left
+  // out would keep its raw value.
+  return {
     step,
     match: match.success ? match.data : undefined,
     page: page && page > 1 ? page : undefined,
     validation: validation.success ? validation.data : undefined,
     ipage: ipage && ipage > 1 ? ipage : undefined,
     issue,
-  })
+  }
 }
 
 /** The open statuses In Progress filters by (spec "Pantalla In Progress: filtros"). */
@@ -79,17 +81,13 @@ export const validateInProgressSearch = (search: Record<string, unknown>): InPro
   const accountId = providerId === undefined ? undefined : uuid(search.accountId)
   const status = OPEN_STATUSES.find((open) => open === search.status)
   const page = intId(search.page)
-  return dropUndefined({
+  // Every key is returned, undefined when invalid, for the same reason as validateImportSearch.
+  return {
     merchantId,
     providerId,
     accountId,
     status,
     mine: search.mine === true || search.mine === 'true' ? (true as const) : undefined,
     page: page && page > 1 ? page : undefined,
-  })
-}
-
-/** Absent keys stay absent, so the address carries only what is set. */
-function dropUndefined<T extends object>(value: T): T {
-  return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as T
+  }
 }
