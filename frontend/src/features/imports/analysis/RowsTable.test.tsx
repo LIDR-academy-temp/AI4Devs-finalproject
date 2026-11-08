@@ -26,6 +26,23 @@ const column = (name: string) =>
     .findIndex((h) => h.textContent === name)
 const cell = (row: HTMLElement, name: string) => cellsOf(row)[column(name)]!
 
+/**
+ * The file of a row in one line at the foot of the row (web-analysis-polish design D5). jsdom does not lay out, so
+ * these are the classes that do it: every cell of the row reserves a band of one line at its foot, the row is the box
+ * the file is placed against, and the file sits in that band, in one line cut with "…" if longer than the row; the
+ * screenshots measure that it overlaps nothing.
+ */
+function expectFileAtFoot(row: HTMLElement) {
+  const file = within(cell(row, s.columns.file)).getByTitle(/.+/)
+  expect(file).toHaveAttribute('title', file.textContent)
+  expect(file).toHaveClass('absolute', 'bottom-2', 'truncate')
+  expect(file).not.toHaveClass('whitespace-normal')
+  expect(file.className).not.toMatch(/overflow-wrap/)
+  expect(row).toHaveClass('relative')
+  for (const td of cellsOf(row)) expect(td).toHaveClass('pb-6')
+  return file
+}
+
 describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")', () => {
   it('batch-issues shows the unmatched row first and 770 rows in the pagination', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
@@ -185,14 +202,32 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
       expect(line.textContent).toMatch(new RegExp(`^${sheet.textContent} · row \\d+$`))
       lines.push(line.textContent ?? '')
 
-      const file = within(where).getByTitle(/^Recon_Template_/)
+      // Then the whole name of the file in one line, below everything else in the row (web-analysis-polish D5).
+      const file = expectFileAtFoot(row)
       expect(file.textContent).toMatch(/^Recon_Template_ProviderA-USD_batch-split_part[12]\.xlsx$/)
-      expect(file).toHaveAttribute('title', file.textContent)
-      expect(file).not.toHaveClass('truncate')
-      // The cell does not wrap (whitespace-nowrap), and without whitespace-normal overflow-wrap does nothing (#132).
-      expect(file).toHaveClass('whitespace-normal')
     }
     expect(lines[0]).toBe('APP · row 2')
+  })
+
+  it('reserves the band of the file only in the rows of data, never in the header row', async () => {
+    const { importId } = seedImport('batch-split', { status: 'analyzed' })
+    await openRows(`/imports/${importId}?step=analysis`)
+
+    const header = within(screen.getByRole('table', { name: s.title })).getAllByRole('row')[0]!
+    expect(header).not.toHaveClass('relative')
+    for (const th of within(header).getAllByRole('columnheader')) expect(th).not.toHaveClass('pb-6')
+    for (const row of bodyRows()) expect(row).toHaveClass('relative')
+  })
+
+  // The tallest cell of the table: candidates and their Choose also end above the band of the file (design D5).
+  it('keeps the file below the candidates and the Choose of an ambiguous row', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    seedAmbiguousRow(importId)
+    await openRows(`/imports/${importId}?step=analysis`)
+
+    const first = bodyRows()[0]!
+    expect(within(cell(first, s.columns.result)).getAllByRole('button')).toHaveLength(2)
+    expectFileAtFoot(first)
   })
 
   // A legacy file names its sheets freely (Excel allows 31 characters). jsdom does not lay out, so these are the
@@ -229,6 +264,8 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
     expect(sheet).toHaveClass('whitespace-normal', 'break-words')
     const rowNo = within(line).getByText('· row 1234')
     expect(rowNo).toHaveClass('whitespace-nowrap')
+    // The sheet wraps in flow; the file stays at the foot of the row, below it (web-analysis-polish design D5).
+    expectFileAtFoot(bodyRows().find((r) => cell(r, s.columns.id).textContent === '900')!)
   })
 
   // jsdom does not lay out: the widths at 1024 px are measured by the screenshots of web-ambiguous-rows (#132). Here,
@@ -337,6 +374,8 @@ describe('Analysis: ID with hyphens (spec "Resultado del análisis: ID con guion
     // <wbr> is a break opportunity that adds no character: the text, and so the copy, is the ID as read.
     expect(piece.innerHTML).toBe('df14616d-<wbr>4b26-<wbr>4ffb-<wbr>9984-<wbr>72717ebff6a6')
     expect(piece.textContent).toBe('df14616d-4b26-4ffb-9984-72717ebff6a6')
+    // A wrapped ID grows the row; the file stays at its foot, below the last line of the ID (web-analysis-polish D5).
+    expectFileAtFoot(bodyRows().find((r) => cell(r, s.columns.id).textContent === piece.textContent)!)
   })
 
   it('an ID without hyphens never breaks', async () => {
