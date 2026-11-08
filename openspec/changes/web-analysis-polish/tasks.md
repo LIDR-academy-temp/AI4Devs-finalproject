@@ -64,16 +64,16 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
 
 ## 4. Archivo en una línea en la tabla de filas (D5)
 
-- [ ] 4.1 Tests primero, en `features/imports/analysis/RowsTable.test.tsx`:
+- [x] 4.1 Tests primero, en `features/imports/analysis/RowsTable.test.tsx`:
   - **"shows the sheet and row of each row in one line, then its whole file name"** (`batch-split`): el archivo tiene `absolute` y `truncate`, `title` igual a su texto, y no tiene `whitespace-normal` ni `[overflow-wrap:anywhere]`; su `<tr>` tiene `relative` y todas sus celdas tienen `pb-6`; la primera línea sigue siendo `APP · row 2`, con la hoja en su elemento;
   - **la fila con UUID y la fila con `Transactions approved by issuer`**: la misma estructura (archivo fuera de flujo, `relative` en la fila, `pb-6` en cada celda), y se conservan las aserciones de D3 y D8;
   - **una fila ambigua con candidatas y botón Choose** (`analyst`, import `analyzed`): `relative` en su `<tr>` y `pb-6` en todas sus celdas, también en la de `Result` con `AmbiguousCandidates`;
   - **la fila de cabecera**: su `<tr>` no tiene `relative` y ningún `columnheader` tiene `pb-6`.
 
   Verificar que fallan.
-- [ ] 4.2 Commit: `test(web): el nombre del archivo de cada fila va en una línea al pie de la fila`
-- [ ] 4.3 Implementar D5 en `RowsTable.tsx`: `relative` en la `TableRow` de las filas de datos del `tbody` (no en la de cabecera), `pb-6` en cada `TableCell` de esas filas, y el `span` del archivo con `absolute bottom-2 left-1.5 right-1.5 xl:left-2 xl:right-2 truncate` y `title`. Sustituir el comentario de la columna (D7, #132) por la razón de D5. Verificar con `pnpm --filter frontend exec vitest run src/features/imports`, `pnpm lint` y `pnpm typecheck`.
-- [ ] 4.4 Commit: `fix(web): el nombre del archivo de cada fila en una sola línea sin pisar otras columnas`
+- [x] 4.2 Commit: `test(web): el nombre del archivo de cada fila va en una línea al pie de la fila`
+- [x] 4.3 Implementar D5 en `RowsTable.tsx`: `relative` en la `TableRow` de las filas de datos del `tbody` (no en la de cabecera), `pb-6` en cada `TableCell` de esas filas, y el `span` del archivo con `absolute bottom-2 left-1.5 right-1.5 xl:left-2 xl:right-2 truncate` y `title`. Sustituir el comentario de la columna (D7, #132) por la razón de D5. Verificar con `pnpm --filter frontend exec vitest run src/features/imports`, `pnpm lint` y `pnpm typecheck`.
+- [x] 4.4 Commit: `fix(web): el nombre del archivo de cada fila en una sola línea sin pisar otras columnas`
 
 ## 5. Capturas a 1280 y 1024 px con la medida de desborde (D7)
 

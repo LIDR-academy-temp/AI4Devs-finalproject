@@ -64,21 +64,22 @@ const columns = helper.columns([
   helper.display({
     id: 'file',
     header: s.columns.file,
-    // The sheet always shows; the file, long and shared by many rows, wraps where it does not fit (the names of the
-    // template have no spaces) and keeps its whole name as tooltip (design D7). A fixed width: narrow, so the table fits
-    // at 1024 px, but not less, since overflow-wrap:anywhere would let the table squeeze it to a letter a line (#132).
-    // The row number goes after the sheet, not as a column of its own (web-rows-table-compact D1); the sheet keeps an
-    // element of its own. A long legacy sheet name wraps inside the fixed width instead of widening the cell, and
-    // "· row N" never parts (D3).
+    // The sheet always shows, with the row number after it, not as a column of its own (web-rows-table-compact D1); the
+    // sheet keeps an element of its own. A fixed width, narrow so the table fits at 1024 px (#132): a long legacy sheet
+    // name wraps inside it instead of widening the cell, and "· row N" never parts (web-rows-table-compact D3).
+    // The file goes whole in one line at the foot of the row (web-analysis-polish design D5): placed against the row,
+    // which is relative, in the band that every cell of the row reserves below its content (pb-6), so it may run below
+    // the next columns without overlapping their text, however many lines a UUID, a long sheet or the candidates of an
+    // ambiguous row take. Out of flow, it adds no width to the table; longer than the row, it is cut with "…" and keeps
+    // its whole name as tooltip.
     cell: ({ row }) => (
-      <div className="flex w-28 flex-col">
+      <div className="w-28">
         <div className="whitespace-normal">
           <span className="whitespace-normal break-words font-medium">{row.original.sheetName}</span>{' '}
           <span className="whitespace-nowrap text-muted-foreground">{s.rowNo(row.original.rowNo)}</span>
         </div>
-        {/* whitespace-normal: the cell does not wrap, and overflow-wrap does nothing under it (#132). */}
         <span
-          className="whitespace-normal text-muted-foreground [overflow-wrap:anywhere]"
+          className="absolute bottom-2 left-1.5 right-1.5 truncate text-muted-foreground xl:left-2 xl:right-2"
           title={row.original.fileName}
         >
           {row.original.fileName}
@@ -312,10 +313,11 @@ export function RowsTable({
               {table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className={row.original.matchResult === 'matched' ? '' : 'bg-amber-50/60 dark:bg-amber-950/20'}
+                  // The row is the box the file is placed against, and each cell reserves its band (design D5).
+                  className={`relative ${row.original.matchResult === 'matched' ? '' : 'bg-amber-50/60 dark:bg-amber-950/20'}`}
                 >
                   {row.getAllCells().map((cell) => (
-                    <TableCell key={cell.id} className="align-top px-1.5 xl:px-2">
+                    <TableCell key={cell.id} className="align-top px-1.5 pb-6 xl:px-2">
                       <table.FlexRender cell={cell} />
                     </TableCell>
                   ))}
