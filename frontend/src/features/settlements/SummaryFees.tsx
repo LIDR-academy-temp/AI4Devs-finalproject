@@ -35,7 +35,7 @@ export function SummaryFees({ view }: { view: SettlementView }) {
   )
 }
 
-/** Reserves held, released (R) and released on chargeback, as the API sends them. */
+/** Reserves held, released (R) and released on an adjustment, as the API sends them. */
 export function SummaryReserves({ view }: { view: SettlementView }) {
   const lines = [
     [s.reserveLines.held, view.reserveHeldAmt],

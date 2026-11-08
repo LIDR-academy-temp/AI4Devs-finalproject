@@ -21,6 +21,24 @@ describe('validateImportSearch', () => {
     })
     expect(validateImportSearch({ step: 'nope', match: 'nope', page: '1' })).toEqual({})
   })
+
+  // #110: the router lays the result over the raw search, so an invalid key has to be there, undefined, or its raw
+  // value would reach the query. toEqual takes an undefined key and an absent one as equal, hence `in`.
+  it('returns each invalid key, undefined, so the raw value does not survive', () => {
+    const result = validateImportSearch({
+      step: 'nope',
+      match: 'weird',
+      page: 'abc',
+      validation: 'foo',
+      ipage: 'abc',
+      issue: 'abc',
+    })
+
+    for (const key of ['step', 'match', 'page', 'validation', 'ipage', 'issue'] as const) {
+      expect(key in result).toBe(true)
+      expect(result[key]).toBeUndefined()
+    }
+  })
 })
 
 describe('validateInProgressSearch (spec "Pantalla In Progress: filtros", design D5)', () => {
@@ -45,5 +63,21 @@ describe('validateInProgressSearch (spec "Pantalla In Progress: filtros", design
       {},
     )
     expect(validateInProgressSearch({ merchantId: 1, accountId: ACCOUNT })).toEqual({ merchantId: 1 })
+  })
+
+  it('returns each invalid key, undefined, so the raw value does not survive (#110)', () => {
+    const result = validateInProgressSearch({
+      merchantId: 'abc',
+      providerId: 201,
+      accountId: ACCOUNT,
+      status: 'cancelled',
+      mine: 'yes',
+      page: 'abc',
+    })
+
+    for (const key of ['merchantId', 'providerId', 'accountId', 'status', 'mine', 'page'] as const) {
+      expect(key in result).toBe(true)
+      expect(result[key]).toBeUndefined()
+    }
   })
 })

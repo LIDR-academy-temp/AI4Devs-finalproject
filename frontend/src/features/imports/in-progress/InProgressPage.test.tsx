@@ -149,6 +149,16 @@ describe('In Progress: filters in the address (spec "Pantalla In Progress: filtr
     )
   })
 
+  it('invalid values of the address are dropped from the query too (#110)', async () => {
+    seedImport('batch-split', PART1)
+    await openInProgress('status=cancelled&mine=yes&providerId=201&page=abc')
+    await screen.findByRole('table', { name: s.tableLabel }, OPENING)
+
+    expect(lastQuery()).toEqual({ page: '1', pageSize: '50' })
+    expect(screen.getByLabelText(s.filters.status)).toHaveValue('')
+    expect(screen.getByRole('checkbox', { name: s.filters.mine })).not.toBeChecked()
+  })
+
   it('a merchant outside the scope is not available and nothing is asked', async () => {
     await openInProgress('merchantId=999')
 

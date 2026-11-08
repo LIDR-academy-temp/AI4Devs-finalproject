@@ -80,7 +80,7 @@ const breakdown = (amounts: Record<SettlementFigures['payableBreakdown'][number]
       ['batch_fees', 'Batch fees', '-'],
       ['reserve_held', 'Reserve held', '-'],
       ['reserve_released', 'Reserve released', '+'],
-      ['reserve_early_released', 'Reserve released on chargeback', '+'],
+      ['reserve_early_released', 'Reserve released on adjustment', '+'],
     ] as const
   ).map(([code, label, sign]) => ({ code, label, sign, amount: amounts[code] }))
 

@@ -121,7 +121,7 @@ export function summaryCsv(view: SettlementView, sourceIds: ReadonlyMap<string, 
       [
         ['Reserve held', '', view.reserveHeldAmt],
         ['Reserve released', String(view.reservesReleasedQty), view.reserveReleasedAmt],
-        ['Reserve released on chargeback', '', view.reserveEarlyReleasedAmt],
+        ['Reserve released on adjustment', '', view.reserveEarlyReleasedAmt],
       ],
     ),
     toCsv(
