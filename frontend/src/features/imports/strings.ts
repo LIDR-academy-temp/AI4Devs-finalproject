@@ -1,5 +1,6 @@
 // Texts of New Reconciliation and the import workspace (Upload Files, Column Mapping, Analysis). Those fixed by
 // openspec/specs/import are literal.
+import { strings as shared } from '@/components/strings'
 import { strings as accountStrings } from '@/features/accounts/strings'
 
 export const strings = {
@@ -132,8 +133,7 @@ export const strings = {
       /** The breakdown of the Unmatched counter, with the reasons of the rows table (web-analysis-guardrails D1). */
       byReason: 'Unmatched by reason',
       wrongAccountLabel: 'Wrong account?',
-      /** The text of Settlement Review, copied so imports does not depend on settlements (D2; to unify in #139). */
-      wrongAccount: 'The IDs do not fit any gateway of this account: the files may belong to another account.',
+      wrongAccount: shared.wrongAccount,
     },
     channels: {
       title: 'Channels to review',

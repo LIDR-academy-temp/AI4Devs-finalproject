@@ -15,4 +15,6 @@ export const strings = {
     firstPage: 'This is the first page.',
     lastPage: 'This is the last page.',
   },
+  /** An import none of whose IDs fit a gateway of its account: Analysis, Settlement Review and the DecisionBar (#139). */
+  wrongAccount: 'The IDs do not fit any gateway of this account: the files may belong to another account.',
 } as const

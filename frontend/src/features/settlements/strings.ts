@@ -73,7 +73,7 @@ export const strings = {
   emptyBatch: {
     label: 'Batch without matched rows',
     noMatchedRows: 'No row of the files matches a transaction of this account: only the batch fees will be processed.',
-    wrongAccount: 'The IDs do not fit any gateway of this account: the files may belong to another account.',
+    wrongAccount: shared.wrongAccount,
     confirm: 'Process a batch with batch fees only',
   },
 
