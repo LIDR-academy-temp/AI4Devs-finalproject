@@ -17,4 +17,15 @@ describe('validateSettlementListSearch', () => {
       expect(validateSettlementListSearch({ from: value, to: value })).toEqual({})
     },
   )
+
+  // #110: the router lays the result over the raw search, so an invalid key has to be there, undefined, or its raw
+  // value would reach the query. toEqual takes an undefined key and an absent one as equal, hence `in`.
+  it('returns each invalid key, undefined, so the raw value does not survive', () => {
+    const result = validateSettlementListSearch({ status: 'foo', dateField: 'foo', from: '2026-02-30', page: 'abc' })
+
+    for (const key of ['status', 'dateField', 'from', 'page'] as const) {
+      expect(key in result).toBe(true)
+      expect(result[key]).toBeUndefined()
+    }
+  })
 })

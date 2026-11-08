@@ -83,6 +83,17 @@ describe('Analysis & Validations: findings of a validation (spec "lista de halla
     expect(router.state.location.search).not.toHaveProperty('issue')
   })
 
+  it('an invalid validation, page and finding in the address are dropped from the queries too (#110)', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    await openAnalysis(importId, '&validation=foo&ipage=abc&issue=abc')
+
+    expect(validationRequests('list').some((r) => r.url.includes('validationCode=foo'))).toBe(false)
+    expect(validationRequests('issue')).toHaveLength(0)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(results().queryByRole('button', { pressed: true })).not.toBeInTheDocument()
+  })
+
   it('opening the address again shows the same validation and the same finding', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const { issues } = seedValidationRun(importId)

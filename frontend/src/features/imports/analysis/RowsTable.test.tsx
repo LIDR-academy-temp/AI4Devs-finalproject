@@ -63,6 +63,14 @@ describe('Analysis: rows table (spec "Resultado del análisis: tabla de filas")'
     await waitFor(() => expect(router.state.location.search).toMatchObject({ match: 'matched', page: 2 }))
   })
 
+  it('an invalid filter and page in the address are dropped from the query too (#110)', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    await openRows(`/imports/${importId}?step=analysis&match=weird&page=abc`)
+
+    expect(importRequests('rows').map((r) => r.url)).toEqual([`/api/v1/imports/${importId}/rows?page=1&pageSize=50`])
+    expect(bodyRows()).toHaveLength(50)
+  })
+
   it('the Unmatched counter link applies the filter', async () => {
     const { importId } = seedImport('batch-issues', { status: 'analyzed' })
     const { user, router } = await openRows(`/imports/${importId}?step=analysis`)

@@ -8,7 +8,7 @@ En la rama `fix/web-polish-e3`, con PR hacia `feature/entrega-3-MVP`.
 
 ## 1. #110: valores inválidos de la dirección (D1)
 
-- [ ] 1.1 Tests primero, sin cambiar la implementación:
+- [x] 1.1 Tests primero, sin cambiar la implementación:
   - **`list-search.test.ts` y `validate-search.test.ts`:** para `validateSettlementListSearch`, `validateImportSearch` y `validateInProgressSearch`, el resultado tiene cada clave inválida presente con `undefined` (`'status' in result` y `result.status === undefined`), no solo `toEqual({})`;
   - **`SettlementList.test.tsx`:** con `?status=foo&dateField=foo&from=2026-02-30&page=abc`, la petición de la lista no lleva `status`, `dateField` ni `from` y lleva `page=1`;
   - **`in-progress/InProgressPage.test.tsx`:** con `?status=cancelled&mine=yes&providerId=201&page=abc`, la petición es `GET /imports?page=1&pageSize=50`;

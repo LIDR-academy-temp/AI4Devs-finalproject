@@ -230,6 +230,18 @@ describe('Settlement List: filters and pages', () => {
     expect(lastQuery()).toMatchObject({ page: '2' })
   })
 
+  it('drops invalid values of the address from the query too (#110)', async () => {
+    seedAccountSettlements(USD, paidHistory(USD, 3))
+    await openList('&status=foo&dateField=foo&from=2026-02-30&page=abc')
+
+    const query = lastQuery()
+    expect(query).not.toHaveProperty('status')
+    expect(query).not.toHaveProperty('dateField')
+    expect(query).not.toHaveProperty('from')
+    expect(query).toMatchObject({ page: '1' })
+    expect(batchNos()).toEqual(['103', '102', '101'])
+  })
+
   it('says so when the filters leave nothing', async () => {
     seedAccountSettlements(USD, [])
     await openList('&status=undone')
