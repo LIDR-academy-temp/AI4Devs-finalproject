@@ -106,7 +106,7 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
 
 ## 6. Verificación y PR
 
-- [x] 6.1 Correr `pnpm lint`, `pnpm typecheck`, `pnpm --filter frontend test` y `openspec validate web-analysis-polish --strict`, y comprobar que todo pasa. Comprobar también que no hay texto en español en `.ts` ni `.tsx` y que los textos de la interfaz están en inglés.
+- [x] 6.1 Correr `pnpm lint`, `pnpm typecheck`, `pnpm --filter frontend test` y `openspec validate web-analysis-polish --strict`, y comprobar que todo pasa. Comprobar también que no hay texto en español en `.ts` ni `.tsx` y que los textos de la interfaz están en inglés. (Se marcó en `ddca6a0`, antes de las capturas, y el grupo 7 cambió código después. Se volvió a correr todo tras `bedc22d`: lint, typecheck, la suite entera, con 99 archivos y 1217 tests, y validate pasan.)
 - [x] 6.2 Commit: `fix(web): correcciones de la verificación de web-analysis-polish`, solo si la verificación obligó a cambiar algo. (No hizo falta: la verificación pasó sin cambios.)
 - [ ] 6.3 Abrir el PR hacia `feature/entrega-3-MVP` con la plantilla. Debe incluir:
   - las capturas y las medidas de 5.4;
