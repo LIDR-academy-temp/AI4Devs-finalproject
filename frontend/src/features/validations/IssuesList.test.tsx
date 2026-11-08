@@ -88,6 +88,8 @@ describe('Analysis & Validations: findings of a validation (spec "lista de halla
     seedValidationRun(importId)
     await openAnalysis(importId, '&validation=foo&ipage=abc&issue=abc')
 
+    // No validation is chosen, so the list of findings is not drawn at all.
+    expect(screen.queryByRole('table', { name: 'Findings' })).not.toBeInTheDocument()
     expect(validationRequests('list').some((r) => r.url.includes('validationCode=foo'))).toBe(false)
     expect(validationRequests('issue')).toHaveLength(0)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
