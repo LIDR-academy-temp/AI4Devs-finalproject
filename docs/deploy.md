@@ -213,7 +213,7 @@ git branch --show-current
 git rev-parse --short HEAD
 ```
 
-La primera orden debe mostrar `feature/entrega-3-MVP`. Si no muestra nada, el servidor quedó en una versión anterior tras volver atrás: vuelve a la rama con `git checkout feature/entrega-3-MVP`. Guarda el resultado de la segunda, un código de 7 caracteres como `f01b550`.
+La primera orden debe mostrar `feature/entrega-3-MVP`. Si muestra otra rama, para y pregunta antes de seguir. Si no muestra nada, el servidor quedó en una versión anterior tras volver atrás: vuelve a la rama con `git checkout feature/entrega-3-MVP`. Guarda el resultado de la segunda, un código de 7 caracteres como `f01b550`.
 
 ```bash
 git pull
@@ -259,7 +259,7 @@ El servidor queda fuera de la rama, en esa versión. Antes de la siguiente actua
 |---|---|---|
 | `scripts/deploy.sh ps` | Muestra el estado de los servicios | No |
 | `scripts/deploy.sh logs api` | Sigue los registros de un servicio (`Ctrl+C` para salir) | No |
-| `scripts/deploy.sh check` | Muestra los usuarios `recon_*` de la base y los 5 últimos logins auditados, con su IP. Solo lee, y solo con la base incluida (sin `DEPLOY_DB=external`) | No |
+| `scripts/deploy.sh check` | Muestra los logins y los usuarios `recon_*` de la base y los 5 últimos logins auditados, con su IP. Solo lee, y solo con la base incluida (sin `DEPLOY_DB=external`) | No |
 | `scripts/deploy.sh down` | Para y elimina los contenedores; los volúmenes siguen | No |
 | `scripts/deploy.sh seed` | Recarga el mundo sintético | **Sí, toda la base** |
 | `docker compose --env-file infra/.env.deploy -f infra/docker-compose.deploy.yml down -v` | Elimina también los volúmenes | **Sí, base y archivos** |
@@ -337,7 +337,7 @@ De dónde sale:
 
 No hay que configurar nada: no depende de las redes de Docker ni del router. En modo de depuración, quien ya tiene acceso al servidor podría mandar su propio `CF-Connecting-IP`; ese modo no se publica.
 
-**Con un SQL Server externo** (sección 14), `api` está también en la red `recon-egress` para salir hacia la base. Sigue sin publicar puertos, así que solo le llegan peticiones de otros contenedores (`web`, y `cloudflared`, cuya ruta va a `web`), y la regla de las direcciones privadas sigue valiendo.
+**Con un SQL Server externo** (sección 14), `api` está también en la red `recon-egress` para salir hacia la base. Sigue sin publicar puertos, así que solo le llegan peticiones de otros contenedores (`web`, y `cloudflared`, cuya ruta va a `web`) y del propio servidor, y la regla de las direcciones privadas sigue valiendo. Quien tenga acceso al servidor podría falsear la IP, como en el modo de depuración.
 
 ### Comprobarlo
 
@@ -349,6 +349,6 @@ No hay que configurar nada: no depende de las redes de Docker ni del router. En 
    ```
 
    Debe dar `401`, o un bloqueo de Cloudflare.
-3. `scripts/deploy.sh check` debe mostrar en los últimos logins la IP del móvil y la IP pública del servidor, nunca `1.2.3.4` ni una `172.x.x.x`.
+3. `scripts/deploy.sh check` debe mostrar en los últimos logins la IP del móvil y la IP pública del servidor, nunca `1.2.3.4` ni una dirección privada (`10.`, `172.16`–`172.31`, `192.168.`).
 
 La IP del móvil puede ser IPv6 (con `:`, como `2a0c:5a80:...`). Compárala con la que muestra Cloudflare en **Security** → **Events** para ese login, no con la de una web como `ifconfig.me`, que puede enseñarte la IPv4.
