@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Thin wrapper over docker compose for the deployment (docs/deploy.md). Needs Docker and Git, not Node.
 #   scripts/deploy.sh build | up | migrate | seed | logs [service] | ps | check | down
-# check is read-only: the database logins and the last audited logins with their IP (bundled SQL Server only).
+# check is read-only: the database logins and users, and the last audited logins with their IP (bundled SQL Server only).
 # DEPLOY_DB=external in infra/.env.deploy targets an external SQL Server.
 # DEPLOY_DEBUG=1 in the environment runs without a tunnel, on http://127.0.0.1:8080.
 set -euo pipefail
@@ -80,6 +80,8 @@ case "$command" in
     query="SET NOCOUNT ON;
 PRINT '== Database logins (recon_*)';
 SELECT name AS login FROM sys.sql_logins WHERE name LIKE 'recon[_]%' ORDER BY name;
+PRINT '== Database users (recon_*), also those left without a login';
+SELECT name AS [user] FROM sys.database_principals WHERE name LIKE 'recon[_]%' ORDER BY name;
 PRINT '== Last 5 audited logins';
 SELECT TOP (5) CONVERT(varchar(19), createdAt, 120) AS createdAt, action, detailJson
 FROM dbo.AuditLog WHERE action LIKE 'auth.login.%' ORDER BY auditId DESC;"

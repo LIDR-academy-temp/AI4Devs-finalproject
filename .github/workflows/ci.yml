@@ -338,6 +338,15 @@ jobs:
           [ -n "$direct" ] || { echo "the login without CF-Connecting-IP is not in AuditLog"; exit 1; }
           grep -Eq '"ip":"(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)' <<<"$direct" \
             || { echo "without CF-Connecting-IP the audited IP is not the private one of the connection (#106)"; exit 1; }
+          # web's own addresses would also be private: that is what the API records if Nginx's "" branch of the map
+          # sent no X-Forwarded-For. The audited IP must be the client's connection to web, not web itself.
+          # shellcheck disable=SC2016 # a Go template for docker inspect, not a shell expansion
+          web_ips="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$(scripts/deploy.sh ps -q web)")"
+          echo "web addresses: $web_ips"
+          [ -n "${web_ips// /}" ] || { echo "could not read the addresses of web"; exit 1; }
+          for ip in $web_ips; do
+            if grep -qF "\"ip\":\"$ip\"" <<<"$direct"; then echo "the audited IP is web's own ($ip), not the client's (#106)"; exit 1; fi
+          done
 
           echo "--- services"
           services="$(scripts/deploy.sh ps -a --format '{{.Service}} {{.State}} {{.Health}}')"

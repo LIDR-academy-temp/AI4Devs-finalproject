@@ -123,8 +123,9 @@ proxy_set_header X-Forwarded-Host "";          # not forwarded
 
 ### D6. `scripts/deploy.sh check`
 
-Orden nueva, de solo lectura. Ejecuta en `mssql`, con el `sa` del propio contenedor, dos consultas:
+Orden nueva, de solo lectura. Ejecuta en `mssql`, con el `sa` del propio contenedor, tres consultas:
 - los logins `recon_%` de `sys.sql_logins`;
+- los usuarios `recon_%` de `sys.database_principals`, para ver también un usuario que se quedó sin login;
 - las 5 últimas filas `auth.login.%` de `AuditLog`: `createdAt`, `action` y `detailJson`, que guarda el usuario, el motivo y la IP, sin secretos.
 
 La usan el smoke (D4) y la persona el martes, para no copiar a mano un `sqlcmd` con comillas anidadas.
@@ -156,7 +157,7 @@ La usan el smoke (D4) y la persona el martes, para no copiar a mano un `sqlcmd` 
    cd <ruta del repositorio>
    git branch --show-current
    ```
-   Debe mostrar `feature/entrega-3-MVP`. Si no muestra nada, el servidor quedó en una versión anterior: `git checkout feature/entrega-3-MVP`.
+   Debe mostrar `feature/entrega-3-MVP`. Si muestra otra rama, para y pregunta antes de seguir. Si no muestra nada, el servidor quedó en una versión anterior: `git checkout feature/entrega-3-MVP`.
 2. Apunta la versión actual, la que necesitas para volver atrás: `git rev-parse --short HEAD`. Es un código de 7 caracteres.
 3. Trae la versión: `git pull`.
 4. Construye: `scripts/deploy.sh build`. Tarda unos minutos.
@@ -178,7 +179,7 @@ La usan el smoke (D4) y la persona el martes, para no copiar a mano un `sqlcmd` 
      Debe dar `401`, o un bloqueo de Cloudflare.
 8. En el servidor, `scripts/deploy.sh check` debe mostrar:
    - solo `recon_app` y `recon_migrator` en los logins, sin `recon_reader`;
-   - en los últimos logins, la IP del móvil y la IP pública del servidor, nunca `1.2.3.4` ni una `172.x.x.x`.
+   - en los últimos logins, la IP del móvil y la IP pública del servidor, nunca `1.2.3.4` ni una dirección privada (`10.`, `172.16`–`172.31`, `192.168.`).
    - La IP del móvil puede ser IPv6 (con `:`). Compárala con la que muestra Cloudflare en **Security** → **Events** para ese login.
 9. **Si `check` sigue mostrando `recon_reader`:** `scripts/deploy.sh logs mssql` y busca `could not be removed`, que dice el motivo (normalmente, una sesión abierta con ese usuario). `logs` no termina solo: sal con `Ctrl+C`. Después repite `scripts/deploy.sh down` y `scripts/deploy.sh up --wait`, y vuelve a mirar `check`.
 
