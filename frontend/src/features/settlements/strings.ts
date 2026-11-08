@@ -64,8 +64,8 @@ export const strings = {
     unassigned: (name: string) => `${name} · not assigned yet`,
     otherAccount: (name: string, account: string) => `${name} · primary account: ${account}`,
     otherMerchant: (name: string) => `${name} · primary account: an account of another merchant`,
-    /** Assigned elsewhere, without the account in the answer. */
-    anotherAccount: (name: string) => `${name} · primary account: another account`,
+    /** assigned_to_other_account without otherAccount: no account is primary (#140). */
+    noPrimary: (name: string) => `${name} · no primary account`,
     confirm: 'Assign these channels to this account as primary',
   },
 
@@ -73,7 +73,7 @@ export const strings = {
   emptyBatch: {
     label: 'Batch without matched rows',
     noMatchedRows: 'No row of the files matches a transaction of this account: only the batch fees will be processed.',
-    wrongAccount: 'The IDs do not fit any gateway of this account: the files may belong to another account.',
+    wrongAccount: shared.wrongAccount,
     confirm: 'Process a batch with batch fees only',
   },
 
@@ -234,7 +234,7 @@ export const strings = {
     batchFee: (title: string, origin: string, amount: string, userName: string | null) =>
       [title, origin, amount, userName ? `entered by ${userName}` : null].filter(Boolean).join(' · '),
     reserves: 'Reserves',
-    reserveLines: { held: 'Held in this batch', released: 'Released (R)', early: 'Released on chargeback' },
+    reserveLines: { held: 'Held in this batch', released: 'Released (R)', early: 'Released on adjustment' },
     payable: 'Reserve and payable',
     channels: 'Channels assigned',
     channelNew: (name: string) => `${name} · assigned to this account as primary`,
@@ -322,7 +322,7 @@ export const strings = {
     reserveLines: {
       held: 'Held',
       released: 'Released',
-      early: 'Released on chargeback',
+      early: 'Released on adjustment',
       expected: 'Expected release',
     },
     sourceRow: (sheetName: string, rowNo: number) => `${sheetName} · ${rowNo}`,
@@ -352,7 +352,7 @@ export const strings = {
     batch_fees: 'Batch fees',
     reserve_held: 'Reserve held',
     reserve_released: 'Reserve released',
-    reserve_early_released: 'Reserve released on chargeback',
+    reserve_early_released: 'Reserve released on adjustment',
   } satisfies Record<PayableLineCode, string>,
 }
 

@@ -8,6 +8,10 @@ import type {
   ValidationCode,
   ValidationOutcome,
 } from '@recon/shared'
+import { strings as shared } from '@/components/strings'
+
+/** What the DecisionBar adds to the shared wrong-account sentence. */
+const WRONG_ACCOUNT_ACTION = 'Cancel and reprocess under the right account.'
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
 
@@ -216,8 +220,8 @@ export const strings = {
     emptyBatch: {
       label: 'Batch without matched rows',
       noMatchedRows: 'No row of the files matches a transaction of this account.',
-      wrongAccount:
-        'The IDs do not fit any gateway of this account: the files may belong to another account. Cancel and reprocess under the right account.',
+      wrongAccount: `${shared.wrongAccount} ${WRONG_ACCOUNT_ACTION}`,
+      wrongAccountAction: WRONG_ACCOUNT_ACTION,
       confirm: 'Continue with batch fees only',
       reason: 'Confirm that this batch has batch fees only.',
     },

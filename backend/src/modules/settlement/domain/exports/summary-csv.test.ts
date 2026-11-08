@@ -159,8 +159,13 @@ describe('summary of batch-clean against its expected.json', () => {
     expect(block(body, 'Item,Qty,Amount').slice(1)).toEqual([
       'Reserve held,,3918.1070',
       'Reserve released,320,4314.4040',
-      'Reserve released on chargeback,,0.0000',
+      'Reserve released on adjustment,,0.0000',
     ])
+  })
+
+  it('names the early release after an adjustment in both blocks, never after a chargeback (#125)', () => {
+    expect(body).not.toMatch(/on chargeback/i)
+    expect(block(body, 'Line,Sign,Amount')).toContain('Reserve released on adjustment,+,0.0000')
   })
 
   it('writes the nine lines of the amount payable in order and Amount payable 33771.3600', () => {
@@ -174,7 +179,7 @@ describe('summary of batch-clean against its expected.json', () => {
       'Batch fees',
       'Reserve held',
       'Reserve released',
-      'Reserve released on chargeback',
+      'Reserve released on adjustment',
       'Amount payable',
     ])
     expect(lines.at(-1)).toBe(`Amount payable,,${expected.amountPayable}`)

@@ -58,6 +58,36 @@ describe('Analysis: channel notice (spec "Resultado del análisis: aviso de cana
     expect(items()[0]).toHaveTextContent(OTHER_ACCOUNT_NOTE)
   })
 
+  // #140: no account is primary and this account has a past row of the channel (spec import "Resultado del análisis:
+  // canal sin cuenta principal"): neither seed nor app leave it so, hence the fixture.
+  it('a channel without a primary account: RAM-03 has no primary account, not another merchant', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    importRecord(importId).channels = [
+      channel({ assignment: 'assigned_to_other_account', otherAccount: null, note: OTHER_ACCOUNT_NOTE }),
+    ]
+    await openAnalysis(importId)
+
+    expect(items()).toHaveLength(1)
+    expect(items()[0]).toHaveTextContent('RAM-03 has no primary account')
+    expect(items()[0]).toHaveTextContent('4 rows')
+    expect(items()[0]).toHaveTextContent(OTHER_ACCOUNT_NOTE)
+    expect(items()[0]).not.toHaveTextContent('another merchant')
+  })
+
+  it('a channel primary in an account of another merchant still says so', async () => {
+    const { importId } = seedImport('batch-clean', { status: 'analyzed' })
+    importRecord(importId).channels = [
+      channel({
+        assignment: 'assigned_to_other_account',
+        otherAccount: { accountId: null, name: null, outOfScope: true },
+        note: OTHER_ACCOUNT_NOTE,
+      }),
+    ]
+    await openAnalysis(importId)
+
+    expect(items()[0]).toHaveTextContent('RAM-03 is primary in an account of another merchant')
+  })
+
   it('shows a channel of another merchant without any of its data', async () => {
     const { importId } = seedImport('batch-clean', { status: 'analyzed' })
     importRecord(importId).channels = [

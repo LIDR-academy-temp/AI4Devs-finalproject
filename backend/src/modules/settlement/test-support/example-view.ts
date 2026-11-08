@@ -52,7 +52,7 @@ export function exampleView(overrides: Partial<SettlementView> = {}): Settlement
       { code: 'batch_fees', label: 'Batch fees', sign: '-', amount: zero },
       { code: 'reserve_held', label: 'Reserve held', sign: '-', amount: '10.0000' },
       { code: 'reserve_released', label: 'Reserve released', sign: '+', amount: zero },
-      { code: 'reserve_early_released', label: 'Reserve released on chargeback', sign: '+', amount: zero },
+      { code: 'reserve_early_released', label: 'Reserve released on adjustment', sign: '+', amount: zero },
     ],
     skipped: { ignored: 0, unmatched: 0, ambiguous: 0, excluded: 0, unresolvedStatus: 0, pending: 0 },
     warnings: [{ code: 'transactional_fees_not_computed' }],

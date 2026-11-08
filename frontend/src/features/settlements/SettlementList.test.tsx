@@ -230,6 +230,24 @@ describe('Settlement List: filters and pages', () => {
     expect(lastQuery()).toMatchObject({ page: '2' })
   })
 
+  it('drops invalid values of the address from the query too (#110)', async () => {
+    seedAccountSettlements(USD, paidHistory(USD, 3))
+    await openList('&status=foo&dateField=foo&from=2026-02-30&page=abc')
+
+    // Every request, not only the last one: the first one must not carry the raw values either.
+    const queries = settlementRequests('accountSettlements').map(
+      (r) => new URL(r.url, window.location.origin).searchParams,
+    )
+    expect(queries.length).toBeGreaterThan(0)
+    for (const query of queries) {
+      expect(query.has('status')).toBe(false)
+      expect(query.has('dateField')).toBe(false)
+      expect(query.has('from')).toBe(false)
+    }
+    expect(lastQuery()).toMatchObject({ page: '1' })
+    expect(batchNos()).toEqual(['122', '121', '120'])
+  })
+
   it('says so when the filters leave nothing', async () => {
     seedAccountSettlements(USD, [])
     await openList('&status=undone')
