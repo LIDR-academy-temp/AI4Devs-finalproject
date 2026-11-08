@@ -34,11 +34,25 @@ const rangeRows = () =>
         .getAllByRole('cell')
         .map((c) => c.textContent),
     )
-/** Each counter as [name, value, explanation], read from its term and its definitions. */
-const counters = () =>
-  within(runHeader().getByRole('region', { name: 'Informative counters' }))
-    .getAllByRole('term')
-    .map((term) => [term, ...within(term.parentElement!).getAllByRole('definition')].map((el) => el.textContent))
+const COUNTERS = ['Pending in range', 'Undated adjustments', 'Undated candidates'] as const
+const countersRegion = () => within(runHeader().getByRole('region', { name: 'Informative counters' }))
+/** The card of a counter: a region named by its label (web-analysis-polish design D3). */
+const counterCard = (label: string) => countersRegion().getByRole('region', { name: label })
+const aboutButton = (label: string) => within(counterCard(label)).getByRole('button', { name: `About ${label}` })
+/** Each counter as [name, value]: the value is the line below the label of its card. */
+const counters = () => COUNTERS.map((label) => [label, counterCard(label).children[1]?.textContent])
+const EXPLAIN = {
+  'Pending in range':
+    "Transactions of the account's channels still Pending on the gateway, created within the APP or DEC range.",
+  'Undated adjustments': 'Rows of this batch in cycle I without a status-change date.',
+  'Undated candidates':
+    'Gateway transactions in a cycle I status without a status-change date: they cannot be compared with the I range.',
+} as const
+/** Tabs, as a keyboard user would, until the element has the focus. */
+async function tabTo(user: { tab: () => Promise<void> }, element: HTMLElement) {
+  for (let i = 0; i < 100 && document.activeElement !== element; i++) await user.tab()
+  expect(element).toHaveFocus()
+}
 const resultRows = () =>
   within(screen.getByRole('table', { name: 'Validation results' }))
     .getAllByRole('row')
@@ -91,21 +105,66 @@ describe('Analysis & Validations: header of the run (spec "cabecera de la corrid
       ['I', 'RDR'],
       ['R', '—', '2026-03-31 00:00 ET – 2026-04-09 00:00 ET'],
     ])
-    // Each counter with its value and what it counts; none of them is a finding.
+    // Each counter in its card with its value, and what it counts as the description of its info button; none of them
+    // is a finding, which stays in view (web-analysis-polish design D3, D4).
     expect(counters()).toEqual([
-      [
-        'Pending in range',
-        '0',
-        "Transactions of the account's channels still Pending on the gateway, created within the APP or DEC range.",
-      ],
-      ['Undated adjustments', '1', 'Rows of this batch in cycle I without a status-change date.'],
-      [
-        'Undated candidates',
-        '0',
-        'Gateway transactions in a cycle I status without a status-change date: they cannot be compared with the I range.',
-      ],
+      ['Pending in range', '0'],
+      ['Undated adjustments', '1'],
+      ['Undated candidates', '0'],
     ])
+    for (const label of COUNTERS) expect(aboutButton(label)).toHaveAccessibleDescription(EXPLAIN[label])
     expect(runHeader().getByText('Informative: none of them is a finding.')).toBeInTheDocument()
+  })
+
+  it('batch-issues: the ranges card is centred and keeps the width of its table', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    await openAnalysis(importId)
+
+    // jsdom does not lay out: the classes that centre it; the screenshots measure it (design D1, D7).
+    const card = runHeader().getByRole('table', { name: RANGES_TITLE }).closest<HTMLElement>('[data-slot="card"]')
+    expect(card).toHaveClass('mx-auto', 'w-fit')
+  })
+
+  it('batch-issues: three counter cards in three columns from sm, none of them a warning', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    await openAnalysis(importId)
+
+    const cards = COUNTERS.map(counterCard)
+    // One grid holds the three cards, one per row below sm and three columns from it.
+    const grid = cards[0]!.parentElement!
+    expect(grid).toHaveClass('grid', 'sm:grid-cols-3')
+    expect(cards.every((card) => card.parentElement === grid)).toBe(true)
+    // Informative: Undated adjustments 1 is not highlighted.
+    for (const card of cards) expect(card).not.toHaveAttribute('data-state')
+  })
+
+  it('batch-issues: each explanation is once in its card, with the tooltip closed and open', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    const { user } = await openAnalysis(importId)
+
+    for (const label of COUNTERS) expect(within(counterCard(label)).getAllByText(EXPLAIN[label])).toHaveLength(1)
+
+    await tabTo(user, aboutButton('Pending in range'))
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(EXPLAIN['Pending in range'])
+    // The tooltip goes in a portal, out of the card: the card still has the explanation once.
+    expect(within(counterCard('Pending in range')).getAllByText(EXPLAIN['Pending in range'])).toHaveLength(1)
+  })
+
+  it('batch-issues: Tab reaches About Pending in range, its tooltip opens, and Escape closes it keeping the focus', async () => {
+    const { importId } = seedImport('batch-issues', { status: 'analyzed' })
+    seedValidationRun(importId)
+    const { user } = await openAnalysis(importId)
+
+    const button = aboutButton('Pending in range')
+    await tabTo(user, button)
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(EXPLAIN['Pending in range'])
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    expect(button).toHaveFocus()
   })
 
   it('batch-blocked: Blocked next to the title and no table of ranges', async () => {

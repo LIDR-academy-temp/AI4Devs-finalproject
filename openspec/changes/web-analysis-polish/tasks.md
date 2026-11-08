@@ -33,11 +33,11 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
   Verificar que fallan.
 - [x] 2.2 Commit: `test(web): botón de información con tooltip accesible con teclado`
 - [x] 2.3 Implementar `components/InfoTip.tsx` (primer uso de `components/ui/tooltip`, con `TooltipProvider` local e icono `Info` de `lucide-react`). Verificar que pasa `InfoTip.test.tsx`.
-- [ ] 2.4 Rotura deliberada, para anotarla en el PR:
+- [x] 2.4 Rotura deliberada, para anotarla en el PR:
   1. quitar el `aria-describedby` propio y poner `tabIndex={-1}` en el botón;
   2. comprobar que fallan los tests de descripción y de teclado;
   3. restaurar con `cp` desde una copia en el scratchpad, nunca con `git checkout`.
-- [ ] 2.5 Commit: `feat(web): botón de información con tooltip (InfoTip)`
+- [x] 2.5 Commit: `feat(web): botón de información con tooltip (InfoTip)`
 
 ## 3. Cabecera de Validations: rangos centrados y contadores en tarjetas (D1, D3)
 
