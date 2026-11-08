@@ -1,6 +1,7 @@
 import type { MatchResult, UnmatchedReason } from '@recon/shared'
 import { Link, useSearch } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
+import { StatCard } from '@/components/StatCard'
 import type { ImportDetail } from '@/lib/api/types'
 import { requestListFocus } from '@/lib/list-focus'
 import { strings } from '../strings'
@@ -29,13 +30,7 @@ export function Counters({
   const card = (label: string, value: number, filter?: MatchResult, detail?: ReactNode) => {
     const warn = filter !== undefined && value > 0
     return (
-      <section
-        aria-label={label}
-        data-state={warn ? 'warning' : undefined}
-        className={`flex min-w-32 flex-col gap-1 rounded-md border bg-background p-3 ${warn ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/30' : ''}`}
-      >
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <span className="text-2xl font-semibold tabular-nums">{value}</span>
+      <StatCard label={label} value={value} tone={warn ? 'warning' : 'neutral'}>
         {detail}
         {warn && (
           <Link
@@ -54,7 +49,7 @@ export function Counters({
             {c.showRows(label)}
           </Link>
         )}
-      </section>
+      </StatCard>
     )
   }
 
@@ -78,10 +73,7 @@ export function Counters({
         {card(c.unmatched, rows.unmatched, 'unmatched', breakdown)}
         {card(c.ambiguous, rows.ambiguous, 'ambiguous')}
         {card(c.ignored, rows.ignored)}
-        <section aria-label={c.byCycle} className="flex min-w-32 flex-col gap-1 rounded-md border bg-background p-3">
-          <span className="text-xs text-muted-foreground">{c.byCycle}</span>
-          <span className="text-lg font-semibold tabular-nums">{c.cycles(byCycle.E, byCycle.I, byCycle.R)}</span>
-        </section>
+        <StatCard label={c.byCycle} value={c.cycles(byCycle.E, byCycle.I, byCycle.R)} size="compact" />
       </div>
       {likelyWrongAccount && (
         <section

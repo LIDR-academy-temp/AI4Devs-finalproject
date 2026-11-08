@@ -2,11 +2,11 @@
 
 En la rama `feat/web-analysis-polish` (#157), con PR hacia `feature/entrega-3-MVP`. Solo frontend, e2e y docs: no se tocan el backend, `packages/shared`, el contrato, el esquema, los datos sembrados ni la colección Bruno. Sin migración ni seed.
 
-Comando de tests del frontend: `pnpm --filter frontend exec vitest run <ruta>`. La suite entera: `pnpm --filter frontend test`.
+Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --filter frontend exec vitest run` no encuentra `vitest` en esta máquina). La suite entera: `pnpm --filter frontend test`.
 
 ## 1. Marco de tarjeta común (D2)
 
-- [ ] 1.1 Tests primero, en `components/StatCard.test.tsx`:
+- [x] 1.1 Tests primero, en `components/StatCard.test.tsx`:
   - la tarjeta es una `region` con el nombre de su etiqueta;
   - muestra la etiqueta y el valor;
   - el hueco `info` sale junto a la etiqueta;
@@ -15,11 +15,11 @@ Comando de tests del frontend: `pnpm --filter frontend exec vitest run <ruta>`. 
   - `size="compact"` no cambia el nombre ni el valor.
 
   Verificar que fallan (el módulo no existe).
-- [ ] 1.2 Commit: `test(web): marco de tarjeta común para los contadores`
-- [ ] 1.3 Implementar `components/StatCard.tsx` y pasar las seis tarjetas de `features/imports/analysis/Counters.tsx` a usarlo, sin cambiar lo que pintan. Verificar:
+- [x] 1.2 Commit: `test(web): marco de tarjeta común para los contadores`
+- [x] 1.3 Implementar `components/StatCard.tsx` y pasar las seis tarjetas de `features/imports/analysis/Counters.tsx` a usarlo, sin cambiar lo que pintan. Verificar:
   - pasan `StatCard.test.tsx` y, sin tocarlos, `Counters.test.tsx` y `AnalysisStep.test.tsx` (`pnpm --filter frontend exec vitest run src/components src/features/imports/analysis`);
   - `pnpm lint` y `pnpm typecheck`.
-- [ ] 1.4 Commit: `refactor(web): las tarjetas de Counters usan el marco común StatCard`
+- [x] 1.4 Commit: `refactor(web): las tarjetas de Counters usan el marco común StatCard`
 
 ## 2. Botón de información con tooltip (D4)
 
