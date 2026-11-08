@@ -3238,8 +3238,7 @@ export interface paths {
                                     statusId: number;
                                     statusName: string;
                                     amount: string;
-                                    /** Format: date-time */
-                                    transactionDate: string;
+                                    transactionDate: string & (string);
                                 } | null;
                                 rawData: {
                                     [key: string]: string;
@@ -3397,8 +3396,7 @@ export interface paths {
                                 statusId: number;
                                 statusName: string;
                                 amount: string;
-                                /** Format: date-time */
-                                transactionDate: string;
+                                transactionDate: string & (string);
                             } | null;
                             rawData: {
                                 [key: string]: string;
@@ -3785,28 +3783,20 @@ export interface paths {
                                 blocked: boolean;
                                 ranges: {
                                     APP: {
-                                        /** Format: date-time */
-                                        min: string;
-                                        /** Format: date-time */
-                                        max: string;
+                                        min: string & (string);
+                                        max: string & (string);
                                     } | null;
                                     DEC: {
-                                        /** Format: date-time */
-                                        min: string;
-                                        /** Format: date-time */
-                                        max: string;
+                                        min: string & (string);
+                                        max: string & (string);
                                     } | null;
                                     I: {
-                                        /** Format: date-time */
-                                        min: string;
-                                        /** Format: date-time */
-                                        max: string;
+                                        min: string & (string);
+                                        max: string & (string);
                                     } | null;
                                     R: {
-                                        /** Format: date-time */
-                                        min: string;
-                                        /** Format: date-time */
-                                        max: string;
+                                        min: string & (string);
+                                        max: string & (string);
                                     } | null;
                                 };
                                 pendingInRangeCount: number;
@@ -3936,28 +3926,20 @@ export interface paths {
                                 blocked: boolean;
                                 ranges: {
                                     APP: {
-                                        /** Format: date-time */
-                                        min: string;
-                                        /** Format: date-time */
-                                        max: string;
+                                        min: string & (string);
+                                        max: string & (string);
                                     } | null;
                                     DEC: {
-                                        /** Format: date-time */
-                                        min: string;
-                                        /** Format: date-time */
-                                        max: string;
+                                        min: string & (string);
+                                        max: string & (string);
                                     } | null;
                                     I: {
-                                        /** Format: date-time */
-                                        min: string;
-                                        /** Format: date-time */
-                                        max: string;
+                                        min: string & (string);
+                                        max: string & (string);
                                     } | null;
                                     R: {
-                                        /** Format: date-time */
-                                        min: string;
-                                        /** Format: date-time */
-                                        max: string;
+                                        min: string & (string);
+                                        max: string & (string);
                                     } | null;
                                 };
                                 pendingInRangeCount: number;
@@ -4133,8 +4115,7 @@ export interface paths {
                                 missingType: "previous_to_batch" | "in_range" | null;
                                 /** @enum {string|null} */
                                 missingRange: "APP" | "DEC" | "I" | "R" | null;
-                                /** Format: date-time */
-                                relevantDate: string | null;
+                                relevantDate: (string & (string)) | null;
                                 status: {
                                     statusId: number;
                                     /** @enum {string} */
@@ -4267,8 +4248,7 @@ export interface paths {
                             missingType: "previous_to_batch" | "in_range" | null;
                             /** @enum {string|null} */
                             missingRange: "APP" | "DEC" | "I" | "R" | null;
-                            /** Format: date-time */
-                            relevantDate: string | null;
+                            relevantDate: (string & (string)) | null;
                             status: {
                                 statusId: number;
                                 /** @enum {string} */
@@ -4460,8 +4440,7 @@ export interface paths {
                             missingType: "previous_to_batch" | "in_range" | null;
                             /** @enum {string|null} */
                             missingRange: "APP" | "DEC" | "I" | "R" | null;
-                            /** Format: date-time */
-                            relevantDate: string | null;
+                            relevantDate: (string & (string)) | null;
                             status: {
                                 statusId: number;
                                 /** @enum {string} */
@@ -4699,28 +4678,20 @@ export interface paths {
                                 blocked: boolean;
                                 ranges: {
                                     APP: {
-                                        /** Format: date-time */
-                                        min: string;
-                                        /** Format: date-time */
-                                        max: string;
+                                        min: string & (string);
+                                        max: string & (string);
                                     } | null;
                                     DEC: {
-                                        /** Format: date-time */
-                                        min: string;
-                                        /** Format: date-time */
-                                        max: string;
+                                        min: string & (string);
+                                        max: string & (string);
                                     } | null;
                                     I: {
-                                        /** Format: date-time */
-                                        min: string;
-                                        /** Format: date-time */
-                                        max: string;
+                                        min: string & (string);
+                                        max: string & (string);
                                     } | null;
                                     R: {
-                                        /** Format: date-time */
-                                        min: string;
-                                        /** Format: date-time */
-                                        max: string;
+                                        min: string & (string);
+                                        max: string & (string);
                                     } | null;
                                 };
                                 pendingInRangeCount: number;
@@ -4902,8 +4873,7 @@ export interface paths {
                             missingType: "previous_to_batch" | "in_range" | null;
                             /** @enum {string|null} */
                             missingRange: "APP" | "DEC" | "I" | "R" | null;
-                            /** Format: date-time */
-                            relevantDate: string | null;
+                            relevantDate: (string & (string)) | null;
                             status: {
                                 statusId: number;
                                 /** @enum {string} */
@@ -6668,28 +6638,20 @@ export interface paths {
                         "application/json": {
                             dateRanges: {
                                 APP: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 DEC: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 I: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 R: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                             };
                             channels: string[];
@@ -6954,12 +6916,10 @@ export interface paths {
                                 amount: string;
                                 excludeAmount: boolean;
                                 feeAmount: string;
-                                /** Format: date-time */
-                                eventDate: string | null;
+                                eventDate: (string & (string)) | null;
                                 appliedReservePct: string;
                                 reserveDaysUsed: number;
-                                /** Format: date-time */
-                                expectedReserveReleaseAt: string | null;
+                                expectedReserveReleaseAt: (string & (string)) | null;
                                 reserveHeldAmt: string;
                                 reserveReleasedAmt: string;
                                 reserveEarlyReleasedAmt: string;
@@ -6975,8 +6935,7 @@ export interface paths {
                                     feeTypeId: number;
                                     code: string;
                                     title: string;
-                                    /** Format: date-time */
-                                    eventDate: string | null;
+                                    eventDate: (string & (string)) | null;
                                     amountUsd: string;
                                     configurationSnapshot: {
                                         [key: string]: unknown;
@@ -7175,28 +7134,20 @@ export interface paths {
                         "application/json": {
                             dateRanges: {
                                 APP: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 DEC: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 I: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 R: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                             };
                             channels: string[];
@@ -7706,28 +7657,20 @@ export interface paths {
                         "application/json": {
                             dateRanges: {
                                 APP: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 DEC: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 I: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 R: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                             };
                             channels: string[];
@@ -8057,28 +8000,20 @@ export interface paths {
                         "application/json": {
                             dateRanges: {
                                 APP: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 DEC: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 I: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 R: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                             };
                             channels: string[];
@@ -8352,28 +8287,20 @@ export interface paths {
                         "application/json": {
                             dateRanges: {
                                 APP: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 DEC: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 I: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 R: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                             };
                             channels: string[];
@@ -8647,28 +8574,20 @@ export interface paths {
                         "application/json": {
                             dateRanges: {
                                 APP: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 DEC: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 I: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                                 R: {
-                                    /** Format: date-time */
-                                    min: string;
-                                    /** Format: date-time */
-                                    max: string;
+                                    min: string & (string);
+                                    max: string & (string);
                                 } | null;
                             };
                             channels: string[];

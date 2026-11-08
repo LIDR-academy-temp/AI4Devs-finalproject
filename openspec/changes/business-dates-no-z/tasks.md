@@ -24,7 +24,7 @@ Corte: si el domingo por la noche el PR no está fusionado, el change vuelve a r
 
 ## 3. Contrato
 
-- [ ] 3.1 `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`; `pnpm openapi:check` queda limpio después del commit. Verificar que `docs/openapi.yaml` y `frontend/src/lib/api/schema.gen.ts` solo cambian en los 7 campos.
+- [x] 3.1 `pnpm openapi:export` y `pnpm --filter @recon/frontend api:generate`; `pnpm openapi:check` queda limpio después del commit. Verificar que `docs/openapi.yaml` y `frontend/src/lib/api/schema.gen.ts` solo cambian en los 7 campos.
 
 ## 4. Frontend (D5)
 
