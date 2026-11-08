@@ -141,6 +141,8 @@ export const strings = {
       unassigned: (channel: string) => `${channel} is not assigned yet`,
       primaryIn: (channel: string, account: string) => `${channel} is primary in ${account}`,
       primaryElsewhere: (channel: string) => `${channel} is primary in an account of another merchant`,
+      /** assigned_to_other_account without otherAccount: no account is primary (#140). */
+      noPrimary: (channel: string) => `${channel} has no primary account`,
       /** Its rows are provider_mismatch: processing never assigns it (web-analysis-guardrails D3). */
       otherProvider: (channel: string) => `${channel} belongs to another provider`,
       rows: (count: number) => `${count} ${count === 1 ? 'row' : 'rows'}`,

@@ -6,8 +6,8 @@ const s = strings.analysis.channels
 /**
  * What processing will do with a channel; channels and accounts of another merchant are named only as such. A channel
  * of another provider is said to be so, whatever its assignment: processing never assigns it (design D3). The hidden
- * one already says it is not of this merchant. A primary account without a name can only be that of a channel of
- * another provider, which never gets here; `primaryElsewhere` stays as a fallback the type allows (D4).
+ * one already says it is not of this merchant. A primary account without a name is that of another merchant
+ * (`primaryElsewhere`); `assigned_to_other_account` without any `otherAccount` means no account is primary (#140).
  */
 function describe(channel: ChannelNoticeItem): string {
   if (channel.outOfScope || channel.name === null) {
@@ -21,7 +21,8 @@ function describe(channel: ChannelNoticeItem): string {
 function describeAssignment(channel: ChannelNoticeItem, name: string): string {
   if (channel.assignment === 'unassigned') return s.unassigned(name)
   const other = channel.otherAccount
-  return other && other.name !== null ? s.primaryIn(name, other.name) : s.primaryElsewhere(name)
+  if (!other) return s.noPrimary(name)
+  return other.name !== null ? s.primaryIn(name, other.name) : s.primaryElsewhere(name)
 }
 
 /**

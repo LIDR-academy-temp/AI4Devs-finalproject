@@ -27,8 +27,8 @@ En la rama `fix/web-polish-e3`, con PR hacia `feature/entrega-3-MVP`.
   - **`settlements/merged-contract.test.tsx`** (donde ya estaba el caso `otherAccount = null`, con el texto antiguo): `channelsToAssign` con `RAM-07` `assigned_to_other_account` y `otherAccount = null` muestra `RAM-07 · no primary account`.
 
   Verificar que fallan
-- [ ] 2.2 Commit: `test(web): canal sin cuenta principal en Analysis y Settlement Review, en rojo (#140)`
-- [ ] 2.3 `noPrimary` en `imports/strings.ts` y `settlements/strings.ts`, `describeAssignment` y `describe` con el caso `null`, y `anotherAccount` borrado. Verificar los tests
+- [x] 2.2 Commit: `test(web): canal sin cuenta principal en Analysis y Settlement Review, en rojo (#140)`
+- [x] 2.3 `noPrimary` en `imports/strings.ts` y `settlements/strings.ts`, `describeAssignment` y `describe` con el caso `null`, y `anotherAccount` borrado. Verificar los tests
 - [ ] 2.4 Commit: `fix(web): un canal sin cuenta principal ya no se atribuye a otro merchant (#140)`
 
 ## 3. #125: etiqueta de la liberación por ajuste (D4)

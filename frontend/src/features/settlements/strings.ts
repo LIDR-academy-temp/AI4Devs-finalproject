@@ -64,8 +64,8 @@ export const strings = {
     unassigned: (name: string) => `${name} · not assigned yet`,
     otherAccount: (name: string, account: string) => `${name} · primary account: ${account}`,
     otherMerchant: (name: string) => `${name} · primary account: an account of another merchant`,
-    /** Assigned elsewhere, without the account in the answer. */
-    anotherAccount: (name: string) => `${name} · primary account: another account`,
+    /** assigned_to_other_account without otherAccount: no account is primary (#140). */
+    noPrimary: (name: string) => `${name} · no primary account`,
     confirm: 'Assign these channels to this account as primary',
   },
 
