@@ -195,6 +195,72 @@ describe('login audit trail', () => {
   })
 })
 
+// deploy-hardening, auth spec: the audited IP is the connection's unless it comes from a trusted proxy.
+describe('client IP in the login audit', () => {
+  let untrusted: Awaited<ReturnType<typeof createTestApp>>
+  let trusted: Awaited<ReturnType<typeof createTestApp>>
+  let attempt = 0
+
+  beforeAll(async () => {
+    // An empty TRUST_PROXY is no proxy at all, whatever the environment of the run says.
+    untrusted = await createTestApp({ TRUST_PROXY: '' })
+    trusted = await createTestApp({ TRUST_PROXY: 'uniquelocal' })
+    await Promise.all([untrusted.app.ready(), trusted.app.ready()])
+  })
+
+  afterAll(async () => {
+    for (const built of [untrusted, trusted]) {
+      if (built) {
+        await built.app.close()
+        await built.prisma.$disconnect()
+      }
+    }
+  })
+
+  /** Fails a login as a user name of its own and returns the IP its audit row recorded. */
+  async function auditedIp(
+    app: typeof ctx.app,
+    remoteAddress: string,
+    headers: Record<string, string> = {},
+  ): Promise<unknown> {
+    attempt += 1
+    const userName = `ghost-ip-${attempt}`
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      remoteAddress,
+      headers,
+      payload: { userName, password: 'not-the-password' },
+    })
+    expect(res.statusCode).toBe(401)
+    const row = (await auditRowsSinceStart()).find((r) => r.action === 'auth.login.failure' && r.entityId === userName)
+    expect(row).toBeDefined()
+    return (JSON.parse(row!.detailJson ?? '{}') as { ip?: unknown }).ip
+  }
+
+  it('records the connection IP without a trusted proxy, ignoring X-Forwarded-For', async () => {
+    expect(await auditedIp(untrusted.app, '172.18.0.5', { 'x-forwarded-for': '203.0.113.7' })).toBe('172.18.0.5')
+  })
+
+  it('records the forwarded IP when the connection comes from a trusted proxy', async () => {
+    expect(await auditedIp(trusted.app, '172.18.0.5', { 'x-forwarded-for': '203.0.113.7' })).toBe('203.0.113.7')
+  })
+
+  it('records the rightmost untrusted hop when X-Forwarded-For carries several', async () => {
+    expect(await auditedIp(trusted.app, '172.18.0.5', { 'x-forwarded-for': '1.1.1.1, 203.0.113.7' })).toBe(
+      '203.0.113.7',
+    )
+  })
+
+  it('records the connection IP when a public client sends X-Forwarded-For itself', async () => {
+    expect(await auditedIp(trusted.app, '198.51.100.9', { 'x-forwarded-for': '203.0.113.7' })).toBe('198.51.100.9')
+  })
+
+  it('records the connection IP when the forwarded value is not an IP', async () => {
+    expect(await auditedIp(trusted.app, '172.18.0.5', { 'x-forwarded-for': 'not-an-ip' })).toBe('172.18.0.5')
+  })
+})
+
 describe('refresh and logout', () => {
   it('rotates the pair: the new tokens differ and the previous refresh no longer works', async () => {
     const first = await tokensFor('analyst')

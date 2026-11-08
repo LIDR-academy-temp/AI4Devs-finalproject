@@ -23,7 +23,7 @@ El despliegue tiene cuatro servicios siempre en marcha:
 | `api` | La API, conectada como `recon_app`, que no puede cambiar la estructura de la base | No |
 | `mssql` | SQL Server 2022 | No |
 
-Ningún servicio publica puertos en el servidor. `migrate` y `seed` solo se ejecutan cuando se les ordena, con su propia identidad de base de datos, `recon_migrator`.
+Ningún servicio publica puertos en el servidor. `migrate` y `seed` solo se ejecutan cuando se les ordena, con su propia identidad de base de datos, `recon_migrator`. La base del despliegue tiene solo dos usuarios de la aplicación: `recon_app`, para la API, y `recon_migrator`. El usuario de solo lectura `recon_reader` existe solo en local; si un despliegue anterior lo creó, `mssql` lo borra en su siguiente arranque.
 
 ## 2. Qué necesitas
 
@@ -206,6 +206,15 @@ for i in $(seq 1 10); do curl -s -o /dev/null -w '%{http_code}\n' -H 'Content-Ty
 
 ## 11. Actualizar a una versión nueva
 
+Antes de nada, comprueba que el servidor está en la rama que despliegas y apunta la versión actual: es la que necesitas para volver atrás.
+
+```bash
+git branch --show-current
+git rev-parse --short HEAD
+```
+
+La primera orden debe mostrar `feature/entrega-3-MVP`. Si muestra otra rama, para y pregunta antes de seguir. Si no muestra nada, el servidor quedó en una versión anterior tras volver atrás: vuelve a la rama con `git checkout feature/entrega-3-MVP`. Guarda el resultado de la segunda, un código de 7 caracteres como `f01b550`.
+
 ```bash
 git pull
 scripts/deploy.sh build
@@ -215,7 +224,34 @@ scripts/deploy.sh up --wait
 
 La base y los archivos subidos viven en volúmenes y se conservan. No ejecutes `seed` al actualizar.
 
-Para volver a una versión anterior, haz `git checkout` de esa versión, `scripts/deploy.sh build` y `scripts/deploy.sh up --wait`. Las migraciones no se deshacen solas: si la versión nueva aplicó alguna incompatible con la anterior, necesitas un plan propio.
+**Si la versión nueva cambia los scripts de `infra/mssql/`**, `up` no basta: `mssql` solo los ejecuta al arrancar, y `up` no lo reinicia si su imagen no cambia. Después de `migrate`, reinicia todo y comprueba:
+
+```bash
+scripts/deploy.sh down
+scripts/deploy.sh up --wait
+scripts/deploy.sh ps
+scripts/deploy.sh check
+```
+
+`down` no borra los volúmenes. `ps` debe mostrar los servicios `healthy`, y `check`, solo `recon_app` y `recon_migrator`. La URL está caída uno o dos minutos.
+
+Si `check` sigue mostrando `recon_reader`, es que `mssql` no pudo borrarlo, normalmente porque alguien tenía una sesión abierta con ese usuario. Busca el aviso en los registros y repite el reinicio:
+
+```bash
+scripts/deploy.sh logs mssql
+```
+
+La línea es `recon_reader could not be removed: ...` y explica el motivo. `logs` sigue mostrando registros nuevos sin terminar: sal con `Ctrl+C`. Después repite `scripts/deploy.sh down` y `scripts/deploy.sh up --wait`, y vuelve a mirar `check`.
+
+**Volver a la versión anterior**, con el código que apuntaste antes del `git pull`:
+
+```bash
+git checkout <código apuntado>
+scripts/deploy.sh build
+scripts/deploy.sh up --wait
+```
+
+El servidor queda fuera de la rama, en esa versión. Antes de la siguiente actualización, vuelve a ella con `git checkout feature/entrega-3-MVP` y sigue esta sección desde el principio. Las migraciones no se deshacen solas: si la versión nueva aplicó alguna incompatible con la anterior, necesitas un plan propio.
 
 ## 12. Órdenes de uso diario
 
@@ -223,6 +259,7 @@ Para volver a una versión anterior, haz `git checkout` de esa versión, `script
 |---|---|---|
 | `scripts/deploy.sh ps` | Muestra el estado de los servicios | No |
 | `scripts/deploy.sh logs api` | Sigue los registros de un servicio (`Ctrl+C` para salir) | No |
+| `scripts/deploy.sh check` | Muestra los logins y los usuarios `recon_*` de la base y los 5 últimos logins auditados, con su IP. Solo lee, y solo con la base incluida (sin `DEPLOY_DB=external`) | No |
 | `scripts/deploy.sh down` | Para y elimina los contenedores; los volúmenes siguen | No |
 | `scripts/deploy.sh seed` | Recarga el mundo sintético | **Sí, toda la base** |
 | `docker compose --env-file infra/.env.deploy -f infra/docker-compose.deploy.yml down -v` | Elimina también los volúmenes | **Sí, base y archivos** |
@@ -276,6 +313,8 @@ Con esta opción el servicio `mssql` no arranca y `api`, `migrate` y `seed` sale
    sqlcmd -S SERVIDOR -U ADMIN -C -b -v RECON_MIGRATOR_PASSWORD="..." DB_NAME="ReconTool" -i infra/mssql/init.deploy.sql
    ```
 
+   **Aviso para quien administra ese servidor:** `init.deploy.sql` borra el login `recon_reader` si existe, porque la aplicación lo creaba en versiones anteriores. Si en ese servidor hay un `recon_reader` de otro uso, cámbiale el nombre antes o no ejecutes el script tal cual.
+
 2. En `infra/.env.deploy`, pon `DEPLOY_DB=external` y rellena `DB_HOST`, `DB_PORT` y `DB_NAME`.
 3. Deja un valor cualquiera en `MSSQL_SA_PASSWORD`. No se usa, pero Compose lo exige.
 4. Sigue desde la sección 6.
@@ -286,6 +325,30 @@ Con base externa la copia de seguridad y los permisos de red corren por cuenta d
 
 El plan gratuito corta las peticiones de más de 100 MB y las respuestas que tardan más de unos 100 segundos. La aplicación admite 20 MiB por archivo y hasta 200 MiB en total, así que un batch que supere los 100 MB puede fallar por la URL pública aunque el servidor lo acepte. Los archivos de `data/samples/` quedan muy por debajo de ese límite.
 
-## 16. Limitación conocida: IP en la auditoría
+## 16. IP en la auditoría
 
-La auditoría de los logins registra la IP del contenedor `web`, no la de quien entra, porque la API todavía no confía en la cabecera `X-Forwarded-For`. No uses ese dato para identificar a nadie. Para ver los intentos por IP, usa el panel de Cloudflare.
+La auditoría de los logins registra la IP pública de quien entra, la misma que muestra el panel de Cloudflare. `scripts/deploy.sh check` enseña los últimos logins con su IP.
+
+De dónde sale:
+
+1. El borde de Cloudflare escribe la IP del cliente en la cabecera `CF-Connecting-IP` y sustituye la que pudiera mandar el propio cliente.
+2. Nginx (`web`) pasa a la API un único `X-Forwarded-For` con ese valor, sin conservar el que mande el cliente. Sin Cloudflare delante, por ejemplo en modo de depuración, usa la IP de la conexión.
+3. La API solo hace caso de `X-Forwarded-For` cuando la petición llega desde una dirección privada, es decir, desde otro contenedor de la red interna (`TRUST_PROXY: uniquelocal` en `infra/docker-compose.deploy.yml`). Si el valor no es una IP, guarda la de la conexión.
+
+No hay que configurar nada: no depende de las redes de Docker ni del router. En modo de depuración, quien ya tiene acceso al servidor podría mandar su propio `CF-Connecting-IP`; ese modo no se publica.
+
+**Con un SQL Server externo** (sección 14), `api` está también en la red `recon-egress` para salir hacia la base. Sigue sin publicar puertos, así que solo le llegan peticiones de otros contenedores (`web`, y `cloudflared`, cuya ruta va a `web`) y del propio servidor, y la regla de las direcciones privadas sigue valiendo. Quien tenga acceso al servidor podría falsear la IP, como en el modo de depuración.
+
+### Comprobarlo
+
+1. Entra por la URL pública desde fuera de tu red, por ejemplo con el móvil sin Wi-Fi.
+2. Desde el servidor, por SSH, prueba que una cabecera inventada no cuela. La orden va contra la URL pública, así que también pasa por Cloudflare:
+
+   ```bash
+   curl -s -o /dev/null -w "%{http_code}\n" -X POST https://recon.example.com/api/v1/auth/login -H "Content-Type: application/json" -H "CF-Connecting-IP: 1.2.3.4" -H "X-Forwarded-For: 1.2.3.4" -d '{"userName":"ghost","password":"x"}'
+   ```
+
+   Debe dar `401`, o un bloqueo de Cloudflare.
+3. `scripts/deploy.sh check` debe mostrar en los últimos logins la IP del móvil y la IP pública del servidor, nunca `1.2.3.4` ni una dirección privada (`10.`, `172.16`–`172.31`, `192.168.`).
+
+La IP del móvil puede ser IPv6 (con `:`, como `2a0c:5a80:...`). Compárala con la que muestra Cloudflare en **Security** → **Events** para ese login, no con la de una web como `ifconfig.me`, que puede enseñarte la IPv4.

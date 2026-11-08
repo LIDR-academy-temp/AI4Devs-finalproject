@@ -278,11 +278,11 @@ Copy-Item api-collection/.env.example api-collection/.env
 Abre el `.env` de la raíz y sustituye los valores de ejemplo, como indican sus comentarios:
 
 - `MSSQL_SA_PASSWORD`: contraseña de `sa` dentro del contenedor. Solo la usa el script de arranque de SQL Server para crear la base y los usuarios; la aplicación nunca entra como `sa`. SQL Server exige una contraseña fuerte (8 caracteres o más, con mayúsculas, minúsculas, números y símbolos); si no la cumple, el contenedor no arranca.
-- `RECON_APP_PASSWORD`: contraseña del usuario de aplicación `recon_app` (también fuerte, por el mismo motivo); el usuario de solo lectura `recon_reader` se crea con la misma.
+- `RECON_APP_PASSWORD`: contraseña del usuario de aplicación `recon_app` (también fuerte, por el mismo motivo); en local, el usuario de solo lectura `recon_reader` se crea con la misma. El despliegue no lo crea.
 - `JWT_SECRET`: secreto de firma de las sesiones, de **32 caracteres o más**; con menos, el backend no arranca.
 - `SEED_PASSWORD`: contraseña común de los cuatro usuarios de demostración que crea el seed.
 
-Las demás tienen un valor por defecto válido para local y solo se cambian si hace falta: `MSSQL_PORT` y `DB_PORT` (1433), `DB_HOST` (`localhost`), `DB_NAME` (`ReconTool`), `DB_USER` (`recon_app`), `PORT` (3000), `HOST` (`0.0.0.0`), `LOG_LEVEL` (`info`) y `UPLOAD_DIR` (`data/uploads`, relativo al directorio del backend). `DATABASE_URL`, si se define, sustituye a la conexión que Prisma arma con las `DB_*`; solo la usa la CI.
+Las demás tienen un valor por defecto válido para local y solo se cambian si hace falta: `MSSQL_PORT` y `DB_PORT` (1433), `DB_HOST` (`localhost`), `DB_NAME` (`ReconTool`), `DB_USER` (`recon_app`), `PORT` (3000), `HOST` (`0.0.0.0`), `LOG_LEVEL` (`info`) y `UPLOAD_DIR` (`data/uploads`, relativo al directorio del backend). `TRUST_PROXY` queda vacía en local: solo el despliegue la fija, en `uniquelocal`, para auditar la IP real del cliente detrás de Nginx (`docs/deploy.md` §16). `DATABASE_URL`, si se define, sustituye a la conexión que Prisma arma con las `DB_*`; solo la usa la CI.
 
 En `api-collection/.env`, pon en `SEED_PASSWORD` **el mismo valor** que en el `.env` de la raíz; `SEED_USER` (`analyst`) y `SEED_VIEWER_USER` (`viewer`) ya vienen con los usuarios del seed.
 
@@ -298,7 +298,7 @@ pnpm db:migrate     # aplica las migraciones escritas a mano (prisma migrate dep
 pnpm db:seed        # carga el mundo sintético; tarda uno o dos minutos
 ```
 
-El primer `db:up` tarda más (descarga la imagen); al arrancar por primera vez, el contenedor crea la base `ReconTool` y los usuarios `recon_app` (aplicación y migraciones) y `recon_reader` (solo lectura) con las contraseñas del `.env`. Los datos viven en el volumen `recon-mssql-data`, así que sobreviven a `pnpm db:down`. El seed es idempotente: vacía las tablas y recarga el mismo mundo sintético (catálogos, cuentas con sus fees y reglas de pareo, unas 24 000 transacciones e historial de batches pagados); ejecutarlo de nuevo deja la base exactamente igual y borra el trabajo hecho en la aplicación.
+El primer `db:up` tarda más (descarga la imagen); al arrancar por primera vez, el contenedor crea la base `ReconTool` y los usuarios `recon_app` (aplicación y migraciones) y `recon_reader` (solo lectura, solo en local: `infra/mssql/init.local.sql`) con las contraseñas del `.env`. Los datos viven en el volumen `recon-mssql-data`, así que sobreviven a `pnpm db:down`. El seed es idempotente: vacía las tablas y recarga el mismo mundo sintético (catálogos, cuentas con sus fees y reglas de pareo, unas 24 000 transacciones e historial de batches pagados); ejecutarlo de nuevo deja la base exactamente igual y borra el trabajo hecho en la aplicación.
 
 > No se usan `prisma db push` ni `prisma migrate dev`: los índices únicos filtrados y las `CHECK` solo existen en las migraciones escritas a mano y se perderían.
 
@@ -504,7 +504,7 @@ recon-tool-2/
 ├── .env.example                  # plantilla del .env de la raíz (1.4)
 ├── infra/
 │   ├── docker-compose.yml        # SQL Server 2022 para desarrollo
-│   └── mssql/                    # arranque: crea la base y los usuarios recon_app y recon_reader
+│   └── mssql/                    # arranque: crea la base y recon_app (init.sql); recon_reader solo en local (init.local.sql); recon_migrator solo en el despliegue (init.deploy.sql)
 ├── docs/
 │   ├── adr/                      # ADR-001 … ADR-011 en formato MADR
 │   ├── openapi.yaml              # contrato de la API, exportado del backend
@@ -576,7 +576,7 @@ flowchart LR
     C -->|conexión saliente| T
 ```
 
-**Proceso de despliegue.** Es manual y reproducible con `scripts/deploy.sh`: `git pull`, `build`, `migrate` y `up`. Las migraciones son un paso separado del arranque, con la identidad `recon_migrator`; en el despliegue, `recon_app` no puede cambiar el esquema. La integración continua corre en cada pull request: lint, typecheck, tests unitarios, contrato OpenAPI, build del frontend, migración, seed e integración contra un SQL Server efímero en el runner, gitleaks y build de las imágenes de despliegue, sin publicarlas. La URL pública sale por Cloudflare Tunnel, que no requiere abrir puertos en el router; como respaldo ante indisponibilidad del servidor el día de la revisión, la Entrega 3 incluye vídeo del sistema funcionando.
+**Proceso de despliegue.** Es manual y reproducible con `scripts/deploy.sh`: `git pull`, `build`, `migrate` y `up`. Las migraciones son un paso separado del arranque, con la identidad `recon_migrator`; en el despliegue, `recon_app` no puede cambiar el esquema. La integración continua corre en cada pull request: lint, typecheck, tests unitarios, contrato OpenAPI, build del frontend, migración, seed e integración contra un SQL Server efímero en el runner, gitleaks y build de las imágenes de despliegue, sin publicarlas. Esas imágenes además se arrancan con `scripts/deploy.sh` en modo de depuración, sin túnel y con secretos ficticios, y se comprueban a través de Nginx: health, SPA, cabeceras de seguridad y un login fallido que llega a `AuditLog`. La URL pública sale por Cloudflare Tunnel, que no requiere abrir puertos en el router; como respaldo ante indisponibilidad del servidor el día de la revisión, la Entrega 3 incluye vídeo del sistema funcionando.
 
 **Configuración.** Toda la configuración va por variables de entorno. En local, `.env.example` versionado y `.env` no; en el despliegue, `infra/.env.deploy.example` versionado e `infra/.env.deploy` no. Cada contenedor recibe solo las variables que necesita.
 

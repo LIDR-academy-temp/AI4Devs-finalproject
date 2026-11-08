@@ -1,3 +1,4 @@
+import { isIP } from 'node:net'
 import { ErrorResponse, LoginRequest, MeResponse, RefreshRequest, TokenPair } from '@recon/shared'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -19,7 +20,9 @@ export const authRoutes: FastifyPluginAsyncZod<AuthRoutesOptions> = async (app, 
         response: { 200: TokenPair, 400: ErrorResponse, 401: ErrorResponse },
       },
     },
-    async (request) => service.login({ ...request.body, ip: request.ip }),
+    // Fastify does not check that a forwarded value is an address: never audit arbitrary text as the IP.
+    async (request) =>
+      service.login({ ...request.body, ip: isIP(request.ip) ? request.ip : request.socket.remoteAddress }),
   )
 
   app.post(

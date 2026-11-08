@@ -15,6 +15,23 @@ const EnvSchema = z.object({
   RECON_APP_PASSWORD: z.string().default(''),
   /** Root of the uploaded settlement files; a relative path resolves against the backend process cwd. */
   UPLOAD_DIR: z.string().min(1).default('./data/uploads'),
+  /**
+   * Proxies whose X-Forwarded-For is trusted: a comma-separated proxy-addr list of addresses, CIDRs or names
+   * (uniquelocal, loopback…). Absent or empty, none is trusted. Not a hop count: Fastify trusts nobody with one.
+   */
+  TRUST_PROXY: z
+    .string()
+    .optional()
+    .transform((value) => (value?.trim() ? value : undefined))
+    .refine((value) => value === undefined || value.split(',').every((item) => item.trim() !== ''), {
+      message: 'must be a comma-separated list without empty elements',
+    })
+    .transform((value) =>
+      value
+        ?.split(',')
+        .map((item) => item.trim())
+        .join(','),
+    ),
 })
 
 export type Env = z.infer<typeof EnvSchema>

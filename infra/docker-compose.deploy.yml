@@ -68,6 +68,10 @@ services:
       DB_NAME: ${DB_NAME:-ReconTool}
       DB_USER: recon_app
       RECON_APP_PASSWORD: ${RECON_APP_PASSWORD:?set RECON_APP_PASSWORD in infra/.env.deploy}
+      # Trust X-Forwarded-For only from private addresses, i.e. the containers of recon-internal (web): the audited
+      # login IP is then the client's, which Nginx takes from CF-Connecting-IP. Not a secret nor a choice to make.
+      # See openspec deploy-hardening design D1–D2.
+      TRUST_PROXY: uniquelocal
     volumes:
       - recon-uploads:/data/uploads
     depends_on:
