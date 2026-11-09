@@ -25,10 +25,11 @@ function Conexion({ estado }: { estado: EstadoConfiguracionSat2 }) {
       {estado.configuracion_guardada && estado.cargada_en ? (
         <p>
           Cargada el {formatearMomentoDeArgentina(estado.cargada_en)} por{' '}
-          {estado.cargada_por ?? 'una cuenta que ya no existe'}. La ingesta usa esta configuración.
+          {estado.cargada_por ?? 'una cuenta que ya no existe'}.
+          {estado.modo === 'real' && ' La ingesta usa esta configuración.'}
         </p>
       ) : (
-        <p>No hay una configuración guardada: la ingesta usa las variables del servidor.</p>
+        <p>No hay una configuración guardada: en modo real, la ingesta usa las variables del servidor.</p>
       )}
       <p>
         {ciclo
@@ -55,9 +56,11 @@ const VACIO = { url_base: '', usuario: '', clave: '', contrasena_actual: '' }
 
 function Formulario({
   puedeGuardar,
+  modoReal,
   alGuardar,
 }: {
   puedeGuardar: boolean
+  modoReal: boolean
   alGuardar: (estado: EstadoConfiguracionSat2) => void
 }) {
   const [datos, setDatos] = useState(VACIO)
@@ -85,7 +88,11 @@ function Formulario({
     try {
       alGuardar(await guardarConfiguracionSat2(datos))
       setDatos(VACIO)
-      setAviso('Configuración guardada. La ingesta la usa desde el próximo ciclo, en hasta 10 minutos.')
+      setAviso(
+        modoReal
+          ? 'Configuración guardada. La ingesta la usa desde el próximo ciclo, en hasta 10 minutos.'
+          : 'Configuración guardada. Se usará cuando el servidor funcione en modo real.',
+      )
     } catch (fallo) {
       setError(mensajeDeError(fallo))
       setCampos(erroresDeCampos(fallo))
@@ -114,9 +121,13 @@ function Formulario({
         required
         maxLength={500}
         ayuda={
-          sinCifrado
-            ? 'Atención: con http:// las credenciales viajarían sin cifrar hasta SAT2.'
-            : 'La dirección base de la API, con https://.'
+          sinCifrado ? (
+            <span className="ayuda-advertencia">
+              Atención: con http:// las credenciales viajarían sin cifrar hasta SAT2.
+            </span>
+          ) : (
+            'La dirección base de la API, con https://.'
+          )
         }
         {...campo('url_base')}
       />
@@ -197,7 +208,7 @@ export function Administracion() {
         lecturas de las estaciones.
       </p>
       <Conexion estado={estado} />
-      <Formulario puedeGuardar={estado.puede_guardar} alGuardar={setGuardado} />
+      <Formulario puedeGuardar={estado.puede_guardar} modoReal={estado.modo === 'real'} alGuardar={setGuardado} />
       <Cambios estado={estado} />
     </section>
   )

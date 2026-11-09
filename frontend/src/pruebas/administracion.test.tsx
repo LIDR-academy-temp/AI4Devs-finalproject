@@ -192,7 +192,7 @@ describe('pantalla de administración', () => {
 
     await usuario.click(screen.getByRole('button', { name: 'Guardar la configuración' }))
 
-    expect(await screen.findByText(/^Configuración guardada/)).toBeInTheDocument()
+    expect(await screen.findByText(/^Configuración guardada. La ingesta la usa desde el próximo ciclo/)).toBeInTheDocument()
     expect(enviado).toEqual({
       url_base: URL_SAT2,
       usuario: 'usuario-ficticio',
@@ -203,6 +203,21 @@ describe('pantalla de administración', () => {
       expect(screen.getByLabelText(etiqueta)).toHaveValue('')
     }
     expect(screen.getByRole('region', { name: 'Conexión con SAT2' })).toHaveTextContent(`por ${ADMIN}`)
+  })
+
+  it('en un modo sin SAT2 aclara al guardar que se usará en modo real', async () => {
+    simularApi(
+      rutas(true, {
+        'GET /administracion/sat2': { cuerpo: { ...SIN_CONFIGURACION, modo: 'prueba' } },
+        'PUT /administracion/sat2': { cuerpo: { ...GUARDADA, modo: 'prueba' } },
+      }),
+    )
+    abrir('/administracion')
+    const usuario = await completar()
+
+    await usuario.click(screen.getByRole('button', { name: 'Guardar la configuración' }))
+
+    expect(await screen.findByText(/Se usará cuando el servidor funcione en modo real/)).toBeInTheDocument()
   })
 
   it('advierte una dirección sin cifrado', async () => {

@@ -30,8 +30,8 @@ Las decisiones están en `design.md` (D1 a D8). Las pruebas usan valores fictici
 
 ## 6. Extremo a extremo y seguridad
 
-- [ ] 6.1 Prueba de extremo a extremo en modo prueba: una cuenta común no ve la opción y recibe la página inexistente; el administrador guarda valores ficticios, ve el cambio en el registro y recibe el aviso en Mailpit
-- [ ] 6.2 Sumar a `pruebas_negativas.py` las rutas de administración sin sesión y con una cuenta común (404), y la contraseña incorrecta; verificar en el proyecto aislado `wt-seg`
+- [x] 6.1 Prueba de extremo a extremo en modo prueba: una cuenta común no ve la opción y recibe la página inexistente; el administrador guarda valores ficticios, ve el cambio en el registro y recibe el aviso en Mailpit
+- [x] 6.2 Sumar a `pruebas_negativas.py` las rutas de administración sin sesión y con una cuenta común (404), y la contraseña incorrecta; verificar en el proyecto aislado `wt-seg`
 
 ## 7. Documentación
 

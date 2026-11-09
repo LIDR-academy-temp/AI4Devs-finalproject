@@ -107,6 +107,14 @@ env.write_text(
 )
 E = str(env)
 try:
+    # Un par de claves descartable: la API cifra con la publica; la privada solo prueba que la API no la recibe.
+    claves = compose(E, "run", "--rm", "--no-deps", "--build", "api", "python", "-m", "app.administracion", "generar-claves-sat2")
+    lineas = [l for l in claves.stdout.splitlines() if l.startswith("SAT2_CLAVE_")]
+    if claves.returncode or len(lineas) != 2:
+        print("no se pudieron generar las claves:", claves.returncode)
+        raise SystemExit(1)
+    with env.open("a", encoding="utf-8") as archivo:
+        archivo.write("".join(f"{l}\n" for l in lineas))
     arriba = compose(E, "up", "--build", "-d", "--wait", "--wait-timeout", "300")
     print("up:", arriba.returncode)
     if arriba.returncode:
@@ -146,7 +154,8 @@ try:
         "/api/v1/cuenta/baja-con-enlace", "/api/v1/cuenta/baja-un-clic",
     }
     for ruta, metodos in contrato["paths"].items():
-        if ruta in publicas:
+        # La administracion responde 404 sin sesion, como una ruta inexistente: se prueba aparte.
+        if ruta in publicas or ruta.startswith("/api/v1/administracion"):
             continue
         real = ruta.replace("{estacionId}", str(propia)).replace("{sensorId}", str(sensor_a))
         for metodo in metodos:
@@ -265,6 +274,44 @@ try:
     comprobar("desactivar corta la sesion", pedir("/api/v1/estaciones", galleta=galleta_c)[0] == 401)
     comprobar("cuenta inactiva no entra", entrar("ciclo@ejemplo.com", nueva)[0] == 401)
 
+    print("\n== Administracion: invisible para el resto (weather-track-administracion-sat2)")
+    vaciar_contadores_de_ip()
+
+    def consultar(consulta):
+        return compose(E, "exec", "-T", "db", "psql", "-U", "weather_track", "-d", "weather_track", "-tAc", consulta).stdout.strip()
+
+    SAT2 = "/api/v1/administracion/sat2"
+    inexistente = pedir("/api/v1/noexiste")[2]
+    for ruta, metodo in [(SAT2, "GET"), (SAT2, "PUT"), (SAT2, "DELETE"), ("/api/v1/administracion/otra", "GET")]:
+        for quien, galleta in [("sin sesion", None), ("cuenta comun", galleta_a)]:
+            codigo, _, cuerpo = pedir(ruta, metodo, {} if metodo == "PUT" else None, galleta=galleta)
+            comprobar(f"administracion {quien} {metodo} {ruta}: igual a una ruta inexistente", codigo == 404 and cuerpo == inexistente, str(codigo))
+    datos_a = {"nombre": "Prueba", "apellido": "A", "localidad": "Pergamino", "provincia": "Buenos Aires", "es_administrador": True}
+    pedir("/api/v1/cuenta", "PUT", datos_a, galleta=galleta_a)
+    comprobar("la cuenta no se vuelve administradora por la API", pedir(SAT2, galleta=galleta_a)[0] == 404)
+
+    clave_adm = crear(E, "adm@ejemplo.com")
+    admin(E, "hacer-administrador", "--email", "adm@ejemplo.com")
+    galleta_adm = entrar("adm@ejemplo.com", clave_adm)[1].split(";")[0]
+    codigo, _, cuerpo = pedir(SAT2, galleta=galleta_adm)
+    comprobar(f"el administrador ve la configuracion ({codigo})", codigo == 200 and json.loads(cuerpo)["puede_guardar"] is True)
+    # Valores ficticios: nunca credenciales reales de SAT2.
+    ficticia = {"url_base": "https://sat2.ejemplo.invalid/api", "usuario": "usuario-" + secrets.token_hex(4), "clave": "clave-" + secrets.token_hex(8)}
+    codigo, _, _ = pedir(SAT2, "PUT", {**ficticia, "contrasena_actual": "mala"}, galleta=galleta_adm)
+    filas = consultar("select count(*) from configuracion_sat2")
+    comprobar(f"contrasena incorrecta del administrador no guarda ({codigo})", codigo == 400 and filas == "0", filas)
+    comprobar("la contrasena incorrecta cuenta como intento", consultar("select count(*) from intento_acceso where email = 'adm@ejemplo.com'") == "1")
+    codigo, _, cuerpo = pedir(SAT2, "PUT", {**ficticia, "url_base": "file:///etc/passwd", "contrasena_actual": clave_adm}, galleta=galleta_adm)
+    comprobar(f"una direccion que no es http ni https se rechaza ({codigo})", codigo == 422 and consultar("select count(*) from configuracion_sat2") == "0")
+    codigo, _, cuerpo = pedir(SAT2, "PUT", {**ficticia, "contrasena_actual": clave_adm}, galleta=galleta_adm)
+    comprobar(f"el administrador guarda ({codigo})", codigo == 200)
+    comprobar("la respuesta no repite los valores", not any(v.encode() in cuerpo for v in ficticia.values()))
+    en_claro = [v for v in ficticia.values() if consultar(f"select position(convert_to('{v}', 'UTF8') in contenido_cifrado) from configuracion_sat2") != "0"]
+    comprobar("la base guarda solo texto cifrado", en_claro == [], str(len(en_claro)))
+    registros = compose(E, "logs", "api").stdout
+    comprobar("los registros de la API no tienen los valores", not any(v in registros for v in ficticia.values()))
+    vaciar_contadores_de_ip()
+
     print("\n== Cuentas: enumeracion de correos")
 
     def sql(consulta):
@@ -356,9 +403,11 @@ try:
     comprobar(f"ruta inexistente sin detalles ({codigo})", codigo == 404 and b"Traceback" not in cuerpo)
 
     print("\n== Aislamiento de credenciales y puertos")
-    nombres = ["nombreDeUsuario", "clave", "SAT2_URL_BASE"]
+    nombres = ["nombreDeUsuario", "clave", "SAT2_URL_BASE", "SAT2_CLAVE_PRIVADA"]
     salida = compose(E, "exec", "-T", "api", "python", "-c", f"import os; print([n for n in {nombres!r} if n in os.environ])").stdout.strip()
-    comprobar(f"la API no recibe credenciales SAT2 {salida}", salida == "[]")
+    comprobar(f"la API no recibe credenciales SAT2 ni la clave privada {salida}", salida == "[]")
+    publica = compose(E, "exec", "-T", "api", "python", "-c", "import os; print(bool(os.environ.get('SAT2_CLAVE_PUBLICA')))").stdout.strip()
+    comprobar("la API recibe la clave publica", publica == "True")
     filas = [json.loads(l) for l in compose(E, "ps", "--format", "json").stdout.splitlines() if l.strip()]
     publicados = sorted({p["PublishedPort"] for s in filas for p in s["Publishers"] if p["PublishedPort"]})
     comprobar(f"solo 80 y 443 publicados {publicados}", publicados == [80, 443])
