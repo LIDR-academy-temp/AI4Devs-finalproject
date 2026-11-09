@@ -108,7 +108,7 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
 
 - [x] 6.1 Correr `pnpm lint`, `pnpm typecheck`, `pnpm --filter frontend test` y `openspec validate web-analysis-polish --strict`, y comprobar que todo pasa. Comprobar también que no hay texto en español en `.ts` ni `.tsx` y que los textos de la interfaz están en inglés. (Se marcó en `ddca6a0`, antes de las capturas, y el grupo 7 cambió código después. Se volvió a correr todo tras `bedc22d`: lint, typecheck, la suite entera, con 99 archivos y 1217 tests, y validate pasan.)
 - [x] 6.2 Commit: `fix(web): correcciones de la verificación de web-analysis-polish`, solo si la verificación obligó a cambiar algo. (No hizo falta: la verificación pasó sin cambios.)
-- [ ] 6.3 Abrir el PR hacia `feature/entrega-3-MVP` con la plantilla. Debe incluir:
+- [x] 6.3 Abrir el PR hacia `feature/entrega-3-MVP` con la plantilla. Debe incluir:
   - las capturas y las medidas de 5.4;
   - la rotura deliberada de 2.4;
   - qué medidas secundarias de 5.1 quedaron como revisión a ojo, si alguna;
@@ -116,7 +116,7 @@ Comando de tests del frontend: `pnpm --filter frontend test <ruta>` (`pnpm --fil
   - el riesgo de `position: relative` en `<tr>`;
   - `Refs #157`, porque el issue se cierra a mano, ya que la rama no es la principal.
 
-  Verificar que la CI está en verde.
+  Verificar que la CI está en verde. (PR #158, con la CI en verde. Por indicación de la persona, el cuerpo lleva `Closes #157` en lugar de `Refs #157`, y aclara que el issue se cierra a mano.)
 
 ## 7. Arreglos de la primera pasada de capturas (D8 y D7)
 
