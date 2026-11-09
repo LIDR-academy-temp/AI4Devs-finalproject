@@ -124,6 +124,17 @@ Los tests existentes que cambiaron de comportamiento por las decisiones de las d
 - **Backend, margen:** tres tests de la definición antigua de `below_cost` (coste de medios mayor que el ingreso) se sustituyeron por seis con la definición nueva (margen final negativo); el recuento de redondeos de un flight en curso pasó de cuatro a cinco al añadirse la venta contratada; y una aserción de los códigos de las tablas de tramos.
 - **Frontend:** la navegación pasó de cuatro a cinco enlaces; la columna «Ingreso» pasó a «Devengado» en la vista de margen; y los tests del cierre y del acceso usan un margen con un flight pendiente de cierre porque el botón «Cerrar mes» se desactiva sin él.
 
+## Comprobaciones manuales de acceso por rol
+
+El 2026-11-09 se comprobó en el navegador, sobre el stack real con datos de demostración, qué ve un usuario según su rol. El rol se lee de la base de datos en cada petición, así que se cambiaron con SQL los roles del usuario de desarrollo, se recargó la aplicación y se restauraron sus roles al terminar.
+
+| Roles del usuario | Qué se miró | Resultado |
+|---|---|---|
+| `operations`, sin `finance` | La navegación y `/margin` | El enlace «Margen» desaparece y `/margin` muestra «Acceso denegado» |
+| `business` | Campañas y Estado; después Excepciones, Catálogo y Margen | En Campañas y Estado no se ve ningún coste, ingreso ni margen; las otras tres pantallas muestran «Acceso denegado» |
+
+Corresponden a la tarea 12.4 del change del margen y a la 12.3 del change del estado diario.
+
 ## Alcance
 
 ### En alcance para este informe
