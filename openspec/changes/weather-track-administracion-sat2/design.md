@@ -84,6 +84,13 @@ Antes de cada ciclo y de cada sincronización del catálogo, el worker lee `carg
 
 En los modos `simulado` y `prueba` el worker no lee la configuración, porque no consulta SAT2.
 
+Detalles de la implementación (`app/ingesta/origen_sat2.py`):
+
+- **Versión:** se compara el contenido cifrado, que cambia en cada guardado aunque los valores sean los mismos.
+- **Arranque:** en modo real, sin configuración guardada ni variables completas en el `.env`, el worker termina como antes y avisa qué falta. Si arrancó, toma cada cambio posterior sin reiniciar.
+- **Un error en el ciclo** deja en `ERROR` la ejecución de cada estación activa, con el motivo y sin valores, para que la pantalla de administración lo muestre.
+- **Un solo bloqueo:** el cliente nuevo comparte el bloqueo del anterior, así una carga inicial en curso con el cliente viejo no consulta a la vez que el ciclo con el nuevo. El cliente viejo no se cierra para no cortar esa carga.
+
 ### D7. Aviso por correo
 
 El tipo nuevo `CONFIGURACION_SAT2` dice cuándo y quién cambió la configuración, y qué hacer si no fue el destinatario. No incluye valores. Lleva el enlace de baja, como todos los correos. Respeta el límite de 3 mensajes del mismo tipo por hora.

@@ -2,8 +2,10 @@ import logging
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import func, select
 
 from app.api import principal as api
+from app.datos.modelos import Estacion
 from app.ingesta import worker
 from app.ingesta.cliente_simulado import ClienteSat2Simulado
 
@@ -56,9 +58,26 @@ def test_el_modo_escenarios_ya_no_existe(monkeypatch, caplog):
     assert "SAT2_MODO no admitido: escenarios" in caplog.text
 
 
+class FabricaDePruebas:
+    def __init__(self, sesion):
+        self.sesion = sesion
+
+    def __call__(self):
+        return self
+
+    def __enter__(self):
+        return self.sesion
+
+    def __exit__(self, *errores):
+        return False
+
+
 def test_modo_real_sin_credenciales_termina_sin_exponer_valores(
-    tmp_path, monkeypatch, caplog
+    tmp_path, monkeypatch, caplog, sesion
 ):
+    """Sin configuración guardada ni variables completas en el entorno (D6)."""
+    monkeypatch.setattr(worker, "obtener_motor", lambda: None)
+    monkeypatch.setattr(worker, "sessionmaker", lambda _motor: FabricaDePruebas(sesion))
     for nombre in ("nombreDeUsuario", "SAT2_URL_BASE"):
         monkeypatch.delenv(nombre, raising=False)
     ruta_env = tmp_path / ".env"
@@ -86,3 +105,35 @@ def test_latido(tmp_path):
     momento = ruta.stat().st_mtime
     assert worker.latido_vigente(ruta, ahora=momento + 120)
     assert not worker.latido_vigente(ruta, ahora=momento + 121)
+
+
+class PlanificadorFalso:
+    def __init__(self, **_opciones):
+        self.tareas = []
+
+    def add_job(self, funcion, *_argumentos, args=(), **_opciones):
+        self.tareas.append((funcion, args))
+
+    def start(self):
+        pass
+
+
+def test_el_modo_simulado_arranca_y_planifica_con_su_cliente_fijo(monkeypatch, sesion):
+    planificadores = []
+
+    def crear_planificador(**opciones):
+        planificadores.append(PlanificadorFalso(**opciones))
+        return planificadores[-1]
+
+    monkeypatch.setenv("SAT2_MODO", worker.MODO_SIMULADO)
+    monkeypatch.delenv("SMTP_HOST", raising=False)
+    monkeypatch.setattr(worker, "registrar_latido", lambda: None)
+    monkeypatch.setattr(worker, "obtener_motor", lambda: None)
+    monkeypatch.setattr(worker, "sessionmaker", lambda _motor: FabricaDePruebas(sesion))
+    monkeypatch.setattr(worker, "BlockingScheduler", crear_planificador)
+
+    assert worker.principal() == 0
+
+    nombres = [args[0] for funcion, args in planificadores[0].tareas if funcion is worker.protegida]
+    assert nombres == ["catálogo", "ciclo", "carga inicial"]
+    assert sesion.scalar(select(func.count()).select_from(Estacion)) == 1

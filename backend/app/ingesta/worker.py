@@ -3,10 +3,10 @@
 import logging
 import os
 import sys
-import threading
 import time
 from collections.abc import Callable
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -27,10 +27,17 @@ from app.datos.naturaleza import NaturalezaIncompatible, asegurar_naturaleza
 from app.ingesta.carga_inicial import ejecutar_carga_inicial
 from app.ingesta.catalogo import sincronizar_catalogo
 from app.ingesta.ciclo import ejecutar_ciclo
-from app.ingesta.cliente_sat2 import ClienteSat2, ClienteSat2Http
+from app.ingesta.cliente_sat2 import ClienteSat2
 from app.ingesta.cliente_simulado import ClienteSat2Simulado
-from app.ingesta.configuracion import ConfiguracionIncompleta, cargar_configuracion
+from app.ingesta.configuracion import ConfiguracionIncompleta
 from app.ingesta.modo_prueba import preparar_modo_prueba
+from app.ingesta.origen_sat2 import (
+    ClienteSerializado,
+    ConfiguracionSat2Ilegible,
+    OrigenFijo,
+    OrigenSat2,
+    tarea_con_origen,
+)
 
 MODO_SIMULADO = "simulado"
 MODO_REAL = "real"
@@ -48,38 +55,16 @@ RUTA_ENV = Path(os.environ.get("WORKER_RUTA_ENV", ".env"))
 registro = logging.getLogger("weather_track.worker")
 
 
-class ClienteSerializado:
-    """Garantiza una sola consulta a SAT2 por vez entre el ciclo y la carga.
-
-    El bloqueo se toma por consulta: el ciclo espera como máximo una consulta en curso
-    y nunca a toda la carga.
-    """
-
-    def __init__(self, cliente: ClienteSat2) -> None:
-        self._cliente = cliente
-        self._bloqueo = threading.Lock()
-
-    def recuperar_equipos(self) -> list[dict[str, Any]]:
-        with self._bloqueo:
-            return self._cliente.recuperar_equipos()
-
-    def recuperar_instantaneos(self, id_equipo: int) -> dict[str, Any]:
-        with self._bloqueo:
-            return self._cliente.recuperar_instantaneos(id_equipo)
-
-    def recuperar_historicos(
-        self, id_equipo: int, id_sensor: int, desde: date, hasta: date
-    ) -> list[dict[str, Any]]:
-        with self._bloqueo:
-            return self._cliente.recuperar_historicos(id_equipo, id_sensor, desde, hasta)
-
-
 def crear_cliente(modo: str) -> ClienteSat2:
+    """Solo el modo simulado: el real toma su configuración en cada tarea (`crear_origen_real`)."""
     if modo == MODO_SIMULADO:
         return ClienteSat2Simulado()
-    if modo == MODO_REAL:
-        return ClienteSat2Http(cargar_configuracion(RUTA_ENV))
     raise ConfiguracionIncompleta(f"SAT2_MODO no admitido: {modo}")
+
+
+def crear_origen_real(fabrica: Callable[[], Session]) -> OrigenSat2:
+    """La configuración guardada por un administrador o, si no hay, la del entorno (D6)."""
+    return OrigenSat2(fabrica, RUTA_ENV)
 
 
 def registrar_latido(ruta: Path = RUTA_LATIDO) -> None:
@@ -252,20 +237,27 @@ def principal() -> int:
     if modo == MODO_PRUEBA:
         return principal_de_prueba(sessionmaker(obtener_motor()))
     try:
-        cliente = ClienteSerializado(crear_cliente(modo))
-    except ConfiguracionIncompleta as error:
+        if modo == MODO_REAL:
+            fabrica = sessionmaker(obtener_motor())
+            origen: OrigenSat2 | OrigenFijo = crear_origen_real(fabrica)
+            # Sin ninguna configuración no arranca; después, cada cambio se toma sin reiniciar.
+            origen.cliente()
+        else:
+            origen = OrigenFijo(ClienteSerializado(crear_cliente(modo)))
+            fabrica = sessionmaker(obtener_motor())
+    except (ConfiguracionIncompleta, ConfiguracionSat2Ilegible) as error:
         # El mensaje solo nombra variables, nunca sus valores.
         registro.error("Configuración incompleta: %s", error)
         return 2
 
-    fabrica = sessionmaker(obtener_motor())
     if not preparar_base(fabrica, modo):
         return 2
+    ciclo = partial(tarea_con_origen, registrar_ciclo=True)
 
     registro.info("Worker iniciado en modo %s", modo)
     registrar_latido()
     # Antes de planificar: si corriera junto al ciclo, ambos crearían las mismas estaciones.
-    protegida("catálogo", tarea_catalogo, fabrica, cliente)
+    protegida("catálogo", tarea_con_origen, tarea_catalogo, fabrica, origen)
     ahora = _ahora()
     planificador = BlockingScheduler(
         timezone="UTC",
@@ -277,20 +269,20 @@ def principal() -> int:
         protegida,
         "interval",
         hours=INTERVALO_CATALOGO_HORAS,
-        args=["catálogo", tarea_catalogo, fabrica, cliente],
+        args=["catálogo", tarea_con_origen, tarea_catalogo, fabrica, origen],
     )
     planificador.add_job(
         protegida,
         "interval",
         minutes=INTERVALO_CICLO_MINUTOS,
-        args=["ciclo", tarea_ciclo, fabrica, cliente],
+        args=["ciclo", ciclo, tarea_ciclo, fabrica, origen],
         next_run_time=ahora,
     )
     planificador.add_job(
         protegida,
         "interval",
         minutes=INTERVALO_CARGA_MINUTOS,
-        args=["carga inicial", tarea_carga, fabrica, cliente],
+        args=["carga inicial", tarea_con_origen, tarea_carga, fabrica, origen],
         next_run_time=ahora,
     )
     planificador.start()

@@ -21,7 +21,7 @@ Las decisiones están en `design.md` (D1 a D8). Las pruebas usan valores fictici
 
 ## 4. Worker (D6)
 
-- [ ] 4.1 Escribir primero las pruebas del origen de la configuración (sin fila usa el entorno, con fila usa la base, cambio de `cargada_en` recrea el cliente, sin clave privada no consulta) y luego implementarlo en el ciclo y el catálogo, con un cliente HTTP falso
+- [x] 4.1 Escribir primero las pruebas del origen de la configuración (sin fila usa el entorno, con fila usa la base, cambio de `cargada_en` recrea el cliente, sin clave privada no consulta) y luego implementarlo en el ciclo y el catálogo, con un cliente HTTP falso
 
 ## 5. Frontend (D2, D5)
 
