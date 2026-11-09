@@ -16,6 +16,7 @@ ContextoCuartaQuinientos/PULIR_ENTREGA_2_TYPEFORM.md
 appsettings.Development.json
 appsettings.Production.json
 appsettings.*.local.json
+GraphApi/.continue/
 *.publishSettings
 *WebDeploy*.publishSettings
 .claude/settings.json
