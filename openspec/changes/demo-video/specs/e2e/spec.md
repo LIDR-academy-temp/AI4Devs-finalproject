@@ -1,12 +1,12 @@
 ## ADDED Requirements
 
 ### Requirement: Vídeo de la demo: recorrido y salida
-El proyecto SHALL tener un script, `pnpm video:demo`, fuera de `pnpm test:e2e` y de la CI, que grabe a 1280×720 en un contexto propio el flujo feliz de `batch-clean` en ProviderA-USD: login de `analyst`, import, pareo, análisis, validaciones, Settlement Review, Process, Settlement Summary con descarga del merchant summary, y `payments` con **Mark as paid**. Cada etapa SHALL llevar un rótulo en inglés que no tape cifras. La salida SHALL ser `docs/demo/recon-tool-demo.mp4`, H.264, sin audio y de menos de 20 MB.
+El proyecto SHALL tener un script, `pnpm video:demo`, fuera de `pnpm test:e2e` y de la CI, que grabe a 1280×720 en un contexto propio el flujo feliz de `batch-clean` en ProviderA-USD, de `analyst` importando a `payments` marcando el pago. Cada etapa SHALL llevar un rótulo en inglés que no tape cifras. La salida SHALL ser `docs/demo/recon-tool-demo.mp4`, H.264, sin audio y de menos de 20 MB.
 
 #### Scenario: Grabación completa
 - **GIVEN** la base local recién sembrada y la aplicación levantada con `pnpm dev`
 - **WHEN** se ejecuta `pnpm video:demo`
-- **THEN** `docs/demo/recon-tool-demo.mp4` dura entre 2 y 3 minutos, es H.264 a 1280×720 sin pista de audio, ocupa menos de 20 MB y muestra las nueve etapas en orden, cada una con su rótulo
+- **THEN** `docs/demo/recon-tool-demo.mp4` dura entre 2 y 3 minutos, es H.264 a 1280×720 sin pista de audio, ocupa menos de 20 MB y muestra en orden, cada una con su rótulo, las nueve etapas: login de `analyst`, import, pareo de columnas, análisis, validaciones, Settlement Review con fees prellenados y fecha, Process, Settlement Summary con la descarga del merchant summary, y `payments` con **Mark as paid**
 - **AND** las cifras que se muestran (filas leídas y asociadas, fees prellenados, amount payable) son las de `data/samples/batch-clean/expected.json`, comprobadas por el script antes de seguir
 
 #### Scenario: La suite sigue sin vídeo
