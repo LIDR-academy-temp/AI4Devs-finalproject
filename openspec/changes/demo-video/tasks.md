@@ -2,14 +2,14 @@
 
 ## 1. Script de grabación (D1–D8)
 
-- [ ] 1.1 Crear `e2e/video/steps.ts` con las copias de los pasos de pantalla de D3: `signIn` (más `setPassword` y `clearPassword`, y exige `type="password"` antes de escribir), `uploadFile`, `processBatch`, `downloadMerchantSummary`, `assertFreshSeed`, `cardNumber`, `amountPayable` y `headerValue`. Cada uno cita su step de origen. Solo importa de `support/` lo que ya existe (`api.ts`, `cleanup.ts`, `expected.ts`). Verificación: `pnpm --filter @recon/e2e typecheck` limpio con `video` en el `include` de `e2e/tsconfig.json`.
-- [ ] 1.2 Crear `e2e/video/demo-video.ts` con:
+- [x] 1.1 Crear `e2e/video/steps.ts` con las copias de los pasos de pantalla de D3: `signIn` (más `setPassword` y `clearPassword`, y exige `type="password"` antes de escribir), `uploadFile`, `processBatch`, `downloadMerchantSummary`, `assertFreshSeed`, `cardNumber`, `amountPayable` y `headerValue`. Cada uno cita su step de origen. Solo importa de `support/` lo que ya existe (`api.ts`, `cleanup.ts`, `expected.ts`). Verificación: `pnpm --filter @recon/e2e typecheck` limpio con `video` en el `include` de `e2e/tsconfig.json`.
+- [x] 1.2 Crear `e2e/video/demo-video.ts` con:
   - Las comprobaciones previas: `globalSetup()`, `assertFreshSeed('batch-clean')` y ningún rótulo que contenga `SEED_PASSWORD`.
   - Un contexto con viewport y `recordVideo` a 1280×720 y `acceptDownloads`.
   - `addInitScript` para la franja de rótulos y el `padding-bottom`, más los helpers `caption`, `highlight` y `hold`.
 
   Verificación: typecheck limpio.
-- [ ] 1.3 Escribir el recorrido de las nueve etapas con los rótulos de D4 y las comprobaciones contra `expectedOf('batch-clean')`:
+- [x] 1.3 Escribir el recorrido de las nueve etapas con los rótulos de D4 y las comprobaciones contra `expectedOf('batch-clean')`:
   - Filas leídas y asociadas.
   - Fees prellenados.
   - Amount payable del pre-summary y del summary.
@@ -17,15 +17,15 @@
   - `Paid` con `Paid by` `payments`.
 
   Al terminar, imprimir la marca de tiempo de cada etapa. Verificación: revisión contra el escenario "Grabación completa" del delta spec.
-- [ ] 1.4 Añadir la limpieza en `finally`, después de cerrar el contexto: `cleanUp(created, apiClient(), 'Demo video cleanup')`, las notas impresas y el recordatorio de `pnpm db:seed`. Verificación: revisión contra el escenario "Limpieza al terminar".
-- [ ] 1.5 Añadir la conversión con ffmpeg de D8:
+- [x] 1.4 Añadir la limpieza en `finally`, después de cerrar el contexto: `cleanUp(created, apiClient(), 'Demo video cleanup')`, las notas impresas y el recordatorio de `pnpm db:seed`. Verificación: revisión contra el escenario "Limpieza al terminar".
+- [x] 1.5 Añadir la conversión con ffmpeg de D8:
   - ffmpeg desde `FFMPEG_PATH` o el `PATH`, con el mensaje de `winget` si falta.
   - El `.mp4` va primero a un archivo temporal.
   - El renombrado a `docs/demo/recon-tool-demo.mp4` solo ocurre si mide menos de 20 MB.
   - Informe de `ffprobe`.
 
   Verificación: con `FFMPEG_PATH` apuntando a un archivo inexistente, el script falla con el mensaje de instalación antes de abrir el navegador.
-- [ ] 1.6 Añadir los scripts `video:demo` en `e2e/package.json` (`node video/demo-video.ts`) y en el `package.json` de la raíz (`pnpm --filter @recon/e2e video:demo`), y `*.mp4 binary` en `.gitattributes`. Verificación: `pnpm lint` y `pnpm typecheck` limpios; `git diff --stat origin/feature/entrega-3-MVP -- e2e/steps e2e/features e2e/support e2e/playwright.config.ts` vacío.
+- [x] 1.6 Añadir los scripts `video:demo` en `e2e/package.json` (`node video/demo-video.ts`) y en el `package.json` de la raíz (`pnpm --filter @recon/e2e video:demo`), y `*.mp4 binary` en `.gitattributes`. Verificación: `pnpm lint` y `pnpm typecheck` limpios; `git diff --stat origin/feature/entrega-3-MVP -- e2e/steps e2e/features e2e/support e2e/playwright.config.ts` vacío.
 - [ ] 1.7 Commit: feat(e2e): script del vídeo de la demo con rótulos, limpieza y conversión a mp4
 
 ## 2. Grabación y ajuste (un solo turno de base; K siembra antes de cada pasada)

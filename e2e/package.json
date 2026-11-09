@@ -18,6 +18,7 @@
     "screenshots:web-analysis-guardrails": "node screenshots/web-analysis-guardrails.ts",
     "screenshots:web-polish-e3": "node screenshots/web-polish-e3.ts",
     "screenshots:web-analysis-polish": "node screenshots/web-analysis-polish.ts",
+    "video:demo": "node video/demo-video.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
