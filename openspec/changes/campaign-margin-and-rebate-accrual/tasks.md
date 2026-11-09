@@ -172,7 +172,7 @@ Controls to name (the label text stays as is): `Nombre de la campaña *`, `Nombr
 ## 9. Review and Update Existing Unit Tests (MANDATORY)
 
 - [x] 9.1 Review every test touched by this change and update any asserting superseded behaviour
-- [ ] 9.2 Verify every worked example from `docs/product-description.md` §5 is encoded as a test
+- [x] 9.2 Verify every worked example from `docs/product-description.md` §5 is encoded as a test (Checked: every figure the system computes in the section 5.8 example is asserted in tests; the "margin as Qlik reports it today" line is informative and is not computed by the system.)
 - [x] 9.3 Verify each role-guarded endpoint added here has its negative authorisation case covered
 
 ## 10. Run Unit Tests and Verify Database State (MANDATORY)
