@@ -42,4 +42,13 @@ describe('DateRangesTable', () => {
     const card = table().closest<HTMLElement>('[data-slot="card"]')
     expect(within(card!).getByText('Date ranges of this test')).toHaveAttribute('data-slot', 'card-title')
   })
+
+  // jsdom does not lay out, so these are the classes: centred in its section, as wide as its table
+  // (web-analysis-polish design D1; it was aligned to the left in ui-polish D9).
+  it('is centred and keeps the width of its table', () => {
+    render(<DateRangesTable title="Date ranges of this test" ranges={RANGES} />)
+
+    const card = table().closest<HTMLElement>('[data-slot="card"]')
+    expect(card).toHaveClass('mx-auto', 'w-fit', 'max-w-full')
+  })
 })

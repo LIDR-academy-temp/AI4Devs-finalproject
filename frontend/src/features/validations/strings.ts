@@ -50,7 +50,10 @@ export const strings = {
     pendingInRange: 'Pending in range',
     undatedAdjustments: 'Undated adjustments',
     undatedCandidates: 'Undated candidates',
-    // What each counter counts (README §3.3, "Candidatas I sin fecha" and "Pending"; design D10).
+    /** The accessible name of the info button of a counter (web-analysis-polish design D4). */
+    about: (label: string) => `About ${label}`,
+    // What each counter counts (README §3.3, "Candidatas I sin fecha" and "Pending"), shown in a tooltip
+    // (web-analysis-polish design D3; ui-polish D10 had it in view).
     explain: {
       pendingInRange:
         "Transactions of the account's channels still Pending on the gateway, created within the APP or DEC range.",
