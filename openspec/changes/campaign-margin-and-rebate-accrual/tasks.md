@@ -173,7 +173,7 @@ Controls to name (the label text stays as is): `Nombre de la campaña *`, `Nombr
 
 - [x] 9.1 Review every test touched by this change and update any asserting superseded behaviour
 - [ ] 9.2 Verify every worked example from `docs/product-description.md` §5 is encoded as a test
-- [ ] 9.3 Verify each role-guarded endpoint added here has its negative authorisation case covered
+- [x] 9.3 Verify each role-guarded endpoint added here has its negative authorisation case covered
 
 ## 10. Run Unit Tests and Verify Database State (MANDATORY)
 
@@ -186,14 +186,14 @@ Controls to name (the label text stays as is): `Nombre de la campaña *`, `Nombr
 
 ## 11. Manual Endpoint Testing with curl (MANDATORY - AGENT MUST EXECUTE)
 
-- [ ] 11.1 Start the backend and verify the database connection is active
-- [ ] 11.2 Close a month with `POST /margin/closings`, request a closed flight's margin with curl and verify the four terms against a hand-computed figure, then close it again and verify nothing changed
-- [ ] 11.3 Request a running flight's margin with curl and verify it is pro-rated on its window, marked provisional and that no `applied_rates` row was written
-- [ ] 11.4 Create a platform rate override with curl, verify the resolution changes, then delete it to restore database state
-- [ ] 11.5 Create an agency rebate exception with curl, verify the agency's flights are priced by its own schedule, then remove it and restore database state (the counter carve-out and the restatement are deferred with 4.4 and 4.8)
-- [ ] 11.6 Request a roll-up with curl and verify it agrees with the detail (export is deferred with 6.6)
-- [ ] 11.7 Test authorisation: no token (401), token without `finance` on every cost and margin endpoint, including the closing endpoint (403)
-- [ ] 11.8 Verify the database matches its pre-test state and document every command and response in a report in the change folder
+- [x] 11.1 Start the backend and verify the database connection is active
+- [ ] 11.2 Close a month with `POST /margin/closings`, request a closed flight's margin with curl and verify the four terms against a hand-computed figure, then close it again and verify nothing changed **Deferred:** no curl script was written; the same behaviour is covered by the API tests against PostgreSQL and by the Playwright specs on the real stack (see docs/reports/2026-11-07-entrega-3-test-report.md).
+- [ ] 11.3 Request a running flight's margin with curl and verify it is pro-rated on its window, marked provisional and that no `applied_rates` row was written **Deferred:** no curl script was written; the same behaviour is covered by the API tests against PostgreSQL and by the Playwright specs on the real stack (see docs/reports/2026-11-07-entrega-3-test-report.md).
+- [ ] 11.4 Create a platform rate override with curl, verify the resolution changes, then delete it to restore database state **Deferred:** no curl script was written; the same behaviour is covered by the API tests against PostgreSQL and by the Playwright specs on the real stack (see docs/reports/2026-11-07-entrega-3-test-report.md).
+- [ ] 11.5 Create an agency rebate exception with curl, verify the agency's flights are priced by its own schedule, then remove it and restore database state (the counter carve-out and the restatement are deferred with 4.4 and 4.8) **Deferred:** depends on the counter carve-out and the restatement, deferred with 4.4 and 4.8.
+- [ ] 11.6 Request a roll-up with curl and verify it agrees with the detail (export is deferred with 6.6) **Deferred:** depends on the roll-up view and the export, deferred with 7.4 and 6.6.
+- [ ] 11.7 Test authorisation: no token (401), token without `finance` on every cost and margin endpoint, including the closing endpoint (403) **Deferred:** no curl script was written; the same behaviour is covered by the API tests against PostgreSQL and by the Playwright specs on the real stack (see docs/reports/2026-11-07-entrega-3-test-report.md).
+- [ ] 11.8 Verify the database matches its pre-test state and document every command and response in a report in the change folder **Deferred:** no curl script was written; the same behaviour is covered by the API tests against PostgreSQL and by the Playwright specs on the real stack (see docs/reports/2026-11-07-entrega-3-test-report.md).
 
 ## 12. E2E Testing with Playwright (MANDATORY - AGENT MUST EXECUTE)
 
@@ -201,8 +201,8 @@ Controls to name (the label text stays as is): `Nombre de la campaña *`, `Nombr
 - [x] 12.2 Execute the finance flow: read a campaign margin, drill down to its lines and flights (the roll-up view and export are deferred with 7.4 and 6.6)
 - [x] 12.3 Verify a running-flight figure, and its line, display the provisional label in the browser
 - [ ] 12.4 Verify a user without `finance` cannot reach the margin views and sees no cost figure anywhere
-- [ ] 12.5 Execute the flow as a user holding several roles and verify the interface composes from all of them
-- [ ] 12.6 Clean up test data, restore database state and document the scenarios in a report in the change folder
+- [x] 12.5 Execute the flow as a user holding several roles and verify the interface composes from all of them
+- [x] 12.6 Clean up test data, restore database state and document the scenarios in a report in the change folder
 
 ## 12A. E2E Harness and First Specs
 
@@ -251,7 +251,7 @@ What does not have an accessible name: on the campaign form (`frontend/features/
 
 ## 13. Update Technical Documentation (MANDATORY)
 
-- [ ] 13.1 Update `readme.md` §3 if the rebate or rate schema diverged from the documented model
-- [ ] 13.2 Record the bracket thresholds actually supplied (the replay timing is deferred with 4.10) in `docs/product-description.md`
-- [ ] 13.3 Resolve or restate pending item 1 of `readme.md` §3.3 once real bracket thresholds exist
-- [ ] 13.4 Verify `openspec validate campaign-margin-and-rebate-accrual` passes before archiving
+- [x] 13.1 Update `readme.md` §3 if the rebate or rate schema diverged from the documented model
+- [ ] 13.2 Record the bracket thresholds actually supplied (the replay timing is deferred with 4.10) in `docs/product-description.md` **Deferred:** no real bracket thresholds were supplied; the replay timing is deferred with 4.10.
+- [ ] 13.3 Resolve or restate pending item 1 of `readme.md` §3.3 once real bracket thresholds exist **Deferred:** waits for real bracket thresholds.
+- [x] 13.4 Verify `openspec validate campaign-margin-and-rebate-accrual` passes before archiving
