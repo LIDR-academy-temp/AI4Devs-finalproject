@@ -35,7 +35,15 @@ Recon Tool 2.0 es una aplicación web para el equipo de reconciliaciones de una 
 
 La aplicación está publicada en <https://recon.aperit.io/>, con datos sintéticos y el despliegue descrito en [2.4](#24-infraestructura-y-despliegue). También se puede ejecutar en local siguiendo [1.4](#14-instrucciones-de-instalación).
 
-**Vídeo de la demo.** Previsto para la Entrega 3: el flujo import → validaciones → settlement → descargas con datos sintéticos ([#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96)).
+**Vídeo de la demo (Entrega 3).** [`docs/demo/recon-tool-demo.mp4`](docs/demo/recon-tool-demo.mp4), 2:16, sin audio y con un rótulo por etapa. Muestra el flujo principal con datos sintéticos:
+
+1. `analyst` importa `batch-clean` en ProviderA-USD.
+2. Confirma el pareo de columnas, analiza y pasa las ocho validaciones.
+3. En Settlement Review revisa los fees prellenados, fija la fecha y procesa.
+4. Ve el amount payable y descarga el merchant summary.
+5. `payments` lo marca como pagado.
+
+Se regenera con `pnpm video:demo` (ver [2.6](#26-tests)); [#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96).
 
 ### 0.5. URL o archivo comprimido del repositorio
 
@@ -146,7 +154,7 @@ La integración con el Back-Office del gateway se mantiene como hoy, mediante lo
 
 ### 1.3. Diseño y experiencia de usuario
 
-> Esta sección describe el mapa del sitio y el recorrido del usuario. Los wireframes y el prototipo están en [`docs/wireframes/`](docs/wireframes/); las capturas de las pantallas construidas en la Entrega 2, en sus subcarpetas por change (`web-validations/`, `web-settlement/`, `settlements-browse/`), y las de la administración de la Entrega 3 en `web-admin-fees/`, `web-admin-accounts/` y `web-admin-matching/`. El vídeo llega en la Entrega 3 ([#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96)).
+> Esta sección describe el mapa del sitio y el recorrido del usuario. Los wireframes y el prototipo están en [`docs/wireframes/`](docs/wireframes/); las capturas de las pantallas construidas en la Entrega 2, en sus subcarpetas por change (`web-validations/`, `web-settlement/`, `settlements-browse/`), y las de la administración de la Entrega 3 en `web-admin-fees/`, `web-admin-accounts/` y `web-admin-matching/`. El recorrido completo se ve en el [vídeo de la demo](docs/demo/recon-tool-demo.mp4) ([#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96)).
 
 #### Mapa de pantallas
 
@@ -575,7 +583,7 @@ flowchart LR
     C -->|conexión saliente| T
 ```
 
-**Proceso de despliegue.** Es manual y reproducible con `scripts/deploy.sh`: `git pull`, `build`, `migrate` y `up`. Las migraciones son un paso separado del arranque, con la identidad `recon_migrator`; en el despliegue, `recon_app` no puede cambiar el esquema. La integración continua corre en cada pull request: lint, typecheck, tests unitarios, contrato OpenAPI, build del frontend, migración, seed e integración contra un SQL Server efímero en el runner, gitleaks y build de las imágenes de despliegue, sin publicarlas. Esas imágenes además se arrancan con `scripts/deploy.sh` en modo de depuración, sin túnel y con secretos ficticios, y se comprueban a través de Nginx: health, SPA, cabeceras de seguridad y un login fallido que llega a `AuditLog`. La URL pública sale por Cloudflare Tunnel, que no requiere abrir puertos en el router; como respaldo ante indisponibilidad del servidor el día de la revisión, la Entrega 3 incluye vídeo del sistema funcionando.
+**Proceso de despliegue.** Es manual y reproducible con `scripts/deploy.sh`: `git pull`, `build`, `migrate` y `up`. Las migraciones son un paso separado del arranque, con la identidad `recon_migrator`; en el despliegue, `recon_app` no puede cambiar el esquema. La integración continua corre en cada pull request: lint, typecheck, tests unitarios, contrato OpenAPI, build del frontend, migración, seed e integración contra un SQL Server efímero en el runner, gitleaks y build de las imágenes de despliegue, sin publicarlas. Esas imágenes además se arrancan con `scripts/deploy.sh` en modo de depuración, sin túnel y con secretos ficticios, y se comprueban a través de Nginx: health, SPA, cabeceras de seguridad y un login fallido que llega a `AuditLog`. La URL pública sale por Cloudflare Tunnel, que no requiere abrir puertos en el router; como respaldo ante indisponibilidad del servidor el día de la revisión, la Entrega 3 incluye un [vídeo del sistema funcionando](docs/demo/recon-tool-demo.mp4), grabado sobre la aplicación local con el mundo sintético.
 
 **Configuración.** Toda la configuración va por variables de entorno. En local, `.env.example` versionado y `.env` no; en el despliegue, `infra/.env.deploy.example` versionado e `infra/.env.deploy` no. Cada contenedor recibe solo las variables que necesita.
 
@@ -632,6 +640,18 @@ La suite necesita una base recién sembrada: procesar `batch-clean` deja RAM-07 
 3. `pnpm test:e2e`. Si la aplicación o el API no responden, falla antes del primer paso indicando esos comandos. El informe queda en `e2e/playwright-report/` (no versionado), sin traza ni vídeo para no guardar lo que se escribe en el login; la contraseña se escribe desde la página y no aparece en los pasos ni en el informe.
 
 Los cinco escenarios tardan alrededor de un minuto en local (smoke 8 s, flujo feliz 21 s, deshacer y reprocesar 22 s, `provider_mismatch` 5 s, batch sin filas asociadas 5 s). En la CI corren en el job `e2e`, después de volver a sembrar (ver "En pipeline").
+
+**Vídeo de la demo.** [`docs/demo/recon-tool-demo.mp4`](docs/demo/recon-tool-demo.mp4) lo genera `e2e/video/demo-video.ts`. Es un script de Playwright fuera de la suite y de la CI, con su propio contexto y `recordVideo` a 1280×720. La configuración de la suite sigue sin vídeo ni traza. Para regenerarlo:
+
+1. `pnpm db:up`, `pnpm db:seed` y `pnpm dev`, con `SEED_PASSWORD` en el `.env` de la raíz.
+2. ffmpeg en el `PATH` o en `FFMPEG_PATH`. En Windows: `winget install Gyan.FFmpeg` y abrir una terminal nueva.
+3. `pnpm video:demo`.
+
+Antes de grabar, el script comprueba que la aplicación local responde y que la base está recién sembrada. Solo usa `http://localhost:5173`, nunca la URL pública.
+
+La contraseña se escribe desde la página en el campo de tipo `password`: en el vídeo solo se ven puntos, y no aparece en los rótulos, en la URL ni en la consola. Si la grabación pasa entera, el script convierte el `.webm` a H.264 sin audio y solo sustituye el `.mp4` si mide menos de 20 MB.
+
+Al terminar, con éxito o con fallo, retira el pago, deshace y cancela por el API. El batch 123 de ProviderA-USD queda consumido y RAM-07 queda como principal, así que después hay que volver a ejecutar `pnpm db:seed`.
 
 **En pipeline.** Unitarios e integración corren en cada pull request desde la Entrega 2. Desde la Entrega 3, también la colección Bruno y el E2E, en el job `e2e` ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)). Queda pendiente el objetivo de cobertura del 80 % en el dominio. Como métrica complementaria, mutation testing sobre el módulo de validaciones, que es donde un test que "pasa" sin detectar nada haría más daño.
 
