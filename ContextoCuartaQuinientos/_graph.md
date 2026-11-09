@@ -99,6 +99,7 @@ Evolución SDD: [_sdd_evolution.md](_sdd_evolution.md)
 - **Hub**: [spec](.planning/tkt-bi-rpt-001/spec.md) · [design](.planning/tkt-bi-rpt-001/design.md) · [delta](.planning/tkt-bi-rpt-001/delta.md)
 - **Rama:** `final-project-AFS`
 - **Fecha cierre**: 2026-11-04
+- **Seguridad 2026-11-09:** [Incidente secretos producción / Git](evidencia/20261109_SEGURIDAD_SECRETOS_GIT/INCIDENTE_SECRETOS_PRODUCCION.md)
 - **Won't**: fase F NAV, HU-BI-03, `/bi`, KPI adopción Telegram
 
 ### [[FE-NAV-ENT1-001]]: Ocultar menús NAV E/F/G (entrega 1)

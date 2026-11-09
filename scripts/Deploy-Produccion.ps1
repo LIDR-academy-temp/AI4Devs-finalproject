@@ -1,6 +1,9 @@
-# Deploy de API y Web a MonsterASP (runasp.net) via Web Deploy.
+﻿# Deploy de API y Web a MonsterASP (runasp.net) via Web Deploy.
 # Uso (desde la raiz del repo):  .\scripts\Deploy-Produccion.ps1 [-Solo Api|Web|Ambos]
 # Credenciales: se leen de los .publishSettings locales (gitignored); nunca se escriben aqui.
+# SECRETOS: este script NO sube appsettings.Production.json (skip msdeploy). Tras rotar SQL/JWT,
+# actualizar el archivo en el panel del sitio API o variables de entorno — ver
+# ContextoCuartaQuinientos/evidencia/20261109_SEGURIDAD_SECRETOS_GIT/INCIDENTE_SECRETOS_PRODUCCION.md
 param([ValidateSet('Api','Web','Ambos')][string]$Solo = 'Ambos')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent

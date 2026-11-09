@@ -135,6 +135,26 @@
 - Acción propuesta: Documentar en design NAV: toda exclusión de producto requiere manifest + Web; SQL PerfilMenus es alineación opcional.
 - Estado: OBSERVACIÓN
 
+### 2026-11-09. Secretos en repo y desacople deploy ↔ appsettings.Production
+
+- Tipo: incidente seguridad + operación
+- Severidad: Crítica (password SQL en historial Git vía Continue MCP)
+- Medidas: commit `cd6bbd0`, rotación SQL + JWT, sync puntual Web Deploy de Production json
+- Evidencia: [evidencia/20261109_SEGURIDAD_SECRETOS_GIT/INCIDENTE_SECRETOS_PRODUCCION.md](evidencia/20261109_SEGURIDAD_SECRETOS_GIT/INCIDENTE_SECRETOS_PRODUCCION.md)
+- Acción propuesta: checklist pre-entrega — buscar `Password=` en `git log -S`; no versionar `.continue/`; documentar que deploy no propaga secretos
+- Estado: CERRADO (prod OK); historial Git antiguo sin purgar
+
+### 2026-11-09. SqlSchemaCompat en exports RPT (FinanzasMes)
+
+- Tipo: observación
+- Fecha: 2026-11-09
+- Tickets: [[BI-RPT-001]]
+- Tema: `sql-schema-compat-usuarios`
+- Descripción: Smoke prod cubrió `GET /Reports/Bi/export` pero no `FinanzasMes/export`; repo hardcodeó `NombreUsuario` → 500 en CQ500 (`Nombre`).
+- Acción propuesta: Incluir todos los exports RPT en `Invoke-ApiSmokePostDeploy.ps1`; checklist design/impl: JOIN `sgr.Usuarios` → `UsuarioColumns` en ctor.
+- Archivo afectado: `GraphApi/Repositories/Reports/BiKpiSnapshotRepository.cs`; delta [tkt-bi-rpt-001/delta.md](.planning/tkt-bi-rpt-001/delta.md)
+- Estado: OBSERVACIÓN (fix aplicado en código; evidencia smoke post-redeploy pendiente)
+
 ## Tendencias
 
 _(vacío — ejecutar `/retrospectiva` tras más entregas)_

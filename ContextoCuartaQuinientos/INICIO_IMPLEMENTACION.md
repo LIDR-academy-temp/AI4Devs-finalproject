@@ -44,7 +44,9 @@
 | Web | `https://cuartaquinientosresidencial.runasp.net` |
 | SQL Server | `db24572.public.databaseasp.net` → BD `db24572` |
 
-Secretos: panel del proveedor o variables del sitio API (`ConnectionStrings__DefaultConnection`, `Jwt__*`, `Cors__AllowedOrigins`). Plantillas sin contraseñas: `scaffolds/api/appsettings.Production.example.json`, `scaffolds/web/.env.production.example`. No versionar `*.publishSettings` ni `appsettings.Production.json`.
+Secretos: panel del proveedor o variables del sitio API (`ConnectionStrings__Default`, `JwtSettings__Key`, `AllowedOrigins` vía config). Plantillas sin contraseñas: `scaffolds/api/appsettings.Production.example.json`, `scaffolds/web/.env.production.example`. No versionar `*.publishSettings`, `appsettings.Production.json` ni `GraphApi/.continue/`.
+
+**Incidente 2026-11-09 (secretos Git + deploy):** [evidencia/20261109_SEGURIDAD_SECRETOS_GIT/INCIDENTE_SECRETOS_PRODUCCION.md](evidencia/20261109_SEGURIDAD_SECRETOS_GIT/INCIDENTE_SECRETOS_PRODUCCION.md). El script `Deploy-Produccion.ps1` **no** sube `appsettings.Production.json`; tras rotar SQL/JWT hay que actualizar el archivo en el servidor o las variables de entorno.
 
 ## C500 Asiste — no es “un chat”
 
