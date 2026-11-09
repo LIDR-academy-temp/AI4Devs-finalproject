@@ -148,7 +148,7 @@ El script guarda en `created` el `importId` y el `batchId` a partir de las respu
 2. `analyst` deshace el intento.
 3. `analyst` cancela el import.
 
-Las notas de fallo de la limpieza se imprimen sin la contraseña (`oneLine` ya la enmascara). Al final siempre imprime: `Run pnpm db:seed before pnpm test:e2e or pnpm test:api: batch 123 of ProviderA-USD is used up and RAM-07 is primary.`
+La limpieza va en su propio `try/finally` en `main`, así que corre aunque falle el cierre del navegador. Las notas de fallo de la limpieza se imprimen sin la contraseña (`oneLine` ya la enmascara). Si hay notas, el script termina con código 1 antes de convertir y el `.mp4` anterior se queda. Al final siempre imprime: `Run pnpm db:seed before pnpm test:e2e or pnpm test:api: batch 123 of ProviderA-USD is used up and RAM-07 is primary.`
 
 La limpieza no sale en el vídeo, porque el recorrido pedido termina en **Mark as paid**.
 
@@ -158,7 +158,7 @@ El `.webm` se escribe en un directorio temporal del sistema. Después:
 
 1. ffmpeg se toma de `FFMPEG_PATH` o del `PATH`. Si no está, el script falla con: `ffmpeg not found: install it with "winget install Gyan.FFmpeg" and open a new terminal, or set FFMPEG_PATH.`
 2. La conversión es: `-c:v libx264 -preset slow -crf 28 -pix_fmt yuv420p -r 25 -an -movflags +faststart`, con `-ss 0.3` para quitar el primer fotograma en blanco.
-3. El resultado va a un archivo temporal junto al destino y solo se renombra a `docs/demo/recon-tool-demo.mp4` si mide menos de 20 MB. Un fallo nunca pisa el vídeo anterior.
+3. El resultado va a un archivo parcial en el directorio temporal y solo se copia sobre `docs/demo/recon-tool-demo.mp4` si mide menos de 20 MB (copiar y borrar: el temporal puede estar en otro volumen). Un fallo nunca pisa el vídeo anterior.
 4. Si `ffprobe` está junto a ffmpeg, el script imprime la duración, el códec y si hay pista de audio.
 
 `.gitattributes` gana `*.mp4 binary`. A 1280×720 y CRF 28, una grabación de pantalla de unos 3 minutos ronda los 5–10 MB.

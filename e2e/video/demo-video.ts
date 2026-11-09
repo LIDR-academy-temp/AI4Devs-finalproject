@@ -5,7 +5,8 @@
 // Needs: `pnpm db:up`, `pnpm db:seed` right before and `pnpm dev` (http://localhost:5173 only, never the public URL),
 // SEED_PASSWORD in the root .env, and ffmpeg in the PATH or in FFMPEG_PATH (Windows: `winget install Gyan.FFmpeg`).
 // Run with `pnpm video:demo`. Output: docs/demo/recon-tool-demo.mp4, H.264 without audio, written only when the whole
-// recording passed and the file is under 20 MB.
+// recording passed, the cleanup left no notes and the file is under 20 MB. If the cleanup leaves notes, the script
+// exits with code 1 and keeps the previous video.
 //
 // It WRITES to the local database: it imports, processes and pays batch 123 of ProviderA-USD. Afterwards, with
 // success or failure, it unpays, undoes and cancels through the API, off camera. Batch number 123 stays used up and
@@ -15,7 +16,7 @@
 // (the video shows dots), the field is emptied after the click, and it never reaches a caption, a URL nor the console.
 // The recording holds the viewport only, without an address bar. No trace is recorded.
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, statSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -339,10 +340,10 @@ async function walkThrough(page: Page, rec: Recording, created: Created) {
   await rec.hold(HOLD_SHORT)
 }
 
-/** webm to H.264 without audio, written next to the output and moved onto it only when it is small enough. */
-function convert(ffmpeg: string, webm: string) {
+/** webm to H.264 without audio, written in the temporary directory and copied onto the output only when small enough. */
+function convert(ffmpeg: string, webm: string, workDir: string) {
   mkdirSync(dirname(OUTPUT), { recursive: true })
-  const partial = join(dirname(OUTPUT), `.${basename(OUTPUT, '.mp4')}.partial.mp4`)
+  const partial = join(workDir, `${basename(OUTPUT, '.mp4')}.partial.mp4`)
   const args = ['-y', '-ss', '0.3', '-i', webm, '-c:v', 'libx264', '-preset', 'slow', '-crf', '28']
   args.push('-pix_fmt', 'yuv420p', '-r', '25', '-an', '-movflags', '+faststart', partial)
   const run = spawnSync(ffmpeg, args, { encoding: 'utf8' })
@@ -351,7 +352,8 @@ function convert(ffmpeg: string, webm: string) {
       throw new Error(`ffmpeg failed: ${(run.stderr ?? '').trim().split('\n').slice(-3).join(' | ')}`)
     const bytes = statSync(partial).size
     if (bytes >= MAX_BYTES) throw new Error(`The video is ${(bytes / 1048576).toFixed(1)} MB, over 20 MB: raise -crf.`)
-    renameSync(partial, OUTPUT)
+    // Copy and delete: the temporary directory may be on another volume, where a rename fails.
+    copyFileSync(partial, OUTPUT)
     console.log(`saved docs/demo/recon-tool-demo.mp4 (${(bytes / 1048576).toFixed(1)} MB)`)
   } finally {
     rmSync(partial, { force: true })
@@ -382,14 +384,28 @@ async function main() {
   const created: Created = { importIds: [], batchIds: [] }
   const videoDir = mkdtempSync(join(tmpdir(), 'recon-demo-'))
   try {
-    const webm = await record(videoDir, created)
-    convert(ffmpeg, webm)
+    let webm: string
+    let notes: string[] = []
+    try {
+      webm = await record(videoDir, created)
+    } finally {
+      // With success or failure, and even if closing the browser threw: clean up what was created (design D7).
+      notes = await cleanUp(created, apiClient(), CLEANUP_REASON)
+      for (const note of notes) console.log(`cleanup: ${note}`)
+      console.log(RESEED)
+    }
+    if (notes.length > 0) {
+      console.error('The cleanup left notes: the video is not saved and the previous one stays.')
+      process.exitCode = 1
+      return
+    }
+    convert(ffmpeg, webm, videoDir)
   } finally {
     rmSync(videoDir, { recursive: true, force: true })
   }
 }
 
-/** Records the walk-through and, with success or failure, cleans up what it created (design D7). */
+/** Records the walk-through into videoDir; created gathers what it made, for the cleanup in main. */
 async function record(videoDir: string, created: Created): Promise<string> {
   const browser = await chromium.launch()
   try {
@@ -415,9 +431,6 @@ async function record(videoDir: string, created: Created): Promise<string> {
     return webm
   } finally {
     await browser.close()
-    const notes = await cleanUp(created, apiClient(), CLEANUP_REASON)
-    for (const note of notes) console.log(`cleanup: ${note}`)
-    console.log(RESEED)
   }
 }
 

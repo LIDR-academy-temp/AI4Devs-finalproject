@@ -646,12 +646,13 @@ Los cinco escenarios tardan alrededor de un minuto en local (smoke 8 s, flujo fe
 1. `pnpm db:up`, `pnpm db:seed` y `pnpm dev`, con `SEED_PASSWORD` en el `.env` de la raíz.
 2. ffmpeg en el `PATH` o en `FFMPEG_PATH`. En Windows: `winget install Gyan.FFmpeg` y abrir una terminal nueva.
 3. `pnpm video:demo`.
+4. Actualizar en [§0.4](#04-url-del-proyecto) la duración que imprime el script (`format|duration` de `ffprobe`).
 
 Antes de grabar, el script comprueba que la aplicación local responde y que la base está recién sembrada. Solo usa `http://localhost:5173`, nunca la URL pública.
 
 La contraseña se escribe desde la página en el campo de tipo `password`: en el vídeo solo se ven puntos, y no aparece en los rótulos, en la URL ni en la consola. Si la grabación pasa entera, el script convierte el `.webm` a H.264 sin audio y solo sustituye el `.mp4` si mide menos de 20 MB.
 
-Al terminar, con éxito o con fallo, retira el pago, deshace y cancela por el API. El batch 123 de ProviderA-USD queda consumido y RAM-07 queda como principal, así que después hay que volver a ejecutar `pnpm db:seed`.
+Al terminar, con éxito o con fallo, retira el pago, deshace y cancela por el API. Si la limpieza deja notas, el script termina con código 1 y no sustituye el `.mp4`. El batch 123 de ProviderA-USD queda consumido y RAM-07 queda como principal, así que después hay que volver a ejecutar `pnpm db:seed`.
 
 **En pipeline.** Unitarios e integración corren en cada pull request desde la Entrega 2. Desde la Entrega 3, también la colección Bruno y el E2E, en el job `e2e` ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)). Queda pendiente el objetivo de cobertura del 80 % en el dominio. Como métrica complementaria, mutation testing sobre el módulo de validaciones, que es donde un test que "pasa" sin detectar nada haría más daño.
 

@@ -18,9 +18,15 @@ export interface Created {
   batchIds: string[]
 }
 
-/** Copy of setPassword of steps/common.steps.ts: the value is set from the page, so no log carries it. */
+/**
+ * Copy of setPassword of steps/common.steps.ts: the value is set from the page, so no log carries it. Unlike the suite,
+ * the type is checked in the same evaluate that writes, so nothing can turn the field visible in between.
+ */
 async function setPassword(page: Page, value: string) {
   await page.getByLabel('Password').evaluate((input, text) => {
+    if (!(input instanceof HTMLInputElement) || input.type !== 'password') {
+      throw new Error('The password field is not of type password: nothing was written.')
+    }
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
     setter?.call(input, text)
     input.dispatchEvent(new Event('input', { bubbles: true }))
