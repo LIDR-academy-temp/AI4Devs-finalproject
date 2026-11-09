@@ -37,7 +37,7 @@ Sustituye la cadena actual de hojas de cálculo en OneDrive, descargas manuales 
 
 https://github.com/lfmorales/AI4Devs-finalproject-temp (rama `final-project-LFMC`)
 
-Las pull requests se abren desde ese repositorio contra `LIDR-academy-temp/AI4Devs-finalproject`: [PR 1](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/3), [PR 2](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/4) y la PR 3 de la entrega final.
+Las pull requests se abren desde ese repositorio contra `LIDR-academy-temp/AI4Devs-finalproject`: [PR 1](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/3), [PR 2](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/4) y [PR 3](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/18).
 
 > Puedes tenerlo alojado en público o en privado, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/). También puedes compartir por correo un archivo zip con el contenido
 
@@ -1653,7 +1653,7 @@ Origen: `daily-campaign-delivery-status`, grupo 8 de `tasks.md` (6 tareas).
 
 ## 7. Pull Requests
 
-> Las tres entregas se recogen en tres pull requests abiertas desde `lfmorales/AI4Devs-finalproject-temp` contra `LIDR-academy-temp/AI4Devs-finalproject` (`main`): la **PR 1** ([#3](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/3)) con la documentación técnica de la entrega 1, la **PR 2** ([#4](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/4)) con el registro de campañas desde la orden de compra, y la **PR 3**, de la entrega final, con el estado diario de entrega y el margen.
+> Las tres entregas se recogen en tres pull requests abiertas desde `lfmorales/AI4Devs-finalproject-temp` contra `LIDR-academy-temp/AI4Devs-finalproject` (`main`): la **PR 1** ([#3](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/3)) con la documentación técnica de la entrega 1, la **PR 2** ([#4](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/4)) con el registro de campañas desde la orden de compra, y la **PR 3** ([#18](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/18)), de la entrega final, con el estado diario de entrega y el margen.
 >
 > Las PR se revisan y no se fusionan, porque `main` es la plantilla compartida del curso: cada una incluye los commits de las anteriores, y por eso *Files changed* de la 2 y de la 3 muestra también el trabajo previo.
 
