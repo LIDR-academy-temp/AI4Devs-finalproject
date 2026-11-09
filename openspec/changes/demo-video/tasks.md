@@ -39,8 +39,8 @@
 
   Ajustar las pausas hasta que dure entre 2:15 y 2:45. Verificación: `ffprobe` muestra la duración en rango, h264, 1280×720 y sin pista de audio. El archivo mide menos de 20 MB.
 - [x] 2.3 Solo si alguna espera del sistema supera 8 s en 2.1: anotar los tramos y recortarlos en la conversión (D5). Verificación: el tramo ya no aparece en el `.mp4` y la duración sigue en rango. Si no hace falta, marcarla como no aplicable con la medida. **No aplica:** analizar 1,6–1,8 s, validar 1,1–1,7 s y procesar 1,1–1,3 s en las dos pasadas.
-- [ ] 2.4 Pasada final tras `! pnpm db:seed`, y otro `! pnpm db:seed` al terminar para dejar la base lista. Verificación: `docs/demo/recon-tool-demo.mp4` regenerado y comprobado como en 2.2. Cierre del turno de base.
-- [ ] 2.5 Commit: docs(demo): vídeo de la demo de la Entrega 3
+- [x] 2.4 Pasada final tras `! pnpm db:seed`, y otro `! pnpm db:seed` al terminar para dejar la base lista. Verificación: `docs/demo/recon-tool-demo.mp4` regenerado y comprobado como en 2.2. Cierre del turno de base.
+- [x] 2.5 Commit: docs(demo): vídeo de la demo de la Entrega 3
 
 ## 3. Documentación
 
@@ -52,11 +52,11 @@
 
   Verificación: los enlaces relativos abren el archivo en GitHub, en la vista del PR.
 - [x] 3.2 Comentario de cabecera de `e2e/video/demo-video.ts` en inglés: qué graba, qué necesita, qué escribe en la base y qué deja. Verificación: revisión.
-- [ ] 3.3 Commit: docs(readme): enlace al vídeo de la demo y cómo regenerarlo
+- [x] 3.3 Commit: docs(readme): enlace al vídeo de la demo y cómo regenerarlo
 
 ## 4. Cierre
 
-- [ ] 4.1 `pnpm lint`, `pnpm typecheck` y `pnpm --filter @recon/e2e test` en verde. `openspec validate demo-video` pasa sin avisos.
+- [x] 4.1 `pnpm lint`, `pnpm typecheck` y `pnpm --filter @recon/e2e test` en verde. `openspec validate demo-video` pasa sin avisos.
 - [ ] 4.2 `/opsx:verify demo-video` y PR hacia `feature/entrega-3-MVP` con la plantilla, citando #96. Verificación: CI en verde, incluido el job `e2e` con la suite sin cambios.
 
 ## Workflow follow-up
