@@ -65,7 +65,14 @@ Ninguna tarea usa la base local salvo la 2.4, que necesita turno pedido antes. L
   - un `Closes` por cada grupo que haya entrado;
   - la duración medida y los runs de la rotura;
   - en "Notas para el revisor" y en la descripción, los pasos del martes (Migration Plan de design.md).
-- [ ] 4.3 **Martes, en el servidor (lo hace la persona):** el Migration Plan de design.md. Con su resultado, los criterios de producción de #106 (1 y 2) y de #108 (2) quedan comprobados y se anotan en los issues.
+- [x] 4.3 **Martes, en el servidor (lo hace la persona):** el Migration Plan de design.md. Con su resultado, los criterios de producción de #106 (1 y 2) y de #108 (2) quedan comprobados y se anotan en los issues.
+
+  Servidor en `b9c710d`:
+  - `migrate`: 9 migraciones, ninguna pendiente (la 0009 ya estaba aplicada).
+  - `ps`: los cuatro servicios `healthy` después de `down` y `up --wait`.
+  - `check`: solo `recon_app` y `recon_migrator`, en logins y en usuarios.
+  - `curl` contra la URL pública con `CF-Connecting-IP` y `X-Forwarded-For` inventados: `403`, bloqueado por Cloudflare antes de llegar a la aplicación (resultado seguro según el paso 7).
+  - Los últimos logins de `AuditLog` guardan la IP pública del cliente; ninguno guarda `1.2.3.4` ni una IP privada.
 
 ## Workflow follow-up
 

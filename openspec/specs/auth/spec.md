@@ -37,7 +37,7 @@ Una contraseña incorrecta, un `userName` inexistente o un usuario inactivo SHAL
 - **THEN** recibe `401` con el mismo cuerpo que en el caso de contraseña incorrecta
 
 ### Requirement: Auditoría de intentos de login
-Cada intento de login con cuerpo válido SHALL dejar una fila en `AuditLog`: `action = "auth.login.success"` o `"auth.login.failure"`, `entityType = "User"`, `userId` del usuario si existe (o `NULL` si no) y en `detailJson` el `userName` intentado y, en los fallos, el motivo (`bad_password`, `inactive`, `unknown_user`). La contraseña y el hash SHALL no aparecer nunca en `AuditLog` ni en los logs.
+Cada intento de login con cuerpo válido SHALL dejar una fila en `AuditLog`: `action = "auth.login.success"` o `"auth.login.failure"`, `entityType = "User"`, `userId` del usuario si existe (o `NULL` si no) y en `detailJson` el `userName` intentado, la `ip` del cliente y, en los fallos, el motivo (`bad_password`, `inactive`, `unknown_user`). La contraseña y el hash SHALL no aparecer nunca en `AuditLog` ni en los logs.
 
 #### Scenario: Login correcto auditado
 - **WHEN** `analyst` hace login con éxito
@@ -132,3 +132,26 @@ El servidor SHALL negarse a arrancar si `JWT_SECRET` no está definido o tiene m
 - **GIVEN** un entorno sin `JWT_SECRET`
 - **WHEN** se construye la aplicación
 - **THEN** falla con un error que menciona `JWT_SECRET` y el servidor no escucha
+
+### Requirement: IP del cliente en la auditoría
+La `ip` de la auditoría del login SHALL ser la de la conexión, salvo cuando la conexión llega desde un proxy de confianza (`TRUST_PROXY`), en cuyo caso SHALL ser la que ese proxy envía en `X-Forwarded-For`: la dirección más a la derecha que no es de confianza. Un valor que no sea una dirección IP SHALL sustituirse por la IP de la conexión.
+
+#### Scenario: Sin proxy de confianza
+- **GIVEN** la API sin `TRUST_PROXY`, como en `pnpm dev`
+- **WHEN** llega un login desde `172.18.0.5` con `X-Forwarded-For: 203.0.113.7`
+- **THEN** la fila guarda `ip = "172.18.0.5"`
+
+#### Scenario: Detrás del proxy de confianza
+- **GIVEN** la API con `TRUST_PROXY = "uniquelocal"`
+- **WHEN** llega un login desde `172.18.0.5` con `X-Forwarded-For: 203.0.113.7`
+- **THEN** la fila guarda `ip = "203.0.113.7"`
+
+#### Scenario: Cabecera de un cliente que no es proxy
+- **GIVEN** la API con `TRUST_PROXY = "uniquelocal"`
+- **WHEN** llega un login directamente desde la dirección pública `198.51.100.9` con `X-Forwarded-For: 203.0.113.7`
+- **THEN** la fila guarda `ip = "198.51.100.9"`
+
+#### Scenario: Valor que no es una IP
+- **GIVEN** la API con `TRUST_PROXY = "uniquelocal"`
+- **WHEN** llega un login desde `172.18.0.5` con `X-Forwarded-For: not-an-ip`
+- **THEN** la fila guarda `ip = "172.18.0.5"`
