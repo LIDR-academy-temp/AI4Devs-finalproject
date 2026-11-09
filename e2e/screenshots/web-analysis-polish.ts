@@ -145,7 +145,7 @@ async function measure(page: Page, synthetic: boolean): Promise<Measure> {
         if (wrapped.length > 0) found.push(`${wrapped.length} IDs of the rows table on more than one line`)
       }
 
-      // 3. The file of each row: one line, over no text of the row, inside the table (design D5).
+      // 3. The file of each row: one line, inside the table and its own row, below the text of the row (design D5).
       const box = container.getBoundingClientRect()
       let oneLine = 0
       for (const tr of rows.tBodies[0]!.rows) {
@@ -162,9 +162,19 @@ async function measure(page: Page, synthetic: boolean): Promise<Measure> {
         if (fileBox.left < box.left - 0.5 || fileBox.right > box.right + 0.5) {
           found.push(`the file of row "${tr.cells[idColumn]?.textContent}" leaves the table`)
         }
+        // Inside its own row: without `relative` on the <tr>, the file would sit against the table container.
+        const rowBox = tr.getBoundingClientRect()
+        if (fileBox.top < rowBox.top - 0.5 || fileBox.bottom > rowBox.bottom + 0.5) {
+          found.push(`the file of row "${tr.cells[idColumn]?.textContent}" outside its row`)
+        }
         const others = [first.firstElementChild!.firstElementChild!, ...[...tr.cells].slice(1)]
-        const over = others.some((element) => textBoxes(element).some((text) => overlap(text, fileBox)))
-        if (over) found.push(`the file of row "${tr.cells[idColumn]?.textContent}" overlaps the text of the row`)
+        const texts = others.flatMap((element) => textBoxes(element))
+        if (texts.some((text) => overlap(text, fileBox)))
+          found.push(`the file of row "${tr.cells[idColumn]?.textContent}" overlaps the text of the row`)
+        // Below the last line of text of the row, in the strip that pb-6 keeps for it.
+        const lastText = Math.max(...texts.map((text) => text.bottom))
+        if (fileBox.top < lastText - 0.5)
+          found.push(`the file of row "${tr.cells[idColumn]?.textContent}" above the last text of the row`)
       }
       report.push(`${oneLine} files in one line`)
 
@@ -172,6 +182,8 @@ async function measure(page: Page, synthetic: boolean): Promise<Measure> {
       if (synthetic) {
         const file = rows.tBodies[0]!.rows[0]!.cells[0]!.querySelector<HTMLElement>('span[title]')!
         if (file.scrollWidth <= file.clientWidth) found.push('the long synthetic file name is not cut')
+        else if (getComputedStyle(file).textOverflow !== 'ellipsis')
+          found.push('the long synthetic file name is cut without an ellipsis')
         else report.push('long synthetic file name cut with an ellipsis')
       }
     }
@@ -188,10 +200,13 @@ async function measure(page: Page, synthetic: boolean): Promise<Measure> {
       if (Math.abs(left - right) > 1) found.push(`ranges card not centred (${Math.round(left)} / ${Math.round(right)})`)
     }
     const counters = document.querySelector('section[aria-label="Informative counters"]')
-    const cards = counters ? [...counters.querySelectorAll<HTMLElement>(':scope > div > section')] : []
-    if (cards.length > 0 && window.innerWidth >= 640) {
-      const tops = new Set(cards.map((c) => Math.round(c.getBoundingClientRect().top)))
-      if (cards.length !== 3 || tops.size !== 1) found.push(`${cards.length} counter cards on ${tops.size} rows`)
+    if (counters) {
+      const cards = [...counters.querySelectorAll<HTMLElement>(':scope > div > section')]
+      if (cards.length !== 3) found.push(`${cards.length} counter cards instead of 3`)
+      else if (window.innerWidth >= 640) {
+        const tops = new Set(cards.map((c) => Math.round(c.getBoundingClientRect().top)))
+        if (tops.size !== 1) found.push(`the 3 counter cards on ${tops.size} rows`)
+      }
     }
     return { found, report }
   }, synthetic)
@@ -275,12 +290,15 @@ async function cancelImport(page: Page, importId: string, reason: string): Promi
   return 'cancelled'
 }
 
-/** Cancels the last import created and takes it off the list of what is left. */
+/**
+ * Cancels the last import created, and only then takes it off the list of what is left: if the cancel fails, the
+ * import stays on the list and is cancelled at the end or printed to cancel by hand.
+ */
 async function cancelLast(page: Page) {
-  const importId = created.pop()!
-  console.log(
-    `${importId} ${(await cancelImport(page, importId, CLEANUP_REASON)) === 'already' ? 'was already closed' : 'cancelled'}`,
-  )
+  const importId = created.at(-1)!
+  const result = await cancelImport(page, importId, CLEANUP_REASON)
+  created.pop()
+  console.log(`${importId} ${result === 'already' ? 'was already closed' : 'cancelled'}`)
 }
 
 /** Creates an import with the files in the account, confirms the proposed mapping and analyzes it, by the screens. */
