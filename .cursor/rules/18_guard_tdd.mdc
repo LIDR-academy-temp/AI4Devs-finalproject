@@ -1,0 +1,115 @@
+﻿---
+description: Guard TDD — Red phase, characterization (paridad), anti-sabotaje, triangulación y mutation
+alwaysApply: false
+globs: "**/*.{sql,cs,ts,js,py},**/*.dart,**/*.spec.*,**/*.test.*"
+---
+
+# Guard TDD
+
+Disciplina de pruebas para `/ejecutar` y `/revisar`. Complementa el DoD (`09`) y
+las plantillas `spec.md` / `design.md`. No sustituye el smoke SP ni el SELECT previo.
+
+## Ámbito
+
+- Aplica a: Feature, Bug Fix, Refactor con lógica.
+- No aplica a: typos, documentación, cambios sin lógica (igual que el DoD).
+
+## Proporcionalidad — no entorpecer
+
+Este guard eleva el techo de calidad; no agrega ceremonia. Los mecanismos pesados
+(CHAR-x, mutation, triangulación) solo aplican donde cambian el desenlace: refactor
+de objeto legacy, paths críticos. En un cambio pequeño o sin lógica, este guard
+guarda silencio. La regla es afilar, no burocratizar.
+
+## 1. Red phase — el test falla ANTES de implementar
+
+1. Escribe el test → ejecútalo → confirma que **FALLA** con el error esperado.
+2. Solo entonces: implementación mínima (Fake It: lo más simple que pase).
+3. Si el test **no** falla en el paso 1 → STOP. El test no prueba lo que cree.
+
+> El implementador (Cursor) nunca entrega implementación y test en el **mismo bloque**.
+> Primero el test en rojo; después la implementación. Evita la validación circular
+> (Test Theater): el test terminaría verificando lo que el código *hace*, no lo que *debe*.
+
+## 2. Characterization — paridad en refactor (CHAR-x)
+
+Para Refactor de objeto legacy (ej. SP grande vivo):
+
+1. Antes de tocar nada: capturar la salida ACTUAL del objeto con los `CHAR-x` de
+   `spec.md`, vía MCP (`nesgotest`/`nesgoPROD` read-only). Guardar baseline.
+2. Implementar el refactor.
+3. Post-cambio: los mismos `CHAR-x` deben devolver **idéntico** resultado (paridad).
+4. Cualquier diferencia no declarada en el spec como cambio intencional → REQUIERE DECISIÓN.
+
+> Este es el mecanismo de "refactor con paridad": el baseline es el contrato del
+> comportamiento previo. Sin baseline capturado, un refactor de SP no se marca LISTO.
+
+## 3. Anti-sabotaje — TOLERANCIA CERO
+
+- Nunca borrar, comentar ni deshabilitar tests existentes.
+- Nunca modificar assertions ni datos de entrada de un test existente para que pase.
+- Si un test existente falla por el cambio → ESCALAR como REQUIERE DECISIÓN, no silenciar.
+- Los tests existentes son la especificación firmada: se tratan como los invariantes
+  (INV-x) de `spec.md` — restricción dura, no negociable por el implementador.
+
+## 4. El humano define el QUÉ
+
+- El humano define: criterios de aceptación (CA), propiedades (PBT-x), characterization (CHAR-x).
+- El agente define: implementación + tests que VERIFICAN esos criterios.
+- Sin criterios en `spec.md` → preguntar, no asumir (coherente con el gate de `/definir`).
+
+## 5. Triangulación — ≥ 2 datasets
+
+- Cada comportamiento nuevo se prueba con al menos **dos datasets distintos**.
+- Un test que pasa solo con el valor de ejemplo del spec no cuenta como generalizado.
+- Patrón: Fake It (hardcode que pasa el 1er test) → 2º dataset fuerza la generalización → refactor en verde.
+
+## 6. Mutation — el test detecta el cambio
+
+- SQL: mínimo **3 mutantes manuales** (alterar un WHERE, un operador, un umbral).
+  Si el test sigue pasando con el mutante → no prueba lo que cree.
+- C# / TS: Stryker.NET / Stryker. Kill rate objetivo **≥ 80%** en paths críticos.
+- Kill rate < 80% sin justificación → se reporta en el DoD.
+
+## 7. Cobertura = alarma, no objetivo
+
+- Reportar cobertura como **zonas sin probar**, nunca como porcentaje de calidad.
+- 100% de cobertura puede tener mutation score bajo. La cobertura señala huecos; la
+  mutation señala tests débiles.
+- Tests sin assertions: 0 tolerados.
+
+## Mock — en fronteras, no en entrañas
+
+- Tests de SP usan `nesgotest` real vía MCP, no mocks.
+- Si el mock resulta más complejo que lo probado → subir el nivel a integración.
+
+## Gate de calidad automatizado (hook `check-tests-green`)
+
+Un hook `PreToolUse (Write|Edit)` **bloquea en Claude Code** (cableado en `.claude/settings.json`).
+En Cursor no hay `hooks.json` instalado: ahí el gate lo aplican esta regla y los comandos
+(`/test`, `/ejecutar` paso 8, `/revisar` bloqueos duros).
+
+- **Anti-Test-Theater:** un `*Pruebas*.sql` sin ≥1 caso NEGATIVO/de error (código
+  `5xxxx`, `N'Error'`, `actionable=0`, `TC-ERR`, `N'ROJO'` — en código, no en comentarios) se
+  **rechaza**. El humano define el *qué*.
+- **Contratos de escritura:** un `*Pruebas*.sql` que ejecuta un `prcSet*` sin `TC-IDEM` se **rechaza**
+  (escape: `-- TC-IDEM N/A: <motivo>` si el `prcSet*` es solo fixture).
+- **Evidencia de ejecución:** un `*Pruebas*.sql` sin anotación
+  `-- [OK] TESTS [<entorno>] → <N> PASS / <M> ROJO esperado` (o `[PENDIENTE]` sin MCP, que no
+  habilita `/ejecutar`) se **rechaza**.
+- **Shift-left:** un `CREATE/ALTER PROCEDURE` sin un `*Pruebas*.sql` hermano o, en el proyecto,
+  uno que mencione el SP (la fase TEST lo deja en la carpeta del requerimiento) se **rechaza**.
+
+Andamiaje base: `sdd-toolkit/templates/pruebas.sql`. Fase: `rules/pipeline-test.md`
+(fase TEST de `methodology.md`, comando `/test`). Paso adversarial en SP de negocio: skill
+`abogado-del-diablo` sobre los propios tests.
+
+## Checklist rápido (antes de marcar LISTO)
+
+- [ ] Cada test nuevo falló antes de implementar (Red phase documentada)
+- [ ] Refactor: CHAR-x baseline capturado y paridad verificada post-cambio
+- [ ] Ningún test existente borrado, editado o deshabilitado para pasar
+- [ ] Cada comportamiento nuevo con ≥ 2 datasets (triangulación)
+- [ ] ≥1 caso NEGATIVO/de error por objeto (anti-Test-Theater) + evidencia `-- [OK] TESTS`
+- [ ] SQL: 3 mutantes manuales probados / C#-TS: kill rate ≥ 80% o justificación
+- [ ] Cobertura reportada como zonas sin probar; cero tests sin assertions

@@ -1,0 +1,114 @@
+@host = http://localhost:5000
+@correo = admin@local
+@password = ChangeMe123!
+
+### Login (cookie rt + JWT)
+POST {{host}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "{{correo}}",
+  "password": "{{password}}"
+}
+
+### Refresh (requiere cookie rt del login)
+POST {{host}}/SGR/AuthService/RefreshToken
+
+### Cambiar contraseña (JWT)
+POST {{host}}/SGR/AuthService/CambiarPassword
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "passwordActual": "{{password}}",
+  "passwordNueva": "NuevaClave123!"
+}
+
+### Logout
+POST {{host}}/SGR/AuthService/Logout
+Authorization: Bearer {{token}}
+
+### Bandeja de notificaciones
+GET {{host}}/NTF/Notificaciones?pagina=1&tamano=20
+Authorization: Bearer {{token}}
+
+### Marcar notificación leída
+PATCH {{host}}/NTF/Notificaciones/1/leida
+Authorization: Bearer {{token}}
+
+### Crear ticket (residente)
+POST {{host}}/TKT/Tickets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "titulo": "Fuga en cocina",
+  "descripcion": "Gotea la llave bajo el fregadero",
+  "categoria": "Agua",
+  "prioridad": "Media"
+}
+
+### Setup diagnostics (409 sample)
+GET {{host}}/Setup/SetupDiagnostics/conflict-sample
+
+### Padrón usuarios (Admin)
+GET {{host}}/SGR/Usuarios?perfil=Residente&bActivo=true
+Authorization: Bearer {{token}}
+
+### Alta usuario (Admin)
+POST {{host}}/SGR/Usuarios
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Nuevo Residente",
+  "correo": "nuevo@local.test",
+  "telefono": "5512345678",
+  "perfil": "Residente",
+  "casaId": 1
+}
+
+### Desactivar usuario (Admin)
+PATCH {{host}}/SGR/Usuarios/2/desactivar
+Authorization: Bearer {{token}}
+
+### Estado de cuenta (residente)
+GET {{host}}/FNZ/Cuotas/mis
+Authorization: Bearer {{token}}
+
+### Estado de cuenta (admin)
+GET {{host}}/FNZ/Cuotas?usuarioId=1
+Authorization: Bearer {{token}}
+
+### Registrar pago de cuota (Admin)
+PATCH {{host}}/FNZ/Cuotas/1/pago
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "montoPagado": 1200,
+  "fechaPago": "2026-03-15T00:00:00",
+  "metodoPago": "Transferencia",
+  "referenciaPago": "REF-001"
+}
+
+### Dashboard resumen (Admin o Residente según JWT)
+GET {{host}}/Dashboard/Resumen
+Authorization: Bearer {{token}}
+
+### Dashboard resumen — período explícito
+GET {{host}}/Dashboard/Resumen?mes=8&anio=2026
+Authorization: Bearer {{token}}
+
+### Generar cuotas del período (Admin)
+POST {{host}}/FNZ/Cuotas/generar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "anio": 2026,
+  "mes": 3,
+  "monto": 1200,
+  "fechaVencimiento": "2026-03-15T00:00:00",
+  "cuentaId": 1
+}

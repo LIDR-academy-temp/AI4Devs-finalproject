@@ -1,0 +1,503 @@
+/* Port from Web_diseño Casas.cshtml — scoped under .cq-admin-page */
+
+.cq-admin-page .cq-reserva-hero {
+  border: 1px solid var(--cq-border);
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+.cq-admin-page .cq-reserva-pill {
+  background: var(--color-primary-50);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.cq-admin-page .cq-reserva-stat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cq-admin-page .cq-reserva-stat {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--cq-border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  min-width: 5.5rem;
+}
+
+.cq-admin-page .cq-reserva-stat span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--cq-muted);
+}
+
+.cq-admin-page .cq-reserva-stat strong {
+  font-size: 1.1rem;
+  color: var(--cq-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Barra única listados CRUD (ADR-BS-10) — sin hero + card title duplicados */
+.cq-admin-page .cq-list-toolbar {
+  border: 1px solid var(--cq-border);
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+.cq-admin-page .cq-list-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+}
+
+.cq-admin-page .cq-list-metrics li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--cq-muted);
+}
+
+.cq-admin-page .cq-list-metric-value {
+  font-weight: 600;
+  color: var(--cq-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.cq-admin-page .cq-list-metrics li:not(:first-child) {
+  padding-left: 1rem;
+  border-left: 1px solid var(--cq-border);
+}
+
+.cq-admin-page .cq-list-toolbar-actions .form-select {
+  max-width: 14rem;
+}
+
+.cq-admin-page .cq-split {
+  display: grid;
+  grid-template-columns: 1fr 0;
+  gap: 0;
+  transition:
+    grid-template-columns 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+    gap 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  align-items: start;
+}
+
+.cq-admin-page .cq-split.panel-open {
+  grid-template-columns: 1fr 390px;
+  gap: 1.1rem;
+}
+
+@media (max-width: 767px) {
+  .cq-admin-page .cq-split.panel-open {
+    grid-template-columns: 1fr;
+  }
+  .cq-admin-page .cq-form-pane {
+    width: 100% !important;
+  }
+}
+
+.cq-admin-page .cq-table-pane {
+  min-width: 0;
+}
+
+.cq-admin-page .cq-form-pane {
+  width: 390px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(16px);
+  transition:
+    opacity 0.22s ease 0.12s,
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cq-admin-page .cq-split.panel-open .cq-form-pane {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+  overflow: visible;
+}
+
+.cq-admin-page .cq-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  background: linear-gradient(135deg, rgba(39, 76, 119, 0.04), rgba(96, 150, 186, 0.09));
+  border-bottom: 1px solid var(--cq-border);
+  border-radius: calc(var(--cq-radius) - 1px) calc(var(--cq-radius) - 1px) 0 0;
+}
+
+.cq-admin-page .cq-card-editing {
+  border: 1.5px solid rgba(96, 150, 186, 0.35);
+}
+
+.cq-admin-page .cq-card-editing .cq-panel-header {
+  background: linear-gradient(135deg, rgba(96, 150, 186, 0.1), rgba(39, 76, 119, 0.08));
+}
+
+.cq-admin-page .cq-panel-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(39, 76, 119, 0.25);
+}
+
+.cq-admin-page .cq-panel-icon i {
+  font-size: 1.05rem;
+  color: #fff;
+}
+
+.cq-admin-page .cq-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--cq-border);
+  background: var(--color-surface-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--cq-muted);
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.cq-admin-page .cq-close-btn:hover {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  border-color: #fca5a5;
+}
+
+.cq-admin-page .cq-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--cq-text);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+
+.cq-admin-page .cq-label i {
+  font-size: 0.9rem;
+  color: var(--cq-primary);
+}
+
+.cq-admin-page .cq-form-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--cq-border);
+}
+
+.cq-admin-page .cq-row-active td {
+  background: rgba(96, 150, 186, 0.08) !important;
+}
+
+.cq-admin-page .cq-row-active td:first-child {
+  border-left: 3px solid var(--cq-primary);
+}
+
+.cq-admin-page .cq-empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.cq-admin-page .cq-empty-icon {
+  font-size: 3rem;
+  color: rgba(30, 30, 30, 0.15);
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+html.dark .cq-admin-page .cq-empty-icon {
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.cq-admin-page .cq-empty-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--cq-text);
+  margin-bottom: 0.3rem;
+}
+
+.cq-admin-page .cq-actions .btn-link {
+  padding: 0.15rem 0.35rem;
+}
+
+.cq-admin-page .min-width-0 {
+  min-width: 0;
+}
+
+/* cq-filterable — port from Web_diseño site-redesign.css */
+.cq-admin-page .table.table-striped > tbody > tr:nth-of-type(odd) > * {
+  --bs-table-bg-type: var(--color-primary-50, #f0f6fa);
+  background-color: var(--bs-table-bg-type);
+}
+
+.cq-admin-page .table.table-striped > tbody > tr:hover > * {
+  --bs-table-hover-bg: var(--color-primary-50, #e8f1f7);
+}
+
+.cq-admin-page .table.cq-filterable.table-striped > tbody > tr:nth-of-type(odd) > * {
+  --bs-table-bg-type: var(--color-primary-50, #f0f6fa);
+  background-color: var(--bs-table-bg-type);
+}
+
+.cq-admin-page .table.cq-filterable.table-striped > tbody > tr:hover > * {
+  --bs-table-hover-bg: var(--color-primary-50, #e8f1f7);
+}
+
+.cq-admin-page .cq-tf-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.cq-admin-page .cq-tf-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--cq-surface-alt);
+  border: 1px solid var(--cq-border);
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  min-width: 220px;
+  flex: 1;
+  max-width: 400px;
+}
+
+.cq-admin-page .cq-tf-search-icon {
+  color: var(--color-neutral);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.cq-admin-page .cq-tf-search {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.875rem;
+  color: var(--cq-text);
+  min-width: 0;
+}
+
+.cq-admin-page .cq-tf-search::placeholder {
+  color: var(--color-neutral);
+}
+
+.cq-admin-page .cq-tf-count {
+  font-size: 0.75rem;
+  color: var(--cq-muted);
+  white-space: nowrap;
+  background: var(--color-neutral-100);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+
+.cq-admin-page .cq-tf-count-filtered {
+  background: var(--color-primary-50);
+  color: var(--color-primary-dark);
+}
+
+.cq-admin-page .cq-tf-filter-row th.cq-tf-col-cell {
+  padding: 0.35rem 0.5rem;
+  background: var(--cq-surface-alt);
+  border-bottom: 2px solid var(--cq-border);
+  font-weight: normal;
+}
+
+.cq-admin-page .cq-tf-input,
+.cq-admin-page .cq-tf-select {
+  width: 100%;
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: var(--cq-text);
+  background: var(--color-surface-alt);
+}
+
+.cq-admin-page .cq-tf-input:focus,
+.cq-admin-page .cq-tf-select:focus {
+  outline: none;
+  border-color: var(--cq-primary);
+}
+
+@media (max-width: 767.98px) {
+  .cq-admin-page .cq-admin-table-pane {
+    display: none;
+  }
+}
+
+.cq-admin-page .cq-admin-mobile-card {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--cq-border);
+}
+
+.cq-admin-page .cq-admin-mobile-card--interactive {
+  cursor: pointer;
+  min-height: 3rem;
+}
+
+.cq-admin-page .cq-admin-mobile-card--interactive:focus-visible {
+  outline: 2px solid var(--cq-primary);
+  outline-offset: 2px;
+}
+
+/* Árbol de menús (admin) */
+.cq-admin-page .cq-admin-menu-tree-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 2.25rem;
+  border-radius: var(--cq-radius-sm, 0.375rem);
+  margin-bottom: 0.125rem;
+}
+
+.cq-admin-page .cq-admin-menu-tree-row--selected {
+  background: rgba(var(--cq-primary-rgb, 13, 110, 253), 0.12);
+}
+
+.cq-admin-page .cq-admin-menu-tree-row--match {
+  box-shadow: inset 0 0 0 1px rgba(var(--cq-primary-rgb, 13, 110, 253), 0.35);
+}
+
+.cq-admin-page .cq-admin-menu-tree-toggle-spacer {
+  display: inline-block;
+  width: 1.25rem;
+  flex-shrink: 0;
+}
+
+.cq-admin-page .cq-admin-menu-tree-select {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cq-admin-page .cq-admin-menu-tree-select:hover {
+  color: var(--cq-primary);
+}
+
+.cq-admin-page .cq-admin-menu-tree-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.cq-admin-page .cq-admin-menu-tree-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cq-admin-page .cq-admin-menu-tree-meta {
+  font-size: 0.75rem;
+  color: var(--cq-muted, #6c757d);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cq-admin-page .cq-admin-menu-tree-add {
+  opacity: 0;
+  color: var(--cq-muted, #6c757d);
+}
+
+.cq-admin-page .cq-admin-menu-tree-row:hover .cq-admin-menu-tree-add,
+.cq-admin-page .cq-admin-menu-tree-row:focus-within .cq-admin-menu-tree-add {
+  opacity: 1;
+}
+
+.cq-admin-page .cq-admin-mobile-card--active {
+  border-left: 3px solid var(--cq-primary);
+  background: rgba(96, 150, 186, 0.06);
+}
+
+.cq-admin-page .cq-admin-mobile-card-meta {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.cq-admin-page .cq-admin-mobile-card-meta-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cq-admin-page .cq-admin-mobile-card-meta-row dt {
+  color: var(--cq-muted);
+  font-weight: 600;
+  min-width: 5.5rem;
+}
+
+/* BI tendencias — Reportes admin */
+.cq-admin-page .cq-bi-toolbar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, rgba(39, 76, 119, 0.12), rgba(96, 150, 186, 0.2));
+  color: var(--color-primary-dark, #274c77);
+  font-size: 1.25rem;
+}
+
+.cq-admin-page .cq-bi-kpi-strip .cq-reserva-stat {
+  flex: 1 1 8rem;
+}
+
+.cq-admin-page .cq-bi-chart-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.45rem;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--cq-border);
+  color: var(--color-primary-dark, #274c77);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.cq-admin-page .cq-bi-chart-canvas {
+  position: relative;
+  min-height: 16.5rem;
+}
+
+.cq-admin-page .cq-bi-empty-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-surface-alt);
+  border: 1px dashed var(--cq-border);
+  color: var(--cq-muted);
+  font-size: 1.75rem;
+}
+
+.cq-admin-page .cq-bi-chart-card .card-body {
+  min-height: 100%;
+}

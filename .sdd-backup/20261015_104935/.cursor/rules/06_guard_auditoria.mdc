@@ -1,0 +1,94 @@
+﻿---
+description: Flujo obligatorio de auditoría (auditor-sql / auditor-codigo / auditor-flutter) antes de finalizar tareas
+alwaysApply: false
+globs: "**/*.{sql,cs,ts,js,py},**/*.dart,!**/*.g.dart"
+---
+
+# Mandatory Code Auditor
+
+Siempre que generes, modifiques o propongas código en este proyecto, debes solicitar auditoría antes de marcar la tarea como terminada.
+
+## Flujo obligatorio general
+
+1. Entender el requerimiento original del usuario.
+2. Implementar o proponer el cambio.
+3. Preparar resumen del cambio.
+4. Si el cambio incluye SQL → ejecutar primero `auditor-sql`.
+   Si el cambio incluye código Dart/Flutter → ejecutar `auditor-flutter`.
+5. Invocar `auditor-codigo` solo si hay C#/JS/Python — Flutter puro NO invoca `auditor-codigo`.
+6. Nunca responder "listo", "terminado", "seguro" o "se puede aplicar" sin incluir resultado de auditoría.
+
+## Auditoría SQL obligatoria
+
+Si el cambio incluye SQL, T-SQL, stored procedures, tablas, scripts `.sql`, jobs, triggers o lógica que lea/escriba en SQL Server:
+
+1. Primero invoca al subagente `auditor-sql`.
+2. Si `auditor-sql` responde **REQUIERE CAMBIOS**, invoca `corrector-revision` para corregir hallazgos accionables y vuelve a auditar con `auditor-sql`.
+3. Si `auditor-sql` responde **RIESGOSO**, detente y pide revisión manual.
+4. Solo después de aprobación SQL, invoca al subagente `auditor-codigo`.
+5. Nunca marques un cambio SQL como terminado sin ambos veredictos.
+
+## Auditoría general obligatoria
+
+Para cualquier cambio de código, configuración, scripts o documentación técnica:
+
+**Si el cambio incluye Dart/Flutter:**
+1. Invoca al subagente `auditor-flutter`.
+2. Si responde **APROBADO**, puedes finalizar (no invoques `auditor-codigo` para Flutter puro).
+3. Si responde **REQUIERE CAMBIOS**, invoca `corrector-revision` y vuelve a auditar con `auditor-flutter`.
+4. Si responde **RIESGOSO**, detente y pide revisión manual.
+
+**Si el cambio incluye C#/JavaScript/Python (no Flutter puro):**
+1. Invoca al subagente `auditor-codigo`.
+2. Si `auditor-codigo` responde **APROBADO**, puedes finalizar.
+3. Si `auditor-codigo` responde **REQUIERE CAMBIOS**, invoca `corrector-revision` y vuelve a auditar con `auditor-codigo`.
+4. Si `auditor-codigo` responde **RIESGOSO**, detente y pide revisión manual.
+
+## Bloqueo obligatorio de cierre
+
+Nunca finalices una tarea si:
+
+- `auditor-codigo` devuelve **REQUIERE CAMBIOS**
+- `auditor-codigo` devuelve **RIESGOSO**
+- `auditor-sql` devuelve **REQUIERE CAMBIOS**
+- `auditor-sql` devuelve **RIESGOSO**
+- `auditor-flutter` devuelve **REQUIERE CAMBIOS**
+- `auditor-flutter` devuelve **RIESGOSO**
+- `auditor-seguridad` devuelve **BLOQUEAR** (≡ RIESGOSO — escalada directa, NO invocar `corrector-revision`)
+
+En esos casos:
+
+1. Ejecutar `corrector-revision` si los hallazgos son corregibles (solo `REQUIERE CAMBIOS`; nunca `RIESGOSO`/`BLOQUEAR`).
+2. Reauditar.
+3. Repetir máximo 3 ciclos.
+4. Si persisten hallazgos críticos o mayores:
+   - responder **PARCIAL**
+   - o **REQUIERE DECISIÓN**
+
+Nunca marques una tarea como terminada con hallazgos bloqueantes.
+
+## Formato final obligatorio
+
+### Cambio realizado
+Resumen breve.
+
+### Resultado del auditor-sql
+Estado y hallazgos principales.  
+Si no aplica SQL, escribe: No aplica.
+
+### Resultado del auditor-flutter
+Estado y hallazgos principales.
+Si no aplica Flutter/Dart, escribe: No aplica.
+
+### Resultado del auditor-codigo
+Estado y hallazgos principales.
+Si no aplica C#/JS/Python (ticket Flutter puro), escribe: No aplica.
+
+### Correcciones aplicadas
+Indica qué se corrigió después de la auditoría.
+
+### Pruebas
+Lista pruebas realizadas o recomendadas.
+
+### Estado final
+Listo / Pendiente de corrección / Riesgoso.

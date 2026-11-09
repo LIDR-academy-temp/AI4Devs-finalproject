@@ -1,0 +1,54 @@
+@baseUrl = http://localhost:5180
+@tokenAdmin = {{loginAdmin.response.body.token}}
+@tokenResidente = {{loginResidente.response.body.token}}
+
+# @name loginAdmin
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "Correo": "admin@local",
+  "Password": "{{$dotenv FASE1_SMOKE_PASSWORD}}"
+}
+
+###
+
+# @name loginResidente
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "Correo": "residente@local",
+  "Password": "{{$dotenv FASE1_SMOKE_PASSWORD}}"
+}
+
+###
+
+# TC-ENC-R-1 — Admin siempre 200 (encuesta publicada existente)
+@encuestaId = 1
+GET {{baseUrl}}/ENC/Encuestas/{{encuestaId}}/resultados
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+# TC-ENC-R-3 — Residente vigente sin participar → 403
+GET {{baseUrl}}/ENC/Encuestas/{{encuestaId}}/resultados
+Authorization: Bearer {{tokenResidente}}
+
+###
+
+# Tras POST /respuestas exitoso — TC-ENC-R-2 residente → 200
+POST {{baseUrl}}/ENC/Encuestas/{{encuestaId}}/respuestas
+Authorization: Bearer {{tokenResidente}}
+Content-Type: application/json
+
+{
+  "respuestas": [
+    { "preguntaId": 1, "opcionPreguntaId": 1 }
+  ]
+}
+
+###
+
+GET {{baseUrl}}/ENC/Encuestas/{{encuestaId}}/resultados
+Authorization: Bearer {{tokenResidente}}

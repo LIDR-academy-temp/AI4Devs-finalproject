@@ -1,0 +1,33 @@
+@baseUrl = http://localhost:5000
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+# @name loginAdmin
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "admin@cuartaquinientos.local",
+  "password": "CHANGE_ME"
+}
+
+###
+
+GET {{baseUrl}}/SGR/Navegacion/menus
+Authorization: Bearer {{adminToken}}
+
+###
+
+GET {{baseUrl}}/SGR/Menus/admin
+Authorization: Bearer {{adminToken}}
+
+###
+
+PUT {{baseUrl}}/SGR/Perfiles/1/permisos-menus
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "menus": [
+    { "menuId": 1, "visible": true }
+  ]
+}

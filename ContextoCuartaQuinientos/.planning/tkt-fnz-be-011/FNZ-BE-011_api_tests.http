@@ -1,0 +1,73 @@
+@baseUrl = http://localhost:5000
+@adminToken = {{loginAdmin.response.body.token}}
+@residentToken = {{loginResident.response.body.token}}
+
+### Login admin
+# @name loginAdmin
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "admin@ejemplo.com",
+  "password": "CambiarMe1!"
+}
+
+### Login residente (dueño de la cuota)
+# @name loginResident
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "residente@ejemplo.com",
+  "password": "CambiarMe1!"
+}
+
+### Generar cuotas del período (admin)
+POST {{baseUrl}}/FNZ/Cuotas/generar
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "mes": 10,
+  "anio": 2026,
+  "monto": 1200.00
+}
+
+### Registrar pago (admin) — smoke FNZ-BE-011
+# @name registrarPago
+PATCH {{baseUrl}}/FNZ/Cuotas/50/pago
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "montoPagado": 1200.00,
+  "fechaPago": "2026-10-16",
+  "metodoPago": "Transferencia",
+  "referenciaPago": "SMOKE-REF-001"
+}
+
+### Estado de cuenta residente — debe mostrar estado Pagada en UI /finanzas/cuenta
+GET {{baseUrl}}/FNZ/Cuotas/mis
+Authorization: Bearer {{residentToken}}
+
+### Error: monto distinto (422)
+PATCH {{baseUrl}}/FNZ/Cuotas/50/pago
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "montoPagado": 600.00,
+  "fechaPago": "2026-10-16",
+  "referenciaPago": "BAD"
+}
+
+### Error: residente (403)
+PATCH {{baseUrl}}/FNZ/Cuotas/50/pago
+Authorization: Bearer {{residentToken}}
+Content-Type: application/json
+
+{
+  "montoPagado": 1200.00,
+  "fechaPago": "2026-10-16",
+  "referenciaPago": "X"
+}

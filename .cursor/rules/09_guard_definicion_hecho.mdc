@@ -1,0 +1,144 @@
+﻿---
+description: Checklist de Definition of Done y plantillas de pruebas por capa
+alwaysApply: false
+globs: "**/*.{sql,cs,ts,js,py},**/*.dart,!**/*.g.dart"
+---
+
+# Definition of Done (DoD)
+
+Checklist unificado para determinar si una tarea está completa.
+
+## Criterios obligatorios
+
+Antes de marcar una tarea como terminada, validar TODOS:
+
+### 1. Implementación
+
+- [ ] Código cumple exactamente el requerimiento original
+- [ ] Cambios mínimos y dentro del alcance
+- [ ] Patrones existentes respetados
+- [ ] Sin código muerto o innecesario agregado
+- [ ] Escalera de decisión respetada: cada objeto creado coincide con el peldaño 5 prescrito en `design.md`; ningún objeto nuevo donde design dictaba reuso/cambio mínimo
+
+### 2. Auditoría
+
+- [ ] `auditor-sql`: APROBADO (si hubo SQL)
+- [ ] `auditor-flutter`: APROBADO (si hubo Dart/Flutter)
+- [ ] `auditor-codigo`: APROBADO (si hubo C#/JS/Python — no aplica Flutter puro)
+- [ ] `auditor-seguridad`: APROBADO (si hay endpoints o SQL con input externo)
+- [ ] Hallazgos corregidos (máximo 3 ciclos con `corrector-revision`)
+- [ ] Si persisten hallazgos: escalado como PARCIAL o REQUIERE DECISIÓN
+
+### 3. Pruebas
+
+- [ ] SQL: SELECT previo de validación + smoke ejecutado
+- [ ] SQL: `*PruebasUnitarias.sql` de la fase TEST en VERDE (`-- [OK] TESTS [..] -> N PASS`, 0 ROJO), con
+      ≥1 `TC-ERR`, `TC-IDEM` si hay `prcSet*`, y `Expected` iguales a la matriz de `design.md`
+- [ ] Sellos `verde`/`revisar` FRESCOS (`sdd-toolkit/tools/sello.py verificar`)
+- [ ] API: caso happy path + caso error + auth validada
+- [ ] API: **todo endpoint nuevo con body ejecutado al menos 1 vez contra el API levantado** — `dotnet build` + `.http` bien escrito NO sustituyen esto (el model binding falla en runtime, no en compilación); si el smoke se hizo llamando el SP por MCP, el endpoint sigue sin verificar
+- [ ] Frontend React: `tsc --noEmit` + `vite build` pasan
+- [ ] Mobile Flutter: `flutter analyze` (cero warnings) + `flutter test` (todos pasan)
+- [ ] O justificación explícita de por qué no se ejecutaron
+
+#### TDD (solo Feature / Refactor con lógica — detalle en `18_guard_tdd`)
+
+- [ ] Red phase respetada + suite íntegro: ningún test alterado/borrado para pasar
+- [ ] Refactor: paridad CHAR-x verificada (baseline pre = resultado post)
+- [ ] Robustez: SQL 3 mutantes o kill rate ≥ 80 % (o justificación)
+
+### 4. Contexto y documentación
+
+- [ ] Contexto actualizado en `<RUTA_CONTEXTOS>\`
+- [ ] Entregables creados/actualizados (`<fecha>_<TKT>_Entregables.md`)
+- [ ] Inventario de cambios si hubo SQL/API (`<fecha>_<TKT>_INVENTARIO_CAMBIOS.md`)
+- [ ] XML Swagger actualizado si hubo endpoint nuevo/modificado
+
+### 5. Spec SDD (si aplica flujo completo)
+
+- [ ] Criterios de aceptación cumplidos
+- [ ] Estado del spec actualizado
+- [ ] Riesgos residuales documentados
+
+## Cuándo NO aplica DoD completo
+
+- Typos, explicaciones, documentación menor
+- En esos casos: solo auditoría + contexto si cambió algo relevante
+
+## Formato de confirmación
+
+```md
+### DoD ✓
+- Auditoría: APROBADO
+- Pruebas: ejecutadas / justificadas
+- Contexto: actualizado en `<ruta>`
+- Estado: LISTO
+```
+
+---
+
+## Plantillas de pruebas por capa
+
+### SQL Server — Antes de DML
+
+```sql
+SELECT COUNT(*) AS FilasAFectar FROM <tabla> WHERE <mismos filtros>;
+SELECT TOP 10 <columnas> FROM <tabla> WHERE <mismos filtros>;
+```
+
+### SQL Server — Smoke SP
+
+```sql
+EXEC [esquema].[prcNombre] @iPParam1 = <valor_valido>;   -- happy path
+EXEC [esquema].[prcNombre] @iPParam1 = -1;                -- error path
+EXEC [esquema].[prcNombre] @iPParam1 = NULL;               -- null handling
+```
+
+### SQL Server — SP masivo (JSON)
+
+```sql
+EXEC [esquema].[prcSetNombre] @nvPJSON = N'[{"Campo":1}]', @iPUserID = 1;   -- happy
+EXEC [esquema].[prcSetNombre] @nvPJSON = N'[{"Campo":-1}]', @iPUserID = 1;  -- error
+EXEC [esquema].[prcSetNombre] @nvPJSON = N'[]', @iPUserID = 1;              -- vacío
+```
+
+### API C# — GET
+
+- Filtros válidos → 200 + datos
+- Sin filtros → 200 + datos sin filtrar
+- Filtro inexistente → 200 + array vacío
+
+### API C# — POST
+
+- Body válido → 200 + ID
+- Campo requerido faltante → `parametersAdvice`
+- ID existente → UPDATE (verificar ModifiedDate)
+- ID = 0 → INSERT
+- **Binding verificado en runtime**: el body válido debe entrar al action (no HTTP 400 de deserialización). Ver prohibición de `JObject` en el body en `02_tech_api_patrones`
+
+### API C# — DELETE
+
+- ID válido → 200 + ID eliminado
+- ID = 0 → error/validación
+
+### Frontend (React+Vite)
+
+```powershell
+node_modules\.bin\tsc --noEmit
+node_modules\.bin\vite build --mode development 2>&1 | Select-Object -Last 30
+```
+
+### Mobile (Flutter)
+
+```bash
+flutter analyze          # cero warnings obligatorio
+flutter test             # todos los tests pasan
+flutter test --coverage  # si el PR incluye nueva lógica de negocio
+```
+
+### Reglas de testing
+
+- Ejecutar al menos smoke test antes de confirmar "listo"
+- Si no se puede ejecutar, documentar por qué
+- Para SQL productivo: NUNCA DML sin SELECT previo
+- Para SP masivos: happy path + error + vacío como mínimo

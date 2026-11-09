@@ -1,0 +1,13 @@
+﻿{
+    "VisitaGeneradaId":  4,
+    "NombreVisitante":  "Doc API",
+    "CodigoQr":  "52B0B97181D9B37B1168312365B4564C",
+    "FechaEmision":  "2026-10-28T18:00:00",
+    "FechaExpira":  "2026-10-28T22:00:00",
+    "BUsado":  false,
+    "EstadoLista":  "vigente",
+    "CasaId":  1,
+    "DireccionCasa":  "cada 55",
+    "TipoIdentificacion":  "INE",
+    "NumeroIdentificacion":  "N/A"
+}

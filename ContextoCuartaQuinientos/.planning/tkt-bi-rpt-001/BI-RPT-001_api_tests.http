@@ -1,0 +1,93 @@
+# BI-RPT-001 — pruebas API (matriz design TC-BIRPT-05 … TC-BIRPT-08)
+# Expected congelado; ROJO hasta /ejecutar. Rama: final-project-AFS
+# Local: @baseUrl = http://localhost:5180
+# Prod post-deploy: https://apicuartaquinientos.runasp.net (runner: scripts/Invoke-ApiSmokePostDeploy.ps1 -Target Prod)
+@baseUrl = http://localhost:5180
+@tokenAdmin = {{loginAdmin.response.body.token}}
+@tokenResidente = {{loginResidente.response.body.token}}
+
+### Auth admin
+# @name loginAdmin
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "admin@local",
+  "password": "{{$dotenv FASE1_SMOKE_PASSWORD}}"
+}
+
+###
+
+### Auth residente
+# @name loginResidente
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "{{$dotenv E2E_RESIDENT_CORREO}}",
+  "password": "{{$dotenv E2E_RESIDENT_PASSWORD}}"
+}
+
+###
+
+# TC-BIRPT-07 — Morosos regresion (Happy)
+# Expected: 200 + array
+GET {{baseUrl}}/Reports/Reportes/Morosos
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+# TC-BIRPT-05 — Tendencias BI admin (ROJO hasta BiTendenciasController)
+# Expected: 200 + JSON array snapshots
+GET {{baseUrl}}/Reports/Bi/tendencias?meses=6
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+# TC-BIRPT-05-ERR — Tendencias residente
+# Expected: 403 Forbidden
+GET {{baseUrl}}/Reports/Bi/tendencias?meses=6
+Authorization: Bearer {{tokenResidente}}
+
+###
+
+# TC-BIRPT-06 — Export BI periodo (ROJO hasta endpoint en impl)
+# Expected: 200 application/pdf o spreadsheet
+# Ajustar ruta en /ejecutar si design prescribe otra convencion
+GET {{baseUrl}}/Reports/Bi/export?meses=6&formato=pdf
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+# TC-BIRPT-09 — Export RPT finanzas mes (hotfix 2026-11-09: SqlSchemaCompat UsuarioColumns)
+# Expected: 200 application/pdf
+GET {{baseUrl}}/Reports/Reportes/FinanzasMes/export?mes=11&anio=2026&formato=pdf
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+# TC-BIRPT-08 — Aviso NTF admin (fase G; endpoint existente)
+# Expected: 201 Created o 200 OK
+POST {{baseUrl}}/NTF/Notificaciones/aviso
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "titulo": "Smoke BI-RPT-001",
+  "mensaje": "TC-BIRPT-08 aviso general"
+}
+
+###
+
+# TC-BIRPT-08-ERR — Residente no puede aviso
+# Expected: 403
+POST {{baseUrl}}/NTF/Notificaciones/aviso
+Authorization: Bearer {{tokenResidente}}
+Content-Type: application/json
+
+{
+  "titulo": "Intento",
+  "mensaje": "Debe fallar"
+}
+
+###

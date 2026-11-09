@@ -1,0 +1,156 @@
+# NAV-ROOT-001 — pruebas API (matriz design TC-NAV-08 … TC-NAV-10)
+# Local: @baseUrl = http://localhost:5180
+# Prod post-deploy: https://apicuartaquinientos.runasp.net (runner: scripts/Invoke-ApiSmokePostDeploy.ps1 -Target Prod)
+@baseUrl = http://localhost:5180
+@tokenAdmin = {{loginAdmin.response.body.token}}
+@tokenResidente = {{loginResidente.response.body.token}}
+@tokenGuardia = {{loginGuardia.response.body.token}}
+@tokenTrabajador = {{loginTrabajador.response.body.token}}
+
+### Auth admin
+# @name loginAdmin
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "admin@local",
+  "password": "{{$dotenv FASE1_SMOKE_PASSWORD}}"
+}
+
+###
+
+### Auth residente
+# @name loginResidente
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "{{$dotenv E2E_RESIDENT_CORREO}}",
+  "password": "{{$dotenv E2E_RESIDENT_PASSWORD}}"
+}
+
+###
+
+### Auth guardia (credencial TEST; ajustar si DB-008 seed distinto)
+# @name loginGuardia
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "guardia@local",
+  "password": "{{$dotenv FASE1_SMOKE_PASSWORD}}"
+}
+
+###
+
+### Auth trabajador
+# @name loginTrabajador
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "trabajador@local",
+  "password": "{{$dotenv FASE1_SMOKE_PASSWORD}}"
+}
+
+###
+
+# TC-NAV-08 — Menus x 4 perfiles (post DB-008: incluir /visitas/pases residente, sin /admin en guardia)
+# Expected admin: 200 + arbol con /admin/tickets
+GET {{baseUrl}}/SGR/Navegacion/menus
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+# Expected residente: 200 + ruta /visitas/pases en arbol (ROJO hasta DB-008)
+GET {{baseUrl}}/SGR/Navegacion/menus
+Authorization: Bearer {{tokenResidente}}
+
+###
+
+# Expected guardia: 200 + /guardia/validar-pase; sin hijos /admin/*
+GET {{baseUrl}}/SGR/Navegacion/menus
+Authorization: Bearer {{tokenGuardia}}
+
+###
+
+# Expected trabajador: 200 + /trabajador/tickets (ROJO hasta DB-008 + seed)
+GET {{baseUrl}}/SGR/Navegacion/menus
+Authorization: Bearer {{tokenTrabajador}}
+
+###
+
+# TC-NAV-08b — Trabajador: cola asignados (fase C)
+# Expected trabajador: 200 + items paginados
+GET {{baseUrl}}/TKT/Tickets/asignados?terminado=false
+Authorization: Bearer {{tokenTrabajador}}
+
+###
+
+# Expected residente: 403 Forbidden
+GET {{baseUrl}}/TKT/Tickets/asignados?terminado=false
+Authorization: Bearer {{tokenResidente}}
+
+###
+# Expected admin: 200 + series KPI
+GET {{baseUrl}}/Reports/Bi/tendencias?meses=6
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+# Expected residente: 403 Forbidden
+GET {{baseUrl}}/Reports/Bi/tendencias?meses=6
+Authorization: Bearer {{tokenResidente}}
+
+###
+
+# TC-NAV-09 negativo — residente listado reservas admin (fase D, ROJO hasta API)
+# Expected: 403
+GET {{baseUrl}}/VTS/ReservacionesArea/admin?pagina=1&tamano=20
+Authorization: Bearer {{tokenResidente}}
+
+###
+
+# TC-NAV-09 happy reservas admin (ROJO hasta fase D)
+# Expected admin: 200
+GET {{baseUrl}}/VTS/ReservacionesArea/admin?pagina=1&tamano=20
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+# TC-NAV-10 — POST aviso NTF admin (fase G; endpoint existente)
+# Expected admin: 201 + destinatarios >= 0
+POST {{baseUrl}}/NTF/Notificaciones/aviso
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "titulo": "Prueba NAV-ROOT-001",
+  "mensaje": "Smoke aviso general TC-NAV-10"
+}
+
+###
+
+# TC-NAV-10 negativo — residente no puede aviso general
+# Expected: 403
+POST {{baseUrl}}/NTF/Notificaciones/aviso
+Authorization: Bearer {{tokenResidente}}
+Content-Type: application/json
+
+{
+  "titulo": "Intento residente",
+  "mensaje": "Debe fallar"
+}
+
+###
+
+# TC-NAV-10 validacion — titulo vacio
+# Expected: 400 VALIDATION_ERROR
+POST {{baseUrl}}/NTF/Notificaciones/aviso
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "titulo": "",
+  "mensaje": "Sin titulo"
+}

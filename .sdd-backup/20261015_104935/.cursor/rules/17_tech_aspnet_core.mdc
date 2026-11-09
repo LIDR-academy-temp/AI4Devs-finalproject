@@ -1,0 +1,127 @@
+---
+description: Arquitectura, patrones y convenciones ASP.NET Core 8 / Razor Pages para <PROYECTO_ASPNET_CORE>
+globs: "**/*.cs,**/*.cshtml,!**/obj/**,!**/packages/**"
+alwaysApply: false
+---
+
+# Architecture & ASP.NET Core 8 Rules — <PROYECTO_ASPNET_CORE>
+
+## Stack
+
+Ver `sdd-toolkit/profiles/web-core.md` para el stack completo del proyecto.
+Esta regla documenta los patrones de código — no dupliques la lista de dependencias aquí.
+
+## Arquitectura
+
+Flujo obligatorio: `PageModel → <CLASE_HTTP_CORE> → API externa → Razor View`
+Para endpoints OIDC/API: `Controller/ControllerBase → <CLASE_HTTP_CORE> → respuesta`
+Nunca lógica de negocio en `.cshtml`.
+
+Estructura canónica:
+
+```
+<PROYECTO_ASPNET_CORE>/
+├── Controllers/          ← controllers OIDC/API
+├── Pages/                ← Razor Pages por dominio; Shared/ para layouts y partials
+├── Helpers/
+│   ├── Generales/        ← <CLASE_HTTP_CORE>, <CLASE_TOOLS_CORE> y helpers transversales
+│   └── Sessions/         ← wrappers tipados sobre ISession
+├── Data/                 ← DbContext + migraciones EF Core
+└── Program.cs            ← entry point, DI, middleware pipeline
+```
+
+> Estructura real puede tener subcarpetas adicionales — leer el repo antes de crear archivos.
+
+## Program.cs — convenciones
+
+- Toda configuración de servicios vía `builder.Services.*` — sin `Startup.cs`.
+- Orden de middleware obligatorio: ForwardedHeaders → HTTPS → StaticFiles → Session → Auth → Routing/Endpoints.
+- No alterar el orden del pipeline sin justificación explícita en el diseño.
+- Configuración sensible (URIs, certificados): leer de `appsettings.json` vía `builder.Configuration` — nunca hardcoded.
+
+## Razor Pages — convenciones
+
+- Cada página = par `.cshtml` + `.cshtml.cs` en `Pages/` (o subcarpeta por dominio).
+- PageModel: hereda `PageModel` (namespace `Microsoft.AspNetCore.Mvc.RazorPages`).
+- Handlers: `OnGetAsync()` para GET, `OnPostAsync()` para POST — siempre `async Task<IActionResult>`.
+- Formularios: usar `[BindProperty]` en la propiedad del PageModel — nunca parámetros sueltos en el handler.
+- Sin `ViewBag` — exponer datos al Razor vía propiedades públicas del PageModel.
+- Acceso al modelo en `.cshtml`: `@Model.PropNombre` — nunca `@ViewBag.X`.
+
+## Controllers — convenciones
+
+- Herencia: `Controller` cuando la acción hace redirects o usa helpers MVC (e.g. OpenIddict); `ControllerBase` para respuestas JSON puras.
+- Acciones asíncronas: `async Task<IActionResult>` para toda acción con IO externo.
+- Un controller por dominio — no crear controllers genéricos o catch-all.
+- Namespace: seguir el namespace de `<PAGE_REFERENCIA_CORE>`.
+
+## <CLASE_HTTP_CORE> — patrón HTTP client
+
+Ver `sdd-toolkit/profiles/web-core.md` sección **Patrón HTTP client** para el snippet
+exacto de este proyecto. Reglas generales:
+
+- Verificar la propiedad de éxito de la respuesta antes de acceder a los datos.
+- Serializar/deserializar con la librería declarada en el profile (Newtonsoft.Json o System.Text.Json).
+- Nunca pasar `dynamic` directamente como body sin serializar.
+- Base URL y endpoints: leer de `IConfiguration` vía `appsettings.json` — no hardcodear en código.
+
+## Auth / Session guard
+
+Ver `sdd-toolkit/profiles/web-core.md` sección **Auth** para la clave de sesión
+y el redirect exacto del proyecto. Reglas generales:
+
+- Para auth de cookie: verificar `User.Identity.IsAuthenticated` o el claim esperado al inicio de handlers protegidos.
+- Para Razor Pages: usar `[Authorize]` attribute o verificar en `OnGetAsync`.
+- Secrets (certificados, claves API): cargar de `appsettings.json` o variables de entorno — nunca en código fuente.
+- No mezclar lógica de auth con lógica de negocio en el mismo método.
+
+## EF Core — convenciones
+
+- Un solo `DbContext` por proyecto salvo justificación explícita en el diseño.
+- Cambios de schema: solo vía migraciones (`dotnet ef migrations add`). No alterar tablas manualmente.
+- Seed de datos: en `Program.cs` (o extensión de IHost) — no en el constructor del DbContext.
+- No mezclar consultas EF y SQL raw en el mismo método salvo que el profile lo explicite.
+
+## Session helpers (`Helpers/Sessions/`)
+
+Ver profile para las claves y métodos disponibles. Reglas generales:
+- Usar los wrappers tipados del proyecto para acceder a sesión — no `HttpContext.Session.GetString(...)` directo en páginas.
+- No almacenar objetos complejos en sesión sin serialización explícita a JSON.
+
+## <CLASE_TOOLS_CORE> — helpers del proyecto
+
+Ver profile para los métodos disponibles. Reglas generales:
+- Usar los helpers del proyecto para tareas transversales (resolución de cultura, validación de identidad, carga de traducciones).
+- No reimplementar funcionalidad que el helper ya provee.
+
+## Vistas Razor (.cshtml)
+
+- Un archivo por página: `Pages/<Dominio>/<Pagina>.cshtml`.
+- Layouts y partials compartidos: `Pages/Shared/_<Nombre>.cshtml`.
+- Sin lógica de negocio en `.cshtml` — solo condicionales de presentación simples.
+- No bloques `@{ }` complejos — extraer a helper o PageModel si hace falta.
+
+## Routing
+
+- Routing de Razor Pages por convención de carpetas — no redefinir rutas salvo necesidad explícita.
+- Rutas personalizadas: directiva `@page "/ruta/{param}"` en el `.cshtml`.
+- Para controllers: `[Route(...)]` o convención en `MapControllerRoute`.
+- Seguir el esquema de URLs del proyecto documentado en el profile — no inventar rutas nuevas.
+
+## Modelos y DTOs
+
+- Clases tipadas — prohibido `dynamic` como tipo de retorno en métodos públicos.
+- Propiedades de formulario: `[BindProperty]` + tipo explícito.
+- Para payloads hacia API externa: objeto serializado con la librería del profile.
+- DataAnnotations en PageModel: `[Required]`, `[EmailAddress]`, etc.
+
+## Errores y logging
+
+- Envolver llamadas a `<CLASE_HTTP_CORE>` en try/catch cuando el error no impide el render.
+- Usar `ILogger<T>` por inyección — no `Console.WriteLine`.
+- Nunca exponer stack trace en vistas o respuestas de API.
+
+## Verificación antes de entregar
+
+`dotnet build` sin errores de compilación.
+Si el build falla → no entregar. Corregir primero.

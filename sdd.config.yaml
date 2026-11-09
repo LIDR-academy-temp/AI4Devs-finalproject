@@ -1,0 +1,188 @@
+# =====================================================================
+# sdd.config.yaml — CuartaQuinientos
+# Portal condominial: React 18 + ASP.NET Core 9 (GraphQL/REST) + SQL Server + Bot Telegram
+# Modo: hybrid (Claude planifica spec/design → Cursor implementa)
+# =====================================================================
+
+project: CuartaQuinientos
+owner: afonseca@nice.com.mx
+language: es
+
+vars:
+  # Rutas de los repos
+  RUTA_CONTEXTOS:        'D:\LIDR\ProyectoFinal\feature-entrega-1-AFS\ContextoCuartaQuinientos'
+  RUTA_PLANNING:         'D:\LIDR\ProyectoFinal\feature-entrega-1-AFS\ContextoCuartaQuinientos\.planning'
+  RUTA_SPECS:            'D:\LIDR\ProyectoFinal\feature-entrega-1-AFS\ContextoCuartaQuinientos\.planning'
+  RUTA_GRAPH:            'D:\LIDR\ProyectoFinal\feature-entrega-1-AFS\ContextoCuartaQuinientos\_graph.md'
+  RUTA_REPO_API:         'D:\LIDR\ProyectoFinal\feature-entrega-1-AFS\GraphApi'
+  RUTA_REPO_SQL:         'D:\LIDR\ProyectoFinal\feature-entrega-1-AFS\SQL'
+  RUTA_REPO_FRONT:       'D:\LIDR\ProyectoFinal\feature-entrega-1-AFS\Web'
+  RUTA_REPO_BOT:         'D:\LIDR\ProyectoFinal\feature-entrega-1-AFS\Bot'
+
+  # Backend .NET
+  PROYECTO_API:          GraphApi
+  NOMBRE_API:            cuartaquinientos-api
+
+  # Base de datos
+  DB_PRINCIPAL:          CuartaQuinientos
+
+  # MCP SQL Server (nesgo)
+  MCP_TEST:              nesgotest
+  MCP_PROD:              nesgoPROD
+
+  # Convenciones backend .NET
+  CTR_REFERENCIA:        TicketController
+  CTR_ERROR_SQL:         TicketController
+
+  # Frontend React/Vite
+  PROYECTO_FRONT:        cuartaquinientos-web
+  COMPONENTE_REFERENCIA: TicketForm
+
+  # Bot Telegram
+  NOMBRE_BOT:            cuartaquinientos-bot
+
+targets:
+
+  context:
+    enabled: true
+    profile: ./sdd-toolkit/profiles/context.md
+    instances:
+      - name: contexto-cuartaquinientos
+        repo: 'D:\LIDR\ProyectoFinal\feature-entrega-1-AFS\ContextoCuartaQuinientos'
+        specs_path: .planning
+        graph: _graph.md
+        planning_path: .planning
+        git:
+          enabled: false
+
+  database:
+    enabled: true
+    profile: ./sdd-toolkit/profiles/database.md
+    engine: sqlserver
+    envs:
+      test: { host: nesgotest, port: 1433 }
+      prod: { host: nesgoPROD, port: 1433 }
+    instances:
+      - name: CuartaQuinientos
+        role: principal
+        git:
+          enabled: true
+          base_branch: feature/entrega-2-AFS
+          branch_format: "feature/{id}-{slug}"
+        schemas: [sgr, tkt, fnz, ntf, usr, vts, enc, jnt, anm, arc, api, dbo, bot, ia, bi, wms]
+    conventions:
+      # sin stored procedures: Dapper + vistas + servicios C# (0 SPs en el repo)
+      sp_prefix: ""
+      audit_fields: [Creado, Modificado, UsuarioCreacionID, UsuarioModificacionID, FechaCreacion, FechaModificacion]
+      soft_delete: bEliminado
+      error_output: ""   # sin SP; validacion con FluentValidation en servicios
+      transaction_pattern: "Dapper IDbTransaction (BeginTransaction/Commit/Rollback en el servicio)"
+      unicode: true
+      datetime: SYSUTCDATETIME()
+      naming: "nombres logicos del readme §3 (ADR-008); DB-001 alinea el fisico"
+
+  backend:
+    enabled: true
+    profile: ./sdd-toolkit/profiles/backend.md
+    instances:
+      - name: cuartaquinientos-api
+        stack: dotnet
+        role: API principal — GraphQL (Hot Chocolate) + REST + JWT
+        repo: 'D:\LIDR\ProyectoFinal\feature-entrega-1-AFS\GraphApi'
+        git:
+          enabled: true
+          base_branch: feature/entrega-2-AFS
+          branch_format: "feature/{id}-{slug}"
+        conventions:
+          auth: JWT HMAC-SHA256, 60 min + refresh token 14 dias, claims (sub, correo, nombre, perfil, bAdministrador, condominioId)
+          roles: [Administrador, Residente, Guardia, Trabajador]
+          graphql_endpoint: /graphql
+          rest_base: /{Dominio}/{Controller}
+          orm: Dapper
+          error_handling: "Result<T> del servicio; REST -> ProblemDetails con code; GraphQL -> UserError"
+          domains: [SGR, USR, TKT, FNZ, ANM, VTS, ENC, JNT, NTF, Dashboard, ARC, RPT, BI, WMS, BOT]
+
+  frontend:
+    enabled: true
+    profile: ./sdd-toolkit/profiles/frontend.md
+    instances:
+      - name: cuartaquinientos-web
+        stack: react-vite
+        role: SPA React 18 + TypeScript + Apollo Client 3 + Tailwind CSS
+        repo: 'D:\LIDR\ProyectoFinal\feature-entrega-1-AFS\Web'
+        git:
+          enabled: true
+          base_branch: feature/entrega-2-AFS
+          branch_format: "feature/{id}-{slug}"
+        conventions:
+          structure: feature-based
+          state: Apollo Client InMemoryCache
+          forms: react-hook-form
+          routing: React Router v6
+          styling: Tailwind CSS
+          graphql_files: .gql separados por dominio
+          hooks: useTickets, usePagos, useAuth, useNotificaciones
+
+  integrations:
+    enabled: true
+    profile: ./sdd-toolkit/profiles/integrations.md
+    instances:
+      - name: cuartaquinientos-bot
+        stack: python
+        role: Bot de Telegram — canal alternativo para residentes
+        repo: 'D:\LIDR\ProyectoFinal\feature-entrega-1-AFS\Bot'
+        git:
+          enabled: true
+          base_branch: feature/entrega-2-AFS
+          branch_format: "feature/{id}-{slug}"
+        conventions:
+          runtime: "Python 3.11 + python-telegram-bot 21.x"
+          pattern: ConversationHandler multi-paso
+          auth: "vinculacion por token de un solo uso (bot.CuentasTelegram); JWT del usuario via POST /SGR/Usuarios/telegram/sesion con X-Bot-Secret"
+          api_client: httpx
+          prod_mode: webhook
+          dev_mode: polling
+          canal_tag: TELEGRAM
+
+  mobile:
+    enabled: false
+    profile: ./sdd-toolkit/profiles/mobile.md
+    instances: []
+
+implementer:
+  tool: cursor
+  mode: hybrid
+  rules_path: .cursor
+  entry_command: /ejecutar
+
+planning:
+  architect_role: context-generator
+  editor_role: implementer
+  model_routing:
+    strong: [spec_md, design_md, delta_md]
+    weak:   [_index_md, _graph_md, compound_loop]
+
+tools:
+  code_graph:    'python sdd-toolkit/tools/code_graph.py --query "{query}"'
+  graph_query:   'python sdd-toolkit/tools/graph_viz.py --query "{query}"'
+  impact_graph:  'python sdd-toolkit/tools/impact_graph.py --object "{object}" --format md'
+  enrich_graph:  'python sdd-toolkit/tools/enrich_graph.py'
+  check_links:   'python sdd-toolkit/tools/check_doc_links.py'
+  check_drift:   'python sdd-toolkit/tools/check_api_drift.py'
+
+artifacts:
+  - { name: _index.md,  generated_by: context-generator }
+  - { name: spec.md,    generated_by: context-generator, template: ./sdd-toolkit/templates/spec.md }
+  - { name: design.md,  generated_by: context-generator, template: ./sdd-toolkit/templates/design.md }
+  - { name: impl.md,    generated_by: implementer,        template: ./sdd-toolkit/templates/impl.md }
+  - { name: delta.md,   generated_by: context-generator, template: ./sdd-toolkit/templates/delta.md }
+  - { name: release.md, generated_by: context-generator, template: ./sdd-toolkit/templates/release.md }
+
+context_discipline:
+  austero: always
+  lean_context_at: 0.4
+
+repo_setup:
+  context_repo:
+    - dest: .editorconfig
+      src:  sdd-toolkit/setup/editorconfig

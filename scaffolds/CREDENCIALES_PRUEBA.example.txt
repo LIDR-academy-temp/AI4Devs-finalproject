@@ -1,0 +1,13 @@
+# Credenciales de PRUEBA (plantilla — NO poner contraseñas reales aqui)
+# Copia este archivo a la raiz del repo como:  test.txt  (gitignored)
+# Las contras reales solo van en Typeform para el TA, nunca en el repo.
+
+# Formato: una linea por usuario
+#   correo@dominio  pass <contrasena>
+
+admin@local  pass <CONTRASENA_ADMIN_PRUEBA>
+residente@local  pass <CONTRASENA_RESIDENTE_PRUEBA>
+
+# Perfiles tipicos (segun seeds DB-002 / readme):
+# - admin@local        -> Administrador
+# - residente@local    -> Residente (ajusta correo si tu seed usa otro)

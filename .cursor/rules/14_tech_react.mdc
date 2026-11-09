@@ -1,0 +1,153 @@
+---
+description: Arquitectura, reglas React+TypeScript y patrones <PROYECTO_FRONT>
+globs: "**/*.tsx,**/*.ts,!**/*.d.ts"
+alwaysApply: false
+---
+
+# Architecture & React+TypeScript Rules
+
+## Arquitectura
+
+Flujo obligatorio: `API → UI`. Nunca lógica de negocio en el frontend.
+
+- API: valida, procesa, persiste. El frontend solo consulta y presenta.
+- UI: componentes React, estado cliente (Zustand), datos remotos (TanStack Query).
+
+Principios: simplicidad sobre complejidad, no duplicar lógica, no romper patrones actuales.
+
+## Capas de estado — regla de separación
+
+| Tipo de estado | Dónde vive |
+|----------------|-----------|
+| Datos del servidor | TanStack Query (`useQuery` / `useMutation`) |
+| Estado UI global (usuario, tema, sesión) | Zustand store |
+| Estado local efímero (modal abierto, tab activo) | `useState` |
+
+**Nunca** duplicar datos del servidor en Zustand. Si dos componentes necesitan el mismo dato remoto, comparten el mismo `queryKey`.
+
+## TypeScript — reglas de tipado
+
+- Prohibido `any`. Usar `unknown` con narrowing si el tipo es incierto.
+- Tipos de respuesta de API: definir en `src/shared/types/<dominio>.ts`.
+- Props de componente: interfaz explícita, nunca inferir desde el uso.
+- Genéricos solo cuando hay reutilización real — no por anticipar futuros usos.
+
+```ts
+// ✅ Correcto
+interface AreaWindowProps {
+  areaId: number;
+}
+
+// ❌ Incorrecto
+function AreaWindow(props: any) { ... }
+```
+
+## Componentes React — convenciones
+
+- Un componente por archivo; nombre en PascalCase igual al archivo.
+- Hooks del dominio en `src/features/<dominio>/`; hooks compartidos en `src/shared/lib/`. Siempre empiezan con `use`.
+- No lógica de negocio en JSX — extraer a hook o función utilitaria.
+- Evitar prop-drilling de más de 2 niveles — usar contexto o store Zustand.
+
+## TanStack Query — patrones
+
+```tsx
+// Hook encapsulado por entidad de dominio
+export function useVentaResumen(customerID: number, year: number) {
+  return useQuery({
+    queryKey: ['ventaResumen', customerID, year],
+    queryFn: () => fetchVentaResumen(customerID, year),
+    enabled: customerID > 0 && year > 0,
+  });
+}
+
+// Mutación con invalidación
+export function useActualizarVenta() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: actualizarVenta,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ventaResumen'] }),
+  });
+}
+```
+
+## React Hook Form + Zod — patrón obligatorio para formularios
+
+```tsx
+const schema = z.object({
+  customerID: z.number().int().positive('Requerido'),
+  year: z.number().int().min(2020).max(2099),
+});
+type FormData = z.infer<typeof schema>;
+
+function VentaForm({ onSubmit }: { onSubmit: (data: FormData) => void }) {
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  });
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register('customerID', { valueAsNumber: true })} />
+      {errors.customerID && <span>{errors.customerID.message}</span>}
+    </form>
+  );
+}
+```
+
+Nunca validar formularios con lógica manual fuera de Zod.
+
+## Estados de UI — obligatorios en todo componente con datos remotos
+
+```tsx
+const { data, isLoading, isError, error } = useVentaResumen(customerID, year);
+
+if (isLoading) return <Spinner />;
+if (isError) return <ErrorMessage error={error} />;
+if (!data || data.length === 0) return <EmptyState mensaje="Sin ventas para este período." />;
+return <VentaTabla rows={data} />;
+```
+
+Nunca omitir el estado vacío ni el estado de error.
+
+## Estilos — Tailwind
+
+- Utility-first: clases Tailwind en JSX directamente.
+- Sin CSS modules ni archivos `.css` custom salvo variables de tema global.
+- Clases condicionales: `clsx` o `cn` helper — no template literals con ternarios anidados.
+
+```tsx
+// ✅
+<div className={cn('rounded px-4 py-2', isActive && 'bg-blue-600 text-white')} />
+
+// ❌
+<div className={`rounded px-4 py-2 ${isActive ? 'bg-blue-600 text-white' : ''}`} />
+```
+
+## TanStack Table — uso correcto
+
+Solo para tablas con filtros, ordenamiento o paginación del lado cliente.
+Para listas simples (`<ul>`, `<table>` sin interacción), no usar TanStack Table.
+
+```tsx
+const columns = useMemo<ColumnDef<VentaRow>[]>(() => [
+  { accessorKey: 'customerID', header: 'Cliente' },
+  { accessorKey: 'total', header: 'Total', cell: ({ getValue }) => formatCurrency(getValue<number>()) },
+], []);
+
+const table = useReactTable({
+  data: data ?? [],
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+});
+```
+
+## Verificación antes de entregar
+
+Antes de marcar implementación como lista:
+
+```bash
+tsc --noEmit           # cero errores de tipos
+vite build             # cero errores de importación/bundling
+```
+
+Si alguno falla → no entregar. Corregir primero.
