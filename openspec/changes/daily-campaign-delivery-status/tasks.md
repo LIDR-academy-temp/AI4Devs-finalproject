@@ -251,7 +251,7 @@ A filter over the list of the active tab of `/exceptions`, in the style of the c
 
 - [x] 12.1 Start frontend and backend and verify the database is in a known state
 - [x] 12.2 Execute the operations flow: open the daily status, identify a flagged campaign and work an ingestion exception to resolution
-- [ ] 12.3 Execute the business flow and verify no cost or margin figure is visible anywhere in it
+- [x] 12.3 Execute the business flow and verify no cost or margin figure is visible anywhere in it
 - [ ] 12.4 Verify the loading and empty states render distinctly in the browser **Deferred:** the loading and empty states are covered by a jsdom test (status-states.test.tsx) and were not checked in a real browser.
 - [x] 12.5 Execute the flow as a user holding several roles and verify the interface composes from all of them
 - [x] 12.6 Clean up test data, restore database state and document the scenarios in a report in the change folder

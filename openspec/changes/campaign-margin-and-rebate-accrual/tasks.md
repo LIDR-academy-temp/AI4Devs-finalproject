@@ -200,7 +200,7 @@ Controls to name (the label text stays as is): `Nombre de la campaña *`, `Nombr
 - [x] 12.1 Start frontend and backend and verify the database is in a known state
 - [x] 12.2 Execute the finance flow: read a campaign margin, drill down to its lines and flights (the roll-up view and export are deferred with 7.4 and 6.6)
 - [x] 12.3 Verify a running-flight figure, and its line, display the provisional label in the browser
-- [ ] 12.4 Verify a user without `finance` cannot reach the margin views and sees no cost figure anywhere
+- [x] 12.4 Verify a user without `finance` cannot reach the margin views and sees no cost figure anywhere
 - [x] 12.5 Execute the flow as a user holding several roles and verify the interface composes from all of them
 - [x] 12.6 Clean up test data, restore database state and document the scenarios in a report in the change folder
 
