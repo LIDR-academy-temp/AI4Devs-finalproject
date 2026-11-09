@@ -26,7 +26,7 @@
 
   Verificación: con `FFMPEG_PATH` apuntando a un archivo inexistente, el script falla con el mensaje de instalación antes de abrir el navegador.
 - [x] 1.6 Añadir los scripts `video:demo` en `e2e/package.json` (`node video/demo-video.ts`) y en el `package.json` de la raíz (`pnpm --filter @recon/e2e video:demo`), y `*.mp4 binary` en `.gitattributes`. Verificación: `pnpm lint` y `pnpm typecheck` limpios; `git diff --stat origin/feature/entrega-3-MVP -- e2e/steps e2e/features e2e/support e2e/playwright.config.ts` vacío.
-- [ ] 1.7 Commit: feat(e2e): script del vídeo de la demo con rótulos, limpieza y conversión a mp4
+- [x] 1.7 Commit: feat(e2e): script del vídeo de la demo con rótulos, limpieza y conversión a mp4
 
 ## 2. Grabación y ajuste (un solo turno de base; K siembra antes de cada pasada)
 
