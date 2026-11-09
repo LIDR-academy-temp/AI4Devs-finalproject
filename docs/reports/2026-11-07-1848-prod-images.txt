@@ -1,0 +1,1 @@
+OK: images built, /api/health 200 over HTTPS, port 80 redirects, backend image clean and non-root, database not published, migrations applied as a separate step

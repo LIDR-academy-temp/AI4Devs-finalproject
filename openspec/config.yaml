@@ -1,0 +1,73 @@
+schema: spec-driven
+
+context: |
+  AdOps360 — GeoQ's system of record for OOH/DOOH and digital advertising campaigns.
+  It replaces a chain of OneDrive spreadsheets, manual DSP report downloads and a
+  Qlik Sense financial layer.
+
+  Tech stack
+  - Backend: Python 3.12, FastAPI, SQLAlchemy, Alembic, pandas/openpyxl.
+    Layered DDD: presentation -> application -> domain; infrastructure -> domain.
+    Nothing depends on infrastructure. The economic model lives in the domain layer
+    and must be testable without a database, an HTTP server or a DSP.
+  - Frontend: Node 22 LTS, Next.js, TypeScript. Grouped by feature, not by file type.
+  - Database: PostgreSQL 16 in its own container with a named volume.
+  - Auth: AWS Cognito User Pool authenticates; the application authorises.
+    Roles live only in the database, in the user_roles bridge table.
+  - Deployment: containerised monolith on a single EC2 instance, Docker Compose,
+    nginx + Certbot. Four services: backend, frontend, db, nginx.
+
+  Testing
+  - Backend: pytest, httpx for API-level tests. Frontend: Vitest + Testing Library.
+  - E2E: Playwright, one flow per role plus a multi-role user.
+  - TDD: new functionality starts with a failing test.
+
+  Domain invariants that must never be violated
+  - Revenue is booked on CONTRACTED volume, never on delivered volume.
+    contracted_impressions and delivered_impressions are distinct fields; a single
+    "impressions" field is a defect.
+  - Platform cost is part of the margin:
+    margin = revenue - media cost - agency rebate - platform cost.
+  - The rebate is a tiered annual accrual with marginal brackets, per holding group
+    and channel, attributed chronologically and settled once in arrears. An agency
+    may carry an exception, which overrides its group's schedule AND carves it out
+    of the group's counter for that channel.
+  - Applied rebate and platform rates are frozen on the campaign line at calculation
+    time with their provenance. They are never recomputed from masters at read time.
+  - The channel comes from the configuration (tipo_plataforma), never from the DSP's
+    line_format. It is the rebate accumulation key.
+  - Purchase orders are versioned, never overwritten.
+  - The monthly period is a first-class entity: the grain is campaign x calendar month.
+  - Monetary values use Decimal in Python and Numeric in PostgreSQL, never float.
+  - Ingestion is idempotent over a rolling 7-day window, and unmatched keys are
+    exceptions to be worked in BOTH directions.
+  - An active campaign line with no DSP mapping is a blocking status, not a warning.
+
+  Authoritative documents
+  - docs/base-standards.md      — stack, authorisation model, deployment
+  - docs/backend-standards.md   — layering, API design, database patterns, testing
+  - docs/frontend-standards.md  — structure, role guards, data access, testing
+  - docs/product-description.md — domain model, economic model, phases, PO decisions
+  - readme.md sections 1-5      — product, architecture, data model, user stories
+
+  Language: all artifacts, code, schemas and commit messages in English.
+
+rules:
+  tasks:
+    - "Step 0 MUST be creating the feature branch, named feature/[change-name]."
+    - "Include these mandatory steps after the implementation steps, numbered sequentially and labelled (MANDATORY) - Review and Update Existing Unit Tests; Run Unit Tests and Verify Database State; Manual Endpoint Testing with curl (AGENT MUST EXECUTE); E2E Testing with Playwright (AGENT MUST EXECUTE, if frontend is involved); Update Technical Documentation."
+    - "The unit-test step must produce a report at specs/<change-name>/reports/YYYY-MM-DD-step-N-unit-test-and-db-verification.md, and is complete only once that report exists."
+    - "Manual test steps must restore database state after any create, update or delete."
+    - "Every role-guarded endpoint needs a task asserting that a user WITHOUT the role is forbidden. An endpoint is not covered until its negative case is."
+    - "Any model change needs an Alembic migration task, created and reviewed."
+    - "Follow TDD - the failing test comes before the implementation it covers."
+  proposal:
+    - "State which phase the change belongs to (1, 2 or 3) per product-description.md."
+    - "Include a Non-goals section naming what is deliberately excluded."
+
+operations:
+  apply:
+    guidance:
+      - The agent executes all manual tests itself and never delegates them to the user.
+      - Keep the layering intact; a rule that needs a database to be tested is in the
+        wrong layer.

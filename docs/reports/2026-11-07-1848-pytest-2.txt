@@ -1,0 +1,52 @@
+........................................................................ [  3%]
+........................................................................ [  7%]
+........................................................................ [ 11%]
+........................................................................ [ 15%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 26%]
+........................................................................ [ 30%]
+........................................................................ [ 34%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 45%]
+........................................................................ [ 49%]
+........................................................................ [ 53%]
+........................................................................ [ 57%]
+........................................................................ [ 61%]
+........................................................................ [ 64%]
+........................................................................ [ 68%]
+........................................................................ [ 72%]
+........................................................................ [ 76%]
+........................................................................ [ 80%]
+........................................................................ [ 83%]
+........................................................................ [ 87%]
+........................................................................ [ 91%]
+...................................s.................................... [ 95%]
+........................................................................ [ 99%]
+...............                                                          [100%]
+=============================== warnings summary ===============================
+../opt/venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /opt/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/acceptance/test_closed_month_sheet.py: 1 warning
+tests/infrastructure/test_identity_models.py: 1 warning
+tests/infrastructure/test_line_model_migration.py: 16 warnings
+tests/infrastructure/test_margin_closing_concurrency.py: 1 warning
+tests/infrastructure/test_margin_migration.py: 20 warnings
+  /opt/venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+tests/infrastructure/test_identity_models.py::test_user_roles_composite_pk
+  /app/tests/infrastructure/test_identity_models.py:39: SAWarning: New instance <UserRoleRecord at 0xffffb4dd9070> with identity key (<class 'app.infrastructure.persistence.models.identity.UserRoleRecord'>, (351, 1), None) conflicts with persistent instance <UserRoleRecord at 0xffffb42f1940>
+    test_db_session.commit()
+
+../opt/venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:469
+  /opt/venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:469: PytestCacheWarning: could not create cache path /app/.pytest_cache/v/cache/nodeids: [Errno 13] Permission denied: '/app/pytest-cache-files-p_edey3x'
+    config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/scripts/test_load_masters.py:166: deploy/masters.example.json is outside this image: run it from a checkout
+1886 passed, 1 skipped, 1 deselected, 42 warnings in 24.55s
