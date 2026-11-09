@@ -1,0 +1,28 @@
+﻿[
+    {
+        "VisitaGeneradaId":  1,
+        "NombreVisitante":  "Visitante HTTP Test",
+        "CodigoQr":  "0C3705762AC9BB9CA6540E463E44FFB2",
+        "FechaEmision":  "2026-10-28T18:14:07.35",
+        "FechaExpira":  "2026-10-28T22:14:07.35",
+        "BUsado":  false,
+        "EstadoLista":  "vigente",
+        "CasaId":  1,
+        "DireccionCasa":  "cada 55",
+        "TipoIdentificacion":  "INE",
+        "NumeroIdentificacion":  "N/A"
+    },
+    {
+        "VisitaGeneradaId":  2,
+        "NombreVisitante":  "Visitante HTTP Test",
+        "CodigoQr":  "4166146AD97308281D419E62F491DA77",
+        "FechaEmision":  "2026-10-28T18:00:00",
+        "FechaExpira":  "2026-10-28T22:00:00",
+        "BUsado":  false,
+        "EstadoLista":  "vigente",
+        "CasaId":  1,
+        "DireccionCasa":  "cada 55",
+        "TipoIdentificacion":  "INE",
+        "NumeroIdentificacion":  "N/A"
+    }
+]

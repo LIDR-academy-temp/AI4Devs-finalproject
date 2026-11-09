@@ -1,0 +1,41 @@
+@baseUrl = http://localhost:5000
+@token = {{login.response.body.accessToken}}
+
+### Login admin (ajustar credenciales)
+# @name login
+POST {{baseUrl}}/SGR/Auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@example.com",
+  "password": "ChangeMe!"
+}
+
+### GET padron vehículos
+GET {{baseUrl}}/USR/Automoviles/padron
+Authorization: Bearer {{token}}
+
+### POST vehículo admin
+POST {{baseUrl}}/USR/Automoviles/admin
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "usuarioId": 2,
+  "placas": "TST-999",
+  "color": "Gris"
+}
+
+### PUT vehículo admin
+PUT {{baseUrl}}/USR/Automoviles/1/admin
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "placas": "TST-998",
+  "color": "Azul"
+}
+
+### DELETE vehículo admin
+DELETE {{baseUrl}}/USR/Automoviles/1/admin
+Authorization: Bearer {{token}}

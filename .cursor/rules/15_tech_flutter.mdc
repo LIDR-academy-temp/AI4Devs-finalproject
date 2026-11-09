@@ -1,0 +1,96 @@
+---
+description: Arquitectura, reglas Flutter/Dart y patrones del proyecto nice_app
+globs: "**/*.dart,!**/*.g.dart"
+alwaysApply: false
+---
+
+# nice_app — Estándares Flutter/Dart
+
+## Flujo de datos obligatorio
+
+```
+ApiRequest (estático) → [dominio]_service.dart → Widget/Screen
+```
+
+No saltar capas. Los widgets no llaman ApiRequest directamente.
+
+## Cuándo usar qué patrón de estado
+
+| Alcance | Patrón |
+|---------|--------|
+| Sesión / tienda global | ChangeNotifierProvider → SessionProvider / ShopProvider |
+| Eventos ligeros cross-widget | ValueNotifier en `lib/utils/notifiers.dart` |
+| Estado local de pantalla | StatefulWidget + setState |
+
+No usar BLoC, Riverpod ni GetX en este proyecto.
+
+## Null safety
+
+- Null safety habilitado — no deshabilitar.
+- No usar `!` sin comprobación previa.
+- No usar `late` sin garantía de inicialización en `initState`.
+- `fromJson()` siempre manual: castear con `as Tipo? ?? valorDefecto`.
+
+```dart
+// Correcto
+factory DominioModel.fromJson(Map<String, dynamic> json) {
+  return DominioModel(
+    id: json['ID'] as int,
+    nombre: json['Nombre'] as String? ?? '',
+  );
+}
+```
+
+## StatefulWidget y recursos
+
+- `dispose()` obligatorio para todos los controllers, streams y animations.
+- Siempre verificar `if (!mounted) return;` antes de `setState()` en callbacks async.
+
+```dart
+Future<void> _load() async {
+  final data = await Service.get();
+  if (!mounted) return;
+  setState(() => _items = data);
+}
+```
+
+## BuildContext
+
+- No pasar BuildContext a servicios ni modelos.
+- No usar `context` después de un `await` sin el mounted check anterior.
+
+## Prohibido en build()
+
+- No lógica de negocio en `build()`.
+- No llamadas a servicios en `build()`.
+- Computaciones derivadas → variables de instancia o `get` accessor.
+
+## No dynamic
+
+No usar `dynamic` sin justificación explícita. Preferir genéricos o tipos concretos.
+
+## Naming
+
+| Artefacto | Convención |
+|-----------|-----------|
+| Archivos | `snake_case.dart` |
+| Clases, Widgets, Providers | `PascalCase` |
+| Carpeta `Widgets/` | PascalCase (excepción documentada — no corregir) |
+| Pantalla | `[nombre]_screen_widget.dart` con `static const routeName` |
+| Servicio | `[dominio]_service.dart` en `lib/api/` |
+| Modelo | `[entidad]_model.dart` en `lib/models/` |
+
+## Localización
+
+Strings visibles al usuario en `app_<lang>.arb`, no hardcodeados en Dart.
+
+## Verificación antes de entregar
+
+```bash
+flutter analyze   # cero warnings — obligatorio
+flutter test      # todos los tests pasan — obligatorio
+```
+
+## Componente de referencia
+
+Ver `<COMPONENTE_REFERENCIA_MOBILE>` para ejemplo de estructura completa de pantalla con StatefulWidget, servicio y modelo.

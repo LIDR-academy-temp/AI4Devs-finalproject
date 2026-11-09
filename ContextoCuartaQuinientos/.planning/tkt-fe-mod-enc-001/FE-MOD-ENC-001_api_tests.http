@@ -1,0 +1,49 @@
+@baseUrl = http://localhost:5000
+@token = {{adminJwt}}
+
+### Listar tipos pregunta
+GET {{baseUrl}}/ENC/TiposPregunta
+Authorization: Bearer {{token}}
+
+### Crear encuesta borrador (sin preguntas)
+POST {{baseUrl}}/ENC/Encuestas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "titulo": "Encuesta prueba FE-MOD-ENC-001",
+  "descripcion": "Borrador",
+  "fechaInicio": "2026-10-23T00:00:00Z",
+  "preguntas": []
+}
+
+### Agregar pregunta opción múltiple
+@encuestaId = 1
+POST {{baseUrl}}/ENC/Encuestas/{{encuestaId}}/preguntas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "texto": "¿Aprueba el reglamento?",
+  "tipoPregunta": "Opción múltiple",
+  "orden": 1,
+  "requerida": true,
+  "opciones": [
+    { "texto": "Sí", "orden": 1 },
+    { "texto": "No", "orden": 2 }
+  ]
+}
+
+### Publicar (requiere preguntas)
+PUT {{baseUrl}}/ENC/Encuestas/{{encuestaId}}/publicar
+Authorization: Bearer {{token}}
+
+### Actualizar metadatos borrador
+PUT {{baseUrl}}/ENC/Encuestas/{{encuestaId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "titulo": "Encuesta actualizada",
+  "fechaInicio": "2026-10-23T00:00:00Z"
+}

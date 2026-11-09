@@ -1,0 +1,334 @@
+﻿---
+description: Estándar T-SQL para tablas, índices, vistas, procedimientos y funciones
+globs: **/*.sql
+alwaysApply: false
+---
+
+# SQL Server Rules
+
+Estas reglas aplican a todo código T-SQL del repositorio.
+
+## Reglas Fundamentales
+
+- **TODOS los nombres (tablas, columnas, SPs, vistas, índices) SIEMPRE en INGLÉS** — sin excepción aunque el requerimiento venga en español. `StartDate` no `FechaInicio`, `Name` no `Nombre`, `IsActive` no `EsActivo`.
+- No inventar tablas, columnas, vistas, SPs o funciones.
+- Escribir palabras reservadas SQL en mayúsculas: `SELECT`, `FROM`, `WHERE`, `JOIN`, `CREATE`, `ALTER`.
+- Evitar `SELECT *`; especificar columnas explícitamente.
+- Declarar e inicializar variables y tablas temporales al inicio.
+- Documentar lógica compleja con comentarios útiles.
+- Planificar antes de codificar y mantener consistencia con patrones existentes.
+
+## Codificación
+
+- Guardar `.sql`, `.md`, `.mdc`, `.json`, `.yml`, `.yaml` y `.xml` en **UTF-8 con BOM** (no UTF-8 sin BOM).
+- Mantener fin de línea **CRLF** en Windows.
+- **SSMS / editores heredados:** si el archivo es UTF-8 **sin** BOM, SSMS suele abrirlo como Windows-1252 y el texto con tildes o guiones tipográficos se ve corrupto (`Ã©`, `Ã³`, `â€"`…). El BOM evita ese error.
+- **Al crear o reescribir `.sql` desde el agente:** asegurar archivo en disco con BOM y CRLF. Tras escribir, verificar que los primeros bytes del archivo sean `EF BB BF` antes de `/*` o la primera sentencia.
+- **Prohibido** normalizar EOL con `Replace("`n","`r`n")` (PowerShell) o equivalente sobre texto que ya tiene CRLF: convierte cada `\r\n` en `\r\r\n` y duplica lineas en blanco.
+- **Obligatorio** antes de cerrar cambios SQL: ejecutar [`.cursor/scripts/Normalize-SqlEncoding.ps1`](../scripts/Normalize-SqlEncoding.ps1) o el comando `/normalizar-sql` sobre cada `.sql` tocado.
+- En headers de SPs y scripts que solo se abren en SSMS, **preferir ASCII** sin tildes ni `ñ` en comentarios si se quiere máxima tolerancia a herramientas sin detección UTF-8.
+- Normalizar codificación antes de cerrar cambios si se detecta texto corrupto, mojibake en comentarios o CRLF duplicado (`\r\r\n`).
+
+## Filtros WHERE
+
+Ordenar filtros de mayor a menor universo:
+
+1. Filtros que abarcan mayor cantidad de registros.
+2. Filtros más restrictivos.
+3. Campos o combinaciones indizadas.
+
+## NOLOCK
+
+| Contexto | Usar `NOLOCK` |
+| --- | --- |
+| Información histórica/reportes | Sí |
+| Transaccional en tiempo real | No |
+| Dentro de transacciones | No |
+| Vistas de lectura `vs*` (catalogo / config / API) | Si: `WITH (NOLOCK)` en cada referencia de tabla **dentro** de la definicion `CREATE VIEW` |
+| Otras vistas transaccionales / consistencia fuerte | No salvo ticket |
+| `#temp` / `@table` | No |
+
+## Manejo de Errores
+
+- Usar `TRY/CATCH` en procedimientos con `INSERT`, `UPDATE` o `DELETE`.
+- Si hay transacción, usar patrón completo `COMMIT` / `ROLLBACK`.
+- No dejar escrituras sin control de error.
+
+## Esquemas
+
+- **Esquemas de dominio nuevos:** nombre corto en minúsculas (3-4 chars).
+  Ejemplos reales: `sls`, `cst`, `itm`, `gpm`, `dfr`.
+- **Existen esquemas de contexto en PascalCase** (legado válido — NO replicar ese
+  estilo al crear dominios nuevos): `CommissionsContext`, `CustomServiceContext`,
+  `ExigoWebContext`, `PromoEngine`, `Coupons`.
+- No inventar esquemas: reusar uno existente (verificar vía MCP / `13_guard_fuente_objetos`)
+  salvo que `design.md` prescriba uno nuevo.
+
+## Tablas
+
+- Nombre en `UpperCamelCase` y singular.
+- Toda tabla debe tener llave primaria.
+- PK: `pk_<esquema>_<Tabla>`.
+- Ejemplo: `cst.Customer` -> `pk_cst_Customer`.
+
+Campos default en inglés (canónico para tablas nuevas):
+
+```sql
+CreatedBy         NVARCHAR(100) NOT NULL,
+ModifiedBy        NVARCHAR(100) NULL,
+CreatedUserID     INT           NOT NULL,
+ModifiedUserID    INT           NULL,
+CreatedDate       DATETIME      NOT NULL DEFAULT GETDATE(),
+ModifiedDate      DATETIME      NULL
+```
+
+Campos default en español (SOLO legado existente — no usar en tablas nuevas):
+
+```sql
+CreadoPor             NVARCHAR(100) NOT NULL,
+ModificadoPor         NVARCHAR(100) NULL,
+IDUsuarioCreacion     INT           NOT NULL,
+IDUsuarioModificacion INT           NULL,
+FechaCreacion         DATETIME      NOT NULL DEFAULT GETDATE(),
+FechaModificacion     DATETIME      NULL
+```
+
+## Índices
+
+- Máximo 7 campos: `I_campo1_campo2_campo3`.
+- Más de 7 campos: `I_campo1_campo2_..._campo7_n0`.
+
+## Vistas
+
+- Formato: `[esquema].[vsNombreDeLaVista]`.
+- Prefijo obligatorio: `vs`.
+- Nombre en `UpperCamelCase` y descriptivo.
+- No usar `SELECT *`.
+- **Lectura `vs*` (catalogo / config / admin):** en cada tabla del `FROM` y `JOIN`, usar `WITH (NOLOCK)` en la referencia (convencion <proyecto> para vistas de solo lectura expuestas a API).
+- Favorecer `JOIN` por campos llave.
+- Ordenar filtros de mayor a menor universo.
+- **Lectura `vs*` (API / admin):** no exponer en el `SELECT` los campos de auditoria de cajon salvo requisito explicito del ticket: `CreatedBy`, `ModifiedBy`, `CreatedUserID`, `ModifiedUserID`, `CreatedDate`, `ModifiedDate` (y equivalentes en español `CreadoPor`, etc.). Esos datos siguen en la tabla base; la vista entrega solo negocio + joins utiles.
+
+Plantilla:
+
+```sql
+SET ANSI_NULLS ON;
+GO
+SET QUOTED_IDENTIFIER ON;
+GO
+-- =============================================
+-- Author:      [Nombre]
+-- Create date: dd-mm-yyyy
+-- Description: [Descripcion de la vista]
+-- =============================================
+--                 UPDATES
+-- =============================================
+-- Author:      [Nombre]
+-- Update date: dd-mm-yyyy
+-- Description: [Cambio realizado]
+-- =============================================
+--              EXECUTE EXAMPLE
+-- =============================================
+-- SELECT Columna1, Columna2 FROM [esquema].[vsNombreVista]
+-- (En el cuerpo de la vista: FROM Tabla AS T WITH (NOLOCK) INNER JOIN ...)
+-- =============================================
+```
+
+## Stored Procedures
+
+- Formato: `[esquema].[prc(Get|Set|Del)NombreDescriptivo]`.
+- Prefijo obligatorio: `prc`.
+- Ejecutar con parámetros explícitos: `EXEC cst.prcGetCustomer @iPCustomerID = 105`.
+- Declarar e inicializar variables al inicio.
+- Parámetros llevan `P` después del prefijo de tipo: `@iPCustomerID`.
+- Incluir `SET NOCOUNT ON;`.
+- Todo SP debe retornar estatus.
+- Consolidar `UPDATES` por TKT: si hay múltiples cambios del mismo ticket, mantener una sola entrada.
+
+## Marcaje de cambios por ticket en el body
+
+Al modificar un `ALTER PROCEDURE` existente:
+
+- Envolver solo el diff del ticket en `--REGION <TKT>` / `--ENDREGION`.
+- Inmediatamente debajo de `--REGION`, una sola linea con el identificador del ticket: `--TKT-12345` o `--TKT-mundial`.
+- No agregar comentarios narrativos dentro del bloque; la descripcion va en la cabecera `UPDATES` del SP.
+- No mezclar en la misma region logica previa que no forma parte del cambio.
+
+### Lineas movidas o tocadas fuera de REGION
+
+- Si el cambio no puede ir en `--REGION` propia del ticket (bloque ajeno, condicion anidada, guardia existente, etc.), **cada linea movida o modificada** debe llevar al final `--TKT-<id>` (mismo id del ticket activo).
+- Aplica a reordenamientos, condiciones agregadas o quitadas y ajustes puntuales en REGION de otro ticket.
+- Objetivo: identificar en el diff que lineas pasar a PROD sin reenviar el SP completo.
+- No marcar lineas que no cambiaron; no duplicar el tag si toda la logica ya esta en `--REGION` del mismo ticket.
+
+```sql
+   OR @iExpressStart = 1 --TKT-14818
+```
+
+```sql
+--REGION TKT-mundial
+--TKT-mundial
+DELETE T
+FROM @tblItems T
+...
+--ENDREGION
+```
+
+Plantilla:
+
+```sql
+SET ANSI_NULLS ON;
+GO
+SET QUOTED_IDENTIFIER ON;
+GO
+-- =============================================
+--                 CREATE
+-- =============================================
+-- Author:      [USERNAME]
+-- Create date: dd-mm-yyyy
+-- Description: [Descripcion del SP]
+-- Exception:   No hay SP anterior
+-- =============================================
+--                 UPDATES
+-- =============================================
+-- Author:      [Nombre]
+-- Update date: dd-mm-yyyy
+-- Description: [Cambio realizado]
+-- =============================================
+--              EXECUTE EXAMPLE
+-- =============================================
+/*
+    EXEC [esquema].[prcNombre]
+        @iPParametro1 = valor,
+        @nvPParametro2 = 'texto'
+*/
+-- =============================================
+--           PARAMETERS DEFINITION
+-- =============================================
+-- <param name="@iPParametro1" type="INT" required="Si">Descripcion</param>
+-- =============================================
+--                 STRUCTURE
+-- =============================================
+-- Schema: [esquema]
+-- Name:   [prcNombre]
+-- =============================================
+--                   BODY
+-- =============================================
+```
+
+Patrón `TRY/CATCH`:
+
+```sql
+BEGIN TRY
+    BEGIN TRAN NombreTransaccion;
+
+    -- Logica del procedimiento
+
+    IF (@iErrorID = 0)
+        COMMIT TRAN NombreTransaccion;
+    ELSE
+        ROLLBACK TRAN NombreTransaccion;
+END TRY
+BEGIN CATCH
+    ROLLBACK TRAN NombreTransaccion;
+
+    SELECT
+        ERROR_NUMBER() AS ErrorID,
+        ERROR_MESSAGE() AS ErrorMessage,
+        ERROR_SEVERITY() AS ErrorSeverity,
+        ERROR_STATE() AS ErrorState,
+        ERROR_LINE() AS ErrorLine,
+        GETDATE() AS ErrorDate,
+        OBJECT_NAME(@@PROCID) AS ObjectName;
+END CATCH;
+```
+
+## SPs Masivos
+
+Aplica a SPs que reciben más de un registro, típicamente JSON `NVARCHAR(MAX)` con `OPENJSON`.
+
+- Parsear input a staging `@tblJSONEntry` con una fila por registro recibido.
+- Incluir `RowNum INT IDENTITY(1,1)`, `ErrorID INT NULL` y `ErrorMessage NVARCHAR(MAX) NULL`.
+- Validar primero, procesar después.
+- Acumular errores por fila:
+  - `ErrorMessage = ISNULL(ErrorMessage, N'') + N'<mensaje>. '`.
+  - `ErrorID = COALESCE(ErrorID, <ErrorID>)`.
+- Si existe error, no ejecutar escrituras: `IF EXISTS (SELECT 1 FROM @tblJSONEntry WHERE ErrorID IS NOT NULL) GOTO FIN;`.
+- En `CATCH`, hacer `ROLLBACK` y retornar por `FIN`.
+- Usar una única salida final con etiqueta `FIN:`.
+- Salida obligatoria: `ISNULL(ErrorID, 0) AS ErrorID` e `ISNULL(ErrorMessage, N'') AS ErrorMessage`.
+- Éxito: `ErrorID = 0`, `ErrorMessage = ''`. Error: `ErrorID > 0`.
+
+## Funciones
+
+- Formato: `[esquema].[fnc(Get|Set|Del)NombreDescriptivo]`.
+- Prefijo obligatorio: `fnc`.
+- Declarar e inicializar variables al inicio.
+- SQL en mayúsculas.
+- Ordenar filtros de mayor a menor universo.
+
+## Prefijos de Variables y Parámetros
+
+Formato: `@<prefijoTipo><NombreEnUpperCamelCase>`.
+
+Los prefijos aplican solo a `@variables` y `@parametros`. Columnas de tablas, `#temp` y variables tabla `@tbl` no llevan prefijo de tipo; usan `UpperCamelCase` directo.
+
+| Tipo | Prefijo |
+| --- | --- |
+| `bigint` | `bi` |
+| `int` | `i` |
+| `smallint` | `si` |
+| `tinyint` | `ti` |
+| `bit` | `b` |
+| `decimal` / `numeric` | `x` |
+| `money` | `m` |
+| `smallmoney` | `sm` |
+| `float` | `f` |
+| `real` | `r` |
+| `datetime` | `dt` |
+| `smalldatetime` | `sdt` |
+| `char` | `c` |
+| `varchar` | `v` |
+| `text` | `tx` |
+| `nchar` | `nc` |
+| `nvarchar` | `nv` |
+| `ntext` | `nt` |
+| `binary` | `bn` |
+| `varbinary` | `vb` |
+| `image` | `im` |
+| `cursor` | `cs` |
+| `timestamp` | `ts` |
+| `sql_variant` | `sv` |
+| `uniqueidentifier` | `u` |
+| `table` | `tbl` |
+| `xml` | `x` |
+
+Ejemplos: `@iCustomerID`, `@nvUserName`, `@dtCreatedAt`, `@bIsActive`, `@tblResults`.
+
+## Regla Items
+
+Si se usa `itm.vsItemCF`, incluir siempre:
+
+`ItemID`, `ItemCode`, `ItemSecondCode`, `ItemDescription`, `CatalogID`, `[Catalog]`, `FamilyID`, `Family`, `SubFamilyID`, `SubFamily`, `ItemNiceTypeID`, `ItemNiceTypeDescription`.
+
+Notas:
+
+- `Price` viene de <DB_SECUNDARIA>.
+- `ItemNiceTypeID` es `NVARCHAR`.
+
+## MCP BUG
+
+No usar literal directo `N'ALTER PROCEDURE'` en llamadas donde el MCP lo bloquee.
+
+Usar:
+
+```sql
+DECLARE @kw NVARCHAR(20) = CHAR(65)+CHAR(76)+CHAR(84)+CHAR(69)+CHAR(82)+N' PROCEDURE';
+```
+
+## Checklist Post-Cambio SQL
+
+1. Confirmar si se modificó un objeto SQL.
+2. Actualizar header `UPDATES`.
+3. Actualizar contexto del proyecto.
+4. Confirmar al usuario la ruta del contexto actualizado.

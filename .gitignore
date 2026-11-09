@@ -1,0 +1,58 @@
+# --- Material privado / local (no se publica) ---
+NoVer/
+Bot/
+Docs/
+.history/
+
+# --- Secretos y configuración local ---
+*.runasp.net
+.env
+*.env.local
+.env.*.local
+**/fase1-smoke.env
+test.txt
+# Typeform E2 con contraseñas — solo local; no commitear
+ContextoCuartaQuinientos/PULIR_ENTREGA_2_TYPEFORM.md
+**/credenciales.local.*
+appsettings.Development.json
+appsettings.Production.json
+appsettings.*.local.json
+GraphApi/.continue/
+*.publishSettings
+*WebDeploy*.publishSettings
+.claude/settings.json
+.claude/settings.local.json
+
+# --- .NET ---
+bin/
+obj/
+GraphApi/_test_out/
+.vs/
+*.user
+*.bak
+TestResults/
+
+# --- Agent skills (instalar con npx skills@latest add …) ---
+.agents/
+
+# --- Node / Vite ---
+node_modules/
+dist/
+coverage/
+playwright-report/
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# --- Editor / SO ---
+.idea/
+*.log
+.DS_Store
+Thumbs.db
+
+# Prototipo de diseño, no forma parte de la entrega
+Web_diseño/

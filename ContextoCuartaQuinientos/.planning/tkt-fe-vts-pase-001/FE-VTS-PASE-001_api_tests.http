@@ -1,0 +1,85 @@
+@baseUrl = http://localhost:5180
+@tokenResidente = {{loginResidente.response.body.token}}
+@tokenGuardia = {{loginGuardia.response.body.token}}
+
+### Login residente (ajustar credenciales TEST)
+# @name loginResidente
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "admin@local",
+  "password": "Admin@Cuarta1"
+}
+
+### Login guardia (mismo usuario si no hay seed guardia)
+# @name loginGuardia
+POST {{baseUrl}}/SGR/AuthService/GenerateToken
+Content-Type: application/json
+
+{
+  "correo": "admin@local",
+  "password": "Admin@Cuarta1"
+}
+
+### GET mis pases (solo sub)
+GET {{baseUrl}}/VTS/VisitasGeneradas/mias
+Authorization: Bearer {{tokenResidente}}
+
+### POST crear pase (201 + codigoQr)
+# @name crearPase
+POST {{baseUrl}}/VTS/VisitasGeneradas
+Authorization: Bearer {{tokenResidente}}
+Content-Type: application/json
+
+{
+  "nombreVisitante": "Visitante HTTP Test",
+  "tipoIdentificacionId": null,
+  "numeroIdentificacion": null,
+  "fechaInicio": "2026-10-28T18:00:00.000Z",
+  "fechaFin": "2026-10-28T22:00:00.000Z",
+  "todoElDia": false
+}
+
+### POST validar código vigente (guardia)
+POST {{baseUrl}}/VTS/VisitasGeneradas/validar
+Authorization: Bearer {{tokenGuardia}}
+Content-Type: application/json
+
+{
+  "codigoQr": "{{crearPase.response.body.codigoQr}}"
+}
+
+### POST marcar usado
+POST {{baseUrl}}/VTS/VisitasGeneradas/{{crearPase.response.body.visitaGeneradaId}}/usar
+Authorization: Bearer {{tokenGuardia}}
+Content-Type: application/json
+
+{}
+
+### POST validar tras uso (esperado estado Usado)
+POST {{baseUrl}}/VTS/VisitasGeneradas/validar
+Authorization: Bearer {{tokenGuardia}}
+Content-Type: application/json
+
+{
+  "codigoQr": "{{crearPase.response.body.codigoQr}}"
+}
+
+### POST validar código inexistente (NoEncontrado)
+POST {{baseUrl}}/VTS/VisitasGeneradas/validar
+Authorization: Bearer {{tokenGuardia}}
+Content-Type: application/json
+
+{
+  "codigoQr": "00000000000000000000000000000000"
+}
+
+### POST validar sin rol guardia (esperado 403)
+POST {{baseUrl}}/VTS/VisitasGeneradas/validar
+Authorization: Bearer {{tokenResidente}}
+Content-Type: application/json
+
+{
+  "codigoQr": "TEST"
+}

@@ -1,0 +1,9 @@
+/* Contrato TKT-FE-THEME-001 — fallback classic-light si falta data-theme */
+:root {
+  --color-sidebar-bg: #274c77;
+  --color-sidebar-fg: rgba(255, 255, 255, 0.82);
+  --color-sidebar-icon: #b8d9f0;
+  --color-sidebar-active: #a3cef1;
+  --color-header-bg: #274c77;
+  --color-surface-raised: #e4ecf0;
+}

@@ -1,0 +1,7 @@
+using HotChocolate.Authorization;
+using GraphApi.Infrastructure.Services;using GraphApi.Models.TKT.DocumentosComentarioTicket;using GraphApi.Services.TKT.DocumentosComentarioTicket;using HotChocolate;namespace GraphApi.GraphQL.TKT.DocumentosComentarioTicket{    [QueryType]    [GraphQLDescription("Punto de entrada para las consultas de DocumentosComentarioTickets.")]    public class DocumentosComentarioTicketQuery    {        /// <summary>        /// Devuelve documentoscomentariotickets con paginación, filtrado y ordenamiento.        /// </summary>        [UsePaging, UseFiltering, UseSorting, Authorize]        [GraphQLName("getDocumentosComentarioTickets")]        [GraphQLDescription("Obtiene una lista paginada, filtrada y ordenada de DocumentosComentarioTickets.")]        public Task<IEnumerable<clReadDocumentosComentarioTicket>> GetDocumentosComentarioTicketsAsync(            [Service] IGraphQLContextService objCtx,
+            [Service] IDocumentosComentarioTicketService objService)
+        {
+            var (userId, windowName) = objCtx.GetRequestContext();
+            return objService.GetDocumentosComentarioTickets(userId, windowName);
+        }    }}

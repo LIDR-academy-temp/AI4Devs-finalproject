@@ -1,0 +1,190 @@
+﻿# design.md — TKT-<id>: <título>
+
+> Generado por: **generador de contexto SDD** tras validar spec.md
+> Consumido por: implementador (`implementer.tool` — agentes según su toolchain)
+
+## Estrategia técnica
+
+<Decisión central y justificación. Alternativas descartadas y por qué — esto
+hace el cambio auditable.>
+
+### Escalera de decisión (methodology.md regla 6) — recorrer ANTES de las tablas de objetos
+
+<!-- Una fila por capacidad pedida. El peldaño es el primero que la resuelve.
+     Toda capacidad que termine en objeto NUEVO debe ser peldaño 5 con la
+     evidencia de por qué fallaron 2-4 (incluida la feature nativa evaluada). -->
+
+| Capacidad pedida | Peldaño (1-5) | Objeto resultante | Por qué se descartaron los anteriores |
+|---|---|---|---|
+| <capacidad> | 5 (nuevo) | `<objeto según naming del profile>` | 2: no hay feature nativa que…; 3: no existe objeto/endpoint que…; 4: cambio mínimo insuficiente porque… |
+
+<!-- ============ SECCIONES POR TARGET: incluir SOLO instancias en scope ============ -->
+
+## database:<instancia>
+
+<!-- Repetir esta sección por cada DB en scope. Respetar profiles/database.md.
+     Toda fila con Acción=crear debe tener su fila peldaño 5 en la sub-tabla
+     "Escalera de decisión" de arriba. -->
+| Objeto | Tipo | Acción | Notas |
+|---|---|---|---|
+| `<objeto>` | <tipo> | crear/modificar | |
+
+```
+-- Esqueleto/firma propuesta (no implementación completa: eso es del implementador)
+-- Antes de incluir la query/comando real: verificarlo con tools.verify / MCP
+-- del profile. Formato obligatorio si el proyecto usa MCP SQL:
+--   ✓ MCP [<entorno>] → <N filas o resultado>  (ej: -- ✓ MCP [nesgotest] → 5 filas)
+```
+
+## backend:<instancia>
+
+<!-- Repetir por cada API en scope. Respetar profiles/backend.md -->
+| Endpoint | Verbo | Request | Response | Acción |
+|---|---|---|---|---|
+
+## frontend:<instancia>
+
+<!-- Solo si frontend está en scope -->
+| Componente/Vista | Acción | Contrato API que consume |
+|---|---|---|
+
+## mobile:<instancia>
+
+<!-- Solo si mobile está en scope -->
+| Pantalla/Widget | Acción | Contrato API que consume |
+|---|---|---|
+
+## integrations:<instancia>
+
+<!-- Solo si hay integración en scope: eventos, payloads, idempotencia -->
+
+<!-- ================================================================== -->
+
+## Diagrama de flujo (Mermaid, opcional)
+
+<!-- Incluir SOLO si el requerimiento toca >2 objetos/instancias o cruza la frontera
+     SQL→API (o API→frontend). Un requerimiento de un solo SP o un solo endpoint no
+     lo necesita — no agregar diagramas por costumbre. -->
+
+```mermaid
+sequenceDiagram
+    participant C as Cliente
+    participant A as backend:<instancia>
+    participant DB as database:<instancia>
+
+    C->>A: <endpoint>
+    A->>DB: <SP/query>
+    DB-->>A: <resultado>
+    A-->>C: <respuesta>
+```
+
+<!-- ================================================================== -->
+
+## Orden de implementación
+
+<!-- Una fila por paso. "Entregable" = objeto que queda listo al terminar el paso.
+     "Dependencia" = número del paso previo requerido (o "—" si es primero).
+     "Verificación" = chequeo puntual antes de avanzar al siguiente paso — build,
+     SELECT de smoke test, o N/A si no hay verificación razonable. -->
+| # | Paso | Target:Instancia | Entregable | Dependencia | Verificación |
+|---|------|-------------------|------------|-------------|--------------|
+| 1 | <qué hacer> | `target:instancia` | <objeto que queda listo> | — | <build / SELECT smoke test / N/A> |
+
+## Plan de pruebas
+
+<!-- Por instancia en scope: tipos de prueba del profile del target.
+     OBLIGATORIO: una fila TC-INV-x por cada invariante de spec.md (regresión),
+     y TC-RB para validar la estrategia de rollback.
+     ENDURECIMIENTO (Unidad 7 — Regla de Oro): el humano define el QUE.
+     - OBLIGATORIO >=1 caso NEGATIVO/de error (TC-ERR-x): entrada inválida, código
+       5xxxx, borde de dominio. Un plan sin caso negativo = Test Theater (se rechaza).
+     - El plan se materializa en un script ejecutable a partir de
+       `sdd-toolkit/templates/pruebas.sql` (nombre `<yyyymmdd>_<TKT>_Pruebas*.sql`),
+       corrido en `<MCP_TEST>` con TRAN+ROLLBACK y anotado
+       `-- [OK] TESTS [<entorno>] -> <N> PASS`. El hook `check-tests-green.ps1`
+       bloquea el script sin caso negativo o sin esa evidencia, y bloquea implementar
+       un `*_business_sps.sql` sin su `*Pruebas*.sql` hermano (shift-left).
+     - Paso adversarial en SP de negocio o cambios difíciles de revertir: aplicar
+       la skill `abogado-del-diablo` sobre los propios tests antes de darlos por buenos. -->
+| Prueba | Target | Tipo | Cubre CA |
+|---|---|---|---|
+| `TC-INV-1` | <instancia> | regresión | CA-R1 (invariante INV-1) |
+| `TC-ERR-1` | <instancia> | negativo | <entrada inválida → error esperado> |
+| `TC-RB` | <instancia> | rollback | estrategia de rollback |
+
+### Ratio de pruebas (Testing Trophy)
+
+<!-- CUÁNDO APLICA: siempre que haya tests (costo cero de incluir).
+     Sesgo a integración: SP vía MCP y controller con BD de test = integración.
+     Unitario solo para lógica pura sin dependencias. -->
+- Integración: ~70 % (BD real / MCP `nesgotest`)
+- Unitario: ~30 % (solo lógica pura)
+- Mocks: solo APIs externas imposibles de integrar en test
+
+### Characterization (paridad — solo Refactor)
+
+<!-- CUÁNDO APLICA: Tipo = Refactor de objeto legacy.
+     Si Tipo ≠ Refactor → eliminar esta subsección completa. -->
+| Test | CHAR-x del spec | Baseline | Paridad post-cambio |
+|---|---|---|---|
+| `TC-CHAR-1` | CHAR-1 | `<output actual>` | ☐ |
+
+### Triangulación
+
+<!-- CUÁNDO APLICA: Feature o Refactor con comportamiento nuevo no trivial.
+     En typo, doc o cambio sin lógica → eliminar esta subsección. -->
+| Comportamiento | Dataset A | Dataset B | Qué generaliza |
+|---|---|---|---|
+| <SP acepta input válido> | caso mínimo | caso máximo | que no quedó hardcodeado |
+
+### Mutation
+
+<!-- CUÁNDO APLICA: paths críticos (lógica de negocio, cálculos financieros, gates).
+     En cambios sin paths críticos → eliminar esta subsección.
+     SQL: 3 mutantes manuales (WHERE, operador, umbral). C#/TS: Stryker, kill rate ≥ 80 %. -->
+| Objeto | Técnica | Kill rate objetivo |
+|---|---|---|
+| `<SP/clase>` | 3 mutantes manuales / Stryker | ≥ 80 % paths críticos |
+
+## Estrategia de rollback
+
+<Cómo revertir cada cambio. Según el profile: script inverso, dry-run, feature flag, etc.>
+
+## Pre-mortem
+
+<!-- SOLO para requerimientos con riesgo alto, estado RIESGOSO o estructura extendida.
+     En requerimientos simples, eliminar esta sección. -->
+- **Si esto falla en PROD, la causa más probable es:** <...>
+- **Cómo lo detectamos:** <query/log/alerta concreta>
+- **Acción inmediata:** <rollback de release.md / a quién avisar>
+
+## Decisiones técnicas (auditoría)
+
+<!-- Por cada objeto nuevo (peldaño 5), una fila citando por qué fallaron los
+     peldaños 2-4 — incluida la feature nativa evaluada y descartada (peldaño 2).
+     Sin esa evidencia, el peldaño 2 no se considera recorrido. -->
+
+| # | Decisión | Justificación |
+|---|---|---|
+
+## Autoverificación antes del handoff
+
+<!-- Autochequeo del generador de contexto, no una auditoría del implementador
+     (esa es post-impl.md). Objetivo: que este design.md no contradiga lo que
+     spec.md ya prometió. -->
+
+**Consistencia con spec.md:**
+- [ ] Ningún objeto/tabla de este design.md implementa algo listado como `Won't`
+      en spec.md — si algo del `Won't` aparece aquí, es un error, no una mejora
+- [ ] Cada fila de "Plan de pruebas" `TC-INV-x` corresponde a un invariante real
+      de spec.md (uno por invariante, ninguno huérfano ni faltante)
+
+**Calidad del artefacto:**
+- [ ] Toda query/comando SQL verificado con MCP — anotado `-- ✓ MCP [<entorno>] → <resultado>`
+- [ ] Orden de implementación: cada paso tiene Entregable + Dependencia explícita
+- [ ] Sin falsa agencia: ningún "el sistema aplica" ni "el diseño propone" —
+      cada paso nombra el actor real (SP / controller / agente Cursor)
+- [ ] Toda query/comando propuesto verificado antes de escribirlo — no se asume
+      que un objeto citado en la escalera existe sin haberlo verificado vía MCP
+- [ ] Si el spec tiene CHAR-x → hay una fila `TC-CHAR-x` por cada uno (paridad cubierta)
+- [ ] Cada comportamiento nuevo tiene ≥ 2 datasets en la tabla de Triangulación

@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main, feature/**]
+  pull_request:
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - name: Build API
+        run: dotnet build GraphApi/GraphApi.csproj --configuration Release
+      - name: Test API
+        run: dotnet test GraphApi/GraphApi.Tests/GraphApi.Tests.csproj --configuration Release
+        env:
+          JwtSettings__Key: "01234567890123456789012345678901"
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: Web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
