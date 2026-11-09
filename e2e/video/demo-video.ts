@@ -49,9 +49,9 @@ const RESEED =
   'Run pnpm db:seed before pnpm test:e2e or pnpm test:api: batch 123 of ProviderA-USD is used up and RAM-07 is primary.'
 
 /** Pauses to read each screen (design D5). */
-const HOLD_SHORT = 2_500
-const HOLD = 4_000
-const HOLD_LONG = 7_000
+const HOLD_SHORT = 3_000
+const HOLD = 5_500
+const HOLD_LONG = 10_000
 
 /** The captions, fixed in the script: none can carry the password (design D1, D4). */
 const CAPTIONS = {
@@ -146,7 +146,7 @@ class Recording {
   }
 
   async caption(text: string) {
-    this.marks.push({ at: Date.now() - this.start, caption: text })
+    if (this.marks.at(-1)?.caption !== text) this.marks.push({ at: Date.now() - this.start, caption: text })
     await this.page.evaluate((value) => {
       try {
         sessionStorage.setItem('demo-caption', value)
@@ -318,6 +318,7 @@ async function walkThrough(page: Page, rec: Recording, created: Created) {
   await rec.hold(HOLD_LONG)
   await rec.highlight(page.getByRole('button', { name: 'Merchant summary' }))
   await downloadMerchantSummary(page, SAMPLE, batchNo)
+  await rec.center(page.getByRole('button', { name: 'Merchant summary' }))
   await rec.hold(HOLD)
 
   // 9. payments marks it as paid.
@@ -335,6 +336,7 @@ async function walkThrough(page: Page, rec: Recording, created: Created) {
   await expect(headerValue(page, 'Paid by')).toContainText('payments')
   await rec.center(headerValue(page, 'Status'))
   await rec.hold(HOLD_LONG)
+  await rec.hold(HOLD_SHORT)
 }
 
 /** webm to H.264 without audio, written next to the output and moved onto it only when it is small enough. */

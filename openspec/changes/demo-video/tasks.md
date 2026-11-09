@@ -30,28 +30,28 @@
 
 ## 2. Grabación y ajuste (un solo turno de base; K siembra antes de cada pasada)
 
-- [ ] 2.1 Pedir turno de base a K. Tras `! pnpm db:seed`, ejecutar `pnpm video:demo` con la salida redirigida al scratchpad. Verificación: termina sin error, imprime las marcas de tiempo y la limpieza no deja notas.
-- [ ] 2.2 Revisar el `.mp4` fotograma a fotograma, con `ffmpeg -vf fps=1/5` a PNG en el scratchpad:
+- [x] 2.1 Pedir turno de base a K. Tras `! pnpm db:seed`, ejecutar `pnpm video:demo` con la salida redirigida al scratchpad. Verificación: termina sin error, imprime las marcas de tiempo y la limpieza no deja notas.
+- [x] 2.2 Revisar el `.mp4` fotograma a fotograma, con `ffmpeg -vf fps=1/5` a PNG en el scratchpad:
   - Cada rótulo está en su etapa.
   - Ninguna cifra queda bajo la franja.
   - La contraseña solo se ve como puntos.
   - No sale ningún nombre de sistema real.
 
   Ajustar las pausas hasta que dure entre 2:15 y 2:45. Verificación: `ffprobe` muestra la duración en rango, h264, 1280×720 y sin pista de audio. El archivo mide menos de 20 MB.
-- [ ] 2.3 Solo si alguna espera del sistema supera 8 s en 2.1: anotar los tramos y recortarlos en la conversión (D5). Verificación: el tramo ya no aparece en el `.mp4` y la duración sigue en rango. Si no hace falta, marcarla como no aplicable con la medida.
+- [x] 2.3 Solo si alguna espera del sistema supera 8 s en 2.1: anotar los tramos y recortarlos en la conversión (D5). Verificación: el tramo ya no aparece en el `.mp4` y la duración sigue en rango. Si no hace falta, marcarla como no aplicable con la medida. **No aplica:** analizar 1,6–1,8 s, validar 1,1–1,7 s y procesar 1,1–1,3 s en las dos pasadas.
 - [ ] 2.4 Pasada final tras `! pnpm db:seed`, y otro `! pnpm db:seed` al terminar para dejar la base lista. Verificación: `docs/demo/recon-tool-demo.mp4` regenerado y comprobado como en 2.2. Cierre del turno de base.
 - [ ] 2.5 Commit: docs(demo): vídeo de la demo de la Entrega 3
 
 ## 3. Documentación
 
-- [ ] 3.1 README:
+- [x] 3.1 README:
   - §0.4: sustituir "Previsto para la Entrega 3" por el enlace a `docs/demo/recon-tool-demo.mp4` y la duración.
   - §1.3: enlace en lugar de "El vídeo llega en la Entrega 3".
   - §2.4: enlace en la frase del respaldo con el vídeo ("evidencia de funcionamiento").
   - §2.6: cómo regenerarlo (`pnpm db:seed`, `pnpm dev`, `pnpm video:demo`, ffmpeg con `winget install Gyan.FFmpeg` y volver a sembrar después).
 
   Verificación: los enlaces relativos abren el archivo en GitHub, en la vista del PR.
-- [ ] 3.2 Comentario de cabecera de `e2e/video/demo-video.ts` en inglés: qué graba, qué necesita, qué escribe en la base y qué deja. Verificación: revisión.
+- [x] 3.2 Comentario de cabecera de `e2e/video/demo-video.ts` en inglés: qué graba, qué necesita, qué escribe en la base y qué deja. Verificación: revisión.
 - [ ] 3.3 Commit: docs(readme): enlace al vídeo de la demo y cómo regenerarlo
 
 ## 4. Cierre

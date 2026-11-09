@@ -115,9 +115,11 @@ Hay tres pausas fijas:
 
 | Pausa | Duración | Uso |
 |---|---|---|
-| `HOLD_SHORT` | 2,5 s | Transiciones |
-| `HOLD` | 4 s | Una pantalla normal |
-| `HOLD_LONG` | 7 s | Contadores, tabla de validaciones, pre-summary y summary |
+| `HOLD_SHORT` | 3 s | Transiciones |
+| `HOLD` | 5,5 s | Una pantalla normal |
+| `HOLD_LONG` | 10 s | Contadores, tabla de validaciones, pre-summary y summary |
+
+Con 2,5 / 4 / 7 s, la primera pasada duró 1:47. Con estos valores, 2:16.
 
 El usuario y la fecha de liquidación (`2026-10-24`, la de la suite) se teclean con un retardo de 80 ms por carácter. El script imprime al terminar la marca de tiempo de cada etapa respecto al inicio del vídeo, para ajustar las pausas hasta quedar entre 2:15 y 2:45.
 
