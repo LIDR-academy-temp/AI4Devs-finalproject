@@ -39,8 +39,14 @@ const countersRegion = () => within(runHeader().getByRole('region', { name: 'Inf
 /** The card of a counter: a region named by its label (web-analysis-polish design D3). */
 const counterCard = (label: string) => countersRegion().getByRole('region', { name: label })
 const aboutButton = (label: string) => within(counterCard(label)).getByRole('button', { name: `About ${label}` })
-/** Each counter as [name, value]: the value is the line below the label of its card. */
-const counters = () => COUNTERS.map((label) => [label, counterCard(label).children[1]?.textContent])
+/**
+ * Every card of the counters region, in the order of the screen, as [name, value]: the value is the line below the
+ * label of its card. Read from the DOM, so a fourth card or a change of order fails.
+ */
+const counters = () =>
+  countersRegion()
+    .getAllByRole('region')
+    .map((card) => [card.getAttribute('aria-label'), card.children[1]?.textContent])
 const EXPLAIN = {
   'Pending in range':
     "Transactions of the account's channels still Pending on the gateway, created within the APP or DEC range.",
@@ -57,8 +63,14 @@ const resultRows = () =>
   within(screen.getByRole('table', { name: 'Validation results' }))
     .getAllByRole('row')
     .slice(1)
+/** The index of a column of the validations table, by its header. */
+const resultColumn = (name: string) =>
+  within(screen.getByRole('table', { name: 'Validation results' }))
+    .getAllByRole('columnheader')
+    .findIndex((h) => h.textContent === name)
 /** The element that holds the breakdown, inside the Breakdown cell of a row of the validations. */
-const breakdownOf = (row: HTMLElement) => within(row).getAllByRole('cell')[4]!.firstElementChild as HTMLElement
+const breakdownOf = (row: HTMLElement) =>
+  within(row).getAllByRole('cell')[resultColumn('Breakdown')]!.firstElementChild as HTMLElement
 
 describe('Analysis & Validations: running the validations (spec "ejecutar la corrida")', () => {
   it('without a run invites to run them and does not run them on its own', async () => {
