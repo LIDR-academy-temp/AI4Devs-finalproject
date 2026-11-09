@@ -315,4 +315,6 @@ Los 40 tickets planificados en la Entrega 1 están en [`documentacion/06-tickets
 | 2 | `feature/entrega-2-AFS` | Implementación API + Web, despliegue y documentación de uso de IA |
 | 3 (final) | **`final-project-AFS`** | Cierre BI-RPT, portal UX, matriz TDD, E2E, Typeform (rama de entrega académica) |
 
+- **Abrir PR Entrega 3:** [compare `feature/entrega-2-AFS`…`final-project-AFS`](https://github.com/afonsecanice/ProyectoFinalLIDR_AFS/compare/feature/entrega-2-AFS...final-project-AFS?expand=1) — plantilla en [`documentacion/07-pull-requests-entrega-3.md`](documentacion/07-pull-requests-entrega-3.md).
+
 Detalle de la PR de la Entrega 1: [`documentacion/07-pull-requests-entrega-1.md`](documentacion/07-pull-requests-entrega-1.md).
