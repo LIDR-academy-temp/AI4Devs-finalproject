@@ -9,7 +9,7 @@ from fastapi import FastAPI, Response, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.api import autenticacion, cuenta, estaciones, lecturas
+from app.api import administracion, autenticacion, cuenta, estaciones, lecturas
 from app.api import registro as registro_publico
 from app.api.errores import registrar_manejadores
 from app.api.registros import instalar_filtro_de_codigos
@@ -58,6 +58,7 @@ app.include_router(registro_publico.router)
 app.include_router(cuenta.router)
 app.include_router(estaciones.router)
 app.include_router(lecturas.router)
+app.include_router(administracion.router)
 
 
 def modo_publico() -> str:

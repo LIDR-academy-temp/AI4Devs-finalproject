@@ -101,7 +101,7 @@ def contar(sesion, modelo):
 def test_credenciales_validas(cliente, usuario):
     respuesta = ingresar(cliente)
     assert respuesta.status_code == 200
-    assert respuesta.json() == {"email": EMAIL, "nombre": "Persona"}
+    assert respuesta.json() == {"email": EMAIL, "nombre": "Persona", "es_administrador": False}
     assert cliente.cookies.get("wt_sesion")
 
 

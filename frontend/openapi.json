@@ -14,6 +14,25 @@
         "title": "Aviso",
         "type": "object"
       },
+      "CambioVisible": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "ocurrido_en": {
+            "format": "date-time",
+            "title": "Ocurrido En",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ocurrido_en",
+          "email"
+        ],
+        "title": "CambioVisible",
+        "type": "object"
+      },
       "CondicionesActuales": {
         "properties": {
           "activa": {
@@ -132,6 +151,10 @@
             "title": "Email",
             "type": "string"
           },
+          "es_administrador": {
+            "title": "Es Administrador",
+            "type": "boolean"
+          },
           "localidad": {
             "anyOf": [
               {
@@ -201,7 +224,8 @@
           "organizacion",
           "telefono",
           "acepta_novedades",
-          "terminos_version"
+          "terminos_version",
+          "es_administrador"
         ],
         "title": "Cuenta",
         "type": "object"
@@ -321,6 +345,74 @@
           "inactiva_desde"
         ],
         "title": "EstacionResumen",
+        "type": "object"
+      },
+      "EstadoConfiguracionSat2": {
+        "description": "Nunca incluye la URL, el usuario ni la contraseña: la API no puede leerlos.",
+        "properties": {
+          "cambios": {
+            "items": {
+              "$ref": "#/components/schemas/CambioVisible"
+            },
+            "title": "Cambios",
+            "type": "array"
+          },
+          "cargada_en": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cargada En"
+          },
+          "cargada_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cargada Por"
+          },
+          "configuracion_guardada": {
+            "title": "Configuracion Guardada",
+            "type": "boolean"
+          },
+          "modo": {
+            "title": "Modo",
+            "type": "string"
+          },
+          "puede_guardar": {
+            "title": "Puede Guardar",
+            "type": "boolean"
+          },
+          "ultimo_ciclo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UltimoCiclo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "configuracion_guardada",
+          "puede_guardar",
+          "modo",
+          "cargada_en",
+          "cargada_por",
+          "ultimo_ciclo",
+          "cambios"
+        ],
+        "title": "EstadoConfiguracionSat2",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -721,6 +813,44 @@
         "title": "SolicitudCodigo",
         "type": "object"
       },
+      "SolicitudConfiguracionSat2": {
+        "properties": {
+          "clave": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Clave",
+            "type": "string"
+          },
+          "contrasena_actual": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Contrasena Actual",
+            "type": "string"
+          },
+          "url_base": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Url Base",
+            "type": "string"
+          },
+          "usuario": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Usuario",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url_base",
+          "usuario",
+          "clave",
+          "contrasena_actual"
+        ],
+        "title": "SolicitudConfiguracionSat2",
+        "type": "object"
+      },
       "SolicitudCorreo": {
         "properties": {
           "email": {
@@ -872,11 +1002,34 @@
         "title": "SolicitudRegistro",
         "type": "object"
       },
+      "UltimoCiclo": {
+        "properties": {
+          "finalizado_en": {
+            "format": "date-time",
+            "title": "Finalizado En",
+            "type": "string"
+          },
+          "resultado": {
+            "title": "Resultado",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resultado",
+          "finalizado_en"
+        ],
+        "title": "UltimoCiclo",
+        "type": "object"
+      },
       "UsuarioPublico": {
         "properties": {
           "email": {
             "title": "Email",
             "type": "string"
+          },
+          "es_administrador": {
+            "title": "Es Administrador",
+            "type": "boolean"
           },
           "nombre": {
             "title": "Nombre",
@@ -885,7 +1038,8 @@
         },
         "required": [
           "email",
-          "nombre"
+          "nombre",
+          "es_administrador"
         ],
         "title": "UsuarioPublico",
         "type": "object"
@@ -938,6 +1092,112 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/administracion/sat2": {
+      "get": {
+        "operationId": "obtenerConfiguracionSat2",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoConfiguracionSat2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obtener Configuracion",
+        "tags": [
+          "administración"
+        ]
+      },
+      "put": {
+        "operationId": "guardarConfiguracionSat2",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudConfiguracionSat2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoConfiguracionSat2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Guardar Configuracion",
+        "tags": [
+          "administración"
+        ]
+      }
+    },
     "/api/v1/auth/confirmacion": {
       "post": {
         "operationId": "confirmarCuenta",

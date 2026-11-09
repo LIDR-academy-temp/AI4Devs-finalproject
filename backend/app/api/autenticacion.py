@@ -43,6 +43,8 @@ class SolicitudInicio(BaseModel):
 class UsuarioPublico(BaseModel):
     email: str
     nombre: str
+    # Solo decide si la interfaz muestra la opción de administración; la API lo comprueba siempre.
+    es_administrador: bool
 
 
 def segundos_de_bloqueo(sesion: Session, email: str, ahora: datetime) -> int:
@@ -118,7 +120,9 @@ def iniciar_sesion(
         secure=cookie_segura(),
         samesite="lax",
     )
-    return UsuarioPublico(email=usuario.email, nombre=usuario.nombre)
+    return UsuarioPublico(
+        email=usuario.email, nombre=usuario.nombre, es_administrador=usuario.es_administrador
+    )
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT, operation_id="cerrarSesion")

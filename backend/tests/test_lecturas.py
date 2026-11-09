@@ -592,7 +592,7 @@ def test_las_rutas_coinciden_con_el_contrato(contrato):
         "Recomendacion", "CondicionesActuales", "Historico", "LecturaSensor", "Punto", "Resumen",
         "Motivo", "EstacionResumen", "DatosPersonales", "Cuenta", "SolicitudCorreo", "SolicitudCodigo",
         "SolicitudNuevaContrasena", "SolicitudCambioContrasena", "SolicitudBaja", "SolicitudBajaConEnlace",
-        "Aviso",
+        "Aviso", "UsuarioPublico", "SolicitudConfiguracionSat2", "EstadoConfiguracionSat2",
     ],
 )
 def test_los_campos_coinciden_con_el_contrato(contrato, esquema):

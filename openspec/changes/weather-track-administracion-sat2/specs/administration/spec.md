@@ -46,12 +46,12 @@ El sistema SHALL mostrar la opción «Administración» solo a las cuentas admin
 
 ### Requirement: Configuración de SAT2 desde la aplicación
 
-El sistema SHALL permitir que el administrador cargue la URL, el usuario y la contraseña de SAT2, y MUST conservarlos hasta que un administrador los reemplace. La pantalla SHALL mostrar si hay una configuración guardada, cuándo y quién la cargó, qué origen está usando la ingesta (base, entorno o ninguno) y el resultado del último ciclo de ingesta. La pantalla MUST NOT mostrar la URL, el usuario ni la contraseña guardados.
+El sistema SHALL permitir que el administrador cargue la URL, el usuario y la contraseña de SAT2, y MUST conservarlos hasta que un administrador los reemplace. La pantalla SHALL mostrar si hay una configuración guardada, cuándo y quién la cargó, el modo de datos y el resultado del último ciclo de ingesta. Sin configuración guardada, SHALL indicar que la ingesta usa las variables del servidor. La pantalla MUST NOT mostrar la URL, el usuario ni la contraseña guardados.
 
 #### Scenario: Primera carga
 
 - **WHEN** el administrador guarda una URL, un usuario y una contraseña válidos
-- **THEN** la pantalla indica que hay una configuración guardada, con la fecha y su autor, y que la ingesta usa la base
+- **THEN** la pantalla indica que hay una configuración guardada, con la fecha y su autor
 
 #### Scenario: Reemplazo
 

@@ -14,10 +14,10 @@ Las decisiones están en `design.md` (D1 a D8). Las pruebas usan valores fictici
 
 ## 3. API (D2, D5, D7)
 
-- [ ] 3.1 Sumar `es_administrador` a la respuesta de sesión y verificar que la actualización de la cuenta ignora ese campo
-- [ ] 3.2 Escribir primero las pruebas de `/api/administracion/sat2`: 404 igual a una ruta inexistente sin rol y sin sesión, validación por campo, contraseña incorrecta con conteo para el bloqueo, falta de clave pública, reemplazo, registro y respuesta sin valores; luego implementar las rutas
-- [ ] 3.3 Agregar el correo `CONFIGURACION_SAT2` a cada administrador activo, con pruebas de que no contiene valores y lleva el enlace de baja
-- [ ] 3.4 Regenerar el contrato y los tipos del frontend
+- [x] 3.1 Sumar `es_administrador` a la respuesta de sesión y verificar que la actualización de la cuenta ignora ese campo
+- [x] 3.2 Escribir primero las pruebas de `/api/administracion/sat2`: 404 igual a una ruta inexistente sin rol y sin sesión, validación por campo, contraseña incorrecta con conteo para el bloqueo, falta de clave pública, reemplazo, registro y respuesta sin valores; luego implementar las rutas
+- [x] 3.3 Agregar el correo `CONFIGURACION_SAT2` a cada administrador activo, con pruebas de que no contiene valores y lleva el enlace de baja
+- [x] 3.4 Regenerar el contrato y los tipos del frontend
 
 ## 4. Worker (D6)
 

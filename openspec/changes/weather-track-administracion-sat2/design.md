@@ -64,11 +64,15 @@ Migración `0004`, con `upgrade` y `downgrade`:
 `PUT /api/administracion/sat2` recibe `url_base`, `usuario`, `clave` y `contrasena_actual`:
 
 - Valida que la URL sea absoluta, con `https://` o `http://`, y que los tres campos tengan contenido, con un 422 por campo. Con `http://` la pantalla advierte que las credenciales viajarían sin cifrar hasta SAT2.
-- Una contraseña incorrecta cuenta como intento fallido del ingreso y lleva al mismo bloqueo tras 5. Responde 403 `CONTRASENA_INCORRECTA`.
+- Una contraseña incorrecta cuenta como intento fallido del ingreso y lleva al mismo bloqueo tras 5. Responde 400 `CONTRASENA_INCORRECTA` con el error en el campo, como el cambio de contraseña y la baja.
 - En la misma transacción: reemplaza la fila, agrega el cambio al registro y encola el aviso por correo a cada administrador activo.
 - Lleva el límite por dirección IP del inicio de sesión, porque también verifica una contraseña.
 
-`GET /api/administracion/sat2` devuelve el origen en uso (`base`, `entorno` o `ninguno`), si hay clave pública, la fecha y el autor de la carga, los últimos 10 cambios y el resultado y la hora del último ciclo de ingesta. Esto último permite ver si las credenciales nuevas funcionan, sin que la API hable con SAT2.
+`GET /api/administracion/sat2` devuelve si hay una configuración guardada, si hay clave pública, el modo de datos, la fecha y el autor de la carga, los últimos 10 cambios y el resultado y la hora del último ciclo de ingesta. Esto último permite ver si las credenciales nuevas funcionan, sin que la API hable con SAT2.
+
+La API no puede saber si el `.env` del worker tiene credenciales, porque nunca las recibe. Por eso, sin configuración guardada, la pantalla dice que la ingesta usa las variables del servidor, sin afirmar que existan.
+
+Una ruta comodín bajo `/api/v1/administracion` responde 404 a cualquier otro método o ruta: sin ella, un `DELETE` daría 405 y revelaría que la ruta existe. El contrato OpenAPI sí lista las dos rutas, como todo el repositorio público; la protección está en la API, no en ocultarlas.
 
 ### D6. El worker recarga sin reiniciar
 

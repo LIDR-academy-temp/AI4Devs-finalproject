@@ -21,6 +21,8 @@ CORREO_CONFIRMACION = "CONFIRMACION"
 CORREO_YA_REGISTRADO = "YA_REGISTRADO"
 CORREO_RECUPERO = "RECUPERO"
 CORREO_CLAVE_CAMBIADA = "CLAVE_CAMBIADA"
+# A cada administrador activo, al cambiar la configuración de SAT2. Nunca lleva sus valores.
+CORREO_CONFIGURACION_SAT2 = "CONFIGURACION_SAT2"
 
 # El enlace de un solo uso que necesita cada tipo, además del de baja.
 ENLACE_DEL_TIPO = {
@@ -28,6 +30,7 @@ ENLACE_DEL_TIPO = {
     CORREO_YA_REGISTRADO: None,
     CORREO_RECUPERO: RECUPERO,
     CORREO_CLAVE_CAMBIADA: None,
+    CORREO_CONFIGURACION_SAT2: None,
 }
 MAXIMO_POR_HORA = 3
 
@@ -44,7 +47,9 @@ def url_publica() -> str:
     return os.environ.get("URL_PUBLICA", "http://localhost:8080").rstrip("/")
 
 
-def _parrafos(tipo: str, nombre: str, base: str, codigo: str | None, ahora: datetime) -> tuple[str, list[str]]:
+def _parrafos(
+    tipo: str, nombre: str, base: str, codigo: str | None, ahora: datetime, autor: str | None = None
+) -> tuple[str, list[str]]:
     """Asunto y párrafos. Los enlaces van solos en su propio párrafo."""
     saludo = f"Hola, {nombre}:"
     if tipo == CORREO_CONFIRMACION:
@@ -79,6 +84,14 @@ def _parrafos(tipo: str, nombre: str, base: str, codigo: str | None, ahora: date
             "Si no fue usted, recupere el acceso ahora:",
             f"{base}/recuperar",
         ]
+    if tipo == CORREO_CONFIGURACION_SAT2:
+        fecha = ahora.astimezone(ZONA_ARGENTINA).strftime("%d/%m/%Y %H:%M")
+        return "Cambió la configuración de SAT2 en Weather Track", [
+            saludo,
+            f"La configuración de SAT2 cambió el {fecha}, hora de Argentina. La guardó {autor}.",
+            "Si no reconoce este cambio, revíselo en la pantalla de administración y cambie su contraseña:",
+            f"{base}/administracion",
+        ]
     raise ValueError(f"Tipo de correo desconocido: {tipo}")
 
 
@@ -89,9 +102,10 @@ def armar_mensaje(
     ahora: datetime,
     codigo: str | None = None,
     base: str | None = None,
+    autor: str | None = None,
 ) -> Mensaje:
     base = base or url_publica()
-    asunto, parrafos = _parrafos(tipo, usuario.nombre, base, codigo, ahora)
+    asunto, parrafos = _parrafos(tipo, usuario.nombre, base, codigo, ahora, autor)
     enlace_baja = f"{base}/baja#codigo={codigo_baja}"
     leyenda = "Para darse de baja y borrar su cuenta y todos sus datos, abra este enlace:"
     parrafos = [*parrafos, "—", leyenda, enlace_baja, "Weather Track"]
@@ -128,7 +142,9 @@ def correos_recientes(sesion: Session, destinatario: str, tipo: str, ahora: date
     )
 
 
-def encolar_correo(sesion: Session, usuario: Usuario, tipo: str, ahora: datetime) -> bool:
+def encolar_correo(
+    sesion: Session, usuario: Usuario, tipo: str, ahora: datetime, autor: str | None = None
+) -> bool:
     """Emite los enlaces del correo y lo deja en la bandeja de salida. No hace commit.
 
     Devuelve False, sin emitir ni encolar nada, si ese destinatario ya recibió 3 correos de ese
@@ -139,7 +155,7 @@ def encolar_correo(sesion: Session, usuario: Usuario, tipo: str, ahora: datetime
     proposito = ENLACE_DEL_TIPO[tipo]
     codigo = emitir_enlace(sesion, usuario, proposito, ahora) if proposito else None
     codigo_baja = emitir_enlace(sesion, usuario, BAJA, ahora)
-    mensaje = armar_mensaje(tipo, usuario, codigo_baja, ahora, codigo)
+    mensaje = armar_mensaje(tipo, usuario, codigo_baja, ahora, codigo, autor=autor)
     sesion.add(
         CorreoSaliente(
             tipo=tipo,

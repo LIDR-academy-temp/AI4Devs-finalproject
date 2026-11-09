@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/api/v1/administracion/sat2": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener Configuracion */
+        get: operations["obtenerConfiguracionSat2"];
+        /** Guardar Configuracion */
+        put: operations["guardarConfiguracionSat2"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/confirmacion": {
         parameters: {
             query?: never;
@@ -306,6 +324,16 @@ export interface components {
             /** Mensaje */
             mensaje: string;
         };
+        /** CambioVisible */
+        CambioVisible: {
+            /** Email */
+            email: string;
+            /**
+             * Ocurrido En
+             * Format: date-time
+             */
+            ocurrido_en: string;
+        };
         /** CondicionesActuales */
         CondicionesActuales: {
             /** Activa */
@@ -340,6 +368,8 @@ export interface components {
             apellido: string | null;
             /** Email */
             email: string;
+            /** Es Administrador */
+            es_administrador: boolean;
             /** Localidad */
             localidad: string | null;
             /** Nombre */
@@ -387,6 +417,25 @@ export interface components {
             longitud: string;
             /** Nombre */
             nombre: string;
+        };
+        /**
+         * EstadoConfiguracionSat2
+         * @description Nunca incluye la URL, el usuario ni la contraseña: la API no puede leerlos.
+         */
+        EstadoConfiguracionSat2: {
+            /** Cambios */
+            cambios: components["schemas"]["CambioVisible"][];
+            /** Cargada En */
+            cargada_en: string | null;
+            /** Cargada Por */
+            cargada_por: string | null;
+            /** Configuracion Guardada */
+            configuracion_guardada: boolean;
+            /** Modo */
+            modo: string;
+            /** Puede Guardar */
+            puede_guardar: boolean;
+            ultimo_ciclo: components["schemas"]["UltimoCiclo"] | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -513,6 +562,17 @@ export interface components {
             /** Codigo */
             codigo: string;
         };
+        /** SolicitudConfiguracionSat2 */
+        SolicitudConfiguracionSat2: {
+            /** Clave */
+            clave: string;
+            /** Contrasena Actual */
+            contrasena_actual: string;
+            /** Url Base */
+            url_base: string;
+            /** Usuario */
+            usuario: string;
+        };
         /** SolicitudCorreo */
         SolicitudCorreo: {
             /** Email */
@@ -558,10 +618,22 @@ export interface components {
             /** Telefono */
             telefono?: string | null;
         };
+        /** UltimoCiclo */
+        UltimoCiclo: {
+            /**
+             * Finalizado En
+             * Format: date-time
+             */
+            finalizado_en: string;
+            /** Resultado */
+            resultado: string;
+        };
         /** UsuarioPublico */
         UsuarioPublico: {
             /** Email */
             email: string;
+            /** Es Administrador */
+            es_administrador: boolean;
             /** Nombre */
             nombre: string;
         };
@@ -587,6 +659,72 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    obtenerConfiguracionSat2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                wt_sesion?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoConfiguracionSat2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    guardarConfiguracionSat2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                wt_sesion?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicitudConfiguracionSat2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoConfiguracionSat2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     confirmarCuenta: {
         parameters: {
             query?: never;

@@ -945,6 +945,57 @@ paths:
           $ref: '#/components/responses/Aviso'
         '400':
           $ref: '#/components/responses/EnlaceInvalido'
+  /administracion/sat2:
+    get:
+      summary: Estado de la configuración de SAT2; solo para administradores
+      description: >-
+        Nunca devuelve la URL, el usuario ni la contraseña de SAT2: la API solo
+        tiene la clave pública y no puede descifrarlos. Para una cuenta sin el
+        rol, o sin sesión, responde 404 como una ruta inexistente.
+      operationId: obtenerConfiguracionSat2
+      responses:
+        '200':
+          description: Estado de la configuración, último ciclo y últimos 10 cambios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadoConfiguracionSat2'
+        '404':
+          description: La ruta no existe para esta cuenta
+    put:
+      summary: Reemplaza la configuración de SAT2; exige la contraseña del administrador
+      description: >-
+        La guarda cifrada con la clave pública, la agrega al registro de cambios
+        y avisa por correo a cada administrador activo, sin los valores. Una
+        contraseña incorrecta cuenta como intento fallido de ingreso.
+      operationId: guardarConfiguracionSat2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudConfiguracionSat2'
+      responses:
+        '200':
+          description: Configuración guardada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadoConfiguracionSat2'
+        '400':
+          $ref: '#/components/responses/ContrasenaIncorrecta'
+        '404':
+          description: La ruta no existe para esta cuenta
+        '422':
+          $ref: '#/components/responses/SolicitudInvalida'
+        '429':
+          $ref: '#/components/responses/DemasiadosPedidos'
+        '503':
+          description: Falta la clave pública en el servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /estaciones:
     get:
       summary: Lista las estaciones a las que accede el usuario
@@ -1276,6 +1327,9 @@ components:
         terminos_version:
           type: string
           nullable: true
+        es_administrador:
+          type: boolean
+          description: Lo otorga solo la línea de comandos del servidor.
     SolicitudCambioContrasena:
       type: object
       required: [actual, nueva]
@@ -1318,12 +1372,80 @@ components:
           maxLength: 1024
     UsuarioPublico:
       type: object
-      required: [email, nombre]
+      required: [email, nombre, es_administrador]
       properties:
         email:
           type: string
         nombre:
           type: string
+        es_administrador:
+          type: boolean
+          description: Solo decide si la interfaz muestra la administración.
+    SolicitudConfiguracionSat2:
+      type: object
+      required: [url_base, usuario, clave, contrasena_actual]
+      properties:
+        url_base:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Dirección absoluta con http:// o https://.
+        usuario:
+          type: string
+          minLength: 1
+          maxLength: 200
+        clave:
+          type: string
+          minLength: 1
+          maxLength: 1024
+          description: Contraseña de SAT2. No se recorta.
+        contrasena_actual:
+          type: string
+          minLength: 1
+          maxLength: 1024
+          description: Contraseña de Weather Track del administrador.
+    EstadoConfiguracionSat2:
+      type: object
+      required: [configuracion_guardada, puede_guardar, modo, cambios]
+      properties:
+        configuracion_guardada:
+          type: boolean
+          description: Sin configuración guardada, la ingesta usa las variables del servidor.
+        puede_guardar:
+          type: boolean
+          description: Falso si falta la clave pública en el servidor.
+        modo:
+          type: string
+          enum: [real, simulado, prueba, desconocido]
+        cargada_en:
+          type: string
+          format: date-time
+          nullable: true
+        cargada_por:
+          type: string
+          nullable: true
+        ultimo_ciclo:
+          type: object
+          nullable: true
+          required: [resultado, finalizado_en]
+          properties:
+            resultado:
+              type: string
+            finalizado_en:
+              type: string
+              format: date-time
+        cambios:
+          type: array
+          maxItems: 10
+          items:
+            type: object
+            required: [ocurrido_en, email]
+            properties:
+              ocurrido_en:
+                type: string
+                format: date-time
+              email:
+                type: string
     EstacionResumen:
       type: object
       required: [id, nombre, latitud, longitud, activa]

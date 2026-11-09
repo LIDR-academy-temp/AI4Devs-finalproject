@@ -41,6 +41,8 @@ class Cuenta(BaseModel):
     telefono: str | None
     acepta_novedades: bool
     terminos_version: str | None
+    # Lo otorga solo la línea de comandos del servidor; actualizar la cuenta no lo cambia.
+    es_administrador: bool
 
 
 class SolicitudCambioContrasena(BaseModel):
@@ -67,6 +69,7 @@ def _cuenta(usuario: Usuario) -> Cuenta:
         telefono=usuario.telefono,
         acepta_novedades=usuario.acepta_novedades,
         terminos_version=usuario.terminos_version,
+        es_administrador=usuario.es_administrador,
     )
 
 
