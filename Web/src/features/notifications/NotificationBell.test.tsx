@@ -10,6 +10,14 @@ vi.mock('../auth/AuthContext', () => ({
   useAuth: () => ({ session: { token: 'jwt' } }),
 }))
 
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+  }
+})
+
 vi.mock('./notifications.api', () => ({
   fetchNotificaciones: (...args: unknown[]) => mockFetch(...args),
   marcarNotificacionLeida: (...args: unknown[]) => mockMarcar(...args),

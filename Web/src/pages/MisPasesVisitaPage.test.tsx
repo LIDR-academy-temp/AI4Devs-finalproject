@@ -9,6 +9,15 @@ vi.mock('../features/visitas/useVisitasPase', () => ({
   crearPase: vi.fn(),
 }))
 
+vi.mock('../features/admin/visitas/useTiposIdentificacionVisitas', () => ({
+  useTiposIdentificacionVisitas: () => ({
+    tipos: [],
+    loading: false,
+    error: null,
+    recargar: vi.fn(),
+  }),
+}))
+
 describe('MisPasesVisitaPage', () => {
   it('renderiza encabezado Pases de visita', () => {
     render(

@@ -41,7 +41,7 @@ export function AdminAvisoNotificacionPage() {
 
   return (
     <PortalPageLayout width="3xl">
-      <PageHeader title="Aviso general" subtitle="Notificación masiva vía NTF (solo administración)" />
+      <PageHeader title="Aviso general" description="Notificación masiva vía NTF (solo administración)" />
       <form onSubmit={onSubmit} className="d-flex flex-column gap-3">
         <div>
           <label className="form-label" htmlFor="aviso-titulo">

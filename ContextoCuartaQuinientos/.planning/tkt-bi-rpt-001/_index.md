@@ -17,7 +17,7 @@
 |-----------|---------|---------|--------|
 | Spec | [spec.md](spec.md) | /definir | ✅ |
 | Design | [design.md](design.md) | /diseñar | ✅ |
-| Test | [20261104_BI-RPT-001_PruebasUnitarias.sql](20261104_BI-RPT-001_PruebasUnitarias.sql) · [BI-RPT-001_api_tests.http](BI-RPT-001_api_tests.http) | /test | **7/7 SQL** · `.http` smoke pendiente |
+| Test | [20261104_BI-RPT-001_PruebasUnitarias.sql](20261104_BI-RPT-001_PruebasUnitarias.sql) · [BI-RPT-001_api_tests.http](BI-RPT-001_api_tests.http) | /test | **8/8 SQL** · smoke prod 16/16 (2026-11-04); **TC-BIRPT-09** Finanzas PDF tras hotfix 2026-11-09 (pendiente redeploy) |
 | Impl | [impl.md](impl.md) | /ejecutar | ✅ |
 | Delta | [delta.md](delta.md) | /completar | ✅ |
 | Release | [release.md](release.md) | /completar | Esqueleto |
@@ -39,10 +39,10 @@
 - auditor-seguridad: **APROBADO**
 
 ### Pruebas ejecutadas
-- T-SQL: **7/7** PASS (local + prod)
+- T-SQL: **8/8** PASS (local + prod)
 - xUnit BI: **4** PASS
 - Vitest: **6** PASS (+ TC-NAV-07 skip bot)
-- API `.http`: pendiente post-deploy API
+- API `.http` / runner prod: **16/16 PASS** — `scripts/Invoke-ApiSmokePostDeploy.ps1 -Target Prod` · [evidencia](../../evidencia/20261104_API_SMOKE_POSTDEPLOY/EVIDENCIA_API_SMOKE_POSTDEPLOY.md)
 
 ### Riesgos residuales
 - Smoke `.http` no ejecutado en CI.
@@ -61,3 +61,4 @@
 | 2026-11-04 | LISTO PARA EJECUTAR | EN REVISIÓN | /ejecutar |
 | 2026-11-04 | EN REVISIÓN | LISTO PARA PR | /revisar · SQL 7/7 |
 | 2026-11-04 | LISTO PARA PR | **ARCHIVADO** | /completar · delta · specs · graph |
+| 2026-11-09 | ARCHIVADO | ARCHIVADO + hotfix | FinanzasMes export 500 → `SqlSchemaCompat` en `BiKpiSnapshotRepository`; TC-BIRPT-09 smoke |

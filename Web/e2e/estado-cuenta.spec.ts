@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { loginWithCredentials, residentCredentials } from './helpers/auth'
+import { loginWithCredentials, gotoAuthed, residentCredentials } from './helpers/auth'
 
 const describeSmoke =
   process.env.E2E_SMOKE === '1' ? test.describe : test.describe.skip
@@ -10,8 +10,7 @@ describeSmoke('Smoke estado de cuenta', () => {
     test.skip(!password, 'Falta E2E_RESIDENT_PASSWORD o FASE1_SMOKE_PASSWORD')
 
     await loginWithCredentials(page, correo, password)
-
-    await page.goto('/finanzas/cuenta')
+    await gotoAuthed(page, '/finanzas/cuenta')
     await expect(page.getByRole('heading', { name: 'Mi estado de cuenta' })).toBeVisible({
       timeout: 15_000,
     })

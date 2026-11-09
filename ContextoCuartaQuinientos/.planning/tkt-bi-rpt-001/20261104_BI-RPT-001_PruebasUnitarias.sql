@@ -1,8 +1,8 @@
--- ============================================================================
+﻿-- ============================================================================
 -- 20261104_BI-RPT-001_PruebasUnitarias.sql — Fase TEST (TDD ROJO)
 -- Matriz: design.md Plan de pruebas. Entorno: CuartaQuinientos (localhost / CQ500).
 -- NO ejecutar en PROD.
--- [OK] TESTS [prod/local] -> 7 PASS / 0 ROJO (DB-010 + 20261104_sgr_menus_bi_rpt_reactivate.sql)
+-- [OK] TESTS [prod/local] -> 8 PASS / 0 ROJO (DB-010 + 20261104_sgr_menus_bi_rpt_reactivate.sql)
 --
 -- Mutantes criticos (/ejecutar): ver design.md seccion Plan de pruebas.
 -- TC-IDEM N/A: sin prcSet*; idempotencia worker cubierta por TC-DB-ERR-01.
@@ -67,6 +67,25 @@ INSERT INTO #TestResults (Grupo, Caso, TestName, Expected, Actual, Passed, Tipo)
 SELECT N'bi.KpiSnapshots', N'TC-DB-CHAR-02', N'indice_unico_condominio_fecha',
        N'>=1', CAST(@Ux AS nvarchar(200)),
        CASE WHEN @Ux >= 1 THEN 1 ELSE 0 END, N'Caracterizacion';
+
+-- TC-DB-CHAR-03 — tipo Fecha + DEFAULT TicketsAbiertos (F005)
+DECLARE @FechaType sysname = (
+    SELECT TOP (1) t.name
+    FROM sys.columns c
+    INNER JOIN sys.types t ON c.user_type_id = t.user_type_id
+    WHERE c.object_id = @Tbl AND c.name = N'Fecha'
+);
+DECLARE @DfTickets int = (
+    SELECT COUNT(*)
+    FROM sys.default_constraints dc
+    INNER JOIN sys.columns c ON c.default_object_id = dc.object_id
+    WHERE c.object_id = @Tbl AND c.name = N'TicketsAbiertos'
+);
+INSERT INTO #TestResults (Grupo, Caso, TestName, Expected, Actual, Passed, Tipo)
+SELECT N'bi.KpiSnapshots', N'TC-DB-CHAR-03', N'fecha_date_y_default_tickets',
+       N'date+DF', CONCAT(ISNULL(@FechaType, N'?'), N'+', CAST(@DfTickets AS nvarchar(20))),
+       CASE WHEN @Tbl IS NOT NULL AND @FechaType = N'date' AND @DfTickets >= 1 THEN 1 ELSE 0 END,
+       N'Caracterizacion';
 
 -- TC-DB-ROJO-04 — menu reportes visible para admin (reactivacion nav)
 DECLARE @PerfilCol sysname =

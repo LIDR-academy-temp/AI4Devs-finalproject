@@ -52,6 +52,12 @@
 - Fix UX Reportes: selección morosos operativa; tabs con `cq-admin-tabs` y cards.
 - Rediseño Tendencias BI: KPI strip, toolbar 3m/6m/12m, gráficas en cards, normalización JSON.
 
+## Hotfix (2026-11-09, post-archivo)
+
+- **Modificado:** `BiKpiSnapshotRepository` — nombre de residente en export Finanzas (cuotas/transacciones) vía `SqlSchemaCompat.UsuarioColumns` (prod `Nombre` vs legado `NombreUsuario`).
+- **Modificado:** `Invoke-ApiSmokePostDeploy.ps1` — caso **TC-BIRPT-09** `GET /Reports/Reportes/FinanzasMes/export?formato=pdf`.
+- **Sin cambio de contrato API** ni SQL DDL.
+
 ## Para el reviewer
 
 - **Qué se hizo**: Reportes admin con morosos, exports RPT/BI, tendencias Chart.js, aviso NTF y menús SGR.
@@ -63,6 +69,7 @@
 ## Aprendizajes
 
 - No llamar `SqlSchemaCompat` dentro de transacción activa: cachear columnas en ctor del repositorio.
+- Cualquier SQL nuevo sobre `sgr.Usuarios` debe usar `UsuarioColumns` (mismo patrón que `MorososRepository`); no asumir `NombreUsuario` en prod.
 - Admin sin `CasaOcupante` necesita `condominioId` en JWT explícito (no fallback hardcoded).
 - Dapper requiere handler `DateOnly` para `bi.KpiSnapshots`.
 - Tendencias BI necesitan múltiples fechas snapshot (backfill o demo SQL), no solo el día actual.

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { loginWithCredentials, residentCredentials } from './helpers/auth'
+import { loginWithCredentials, gotoAuthed, residentCredentials } from './helpers/auth'
 
 const describeSmoke =
   process.env.E2E_SMOKE === '1' ? test.describe : test.describe.skip
@@ -12,22 +12,29 @@ describeSmoke('Smoke crear ticket', () => {
     const titulo = `E2E ticket ${Date.now()}`
 
     await loginWithCredentials(page, correo, password)
-
-    await page.goto('/tickets/nuevo')
+    await gotoAuthed(page, '/tickets/nuevo')
     await expect(page.getByRole('heading', { name: 'Nuevo ticket' })).toBeVisible({
       timeout: 15_000,
     })
 
-    const categoria = page.locator('select').first()
+    const categoria = page.locator('#ticket-categoria')
     await expect(categoria.locator('option')).not.toHaveCount(1, { timeout: 15_000 })
     await categoria.selectOption({ index: 1 })
 
-    await page.getByLabel('Título').fill(titulo)
-    await page.getByLabel('Descripción').fill(`Descripción smoke ${titulo}`)
+    await page.locator('#ticket-titulo').fill(titulo)
+    await page.locator('#ticket-descripcion').fill(`Descripción smoke ${titulo}`)
 
     await page.getByRole('button', { name: 'Enviar incidencia' }).click()
 
-    await page.waitForURL(/\/tickets\/?$/, { timeout: 15_000 })
+    const listado = page.waitForURL(/\/tickets\/?$/, { timeout: 25_000 })
+    const formError = page
+      .getByRole('alert')
+      .waitFor({ state: 'visible', timeout: 25_000 })
+      .then(async () => {
+        const msg = (await page.getByRole('alert').textContent()) ?? 'error desconocido'
+        throw new Error(`Crear ticket rechazado: ${msg}`)
+      })
+    await Promise.race([listado, formError])
     await expect(page.getByText(titulo, { exact: false })).toBeVisible({ timeout: 15_000 })
   })
 })

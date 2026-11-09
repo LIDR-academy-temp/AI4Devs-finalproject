@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { EmptyState, type EmptyStateProps } from '../admin/EmptyState'
+import type { EmptyStateProps } from '../admin/EmptyState'
 import { PageHeader, type PageHeaderProps } from '../admin/PageHeader'
 import { PortalPageLayout, type PortalPageLayoutProps } from '../PortalPageLayout'
 import { PortalBackLink } from './PortalBackLink'

@@ -95,10 +95,11 @@ Evolución SDD: [_sdd_evolution.md](_sdd_evolution.md)
 - **Estado**: ARCHIVADO
 - **Dominios**: [[reportes-bi]] · [[frontend]] · [[finanzas]] · [[tickets]] · [[notificaciones]] · [[sgr]]
 - **Objetos clave**: `bi.KpiSnapshots`, `BiSnapshotWorker`, `GET /Reports/Bi/tendencias`, `AdminReportesPage`, `BiTrendsPanel`, aviso NTF scoped condominio
-- **Patrones**: snapshots BI + backfill mensual; JWT `condominioId` admin; SqlSchemaCompat cache en ctor NTF
+- **Patrones**: snapshots BI + backfill mensual; JWT `condominioId` admin; SqlSchemaCompat cache en ctor NTF / exports RPT (`BiKpiSnapshotRepository`, 2026-11-09 hotfix)
 - **Hub**: [spec](.planning/tkt-bi-rpt-001/spec.md) · [design](.planning/tkt-bi-rpt-001/design.md) · [delta](.planning/tkt-bi-rpt-001/delta.md)
 - **Rama:** `final-project-AFS`
 - **Fecha cierre**: 2026-11-04
+- **Entrega 3:** [MATRIZ_TDD_ENTREGA3.md](MATRIZ_TDD_ENTREGA3.md) · [Entregables](20261104_ENTREGA3_Entregables.md) · [E2E](evidencia/20261104_E2E_CRITICO/EVIDENCIA_E2E_ENTREGA3.md) · [API smoke prod](evidencia/20261104_API_SMOKE_POSTDEPLOY/EVIDENCIA_API_SMOKE_POSTDEPLOY.md)
 - **Seguridad 2026-11-09:** [Incidente secretos producción / Git](evidencia/20261109_SEGURIDAD_SECRETOS_GIT/INCIDENTE_SECRETOS_PRODUCCION.md)
 - **Won't**: fase F NAV, HU-BI-03, `/bi`, KPI adopción Telegram
 

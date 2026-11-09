@@ -5,6 +5,7 @@ Docs/
 .history/
 
 # --- Secretos y configuración local ---
+*.runasp.net
 .env
 *.env.local
 .env.*.local
@@ -25,6 +26,7 @@ GraphApi/.continue/
 # --- .NET ---
 bin/
 obj/
+GraphApi/_test_out/
 .vs/
 *.user
 *.bak

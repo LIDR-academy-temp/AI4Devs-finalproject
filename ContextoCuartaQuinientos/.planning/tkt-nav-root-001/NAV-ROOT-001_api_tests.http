@@ -1,5 +1,6 @@
 # NAV-ROOT-001 — pruebas API (matriz design TC-NAV-08 … TC-NAV-10)
-# Base URL segun launchSettings GraphApi (ajustar si difiere).
+# Local: @baseUrl = http://localhost:5180
+# Prod post-deploy: https://apicuartaquinientos.runasp.net (runner: scripts/Invoke-ApiSmokePostDeploy.ps1 -Target Prod)
 @baseUrl = http://localhost:5180
 @tokenAdmin = {{loginAdmin.response.body.token}}
 @tokenResidente = {{loginResidente.response.body.token}}
@@ -24,8 +25,8 @@ POST {{baseUrl}}/SGR/AuthService/GenerateToken
 Content-Type: application/json
 
 {
-  "correo": "residente@local",
-  "password": "{{$dotenv FASE1_SMOKE_PASSWORD}}"
+  "correo": "{{$dotenv E2E_RESIDENT_CORREO}}",
+  "password": "{{$dotenv E2E_RESIDENT_PASSWORD}}"
 }
 
 ###

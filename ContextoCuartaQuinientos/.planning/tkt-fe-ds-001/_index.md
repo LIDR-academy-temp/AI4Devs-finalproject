@@ -17,7 +17,7 @@
 - `Web/src/features/dashboard/ResumenAdminCards.tsx` — label caps/neutral, value primary-dark
 - `Web/src/features/dashboard/ResumenResidenteCards.tsx` — tokens DS, alerta con danger tokens
 - `Web/src/features/notifications/NotificationBell.tsx` — bell blanco, badge danger, dropdown border-neutral-200
-- `Web/src/features/notifications/NotificationDropdown.tsx` — no-leída con borde primary
+- `Web/src/features/notifications/NotificationDropdown.tsx` — delega a `NotificacionesBandeja` (portal row list; 2026-11-04)
 - `Web/src/features/tickets/EstadoTicketBadge.tsx` — tokens funcionales (success/warning/danger/primary-50)
 - `Web/src/pages/**/*.tsx` — batch reemplazo: slate/gray/blue/indigo/red/green/amber/sky → tokens DS
 - `Web/src/features/**/*.tsx` — mismo batch

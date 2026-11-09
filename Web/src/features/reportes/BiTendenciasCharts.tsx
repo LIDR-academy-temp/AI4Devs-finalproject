@@ -32,7 +32,30 @@ type Props = { snapshots: BiKpiSnapshot[] }
 const gridColor = 'rgba(148, 163, 184, 0.25)'
 const textMuted = '#64748b'
 
-const baseCartesian: ChartOptions<'line' | 'bar'> = {
+const baseLine: ChartOptions<'line'> = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: { mode: 'index', intersect: false },
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: { boxWidth: 12, padding: 16, color: textMuted, font: { size: 11 } },
+    },
+    tooltip: {
+      backgroundColor: 'rgba(15, 23, 42, 0.92)',
+      padding: 10,
+      cornerRadius: 8,
+    },
+  },
+  scales: {
+    x: {
+      grid: { display: false },
+      ticks: { color: textMuted, maxRotation: 45, minRotation: 0, font: { size: 11 } },
+    },
+  },
+}
+
+const baseBar: ChartOptions<'bar'> = {
   responsive: true,
   maintainAspectRatio: false,
   interaction: { mode: 'index', intersect: false },
@@ -175,9 +198,9 @@ export function BiTendenciasCharts({ snapshots }: Props) {
           <Line
             data={ticketsData}
             options={{
-              ...baseCartesian,
+              ...baseLine,
               scales: {
-                ...baseCartesian.scales,
+                ...baseLine.scales,
                 y: {
                   beginAtZero: true,
                   grid: { color: gridColor },
@@ -201,11 +224,11 @@ export function BiTendenciasCharts({ snapshots }: Props) {
           <Bar
             data={finanzasData}
             options={{
-              ...baseCartesian,
+              ...baseBar,
               plugins: {
-                ...baseCartesian.plugins,
+                ...baseBar.plugins,
                 tooltip: {
-                  ...baseCartesian.plugins?.tooltip,
+                  ...baseBar.plugins?.tooltip,
                   callbacks: {
                     label: (ctx) => {
                       const v = ctx.parsed.y
@@ -215,7 +238,7 @@ export function BiTendenciasCharts({ snapshots }: Props) {
                 },
               },
               scales: {
-                ...baseCartesian.scales,
+                ...baseBar.scales,
                 y: {
                   beginAtZero: true,
                   grid: { color: gridColor },
@@ -238,9 +261,9 @@ export function BiTendenciasCharts({ snapshots }: Props) {
           <Line
             data={morosidadData}
             options={{
-              ...baseCartesian,
+              ...baseLine,
               scales: {
-                ...baseCartesian.scales,
+                ...baseLine.scales,
                 y: {
                   beginAtZero: true,
                   max: 100,

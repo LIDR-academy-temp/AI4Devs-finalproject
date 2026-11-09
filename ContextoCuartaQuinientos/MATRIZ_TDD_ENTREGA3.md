@@ -1,6 +1,7 @@
 # Matriz TDD — Entrega 3 (todos los módulos in-scope)
 
 > **Fuente de verdad ejecutable:** los gates `ModulosTddCoverageTests` (API) y `entrega3ModulosTdd.test.ts` (Web) fallan si falta un dominio.
+> **Alcance del gate:** presencia de al menos un archivo `*Tests.cs` / `*.test.tsx` por módulo; no mide cobertura de líneas ni flujos E2E.
 > **Excluido:** `bot-ia` (v2, documentado en README §alcance).
 
 ## Capas por módulo
@@ -20,6 +21,10 @@
 | NTF | Notificacion*, **AvisoGeneral** | Bandeja, **aviso admin** | — |
 | Dashboard | DashboardKpi* | HomePage | — |
 | BI/RPT | BiKpi*, BiRpt* | Reportes, **biTrendsUtils** | BI-RPT-001 |
+| Trabajador | (rutas TKT trabajador vía API compartida) | TrabajadorRoute, TrabajadorTicketsPage | — |
+| Shell | — | AppShell, PortalPageLayout, Perfil (layout transversal) | — |
+
+**Runner Entrega 3 vs CI:** ver README §2.6 (filtro xUnit en `Invoke-Entrega3Tests.ps1`).
 
 ## Ejecutar todo (local)
 

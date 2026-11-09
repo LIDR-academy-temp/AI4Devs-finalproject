@@ -1,5 +1,6 @@
 using System.Data;
 using Dapper;
+using GraphApi.Infrastructure;
 using GraphApi.Models.Reports;
 
 namespace GraphApi.Repositories.Reports;
@@ -7,8 +8,17 @@ namespace GraphApi.Repositories.Reports;
 public sealed class BiKpiSnapshotRepository : IBiKpiSnapshotRepository
 {
     private readonly IDbConnection _db;
+    private readonly string _usuarioNombreCol;
+    private readonly string _cuentaNombreCol;
 
-    public BiKpiSnapshotRepository(IDbConnection db) => _db = db;
+    public BiKpiSnapshotRepository(IDbConnection db)
+    {
+        _db = db;
+        _usuarioNombreCol = SqlSchemaCompat.UsuarioColumns(db).Nombre;
+        _cuentaNombreCol = SqlSchemaCompat.HasColumn(db, "fnz", "Cuentas", "Nombre")
+            ? "c.Nombre"
+            : "c.Cuenta";
+    }
 
     public async Task<bool> ExistsAsync(int condominioId, DateOnly fecha, CancellationToken ct = default)
     {
@@ -191,8 +201,8 @@ public sealed class BiKpiSnapshotRepository : IBiKpiSnapshotRepository
         DateTime finExclusive,
         CancellationToken ct = default)
     {
-        const string sql = """
-            SELECT c.CuotaID, u.NombreUsuario, c.Monto, c.FechaPago, c.MetodoPago
+        var sql = $"""
+            SELECT c.CuotaID, {_usuarioNombreCol} AS NombreUsuario, c.Monto, c.FechaPago, c.MetodoPago
               FROM fnz.Cuotas c WITH (NOLOCK)
               INNER JOIN sgr.Usuarios u WITH (NOLOCK) ON u.UsuarioID = c.UsuarioID
               INNER JOIN sgr.Casas ca WITH (NOLOCK) ON ca.CasaID = c.CasaID AND ca.CondominioID = @CondominioId AND ca.bEliminado = 0
@@ -211,8 +221,8 @@ public sealed class BiKpiSnapshotRepository : IBiKpiSnapshotRepository
         DateTime finExclusive,
         CancellationToken ct = default)
     {
-        const string sql = """
-            SELECT t.TransaccionID, c.Cuenta, u.NombreUsuario, tm.TipoMovimiento, t.Cargo, t.Abono, t.FechaCreacion
+        var sql = $"""
+            SELECT t.TransaccionID, {_cuentaNombreCol} AS Cuenta, {_usuarioNombreCol} AS NombreUsuario, tm.TipoMovimiento, t.Cargo, t.Abono, t.FechaCreacion
               FROM fnz.Transacciones t WITH (NOLOCK)
               INNER JOIN fnz.Cuentas c WITH (NOLOCK) ON c.CuentaID = t.CuentaID
               INNER JOIN sgr.Usuarios u WITH (NOLOCK) ON u.UsuarioID = t.UsuarioID

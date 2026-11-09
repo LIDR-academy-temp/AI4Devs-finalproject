@@ -1,1 +1,0 @@
-{"query":"mutation GenerarToken($input: clAuthServiceRequestInput!) { getgenerarToken(input: $input) { token expires } }","variables":{"input":{"nombreUsuario":"dusvaan@gmail.com","password":"Admin2026"}}}

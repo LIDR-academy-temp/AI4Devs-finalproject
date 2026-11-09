@@ -84,7 +84,7 @@
 ### Pruebas API
 
 - Archivo: `NAV-ROOT-001_api_tests.http` (TC-NAV-08)
-- Resultado: **Pendiente runtime** — API `:5180` responde; login smoke 401 con password de prueba local
+- Resultado: **PASS prod 2026-11-04** — `Invoke-ApiSmokePostDeploy.ps1 -Target Prod` (TC-NAV-08/08b + BI-RPT). Evidencia: [EVIDENCIA_API_SMOKE_POSTDEPLOY.md](../../evidencia/20261104_API_SMOKE_POSTDEPLOY/EVIDENCIA_API_SMOKE_POSTDEPLOY.md). Prod: usuarios `guardia@local`/`trabajador@local` + patch `PerfilMenus` (menus Guardia/Trabajador).
 - Endpoints fase A: `GET /SGR/Navegacion/menus` (sin cambio contrato)
 
 ### QA Checklist
@@ -117,7 +117,7 @@
 
 ## Ajustes durante implementación
 
-- (ninguno)
+- 2026-11-04 | Dropdown campana (`NotificationDropdown`) alineado a `NotificacionesBandeja` + tokens `cq-portal-row-list` (UX post E2E) | Ver `specs/notificaciones.md` § UI web
 
 ## Implementación realizada (fase B)
 
@@ -168,7 +168,7 @@
 
 - Archivo: `NAV-ROOT-001_api_tests.http` — sin endpoints nuevos
 - Consumo existente: `GET /NTF/Notificaciones`, `PATCH …/leida` (cubierto por TC-NAV-04 mock)
-- TC-NAV-08 smoke HTTP: pendiente credenciales (heredado fase A)
+- TC-NAV-08 smoke HTTP: **PASS prod** (ver evidencia API smoke arriba)
 
 ### QA Checklist
 
@@ -266,7 +266,7 @@
 ### Pruebas API
 
 - Archivo: `NAV-ROOT-001_api_tests.http` (TC-NAV-08b)
-- Resultado: **Pendiente runtime** — login local `trabajador@local` 401 con credenciales de smoke; contrato cubierto por xUnit. Ejecutar TC-NAV-08b en QA tras deploy API fase C.
+- Resultado: **PASS prod 2026-11-04** — TC-NAV-08b incluido en `Invoke-ApiSmokePostDeploy.ps1` (misma evidencia API smoke).
 
 ### QA Checklist
 

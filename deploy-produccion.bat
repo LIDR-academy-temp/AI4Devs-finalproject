@@ -1,28 +1,29 @@
 @echo off
-title Deploy -> cuartaquinientosresidencial.runasp.net
+title Deploy produccion MonsterASP (API + Web)
 color 0E
 echo ============================================================
-echo   Deploy GraphApi -> cuartaquinientosresidencial.runasp.net
+echo   Deploy API + Web (runasp.net)
+echo   API:  https://apicuartaquinientos.runasp.net
+echo   Web:  https://cuartaquinientosresidencial.runasp.net
 echo ============================================================
 echo.
+echo NOTA: Este script ya NO publica GraphApi en el sitio del portal.
+echo       Si corriste una version vieja del .bat, restaura la Web con:
+echo       powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\Deploy-Produccion.ps1" -Solo Web
+echo.
 
-cd /d "%~dp0GraphApi"
-
-echo [1/2] Publicando con perfil Produccion...
-dotnet publish -c Release /p:PublishProfile=Produccion /p:Password=t?4N3K!jn-5E
+cd /d "%~dp0"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\Deploy-Produccion.ps1" -Solo Ambos
 
 if %ERRORLEVEL% NEQ 0 (
     color 0C
     echo.
-    echo [ERROR] El publish fallo. Revisa los errores arriba.
+    echo [ERROR] Deploy fallo. Revisa credenciales en *.publishSettings en la raiz del repo.
     pause
     exit /b 1
 )
 
-echo.
-echo [2/2] Deploy completado exitosamente.
 color 0A
 echo.
-echo Sitio: https://cuartaquinientosresidencial.runasp.net/
-echo.
+echo Deploy completado.
 pause

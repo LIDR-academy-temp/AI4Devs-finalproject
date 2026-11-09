@@ -1397,29 +1397,31 @@ Tabla verificable archivo por archivo; prioridad: rama administrativa → E2E �
 
 ## Flujo 2 — Ampliación E2E (Playwright) con gate opt-in
 
-**Objetivo dado a la IA:** tres flujos residente además de admin casas, reutilizando credenciales de smoke (`FASE1_SMOKE_PASSWORD`, `E2E_*_CORREO`).
+**Objetivo dado a la IA:** flujos críticos residente y admin (incl. BI-RPT), reutilizando credenciales de smoke (`fase1-smoke.env`, gitignored).
 
-**Artefactos:**
+**Artefactos (7 specs — ver [`EVIDENCIA_E2E_ENTREGA3.md`](ContextoCuartaQuinientos/evidencia/20261104_E2E_CRITICO/EVIDENCIA_E2E_ENTREGA3.md)):**
 
 | Spec | Flujo |
 |------|--------|
 | `Web/e2e/login-residente.spec.ts` | Login → saludo en inicio |
-| `Web/e2e/crear-ticket.spec.ts` | Nuevo ticket → listado |
+| `Web/e2e/crear-ticket.spec.ts` | Nuevo ticket → incidencia |
 | `Web/e2e/estado-cuenta.spec.ts` | Estado de cuenta → KPIs o vacío |
+| `Web/e2e/admin-casas.spec.ts` | Admin → alta casa `E2E-*` |
+| `Web/e2e/critico-residente-extra.spec.ts` | Comunicados, tickets, perfil, áreas |
+| `Web/e2e/critico-admin-extra.spec.ts` | Tickets admin, anuncios, aviso NTF |
+| `Web/e2e/extra-bi-reportes.spec.ts` | Reportes → pestaña Tendencias BI (panel + carga) |
 | `Web/e2e/helpers/auth.ts` | Login compartido + credenciales |
+
+**Ejecución recomendada (prod académica, 2 fases + rate limit API):**
+
+```powershell
+.\scripts\Invoke-E2ESmoke.ps1 -Target Prod
+# opcional antes: .\scripts\Invoke-E2ESmoke.ps1 -Target Prod -PreflightApi
+```
 
 **Patrón FE-QA-001:** skip global salvo `E2E_SMOKE=1`; Vitest excluye `e2e/`.
 
-**Ejecución local:**
-
-```powershell
-$env:E2E_SMOKE='1'
-$env:FASE1_SMOKE_PASSWORD='<seed local>'
-cd Web
-npm run test:e2e
-```
-
-**Criterio humano:** no exigir Playwright en CI sin API+Web; basta specs en repo + opt-in documentado.
+**Criterio humano:** no exigir Playwright en CI sin API+Web; evidencia en repo + script documentado. Auth API adicional: [`EVIDENCIA_API_SMOKE_POSTDEPLOY.md`](ContextoCuartaQuinientos/evidencia/20261104_API_SMOKE_POSTDEPLOY/EVIDENCIA_API_SMOKE_POSTDEPLOY.md).
 
 ---
 
@@ -1482,14 +1484,16 @@ Invoke-Entrega3Tests.ps1 en verde; ModulosTddCoverageTests + entrega3ModulosTdd.
 | Decisión | Motivo |
 |----------|--------|
 | Rama `final-project-AFS` | Requisito nominal del curso |
-| 4 specs E2E | Login, ticket, finanzas residente + admin casas |
+| **7 specs E2E** | 4 base + 2 críticos extra + BI reportes (`Invoke-E2ESmoke.ps1`, 2 fases) |
 | Bot sin tests | v2 fuera de alcance en README |
 | Typeform manual | Activa revisión; solo el humano envía |
 | TDD por módulo vía gates | Matriz + script; no 13 suites SQL inventadas |
+| Datos E2E en prod | Casas/tickets prefijo `E2E-` — entorno demo académico (`db24572`) |
 
 ## Métricas de cierre (noviembre 2026)
 
 - **Rama:** `final-project-AFS`.
-- **E2E:** 4 archivos en `Web/e2e/` (`E2E_SMOKE=1`); ver README §2.6.1.
+- **E2E:** **7** archivos `Web/e2e/*.spec.ts` + `Invoke-E2ESmoke.ps1`; evidencia [`EVIDENCIA_E2E_ENTREGA3.md`](ContextoCuartaQuinientos/evidencia/20261104_E2E_CRITICO/EVIDENCIA_E2E_ENTREGA3.md).
+- **API smoke prod:** [`EVIDENCIA_API_SMOKE_POSTDEPLOY.md`](ContextoCuartaQuinientos/evidencia/20261104_API_SMOKE_POSTDEPLOY/EVIDENCIA_API_SMOKE_POSTDEPLOY.md) (16/16).
 - **TDD gates:** `ModulosTddCoverageTests` + `entrega3ModulosTdd.test.ts`; runner `Invoke-Entrega3Tests.ps1`.
 - **Pendiente humano:** Typeform con link al remoto.

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { adminCredentials, loginWithCredentials } from './helpers/auth'
+import { adminCredentials, gotoAuthed, loginWithCredentials } from './helpers/auth'
 
 const describeSmoke =
   process.env.E2E_SMOKE === '1' ? test.describe : test.describe.skip
@@ -13,8 +13,7 @@ describeSmoke('Smoke admin casas', () => {
     const uniqueNum = `E2E-${Date.now()}`
 
     await loginWithCredentials(page, correo, password)
-
-    await page.goto('/admin/casas')
+    await gotoAuthed(page, '/admin/casas')
     await expect(page.getByRole('heading', { name: 'Casas' })).toBeVisible({ timeout: 15_000 })
 
     await page.getByRole('button', { name: 'Nueva casa' }).click()
@@ -25,6 +24,8 @@ describeSmoke('Smoke admin casas', () => {
 
     await page.getByRole('button', { name: 'Crear casa' }).click()
 
-    await expect(page.getByText(uniqueNum, { exact: false })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('cell', { name: uniqueNum, exact: true })).toBeVisible({
+      timeout: 15_000,
+    })
   })
 })

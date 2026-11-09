@@ -1,5 +1,7 @@
 # BI-RPT-001 — pruebas API (matriz design TC-BIRPT-05 … TC-BIRPT-08)
 # Expected congelado; ROJO hasta /ejecutar. Rama: final-project-AFS
+# Local: @baseUrl = http://localhost:5180
+# Prod post-deploy: https://apicuartaquinientos.runasp.net (runner: scripts/Invoke-ApiSmokePostDeploy.ps1 -Target Prod)
 @baseUrl = http://localhost:5180
 @tokenAdmin = {{loginAdmin.response.body.token}}
 @tokenResidente = {{loginResidente.response.body.token}}
@@ -22,8 +24,8 @@ POST {{baseUrl}}/SGR/AuthService/GenerateToken
 Content-Type: application/json
 
 {
-  "correo": "residente@local",
-  "password": "{{$dotenv FASE1_SMOKE_PASSWORD}}"
+  "correo": "{{$dotenv E2E_RESIDENT_CORREO}}",
+  "password": "{{$dotenv E2E_RESIDENT_PASSWORD}}"
 }
 
 ###
@@ -53,6 +55,13 @@ Authorization: Bearer {{tokenResidente}}
 # Expected: 200 application/pdf o spreadsheet
 # Ajustar ruta en /ejecutar si design prescribe otra convencion
 GET {{baseUrl}}/Reports/Bi/export?meses=6&formato=pdf
+Authorization: Bearer {{tokenAdmin}}
+
+###
+
+# TC-BIRPT-09 — Export RPT finanzas mes (hotfix 2026-11-09: SqlSchemaCompat UsuarioColumns)
+# Expected: 200 application/pdf
+GET {{baseUrl}}/Reports/Reportes/FinanzasMes/export?mes=11&anio=2026&formato=pdf
 Authorization: Bearer {{tokenAdmin}}
 
 ###

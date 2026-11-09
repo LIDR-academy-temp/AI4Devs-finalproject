@@ -1,4 +1,4 @@
-import { apiGet } from '../../shared/lib/apiClient'
+import { apiGet, type ApiProblem } from '../../shared/lib/apiClient'
 import { getMorosos } from '../admin/finanzas/finanzasAdmin.api'
 import type { Moroso } from '../../shared/types/finanzasAdmin'
 
@@ -22,7 +22,7 @@ export async function getMorososReporte(
   token: string,
   mes?: number,
   anio?: number,
-): Promise<{ data?: Moroso[]; problem?: unknown; status: number }> {
+): Promise<{ data?: Moroso[]; problem?: ApiProblem; status: number }> {
   return getMorosos(token, mes, anio)
 }
 

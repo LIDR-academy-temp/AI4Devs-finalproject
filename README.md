@@ -188,6 +188,8 @@ Las credenciales se leen de los `.publishSettings` locales (excluidos de git). C
 | Smoke | `Fase1SmokeApiIntegrationTests` (`Category=Smoke`) y `scripts/Invoke-Fase1Smoke.ps1` | Requiere API y BD levantadas |
 | **Matriz Entrega 3** | [`MATRIZ_TDD_ENTREGA3.md`](ContextoCuartaQuinientos/MATRIZ_TDD_ENTREGA3.md) + gates `ModulosTddCoverageTests` / `entrega3ModulosTdd.test.ts` | `scripts/Invoke-Entrega3Tests.ps1` |
 
+**CI vs runner Entrega 3:** GitHub Actions (`.github/workflows/ci.yml`) ejecuta `dotnet test` y `npm test` completos. `Invoke-Entrega3Tests.ps1` aplica el mismo Vitest y un subconjunto xUnit (**188** casos) que excluye `Category=Smoke` e integración HTTP+SQL (`Authorization`, `AuthServiceController`, `SetupDiagnostics`, `ReservacionesAdminEndpoint`). Los gates TDD comprueban que **exista** al menos un archivo de test por módulo, no sustituyen E2E ni smoke de API.
+
 #### 2.6.1. E2E Playwright (smoke manual, opt-in)
 
 No corre en CI por defecto (`E2E_SMOKE` unset → specs en skip). **Evidencia local recomendada** antes de Typeform: API + Web levantados, contraseña seed en env (no commitear).
@@ -200,9 +202,28 @@ cd Web
 npm run test:e2e
 ```
 
-Specs: `Web/e2e/login-residente.spec.ts`, `crear-ticket.spec.ts`, `estado-cuenta.spec.ts`, `admin-casas.spec.ts`. Última corrida documentada en cierre: ejecutar tras `Invoke-Entrega3Tests.ps1` en verde (4 tests activos con `E2E_SMOKE=1`).
+Atajo (carga `fase1-smoke.env` + `-Target Prod|Local`):
+
+```powershell
+.\scripts\Invoke-E2ESmoke.ps1 -Target Prod
+```
+
+**Nota:** las credenciales de `fase1-smoke.env` deben ser las mismas que funcionan contra **db24572** (login API 200). Si el login devuelve 401, actualiza el `.env` antes de E2E. El helper E2E usa `#password` (toggle «Mostrar contraseña» en login).
+
+**Evidencia Entrega 3 (7 specs críticos + extra BI):** [`EVIDENCIA_E2E_ENTREGA3.md`](ContextoCuartaQuinientos/evidencia/20261104_E2E_CRITICO/EVIDENCIA_E2E_ENTREGA3.md) · entregables [`20261104_ENTREGA3_Entregables.md`](ContextoCuartaQuinientos/20261104_ENTREGA3_Entregables.md).
 
 ---
+
+### 2.7. Limitaciones conocidas y deuda técnica
+
+| Área | Detalle | Mitigación actual |
+|---|---|---|
+| **E2E no automatizados en CI** | Los 7 specs Playwright requieren API + BD levantadas (`E2E_SMOKE=1`); no corren en GitHub Actions | Runner local `Invoke-E2ESmoke.ps1` con evidencia en [`EVIDENCIA_E2E_ENTREGA3.md`](ContextoCuartaQuinientos/evidencia/20261104_E2E_CRITICO/EVIDENCIA_E2E_ENTREGA3.md) |
+| **Cobertura de líneas no medida** | Gates TDD verifican presencia de tests por módulo, no porcentaje de cobertura | Matriz [`MATRIZ_TDD_ENTREGA3.md`](ContextoCuartaQuinientos/MATRIZ_TDD_ENTREGA3.md) asegura que ningún dominio quede sin tests |
+| **Historial Git con secretos rotados** | Commits antiguos contienen credenciales de producción (ya rotadas e inválidas) | Password SQL y JWT key rotadas; `appsettings.Production.json` fuera del índice; incidente documentado en [`INCIDENTE_SECRETOS_PRODUCCION.md`](ContextoCuartaQuinientos/evidencia/20261109_SEGURIDAD_SECRETOS_GIT/INCIDENTE_SECRETOS_PRODUCCION.md) |
+| **Bot Telegram (v2)** | Diseñado pero no implementado; carpeta `Bot/` sin código funcional | Arquitectura API-first permite agregarlo sin cambios al backend |
+| **BI con RAG e IA (v2)** | Resumen inteligente de KPIs y chat con datos diferidos | Snapshots `bi.KpiSnapshots` y exports PDF/Excel ya operativos como base |
+| **Hosting académico (MonsterASP)** | Tier gratuito con límites de recursos y sin SLA; deploy manual por Web Deploy | Script `Deploy-Produccion.ps1` reproducible; CI valida build y tests |
 
 ## 3. Modelo de datos
 
@@ -216,7 +237,8 @@ Specs: `Web/e2e/login-residente.spec.ts`, `crear-ticket.spec.ts`, `estado-cuenta
 | `anm` · `enc` · `jnt` | Anuncios · Encuestas, Preguntas, Respuestas · Juntas y acuerdos |
 | `vts` · `usr` | Visitas, VisitasGeneradas, AreasComunes, Reservaciones · Automóviles, Mascotas y catálogos |
 | `arc` · `wms` · `ntf` | Archivos · Artículos y Préstamos · Notificaciones y su outbox de entrega |
-| `bot` · `ia` · `bi` | Diseñados para v2 (bot, RAG, snapshots de KPIs) |
+| `bi` | KPIs mensuales (`bi.KpiSnapshots`, worker + reportes admin — **BI-RPT-001**, Entrega 3) |
+| `bot` · `ia` | Diseñados para v2 (Telegram, RAG); sin carpeta `Bot/` en esta entrega |
 
 Convenciones: auditoría (`Creado`, `Modificado`, `UsuarioCreacionID`, `FechaCreacion`, …) y borrado lógico `bEliminado` en todas las tablas; catálogos resueltos por nombre, nunca por ID fijo. Diagrama ER y descripción de entidades: [`documentacion/03-modelo-datos.md`](documentacion/03-modelo-datos.md).
 
@@ -279,6 +301,7 @@ Ejemplos con trazabilidad completa:
 - **SGR-BE-030** — API JWT de navegación y permisos (3 pasadas de `/revisar`).
 - **FE-043** — Anuncios para residente y admin (2 ciclos `REQUIERE CAMBIOS`).
 - **FE-UX-001 … FE-UX-006** — rediseño de UX integral.
+- **BI-RPT-001** — reportes admin, tendencias BI, exports RPT y aviso NTF (cierre Entrega 3 en `final-project-AFS`).
 
 Los 40 tickets planificados en la Entrega 1 están en [`documentacion/06-tickets-trabajo.md`](documentacion/06-tickets-trabajo.md). El uso de IA en cada fase se documenta en [`prompts.md`](prompts.md).
 

@@ -70,6 +70,6 @@ function moduloCubierto(patterns: RegExp[]): boolean {
 
 describe('Entrega 3 — cobertura TDD por módulo (Web)', () => {
   it.each(MODULOS)('módulo $id tiene tests Vitest', ({ id, patterns }) => {
-    expect(moduloCubierto(patterns)).toBe(true)
+    expect(moduloCubierto(patterns), `sin tests para módulo ${id}`).toBe(true)
   })
 })

@@ -41,7 +41,15 @@ Readme §6 NTF-BE-013:
 - `/NTF/NotificacionesVisualizadas`, `/NTF/TiposNotificacion` — controladores del inventario §4 (verbos sin detallar en §6).
 
 ## UI web
-- Campana en `AppShell` (FE-040): badge `totalNoLeidas`, dropdown con `PATCH …/leida`.
+- Campana en `AppShell` (FE-040): badge `totalNoLeidas`; panel alineado a tokens portal (`cq-portal-row-list`, filas `data-unread`, sin borde lateral legacy).
+- **Dropdown** (`NotificationBell` + `NotificationDropdown`): reutiliza `NotificacionesBandeja` con `variant="dropdown"` — mensaje `line-clamp-2`, meta fecha/tipo en pie de fila, acción «Marcar leída» (`PortalRowActionButton`), enlace «Ver todas» → `/notificaciones`.
+- **Página** `/notificaciones` (`NotificacionesPage`): misma bandeja `variant="page"` (icono campana, layout ancho).
+- Marcar leída: `PATCH /NTF/Notificaciones/{id}/leida` (idempotente INV-3).
+
+### Registro SDD (UX)
+| Fecha | Cambio |
+|-------|--------|
+| 2026-11-04 | Paridad visual dropdown ↔ bandeja; panel `rounded-xl` + footer «Ver todas» (post E2E Entrega 3). |
 
 ## Reutilización / objetos existentes (escalera)
 - **Reutiliza** `sgr.Usuarios` (destinatario, `bActivo`) y `sgr.Perfiles` (`bAdministrador` para aviso general).

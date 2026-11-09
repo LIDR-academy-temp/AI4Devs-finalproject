@@ -64,10 +64,12 @@ Controller backend real: `Reports/Reportes` (`ReportesController`).
 | Fecha | Requerimiento | Cambio |
 |-------|---------------|--------|
 | 2026-11-04 | [[BI-RPT-001]] | Reportes/BI web, worker snapshots, menús, aviso NTF scoped; ver [delta](.planning/tkt-bi-rpt-001/delta.md) |
+| 2026-11-09 | [[BI-RPT-001]] hotfix | `FinanzasMes/export` 500 prod: `BiKpiSnapshotRepository` + `SqlSchemaCompat.UsuarioColumns`; smoke TC-BIRPT-09; ver [impl § Hotfix](.planning/tkt-bi-rpt-001/impl.md) |
 
 ## Registro de cambios de contexto
 - **2026-11-04** — Alcance web RPT/BI acotado en [[BI-RPT-001]]; bot/IA explícitamente excluidos del hito actual.
 - **2026-11-04** — Cierre ARCHIVADO: specs alineadas a implementación (JWT condominio, SqlSchemaCompat NTF, demo SQL opcional).
+- **2026-11-09** — Hotfix export finanzas mes (PDF/XLSX): columna usuario prod `Nombre`; código alineado a patrón Morosos; redeploy API pendiente.
 
 ## Notas
 - Sin stored procedures: Dapper sobre vistas `vs*` + servicios C# + QuestPDF/ClosedXML.

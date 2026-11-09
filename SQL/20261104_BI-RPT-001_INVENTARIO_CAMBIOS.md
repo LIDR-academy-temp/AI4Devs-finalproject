@@ -9,8 +9,8 @@
 
 - `GET Reports/Bi/tendencias` — NUEVO
 - `GET Reports/Bi/export` — NUEVO
-- `GET Reports/Reportes/FinanzasMes/export` — NUEVO (stub datos)
-- `GET Reports/Reportes/TicketsPeriodo/export` — NUEVO (stub datos)
+- `GET Reports/Reportes/FinanzasMes/export` — NUEVO (PDF/XLSX con cuotas y transacciones del condominio JWT)
+- `GET Reports/Reportes/TicketsPeriodo/export` — NUEVO (PDF/XLSX con tickets del periodo, scoped condominio)
 - `POST NTF/Notificaciones/aviso` — existente (UI admin)
 
 ## Frontend

@@ -115,7 +115,7 @@ export function AdminReportesPage() {
 
   return (
     <PortalPageLayout>
-      <PageHeader title="Reportes" subtitle="Morosos, exportaciones y tendencias BI" />
+      <PageHeader title="Reportes" description="Morosos, exportaciones y tendencias BI" />
 
       <ul className="nav nav-tabs mb-3 cq-admin-tabs" role="tablist">
         {(['bi', 'morosos', 'export'] as const).map((t) => (

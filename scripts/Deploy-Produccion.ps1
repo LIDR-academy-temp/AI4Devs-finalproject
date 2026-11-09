@@ -17,13 +17,23 @@ function Get-Perfil($patron) {
   $x.publishData.publishProfile | Where-Object publishMethod -eq 'MSDeploy' | Select-Object -First 1
 }
 
-function Publicar($perfil, $carpeta, $nombre) {
+function Publicar($perfil, $carpeta, $nombre, [switch]$SoloAgregar) {
   Write-Host "==> Publicando $nombre en $($perfil.msdeploySite)" -ForegroundColor Cyan
+  if ($SoloAgregar) {
+    Write-Host "    (DoNotDelete: no borra archivos viejos en el servidor; util si quedo API en el sitio del portal)" -ForegroundColor DarkYellow
+  }
   $dest = "contentPath=$($perfil.msdeploySite),ComputerName=https://$($perfil.publishUrl):8172/msdeploy.axd?site=$($perfil.msdeploySite),UserName=$($perfil.userName),Password=$($perfil.userPWD),AuthType=Basic"
-  & $msdeploy -verb:sync "-source:contentPath=$carpeta" "-dest:$dest" `
-    -allowUntrusted -enableRule:AppOffline `
-    "-skip:objectName=filePath,absolutePath=appsettings\.Production\.json$" `
+  $args = @(
+    '-verb:sync',
+    "-source:contentPath=$carpeta",
+    "-dest:$dest",
+    '-allowUntrusted',
+    '-enableRule:AppOffline',
+    "-skip:objectName=filePath,absolutePath=appsettings\.Production\.json$",
     "-skip:objectName=dirPath,absolutePath=App_Data$"
+  )
+  if ($SoloAgregar) { $args += '-enableRule:DoNotDeleteRule' }
+  & $msdeploy @args
   if ($LASTEXITCODE -ne 0) { throw "Fallo deploy de $nombre" }
 }
 
@@ -42,7 +52,7 @@ if ($Solo -in 'Web','Ambos') {
     npx vitest run; if ($LASTEXITCODE) { throw 'Tests Web fallaron' }
     npm run build; if ($LASTEXITCODE) { throw 'Build Web fallo' }
   } finally { Pop-Location }
-  Publicar (Get-Perfil 'cuartaquinientosresidencial*.publishSettings') "$root\Web\dist" 'Web'
+  Publicar (Get-Perfil 'cuartaquinientosresidencial*.publishSettings') "$root\Web\dist" 'Web' -SoloAgregar
 }
 
 foreach ($u in 'https://apicuartaquinientos.runasp.net','https://cuartaquinientosresidencial.runasp.net') {

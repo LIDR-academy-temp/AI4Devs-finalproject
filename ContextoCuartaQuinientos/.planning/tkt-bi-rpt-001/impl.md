@@ -2,16 +2,27 @@
 
 > [← index](_index.md) | [← design](design.md) | [delta →](delta.md)
 
+## Hotfix post-archivo (2026-11-09)
+
+- **Síntoma:** `GET /Reports/Reportes/FinanzasMes/export` (PDF/XLSX) HTTP **500** en prod (`apicuartaquinientos.runasp.net`); UI «Descargar PDF» en `/admin/reportes` → consola 500.
+- **Causa (1):** `u.NombreUsuario` en prod → columna **`Nombre`** (`Invalid column name 'NombreUsuario'`).
+- **Causa (2):** `c.Cuenta` en `fnz.Cuentas` → prod usa **`Nombre`** (`Invalid column name 'Cuenta'`). El export llama cuotas **y** transacciones; falla la segunda aunque cuotas esté bien.
+- **Fix:** ctor — `SqlSchemaCompat.UsuarioColumns` + `HasColumn(..., Cuentas, Nombre)` → `c.Nombre` / `c.Cuenta` con alias `AS Cuenta`.
+- **Deploy:** el fix es solo **API** (`GraphApi` → `apicuartaquinientos.runasp.net`). Publicar solo la **Web** no corrige el 500.
+- **Archivos:** `GraphApi/Repositories/Reports/BiKpiSnapshotRepository.cs`; smoke `scripts/Invoke-ApiSmokePostDeploy.ps1` → **TC-BIRPT-09** (Finanzas PDF).
+- **Verificación:** SQL corregido OK en MCP CQ500; `dotnet build` OK; prod **pendiente redeploy API** y `Invoke-ApiSmokePostDeploy.ps1 -Target Prod` (TC-BIRPT-09).
+- **Gap detectado:** smoke 2026-11-04 (**16/16**) no cubría FinanzasMes; solo BI export PDF.
+
 ## Ajustes durante implementación
 
-- Export finanzas/tickets: PDF/Excel mínimos (título) hasta integrar vistas `vs*` en ticket posterior.
-- Métricas tickets en `CalculateAsync` sin filtro `CondominioID` en `tkt.Tickets` (modelo actual sin columna); casas/morosos sí filtran condominio.
+- Export finanzas/tickets: PDF/Excel con filas del periodo (cuotas, transacciones, tickets) scoped por condominio JWT.
+- Métricas tickets en `CalculateAsync` sin filtro `CondominioID` en `tkt.Tickets` (modelo actual sin columna); casas/morosos sí filtran condominio — **riesgo residual** documentado.
 - Tests servicio BI con Moq alineados a `EnsureSnapshotAsync` / `ExistsAsync` (no `Upsert`).
 - **Post-auditoría (2026-11-04):** DB-010 + script menú; F003 sin fallback `condominioId=1`; KPI/export scoped por condominio; `FechaPago` ingresos; egresos vía `Cargo` transacciones; exports RPT con datos; aviso NTF filtrado; `AdminRoute` → `/403`; idempotencia insert SQL 2601/2627.
 
 ## Implementación realizada
 
-- DDL `DB-010` aplicado en localhost; suite SQL **7 PASS / 0 ROJO**.
+- DDL `DB-010` aplicado en localhost; suite SQL **8 PASS / 0 ROJO**.
 - Repo/servicio/worker KPI BI, GET tendencias + export BI (QuestPDF/ClosedXML).
 - Controllers `BiTendenciasController`, `ReportesPeriodoController`.
 - SPA: `AdminReportesPage`, `AdminAvisoNotificacionPage`, rutas App, Chart.js, manifest nav.
@@ -28,15 +39,14 @@
 
 ## Auditoría SQL
 
-- Estado: **REQUIERE CAMBIOS** → correcciones post [auditor-sql](9a0b39d9-3f80-4a5b-ad38-fa891bcc3c98): renombre **DB-010**, script menú reactivate, TC-DB-ERR-01 skip sin condominio, schema base actualizado.
-- Hallazgos cerrados: F001 colisión DB-009, F002 suite vacía, F003 script nav, F004 schema drift.
-- Pendiente menor (F005): asertos de tipos/DEFAULT en suite SQL.
+- Estado final: **APROBADO** (post-correcciones 2026-11-04).
+- Hallazgos cerrados: F001 colisión DB-009, F002 suite vacía, F003 script nav, F004 schema drift, F005 tipos/DEFAULT (`TC-DB-CHAR-03` en suite).
+- Prod/local: suite **8/8 PASS** documentada en cabecera del script SQL.
 
 ## Auditoría general
 
-- Estado: **APROBADO** con observaciones menores
-- Hallazgos: exports RPT stub; tickets KPI no scoped por condominio; `.http` no ejecutado en esta sesión.
-- Correcciones: documentado para `/revisar`.
+- Estado: **APROBADO**
+- Riesgo residual: KPI tickets sin columna condominio en `tkt.Tickets`; smoke `.http` prod **16/16** — [`EVIDENCIA_API_SMOKE_POSTDEPLOY.md`](../../evidencia/20261104_API_SMOKE_POSTDEPLOY/EVIDENCIA_API_SMOKE_POSTDEPLOY.md).
 
 ## Scripts de prueba creados
 
@@ -67,7 +77,7 @@
 
 ## Sello VERDE
 
-- Re-sellado 2026-11-04 post suite prod 7/7; sello `revisar` registrado.
+- Re-sellado 2026-11-04 post suite prod 8/8; sello `revisar` registrado.
 
 ## Verificación final
 
@@ -81,7 +91,7 @@
 - [x] **CA-R3:** Export tickets período PDF/XLSX con filas
 - [x] **CA-B1:** Columnas BI en `bi.KpiSnapshots` (TC-DB-ROJO-01..03)
 - [x] **CA-B2:** Idempotencia worker/índice (TC-DB-ERR-01, `BiKpiSnapshotServiceTests`)
-- [x] **CA-B3:** Controller tendencias + policy admin (`.http` + integración pendiente smoke desplegado)
+- [x] **CA-B3:** Controller tendencias + policy admin (smoke prod PASS)
 - [x] **CA-B4:** 3 gráficas Chart.js + export BI
 - [x] **CA-G1:** Pantalla aviso + POST NTF scoped condominio
 - [x] **CA-T1:** TC-NAV-06 Vitest activo; `tsc` + `vite build` OK
@@ -89,7 +99,7 @@
 ### Pruebas T-SQL (tester-sql)
 
 - Script: `20261104_BI-RPT-001_PruebasUnitarias.sql`
-- Resultado: **7/7** (localhost + prod reportado usuario)
+- Resultado: **8/8** (localhost + prod reportado usuario)
 - Casos fallidos: ninguno
 
 ### Pruebas contrato C# xUnit
@@ -99,7 +109,7 @@
 ### Pruebas API
 
 - Archivo: `BI-RPT-001_api_tests.http`
-- Resultado: **Pendiente smoke** con API desplegada (contrato en [TKT-BI-RPT-001-APIS.md](TKT-BI-RPT-001-APIS.md))
+- Resultado: **PASS prod 2026-11-04** — `Invoke-ApiSmokePostDeploy.ps1 -Target Prod` (TC-BIRPT-05…08). Evidencia: [EVIDENCIA_API_SMOKE_POSTDEPLOY.md](../../evidencia/20261104_API_SMOKE_POSTDEPLOY/EVIDENCIA_API_SMOKE_POSTDEPLOY.md)
 
 ### QA Checklist
 
@@ -110,7 +120,7 @@
 
 ### Auditorías verificadas
 
-- auditor-sql: **APROBADO** (DB-010 + menú reactivate; prod 7/7)
+- auditor-sql: **APROBADO** (DB-010 + menú reactivate; prod 8/8)
 - auditor-codigo: **APROBADO** (post-correcciones tenant/export)
 - auditor-flutter: No aplica
 - auditor-seguridad: **APROBADO** (sin fallback condominio; aviso scoped)
@@ -122,5 +132,5 @@
 
 ### Pendientes
 
-- Ejecutar `BI-RPT-001_api_tests.http` contra API en prod/staging tras deploy.
-- Opcional: `DB-010_bi_snapshots_demo.sql` para gráficas con histórico.
+- Opcional: `DB-010_bi_snapshots_demo.sql` para gráficas con histórico en demos vacías.
+- Futuro: columna `CondominioID` en `tkt.Tickets` o vista scoped para KPI tickets multi-condominio.

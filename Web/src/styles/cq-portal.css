@@ -152,6 +152,10 @@
   border-bottom: none;
 }
 
+.cq-portal-row-list--compact .cq-portal-row-list__item {
+  padding: 0.75rem 1rem;
+}
+
 /* Tablas portal */
 .cq-portal-data-table-wrap {
   width: 100%;

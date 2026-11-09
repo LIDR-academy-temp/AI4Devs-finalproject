@@ -1,5 +1,6 @@
 import { Bell } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { fetchNotificaciones, marcarNotificacionLeida } from './notifications.api'
 import { useQueryErrorToast } from '../../shared/hooks/useQueryErrorToast'
@@ -8,6 +9,7 @@ import type { NotificacionItem } from '../../shared/types/notifications'
 
 export function NotificationBell() {
   const { session } = useAuth()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<NotificacionItem[]>([])
   const [totalNoLeidas, setTotalNoLeidas] = useState(0)
@@ -82,8 +84,18 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-1 w-80 rounded-lg border border-neutral-100 bg-surface-alt shadow-xl">
-          <p className="border-b border-neutral-100 px-3 py-2 text-sm font-semibold text-neutral-900">Notificaciones</p>
+        <div
+          className="absolute right-0 z-50 mt-2 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-neutral-100 bg-surface-alt shadow-[var(--shadow-dropdown)]"
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="notif-dropdown-title"
+        >
+          <p
+            id="notif-dropdown-title"
+            className="border-b border-neutral-100 px-4 py-2.5 text-sm font-semibold text-primary-dark"
+          >
+            Notificaciones
+          </p>
           <NotificationDropdown
             items={items}
             loading={loading}
@@ -91,6 +103,18 @@ export function NotificationBell() {
             markingId={markingId}
             onMarcarLeida={(id) => void handleMarcarLeida(id)}
           />
+          <div className="border-t border-neutral-100 bg-surface-alt px-4 py-2">
+            <button
+              type="button"
+              className="w-full cursor-pointer rounded-lg py-2 text-center text-sm font-medium text-primary hover:bg-primary-50"
+              onClick={() => {
+                setOpen(false)
+                navigate('/notificaciones')
+              }}
+            >
+              Ver todas
+            </button>
+          </div>
         </div>
       )}
     </div>

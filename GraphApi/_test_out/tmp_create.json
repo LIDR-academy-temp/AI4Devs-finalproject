@@ -1,1 +1,0 @@
-{"query":"mutation ($objInput: clCreateMascotasInput!) { createMascotas(objInput: $objInput) { mascotaID } }","variables":{"objInput":{"usuarioID":1,"nombreMascota":"PruebaWithHeaders","tipoMascotaID":null,"razaMascotaID":null,"razaLibre":"RazaHdr","fechaNacimiento":null,"bEliminado":false}}}

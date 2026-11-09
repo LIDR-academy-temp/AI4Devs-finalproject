@@ -13,12 +13,10 @@ public sealed class BiSnapshotWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await RunOnceAsync(stoppingToken);
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
                 await RunOnceAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -28,6 +26,15 @@ public sealed class BiSnapshotWorker : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "BiSnapshotWorker cycle failed");
+            }
+
+            try
+            {
+                await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
             }
         }
     }

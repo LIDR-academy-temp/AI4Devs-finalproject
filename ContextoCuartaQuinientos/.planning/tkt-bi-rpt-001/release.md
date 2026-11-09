@@ -1,6 +1,6 @@
 # release.md — TKT-BI-RPT-001: Reportes + BI web
 
-> Esqueleto `/completar` · Llenar al desplegar TEST/PROD
+> Bitácora de deploy PROD (2026-11-04) · Evidencia API: [EVIDENCIA_API_SMOKE_POSTDEPLOY.md](../../evidencia/20261104_API_SMOKE_POSTDEPLOY/EVIDENCIA_API_SMOKE_POSTDEPLOY.md)
 
 ## Piezas a desplegar (en orden)
 
@@ -16,14 +16,17 @@
 
 | Pieza | Ambiente | Fecha | Quién | Método | Smoke test | Resultado |
 |---|---|---|---|---|---|---|
-| 1 | PROD | 2026-11-04 | equipo | sqlcmd | suite 7/7 | ✅ (usuario) |
-| 4 | local | | | dotnet run | `.http` tendencias | pendiente |
+| 1 | PROD | 2026-11-04 | equipo | sqlcmd | suite SQL 8/8 | ✅ |
+| 2 | PROD | 2026-11-04 | equipo | sqlcmd | TC-DB-ROJO-04 | ✅ |
+| 4 | PROD | 2026-11-04 | equipo | Web Deploy | `Invoke-ApiSmokePostDeploy.ps1` | ✅ **16/16** |
+| 5 | PROD | 2026-11-04 | equipo | Web Deploy | E2E `extra-bi-reportes` + reportes UI | ✅ (evidencia E2E Entrega 3) |
+| 6 | PROD | 2026-11-09 | equipo | API Deploy | Hotfix `BiKpiSnapshotRepository` + TC-BIRPT-09 | ✅ PDF finanzas en UI · [evidencia](../../evidencia/20261109_HOTFIX_FINANZAS_EXPORT/EVIDENCIA_HOTFIX_BI-RPT-001_FINANZAS.md) |
 
 ## Verificación post-deploy
 
-- [ ] `GET /Reports/Bi/tendencias?meses=6` → 200 + array (admin JWT con `condominioId`).
-- [ ] `POST /NTF/Notificaciones/aviso` → 201.
-- [ ] `/admin/reportes` morosos + BI + export en Web.
+- [x] `GET /Reports/Bi/tendencias?meses=6` → 200 + array (admin JWT con `condominioId`) — TC-BIRPT-05
+- [x] `POST /NTF/Notificaciones/aviso` → 201 — TC-BIRPT-08
+- [x] `/admin/reportes` morosos + BI + export en Web — E2E + Vitest admin reportes
 
 ## Canario
 
