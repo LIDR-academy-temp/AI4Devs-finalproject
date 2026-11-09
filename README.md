@@ -75,6 +75,26 @@ Detalle por módulo y visión del bot: [`documentacion/01-producto.md`](document
 
 SPA responsiva con sidebar colapsable, modo claro/oscuro, tablas admin que pasan a tarjetas en móvil y notificaciones tipo toast. Evolución del diseño: tickets `FE-UX-001` a `FE-UX-006` en `ContextoCuartaQuinientos/.planning/`.
 
+#### Capturas del portal en producción
+
+| Vista | Captura |
+|---|---|
+| **Login** — landing con JWT | ![Login](docs/screenshots/01-login.jpg) |
+| **Dashboard Admin** — KPIs, accesos rápidos y notificaciones | ![Dashboard](docs/screenshots/02-dashboard-admin.jpg) |
+| **Reportes BI** — tendencias, morosos y exports PDF/Excel | ![Reportes](docs/screenshots/03-reportes-bi.jpg) |
+| **Gestión de Tickets** — listado admin con filtros y estados | ![Tickets](docs/screenshots/04-tickets-admin.jpg) |
+| **Finanzas** — cuotas por residente, morosos, cuentas contables | ![Finanzas](docs/screenshots/05-finanzas-admin.jpg) |
+| **Residentes / Usuarios** — 13 usuarios con perfiles y roles | ![Residentes](docs/screenshots/06-residentes-admin.jpg) |
+| **Anuncios** — publicaciones con vigencia y tipo | ![Anuncios](docs/screenshots/07-anuncios-admin.jpg) |
+| **Aviso General** — notificación masiva a residentes | ![Aviso](docs/screenshots/08-aviso-general.jpg) |
+| **Casas** — 22 unidades con propietario asignado | ![Casas](docs/screenshots/09-casas-admin.jpg) |
+| **Encuestas** — votaciones activas con fechas | ![Encuestas](docs/screenshots/10-encuestas-admin.jpg) |
+| **Juntas** — asambleas programadas con ubicación | ![Juntas](docs/screenshots/11-juntas-admin.jpg) |
+| **Almacén** — inventario, préstamos y categorías | ![Almacén](docs/screenshots/12-almacen-admin.jpg) |
+| **Archivos** — repositorio documental del condominio | ![Archivos](docs/screenshots/13-archivos-admin.jpg) |
+
+> Portal live: [cuartaquinientosresidencial.runasp.net](https://cuartaquinientosresidencial.runasp.net)
+
 ### 1.4. Instalación y ejecución local
 
 **Requisitos:** .NET 9 SDK, Node.js 20+, SQL Server 2019+ (o Express).
