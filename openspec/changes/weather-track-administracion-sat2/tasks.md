@@ -35,7 +35,7 @@ Las decisiones están en `design.md` (D1 a D8). Las pruebas usan valores fictici
 
 ## 7. Documentación
 
-- [ ] 7.1 Escribir el ADR-0004 sobre dónde viven las credenciales de SAT2, y actualizar el README (1.4 y 2.5), la guía de instalación (generar claves, hacerse administrador, pérdida de la clave privada), el informe de seguridad, `CLAUDE.md`, las instrucciones de revisión de la API si hace falta y la hoja de ruta; regenerar la guía de las especificaciones
+- [x] 7.1 Escribir el ADR-0004 sobre dónde viven las credenciales de SAT2, y actualizar el README (1.4 y 2.5), la guía de instalación (generar claves, hacerse administrador, pérdida de la clave privada), el informe de seguridad, `CLAUDE.md`, las instrucciones de revisión de la API si hace falta y la hoja de ruta; regenerar la guía de las especificaciones
 
 ## 8. Verificación del responsable
 

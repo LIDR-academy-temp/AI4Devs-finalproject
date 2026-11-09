@@ -6,7 +6,7 @@
 | **Actividad** | A14 del [plan](../plan/plan-implementacion-entrega-2.md): revisión corta de secretos, autorización, sesión y entradas |
 | **Realizada por** | Claude (asistente de IA), con supervisión del responsable |
 | **Resultado** | Sin hallazgos críticos abiertos. Se corrigieron 11 hallazgos; quedan 7 riesgos aceptados y R1 está resuelto |
-| **Actualización** | 4 de noviembre de 2026: registro público, recupero y bajas del cambio [`weather-track-registro-cuentas`](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md). Ver la [sección 7](#7-actualización-cuentas-autogestionadas) |
+| **Actualización** | 4 de noviembre de 2026: registro público, recupero y bajas del cambio [`weather-track-registro-cuentas`](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md). Ver la [sección 7](#7-actualización-cuentas-autogestionadas). 9 de noviembre de 2026: administración de SAT2. Ver la [sección 8](#8-actualización-administración-de-sat2) |
 
 **Alcance y límites.** Es una revisión corta, no una auditoría ni una prueba de penetración independiente. Tampoco es una verificación completa de OWASP ASVS, que queda como la extensión X4 del plan. Se hizo sobre la **configuración de producción en una pila local aislada** con datos ficticios, porque el despliegue en la nube está pospuesto ([ADR-0002](../decisions/0002-proveedor-del-servidor.md)). Cuando exista un servidor real, hay que repetirla allí.
 
@@ -100,3 +100,23 @@ El 4 de noviembre de 2026 se agregaron el registro público, la confirmación po
 | **Respuestas** | Los errores de validación nombran el campo sin repetir lo enviado, incluida la contraseña | Correcto |
 
 Las pruebas de extremo a extremo recorren los mismos flujos en el navegador, leyendo los correos en Mailpit, y verifican que el código se borra de la barra de direcciones y que el correo trae la cabecera `List-Unsubscribe`. Con esto **R1 queda resuelto**: el límite por IP se aplica en la API con la dirección que fija Caddy, en el ingreso y en todos los flujos públicos.
+
+## 8. Actualización: administración de SAT2
+
+El 9 de noviembre de 2026 se agregó un administrador que carga la URL y las credenciales de SAT2 desde la aplicación ([ADR-0004](../decisions/0004-credenciales-de-sat2.md)). Es el cambio más sensible desde la Entrega 2: por primera vez, las credenciales de SAT2 pasan por la API. Se repitieron las pruebas negativas sobre la pila aislada con la configuración de producción y se sumaron 18 comprobaciones. Todas pasan: 133 en total.
+
+| Área | Qué se comprobó | Resultado |
+|---|---|---|
+| **Invisibilidad** | Sin sesión y con una cuenta común, `GET`, `PUT` y `DELETE` sobre las rutas de administración, y una subruta inventada, responden exactamente igual que una ruta inexistente. Un 401 o un 403 habrían confirmado que existen | Correcto |
+| **Elevación de privilegios** | Una cuenta común que envía `es_administrador` al actualizar sus datos sigue sin el rol. El rol solo se otorga desde el servidor | Correcto |
+| **Confirmación** | Con la contraseña incorrecta del administrador no se guarda nada, y el intento cuenta para el bloqueo de la cuenta | Correcto |
+| **Entradas** | Una dirección que no es `http://` ni `https://`, como `file://`, se rechaza con 422 | Correcto |
+| **Secreto en reposo** | La base guarda solo texto cifrado: ninguno de los valores enviados aparece en `configuracion_sat2` | Correcto |
+| **Secreto en tránsito y registros** | Ni la respuesta de la API ni sus registros repiten los valores. La API recibe la clave pública y nunca la privada | Correcto |
+
+**Riesgos aceptados:**
+
+- **La API recibe las credenciales en claro durante el pedido.** Viajan por HTTPS en el servidor, se cifran en memoria y nunca se registran. En la instalación local viajan por HTTP, pero solo desde la misma computadora.
+- **La clave privada vive en el `.env` del servidor**, como antes las credenciales. Quien tenga el `.env` y una copia de la base puede leerlas. La mejora es que una copia de la base sola, o un acceso a la API, ya no alcanzan.
+- **El contrato OpenAPI lista las rutas de administración**, como todo el repositorio público. Que la opción sea invisible depende de la API, no de ocultar su existencia.
+

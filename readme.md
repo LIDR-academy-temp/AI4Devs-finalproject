@@ -180,6 +180,7 @@ El último comando muestra el usuario de demostración y su clave, que aparece u
 - **[Despliegue en Google Cloud](docs/despliegue/despliegue-gcp.md) (pospuesto):** guía preparada para publicar en internet con HTTPS y dominio propio. Todavía no se ejecutó.
 - **Modos de datos:** `simulado` por defecto, `real` con una cuenta de SAT2 y `prueba` para ver el selector con dos casos. La base recuerda con qué modo se llenó y no arranca con otro, así que los datos reales y los ficticios nunca se mezclan. Para probar con datos reales hay un comando que copia la base a un proyecto aislado. Detalle en la [sección 5 de la guía](docs/despliegue/instalacion-local.md#5-modos-de-datos).
 - El administrador puede operar con `docker compose exec api python -m app.administracion`: `crear-usuario` (la crea ya confirmada), `restablecer-clave`, `desactivar-usuario` y `exportar-clientes`, que escribe el CSV de la base de clientes en la salida estándar.
+- **Administración de SAT2:** `hacer-administrador --email` le da a una cuenta confirmada la opción «Administración», donde carga la URL y las credenciales de SAT2 sin entrar al servidor. Antes hay que generar las claves con `generar-claves-sat2`. El resto de las cuentas no ve la opción. Pasos en la [sección 4 de la guía](docs/despliegue/instalacion-local.md#4-usar-datos-reales-de-sat2-opcional) y decisión en el [ADR-0004](docs/decisions/0004-credenciales-de-sat2.md).
 - Para detenerla sin perder datos, usar `docker compose stop`. `docker compose down -v` borra la base.
 - La documentación de la API está en `http://localhost:8080/api/docs`.
 
@@ -306,6 +307,7 @@ AI4Devs-finalproject-temp/
 │   │   ├── ingesta/         # Cliente SAT2, modos simulados, ciclo, carga y worker
 │   │   ├── datos/           # Modelos y conexión a la base de datos
 │   │   ├── administracion.py  # Comandos para administrar cuentas
+│   │   ├── cifrado_sat2.py  # Cifrado de la configuración de SAT2 con clave pública
 │   │   ├── seguridad.py     # Contraseñas e identificadores de sesión
 │   │   └── semillas.py      # Datos de demostración
 │   ├── herramientas/        # Prueba de límites de SAT2, contrato, guía de especificaciones y pruebas negativas
@@ -326,7 +328,7 @@ AI4Devs-finalproject-temp/
 ├── openspec/                # Especificaciones y cambios
 ├── docs/
 │   ├── capturas/            # Capturas del MVP
-│   ├── decisions/           # ADR-0001 a ADR-0003
+│   ├── decisions/           # ADR-0001 a ADR-0004
 │   ├── demo/                # Guion de la demostración
 │   ├── despliegue/          # Instalación local y despliegue en Google Cloud
 │   ├── especificaciones/    # Guía generada desde las especificaciones de OpenSpec
@@ -384,7 +386,8 @@ Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-ent
 | Práctica | Aplicación |
 |---|---|
 | Secretos fuera del código | Variables de entorno y `.env.example` sin valores reales. Gitleaks revisa todo el historial en cada push y pull request; los falsos positivos conocidos están en `.gitleaksignore` con su motivo. |
-| Credenciales de terceros aisladas | La cuenta de servicio de SAT2 solo existe en el worker. Nunca llega al navegador ni a la API de lectura. |
+| Credenciales de terceros aisladas | Solo el worker puede leer la cuenta de servicio de SAT2. El administrador la carga desde la aplicación y se guarda cifrada con una clave pública: la API cifra pero no puede descifrar, y nunca la devuelve al navegador ([ADR-0004](docs/decisions/0004-credenciales-de-sat2.md)). Sin configuración guardada, el worker usa el `.env`. |
+| Administración | El rol solo se otorga desde la línea de comandos del servidor. Para cualquier otra cuenta, y sin sesión, las rutas de administración responden igual que una ruta inexistente. Guardar exige la contraseña del administrador, y cada cambio se avisa por correo y queda registrado, sin los valores. |
 | Contraseñas | Solo se guarda un hash con Argon2id, con un tope de cálculos simultáneos para que una ráfaga no agote la memoria. |
 | Sesión | Identificador opaco en cookie `HttpOnly` y `SameSite`, y `Secure` en el servidor. Vence a las 8 horas y se invalida al salir. |
 | Autorización | Todas las rutas se protegen en el servidor. Sin niveles de usuario, toda cuenta confirmada consulta todas las estaciones; una estación inexistente da 404 y un sensor solo se lee a través de su propia estación. |
@@ -398,14 +401,14 @@ Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-ent
 
 ### **2.6. Tests**
 
-Resultado de la última ejecución, el 7 de noviembre de 2026: todas pasan, en local y en el [pipeline](https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp/actions/workflows/integracion.yml), que las corre en cada push. El backend además pasa Ruff, y el pipeline falla si el motor baja del 100 % de cobertura o si falta la base de pruebas.
+Resultado de la última ejecución, el 9 de noviembre de 2026: todas pasan, en local y en el [pipeline](https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp/actions/workflows/integracion.yml), que las corre en cada push. El backend además pasa Ruff, y el pipeline falla si el motor baja del 100 % de cobertura o si falta la base de pruebas.
 
 | Nivel | Herramienta | Qué cubre | Pruebas |
 |---|---|---|---|
-| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones y las instrucciones de revisión | 587 |
-| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos con sus rangos y el calendario, y las pantallas de cuentas con sus errores por campo | 93 |
-| Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el rango manual de históricos, el selector, el equipo inactivo y las cuentas leyendo los correos en Mailpit: registro, confirmación, recupero y las tres formas de baja | 22 |
-| Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras, carga, enumeración de correos, enlaces de un solo uso, baja por `GET` y límites por IP | 115 |
+| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones, las instrucciones de revisión, el cifrado de la configuración de SAT2, la API de administración y el origen de la configuración en el worker | 688 |
+| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos con sus rangos y el calendario, las pantallas de cuentas con sus errores por campo y la pantalla de administración, visible solo para el rol | 108 |
+| Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el rango manual de históricos, el selector, el equipo inactivo y las cuentas leyendo los correos en Mailpit: registro, confirmación, recupero y las tres formas de baja, y la administración de SAT2 con valores ficticios | 24 |
+| Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras, carga, enumeración de correos, enlaces de un solo uso, baja por `GET`, límites por IP y administración de SAT2 | 133 |
 
 Además, la ingesta se probó una vez contra SAT2 real, durante 38 minutos y con 48.427 lecturas. Los comandos están en la [sección 1.4](#14-instrucciones-de-instalación).
 
@@ -437,6 +440,8 @@ erDiagram
     SENSOR ||--o{ OBSERVACION : "registra"
     ESTACION ||--o{ RECOMENDACION : "recibe"
     ESTACION ||--o{ EJECUCION_INGESTA : "registra"
+    USUARIO |o--o{ CONFIGURACION_SAT2 : "carga"
+    USUARIO |o--o{ CAMBIO_CONFIGURACION_SAT2 : "queda en"
 
     USUARIO {
         uuid id PK
@@ -454,6 +459,19 @@ erDiagram
         varchar terminos_version
         timestamptz terminos_aceptados_en
         boolean acepta_novedades "NOT NULL DEFAULT false"
+        boolean es_administrador "NOT NULL DEFAULT false"
+    }
+    CONFIGURACION_SAT2 {
+        integer id PK "siempre 1"
+        bytea contenido_cifrado "NOT NULL"
+        timestamptz cargada_en "NOT NULL"
+        uuid cargada_por FK "ON DELETE SET NULL"
+    }
+    CAMBIO_CONFIGURACION_SAT2 {
+        bigint id PK
+        timestamptz ocurrido_en "NOT NULL"
+        uuid usuario_id FK "ON DELETE SET NULL"
+        varchar email_usuario "NOT NULL"
     }
     ENLACE_CUENTA {
         bigint id PK
@@ -543,6 +561,25 @@ erDiagram
 | `confirmado_en` | `timestamptz` | | Cuándo confirmó el correo. Sin confirmar no puede iniciar sesión. Las cuentas anteriores quedaron confirmadas |
 | `terminos_version`, `terminos_aceptados_en` | `varchar(20)`, `timestamptz` | | Versión y fecha de los términos y la política de privacidad aceptados |
 | `acepta_novedades` | `boolean` | NOT NULL, DEFAULT false | Consentimiento para recibir novedades, que se ofrece sin marcar |
+| `es_administrador` | `boolean` | NOT NULL, DEFAULT false | Ve la administración de SAT2. Solo lo otorga la línea de comandos del servidor |
+
+**CONFIGURACION_SAT2.** Una sola fila con la URL, el usuario y la contraseña de SAT2 que cargó un administrador, cifrados juntos con la clave pública ([ADR-0004](docs/decisions/0004-credenciales-de-sat2.md)). Solo el worker, con la clave privada, puede leerla. Sin esta fila, el worker usa el `.env`.
+
+| Atributo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | `integer` | PK, CHECK `id = 1` | Una sola fila |
+| `contenido_cifrado` | `bytea` | NOT NULL | Cambia en cada guardado; así el worker sabe que debe recargar |
+| `cargada_en` | `timestamptz` | NOT NULL | Cuándo se guardó |
+| `cargada_por` | `uuid` | FK a `USUARIO.id`, ON DELETE SET NULL | Quién la guardó |
+
+**CAMBIO_CONFIGURACION_SAT2.** Registro de cada guardado, sin los valores. Conserva el correo para que el registro sobreviva al borrado de la cuenta.
+
+| Atributo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | `bigint` | PK | Identificador |
+| `ocurrido_en` | `timestamptz` | NOT NULL, índice descendente | Cuándo |
+| `usuario_id` | `uuid` | FK a `USUARIO.id`, ON DELETE SET NULL | Quién |
+| `email_usuario` | `varchar(254)` | NOT NULL | Correo de quien guardó |
 
 **ENLACE_CUENTA.** Código de un solo uso de confirmación, recupero o baja (N:1 con USUARIO, borrado en cascada). El código solo viaja en el correo: la base guarda su SHA-256.
 

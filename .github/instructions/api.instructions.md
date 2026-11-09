@@ -12,5 +12,6 @@ La API solo lee lo que el worker ya validó y guardó. Atiende cuentas de client
 - **Validación de entradas.** Rangos de fechas, longitudes y formatos se validan con Pydantic o en la ruta, con un error 422 claro. Las fechas se interpretan en hora de Argentina.
 - **Nada sensible en los registros.** Ni contraseñas, ni hashes, ni tokens de enlaces, ni cookies, ni correos completos en los mensajes de registro o de error.
 - **Sin llamadas a SAT2.** La API nunca habla con SAT2; eso es de `app/ingesta`.
+- **Administración de SAT2 (ADR-0004).** Toda ruta bajo `/api/v1/administracion` depende de `requerir_administrador` y responde 404 como una ruta inexistente a quien no tiene el rol, también con otros métodos. Señalar como **Bloqueante** una respuesta 401 o 403 ahí, una respuesta o un registro que incluya la URL, el usuario o la contraseña de SAT2, o cualquier uso de `SAT2_CLAVE_PRIVADA` o de `descifrar` en la API.
 - **Vigencia al leer.** Las rutas que devuelven la recomendación aplican la regla R2 con la hora actual al responder.
 - **Errores uniformes.** Usar los errores de `errores.py`, sin trazas internas en la respuesta.

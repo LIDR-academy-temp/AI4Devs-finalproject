@@ -91,19 +91,31 @@ Requiere una cuenta de servicio de SAT2.
 docker compose down -v
 ```
 
-Editá el archivo `.env` y completá estas variables. Este archivo nunca se sube a GitHub:
+Las credenciales de SAT2 se cargan de una de dos formas. La recomendada es desde la aplicación, como administrador: quedan cifradas en la base y se cambian sin entrar al servidor ([ADR-0004](../decisions/0004-credenciales-de-sat2.md)).
+
+**1. Generá las claves de cifrado.** El comando no usa la base. Muestra dos líneas, `SAT2_CLAVE_PUBLICA=...` y `SAT2_CLAVE_PRIVADA=...`:
+
+```bash
+docker compose run --rm --no-deps worker python -m app.administracion generar-claves-sat2
+```
+
+**2. Editá el archivo `.env`.** Este archivo nunca se sube a GitHub:
 
 | Variable | Valor |
 |---|---|
 | `SAT2_MODO` | `real` |
-| `nombreDeUsuario`, `clave` | La cuenta de SAT2 |
-| `SAT2_URL_BASE` | La dirección de la API de SAT2 |
+| `SAT2_CLAVE_PUBLICA`, `SAT2_CLAVE_PRIVADA` | Las dos líneas del paso anterior. La API recibe solo la pública; la privada la usa solo el worker |
+| `nombreDeUsuario`, `clave`, `SAT2_URL_BASE` | Opcional: la cuenta y la dirección de SAT2. Solo se usan mientras nadie cargue la configuración desde la aplicación |
 
-Levantá el sistema:
+> **Guardá la clave privada.** Sin ella no se puede leer la configuración guardada. Si se pierde, generá un par nuevo, reemplazalo en el `.env` y volvé a cargar las credenciales desde la aplicación.
+
+**3. Levantá el sistema:**
 
 ```bash
 docker compose up --build -d --wait
 ```
+
+En modo real, si todavía no hay credenciales ni en la base ni en el `.env`, el worker se detiene y avisa qué falta. Seguí con los pasos siguientes y volvé a levantarlo al final.
 
 Buscá el número de equipo de tu estación. Si todavía no aparece, esperá un minuto y repetí:
 
@@ -116,6 +128,22 @@ Creá tu cuenta desde **Crear una cuenta**, en <http://localhost:8080>, y confir
 ```bash
 docker compose exec api python -m app.administracion crear-usuario --email tu@correo.com --nombre "Tu nombre"
 ```
+
+**4. Hacete administrador** con el correo de una cuenta ya confirmada:
+
+```bash
+docker compose exec api python -m app.administracion hacer-administrador --email tu@correo.com
+```
+
+Al volver a ingresar aparece **Administración** en el encabezado. Ahí cargás la dirección, el usuario y la contraseña de SAT2, y confirmás con tu contraseña de Weather Track. La pantalla nunca vuelve a mostrar esos datos: indica quién los cargó y cuándo, y el resultado del último ciclo de ingesta. Cada cambio se avisa por correo a los administradores. Para quitar el rol, `quitar-administrador --email`.
+
+Si el worker se había detenido por falta de credenciales, levantalo de nuevo:
+
+```bash
+docker compose up -d --wait
+```
+
+A partir de ahí, cada cambio que guardes en **Administración** se usa desde el ciclo siguiente, sin reiniciar. Cuando la pantalla muestre que el último ciclo terminó bien, podés borrar del `.env` `nombreDeUsuario`, `clave` y `SAT2_URL_BASE`.
 
 El sistema consulta SAT2 cada 10 minutos. La carga de los últimos 31 días tarda unos 40 minutos y avanza en segundo plano, con pausas para no sobrecargar a SAT2.
 
@@ -170,6 +198,8 @@ Después podés borrar la carpeta `weather-track`.
 | "Datos insuficientes" al usar datos reales | Es esperable hasta el primer ciclo. Si sigue, mirá `docker compose logs worker --tail 30`: los registros nunca muestran la clave |
 | El comando de las semillas termina con un error justo después de levantar | El sistema todavía estaba creando las estaciones. Repetilo: no duplica nada |
 | Un servicio no arranca | Revisá `docker compose ps` y `docker compose logs --tail 50` |
+| **Administración** dice que falta configurar el servidor | Falta `SAT2_CLAVE_PUBLICA` en el `.env`. Generá las claves (sección 4, paso 1) y reiniciá la pila |
+| El último ciclo terminó con error y el registro del worker menciona `SAT2_CLAVE_PRIVADA` | La clave privada falta o no corresponde a la pública con que se guardó la configuración. Si se perdió, generá un par nuevo, reiniciá la pila y volvé a cargar las credenciales en **Administración** |
 | El worker o la API dicen que la base tiene datos de otra naturaleza | Cambiaste `SAT2_MODO` sobre una base llenada con otro modo. Volvé al modo anterior, o usá una base nueva: otro proyecto con `docker compose -p <nombre>` o la [copia de prueba](#probar-con-los-datos-reales-sin-tocar-la-instalación) |
 
 ## Probado en

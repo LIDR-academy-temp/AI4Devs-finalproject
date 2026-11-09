@@ -18,8 +18,8 @@ Fuentes de verdad, en este orden: las specs de `openspec/`, `readme.md`, los ADR
 Monolito modular con un worker de una sola instancia ([ADR-0001](docs/decisions/0001-arquitectura-destino-weather-track.md)).
 
 - `backend/app/dominio`: motor del índice TIS, reglas R1 a R4, normalización y vigencia. **No depende de ninguna otra capa**: ni de `api`, ni de `ingesta`, ni de `datos`. Lo verifica `tests/test_arquitectura.py`.
-- `backend/app/ingesta`: cliente de SAT2, modos simulados, ciclo de 10 minutos, carga inicial y worker. Es la única capa que habla con SAT2.
-- `backend/app/api`: rutas HTTP, sesión y autorización. Solo lee lo que el worker ya validó y guardó.
+- `backend/app/ingesta`: cliente de SAT2, modos simulados, ciclo de 10 minutos, carga inicial y worker. Es la única capa que habla con SAT2 y la única que descifra su configuración (`origen_sat2.py`).
+- `backend/app/api`: rutas HTTP, sesión y autorización. Solo lee lo que el worker ya validó y guardó. La única excepción es la administración de SAT2, que guarda la configuración cifrada con la clave pública y no puede descifrarla ([ADR-0004](docs/decisions/0004-credenciales-de-sat2.md)).
 - `backend/app/datos`: modelos y conexión.
 - `frontend/src`: `pantallas`, `componentes`, `servicios` (cliente de la API con tipos generados) y `pruebas`.
 
@@ -87,6 +87,8 @@ GitHub Copilot revisa cada pull request a `main` con `.github/copilot-instructio
 - **Nunca poner en el repositorio** la URL de SAT2, credenciales, tokens ni copias de su documentación privada. El repositorio es público.
 - `privado/` está en `.gitignore` y nunca se versiona ni se copia a documentos públicos.
 - **El asistente no se autentica en SAT2 ni ejecuta el modo real.** Los comandos con datos reales los ejecuta el responsable; el asistente solo lee resultados locales sin secretos.
+- **El asistente no carga credenciales reales en «Administración», no genera las claves del `.env` real ni lee `SAT2_CLAVE_PRIVADA`.** En las pruebas usa valores ficticios y claves descartables.
+- **Las rutas de administración responden 404 a quien no tiene el rol**, igual que una ruta inexistente, y nunca devuelven ni registran la URL, el usuario o la contraseña de SAT2.
 - **Toda verificación con Docker usa un proyecto aislado:** `docker compose -p <nombre>` en modo simulado. El archivo de Compose fija `name: weather-track`, así que sin `-p` los comandos actúan sobre la instalación real.
 - **Nunca ejecutar `docker compose down -v` sobre el proyecto por defecto:** borra el volumen con los datos reales.
 - No repetir en el chat claves de demostración ni de pruebas.
