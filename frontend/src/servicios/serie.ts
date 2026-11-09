@@ -90,6 +90,12 @@ export function formatearFecha(fecha: string): string {
   return `${dia}/${mes}/${anio}`
 }
 
+/** Un instante de la API, en cualquier zona, como `DD/MM/AAAA HH:MM` de Argentina. */
+export function formatearMomentoDeArgentina(iso: string): string {
+  const momento = new Date(iso)
+  return `${formatearFecha(fechaDeArgentina(momento))} ${formatearHoraDeArgentina(momento)}`
+}
+
 function diasEntre(desde: string, hasta: string): number {
   return (Date.parse(`${hasta}T00:00:00Z`) - Date.parse(`${desde}T00:00:00Z`)) / 86_400_000
 }

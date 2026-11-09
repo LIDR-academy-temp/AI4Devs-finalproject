@@ -25,8 +25,8 @@ Las decisiones están en `design.md` (D1 a D8). Las pruebas usan valores fictici
 
 ## 5. Frontend (D2, D5)
 
-- [ ] 5.1 Mostrar «Administración» en el encabezado solo con el rol, y mostrar «Esta página no existe.» en `/administracion` sin él
-- [ ] 5.2 Pantalla de administración: estado de la configuración, origen, último ciclo, registro de cambios y formulario con la contraseña del administrador, la advertencia de `http://` y los errores por campo; con pruebas en Vitest
+- [x] 5.1 Mostrar «Administración» en el encabezado solo con el rol, y mostrar «Esta página no existe.» en `/administracion` sin él
+- [x] 5.2 Pantalla de administración: estado de la configuración, origen, último ciclo, registro de cambios y formulario con la contraseña del administrador, la advertencia de `http://` y los errores por campo; con pruebas en Vitest
 
 ## 6. Extremo a extremo y seguridad
 

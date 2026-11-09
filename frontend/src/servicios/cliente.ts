@@ -12,6 +12,8 @@ export type SolicitudRegistro = components['schemas']['SolicitudRegistro']
 export type Cuenta = components['schemas']['Cuenta']
 export type DatosPersonales = components['schemas']['DatosPersonales']
 export type Aviso = components['schemas']['Aviso']
+export type EstadoConfiguracionSat2 = components['schemas']['EstadoConfiguracionSat2']
+export type SolicitudConfiguracionSat2 = components['schemas']['SolicitudConfiguracionSat2']
 
 const BASE = '/api/v1'
 const NO_AUTENTICADO = 401
@@ -160,8 +162,8 @@ export function darDeBajaConEnlace(codigo: string): Promise<Aviso> {
   return pedir('/cuenta/baja-con-enlace', { metodo: 'POST', cuerpo: { codigo }, ...PUBLICA })
 }
 
-export function obtenerCuenta(): Promise<Cuenta> {
-  return pedir('/cuenta')
+export function obtenerCuenta(sinAvisoDeVencimiento = false): Promise<Cuenta> {
+  return pedir('/cuenta', { sinAvisoDeVencimiento })
 }
 
 export function actualizarCuenta(datos: DatosPersonales): Promise<Cuenta> {
@@ -174,6 +176,16 @@ export function cambiarContrasena(actual: string, nueva: string): Promise<void> 
 
 export function darDeBaja(contrasena: string): Promise<void> {
   return pedir('/cuenta/baja', { metodo: 'POST', cuerpo: { contrasena } })
+}
+
+// Administración: para cualquier cuenta sin el rol, estas rutas no existen (404).
+
+export function obtenerConfiguracionSat2(): Promise<EstadoConfiguracionSat2> {
+  return pedir('/administracion/sat2')
+}
+
+export function guardarConfiguracionSat2(datos: SolicitudConfiguracionSat2): Promise<EstadoConfiguracionSat2> {
+  return pedir('/administracion/sat2', { metodo: 'PUT', cuerpo: datos })
 }
 
 /** Los mensajes por campo de un error de la API, o ninguno. */

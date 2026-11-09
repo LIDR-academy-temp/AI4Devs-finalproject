@@ -5,6 +5,7 @@ import {
   cerrarSesion,
   iniciarSesion,
   listarEstaciones,
+  obtenerCuenta,
   registrarAlVencerSesion,
 } from './cliente'
 
@@ -15,6 +16,11 @@ const AVISO_VENCIDA = 'Su sesión venció. Vuelva a ingresar.'
 interface Sesion {
   estado: EstadoSesion
   aviso: string | null
+  /**
+   * Solo decide si se muestra la opción de administración; la API lo comprueba en cada pedido.
+   * Nulo mientras no se sabe.
+   */
+  esAdministrador: boolean | null
   ingresar: (email: string, contrasena: string) => Promise<void>
   salir: () => Promise<void>
   /** La sesión ya terminó en el servidor, por ejemplo tras una baja: solo se informa. */
@@ -26,6 +32,7 @@ const ContextoSesion = createContext<Sesion | null>(null)
 export function ProveedorDeSesion({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<EstadoSesion>('verificando')
   const [aviso, setAviso] = useState<string | null>(null)
+  const [esAdministrador, setEsAdministrador] = useState<boolean | null>(null)
 
   useEffect(() => {
     registrarAlVencerSesion(() => {
@@ -34,7 +41,12 @@ export function ProveedorDeSesion({ children }: { children: ReactNode }) {
     })
     // La cookie es HttpOnly: la única forma de saber si hay sesión es pedirle algo a la API.
     listarEstaciones(true)
-      .then(() => setEstado('activa'))
+      .then(() => {
+        setEstado('activa')
+        obtenerCuenta(true)
+          .then((cuenta) => setEsAdministrador(cuenta.es_administrador))
+          .catch(() => setEsAdministrador(false))
+      })
       .catch((error: unknown) => {
         setEstado('sin_sesion')
         if (!(error instanceof ErrorDeApi && error.estado === 401)) {
@@ -44,7 +56,8 @@ export function ProveedorDeSesion({ children }: { children: ReactNode }) {
   }, [])
 
   const ingresar = useCallback(async (email: string, contrasena: string) => {
-    await iniciarSesion(email, contrasena)
+    const usuario = await iniciarSesion(email, contrasena)
+    setEsAdministrador(usuario.es_administrador)
     setAviso(null)
     setEstado('activa')
   }, [])
@@ -54,18 +67,20 @@ export function ProveedorDeSesion({ children }: { children: ReactNode }) {
       await cerrarSesion()
     } finally {
       setAviso(null)
+      setEsAdministrador(null)
       setEstado('sin_sesion')
     }
   }, [])
 
   const terminar = useCallback((mensaje: string) => {
     setAviso(mensaje)
+    setEsAdministrador(null)
     setEstado('sin_sesion')
   }, [])
 
   const valor = useMemo(
-    () => ({ estado, aviso, ingresar, salir, terminar }),
-    [estado, aviso, ingresar, salir, terminar],
+    () => ({ estado, aviso, esAdministrador, ingresar, salir, terminar }),
+    [estado, aviso, esAdministrador, ingresar, salir, terminar],
   )
   return <ContextoSesion value={valor}>{children}</ContextoSesion>
 }

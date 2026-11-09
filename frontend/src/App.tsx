@@ -2,6 +2,7 @@ import { Link, Navigate, Outlet, Route, Routes } from 'react-router'
 import { AvisoDeModo } from './componentes/AvisoDeModo'
 import { SelectorEstacion } from './componentes/SelectorEstacion'
 import { Acceso } from './pantallas/Acceso'
+import { Administracion } from './pantallas/Administracion'
 import { Baja } from './pantallas/Baja'
 import { Confirmar } from './pantallas/Confirmar'
 import { Decision } from './pantallas/Decision'
@@ -17,8 +18,19 @@ import { Terminos } from './pantallas/Terminos'
 import { ProveedorDeEstaciones } from './servicios/estaciones'
 import { useSesion } from './servicios/sesion'
 
+const PAGINA_INEXISTENTE = <p role="status">Esta página no existe.</p>
+
+/** Para cualquier cuenta sin el rol, la pantalla no existe, igual que en la API. */
+function SoloAdministrador() {
+  const { esAdministrador } = useSesion()
+  if (esAdministrador === null) {
+    return <p role="status">Verificando la sesión…</p>
+  }
+  return esAdministrador ? <Administracion /> : PAGINA_INEXISTENTE
+}
+
 function Protegida() {
-  const { estado, salir } = useSesion()
+  const { estado, salir, esAdministrador } = useSesion()
 
   if (estado === 'verificando') {
     return <p role="status">Verificando la sesión…</p>
@@ -33,6 +45,11 @@ function Protegida() {
           Weather Track
         </Link>
         <SelectorEstacion />
+        {esAdministrador && (
+          <Link to="/administracion" className="enlace-cuenta">
+            Administración
+          </Link>
+        )}
         <Link to="/cuenta" className="enlace-cuenta">
           Mi cuenta
         </Link>
@@ -64,9 +81,10 @@ function App() {
         <Route element={<Protegida />}>
           <Route path="/" element={<Estaciones />} />
           <Route path="/cuenta" element={<MiCuenta />} />
+          <Route path="/administracion" element={<SoloAdministrador />} />
           <Route path="/estaciones/:estacionId" element={<Decision />} />
           <Route path="/estaciones/:estacionId/sensores/:sensorId" element={<DetalleSensor />} />
-          <Route path="*" element={<p role="status">Esta página no existe.</p>} />
+          <Route path="*" element={PAGINA_INEXISTENTE} />
         </Route>
       </Routes>
     </>
