@@ -57,7 +57,7 @@
 ## 4. Cierre
 
 - [x] 4.1 `pnpm lint`, `pnpm typecheck` y `pnpm --filter @recon/e2e test` en verde. `openspec validate demo-video` pasa sin avisos.
-- [ ] 4.2 `/opsx:verify demo-video` y PR hacia `feature/entrega-3-MVP` con la plantilla, citando #96. Verificación: CI en verde, incluido el job `e2e` con la suite sin cambios.
+- [x] 4.2 `/opsx:verify demo-video` y PR hacia `feature/entrega-3-MVP` con la plantilla, citando #96. Verificación: CI en verde, incluido el job `e2e` con la suite sin cambios.
 
 ## Workflow follow-up
 
