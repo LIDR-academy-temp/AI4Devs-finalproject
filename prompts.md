@@ -317,7 +317,7 @@
 
 ### 7. Pull Requests
 
-Las pull requests de código van de una rama por feature (`feat/<módulo>-<tema>`) hacia la rama de entrega `feature/entrega-2-MVP`, con la plantilla del repositorio y CI en verde. Cada diff generado con IA se revisa según los cinco focos del módulo de backend (correctitud, seguridad, rendimiento, legibilidad y tests), concretados para este proyecto en la skill `review-diff`: fidelidad al README y al vocabulario fijo, dinero y fechas, pruebas reales, seguridad y datos sintéticos, y arquitectura hexagonal.
+Las pull requests de código van de una rama por feature (`feat/<módulo>-<tema>`) hacia la rama de entrega (`feature/entrega-2-MVP` en la Entrega 2 y `feature/entrega-3-MVP` en la Entrega 3), con la plantilla del repositorio y CI en verde. Las entradas 1 a 16 son de la Entrega 2 y las siguientes, de la Entrega 3; el change de despliegue de la Entrega 3 (`deploy-compose`) está en el §2.4, Prompt 2. Cada diff generado con IA se revisa según los cinco focos del módulo de backend (correctitud, seguridad, rendimiento, legibilidad y tests), concretados para este proyecto en la skill `review-diff`: fidelidad al README y al vocabulario fijo, dinero y fechas, pruebas reales, seguridad y datos sintéticos, y arquitectura hexagonal.
 
 **Prompt 1:**
 
@@ -713,3 +713,641 @@ Durante el apply aparecieron cuatro cosas:
 - **Gateway sintético.** El seed no tiene dos gateways del mismo formato, así que la candidata de otro merchant usa uno sintético.
 
 *Ajuste humano.* La persona aprobó los artefactos tal cual. Decidió versionar solo las capturas de 1280 px: el desborde de 1024 px queda en el log hasta #132, y el script sigue fallando por todo lo demás. Marcó tres fallos del agente: un `cd`, un script de Python en línea y varios `sed` para editar archivos; la regla es Edit y `pnpm --filter`. La base la dio por turnos (`pnpm dev` levantado para las capturas) y el agente le avisó al terminar con ella para volver a sembrar. El review-diff queda para una sesión nueva.
+
+**Prompt 19:**
+
+*Contexto.* `settlement-lifecycle` (PR #99, issues #78 y #79) cierra los dos recortes de la Entrega 2: marcar un intento como pagado, retirar el pago, deshacerlo y reprocesarlo con el mismo número (HU3 criterios 7 y 8, HU2 criterio 9). Completa además la parte `settlement` de #21. Añade:
+- `POST /settlements/{id}/pay`, `/unpay` y `/undo`, con cuatro `409` nuevos y auditoría en la misma transacción;
+- las acciones **Mark as paid**, **Unpay…** y **Undo batch…** en la cabecera del intento, según permiso y estado;
+- el historial de intentos del import en el Settlement Summary.
+
+Sin migraciones: el esquema ya admitía los intentos `paid` y `undone`.
+
+*Prompt.* Proponer el change juntando los dos issues, porque operan sobre el mismo recurso y sus reglas se cruzan, y apoyarse en las guardas de concurrencia, el reintento ante 1205 y `settlement_busy` de `settlement-process`. Cada decisión del design, con su alternativa descartada. Después, aplicar grupo a grupo con test primero y una rotura a propósito por grupo. Más restricciones:
+- Sin migraciones: si un grupo parece necesitar una, parar y preguntar.
+- Las transiciones, como función pura con TDD.
+- El mismo orden de bloqueos que procesar.
+- La concurrencia, con compuertas; nunca `Promise.all` solo.
+- `undo` después de `pay`, porque una de sus reglas es rechazar un `paid`.
+- Integración, Bruno y capturas, con turno de base de la persona.
+
+*Resultado.* **El design.** `transitionOf` resume las nueve combinaciones de acción y estado, pero la que cuenta es la guarda del repositorio (`WHERE status = @from`): con 0 filas relee el estado y elige el error. `undo` bloquea `Import` antes que `SettlementBatch`, como procesar, y reabre los faltantes antes de superar la corrida vigente. Al explorar salieron tres cosas:
+- `reopenForBatch` existía, nadie lo llamaba y no filtraba por corrida vigente, en contra de la spec `validation`. Se corrigió y ahora devuelve los ids.
+- `settledStatusOf` estaba duplicado en el dominio y en el lector; queda una sola copia.
+- El reintento ante 1205 pasó a `deadlock-retry.ts` para compartirlo con procesar.
+
+**Durante el apply.** Dos tests chocaron con la base real: el seed solo escribe batches `paid`, y procesar se bloquea antes de la fase del número mientras `undo` tiene sus bloqueos. La spec decía que esperaba en el bloqueo del número; el resultado es el previsto y el test no exige dónde espera. La colección ganó un tercer usuario, `payments`, porque `analyst` no tiene `payment.process`. `pnpm test` fue intermitente en local con la raíz en paralelo y `pnpm dev` levantado (`app.test.ts` y `export-openapi.test.ts`).
+
+**El verify.** Pidió la fecha en el historial de intentos. Encontró que el error de una acción pasaba de un intento a otro y que Escape cerraba el diálogo con una petición en curso. Añadió a la colección el `409` de un segundo pago y tests de que retirar el pago no reabre faltantes. La spec y el design decían que los exports no cambian, pero el `summary` muestra el estado actual en sus líneas `Status` y `Payment`: se corrigieron ellos y no el código.
+
+**El review-diff.** Un bloqueante de pruebas (B1): los tests de un `undo` que falla no probaban el rollback. Ahora parten de un faltante resuelto y fallan después de las demás escrituras; sacar la reapertura o la corrida de la transacción los hace caer. Además, una carrera de ida y vuelta entre la guarda y la relectura responde `409 settlement_busy` en lugar de `404` o `settlement_not_current`. Quedan anotadas en el PR:
+- una laguna: el test de "Otro import toma el número" mide la espera con una pausa de 1 s y no ejercita `lockNumber`;
+- `review-events` se importa desde `settlement` sin puerto;
+- `settlement.export` no registra el estado entregado en el `summary`, con un issue aún sin crear.
+
+Bruno, 177/177 peticiones y 187/187 tests.
+
+*Ajuste humano.* En el gate, la persona decidió:
+- **`pay` sin motivo:** la auditoría lleva `reason: null`; un clic erróneo se revierte con **Unpay…**.
+- **`undo` supera la corrida vigente** sin crear otra: el analista decide cuándo validar de nuevo.
+- **Visibilidad:** quien no tiene el permiso no ve la acción, aunque #78 pedía botones deshabilitados con el motivo. La excepción es **Undo batch…** en un `paid` para `analyst`: sale deshabilitado con `Remove the payment first.`
+- **Errores:** cuatro códigos nuevos, `settlement_not_processed`, `settlement_not_paid`, `settlement_payment_not_removed` y `settlement_not_current`.
+
+Copió `SEED_PAYMENTS_USER` a su `api-collection/.env`, que el agente no lee. Dio los turnos de base, sembró, ejecutó la integración, Bruno y las capturas, y probó a mano como `payments` y `analyst`: pagar, retirar, deshacer y reprocesar.
+
+**Prompt 20:**
+
+*Contexto.* `admin-fees` (PR #112, issue #80, parte 1 de 3) lleva al API la administración de fees, que hasta entonces solo creaba el seed. Completa además la parte de `fees` de #21. Solo backend:
+- `POST /accounts/{id}/fees`, que el README ya daba por hecho;
+- `PATCH /fees/{id}`, con corrección en el sitio, cierre y cambio desde una fecha (`effectiveFrom`);
+- la vista global `GET /fees`, paginada en servidor;
+- el historial `GET /fees/{id}/history`.
+
+`AccountFee` se amplía de forma aditiva con `status`, `inUse` y `lastAppliedEventDate`. Sin migraciones: el trigger `TR_Fee_NoOverlap` y las columnas de `FeeHistory` ya existían. Las pantallas van en `web-admin-fees`.
+
+*Prompt.* Proponer el change como primera parte de #80 y dejar las pantallas a otro change que parte de este contrato. El primer grupo publica el contrato en `@recon/shared` y el OpenAPI, con las rutas declaradas y respondiendo `501`; después, push, aviso a la persona y espera a su confirmación. Más restricciones:
+- Sin migraciones: si el esquema hace falta, parar y preguntar.
+- Vigencia, solape y edición, como funciones puras con test primero y rotura a propósito.
+- Concurrencia con compuertas.
+- Colección Bruno repetible sin sembrar, con fechas futuras derivadas de cada pasada.
+
+*Resultado.* **El design.** El `PATCH` tiene dos formas, según venga o no `effectiveFrom`. Un fee en uso solo admite `description` y `endDate`, y ni el cierre ni el cambio pueden dejar fuera un evento ya aplicado (`409 fee_in_use` con `lastAppliedEventDate`). Cuentan como uso todos los intentos, también los `undone`. Las escrituras bloquean la fila de `Account` con `UPDLOCK, HOLDLOCK`, y el trigger queda como respaldo traducido a `fee_overlap`. El reintento ante interbloqueo pasó a la infraestructura compartida sin cambiar `settlement`.
+
+**El seed sin fees en uso.** Con la base recién sembrada fallaron 8 tests de fees que daban por hecho fees en uso. El seed procesa sus batches sin desglose, así que ningún fee lo está. Los tests crean ahora su uso con un fixture (`applyFeeUsage`) y el negativo de `fee_in_use` de Bruno pasó al final de `batch-clean`. Como ese flujo solo procesa con la base recién sembrada (#111), `10-smoke/Fees` guarda un fee en uso de una pasada anterior como respaldo.
+
+**El índice que falta.** El cálculo de uso recorre `SettlementTransactionFee`, que no tiene índice por `feeId`. Se midió con 800 filas de batches procesados a mano: p95 entre 62 y 85 ms por cuenta. El índice queda en #67, junto con la carrera aceptada entre una corrección en el sitio y un settlement que aplica el mismo fee.
+
+**El verify.** Faltaba probar el uso por un fee por batch: un `SettlementBatchFee` pone el fee en uso con la `settlementDate` de su batch, y un intento `undone` sigue contando. Quitar esa rama de `fee-usage.ts` hace fallar los dos tests nuevos. D5 y dos escenarios se alinearon con lo implementado.
+
+**El review-diff** (aprobado con cambios menores):
+- **M1.** El respaldo del trigger se reconoce por su número, 50001, en la causa del adaptador, y no por el texto.
+- **M2.** El respaldo de Bruno va en su propia variable (`earlierInUseFeeId`), y el test dice de dónde sale el fee.
+- **Menores.** El sucesor exige un tipo activo. `previousDay` leía el año 0050 como 1950. `today()` se calcula una vez por petición. `q` se busca como texto literal: Prisma no escapa `%`, `_` ni `[` en SQL Server.
+
+Bruno, 196/196 peticiones con la base recién sembrada; en la segunda pasada, todo lo de fees en verde y 27 fallos ajenos de #111.
+
+*Ajuste humano.* En el gate, la persona decidió:
+- Simulate pasa al roadmap.
+- La retirada de un fee programado y sin uso va a #109, para no tocar la `CHECK` ni el trigger antes de la entrega.
+- Los intentos `undone` cuentan como uso.
+- Un `PATCH` sin cambios responde `200` sin historial ni auditoría.
+- Las variantes condicionales y por marca se guardan, pero el motor no las aplica (limitación conocida).
+- La copia de fees al crear una cuenta va en `admin-accounts`.
+
+Confirmó el contrato publicado antes de seguir. Acotó la tarea de Bruno: se cerró con todo lo de fees en verde en dos pasadas seguidas, y los fallos de `batch-clean` quedaron en #111. El review-diff se hizo en una sesión nueva.
+
+**Prompt 21:**
+
+*Contexto.* `web-admin-fees` (PR #113, issue #80, parte 1 de 3): las pantallas de `admin-fees`. Solo frontend:
+- la vista global `/fees`, de solo lectura y con estado `active` por defecto;
+- la página `/accounts/$accountId/fees`, con alta, edición según uso, cambio desde una fecha, cierre e historial;
+- la entrada Fees del menú, que deja de estar en "Soon".
+
+Además, en un intento `processed`, quien no tiene `payment.process` ve en el Settlement Summary que el intento espera a alguien con ese permiso. Se construyó contra el contrato publicado por #112 y con MSW, en una rama apilada que se rebasó con `git rebase --onto` cuando #112 se fusionó.
+
+*Prompt.* Proponer el change a partir del design D2 y la delta spec de `admin-fees`, sin tocar el API, la base ni la colección Bruno. Si una tarea pide cambiar un esquema de `@recon/shared`, parar y avisar; ningún esquema se duplica en el front. Después, aplicar grupo a grupo con test primero. Más restricciones:
+- Dinero y porcentajes como texto de punta a punta, sin `parseFloat` ni `Number`.
+- La pantalla no calcula reglas: estado, uso, fecha mínima de cierre, solapes y orden vienen del API.
+- Las capturas, contra el backend real, en el último grupo, con la base sembrada por la persona.
+
+*Resultado.* **El design.** Un solo formulario con tres modos (alta, corrección y cambio desde una fecha) que envía solo lo que cambia. Compara los importes como texto normalizado, así que `"15"` y `"15.0000"` son el mismo. El porcentaje pasa a fracción desplazando la coma sobre el texto. "Hoy" en Nueva York solo da el valor por defecto de **Close…**; el mínimo lo pone `lastAppliedEventDate`. El MSW de fees valida consultas y cuerpos con los esquemas de `@recon/shared` y no decide solapes ni uso: cada test guiona esas respuestas. `GET /accounts/{id}/fees` y `GET /fee-types` se movieron a ese fake sin cambiar lo que ve Settlement Review.
+
+**Las capturas.** A 1024 px las dos tablas se salían de su tarjeta, porque las celdas de shadcn no parten el texto. En la tabla de la cuenta se parten el tipo y las acciones. En la vista global, el merchant y el proveedor pasan bajo la cuenta, en la misma celda. El seed no deja ningún fee en uso, así que el script procesa `batch-clean` antes de capturar.
+
+**La revisión.** El `review-diff` del grupo 9 no cuenta, porque lo hizo el mismo agente sobre su propio trabajo. La revisión en una sesión nueva aprobó con cambios menores, resueltos en el grupo 11, cada uno con su test:
+- A 1024 px, la insignia de estado del Summary quedaba bajo **Processed by**. Ahora se parte, y **Processed by**, **Paid by** y **Undone by** solo se parten entre usuario, fecha y hora.
+- El porcentaje se compara con 100 como texto, sin `Number`.
+- Tras escribir, el foco va al **History** del fee escrito. La validación local lleva el foco al primer campo con error.
+- La búsqueda de `/fees` sigue a `q` de la dirección al ir atrás o adelante.
+- El fake respeta `asOf` en los fees de la cuenta.
+
+Una nota de #94 recoge que los scripts de capturas no detectan elementos solapados dentro de una rejilla. Frontend, 790 tests.
+
+*Ajuste humano.* El aviso de espera del pago lo decidió la persona antes del change. Al ver las capturas, decidió con el agente poner el merchant y el proveedor bajo la cuenta, porque con diez columnas la tabla no cabía a 1024 px. Sembró la base dentro de la sesión para las capturas. Tras la revisión solo se regeneró `summary-waiting-analyst`, sobre una base recién sembrada. La revisión se hizo en una sesión nueva, sobre el diff ya rebasado.
+
+**Prompt 22:**
+
+*Contexto.* `admin-accounts` (PR #117, issue #80, parte 2 de 3): administración de cuentas en el backend. Completa además la parte de `accounts` de #21. Añade:
+- `POST /providers/{id}/accounts`, que puede copiar los fees activos de otra cuenta del mismo proveedor;
+- `PATCH /accounts/{id}`, para editar, cerrar y reabrir;
+- `409 account_inactive` al subir un import a una cuenta cerrada;
+- la lectura `GET /providers/{id}/matching-rule-sets`, que amplía después `admin-matching`;
+- campos nuevos y aditivos en las lecturas de cuentas y canales.
+
+Los canales siguen siendo de solo lectura. Sin migraciones: el `UNIQUE` del nombre, las `CHECK` y `FeeHistory.action = copied` ya existían. Las pantallas van en `web-admin-accounts`.
+
+*Prompt.* Proponer el change siguiendo el patrón de escritura de `admin-fees`: bloqueo por cuenta, reintento ante interbloqueo, historial y auditoría en la misma transacción. Como allí, el primer grupo publica el contrato con las rutas en `501` y espera la confirmación de la persona antes de seguir. Más restricciones:
+- Reglas de cuenta y plan de copia, como funciones puras con test primero y rotura a propósito.
+- Concurrencia con compuertas.
+- Bruno repetible sin sembrar, y los tests con listas exactas de cuentas, robustos ante las que deja la colección (lección de #111).
+- Integración y Bruno, con turno de base de la persona.
+
+*Resultado.* **El design.** Las escrituras viven en un módulo `accounts` nuevo; las lecturas siguen en `catalog`. La copia bloquea la cuenta origen antes de leer sus fees, así que un cambio de fee en curso termina antes o empieza después. Solo copia los fees `active` del día de Nueva York, con vigencia `NULL…NULL` y una fila `copied` cada uno. El nombre es único en todo el sistema y sin distinguir mayúsculas. Tiene dos barreras: una comprobación previa y, detrás, el índice, reconocido por su número de error. El wireframe decía "unique per provider", y la pantalla tendrá que decir "unique" a secas. La cuenta cerrada se comprueba en la subida sin bloqueo; un import creado milisegundos antes del cierre sigue su curso.
+
+**Durante el apply.** Los tests de integración de crear y editar no se vieron en rojo antes de implementar, porque no había turno de base. Se compensó en el grupo 4: sin la escritura de la fila `copied`, el fichero falla. Las otras roturas también se vieron caer: sin la comprobación previa ni el respaldo del índice, y sin el bloqueo de la cuenta origen. La colección crea cuentas `bruno-<id>` en Provider C y las deja cerradas, y `seedAccounts()` las ignora en los tests. La integración completa dio 416/416 con la base recién sembrada. Tras dos pasadas de Bruno fallaban 59 tests de settlement y validación, todos de #111. El verify no encontró críticos; su aviso 2 llevó "Canales de solo lectura" a aceptar RAM-07 sin cuenta o con ProviderA-USD.
+
+**El review-diff.** Tres medios y siete menores. M2 y dos menores estaban en rojo antes del arreglo; el resto refuerza tests que ya pasaban.
+- **M1.** `catalog.int.test.ts` compara cada `assignedInBatchNo` con el batch leído de la base.
+- **M2.** Un `matchingRuleSetId` por encima de `INT` respondía `500`; ahora es `400`.
+- **M3.** El test de copia y cambio simultáneos sacaba conclusiones del orden final. Tras una re-revisión comprueba que el cambio no termina mientras la copia está retenida y que el importe copiado es siempre el de antes. Sin `lockSourceAccount`, falla.
+- **Menores.** Los ids del detalle de `account.create` van en minúsculas, el tope `"-0"` se guarda como `0.0000`, y una escritura fallida no deja nada.
+
+*Ajuste humano.* La persona confirmó el contrato publicado antes de seguir y dio los turnos de base para la integración. Ejecutó `pnpm test:api` dos veces seguidas sin sembrar: todo lo de cuentas pasó las dos veces. Aprobó como criterio que los timeouts de 5 s por carga local (arranque de la app, `export-openapi` y Argon2), que pasan aislados, no bloquean el cierre: el CI decide.
+
+**Prompt 23:**
+
+*Contexto.* `admin-matching` (PR #121, issue #80, parte 3 de 3): administración de las reglas de pareo en el backend. Completa además la parte de `matching` de #21. Añade:
+- crear, ver y editar conjuntos de reglas por proveedor;
+- leer y editar las reglas globales y los alias de estado;
+- `409 rule_set_name_taken` (nombre único por proveedor) y `409 rule_set_in_use` (desactivar un conjunto con cuentas enlazadas).
+
+Las filas a ignorar quedan de solo lectura hasta #120. Sin migraciones: ninguna tabla referencia el id de una regla, así que reemplazarlas no rompe nada. La pantalla va en `web-admin-matching`.
+
+*Prompt.* Proponer el change con el patrón de escritura de `admin-accounts` y sin tocar `rulesFor()` ni `propose-mapping.ts`: el efecto de un cambio de reglas solo se fija con tests. Como en los dos changes anteriores, el primer grupo publica el contrato con las rutas en `501` y espera la confirmación de la persona. Más restricciones:
+- Validación y comparación de reglas, como funciones puras con test primero y rotura a propósito.
+- Concurrencia con compuertas.
+- La colección, repetible sin sembrar y sin depender de `batch-clean` (#111).
+- Integración y Bruno, con turno de base de la persona.
+- Sin `cd` ni código en línea.
+
+*Resultado.* **El design.** Un `PUT` recibe el documento completo. Los esquemas son estrictos, así que un id de regla o `rowIgnoreRules` en el cuerpo dan `400` sin código propio. La coherencia de hoja, ciclo y estado va en el dominio, para responder con un `details.field` exacto (`sheetRules[2].statusId`). Gana la última escritura, con la fila del conjunto en `UPDLOCK`; las globales no tienen fila que bloquear y usan `sp_getapplock`. El control optimista necesitaría una migración y queda fuera.
+
+**Durante el apply.** Tres cambios fuera del plan:
+- Reenviar el detalle no es un cambio, aunque las reglas lleguen en otro orden de prioridades. Reordenar reglas de igual prioridad sí lo es, porque cambia el desempate.
+- Un `PUT` solo reemplaza las listas que cambian, así que renombrar conserva los ids.
+- La comprobación de clave duplicada pasa a `duplicate-key.ts`, compartida con `admin-accounts`.
+
+Las roturas se vieron caer:
+- sin `UPDLOCK` o sin `sp_getapplock`, el segundo `PUT` simultáneo confirma durante la espera del primero;
+- con la propuesta fijada en la subida, falla "Import subido sin confirmar".
+
+La primera vez, esa última rotura se revirtió sin ejecutarla, por un error del agente. Integración completa, 450/451: el test de 20 000 filas pasó de 20 s justo tras la siembra y, solo, tardó 14,1 s.
+
+**El verify.** El design no recogía la comparación estable ni el reemplazo por lista, y la ruta y el README describían mal el `PUT`. Faltaba el test de "Conjunto vacío". El escenario "Alias nuevo" se comprueba con `rulesFor()` y no con una propuesta real, y queda así.
+
+**El review-diff** (aprobado con cambios menores):
+- **M1.** El proposal, los comentarios del contrato y la fila global del README seguían sin decir que se reemplazan las listas que cambian.
+- **M2.** El negativo de `rowIgnoreRules` en Bruno parte ahora de lo que devuelve el `GET`.
+- **M3.** Faltaba un test de una regla global cambiada: ids nuevos, filas a ignorar intactas y restauración.
+- **Menores.** `@LockTimeout` de 10 s, menor que los 15 s de la transacción. Ids conservados al renombrar y nuevos al editar, también en Bruno.
+
+Bruno, 230/230 peticiones y 242/242 tests.
+
+*Ajuste humano.* La persona confirmó el contrato publicado y dio los turnos de base para la integración, la concurrencia y las dos pasadas de Bruno. El agente anotó en `tasks.md` y en el PR sus incidencias de proceso: dos `cd` y un `python -c` en línea contra las reglas de la sesión, y un commit cuyo mensaje no coincide con su contenido, que no se reescribió para no forzar el push.
+
+**Prompt 24:**
+
+*Contexto.* `web-admin-accounts` (PR #119, parte 2 de #80): las pantallas de cuentas y canales sobre el API de `admin-accounts`. Solo frontend, sin cambios de API ni migración. Añade:
+- **Account Detail** (`/accounts/$accountId`) con dos pestañas, Overview y Fees. La página de fees de la cuenta pasa a ser la pestaña Fees (`AccountFeesPanel`, extraído de `features/fees` sin duplicarlo).
+- Crear, editar, cerrar y reabrir cuentas con `account.manage` (solo `admin`).
+- **Channel Assignment** (`/channel-assignment`), de solo lectura y habilitado en el menú.
+- El motivo del `409 account_inactive` en New Reconciliation.
+
+Se construyó contra MSW mientras `admin-accounts` terminaba sus grupos 3 y 4; solo las capturas necesitaban el backend real.
+
+*Prompt.* Proponer el change tomando como contrato el proposal, el design (D2) y las delta specs de `admin-accounts`, y después aplicarlo grupo a grupo con test primero y una rotura a propósito por grupo. Más restricciones:
+- Solo frontend: si una tarea pide cambiar un esquema de `@recon/shared` o el API, se para y se avisa, porque eso es de `admin-accounts`. No se duplican esquemas en el front.
+- El fake de MSW valida con los esquemas de `@recon/shared` y no decide reglas de negocio: los `409` y los `400` de dominio los guiona cada test.
+- El dinero, como texto de punta a punta: el tope nunca pasa por `number`.
+- Los formularios no se cierran ante un error y conservan lo escrito.
+- Capturas a 1280 y 1024 px contra el backend real, con turno de base; las cuentas que crean llevan el prefijo `bruno-` y quedan cerradas.
+- Review-diff en una sesión nueva.
+
+*Resultado.* **El design.** La extracción de `AccountFeesPanel` se hizo primero y sola (grupo 2), protegida por la suite de fees, que solo cambió el título. El menú marca **Accounts** dentro de una cuenta, también en su pestaña Fees: revierte el `activeWhen` de `web-admin-fees` D2 y queda recogido en la delta de `web-shell`. El texto de ayuda dice `Name must be unique`, porque el README y el API hacen el nombre único en todo el sistema, no por proveedor como decía el wireframe. Channel Assignment hace una llamada por canal (`GET /channels/{id}/accounts`), como mucho 9, para "Since" y las cuentas históricas.
+
+**La rama.** Iba a avanzar por fast-forward sobre `admin-accounts`, pero ya tenía commits: se rebasó sobre esa rama y, cuando se fusionó (#117), con `git rebase --onto` sobre la rama de entrega.
+
+**Las capturas.** A 1024 px la tabla de Accounts se salía 9 px de su tarjeta y recortaba la columna Fees. Ahora la cabecera de la política y el nombre de la cuenta pueden partirse. El script mide también un nombre de 50 caracteres sin espacios, que con el frontend anterior daba 360 px de más.
+
+**El review-diff.** Veredicto "aprobar con cambios menores". Cada arreglo llevó su commit de test y después el del arreglo:
+- Las consultas por canal de Channel Assignment suben a la página, así que un fallo muestra `Could not load channels.` y **Retry** pide solo la que falló. Sin ellas entre las fallidas, el test cae.
+- Un `5xx` ya no se presenta como error de red: cada uno tiene su texto.
+- Sin merchant elegido, el foco va a Merchant y no al select de proveedor, que está deshabilitado.
+- El mensaje general recupera el foco aunque repita el texto (`Nothing to save.` dos veces seguidas).
+- El nombre de 50 caracteres se mide en cinco sitios más (título de la ficha, panel Edit, diálogo Close…, Channel Assignment), y los cinco lo parten.
+- Las pestañas dejan de ser `role="tab"`: un `tablist` promete navegación con flechas dentro de una página, y aquí cada pestaña es una ruta. Pasan a un `<nav>` con enlaces y `aria-current="page"`.
+
+La re-revisión pidió que los tests que escuchan `request:start` retiraran solo su listener y que la columna Role here también partiera el nombre. El verify solo dejó sugerencias de texto en el design y el proposal.
+
+*Ajuste humano.* La persona decidió con el agente mostrar "Since" y las cuentas históricas en Channel Assignment pese a las llamadas por canal: el volumen es pequeño y es lo que el administrador viene a comprobar. Hizo los force push de los rebase con `--force-with-lease`, que el agente le pasaba ya escrito. Sembró la base para las capturas y pidió el review-diff en una sesión aparte.
+
+**Prompt 25:**
+
+*Contexto.* `web-admin-matching` (PR #124, cierra #80): las pantallas de **Matching Rules** sobre el API de `admin-matching` (#121). Solo frontend, sin migración ni cambios de API. Añade la lista de conjuntos de un proveedor con **Global defaults**, el detalle de un conjunto con sus cuentas, crear (vacío o como copia), editar reglas en modo edición de página, renombrar, desactivar y activar, y las reglas globales con los alias de estado. La Overview de Account Detail enlaza a su conjunto o a las globales, y el menú habilita Matching Rules.
+
+*Prompt.* Proponer el change con el design y la delta `matching` de `admin-matching` como contrato, y aplicarlo grupo a grupo con test primero y una rotura a propósito por grupo. Más restricciones:
+- Solo frontend: si hace falta cambiar un esquema de `@recon/shared`, se para y se avisa a la otra sesión.
+- La rama integra `admin-matching` y la de entrega **por merge**, nunca con rebase ni force push. El PR se abre cuando `admin-matching` esté fusionado.
+- El navegador no decide reglas de dominio: solo aplica los esquemas `*Input` y adapta los campos al tipo de hoja. Regex, patrones repetidos, `Pending` y ciclo natural los decide el `400` del API.
+- Ningún cuerpo lleva ids de regla, `rowIgnoreRules` ni `statuses`.
+- Capturas contra el backend real con turno de base, y review-diff en una sesión nueva.
+
+*Resultado.* **El design.** Un solo editor de reglas para conjuntos y globales (`RulesEditor`, con `useFieldArray` por primera vez en el proyecto). El formulario siempre parte del último `GET`: un `PUT` puede dar ids nuevos, así que el frontend nunca guarda ids entre ediciones. Por eso se descartó editar regla a regla en un panel, como en el wireframe. El orden se cambia con **Move up** / **Move down** en lugar de arrastrar, y una nota fija explica que el orden solo desempata a igual prioridad. Account Detail no tiene pestaña de reglas: el conjunto es del proveedor y lo comparten varias cuentas, y editarlo ahí cambiaría las de las otras sin que se vea. La elección merchant → proveedor se extrajo de Accounts a `provider-choice.tsx`, protegida por `AccountsPage.test.tsx` sin cambios.
+
+**El fake.** Da ids nuevos a las dos listas en cada `PUT`, para no decidir qué lista cambió; durante el apply se corrigió el design, que decía que un `PUT` siempre los cambia. Las filas del formulario dejaron de llevar clave propia, porque `useFieldArray` ya genera la `key` de React.
+
+**Las capturas.** La tabla de edición de reglas de hoja medía 138 px más que su tarjeta a 1024 px. Se estrecharon las celdas y los controles de las filas editables, y el error de un campo se parte dentro de su columna.
+
+**El review-diff.** Arreglos con su test:
+- Sin catálogo de estados, junto a `Statuses are not available.` hay un **Retry** que habilita **Edit rules**.
+- El `Reason` del modo edición, con `maxLength` de 500, como Rename y Deactivate/Activate.
+- `rule_set_name_taken` en el modo edición, que no tiene campo de nombre, sale como mensaje general.
+- Las casillas pintan su error; un `400` en `cycle` o `statusId` que el tipo de hoja oculta va al mensaje general, con la misma regla de qué campos se ven que usa la tabla.
+- Un test se atribuía la garantía de "sin ids", que vive en `rule-form.test.ts`, y se renombró.
+- Un nombre de 80 caracteres se mide también en Rename, Deactivate y el enlace de la Overview.
+
+La re-revisión aprobó. La spec cambió el escenario de las migas a `analyst`, porque `viewer` no ve el conjunto del merchant 2.
+
+*Ajuste humano.* La persona sembró la base para las capturas y pidió el review-diff en una sesión nueva.
+
+**Prompt 26:**
+
+*Contexto.* `settlement-reserve-chargeback` (PR #127, issue #62): con `release_on_chargeback`, el primer ajuste de una transacción (`Chargeback`, también `CHB 2`, `Refund` o `RDR`) libera de inmediato toda la reserva retenida en su E vigente. Es el grupo de `settlement-process` que se recortó de la Entrega 2. Solo backend: dominio, lectura de la fuente, validación de faltantes R, tests, Bruno y documentación. Sin migración, sin seed y sin cambios de contrato: las columnas `reserveEarlyReleasedAmt` y `reservePolicySnapshot` ya existían.
+
+*Prompt.* Proponer el change con las decisiones abiertas para el gate y después aplicarlo grupo a grupo, con TDD en el dominio y el oráculo de `batch-issues`. Más restricciones:
+- Al regenerar las muestras solo puede cambiar `batch-issues/expected.json`; si cambia un `.xlsx` u otro oráculo, se para y se pregunta.
+- La integración y Bruno, con turno de base.
+- Commit y `git push` al cerrar cada grupo, vigilando el CI con `gh … --jq`.
+- No renombrar la política, el requisito ni la etiqueta del summary.
+
+*Resultado.* **El design.** Un paso puro nuevo, `adjustment-reserve.ts`, después de `buildMovements` y antes de los fees. Para cada I, el resultado sale en orden: `held_until_term`, `no_held_reserve`, `released_in_r`, `already_released` o `released`. La liberación se guarda en el I, nunca en el E original, que puede estar en un batch pagado. El estado previo de cada reserva se lee en una consulta por lotes (`reserveStates`) dentro de la transacción del proceso, y en validación `heldReserves` lee la liberación de los I vigentes en lugar del E, donde siempre valía 0.
+
+**Durante el apply:**
+- Al regenerar, los seis `.xlsx` cambiaron de bytes con el openpyxl local, pero tenían las mismas celdas, y se restauraron.
+- `prefilledBatchFees`, el ayudante de test que hace de analista, dejaba fallar la carga de `batch-issues` por un fee fuera del catálogo. Se arregló solo en el montaje del test; producción ya lo conserva como importe libre con advertencia.
+- Los casos de integración pasaron a la primera, porque la implementación era de grupos anteriores. El rojo se vio vaciando a propósito `reserveStates` en el loader: cayeron 4 casos, con 7.5100 en lugar de 151.8930.
+- El comando de las tareas para filtrar un archivo de integración corría la suite entera, y se cambió por `vitest run --project integration <archivo>`.
+
+**El review-diff.** Veredicto "aprobar con cambios menores". El hallazgo principal: dos imports del proveedor procesados a la vez podían liberar dos veces la misma reserva, con un ajuste en cada import o con una RR en uno y un ajuste en el otro, y ninguna validación lo dejaba visible. Se cerró sin migración: tras los bloqueos del número y de canales, el proceso vuelve a leer `reserveStates` y recalcula el plan. Hay dos tests de concurrencia con compuertas, y sin la segunda lectura el proceso que esperaba vuelve a liberar (18.2030 y 25.1150). Más arreglos:
+- La proposal y una spec decían que `batch-issues` trae RDR, y no trae. Se añadió un caso de integración con un RDR que libera.
+- El caso `hold_until_term` exige un E vigente con reserva.
+- La limpieza cuenta también `AuditLog` y `ValidationIssue`.
+- Cuatro títulos de test empezaban en español.
+
+El verify añadió un caso de la vista de un intento que guarda la advertencia antigua en su auditoría.
+
+**Las re-revisiones.** Dos, con cambios. Pidieron el test de RR + ajuste entre dos cuentas y que `released_in_r` se comprobara estricto. Entre dos cuentas el segundo proceso esperó en el bloqueo del número, pero esa espera es incidental y depende del plan de ejecución. Fuera de los tests protege el bloqueo de canales, y que retenga por sí solo no queda probado: aislarlo pide cambiar la consulta de `lockNumber` (`FORCESEEK`) y queda en #67. Bruno, 232/232 sobre una base recién sembrada.
+
+*Ajuste humano.* En el gate, la persona decidió:
+- **P1. Qué se libera:** todo el `reserveHeldAmt` del E vigente, sin prorratear por el importe del ajuste. Un refund parcial libera la reserva entera.
+- **P2. Política:** la de la cuenta que procesa el ajuste, aunque el E sea de otra cuenta del proveedor.
+- **P3. R y ajuste en el mismo batch:** gana la R.
+- **P4. Estados que liberan:** `Chargeback`, `Refund` y `RDR` por igual. La propuesta inicial liberaba solo en `Chargeback`.
+- **P5. Varios ajustes:** solo libera el primero; los demás quedan en 0 con `already_released`.
+- **P6.** La historia sembrada no se reescribe.
+- **P7.** La advertencia antigua se queda en el contrato para los intentos ya procesados.
+- **P8.** Se mantienen los nombres, y renombrar la etiqueta del summary queda en #125.
+
+En el grupo 1 decidió no tocar la muestra para añadir RDR, que se cubre con builders e integración, y aprobó el bloque nuevo del oráculo. Dio los turnos de base, sembró y ejecutó Bruno.
+
+**Prompt 27:**
+
+*Contexto.* `import-guardrails` (PR #135, issues #92, #63 y #40): tres correcciones de reglas en un solo change, sin migración ni seed.
+- **Batch sin filas asociadas (#92).** Un import sin ninguna fila asociada del proveedor de la cuenta exige confirmarlo (`confirmEmptyBatch`) en el review y al procesar; sin ella, `409 no_matched_rows`. La vista previa lo informa sin 409, y se avisa de la cuenta probablemente equivocada. El aviso de canales marca los de otro proveedor, y el motor nunca procesa una fila ajena.
+- **`status_mismatch` con el gateway en `Pending` (#63).**
+- **Tope de 10 archivos por import (#40)**, con `409 import_file_limit_reached`.
+
+Toca backend, contrato, Analysis & Validations, Settlement Review, Upload Files, una muestra nueva y Bruno. La pantalla Analysis queda fuera, porque la estaba cambiando `web-ambiguous-rows` en otra sesión (#131).
+
+*Prompt.* Proponer el change con las decisiones abiertas para el gate, con el README actualizado antes del código, y aplicarlo grupo a grupo con TDD en el dominio y la muestra nueva como oráculo. Más restricciones:
+- Nunca tocar `features/imports/analysis`, comprobado con `git diff --stat`.
+- Al regenerar las muestras solo puede aparecer la carpeta nueva; si cambia cualquier otro archivo, se para y se pregunta.
+- La integración y Bruno, con turno de base. Los tests de integración usan números de batch 98xx y no mueven el propuesto de ProviderA-USD.
+- Commit y `git push` por grupo, sin `--no-verify`.
+- Review-diff en una sesión nueva.
+
+*Resultado.* **El design.** Un solo cálculo del batch vacío: una consulta de los hechos (`JSON_VALUE` sobre `detailJson`, sin migración) y una función pura, `emptyBatchOf`, que usan igual el detalle del import, el review, la vista previa y process. No sirve `Import.rowsMatched`, porque cuenta también las filas de otro proveedor. En review y process la comprobación va dentro de la transacción, después de las de la corrida, así que un import con filas ajenas siempre dice antes `provider_mismatch`, y un `409 no_matched_rows` no consume el número. Los cambios de contrato son solo aditivos.
+
+**Durante el apply:**
+- Al regenerar, los `.xlsx` existentes cambiaron otra vez de bytes con el openpyxl local, con las mismas celdas, como en `settlement-reserve-chargeback`. Quedó documentado en `data/samples/README.md`.
+- El invariante de filas ajenas fue a una función propia, `assertOwnProviderRows`, sin cambiar la firma de `classifyRows`.
+- La transacción `Pending` de #63 se creó sobre un proveedor aislado (9502): una en un canal sembrado alteraría los contadores de las suites que corren a la vez.
+- El `409` del tope quedó en integración y no en Bruno: harían falta once archivos distintos, y la colección tiene ocho.
+- El verify señaló sin cobertura de punta a punta la fila ambigua resuelta, que deja de pedir confirmación, y se añadió.
+
+**El review-diff.** Siete puntos, cada uno con su test y su rotura:
+- Las reglas de conteo de los hechos: una fila `unmatched` sin motivo o con un motivo desconocido es un error de datos, no un cero.
+- Tras el `409` del tope no queda nada en la carpeta de preparación.
+- La casilla del batch vacío se desmarca al cambiar la vista previa, como la de canales.
+- La casilla no se hereda entre corridas: el `DecisionBar` se monta uno por corrida.
+- `previewOf` exige el batch vacío ya juzgado, y lo garantiza el compilador.
+- El `beforeAll` de la integración borra los intentos 9801–9803 de una pasada interrumpida.
+- Bruno comprueba que el procesado rechazado no crea ningún intento.
+
+La revisión de los arreglos pidió tres más: rechazar filas propias fuera de un grupo `matched`, un único review por corrida nueva y acotar el borrado del `beforeAll` a ProviderA-USD. Bruno, 272/272 en la primera pasada; en la segunda fallan los mismos 27 de #111.
+
+*Ajuste humano.* En el gate, la persona decidió:
+- **P1. Criterio:** ninguna fila `matched` del proveedor de la cuenta; las ambiguas resueltas cuentan, y "todo excluido" no pide confirmación.
+- **P2.** La confirmación en review y en process. La de process protege el número y el pago.
+- **P3.** `likelyWrongAccount` lo calcula el backend.
+- **P4.** `otherProvider: true`, sin valor nuevo en el enum.
+- **P5.** La forma de `Skipped` no cambia; una fila ajena es un invariante que falla con un error claro.
+- **P6.** `status_mismatch` con `Pending` es un hallazgo dentro de `non_recorded_adjustment`, no bloqueante.
+- **P7.** Muestra nueva `batch-wrong-account` sin seed.
+- **P8.** Tope de 10 archivos en total, con su propio `409`.
+
+Antes había elegido no bloquear un batch solo de fees, que es legítimo, sino pedir una confirmación explícita. Dio el visto bueno a restaurar los `.xlsx`, dio los turnos de base, lanzó las pasadas de Bruno y decidió no repetirlas por los fallos conocidos de #111.
+
+**Prompt 28:**
+
+*Contexto.* `web-rows-table-compact` (PR #136, issue #132): la tabla de filas del paso Analysis no cabía a 1024 px (167 px de más sin la fila ambigua y hasta 250 con ella). Solo frontend, sin migración ni cambios de API. La rama ya traía arreglos con sus tests: textos partidos, anchos fijos para archivo y resultado, importe y moneda en una sola columna **Amount** y menos relleno. Con ellos la tabla cabía, pero con 1 px de margen. El change quita la columna **Row**: el número de fila va junto a la hoja (`APP · row 2`).
+
+*Prompt.* Proponer un change pequeño que recoja en la spec lo ya hecho y la fila con la hoja, con al menos 20 px de margen a 1024 px en las cuatro pantallas y sin partir cifras ni IDs. Test primero en `RowsTable.test.tsx`, con turno de base para las capturas, y review-diff en una sesión nueva. Más restricciones:
+- No tocar el backend, `packages/shared`, el contrato ni la colección Bruno.
+- El requisito de la tabla, reescrito en menos de 500 caracteres.
+
+*Resultado.* **El design.** La hoja va en su propio elemento para que el script de capturas la siga leyendo sin el número. El margen se mide una vez al verificar, con una medida temporal sin versionar, y el script sigue fallando con cualquier desborde: fijar un umbral lo haría frágil ante cambios ajenos a esta tabla. La cabecera sigue siendo `Sheet · file`, porque la celda ya dice `row`.
+
+**Las medidas.** El PR recoge la evolución a 1024 px, pasada a pasada: de 167–250 px de más a 1 px libre con los arreglos previos, y a 41 px libres en las cuatro pantallas con la fila junto a la hoja. A 1280 px quedan 265 px. Los anchos fijos tienen una contrapartida: con `max-w`, la tabla estrechaba archivo y resultado a una palabra por línea y la página medía unos 8.300 px de alto; con ancho fijo, el archivo ocupa cuatro líneas también a 1280 px. Un arreglo previo destapó que el nombre del archivo no se partía desde `ui-polish`: la celda heredaba `whitespace-nowrap`, y bajo él `overflow-wrap:anywhere` no hace nada.
+
+**El review-diff.** Encontró que una hoja legacy de 31 caracteres (`Transactions approved by issuer`) no cabía en el ancho fijo y se pintaba encima del ID, sin que la tabla ganara scroll ni el script lo midiera. Ahora el nombre de la hoja se parte y `· row N` va en su propio elemento sin partirse (D3). Se descartó ensanchar la celda, porque con hojas largas la tabla volvería a desbordar. Además, el `whitespace-nowrap` del ID se comprueba en su span y no en el `<td>`, y salieron el texto `Currency` y un `max-w-24` sobrante.
+
+*Ajuste humano.* La persona dio el turno de base y levantó `pnpm db:up`, `pnpm db:seed` y `pnpm dev` para las capturas, y pidió el review-diff en una sesión nueva.
+
+**Prompt 29:**
+
+*Contexto.* `ci-e2e` (PR #147, issue #40): job nuevo `e2e` en la CI. Sobre su propio SQL Server efímero, ejecuta la colección Bruno (`pnpm test:api`), vuelve a sembrar y ejecuta el E2E de Playwright (`pnpm test:e2e`), contra el API compilado y la web servida con `vite preview`. El informe de Playwright se sube como artifact solo si el E2E falla. Se desarrolló en paralelo con `e2e-user-stories`, de otra sesión, que escribía la suite que este job iba a ejecutar. Sin cambios de código de la aplicación ni migración.
+
+*Prompt.* Proponer el change a partir de la casilla de #40 y del README, que dejaba ese job para la Entrega 3, y después aplicarlo grupo a grupo con push al cerrar cada uno. Restricciones de partida:
+- Ninguna tarea usa la base local: lo que necesita SQL Server se comprueba en la CI de la rama.
+- No tocar `e2e/features` ni `e2e/steps`, que son de la otra sesión.
+- La ejecución en local queda exactamente como la documenta el README §1.4.
+- La aplicación, la migración y el seed conectan como `recon_app`, nunca como `sa`.
+- Las roturas deliberadas se hacen en la CI y se deshacen con `git revert`, nunca con `git checkout` sobre trabajo sin commit.
+
+*Resultado.* **El design.** Cuatro decisiones con su alternativa descartada:
+- **Un solo job** con las dos suites y un `pnpm db:seed` entre ellas (#111), frente a dos jobs que repetirían la preparación, que es la parte cara. La siembra y el E2E llevan `if: ${{ !cancelled() }}`, para que un fallo de Bruno no tape el resultado del E2E. "Reutilizar el SQL Server de integración" se cumple con el mismo service: dos jobs no pueden compartir un contenedor.
+- **API y web levantados por pasos del workflow**, no con `webServer` de Playwright, porque Bruno necesita el API antes de que empiece Playwright. Con el build de producción y no `pnpm dev`, para no pagar la transformación de módulos de `vite dev` en el primer paso.
+- **Caché del Chromium** con la versión de Playwright en la clave, no el lockfile.
+- **Informe solo si falla el paso del E2E**, no con `failure()`: así un fallo de Bruno no sube el informe de un E2E en verde.
+
+**Las roturas en la CI.** Dos commits temporales, revertidos:
+- Sin la siembra entre Bruno y el E2E, el smoke falla en `RAM-07 is not assigned yet` y se sube `playwright-report`. Descargado, no trae `trace.zip` ni `.webm`, y ninguno de los cuatro valores secretos del job aparece en él.
+- Con una contraseña equivocada para Bruno, la colección falla en `00-auth` con 401, la siembra y el E2E corren igualmente, el smoke pasa y el check falla sin artifact.
+
+**La duración.** Se estimaron 7–9 minutos y se midieron entre 5 min 12 s y 5 min 29 s. Como corre en paralelo con `integration`, no alarga el pull request.
+
+**El review-diff.** Pidió mostrar los logs del API y la web al fallar, `curl --max-time 5` en la espera, `timeout-minutes: 20` y que el paso falle si la versión de Playwright sale vacía, porque una clave de caché sin versión serviría la misma caché a cualquier Playwright. Una tercera rotura con la contraseña equivocada comprobó que el último paso muestra las últimas 200 líneas de `api.log` y `web.log`, sin contraseñas. Un último arreglo hace que esos logs salgan también cuando el job se cancela por el límite de tiempo.
+
+*Ajuste humano.* En el gate, la persona decidió:
+- un solo job por ahora; cuando entre la suite de la otra sesión se mide y, si hace falta, se parte en un change pequeño;
+- repartir el README: este change cambia la tabla de pruebas, el párrafo de la CI de §1.4 y la línea "En pipeline", y los párrafos del E2E y del smoke los cambia la otra sesión con su suite;
+- los nombres de usuario de la colección son los del seed.
+
+La casilla de #40 se marcó al fusionar.
+
+**Prompt 30:**
+
+*Contexto.* `e2e-user-stories` (PR #149, issue #38): suite E2E de las historias HU1 a HU3 en Gherkin con playwright-bdd, contra la aplicación y el API reales. Cuatro escenarios nuevos que, con el smoke, dejan la suite en cinco: flujo feliz con `batch-clean` (`analyst` procesa y descarga el summary, `payments` paga), deshacer y reprocesar con el mismo número (`batch-split`), `provider_mismatch` (`batch-blocked`) y batch sin filas asociadas (`batch-wrong-account`). Se escribió en paralelo con `ci-e2e` (#147), de otra sesión, que montaba el job que la ejecuta. Sin cambios de API, esquema, migraciones ni seed.
+
+*Prompt.* Proponer el change a partir de README §2.6, que pide el E2E del flujo completo con el flujo feliz, "cancelar y reprocesar" y `provider_mismatch`. Después, aplicar grupo a grupo. Restricciones:
+- Ninguna cifra escrita en un paso: todas salen de los `expected.json` de `data/samples/`.
+- No tocar `playwright.config.ts`, `global-setup.ts` ni `ci.yml` (son de la otra sesión), ni el frontend, el backend o la colección Bruno.
+- La contraseña solo sale de `SEED_PASSWORD`, nunca en un paso, en la consola ni en el informe.
+- Las pasadas contra la base, solo con turno de la persona, que siembra antes de cada una.
+- Restaurar las roturas deliberadas con `cp`.
+
+*Resultado.* **El design.** Las decisiones principales:
+- **Un solo `.feature`.** Con un worker, los archivos van en orden alfabético: el smoke corre antes y el flujo feliz es el primero de `user-stories`. Se comprueba con `playwright test --list`.
+- **Base recién sembrada.** Procesar `batch-clean` deja RAM-07 como canal principal para siempre, porque deshacer no lo revierte, y consume números de batch. El primer paso lo comprueba por el API y, si no, falla con `Run pnpm db:seed first`. Se descartó hacer los escenarios tolerantes, porque un paso que comprueba una cosa u otra según el estado no comprueba nada.
+- **Limpieza en dos capas.** En verde, cada escenario termina con su limpieza como pasos a la vista: retirar el pago, deshacer y cancelar. Si falla a mitad, un `After` lo deshace por el API.
+- **El escenario de deshacer no compara sus validaciones con el oráculo.** En la suite, `batch-split` pasa al 124 y, como un intento deshecho no cuenta como batch anterior, `missing_previous_to_batch` da 633. Las compara el flujo feliz.
+
+**Test primero en `support/`.** La lectura de los oráculos y la decisión de la limpieza (qué acción toca según el estado, en qué orden y con qué usuario) se probaron con `node --test`, sin dependencias nuevas. Se rompieron a propósito el orden intento → import y `formatAmount`. Entran en `pnpm test` con un script de `e2e/package.json`, sin tocar `ci.yml`.
+
+**Las pasadas.** En local, 5 de 5 en verde en 1,0 min con la base recién sembrada, frente a los 5–8 minutos estimados. En el job `e2e` del PR, 26,5 s, y el job entero dura lo mismo que con solo el smoke, así que no hace falta partirlo. Tres roturas deliberadas (el oráculo de `provider_mismatch`, el amount payable de un intento `processed` y uno `paid`) fallaron por su motivo, y en cada una el `After` dejó la base limpia. `SEED_PASSWORD` dio 0 coincidencias en la salida, en `test-results/` y en el informe, incluido el zip que lleva dentro.
+
+**El review-diff.** Tres MEDIUM:
+- **M1, cobertura:** los rangos de cada ciclo salen de `expected.ranges`; cada validación compara resultado, hallazgos y columna Blocking; HU1 CA6 compara también las tarjetas Ambiguous e Ignored. D1 y la spec dejan de prometer HU1 CA3 y CA4, y dicen que `provider_mismatch` compara solo esa validación, porque su oráculo no trae las otras siete.
+- **M2:** después de procesar, el flujo feliz comprueba por el API que RAM-07 ya no está sin asignar.
+- **M3:** el `batchId` sale de la respuesta de `POST /imports/{id}/settlements` y se registra para la limpieza antes de esperar la URL del summary.
+
+De los menores, los fees se comparan como texto decimal (`sameDecimal`) y los pasos del aviso y de la casilla fallan si el oráculo no los trae. B3 y B5 quedaron como estaban. Se rompieron a propósito el ancla de la ruta de `createdBy` y el signo de `sameDecimal`. Segunda pasada: 5 de 5 en 46,7 s, a la primera.
+
+*Ajuste humano.* En el gate, la persona aprobó que la suite exija una base recién sembrada y el único paso condicional (la casilla de canales del escenario de deshacer), con su comentario. Fijó el reparto del README §2.6 con la otra sesión y que su PR se trajera con un merge, sin rebase. Pidió medir cada escenario y avisar si la suite pasaba de 5 minutos, porque entonces se partiría el job. Pidió test primero también en la lógica propia de `support/`. Dio los turnos de base y sembró antes de cada pasada.
+
+**Prompt 31:**
+
+*Contexto.* `review-inclusion-version` (PR #142, issue #53, que venía del review-diff de `validation-runs`): el review fija las inclusiones que vio el analista. Cada corrida lleva un contador `inclusionVersion`, que sube en la misma transacción del cambio de inclusión. `POST review` exige ese contador y, si no coincide con el vigente, responde `409 inclusions_changed` sin escribir nada. Toca backend, contrato compartido, frontend y colección. Añade la migración `0009_validation_run_inclusion_version`, escrita a mano.
+
+*Prompt.* Proponer el change a partir del issue, con alternativa descartada en cada decisión, y aplicarlo grupo a grupo: commit de los tests en rojo, rotura a propósito y después la implementación, con push al cerrar cada grupo. Más restricciones:
+- La migración, escrita a mano y nunca generada desde `schema.prisma`; la aplica la persona.
+- Migración, seed, integración y Bruno, solo con turno de base.
+- La guarda del review, una función de dominio pura.
+- Sin `--no-verify`.
+
+*Resultado.* **El design.** La decisión central fue el contador por corrida frente al `updatedAt` del import. `updatedAt` lo mueven muchas escrituras (también un `PATCH` sin cambio), depende de la precisión de `datetime2` frente a los milisegundos de JS y la pantalla solo lo tendría en otra consulta, así que cada cambio propio daría un `409` falso. También se descartaron:
+- contar las `set_inclusion` de la auditoría, que exige `JSON_VALUE` sin índice;
+- `MAX(changedAt)` de las apariciones;
+- un hash de las inclusiones calculado igual en tres sitios.
+
+Un ida y vuelta (A → B → A) da `409`: es conservador a propósito. La guarda pura `reviewRefusal` fija el orden de las negativas: primero lo que dice que la pantalla está desfasada (la corrida, luego sus inclusiones) y después el contenido (bloqueo y batch vacío).
+
+**Durante el apply.**
+- **Falso `409` propio.** Entre la respuesta del `PATCH` y la relectura de la corrida, Continue enviaría la versión vieja. Queda deshabilitado mientras la corrida se recarga, con `Loading the latest results…`.
+- **La carrera en integración.** Es determinista: el review se pausa con `beforeClaim`, un `PATCH` confirma un cambio y el review recibe `409` sin auditoría. Sin la comparación de versión, el review aprobaba.
+- **Bruno.** La primera pasada llevaba una aserción equivocada a propósito: pasaron 260 de 261 peticiones y la única que falló fue esa.
+
+**El verify y el review-diff.** El verify no encontró errores de código. Dejó como coberturas aceptadas tres casos que solo se prueban con el fake, de riesgo bajo porque el repositorio usa la guarda pura ya probada:
+- que una corrida nueva empiece en 0;
+- que una resolución a mano no mueva la versión;
+- el orden de `inclusions_changed` frente a las negativas de contenido en Prisma.
+
+Las correcciones posteriores:
+- el design (D4, D9 y D10) alineado con el código;
+- el motivo de bloqueo tiene prioridad sobre "cargando", para que no parpadee durante la relectura;
+- cada paso de corrida de Bruno guarda la versión junto al `runId`, y el negativo exige exactamente 1;
+- el tipo de los `details` sale del contrato compartido.
+
+*Ajuste humano.* En el gate, la persona confirmó expresamente el cambio de esquema y aplicó ella la `0009` desde la sesión. Dejó fuera de alcance, sin issue de seguimiento, que las resoluciones a mano muevan la versión, y aceptó el `409` del ida y vuelta. La `0009` queda para aplicarse también en el entorno desplegado con `scripts/deploy.sh migrate`, que ejecuta ella. Aceptó las coberturas del verify y dejó #141 (`tsc` no cubre `backend/test/`) fuera del PR. Dio los turnos de base. Repitió un fallo del agente ya visto en `import-in-progress`: el README quedó fuera del commit del backend porque Git lo tiene como `readme.md`, y fue en un commit aparte.
+
+**Prompt 32:**
+
+*Contexto.* `web-analysis-guardrails` (PR #143, issue #131): el paso Analysis aprovecha lo que `import-guardrails` (#92, PR #135) ya devolvía en el detalle del import. La tarjeta `Unmatched` desglosa las filas por motivo, aparece un aviso de cuenta equivocada y el aviso de canales distingue los de otro proveedor. Además, los IDs con guiones se parten por los guiones para que la tabla de filas quepa a 1024 px. Solo frontend, e2e y docs, sin migración.
+
+*Prompt.* Proponer el change a partir del issue y aplicarlo grupo a grupo, con tests RTL primero y una rotura a propósito por grupo. Más restricciones:
+- No tocar `features/validations` ni `features/settlements`, que estaba cambiando #53 en otra sesión, ni el backend, el contrato o la colección Bruno.
+- En el fake de MSW, que también tocaba #53, solo lo imprescindible, sin reordenar ni reformatear; un conflicto se resuelve con un merge, sin rebase.
+- Correr la suite entera del frontend tras cambiar el fake y, si falla un test de esas carpetas, parar y avisar sin tocarlo.
+- Las capturas, con turno de base.
+
+*Resultado.* **El design.**
+- **El desglose** va dentro de la tarjeta `Unmatched`, en orden fijo y con las mismas etiquetas que la tabla de filas. Se descartó una tarjeta por motivo, porque la fila ya se parte a 1024 px y casi siempre estarían a 0.
+- **El aviso de cuenta equivocada** copia la frase de Settlement Review en `imports/strings.ts`, sin "Cancel and reprocess…", porque lo leen también `viewer` e imports cerrados. Se copia en vez de importarse para no acoplarse a un módulo que cambiaba #53, y un test lo compara con la cadena literal.
+- **Un canal de otro proveedor** se describe por su proveedor y no por su asignación. Antes salía con textos como "is primary in ProviderA-USD", que sugerían que procesar lo iba a asociar.
+- **El fake** devolvía combinaciones que el API ya no puede dar desde #135. Ahora calcula `otherProvider` y la nota igual que el API.
+
+**Las capturas.** Tres pasadas contra el API real:
+- La primera falló: con los UUID de 36 caracteres de `batch-wrong-account`, la tabla de filas desbordaba 79 px a 1024 px (#132). Con los IDs numéricos de las demás muestras cabía, por eso no se había visto. Se añadió D8 al change: un ID con guiones lleva un `<wbr>` después de cada guion y se parte solo ahí, y la copia sale entera. No bastaba `whitespace-normal`, porque las reglas de corte de línea no cortan entre un guion y una cifra.
+- La segunda dio un falso positivo a 1280 px: la comprobación contaba las cajas del ID y no sus líneas, y con `<wbr>` cada trozo es una caja.
+- La tercera, la versionada, mide `fits` en las seis capturas a 1280 y 1024 px.
+
+Tras abrir el PR, el script de capturas se hizo más estricto: compara el número de `Unmatched` con una expresión anclada y falla si la tabla de filas no tiene columna ID.
+
+*Ajuste humano.* La persona aceptó que, para `analyst` en un import `analyzed`, el aviso de cuenta equivocada salga dos veces: arriba como diagnóstico y abajo en el `DecisionBar`, junto a la casilla. Dejó dos seguimientos: unificar las tres copias del texto después de #53 (#139) y el canal del mismo proveedor sin cuenta principal que se muestra como "of another merchant" (#140). Dio el turno de base para las capturas. El review-diff quedó para una sesión nueva.
+
+**Prompt 33:**
+
+*Contexto.* `business-dates-no-z` (PR #153, issue #48): las fechas de negocio son hora de Nueva York guardada sin zona, pero el API las devolvía con una `.000Z` que no era UTC. Ahora 7 campos salen como `YYYY-MM-DDTHH:mm:ss` en las 16 operaciones que los devuelven. Es un cambio **BREAKING** del contrato del API, aunque el único cliente es el frontend del monorepo, que cambia en el mismo PR. Los instantes de auditoría siguen con `Z` y las columnas de solo día no cambian. Sin migración.
+
+*Prompt.* Proponer el change a partir del análisis previo de #48 y aplicarlo con test primero y rotura deliberada. Más restricciones:
+- Lo que se ve en pantalla y en los CSV no cambia en ningún carácter, en ninguna zona de navegador ni de servidor.
+- Sin base local: integración, Bruno y E2E corren en la CI de la rama.
+- Los archivos, solo con Edit y Write.
+- Un corte de calendario: si el PR no está fusionado a tiempo, el change vuelve al roadmap y #48 sigue abierto.
+
+*Resultado.* **El design.**
+- **Formato** sin zona ni milisegundos. Se descartaron los milisegundos, que no aportan nada, y el offset `-04:00`, que obligaría a calcular el horario de verano en el backend.
+- **Esquema compartido** `BusinessDateTime`, que rechaza la `Z`, los milisegundos y las fechas imposibles.
+- **Backend:** un ayudante `businessDateTime` en los 7 sitios que llamaban a `toISOString()`. Se descartó un serializador global por nombre de campo, porque el mismo nombre podría ser un instante en otro módulo.
+- **CSV y frontend** leen los dígitos cortando el texto, sin `Date` ni `Intl`, así que no dependen de la zona del proceso.
+
+La red de seguridad es el `serializerCompiler`, que valida cada respuesta: un sitio olvidado da `500`. Y la suite E2E, que compara la tabla de rangos con `<día> HH:MM <zona>`, sigue en verde solo si la salida no cambia.
+
+**Test primero.** Se vieron en rojo `BusinessDateTime` sin el `.regex`, el `businessTime` antiguo, que desplazaba la fecha con la zona local, y `format.ts` con `TZ = Asia/Tokyo`. El caso "outside UTC" de `businessDateTime` falla con getters locales también con `TZ=UTC`, como en la CI.
+
+**La rotura en la CI.** Un commit temporal devolvió los rangos de validaciones a `.000Z`: `POST` y `GET /validations` y `POST /review` dieron `500`. Integración y E2E no llegaron a correr, porque dependen del job `check`. Se revirtió con `git revert` y la CI volvió a verde en los cinco jobs.
+
+**El review.** Cambios menores:
+- en la delta de settlement, el summary del merchant, los totales y la pestaña Movements pasan a MODIFIED sin la `Z`;
+- un requisito por debajo de 500 caracteres;
+- el caso fuera de UTC dice qué protege;
+- el plan de migración avisa de que una pestaña abierta con el frontend antiguo desplaza la fecha hasta recargar;
+- `BusinessDateTime` con descripción y ejemplo en el OpenAPI.
+
+Un escenario de la spec de settlement apuntaba al CSV de transacciones, que no lleva fechas, y pasó al CSV del summary. Otro mostraba la fecha de liberación esperada con "ET", y la pantalla la pinta solo con el día. Tras traer la rama de entrega, que incluía el archive de `web-polish-e3` (#125) sobre los mismos requisitos, los MODIFIED de settlement se rehicieron desde la spec viva con sus etiquetas nuevas.
+
+*Ajuste humano.* Los `toISOString()` de las inserciones masivas hacia SQL quedaron fuera de alcance, porque no son respuestas. En local, la suite completa dio tiempos agotados en `app.test` y `export-openapi`, que pasaban sueltos, y el resultado que contó fue el de la CI.
+
+**Prompt 34:**
+
+*Contexto.* `web-analysis-polish` (PR #158, issue #157): pulido de la pantalla Analysis & Validations tras una revisión visual que encontró tres problemas. La tarjeta de rangos salía pegada a la izquierda, los tres contadores informativos de Validations eran texto suelto con explicaciones de dos líneas, y el nombre del archivo se partía en cuatro líneas en cada fila de la tabla de filas. Cada problema contradecía una frase de las specs vivas, así que la spec cambia antes que el código. Solo frontend, e2e y docs: sin API, esquema, seed, Bruno ni migración.
+
+*Prompt.* Proponer el change con una tabla de las decisiones anteriores que se revierten (`ui-polish` D7, D9 y D10) y las que siguen vigentes. Después, aplicar grupo a grupo con test primero, un commit `test` y otro `feat`, `fix` o `refactor`, y una rotura deliberada por grupo, restaurada con `cp` desde el scratchpad y nunca con `git checkout`. Más restricciones:
+- El marco de tarjeta se extrae a un componente común, no se copian clases.
+- El tooltip, accesible con teclado y con lector de pantalla también cerrado, sin un `TooltipProvider` global.
+- Los tests asertan estructura, no diseño, porque jsdom no calcula el layout.
+- El script de capturas, con un tope de 90 minutos: unas medidas imprescindibles (desborde, margen a 1024 px, archivo en una línea sin pisar nada, nombre largo cortado) y otras secundarias que, si no daba tiempo, quedarían como revisión a ojo.
+- Las capturas las ejecuta la persona en la sesión, con `!`, para que la salida quede a la vista. Sin `batch-clean` (#111).
+
+*Resultado.* **El design.**
+- `StatCard` en `components/` sustituye al marco que `Counters` repetía. Sus tests, sin tocarlos, fueron la red de seguridad del refactor.
+- `InfoTip` es el primer uso de `components/ui/tooltip`. La explicación existe una sola vez en el DOM de la tarjeta: el mismo `span` `sr-only` lo nombra el `aria-describedby` del botón y lo lee quien recorre la tarjeta.
+- El archivo va en una franja reservada al pie de la fila: `relative` en el `<tr>`, `pb-6` en cada celda y el nombre posicionado con `truncate`. Se descartaron el desborde visible que pedía el issue al pie de la letra, porque pisaba un UUID o una hoja partidos y volvía a ensanchar la tabla (#132), y una segunda `<tr>` por fila.
+
+**La primera pasada de capturas.** Falló por dos motivos:
+- `Validation results` medía 65 px más que su tarjeta a 1024 px. El defecto ya existía antes del change: es la primera vez que el script medía esa tabla con una corrida. Se arregló aquí (D8): el desglose va en un ancho fijo, y cada parte en un `span` que no se parte, así que el corte cae solo en el «·».
+- El tooltip no se reabría. Radix lo cierra cuando se desplaza un ancestro del botón, así que el script lleva el foco al elemento anterior sin desplazar, pulsa Tab, captura la ventana y comprueba después que `scrollY` no cambió.
+
+Las medidas secundarias sí entraron en el script. Solo el anillo de foco del último **Choose** de la fila ambigua, interceptada como en `web-ambiguous-rows`, se revisó a ojo. A 1024 px, el margen mínimo de la tabla de filas quedó en 35 px, por encima de los 20 px de `web-rows-table-compact`.
+
+**El verify.** La única tarea pendiente era abrir el PR. Dejó dos sugerencias: el corte del desglose solo en el «·» y el tooltip que tapa la fila R de la tabla de rangos, que se dejó como comportamiento conocido.
+
+**El review-diff.** Pidió que el script cancele un import antes de sacarlo de la lista de pendientes y que exija el archivo dentro de su `<tr>`, exactamente tres tarjetas y el corte con `text-overflow: ellipsis`. También, que los tests lean los contadores en el orden del DOM y busquen el desglose por su cabecera. Cada corrección tuvo su rotura: quitar `relative` del `<tr>` hizo fallar las 14 capturas.
+
+*Ajuste humano.* La persona ejecutó el script de capturas en cada pasada contra el stack local, y las 14 imágenes se revisaron a ojo. De esa revisión salió que el desglose se corte solo en el separador, para no dejar un número lejos de su texto. La persona pidió `Closes #157` en el PR, aunque el issue se cierra a mano porque la rama de destino no es la principal. El review-diff lo hizo en otra sesión. En dos de las roturas se restauró con `git restore --source=HEAD` tras comprobar que el diff era solo la rotura, no con `cp` como pedía la tarea.
+
+**Prompt 35:**
+
+*Contexto.* `web-polish-e3` (PR #154, issues #110, #140, #139 y #125): cuatro arreglos pequeños de pantalla pendientes de changes anteriores. Dos son errores visibles: valores inválidos de la dirección que llegaban a la consulta del API (#110) y un canal sin cuenta principal que la pantalla atribuía a otro merchant (#140). Los otros dos son deuda de texto: la frase de cuenta equivocada repetida en tres features (#139) y la etiqueta "chargeback" de una línea que también usan REF y RDR (#125). El backend solo cambia dos etiquetas de texto. Sin migración ni seed.
+
+*Prompt.* Proponer el change con cada arreglo en su propio grupo de tareas y de commits, en orden de prioridad (#110, #140, #125, #139), para poder cortar por el final antes de la entrega sin dejar nada a medias. Test primero en los cuatro, y cada test nuevo tiene que fallar por su motivo; si un test de #110 no fallaba, ese arreglo salía del change. Más restricciones:
+- No tocar `format.ts`, los esquemas de `packages/shared` ni las fechas, que son del #48.
+- No cambiar el contrato del API.
+- Capturas con turno de base y sin procesar nada.
+
+*Resultado.* **Los cuatro arreglos.**
+- **#110.** TanStack Router superpone la salida de `validateSearch` sobre la búsqueda cruda, así que una clave omitida con `dropUndefined` conservaba su valor crudo. Los tres validadores devuelven todas sus claves, con `undefined` en las inválidas, como ya hacía `/fees`. Los tests comprueban cada clave y no solo `toEqual({})`, porque `toEqual` no distingue una clave `undefined` de una ausente.
+- **#140.** El API ya distinguía los tres casos de `assigned_to_other_account`. Basta con que la pantalla lea `otherAccount = null` como "sin cuenta principal". Un campo nuevo que dijera "esta cuenta lo tuvo antes" habría tocado `shared` y quedó fuera.
+- **#125.** `Reserve released on adjustment` en el API, el CSV del summary y la pantalla. Como la etiqueta se calcula en cada lectura, los intentos ya procesados también salen con la nueva. La política `release_on_chargeback` no se renombra, porque exigiría migrar su `CHECK`.
+- **#139.** La frase vive en `components/strings.ts`, la capa común, y no en los textos de una feature, para no crear dependencias entre features.
+
+**Lo que salió durante el apply.**
+- Un test de Settlement List esperaba los batches 103–101, cuando el seed crea 122–120. Se corrigió en el mismo commit.
+- El primer commit de la propuesta lo hizo otra ventana que escribía a la vez en la misma carpeta.
+- Para que ningún requisito pasara de 500 caracteres, las reglas nuevas fueron como ADDED.
+- `packages/shared` sigue usando la etiqueta antigua como dato de un test de esquema. Es zona del #48 y no falla.
+
+**El review-diff.** Pidió cinco correcciones:
+- un test de que la lista de hallazgos no se pinta con `validation=foo`;
+- las ocho claves de `validateSettlementListSearch`;
+- que ninguna petición de Settlement List lleve los valores inválidos, no solo la última;
+- el test de la frase común en `src/test/`, para que `components/` no importe de las features;
+- GIVEN/WHEN/THEN en negrita en la spec de settlement.
+
+El `/opsx:verify` no se pasó antes de archivar.
+
+*Ajuste humano.* La persona dio el turno de base para las tres capturas, sobre un batch sembrado como pagado y sin consumir números de batch. El PR avisa en cabecera de que cambia una etiqueta del CSV que se entrega al merchant: columnas, orden e importes siguen igual, pero quien lo procese buscando `on chargeback` dejará de encontrarlo. El review-diff se hizo en otra sesión, y sus correcciones entraron en el mismo PR.
+
+**Prompt 36:**
+
+*Contexto.* `demo-video` (PR #161, issue #96): el vídeo de 2–3 minutos que pide la Entrega 3 y que el README ofrece como respaldo si la URL pública no responde. Lo genera un script de Playwright, `pnpm video:demo`, fuera de la suite y de la CI, sobre la base local recién sembrada. Recorre el flujo feliz de `batch-clean` en ProviderA-USD, desde el login de `analyst` hasta **Mark as paid** con `payments`, y lo convierte con ffmpeg a `docs/demo/recon-tool-demo.mp4`. Sin cambios en la aplicación, el API, el esquema ni la CI.
+
+*Prompt.* Proponer el change a partir del issue, con un recorrido de nueve etapas en el que se vean el login de `analyst` y el cambio a `payments`. Más restricciones:
+- Reproducible con un comando, entre 2:15 y 2:45, legible sin audio.
+- La suite no se toca: ni `steps/`, ni `features/`, ni `support/`, ni `playwright.config.ts`, porque el change se hace el día de la congelación del código.
+- Las credenciales, con las mismas garantías que la suite.
+- Solo contra la base local recién sembrada, y ninguna pasada deja abierto lo que creó.
+- Un solo turno de base para todas las pasadas.
+
+*Resultado.* **El design.**
+- **El login se graba** (D1), a diferencia de lo que proponía el issue, porque el recorrido pedido enseña el cambio de rol. La contraseña sale de `SEED_PASSWORD`, se escribe desde la página en un campo que tiene que ser `type="password"` y se vacía tras **Sign in**. Una comprobación al arrancar falla si algún rótulo contiene la contraseña.
+- **Duplicación aceptada** (D3). Los steps registran `Given`/`When` al cargarse y no se pueden importar fuera de playwright-bdd. El script copia en `e2e/video/steps.ts` los pasos que necesita, cada uno citando su step de origen, y solo importa lo que ya existía en `support/`.
+- **Rótulos en una franja inferior** reservada con `padding-bottom`, y un contorno breve sobre cada botón antes de pulsarlo, porque el vídeo no graba el puntero.
+- **Comprobaciones.** El script comprueba las mismas cifras que la suite contra `expected.json`; si una no cuadra, no hay vídeo. La limpieza va por el API y fuera de cámara: retirar el pago, deshacer y cancelar.
+
+**La grabación.** Con las primeras pausas, el vídeo duró 1:47; con 3, 5,5 y 10 s, 2:16. Analizar, validar y procesar tardaron menos de 2 s, así que el recorte de esperas no se escribió. El `.mp4` mide 1,3 MB, en H.264 a 1280×720 y sin pista de audio. Los fallos previos se probaron: sin ffmpeg y con la aplicación caída, el script falla antes de grabar.
+
+**El verify.** Sin críticos. Sugirió actualizar la duración de §0.4 si se regenera el vídeo con otras pausas.
+
+**La revisión del PR.** Pidió cinco arreglos:
+- si la limpieza deja notas, el script sale con código 1 y no escribe el `.mp4`;
+- la limpieza va en su propio `try/finally`, para que corra aunque falle el cierre del navegador;
+- el archivo parcial se crea en el directorio temporal y se copia sobre el destino;
+- `setPassword` comprueba `type="password"` en el mismo `evaluate` que escribe;
+- el README §2.6 recuerda actualizar la duración.
+
+*Ajuste humano.* La persona dio un solo turno de base y sembró antes de cada pasada y al terminar, porque la grabación deja consumido el batch 123 y RAM-07 como principal. Se revisaron los fotogramas de cada pasada: cada rótulo en su etapa, ninguna cifra bajo la franja y la contraseña solo como puntos. Se grabó solo en local: el script fija la dirección de la aplicación local y no admite otra.
+
+**Prompt 37:**
+
+*Contexto.* `deploy-hardening` (PR #150, issues #106, #107 y #108) cierra tres huecos que dejó la revisión del despliegue de `deploy-compose` (§2.4, Prompt 2):
+- **#106:** la auditoría de los logins guardaba la IP del contenedor `web`, no la de quien entra.
+- **#107:** la CI construía las imágenes, pero nunca las arrancaba.
+- **#108:** el despliegue creaba `recon_reader`, un login que nadie usa y que compartía contraseña con `recon_app`.
+
+Toca `infra/`, la configuración de Nginx, el job `images` de la CI y `docs/deploy.md`. Sin migración.
+
+*Prompt.* Proponer el change con los tres issues juntos, porque comparten piezas y se comprueban con el mismo smoke. Restricciones:
+- Ninguna tarea usa la base local salvo una, con turno pedido antes. Lo que necesita las imágenes o SQL Server se comprueba en la CI de la rama.
+- No se edita ningún `.env` ni la plantilla del despliegue.
+- El redespliegue en el servidor, una secuencia de órdenes copiables, sin tocar la red, el router ni el panel del túnel.
+- Cada grupo cierra con su commit, su documentación y su push. Si un grupo no estaba terminado antes de la congelación del código, se quedaba fuera con su issue abierto.
+
+*Resultado.* **El design.**
+- **La IP.** Nginx sustituye `X-Forwarded-For` por un único valor: `CF-Connecting-IP` si llega y, si no, la IP de la conexión. También vacía `X-Forwarded-Host`. La API confía en esa cabecera solo desde direcciones privadas (`TRUST_PROXY: uniquelocal`, solo en el compose del despliegue).
+- **Lo que se comprobó de Fastify 5.** `trustProxy` con un número falla cerrado y no confía en ningún salto. Además, no valida que el valor sea una IP. Por eso `uniquelocal` y una guarda `isIP` en la ruta de login.
+- **Alternativas descartadas.** El módulo `realip` de Nginx y fijar la dirección de `web` en el compose. Las dos exigían reservar subredes que podían chocar con las del servidor, justo en la parte que la persona no domina.
+- **`recon_reader`.** Pasa a `init.local.sql`, que solo monta el compose local. `init.deploy.sql` lo borra si existe, dentro de un `TRY/CATCH` para que `mssql` arranque aunque haya una sesión abierta.
+- **`scripts/deploy.sh check`.** Orden nueva, de solo lectura: logins y usuarios `recon_*` y últimos logins auditados con su IP.
+
+**El smoke.** Creció por grupos, en el orden aprobado en el gate: #107 → #108 → #106. Con #107 solo, `check` listaba `recon_reader` y la IP de `web`. Tras #108, solo `recon_app` y `recon_migrator`. Tras #106, la IP inventada de `CF-Connecting-IP`, sin rastro del `X-Forwarded-For` inventado. La rotura deliberada quitó `--conditions=recon-dist` de la imagen de la API: el job falló en `up --wait` con los logs de la API, y se revirtió con `git revert`. El job `images` pasó de algo más de 1 minuto a entre 3 min 43 s y 4 min 35 s, pero corre en paralelo con el camino crítico y el PR no tarda más.
+
+**Lo que no salió como estaba previsto.**
+- Los tests de integración de la IP se escribieron antes del código, pero no se vieron en rojo: necesitaban base y la implementación llegó antes del turno. El rojo sí se vio en el smoke de los dos primeros grupos.
+- En la comprobación local, la prueba de rendimiento de 20 000 filas falló una vez justo tras el seed y pasó al repetirla.
+
+**Dos rondas de revisión.**
+- **La primera.** La IP de la auditoría pasó a su propio requisito en la spec de `auth`. El smoke empezó a probar el `DROP` sobre un volumen que ya tiene `recon_reader`, como un despliegue anterior, y un login sin `CF-Connecting-IP`. El test sin proxy construye su propia app, y entró un caso de `X-Forwarded-For` con varios saltos. Los pasos del servidor ganaron comprobar la rama, apuntar la versión antes del `git pull` y cómo volver atrás.
+- **La segunda.** Vio que el login sin Cloudflare acertaría aunque la API guardara la IP de `web`, que también es privada. Ahora el smoke saca las direcciones de `web` con `docker inspect` y las excluye. `check` lista también los usuarios sin login. Los pasos del servidor dicen parar si está en otra rama y descartar cualquier dirección privada en la auditoría.
+
+Queda como deuda que Nginx reenvía `X-Forwarded-Proto` tal como llega, aunque hoy nada lo lee. El hook de pre-commit que usa `git stash` pasó a #151.
+
+*Ajuste humano.* La persona aprobó en el gate el orden de los grupos y lanzó el `pnpm db:seed` de la comprobación local, porque el hook se lo impide al agente. Después del merge siguió los pasos en el servidor:
+- `migrate`, sin migraciones pendientes;
+- los cuatro servicios `healthy` tras `down` y `up --wait`;
+- `check`, solo con `recon_app` y `recon_migrator`;
+- el `curl` con cabeceras inventadas, bloqueado por Cloudflare antes de llegar a la aplicación, un resultado seguro según el plan;
+- los logins auditados, con la IP pública del cliente y ninguna privada.
+
+Con ese resultado se anotaron en los issues los criterios de producción. Los tres issues siguieron abiertos, porque el PR se fusionó en la rama de entrega y no en la principal: se cierran a mano cuando decida la persona.
