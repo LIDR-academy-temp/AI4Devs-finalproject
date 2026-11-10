@@ -38,6 +38,7 @@ from app.ingesta.origen_sat2 import (
     OrigenSat2,
     tarea_con_origen,
 )
+from app.ingesta.recuperacion import recuperar_huecos
 
 MODO_SIMULADO = "simulado"
 MODO_REAL = "real"
@@ -155,9 +156,13 @@ def tarea_carga(
                 .limit(1)
             )
             if ya_cargada is None:
-                ejecutar_carga_inicial(
+                carga = ejecutar_carga_inicial(
                     sesion, cliente, estacion, reloj(), pausa_segundos=pausa, dormir=dormir
                 )
+                # Con la carga sin terminar, recuperar pediría los mismos días otra vez.
+                if carga.resultado != "EXITO":
+                    continue
+            recuperar_huecos(sesion, cliente, estacion, reloj(), pausa_segundos=pausa, dormir=dormir)
 
 
 def tarea_correo(
@@ -282,7 +287,7 @@ def principal() -> int:
         protegida,
         "interval",
         minutes=INTERVALO_CARGA_MINUTOS,
-        args=["carga inicial", tarea_con_origen, tarea_carga, fabrica, origen],
+        args=["carga y huecos", tarea_con_origen, tarea_carga, fabrica, origen],
         next_run_time=ahora,
     )
     planificador.start()

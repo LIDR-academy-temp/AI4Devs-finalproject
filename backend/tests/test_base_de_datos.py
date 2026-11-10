@@ -577,6 +577,65 @@ def test_ventana_solo_en_cargas(sesion, estacion):
     sesion.flush()
 
 
+
+def test_una_recuperacion_guarda_los_dias_que_pidio(sesion, estacion):
+    sesion.add(
+        EjecucionIngesta(
+            estacion_id=estacion.id,
+            tipo="RECUPERACION",
+            ventana_desde=AHORA - timedelta(days=8),
+            ventana_hasta=AHORA,
+            resultado="EXITO",
+        )
+    )
+    sesion.flush()
+
+
+def test_la_migracion_0005_revierte_borrando_solo_las_recuperaciones(motor):
+    configuracion = configuracion_alembic()
+    try:
+        with motor.begin() as conexion:
+            estacion = conexion.execute(
+                text(
+                    "INSERT INTO estacion (id_equipo_sat2, nombre, latitud, longitud) "
+                    "VALUES (905, 'Recuperada', -34, -60) RETURNING id"
+                )
+            ).scalar()
+            conexion.execute(
+                text(
+                    "INSERT INTO ejecucion_ingesta (estacion_id, tipo, ventana_desde, ventana_hasta, "
+                    "iniciada_en, resultado) VALUES "
+                    "(:e, 'RECUPERACION', now() - interval '2 days', now(), now(), 'EXITO'), "
+                    "(:e, 'CICLO', NULL, NULL, now(), 'EXITO')"
+                ),
+                {"e": estacion},
+            )
+
+        command.downgrade(configuracion, "0004")
+        with motor.connect() as conexion:
+            tipos = conexion.execute(
+                text("SELECT tipo FROM ejecucion_ingesta WHERE estacion_id = :e"), {"e": estacion}
+            ).scalars().all()
+        assert tipos == ["CICLO"]
+        with pytest.raises(IntegrityError), motor.begin() as conexion:
+            conexion.execute(
+                text(
+                    "INSERT INTO ejecucion_ingesta (estacion_id, tipo, iniciada_en, resultado) "
+                    "VALUES (:e, 'RECUPERACION', now(), 'EXITO')"
+                ),
+                {"e": estacion},
+            )
+    finally:
+        command.upgrade(configuracion, "head")
+        with motor.begin() as conexion:
+            conexion.execute(
+                text(
+                    "DELETE FROM ejecucion_ingesta WHERE estacion_id IN "
+                    "(SELECT id FROM estacion WHERE id_equipo_sat2 = 905)"
+                )
+            )
+            conexion.execute(text("DELETE FROM estacion WHERE id_equipo_sat2 = 905"))
+
 def test_rechaza_resultado_desconocido(sesion, estacion):
     debe_rechazarse(
         sesion, EjecucionIngesta(estacion_id=estacion.id, tipo="CICLO", resultado="OTRO")

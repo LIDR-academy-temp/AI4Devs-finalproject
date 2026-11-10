@@ -29,7 +29,9 @@ from app.dominio.vigencia import (
     estado_de_los_datos,
 )
 
-RANGO_MAXIMO = timedelta(days=31)
+# Un mes de calendario: desde las 00:00 de un día hasta las 23:59 del mismo día del mes siguiente
+# (weather-track-historicos-sin-huecos, D5).
+RANGO_MAXIMO = timedelta(days=32)
 # Diferencia admitida entre el reloj del navegador, que arma los rangos, y el del servidor.
 TOLERANCIA_FUTURO = timedelta(minutes=5)
 # Fuera de estos años no hay datos, y convertir fechas extremas a otra zona desborda.
@@ -38,7 +40,7 @@ FECHA_MAXIMA = datetime(2100, 1, 1, tzinfo=UTC)
 
 Calidad = Literal["OK", "FALTANTE", "SOSPECHOSO"]
 MENSAJE_RANGO = (
-    "La fecha final debe ser posterior a la inicial, con un máximo de 31 días, "
+    "La fecha final debe ser posterior a la inicial, hasta el mismo día del mes siguiente, "
     "sin fechas futuras ni anteriores a un año."
 )
 

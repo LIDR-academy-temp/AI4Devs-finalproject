@@ -1153,7 +1153,7 @@ paths:
         - name: hasta
           in: query
           required: true
-          description: Debe ser posterior a desde, con un rango máximo de 31 días. Desde no puede ser anterior a las 00:00, hora de Argentina, del mismo día del año anterior, y hasta no puede superar en más de 5 minutos la hora del servidor.
+          description: Debe ser posterior a desde, con un rango máximo de 32 días, para abarcar desde las 00:00 de un día hasta las 23:59 del mismo día del mes siguiente. Desde no puede ser anterior a las 00:00, hora de Argentina, del mismo día del año anterior, y hasta no puede superar en más de 5 minutos la hora del servidor.
           schema:
             type: string
             format: date-time
@@ -1185,7 +1185,7 @@ paths:
         '404':
           $ref: '#/components/responses/NoEncontrado'
         '422':
-          description: Rango de fechas inválido, mayor a 31 días, futuro o anterior a un año
+          description: Rango de fechas inválido, mayor a 32 días, futuro o anterior a un año
           content:
             application/json:
               schema:

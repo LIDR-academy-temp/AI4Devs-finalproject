@@ -254,7 +254,7 @@ describe('detalle e históricos', () => {
     }
   }
 
-  it('muestra el valor actual, el resumen y el gráfico de 7 días', async () => {
+  it('abre en Día: muestra el valor actual, el resumen y el gráfico de 24 horas', async () => {
     simularApi(rutasDetalle())
     abrir('/estaciones/1/sensores/6')
     expect(await screen.findByRole('heading', { name: 'Temp Amb. a 2 Mts' })).toBeInTheDocument()
@@ -262,12 +262,10 @@ describe('detalle e históricos', () => {
     expect(screen.getByText('20,91')).toBeInTheDocument()
     expect(screen.getByText('1.008')).toBeInTheDocument()
     expect(screen.getByRole('img')).toHaveAccessibleName(
-      'Temp Amb. a 2 Mts: últimos 7 días, en °C',
+      'Temp Amb. a 2 Mts: últimas 24 horas, en °C',
     )
-    expect(screen.getByRole('button', { name: 'Semana' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    expect(screen.getByRole('button', { name: 'Día' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Semana' })).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('consulta 31 días al elegir Mes', async () => {
@@ -288,7 +286,8 @@ describe('detalle e históricos', () => {
     const dias = consultas.map(
       (c) => (Date.parse(c.get('hasta')!) - Date.parse(c.get('desde')!)) / 86_400_000,
     )
-    expect(dias[0]).toBeCloseTo(7)
+    // Primero Día, con el que abre la pantalla; después Mes.
+    expect(dias[0]).toBeCloseTo(1)
     expect(dias.at(-1)).toBeCloseTo(31)
   })
 
@@ -332,7 +331,7 @@ describe('detalle e históricos', () => {
   })
 
   it.each([
-    ['más de 31 días', 40, 0, 'Hasta', '31 días'],
+    ['más de un mes', 40, 0, 'Hasta', 'mismo día del mes siguiente'],
     ['el fin antes del inicio', 3, 5, 'Hasta', 'anterior'],
     ['más de un año atrás', 400, 390, 'Desde', 'un año'],
   ])('un rango manual con %s se explica y no se consulta', async (_caso, inicio, fin, campo, texto) => {
@@ -411,7 +410,7 @@ describe('equipo inactivo', () => {
     abrir()
     await usuario.click(await screen.findByRole('link', { name: 'Temp Amb. a 2 Mts' }))
     expect(await screen.findByRole('img')).toHaveAccessibleName(
-      'Temp Amb. a 2 Mts: últimos 7 días, en °C',
+      'Temp Amb. a 2 Mts: últimas 24 horas, en °C',
     )
   })
 })

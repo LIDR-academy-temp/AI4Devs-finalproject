@@ -75,7 +75,7 @@ function RangoManual({ alElegir }: { alElegir: (consulta: Consulta) => void }) {
           onChange={(evento) => setHasta(evento.target.value)}
         />
       </div>
-      <p className="ayuda">Hasta 31 días, dentro del último año. Hora de Argentina.</p>
+      <p className="ayuda">Hasta un mes, por ejemplo del 1/10 al 1/11, dentro del último año. Hora de Argentina.</p>
       <button type="submit">Ver el período</button>
     </form>
   )
@@ -89,11 +89,12 @@ const TEXTO_CALIDAD: Record<string, string> = {
 
 export function DetalleSensor() {
   const { estacionId = '', sensorId = '' } = useParams()
-  const [seleccion, setSeleccion] = useState<Seleccion>('semana')
+  // Abre en Día: lo más útil para decidir una aplicación (weather-track-historicos-sin-huecos, D4).
+  const [seleccion, setSeleccion] = useState<Seleccion>('dia')
   // Se fija al elegir: recalcularlo en cada render repetiría la consulta sin fin.
   const [consulta, setConsulta] = useState<Consulta>(() => ({
-    rango: rangoDeDias(7, new Date()),
-    titulo: 'últimos 7 días',
+    rango: rangoDeDias(RAPIDOS[0].dias, new Date()),
+    titulo: RAPIDOS[0].titulo,
   }))
   const { rango } = consulta
 

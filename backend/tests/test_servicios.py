@@ -135,5 +135,5 @@ def test_el_modo_simulado_arranca_y_planifica_con_su_cliente_fijo(monkeypatch, s
     assert worker.principal() == 0
 
     nombres = [args[0] for funcion, args in planificadores[0].tareas if funcion is worker.protegida]
-    assert nombres == ["catálogo", "ciclo", "carga inicial"]
+    assert nombres == ["catálogo", "ciclo", "carga y huecos"]
     assert sesion.scalar(select(func.count()).select_from(Estacion)) == 1

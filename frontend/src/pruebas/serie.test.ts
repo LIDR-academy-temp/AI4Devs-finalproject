@@ -101,6 +101,9 @@ describe('rangos del calendario', () => {
   it.each([
     ['2025-11-05', '2025-11-05'],
     ['2026-10-06', '2026-11-05'],
+    // Un mes de calendario: hasta el mismo día del mes siguiente (weather-track-historicos-sin-huecos).
+    ['2026-10-05', '2026-11-05'],
+    ['2026-10-01', '2026-11-01'],
     ['2026-11-05', '2026-11-05'],
   ])('acepta del %s al %s', (desde, hasta) => {
     expect(rangoManual(desde, hasta, AHORA)).toHaveProperty('rango')
@@ -111,7 +114,8 @@ describe('rangos del calendario', () => {
     ['2026-11-01', '2026-11-06', 'hasta', 'futura'],
     ['2026-11-06', '2026-11-07', 'hasta', 'futura'],
     ['2026-10-10', '2026-10-09', 'hasta', 'anterior'],
-    ['2026-10-05', '2026-11-05', 'hasta', '31 días'],
+    ['2026-10-04', '2026-11-05', 'hasta', 'mismo día del mes siguiente'],
+    ['2026-10-01', '2026-11-02', 'hasta', 'del 1/10 al 1/11'],
     ['', '2026-11-05', 'desde', 'inicio'],
     ['2026-11-01', '', 'hasta', 'fin'],
   ])('rechaza del %s al %s en el campo %s', (desde, hasta, campo, texto) => {

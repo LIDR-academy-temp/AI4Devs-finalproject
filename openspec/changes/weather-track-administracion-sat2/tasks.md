@@ -39,5 +39,5 @@ Las decisiones están en `design.md` (D1 a D8). Las pruebas usan valores fictici
 
 ## 8. Verificación del responsable
 
-- [ ] 8.1 El responsable genera las claves en su `.env`, se hace administrador, carga las credenciales reales en la pantalla y confirma que el ciclo siguiente termina bien; el asistente solo lee el resultado en la pantalla o en la base local, sin valores
+- [x] 8.1 El responsable genera las claves en su `.env`, se hace administrador, carga las credenciales reales en la pantalla y confirma que el ciclo siguiente termina bien; el asistente solo lee el resultado en la pantalla o en la base local, sin valores
 - [ ] 8.2 El responsable revisa el cambio y lo aprueba

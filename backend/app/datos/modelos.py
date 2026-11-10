@@ -47,7 +47,8 @@ ESTADOS_RECOMENDACION = (
     "NO_APLICAR",
     "DATOS_INSUFICIENTES",
 )
-TIPOS_EJECUCION = ("CICLO", "CARGA_INICIAL")
+# RECUPERACION: los huecos que se piden a SAT2 después (weather-track-historicos-sin-huecos).
+TIPOS_EJECUCION = ("CICLO", "CARGA_INICIAL", "RECUPERACION")
 RESULTADOS_EJECUCION = ("EN_CURSO", "EXITO", "PARCIAL", "ERROR")
 NATURALEZAS = ("REAL", "FICTICIA", "COPIA_DE_PRUEBA")
 PROPOSITOS_ENLACE = ("CONFIRMACION", "RECUPERO", "BAJA")
@@ -219,7 +220,8 @@ class EjecucionIngesta(Base):
         ),
         CheckConstraint("lecturas_guardadas >= 0", name="lecturas_no_negativas"),
         CheckConstraint(
-            "tipo = 'CARGA_INICIAL' OR (ventana_desde IS NULL AND ventana_hasta IS NULL)",
+            "tipo IN ('CARGA_INICIAL', 'RECUPERACION') "
+            "OR (ventana_desde IS NULL AND ventana_hasta IS NULL)",
             name="ventana_solo_en_cargas",
         ),
         Index("ix_ejecucion_ingesta_ultima", "estacion_id", "tipo", text("iniciada_en DESC")),

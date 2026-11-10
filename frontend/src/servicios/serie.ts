@@ -62,7 +62,10 @@ export function formatearNumero(valor: number | null | undefined): string {
 const ZONA_ARGENTINA = 'America/Argentina/Buenos_Aires'
 /** Argentina no usa horario de verano desde 2009: sus fechas se arman con este desfase. */
 const DESFASE_ARGENTINA = '-03:00'
-/** El mismo máximo que la API (RANGO_MAXIMO): un rango manual abarca hasta 31 días de calendario. */
+/**
+ * Un rango manual llega hasta el mismo día del mes siguiente: la fecha de fin, como mucho 31 días
+ * después de la de inicio. La API admite 32 días (RANGO_MAXIMO), de 00:00 a 23:59.
+ */
 export const DIAS_MAXIMOS = 31
 
 export interface Rango {
@@ -128,8 +131,11 @@ export function rangoManual(desde: string, hasta: string, ahora: Date): Resultad
   if (hasta < desde) {
     return { campo: 'hasta', error: 'La fecha de fin no puede ser anterior a la de inicio.' }
   }
-  if (diasEntre(desde, hasta) + 1 > DIAS_MAXIMOS) {
-    return { campo: 'hasta', error: `El rango puede abarcar como máximo ${DIAS_MAXIMOS} días.` }
+  if (diasEntre(desde, hasta) > DIAS_MAXIMOS) {
+    return {
+      campo: 'hasta',
+      error: 'El rango puede llegar hasta el mismo día del mes siguiente, por ejemplo del 1/10 al 1/11.',
+    }
   }
   return {
     rango: {

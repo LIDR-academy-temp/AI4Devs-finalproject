@@ -22,7 +22,11 @@ test.describe('HU3: revisar el comportamiento histórico', () => {
   test('consulta de Semana y Mes con gráfico y resumen', async ({ page }) => {
     const bloqueos = vigilarPoliticaDeContenido(page)
     await abrirDetalle(page)
+    // Abre en Día, las últimas 24 horas.
+    await expect(page.getByRole('img', { name: /Temp Amb. a 2 Mts: últimas 24 horas/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Día' })).toHaveAttribute('aria-pressed', 'true')
 
+    await page.getByRole('button', { name: 'Semana' }).click()
     const grafico = page.getByRole('img', { name: /Temp Amb. a 2 Mts: últimos 7 días/ })
     // La fuente simulada tiene huecos: la línea se corta en varios tramos, sin interpolar.
     await expect.poll(() => grafico.locator('.scatterlayer .js-line').count()).toBeGreaterThan(1)
@@ -58,11 +62,11 @@ test.describe('HU3: revisar el comportamiento histórico', () => {
     await expect(page.getByRole('img', { name: new RegExp(`del ${dia}/${mes}/${anio}`) })).toBeVisible()
     await expect.poll(() => registros(page)).toBeGreaterThan(0)
 
-    // Más de 31 días no se consulta.
+    // Más de un mes no se consulta.
     const viejo = new Date(Date.parse(`${hoy}T12:00:00-03:00`) - 40 * 86_400_000).toISOString().slice(0, 10)
     await desde.fill(viejo)
     await page.getByRole('button', { name: 'Ver el período' }).click()
-    await expect(page.getByText('El rango puede abarcar como máximo 31 días.')).toBeVisible()
+    await expect(page.getByText(/hasta el mismo día del mes siguiente/)).toBeVisible()
   })
 
   test.describe('a 360 píxeles', () => {

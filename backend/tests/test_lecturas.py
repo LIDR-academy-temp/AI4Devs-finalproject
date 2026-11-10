@@ -1,7 +1,7 @@
 """Endpoints de lectura contra PostgreSQL, y su contrato con la sección 4 del README."""
 
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal as D
 from pathlib import Path
 
@@ -400,9 +400,22 @@ def test_periodo_sin_lecturas_validas(cliente, sesion, estacion, sensor):
     assert datos["resumen"] == {"maximo": None, "minimo": None, "promedio": None, "cantidad": 0}
 
 
-def test_acepta_exactamente_31_dias(cliente, estacion, sensor):
+def test_acepta_exactamente_32_dias(cliente, estacion, sensor):
     respuesta = consultar_historico(
-        cliente, estacion, sensor.id, AHORA - timedelta(days=31), AHORA
+        cliente, estacion, sensor.id, AHORA - timedelta(days=32), AHORA
+    )
+    assert respuesta.status_code == 200
+
+
+def test_acepta_un_mes_de_calendario(cliente, estacion, sensor):
+    """Del 1/10 a las 00:00 al 1/11 a las 23:59, hora de Argentina (weather-track-historicos-sin-huecos)."""
+    argentina = timezone(timedelta(hours=-3))
+    respuesta = consultar_historico(
+        cliente,
+        estacion,
+        sensor.id,
+        datetime(2026, 10, 1, tzinfo=argentina),
+        datetime(2026, 11, 1, 23, 59, 59, 999000, tzinfo=argentina),
     )
     assert respuesta.status_code == 200
 
@@ -410,7 +423,7 @@ def test_acepta_exactamente_31_dias(cliente, estacion, sensor):
 @pytest.mark.parametrize(
     ("desde", "hasta"),
     [
-        (AHORA - timedelta(days=31, seconds=1), AHORA),
+        (AHORA - timedelta(days=32, minutes=1), AHORA),
         (AHORA, AHORA - timedelta(hours=1)),
         (AHORA, AHORA),
     ],

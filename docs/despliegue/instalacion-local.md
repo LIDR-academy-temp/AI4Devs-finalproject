@@ -93,10 +93,10 @@ docker compose down -v
 
 Las credenciales de SAT2 se cargan de una de dos formas. La recomendada es desde la aplicación, como administrador: quedan cifradas en la base y se cambian sin entrar al servidor ([ADR-0004](../decisions/0004-credenciales-de-sat2.md)).
 
-**1. Generá las claves de cifrado.** El comando no usa la base. Muestra dos líneas, `SAT2_CLAVE_PUBLICA=...` y `SAT2_CLAVE_PRIVADA=...`:
+**1. Generá las claves de cifrado.** El comando no usa la base. `--build` reconstruye antes la imagen del worker, para que tenga este comando aunque la instalación venga de una versión anterior. Muestra dos líneas, `SAT2_CLAVE_PUBLICA=...` y `SAT2_CLAVE_PRIVADA=...`:
 
 ```bash
-docker compose run --rm --no-deps worker python -m app.administracion generar-claves-sat2
+docker compose run --rm --no-deps --build worker python -m app.administracion generar-claves-sat2
 ```
 
 **2. Editá el archivo `.env`.** Este archivo nunca se sube a GitHub:
