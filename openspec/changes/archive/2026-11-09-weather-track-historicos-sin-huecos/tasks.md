@@ -15,9 +15,9 @@ Las decisiones están en `design.md` (D1 a D5). Las pruebas usan una SAT2 falsa 
 
 ## 3. Documentación
 
-- [ ] 3.1 Actualizar el README (1.6, 2.6 y lo que describa los rangos o la carga) y la hoja de ruta, y regenerar la guía de las especificaciones al archivar
+- [x] 3.1 Actualizar el README (1.6, 2.6 y lo que describa los rangos o la carga) y la hoja de ruta, y regenerar la guía de las especificaciones al archivar
 
 ## 4. Verificación del responsable
 
-- [ ] 4.1 El responsable levanta su instalación con el cambio y comprueba que se completan los días 1 al 9 de noviembre y que Día, Semana, Mes y el rango del 1/10 al 1/11 se ven completos; el asistente solo cuenta lecturas por día en la base local
-- [ ] 4.2 El responsable revisa el cambio y lo aprueba
+- [x] 4.1 El responsable levanta su instalación con el cambio y comprueba que se completan los días 1 al 9 de noviembre y que Día, Semana, Mes y el rango del 1/10 al 1/11 se ven completos; el asistente solo cuenta lecturas por día en la base local
+- [x] 4.2 El responsable revisa el cambio y lo aprueba

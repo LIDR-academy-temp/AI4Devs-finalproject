@@ -3,7 +3,7 @@
 > Este archivo se genera desde `openspec/specs` y no se edita a mano.
 > Para regenerarlo, desde `backend/`: `uv run python -m herramientas.documentar_especificaciones`.
 
-Qué hace Weather Track, según sus especificaciones de OpenSpec: 12 capacidades, 84 requisitos y 172 escenarios. Cada capacidad enlaza su especificación, donde están los escenarios completos, y el último cambio archivado que la modificó.
+Qué hace Weather Track, según sus especificaciones de OpenSpec: 13 capacidades, 94 requisitos y 201 escenarios. Cada capacidad enlaza su especificación, donde están los escenarios completos, y el último cambio archivado que la modificó.
 
 ## Índice
 
@@ -12,13 +12,14 @@ Qué hace Weather Track, según sus especificaciones de OpenSpec: 12 capacidades
 | [account-access](#account-access) | Permite que solo las personas con una cuenta activa de Weather Track ingresen al sistema y consulten únicamente las estaciones que tienen asignadas. | 7 | 15 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
 | [account-lifecycle](#account-lifecycle) | Permite que una persona cree su propia cuenta de Weather Track, la confirme por correo, la administre y la dé de baja, y que el sistema borre las cuentas que no se confirman o se dan de baja. | 10 | 20 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
 | [account-recovery](#account-recovery) | Permite que el titular de una cuenta recupere el acceso cuando olvidó su contraseña, sin que nadie pueda averiguar qué correos están registrados. | 4 | 7 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
+| [administration](#administration) | Permite que un administrador de Weather Track gestione la conexión con SAT2 desde la aplicación, sin entrar al servidor, y sin que el resto de las cuentas vea ni alcance esa opción. | 6 | 17 | [weather-track-administracion-sat2](../../openspec/changes/archive/2026-11-09-weather-track-administracion-sat2/proposal.md), 2026-11-09 |
 | [ai-code-review](#ai-code-review) | Suma a cada pull request una revisión de IA enfocada en las reglas de Weather Track, como apoyo a la decisión del responsable y sin reemplazar los controles del pipeline. | 4 | 6 | [weather-track-revision-y-documentacion-viva](../../openspec/changes/archive/2026-11-07-weather-track-revision-y-documentacion-viva/proposal.md), 2026-11-07 |
 | [application-recommendation](#application-recommendation) | Responde si conviene aplicar fitosanitarios en una estación en este momento, con un índice, un estado y sus motivos, sin presentar como favorable una condición de inversión ni datos faltantes o viejos. | 11 | 24 | [weather-track-mvp-nucleo](../../openspec/changes/archive/2026-11-03-weather-track-mvp-nucleo/proposal.md), 2026-11-03 |
 | [continuous-integration](#continuous-integration) | Verifica automáticamente cada cambio de Weather Track con las mismas pruebas que se ejecutan a mano, para que nada llegue a `main` sin pasar por ellas, y sin que el propio pipeline exponga credenciales. | 10 | 12 | [weather-track-revision-y-documentacion-viva](../../openspec/changes/archive/2026-11-07-weather-track-revision-y-documentacion-viva/proposal.md), 2026-11-07 |
 | [customer-base](#customer-base) | Convierte las cuentas confirmadas en una base de clientes potenciales, con el consentimiento de cada persona registrado y una exportación para el administrador. | 3 | 4 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
 | [living-documentation](#living-documentation) | Ofrece una guía legible de lo que hace Weather Track, generada a partir de las especificaciones de OpenSpec para que nunca quede vieja. | 3 | 4 | [weather-track-revision-y-documentacion-viva](../../openspec/changes/archive/2026-11-07-weather-track-revision-y-documentacion-viva/proposal.md), 2026-11-07 |
-| [sat2-ingestion](#sat2-ingestion) | Mantiene los datos de las estaciones actualizados y con su calidad identificada, obteniéndolos de SAT2 de forma automática e independiente de las sesiones de usuario. | 15 | 41 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
-| [sensor-history](#sensor-history) | Permite revisar cómo evolucionó un sensor en un período reciente, con un gráfico y un resumen estadístico, para entender las condiciones y planificar la próxima aplicación. | 5 | 14 | [weather-track-historicos-rangos](../../openspec/changes/archive/2026-11-05-weather-track-historicos-rangos/proposal.md), 2026-11-05 |
+| [sat2-ingestion](#sat2-ingestion) | Mantiene los datos de las estaciones actualizados y con su calidad identificada, obteniéndolos de SAT2 de forma automática e independiente de las sesiones de usuario. | 18 | 50 | [weather-track-historicos-sin-huecos](../../openspec/changes/archive/2026-11-09-weather-track-historicos-sin-huecos/proposal.md), 2026-11-09 |
+| [sensor-history](#sensor-history) | Permite revisar cómo evolucionó un sensor en un período reciente, con un gráfico y un resumen estadístico, para entender las condiciones y planificar la próxima aplicación. | 6 | 17 | [weather-track-historicos-sin-huecos](../../openspec/changes/archive/2026-11-09-weather-track-historicos-sin-huecos/proposal.md), 2026-11-09 |
 | [station-conditions](#station-conditions) | Muestra las últimas lecturas de una estación con su calidad, sus alarmas y su antigüedad, para que la persona sepa qué se midió y cuánto puede confiar en ese dato. | 6 | 17 | [weather-track-estaciones](../../openspec/changes/archive/2026-11-05-weather-track-estaciones/proposal.md), 2026-11-05 |
 | [transactional-email](#transactional-email) | Envía los correos de las cuentas (confirmación, recupero, avisos de seguridad) de forma confiable, con un enlace de baja en cada uno, y sin que una instalación local envíe correos a internet. | 6 | 8 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
 
@@ -228,6 +229,71 @@ El sistema SHALL indicar en la pantalla de recupero que el usuario es el correo 
 Escenarios:
 
 - Persona que no recuerda su usuario
+
+## administration
+
+Permite que un administrador de Weather Track gestione la conexión con SAT2 desde la aplicación, sin entrar al servidor, y sin que el resto de las cuentas vea ni alcance esa opción.
+
+Especificación: [openspec/specs/administration/spec.md](../../openspec/specs/administration/spec.md). Último cambio archivado: [weather-track-administracion-sat2](../../openspec/changes/archive/2026-11-09-weather-track-administracion-sat2/proposal.md), 2026-11-09.
+
+### Rol de administrador desde el servidor
+
+El sistema SHALL otorgar y quitar el rol de administrador solo con un comando de la línea de comandos del servidor, y solo a una cuenta activa y confirmada. Ninguna ruta de la API ni pantalla MUST permitir otorgar, quitar ni modificar ese rol.
+
+Escenarios:
+
+- Otorgar el rol
+- Cuenta sin confirmar
+- Intento desde la web
+
+### Opción invisible para el resto de las cuentas
+
+El sistema SHALL mostrar la opción «Administración» solo a las cuentas administradoras. Para cualquier otra cuenta, y para pedidos sin sesión, las rutas de administración de la API MUST responder igual que una ruta inexistente (404), y la pantalla de administración MUST mostrar lo mismo que una página inexistente.
+
+Escenarios:
+
+- Cuenta común
+- Ruta pedida a mano
+- Administrador
+
+### Configuración de SAT2 desde la aplicación
+
+El sistema SHALL permitir que el administrador cargue la URL, el usuario y la contraseña de SAT2, y MUST conservarlos hasta que un administrador los reemplace. La pantalla SHALL mostrar si hay una configuración guardada, cuándo y quién la cargó, el modo de datos y el resultado del último ciclo de ingesta. Sin configuración guardada, SHALL indicar que la ingesta usa las variables del servidor. La pantalla MUST NOT mostrar la URL, el usuario ni la contraseña guardados.
+
+Escenarios:
+
+- Primera carga
+- Reemplazo
+- Campos inválidos
+- URL sin cifrado
+
+### Credenciales cifradas que la API no puede leer
+
+El sistema MUST guardar la configuración de SAT2 cifrada con una clave pública, de modo que solo el proceso de ingesta, con la clave privada, pueda descifrarla. La API MUST NOT tener la clave privada, y ninguna respuesta, registro ni correo MUST incluir la URL, el usuario ni la contraseña de SAT2.
+
+Escenarios:
+
+- Copia de la base
+- Consulta de la configuración
+- Falta la clave pública
+
+### Confirmación con la contraseña del administrador
+
+Para guardar la configuración de SAT2, el sistema MUST pedir la contraseña de Weather Track del administrador, aunque tenga la sesión abierta. Una contraseña incorrecta MUST contar como intento fallido de ingreso a esa cuenta.
+
+Escenarios:
+
+- Contraseña correcta
+- Contraseña incorrecta
+
+### Aviso y registro de cada cambio
+
+Cada vez que se guarda la configuración de SAT2, el sistema SHALL enviar un aviso por correo a cada administrador activo y SHALL agregar al registro de cambios la fecha y el correo de quien la guardó. Ni el aviso ni el registro MUST incluir los valores de la configuración.
+
+Escenarios:
+
+- Cambio guardado
+- Registro en pantalla
 
 ## ai-code-review
 
@@ -530,7 +596,7 @@ Escenarios:
 
 Mantiene los datos de las estaciones actualizados y con su calidad identificada, obteniéndolos de SAT2 de forma automática e independiente de las sesiones de usuario.
 
-Especificación: [openspec/specs/sat2-ingestion/spec.md](../../openspec/specs/sat2-ingestion/spec.md). Último cambio archivado: [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05.
+Especificación: [openspec/specs/sat2-ingestion/spec.md](../../openspec/specs/sat2-ingestion/spec.md). Último cambio archivado: [weather-track-historicos-sin-huecos](../../openspec/changes/archive/2026-11-09-weather-track-historicos-sin-huecos/proposal.md), 2026-11-09.
 
 ### Ciclo automático de lecturas
 
@@ -593,13 +659,20 @@ Escenarios:
 
 ### Protección de credenciales de SAT2
 
-El sistema MUST leer las credenciales de SAT2 desde el entorno del proceso de ingesta, y MUST NOT incluirlas en la API, el navegador, el código, los registros ni los datos de prueba. Las cuentas de Weather Track MUST NOT tener relación con la cuenta de SAT2: ningún flujo de cuentas pide, muestra ni usa sus credenciales.
+El sistema MUST tomar las credenciales de SAT2 de la configuración cifrada que carga un administrador o, en su defecto, del entorno del proceso de ingesta. Solo el proceso de ingesta MUST poder leerlas: la API MUST NOT tener la clave para descifrarlas ni las variables con credenciales de SAT2. Las credenciales MUST NOT aparecer en el navegador, el código, los registros, los correos ni los datos de prueba.
 
 Escenarios:
 
 - Registro de una consulta
 - Faltan credenciales
 - Entorno de la API
+
+### Cuentas sin relación con SAT2
+
+Las cuentas comunes de Weather Track MUST NOT tener relación con la cuenta de SAT2: ningún flujo de cuentas pide, muestra ni usa sus credenciales.
+
+Escenarios:
+
 - Registro de una cuenta
 
 ### Modo simulado
@@ -678,19 +751,43 @@ Escenarios:
 - Modo de prueba sobre la base real
 - Copia de la base real
 
+### Origen de la configuración de SAT2
+
+En modo real, el proceso de ingesta SHALL usar la configuración de SAT2 guardada por un administrador, si existe. Si no existe, SHALL usar las variables del entorno. Si existe pero no puede descifrarla, MUST registrar el error sin valores y MUST NOT consultar SAT2 ni volver a las variables del entorno.
+
+Escenarios:
+
+- Sin configuración guardada
+- Configuración guardada
+- Cambio de configuración
+- No se puede descifrar
+
+### Recuperación de huecos
+
+El sistema SHALL buscar, al arrancar el proceso de ingesta y luego cada hora, los tramos de más de 30 minutos sin lecturas de cada estación activa en los últimos 31 días, y SHALL pedirlos a SAT2 como históricos, sensor por sensor, con las mismas pausas y la misma ventana adaptable de la carga inicial y sin duplicar lecturas. El sistema MUST NOT volver a pedir un día ya terminado que SAT2 devolvió después de terminar ese día.
+
+Escenarios:
+
+- Instalación apagada varios días
+- Lecturas ya guardadas
+- Día sin datos en SAT2
+- Día en curso
+- Ciclo durante la recuperación
+
 ## sensor-history
 
 Permite revisar cómo evolucionó un sensor en un período reciente, con un gráfico y un resumen estadístico, para entender las condiciones y planificar la próxima aplicación.
 
-Especificación: [openspec/specs/sensor-history/spec.md](../../openspec/specs/sensor-history/spec.md). Último cambio archivado: [weather-track-historicos-rangos](../../openspec/changes/archive/2026-11-05-weather-track-historicos-rangos/proposal.md), 2026-11-05.
+Especificación: [openspec/specs/sensor-history/spec.md](../../openspec/specs/sensor-history/spec.md). Último cambio archivado: [weather-track-historicos-sin-huecos](../../openspec/changes/archive/2026-11-09-weather-track-historicos-sin-huecos/proposal.md), 2026-11-09.
 
 ### Consulta de la serie por la API
 
-El sistema SHALL entregar, para un sensor de una estación autorizada y un rango de hasta 31 días, sus lecturas en orden ascendente, a partir de los datos guardados y sin consultar a SAT2. El rango MUST NOT empezar antes de las 00:00, hora de Argentina, del mismo día del año anterior, ni terminar más de 5 minutos después de la hora del servidor.
+El sistema SHALL entregar, para un sensor de una estación autorizada y un rango de hasta 32 días entre el inicio y el fin, sus lecturas en orden ascendente, a partir de los datos guardados y sin consultar a SAT2. Así se puede consultar desde las 00:00 de un día hasta las 23:59 del mismo día del mes siguiente. El rango MUST NOT empezar antes de las 00:00, hora de Argentina, del mismo día del año anterior, ni terminar más de 5 minutos después de la hora del servidor.
 
 Escenarios:
 
 - Rango válido
+- Un mes de calendario
 - Rango inválido
 - Rango de hace más de un año
 - Primer día permitido
@@ -699,12 +796,21 @@ Escenarios:
 
 ### Rangos en la pantalla
 
-La pantalla de históricos SHALL ofrecer tres rangos medidos hasta el momento de la consulta: Día (últimas 24 horas), Semana (últimos 7 días) y Mes (últimos 31 días). También SHALL ofrecer un rango manual con calendario, de una fecha de inicio a una de fin, en hora de Argentina. El calendario MUST NOT ofrecer fechas futuras ni anteriores al mismo día del año anterior, y la pantalla MUST NOT consultar un rango manual de más de 31 días o con la fecha de fin anterior a la de inicio.
+La pantalla de históricos SHALL ofrecer tres rangos medidos hasta el momento de la consulta: Día (últimas 24 horas), Semana (últimos 7 días) y Mes (últimos 31 días), y SHALL abrir con Día seleccionado.
 
 Escenarios:
 
+- Apertura del detalle
 - Selección de rango
+
+### Rango manual con calendario
+
+La pantalla de históricos SHALL ofrecer un rango manual con calendario, de una fecha de inicio a una de fin, en hora de Argentina. El calendario MUST NOT ofrecer fechas futuras ni anteriores al mismo día del año anterior, y la pantalla MUST NOT consultar un rango manual cuya fecha de fin esté más de 31 días después de la de inicio o sea anterior a ella.
+
+Escenarios:
+
 - Rango manual válido
+- Un mes de calendario en el rango manual
 - Rango manual que termina hoy
 - Rango manual inválido
 

@@ -10,7 +10,7 @@ informed: Evaluadores de AI4Devs
 
 | | |
 |---|---|
-| **Estado** | Aceptado el 9 de noviembre de 2026. Implementado en el cambio de OpenSpec [`weather-track-administracion-sat2`](../../openspec/changes/weather-track-administracion-sat2/design.md). Falta la verificación del responsable con las credenciales reales. |
+| **Estado** | Aceptado el 9 de noviembre de 2026. Implementado en el cambio de OpenSpec [`weather-track-administracion-sat2`](../../openspec/changes/archive/2026-11-09-weather-track-administracion-sat2/design.md). Verificado por el responsable con las credenciales reales el mismo día. |
 | **Alcance** | Dónde viven la URL y las credenciales de SAT2, quién puede cambiarlas y cómo llegan al worker. Es el requisito previo de D7 en la [hoja de ruta](../plan/hoja-de-ruta-entrega-final.md). |
 | **Fuera de alcance** | Roles por estación o niveles de usuario, rotación automática de claves y elegir el modo de datos desde la aplicación. |
 
@@ -73,7 +73,7 @@ Las claves se generan con `python -m app.administracion generar-claves-sat2`. `S
 - Pruebas del cifrado, de la API (incluido el 404 igual a una ruta inexistente con nueve tipos de pedido), del worker con una SAT2 falsa, del frontend y de extremo a extremo, todas con valores ficticios.
 - [Pruebas negativas](../../backend/herramientas/pruebas_negativas.py) sobre la configuración de producción: 18 comprobaciones nuevas, entre ellas que la base guarda solo texto cifrado y que la API no recibe la clave privada.
 - Prueba de Compose: la API recibe la clave pública y nunca la privada.
-- **Pendiente:** el responsable genera las claves, carga las credenciales reales en la pantalla y confirma que el ciclo siguiente termina bien. El asistente no carga credenciales reales ni ejecuta el modo real.
+- **Verificado el 9 de noviembre de 2026:** el responsable generó las claves, cargó las credenciales reales en la pantalla y el worker las usa: los ciclos siguientes terminaron bien. El asistente no cargó credenciales reales ni ejecutó el modo real.
 
 ## Más información
 

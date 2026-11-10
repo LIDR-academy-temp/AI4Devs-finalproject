@@ -116,7 +116,7 @@ El sistema SHALL renovar la sesión con SAT2 antes de que venza y reintentar una
 
 ### Requirement: Protección de credenciales de SAT2
 
-El sistema MUST leer las credenciales de SAT2 desde el entorno del proceso de ingesta, y MUST NOT incluirlas en la API, el navegador, el código, los registros ni los datos de prueba. Las cuentas de Weather Track MUST NOT tener relación con la cuenta de SAT2: ningún flujo de cuentas pide, muestra ni usa sus credenciales.
+El sistema MUST tomar las credenciales de SAT2 de la configuración cifrada que carga un administrador o, en su defecto, del entorno del proceso de ingesta. Solo el proceso de ingesta MUST poder leerlas: la API MUST NOT tener la clave para descifrarlas ni las variables con credenciales de SAT2. Las credenciales MUST NOT aparecer en el navegador, el código, los registros, los correos ni los datos de prueba.
 
 #### Scenario: Registro de una consulta
 
@@ -125,13 +125,17 @@ El sistema MUST leer las credenciales de SAT2 desde el entorno del proceso de in
 
 #### Scenario: Faltan credenciales
 
-- **WHEN** el proceso de ingesta inicia sin credenciales y fuera del modo simulado
+- **WHEN** el proceso de ingesta inicia en modo real sin configuración guardada ni credenciales en el entorno
 - **THEN** informa el error de configuración, sin imprimir valores, y no consulta SAT2
 
 #### Scenario: Entorno de la API
 
 - **WHEN** se inspecciona la configuración con la que arranca la API
-- **THEN** no contiene ninguna variable con credenciales de SAT2
+- **THEN** no contiene ninguna variable con credenciales de SAT2 ni la clave privada, solo la clave pública
+
+### Requirement: Cuentas sin relación con SAT2
+
+Las cuentas comunes de Weather Track MUST NOT tener relación con la cuenta de SAT2: ningún flujo de cuentas pide, muestra ni usa sus credenciales.
 
 #### Scenario: Registro de una cuenta
 
@@ -269,3 +273,56 @@ El sistema MUST registrar si una base contiene datos reales o ficticios desde su
 
 - **WHEN** se prepara una copia de la base real para el modo de prueba
 - **THEN** "Caso de prueba - 1" muestra los datos reales copiados y la base original no cambia
+
+### Requirement: Origen de la configuración de SAT2
+
+En modo real, el proceso de ingesta SHALL usar la configuración de SAT2 guardada por un administrador, si existe. Si no existe, SHALL usar las variables del entorno. Si existe pero no puede descifrarla, MUST registrar el error sin valores y MUST NOT consultar SAT2 ni volver a las variables del entorno.
+
+#### Scenario: Sin configuración guardada
+
+- **WHEN** el worker arranca en modo real y nadie guardó una configuración
+- **THEN** usa la URL y las credenciales del entorno
+
+#### Scenario: Configuración guardada
+
+- **WHEN** hay una configuración guardada por un administrador
+- **THEN** el worker la usa, aunque el entorno tenga otras variables
+
+#### Scenario: Cambio de configuración
+
+- **WHEN** un administrador guarda una configuración nueva con el worker en marcha
+- **THEN** el ciclo siguiente abre una sesión nueva con SAT2 con esa configuración, sin reiniciar el worker
+
+#### Scenario: No se puede descifrar
+
+- **WHEN** hay una configuración guardada y falta la clave privada o no corresponde
+- **THEN** el worker registra el error sin valores, el ciclo termina en error y no se consulta SAT2
+
+### Requirement: Recuperación de huecos
+
+El sistema SHALL buscar, al arrancar el proceso de ingesta y luego cada hora, los tramos de más de 30 minutos sin lecturas de cada estación activa en los últimos 31 días, y SHALL pedirlos a SAT2 como históricos, sensor por sensor, con las mismas pausas y la misma ventana adaptable de la carga inicial y sin duplicar lecturas. El sistema MUST NOT volver a pedir un día ya terminado que SAT2 devolvió después de terminar ese día.
+
+#### Scenario: Instalación apagada varios días
+
+- **WHEN** el proceso de ingesta vuelve a arrancar después de estar detenido una semana
+- **THEN** pide a SAT2 los días que faltan y los históricos quedan completos hasta el momento actual
+
+#### Scenario: Lecturas ya guardadas
+
+- **WHEN** se recupera un día del que ya había lecturas
+- **THEN** las lecturas existentes no se duplican
+
+#### Scenario: Día sin datos en SAT2
+
+- **WHEN** SAT2 devolvió sin lecturas un día ya terminado
+- **THEN** ese día no se vuelve a pedir en las horas siguientes
+
+#### Scenario: Día en curso
+
+- **WHEN** el día de hoy tiene un tramo sin lecturas
+- **THEN** se vuelve a pedir en la hora siguiente mientras el tramo siga sin lecturas
+
+#### Scenario: Ciclo durante la recuperación
+
+- **WHEN** corresponde ejecutar un ciclo de 10 minutos mientras avanza una recuperación
+- **THEN** el ciclo se ejecuta con prioridad

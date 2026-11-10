@@ -66,8 +66,8 @@ https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp
 | F2 | Estación | Selector siempre visible con las estaciones: cada una es un equipo de SAT2, hoy INTA Pergamino. Un equipo que deja de llegar de SAT2 queda inactivo y muestra solo sus históricos. |
 | F3 | Condiciones actuales | Una tarjeta por sensor con valor, unidad, calidad del dato y antigüedad. |
 | F4 | Recomendación | Estado de aplicación, índice TIS (Índice de Inversión Térmica), diferencia térmica y motivos. |
-| F5 | Históricos | Serie por sensor del último día, la última semana o el último mes, o de un rango elegido en el calendario: hasta 31 días, dentro del último año y sin fechas futuras. Con resumen estadístico. |
-| F6 | Ingesta automática | Carga inicial de los últimos 31 días y proceso programado que cada 10 minutos obtiene datos, los normaliza, los guarda y calcula la recomendación. |
+| F5 | Históricos | Serie por sensor del último día, la última semana o el último mes, o de un rango elegido en el calendario: hasta el mismo día del mes siguiente (del 1/10 al 1/11, por ejemplo), dentro del último año y sin fechas futuras. Abre en el último día. Con resumen estadístico. |
+| F6 | Ingesta automática | Carga inicial de los últimos 31 días y proceso programado que cada 10 minutos obtiene datos, los normaliza, los guarda y calcula la recomendación. Al arrancar y cada hora recupera los huecos de los últimos 31 días, por ejemplo después de un apagado. |
 | F7 | Base de clientes | El administrador exporta a CSV las cuentas confirmadas, con su consentimiento para recibir novedades, sin datos de acceso. |
 
 #### Sistema de unidades
@@ -273,7 +273,7 @@ En el servidor el acceso es por HTTPS. En la instalación local es por HTTP, sol
 |---|---|---|
 | Frontend | React, TypeScript, Vite, Plotly.js | Pantallas de acceso, decisión, detalle e históricos. Consulta la API cada 60 segundos. |
 | API | Python, FastAPI, Pydantic, SQLAlchemy | Autenticación, control de acceso por estación y lectura de datos. Aplica la regla R2 al responder. |
-| Worker de ingesta | Python, APScheduler, httpx | Sincroniza el catálogo, obtiene lecturas, normaliza, marca la calidad y dispara el cálculo. Registra cada ejecución. |
+| Worker de ingesta | Python, APScheduler, httpx | Sincroniza el catálogo, obtiene lecturas, normaliza, marca la calidad y dispara el cálculo. Recupera los huecos de los últimos 31 días. Registra cada ejecución. |
 | Motor de recomendación | Python, sin dependencias externas | Función pura que recibe lecturas y devuelve índice, estado y motivos. Lo usa el worker. |
 | Base de datos | PostgreSQL 18, Alembic | Usuarios, estaciones, sensores, observaciones, recomendaciones e historial de ingesta. |
 | Proxy inverso | Caddy | HTTPS, entrega de estáticos y enrutamiento hacia la API. |
@@ -405,8 +405,8 @@ Resultado de la última ejecución, el 9 de noviembre de 2026: todas pasan, en l
 
 | Nivel | Herramienta | Qué cubre | Pruebas |
 |---|---|---|---|
-| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones, las instrucciones de revisión, el cifrado de la configuración de SAT2, la API de administración y el origen de la configuración en el worker | 688 |
-| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos con sus rangos y el calendario, las pantallas de cuentas con sus errores por campo y la pantalla de administración, visible solo para el rol | 108 |
+| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones, las instrucciones de revisión, el cifrado de la configuración de SAT2, la API de administración, el origen de la configuración en el worker y la recuperación de huecos | 705 |
+| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos con sus rangos y el calendario, las pantallas de cuentas con sus errores por campo y la pantalla de administración, visible solo para el rol | 111 |
 | Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el rango manual de históricos, el selector, el equipo inactivo y las cuentas leyendo los correos en Mailpit: registro, confirmación, recupero y las tres formas de baja, y la administración de SAT2 con valores ficticios | 24 |
 | Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras, carga, enumeración de correos, enlaces de un solo uso, baja por `GET`, límites por IP y administración de SAT2 | 133 |
 
@@ -1765,12 +1765,12 @@ Escenario: Consulta de un período válido
 
 Escenario: Rango elegido en el calendario
   Dado que estoy en el detalle de un sensor
-  Cuando elijo una fecha de inicio y una de fin dentro del último año, con hasta 31 días
+  Cuando elijo una fecha de inicio y una de fin dentro del último año, hasta el mismo día del mes siguiente
   Entonces veo el gráfico desde las 00:00 del inicio hasta las 23:59 del fin, en hora de Argentina
 
 Escenario: Rango fuera de los límites
   Dado que estoy en el detalle de un sensor
-  Cuando elijo más de 31 días, una fecha futura o una de hace más de un año
+  Cuando elijo una fecha de fin más allá del mismo día del mes siguiente, una fecha futura o una de hace más de un año
   Entonces la pantalla explica el error junto a las fechas y no consulta los datos
 
 Escenario: Huecos en la serie
