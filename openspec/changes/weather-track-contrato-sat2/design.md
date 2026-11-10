@@ -76,7 +76,7 @@ Gitleaks también lo escanea en el pipeline.
 
 ### D5. Forma de referencia y comparación
 
-`forma(datos)` describe una respuesta sin sus valores: para un objeto, sus claves con la forma de cada valor; para una lista, la forma combinada de sus elementos; para lo demás, el tipo (`texto`, `entero`, `decimal`, `booleano` o `nulo`). Se guarda en `herramientas/forma_sat2.json`, dentro de la imagen, para que `--comparar` funcione en el worker.
+`forma(datos)` describe una respuesta sin sus valores: para un objeto, sus claves con la forma de cada valor; para una lista, la forma combinada de sus elementos; para lo demás, el tipo (`texto`, `numero`, `booleano` o `nulo`). Enteros y decimales son el mismo tipo: JSON escribe `0` o `0.0` según el valor, y separarlos daría falsas alarmas. Se guarda en `herramientas/forma_sat2.json`, dentro de la imagen, para que `--comparar` funcione en el worker.
 
 ```bash
 docker compose exec -T worker python -m herramientas.capturar_sat2 --comparar

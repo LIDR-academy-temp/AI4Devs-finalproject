@@ -119,8 +119,8 @@ def test_la_forma_describe_tipos_sin_valores():
 
     assert forma(datos) == {
         "texto": "texto",
-        "entero": "entero",
-        "decimal": "decimal",
+        "entero": "numero",
+        "decimal": "numero",
         "booleano": "booleano",
         "nulo": "nulo",
         "objeto": {"x": "texto"},
@@ -130,14 +130,16 @@ def test_la_forma_describe_tipos_sin_valores():
 def test_la_forma_de_una_lista_combina_sus_elementos():
     datos = [{"valor": "20,30", "fecha": "f"}, {"valor": -999.9, "fecha": "f", "alarma": True}]
 
-    assert forma(datos) == [{"valor": "decimal|texto", "fecha": "texto", "alarma": "booleano"}]
+    assert forma(datos) == [{"valor": "numero|texto", "fecha": "texto", "alarma": "booleano"}]
+    # Un 0 sin decimales no es un tipo distinto de 0.5.
+    assert forma([{"valor": 0}, {"valor": 0.5}]) == [{"valor": "numero"}]
     assert forma([]) == []
 
 
 # Comparación
 
 
-REFERENCIA = {"fecha": "texto", "datos": [{"nombre": "texto", "valor": "decimal|texto"}]}
+REFERENCIA = {"fecha": "texto", "datos": [{"nombre": "texto", "valor": "numero|texto"}]}
 
 
 def test_sin_diferencias():
@@ -151,10 +153,10 @@ def test_un_tipo_ya_visto_no_es_un_cambio():
 
 
 def test_detecta_una_clave_nueva_una_faltante_y_un_tipo_cambiado():
-    actual = {"fecha": "entero", "datos": [{"nombre": "texto", "unidad": "texto"}]}
+    actual = {"fecha": "numero", "datos": [{"nombre": "texto", "unidad": "texto"}]}
 
     assert comparar(REFERENCIA, actual, "R") == [
-        "R.fecha: el tipo pasó de texto a entero",
+        "R.fecha: el tipo pasó de texto a numero",
         "R.datos[].valor: ya no llega",
         "R.datos[].unidad: clave nueva",
     ]

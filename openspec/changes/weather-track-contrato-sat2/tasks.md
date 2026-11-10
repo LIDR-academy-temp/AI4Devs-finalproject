@@ -11,8 +11,8 @@ Las decisiones están en `design.md` (D1 a D5). El asistente nunca consulta SAT2
 
 ## 2. Respuestas reales (D3, D4)
 
-- [ ] 2.1 El responsable reconstruye su instalación y ejecuta la captura; la prueba de secretos pasa sobre el archivo, el asistente resume qué contiene y el responsable aprueba versionarlo
-- [ ] 2.2 Generar `herramientas/forma_sat2.json` y escribir las pruebas de contrato del catálogo, el ciclo y los históricos con las respuestas reales, más la prueba de que la forma versionada coincide
+- [x] 2.1 El responsable reconstruye su instalación y ejecuta la captura; la prueba de secretos pasa sobre el archivo, el asistente resume qué contiene y el responsable aprueba versionarlo
+- [x] 2.2 Generar `herramientas/forma_sat2.json` y escribir las pruebas de contrato del catálogo, el ciclo y los históricos con las respuestas reales, más la prueba de que la forma versionada coincide
 - [ ] 2.3 El responsable ejecuta `--comparar` en su instalación y confirma que no hay diferencias
 
 ## 3. Documentación

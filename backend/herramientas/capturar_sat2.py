@@ -93,10 +93,9 @@ def _tipo(valor: Any) -> str:
         return "nulo"
     if isinstance(valor, bool):
         return "booleano"
-    if isinstance(valor, int):
-        return "entero"
-    if isinstance(valor, float):
-        return "decimal"
+    # Entero y decimal son lo mismo: JSON escribe 0 o 0.0 según el valor, no según el campo.
+    if isinstance(valor, int | float):
+        return "numero"
     return "texto"
 
 
