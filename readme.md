@@ -1,6 +1,6 @@
 # Recon Tool 2.0 — Proyecto Final AI4Devs
 
-> Entrega 2 · Backend, frontend y base de datos conectados con el flujo principal (HU1 → HU2 → HU3). Sigue la plantilla oficial de `LIDR-academy/AI4Devs-finalproject`. Documento vivo: define el proyecto y se actualiza con cada entrega.
+> Entrega 3 (final) · Producto completo con tests unitarios, de integración y E2E, despliegue público, documentación del uso de IA (`prompts.md`, OpenSpec, `CLAUDE.md`) y vídeo de la demo. Sigue la plantilla oficial de `LIDR-academy/AI4Devs-finalproject`. Documento vivo: define el proyecto y se actualiza con cada entrega.
 
 > **Sistema actual y desarrollo propuesto.** Existe una única herramienta Recon Tool en producción, implementada sobre reportes SSRS. "Recon Tool 2.0" es el nombre de este proyecto: su reemplazo como aplicación web independiente. Las versiones de los documentos de referencia son revisiones de la documentación, no versiones desplegadas del sistema.
 
@@ -33,7 +33,26 @@ Recon Tool 2.0 es una aplicación web para el equipo de reconciliaciones de una 
 
 ### 0.4. URL del proyecto
 
+**Cómo evaluar en 5 minutos**
+
+1. **Aplicación:** <https://recon.aperit.io/>, con los usuarios de prueba de la tabla de abajo. Para el flujo completo, entra como `analyst` y sube un conjunto de [`data/samples/`](data/samples/) (por ejemplo `batch-clean` en ProviderA-USD); después, entra como `payments` para marcarlo como pagado.
+2. **Vídeo:** [`docs/demo/recon-tool-demo.mp4`](docs/demo/recon-tool-demo.mp4), el mismo flujo en 2:16, por si la URL no responde.
+3. **CI:** [![CI](https://github.com/kajirioji/AI4Devs-finalproject/actions/workflows/ci.yml/badge.svg?branch=feature/entrega-3-MVP)](https://github.com/kajirioji/AI4Devs-finalproject/actions/workflows/ci.yml?query=branch%3Afeature%2Fentrega-3-MVP). En cada pull request corren lint, typecheck, unitarios, integración contra SQL Server, la colección Bruno, el E2E y el arranque de las imágenes de despliegue.
+4. **Tests:** qué se prueba en cada nivel y las cifras actuales, en [2.6](#26-tests).
+5. **Uso de la IA:** [`prompts.md`](prompts.md) (una entrada por change), los changes de OpenSpec en [`openspec/changes/archive/`](openspec/changes/archive/) y las instrucciones del agente en [`CLAUDE.md`](CLAUDE.md).
+
 La aplicación está publicada en <https://recon.aperit.io/>, con datos sintéticos y el despliegue descrito en [2.4](#24-infraestructura-y-despliegue). También se puede ejecutar en local siguiendo [1.4](#14-instrucciones-de-instalación).
+
+**Acceso de prueba.** Los cuatro usuarios comparten la contraseña `Recon2026!`:
+
+| Usuario | Rol | Alcance |
+|---|---|---|
+| `analyst` | analista: importa, valida y procesa | merchants 1 y 2 |
+| `payments` | pagos (permiso `payment.process`) | merchants 1 y 2 |
+| `viewer` | solo consulta | merchant 1 |
+| `admin` | administración | todos los merchants |
+
+> Entorno de prueba con datos sintéticos; puede reiniciarse sin aviso. En producción las credenciales serán otras.
 
 **Vídeo de la demo (Entrega 3).** [`docs/demo/recon-tool-demo.mp4`](docs/demo/recon-tool-demo.mp4), 2:16, sin audio y con un rótulo por etapa. Muestra el flujo principal con datos sintéticos:
 
@@ -49,7 +68,9 @@ Se regenera con `pnpm video:demo` (ver [2.6](#26-tests)); [#96](https://github.c
 
 **Repositorio:** [kajirioji/AI4Devs-finalproject](https://github.com/kajirioji/AI4Devs-finalproject).
 
-**Rama de la Entrega 2:** [`feature/entrega-2-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/feature/entrega-2-MVP): monorepo con backend, frontend, base de datos (migraciones y seed), pruebas, `README.md` y `prompts.md`. La Entrega 1 (solo documentación) está en [`feature/entrega-1-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/feature/entrega-1-MVP); la final irá en `final-project-MVP`.
+**Rama de la Entrega 3:** [`feature/entrega-3-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/feature/entrega-3-MVP): monorepo con backend, frontend, base de datos (migraciones y seed), pruebas unitarias, de integración y E2E, despliegue, vídeo de la demo, `README.md` y `prompts.md`. La entrega final va en `final-project-MVP`.
+
+**Histórico:** la Entrega 2 (flujo principal conectado) está en [`feature/entrega-2-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/feature/entrega-2-MVP), y la Entrega 1 (solo documentación), en [`feature/entrega-1-MVP`](https://github.com/kajirioji/AI4Devs-finalproject/tree/feature/entrega-1-MVP).
 
 ---
 
@@ -147,10 +168,9 @@ La integración con el Back-Office del gateway se mantiene como hoy, mediante lo
 
 #### Limitaciones conocidas
 
-- La pantalla Analysis todavía no desglosa las filas sin asociar por motivo ni distingue los canales de otro proveedor en el aviso de canales: el API ya lo informa, y el aviso de cuenta equivocada sale al continuar y en Settlement Review ([#131](https://github.com/kajirioji/AI4Devs-finalproject/issues/131)).
 - Las variantes de un fee (`conditionalPercentage`, `conditionThresholdAmt`, `brandFixedAmount`, `brandPercentage`) se aceptan, se guardan y salen en la API, pero el motor de settlement todavía no las aplica: calcula con `fixedAmount` y `percentage`.
 - Un fee programado y sin uso no se puede retirar (anular sin que llegue a regir); se corrige en el sitio, fechas y valores incluidos. La retirada está en el roadmap ([#109](https://github.com/kajirioji/AI4Devs-finalproject/issues/109)).
-- Lo recortado de la Entrega 2 (administración de cuentas y reglas de pareo, entre otros) está en [1.5](#15-plan-de-recorte-de-la-entrega-2).
+- Lo que sigue pendiente del recorte de la Entrega 2 (catálogo de estados, motivo de `includable = false`, entre otros) está en [1.5](#15-plan-de-recorte-de-la-entrega-2) y [1.6](#16-entrega-3).
 
 ### 1.3. Diseño y experiencia de usuario
 
@@ -292,7 +312,7 @@ Abre el `.env` de la raíz y sustituye los valores de ejemplo, como indican sus 
 
 Las demás tienen un valor por defecto válido para local y solo se cambian si hace falta: `MSSQL_PORT` y `DB_PORT` (1433), `DB_HOST` (`localhost`), `DB_NAME` (`ReconTool`), `DB_USER` (`recon_app`), `PORT` (3000), `HOST` (`0.0.0.0`), `LOG_LEVEL` (`info`) y `UPLOAD_DIR` (`data/uploads`, relativo al directorio del backend). `TRUST_PROXY` queda vacía en local: solo el despliegue la fija, en `uniquelocal`, para auditar la IP real del cliente detrás de Nginx (`docs/deploy.md` §16). `DATABASE_URL`, si se define, sustituye a la conexión que Prisma arma con las `DB_*`; solo la usa la CI.
 
-En `api-collection/.env`, pon en `SEED_PASSWORD` **el mismo valor** que en el `.env` de la raíz; `SEED_USER` (`analyst`) y `SEED_VIEWER_USER` (`viewer`) ya vienen con los usuarios del seed.
+En `api-collection/.env`, pon en `SEED_PASSWORD` **el mismo valor** que en el `.env` de la raíz; `SEED_USER` (`analyst`), `SEED_VIEWER_USER` (`viewer`), `SEED_PAYMENTS_USER` (`payments`) y `SEED_ADMIN_USER` (`admin`) ya vienen con los usuarios del seed.
 
 Los tres `.env` están en `.gitignore`: nunca se versionan.
 
@@ -337,7 +357,7 @@ Arranques siguientes: `pnpm db:up` y `pnpm dev`; no hace falta migrar ni sembrar
 | `pnpm test` | pruebas unitarias con Vitest (dominio, backend y frontend) | solo el paso 2 y `pnpm db:generate` |
 | `pnpm --filter @recon/backend test:integration` | pruebas de integración del backend contra el SQL Server local | pasos 3 y 4 (base migrada y sembrada) |
 | `pnpm test:api` | colección Bruno de la API ([`api-collection/`](api-collection/)); `pnpm test:api:smoke` ejecuta solo `10-smoke`. También corre en la CI (job `e2e`) | pasos 4 y 5 con `pnpm dev` en marcha, y `api-collection/.env` (paso 3) |
-| `pnpm test:e2e` | smoke E2E del flujo de importación con Playwright y Gherkin ([`e2e/`](e2e/)). También corre en la CI (job `e2e`) | pasos 4 y 5 con `pnpm dev` en marcha, y el navegador de Playwright (abajo) |
+| `pnpm test:e2e` | suite E2E de las historias HU1–HU3 con Playwright y Gherkin ([`e2e/`](e2e/)): 5 escenarios, incluido el smoke de importación. Necesita una base recién sembrada. También corre en la CI (job `e2e`) | pasos 4 y 5 con `pnpm dev` en marcha, y el navegador de Playwright (abajo) |
 
 Preparación de una sola vez para el E2E (la CLI de Bruno ya llega con `pnpm install`):
 
@@ -366,15 +386,15 @@ La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al
 |---|---|---|
 | Reserva ante chargeback por política de la cuenta (`release_on_chargeback`) | Recortable previsto en el design de `settlement-process`: el núcleo de HU3 no depende de ella. **Hecho en la Entrega 3** con `settlement-reserve-chargeback`: aplica a `Chargeback`, `Refund` y `RDR` | [#62](https://github.com/kajirioji/AI4Devs-finalproject/issues/62) |
 | Resolver filas ambiguas desde la interfaz | El endpoint de resolución ya existe (`PATCH` de la fila); la pantalla solo las muestra. **Hecho en la Entrega 3** con `web-ambiguous-rows`, solo frontend: **Choose** por candidata, confirmación con aviso de la corrida y control deshabilitado en `validated` | [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38) |
-| Suite E2E completa y job E2E en CI | Entra solo el smoke de importación, en local; la integración y la colección Bruno cubren el resto del API | [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38), [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40) |
-| Huecos del API vistos en las pantallas: límite de archivos por import, catálogo de estados | No bloquean el flujo; el límite por petición ya existe | [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40) |
-| Motivo de `includable = false` en el detalle del hallazgo | La regla se aplica; falta mostrar el motivo al analista | [#55](https://github.com/kajirioji/AI4Devs-finalproject/issues/55) |
+| Suite E2E completa y job E2E en CI | Entra solo el smoke de importación, en local; la integración y la colección Bruno cubren el resto del API. **Hecho en la Entrega 3:** la suite de las historias HU1–HU3 con `e2e-user-stories` (PR [#149](https://github.com/kajirioji/AI4Devs-finalproject/pull/149)) y el job `e2e` de la CI con `ci-e2e` (PR [#147](https://github.com/kajirioji/AI4Devs-finalproject/pull/147)) | [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38), [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40) |
+| Huecos del API vistos en las pantallas: límite de archivos por import, catálogo de estados | No bloquean el flujo; el límite por petición ya existe. **El límite de archivos, hecho en la Entrega 3** con `import-guardrails` (PR [#135](https://github.com/kajirioji/AI4Devs-finalproject/pull/135)): 10 por import y `409 import_file_limit_reached`. **Pendiente:** el catálogo de estados | [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40) |
+| Motivo de `includable = false` en el detalle del hallazgo | La regla se aplica; falta mostrar el motivo al analista. **Pendiente** | [#55](https://github.com/kajirioji/AI4Devs-finalproject/issues/55) |
 | La decisión de conjunto no fija las inclusiones que vio el analista | Aceptado en el review de `validation-runs`: la corrida vigente sí se exige. **Hecho en la Entrega 3** con `review-inclusion-version`: el review exige también la `inclusionVersion` de la corrida (`409 inclusions_changed`) | [#53](https://github.com/kajirioji/AI4Devs-finalproject/issues/53) |
-| `status_mismatch` cuando el gateway está en `Pending` | Decisión del gate: la fila se procesa con su estado y el aviso llega después | [#63](https://github.com/kajirioji/AI4Devs-finalproject/issues/63) |
-| Guardar `skipped`, `warnings` y `channelsAssigned` en el batch | Hoy se reconstruyen desde la auditoría; funciona, pero no es su sitio | [#65](https://github.com/kajirioji/AI4Devs-finalproject/issues/65) |
-| Descarga `.xlsx` de los movimientos con el ID como texto | Los CSV del Back-Office ya salen; el `.xlsx` es para el analista | [#68](https://github.com/kajirioji/AI4Devs-finalproject/issues/68) |
-| Aviso cuando ninguna fila del import coincide con la cuenta | Hoy puede procesarse como un batch solo de fees (ver "Limitaciones conocidas" en 1.2) | [#92](https://github.com/kajirioji/AI4Devs-finalproject/issues/92) |
-| Vídeo de la demo | El tiempo de la Entrega 2 fue al flujo y a la revisión con usuarios | [#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96) |
+| `status_mismatch` cuando el gateway está en `Pending` | Decisión del gate: la fila se procesa con su estado y el aviso llega después. **Hecho en la Entrega 3** con `import-guardrails` (PR [#135](https://github.com/kajirioji/AI4Devs-finalproject/pull/135)): hallazgo no bloqueante dentro de `non_recorded_adjustment` | [#63](https://github.com/kajirioji/AI4Devs-finalproject/issues/63) |
+| Guardar `skipped`, `warnings` y `channelsAssigned` en el batch | Hoy se reconstruyen desde la auditoría; funciona, pero no es su sitio. **Pendiente** | [#65](https://github.com/kajirioji/AI4Devs-finalproject/issues/65) |
+| Descarga `.xlsx` de los movimientos con el ID como texto | Los CSV del Back-Office ya salen; el `.xlsx` es para el analista. **Pendiente** | [#68](https://github.com/kajirioji/AI4Devs-finalproject/issues/68) |
+| Aviso cuando ninguna fila del import coincide con la cuenta | Podía procesarse como un batch solo de fees sin aviso. **Hecho en la Entrega 3** con `import-guardrails` (PR [#135](https://github.com/kajirioji/AI4Devs-finalproject/pull/135)): confirmación explícita en el review y al procesar (`409 no_matched_rows`) y aviso de cuenta probablemente equivocada | [#92](https://github.com/kajirioji/AI4Devs-finalproject/issues/92) |
+| Vídeo de la demo | El tiempo de la Entrega 2 fue al flujo y a la revisión con usuarios. **Hecho en la Entrega 3** con `demo-video` (PR [#161](https://github.com/kajirioji/AI4Devs-finalproject/pull/161)) | [#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96) |
 
 **Lo que entró al final.** La lista de Settlements de una cuenta y la pestaña Movements del Summary, que estaban recortadas, entraron con `settlements-browse` ([#64](https://github.com/kajirioji/AI4Devs-finalproject/issues/64), PR [#88](https://github.com/kajirioji/AI4Devs-finalproject/pull/88)). La administración de fees (crear, corregir, cerrar, cambiar desde una fecha, vista global e historial) entró en el API con `admin-fees` ([#80](https://github.com/kajirioji/AI4Devs-finalproject/issues/80), parte 1), y la de cuentas (crear con o sin copia de fees, editar, cerrar y reabrir, y las lecturas de canales y cuenta principal que usan Account Detail y Channel Assignment) con `admin-accounts` (parte 2). La de reglas de pareo (crear, ver y editar conjuntos por proveedor, y editar las reglas globales y los alias de estado) entró en el API con `admin-matching` (parte 3); las filas a ignorar quedan de solo lectura hasta [#120](https://github.com/kajirioji/AI4Devs-finalproject/issues/120). La lista *In Progress* para retomar o cancelar los imports abiertos de todas las cuentas del alcance (`GET /imports`), el motivo obligatorio al cancelar un import ([#47](https://github.com/kajirioji/AI4Devs-finalproject/issues/47)) y las hojas sin confirmar en la readiness del detalle ([#42](https://github.com/kajirioji/AI4Devs-finalproject/issues/42)) entraron con `import-in-progress` (parte de [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38)), y la resolución de filas ambiguas desde la tabla de filas, con `web-ambiguous-rows` (el resto de [#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38)).
 
@@ -404,8 +424,38 @@ La Entrega 2 exige el flujo principal operativo de punta a punta, no completo al
 | Falsos positivos del hook `guard-db.sh` con comandos citados en mensajes de commit | [#81](https://github.com/kajirioji/AI4Devs-finalproject/issues/81) |
 | Un solo ayudante para el texto que no se parte en el frontend | [#90](https://github.com/kajirioji/AI4Devs-finalproject/issues/90) |
 | Cobertura pendiente tras el review de `ui-polish` | [#94](https://github.com/kajirioji/AI4Devs-finalproject/issues/94) |
+| El flujo `batch-clean` de la colección Bruno no es repetible sin volver a sembrar | [#111](https://github.com/kajirioji/AI4Devs-finalproject/issues/111) |
+| `tsc` no cubre `backend/test/` | [#141](https://github.com/kajirioji/AI4Devs-finalproject/issues/141) |
+| El fake de MSW de validations responde `403` antes que `400`; el API valida el cuerpo antes | [#144](https://github.com/kajirioji/AI4Devs-finalproject/issues/144) |
+| `lint-staged` usa el `git stash`, común a todos los worktrees | [#151](https://github.com/kajirioji/AI4Devs-finalproject/issues/151) |
 
-**Roadmap** (etiqueta `roadmap`, sin fecha): cerrar la inclusión manual de duplicados E entre batches, que hoy existe solo para procesar batches históricos ([#49](https://github.com/kajirioji/AI4Devs-finalproject/issues/49)); mantenimiento de tipos de fees ([#60](https://github.com/kajirioji/AI4Devs-finalproject/issues/60)); alerta de tope de reserva alcanzado ([#61](https://github.com/kajirioji/AI4Devs-finalproject/issues/61)); y señalar importes del proveedor fuera de un tipo de cambio razonable ([#93](https://github.com/kajirioji/AI4Devs-finalproject/issues/93)).
+**Roadmap** (etiqueta `roadmap`, sin fecha): cerrar la inclusión manual de duplicados E entre batches, que hoy existe solo para procesar batches históricos ([#49](https://github.com/kajirioji/AI4Devs-finalproject/issues/49)); mantenimiento de tipos de fees ([#60](https://github.com/kajirioji/AI4Devs-finalproject/issues/60)); alerta de tope de reserva alcanzado ([#61](https://github.com/kajirioji/AI4Devs-finalproject/issues/61)); señalar importes del proveedor fuera de un tipo de cambio razonable ([#93](https://github.com/kajirioji/AI4Devs-finalproject/issues/93)); retirar un fee programado y sin uso ([#109](https://github.com/kajirioji/AI4Devs-finalproject/issues/109)); y que el motor de importación aplique las reglas de filas a ignorar, que hoy se administran en solo lectura ([#120](https://github.com/kajirioji/AI4Devs-finalproject/issues/120)).
+
+### 1.6. Entrega 3
+
+La Entrega 3 cierra lo recortado de la Entrega 2 y añade la administración, las protecciones del import, la suite E2E en la CI, el endurecimiento del despliegue y el vídeo. Cada línea es un change de OpenSpec con su PR (el detalle de cada uno, en [7](#7-pull-requests) y en [`prompts.md`](prompts.md)).
+
+**Qué entró**
+
+- **Ciclo de vida del settlement** ([#78](https://github.com/kajirioji/AI4Devs-finalproject/issues/78), [#79](https://github.com/kajirioji/AI4Devs-finalproject/issues/79)): pagar, retirar el pago, deshacer y reprocesar con el mismo número. PR [#99](https://github.com/kajirioji/AI4Devs-finalproject/pull/99).
+- **Despliegue público** ([#97](https://github.com/kajirioji/AI4Devs-finalproject/issues/97)): Docker Compose con túnel. PR [#98](https://github.com/kajirioji/AI4Devs-finalproject/pull/98).
+- **Administración** ([#80](https://github.com/kajirioji/AI4Devs-finalproject/issues/80)): fees (PR [#112](https://github.com/kajirioji/AI4Devs-finalproject/pull/112) y [#113](https://github.com/kajirioji/AI4Devs-finalproject/pull/113)), cuentas y canales (PR [#117](https://github.com/kajirioji/AI4Devs-finalproject/pull/117) y [#119](https://github.com/kajirioji/AI4Devs-finalproject/pull/119)) y reglas de pareo (PR [#121](https://github.com/kajirioji/AI4Devs-finalproject/pull/121) y [#124](https://github.com/kajirioji/AI4Devs-finalproject/pull/124)).
+- **Reserva ante chargeback** ([#62](https://github.com/kajirioji/AI4Devs-finalproject/issues/62)): con `release_on_chargeback`, el primer ajuste libera la reserva retenida. PR [#127](https://github.com/kajirioji/AI4Devs-finalproject/pull/127).
+- **In Progress y filas ambiguas** ([#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38), con [#47](https://github.com/kajirioji/AI4Devs-finalproject/issues/47) y [#42](https://github.com/kajirioji/AI4Devs-finalproject/issues/42)): lista de imports abiertos, motivo obligatorio al cancelar y resolución de ambiguas desde la tabla de filas. PR [#128](https://github.com/kajirioji/AI4Devs-finalproject/pull/128) y [#133](https://github.com/kajirioji/AI4Devs-finalproject/pull/133).
+- **Protecciones del import** ([#92](https://github.com/kajirioji/AI4Devs-finalproject/issues/92), [#63](https://github.com/kajirioji/AI4Devs-finalproject/issues/63) y el límite de archivos de [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)): batch sin filas asociadas, `status_mismatch` con `Pending` y tope de 10 archivos. PR [#135](https://github.com/kajirioji/AI4Devs-finalproject/pull/135).
+- **Inclusiones del review** ([#53](https://github.com/kajirioji/AI4Devs-finalproject/issues/53)): el review exige la `inclusionVersion` que vio el analista; migración `0009`. PR [#142](https://github.com/kajirioji/AI4Devs-finalproject/pull/142).
+- **Fechas de negocio sin `Z`** ([#48](https://github.com/kajirioji/AI4Devs-finalproject/issues/48)): cambio del contrato del API, sin cambios visibles. PR [#153](https://github.com/kajirioji/AI4Devs-finalproject/pull/153).
+- **Pantallas de Analysis** ([#131](https://github.com/kajirioji/AI4Devs-finalproject/issues/131), [#132](https://github.com/kajirioji/AI4Devs-finalproject/issues/132), [#157](https://github.com/kajirioji/AI4Devs-finalproject/issues/157)): desglose de no asociadas y aviso de cuenta equivocada, la tabla de filas cabe a 1024 px, y rangos, contadores y archivo pulidos. PR [#143](https://github.com/kajirioji/AI4Devs-finalproject/pull/143), [#136](https://github.com/kajirioji/AI4Devs-finalproject/pull/136) y [#158](https://github.com/kajirioji/AI4Devs-finalproject/pull/158).
+- **Arreglos de pantalla** ([#110](https://github.com/kajirioji/AI4Devs-finalproject/issues/110), [#125](https://github.com/kajirioji/AI4Devs-finalproject/issues/125), [#139](https://github.com/kajirioji/AI4Devs-finalproject/issues/139), [#140](https://github.com/kajirioji/AI4Devs-finalproject/issues/140)). PR [#154](https://github.com/kajirioji/AI4Devs-finalproject/pull/154).
+- **E2E y CI** ([#38](https://github.com/kajirioji/AI4Devs-finalproject/issues/38), [#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)): suite de las historias HU1–HU3 y job `e2e` con Bruno y Playwright. PR [#149](https://github.com/kajirioji/AI4Devs-finalproject/pull/149) y [#147](https://github.com/kajirioji/AI4Devs-finalproject/pull/147).
+- **Endurecimiento del despliegue** ([#106](https://github.com/kajirioji/AI4Devs-finalproject/issues/106)–[#108](https://github.com/kajirioji/AI4Devs-finalproject/issues/108)): IP real del cliente en la auditoría, arranque de las imágenes en la CI y sin `recon_reader` en el despliegue. PR [#150](https://github.com/kajirioji/AI4Devs-finalproject/pull/150).
+- **Vídeo de la demo** ([#96](https://github.com/kajirioji/AI4Devs-finalproject/issues/96)). PR [#161](https://github.com/kajirioji/AI4Devs-finalproject/pull/161).
+
+**Qué quedó fuera**
+
+- **Pendiente del recorte:** catálogo de estados ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)), motivo de `includable = false` ([#55](https://github.com/kajirioji/AI4Devs-finalproject/issues/55)), guardar `skipped`, `warnings` y `channelsAssigned` en el batch ([#65](https://github.com/kajirioji/AI4Devs-finalproject/issues/65)) y descarga `.xlsx` de los movimientos ([#68](https://github.com/kajirioji/AI4Devs-finalproject/issues/68)).
+- **Roadmap:** retirar un fee programado sin uso ([#109](https://github.com/kajirioji/AI4Devs-finalproject/issues/109)), aplicar las reglas de filas a ignorar ([#120](https://github.com/kajirioji/AI4Devs-finalproject/issues/120)) y el resto de la lista de [1.5](#15-plan-de-recorte-de-la-entrega-2).
+- **Deuda técnica:** la tabla de [1.5](#15-plan-de-recorte-de-la-entrega-2), con [#111](https://github.com/kajirioji/AI4Devs-finalproject/issues/111), [#141](https://github.com/kajirioji/AI4Devs-finalproject/issues/141), [#144](https://github.com/kajirioji/AI4Devs-finalproject/issues/144) y [#151](https://github.com/kajirioji/AI4Devs-finalproject/issues/151) como novedades.
 
 ---
 
@@ -475,7 +525,7 @@ Las razones son de este proyecto, no genéricas:
 
 ### 2.2. Descripción de componentes principales
 
-> Describe el diseño completo del MVP. En la Entrega 2 está implementado lo que necesita el flujo principal; lo recortado (administración de cuentas y reglas de pareo, entre otros) está en [1.5](#15-plan-de-recorte-de-la-entrega-2).
+> Describe el diseño completo del MVP. En la Entrega 3 está implementado el flujo principal con la administración de fees, cuentas y reglas de pareo; lo que quedó pendiente está en [1.5](#15-plan-de-recorte-de-la-entrega-2) y [1.6](#16-entrega-3).
 
 **Frontend (React 19, TypeScript, Vite).** SPA con enrutado por pantalla (login, dashboard, flujo de reconciliación en seis pasos, settlements, pagos, búsqueda, administración). Estado de servidor con TanStack Query (caché, reintentos, invalidación tras cada acción); componentes de UI con shadcn/ui sobre Tailwind; formularios con React Hook Form y los mismos esquemas Zod que valida el backend. Tabla de datos virtualizada para las vistas de filas, hallazgos y apariciones.
 
@@ -604,7 +654,19 @@ flowchart LR
 
 ### 2.6. Tests
 
-> **Estado en la Entrega 2.** Los tres niveles están en marcha sobre las partes críticas: unitarios con Vitest (dominio de validaciones, pareo, fees y summary escritos test-first contra los `expected.json` de `data/samples/`, y pantallas con Testing Library), integración contra SQL Server real (`backend/test/integration/`) y la colección Bruno del API; del E2E existe el smoke de importación. Unitarios e integración corren en la CI en cada pull request; Bruno y el E2E, en local (comandos en [1.4](#14-instrucciones-de-instalación), paso 6). Lo que sigue es la estrategia completa; lo pendiente se indica en cada nivel.
+> **Estado en la Entrega 3.** Los tres niveles cubren el flujo completo y corren todos en la CI en cada pull request (comandos en [1.4](#14-instrucciones-de-instalación), paso 6). Cifras del último run de la CI en `feature/entrega-3-MVP`, todo en verde:
+>
+> | Nivel | Qué | Resultado |
+> |---|---|---|
+> | Unitarios (Vitest) | `packages/shared`: esquemas y vocabulario compartidos | 309 tests en 10 ficheros |
+> | Unitarios (Vitest) | `backend`: dominio de validaciones, pareo, fees, settlement y summary contra los `expected.json`, y rutas | 1 461 tests en 112 ficheros (9 omitidos) |
+> | Unitarios (Vitest) | `frontend`: pantallas con Testing Library y un API falso de MSW | 1 218 tests en 99 ficheros |
+> | Unitarios (`node --test`) | `e2e/support`: oráculos y limpieza de la suite E2E | 30 tests |
+> | Integración (Vitest) | backend contra SQL Server 2022 efímero (`backend/test/integration/`) | 499 tests en 39 ficheros (8 omitidos) |
+> | API (Bruno) | colección [`api-collection/`](api-collection/): caso feliz y negativos por endpoint, y flujos | 261 peticiones, 278/278 aserciones |
+> | E2E (Playwright + Gherkin) | historias HU1–HU3 y el smoke de importación | 5 escenarios en 25 s |
+>
+> Además, 29 comprobaciones de los hooks del agente (`pnpm test:hooks`) y el arranque de las tres imágenes de despliegue con un smoke. Lo que sigue es la estrategia completa.
 
 **Escenarios críticos de aceptación previstos:**
 
@@ -654,7 +716,7 @@ La contraseña se escribe desde la página en el campo de tipo `password`: en el
 
 Al terminar, con éxito o con fallo, retira el pago, deshace y cancela por el API. Si la limpieza deja notas, el script termina con código 1 y no sustituye el `.mp4`. El batch 123 de ProviderA-USD queda consumido y RAM-07 queda como principal, así que después hay que volver a ejecutar `pnpm db:seed`.
 
-**En pipeline.** Unitarios e integración corren en cada pull request desde la Entrega 2. Desde la Entrega 3, también la colección Bruno y el E2E, en el job `e2e` ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)). Queda pendiente el objetivo de cobertura del 80 % en el dominio. Como métrica complementaria, mutation testing sobre el módulo de validaciones, que es donde un test que "pasa" sin detectar nada haría más daño.
+**En pipeline.** Unitarios e integración corren en cada pull request desde la Entrega 2. Desde la Entrega 3, también la colección Bruno y el E2E, en el job `e2e` ([#40](https://github.com/kajirioji/AI4Devs-finalproject/issues/40)). La cobertura no tiene umbral en la CI: `pnpm --filter @recon/backend test:coverage` la mide en el módulo de validaciones, que cerró el motor con 99,9 % de líneas y 94,9 % de ramas. Queda en el roadmap extender el objetivo del 80 % al resto del dominio y, como métrica complementaria, el mutation testing sobre el módulo de validaciones, que es donde un test que "pasa" sin detectar nada haría más daño. Mientras tanto, cada grupo de tareas rompe el código a propósito una vez para ver caer su test.
 
 ---
 
@@ -1963,7 +2025,7 @@ Fuera del MVP (roadmap, no se implementan): simular un cambio de fee (`POST /fee
 
 ## 5. Historias de Usuario
 
-Tres historias principales del flujo. Son amplias y se descomponen en tickets; los criterios describen comportamiento previsto, todavía no implementado ni probado, en formato Given/When/Then para que sean traducibles a tests.
+Tres historias principales del flujo. Son amplias y se descomponen en tickets; los criterios, en formato Given/When/Then, están implementados y cubiertos por la suite E2E de las historias ([2.6](#26-tests)), además de por los tests unitarios y de integración de cada change.
 
 ### HU1 — Importar los archivos de un settlement y confirmar el pareo
 
@@ -2123,7 +2185,7 @@ Tres tickets representativos del backlog, uno por capa; no representan todo el t
 
 ## 7. Pull Requests
 
-Las pull requests van de una rama por change (`feat/<módulo>-<tema>`) a la rama de la entrega en curso (`feature/entrega-2-MVP` en la Entrega 2, `feature/entrega-3-MVP` en la Entrega 3), con la plantilla del repositorio y la CI en verde. Cada change pasa dos revisiones de IA antes del merge:
+Las pull requests van de una rama por change (`feat/<módulo>-<tema>`, o `fix/` y `docs/` según el caso) a la rama de la entrega en curso (`feature/entrega-2-MVP` en la Entrega 2, `feature/entrega-3-MVP` en la Entrega 3), con la plantilla del repositorio y la CI en verde. Cada change pasa dos revisiones de IA antes del merge:
 
 - **`/opsx:verify`** contrasta el código con la spec, el design y las tareas del change de OpenSpec (completitud, escenarios sin test, desfases con el README).
 - **`review-diff`**, en una sesión independiente de la que escribió el código, revisa el diff con los cinco focos del módulo de backend (correctitud, seguridad, rendimiento, legibilidad y tests), concretados para este proyecto en la skill [`review-diff`](.claude/skills/review-diff/SKILL.md): fidelidad al README y al vocabulario fijo, dinero y fechas, pruebas reales, seguridad y datos sintéticos, y arquitectura hexagonal. Los hallazgos se clasifican HIGH / MEDIUM / LOW; cada uno se reproduce antes de corregirlo y se cierra con una pareja de commits test/fix o pasa a un issue tras el triaje humano.
@@ -2171,3 +2233,50 @@ El PR de archive (`/opsx:archive`, que sincroniza los delta specs con `openspec/
 |---|---|---|---|
 | [#88](https://github.com/kajirioji/AI4Devs-finalproject/pull/88) · [#89](https://github.com/kajirioji/AI4Devs-finalproject/pull/89) | feat(settlement): Settlement List de una cuenta y pestaña Movements (#64) | `GET /accounts/{id}/settlements` con filtros, paginación y alcance; pantalla Settlement List desde el menú y desde Accounts; pestaña Movements del Summary con los movimientos E/I/R | **Verify:** sin errores de código; el flujo de Bruno no comprobaba el orden tras el intento nuevo → petición añadida; unificar los ayudantes de texto → [#90](https://github.com/kajirioji/AI4Devs-finalproject/issues/90). **Review-diff:** aprobar con cambios menores. El test del rango al revés no esperaba a la petición; `whitespace-nowrap` y el script de capturas pasaron a fallar si algo desborda; filtro por `processedAt` en Bruno sin efecto si se ignoraba `dateField`; páginas fuera de rango; placeholder de Movements con filas del intento anterior. Corregidos con test y rotura a propósito |
 | [#91](https://github.com/kajirioji/AI4Devs-finalproject/pull/91) · [#95](https://github.com/kajirioji/AI4Devs-finalproject/pull/95) | feat(frontend): pulido de la interfaz tras la revisión del 20-oct (ui-polish) | Las doce observaciones de la [revisión del 20 de octubre](docs/uat/2026-10-20-revision-interfaz.md): menú, tarjetas, barra superior, bloques por archivo, readiness, colores de estado por enumeración, tabla de rangos, contadores, cabecera del Summary, fechas sin `ET` y navegación sin volver arriba. Solo frontend | **Verify y revisión del PR:** el foco podía pedirse sin cambio en la lista → defensas complementarias con su test; el aviso de no Settled usaba un color fijo → tono del mapa, con test que falla ante un color fijo; la línea de por qué es faltante se ciñe a §3.3; docs y tareas desactualizados, corregidos. Cobertura y deuda menor sin bloquear → [#94](https://github.com/kajirioji/AI4Devs-finalproject/issues/94) |
+
+#### Tramo 5 — Ciclo de vida del settlement y despliegue (Entrega 3)
+
+| PR | Título | Resumen | Qué revisó la IA |
+|---|---|---|---|
+| [#99](https://github.com/kajirioji/AI4Devs-finalproject/pull/99) · [#101](https://github.com/kajirioji/AI4Devs-finalproject/pull/101) | feat(settlement): pagar, retirar el pago, deshacer y reprocesar un intento | `pay`, `unpay` y `undo` con cuatro `409` nuevos y auditoría en la misma transacción; acciones según permiso y estado; historial de intentos en el Summary | **Verify:** el error de una acción pasaba de un intento a otro y Escape cerraba el diálogo con una petición en curso → corregidos; el `summary` sí cambia con el estado → corregidas la spec y el design. **Review-diff:** un bloqueante: los tests de un `undo` fallido no probaban el rollback → reescritos y verificados con roturas; carrera entre guarda y relectura → `409 settlement_busy` |
+| [#98](https://github.com/kajirioji/AI4Devs-finalproject/pull/98) · [#105](https://github.com/kajirioji/AI4Devs-finalproject/pull/105) | feat(infra): despliegue con Docker Compose y Cloudflare Tunnel | Imágenes de API y web, compose del despliegue, identidad `recon_migrator`, `scripts/deploy.sh`, job `images` en la CI y [`docs/deploy.md`](docs/deploy.md) | **Gate del design:** el arreglo de `pnpm start` en su propio commit y el rate limiting del login como paso obligatorio. **Pruebas con Docker:** tras reiniciar sobre un volumen con datos, `mssql` moría con `Msg 904` → inicialización con reintento, sin devolver `db_ddladmin` a `recon_app` |
+
+#### Tramo 6 — Administración (Entrega 3, #80)
+
+| PR | Título | Resumen | Qué revisó la IA |
+|---|---|---|---|
+| [#112](https://github.com/kajirioji/AI4Devs-finalproject/pull/112) · [#114](https://github.com/kajirioji/AI4Devs-finalproject/pull/114) | feat(fees): administración de fees en el API | Crear, corregir en el sitio, cerrar y cambiar desde una fecha; vista global e historial; `409 fee_in_use` con la última fecha aplicada | **Verify:** faltaba probar el uso por un fee por batch → dos tests nuevos. **Review-diff:** aprobado con cambios menores: el respaldo del trigger se reconoce por su número (50001); `previousDay` leía el año 0050 como 1950; `q` se busca como texto literal. Índice por `feeId` → [#67](https://github.com/kajirioji/AI4Devs-finalproject/issues/67) |
+| [#113](https://github.com/kajirioji/AI4Devs-finalproject/pull/113) · [#115](https://github.com/kajirioji/AI4Devs-finalproject/pull/115) | feat(web): pantallas de administración de fees | Vista global `/fees` y fees de la cuenta con alta, edición según uso, cierre e historial; dinero y porcentajes como texto | **Review-diff** (en sesión nueva; el del mismo agente no contó): aprobado con cambios menores: insignia del Summary a 1024 px, porcentaje comparado como texto, foco tras escribir y `q` al ir atrás. **Capturas:** tablas desbordadas a 1024 px → merchant y proveedor bajo la cuenta |
+| [#117](https://github.com/kajirioji/AI4Devs-finalproject/pull/117) · [#118](https://github.com/kajirioji/AI4Devs-finalproject/pull/118) | feat(accounts): administración de cuentas | Crear (con copia de fees), editar, cerrar y reabrir; `409 account_inactive` al subir a una cuenta cerrada | **Verify:** sin críticos. **Review-diff:** tres medios: un id por encima de `INT` daba `500` → `400`; el test de copia y cambio simultáneos sacaba conclusiones del orden final → reescrito tras una re-revisión, cae sin `lockSourceAccount` |
+| [#119](https://github.com/kajirioji/AI4Devs-finalproject/pull/119) · [#122](https://github.com/kajirioji/AI4Devs-finalproject/pull/122) | feat(web): pantallas de cuentas y canales | Account Detail con Overview y Fees, crear, editar, cerrar y reabrir, y Channel Assignment | **Review-diff:** aprobado con cambios menores: reintento por canal en Channel Assignment, `5xx` con su texto, foco y nombres largos; las pestañas pasan a enlaces con `aria-current`. **Capturas:** la tabla de Accounts desbordaba 9 px a 1024 px |
+| [#121](https://github.com/kajirioji/AI4Devs-finalproject/pull/121) · [#123](https://github.com/kajirioji/AI4Devs-finalproject/pull/123) | feat(matching): administración de reglas de pareo | Conjuntos por proveedor, reglas globales y alias de estado; `PUT` del documento completo con bloqueo (`UPDLOCK` o `sp_getapplock`) | **Verify:** design y README describían mal el `PUT`; faltaba el test de conjunto vacío. **Review-diff:** aprobado con cambios menores: documentar que se reemplazan solo las listas que cambian, negativo de Bruno a partir del `GET` y test de regla global cambiada |
+| [#124](https://github.com/kajirioji/AI4Devs-finalproject/pull/124) · [#126](https://github.com/kajirioji/AI4Devs-finalproject/pull/126) | feat(web): pantallas de Matching Rules | Lista y detalle de conjuntos, edición de reglas con un solo editor, globales y alias; el formulario siempre parte del último `GET` | **Review-diff:** Retry sin catálogo de estados, errores de casillas y de campos ocultos al mensaje general, `maxLength` del motivo; la re-revisión aprobó. **Capturas:** la tabla de reglas desbordaba 138 px a 1024 px |
+
+#### Tramo 7 — Reglas y protecciones del flujo (Entrega 3)
+
+| PR | Título | Resumen | Qué revisó la IA |
+|---|---|---|---|
+| [#127](https://github.com/kajirioji/AI4Devs-finalproject/pull/127) · [#130](https://github.com/kajirioji/AI4Devs-finalproject/pull/130) | feat(settlement): liberar la reserva ante un ajuste con release_on_chargeback | El primer `Chargeback`, `Refund` o `RDR` libera toda la reserva retenida del E vigente; la liberación se guarda en el I | **Review-diff:** dos imports procesados a la vez podían liberar dos veces la misma reserva → relectura de `reserveStates` tras los bloqueos, con dos tests de concurrencia; la muestra no traía RDR → caso de integración. Dos re-revisiones; aislar el bloqueo del número → [#67](https://github.com/kajirioji/AI4Devs-finalproject/issues/67) |
+| [#128](https://github.com/kajirioji/AI4Devs-finalproject/pull/128) · [#129](https://github.com/kajirioji/AI4Devs-finalproject/pull/129) | feat(import): lista In Progress, motivo al cancelar y hojas sin confirmar | `GET /imports` con filtros y alcance, motivo obligatorio al cancelar (solo en `AuditLog`) y hojas sin confirmar en la readiness | **Antes del apply:** el motivo obligatorio rompía seis cancelaciones de otros módulos → cambiadas en un commit aparte de solo tests. **Bruno:** dos cancel de los flujos de validations que la búsqueda no encontró. **Capturas:** cuenta y fecha partidas a 1024 px |
+| [#133](https://github.com/kajirioji/AI4Devs-finalproject/pull/133) · [#134](https://github.com/kajirioji/AI4Devs-finalproject/pull/134) | feat(web): resolver filas ambiguas desde la tabla de filas | **Choose** por candidata en `analyzed`, aviso de la corrida que se descarta, deshabilitado y explicado en `validated` | **Apply:** el foco no se movía tras resolver → contador en la `focusKey`; el fake del `PATCH` pasó a comprobar permiso antes que alcance (otros cinco handlers → [#94](https://github.com/kajirioji/AI4Devs-finalproject/issues/94)). **Capturas:** la tabla de filas ya desbordaba a 1024 px → [#132](https://github.com/kajirioji/AI4Devs-finalproject/issues/132) |
+| [#135](https://github.com/kajirioji/AI4Devs-finalproject/pull/135) · [#138](https://github.com/kajirioji/AI4Devs-finalproject/pull/138) | feat: batch sin filas asociadas, status_mismatch con Pending y tope de archivos | Confirmación explícita del batch sin filas asociadas (`409 no_matched_rows`), `status_mismatch` con `Pending` y 10 archivos por import | **Verify:** faltaba la fila ambigua resuelta de punta a punta → añadida. **Review-diff:** siete puntos con test y rotura (conteo de hechos, casillas que no se heredan, limpieza tras el tope, Bruno sin intento creado); la revisión de los arreglos pidió tres más |
+| [#142](https://github.com/kajirioji/AI4Devs-finalproject/pull/142) · [#146](https://github.com/kajirioji/AI4Devs-finalproject/pull/146) | feat(validation): el review fija las inclusiones que vio el analista | Contador `inclusionVersion` por corrida; `409 inclusions_changed` si no coincide; migración `0009` | **Verify:** sin errores de código; tres coberturas solo con el fake, aceptadas. **Review-diff:** design alineado, motivo de bloqueo antes que "cargando", versión guardada en cada paso de Bruno y tipo de `details` del contrato compartido |
+| [#153](https://github.com/kajirioji/AI4Devs-finalproject/pull/153) · [#156](https://github.com/kajirioji/AI4Devs-finalproject/pull/156) | fix!: fechas de negocio sin zona en el API | 7 campos en 16 operaciones salen como `YYYY-MM-DDTHH:mm:ss`; esquema `BusinessDateTime`; pantalla y CSV sin cambios | **Rotura en la CI:** devolver una fecha con `.000Z` da `500` por el `serializerCompiler`. **Review-diff:** cambios menores en la spec, el plan de migración y el OpenAPI; los MODIFIED de settlement, rehechos sobre la spec viva tras `web-polish-e3` |
+
+#### Tramo 8 — Pantallas (Entrega 3)
+
+| PR | Título | Resumen | Qué revisó la IA |
+|---|---|---|---|
+| [#136](https://github.com/kajirioji/AI4Devs-finalproject/pull/136) · [#137](https://github.com/kajirioji/AI4Devs-finalproject/pull/137) | fix(web): la tabla de filas de Analysis cabe a 1024 px | Sin columna Row: el número va junto a la hoja; anchos fijos y una sola columna Amount; 41 px de margen a 1024 px | **Review-diff:** aprobado con cambios menores: una hoja legacy larga se pintaba sobre el ID → el nombre de la hoja se parte; la segunda revisión de los arreglos aprobó el merge |
+| [#143](https://github.com/kajirioji/AI4Devs-finalproject/pull/143) · [#145](https://github.com/kajirioji/AI4Devs-finalproject/pull/145) | feat(web): desglose de no asociadas, aviso de cuenta equivocada y canales de otro proveedor en Analysis | Desglose por motivo en la tarjeta Unmatched, aviso de cuenta equivocada y canales de otro proveedor; los UUID se parten por los guiones | **Capturas:** los UUID desbordaban 79 px a 1024 px → corregido en el change (D8). **Review-diff:** nada alto ni medio; dos comprobaciones más estrictas en el script de capturas |
+| [#154](https://github.com/kajirioji/AI4Devs-finalproject/pull/154) · [#155](https://github.com/kajirioji/AI4Devs-finalproject/pull/155) | fix(web): pulido de pantalla de la entrega 3 | Valores inválidos de la dirección (#110), canal sin principal (#140), etiqueta de reserva por ajuste (#125) y frase común de cuenta equivocada (#139) | **Review-diff:** cinco correcciones: claves completas de los validadores, ninguna petición con valores inválidos y la frase común sin importar de las features. Sin verify antes de archivar |
+| [#158](https://github.com/kajirioji/AI4Devs-finalproject/pull/158) · [#159](https://github.com/kajirioji/AI4Devs-finalproject/pull/159) | fix(web): rangos centrados, contadores en tarjetas y archivo en una línea en Analysis | `StatCard` común, tooltip accesible y el archivo en una franja al pie de la fila | **Capturas:** la tabla de resultados desbordaba 65 px a 1024 px → corregido (D8). **Verify:** dos sugerencias. **Review-diff:** el script exige el archivo dentro de su fila, tres tarjetas y el corte con elipsis; quitar `relative` del `<tr>` hace fallar las 14 capturas |
+
+#### Tramo 9 — Pruebas, despliegue y demo (Entrega 3)
+
+| PR | Título | Resumen | Qué revisó la IA |
+|---|---|---|---|
+| [#147](https://github.com/kajirioji/AI4Devs-finalproject/pull/147) · [#148](https://github.com/kajirioji/AI4Devs-finalproject/pull/148) | ci: job e2e con la colección Bruno y Playwright | Un job con su SQL Server efímero: Bruno, nueva siembra y Playwright contra el build; informe solo si falla el E2E | **Roturas en la CI:** sin la siembra intermedia y con una contraseña equivocada, el informe no lleva secretos. **Verify:** sin errores de código; D6 decía `failure()` → texto corregido. **Review-diff:** logs del API y la web al fallar, timeouts y clave de caché con versión |
+| [#149](https://github.com/kajirioji/AI4Devs-finalproject/pull/149) · [#152](https://github.com/kajirioji/AI4Devs-finalproject/pull/152) | test(e2e): suite de las historias HU1 a HU3 con Playwright y Gherkin | Cuatro escenarios más el smoke, con las cifras de los `expected.json` y limpieza en dos capas | **Review-diff:** tres MEDIUM: rangos y validaciones comparados con el oráculo, RAM-07 comprobado por el API y el `batchId` registrado antes de esperar la URL. **Verify:** 0 críticos, 0 avisos |
+| [#150](https://github.com/kajirioji/AI4Devs-finalproject/pull/150) · [#160](https://github.com/kajirioji/AI4Devs-finalproject/pull/160) | fix(deploy): endurecer el despliegue | IP real del cliente en la auditoría, smoke de las imágenes en la CI y sin `recon_reader` en el despliegue; `scripts/deploy.sh check` | **Verify:** el login sin `CF-Connecting-IP` no se probaba. **Review-diff:** dos rondas: `DROP` sobre un volumen antiguo y login sin cabecera; después, excluir del smoke las direcciones de `web`. Comprobado en el servidor |
+| [#161](https://github.com/kajirioji/AI4Devs-finalproject/pull/161) · [#162](https://github.com/kajirioji/AI4Devs-finalproject/pull/162) | docs(demo): vídeo de la demo de la Entrega 3 | `pnpm video:demo` graba con Playwright el flujo feliz y lo convierte a `.mp4` (2:16) | **Verify:** sin críticos. **Review-diff:** limpieza en su propio `try/finally`, código 1 si deja notas, archivo parcial en el directorio temporal y comprobación del campo `password` en el mismo `evaluate` |
