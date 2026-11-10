@@ -45,6 +45,7 @@ class ClienteSat2Http:
         transporte: httpx.BaseTransport | None = None,
         reloj: Callable[[], float] = time.monotonic,
         timeout_segundos: float = 120.0,
+        observar: Callable[[str, Any], None] | None = None,
     ) -> None:
         self._configuracion = configuracion
         self._reloj = reloj
@@ -56,6 +57,8 @@ class ClienteSat2Http:
         self._token: str | None = None
         self._id_cliente: int | None = None
         self._token_obtenido_en = 0.0
+        # Solo para capturar respuestas de referencia (herramientas/capturar_sat2.py).
+        self._observar = observar
 
     def __repr__(self) -> str:
         return "ClienteSat2Http()"
@@ -103,6 +106,7 @@ class ClienteSat2Http:
         if respuesta.status_code != 200:
             raise ErrorSat2(f"Autenticación con estado {respuesta.status_code}")
         datos = self._decodificar(respuesta)
+        self._registrar("AutenticarUsuario", datos)
         if not isinstance(datos, dict) or not datos.get("autenticado"):
             raise ErrorCredenciales("SAT2 rechazó las credenciales")
         self._token = datos.get("token")
@@ -126,7 +130,13 @@ class ClienteSat2Http:
                 raise ErrorAutorizacion(f"{metodo}: autorización rechazada")
         if respuesta.status_code != 200:
             raise ErrorSat2(f"{metodo}: estado {respuesta.status_code}")
-        return self._decodificar(respuesta)
+        datos = self._decodificar(respuesta)
+        self._registrar(metodo, datos)
+        return datos
+
+    def _registrar(self, metodo: str, datos: Any) -> None:
+        if self._observar is not None:
+            self._observar(metodo, datos)
 
     def _post(self, metodo: str, cuerpo: dict[str, Any]) -> httpx.Response:
         try:

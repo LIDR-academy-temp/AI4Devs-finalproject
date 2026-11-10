@@ -6,7 +6,7 @@
 | **Entrega final** | 9 de diciembre de 2026 |
 | **Punto de partida** | Entrega 2 presentada en forma anticipada ([pull request](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14)) |
 | **Responsable** | Pablo Guillermo Di Nanno |
-| **Versión** | 1.8, 9 de noviembre de 2026 |
+| **Versión** | 1.9, 10 de noviembre de 2026 |
 
 Este documento registra qué línea de trabajo está activa, cuál está en pausa y qué falta decidir, para no perder el hilo entre sesiones.
 
@@ -15,7 +15,7 @@ Este documento registra qué línea de trabajo está activa, cuál está en paus
 | Línea | Estado | Condición para avanzar |
 |---|---|---|
 | **A. Instalación local, como la quiere el responsable** | **Terminada** el 5 de noviembre de 2026 | El responsable aprobó la aplicación local y se archivaron sus cambios |
-| **D. Pendientes de la devolución de la Entrega 1** | D1 a D5 hechos; administrador de SAT2 verificado con datos reales; históricos sin huecos; D7 decidido; D6 opcional | Aprobar los cambios del administrador y de los históricos; después sigue D7 |
+| **D. Pendientes de la devolución de la Entrega 1** | D1 a D5 hechos; administrador de SAT2 verificado con datos reales; históricos sin huecos; D7 decidido; D6 opcional | D7 propuesto: cambio `weather-track-contrato-sat2` |
 | **B. Despliegue público en Google Cloud (opción plus)** | **En pausa** desde el 2 de noviembre de 2026; el responsable la mantuvo en pausa el 7 de noviembre | Se retoma cuando lo decida el responsable |
 | C. Pipeline, monitoreo y documentación para clientes | **Integración continua** (D4), **revisión con IA y documentación viva** (D5) hechas el 7 de noviembre de 2026 | Faltan el monitoreo y la documentación para clientes |
 
@@ -168,3 +168,4 @@ Respuestas del responsable del 3 de noviembre de 2026:
 | 7 nov 2026 | Administrador de la aplicación para la configuración de SAT2, antes de D7: rol otorgado solo desde el servidor, opción invisible para el resto (404), configuración en la base cifrada con clave pública que solo el worker descifra, el `.env` como respaldo hasta la primera carga, contraseña repetida, aviso por correo y registro de cambios |
 | 9 nov 2026 | Administrador de SAT2 implementado y probado con valores ficticios: cifrado con PyNaCl, API invisible para el resto, worker que recarga sin reiniciar, pantalla, extremo a extremo y 18 pruebas negativas nuevas. Decisión registrada en el ADR-0004 |
 | 9 nov 2026 | Revisión con datos reales de INTA Pergamino: el administrador funciona. Los gráficos incompletos se debían a un hueco del 1 al 9 de noviembre, con la instalación apagada. Cambio `weather-track-historicos-sin-huecos`: el worker recupera los huecos de los últimos 31 días al arrancar y cada hora (recuperó 12.379 lecturas en la instalación del responsable), el detalle abre en Día y el rango manual llega hasta el mismo día del mes siguiente |
+| 10 nov 2026 | D7 propuesto: el responsable captura en su worker respuestas reales de SAT2, ya saneadas (sin URL, credenciales, tokens ni datos de la cuenta), usando la configuración de «Administración». Se versionan tras su revisión, alimentan pruebas de contrato y una comparación avisa si SAT2 cambia la forma de sus respuestas |

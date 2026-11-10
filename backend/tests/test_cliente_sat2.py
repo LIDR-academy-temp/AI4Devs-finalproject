@@ -144,3 +144,30 @@ def test_configuracion_incompleta_solo_nombra_las_variables(tmp_path, monkeypatc
 
     assert "SAT2_URL_BASE" in str(error.value)
     assert CLAVE not in str(error.value)
+
+
+def test_observar_recibe_cada_respuesta_decodificada_incluida_la_autenticacion():
+    vistas = []
+    cliente = ClienteSat2Http(
+        CONFIGURACION,
+        httpx.MockTransport(Fuente()),
+        lambda: 0.0,
+        observar=lambda metodo, datos: vistas.append((metodo, datos)),
+    )
+
+    cliente.recuperar_equipos()
+    cliente.recuperar_historicos(1, 6, date(2026, 11, 9), date(2026, 11, 9))
+
+    assert [metodo for metodo, _ in vistas] == [
+        "AutenticarUsuario",
+        "RecuperarEquipos",
+        "RecuperarHistoricosDeEquipoPorSensor",
+    ]
+    assert vistas[0][1]["token"] == TOKEN
+    assert vistas[1][1] == [{"fecha": "2026-01-01 00:00", "valor": 1}]
+
+
+def test_sin_observar_el_cliente_funciona_igual():
+    cliente = crear_cliente(Fuente())
+
+    assert cliente.recuperar_equipos() == [{"fecha": "2026-01-01 00:00", "valor": 1}]
