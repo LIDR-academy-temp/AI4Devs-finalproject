@@ -1060,9 +1060,9 @@ Antes había elegido no bloquear un batch solo de fees, que es legítimo, sino p
 
 **Las medidas.** El PR recoge la evolución a 1024 px, pasada a pasada: de 167–250 px de más a 1 px libre con los arreglos previos, y a 41 px libres en las cuatro pantallas con la fila junto a la hoja. A 1280 px quedan 265 px. Los anchos fijos tienen una contrapartida: con `max-w`, la tabla estrechaba archivo y resultado a una palabra por línea y la página medía unos 8.300 px de alto; con ancho fijo, el archivo ocupa cuatro líneas también a 1280 px. Un arreglo previo destapó que el nombre del archivo no se partía desde `ui-polish`: la celda heredaba `whitespace-nowrap`, y bajo él `overflow-wrap:anywhere` no hace nada.
 
-**El review-diff.** Encontró que una hoja legacy de 31 caracteres (`Transactions approved by issuer`) no cabía en el ancho fijo y se pintaba encima del ID, sin que la tabla ganara scroll ni el script lo midiera. Ahora el nombre de la hoja se parte y `· row N` va en su propio elemento sin partirse (D3). Se descartó ensanchar la celda, porque con hojas largas la tabla volvería a desbordar. Además, el `whitespace-nowrap` del ID se comprueba en su span y no en el `<td>`, y salieron el texto `Currency` y un `max-w-24` sobrante.
+**El review-diff.** Encontró que una hoja legacy de 31 caracteres (`Transactions approved by issuer`) no cabía en el ancho fijo y se pintaba encima del ID, sin que la tabla ganara scroll ni el script lo midiera. Ahora el nombre de la hoja se parte y `· row N` va en su propio elemento sin partirse (D3). Además, el `whitespace-nowrap` del ID se comprueba en su span y no en el `<td>`, y salieron el texto `Currency` y un `max-w-24` sobrante. El review-diff aprobó con cambios menores, y una segunda revisión de los arreglos, en otra sesión, aprobó el merge.
 
-*Ajuste humano.* La persona dio el turno de base y levantó `pnpm db:up`, `pnpm db:seed` y `pnpm dev` para las capturas, y pidió el review-diff en una sesión nueva.
+*Ajuste humano.* La persona decidió quitar la columna Row y llevar el número junto a la hoja en un change pequeño aparte, con un objetivo de al menos 20 px de margen a 1024 px. Ante el hallazgo de la hoja legacy larga, eligió partir el nombre de la hoja en lugar de ensanchar la celda, como proponía el revisor, porque ensanchar volvería a desbordar a 1024 px (#132). Dio el turno de base y levantó `pnpm db:up`, `pnpm db:seed` y `pnpm dev` para las capturas, y pidió el review-diff en una sesión nueva.
 
 **Prompt 29:**
 
@@ -1086,6 +1086,8 @@ Antes había elegido no bloquear un batch solo de fees, que es legítimo, sino p
 - Con una contraseña equivocada para Bruno, la colección falla en `00-auth` con 401, la siembra y el E2E corren igualmente, el smoke pasa y el check falla sin artifact.
 
 **La duración.** Se estimaron 7–9 minutos y se midieron entre 5 min 12 s y 5 min 29 s. Como corre en paralelo con `integration`, no alarga el pull request.
+
+**El verify.** Sin errores de código. Dejó una tarea pendiente por diseño, marcar #40 tras el merge, y un aviso: D6 y la tarea 2.4 decían `failure()`, cuando el código usa la condición del paso del E2E. Se corrigió el texto.
 
 **El review-diff.** Pidió mostrar los logs del API y la web al fallar, `curl --max-time 5` en la espera, `timeout-minutes: 20` y que el paso falle si la versión de Playwright sale vacía, porque una clave de caché sin versión serviría la misma caché a cualquier Playwright. Una tercera rotura con la contraseña equivocada comprobó que el último paso muestra las últimas 200 líneas de `api.log` y `web.log`, sin contraseñas. Un último arreglo hace que esos logs salgan también cuando el job se cancela por el límite de tiempo.
 
@@ -1123,6 +1125,8 @@ La casilla de #40 se marcó al fusionar.
 - **M3:** el `batchId` sale de la respuesta de `POST /imports/{id}/settlements` y se registra para la limpieza antes de esperar la URL del summary.
 
 De los menores, los fees se comparan como texto decimal (`sameDecimal`) y los pasos del aviso y de la casilla fallan si el oráculo no los trae. B3 y B5 quedaron como estaban. Se rompieron a propósito el ancla de la ruta de `createdBy` y el signo de `sameDecimal`. Segunda pasada: 5 de 5 en 46,7 s, a la primera.
+
+**El verify.** 0 críticos, 0 avisos y una sugerencia: que D7 recogiera también la medición posterior al review-diff.
 
 *Ajuste humano.* En el gate, la persona aprobó que la suite exija una base recién sembrada y el único paso condicional (la casilla de canales del escenario de deshacer), con su comentario. Fijó el reparto del README §2.6 con la otra sesión y que su PR se trajera con un merge, sin rebase. Pidió medir cada escenario y avisar si la suite pasaba de 5 minutos, porque entonces se partiría el job. Pidió test primero también en la lógica propia de `support/`. Dio los turnos de base y sembró antes de cada pasada.
 
@@ -1182,9 +1186,9 @@ Las correcciones posteriores:
 - La segunda dio un falso positivo a 1280 px: la comprobación contaba las cajas del ID y no sus líneas, y con `<wbr>` cada trozo es una caja.
 - La tercera, la versionada, mide `fits` en las seis capturas a 1280 y 1024 px.
 
-Tras abrir el PR, el script de capturas se hizo más estricto: compara el número de `Unmatched` con una expresión anclada y falla si la tabla de filas no tiene columna ID.
+**El review-diff.** En una sesión nueva, no encontró nada alto ni medio. Comprobó que la columna Result vacía que se creyó ver en una captura no era un fallo, porque la captura versionada muestra `Matched`. Pidió dos comprobaciones más estrictas en el script de capturas: el número de `Unmatched` con una expresión anclada y fallar si la tabla de filas no tiene columna ID.
 
-*Ajuste humano.* La persona aceptó que, para `analyst` en un import `analyzed`, el aviso de cuenta equivocada salga dos veces: arriba como diagnóstico y abajo en el `DecisionBar`, junto a la casilla. Dejó dos seguimientos: unificar las tres copias del texto después de #53 (#139) y el canal del mismo proveedor sin cuenta principal que se muestra como "of another merchant" (#140). Dio el turno de base para las capturas. El review-diff quedó para una sesión nueva.
+*Ajuste humano.* Cuando la primera pasada de capturas desbordó con los UUID, la persona eligió corregirlo en este mismo change (D8) en lugar de abrir un issue o capturar sin esa tabla, porque esconder el desborde contradecía #132. Aceptó que, para `analyst` en un import `analyzed`, el aviso de cuenta equivocada salga dos veces: arriba como diagnóstico y abajo en el `DecisionBar`, junto a la casilla. Dejó dos seguimientos: unificar las tres copias del texto después de #53 (#139) y el canal del mismo proveedor sin cuenta principal que se muestra como "of another merchant" (#140). Dio el turno de base para las capturas.
 
 **Prompt 33:**
 
@@ -1217,7 +1221,7 @@ La red de seguridad es el `serializerCompiler`, que valida cada respuesta: un si
 
 Un escenario de la spec de settlement apuntaba al CSV de transacciones, que no lleva fechas, y pasó al CSV del summary. Otro mostraba la fecha de liberación esperada con "ET", y la pantalla la pinta solo con el día. Tras traer la rama de entrega, que incluía el archive de `web-polish-e3` (#125) sobre los mismos requisitos, los MODIFIED de settlement se rehicieron desde la spec viva con sus etiquetas nuevas.
 
-*Ajuste humano.* Los `toISOString()` de las inserciones masivas hacia SQL quedaron fuera de alcance, porque no son respuestas. En local, la suite completa dio tiempos agotados en `app.test` y `export-openapi`, que pasaban sueltos, y el resultado que contó fue el de la CI.
+*Ajuste humano.* El primer propose midió 6,25 h y la persona lo pasó al roadmap, con el análisis publicado como comentario en #48. Con tiempo libre lo recuperó, con un corte: si no estaba fusionado esa noche, volvía al roadmap. Ante el choque con `web-polish-e3` en los mismos requisitos MODIFIED de settlement, fijó el orden: archivar primero `web-polish-e3` y rehacer después los MODIFIED de este change sobre la spec viva. Decidió que la spec dijera lo que pinta la pantalla en "Expected release" (sin ET), sin tocar código. Los `toISOString()` de las inserciones masivas hacia SQL quedaron fuera de alcance, porque no son respuestas. En local, la suite completa dio tiempos agotados en `app.test` y `export-openapi`, que pasaban sueltos, y el resultado que contó fue el de la CI.
 
 **Prompt 34:**
 
@@ -1264,7 +1268,6 @@ Las medidas secundarias sí entraron en el script. Solo el anillo de foco del ú
 
 **Lo que salió durante el apply.**
 - Un test de Settlement List esperaba los batches 103–101, cuando el seed crea 122–120. Se corrigió en el mismo commit.
-- El primer commit de la propuesta lo hizo otra ventana que escribía a la vez en la misma carpeta.
 - Para que ningún requisito pasara de 500 caracteres, las reglas nuevas fueron como ADDED.
 - `packages/shared` sigue usando la etiqueta antigua como dato de un test de esquema. Es zona del #48 y no falla.
 
@@ -1277,7 +1280,7 @@ Las medidas secundarias sí entraron en el script. Solo el anillo de foco del ú
 
 El `/opsx:verify` no se pasó antes de archivar.
 
-*Ajuste humano.* La persona dio el turno de base para las tres capturas, sobre un batch sembrado como pagado y sin consumir números de batch. El PR avisa en cabecera de que cambia una etiqueta del CSV que se entrega al merchant: columnas, orden e importes siguen igual, pero quien lo procese buscando `on chargeback` dejará de encontrarlo. El review-diff se hizo en otra sesión, y sus correcciones entraron en el mismo PR.
+*Ajuste humano.* La persona aprobó cambiar también la etiqueta en el CSV del summary, para que pantalla y entrega coincidan, y descartó el campo nuevo de #140. Dio el turno de base para las tres capturas, sobre un batch sembrado como pagado y sin consumir números de batch. El primer commit de la propuesta lo hizo otra ventana, por un mensaje pegado en la ventana equivocada; la sesión lo detectó por el reflog y lo revisó. El PR avisa en cabecera de que cambia una etiqueta del CSV que se entrega al merchant: columnas, orden e importes siguen igual, pero quien lo procese buscando `on chargeback` dejará de encontrarlo. El review-diff se hizo en otra sesión, y sus correcciones entraron en el mismo PR.
 
 **Prompt 36:**
 
@@ -1300,14 +1303,14 @@ El `/opsx:verify` no se pasó antes de archivar.
 
 **El verify.** Sin críticos. Sugirió actualizar la duración de §0.4 si se regenera el vídeo con otras pausas.
 
-**La revisión del PR.** Pidió cinco arreglos:
+**El review-diff.** En una sesión nueva, pidió cinco arreglos:
 - si la limpieza deja notas, el script sale con código 1 y no escribe el `.mp4`;
 - la limpieza va en su propio `try/finally`, para que corra aunque falle el cierre del navegador;
 - el archivo parcial se crea en el directorio temporal y se copia sobre el destino;
 - `setPassword` comprueba `type="password"` en el mismo `evaluate` que escribe;
 - el README §2.6 recuerda actualizar la duración.
 
-*Ajuste humano.* La persona dio un solo turno de base y sembró antes de cada pasada y al terminar, porque la grabación deja consumido el batch 123 y RAM-07 como principal. Se revisaron los fotogramas de cada pasada: cada rótulo en su etapa, ninguna cifra bajo la franja y la contraseña solo como puntos. Se grabó solo en local: el script fija la dirección de la aplicación local y no admite otra.
+*Ajuste humano.* La persona decidió versionar el vídeo en el repositorio, en lugar de subirlo a un servicio externo, para que viaje con la rama que se entrega. En el gate pidió no refactorizar la suite y aceptar la duplicación, para no tocarla el día de la congelación. Dio un solo turno de base y sembró antes de cada pasada y al terminar, porque la grabación deja consumido el batch 123 y RAM-07 como principal. Se revisaron los fotogramas de cada pasada: cada rótulo en su etapa, ninguna cifra bajo la franja y la contraseña solo como puntos. Se grabó solo en local: el script fija la dirección de la aplicación local y no admite otra. La persona revisó el vídeo final entero antes del merge. Tras los arreglos del review-diff, una pasada de comprobación salió con código 0 y se descartó su vídeo para conservar el aprobado.
 
 **Prompt 37:**
 
@@ -1337,17 +1340,19 @@ Toca `infra/`, la configuración de Nginx, el job `images` de la CI y `docs/depl
 - Los tests de integración de la IP se escribieron antes del código, pero no se vieron en rojo: necesitaban base y la implementación llegó antes del turno. El rojo sí se vio en el smoke de los dos primeros grupos.
 - En la comprobación local, la prueba de rendimiento de 20 000 filas falló una vez justo tras el seed y pasó al repetirla.
 
-**Dos rondas de revisión.**
+**El verify.** Una sola tarea pendiente, la del servidor. Dos avisos: el login sin `CF-Connecting-IP` no se probaba, y dos escenarios solo se pueden comprobar en producción. Y dos sugerencias de texto.
+
+**Dos rondas de review-diff**, cada una en una sesión nueva.
 - **La primera.** La IP de la auditoría pasó a su propio requisito en la spec de `auth`. El smoke empezó a probar el `DROP` sobre un volumen que ya tiene `recon_reader`, como un despliegue anterior, y un login sin `CF-Connecting-IP`. El test sin proxy construye su propia app, y entró un caso de `X-Forwarded-For` con varios saltos. Los pasos del servidor ganaron comprobar la rama, apuntar la versión antes del `git pull` y cómo volver atrás.
 - **La segunda.** Vio que el login sin Cloudflare acertaría aunque la API guardara la IP de `web`, que también es privada. Ahora el smoke saca las direcciones de `web` con `docker inspect` y las excluye. `check` lista también los usuarios sin login. Los pasos del servidor dicen parar si está en otra rama y descartar cualquier dirección privada en la auditoría.
 
 Queda como deuda que Nginx reenvía `X-Forwarded-Proto` tal como llega, aunque hoy nada lo lee. El hook de pre-commit que usa `git stash` pasó a #151.
 
-*Ajuste humano.* La persona aprobó en el gate el orden de los grupos y lanzó el `pnpm db:seed` de la comprobación local, porque el hook se lo impide al agente. Después del merge siguió los pasos en el servidor:
+*Ajuste humano.* En el gate, la persona decidió el orden #107 → #108 → #106, con la regla de dejar fuera el grupo que no estuviera terminado antes de la congelación. Lanzó el `pnpm db:seed` de la comprobación local, porque el hook se lo impide al agente. Después del merge siguió los pasos en el servidor:
 - `migrate`, sin migraciones pendientes;
 - los cuatro servicios `healthy` tras `down` y `up --wait`;
 - `check`, solo con `recon_app` y `recon_migrator`;
 - el `curl` con cabeceras inventadas, bloqueado por Cloudflare antes de llegar a la aplicación, un resultado seguro según el plan;
 - los logins auditados, con la IP pública del cliente y ninguna privada.
 
-Con ese resultado se anotaron en los issues los criterios de producción. Los tres issues siguieron abiertos, porque el PR se fusionó en la rama de entrega y no en la principal: se cierran a mano cuando decida la persona.
+Con ese resultado se anotaron en los issues los criterios de producción. Como el PR se fusionó en la rama de entrega y no en la principal, la persona cerró a mano los tres issues después de la comprobación en el servidor.
