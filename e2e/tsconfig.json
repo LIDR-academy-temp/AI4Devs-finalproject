@@ -9,5 +9,5 @@
     "allowImportingTsExtensions": true,
     "types": ["node"]
   },
-  "include": ["playwright.config.ts", "global-setup.ts", "steps", "support", "screenshots"]
+  "include": ["playwright.config.ts", "global-setup.ts", "steps", "support", "screenshots", "video"]
 }
