@@ -22,8 +22,8 @@ Las decisiones están en `design.md` (D1 a D6). Las verificaciones con Docker us
 
 ## 4. Seguridad y extremo a extremo
 
-- [ ] 4.1 Sumar a las pruebas negativas que `/metrics` no se alcanza por el proxy, que la ruta de estado responde 404 al resto y que una ráfaga de ingresos fallidos abre `FUERZA_BRUTA` una sola vez
-- [ ] 4.2 Sumar una prueba de extremo a extremo: el administrador ve «Estado del sistema» en verde
+- [x] 4.1 Sumar a las pruebas negativas que `/metrics` no se alcanza por el proxy, que la ruta de estado responde 404 al resto y que una ráfaga de ingresos fallidos abre `FUERZA_BRUTA` una sola vez
+- [x] 4.2 Sumar una prueba de extremo a extremo: el administrador ve «Estado del sistema» en verde
 
 ## 5. Documentación
 

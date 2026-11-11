@@ -282,7 +282,8 @@ try:
 
     SAT2 = "/api/v1/administracion/sat2"
     inexistente = pedir("/api/v1/noexiste")[2]
-    for ruta, metodo in [(SAT2, "GET"), (SAT2, "PUT"), (SAT2, "DELETE"), ("/api/v1/administracion/otra", "GET")]:
+    for ruta, metodo in [(SAT2, "GET"), (SAT2, "PUT"), (SAT2, "DELETE"), ("/api/v1/administracion/otra", "GET"),
+                         ("/api/v1/administracion/estado", "GET")]:
         for quien, galleta in [("sin sesion", None), ("cuenta comun", galleta_a)]:
             codigo, _, cuerpo = pedir(ruta, metodo, {} if metodo == "PUT" else None, galleta=galleta)
             comprobar(f"administracion {quien} {metodo} {ruta}: igual a una ruta inexistente", codigo == 404 and cuerpo == inexistente, str(codigo))
@@ -426,6 +427,29 @@ try:
     print(f"     180 logins en {duracion:.1f} s; codigos {sorted(set(codigos))}; pico de memoria {int(pico or 0)/2**20:.0f} MiB")
     comprobar("la API sigue viva tras la rafaga", pedir("/api/v1/salud")[0] == 200)
     comprobar("pico de memoria menor a 1 GiB", int(pico or 0) < 2**30, f"{int(pico or 0)/2**20:.0f} MiB")
+
+    print("\n== Monitoreo (weather-track-monitoreo)")
+    _, _, cuerpo = pedir("/metrics")
+    comprobar("las metricas no se alcanzan por el proxy", b"weathertrack_" not in cuerpo)
+    comprobar("tampoco bajo /api", pedir("/api/metrics")[0] == 404)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as conexion:
+        conexion.settimeout(2)
+        comprobar("el puerto de metricas no esta publicado", conexion.connect_ex(("127.0.0.1", 9464)) != 0)
+    comprobar("el estado del sistema responde al administrador", pedir("/api/v1/administracion/estado", galleta=galleta_adm)[0] == 200)
+    # La rafaga de ingresos fallidos tiene que abrir una sola alerta, aunque se evalue dos veces.
+    evaluar = (
+        "from sqlalchemy.orm import sessionmaker; from app.datos.conexion import obtener_motor; "
+        "from app.ingesta import worker; f = sessionmaker(obtener_motor()); "
+        "worker.tarea_monitoreo(f, 'prueba'); worker.tarea_monitoreo(f, 'prueba')"
+    )
+    resultado = compose(E, "exec", "-T", "worker", "python", "-c", evaluar)
+    comprobar(f"el worker evalua los controles ({resultado.returncode})", resultado.returncode == 0, resultado.stderr[-300:])
+    abiertas = consultar("select count(*) from alerta_sistema where tipo = 'FUERZA_BRUTA' and cerrada_en is null")
+    comprobar(f"la rafaga abre una sola alerta de fuerza bruta ({abiertas})", abiertas == "1")
+    avisos = consultar("select count(*) from correo_saliente where tipo = 'ALERTA_SISTEMA' and destinatario = 'adm@ejemplo.com'")
+    comprobar(f"el administrador recibe un solo aviso ({avisos})", avisos == "1")
+    detalle = consultar("select string_agg(detalle, ' ') from alerta_sistema")
+    comprobar("la alerta no tiene correos ni direcciones IP", "@" not in detalle and not re.search(r"\d+\.\d+\.\d+\.\d+", detalle))
 finally:
     print("\ndown:", compose(E, "down", "-v").returncode)
     env.unlink()

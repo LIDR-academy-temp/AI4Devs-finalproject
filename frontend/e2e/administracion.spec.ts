@@ -42,6 +42,15 @@ test.describe('Administración de la configuración de SAT2', () => {
 
     await page.getByRole('link', { name: 'Administración' }).click()
     await expect(page.getByRole('heading', { name: 'Administración', level: 2 })).toBeVisible()
+
+    // Estado del sistema: en modo prueba no se vigila la ingesta, solo el disco y los accesos.
+    const estado = page.getByRole('region', { name: 'Estado del sistema' })
+    const controles = estado.getByRole('list', { name: 'Controles' })
+    await expect(controles.getByRole('listitem')).toHaveCount(2)
+    await expect(controles).toContainText('Disco de la base:')
+    await expect(controles).toContainText('Accesos por fuerza bruta:')
+    await expect(estado).toContainText('Proceso de ingesta: en modo prueba no ejecuta ciclos.')
+    await expect(estado).toContainText(/Tamaño de la base: \d+ MB\./)
     const conexion = page.getByRole('region', { name: 'Conexión con SAT2' })
     await expect(conexion).toContainText('El modo actual, prueba, no consulta SAT2')
 
