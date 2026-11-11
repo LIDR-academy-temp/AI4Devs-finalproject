@@ -7,12 +7,12 @@ no puede descifrar lo que guarda.
 
 import os
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, status
 from pydantic import AfterValidator, BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.autenticacion import segundos_de_bloqueo
@@ -24,15 +24,19 @@ from app.api.limite_ip import limitar
 from app.cifrado_sat2 import ClaveAusente, ClaveInvalida, cifrar, clave_publica_del_entorno
 from app.cuentas.correo import CORREO_CONFIGURACION_SAT2, encolar_correo
 from app.datos.modelos import (
+    AlertaSistema,
     CambioConfiguracionSat2,
     ConfiguracionSat2,
     EjecucionIngesta,
     IntentoAcceso,
     Usuario,
 )
+from app.monitoreo import umbrales
+from app.monitoreo.controles import evaluar
 from app.seguridad import verificar_contrasena
 
 CAMBIOS_VISIBLES = 10
+ALERTAS_VISIBLES = 20
 MODOS = ("real", "simulado", "prueba")
 
 
@@ -200,6 +204,88 @@ def guardar_configuracion(
         )
     sesion.commit()
     return _estado(sesion)
+
+
+class ControlVisible(BaseModel):
+    tipo: str
+    # La estación afectada, o vacío para los controles generales.
+    objeto: str
+    estado: Literal["OK", "ALERTA"]
+    detalle: str
+
+
+class EstadoWorker(BaseModel):
+    estado: Literal["ACTIVO", "SIN_ACTIVIDAD", "MODO_PRUEBA"]
+    ultimo_ciclo_en: datetime | None
+
+
+class AlertaVisible(BaseModel):
+    tipo: str
+    objeto: str
+    abierta_en: datetime
+    cerrada_en: datetime | None
+    detalle: str
+
+
+class EstadoSistema(BaseModel):
+    """Sin credenciales, correos de cuentas ni direcciones IP (weather-track-monitoreo, D4)."""
+
+    controles: list[ControlVisible]
+    worker: EstadoWorker
+    alertas: list[AlertaVisible]
+    base_tamano_bytes: int
+
+
+def _estado_del_worker(sesion: Session, ahora: datetime, modo: str) -> EstadoWorker:
+    ultimo = sesion.scalar(
+        select(func.max(EjecucionIngesta.iniciada_en)).where(EjecucionIngesta.tipo == "CICLO")
+    )
+    if modo == "prueba":
+        return EstadoWorker(estado="MODO_PRUEBA", ultimo_ciclo_en=ultimo)
+    activo = ultimo is not None and ahora - ultimo <= umbrales.WORKER_SIN_ACTIVIDAD_DESPUES_DE
+    return EstadoWorker(estado="ACTIVO" if activo else "SIN_ACTIVIDAD", ultimo_ciclo_en=ultimo)
+
+
+@router.get("/estado", operation_id="obtenerEstadoSistema")
+def obtener_estado(sesion: SesionBd, ahora: Ahora) -> EstadoSistema:
+    modo = os.environ.get("SAT2_MODO", "simulado")
+    # La API no ve el disco de la base: lo mide el worker, y su estado sale de la alerta abierta.
+    controles = [
+        ControlVisible(
+            tipo=r.tipo, objeto=r.objeto, estado="ALERTA" if r.en_alerta else "OK", detalle=r.detalle
+        )
+        for r in evaluar(sesion, ahora, modo, None)
+    ]
+    disco = sesion.scalar(
+        select(AlertaSistema).where(
+            AlertaSistema.tipo == "DISCO_CASI_LLENO", AlertaSistema.cerrada_en.is_(None)
+        )
+    )
+    controles.insert(
+        len(controles) - 1,
+        ControlVisible(
+            tipo="DISCO_CASI_LLENO",
+            objeto="",
+            estado="ALERTA" if disco else "OK",
+            detalle=disco.detalle if disco else "Sin alertas de espacio en el disco de la base.",
+        ),
+    )
+    alertas = sesion.scalars(
+        select(AlertaSistema)
+        .order_by(AlertaSistema.abierta_en.desc(), AlertaSistema.id.desc())
+        .limit(ALERTAS_VISIBLES)
+    ).all()
+    return EstadoSistema(
+        controles=controles,
+        worker=_estado_del_worker(sesion, ahora, modo),
+        alertas=[
+            AlertaVisible(
+                tipo=a.tipo, objeto=a.objeto, abierta_en=a.abierta_en, cerrada_en=a.cerrada_en, detalle=a.detalle
+            )
+            for a in alertas
+        ],
+        base_tamano_bytes=sesion.scalar(select(func.pg_database_size(func.current_database()))),
+    )
 
 
 @router.api_route(

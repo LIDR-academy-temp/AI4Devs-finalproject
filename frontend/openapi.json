@@ -1,6 +1,48 @@
 {
   "components": {
     "schemas": {
+      "AlertaVisible": {
+        "properties": {
+          "abierta_en": {
+            "format": "date-time",
+            "title": "Abierta En",
+            "type": "string"
+          },
+          "cerrada_en": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cerrada En"
+          },
+          "detalle": {
+            "title": "Detalle",
+            "type": "string"
+          },
+          "objeto": {
+            "title": "Objeto",
+            "type": "string"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "objeto",
+          "abierta_en",
+          "cerrada_en",
+          "detalle"
+        ],
+        "title": "AlertaVisible",
+        "type": "object"
+      },
       "Aviso": {
         "properties": {
           "mensaje": {
@@ -128,6 +170,38 @@
           "sensores"
         ],
         "title": "CondicionesActuales",
+        "type": "object"
+      },
+      "ControlVisible": {
+        "properties": {
+          "detalle": {
+            "title": "Detalle",
+            "type": "string"
+          },
+          "estado": {
+            "enum": [
+              "OK",
+              "ALERTA"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "objeto": {
+            "title": "Objeto",
+            "type": "string"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "objeto",
+          "estado",
+          "detalle"
+        ],
+        "title": "ControlVisible",
         "type": "object"
       },
       "Cuenta": {
@@ -413,6 +487,71 @@
           "cambios"
         ],
         "title": "EstadoConfiguracionSat2",
+        "type": "object"
+      },
+      "EstadoSistema": {
+        "description": "Sin credenciales, correos de cuentas ni direcciones IP (weather-track-monitoreo, D4).",
+        "properties": {
+          "alertas": {
+            "items": {
+              "$ref": "#/components/schemas/AlertaVisible"
+            },
+            "title": "Alertas",
+            "type": "array"
+          },
+          "base_tamano_bytes": {
+            "title": "Base Tamano Bytes",
+            "type": "integer"
+          },
+          "controles": {
+            "items": {
+              "$ref": "#/components/schemas/ControlVisible"
+            },
+            "title": "Controles",
+            "type": "array"
+          },
+          "worker": {
+            "$ref": "#/components/schemas/EstadoWorker"
+          }
+        },
+        "required": [
+          "controles",
+          "worker",
+          "alertas",
+          "base_tamano_bytes"
+        ],
+        "title": "EstadoSistema",
+        "type": "object"
+      },
+      "EstadoWorker": {
+        "properties": {
+          "estado": {
+            "enum": [
+              "ACTIVO",
+              "SIN_ACTIVIDAD",
+              "MODO_PRUEBA"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "ultimo_ciclo_en": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ultimo Ciclo En"
+          }
+        },
+        "required": [
+          "estado",
+          "ultimo_ciclo_en"
+        ],
+        "title": "EstadoWorker",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -1092,6 +1231,55 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/administracion/estado": {
+      "get": {
+        "operationId": "obtenerEstadoSistema",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoSistema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obtener Estado",
+        "tags": [
+          "administración"
+        ]
+      }
+    },
     "/api/v1/administracion/sat2": {
       "get": {
         "operationId": "obtenerConfiguracionSat2",

@@ -45,8 +45,21 @@ const GUARDADA = {
   ],
 }
 
+const ESTADO_BIEN = {
+  controles: [
+    { tipo: 'DATOS_VIEJOS', objeto: 'INTA Pergamino', estado: 'OK', detalle: 'Última lectura hace 3 minutos.' },
+    { tipo: 'CICLOS_FALLIDOS', objeto: 'INTA Pergamino', estado: 'OK', detalle: 'Los ciclos recientes terminaron bien.' },
+    { tipo: 'DISCO_CASI_LLENO', objeto: '', estado: 'OK', detalle: 'Sin alertas de espacio en el disco de la base.' },
+    { tipo: 'FUERZA_BRUTA', objeto: '', estado: 'OK', detalle: '0 ingresos fallidos en 15 minutos.' },
+  ],
+  worker: { estado: 'ACTIVO', ultimo_ciclo_en: '2026-11-11T15:00:00Z' },
+  alertas: [],
+  base_tamano_bytes: 157_286_400,
+}
+
 function rutas(esAdministrador: boolean, extra: Rutas = {}): Rutas {
   return {
+    'GET /administracion/estado': { cuerpo: ESTADO_BIEN },
     'GET /estaciones': { cuerpo: [ESTACION] },
     'GET /estaciones/1/condiciones-actuales': { estado: 503, cuerpo: { codigo: 'X', mensaje: 'Sin datos.' } },
     'GET /estaciones/1/recomendacion': { estado: 503, cuerpo: { codigo: 'X', mensaje: 'Sin datos.' } },
@@ -293,5 +306,96 @@ describe('pantalla de administración', () => {
         expect.stringContaining('Revise este dato.'),
       ),
     )
+  })
+})
+
+describe('estado del sistema', () => {
+  it('muestra cada control con texto, el worker y el tamaño de la base', async () => {
+    simularApi(rutas(true, { 'GET /administracion/sat2': { cuerpo: SIN_CONFIGURACION } }))
+    abrir('/administracion')
+
+    const panel = await screen.findByRole('region', { name: 'Estado del sistema' })
+    const controles = within(await within(panel).findByRole('list', { name: 'Controles' })).getAllByRole('listitem')
+    expect(controles.map((c) => c.textContent)).toEqual([
+      'Datos viejos en INTA Pergamino: bien. Última lectura hace 3 minutos.',
+      'Ciclos con error en INTA Pergamino: bien. Los ciclos recientes terminaron bien.',
+      'Disco de la base: bien. Sin alertas de espacio en el disco de la base.',
+      'Accesos por fuerza bruta: bien. 0 ingresos fallidos en 15 minutos.',
+    ])
+    expect(panel).toHaveTextContent('Proceso de ingesta: activo, último ciclo el 11/11/2026 12:00.')
+    expect(panel).toHaveTextContent('Tamaño de la base: 150 MB.')
+    expect(within(panel).getByText('Todavía no hubo alertas.')).toBeInTheDocument()
+  })
+
+  it('marca los controles en alerta y el worker sin actividad', async () => {
+    const enAlerta = {
+      ...ESTADO_BIEN,
+      controles: [
+        { tipo: 'DATOS_VIEJOS', objeto: 'INTA Pergamino', estado: 'ALERTA', detalle: 'Última lectura hace 47 minutos.' },
+      ],
+      worker: { estado: 'SIN_ACTIVIDAD', ultimo_ciclo_en: '2026-11-11T14:00:00Z' },
+      alertas: [
+        {
+          tipo: 'DATOS_VIEJOS',
+          objeto: 'INTA Pergamino',
+          abierta_en: '2026-11-11T14:30:00Z',
+          cerrada_en: null,
+          detalle: 'Última lectura hace 47 minutos.',
+        },
+        {
+          tipo: 'FUERZA_BRUTA',
+          objeto: '',
+          abierta_en: '2026-11-10T10:00:00Z',
+          cerrada_en: '2026-11-10T10:30:00Z',
+          detalle: '25 ingresos fallidos en 15 minutos.',
+        },
+      ],
+    }
+    simularApi(
+      rutas(true, {
+        'GET /administracion/sat2': { cuerpo: SIN_CONFIGURACION },
+        'GET /administracion/estado': { cuerpo: enAlerta },
+      }),
+    )
+    abrir('/administracion')
+
+    const panel = await screen.findByRole('region', { name: 'Estado del sistema' })
+    expect(await within(panel).findByRole('list', { name: 'Controles' })).toHaveTextContent(
+      'Datos viejos en INTA Pergamino: en alerta. Última lectura hace 47 minutos.',
+    )
+    expect(panel).toHaveTextContent('Proceso de ingesta: sin actividad desde el 11/11/2026 11:00.')
+    const historial = within(within(panel).getByRole('list', { name: 'Últimas alertas' })).getAllByRole('listitem')
+    expect(historial.map((a) => a.textContent)).toEqual([
+      'Datos viejos en INTA Pergamino, desde el 11/11/2026 11:30, sigue abierta. Última lectura hace 47 minutos.',
+      'Accesos por fuerza bruta, del 10/11/2026 07:00 al 10/11/2026 07:30. 25 ingresos fallidos en 15 minutos.',
+    ])
+  })
+
+  it('en modo prueba explica que no hay ciclos', async () => {
+    simularApi(
+      rutas(true, {
+        'GET /administracion/sat2': { cuerpo: SIN_CONFIGURACION },
+        'GET /administracion/estado': {
+          cuerpo: { ...ESTADO_BIEN, worker: { estado: 'MODO_PRUEBA', ultimo_ciclo_en: null } },
+        },
+      }),
+    )
+    abrir('/administracion')
+
+    const panel = await screen.findByRole('region', { name: 'Estado del sistema' })
+    expect(await within(panel).findByText('Proceso de ingesta: en modo prueba no ejecuta ciclos.')).toBeInTheDocument()
+  })
+
+  it('si no se puede leer el estado, el resto de la pantalla sigue', async () => {
+    simularApi(
+      rutas(true, {
+        'GET /administracion/sat2': { cuerpo: SIN_CONFIGURACION },
+        'GET /administracion/estado': { estado: 500, cuerpo: { codigo: 'ERROR', mensaje: 'Falló.' } },
+      }),
+    )
+    abrir('/administracion')
+
+    expect(await screen.findByRole('region', { name: 'Conexión con SAT2' })).toBeInTheDocument()
+    expect(await within(screen.getByRole('region', { name: 'Estado del sistema' })).findByText('Falló.')).toBeInTheDocument()
   })
 })

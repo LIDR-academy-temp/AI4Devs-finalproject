@@ -14,6 +14,7 @@ export type DatosPersonales = components['schemas']['DatosPersonales']
 export type Aviso = components['schemas']['Aviso']
 export type EstadoConfiguracionSat2 = components['schemas']['EstadoConfiguracionSat2']
 export type SolicitudConfiguracionSat2 = components['schemas']['SolicitudConfiguracionSat2']
+export type EstadoSistema = components['schemas']['EstadoSistema']
 
 const BASE = '/api/v1'
 const NO_AUTENTICADO = 401
@@ -182,6 +183,10 @@ export function darDeBaja(contrasena: string): Promise<void> {
 
 export function obtenerConfiguracionSat2(): Promise<EstadoConfiguracionSat2> {
   return pedir('/administracion/sat2')
+}
+
+export function obtenerEstadoSistema(): Promise<EstadoSistema> {
+  return pedir('/administracion/estado')
 }
 
 export function guardarConfiguracionSat2(datos: SolicitudConfiguracionSat2): Promise<EstadoConfiguracionSat2> {

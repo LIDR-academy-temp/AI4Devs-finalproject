@@ -6,8 +6,9 @@ import {
   guardarConfiguracionSat2,
   mensajeDeError,
   obtenerConfiguracionSat2,
+  obtenerEstadoSistema,
 } from '../servicios/cliente'
-import type { EstadoConfiguracionSat2 } from '../servicios/cliente'
+import type { EstadoConfiguracionSat2, EstadoSistema as Estado } from '../servicios/cliente'
 import { formatearMomentoDeArgentina } from '../servicios/serie'
 import { useCarga } from '../servicios/useCarga'
 
@@ -15,6 +16,87 @@ const RESULTADOS: Record<string, string> = {
   EXITO: 'terminó bien',
   PARCIAL: 'terminó con datos parciales',
   ERROR: 'terminó con error',
+}
+
+/** Los mismos nombres que usan los correos de alerta. */
+function nombreDelControl(tipo: string, objeto: string): string {
+  switch (tipo) {
+    case 'DATOS_VIEJOS':
+      return `Datos viejos en ${objeto}`
+    case 'CICLOS_FALLIDOS':
+      return `Ciclos con error en ${objeto}`
+    case 'DISCO_CASI_LLENO':
+      return 'Disco de la base'
+    default:
+      return 'Accesos por fuerza bruta'
+  }
+}
+
+function megabytes(bytes: number): string {
+  return `${new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(bytes / 1_048_576)} MB`
+}
+
+function textoDelWorker(worker: Estado['worker']): string {
+  if (worker.estado === 'MODO_PRUEBA') {
+    return 'Proceso de ingesta: en modo prueba no ejecuta ciclos.'
+  }
+  if (!worker.ultimo_ciclo_en) {
+    return 'Proceso de ingesta: sin actividad, todavía no ejecutó ningún ciclo.'
+  }
+  const momento = formatearMomentoDeArgentina(worker.ultimo_ciclo_en)
+  return worker.estado === 'ACTIVO'
+    ? `Proceso de ingesta: activo, último ciclo el ${momento}.`
+    : `Proceso de ingesta: sin actividad desde el ${momento}.`
+}
+
+function EstadoDelSistema() {
+  const { datos, error, cargando } = useCarga(() => obtenerEstadoSistema(), [])
+  return (
+    <section className="tarjeta" aria-labelledby="titulo-estado">
+      <h3 id="titulo-estado">Estado del sistema</h3>
+      {cargando && !datos && <p role="status">Revisando el estado…</p>}
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+      {datos && (
+        <>
+          <ul aria-label="Controles" className="controles">
+            {datos.controles.map((control) => (
+              <li
+                key={`${control.tipo}-${control.objeto}`}
+                className={control.estado === 'ALERTA' ? 'control-alerta' : 'control-bien'}
+              >
+                <strong>
+                  {nombreDelControl(control.tipo, control.objeto)}: {control.estado === 'ALERTA' ? 'en alerta' : 'bien'}.
+                </strong>{' '}
+                {control.detalle}
+              </li>
+            ))}
+          </ul>
+          <p>{textoDelWorker(datos.worker)}</p>
+          <p className="secundario">Tamaño de la base: {megabytes(datos.base_tamano_bytes)}.</p>
+          <h4>Últimas alertas</h4>
+          {datos.alertas.length ? (
+            <ul aria-label="Últimas alertas">
+              {datos.alertas.map((alerta) => (
+                <li key={`${alerta.tipo}-${alerta.objeto}-${alerta.abierta_en}`}>
+                  {nombreDelControl(alerta.tipo, alerta.objeto)},{' '}
+                  {alerta.cerrada_en
+                    ? `del ${formatearMomentoDeArgentina(alerta.abierta_en)} al ${formatearMomentoDeArgentina(alerta.cerrada_en)}.`
+                    : `desde el ${formatearMomentoDeArgentina(alerta.abierta_en)}, sigue abierta.`}{' '}
+                  {alerta.detalle}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>Todavía no hubo alertas.</p>
+          )}
+        </>
+      )}
+    </section>
+  )
 }
 
 function Conexion({ estado }: { estado: EstadoConfiguracionSat2 }) {
@@ -207,6 +289,7 @@ export function Administracion() {
         Solo los administradores ven esta pantalla. Acá se carga la conexión con SAT2, de donde llegan las
         lecturas de las estaciones.
       </p>
+      <EstadoDelSistema />
       <Conexion estado={estado} />
       <Formulario puedeGuardar={estado.puede_guardar} modoReal={estado.modo === 'real'} alGuardar={setGuardado} />
       <Cambios estado={estado} />

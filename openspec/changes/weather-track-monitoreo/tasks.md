@@ -11,8 +11,8 @@ Las decisiones están en `design.md` (D1 a D6). Las verificaciones con Docker us
 
 ## 2. Pantalla (D4)
 
-- [ ] 2.1 Escribir primero las pruebas de `GET /api/v1/administracion/estado` (404 para el resto, controles, worker activo o sin actividad, últimas 20 alertas) y luego implementarla; regenerar el contrato y los tipos
-- [ ] 2.2 Agregar «Estado del sistema» a la pantalla de administración, con pruebas en Vitest
+- [x] 2.1 Escribir primero las pruebas de `GET /api/v1/administracion/estado` (404 para el resto, controles, worker activo o sin actividad, últimas 20 alertas) y luego implementarla; regenerar el contrato y los tipos
+- [x] 2.2 Agregar «Estado del sistema» a la pantalla de administración, con pruebas en Vitest
 
 ## 3. Métricas, Prometheus y Grafana (D5, D6)
 

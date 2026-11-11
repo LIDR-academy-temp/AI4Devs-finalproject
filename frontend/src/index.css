@@ -263,6 +263,24 @@ button:disabled {
   color: var(--texto-suave);
 }
 
+/* Estado del sistema: el texto dice el estado; el borde lo refuerza. */
+.controles {
+  padding-left: 0;
+  list-style: none;
+}
+
+.controles li {
+  padding: 0.35rem 0.6rem;
+  margin-bottom: 0.35rem;
+  border-left: 4px solid var(--apto-texto);
+}
+
+.controles li.control-alerta {
+  color: var(--no-aplicar-texto);
+  background: var(--no-aplicar-fondo);
+  border-left-color: var(--no-aplicar-texto);
+}
+
 /* Una ayuda que advierte un riesgo: el mismo color que los avisos, sobre la superficie. */
 .ayuda-advertencia {
   font-weight: 600;

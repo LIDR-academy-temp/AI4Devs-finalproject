@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v1/administracion/estado": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Obtener Estado */
+        get: operations["obtenerEstadoSistema"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/administracion/sat2": {
         parameters: {
             query?: never;
@@ -319,6 +336,22 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AlertaVisible */
+        AlertaVisible: {
+            /**
+             * Abierta En
+             * Format: date-time
+             */
+            abierta_en: string;
+            /** Cerrada En */
+            cerrada_en: string | null;
+            /** Detalle */
+            detalle: string;
+            /** Objeto */
+            objeto: string;
+            /** Tipo */
+            tipo: string;
+        };
         /** Aviso */
         Aviso: {
             /** Mensaje */
@@ -359,6 +392,20 @@ export interface components {
             ultima_ingesta_con_error: boolean;
             /** Ultima Ingesta Exitosa En */
             ultima_ingesta_exitosa_en: string | null;
+        };
+        /** ControlVisible */
+        ControlVisible: {
+            /** Detalle */
+            detalle: string;
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "OK" | "ALERTA";
+            /** Objeto */
+            objeto: string;
+            /** Tipo */
+            tipo: string;
         };
         /** Cuenta */
         Cuenta: {
@@ -436,6 +483,29 @@ export interface components {
             /** Puede Guardar */
             puede_guardar: boolean;
             ultimo_ciclo: components["schemas"]["UltimoCiclo"] | null;
+        };
+        /**
+         * EstadoSistema
+         * @description Sin credenciales, correos de cuentas ni direcciones IP (weather-track-monitoreo, D4).
+         */
+        EstadoSistema: {
+            /** Alertas */
+            alertas: components["schemas"]["AlertaVisible"][];
+            /** Base Tamano Bytes */
+            base_tamano_bytes: number;
+            /** Controles */
+            controles: components["schemas"]["ControlVisible"][];
+            worker: components["schemas"]["EstadoWorker"];
+        };
+        /** EstadoWorker */
+        EstadoWorker: {
+            /**
+             * Estado
+             * @enum {string}
+             */
+            estado: "ACTIVO" | "SIN_ACTIVIDAD" | "MODO_PRUEBA";
+            /** Ultimo Ciclo En */
+            ultimo_ciclo_en: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -659,6 +729,37 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    obtenerEstadoSistema: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                wt_sesion?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstadoSistema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     obtenerConfiguracionSat2: {
         parameters: {
             query?: never;
