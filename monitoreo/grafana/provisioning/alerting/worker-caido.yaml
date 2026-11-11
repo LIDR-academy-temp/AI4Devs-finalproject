@@ -1,0 +1,64 @@
+# El único aviso que la aplicación no puede enviar sola: los correos los envía el worker,
+# así que si el worker se detiene, avisa Grafana (weather-track-monitoreo, D1 y D6).
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: Administración de Weather Track
+    receivers:
+      - uid: correo-administracion
+        type: email
+        settings:
+          addresses: ${ALERTAS_CORREO}
+          singleEmail: true
+
+policies:
+  - orgId: 1
+    receiver: Administración de Weather Track
+    group_by: ["alertname"]
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 12h
+
+groups:
+  - orgId: 1
+    name: Weather Track
+    folder: Weather Track
+    interval: 1m
+    rules:
+      - uid: worker-sin-metricas
+        title: El worker de Weather Track dejó de publicar métricas
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              # Sin el worker no hay serie: `or vector(0)` lo cuenta como caído.
+              expr: max(up{job="weathertrack-worker"}) or vector(0)
+              instant: true
+              intervalMs: 60000
+              maxDataPoints: 43200
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [1]
+        for: 5m
+        noDataState: Alerting
+        execErrState: Alerting
+        annotations:
+          summary: El worker de Weather Track no publica métricas desde hace 5 minutos.
+          description: >-
+            Sin el worker no se consultan las estaciones ni se envían los correos de la aplicación.
+            Revisar con docker compose ps y docker compose logs worker --tail 50.
+        labels:
+          servicio: worker

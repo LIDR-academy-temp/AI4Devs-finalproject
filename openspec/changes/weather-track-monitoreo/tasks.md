@@ -16,9 +16,9 @@ Las decisiones están en `design.md` (D1 a D6). Las verificaciones con Docker us
 
 ## 3. Métricas, Prometheus y Grafana (D5, D6)
 
-- [ ] 3.1 Escribir primero las pruebas de las métricas (nombres, etiquetas, valores, ningún dato personal) y luego publicarlas en el worker con `prometheus-client`
-- [ ] 3.2 Agregar el perfil `monitoreo` con Prometheus y Grafana, sus imágenes fijadas y la configuración en `monitoreo/` (Prometheus, fuente de datos, tablero y regla de worker caído); verificar con pruebas de Compose que Grafana solo escucha en la computadora local, exige su contraseña y no admite acceso anónimo, que Prometheus y el worker no publican puertos, y que el tablero y la regla son JSON y YAML válidos
-- [ ] 3.3 Levantar el perfil en un proyecto aislado: Prometheus toma las métricas, el tablero muestra datos, y al detener el worker Grafana envía el aviso a Mailpit
+- [x] 3.1 Escribir primero las pruebas de las métricas (nombres, etiquetas, valores, ningún dato personal) y luego publicarlas en el worker con `prometheus-client`
+- [x] 3.2 Agregar el perfil `monitoreo` con Prometheus y Grafana, sus imágenes fijadas y la configuración en `monitoreo/` (Prometheus, fuente de datos, tablero y regla de worker caído); verificar con pruebas de Compose que Grafana solo escucha en la computadora local, exige su contraseña y no admite acceso anónimo, que Prometheus y el worker no publican puertos, y que el tablero y la regla son JSON y YAML válidos
+- [x] 3.3 Levantar el perfil en un proyecto aislado: Prometheus toma las métricas, el tablero muestra datos, y al detener el worker Grafana envía el aviso a Mailpit
 
 ## 4. Seguridad y extremo a extremo
 

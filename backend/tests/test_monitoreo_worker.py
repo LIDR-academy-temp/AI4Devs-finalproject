@@ -40,3 +40,16 @@ def test_medir_el_disco_montado(tmp_path, monkeypatch):
 
     assert disco.total > 0
     assert 0 <= disco.libre <= disco.total
+
+
+def test_la_tarea_actualiza_las_metricas(sesion):
+    from app.monitoreo.metricas import exponer
+
+    sesion.add(Estacion(id_equipo_sat2=1, nombre="INTA Pergamino", latitud=Decimal("-34"), longitud=Decimal("-60")))
+    sesion.commit()
+
+    worker.tarea_monitoreo(
+        FabricaDePruebas(sesion), "real", reloj=lambda: AHORA, medir_disco=lambda: Disco(100, 40)
+    )
+
+    assert "weathertrack_disco_libre_ratio 0.4" in exponer().decode("utf-8")

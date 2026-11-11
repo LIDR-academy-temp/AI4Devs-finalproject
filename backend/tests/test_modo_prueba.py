@@ -129,6 +129,7 @@ def test_el_worker_en_modo_prueba_no_crea_el_cliente_de_sat2(sesion, monkeypatch
 
     monkeypatch.setattr(worker, "crear_cliente", sin_sat2)
     monkeypatch.setattr(worker, "BlockingScheduler", PlanificadorFalso)
+    monkeypatch.setattr(worker, "iniciar_servidor_de_metricas", lambda: None)
     monkeypatch.setattr(worker, "RUTA_LATIDO", tmp_path / "latido")
     monkeypatch.setattr(worker, "registrar_latido", lambda: None)
     base_con_lecturas(sesion)

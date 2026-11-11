@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from apscheduler.schedulers.blocking import BlockingScheduler
+from prometheus_client import start_http_server
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -42,6 +43,7 @@ from app.ingesta.origen_sat2 import (
 from app.ingesta.recuperacion import recuperar_huecos
 from app.monitoreo.alertas import actualizar_alertas
 from app.monitoreo.controles import Disco, evaluar
+from app.monitoreo.metricas import REGISTRO, actualizar_metricas
 
 MODO_SIMULADO = "simulado"
 MODO_REAL = "real"
@@ -57,6 +59,8 @@ RUTA_LATIDO = Path(os.environ.get("WORKER_RUTA_LATIDO", "/tmp/weather-track-lati
 RUTA_ENV = Path(os.environ.get("WORKER_RUTA_ENV", ".env"))
 # El volumen de la base, montado en modo solo lectura para medir su espacio libre.
 RUTA_DISCO = Path(os.environ.get("MONITOREO_RUTA_DISCO", "/datos_db"))
+# Interno: Prometheus lo consulta por la red de Compose; nunca se publica (weather-track-monitoreo, D5).
+PUERTO_METRICAS = int(os.environ.get("MONITOREO_PUERTO_METRICAS", "9464"))
 
 registro = logging.getLogger("weather_track.worker")
 
@@ -186,11 +190,18 @@ def tarea_monitoreo(
 ) -> None:
     """Evalúa los controles de salud y abre o cierra sus alertas (weather-track-monitoreo, D2 y D3)."""
     ahora = reloj()
+    disco = medir_disco()
     with fabrica() as sesion:
-        actualizar_alertas(sesion, evaluar(sesion, ahora, modo, medir_disco()), ahora)
+        actualizar_alertas(sesion, evaluar(sesion, ahora, modo, disco), ahora)
+        actualizar_metricas(sesion, ahora, modo, disco)
+
+
+def iniciar_servidor_de_metricas() -> None:
+    start_http_server(PUERTO_METRICAS, registry=REGISTRO)
 
 
 def programar_monitoreo(planificador: BlockingScheduler, fabrica: Callable[[], Session], modo: str) -> None:
+    iniciar_servidor_de_metricas()
     # Un minuto después del ciclo, para evaluar los datos que acaba de traer.
     planificador.add_job(
         protegida,

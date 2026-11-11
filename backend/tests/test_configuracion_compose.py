@@ -31,6 +31,8 @@ COMPLETAS = {
     # Valores ficticios con el formato de las claves de weather-track-administracion-sat2.
     "SAT2_CLAVE_PUBLICA": "clave-publica-ficticia",
     "SAT2_CLAVE_PRIVADA": "clave-privada-ficticia",
+    "GRAFANA_CLAVE_ADMIN": "clave-grafana-ficticia",
+    "ALERTAS_CORREO": "alertas@ejemplo.com",
 }
 SECRETAS = re.compile(
     r"^(nombreDeUsuario|clave|SAT2_URL_BASE|SAT2_CLAVE_PRIVADA|SMTP_.*|CORREO_REMITENTE)$"
@@ -39,12 +41,13 @@ SECRETAS = re.compile(
 pytestmark = pytest.mark.skipif(shutil.which("docker") is None, reason="Sin Docker")
 
 
-def configuracion(tmp_path, variables, *archivos):
+def configuracion(tmp_path, variables, *archivos, perfiles=()):
     for nombre in ("docker-compose.yml", "docker-compose.prod.yml"):
         shutil.copy(RAIZ / nombre, tmp_path / nombre)
     archivo = tmp_path / "prueba.env"
     archivo.write_text("".join(f"{k}={v}\n" for k, v in variables.items()), encoding="utf-8")
     opciones = [arg for nombre in archivos for arg in ("-f", nombre)]
+    opciones += [arg for perfil in perfiles for arg in ("--profile", perfil)]
     return subprocess.run(
         ["docker", "compose", "-p", "wt-config", "--env-file", str(archivo), *opciones,
          "config", "--format", "json"],
@@ -52,8 +55,8 @@ def configuracion(tmp_path, variables, *archivos):
     )
 
 
-def servicios(tmp_path, *archivos):
-    resultado = configuracion(tmp_path, COMPLETAS, *archivos)
+def servicios(tmp_path, *archivos, perfiles=()):
+    resultado = configuracion(tmp_path, COMPLETAS, *archivos, perfiles=perfiles)
     assert resultado.returncode == 0, resultado.stderr
     return json.loads(resultado.stdout)["services"]
 
@@ -129,3 +132,51 @@ def test_solo_el_worker_ve_el_disco_de_la_base_y_en_modo_solo_lectura(tmp_path, 
     assert volumen["target"] == "/datos_db"
     assert volumen["read_only"] is True
     assert not [v for v in todos["api"].get("volumes", []) if v.get("source") == "datos_db"]
+
+
+
+# Perfil de monitoreo (weather-track-monitoreo, D6)
+
+MONITOREO = ("monitoreo",)
+
+
+@pytest.mark.parametrize("archivos", [LOCAL, PRODUCCION], ids=["local", "produccion"])
+def test_sin_el_perfil_no_se_levantan_prometheus_ni_grafana(tmp_path, archivos):
+    todos = servicios(tmp_path, *archivos)
+    assert "prometheus" not in todos
+    assert "grafana" not in todos
+
+
+@pytest.mark.parametrize("archivos", [LOCAL, PRODUCCION], ids=["local", "produccion"])
+def test_grafana_solo_escucha_en_esta_computadora(tmp_path, archivos):
+    [puerto] = servicios(tmp_path, *archivos, perfiles=MONITOREO)["grafana"]["ports"]
+    assert puerto["host_ip"] == "127.0.0.1"
+
+
+def test_prometheus_y_las_metricas_del_worker_no_se_publican(tmp_path):
+    todos = servicios(tmp_path, *LOCAL, perfiles=MONITOREO)
+    assert not todos["prometheus"].get("ports")
+    assert not todos["worker"].get("ports")
+
+
+def test_grafana_exige_contrasena_y_no_admite_registro_ni_anonimos(tmp_path):
+    grafana = servicios(tmp_path, *LOCAL, perfiles=MONITOREO)["grafana"]
+    entorno = grafana["environment"]
+    assert entorno["GF_SECURITY_ADMIN_PASSWORD"] == "clave-grafana-ficticia"
+    assert entorno["GF_USERS_ALLOW_SIGN_UP"] == "false"
+    assert entorno["GF_AUTH_ANONYMOUS_ENABLED"] == "false"
+    assert entorno["GF_ANALYTICS_REPORTING_ENABLED"] == "false"
+    # Sin contraseña no arranca: Grafana usaría admin/admin.
+    assert "GF_SECURITY_ADMIN_PASSWORD" in " ".join(grafana["entrypoint"])
+
+
+def test_grafana_no_recibe_credenciales_de_sat2(tmp_path):
+    grafana = servicios(tmp_path, *LOCAL, perfiles=MONITOREO)["grafana"]
+    assert not grafana.get("env_file")
+    assert not {"nombreDeUsuario", "clave", "SAT2_URL_BASE", "SAT2_CLAVE_PRIVADA"} & set(grafana["environment"])
+
+
+@pytest.mark.parametrize("servicio", ["prometheus", "grafana"])
+def test_las_imagenes_del_monitoreo_tienen_version_fija(tmp_path, servicio):
+    imagen = servicios(tmp_path, *LOCAL, perfiles=MONITOREO)[servicio]["image"]
+    assert re.fullmatch(r"[a-z/]+:v?\d+\.\d+\.\d+", imagen), imagen

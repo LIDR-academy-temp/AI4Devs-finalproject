@@ -131,6 +131,7 @@ def test_el_modo_simulado_arranca_y_planifica_con_su_cliente_fijo(monkeypatch, s
     monkeypatch.setattr(worker, "obtener_motor", lambda: None)
     monkeypatch.setattr(worker, "sessionmaker", lambda _motor: FabricaDePruebas(sesion))
     monkeypatch.setattr(worker, "BlockingScheduler", crear_planificador)
+    monkeypatch.setattr(worker, "iniciar_servidor_de_metricas", lambda: None)
 
     assert worker.principal() == 0
 
