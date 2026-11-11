@@ -78,6 +78,9 @@ services:
     build: ./backend
     command: python -m app.ingesta.worker
     # Debe correr en una sola instancia: el planificador no se comparte entre procesos.
+    # El volumen de la base, solo para medir su espacio libre (weather-track-monitoreo).
+    volumes:
+      - datos_db:/datos_db:ro
     env_file:
       - path: .env
         required: false

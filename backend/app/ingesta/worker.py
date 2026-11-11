@@ -2,6 +2,7 @@
 
 import logging
 import os
+import shutil
 import sys
 import time
 from collections.abc import Callable
@@ -39,6 +40,8 @@ from app.ingesta.origen_sat2 import (
     tarea_con_origen,
 )
 from app.ingesta.recuperacion import recuperar_huecos
+from app.monitoreo.alertas import actualizar_alertas
+from app.monitoreo.controles import Disco, evaluar
 
 MODO_SIMULADO = "simulado"
 MODO_REAL = "real"
@@ -52,6 +55,8 @@ ANTIGUEDAD_MAXIMA_LATIDO_SEGUNDOS = 120
 ANTIGUEDAD_INTENTOS_HORAS = 24
 RUTA_LATIDO = Path(os.environ.get("WORKER_RUTA_LATIDO", "/tmp/weather-track-latido"))
 RUTA_ENV = Path(os.environ.get("WORKER_RUTA_ENV", ".env"))
+# El volumen de la base, montado en modo solo lectura para medir su espacio libre.
+RUTA_DISCO = Path(os.environ.get("MONITOREO_RUTA_DISCO", "/datos_db"))
 
 registro = logging.getLogger("weather_track.worker")
 
@@ -165,6 +170,37 @@ def tarea_carga(
             recuperar_huecos(sesion, cliente, estacion, reloj(), pausa_segundos=pausa, dormir=dormir)
 
 
+def medir_disco() -> Disco | None:
+    """El espacio del disco de la base. Sin el volumen montado, no hay medición."""
+    if not RUTA_DISCO.is_dir():
+        return None
+    uso = shutil.disk_usage(RUTA_DISCO)
+    return Disco(total=uso.total, libre=uso.free)
+
+
+def tarea_monitoreo(
+    fabrica: Callable[[], Session],
+    modo: str,
+    reloj: Callable[[], datetime] = _ahora,
+    medir_disco: Callable[[], Disco | None] = medir_disco,
+) -> None:
+    """Evalúa los controles de salud y abre o cierra sus alertas (weather-track-monitoreo, D2 y D3)."""
+    ahora = reloj()
+    with fabrica() as sesion:
+        actualizar_alertas(sesion, evaluar(sesion, ahora, modo, medir_disco()), ahora)
+
+
+def programar_monitoreo(planificador: BlockingScheduler, fabrica: Callable[[], Session], modo: str) -> None:
+    # Un minuto después del ciclo, para evaluar los datos que acaba de traer.
+    planificador.add_job(
+        protegida,
+        "interval",
+        minutes=INTERVALO_CICLO_MINUTOS,
+        args=["monitoreo", tarea_monitoreo, fabrica, modo],
+        next_run_time=_ahora() + timedelta(minutes=1),
+    )
+
+
 def tarea_correo(
     fabrica: Callable[[], Session],
     enviar: Enviador,
@@ -231,6 +267,7 @@ def principal_de_prueba(fabrica: Callable[[], Session]) -> int:
     planificador.add_job(
         protegida, "interval", minutes=INTERVALO_CICLO_MINUTOS, args=["limpieza", tarea_limpieza, fabrica]
     )
+    programar_monitoreo(planificador, fabrica, MODO_PRUEBA)
     planificador.start()
     return 0
 
@@ -290,6 +327,7 @@ def principal() -> int:
         args=["carga y huecos", tarea_con_origen, tarea_carga, fabrica, origen],
         next_run_time=ahora,
     )
+    programar_monitoreo(planificador, fabrica, modo)
     planificador.start()
     return 0
 

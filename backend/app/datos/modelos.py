@@ -375,3 +375,38 @@ class CambioConfiguracionSat2(Base):
     )
     # Aparte del usuario, para que el registro sobreviva al borrado de la cuenta.
     email_usuario: Mapped[str] = mapped_column(String(254))
+
+
+# Los controles de salud de weather-track-monitoreo (D2).
+TIPOS_ALERTA = ("DATOS_VIEJOS", "CICLOS_FALLIDOS", "DISCO_CASI_LLENO", "FUERZA_BRUTA")
+
+
+class AlertaSistema(Base):
+    """Una alerta de un control de salud, desde que empieza hasta que se normaliza (D3).
+
+    El detalle nunca lleva credenciales, correos de cuentas ni direcciones IP.
+    """
+
+    __tablename__ = "alerta_sistema"
+    __table_args__ = (
+        CheckConstraint(f"tipo IN ({_lista_sql(TIPOS_ALERTA)})", name="tipo_valido"),
+        CheckConstraint("cerrada_en IS NULL OR cerrada_en >= abierta_en", name="cierra_despues_de_abrir"),
+        # Una sola alerta abierta por control y objeto: así un control que sigue fallando no avisa
+        # dos veces.
+        Index(
+            "ix_alerta_sistema_abierta",
+            "tipo",
+            "objeto",
+            unique=True,
+            postgresql_where=text("cerrada_en IS NULL"),
+        ),
+        Index("ix_alerta_sistema_reciente", text("abierta_en DESC")),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    tipo: Mapped[str] = mapped_column(String(20))
+    # La estación afectada, o vacío para los controles generales.
+    objeto: Mapped[str] = mapped_column(String(120), server_default=text("''"))
+    abierta_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    cerrada_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    detalle: Mapped[str] = mapped_column(Text)

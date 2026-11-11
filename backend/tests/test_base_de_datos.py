@@ -10,6 +10,7 @@ from sqlalchemy import func, inspect, select, text
 from sqlalchemy.exc import IntegrityError
 
 from app.datos.modelos import (
+    AlertaSistema,
     Base,
     CambioConfiguracionSat2,
     ConfiguracionBase,
@@ -46,6 +47,7 @@ TABLAS = {
     "limite_ip",
     "configuracion_sat2",
     "cambio_configuracion_sat2",
+    "alerta_sistema",
 }
 MOTIVO = [{"codigo": "SIN_INVERSION", "detalle": "No hay inversión."}]
 
@@ -635,6 +637,44 @@ def test_la_migracion_0005_revierte_borrando_solo_las_recuperaciones(motor):
                 )
             )
             conexion.execute(text("DELETE FROM estacion WHERE id_equipo_sat2 = 905"))
+
+
+def alerta(**cambios):
+    datos = {"tipo": "DATOS_VIEJOS", "objeto": "INTA Pergamino", "abierta_en": AHORA, "detalle": "x"}
+    return AlertaSistema(**{**datos, **cambios})
+
+
+def test_no_puede_haber_dos_alertas_abiertas_del_mismo_tipo_y_objeto(sesion):
+    sesion.add(alerta())
+    sesion.flush()
+
+    debe_rechazarse(sesion, alerta())
+
+
+def test_una_alerta_cerrada_no_impide_abrir_otra(sesion):
+    sesion.add(alerta(cerrada_en=AHORA + timedelta(minutes=10)))
+    sesion.add(alerta(abierta_en=AHORA + timedelta(minutes=20)))
+    sesion.add(alerta(objeto="Otra estación"))
+    sesion.add(alerta(tipo="DISCO_CASI_LLENO", objeto=""))
+    sesion.flush()
+
+
+def test_rechaza_una_alerta_de_tipo_desconocido(sesion):
+    debe_rechazarse(sesion, alerta(tipo="OTRO"))
+
+
+def test_rechaza_una_alerta_que_cierra_antes_de_abrir(sesion):
+    debe_rechazarse(sesion, alerta(cerrada_en=AHORA - timedelta(minutes=1)))
+
+
+def test_la_migracion_0006_se_revierte(motor):
+    configuracion = configuracion_alembic()
+    try:
+        command.downgrade(configuracion, "0005")
+        assert "alerta_sistema" not in set(inspect(motor).get_table_names())
+    finally:
+        command.upgrade(configuracion, "head")
+    assert "alerta_sistema" in set(inspect(motor).get_table_names())
 
 def test_rechaza_resultado_desconocido(sesion, estacion):
     debe_rechazarse(

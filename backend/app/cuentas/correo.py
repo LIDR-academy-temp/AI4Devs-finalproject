@@ -23,6 +23,9 @@ CORREO_RECUPERO = "RECUPERO"
 CORREO_CLAVE_CAMBIADA = "CLAVE_CAMBIADA"
 # A cada administrador activo, al cambiar la configuración de SAT2. Nunca lleva sus valores.
 CORREO_CONFIGURACION_SAT2 = "CONFIGURACION_SAT2"
+# A cada administrador activo, cuando un control de salud empieza a fallar y cuando se normaliza.
+CORREO_ALERTA = "ALERTA_SISTEMA"
+CORREO_ALERTA_NORMALIZADA = "ALERTA_NORMALIZADA"
 
 # El enlace de un solo uso que necesita cada tipo, además del de baja.
 ENLACE_DEL_TIPO = {
@@ -31,6 +34,8 @@ ENLACE_DEL_TIPO = {
     CORREO_RECUPERO: RECUPERO,
     CORREO_CLAVE_CAMBIADA: None,
     CORREO_CONFIGURACION_SAT2: None,
+    CORREO_ALERTA: None,
+    CORREO_ALERTA_NORMALIZADA: None,
 }
 MAXIMO_POR_HORA = 3
 
@@ -48,7 +53,13 @@ def url_publica() -> str:
 
 
 def _parrafos(
-    tipo: str, nombre: str, base: str, codigo: str | None, ahora: datetime, autor: str | None = None
+    tipo: str,
+    nombre: str,
+    base: str,
+    codigo: str | None,
+    ahora: datetime,
+    autor: str | None = None,
+    alerta: tuple[str, str] | None = None,
 ) -> tuple[str, list[str]]:
     """Asunto y párrafos. Los enlaces van solos en su propio párrafo."""
     saludo = f"Hola, {nombre}:"
@@ -92,6 +103,22 @@ def _parrafos(
             "Si no reconoce este cambio, revíselo en la pantalla de administración y cambie su contraseña:",
             f"{base}/administracion",
         ]
+    if tipo in (CORREO_ALERTA, CORREO_ALERTA_NORMALIZADA) and alerta:
+        titulo, detalle = alerta
+        fecha = ahora.astimezone(ZONA_ARGENTINA).strftime("%d/%m/%Y %H:%M")
+        if tipo == CORREO_ALERTA:
+            return f"Alerta de Weather Track: {titulo}", [
+                saludo,
+                f"{titulo}. {detalle}",
+                f"Empezó el {fecha}, hora de Argentina. No se repetirá este aviso mientras siga.",
+                "Revise el estado del sistema en la pantalla de administración:",
+                f"{base}/administracion",
+            ]
+        return f"Se normalizó: {titulo}", [
+            saludo,
+            f"La alerta «{titulo}» se normalizó el {fecha}, hora de Argentina. {detalle}",
+            f"{base}/administracion",
+        ]
     raise ValueError(f"Tipo de correo desconocido: {tipo}")
 
 
@@ -103,9 +130,10 @@ def armar_mensaje(
     codigo: str | None = None,
     base: str | None = None,
     autor: str | None = None,
+    alerta: tuple[str, str] | None = None,
 ) -> Mensaje:
     base = base or url_publica()
-    asunto, parrafos = _parrafos(tipo, usuario.nombre, base, codigo, ahora, autor)
+    asunto, parrafos = _parrafos(tipo, usuario.nombre, base, codigo, ahora, autor, alerta)
     enlace_baja = f"{base}/baja#codigo={codigo_baja}"
     leyenda = "Para darse de baja y borrar su cuenta y todos sus datos, abra este enlace:"
     parrafos = [*parrafos, "—", leyenda, enlace_baja, "Weather Track"]
@@ -143,7 +171,12 @@ def correos_recientes(sesion: Session, destinatario: str, tipo: str, ahora: date
 
 
 def encolar_correo(
-    sesion: Session, usuario: Usuario, tipo: str, ahora: datetime, autor: str | None = None
+    sesion: Session,
+    usuario: Usuario,
+    tipo: str,
+    ahora: datetime,
+    autor: str | None = None,
+    alerta: tuple[str, str] | None = None,
 ) -> bool:
     """Emite los enlaces del correo y lo deja en la bandeja de salida. No hace commit.
 
@@ -155,7 +188,7 @@ def encolar_correo(
     proposito = ENLACE_DEL_TIPO[tipo]
     codigo = emitir_enlace(sesion, usuario, proposito, ahora) if proposito else None
     codigo_baja = emitir_enlace(sesion, usuario, BAJA, ahora)
-    mensaje = armar_mensaje(tipo, usuario, codigo_baja, ahora, codigo, autor=autor)
+    mensaje = armar_mensaje(tipo, usuario, codigo_baja, ahora, codigo, autor=autor, alerta=alerta)
     sesion.add(
         CorreoSaliente(
             tipo=tipo,

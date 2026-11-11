@@ -6,7 +6,7 @@
 | **Entrega final** | 9 de diciembre de 2026 |
 | **Punto de partida** | Entrega 2 presentada en forma anticipada ([pull request](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14)) |
 | **Responsable** | Pablo Guillermo Di Nanno |
-| **Versión** | 1.10, 11 de noviembre de 2026 |
+| **Versión** | 1.11, 11 de noviembre de 2026 |
 
 Este documento registra qué línea de trabajo está activa, cuál está en pausa y qué falta decidir, para no perder el hilo entre sesiones.
 
@@ -15,9 +15,9 @@ Este documento registra qué línea de trabajo está activa, cuál está en paus
 | Línea | Estado | Condición para avanzar |
 |---|---|---|
 | **A. Instalación local, como la quiere el responsable** | **Terminada** el 5 de noviembre de 2026 | El responsable aprobó la aplicación local y se archivaron sus cambios |
-| **D. Pendientes de la devolución de la Entrega 1** | D1 a D5 y D7 hechos; administrador de SAT2 verificado con datos reales; históricos sin huecos; D6 opcional | D7 espera la aprobación del responsable |
+| **D. Pendientes de la devolución de la Entrega 1** | D1 a D5 y D7 hechos; administrador de SAT2 verificado con datos reales; históricos sin huecos; D6 opcional | Cerrada; D6 opcional |
 | **B. Despliegue público en Google Cloud (opción plus)** | **En pausa** desde el 2 de noviembre de 2026; el responsable la mantuvo en pausa el 7 de noviembre | Se retoma cuando lo decida el responsable |
-| C. Pipeline, monitoreo y documentación para clientes | **Integración continua** (D4), **revisión con IA y documentación viva** (D5) hechas el 7 de noviembre de 2026 | Faltan el monitoreo y la documentación para clientes |
+| C. Pipeline, monitoreo y documentación para clientes | **Integración continua** (D4), **revisión con IA y documentación viva** (D5) hechas el 7 de noviembre de 2026 | Monitoreo propuesto (cambio `weather-track-monitoreo`); falta la documentación para clientes |
 
 ## 2. Línea A: cuentas propias con registro, ingreso y recupero
 
@@ -170,3 +170,4 @@ Respuestas del responsable del 3 de noviembre de 2026:
 | 9 nov 2026 | Revisión con datos reales de INTA Pergamino: el administrador funciona. Los gráficos incompletos se debían a un hueco del 1 al 9 de noviembre, con la instalación apagada. Cambio `weather-track-historicos-sin-huecos`: el worker recupera los huecos de los últimos 31 días al arrancar y cada hora (recuperó 12.379 lecturas en la instalación del responsable), el detalle abre en Día y el rango manual llega hasta el mismo día del mes siguiente |
 | 10 nov 2026 | D7 propuesto: el responsable captura en su worker respuestas reales de SAT2, ya saneadas (sin URL, credenciales, tokens ni datos de la cuenta), usando la configuración de «Administración». Se versionan tras su revisión, alimentan pruebas de contrato y una comparación avisa si SAT2 cambia la forma de sus respuestas |
 | 11 nov 2026 | D7 hecho: respuestas reales de SAT2 capturadas el 10/11, saneadas y revisadas por el responsable; 6 pruebas de contrato; comparación sin diferencias. Enteros y decimales cuentan como un mismo tipo, para evitar falsas alarmas |
+| 11 nov 2026 | Monitoreo (línea C): vigilar la ingesta y la frescura, la base y el disco y los accesos sospechosos; avisar en pantalla y por correo; Prometheus y Grafana en un perfil opcional de Compose |

@@ -118,3 +118,14 @@ def test_la_produccion_no_levanta_mailpit_y_obliga_starttls(tmp_path):
 def test_en_local_mailpit_solo_escucha_en_esta_computadora(tmp_path):
     [puerto] = servicios(tmp_path, *LOCAL)["correo"]["ports"]
     assert puerto["host_ip"] == "127.0.0.1"
+
+
+
+@pytest.mark.parametrize("archivos", [LOCAL, PRODUCCION], ids=["local", "produccion"])
+def test_solo_el_worker_ve_el_disco_de_la_base_y_en_modo_solo_lectura(tmp_path, archivos):
+    """Para medir el espacio libre (D2 de weather-track-monitoreo)."""
+    todos = servicios(tmp_path, *archivos)
+    [volumen] = [v for v in todos["worker"].get("volumes", []) if v["source"] == "datos_db"]
+    assert volumen["target"] == "/datos_db"
+    assert volumen["read_only"] is True
+    assert not [v for v in todos["api"].get("volumes", []) if v.get("source") == "datos_db"]

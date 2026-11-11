@@ -136,7 +136,7 @@ def test_el_worker_en_modo_prueba_no_crea_el_cliente_de_sat2(sesion, monkeypatch
     assert worker.principal_de_prueba(FabricaDePruebas(sesion)) == 0
 
     # Sin ciclo, carga ni catálogo: solo el latido y la limpieza (el correo, si hay servidor).
-    assert PlanificadorFalso.ultimo.tareas == [worker.registrar_latido, "limpieza"]
+    assert PlanificadorFalso.ultimo.tareas == [worker.registrar_latido, "limpieza", "monitoreo"]
     assert contar(sesion, Observacion) == 1
     assert sesion.scalar(select(ConfiguracionBase.naturaleza)) == "FICTICIA"
 
