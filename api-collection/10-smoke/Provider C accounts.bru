@@ -1,0 +1,42 @@
+meta {
+  name: Provider C accounts
+  type: http
+  seq: 20
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/providers/:providerId/accounts
+  body: none
+  auth: inherit
+}
+
+params:path {
+  providerId: 201
+}
+
+script:post-response {
+  // ProviderC-USD belongs to merchant 2: the account the viewer must not see (scope negatives).
+  const account = Array.isArray(res.body) && res.body.find((a) => a.name === 'ProviderC-USD');
+  if (account) {
+    bru.setVar('providerCUsdAccountId', account.accountId);
+  } else {
+    bru.setVar('providerCUsdLookupError', `ProviderC-USD not found in provider 201 (status ${res.status})`);
+  }
+  // ProviderC-Alt (merchant 2 too) has seeded paid batches: the settlement the viewer must not see.
+  const alt = Array.isArray(res.body) && res.body.find((a) => a.name === 'ProviderC-Alt');
+  if (alt) {
+    bru.setVar('providerCAltAccountId', alt.accountId);
+  } else {
+    bru.setVar('providerCAltLookupError', `ProviderC-Alt not found in provider 201 (status ${res.status})`);
+  }
+}
+
+tests {
+  test('analyst lists the accounts of provider 201, ProviderC-USD among them', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.map((a) => a.name)).to.include('ProviderC-USD');
+  });
+}

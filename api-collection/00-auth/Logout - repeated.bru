@@ -1,0 +1,43 @@
+meta {
+  name: Logout - repeated
+  type: http
+  seq: 10
+  tags: [
+    auth
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/logout
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refreshToken": "{{flowRefreshToken}}"
+  }
+}
+
+vars:pre-request {
+  selfAuth: true
+}
+
+script:pre-request {
+  // Revoke the token once, so this request is the repeated call.
+  await bru.runRequest('00-auth/Login for flow');
+  const first = await bru.sendRequest({
+    method: 'POST',
+    url: `${bru.getEnvVar('baseUrl')}/api/v1/auth/logout`,
+    headers: { 'Content-Type': 'application/json' },
+    data: { refreshToken: bru.getVar('flowRefreshToken') },
+  });
+  bru.setVar('firstLogoutStatus', first.status);
+}
+
+tests {
+  test('logout is idempotent: both calls respond 204', () => {
+    expect(bru.getVar('firstLogoutStatus')).to.equal(204);
+    expect(res.status).to.equal(204);
+  });
+}

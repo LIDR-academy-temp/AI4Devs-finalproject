@@ -1,0 +1,39 @@
+meta {
+  name: 16 Export reserves
+  type: http
+  seq: 16
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/settlements/:batchId/export?type=reserves
+  body: none
+  auth: inherit
+}
+
+params:query {
+  type: reserves
+}
+
+params:path {
+  batchId: {{setBatchId}}
+}
+
+tests {
+  test('a CSV named by attempt', () => {
+    expect(res.status).to.equal(200);
+    expect(res.getHeader('content-disposition')).to.equal(
+      `attachment; filename="ProviderA-USD_B${bru.getVar('setBatchNo')}_A1_reserves.csv"`,
+    );
+  });
+  // Oracle: data/samples/batch-clean/expected.json, summary.qty.reservesReleased.
+  test('header ID,Description and 320 rows Batch <batchNo> (321 lines)', () => {
+    const all = String(res.body).split('\r\n');
+    expect(all.pop()).to.equal('');
+    expect(all).to.have.length(321);
+    expect(all[0]).to.equal('ID,Description');
+    expect(all.slice(1).every((l) => l.endsWith(`,Batch ${bru.getVar('setBatchNo')}`))).to.equal(true);
+  });
+}

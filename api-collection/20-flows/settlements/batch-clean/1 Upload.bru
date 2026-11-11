@@ -1,0 +1,46 @@
+meta {
+  name: 1 Upload
+  type: http
+  seq: 1
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/imports
+  body: multipartForm
+  auth: inherit
+}
+
+params:path {
+  accountId: {{providerAUsdAccountId}}
+}
+
+body:multipart-form {
+  files: @file(../data/samples/batch-clean/Recon_Template_ProviderA-USD_batch-clean.xlsx)
+}
+
+script:pre-request {
+  // Needs a fresh seed (pnpm db:seed): the flow leaves batch-clean processed and RAM-07 assigned (no undo yet).
+  if (!bru.getVar('providerAUsdAccountId')) {
+    await bru.runRequest('10-smoke/Provider accounts');
+  }
+  if (!bru.getVar('providerAUsdAccountId')) {
+    throw new Error(bru.getVar('providerAUsdLookupError') || 'ProviderA-USD accountId could not be resolved');
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar('setImportId', res.body.importId);
+    bru.setVar('setDetail', res.body);
+  }
+}
+
+tests {
+  test('creates the batch-clean import in uploaded', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.status).to.equal('uploaded');
+  });
+}

@@ -1,0 +1,33 @@
+meta {
+  name: 4 List imports
+  type: http
+  seq: 4
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/imports?status=uploaded
+  body: none
+  auth: inherit
+}
+
+params:path {
+  accountId: {{providerAUsdAccountId}}
+}
+
+params:query {
+  status: uploaded
+}
+
+tests {
+  test('lists the uploaded imports of the account, the new one with two files', () => {
+    expect(res.status).to.equal(200);
+    const mine = res.body.find((i) => i.importId === bru.getVar('flowImportId'));
+    expect(mine).to.not.equal(undefined);
+    expect(mine.fileCount).to.equal(2);
+    expect(mine.status).to.equal('uploaded');
+    expect(mine).to.not.have.property('files');
+  });
+}

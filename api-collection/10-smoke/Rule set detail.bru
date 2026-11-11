@@ -1,0 +1,46 @@
+meta {
+  name: Rule set detail
+  type: http
+  seq: 109
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/matching-rule-sets/:ruleSetId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  ruleSetId: {{providerCLegacyRuleSetId}}
+}
+
+script:pre-request {
+  // "Provider C legacy" resolved by name (no literal ids).
+  if (!bru.getVar('providerCLegacyRuleSetId')) {
+    await bru.runRequest('10-smoke/Matching rule sets');
+  }
+  if (!bru.getVar('providerCLegacyRuleSetId')) {
+    throw new Error('the "Provider C legacy" rule set could not be resolved');
+  }
+}
+
+script:post-response {
+  // The legacy detail, for the flow step that tries to deactivate it (20-flows/matching).
+  if (res.status === 200) {
+    bru.setVar('providerCLegacyDetail', res.body);
+  }
+}
+
+tests {
+  test('analyst reads "Provider C legacy": its provider, ProviderC-Alt, the seed rules and the row ignores', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.provider.name).to.equal('Provider C');
+    expect(res.body.accounts.map((a) => a.name)).to.include('ProviderC-Alt');
+    expect(res.body.sheetRules.map((r) => r.sheetPattern)).to.include.members(['TRX', 'CB', 'Fail', 'Summary']);
+    expect(res.body.columnRules.map((r) => r.columnPattern)).to.include('Merchant Order No#');
+    expect(res.body.rowIgnoreRules).to.be.an('array');
+  });
+}

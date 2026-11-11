@@ -1,0 +1,44 @@
+meta {
+  name: 2 Create overlapping fee
+  type: http
+  seq: 2
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/fees
+  body: json
+  auth: bearer
+}
+
+params:path {
+  accountId: {{providerAEurAccountId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "feeTypeId": 119,
+    "fixedAmount": "20",
+    "startDate": "{{flowFeeEnd}}",
+    "endDate": null
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+tests {
+  test('the same type over the same days: 409 fee_overlap naming the fee of step 1', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('fee_overlap');
+    const ids = res.body.details.conflicts.map((c) => c.feeId.toLowerCase());
+    expect(ids).to.include(bru.getVar('flowFeeId').toLowerCase());
+  });
+}

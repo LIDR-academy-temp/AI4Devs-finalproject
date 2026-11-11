@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>New Account</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:14px;box-sizing:border-box}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:#4b5563;border-bottom:1px solid #d0d5dc;padding:8px}
+.tbl td{border-bottom:1px solid #e5e7eb;padding:8px}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.btn.pri{background:#1f4e9c;border-color:#1f4e9c;color:#fff}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.ok{border-color:#2f7d4f;color:#1e5c38;background:#e8f3ec}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}h2{font-size:17px;margin:0}
+label{font-size:13px;color:#4b5563;display:block;margin-bottom:4px}
+input,select{font:inherit;font-size:13px;padding:8px 10px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;width:100%;box-sizing:border-box}
+.dim{opacity:.35;pointer-events:none}
+</style>
+</helmet>
+<div style="position:relative;min-height:820px">
+  <div class="dim" style="display:flex;flex-wrap:wrap;min-height:820px">
+    <nav class="nav" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+      <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+      <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+      <div class="grp">Reconciliation</div>
+      <a href="NewReconciliation.dc.html">New Reconciliation</a>
+      <a href="InProgress.dc.html">In Progress</a>
+      <div class="grp">Settlements</div>
+      <a href="SettlementList.dc.html">Settlement List</a>
+      <a href="Payments.dc.html">Payments</a>
+      <div class="grp">Search</div>
+      <a href="TransactionSearch.dc.html">Transaction Search</a>
+      <a href="MissingDuplicates.dc.html">Missing &amp; Duplicates</a>
+      <div class="grp">Reports</div>
+      <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+      <a href="ReportsRoadmap.dc.html">Aged Receivables · roadmap</a>
+      <div class="grp">Administration</div>
+      <a href="MerchantsProviders.dc.html">Merchants &amp; Providers</a>
+      <a href="Accounts.dc.html" class="on">Accounts</a>
+      <a href="FeesAll.dc.html">Fees</a>
+      <a href="ChannelAssignment.dc.html">Channel Assignment</a>
+      <a href="MatchingRules.dc.html">Matching Rules</a>
+      <a href="UsersRoles.dc.html">Users &amp; Roles</a>
+      <a href="AuditLog.dc.html">Audit Log</a>
+    </nav>
+    <main style="flex:999 1 560px;min-width:0;padding:20px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+      <div class="ctx">Dashboard › Administration › Accounts</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h1>Accounts</h1><span class="btn pri">New account</span></div>
+      <div class="card">
+        <table class="tbl">
+          <tr><th>Account</th><th>Merchant / Provider</th><th>Channels</th><th>Reserve policy</th><th>Fees</th><th>Last batch</th><th>Status</th></tr>
+          <tr><td>ProviderA-USD</td><td>Merchant A / Provider A</td><td>3 primary · 1 historical</td><td>hold_until_term</td><td>6 active</td><td>119 · processed</td><td><span class="badge ok">active</span></td></tr>
+          <tr><td>ProviderA-EUR</td><td>Merchant A / Provider A</td><td>1 primary · 1 historical</td><td>release_on_chargeback</td><td>5 active</td><td>31 · pending payment</td><td><span class="badge ok">active</span></td></tr>
+          <tr><td>ProviderC-EUR</td><td>Merchant A / Provider C</td><td>3 primary</td><td>hold_until_term</td><td>4 active</td><td>77 · pending payment</td><td><span class="badge ok">active</span></td></tr>
+          <tr><td>ProviderA-MerchantB</td><td>Merchant B / Provider A</td><td>2 primary</td><td>hold_until_term</td><td>3 active</td><td>42 · paid</td><td><span class="badge ok">active</span></td></tr>
+        </table>
+      </div>
+    </main>
+  </div>
+  <div style="position:absolute;inset:0;background:rgba(31,35,40,.25);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;box-sizing:border-box">
+    <form style="width:520px;max-width:100%;background:#fff;border:1px solid #d0d5dc;border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,.18);padding:24px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>New account</h2><a href="Accounts.dc.html" class="btn" aria-label="Close dialog">✕</a></div>
+      <div><label for="an">Name</label><input id="an" placeholder="ProviderD-USD"></div>
+      <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:10px">
+        <div><label for="am">Merchant</label><select id="am"><option>Merchant A</option><option>Merchant B</option></select></div>
+        <div><label for="ap">Provider</label><select id="ap"><option>Provider D (new · no accounts)</option><option>Provider A</option><option>Provider C</option></select></div>
+      </div>
+      <div><label for="rp">Reserve policy on chargeback</label><select id="rp"><option>hold_until_term · keep the reserve until the term</option><option>release_on_chargeback · release it immediately</option></select></div>
+      <div><label for="rc">Reserve cap (optional, USD)</label><input id="rc" placeholder="no cap"></div>
+      <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:10px">
+        <div><label for="fs">Fees</label><select id="fs"><option>No fees (default) · add them one by one later</option><option>Copy fees from ProviderA-USD</option><option>Copy fees from ProviderA-EUR</option></select></div>
+        <div><label for="mr">Matching rules</label><select id="mr"><option>None (blank) · global defaults apply</option><option>Provider A · Standard template (used by 2 accounts)</option><option>Provider A · Legacy layout (used by 1 account)</option></select></div>
+      </div>
+      <div class="ctx">Fees are account-specific; copying takes the other account's active fees and creates them here with open validity (always → no end), so every movement that reaches this account is covered; adjust them afterwards if needed. Matching rule sets belong to the provider and an account links to one of them, so a provider change is made once. Settlement term, reserve % and release days come from each channel (gateway); channels join the account with the first settlement that includes them.</div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:6px;border-top:1px solid #e5e7eb"><a href="Accounts.dc.html" class="btn">Cancel</a><a href="AccountDetail.dc.html" class="btn pri">Create account</a></div>
+      <div class="ctx">Validation: name unique per provider; provider must belong to a merchant in your scope. Permission: account.manage.</div>
+    </form>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

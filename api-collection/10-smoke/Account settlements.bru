@@ -1,0 +1,68 @@
+meta {
+  name: Account settlements
+  type: http
+  seq: 60
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/settlements?pageSize=50
+  body: none
+  auth: inherit
+}
+
+params:query {
+  pageSize: 50
+}
+
+params:path {
+  accountId: {{providerAUsdAccountId}}
+}
+
+script:pre-request {
+  if (!bru.getVar('providerAUsdAccountId')) {
+    await bru.runRequest('10-smoke/Provider accounts');
+  }
+}
+
+tests {
+  test('the seeded history of ProviderA-USD: at least the 22 paid batches, one page', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.accountId).to.equal(bru.getVar('providerAUsdAccountId'));
+    expect([res.body.page, res.body.pageSize]).to.eql([1, 50]);
+    expect(res.body.total).to.be.at.least(22);
+    expect(res.body.items.filter((i) => i.status === 'paid')).to.have.length(22);
+  });
+  test('newest first by processedAt', () => {
+    const instants = res.body.items.map((i) => i.processedAt);
+    expect(instants).to.eql([...instants].sort().reverse());
+  });
+  test('keeps the New York day of batch 122 for "Account settlements - processed date"', () => {
+    // The script sandbox has no reliable Intl time zones: the US rule (EDT from the second Sunday of March at 07:00
+    // UTC to the first Sunday of November at 06:00 UTC, EST otherwise) is applied by hand.
+    const etDay = (iso) => {
+      const instant = new Date(iso).getTime();
+      const year = new Date(iso).getUTCFullYear();
+      const sunday = (month, nth) => {
+        const firstDay = new Date(Date.UTC(year, month, 1)).getUTCDay();
+        return 1 + ((7 - firstDay) % 7) + 7 * (nth - 1);
+      };
+      const edt = instant >= Date.UTC(year, 2, sunday(2, 2), 7) && instant < Date.UTC(year, 10, sunday(10, 1), 6);
+      return new Date(instant - (edt ? 4 : 5) * 3600000).toISOString().slice(0, 10);
+    };
+    const batch122 = res.body.items.find((i) => i.batchNo === 122);
+    const day = etDay(batch122.processedAt);
+    expect(day).to.match(/^\d{4}-\d{2}-\d{2}$/);
+    bru.setVar('batch122EtDay', day);
+    bru.setVar('batch122SettlementDate', batch122.settlementDate);
+  });
+  test('money as text with four decimals and the settlement date as a day', () => {
+    for (const item of res.body.items) {
+      expect(item.amountPayable).to.be.a('string');
+      expect(item.amountPayable).to.match(/^-?\d+\.\d{4}$/);
+      if (item.settlementDate !== null) expect(item.settlementDate).to.match(/^\d{4}-\d{2}-\d{2}$/);
+    }
+  });
+}

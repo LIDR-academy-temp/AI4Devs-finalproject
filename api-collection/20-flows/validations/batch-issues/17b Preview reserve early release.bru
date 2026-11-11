@@ -1,0 +1,47 @@
+meta {
+  name: 17b Preview reserve early release
+  type: http
+  seq: 22
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements/preview
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({ runId: bru.getVar('runId2') });
+}
+
+tests {
+  // Money in units of 0.0001 as BigInt: never a JS number.
+  const units = (text) => BigInt(text.replace('.', ''));
+  // Oracle: data/samples/batch-issues/expected.json, reserveEarlyRelease.reserveEarlyReleasedAmt (ProviderB-Main,
+  // release_on_chargeback: each CHB and REF releases the whole reserve its E held).
+  test('previews the reserve released by the adjustments of the oracle, without writing', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.reserveEarlyReleasedAmt).to.equal('151.8930');
+    const line = res.body.payableBreakdown.find((l) => l.code === 'reserve_early_released');
+    expect(line.sign).to.equal('+');
+    expect(line.amount).to.equal('151.8930');
+  });
+  test('the breakdown adds up to amountPayable, and the old warning is gone', () => {
+    const sum = res.body.payableBreakdown.reduce((s, l) => (l.sign === '+' ? s + units(l.amount) : s - units(l.amount)), BigInt(0));
+    expect(sum === units(res.body.amountPayable)).to.equal(true);
+    expect(res.body.warnings.map((w) => w.code)).to.not.include('chargeback_reserve_policy_not_applied');
+  });
+}

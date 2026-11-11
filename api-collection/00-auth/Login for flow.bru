@@ -1,0 +1,40 @@
+meta {
+  name: Login for flow
+  type: http
+  seq: 3
+  tags: [
+    auth
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userName": "{{process.env.SEED_USER}}",
+    "password": "{{process.env.SEED_PASSWORD}}"
+  }
+}
+
+vars:pre-request {
+  selfAuth: true
+}
+
+script:post-response {
+  // Own token pair for requests that rotate or revoke it, so the shared session stays valid (design D4).
+  if (res.status === 200) {
+    bru.setVar('flowAccessToken', res.body.accessToken);
+    bru.setVar('flowRefreshToken', res.body.refreshToken);
+  }
+}
+
+tests {
+  test('responds 200 with a token pair', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.refreshToken).to.be.a('string').and.not.empty;
+  });
+}

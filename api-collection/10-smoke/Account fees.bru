@@ -1,0 +1,47 @@
+meta {
+  name: Account fees
+  type: http
+  seq: 47
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/fees?transactional=false
+  body: none
+  auth: bearer
+}
+
+params:query {
+  transactional: false
+}
+
+params:path {
+  accountId: {{providerAUsdAccountId}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+script:pre-request {
+  if (!bru.getVar('providerAUsdAccountId')) {
+    await bru.runRequest('10-smoke/Provider accounts');
+  }
+}
+
+tests {
+  test('the batch presets of ProviderA-USD: a percentage-only one, without a computed amount (P9)', () => {
+    expect(res.status).to.equal(200);
+    const preset = res.body.find((f) => f.code === 'Chargeback over 1%');
+    expect(preset.isTransactional).to.equal(false);
+    expect(preset.fixedAmount).to.equal(null);
+    expect(preset.percentage).to.equal('0.010000');
+    expect(preset.startDate).to.equal(null);
+  });
+}

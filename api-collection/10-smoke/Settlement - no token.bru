@@ -1,0 +1,29 @@
+meta {
+  name: Settlement - no token
+  type: http
+  seq: 55
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/settlements/:batchId
+  body: none
+  auth: none
+}
+
+params:path {
+  batchId: {{$randomUUID}}
+}
+
+vars:pre-request {
+  selfAuth: true
+}
+
+tests {
+  test('responds 401 unauthorized without a token', () => {
+    expect(res.status).to.equal(401);
+    expect(res.body.code).to.equal('unauthorized');
+  });
+}

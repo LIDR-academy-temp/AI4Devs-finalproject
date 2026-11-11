@@ -1,0 +1,27 @@
+meta {
+  name: Refresh - access token
+  type: http
+  seq: 8
+  tags: [
+    auth
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/refresh
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refreshToken": "{{accessToken}}"
+  }
+}
+
+tests {
+  test('an access token does not work as refresh: 401 invalid_token', () => {
+    expect(res.status).to.equal(401);
+    expect(res.body.code).to.equal('invalid_token');
+  });
+}

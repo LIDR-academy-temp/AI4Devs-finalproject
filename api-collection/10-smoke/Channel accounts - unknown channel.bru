@@ -1,0 +1,25 @@
+meta {
+  name: Channel accounts - unknown channel
+  type: http
+  seq: 19
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/channels/:channelId/accounts
+  body: none
+  auth: inherit
+}
+
+params:path {
+  channelId: 999999
+}
+
+tests {
+  test('responds 404 not_found', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

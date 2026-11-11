@@ -1,0 +1,43 @@
+meta {
+  name: Fee history
+  type: http
+  seq: 89
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/fees/:feeId/history
+  body: none
+  auth: bearer
+}
+
+params:path {
+  feeId: {{providerAUsdMdrFeeId}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+script:pre-request {
+  if (!bru.getVar('providerAUsdMdrFeeId')) {
+    await bru.runRequest('10-smoke/Fees');
+  }
+}
+
+tests {
+  test('the history of a fee, oldest row created by the seed, in API form', () => {
+    expect(res.status).to.equal(200);
+    const seeded = res.body[res.body.length - 1];
+    expect(seeded.action).to.equal('created');
+    expect(seeded.before).to.equal(null);
+    expect(seeded.changedBy.userName).to.equal('admin');
+    expect(seeded.after.percentage).to.equal('0.100000');
+  });
+}

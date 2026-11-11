@@ -1,0 +1,41 @@
+meta {
+  name: 9 Process free amount not allowed
+  type: http
+  seq: 9
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{setImportId}}
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  // Wire Fee (121) has no free amount and a manual one is not pre-filled: refused, nothing written.
+  req.setBody({
+    runId: bru.getVar('setRunId'),
+    confirmChannelAssignment: true,
+    batchFees: [{ feeTypeId: 121, feeId: null, amount: '10.0000', description: 'Typed by hand', source: 'manual' }],
+  });
+}
+
+tests {
+  test('400 batch_fee_invalid with the index and the reason', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('batch_fee_invalid');
+    expect(res.body.details).to.eql({ index: 0, reason: 'free_amount_not_allowed' });
+  });
+}

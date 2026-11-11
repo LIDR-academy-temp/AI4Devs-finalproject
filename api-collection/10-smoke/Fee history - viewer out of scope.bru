@@ -1,0 +1,43 @@
+meta {
+  name: Fee history - viewer out of scope
+  type: http
+  seq: 90
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/fees/:feeId/history
+  body: none
+  auth: bearer
+}
+
+params:path {
+  feeId: {{providerCAltFeeId}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+script:pre-request {
+  // The analyst sees merchant 2: a fee of ProviderC-Alt, which the viewer must not see.
+  if (!bru.getVar('providerCAltFeeId')) {
+    const page = await bru.runRequest('10-smoke/Fees - Provider C-Alt');
+    if (!bru.getVar('providerCAltFeeId')) {
+      throw new Error(`no fee of ProviderC-Alt found (status ${page && page.status})`);
+    }
+  }
+}
+
+tests {
+  test('viewer asking for the history of a fee of merchant 2: 404 not_found', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

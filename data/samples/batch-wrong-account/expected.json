@@ -1,0 +1,107 @@
+{
+  "sample": "batch-wrong-account",
+  "description": "Archivo de otra cuenta: IDs UUID de ProviderC-USD subidos a ProviderA-USD (solo gateway numérico). Ninguna fila se asocia (todas id_format), así que continuar y procesar exigen confirmar un batch solo de fees.",
+  "account": "ProviderA-USD",
+  "files": ["Recon_Template_ProviderA-USD_batch-wrong-account.xlsx"],
+  "import": {
+    "files": 1,
+    "sheets": {
+      "transactions": ["APP", "DEC", "CHB", "REF", "RDR", "RR"],
+      "batch_fees": ["Other Fees"],
+      "ignored": ["Duplicate Corrections", "CHB Alerts", "Settings"]
+    }
+  },
+  "rows": {
+    "read": 12,
+    "ignoredEmptyId": 0,
+    "matched": 0,
+    "unmatched": 12,
+    "ambiguous": 0,
+    "unmatchedByReason": {
+      "no_match": 0,
+      "id_format": 12,
+      "lossy_numeric_id": 0,
+      "no_gateways": 0
+    }
+  },
+  "requiresEmptyBatchConfirmation": true,
+  "likelyWrongAccount": true,
+  "channels": [],
+  "foreignChannel": "RAM-U1",
+  "validations": {
+    "provider_mismatch": 0,
+    "non_recorded_adjustment": {
+      "non_recorded_adjustment": 0,
+      "status_mismatch": 0
+    },
+    "duplicate_in_batch": 0,
+    "status_collision_in_batch": 0,
+    "duplicate_across_batches": 0,
+    "status_collision_across_batches": 0,
+    "missing_previous_to_batch": {
+      "E": 0,
+      "I": 0,
+      "R": 0
+    },
+    "missing_in_range": {
+      "E": 0,
+      "I": 0,
+      "R": 0
+    }
+  },
+  "outcomes": {
+    "provider_mismatch": "not_applicable",
+    "non_recorded_adjustment": "not_applicable",
+    "duplicate_in_batch": "not_applicable",
+    "status_collision_in_batch": "not_applicable",
+    "duplicate_across_batches": "passed",
+    "status_collision_across_batches": "passed",
+    "missing_previous_to_batch": "not_applicable",
+    "missing_in_range": "not_applicable"
+  },
+  "batchFeesPrefilled": [
+    {
+      "feeType": "Wire Fee",
+      "amount": 25
+    }
+  ],
+  "proposedBatchNo": 123,
+  "skipped": {
+    "ignored": 0,
+    "unmatched": 12,
+    "ambiguous": 0,
+    "excluded": 0,
+    "unresolvedStatus": 0,
+    "pending": 0
+  },
+  "summary": {
+    "qty": {
+      "deposit": 0,
+      "declined": 0,
+      "chargeback": 0,
+      "refund": 0,
+      "rdr": 0,
+      "reservesReleased": 0
+    },
+    "amounts": {
+      "deposit": "0.0000",
+      "chargeback": "0.0000",
+      "refund": "0.0000",
+      "rdr": "0.0000",
+      "reserveHeld": "0.0000",
+      "reserveReleased": "0.0000"
+    },
+    "fees": {
+      "deposit": "0.0000",
+      "declined": "0.0000",
+      "chargeback": "0.0000",
+      "refund": "0.0000",
+      "rdr": "0.0000",
+      "mdrIncludedInDeposit": "0.0000",
+      "total": "0.0000"
+    },
+    "otherFeeAmt": "25.0000",
+    "amountPayable": "-25.0000"
+  },
+  "note": "Procesar con confirmEmptyBatch crea un batch solo con el fee de Other Fees: amountPayable = -25.0000."
+}

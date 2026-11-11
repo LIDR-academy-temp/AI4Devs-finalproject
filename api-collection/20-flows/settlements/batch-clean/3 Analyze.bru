@@ -1,0 +1,43 @@
+meta {
+  name: 3 Analyze
+  type: http
+  seq: 3
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/analyze
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{setImportId}}
+}
+
+script:post-response {
+  if (res.status === 200) {
+    // The pre-filled batch fees, as the analyst confirms them in Settlement Review.
+    bru.setVar(
+      'setBatchFees',
+      (res.body.batchFees || []).map((f) => ({
+        feeTypeId: f.feeTypeId,
+        feeId: null,
+        amount: f.amount,
+        description: f.title,
+        source: 'file',
+      })),
+    );
+  }
+}
+
+tests {
+  test('analyzes batch-clean: 780 matched rows and the two pre-filled batch fees', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.status).to.equal('analyzed');
+    expect(res.body.analysis.rows.matched).to.equal(780);
+    expect(res.body.batchFees.map((f) => f.title)).to.eql(['Wire Fee', 'Settlement Fee']);
+  });
+}

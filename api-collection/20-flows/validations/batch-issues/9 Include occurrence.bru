@@ -1,0 +1,35 @@
+meta {
+  name: 9 Include occurrence
+  type: http
+  seq: 9
+  tags: [
+    flow
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/conflict-occurrences/:occurrenceId
+  body: json
+  auth: inherit
+}
+
+params:path {
+  occurrenceId: {{excludedOccurrenceId}}
+}
+
+body:json {
+  {
+    "includeInSettlement": true
+  }
+}
+
+tests {
+  test('includes the excluded duplicate: author analyst and one history entry', () => {
+    expect(res.status).to.equal(200);
+    const changed = res.body.occurrences.find((o) => o.occurrenceId === bru.getVar('excludedOccurrenceId'));
+    expect(changed.includeInSettlement).to.equal(true);
+    expect(changed.changedBy.userName).to.equal('analyst');
+    expect(res.body.history).to.have.length(1);
+    expect(res.body.resolutionStatus).to.equal('persistent');
+  });
+}

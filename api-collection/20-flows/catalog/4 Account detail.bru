@@ -1,0 +1,30 @@
+meta {
+  name: 4 Account detail
+  type: http
+  seq: 4
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  accountId: {{flowAccountId}}
+}
+
+tests {
+  test('the account detail responds 200 with its provider', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.name).to.equal('ProviderA-USD');
+    expect(res.body.provider.providerId).to.equal(Number(bru.getVar('flowProviderId')));
+  });
+  test('it says who created the account and when it last changed', () => {
+    expect(res.body.createdBy.userName).to.equal('admin');
+    expect(res.body.updatedAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+  });
+}

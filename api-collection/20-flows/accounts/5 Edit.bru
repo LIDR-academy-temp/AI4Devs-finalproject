@@ -1,0 +1,43 @@
+meta {
+  name: 5 Edit
+  type: http
+  seq: 5
+  tags: [
+    flow
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/accounts/:accountId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  accountId: {{flowNewAccountId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "chargebackReservePolicy": "release_on_chargeback",
+    "rollingReserveCapAmt": "2500.5",
+    "reason": "Bruno flow"
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+tests {
+  test('admin changes the policy and the cap: 200, cap normalized to 4 decimals', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.chargebackReservePolicy).to.equal('release_on_chargeback');
+    expect(res.body.rollingReserveCapAmt).to.equal('2500.5000');
+    expect(res.body.isActive).to.equal(true);
+  });
+}

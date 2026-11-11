@@ -1,0 +1,29 @@
+meta {
+  name: 7 Upload to closed account
+  type: http
+  seq: 7
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/imports
+  body: multipartForm
+  auth: inherit
+}
+
+params:path {
+  accountId: {{flowNewAccountId}}
+}
+
+body:multipart-form {
+  files: @file(../data/samples/batch-clean/Recon_Template_ProviderA-USD_batch-clean.xlsx)
+}
+
+tests {
+  test('analyst uploads to the closed account: 409 account_inactive, no import created', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('account_inactive');
+  });
+}

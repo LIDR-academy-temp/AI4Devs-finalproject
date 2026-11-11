@@ -1,0 +1,20 @@
+{
+  "sample": "batch-blocked",
+  "description": "Archivo con una transacción de un canal de otro proveedor: provider_mismatch, la única validación bloqueante.",
+  "account": "ProviderB-Main",
+  "files": ["Recon_Template_ProviderB-Main_batch-blocked.xlsx"],
+  "rows": {
+    "read": 21,
+    "matched": 21,
+    "unmatched": 0
+  },
+  "validations": {
+    "provider_mismatch": 1
+  },
+  "blocked": true,
+  "affectedIds": {
+    "provider_mismatch": ["252570479111759"],
+    "foreignChannel": "RAM-01"
+  },
+  "note": "No hay override: el analista cancela el import y procesa con el proveedor correcto."
+}

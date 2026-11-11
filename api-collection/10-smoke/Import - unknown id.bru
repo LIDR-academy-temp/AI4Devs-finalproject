@@ -1,0 +1,25 @@
+meta {
+  name: Import - unknown id
+  type: http
+  seq: 25
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{$randomUUID}}
+}
+
+tests {
+  test('responds 404 not_found for a random UUID', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

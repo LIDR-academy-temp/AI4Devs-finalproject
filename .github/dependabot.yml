@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      dev-tooling: { patterns: ["@biomejs/*", "vitest", "typescript", "tsx", "husky", "lint-staged"] }
+      prisma: { patterns: ["prisma", "@prisma/*"] }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }

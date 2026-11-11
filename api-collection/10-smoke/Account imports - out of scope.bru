@@ -1,0 +1,43 @@
+meta {
+  name: Account imports - out of scope
+  type: http
+  seq: 24
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/imports
+  body: none
+  auth: bearer
+}
+
+params:path {
+  accountId: {{providerCUsdAccountId}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+script:pre-request {
+  // The accountId of ProviderC-USD (merchant 2) is resolved as analyst in 10-smoke/Provider C accounts.
+  if (!bru.getVar('providerCUsdAccountId')) {
+    await bru.runRequest('10-smoke/Provider C accounts');
+  }
+  if (!bru.getVar('providerCUsdAccountId')) {
+    throw new Error(bru.getVar('providerCUsdLookupError') || 'ProviderC-USD accountId could not be resolved');
+  }
+}
+
+tests {
+  test('viewer gets 404 not_found for the imports of an account of merchant 2, never 403', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

@@ -1,0 +1,46 @@
+meta {
+  name: Create fee - no amount
+  type: http
+  seq: 81
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/fees
+  body: json
+  auth: bearer
+}
+
+params:path {
+  accountId: {{providerAUsdAccountId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "feeTypeId": 121
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:pre-request {
+  if (!bru.getVar('providerAUsdAccountId')) {
+    await bru.runRequest('10-smoke/Provider accounts');
+  }
+}
+
+tests {
+  test('neither fixedAmount nor percentage: 400 validation_error pointing at fixedAmount', () => {
+    expect(res.status).to.equal(400);
+    expect(res.body.code).to.equal('validation_error');
+    expect(res.body.details.field).to.equal('fixedAmount');
+  });
+}

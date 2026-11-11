@@ -1,0 +1,700 @@
+/**
+ * Builds the sample files plan from the synthetic world (same seed as the database)
+ * and writes it as JSON. `build-samples.py` converts that JSON into the .xlsx files
+ * in the standardized template format and into the expected.json files.
+ *
+ *   pnpm tsx data/samples/plan.ts > data/samples/plan.json
+ *
+ * Rules it reproduces (README §1.2, §3.3, doc 05): only ID is mandatory; amounts always
+ * positive; RR.Amount = released reserve; IDs as text; several files per batch.
+ */
+import {
+  ACCOUNT_FEES,
+  ACCOUNTS,
+  ANCHOR,
+  amount4,
+  type BatchPlan,
+  buildWorld,
+  CHANNELS,
+  Decimal,
+  day,
+  feeFor,
+  iso,
+  money,
+  mulberry32,
+  NEW_CHANNEL_FOR,
+  reserveOf,
+  type Txn,
+} from '../../backend/prisma/synthetic.js'
+
+type Cell = string | number | null
+type Row = Cell[]
+interface SheetDef {
+  columns: string[]
+  rows: Row[]
+}
+interface FileDef {
+  fileName: string
+  sheets: Record<string, SheetDef>
+}
+interface Sample {
+  name: string
+  account: string
+  batchNo: number
+  description: string
+  files: FileDef[]
+  expected: Record<string, unknown>
+}
+
+const world = buildWorld()
+const rng = mulberry32(99)
+const chan = (id: number) => CHANNELS.find((c) => c.channelId === id)!
+const accountChannels = (account: string) => CHANNELS.filter((c) => c.account === account).map((c) => c.channelId)
+const T = (k: string) => world.txnByKey.get(k)!
+const tx = (t: Txn, amount: number | null = t.amount): Row => [
+  t.sourceTransactionId,
+  amount,
+  amount === null ? null : 'USD',
+]
+const rr = (t: Txn): Row => [t.sourceTransactionId, money(t.amount * t.appliedReservePct), 'USD']
+const SUM_ROW: Row = ['', 0, null] // leftover =SUM() from the template: empty ID ⇒ ignored
+
+function baseSheets(plan: BatchPlan, opts: { includeNewChannelAdjustments?: boolean } = {}) {
+  const own = new Set(accountChannels(plan.account))
+  const E = plan.eKeys.map(T)
+  const I = plan.iKeys.map(T).filter((t) => opts.includeNewChannelAdjustments || own.has(t.channelId))
+  const R = plan.rKeys.map(T)
+  return {
+    APP: E.filter((t) => t.status !== 'Declined'),
+    DEC: E.filter((t) => t.status === 'Declined'),
+    CHB: I.filter((t) => t.status === 'Chargeback'),
+    REF: I.filter((t) => t.status === 'Refund'),
+    RDR: I.filter((t) => t.status === 'RDR'),
+    RR: R,
+  }
+}
+
+function templateSheets(s: ReturnType<typeof baseSheets>, otherFees: Row[]): Record<string, SheetDef> {
+  const cols = ['ID', 'Amount', 'Currency']
+  return {
+    APP: { columns: cols, rows: s.APP.map((t) => tx(t)) },
+    DEC: { columns: cols, rows: s.DEC.map((t) => tx(t)) },
+    CHB: { columns: cols, rows: [...s.CHB.map((t) => tx(t)), SUM_ROW] },
+    REF: { columns: cols, rows: [...s.REF.map((t) => tx(t)), SUM_ROW] },
+    RDR: { columns: cols, rows: [...s.RDR.map((t) => tx(t)), SUM_ROW] },
+    RR: { columns: cols, rows: s.RR.map(rr) },
+    'Duplicate Corrections': { columns: ['ID', 'Status', 'Amount'], rows: [] },
+    'CHB Alerts': { columns: ['ID', 'Type of Fee'], rows: [] },
+    'Other Fees': { columns: ['Type of Fee', 'Amount', 'Currency'], rows: otherFees },
+  }
+}
+
+/**
+ * Expected Settlement Summary totals for a hold_until_term account with no issues, as DECIMAL(19,4) text (gate of
+ * settlement-process): 4 decimals with Decimal, RDR deducted like chargebacks and refunds, the pre-filled batch fees
+ * deducted from the amount payable, and the chargebacks in `excluded` (CHB 2) counted in qty and fees, not in amount.
+ */
+function totals(
+  account: string,
+  s: ReturnType<typeof baseSheets>,
+  batchFees: Row[],
+  excluded: ReadonlySet<string> = new Set(),
+) {
+  const sum = (xs: Decimal.Value[]) => xs.reduce<Decimal>((a, b) => a.plus(b), new Decimal(0))
+  const amountOf = (xs: Txn[]) => sum(xs.map((t) => t.amount))
+  const mdrPct = (ACCOUNT_FEES[account] ?? []).find((f) => f.feeTypeId === 1)?.pct ?? 0
+  const fee = (xs: Txn[], st: Txn['status'], cyc: 'E' | 'I') => sum(xs.map((t) => feeFor(account, st, t.amount, cyc)))
+  const fees = {
+    deposit: fee(s.APP, 'Successful', 'E'),
+    declined: fee(s.DEC, 'Declined', 'E'),
+    chargeback: fee(s.CHB, 'Chargeback', 'I'),
+    refund: fee(s.REF, 'Refund', 'I'),
+    rdr: fee(s.RDR, 'RDR', 'I'),
+  }
+  const deposit = amountOf(s.APP)
+  const chargeback = amountOf(s.CHB.filter((t) => !excluded.has(t.key)))
+  const refund = amountOf(s.REF)
+  const rdr = amountOf(s.RDR)
+  const held = sum(s.APP.map(reserveOf))
+  const released = sum(s.RR.map(reserveOf))
+  const totalFees = sum(Object.values(fees))
+  const otherFeeAmt = sum(batchFees.map((r) => r[1] as number))
+  const amountPayable = deposit
+    .minus(chargeback)
+    .minus(refund)
+    .minus(rdr)
+    .minus(totalFees)
+    .minus(otherFeeAmt)
+    .minus(held)
+    .plus(released)
+  const text = (d: Decimal) => d.toFixed(4)
+  return {
+    qty: {
+      deposit: s.APP.length,
+      declined: s.DEC.length,
+      chargeback: s.CHB.length,
+      refund: s.REF.length,
+      rdr: s.RDR.length,
+      reservesReleased: s.RR.length,
+    },
+    amounts: {
+      deposit: text(deposit),
+      chargeback: text(chargeback),
+      refund: text(refund),
+      rdr: text(rdr),
+      reserveHeld: text(held),
+      reserveReleased: text(released),
+    },
+    fees: {
+      deposit: text(fees.deposit),
+      declined: text(fees.declined),
+      chargeback: text(fees.chargeback),
+      refund: text(fees.refund),
+      rdr: text(fees.rdr),
+      // Over the deposit total, as v1 reports it; the engine's mdrAmt is the sum per movement and may differ (P15).
+      mdrIncludedInDeposit: text(amount4(deposit.times(mdrPct))),
+      total: text(totalFees),
+    },
+    otherFeeAmt: text(otherFeeAmt),
+    amountPayable: text(amountPayable),
+  }
+}
+
+const ranges = (s: ReturnType<typeof baseSheets>) => {
+  const r = (xs: Txn[], f: (t: Txn) => Date) =>
+    xs.length
+      ? [
+          iso(new Date(Math.min(...xs.map((t) => f(t).getTime())))),
+          iso(new Date(Math.max(...xs.map((t) => f(t).getTime())))),
+        ]
+      : null
+  return {
+    APP: r(s.APP, (t) => t.transactionDate),
+    DEC: r(s.DEC, (t) => t.transactionDate),
+    I: r([...s.CHB, ...s.REF, ...s.RDR], (t) => t.lastStatusChangedAt!),
+    // R by expiry date: creation + rollingReserveDays of the transaction's channel.
+    R: r(s.RR, (t) => day(t.transactionDate, chan(t.channelId).days)),
+  }
+}
+
+const ACCOUNTS_BY_NAME = new Map<string, (typeof ACCOUNTS)[number]>(ACCOUNTS.map((a) => [a.name, a]))
+const txnBySourceId = new Map(world.txns.map((t) => [t.sourceTransactionId, t]))
+
+/**
+ * Expected early reserve release of a release_on_chargeback sample (settlement-reserve-chargeback D6): the CHB, REF
+ * and RDR rows in processing order; the first adjustment of a transaction releases the whole reserve held by its
+ * Successful E (a previous seeded batch of the provider, or the sample's own APP sheet), unless a previous seeded
+ * batch or the sample's RR sheet releases it in R. Seeded adjustments released nothing (P6).
+ */
+function adjustmentReserveRelease(plan: BatchPlan, sheets: Record<string, SheetDef>) {
+  const account = ACCOUNTS_BY_NAME.get(plan.account)!
+  // The rules below are those of release_on_chargeback: with hold_until_term every adjustment is held_until_term.
+  if (account.policy !== 'release_on_chargeback')
+    throw new Error(
+      `${plan.account} is ${account.policy}: the reserve early release oracle is for release_on_chargeback`,
+    )
+  const providerId = account.providerId
+  const previous = world.batches.filter((b) => ACCOUNTS_BY_NAME.get(b.account)!.providerId === providerId)
+  const heldIn = new Map<string, number>()
+  for (const b of previous)
+    for (const k of b.eKeys) {
+      const t = T(k)
+      if (t.status !== 'Declined' && reserveOf(t).gt(0) && !heldIn.has(k)) heldIn.set(k, b.batchNo)
+    }
+  const releasedInR = new Set(previous.flatMap((b) => b.rKeys))
+  const keysOf = (sheet: string) =>
+    new Set(sheets[sheet]!.rows.flatMap((r) => (r[0] === '' ? [] : [txnBySourceId.get(String(r[0]))?.key ?? ''])))
+  const appInBatch = keysOf('APP')
+  const rrInBatch = keysOf('RR')
+  const releasedInBatch = new Set<string>()
+  const released: { id: string; sheet: string; amount: string; heldInBatchNo: number | null }[] = []
+  const notReleased: { id: string; sheet: string; outcome: string }[] = []
+  let total = new Decimal(0)
+  for (const sheet of ['CHB', 'REF', 'RDR'])
+    for (const r of sheets[sheet]!.rows) {
+      if (r[0] === '') continue
+      const id = String(r[0])
+      const t = txnBySourceId.get(id)!
+      const heldInBatchNo = heldIn.get(t.key) ?? (appInBatch.has(t.key) && reserveOf(t).gt(0) ? null : undefined)
+      const outcome =
+        heldInBatchNo === undefined
+          ? 'no_held_reserve'
+          : releasedInR.has(t.key) || rrInBatch.has(t.key)
+            ? 'released_in_r'
+            : releasedInBatch.has(t.key)
+              ? 'already_released'
+              : 'released'
+      if (outcome !== 'released') {
+        notReleased.push({ id, sheet, outcome })
+        continue
+      }
+      releasedInBatch.add(t.key)
+      released.push({ id, sheet, amount: reserveOf(t).toFixed(4), heldInBatchNo: heldInBatchNo ?? null })
+      total = total.plus(reserveOf(t))
+    }
+  return { released, notReleased, reserveEarlyReleasedAmt: total.toFixed(4) }
+}
+
+const samples: Sample[] = []
+
+// ───────── 1. batch-clean (ProviderA-USD) ─────────
+{
+  const plan = world.sampleBatch['ProviderA-USD']!
+  const s = baseSheets(plan)
+  const newChannels = [
+    ...new Set(
+      [...s.APP, ...s.DEC]
+        .filter((t) => NEW_CHANNEL_FOR[chan(t.channelId).name] === plan.account)
+        .map((t) => chan(t.channelId).name),
+    ),
+  ]
+  const otherFees: Row[] = [
+    ['Wire Fee', 25, 'USD'],
+    ['Settlement Fee', 15, 'USD'],
+  ]
+  samples.push({
+    name: 'batch-clean',
+    account: plan.account,
+    batchNo: plan.batchNo,
+    description: 'Batch completo sin incidencias, en un solo archivo con el formato de la plantilla.',
+    files: [{ fileName: 'Recon_Template_ProviderA-USD_batch-clean.xlsx', sheets: templateSheets(s, otherFees) }],
+    expected: {
+      import: {
+        files: 1,
+        sheets: {
+          transactions: ['APP', 'DEC', 'CHB', 'REF', 'RDR', 'RR'],
+          batch_fees: ['Other Fees'],
+          ignored: ['Duplicate Corrections', 'CHB Alerts', 'Settings'],
+        },
+      },
+      rows: {
+        read: s.APP.length + s.DEC.length + s.CHB.length + s.REF.length + s.RDR.length + s.RR.length + 3,
+        ignoredEmptyId: 3,
+        matched: s.APP.length + s.DEC.length + s.CHB.length + s.REF.length + s.RDR.length + s.RR.length,
+        unmatched: 0,
+        ambiguous: 0,
+      },
+      byCycle: { E: s.APP.length + s.DEC.length, I: s.CHB.length + s.REF.length + s.RDR.length, R: s.RR.length },
+      ranges: ranges(s),
+      warnings: { newChannels, nonUsdCurrency: 0, negativeAmounts: 0, unknownFeeTypes: [] },
+      validations: {
+        provider_mismatch: 0,
+        non_recorded_adjustment: { non_recorded_adjustment: 0, status_mismatch: 0 },
+        duplicate_in_batch: 0,
+        status_collision_in_batch: 0,
+        duplicate_across_batches: 0,
+        status_collision_across_batches: 0,
+        missing_previous_to_batch: { E: 0, I: 0, R: 0 },
+        missing_in_range: { E: 0, I: 0, R: 0 },
+      },
+      batchFeesPrefilled: otherFees.map(([type, amount]) => ({ feeType: type, amount })),
+      proposedBatchNo: plan.batchNo,
+      summary: totals(plan.account, s, otherFees),
+    },
+  })
+
+  // ───────── 2. batch-split (same batch, two files) ─────────
+  const all = templateSheets(s, otherFees)
+  const part1: FileDef = {
+    fileName: 'Recon_Template_ProviderA-USD_batch-split_part1.xlsx',
+    sheets: {
+      APP: all.APP!,
+      DEC: all.DEC!,
+      CHB: { columns: all.CHB!.columns, rows: [] },
+      REF: { columns: all.REF!.columns, rows: [] },
+      RDR: { columns: all.RDR!.columns, rows: [] },
+      RR: { columns: all.RR!.columns, rows: [] },
+      'Duplicate Corrections': all['Duplicate Corrections']!,
+      'CHB Alerts': all['CHB Alerts']!,
+      'Other Fees': { columns: all['Other Fees']!.columns, rows: [] },
+    },
+  }
+  const part2: FileDef = {
+    fileName: 'Recon_Template_ProviderA-USD_batch-split_part2.xlsx',
+    sheets: {
+      APP: { columns: all.APP!.columns, rows: [] },
+      DEC: { columns: all.DEC!.columns, rows: [] },
+      CHB: all.CHB!,
+      REF: all.REF!,
+      RDR: all.RDR!,
+      RR: all.RR!,
+      'Duplicate Corrections': all['Duplicate Corrections']!,
+      'CHB Alerts': all['CHB Alerts']!,
+      'Other Fees': all['Other Fees']!,
+    },
+  }
+  const clean = samples[samples.length - 1]!
+  samples.push({
+    name: 'batch-split',
+    account: plan.account,
+    batchNo: plan.batchNo,
+    description:
+      'El mismo batch que batch-clean repartido en dos archivos (E en part1; I, R y fees en part2). Los totales deben coincidir con batch-clean.',
+    files: [part1, part2],
+    expected: {
+      ...clean.expected,
+      import: { ...(clean.expected.import as object), files: 2 },
+      sameResultAs: 'batch-clean',
+    },
+  })
+}
+
+// ───────── 3. batch-issues (ProviderB-Main) ─────────
+{
+  const plan = world.sampleBatch['ProviderB-Main']!
+  const prev = world.batches.filter((b) => b.account === plan.account).at(-1)!
+  const s = baseSheets(plan)
+  const own = new Set(accountChannels(plan.account))
+  const APP = [...s.APP]
+  const DEC = [...s.DEC]
+  const CHB = [...s.CHB]
+  const REF = [...s.REF]
+  const RR = [...s.RR]
+  const notes: Record<string, unknown> = {}
+
+  // duplicate_in_batch: one approved txn repeated
+  const dup = APP[10]!
+  const appRows: Row[] = APP.map((t) => tx(t))
+  appRows.push(tx(dup))
+  notes.duplicate_in_batch = [dup.sourceTransactionId]
+
+  // status_collision_in_batch: one approved txn also in DEC
+  const col = APP[20]!
+  const decRows: Row[] = DEC.filter((t) => iso(t.transactionDate) !== iso(plan.eWindow[0])) // previous_to_batch: the first day's DEC rows are omitted
+    .map((t) => tx(t))
+  decRows.push(tx(col))
+  notes.status_collision_in_batch = [col.sourceTransactionId]
+  const decOmitted = DEC.filter((t) => iso(t.transactionDate) === iso(plan.eWindow[0]) && own.has(t.channelId))
+  notes.missing_previous_to_batch_DEC = decOmitted.map((t) => t.sourceTransactionId)
+
+  // duplicate_across_batches: one approved txn from the previous batch again in APP
+  const prevApp = prev.eKeys.map(T).filter((t) => t.status !== 'Declined' && own.has(t.channelId))
+  const dupAcross = prevApp[5]!
+  appRows.push(tx(dupAcross))
+  notes.duplicate_across_batches = [dupAcross.sourceTransactionId]
+
+  // status_collision_across_batches: one approved txn from the previous batch now as DEC
+  const colAcross = prevApp[6]!
+  decRows.push(tx(colAcross))
+  notes.status_collision_across_batches = [colAcross.sourceTransactionId]
+
+  // status_mismatch: both DEC rows above are Successful in the gateway (file Declined vs gateway Successful)
+  notes.status_mismatch = [col.sourceTransactionId, colAcross.sourceTransactionId]
+
+  // non_recorded_adjustment: chargeback from a new channel (RAM-13) whose approved txn was never settled
+  const newChTxns = [...s.APP].filter((t) => NEW_CHANNEL_FOR[chan(t.channelId).name] === plan.account)
+  const nra = newChTxns[0]!
+  const chbRows: Row[] = CHB.map((t) => tx(t))
+  chbRows.push(tx(nra))
+  notes.non_recorded_adjustment = [nra.sourceTransactionId]
+
+  // missing_in_range E: three approved txns from intermediate days omitted from the file
+  const mid = APP.filter(
+    (t) =>
+      own.has(t.channelId) &&
+      iso(t.transactionDate) > iso(plan.eWindow[0]) &&
+      iso(t.transactionDate) < iso(plan.eWindow[1]),
+  )
+  const missE = [mid[3]!, mid[40]!, mid[80]!]
+  const missSet = new Set(missE.map((t) => t.key))
+  // the new channel's approved txn that goes in CHB is removed from APP: its E was never settled (non_recorded_adjustment)
+  const appRowsFinal = appRows.filter(
+    (r) => !missE.some((t) => t.sourceTransactionId === r[0]) && r[0] !== nra.sourceTransactionId,
+  )
+  notes.missing_in_range_E = missE.map((t) => t.sourceTransactionId)
+
+  // missing_in_range R: three expired reserves omitted from RR (from the middle of the range)
+  const rSorted = [...RR].sort((a, b) => a.transactionDate.getTime() - b.transactionDate.getTime())
+  const missR = [
+    rSorted[Math.floor(rSorted.length / 3)]!,
+    rSorted[Math.floor(rSorted.length / 2)]!,
+    rSorted[Math.floor((2 * rSorted.length) / 3)]!,
+  ]
+  const rrRows: Row[] = rSorted.filter((t) => !missR.includes(t)).map(rr)
+  notes.missing_in_range_R = missR.map((t) => t.sourceTransactionId)
+
+  // unmatched: non-existent 16-digit ID
+  const bogus = `4${String(Math.floor(rng() * 1e15)).padStart(15, '0')}`
+  appRowsFinal.push([bogus, 120, 'USD'])
+  notes.unmatched = [bogus]
+
+  // negative amount (warning) in REF
+  const refRows: Row[] = REF.map((t, i) => (i === 0 ? tx(t, -t.amount) : tx(t)))
+  notes.negativeAmount = REF.length ? [REF[0]!.sourceTransactionId] : []
+
+  // leftover =SUM
+  chbRows.push(SUM_ROW)
+  refRows.push(SUM_ROW)
+
+  const otherFees: Row[] = [
+    ['Wire Fee', 25, 'USD'],
+    ['Fraud Monitoring Fee', 99, 'USD'],
+  ]
+  const newChannels = [
+    ...new Set(
+      [...APP, ...DEC]
+        .filter((t) => NEW_CHANNEL_FOR[chan(t.channelId).name] === plan.account)
+        .map((t) => chan(t.channelId).name),
+    ),
+  ]
+  const sheets: Record<string, SheetDef> = {
+    APP: { columns: ['ID', 'Amount', 'Currency'], rows: appRowsFinal },
+    DEC: { columns: ['ID', 'Amount', 'Currency'], rows: decRows },
+    CHB: { columns: ['ID', 'Amount', 'Currency'], rows: chbRows },
+    REF: { columns: ['ID', 'Amount', 'Currency'], rows: refRows },
+    RDR: { columns: ['ID', 'Amount', 'Currency'], rows: [...s.RDR.map((t) => tx(t)), SUM_ROW] },
+    RR: { columns: ['ID', 'Amount', 'Currency'], rows: rrRows },
+    'Duplicate Corrections': { columns: ['ID', 'Status', 'Amount'], rows: [] },
+    'CHB Alerts': { columns: ['ID', 'Type of Fee'], rows: [] },
+    'Other Fees': { columns: ['Type of Fee', 'Amount', 'Currency'], rows: otherFees },
+  }
+  const reserveEarlyRelease = adjustmentReserveRelease(plan, sheets)
+  const countRows = (k: string) => sheets[k]!.rows.filter((r) => r[0] !== '').length
+  // rows.read counts the transaction sheets only (as batch-clean does): Other Fees rows are batch fees, not rows to match.
+  const totalRows = ['APP', 'DEC', 'CHB', 'REF', 'RDR', 'RR'].reduce((a, k) => a + sheets[k]!.rows.length, 0)
+  samples.push({
+    name: 'batch-issues',
+    account: plan.account,
+    batchNo: plan.batchNo,
+    description:
+      'Batch con una incidencia de cada tipo no bloqueante, un canal nuevo, un ID desconocido, un importe negativo y un tipo de fee fuera de catálogo.',
+    files: [{ fileName: 'Recon_Template_ProviderB-Main_batch-issues.xlsx', sheets }],
+    expected: {
+      import: { files: 1 },
+      rows: { read: totalRows, ignoredEmptyId: 3, matched: totalRows - 3 - 1, unmatched: 1, ambiguous: 0 },
+      byCycle: {
+        E: countRows('APP') + countRows('DEC'),
+        I: countRows('CHB') + countRows('REF') + countRows('RDR'),
+        R: countRows('RR'),
+      },
+      warnings: { newChannels, negativeAmounts: 1, unknownFeeTypes: ['Fraud Monitoring Fee'] },
+      validations: {
+        provider_mismatch: 0,
+        non_recorded_adjustment: {
+          non_recorded_adjustment: (notes.non_recorded_adjustment as string[]).length,
+          status_mismatch: (notes.status_mismatch as string[]).length,
+        },
+        duplicate_in_batch: 1,
+        status_collision_in_batch: 1,
+        duplicate_across_batches: 1,
+        status_collision_across_batches: 1,
+        missing_previous_to_batch: { E: decOmitted.length, I: 0, R: 0 },
+        missing_in_range: { E: missE.length, I: 0, R: missR.length },
+      },
+      defaults: {
+        duplicate_in_batch: 'first occurrence included, second excluded',
+        duplicate_across_batches: 'current excluded',
+        status_collision_in_batch: 'both included',
+        status_collision_across_batches: 'current included',
+        non_recorded_adjustment: 'included',
+        status_mismatch: 'included',
+      },
+      affectedIds: notes,
+      batchFeesPrefilled: otherFees.map(([type, amount]) => ({ feeType: type, amount })),
+      proposedBatchNo: plan.batchNo,
+      reserveEarlyRelease,
+      note: 'Los totales del summary dependen de las decisiones de inclusión y no se fijan aquí; reserveEarlyRelease fija la liberación de reserva por ajuste de release_on_chargeback con las inclusiones por defecto.',
+    },
+  })
+  void missSet
+
+  // ───────── 4. batch-blocked (provider_mismatch) ─────────
+  const foreign = world.txns.find(
+    (t) => chan(t.channelId).name === 'RAM-01' && t.status === 'Successful' && t.transactionDate >= plan.eWindow[0],
+  )!
+  const small = APP.filter((t) => own.has(t.channelId)).slice(0, 20)
+  samples.push({
+    name: 'batch-blocked',
+    account: plan.account,
+    batchNo: plan.batchNo,
+    description:
+      'Archivo con una transacción de un canal de otro proveedor: provider_mismatch, la única validación bloqueante.',
+    files: [
+      {
+        fileName: 'Recon_Template_ProviderB-Main_batch-blocked.xlsx',
+        sheets: {
+          APP: { columns: ['ID', 'Amount', 'Currency'], rows: [...small.map((t) => tx(t)), tx(foreign)] },
+          DEC: { columns: ['ID', 'Amount', 'Currency'], rows: [] },
+          CHB: { columns: ['ID', 'Amount', 'Currency'], rows: [] },
+          REF: { columns: ['ID', 'Amount', 'Currency'], rows: [] },
+          RDR: { columns: ['ID', 'Amount', 'Currency'], rows: [] },
+          RR: { columns: ['ID', 'Amount', 'Currency'], rows: [] },
+          'Other Fees': { columns: ['Type of Fee', 'Amount', 'Currency'], rows: [] },
+        },
+      },
+    ],
+    expected: {
+      rows: { read: 21, matched: 21, unmatched: 0 },
+      validations: { provider_mismatch: 1 },
+      blocked: true,
+      affectedIds: { provider_mismatch: [foreign.sourceTransactionId], foreignChannel: 'RAM-01' },
+      note: 'No hay override: el analista cancela el import y procesa con el proveedor correcto.',
+    },
+  })
+}
+
+// ───────── 5. legacy-provider (ProviderC-Alt, UUID gateway, provider rule set) ─────────
+{
+  const plan = world.sampleBatch['ProviderC-Alt']!
+  const s = baseSheets(plan)
+  const trx: Row[] = [...s.APP.map((t) => [t.sourceTransactionId, 'Successful', t.amount] as Row)]
+  const fail: Row[] = s.DEC.map((t) => [t.sourceTransactionId, 'Failed', t.amount] as Row)
+  const cb: Row[] = s.CHB.map((t, i) => [t.sourceTransactionId, i === 0 ? 'CHB 2' : 'CHB', t.amount] as Row)
+  // the CB sheet carries chargebacks only: the window's refunds and RDRs are omitted; those whose status change
+  // precedes the I range (built from the CB rows) are missing_previous_to_batch, later ones are out of range
+  const iMin = Math.min(...s.CHB.map((t) => t.lastStatusChangedAt!.getTime()))
+  const missPrevI = [...s.REF, ...s.RDR].filter((t) => t.lastStatusChangedAt!.getTime() < iMin)
+  samples.push({
+    name: 'legacy-provider',
+    account: plan.account,
+    batchNo: plan.batchNo,
+    description:
+      'Archivo con nombres de hoja y columna antiguos (TRX / Fail / CB / Summary, Merchant Order No#, Order Status) resuelto por el conjunto de reglas "Provider C legacy"; gateway UUID; un CHB 2 con importe excluido.',
+    files: [
+      {
+        fileName: 'Legacy_ProviderC-Alt_batch.xlsx',
+        sheets: {
+          Summary: {
+            columns: ['Batch', 'Total'],
+            rows: [[`Batch ${plan.batchNo}`, money(s.APP.reduce((a, t) => a + t.amount, 0))]],
+          },
+          TRX: { columns: ['Merchant Order No#', 'Order Status', 'Amount USD'], rows: trx },
+          Fail: { columns: ['Merchant Order No#', 'Order Status', 'Amount USD'], rows: fail },
+          CB: { columns: ['Merchant Order No#', 'Order Status', 'Amount USD'], rows: cb },
+        },
+      },
+    ],
+    expected: {
+      ruleSet: 'Provider C legacy',
+      sheets: {
+        TRX: { kind: 'transactions', cycle: 'E', statusBy: 'column' },
+        Fail: { kind: 'transactions', cycle: 'E', status: 'Declined' },
+        CB: { kind: 'transactions', cycle: 'I', statusBy: 'column' },
+        Summary: { kind: 'ignore' },
+      },
+      columns: { 'Merchant Order No#': 'transactionId', 'Order Status': 'status', 'Amount USD': 'amount' },
+      rows: { read: trx.length + fail.length + cb.length, matched: trx.length + fail.length + cb.length, unmatched: 0 },
+      byCycle: { E: trx.length + fail.length, I: cb.length, R: 0 },
+      statusAliases: { Failed: 'Declined', CHB: 'Chargeback', 'CHB 2': 'Chargeback (excludeAmount)' },
+      excludeAmountRows: cb.length ? [cb[0]![0]] : [],
+      validations: {
+        provider_mismatch: 0,
+        non_recorded_adjustment: { non_recorded_adjustment: 0, status_mismatch: 0 },
+        duplicate_in_batch: 0,
+        status_collision_in_batch: 0,
+        duplicate_across_batches: 0,
+        status_collision_across_batches: 0,
+        missing_previous_to_batch: { E: 0, I: missPrevI.length, R: 0 },
+        missing_in_range: { E: 0, I: 0, R: 0 },
+      },
+      affectedIds: { missing_previous_to_batch_I: missPrevI.map((t) => t.sourceTransactionId) },
+      fees: 'La cuenta solo tiene un fee transaccional, el de Chargeback: los movimientos E no llevan fees y el CHB 2 lleva el de Chargeback.',
+      proposedBatchNo: plan.batchNo,
+      // Only the sheets the file carries: TRX (APP), Fail (DEC) and CB; the first CB row is the CHB 2.
+      summary: totals(
+        plan.account,
+        { APP: s.APP, DEC: s.DEC, CHB: s.CHB, REF: [], RDR: [], RR: [] },
+        [],
+        new Set(s.CHB.length ? [s.CHB[0]!.key] : []),
+      ),
+    },
+  })
+}
+
+// ───────── 6. batch-wrong-account (ProviderA-USD, a file of another account: #92) ─────────
+// Last, and without drawing from rng, so the samples above keep their bytes. The IDs are UUIDs of RAM-U1
+// (ProviderC-USD, merchant 2) and ProviderA-USD only has channels of the numeric gateway: every row is `id_format`.
+{
+  const plan = world.sampleBatch['ProviderA-USD']!
+  const foreignChannel = CHANNELS.find((c) => c.name === 'RAM-U1')!
+  const firstOf = (status: Txn['status'], n: number) =>
+    world.txns
+      .filter((t) => t.channelId === foreignChannel.channelId && t.status === status)
+      .sort(
+        (a, b) =>
+          a.transactionDate.getTime() - b.transactionDate.getTime() ||
+          (a.sourceTransactionId < b.sourceTransactionId ? -1 : 1),
+      )
+      .slice(0, n)
+  const app = firstOf('Successful', 10)
+  const dec = firstOf('Declined', 2)
+  if (app.length !== 10 || dec.length !== 2) throw new Error('RAM-U1 lacks the transactions batch-wrong-account needs')
+  const s = { APP: app, DEC: dec, CHB: [], REF: [], RDR: [], RR: [] }
+  const otherFees: Row[] = [['Wire Fee', 25, 'USD']]
+  const read = app.length + dec.length
+  const sheets = templateSheets(s, otherFees)
+  samples.push({
+    name: 'batch-wrong-account',
+    account: plan.account,
+    batchNo: plan.batchNo,
+    description:
+      'Archivo de otra cuenta: IDs UUID de ProviderC-USD subidos a ProviderA-USD (solo gateway numérico). Ninguna fila se asocia (todas id_format), así que continuar y procesar exigen confirmar un batch solo de fees.',
+    files: [
+      {
+        fileName: 'Recon_Template_ProviderA-USD_batch-wrong-account.xlsx',
+        // No leftover =SUM rows: every row read is unmatched, none ignored.
+        sheets: {
+          ...sheets,
+          CHB: { columns: sheets.CHB!.columns, rows: [] },
+          REF: { columns: sheets.REF!.columns, rows: [] },
+          RDR: { columns: sheets.RDR!.columns, rows: [] },
+        },
+      },
+    ],
+    expected: {
+      import: {
+        files: 1,
+        sheets: {
+          transactions: ['APP', 'DEC', 'CHB', 'REF', 'RDR', 'RR'],
+          batch_fees: ['Other Fees'],
+          ignored: ['Duplicate Corrections', 'CHB Alerts', 'Settings'],
+        },
+      },
+      rows: {
+        read,
+        ignoredEmptyId: 0,
+        matched: 0,
+        unmatched: read,
+        ambiguous: 0,
+        unmatchedByReason: { no_match: 0, id_format: read, lossy_numeric_id: 0, no_gateways: 0 },
+      },
+      requiresEmptyBatchConfirmation: true,
+      likelyWrongAccount: true,
+      channels: [],
+      foreignChannel: foreignChannel.name,
+      validations: {
+        provider_mismatch: 0,
+        non_recorded_adjustment: { non_recorded_adjustment: 0, status_mismatch: 0 },
+        duplicate_in_batch: 0,
+        status_collision_in_batch: 0,
+        duplicate_across_batches: 0,
+        status_collision_across_batches: 0,
+        missing_previous_to_batch: { E: 0, I: 0, R: 0 },
+        missing_in_range: { E: 0, I: 0, R: 0 },
+      },
+      // No matched row: 1–4 have nothing to run on, the across ones run against Provider A's attempts, and no cycle
+      // has a range for the missing ones.
+      outcomes: {
+        provider_mismatch: 'not_applicable',
+        non_recorded_adjustment: 'not_applicable',
+        duplicate_in_batch: 'not_applicable',
+        status_collision_in_batch: 'not_applicable',
+        duplicate_across_batches: 'passed',
+        status_collision_across_batches: 'passed',
+        missing_previous_to_batch: 'not_applicable',
+        missing_in_range: 'not_applicable',
+      },
+      batchFeesPrefilled: otherFees.map(([type, amount]) => ({ feeType: type, amount })),
+      proposedBatchNo: plan.batchNo,
+      skipped: { ignored: 0, unmatched: read, ambiguous: 0, excluded: 0, unresolvedStatus: 0, pending: 0 },
+      // No row becomes a movement: only the batch fee counts.
+      summary: totals(plan.account, { APP: [], DEC: [], CHB: [], REF: [], RDR: [], RR: [] }, otherFees),
+      note: 'Procesar con confirmEmptyBatch crea un batch solo con el fee de Other Fees: amountPayable = -25.0000.',
+    },
+  })
+}
+
+process.stdout.write(
+  JSON.stringify({ generatedFrom: 'backend/prisma/synthetic.ts', anchorDate: iso(ANCHOR), samples }, null, 1),
+)
+void day

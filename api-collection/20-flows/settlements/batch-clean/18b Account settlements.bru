@@ -1,0 +1,29 @@
+meta {
+  name: 18b Account settlements
+  type: http
+  seq: 19
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/settlements
+  body: none
+  auth: inherit
+}
+
+params:path {
+  accountId: {{providerAUsdAccountId}}
+}
+
+tests {
+  test('without a status filter, the attempt just processed comes first and batch 122 of the seed second', () => {
+    expect(res.status).to.equal(200);
+    const [first, second] = res.body.items;
+    expect(first.batchId.toLowerCase()).to.equal(String(bru.getVar('setBatchId')).toLowerCase());
+    expect([first.batchNo, second.batchNo]).to.eql([bru.getVar('setBatchNo'), 122]);
+    expect([first.status, first.settledStatus]).to.eql(['processed', 'pending_payment']);
+    expect([second.status, second.settledStatus]).to.eql(['paid', 'settled']);
+  });
+}

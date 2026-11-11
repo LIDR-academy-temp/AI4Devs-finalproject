@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Matching Rules</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:14px;box-sizing:border-box}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:#4b5563;border-bottom:1px solid #d0d5dc;padding:8px}
+.tbl td{border-bottom:1px solid #e5e7eb;padding:6px 8px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.btn.pri{background:#1f4e9c;border-color:#1f4e9c;color:#fff}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.cyc{display:inline-block;width:22px;text-align:center;border-radius:4px;font-weight:700;font-size:12px;background:#e3e8ef}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 8px}
+code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#f3f4f6;padding:1px 4px;border-radius:4px}
+select{font:inherit;font-size:13px;padding:6px 8px;border:1px solid #9aa3ad;border-radius:6px;background:#fff}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:820px">
+  <nav class="nav" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+    <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+    <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+    <div class="grp">Reconciliation</div>
+    <a href="NewReconciliation.dc.html">New Reconciliation</a>
+    <a href="InProgress.dc.html">In Progress</a>
+    <div class="grp">Settlements</div>
+    <a href="SettlementList.dc.html">Settlement List</a>
+    <a href="Payments.dc.html">Payments</a>
+    <div class="grp">Search</div>
+    <a href="TransactionSearch.dc.html">Transaction Search</a>
+    <a href="MissingDuplicates.dc.html">Missing &amp; Duplicates</a>
+    <div class="grp">Reports</div>
+    <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+    <a href="ReportsRoadmap.dc.html">Aged Receivables · roadmap</a>
+    <div class="grp">Administration</div>
+    <a href="MerchantsProviders.dc.html">Merchants &amp; Providers</a>
+    <a href="Accounts.dc.html">Accounts</a>
+    <a href="FeesAll.dc.html">Fees</a>
+    <a href="ChannelAssignment.dc.html">Channel Assignment</a>
+    <a href="MatchingRules.dc.html" class="on">Matching Rules</a>
+    <a href="UsersRoles.dc.html">Users &amp; Roles</a>
+    <a href="AuditLog.dc.html">Audit Log</a>
+  </nav>
+  <main style="flex:999 1 560px;min-width:0;padding:20px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+    <div class="ctx"><a href="Dashboard.dc.html">Dashboard</a> › Administration › Matching Rules</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h1>Matching Rules</h1><div style="display:flex;gap:8px;align-items:center"><label class="ctx">Rule set</label><select><option>Global defaults</option><option>Provider A · Standard template (ProviderA-USD, ProviderA-MerchantB)</option><option>Provider A · Legacy layout (ProviderA-EUR)</option><option>Provider C · Standard (ProviderC-EUR)</option></select><a href="MatchingRules.dc.html" class="btn">New rule set</a><a href="MatchingRules.dc.html" class="btn">Test against a file…</a></div></div>
+    <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:12px;align-items:start">
+      <div class="card">
+        <h2>Sheet rules · pattern → cycle and status</h2>
+        <table class="tbl">
+          <tr><th>Pattern</th><th>Cycle</th><th>Status</th><th>Priority</th><th></th></tr>
+          <tr><td><code>APP*</code></td><td><span class="cyc">E</span></td><td>Successful</td><td>10</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>DEC*</code></td><td><span class="cyc">E</span></td><td>Declined</td><td>10</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>CHB*</code></td><td><span class="cyc">I</span></td><td>Chargeback</td><td>10</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>REF*</code></td><td><span class="cyc">I</span></td><td>Refund</td><td>10</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>RDR*</code></td><td><span class="cyc">I</span></td><td>RDR</td><td>10</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>RR*</code> / <code>Reserve*</code></td><td><span class="cyc">R</span></td><td>— (no status)</td><td>10</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>Summary</code>, <code>Totals</code></td><td colspan="2">summary sheet · not imported</td><td>5</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+        </table>
+        <div style="margin-top:8px"><a href="MatchingRules.dc.html" class="btn">Add sheet rule</a></div>
+      </div>
+      <div class="card">
+        <h2>Column rules · pattern → field</h2>
+        <table class="tbl">
+          <tr><th>Pattern</th><th>Sheet</th><th>Field</th><th></th></tr>
+          <tr><td><code>Transaction ID</code>, <code>Txn ID</code>, <code>ID</code></td><td>any</td><td>transactionId</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>Status</code>, <code>State</code></td><td>any</td><td>status</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>Amount*</code></td><td>any</td><td>amount</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>Currency</code></td><td>any</td><td>currency</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>Created*</code>, <code>Date</code></td><td>any</td><td>txnDate</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>Gateway</code></td><td>any</td><td>gateway</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+        </table>
+        <div style="margin-top:8px"><a href="MatchingRules.dc.html" class="btn">Add column rule</a></div>
+      </div>
+      <div class="card">
+        <h2>Status aliases · text read → status</h2>
+        <table class="tbl">
+          <tr><th>Text</th><th>Status</th><th>Amount</th><th></th></tr>
+          <tr><td><code>App</code>, <code>Approved</code>, <code>Successful</code></td><td>Successful</td><td>counted</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>Dec</code>, <code>Declined</code></td><td>Declined</td><td>counted</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>CHB</code>, <code>Chargeback</code></td><td>Chargeback</td><td>counted</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>CHB 2</code></td><td>Chargeback</td><td><span class="badge">excluded (excludeAmount)</span></td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>Ref</code>, <code>Refund</code></td><td>Refund</td><td>counted</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h2>Rows to ignore</h2>
+        <table class="tbl">
+          <tr><th>Pattern</th><th>Regex</th><th>Where</th><th></th></tr>
+          <tr><td><code>Total*</code></td><td>no</td><td>first cell</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>^\s*$</code></td><td>yes</td><td>whole row</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+          <tr><td><code>Transaction ID</code> (repeated header)</td><td>no</td><td>ID column</td><td><a href="MatchingRules.dc.html">Edit</a></td></tr>
+        </table>
+        <div class="ctx" style="margin-top:8px">Rule sets belong to a provider; each account is linked to one set (or to none, falling back to the global defaults). A rule in a set overrides a global one with the same pattern. Changing a set applies to every account linked to it, without touching imports already analysed. Interpretation rules (derived status, related rows, reported fees) are a separate roadmap screen.</div>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

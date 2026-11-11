@@ -1,0 +1,33 @@
+meta {
+  name: Validation issues - unknown import
+  type: http
+  seq: 34
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId/validation-issues
+  body: none
+  auth: bearer
+}
+
+params:path {
+  importId: {{$randomUUID}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer gets 404 not_found for the findings of an import it cannot see', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

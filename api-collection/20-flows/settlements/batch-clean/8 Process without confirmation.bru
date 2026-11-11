@@ -1,0 +1,36 @@
+meta {
+  name: 8 Process without confirmation
+  type: http
+  seq: 8
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{setImportId}}
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({ runId: bru.getVar('setRunId'), batchFees: bru.getVar('setBatchFees') });
+}
+
+tests {
+  test('RAM-07 is not assigned yet: 409 channel_assignment_not_confirmed with the channel', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('channel_assignment_not_confirmed');
+    expect(res.body.details.channels.map((c) => c.name)).to.eql(['RAM-07']);
+  });
+}

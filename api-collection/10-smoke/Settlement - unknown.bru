@@ -1,0 +1,26 @@
+meta {
+  name: Settlement - unknown
+  type: http
+  seq: 54
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/settlements/:batchId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  batchId: {{$randomUUID}}
+}
+
+tests {
+  test('responds 404 not_found for a random UUID', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+    expect(res.body.message).to.equal('Settlement not found');
+  });
+}

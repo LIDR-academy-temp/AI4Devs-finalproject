@@ -1,0 +1,40 @@
+meta {
+  name: Account settlements - viewer out of scope
+  type: http
+  seq: 62
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/settlements
+  body: none
+  auth: bearer
+}
+
+params:path {
+  accountId: {{providerCAltAccountId}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+script:pre-request {
+  if (!bru.getVar('providerCAltAccountId')) {
+    await bru.runRequest('10-smoke/Provider C accounts');
+  }
+}
+
+tests {
+  test('viewer gets 404 not_found for the settlements of an account of merchant 2', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+    expect(res.body.message).to.equal('Account not found');
+  });
+}

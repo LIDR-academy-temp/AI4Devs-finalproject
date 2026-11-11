@@ -1,0 +1,30 @@
+meta {
+  name: 14 Import settlements
+  type: http
+  seq: 14
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{setImportId}}
+}
+
+tests {
+  test('one attempt, the current one, processed and pending payment', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.items).to.have.length(1);
+    const [attempt] = res.body.items;
+    expect(attempt.batchId).to.equal(bru.getVar('setBatchId'));
+    expect([attempt.batchNo, attempt.attemptNo, attempt.isCurrent]).to.eql([bru.getVar('setBatchNo'), 1, true]);
+    expect([attempt.status, attempt.settledStatus]).to.eql(['processed', 'pending_payment']);
+    expect(attempt.approvedBy.userName).to.equal('analyst');
+  });
+}

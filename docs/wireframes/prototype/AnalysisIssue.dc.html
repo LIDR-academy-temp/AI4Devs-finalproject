@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Issue Detail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:14px;box-sizing:border-box}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:#4b5563;border-bottom:1px solid #d0d5dc;padding:8px}
+.tbl td{border-bottom:1px solid #e5e7eb;padding:7px 8px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.btn.pri{background:#1f4e9c;border-color:#1f4e9c;color:#fff}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.ok{border-color:#2f7d4f;color:#1e5c38;background:#e8f3ec}
+.warn{border-color:#b7791f;color:#7a4f0e;background:#fbf1dd}
+.cyc{display:inline-block;width:22px;text-align:center;border-radius:4px;font-weight:700;font-size:12px;background:#e3e8ef}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 10px}
+.dim{opacity:.35}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:820px">
+  <nav class="nav dim" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+    <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+    <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+    <div class="grp">Reconciliation</div>
+    <a href="NewReconciliation.dc.html" class="on">New Reconciliation</a>
+    <a href="InProgress.dc.html">In Progress</a>
+    <div class="grp">Settlements</div>
+    <a href="SettlementList.dc.html">Settlement List</a>
+    <a href="Payments.dc.html">Payments</a>
+    <div class="grp">Search</div>
+    <a href="TransactionSearch.dc.html">Transaction Search</a>
+    <a href="MissingDuplicates.dc.html">Missing &amp; Duplicates</a>
+    <div class="grp">Reports</div>
+    <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+    <div class="grp">Administration</div>
+    <a href="Accounts.dc.html">Accounts</a>
+    <a href="FeesAll.dc.html">Fees</a>
+    <a href="MatchingRules.dc.html">Matching Rules</a>
+  </nav>
+  <main style="flex:999 1 560px;min-width:0;display:flex;flex-wrap:wrap">
+    <div class="dim" style="flex:1 1 300px;min-width:0;padding:20px 28px;box-sizing:border-box">
+      <div class="ctx">Merchant A › Provider A › <b>ProviderA-USD</b> · import #2041</div>
+      <h1 style="margin-top:8px">Analysis &amp; Validations</h1>
+      <div class="ctx" style="margin-top:12px">(screen behind the drawer)</div>
+    </div>
+    <aside style="flex:0 1 620px;min-width:0;background:#fff;border-left:1px solid #d0d5dc;padding:20px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;box-shadow:-8px 0 24px rgba(0,0,0,.06)">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div><span class="badge warn">duplicate_across_batches</span> <span class="badge">warning</span></div>
+        <a href="Analysis.dc.html" class="btn" aria-label="Close drawer">Close ✕</a>
+      </div>
+      <div>
+        <h2 style="margin:0">Transaction 4512301190 · <span class="cyc">I</span> Chargeback</h2>
+        <div class="ctx">Same identity and cycle with the same status appears in a previous batch. By default the current occurrence is excluded; include it only if the second adjustment is legitimate.</div>
+      </div>
+      <div class="card">
+        <h2>Occurrences (2)</h2>
+        <table class="tbl">
+          <tr><th>Where</th><th>Status</th><th class="num">Amount</th><th>Include</th></tr>
+          <tr><td>Batch 116 · attempt 1 · paid 01 Sep</td><td>Chargeback</td><td class="num">120.5000</td><td><span class="badge ok">settled</span></td></tr>
+          <tr><td>This import · part1.xlsx · CHB · row 14</td><td>Chargeback</td><td class="num">120.5000</td><td><label><input type="checkbox"> include in this settlement</label></td></tr>
+        </table>
+        <div style="font-size:12px;color:#6b7280;margin-top:8px">A Chargeback and a CHB 2 of the same transaction are not a duplicate (CHB 2 → Chargeback with amount excluded).</div>
+      </div>
+      <div class="card">
+        <h2>Transaction in the gateway</h2>
+        <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:6px;font-size:13px">
+          <div class="ctx">Gateway</div><div>Gateway 1 (numeric id)</div>
+          <div class="ctx">Current status</div><div>Chargeback · changed 2026-08-28</div>
+          <div class="ctx">Channel</div><div>RAM-01</div>
+          <div class="ctx">Settled</div><div><span class="cyc">E</span> batch 112 paid · <span class="cyc">I</span> batch 116 paid · <span class="cyc">R</span> —</div>
+        </div>
+        <div style="margin-top:8px"><a href="TransactionDetail.dc.html">Open transaction detail →</a></div>
+      </div>
+      <div class="card">
+        <h2>Activity</h2>
+        <div style="font-size:13px;display:flex;flex-direction:column;gap:4px">
+          <div>today 10:42 · system · detected in run #2 (also in run #1)</div>
+          <div class="ctx">No manual actions yet. Changing inclusion or marking as resolved is recorded with your user and the moment.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:auto;flex-wrap:wrap">
+        <a href="Analysis.dc.html" class="btn">Previous issue</a>
+        <a href="Analysis.dc.html" class="btn">Next issue</a>
+        <a href="Analysis.dc.html" class="btn pri">Save changes</a>
+      </div>
+    </aside>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

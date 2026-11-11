@@ -1,0 +1,33 @@
+meta {
+  name: 13 Resolve again
+  type: http
+  seq: 13
+  tags: [
+    flow
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/validation-issues/:issueId
+  body: json
+  auth: inherit
+}
+
+params:path {
+  issueId: {{nraIssueId}}
+}
+
+body:json {
+  {
+    "resolutionStatus": "resolved",
+    "note": "Again"
+  }
+}
+
+tests {
+  test('a resolution has no way back: 409 issue_already_resolved', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('issue_already_resolved');
+    expect(res.body.details.resolvedBy.userName).to.equal('analyst');
+  });
+}

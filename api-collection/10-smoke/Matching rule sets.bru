@@ -1,0 +1,35 @@
+meta {
+  name: Matching rule sets
+  type: http
+  seq: 105
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/providers/:providerId/matching-rule-sets
+  body: none
+  auth: inherit
+}
+
+params:path {
+  providerId: 201
+}
+
+script:post-response {
+  // The rule set the 20-flows/accounts flow links its account to, resolved by name (no literal ids).
+  const legacy = Array.isArray(res.body) && res.body.find((s) => s.name === 'Provider C legacy');
+  if (legacy) {
+    bru.setVar('providerCLegacyRuleSetId', legacy.ruleSetId);
+  }
+}
+
+tests {
+  test('analyst reads the sets of Provider C: "Provider C legacy", active, with ProviderC-Alt', () => {
+    expect(res.status).to.equal(200);
+    const legacy = res.body.find((s) => s.name === 'Provider C legacy');
+    expect(legacy).to.include({ providerId: 201, isActive: true });
+    expect(legacy.accounts.map((a) => a.name)).to.include('ProviderC-Alt');
+  });
+}

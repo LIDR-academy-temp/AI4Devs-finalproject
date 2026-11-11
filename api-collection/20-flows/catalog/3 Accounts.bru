@@ -1,0 +1,32 @@
+meta {
+  name: 3 Accounts
+  type: http
+  seq: 3
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/providers/:providerId/accounts
+  body: none
+  auth: inherit
+}
+
+params:path {
+  providerId: {{flowProviderId}}
+}
+
+script:post-response {
+  const account = Array.isArray(res.body) && res.body.find((a) => a.name === 'ProviderA-USD');
+  if (account) {
+    bru.setVar('flowAccountId', account.accountId);
+  }
+}
+
+tests {
+  test('Provider A has the account ProviderA-USD', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.map((a) => a.name)).to.include('ProviderA-USD');
+  });
+}

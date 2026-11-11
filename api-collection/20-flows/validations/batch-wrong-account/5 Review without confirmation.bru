@@ -1,0 +1,38 @@
+meta {
+  name: 5 Review without confirmation
+  type: http
+  seq: 5
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/review
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{wraImportId}}
+}
+
+body:json {
+  {
+    "runId": 0,
+    "inclusionVersion": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({ runId: bru.getVar('wraRunId'), inclusionVersion: bru.getVar('wraInclusionVersion') });
+}
+
+tests {
+  test('409 no_matched_rows with the details of the oracle', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('no_matched_rows');
+    expect(res.body.details.rowsUnmatched).to.equal(12);
+    expect(res.body.details.likelyWrongAccount).to.equal(true);
+  });
+}

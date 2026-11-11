@@ -1,0 +1,69 @@
+meta {
+  name: 1 Create account
+  type: http
+  seq: 1
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/providers/:providerId/accounts
+  body: json
+  auth: bearer
+}
+
+params:path {
+  providerId: 201
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "name": "{{flowAccountName}}",
+    "chargebackReservePolicy": "hold_until_term",
+    "matchingRuleSetId": {{providerCLegacyRuleSetId}},
+    "copyFeesFromAccountId": "{{providerCUsdAccountId}}"
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:pre-request {
+  // One new account per run in Provider C, named bruno-<run id>, so the flow repeats without a seed. The flow closes it
+  // at the end; closed bruno- accounts stay until the next pnpm db:seed and the tests ignore them (admin-accounts D9).
+  if (!bru.getVar('providerCUsdAccountId')) {
+    await bru.runRequest('10-smoke/Provider C accounts');
+  }
+  if (!bru.getVar('providerCLegacyRuleSetId')) {
+    await bru.runRequest('10-smoke/Matching rule sets');
+  }
+  if (!bru.getVar('providerCUsdAccountId') || !bru.getVar('providerCLegacyRuleSetId')) {
+    throw new Error('ProviderC-USD or the "Provider C legacy" rule set could not be resolved');
+  }
+  bru.setVar('flowAccountName', `bruno-${Date.now().toString(36)}`);
+  bru.setVar('flowNewAccountId', '');
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar('flowNewAccountId', res.body.accountId);
+  }
+}
+
+tests {
+  test('admin creates the account in Provider C: 201, active, with the rule set, created by admin', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.name).to.equal(bru.getVar('flowAccountName'));
+    expect(res.body.isActive).to.equal(true);
+    expect(res.body.provider.providerId).to.equal(201);
+    expect(res.body.matchingRuleSetId).to.equal(Number(bru.getVar('providerCLegacyRuleSetId')));
+    expect(res.body.rollingReserveCapAmt).to.equal(null);
+    expect(res.body.createdBy.userName).to.equal('admin');
+  });
+}

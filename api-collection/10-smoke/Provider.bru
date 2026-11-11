@@ -1,0 +1,199 @@
+meta {
+  name: Provider
+  type: http
+  seq: 8
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/providers/:providerId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  providerId: 201
+}
+
+tests {
+  test('analyst reads Provider C of merchant 2', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.name).to.equal('Provider C');
+    expect(res.body.merchant.merchantId).to.equal(2);
+  });
+}
+
+example {
+  name: 200 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/providers/:providerId
+    method: GET
+    mode: none
+    params:path: {
+      providerId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "providerId": 0,
+          "merchantId": 0,
+          "name": "",
+          "isActive": false,
+          "merchant": {
+            "merchantId": 0,
+            "name": ""
+          },
+          "accounts": [
+            {
+              "accountId": "",
+              "providerId": 0,
+              "name": "",
+              "chargebackReservePolicy": "hold_until_term",
+              "rollingReserveCapAmt": "",
+              "matchingRuleSetId": 0,
+              "isActive": false,
+              "createdAt": ""
+            }
+          ],
+          "channels": [
+            {
+              "channelId": 0,
+              "gatewayId": 0,
+              "providerId": 0,
+              "name": "",
+              "isActive": false,
+              "settlementTermDays": 0,
+              "rollingReservePct": "",
+              "rollingReserveDays": 0
+            }
+          ]
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 400 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/providers/:providerId
+    method: GET
+    mode: none
+    params:path: {
+      providerId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 400
+      text: Bad Request
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 401 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/providers/:providerId
+    method: GET
+    mode: none
+    params:path: {
+      providerId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 401
+      text: Unauthorized
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 404 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/providers/:providerId
+    method: GET
+    mode: none
+    params:path: {
+      providerId: 
+    }
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 404
+      text: Not Found
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "code": "",
+          "message": "",
+          "details": ""
+        }
+      '''
+    }
+  }
+}

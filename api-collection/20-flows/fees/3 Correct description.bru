@@ -1,0 +1,41 @@
+meta {
+  name: 3 Correct description
+  type: http
+  seq: 3
+  tags: [
+    flow
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/fees/:feeId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  feeId: {{flowFeeId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "description": "Bruno flow, corrected",
+    "reason": "typo"
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+tests {
+  test('an in-place correction: 200 with the new description and no successor', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.fee.description).to.equal('Bruno flow, corrected');
+    expect(res.body.successor).to.equal(null);
+  });
+}

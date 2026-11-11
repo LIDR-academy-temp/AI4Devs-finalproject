@@ -1,0 +1,36 @@
+meta {
+  name: 11 Process again
+  type: http
+  seq: 11
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{setImportId}}
+}
+
+body:json {
+  {
+    "runId": 0
+  }
+}
+
+script:pre-request {
+  req.setBody({ runId: bru.getVar('setRunId'), confirmChannelAssignment: true });
+}
+
+tests {
+  test('the import is processed: 409 import_not_validated, no second attempt', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('import_not_validated');
+    expect(res.body.details.status).to.equal('processed');
+  });
+}

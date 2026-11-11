@@ -1,0 +1,39 @@
+meta {
+  name: 2 Add part2
+  type: http
+  seq: 2
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/files
+  body: multipartForm
+  auth: inherit
+}
+
+params:path {
+  importId: {{flowImportId}}
+}
+
+body:multipart-form {
+  files: @file(../data/samples/batch-split/Recon_Template_ProviderA-USD_batch-split_part2.xlsx)
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar('flowFileId2', res.body.files[1].fileId);
+  }
+}
+
+tests {
+  test('adds part2: two files, proposal over both', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.files).to.have.length(2);
+    expect(res.body.files[0].fileId).to.equal(bru.getVar('flowFileId1'));
+    const rr = res.body.files[1].sheets.find((s) => s.sheetName === 'RR');
+    expect(rr.rowCount).to.equal(320);
+    expect(res.body.readiness.canAnalyze).to.equal(true);
+  });
+}

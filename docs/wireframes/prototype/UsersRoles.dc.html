@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Users and Roles</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:14px;box-sizing:border-box}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:#4b5563;border-bottom:1px solid #d0d5dc;padding:8px}
+.tbl td{border-bottom:1px solid #e5e7eb;padding:7px 8px}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.btn.pri{background:#1f4e9c;border-color:#1f4e9c;color:#fff}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.ok{border-color:#2f7d4f;color:#1e5c38;background:#e8f3ec}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 10px}
+label{font-size:13px;color:#4b5563;display:block;margin-bottom:4px}
+input,select{font:inherit;font-size:13px;padding:7px 9px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;width:100%;box-sizing:border-box}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:820px">
+  <nav class="nav" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+    <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+    <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+    <div class="grp">Reconciliation</div>
+    <a href="NewReconciliation.dc.html">New Reconciliation</a>
+    <a href="InProgress.dc.html">In Progress</a>
+    <div class="grp">Settlements</div>
+    <a href="SettlementList.dc.html">Settlement List</a>
+    <a href="Payments.dc.html">Payments</a>
+    <div class="grp">Search</div>
+    <a href="TransactionSearch.dc.html">Transaction Search</a>
+    <a href="MissingDuplicates.dc.html">Missing &amp; Duplicates</a>
+    <div class="grp">Reports</div>
+    <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+    <a href="ReportsRoadmap.dc.html">Aged Receivables · roadmap</a>
+    <div class="grp">Administration</div>
+    <a href="MerchantsProviders.dc.html">Merchants &amp; Providers</a>
+    <a href="Accounts.dc.html">Accounts</a>
+    <a href="FeesAll.dc.html">Fees</a>
+    <a href="ChannelAssignment.dc.html">Channel Assignment</a>
+    <a href="MatchingRules.dc.html">Matching Rules</a>
+    <a href="UsersRoles.dc.html" class="on">Users &amp; Roles</a>
+    <a href="AuditLog.dc.html">Audit Log</a>
+  </nav>
+  <main style="flex:999 1 560px;min-width:0;padding:20px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+    <div class="ctx"><a href="Dashboard.dc.html">Dashboard</a> › Administration › Users &amp; Roles</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h1>Users &amp; Roles</h1><a href="UsersRoles.dc.html" class="btn pri">New user</a></div>
+    <div style="display:grid;grid-template-columns:minmax(0, 3fr) minmax(0, 2fr);gap:16px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="card">
+          <h2>Users</h2>
+          <table class="tbl">
+            <tr><th>User</th><th>Email</th><th>Role</th><th>Scope</th><th>Status</th><th>Last login</th><th></th></tr>
+            <tr><td>admin</td><td>admin@example.test</td><td>Admin</td><td>all merchants</td><td><span class="badge ok">active</span></td><td>today</td><td><a href="UsersRoles.dc.html">Edit</a></td></tr>
+            <tr><td>analyst</td><td>analyst@example.test</td><td>Analyst</td><td>Merchant A, Merchant B</td><td><span class="badge ok">active</span></td><td>today</td><td><a href="UsersRoles.dc.html">Edit</a></td></tr>
+            <tr><td>maria</td><td>maria@example.test</td><td>Analyst</td><td>Merchant A</td><td><span class="badge ok">active</span></td><td>yesterday</td><td><a href="UsersRoles.dc.html">Edit</a></td></tr>
+            <tr><td>finance</td><td>finance@example.test</td><td>Payments</td><td>all merchants</td><td><span class="badge ok">active</span></td><td>2 days ago</td><td><a href="UsersRoles.dc.html">Edit</a></td></tr>
+            <tr style="color:#6b7280"><td>jose</td><td>jose@example.test</td><td>Viewer</td><td>Merchant B</td><td><span class="badge">inactive</span></td><td>2026-06-10</td><td><a href="UsersRoles.dc.html">Edit</a></td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h2>Roles and permissions</h2>
+          <table class="tbl">
+            <tr><th>Permission</th><th>Admin</th><th>Analyst</th><th>Payments</th><th>Viewer</th></tr>
+            <tr><td>settlement.process</td><td>●</td><td>●</td><td></td><td></td></tr>
+            <tr><td>payment.process</td><td>●</td><td></td><td>●</td><td></td></tr>
+            <tr><td>account.manage · fee.manage</td><td>●</td><td></td><td></td><td></td></tr>
+            <tr><td>fee.view · reports.view</td><td>●</td><td>●</td><td>●</td><td>●</td></tr>
+            <tr><td>user.manage</td><td>●</td><td></td><td></td><td></td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;gap:12px">
+        <h2>Edit user · maria</h2>
+        <div><label for="un">User name</label><input id="un" value="maria"></div>
+        <div><label for="ue">Email</label><input id="ue" value="maria@example.test"></div>
+        <div><label for="ur">Role</label><select id="ur"><option>Analyst</option><option>Admin</option><option>Payments</option><option>Viewer</option></select></div>
+        <div><label for="us">Scope</label><select id="us"><option>Selected merchants</option><option>All merchants</option></select></div>
+        <div><label>Merchants visible</label><div style="font-size:13px;display:flex;flex-direction:column;gap:4px"><label><input type="checkbox" checked style="width:auto"> Merchant A</label><label><input type="checkbox" style="width:auto"> Merchant B</label></div></div>
+        <div><label><input type="checkbox" checked style="width:auto"> Active</label></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end"><a href="UsersRoles.dc.html" class="btn">Reset password</a><a href="UsersRoles.dc.html" class="btn pri">Save</a></div>
+        <div class="ctx">The last active Admin cannot be deactivated. Passwords are stored hashed (Argon2); sessions are JWT. Permission: user.manage.</div>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

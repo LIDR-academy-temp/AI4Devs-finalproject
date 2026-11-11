@@ -1,0 +1,30 @@
+meta {
+  name: 16 Add file after analyze
+  type: http
+  seq: 16
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/files
+  body: multipartForm
+  auth: inherit
+}
+
+params:path {
+  importId: {{flowImportId}}
+}
+
+body:multipart-form {
+  files: @file(../data/samples/batch-clean/Recon_Template_ProviderA-USD_batch-clean.xlsx)
+}
+
+tests {
+  test('files cannot change once the import is analyzed: 409 import_not_editable', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('import_not_editable');
+    expect(res.body.details.status).to.equal('analyzed');
+  });
+}

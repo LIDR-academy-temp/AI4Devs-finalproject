@@ -1,0 +1,380 @@
+name: CI
+
+on:
+  push:
+    branches: [feature/entrega-2-MVP, feature/entrega-3-MVP, final-project-MVP, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: lint · typecheck · unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Claude Code guard hooks
+        run: pnpm test:hooks
+      - name: OpenAPI contract and generated client are up to date
+        run: pnpm openapi:check
+      - run: pnpm --filter @recon/frontend build
+
+  integration:
+    name: integration (SQL Server 2022)
+    runs-on: ubuntu-latest
+    needs: check
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "Ci_Passw0rd2026"
+          MSSQL_PID: Developer
+        ports: ["1433:1433"]
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Ci_Passw0rd2026' -C -Q 'SELECT 1' -b -o /dev/null"
+          --health-interval 10s --health-timeout 5s --health-retries 12
+    env:
+      DATABASE_URL: "sqlserver://localhost:1433;database=ReconTool;user=sa;password=Ci_Passw0rd2026;encrypt=true;trustServerCertificate=true"
+      DB_HOST: localhost
+      DB_PORT: "1433"
+      DB_NAME: ReconTool
+      DB_USER: sa
+      RECON_APP_PASSWORD: "Ci_Passw0rd2026"
+      SEED_PASSWORD: "Ci_Seed!2026"
+      # Throwaway signing secret for the ephemeral CI environment (>= 32 characters).
+      JWT_SECRET: "ci-only-throwaway-jwt-secret-not-real-0001"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: create database
+        run: |
+          docker exec ${{ job.services.mssql.id }} /opt/mssql-tools18/bin/sqlcmd \
+            -S localhost -U sa -P 'Ci_Passw0rd2026' -C \
+            -Q "IF DB_ID('ReconTool') IS NULL CREATE DATABASE ReconTool"
+      - run: pnpm db:generate
+      - name: migrate + seed (proof that stage 0 is green)
+        run: |
+          pnpm db:migrate
+          pnpm db:seed
+      - run: pnpm --filter @recon/backend test:integration
+
+  e2e:
+    # One job for both suites, with a fresh seed between them (ci-e2e design D1, #111).
+    name: e2e (Bruno · Playwright)
+    runs-on: ubuntu-latest
+    needs: check
+    # About 5–6 min when green: a hung step must not hold the runner for the default 6 hours.
+    timeout-minutes: 20
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "Ci_E2e_Passw0rd2026"
+          MSSQL_PID: Developer
+        ports: ["1433:1433"]
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Ci_E2e_Passw0rd2026' -C -Q 'SELECT 1' -b -o /dev/null"
+          --health-interval 10s --health-timeout 5s --health-retries 12
+    # Throwaway values for the ephemeral CI environment, none from a template (design D5). The app, the migration
+    # and the seed connect as recon_app, as in local; sa only runs init.sql.
+    env:
+      DB_HOST: localhost
+      DB_PORT: "1433"
+      DB_NAME: ReconTool
+      DB_USER: recon_app
+      RECON_APP_PASSWORD: "Ci_E2e_App!2026"
+      SEED_PASSWORD: "Ci_E2e_Seed!2026"
+      JWT_SECRET: "ci-only-throwaway-e2e-jwt-secret-not-real-0002"
+      SEED_USER: analyst
+      SEED_VIEWER_USER: viewer
+      SEED_PAYMENTS_USER: payments
+      SEED_ADMIN_USER: admin
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: create the database and recon_app (infra/mssql/init.sql)
+        run: |
+          docker cp infra/mssql/init.sql ${{ job.services.mssql.id }}:/tmp/init.sql
+          docker exec ${{ job.services.mssql.id }} /opt/mssql-tools18/bin/sqlcmd \
+            -S localhost -U sa -P 'Ci_E2e_Passw0rd2026' -C -b -i /tmp/init.sql \
+            -v DB_NAME="$DB_NAME" RECON_APP_PASSWORD="$RECON_APP_PASSWORD"
+      - run: pnpm db:generate
+      - name: migrate + seed
+        run: |
+          pnpm db:migrate
+          pnpm db:seed
+      - name: build shared, API and web
+        run: |
+          pnpm --filter @recon/shared build
+          pnpm --filter @recon/backend build
+          pnpm --filter @recon/frontend build
+      # Production build, not pnpm dev (design D2): the compiled API and vite preview, which keeps the /api proxy.
+      - name: start API and web
+        run: |
+          nohup pnpm --filter @recon/backend start > "$RUNNER_TEMP/api.log" 2>&1 &
+          nohup pnpm --filter @recon/frontend preview --port 5173 --strictPort > "$RUNNER_TEMP/web.log" 2>&1 &
+      - name: wait for API and web
+        run: |
+          for _ in $(seq 1 45); do
+            if curl -fsS --max-time 5 -o /dev/null http://localhost:3000/api/v1/health \
+              && curl -fsS --max-time 5 -o /dev/null http://localhost:5173/api/v1/health; then
+              echo "API and web answer"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API or web did not answer within about 90 s"
+          echo "--- api.log"; tail -n 50 "$RUNNER_TEMP/api.log"
+          echo "--- web.log"; tail -n 50 "$RUNNER_TEMP/web.log"
+          exit 1
+      # Browser cache keyed by the installed Playwright version (design D4).
+      - name: Playwright version
+        id: playwright
+        run: |
+          v="$(pnpm --filter @recon/e2e exec playwright --version | awk '{print $2}')"
+          # An empty version would make one cache key for every Playwright release.
+          if [ -z "$v" ]; then echo "Could not read the Playwright version"; exit 1; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - name: Playwright browser cache
+        id: browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
+      - name: install Chromium
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm --filter @recon/e2e exec playwright install --with-deps chromium
+      - name: install Chromium system dependencies
+        if: steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm --filter @recon/e2e exec playwright install-deps chromium
+      - name: API collection (Bruno)
+        run: pnpm test:api
+      # The collection leaves batch-clean processed and RAM-07 assigned (#111): seed again, even if it failed.
+      - name: seed again
+        if: ${{ !cancelled() }}
+        run: pnpm db:seed
+      - name: E2E (Playwright)
+        id: e2e
+        if: ${{ !cancelled() }}
+        run: pnpm test:e2e
+      # Only when the E2E fails, not when only Bruno does: a red collection must not upload the report of a green E2E.
+      # Without trace nor video (off in playwright.config.ts) and with a short retention (design D6).
+      - name: Playwright report
+        if: ${{ !cancelled() && steps.e2e.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+      # The API and web logs stay in the job log, never in an artifact (design D6; global-setup.ts points here).
+      # Also when cancelled, so that a job stopped by timeout-minutes still shows them.
+      - name: API and web logs
+        if: ${{ failure() || cancelled() }}
+        run: |
+          for log in api web; do
+            echo "--- $log.log (last 200 lines)"
+            tail -n 200 "$RUNNER_TEMP/$log.log" 2>/dev/null || echo "(no $log.log: the step that starts it did not run)"
+          done
+
+  images:
+    # Builds the deployment images and starts them without a tunnel (deploy-hardening design D4, #107).
+    name: deployment images
+    runs-on: ubuntu-latest
+    # About 3–4 min when green: a hung start must not hold the runner for the default 6 hours.
+    timeout-minutes: 20
+    # Throwaway values for the smoke, never repository secrets and no TUNNEL_TOKEN. They win over the empty ones
+    # of infra/.env.deploy.example, because Compose prefers the shell environment to --env-file.
+    env:
+      DEPLOY_DEBUG: "1"
+      MSSQL_SA_PASSWORD: "Ci_Deploy_Sa!2026"
+      RECON_APP_PASSWORD: "Ci_Deploy_App!2026"
+      RECON_MIGRATOR_PASSWORD: "Ci_Deploy_Migrator!2026"
+      JWT_SECRET: "ci-only-throwaway-deploy-jwt-secret-not-real-0003"
+      SEED_PASSWORD: "Ci_Deploy_Seed!2026"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      # load + tags: the images stay in the runner's Docker under the names the compose uses. Never pushed.
+      - name: API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          target: runtime
+          push: false
+          load: true
+          tags: recon-api
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
+      - name: Migration and seed image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          target: ops
+          push: false
+          load: true
+          tags: recon-ops
+          cache-from: type=gha,scope=api
+      - name: Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: false
+          load: true
+          tags: recon-web
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+      - name: Deployment configuration
+        # The template leaves secrets empty on purpose; these placeholders only let Compose interpolate.
+        env:
+          MSSQL_SA_PASSWORD: ci-placeholder
+          RECON_APP_PASSWORD: ci-placeholder
+          RECON_MIGRATOR_PASSWORD: ci-placeholder
+          JWT_SECRET: ci-placeholder
+          SEED_PASSWORD: ci-placeholder
+        run: |
+          base=(docker compose --env-file infra/.env.deploy.example --profile ops -f infra/docker-compose.deploy.yml)
+          "${base[@]}" config -q
+          "${base[@]}" -f infra/docker-compose.deploy.debug.yml config -q
+          "${base[@]}" -f infra/docker-compose.deploy.external-db.yml config -q
+      # As on a server deployed before #108: mssql alone, plus the recon_reader the old init.sql created. The full
+      # start below recreates the container on the same volume, and init.deploy.sql must remove it.
+      - name: existing deployment with recon_reader
+        run: |
+          set -euo pipefail
+          cp infra/.env.deploy.example infra/.env.deploy
+          scripts/deploy.sh up --no-build --wait --wait-timeout 240 mssql
+          compose=(docker compose --env-file infra/.env.deploy -f infra/docker-compose.deploy.yml -f infra/docker-compose.deploy.debug.yml)
+          query="SET NOCOUNT ON;
+          CREATE LOGIN [recon_reader] WITH PASSWORD = 'Ci_Deploy_Reader!2026', CHECK_POLICY = ON;
+          CREATE USER [recon_reader] FOR LOGIN [recon_reader];
+          ALTER ROLE [db_datareader] ADD MEMBER [recon_reader];
+          SELECT COUNT(*) FROM sys.sql_logins WHERE name = 'recon_reader';"
+          # shellcheck disable=SC2016 # expanded inside the container, not here
+          created="$("${compose[@]}" exec -T mssql bash -c \
+            '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -b -h -1 -W -d "${DB_NAME:-ReconTool}" -Q "$1"' \
+            seed-reader "$query")"
+          echo "recon_reader logins: $created"
+          [ "$created" = "1" ] || { echo "could not create recon_reader"; exit 1; }
+          scripts/deploy.sh down
+      # The real script, as on the server. DEPLOY_DEBUG=1 publishes web on 127.0.0.1:8080 and leaves cloudflared out.
+      - name: start the deployment without a tunnel
+        run: scripts/deploy.sh up --no-build --wait --wait-timeout 240
+      - name: migrate
+        run: scripts/deploy.sh migrate
+      - name: smoke through web
+        run: |
+          set -euo pipefail
+          base=http://127.0.0.1:8080
+
+          echo "--- API health through Nginx"
+          health="$(curl -fsS --max-time 10 "$base/api/v1/health")"
+          echo "$health"
+          grep -q '"db":"ok"' <<<"$health"
+
+          echo "--- deep SPA route falls back to index.html"
+          spa="$(curl -fsS --max-time 10 "$base/imports/00000000-0000-0000-0000-000000000000")"
+          grep -q '<div id="root">' <<<"$spa" || { echo "the deep route did not answer index.html"; exit 1; }
+
+          echo "--- security headers"
+          headers="$(curl -fsS --max-time 10 -o /dev/null -D - "$base/")"
+          for header in X-Content-Type-Options X-Frame-Options Referrer-Policy Content-Security-Policy; do
+            grep -qi "^$header:" <<<"$headers" || { echo "missing $header"; exit 1; }
+          done
+
+          # As if through Cloudflare, plus a forged X-Forwarded-For that must not reach the audit (#106).
+          echo "--- failed login reaches the API and the database"
+          status="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "$base/api/v1/auth/login" \
+            -H 'Content-Type: application/json' \
+            -H 'CF-Connecting-IP: 203.0.113.7' -H 'X-Forwarded-For: 198.51.100.66' \
+            -d '{"userName":"ghost","password":"not-the-password"}')"
+          [ "$status" = "401" ] || { echo "login answered $status, expected 401"; exit 1; }
+
+          # Without Cloudflare in front: the audit keeps the address of the connection to web (#106).
+          echo "--- failed login without CF-Connecting-IP"
+          status="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' -X POST "$base/api/v1/auth/login" \
+            -H 'Content-Type: application/json' \
+            -d '{"userName":"ghost-direct","password":"not-the-password"}')"
+          [ "$status" = "401" ] || { echo "login answered $status, expected 401"; exit 1; }
+
+          echo "--- scripts/deploy.sh check"
+          check="$(scripts/deploy.sh check)"
+          echo "$check"
+          grep -q 'recon_app' <<<"$check"
+          if grep -q 'recon_reader' <<<"$check"; then echo "recon_reader survived the restart of mssql (#108)"; exit 1; fi
+          proxied="$(grep '"userName":"ghost"' <<<"$check" || true)"
+          [ -n "$proxied" ] || { echo "the failed login is not in AuditLog"; exit 1; }
+          grep -q '"ip":"203.0.113.7"' <<<"$proxied" || { echo "the audited IP is not CF-Connecting-IP (#106)"; exit 1; }
+          if grep -q '198.51.100.66' <<<"$check"; then echo "a forged X-Forwarded-For reached the audit (#106)"; exit 1; fi
+          direct="$(grep '"userName":"ghost-direct"' <<<"$check" || true)"
+          [ -n "$direct" ] || { echo "the login without CF-Connecting-IP is not in AuditLog"; exit 1; }
+          grep -Eq '"ip":"(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)' <<<"$direct" \
+            || { echo "without CF-Connecting-IP the audited IP is not the private one of the connection (#106)"; exit 1; }
+          # web's own addresses would also be private: that is what the API records if Nginx's "" branch of the map
+          # sent no X-Forwarded-For. The audited IP must be the client's connection to web, not web itself.
+          # shellcheck disable=SC2016 # a Go template for docker inspect, not a shell expansion
+          web_ips="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$(scripts/deploy.sh ps -q web)")"
+          echo "web addresses: $web_ips"
+          [ -n "${web_ips// /}" ] || { echo "could not read the addresses of web"; exit 1; }
+          for ip in $web_ips; do
+            if grep -qF "\"ip\":\"$ip\"" <<<"$direct"; then echo "the audited IP is web's own ($ip), not the client's (#106)"; exit 1; fi
+          done
+
+          echo "--- services"
+          services="$(scripts/deploy.sh ps -a --format '{{.Service}} {{.State}} {{.Health}}')"
+          echo "$services"
+          for service in mssql api web; do
+            grep -q "^$service running healthy$" <<<"$services" || { echo "$service is not healthy"; exit 1; }
+          done
+          if grep -q '^cloudflared ' <<<"$services"; then echo "cloudflared started"; exit 1; fi
+      # scripts/deploy.sh logs follows the output, so the job calls Compose directly here.
+      - name: deployment logs
+        if: ${{ failure() || cancelled() }}
+        run: |
+          compose=(docker compose --env-file infra/.env.deploy -f infra/docker-compose.deploy.yml -f infra/docker-compose.deploy.debug.yml)
+          "${compose[@]}" ps -a || true
+          "${compose[@]}" logs --no-color --tail=200 mssql api web || true
+      - name: stop the deployment
+        if: ${{ always() }}
+        run: |
+          [ -f infra/.env.deploy ] || exit 0
+          docker compose --env-file infra/.env.deploy -f infra/docker-compose.deploy.yml \
+            -f infra/docker-compose.deploy.debug.yml --profile ops down -v --remove-orphans
+
+  security:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

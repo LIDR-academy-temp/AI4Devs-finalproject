@@ -1,0 +1,41 @@
+meta {
+  name: Resolve row - viewer
+  type: http
+  seq: 30
+  tags: [
+    smoke
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/imports/:importId/rows/:sheetId/:rowNo
+  body: json
+  auth: bearer
+}
+
+params:path {
+  importId: {{$randomUUID}}
+  sheetId: {{$randomUUID}}
+  rowNo: 2
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+body:json {
+  {
+    "gatewayId": 1
+  }
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer lacks settlement.process: 403 forbidden', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

@@ -1,0 +1,40 @@
+meta {
+  name: 7 Issues duplicate in_batch
+  type: http
+  seq: 7
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId/validation-issues?type=duplicate&scope=in_batch
+  body: none
+  auth: inherit
+}
+
+params:query {
+  type: duplicate
+  scope: in_batch
+}
+
+params:path {
+  importId: {{valImportId}}
+}
+
+script:post-response {
+  if (res.status === 200 && res.body.items.length === 1) {
+    bru.setVar('dupIssueId', res.body.items[0].issueId);
+  }
+}
+
+tests {
+  test('one duplicate in the batch with 2 occurrences, 1 included by default', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.total).to.equal(1);
+    const issue = res.body.items[0];
+    expect(issue.transactionIdRaw).to.equal('441706751475644');
+    expect(issue.occurrenceCount).to.equal(2);
+    expect(issue.includedByDefaultCount).to.equal(1);
+  });
+}

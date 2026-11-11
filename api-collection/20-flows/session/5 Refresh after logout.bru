@@ -1,0 +1,31 @@
+meta {
+  name: 5 Refresh after logout
+  type: http
+  seq: 5
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/refresh
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "refreshToken": "{{flowRefreshToken}}"
+  }
+}
+
+vars:pre-request {
+  selfAuth: true
+}
+
+tests {
+  test('a revoked refresh responds 401 invalid_token', () => {
+    expect(res.status).to.equal(401);
+    expect(res.body.code).to.equal('invalid_token');
+  });
+}

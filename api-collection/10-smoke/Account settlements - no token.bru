@@ -1,0 +1,29 @@
+meta {
+  name: Account settlements - no token
+  type: http
+  seq: 65
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/settlements
+  body: none
+  auth: none
+}
+
+params:path {
+  accountId: {{$randomUUID}}
+}
+
+vars:pre-request {
+  selfAuth: true
+}
+
+tests {
+  test('responds 401 unauthorized without a token', () => {
+    expect(res.status).to.equal(401);
+    expect(res.body.code).to.equal('unauthorized');
+  });
+}

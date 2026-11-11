@@ -1,0 +1,50 @@
+meta {
+  name: 4 Change from a date
+  type: http
+  seq: 4
+  tags: [
+    flow
+  ]
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/fees/:feeId
+  body: json
+  auth: bearer
+}
+
+params:path {
+  feeId: {{flowFeeId}}
+}
+
+auth:bearer {
+  token: {{adminToken}}
+}
+
+body:json {
+  {
+    "effectiveFrom": "{{flowFeeEnd}}",
+    "fixedAmount": "16"
+  }
+}
+
+vars:pre-request {
+  as: admin
+}
+
+script:post-response {
+  if (res.status === 200 && res.body.successor) {
+    bru.setVar('flowSuccessorFeeId', res.body.successor.feeId);
+  }
+}
+
+tests {
+  test('closes the fee the day before and opens the successor with the new amount and the original end', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.fee.endDate).to.equal(bru.getVar('flowFeeStart'));
+    expect(res.body.successor.startDate).to.equal(bru.getVar('flowFeeEnd'));
+    expect(res.body.successor.endDate).to.equal(bru.getVar('flowFeeEnd'));
+    expect(res.body.successor.fixedAmount).to.equal('16.0000');
+    expect(res.body.successor.description).to.equal('Bruno flow, corrected');
+  });
+}

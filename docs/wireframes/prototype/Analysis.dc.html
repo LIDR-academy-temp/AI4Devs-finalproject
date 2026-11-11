@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Analysis and Validations</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:14px;box-sizing:border-box}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:#4b5563;border-bottom:1px solid #d0d5dc;padding:8px}
+.tbl td{border-bottom:1px solid #e5e7eb;padding:7px 8px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.btn.pri{background:#1f4e9c;border-color:#1f4e9c;color:#fff}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.ok{border-color:#2f7d4f;color:#1e5c38;background:#e8f3ec}
+.warn{border-color:#b7791f;color:#7a4f0e;background:#fbf1dd}
+.bad{border-color:#b42318;color:#8a1a12;background:#fbe9e7}
+.na{color:#6b7280}
+.cyc{display:inline-block;width:22px;text-align:center;border-radius:4px;font-weight:700;font-size:12px;background:#e3e8ef}
+.step{display:flex;gap:6px;align-items:center;font-size:13px;color:#6b7280;flex-wrap:wrap}
+.step b{color:#1f2328;background:#e3e8ef;padding:3px 10px;border-radius:999px}
+.step span{padding:3px 10px}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}h2{font-size:15px;margin:0 0 10px}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:820px">
+  <nav class="nav" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+    <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+    <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+    <div class="grp">Reconciliation</div>
+    <a href="NewReconciliation.dc.html" class="on">New Reconciliation</a>
+    <a href="InProgress.dc.html">In Progress</a>
+    <div class="grp">Settlements</div>
+    <a href="SettlementList.dc.html">Settlement List</a>
+    <a href="Payments.dc.html">Payments</a>
+    <div class="grp">Search</div>
+    <a href="TransactionSearch.dc.html">Transaction Search</a>
+    <a href="MissingDuplicates.dc.html">Missing &amp; Duplicates</a>
+    <div class="grp">Reports</div>
+    <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+    <a href="ReportsRoadmap.dc.html">Aged Receivables · roadmap</a>
+    <div class="grp">Administration</div>
+    <a href="MerchantsProviders.dc.html">Merchants &amp; Providers</a>
+    <a href="Accounts.dc.html">Accounts</a>
+    <a href="FeesAll.dc.html">Fees</a>
+    <a href="ChannelAssignment.dc.html">Channel Assignment</a>
+    <a href="MatchingRules.dc.html">Matching Rules</a>
+    <a href="UsersRoles.dc.html">Users &amp; Roles</a>
+    <a href="AuditLog.dc.html">Audit Log</a>
+  </nav>
+  <main style="flex:999 1 560px;min-width:0;padding:20px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+    <div class="ctx">Merchant A › Provider A › <b>ProviderA-USD</b> · import #2041 · <span class="badge">validated</span> · run #2 (run #1 superseded)</div>
+    <h1>Analysis &amp; Validations</h1>
+    <div class="step"><span>1 Account</span><span>2 Files</span><span>3 Mapping</span><b>4 Analysis</b><span>5 Review</span><span>6 Summary</span></div>
+    <div style="display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:10px">
+      <div class="card"><div class="ctx">Rows read</div><div style="font-size:22px;font-weight:700">5,812</div></div>
+      <div class="card"><div class="ctx">Matched</div><div style="font-size:22px;font-weight:700">5,790</div></div>
+      <div class="card" style="border-color:#b7791f"><div class="ctx">Unmatched</div><div style="font-size:22px;font-weight:700">19</div><a href="AnalysisIssue.dc.html" style="font-size:12px">See rows</a></div>
+      <div class="card" style="border-color:#b7791f"><div class="ctx">Ambiguous</div><div style="font-size:22px;font-weight:700">3</div><a href="AnalysisIssue.dc.html" style="font-size:12px">Resolve</a></div>
+      <div class="card"><div class="ctx">By cycle</div><div style="font-size:13px"><span class="cyc">E</span> 4,508 · <span class="cyc">I</span> 155 · <span class="cyc">R</span> 1,149</div></div>
+    </div>
+    <div class="card" style="border-color:#b7791f;background:#fffaf0;font-size:13px"><span class="badge warn">channels</span> RAM-07 is <b>not assigned yet</b> and RAM-03 is primary in <b>ProviderA-EUR</b>. On Process, both become channels of this account and this account becomes their primary.</div>
+    <div class="card">
+      <h2>Validations · run #2 · today 10:42</h2>
+      <table class="tbl">
+        <tr><th>Validation</th><th>Result</th><th class="num">Issues</th><th>Default</th><th></th></tr>
+        <tr><td>provider_mismatch <span class="badge bad">blocking</span></td><td><span class="badge ok">passed</span></td><td class="num">0</td><td>—</td><td></td></tr>
+        <tr><td>non_recorded_adjustment</td><td><span class="badge warn">failed</span></td><td class="num">4</td><td>included</td><td><a href="AnalysisIssue.dc.html">Open</a></td></tr>
+        <tr><td>duplicate_in_batch</td><td><span class="badge warn">failed</span></td><td class="num">2</td><td>one included</td><td><a href="AnalysisIssue.dc.html">Open</a></td></tr>
+        <tr><td>status_collision_in_batch</td><td><span class="badge warn">failed</span></td><td class="num">1</td><td>both included</td><td><a href="AnalysisIssue.dc.html">Open</a></td></tr>
+        <tr><td>duplicate_across_batches</td><td><span class="badge warn">failed</span></td><td class="num">3</td><td>current excluded</td><td><a href="AnalysisIssue.dc.html">Open</a></td></tr>
+        <tr><td>status_collision_across_batches</td><td><span class="badge ok">passed</span></td><td class="num">0</td><td>—</td><td></td></tr>
+        <tr><td>missing_previous_to_batch</td><td><span class="badge warn">failed</span></td><td class="num">11 · E 9, I 0, R 2</td><td>recorded</td><td><a href="AnalysisIssue.dc.html">Open</a></td></tr>
+        <tr><td>missing_in_range</td><td><span class="badge warn">failed</span></td><td class="num">27 · E 24, I 3, R 0</td><td>recorded</td><td><a href="AnalysisIssue.dc.html">Open</a></td></tr>
+      </table>
+      <div style="font-size:12px;color:#6b7280;margin-top:8px">Ranges used: APP 2026-09-01…09-14 · DEC 2026-09-01…09-14 · I 2026-08-20…09-14 · R 2026-03-01…03-18 · Pending in range: 6 (informative). A validation with nothing to run on shows <span class="na">n/a</span>.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto;padding-top:12px;border-top:1px solid #d0d5dc">
+      <div style="font-size:13px;color:#4b5563;text-align:right">One decision for the whole import. Acting on single issues is optional and audited. Approval is recorded with your user.</div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><a href="NewReconciliation.dc.html" class="btn" style="border-color:#b42318;color:#8a1a12">Cancel and reprocess</a><a href="SettlementReview.dc.html" class="btn pri">Continue to Settlement Review →</a></div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

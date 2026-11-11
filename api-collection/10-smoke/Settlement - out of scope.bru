@@ -1,0 +1,44 @@
+meta {
+  name: Settlement - out of scope
+  type: http
+  seq: 53
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/settlements/:batchId
+  body: none
+  auth: bearer
+}
+
+params:path {
+  batchId: {{providerCAltBatchId}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+script:pre-request {
+  // The batchId of a seeded attempt of ProviderC-Alt (merchant 2) is resolved as analyst.
+  if (!bru.getVar('providerCAltBatchId')) {
+    await bru.runRequest('10-smoke/Import settlements - Provider C-Alt');
+  }
+  if (!bru.getVar('providerCAltBatchId')) {
+    throw new Error('the batchId of a ProviderC-Alt attempt could not be resolved');
+  }
+}
+
+tests {
+  test('viewer gets the same 404 not_found as for an unknown attempt, never 403', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+    expect(res.body.message).to.equal('Settlement not found');
+  });
+}

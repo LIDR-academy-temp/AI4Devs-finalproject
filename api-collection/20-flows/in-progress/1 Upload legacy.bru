@@ -1,0 +1,47 @@
+meta {
+  name: 1 Upload legacy
+  type: http
+  seq: 1
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/imports
+  body: multipartForm
+  auth: inherit
+}
+
+params:path {
+  accountId: {{providerCAltAccountId}}
+}
+
+body:multipart-form {
+  files: @file(../data/samples/legacy-provider/Legacy_ProviderC-Alt_batch.xlsx)
+}
+
+script:pre-request {
+  // ProviderC-Alt is resolved by name in 10-smoke/Provider C accounts; no UUID literals. Each run creates its own
+  // import and cancels it at the end, so the flow repeats without seeding.
+  if (!bru.getVar('providerCAltAccountId')) {
+    await bru.runRequest('10-smoke/Provider C accounts');
+  }
+  if (!bru.getVar('providerCAltAccountId')) {
+    throw new Error(bru.getVar('providerCAltLookupError') || 'ProviderC-Alt accountId could not be resolved');
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setVar('inProgressImportId', res.body.importId);
+    bru.setVar('inProgressDetail', res.body);
+  }
+}
+
+tests {
+  test('uploads the legacy file to ProviderC-Alt: a new import in uploaded', () => {
+    expect(res.status).to.equal(201);
+    expect(res.body.status).to.equal('uploaded');
+  });
+}

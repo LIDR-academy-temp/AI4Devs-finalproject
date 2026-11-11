@@ -1,0 +1,30 @@
+meta {
+  name: 14 Rows ignored
+  type: http
+  seq: 14
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId/rows?match=ignored
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{flowImportId}}
+}
+
+params:query {
+  match: ignored
+}
+
+tests {
+  test('lists the three leftover rows of the template (empty ID) as ignored', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.total).to.equal(3);
+    expect(res.body.items.every((r) => r.matchResult === 'ignored' && r.reason === 'empty_id')).to.equal(true);
+  });
+}

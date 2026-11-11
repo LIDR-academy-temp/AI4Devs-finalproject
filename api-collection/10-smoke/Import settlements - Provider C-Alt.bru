@@ -1,0 +1,46 @@
+meta {
+  name: Import settlements - Provider C-Alt
+  type: http
+  seq: 52
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{providerCAltImportId}}
+}
+
+script:pre-request {
+  if (!bru.getVar('providerCAltImportId')) {
+    await bru.runRequest('10-smoke/Provider C-Alt imports');
+  }
+  if (!bru.getVar('providerCAltImportId')) {
+    throw new Error(bru.getVar('providerCAltImportLookupError') || 'a ProviderC-Alt import could not be resolved');
+  }
+}
+
+script:post-response {
+  const current = res.body && Array.isArray(res.body.items) && res.body.items.find((a) => a.isCurrent);
+  if (current) {
+    bru.setVar('providerCAltBatchId', current.batchId);
+  }
+}
+
+tests {
+  test('analyst reads the attempts of a seeded import: the current one is paid and settled', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body.importId.toLowerCase()).to.equal(bru.getVar('providerCAltImportId').toLowerCase());
+    const current = res.body.items.find((a) => a.isCurrent);
+    expect(current.status).to.equal('paid');
+    expect(current.settledStatus).to.equal('settled');
+    expect(current.batchId.toLowerCase()).to.equal(res.body.currentBatchId.toLowerCase());
+    expect(current.amountPayable).to.match(/^-?\d+\.\d{4}$/);
+  });
+}

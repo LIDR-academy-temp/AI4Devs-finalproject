@@ -1,0 +1,89 @@
+meta {
+  name: Health
+  type: http
+  seq: 1
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/health
+  body: none
+  auth: none
+}
+
+vars:pre-request {
+  selfAuth: true
+}
+
+tests {
+  test('responds 200 with service and database ok', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.deep.equal({ status: 'ok', db: 'ok' });
+  });
+}
+
+example {
+  name: 200 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/health
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 200
+      text: OK
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "status": "ok",
+          "db": "ok"
+        }
+      '''
+    }
+  }
+}
+
+example {
+  name: 503 Response
+  description: Default Response
+  
+  request: {
+    url: {{baseUrl}}/api/v1/health
+    method: GET
+    mode: none
+  }
+  
+  response: {
+    headers: {
+      Content-Type: application/json
+    }
+  
+    status: {
+      code: 503
+      text: Service Unavailable
+    }
+  
+    body: {
+      type: json
+      content: '''
+        {
+          "status": "ok",
+          "db": "ok"
+        }
+      '''
+    }
+  }
+}

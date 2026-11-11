@@ -1,0 +1,35 @@
+meta {
+  name: 12 Get settlement
+  type: http
+  seq: 12
+  tags: [
+    flow
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/settlements/:batchId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  batchId: {{setBatchId}}
+}
+
+tests {
+  test('200 with the same view as the 201 of processing', () => {
+    expect(res.status).to.equal(200);
+    const processed = bru.getVar('setProcessed');
+    for (const key of ['batchId', 'batchNo', 'attemptNo', 'status', 'settledStatus', 'amountPayable', 'otherFeeAmt'])
+      expect(res.body[key], key).to.eql(processed[key]);
+    expect(res.body.totals).to.eql(processed.totals);
+    expect(res.body.payableBreakdown).to.eql(processed.payableBreakdown);
+    expect(res.body.channelsAssigned).to.eql(processed.channelsAssigned);
+  });
+  // Oracle: data/samples/batch-clean/expected.json, summary.amountPayable.
+  test('the amount payable of the oracle, still pending payment', () => {
+    expect(res.body.amountPayable).to.equal('33771.3600');
+    expect(res.body.settledStatus).to.equal('pending_payment');
+  });
+}

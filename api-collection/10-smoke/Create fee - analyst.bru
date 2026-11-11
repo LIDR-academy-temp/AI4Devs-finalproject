@@ -1,0 +1,32 @@
+meta {
+  name: Create fee - analyst
+  type: http
+  seq: 80
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/accounts/:accountId/fees
+  body: json
+  auth: inherit
+}
+
+params:path {
+  accountId: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "feeTypeId": 121,
+    "fixedAmount": "15.0000"
+  }
+}
+
+tests {
+  test('analyst lacks fee.manage: 403 forbidden, before the scope', () => {
+    expect(res.status).to.equal(403);
+    expect(res.body.code).to.equal('forbidden');
+  });
+}

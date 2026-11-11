@@ -1,0 +1,11 @@
+packages:
+  - backend
+  - frontend
+  - packages/*
+  - e2e
+
+onlyBuiltDependencies:
+  - '@prisma/engines'
+  - argon2
+  - esbuild
+  - prisma

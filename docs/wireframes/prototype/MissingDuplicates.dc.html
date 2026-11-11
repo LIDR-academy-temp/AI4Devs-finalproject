@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Missing and Duplicates</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2328;background:#f6f7f9}
+a{color:#1f4e9c}a:hover{color:#0f3570}
+.nav a{display:block;padding:8px 12px 8px 24px;border-radius:6px;color:#2a2f36;text-decoration:none;font-size:14px}
+.nav a.on{background:#e3e8ef;font-weight:600}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:16px 12px 4px}
+.card{background:#fff;border:1px solid #d0d5dc;border-radius:8px;padding:14px;box-sizing:border-box}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:#4b5563;border-bottom:1px solid #d0d5dc;padding:8px}
+.tbl td{border-bottom:1px solid #e5e7eb;padding:8px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.btn{display:inline-block;padding:8px 14px;border:1px solid #9aa3ad;border-radius:6px;background:#fff;color:#1f2328;font-size:14px;text-decoration:none;cursor:pointer}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #9aa3ad;background:#f3f4f6}
+.ok{border-color:#2f7d4f;color:#1e5c38;background:#e8f3ec}
+.warn{border-color:#b7791f;color:#7a4f0e;background:#fbf1dd}
+.cyc{display:inline-block;width:22px;text-align:center;border-radius:4px;font-weight:700;font-size:12px;background:#e3e8ef}
+.ctx{font-size:13px;color:#4b5563}
+h1{font-size:22px;margin:0}
+select,input{font:inherit;font-size:13px;padding:6px 8px;border:1px solid #9aa3ad;border-radius:6px;background:#fff}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:820px">
+  <nav class="nav" style="flex:0 0 220px;background:#fff;border-right:1px solid #d0d5dc;padding:16px 8px;box-sizing:border-box">
+    <a href="Dashboard.dc.html" style="font-weight:700;font-size:15px;padding-left:12px">Recon Tool 2.0</a>
+    <a href="Dashboard.dc.html" style="padding-left:12px">Dashboard</a>
+    <div class="grp">Reconciliation</div>
+    <a href="NewReconciliation.dc.html">New Reconciliation</a>
+    <a href="InProgress.dc.html">In Progress</a>
+    <div class="grp">Settlements</div>
+    <a href="SettlementList.dc.html">Settlement List</a>
+    <a href="Payments.dc.html">Payments</a>
+    <div class="grp">Search</div>
+    <a href="TransactionSearch.dc.html">Transaction Search</a>
+    <a href="MissingDuplicates.dc.html" class="on">Missing &amp; Duplicates</a>
+    <div class="grp">Reports</div>
+    <a href="UnsettledPerChannel.dc.html">Unsettled per Channel</a>
+    <a href="ReportsRoadmap.dc.html">Aged Receivables · roadmap</a>
+    <div class="grp">Administration</div>
+    <a href="MerchantsProviders.dc.html">Merchants &amp; Providers</a>
+    <a href="Accounts.dc.html">Accounts</a>
+    <a href="FeesAll.dc.html">Fees</a>
+    <a href="ChannelAssignment.dc.html">Channel Assignment</a>
+    <a href="MatchingRules.dc.html">Matching Rules</a>
+    <a href="UsersRoles.dc.html">Users &amp; Roles</a>
+    <a href="AuditLog.dc.html">Audit Log</a>
+  </nav>
+  <main style="flex:999 1 560px;min-width:0;padding:20px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+    <div class="ctx"><a href="Dashboard.dc.html">Dashboard</a> › Search › Missing &amp; Duplicates</div>
+    <h1>Missing &amp; Duplicates · persistent issues</h1>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select><option>All providers</option></select><select><option>All accounts</option></select><select><option>Type: all</option><option>missing · previous to batch</option><option>missing · in range</option><option>duplicate</option><option>collision</option><option>non_recorded_adjustment</option></select><select><option>Cycle: all</option><option>E</option><option>I</option><option>R</option></select><select><option>Status: persistent</option><option>resolved</option><option>all</option></select><a href="MissingDuplicates.dc.html" class="btn">Export CSV</a></div>
+    <div style="display:grid;grid-template-columns:repeat(4, minmax(0, 1fr));gap:10px">
+      <div class="card"><div class="ctx">Missing · persistent</div><div style="font-size:22px;font-weight:700">38</div></div>
+      <div class="card"><div class="ctx">Duplicates · persistent</div><div style="font-size:22px;font-weight:700">5</div></div>
+      <div class="card"><div class="ctx">Collisions · persistent</div><div style="font-size:22px;font-weight:700">1</div></div>
+      <div class="card"><div class="ctx">Unrecorded adjustments · pending check</div><div style="font-size:22px;font-weight:700">4</div></div>
+    </div>
+    <div class="card">
+      <table class="tbl">
+        <tr><th>Transaction</th><th>Account</th><th>Type</th><th>Cycle</th><th>Expected status</th><th>Relevant date</th><th>Detected in</th><th>Status</th><th></th></tr>
+        <tr><td><a href="TransactionDetail.dc.html">4512299811</a></td><td>ProviderA-USD</td><td>missing · previous to batch</td><td><span class="cyc">E</span></td><td>Successful</td><td>2026-08-29</td><td>batch 119 run #2</td><td><span class="badge warn">persistent</span></td><td><a href="TransactionDetail.dc.html">Detail</a></td></tr>
+        <tr><td><a href="TransactionDetail.dc.html">4512307730</a></td><td>ProviderA-USD</td><td>missing · in range</td><td><span class="cyc">E</span></td><td>Successful</td><td>2026-09-10</td><td>batch 119 run #2</td><td><span class="badge warn">persistent</span></td><td><a href="TransactionDetail.dc.html">Detail</a></td></tr>
+        <tr><td><a href="TransactionDetail.dc.html">4511980002</a></td><td>ProviderA-USD</td><td>missing · previous to batch</td><td><span class="cyc">R</span></td><td>— (reserve)</td><td>2026-02-20</td><td>batch 119 run #2</td><td><span class="badge warn">persistent</span></td><td><a href="TransactionDetail.dc.html">Detail</a></td></tr>
+        <tr><td><a href="TransactionDetail.dc.html">4512301190</a></td><td>ProviderA-USD</td><td>duplicate · across batches</td><td><span class="cyc">I</span></td><td>Chargeback</td><td>2026-08-28</td><td>batch 119 run #2</td><td><span class="badge warn">persistent · current excluded</span></td><td><a href="AnalysisIssue.dc.html">Open</a></td></tr>
+        <tr><td><a href="TransactionDetail.dc.html">4512290044</a></td><td>ProviderA-USD</td><td>missing · in range</td><td><span class="cyc">E</span></td><td>Successful</td><td>2026-08-20</td><td>batch 117</td><td><span class="badge ok">resolved · batch 118</span></td><td><a href="SettlementDetail.dc.html">Batch</a></td></tr>
+      </table>
+      <div class="ctx" style="margin-top:8px">Showing 5 of 48</div>
+    </div>
+    <div style="font-size:12px;color:#6b7280">A missing transaction is recorded once per provider, cycle and transaction; it becomes resolved when a later processed batch includes it, and returns to persistent if that batch is undone.</div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

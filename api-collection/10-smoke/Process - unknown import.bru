@@ -1,0 +1,32 @@
+meta {
+  name: Process - unknown import
+  type: http
+  seq: 42
+  tags: [
+    smoke
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements
+  body: json
+  auth: inherit
+}
+
+params:path {
+  importId: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "runId": 1
+  }
+}
+
+tests {
+  test('an unknown import: 404 not_found, the same body as one outside the scope', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+    expect(res.body.message).to.equal('Import not found');
+  });
+}

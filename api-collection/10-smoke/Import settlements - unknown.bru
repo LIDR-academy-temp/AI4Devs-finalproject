@@ -1,0 +1,33 @@
+meta {
+  name: Import settlements - unknown
+  type: http
+  seq: 59
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/imports/:importId/settlements
+  body: none
+  auth: bearer
+}
+
+params:path {
+  importId: {{$randomUUID}}
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('responds 404 not_found with the same body as an import outside the scope', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body).to.eql({ code: 'not_found', message: 'Import not found' });
+  });
+}

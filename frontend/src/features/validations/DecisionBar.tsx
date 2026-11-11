@@ -1,0 +1,153 @@
+import type { ValidationCode } from '@recon/shared'
+import { Link } from '@tanstack/react-router'
+import { useId, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { CancelImportDialog } from '@/features/imports/CancelImportDialog'
+import { useImportAccess } from '@/features/imports/permissions'
+import type { ImportDetail } from '@/lib/api/types'
+import { formatAuditDateTime } from '@/lib/format'
+import type { ValidationRunView } from './contract'
+import { EmptyBatchConfirmation } from './EmptyBatchConfirmation'
+import type { Review } from './mutations'
+import { settlementReviewRoute, settlementSummaryRoute } from './next-step'
+import { strings } from './strings'
+
+const s = strings.decision
+
+/**
+ * One decision on the whole (design D9): continue on the run shown, or cancel and reprocess. Continue is offered on
+ * an analyzed import and waits for a run that is not blocked; validated, the screen says who reviewed and offers
+ * the next step.
+ */
+export function DecisionBar({
+  detail,
+  view,
+  reviewer,
+  reloading,
+  busy,
+  busyId,
+  onShowBlocking,
+}: {
+  detail: ImportDetail
+  view: ValidationRunView
+  /** The review lives in the section, so Run waits for it too. */
+  reviewer: Review
+  /**
+   * The run is being read again (after a change of the drawer, a 409…): Continue waits, so it never sends the version
+   * of inclusions of the run it is replacing (#53, review-inclusion-version D9).
+   */
+  reloading: boolean
+  /** A run, a review or a change of the drawer is on its way; `busyId` is the text that says which. */
+  busy: boolean
+  busyId: string
+  onShowBlocking: (validation: ValidationCode) => void
+}) {
+  const { canProcess, cancellable } = useImportAccess(detail.status)
+  const reasonId = useId()
+  const run = view.run
+  // A batch without matched rows of the account is confirmed by hand (#92); the API decides when it is one.
+  const emptyBatch = detail.analysis?.requiresEmptyBatchConfirmation === true
+  const [emptyConfirmed, setEmptyConfirmed] = useState(false)
+  // A block does not depend on the inclusions: its reason stays while the run is read again, without flickering.
+  const reason = run?.blocked
+    ? s.blocked
+    : reloading
+      ? s.reloading
+      : !run
+        ? s.noRun
+        : emptyBatch && !emptyConfirmed
+          ? s.emptyBatch.reason
+          : null
+
+  async function onContinue() {
+    if (!run) return
+    const refused = await reviewer.review(run, emptyBatch && emptyConfirmed)
+    // The confirmation is still missing, or was made on inclusions that changed since (#53): the box goes back to
+    // unticked with its text. The run is the same, so the key of the bar does not reset it.
+    if (refused === 'no_matched_rows' || refused === 'inclusions_changed') setEmptyConfirmed(false)
+  }
+
+  // A cancelled or processed import has nothing left to decide: the section says so instead of standing empty.
+  // The API does not say who cancelled, so the text names only the status; a processed one links to its attempt.
+  if (view.importStatus === 'cancelled' || view.importStatus === 'processed') {
+    return (
+      <section aria-label={s.label} className="flex flex-wrap items-center gap-3 border-t pt-3 text-sm">
+        <p className="text-muted-foreground">{s.closed[view.importStatus]}</p>
+        {view.importStatus === 'processed' && detail.currentBatchId && (
+          <Link
+            {...settlementSummaryRoute(detail.currentBatchId)}
+            className="text-primary underline underline-offset-4"
+          >
+            {s.viewSummary}
+          </Link>
+        )}
+      </section>
+    )
+  }
+  // Without the permission there is no decision to take on an analyzed import.
+  if (view.importStatus === 'analyzed' && !canProcess) return null
+
+  return (
+    <section aria-label={s.label} className="flex flex-col gap-2 border-t pt-3">
+      {view.importStatus === 'analyzed' && canProcess && emptyBatch && run && !run.blocked && (
+        <EmptyBatchConfirmation
+          likelyWrongAccount={detail.analysis?.likelyWrongAccount === true}
+          confirmed={emptyConfirmed}
+          onConfirmedChange={setEmptyConfirmed}
+          disabled={busy}
+        />
+      )}
+      <div className="flex flex-wrap items-start gap-3">
+        {view.importStatus === 'analyzed' && canProcess && (
+          <Button
+            size="sm"
+            onClick={() => void onContinue()}
+            disabled={reason !== null || busy}
+            aria-describedby={[reason && reasonId, busy && busyId].filter(Boolean).join(' ') || undefined}
+          >
+            {s.continue}
+          </Button>
+        )}
+        {view.importStatus === 'validated' && (
+          <>
+            {run?.review && (
+              <span className="self-center text-sm">
+                {s.reviewedBy(run.review.reviewedBy.userName, formatAuditDateTime(run.review.reviewedAt))}
+              </span>
+            )}
+            {/* The screen requires settlement.process: without it there is no step to offer. */}
+            {canProcess && (
+              <Button asChild size="sm">
+                <Link {...settlementReviewRoute(detail.importId)}>{s.settlementReview}</Link>
+              </Button>
+            )}
+          </>
+        )}
+        {canProcess && (
+          <CancelImportDialog
+            detail={detail}
+            cancellable={cancellable}
+            disabled={busy}
+            describedBy={busy ? busyId : undefined}
+            label={s.cancel}
+          />
+        )}
+      </div>
+      {view.importStatus === 'analyzed' && canProcess && reason && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <p id={reasonId} className={run?.blocked ? 'text-destructive' : 'text-muted-foreground'}>
+            {reason}
+          </p>
+          {run?.blocked && (
+            <Button variant="link" size="sm" onClick={() => onShowBlocking('provider_mismatch')}>
+              {s.viewBlocking}
+            </Button>
+          )}
+        </div>
+      )}
+      <div aria-live="polite" className="text-sm">
+        {reviewer.error && <p className="text-destructive">{reviewer.error}</p>}
+      </div>
+    </section>
+  )
+}

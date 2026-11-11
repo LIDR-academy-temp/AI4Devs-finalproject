@@ -1,0 +1,23 @@
+meta {
+  name: Fee types
+  type: http
+  seq: 49
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/fee-types
+  body: none
+  auth: inherit
+}
+
+tests {
+  test('lists the 27 fee types; Special Adjustment admits a free amount, Wire Fee does not', () => {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.length(27);
+    expect(res.body.find((t) => t.code === 'Special Adjustment').allowsFreeAmount).to.equal(true);
+    expect(res.body.find((t) => t.code === 'Wire Fee').allowsFreeAmount).to.equal(false);
+  });
+}

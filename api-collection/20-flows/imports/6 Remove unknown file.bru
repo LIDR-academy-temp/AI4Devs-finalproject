@@ -1,0 +1,26 @@
+meta {
+  name: 6 Remove unknown file
+  type: http
+  seq: 6
+  tags: [
+    flow
+  ]
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/imports/:importId/files/:fileId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  importId: {{flowImportId}}
+  fileId: {{$randomUUID}}
+}
+
+tests {
+  test('a fileId that does not belong to the import answers 404 not_found and leaves the import untouched', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}

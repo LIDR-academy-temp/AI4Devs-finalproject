@@ -1,0 +1,31 @@
+meta {
+  name: 3 Add part1 again
+  type: http
+  seq: 3
+  tags: [
+    flow
+  ]
+}
+
+post {
+  url: {{baseUrl}}/api/v1/imports/:importId/files
+  body: multipartForm
+  auth: inherit
+}
+
+params:path {
+  importId: {{flowImportId}}
+}
+
+body:multipart-form {
+  files: @file(../data/samples/batch-split/Recon_Template_ProviderA-USD_batch-split_part1.xlsx)
+}
+
+tests {
+  test('rejects the same file by hash with 409 duplicate_file naming the stored file', () => {
+    expect(res.status).to.equal(409);
+    expect(res.body.code).to.equal('duplicate_file');
+    expect(res.body.details.fileName).to.equal('Recon_Template_ProviderA-USD_batch-split_part1.xlsx');
+    expect(res.body.details.fileId).to.equal(bru.getVar('flowFileId1'));
+  });
+}

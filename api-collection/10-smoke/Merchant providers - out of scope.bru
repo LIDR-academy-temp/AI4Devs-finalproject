@@ -1,0 +1,33 @@
+meta {
+  name: Merchant providers - out of scope
+  type: http
+  seq: 7
+  tags: [
+    smoke
+  ]
+}
+
+get {
+  url: {{baseUrl}}/api/v1/merchants/:merchantId/providers
+  body: none
+  auth: bearer
+}
+
+params:path {
+  merchantId: 2
+}
+
+auth:bearer {
+  token: {{viewerToken}}
+}
+
+vars:pre-request {
+  as: viewer
+}
+
+tests {
+  test('viewer gets 404 not_found for merchant 2, never 403', () => {
+    expect(res.status).to.equal(404);
+    expect(res.body.code).to.equal('not_found');
+  });
+}
