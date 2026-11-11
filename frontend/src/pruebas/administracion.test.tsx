@@ -95,10 +95,19 @@ describe('opción de administración', () => {
   })
 
   it('aparece al ingresar como administrador', async () => {
+    // Sin sesión al abrir; después del ingreso, las estaciones responden. Un 401 después del
+    // ingreso cerraría la sesión, como en la aplicación real.
+    let sesionAbierta = false
     simularApi({
       ...rutas(true, { 'GET /administracion/sat2': { cuerpo: SIN_CONFIGURACION } }),
-      'GET /estaciones': { estado: 401, cuerpo: { codigo: 'NO_AUTENTICADO', mensaje: 'Sesión ausente o vencida.' } },
-      'POST /auth/login': { cuerpo: { email: ADMIN, nombre: 'Ana', es_administrador: true } },
+      'GET /estaciones': () =>
+        sesionAbierta
+          ? { cuerpo: [ESTACION] }
+          : { estado: 401, cuerpo: { codigo: 'NO_AUTENTICADO', mensaje: 'Sesión ausente o vencida.' } },
+      'POST /auth/login': () => {
+        sesionAbierta = true
+        return { cuerpo: { email: ADMIN, nombre: 'Ana', es_administrador: true } }
+      },
     })
     abrir('/acceso')
     const usuario = userEvent.setup()
@@ -106,7 +115,11 @@ describe('opción de administración', () => {
     await usuario.type(screen.getByLabelText('Contraseña'), 'una frase larga de prueba')
     await usuario.click(screen.getByRole('button', { name: 'Ingresar' }))
 
-    expect(await screen.findByRole('link', { name: 'Administración' })).toHaveAttribute('href', '/administracion')
+    const enlace = await screen.findByRole('link', { name: 'Administración' })
+    expect(enlace).toHaveAttribute('href', '/administracion')
+    // Sigue visible después de que la pantalla de la estación consultó la API.
+    expect(await screen.findAllByRole('alert')).not.toHaveLength(0)
+    expect(screen.getByRole('link', { name: 'Administración' })).toBeInTheDocument()
   })
 })
 
