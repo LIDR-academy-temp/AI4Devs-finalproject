@@ -28,4 +28,5 @@ Las decisiones están en `design.md` (D1 a D6). Las verificaciones con Docker us
 ## 5. Documentación
 
 - [x] 5.1 Escribir el ADR-0005 sobre el monitoreo y actualizar el README, la guía de instalación (perfil `monitoreo` y variables), el informe de seguridad, `CLAUDE.md`, las instrucciones de revisión si hace falta y la hoja de ruta (línea C)
-- [ ] 5.2 El responsable levanta el perfil en su instalación, revisa el tablero y los avisos, y aprueba el cambio
+- [x] 5.2 Ajuste pedido en la revisión del responsable del 11 de noviembre: Administración y Mi cuenta muestran «← Volver a la estación», que vuelve a la última estación vista o, si no hay, al inicio; con pruebas en Vitest
+- [ ] 5.3 El responsable levanta el perfil en su instalación, revisa el tablero y los avisos, y aprueba el cambio

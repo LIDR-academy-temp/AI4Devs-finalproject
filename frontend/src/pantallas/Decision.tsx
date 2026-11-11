@@ -2,7 +2,7 @@ import { useParams } from 'react-router'
 import { BloqueEstado } from '../componentes/BloqueEstado'
 import { TarjetaSensor } from '../componentes/TarjetaSensor'
 import { obtenerCondiciones, obtenerRecomendacion } from '../servicios/cliente'
-import { useEstaciones } from '../servicios/estaciones'
+import { useEstaciones, useRecordarEstacion } from '../servicios/estaciones'
 import { formatearFechaHora, formatearHoraDeArgentina } from '../servicios/serie'
 import { useConsultaPeriodica } from '../servicios/useConsultaPeriodica'
 import { EquipoInactivo } from './EquipoInactivo'
@@ -10,6 +10,7 @@ import { EquipoInactivo } from './EquipoInactivo'
 export function Decision() {
   const { estacionId = '' } = useParams()
   const estaciones = useEstaciones()
+  useRecordarEstacion(estacionId)
 
   if (estaciones.cargando) {
     return <p role="status">Cargando condiciones…</p>

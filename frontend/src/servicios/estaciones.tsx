@@ -1,4 +1,4 @@
-import { createContext, use } from 'react'
+import { createContext, use, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { listarEstaciones } from './cliente'
 import type { Estacion } from './cliente'
@@ -7,10 +7,38 @@ import type { Carga } from './useCarga'
 
 const ContextoEstaciones = createContext<Carga<Estacion[]> | null>(null)
 
+interface UltimaEstacion {
+  /** La última estación que se vio, para volver a ella desde Administración o Mi cuenta. */
+  ultima: string | null
+  recordar: (estacionId: string) => void
+}
+
+const ContextoUltimaEstacion = createContext<UltimaEstacion>({ ultima: null, recordar: () => undefined })
+
 /** Una sola consulta de las estaciones para el selector, la pantalla inicial y la decisión. */
 export function ProveedorDeEstaciones({ children }: { children: ReactNode }) {
   const carga = useCarga(() => listarEstaciones(), [])
-  return <ContextoEstaciones value={carga}>{children}</ContextoEstaciones>
+  const [ultima, setUltima] = useState<string | null>(null)
+  const recuerdo = useMemo(() => ({ ultima, recordar: setUltima }), [ultima])
+  return (
+    <ContextoEstaciones value={carga}>
+      <ContextoUltimaEstacion value={recuerdo}>{children}</ContextoUltimaEstacion>
+    </ContextoEstaciones>
+  )
+}
+
+export function useUltimaEstacion(): UltimaEstacion {
+  return use(ContextoUltimaEstacion)
+}
+
+/** Las pantallas de una estación la recuerdan para el enlace «Volver a la estación». */
+export function useRecordarEstacion(estacionId: string): void {
+  const { recordar } = useUltimaEstacion()
+  useEffect(() => {
+    if (estacionId) {
+      recordar(estacionId)
+    }
+  }, [estacionId, recordar])
 }
 
 export function useEstaciones(): Carga<Estacion[]> {

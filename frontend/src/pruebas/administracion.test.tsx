@@ -399,3 +399,30 @@ describe('estado del sistema', () => {
     expect(await within(screen.getByRole('region', { name: 'Estado del sistema' })).findByText('Falló.')).toBeInTheDocument()
   })
 })
+
+describe('volver a la estación', () => {
+  it.each([
+    ['Administración', 'Administración'],
+    ['Mi cuenta', 'Mi cuenta'],
+  ])('%s vuelve a la estación que se estaba viendo', async (enlace, titulo) => {
+    simularApi(rutas(true, { 'GET /administracion/sat2': { cuerpo: SIN_CONFIGURACION } }))
+    abrir('/estaciones/1')
+    const usuario = userEvent.setup()
+
+    await usuario.click(await screen.findByRole('link', { name: enlace }))
+
+    expect(await screen.findByRole('heading', { name: titulo, level: 2 })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '← Volver a la estación' })).toHaveAttribute('href', '/estaciones/1')
+  })
+
+  it.each([
+    ['/administracion', 'Administración'],
+    ['/cuenta', 'Mi cuenta'],
+  ])('abierta directamente, %s vuelve al inicio', async (ruta, titulo) => {
+    simularApi(rutas(true, { 'GET /administracion/sat2': { cuerpo: SIN_CONFIGURACION } }))
+    abrir(ruta)
+
+    expect(await screen.findByRole('heading', { name: titulo, level: 2 })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '← Volver a la estación' })).toHaveAttribute('href', '/')
+  })
+})

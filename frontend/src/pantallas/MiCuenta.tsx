@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router'
 import { Campo } from '../componentes/Campo'
+import { VolverALaEstacion } from '../componentes/VolverALaEstacion'
 import {
   actualizarCuenta,
   cambiarContrasena,
@@ -251,6 +252,7 @@ export function MiCuenta() {
   }
   return (
     <section className="cuenta">
+      <VolverALaEstacion />
       <h2>Mi cuenta</h2>
       <p className="secundario">
         Sus datos se usan para darle acceso y para contactarlo por el servicio de Weather Track. Puede

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Campo } from '../componentes/Campo'
+import { VolverALaEstacion } from '../componentes/VolverALaEstacion'
 import {
   erroresDeCampos,
   guardarConfiguracionSat2,
@@ -284,6 +285,7 @@ export function Administracion() {
   }
   return (
     <section className="cuenta">
+      <VolverALaEstacion />
       <h2>Administración</h2>
       <p className="secundario">
         Solo los administradores ven esta pantalla. Acá se carga la conexión con SAT2, de donde llegan las

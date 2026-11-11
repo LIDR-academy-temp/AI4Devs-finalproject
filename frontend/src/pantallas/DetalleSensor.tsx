@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router'
 import { Campo } from '../componentes/Campo'
 import { GraficoSerie } from '../componentes/GraficoSerie'
 import { obtenerCondiciones, obtenerHistorico } from '../servicios/cliente'
+import { useRecordarEstacion } from '../servicios/estaciones'
 import {
   fechaDeArgentina,
   formatearFecha,
@@ -89,6 +90,7 @@ const TEXTO_CALIDAD: Record<string, string> = {
 
 export function DetalleSensor() {
   const { estacionId = '', sensorId = '' } = useParams()
+  useRecordarEstacion(estacionId)
   // Abre en Día: lo más útil para decidir una aplicación (weather-track-historicos-sin-huecos, D4).
   const [seleccion, setSeleccion] = useState<Seleccion>('dia')
   // Se fija al elegir: recalcularlo en cada render repetiría la consulta sin fin.
