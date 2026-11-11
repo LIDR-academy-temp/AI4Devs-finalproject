@@ -6,7 +6,7 @@
 | **Actividad** | A14 del [plan](../plan/plan-implementacion-entrega-2.md): revisión corta de secretos, autorización, sesión y entradas |
 | **Realizada por** | Claude (asistente de IA), con supervisión del responsable |
 | **Resultado** | Sin hallazgos críticos abiertos. Se corrigieron 11 hallazgos; quedan 7 riesgos aceptados y R1 está resuelto |
-| **Actualización** | 4 de noviembre de 2026: registro público, recupero y bajas del cambio [`weather-track-registro-cuentas`](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md). Ver la [sección 7](#7-actualización-cuentas-autogestionadas). 9 de noviembre de 2026: administración de SAT2. Ver la [sección 8](#8-actualización-administración-de-sat2) |
+| **Actualización** | 4 de noviembre de 2026: registro público, recupero y bajas del cambio [`weather-track-registro-cuentas`](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md). Ver la [sección 7](#7-actualización-cuentas-autogestionadas). 9 de noviembre de 2026: administración de SAT2. Ver la [sección 8](#8-actualización-administración-de-sat2). 11 de noviembre de 2026: monitoreo. Ver la [sección 9](#9-actualización-monitoreo) |
 
 **Alcance y límites.** Es una revisión corta, no una auditoría ni una prueba de penetración independiente. Tampoco es una verificación completa de OWASP ASVS, que queda como la extensión X4 del plan. Se hizo sobre la **configuración de producción en una pila local aislada** con datos ficticios, porque el despliegue en la nube está pospuesto ([ADR-0002](../decisions/0002-proveedor-del-servidor.md)). Cuando exista un servidor real, hay que repetirla allí.
 
@@ -120,3 +120,21 @@ El 9 de noviembre de 2026 se agregó un administrador que carga la URL y las cre
 - **La clave privada vive en el `.env` del servidor**, como antes las credenciales. Quien tenga el `.env` y una copia de la base puede leerlas. La mejora es que una copia de la base sola, o un acceso a la API, ya no alcanzan.
 - **El contrato OpenAPI lista las rutas de administración**, como todo el repositorio público. Que la opción sea invisible depende de la API, no de ocultar su existencia.
 
+## 9. Actualización: monitoreo
+
+El 11 de noviembre de 2026 se agregaron los controles de salud, sus alertas por correo y el perfil opcional con Prometheus y Grafana ([ADR-0005](../decisions/0005-monitoreo.md)). Se repitieron las pruebas negativas y se sumaron 10 comprobaciones. Todas pasan: 143 en total.
+
+| Área | Qué se comprobó | Resultado |
+|---|---|---|
+| **Métricas** | No se alcanzan por el proxy, ni en `/metrics` ni en `/api/metrics`, y el puerto 9464 del worker no se publica | Correcto |
+| **Ruta de estado** | Responde igual que una ruta inexistente sin sesión y con una cuenta común | Correcto |
+| **Alertas** | Una ráfaga de ingresos fallidos, evaluada dos veces, abre una sola alerta y el administrador recibe un solo aviso | Correcto |
+| **Datos personales** | El detalle de las alertas no tiene correos ni direcciones IP | Correcto |
+
+Además, en el proyecto aislado `wt-mon` se comprobó que Grafana responde 401 sin ingreso, que rechaza el registro y que escucha solo en `127.0.0.1`.
+
+**Riesgos aceptados:**
+
+- **El worker monta el volumen de la base.** Es de solo lectura y se usa para medir el espacio libre. El worker ya tenía acceso completo a la base por la red.
+- **El correo de Grafana va a una dirección fija**, `ALERTAS_CORREO`, porque Grafana no lee la base de la aplicación.
+- **Grafana guarda su propia contraseña de administrador** en el `.env`. No tiene relación con las cuentas de Weather Track ni con SAT2.

@@ -157,6 +157,37 @@ docker compose exec -T worker python -m herramientas.capturar_sat2 --comparar
 
 Hace unas 13 consultas a SAT2 y no escribe ningún archivo. Si todo sigue igual, dice «Sin diferencias con la forma de referencia.». Si no, lista las claves nuevas, las que ya no llegan y los tipos que cambiaron, con su ruta y nunca con sus valores. En ese caso, conviene volver a capturar las respuestas como explica el [README de esa carpeta](../../backend/tests/datos_sat2/README.md) y revisar que las pruebas sigan pasando.
 
+## Monitoreo
+
+**Estado del sistema.** En **Administración**, el panel «Estado del sistema» muestra cuatro controles que el worker evalúa cada 10 minutos:
+
+| Control | Alerta cuando |
+|---|---|
+| Datos viejos | La última lectura de una estación tiene más de 30 minutos |
+| Ciclos con error | Los últimos 3 ciclos de una estación terminaron con error |
+| Disco de la base | Queda menos del 10 % libre |
+| Accesos por fuerza bruta | Hay 20 o más ingresos fallidos en 15 minutos, o una dirección bloqueada por superar su límite |
+
+Cada administrador recibe un correo cuando una alerta empieza y otro cuando se normaliza. Mientras sigue abierta, no se repite. En local, los correos llegan a Mailpit.
+
+**Prometheus y Grafana (opcional).** Guardan la historia de las mediciones, muestran un tablero y avisan por correo si el worker deja de publicar métricas durante 5 minutos, que es lo único que la aplicación no puede avisar sola. Para usarlos, agregá al `.env`:
+
+| Variable | Valor |
+|---|---|
+| `GRAFANA_CLAVE_ADMIN` | La contraseña del usuario `admin` de Grafana. Sin ella, Grafana no arranca |
+| `ALERTAS_CORREO` | La dirección que recibe el aviso de worker detenido |
+| `PUERTO_GRAFANA` | Opcional, si el 3000 está ocupado |
+
+y levantá la pila con el perfil:
+
+```bash
+docker compose --profile monitoreo up -d --wait
+```
+
+El tablero «Weather Track» queda en <http://localhost:3000>, solo desde esta computadora. Para detener todo, incluidos Prometheus y Grafana, usá `docker compose --profile monitoreo stop`.
+
+> En Windows, Grafana no detecta los cambios en los archivos del tablero. Si los editás, reinicialo con `docker compose restart grafana`.
+
 ## 5. Modos de datos
 
 `SAT2_MODO`, en el `.env`, elige de dónde salen los datos:

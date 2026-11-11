@@ -11,7 +11,7 @@ Fuentes de verdad, en este orden: las specs de `openspec/`, `readme.md`, los ADR
 | Backend | Python 3.14, FastAPI, Pydantic, SQLAlchemy 2, Alembic, psycopg, APScheduler, Argon2. Dependencias con `uv` (`backend/uv.lock`) |
 | Base de datos | PostgreSQL 18 |
 | Frontend | React 19, TypeScript, Vite, React Router, Plotly.js básico. Pruebas con Vitest, Testing Library y Playwright; lint con oxlint |
-| Infraestructura | Docker Compose: `db`, `db_pruebas`, `migraciones`, `api`, `worker` y `proxy` (Caddy) |
+| Infraestructura | Docker Compose: `db`, `db_pruebas`, `migraciones`, `api`, `worker` y `proxy` (Caddy). Perfil opcional `monitoreo`: `prometheus` y `grafana` |
 
 ## Arquitectura
 
@@ -21,6 +21,7 @@ Monolito modular con un worker de una sola instancia ([ADR-0001](docs/decisions/
 - `backend/app/ingesta`: cliente de SAT2, modos simulados, ciclo de 10 minutos, carga inicial y worker. Es la única capa que habla con SAT2 y la única que descifra su configuración (`origen_sat2.py`).
 - `backend/app/api`: rutas HTTP, sesión y autorización. Solo lee lo que el worker ya validó y guardó. La única excepción es la administración de SAT2, que guarda la configuración cifrada con la clave pública y no puede descifrarla ([ADR-0004](docs/decisions/0004-credenciales-de-sat2.md)).
 - `backend/app/datos`: modelos y conexión.
+- `backend/app/monitoreo`: controles de salud, alertas y métricas para Prometheus. Sus umbrales viven en `umbrales.py` ([ADR-0005](docs/decisions/0005-monitoreo.md)).
 - `frontend/src`: `pantallas`, `componentes`, `servicios` (cliente de la API con tipos generados) y `pruebas`.
 
 ## Reglas del dominio
@@ -90,6 +91,7 @@ GitHub Copilot revisa cada pull request a `main` con `.github/copilot-instructio
 - **El asistente no carga credenciales reales en «Administración», no genera las claves del `.env` real ni lee `SAT2_CLAVE_PRIVADA`.** En las pruebas usa valores ficticios y claves descartables.
 - **Las rutas de administración responden 404 a quien no tiene el rol**, igual que una ruta inexistente, y nunca devuelven ni registran la URL, el usuario o la contraseña de SAT2.
 - **Las respuestas reales de SAT2 las captura el responsable** con `herramientas.capturar_sat2`, que las sanea. Antes de leer `backend/tests/datos_sat2/respuestas.json`, el asistente corre la búsqueda de URL, correos y tokens; nunca la saltea ni muestra un valor que la búsqueda haya marcado. Si se vuelve a capturar, se regenera `herramientas/forma_sat2.json`.
+- **Las métricas del worker nunca se publican fuera de la red de Compose, y Grafana solo escucha en `127.0.0.1`.** Ninguna alerta, correo de alerta ni métrica lleva correos de cuentas, direcciones IP ni credenciales.
 - **Toda verificación con Docker usa un proyecto aislado:** `docker compose -p <nombre>` en modo simulado. El archivo de Compose fija `name: weather-track`, así que sin `-p` los comandos actúan sobre la instalación real.
 - **Nunca ejecutar `docker compose down -v` sobre el proyecto por defecto:** borra el volumen con los datos reales.
 - No repetir en el chat claves de demostración ni de pruebas.

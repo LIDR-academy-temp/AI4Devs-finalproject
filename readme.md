@@ -69,6 +69,7 @@ https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp
 | F5 | Históricos | Serie por sensor del último día, la última semana o el último mes, o de un rango elegido en el calendario: hasta el mismo día del mes siguiente (del 1/10 al 1/11, por ejemplo), dentro del último año y sin fechas futuras. Abre en el último día. Con resumen estadístico. |
 | F6 | Ingesta automática | Carga inicial de los últimos 31 días y proceso programado que cada 10 minutos obtiene datos, los normaliza, los guarda y calcula la recomendación. Al arrancar y cada hora recupera los huecos de los últimos 31 días, por ejemplo después de un apagado. |
 | F7 | Base de clientes | El administrador exporta a CSV las cuentas confirmadas, con su consentimiento para recibir novedades, sin datos de acceso. |
+| F8 | Monitoreo | Cuatro controles de salud (datos viejos, ciclos con error, disco casi lleno y posible fuerza bruta) con aviso por correo a los administradores y el panel «Estado del sistema». Opcionalmente, Prometheus y Grafana con un tablero y un aviso si el worker se detiene. |
 
 #### Sistema de unidades
 
@@ -277,6 +278,7 @@ En el servidor el acceso es por HTTPS. En la instalación local es por HTTP, sol
 | Motor de recomendación | Python, sin dependencias externas | Función pura que recibe lecturas y devuelve índice, estado y motivos. Lo usa el worker. |
 | Base de datos | PostgreSQL 18, Alembic | Usuarios, estaciones, sensores, observaciones, recomendaciones e historial de ingesta. |
 | Proxy inverso | Caddy | HTTPS, entrega de estáticos y enrutamiento hacia la API. |
+| Monitoreo (perfil opcional) | Prometheus, Grafana | Prometheus guarda 30 días de las métricas del worker; Grafana muestra el tablero y avisa por correo si el worker deja de publicarlas. Solo en esta computadora ([ADR-0005](docs/decisions/0005-monitoreo.md)). |
 
 ```mermaid
 sequenceDiagram
@@ -306,6 +308,7 @@ AI4Devs-finalproject-temp/
 │   │   ├── dominio/         # Motor de recomendación, normalización y vigencia
 │   │   ├── ingesta/         # Cliente SAT2, modos simulados, ciclo, carga y worker
 │   │   ├── datos/           # Modelos y conexión a la base de datos
+│   │   ├── monitoreo/       # Controles de salud, alertas y métricas
 │   │   ├── administracion.py  # Comandos para administrar cuentas
 │   │   ├── cifrado_sat2.py  # Cifrado de la configuración de SAT2 con clave pública
 │   │   ├── seguridad.py     # Contraseñas e identificadores de sesión
@@ -325,10 +328,11 @@ AI4Devs-finalproject-temp/
 │   ├── instructions/        # Criterios de revisión de Copilot por zona
 │   ├── copilot-instructions.md  # Cómo revisa Copilot los pull requests
 │   └── pull_request_template.md
+├── monitoreo/               # Prometheus y Grafana: configuración, tablero y alerta
 ├── openspec/                # Especificaciones y cambios
 ├── docs/
 │   ├── capturas/            # Capturas del MVP
-│   ├── decisions/           # ADR-0001 a ADR-0004
+│   ├── decisions/           # ADR-0001 a ADR-0005
 │   ├── demo/                # Guion de la demostración
 │   ├── despliegue/          # Instalación local y despliegue en Google Cloud
 │   ├── especificaciones/    # Guía generada desde las especificaciones de OpenSpec
@@ -360,6 +364,8 @@ El backend sigue una arquitectura en capas: `api` y `ingesta` dependen de `domin
 
 **Implementado: revisión con IA y documentación viva.** GitHub Copilot revisa cada pull request a `main` y cada push nuevo, con las instrucciones del proyecto. No es un control exigido: fusionar depende del pipeline y del responsable. La [guía de las especificaciones](docs/especificaciones/README.md) se genera con `uv run python -m herramientas.documentar_especificaciones`, y el trabajo de backend falla si no coincide con `openspec/specs`.
 
+**Implementado: monitoreo** ([ADR-0005](docs/decisions/0005-monitoreo.md)). El worker evalúa cada 10 minutos cuatro controles de salud y avisa por correo a los administradores cuando una alerta empieza y cuando se normaliza; la pantalla de administración muestra el «Estado del sistema». Con `docker compose --profile monitoreo up -d` se suman Prometheus y Grafana, con un tablero ya armado y un aviso si el worker se detiene. Grafana solo escucha en esta computadora.
+
 **Pendiente: despliegue continuo.** La publicación de imágenes y el despliegue en el servidor del esquema siguiente siguen en la línea B de la [hoja de ruta](docs/plan/hoja-de-ruta-entrega-final.md).
 
 ```mermaid
@@ -387,6 +393,7 @@ Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-ent
 |---|---|
 | Secretos fuera del código | Variables de entorno y `.env.example` sin valores reales. Gitleaks revisa todo el historial en cada push y pull request; los falsos positivos conocidos están en `.gitleaksignore` con su motivo. |
 | Credenciales de terceros aisladas | Solo el worker puede leer la cuenta de servicio de SAT2. El administrador la carga desde la aplicación y se guarda cifrada con una clave pública: la API cifra pero no puede descifrar, y nunca la devuelve al navegador ([ADR-0004](docs/decisions/0004-credenciales-de-sat2.md)). Sin configuración guardada, el worker usa el `.env`. |
+| Monitoreo | Las métricas se publican en un puerto interno que no pasa por Caddy. Grafana escucha solo en `127.0.0.1`, no arranca sin su contraseña y no admite registro ni acceso anónimo. Las alertas, sus correos y las métricas no llevan correos de cuentas, direcciones IP ni credenciales. |
 | Administración | El rol solo se otorga desde la línea de comandos del servidor. Para cualquier otra cuenta, y sin sesión, las rutas de administración responden igual que una ruta inexistente. Guardar exige la contraseña del administrador, y cada cambio se avisa por correo y queda registrado, sin los valores. |
 | Contraseñas | Solo se guarda un hash con Argon2id, con un tope de cálculos simultáneos para que una ráfaga no agote la memoria. |
 | Sesión | Identificador opaco en cookie `HttpOnly` y `SameSite`, y `Secure` en el servidor. Vence a las 8 horas y se invalida al salir. |
@@ -405,10 +412,10 @@ Resultado de la última ejecución, el 9 de noviembre de 2026: todas pasan, en l
 
 | Nivel | Herramienta | Qué cubre | Pruebas |
 |---|---|---|---|
-| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones, las instrucciones de revisión, el cifrado de la configuración de SAT2, la API de administración, el origen de la configuración en el worker y la recuperación de huecos, y el contrato con las respuestas reales de SAT2: su saneado, su forma y su paso por el catálogo, el ciclo y la carga | 738 |
-| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos con sus rangos y el calendario, las pantallas de cuentas con sus errores por campo y la pantalla de administración, visible solo para el rol | 111 |
+| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones, las instrucciones de revisión, el cifrado de la configuración de SAT2, la API de administración, el origen de la configuración en el worker y la recuperación de huecos, y el contrato con las respuestas reales de SAT2 (su saneado, su forma y su paso por el catálogo, el ciclo y la carga) y el monitoreo: controles con sus límites, alertas sin repetición, métricas y la configuración de Prometheus y Grafana | 812 |
+| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos con sus rangos y el calendario, las pantallas de cuentas con sus errores por campo y la pantalla de administración, visible solo para el rol, con el estado del sistema | 115 |
 | Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el rango manual de históricos, el selector, el equipo inactivo y las cuentas leyendo los correos en Mailpit: registro, confirmación, recupero y las tres formas de baja, y la administración de SAT2 con valores ficticios | 24 |
-| Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras, carga, enumeración de correos, enlaces de un solo uso, baja por `GET`, límites por IP y administración de SAT2 | 133 |
+| Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras, carga, enumeración de correos, enlaces de un solo uso, baja por `GET`, límites por IP, administración de SAT2 y monitoreo | 143 |
 
 Además, la ingesta se probó una vez contra SAT2 real, durante 38 minutos y con 48.427 lecturas. Los comandos están en la [sección 1.4](#14-instrucciones-de-instalación).
 
@@ -472,6 +479,14 @@ erDiagram
         timestamptz ocurrido_en "NOT NULL"
         uuid usuario_id FK "ON DELETE SET NULL"
         varchar email_usuario "NOT NULL"
+    }
+    ALERTA_SISTEMA {
+        bigint id PK
+        varchar tipo "NOT NULL"
+        varchar objeto "NOT NULL DEFAULT ''"
+        timestamptz abierta_en "NOT NULL"
+        timestamptz cerrada_en "NULL mientras sigue abierta"
+        text detalle "NOT NULL"
     }
     ENLACE_CUENTA {
         bigint id PK
@@ -580,6 +595,17 @@ erDiagram
 | `ocurrido_en` | `timestamptz` | NOT NULL, índice descendente | Cuándo |
 | `usuario_id` | `uuid` | FK a `USUARIO.id`, ON DELETE SET NULL | Quién |
 | `email_usuario` | `varchar(254)` | NOT NULL | Correo de quien guardó |
+
+**ALERTA_SISTEMA.** Una alerta de un control de salud, desde que empieza hasta que se normaliza ([ADR-0005](docs/decisions/0005-monitoreo.md)). Un índice único parcial sobre `(tipo, objeto)` donde `cerrada_en IS NULL` impide dos alertas abiertas del mismo control para la misma estación, y así no se repite el aviso.
+
+| Atributo | Tipo | Restricciones | Descripción |
+|---|---|---|---|
+| `id` | `bigint` | PK | Identificador |
+| `tipo` | `varchar(20)` | NOT NULL, CHECK | `DATOS_VIEJOS`, `CICLOS_FALLIDOS`, `DISCO_CASI_LLENO` o `FUERZA_BRUTA` |
+| `objeto` | `varchar(120)` | NOT NULL, DEFAULT `''` | La estación afectada, o vacío para los controles generales |
+| `abierta_en` | `timestamptz` | NOT NULL, índice descendente | Cuándo empezó |
+| `cerrada_en` | `timestamptz` | `>= abierta_en` | Cuándo se normalizó |
+| `detalle` | `text` | NOT NULL | Sin correos de cuentas, direcciones IP ni credenciales |
 
 **ENLACE_CUENTA.** Código de un solo uso de confirmación, recupero o baja (N:1 con USUARIO, borrado en cascada). El código solo viaja en el correo: la base guarda su SHA-256.
 
@@ -1033,6 +1059,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /administracion/estado:
+    get:
+      summary: Estado del sistema; solo para administradores
+      description: >-
+        Controles de salud, estado del worker según el último ciclo, últimas 20
+        alertas y tamaño de la base. Para una cuenta sin el rol, o sin sesión,
+        responde 404 como una ruta inexistente.
+      operationId: obtenerEstadoSistema
+      responses:
+        '200':
+          description: Estado del sistema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadoSistema'
+        '404':
+          description: La ruta no existe para esta cuenta
   /estaciones:
     get:
       summary: Lista las estaciones a las que accede el usuario
@@ -1418,6 +1461,60 @@ components:
         es_administrador:
           type: boolean
           description: Solo decide si la interfaz muestra la administración.
+    EstadoSistema:
+      type: object
+      required: [controles, worker, alertas, base_tamano_bytes]
+      properties:
+        controles:
+          type: array
+          items:
+            type: object
+            required: [tipo, objeto, estado, detalle]
+            properties:
+              tipo:
+                type: string
+                enum: [DATOS_VIEJOS, CICLOS_FALLIDOS, DISCO_CASI_LLENO, FUERZA_BRUTA]
+              objeto:
+                type: string
+                description: La estación afectada, o vacío para los controles generales.
+              estado:
+                type: string
+                enum: [OK, ALERTA]
+              detalle:
+                type: string
+        worker:
+          type: object
+          required: [estado, ultimo_ciclo_en]
+          properties:
+            estado:
+              type: string
+              enum: [ACTIVO, SIN_ACTIVIDAD, MODO_PRUEBA]
+            ultimo_ciclo_en:
+              type: string
+              format: date-time
+              nullable: true
+        alertas:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            required: [tipo, objeto, abierta_en, cerrada_en, detalle]
+            properties:
+              tipo:
+                type: string
+              objeto:
+                type: string
+              abierta_en:
+                type: string
+                format: date-time
+              cerrada_en:
+                type: string
+                format: date-time
+                nullable: true
+              detalle:
+                type: string
+        base_tamano_bytes:
+          type: integer
     SolicitudConfiguracionSat2:
       type: object
       required: [url_base, usuario, clave, contrasena_actual]

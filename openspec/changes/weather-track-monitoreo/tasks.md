@@ -27,5 +27,5 @@ Las decisiones están en `design.md` (D1 a D6). Las verificaciones con Docker us
 
 ## 5. Documentación
 
-- [ ] 5.1 Escribir el ADR-0005 sobre el monitoreo y actualizar el README, la guía de instalación (perfil `monitoreo` y variables), el informe de seguridad, `CLAUDE.md`, las instrucciones de revisión si hace falta y la hoja de ruta (línea C)
+- [x] 5.1 Escribir el ADR-0005 sobre el monitoreo y actualizar el README, la guía de instalación (perfil `monitoreo` y variables), el informe de seguridad, `CLAUDE.md`, las instrucciones de revisión si hace falta y la hoja de ruta (línea C)
 - [ ] 5.2 El responsable levanta el perfil en su instalación, revisa el tablero y los avisos, y aprueba el cambio
