@@ -6,7 +6,7 @@
 | **Entrega final** | 9 de diciembre de 2026 |
 | **Punto de partida** | Entrega 2 presentada en forma anticipada ([pull request](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14)) |
 | **Responsable** | Pablo Guillermo Di Nanno |
-| **Versión** | 1.9, 10 de noviembre de 2026 |
+| **Versión** | 1.10, 11 de noviembre de 2026 |
 
 Este documento registra qué línea de trabajo está activa, cuál está en pausa y qué falta decidir, para no perder el hilo entre sesiones.
 
@@ -15,7 +15,7 @@ Este documento registra qué línea de trabajo está activa, cuál está en paus
 | Línea | Estado | Condición para avanzar |
 |---|---|---|
 | **A. Instalación local, como la quiere el responsable** | **Terminada** el 5 de noviembre de 2026 | El responsable aprobó la aplicación local y se archivaron sus cambios |
-| **D. Pendientes de la devolución de la Entrega 1** | D1 a D5 hechos; administrador de SAT2 verificado con datos reales; históricos sin huecos; D7 decidido; D6 opcional | D7 propuesto: cambio `weather-track-contrato-sat2` |
+| **D. Pendientes de la devolución de la Entrega 1** | D1 a D5 y D7 hechos; administrador de SAT2 verificado con datos reales; históricos sin huecos; D6 opcional | D7 espera la aprobación del responsable |
 | **B. Despliegue público en Google Cloud (opción plus)** | **En pausa** desde el 2 de noviembre de 2026; el responsable la mantuvo en pausa el 7 de noviembre | Se retoma cuando lo decida el responsable |
 | C. Pipeline, monitoreo y documentación para clientes | **Integración continua** (D4), **revisión con IA y documentación viva** (D5) hechas el 7 de noviembre de 2026 | Faltan el monitoreo y la documentación para clientes |
 
@@ -132,7 +132,7 @@ LIDR revisó la Entrega 1 el 2 de noviembre de 2026 con el resultado **"Luz verd
 | D4 | **Hecho el 7 de noviembre de 2026.** Pipeline de GitHub Actions redactado con IA: cambio `weather-track-pipeline-ci` y [ADR-0003](../decisions/0003-pipeline-de-integracion-continua.md). Verificado en GitHub, en verde y fallando ante una prueba rota. Aprobado por el responsable, que protegió `main` con los 8 controles exigidos | Medio | Despliegue |
 | D5 | **Hecho el 7 de noviembre de 2026.** Cambio `weather-track-revision-y-documentacion-viva`. GitHub Copilot revisa cada pull request a `main` con [instrucciones del proyecto](../../.github/copilot-instructions.md) en castellano y por zona, sin ser un control exigido; un pull request de prueba con dos errores sembrados mostró que los señala a los dos. La [guía de las especificaciones](../especificaciones/README.md) se genera desde OpenSpec y una prueba del pipeline falla si queda vieja. Aprobado por el responsable | Medio | Mantenimiento |
 | D6 | Opcional: tests basados en propiedades con Hypothesis. Con cualquier combinación de lecturas, nunca "apto" con inversión o lectura sospechosa, y una mayor diferencia térmica nunca baja el índice | Medio | Pruebas |
-| D7 | Datos de prueba con la forma de las respuestas reales de SAT2, para detectar cambios del proveedor. **Decidido el 7 de noviembre de 2026:** se usan respuestas verdaderas obtenidas de SAT2. Las captura el responsable, porque el asistente no se autentica en SAT2; antes de versionarlas se quitan la URL, las credenciales, los tokens y cualquier dato de la cuenta, y el responsable las revisa. **Requisito previo, pedido el 7 de noviembre de 2026:** un administrador que gestiona la URL y las credenciales de SAT2 desde la aplicación (cambio `weather-track-administracion-sat2`); la captura usará esa configuración. **Implementado el 9 de noviembre de 2026** ([ADR-0004](../decisions/0004-credenciales-de-sat2.md)); falta que el responsable lo verifique con las credenciales reales | Bajo | Pruebas |
+| D7 | Datos de prueba con la forma de las respuestas reales de SAT2, para detectar cambios del proveedor. **Decidido el 7 de noviembre de 2026:** se usan respuestas verdaderas obtenidas de SAT2. Las captura el responsable, porque el asistente no se autentica en SAT2; antes de versionarlas se quitan la URL, las credenciales, los tokens y cualquier dato de la cuenta, y el responsable las revisa. **Requisito previo, pedido el 7 de noviembre de 2026:** un administrador que gestiona la URL y las credenciales de SAT2 desde la aplicación (cambio `weather-track-administracion-sat2`); la captura usará esa configuración. **Implementado el 9 de noviembre de 2026** ([ADR-0004](../decisions/0004-credenciales-de-sat2.md)) y verificado con las credenciales reales. **Hecho el 11 de noviembre de 2026:** cambio `weather-track-contrato-sat2`. El responsable capturó en su worker las respuestas reales, ya saneadas, y las revisó antes de versionarlas. Alimentan pruebas de contrato del catálogo, el ciclo y la carga, y `capturar_sat2 --comparar` avisa si SAT2 cambia la forma de sus respuestas; la primera comparación no encontró diferencias | Bajo | Pruebas |
 
 ### Balance de alcance
 
@@ -169,3 +169,4 @@ Respuestas del responsable del 3 de noviembre de 2026:
 | 9 nov 2026 | Administrador de SAT2 implementado y probado con valores ficticios: cifrado con PyNaCl, API invisible para el resto, worker que recarga sin reiniciar, pantalla, extremo a extremo y 18 pruebas negativas nuevas. Decisión registrada en el ADR-0004 |
 | 9 nov 2026 | Revisión con datos reales de INTA Pergamino: el administrador funciona. Los gráficos incompletos se debían a un hueco del 1 al 9 de noviembre, con la instalación apagada. Cambio `weather-track-historicos-sin-huecos`: el worker recupera los huecos de los últimos 31 días al arrancar y cada hora (recuperó 12.379 lecturas en la instalación del responsable), el detalle abre en Día y el rango manual llega hasta el mismo día del mes siguiente |
 | 10 nov 2026 | D7 propuesto: el responsable captura en su worker respuestas reales de SAT2, ya saneadas (sin URL, credenciales, tokens ni datos de la cuenta), usando la configuración de «Administración». Se versionan tras su revisión, alimentan pruebas de contrato y una comparación avisa si SAT2 cambia la forma de sus respuestas |
+| 11 nov 2026 | D7 hecho: respuestas reales de SAT2 capturadas el 10/11, saneadas y revisadas por el responsable; 6 pruebas de contrato; comparación sin diferencias. Enteros y decimales cuentan como un mismo tipo, para evitar falsas alarmas |

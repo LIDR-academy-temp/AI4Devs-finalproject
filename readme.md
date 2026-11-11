@@ -397,7 +397,7 @@ Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-ent
 | Cabeceras | HSTS, política de contenido, `nosniff`, protección contra marcos y sin cabecera `Server`. |
 | Entrada | Validación con Pydantic, consultas parametrizadas por el ORM y límite de 64 KB en el cuerpo. |
 | Registros | Sin contraseñas ni tokens en los logs. |
-| Datos de prueba | Datos de ejemplo y de prueba ficticios, sin copias de respuestas con credenciales. |
+| Datos de prueba | Datos de ejemplo y de prueba ficticios. Las respuestas reales de SAT2 que usan las pruebas de contrato se sanean al capturarlas, sin URL, credenciales, tokens ni datos de la cuenta; una prueba y Gitleaks lo verifican, y el responsable las revisa antes de versionarlas. |
 
 ### **2.6. Tests**
 
@@ -405,7 +405,7 @@ Resultado de la última ejecución, el 9 de noviembre de 2026: todas pasan, en l
 
 | Nivel | Herramienta | Qué cubre | Pruebas |
 |---|---|---|---|
-| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones, las instrucciones de revisión, el cifrado de la configuración de SAT2, la API de administración, el origen de la configuración en el worker y la recuperación de huecos | 705 |
+| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones, las instrucciones de revisión, el cifrado de la configuración de SAT2, la API de administración, el origen de la configuración en el worker y la recuperación de huecos, y el contrato con las respuestas reales de SAT2: su saneado, su forma y su paso por el catálogo, el ciclo y la carga | 738 |
 | Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos con sus rangos y el calendario, las pantallas de cuentas con sus errores por campo y la pantalla de administración, visible solo para el rol | 111 |
 | Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el rango manual de históricos, el selector, el equipo inactivo y las cuentas leyendo los correos en Mailpit: registro, confirmación, recupero y las tres formas de baja, y la administración de SAT2 con valores ficticios | 24 |
 | Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras, carga, enumeración de correos, enlaces de un solo uso, baja por `GET`, límites por IP y administración de SAT2 | 133 |

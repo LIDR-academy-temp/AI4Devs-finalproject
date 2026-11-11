@@ -89,6 +89,7 @@ GitHub Copilot revisa cada pull request a `main` con `.github/copilot-instructio
 - **El asistente no se autentica en SAT2 ni ejecuta el modo real.** Los comandos con datos reales los ejecuta el responsable; el asistente solo lee resultados locales sin secretos.
 - **El asistente no carga credenciales reales en «Administración», no genera las claves del `.env` real ni lee `SAT2_CLAVE_PRIVADA`.** En las pruebas usa valores ficticios y claves descartables.
 - **Las rutas de administración responden 404 a quien no tiene el rol**, igual que una ruta inexistente, y nunca devuelven ni registran la URL, el usuario o la contraseña de SAT2.
+- **Las respuestas reales de SAT2 las captura el responsable** con `herramientas.capturar_sat2`, que las sanea. Antes de leer `backend/tests/datos_sat2/respuestas.json`, el asistente corre la búsqueda de URL, correos y tokens; nunca la saltea ni muestra un valor que la búsqueda haya marcado. Si se vuelve a capturar, se regenera `herramientas/forma_sat2.json`.
 - **Toda verificación con Docker usa un proyecto aislado:** `docker compose -p <nombre>` en modo simulado. El archivo de Compose fija `name: weather-track`, así que sin `-p` los comandos actúan sobre la instalación real.
 - **Nunca ejecutar `docker compose down -v` sobre el proyecto por defecto:** borra el volumen con los datos reales.
 - No repetir en el chat claves de demostración ni de pruebas.

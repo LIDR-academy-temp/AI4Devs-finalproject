@@ -13,9 +13,9 @@ Las decisiones están en `design.md` (D1 a D5). El asistente nunca consulta SAT2
 
 - [x] 2.1 El responsable reconstruye su instalación y ejecuta la captura; la prueba de secretos pasa sobre el archivo, el asistente resume qué contiene y el responsable aprueba versionarlo
 - [x] 2.2 Generar `herramientas/forma_sat2.json` y escribir las pruebas de contrato del catálogo, el ciclo y los históricos con las respuestas reales, más la prueba de que la forma versionada coincide
-- [ ] 2.3 El responsable ejecuta `--comparar` en su instalación y confirma que no hay diferencias
+- [x] 2.3 El responsable ejecuta `--comparar` en su instalación y confirma que no hay diferencias
 
 ## 3. Documentación
 
-- [ ] 3.1 Actualizar la guía de instalación (captura y comparación), el README (2.6 y la sección de SAT2), `CLAUDE.md` y la hoja de ruta (D7)
-- [ ] 3.2 El responsable revisa el cambio y lo aprueba
+- [x] 3.1 Actualizar la guía de instalación (captura y comparación), el README (2.6 y la sección de SAT2), `CLAUDE.md` y la hoja de ruta (D7)
+- [x] 3.2 El responsable revisa el cambio y lo aprueba

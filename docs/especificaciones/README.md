@@ -3,7 +3,7 @@
 > Este archivo se genera desde `openspec/specs` y no se edita a mano.
 > Para regenerarlo, desde `backend/`: `uv run python -m herramientas.documentar_especificaciones`.
 
-Qué hace Weather Track, según sus especificaciones de OpenSpec: 13 capacidades, 94 requisitos y 201 escenarios. Cada capacidad enlaza su especificación, donde están los escenarios completos, y el último cambio archivado que la modificó.
+Qué hace Weather Track, según sus especificaciones de OpenSpec: 14 capacidades, 99 requisitos y 210 escenarios. Cada capacidad enlaza su especificación, donde están los escenarios completos, y el último cambio archivado que la modificó.
 
 ## Índice
 
@@ -18,6 +18,7 @@ Qué hace Weather Track, según sus especificaciones de OpenSpec: 13 capacidades
 | [continuous-integration](#continuous-integration) | Verifica automáticamente cada cambio de Weather Track con las mismas pruebas que se ejecutan a mano, para que nada llegue a `main` sin pasar por ellas, y sin que el propio pipeline exponga credenciales. | 10 | 12 | [weather-track-revision-y-documentacion-viva](../../openspec/changes/archive/2026-11-07-weather-track-revision-y-documentacion-viva/proposal.md), 2026-11-07 |
 | [customer-base](#customer-base) | Convierte las cuentas confirmadas en una base de clientes potenciales, con el consentimiento de cada persona registrado y una exportación para el administrador. | 3 | 4 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
 | [living-documentation](#living-documentation) | Ofrece una guía legible de lo que hace Weather Track, generada a partir de las especificaciones de OpenSpec para que nunca quede vieja. | 3 | 4 | [weather-track-revision-y-documentacion-viva](../../openspec/changes/archive/2026-11-07-weather-track-revision-y-documentacion-viva/proposal.md), 2026-11-07 |
+| [sat2-contract](#sat2-contract) | Mantiene las pruebas de Weather Track alineadas con las respuestas reales de SAT2, sin exponer datos sensibles, y avisa cuando SAT2 cambia la forma de sus respuestas. | 5 | 9 | [weather-track-contrato-sat2](../../openspec/changes/archive/2026-11-11-weather-track-contrato-sat2/proposal.md), 2026-11-11 |
 | [sat2-ingestion](#sat2-ingestion) | Mantiene los datos de las estaciones actualizados y con su calidad identificada, obteniéndolos de SAT2 de forma automática e independiente de las sesiones de usuario. | 18 | 50 | [weather-track-historicos-sin-huecos](../../openspec/changes/archive/2026-11-09-weather-track-historicos-sin-huecos/proposal.md), 2026-11-09 |
 | [sensor-history](#sensor-history) | Permite revisar cómo evolucionó un sensor en un período reciente, con un gráfico y un resumen estadístico, para entender las condiciones y planificar la próxima aplicación. | 6 | 17 | [weather-track-historicos-sin-huecos](../../openspec/changes/archive/2026-11-09-weather-track-historicos-sin-huecos/proposal.md), 2026-11-09 |
 | [station-conditions](#station-conditions) | Muestra las últimas lecturas de una estación con su calidad, sus alarmas y su antigüedad, para que la persona sepa qué se midió y cuánto puede confiar en ese dato. | 6 | 17 | [weather-track-estaciones](../../openspec/changes/archive/2026-11-05-weather-track-estaciones/proposal.md), 2026-11-05 |
@@ -591,6 +592,56 @@ La guía SHALL empezar con un aviso de que se genera, con el comando para regene
 Escenarios:
 
 - Lectura de la guía
+
+## sat2-contract
+
+Mantiene las pruebas de Weather Track alineadas con las respuestas reales de SAT2, sin exponer datos sensibles, y avisa cuando SAT2 cambia la forma de sus respuestas.
+
+Especificación: [openspec/specs/sat2-contract/spec.md](../../openspec/specs/sat2-contract/spec.md). Último cambio archivado: [weather-track-contrato-sat2](../../openspec/changes/archive/2026-11-11-weather-track-contrato-sat2/proposal.md), 2026-11-11.
+
+### Captura saneada de respuestas reales
+
+El sistema SHALL ofrecer una herramienta que, en modo real, pida a SAT2 la autenticación, los equipos, los instantáneos del equipo 1 y un día completo de históricos de cada uno de sus sensores, y escriba esas respuestas saneadas. La herramienta MUST NOT escribir ni mostrar la URL de SAT2, las credenciales, los tokens ni los datos de la cuenta.
+
+Escenarios:
+
+- Captura en modo real
+- Otro modo
+
+### Saneado conservando la forma
+
+El saneado SHALL reemplazar los valores de las claves con nombres de token, clave, contraseña, usuario, cliente, correo o serie, y cualquier texto con forma de URL, de correo o de token, conservando la estructura y el tipo de cada valor.
+
+Escenarios:
+
+- Respuesta de autenticación
+- URL en un campo inesperado
+
+### Respuestas de referencia sin secretos
+
+Las respuestas de referencia versionadas MUST NOT contener textos con forma de URL, de correo o de token, y una prueba SHALL fallar si los contienen, nombrando la ruta sin mostrar el valor.
+
+Escenarios:
+
+- Archivo con un token
+
+### Procesamiento de las respuestas reales
+
+Las pruebas SHALL procesar las respuestas de referencia con el catálogo, el ciclo y la carga de históricos reales, y MUST fallar si un sensor queda sin clasificar, el ciclo no termina bien o una lectura se descarta por su formato.
+
+Escenarios:
+
+- Catálogo real
+- Ciclo real
+
+### Detección de cambios en SAT2
+
+El sistema SHALL guardar la forma de cada respuesta de referencia, sin sus valores, y SHALL ofrecer una comparación que vuelva a pedir las respuestas a SAT2 y liste las claves nuevas, las que faltan y los tipos que cambiaron, terminando con error si hay diferencias.
+
+Escenarios:
+
+- SAT2 sin cambios
+- SAT2 agrega un campo
 
 ## sat2-ingestion
 

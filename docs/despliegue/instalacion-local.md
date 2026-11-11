@@ -147,6 +147,16 @@ A partir de ahí, cada cambio que guardes en **Administración** se usa desde el
 
 El sistema consulta SAT2 cada 10 minutos. La carga de los últimos 31 días tarda unos 40 minutos y avanza en segundo plano, con pausas para no sobrecargar a SAT2.
 
+### Saber si SAT2 cambió sus respuestas
+
+Las pruebas usan respuestas reales de SAT2, saneadas y guardadas en `backend/tests/datos_sat2/`. Para saber si SAT2 cambió la forma de sus respuestas, ejecutá cada tanto, con la instalación en modo real:
+
+```bash
+docker compose exec -T worker python -m herramientas.capturar_sat2 --comparar
+```
+
+Hace unas 13 consultas a SAT2 y no escribe ningún archivo. Si todo sigue igual, dice «Sin diferencias con la forma de referencia.». Si no, lista las claves nuevas, las que ya no llegan y los tipos que cambiaron, con su ruta y nunca con sus valores. En ese caso, conviene volver a capturar las respuestas como explica el [README de esa carpeta](../../backend/tests/datos_sat2/README.md) y revisar que las pruebas sigan pasando.
+
 ## 5. Modos de datos
 
 `SAT2_MODO`, en el `.env`, elige de dónde salen los datos:
