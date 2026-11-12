@@ -37,4 +37,4 @@ Las decisiones están en `design.md` (D1 a D6). Las verificaciones con Docker us
 - [x] 6.2 Sumar `ultimo_intento` y `salud` a `condiciones-actuales` con sus pruebas, y regenerar el contrato, los tipos y la sección 4 del README
 - [x] 6.3 Agregar la franja «Salud de la estación» a la pantalla de la estación y al detalle de un sensor, con pruebas en Vitest de cada estado y del reloj, y comprobarla en una prueba de extremo a extremo
 - [x] 6.4 Actualizar el README, la guía de instalación y el ADR-0005
-- [ ] 6.5 El responsable revisa la salud de la estación en su instalación y aprueba el cambio
+- [x] 6.5 El responsable revisa la salud de la estación en su instalación y aprueba el cambio (11 de noviembre: aprobado)

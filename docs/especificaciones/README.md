@@ -3,7 +3,7 @@
 > Este archivo se genera desde `openspec/specs` y no se edita a mano.
 > Para regenerarlo, desde `backend/`: `uv run python -m herramientas.documentar_especificaciones`.
 
-Qué hace Weather Track, según sus especificaciones de OpenSpec: 14 capacidades, 99 requisitos y 210 escenarios. Cada capacidad enlaza su especificación, donde están los escenarios completos, y el último cambio archivado que la modificó.
+Qué hace Weather Track, según sus especificaciones de OpenSpec: 15 capacidades, 106 requisitos y 228 escenarios. Cada capacidad enlaza su especificación, donde están los escenarios completos, y el último cambio archivado que la modificó.
 
 ## Índice
 
@@ -22,6 +22,7 @@ Qué hace Weather Track, según sus especificaciones de OpenSpec: 14 capacidades
 | [sat2-ingestion](#sat2-ingestion) | Mantiene los datos de las estaciones actualizados y con su calidad identificada, obteniéndolos de SAT2 de forma automática e independiente de las sesiones de usuario. | 18 | 50 | [weather-track-historicos-sin-huecos](../../openspec/changes/archive/2026-11-09-weather-track-historicos-sin-huecos/proposal.md), 2026-11-09 |
 | [sensor-history](#sensor-history) | Permite revisar cómo evolucionó un sensor en un período reciente, con un gráfico y un resumen estadístico, para entender las condiciones y planificar la próxima aplicación. | 6 | 17 | [weather-track-historicos-sin-huecos](../../openspec/changes/archive/2026-11-09-weather-track-historicos-sin-huecos/proposal.md), 2026-11-09 |
 | [station-conditions](#station-conditions) | Muestra las últimas lecturas de una estación con su calidad, sus alarmas y su antigüedad, para que la persona sepa qué se midió y cuánto puede confiar en ese dato. | 6 | 17 | [weather-track-estaciones](../../openspec/changes/archive/2026-11-05-weather-track-estaciones/proposal.md), 2026-11-05 |
+| [system-monitoring](#system-monitoring) | Avisa a los administradores de Weather Track cuando la ingesta, la base de datos o los accesos muestran un problema, en pantalla y por correo, guarda la historia de esas mediciones para verla en Grafana y muestra a todas las cuentas la salud de cada estación. | 7 | 18 | [weather-track-monitoreo](../../openspec/changes/archive/2026-11-11-weather-track-monitoreo/proposal.md), 2026-11-11 |
 | [transactional-email](#transactional-email) | Envía los correos de las cuentas (confirmación, recupero, avisos de seguridad) de forma confiable, con un enlace de baja en cada uno, y sin que una instalación local envíe correos a internet. | 6 | 8 | [weather-track-registro-cuentas](../../openspec/changes/archive/2026-11-05-weather-track-registro-cuentas/proposal.md), 2026-11-05 |
 
 ## account-access
@@ -954,6 +955,79 @@ Escenarios:
 - Abrir un equipo inactivo
 - Histórico de un equipo inactivo
 - Estado informado por la API
+
+## system-monitoring
+
+Avisa a los administradores de Weather Track cuando la ingesta, la base de datos o los accesos muestran un problema, en pantalla y por correo, guarda la historia de esas mediciones para verla en Grafana y muestra a todas las cuentas la salud de cada estación.
+
+Especificación: [openspec/specs/system-monitoring/spec.md](../../openspec/specs/system-monitoring/spec.md). Último cambio archivado: [weather-track-monitoreo](../../openspec/changes/archive/2026-11-11-weather-track-monitoreo/proposal.md), 2026-11-11.
+
+### Controles de salud
+
+El proceso de ingesta SHALL evaluar en cada ciclo los controles de salud: datos de más de 30 minutos o 3 ciclos fallidos seguidos en una estación activa, menos del 10 % libre en el disco de la base, y 20 o más ingresos fallidos en 15 minutos o una dirección IP bloqueada por superar su límite. En modo prueba MUST NOT evaluar los controles de ingesta.
+
+Escenarios:
+
+- Datos viejos
+- Límite de la frescura
+- Ciclos fallidos
+- Disco casi lleno
+- Posible fuerza bruta
+
+### Alertas sin repetición
+
+El sistema SHALL abrir una alerta cuando un control pasa a fallar y cerrarla cuando vuelve a estar bien, y SHALL avisar por correo a cada administrador activo al abrirla y al cerrarla. Mientras una alerta sigue abierta, el sistema MUST NOT volver a avisar. Ni las alertas ni sus correos MUST incluir credenciales, correos de cuentas ni direcciones IP.
+
+Escenarios:
+
+- Alerta nueva
+- Falla que continúa
+- Normalización
+
+### Estado del sistema en pantalla
+
+La pantalla de administración SHALL mostrar el estado de cada control, con texto y no solo con color, el estado del proceso de ingesta y las últimas 20 alertas. El estado del proceso de ingesta SHALL calcularse con la hora del último ciclo, para que se vea aunque el proceso esté detenido. Para cualquier cuenta sin el rol, la ruta de este estado MUST responder igual que una ruta inexistente.
+
+Escenarios:
+
+- Proceso de ingesta detenido
+- Cuenta común
+
+### Métricas para Prometheus
+
+El proceso de ingesta SHALL publicar en un puerto interno las métricas de frescura, ciclos fallidos, tamaño de la base, disco libre, ingresos fallidos y alertas abiertas. Ese puerto MUST NOT publicarse fuera de la red interna, y las métricas MUST NOT incluir correos, direcciones IP ni credenciales.
+
+Escenarios:
+
+- Consulta interna
+- Consulta desde afuera
+
+### Tablero y aviso de proceso detenido
+
+El perfil de monitoreo SHALL levantar Prometheus y Grafana con su configuración versionada: un tablero de Weather Track y una alerta que avisa por correo si el proceso de ingesta deja de publicar métricas durante 5 minutos. Grafana MUST escuchar solo en la computadora local, MUST exigir la contraseña de su administrador y MUST NOT permitir registro ni acceso anónimo.
+
+Escenarios:
+
+- Proceso de ingesta detenido con el perfil activo
+- Acceso a Grafana
+
+### Salud de la estación
+
+La pantalla de la estación y el detalle de un sensor SHALL mostrar a todas las cuentas la hora actual en hora de Argentina, la hora y el resultado del último ciclo de ingesta, la hora del último dato de SAT2 y un semáforo de salud con su texto, calculado al leer.
+
+Escenarios:
+
+- Cuenta común
+
+### Estados del semáforo
+
+El semáforo SHALL mostrar «En vivo» si el último ciclo terminó bien hace 20 minutos o menos y el dato tiene 30 minutos o menos; «Con demoras» si hubo un ciclo en los últimos 20 minutos pero terminó con error o el dato tiene más de 30 minutos; y «Caído» si no hubo ningún ciclo en más de 20 minutos.
+
+Escenarios:
+
+- Estación en vivo
+- SAT2 sin datos nuevos
+- Proceso de ingesta detenido
 
 ## transactional-email
 

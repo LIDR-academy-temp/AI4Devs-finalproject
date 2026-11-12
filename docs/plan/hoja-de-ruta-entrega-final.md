@@ -6,7 +6,7 @@
 | **Entrega final** | 9 de diciembre de 2026 |
 | **Punto de partida** | Entrega 2 presentada en forma anticipada ([pull request](https://github.com/LIDR-academy-temp/AI4Devs-finalproject/pull/14)) |
 | **Responsable** | Pablo Guillermo Di Nanno |
-| **Versión** | 1.12, 11 de noviembre de 2026 |
+| **Versión** | 1.13, 11 de noviembre de 2026 |
 
 Este documento registra qué línea de trabajo está activa, cuál está en pausa y qué falta decidir, para no perder el hilo entre sesiones.
 
@@ -17,7 +17,7 @@ Este documento registra qué línea de trabajo está activa, cuál está en paus
 | **A. Instalación local, como la quiere el responsable** | **Terminada** el 5 de noviembre de 2026 | El responsable aprobó la aplicación local y se archivaron sus cambios |
 | **D. Pendientes de la devolución de la Entrega 1** | D1 a D5 y D7 hechos; administrador de SAT2 verificado con datos reales; históricos sin huecos; D6 opcional | Cerrada; D6 opcional |
 | **B. Despliegue público en Google Cloud (opción plus)** | **En pausa** desde el 2 de noviembre de 2026; el responsable la mantuvo en pausa el 7 de noviembre | Se retoma cuando lo decida el responsable |
-| C. Pipeline, monitoreo y documentación para clientes | **Integración continua** (D4), **revisión con IA y documentación viva** (D5) hechas el 7 de noviembre de 2026 | Monitoreo implementado ([ADR-0005](../decisions/0005-monitoreo.md)), a la espera de la revisión del responsable; falta la documentación para clientes |
+| C. Pipeline, monitoreo y documentación para clientes | **Integración continua** (D4), **revisión con IA y documentación viva** (D5) hechas el 7 de noviembre de 2026 | **Monitoreo** hecho el 11 de noviembre de 2026 ([ADR-0005](../decisions/0005-monitoreo.md)), con la salud de la estación para todas las cuentas; falta la documentación para clientes |
 
 ## 2. Línea A: cuentas propias con registro, ingreso y recupero
 
@@ -172,3 +172,4 @@ Respuestas del responsable del 3 de noviembre de 2026:
 | 11 nov 2026 | D7 hecho: respuestas reales de SAT2 capturadas el 10/11, saneadas y revisadas por el responsable; 6 pruebas de contrato; comparación sin diferencias. Enteros y decimales cuentan como un mismo tipo, para evitar falsas alarmas |
 | 11 nov 2026 | Monitoreo (línea C): vigilar la ingesta y la frescura, la base y el disco y los accesos sospechosos; avisar en pantalla y por correo; Prometheus y Grafana en un perfil opcional de Compose |
 | 11 nov 2026 | Monitoreo implementado y probado en el proyecto aislado `wt-mon`: métricas en Prometheus, tablero en Grafana y aviso en Mailpit 7 minutos después de detener el worker. Decisión registrada en el ADR-0005 |
+| 11 nov 2026 | Revisión del responsable: todo bien; pidió la salud de la estación para todas las cuentas. Se sumó una franja en la pantalla de la estación y en el detalle de un sensor con la hora de Argentina, el último intento de ingesta, el último dato de SAT2 y un semáforo (en vivo, con demoras o caído). Probada y aprobada; monitoreo archivado |

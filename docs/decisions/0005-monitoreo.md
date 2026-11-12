@@ -10,7 +10,7 @@ informed: Evaluadores de AI4Devs
 
 | | |
 |---|---|
-| **Estado** | Aceptado el 11 de noviembre de 2026. Implementado en el cambio de OpenSpec [`weather-track-monitoreo`](../../openspec/changes/weather-track-monitoreo/design.md) y probado en un proyecto aislado. Falta la revisión del responsable en su instalación. |
+| **Estado** | Aceptado el 11 de noviembre de 2026. Implementado en el cambio de OpenSpec [`weather-track-monitoreo`](../../openspec/changes/archive/2026-11-11-weather-track-monitoreo/design.md), probado en un proyecto aislado y revisado por el responsable en su instalación el mismo día, con la salud de la estación. |
 | **Alcance** | Línea C de la [hoja de ruta](../plan/hoja-de-ruta-entrega-final.md): enterarse de un problema sin entrar a mirar. |
 | **Fuera de alcance** | Publicar Grafana o Prometheus en internet (línea B, en pausa), vigilar los correos que no salen y Alertmanager. |
 
@@ -111,7 +111,7 @@ flowchart LR
   - Prometheus leyó las métricas, con un disco libre del 93,6 %.
   - Grafana respondió 401 sin ingreso y mostró el tablero.
   - Con el worker detenido a las 17:08:39, el aviso llegó a Mailpit a las 17:15:40.
-- **Pendiente:** la revisión del responsable en su instalación.
+- **Revisión del responsable, el 11 de noviembre de 2026:** levantó el perfil en su instalación, revisó el tablero, los avisos y la salud de la estación con datos reales, y aprobó el cambio.
 
 ## Más información
 
