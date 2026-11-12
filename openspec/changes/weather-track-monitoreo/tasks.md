@@ -29,4 +29,12 @@ Las decisiones están en `design.md` (D1 a D6). Las verificaciones con Docker us
 
 - [x] 5.1 Escribir el ADR-0005 sobre el monitoreo y actualizar el README, la guía de instalación (perfil `monitoreo` y variables), el informe de seguridad, `CLAUDE.md`, las instrucciones de revisión si hace falta y la hoja de ruta (línea C)
 - [x] 5.2 Ajuste pedido en la revisión del responsable del 11 de noviembre: Administración y Mi cuenta muestran «← Volver a la estación», que vuelve a la última estación vista o, si no hay, al inicio; con pruebas en Vitest
-- [ ] 5.3 El responsable levanta el perfil en su instalación, revisa el tablero y los avisos, y aprueba el cambio
+- [x] 5.3 El responsable levanta el perfil en su instalación y revisa el tablero y los avisos (11 de noviembre: todo bien; pidió la salud de la estación, grupo 6)
+
+## 6. Salud de la estación (D7)
+
+- [x] 6.1 Escribir primero las pruebas parametrizadas de `salud_de_la_estacion` con sus límites (ciclo de 20 y 21 minutos, dato de 30 y 31 minutos, último ciclo con error, sin ciclos y modo prueba) y luego implementarla en `app/monitoreo/salud.py`
+- [x] 6.2 Sumar `ultimo_intento` y `salud` a `condiciones-actuales` con sus pruebas, y regenerar el contrato, los tipos y la sección 4 del README
+- [x] 6.3 Agregar la franja «Salud de la estación» a la pantalla de la estación y al detalle de un sensor, con pruebas en Vitest de cada estado y del reloj, y comprobarla en una prueba de extremo a extremo
+- [x] 6.4 Actualizar el README, la guía de instalación y el ADR-0005
+- [ ] 6.5 El responsable revisa la salud de la estación en su instalación y aprueba el cambio

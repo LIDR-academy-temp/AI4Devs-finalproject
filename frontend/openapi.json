@@ -133,6 +133,16 @@
             ],
             "title": "Medido En"
           },
+          "salud": {
+            "enum": [
+              "EN_VIVO",
+              "CON_DEMORAS",
+              "CAIDO",
+              "MODO_PRUEBA"
+            ],
+            "title": "Salud",
+            "type": "string"
+          },
           "sensores": {
             "items": {
               "$ref": "#/components/schemas/LecturaSensor"
@@ -155,6 +165,16 @@
               }
             ],
             "title": "Ultima Ingesta Exitosa En"
+          },
+          "ultimo_intento": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntentoDeIngesta"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -167,6 +187,8 @@
           "estado_datos",
           "ultima_ingesta_exitosa_en",
           "ultima_ingesta_con_error",
+          "ultimo_intento",
+          "salud",
           "sensores"
         ],
         "title": "CondicionesActuales",
@@ -607,6 +629,30 @@
           "puntos"
         ],
         "title": "Historico",
+        "type": "object"
+      },
+      "IntentoDeIngesta": {
+        "properties": {
+          "en": {
+            "format": "date-time",
+            "title": "En",
+            "type": "string"
+          },
+          "resultado": {
+            "enum": [
+              "EXITO",
+              "PARCIAL",
+              "ERROR"
+            ],
+            "title": "Resultado",
+            "type": "string"
+          }
+        },
+        "required": [
+          "en",
+          "resultado"
+        ],
+        "title": "IntentoDeIngesta",
         "type": "object"
       },
       "LecturaSensor": {

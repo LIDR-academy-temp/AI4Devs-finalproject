@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router'
 import { Campo } from '../componentes/Campo'
 import { GraficoSerie } from '../componentes/GraficoSerie'
+import { SaludEstacion } from '../componentes/SaludEstacion'
 import { obtenerCondiciones, obtenerHistorico } from '../servicios/cliente'
 import { useRecordarEstacion } from '../servicios/estaciones'
 import {
@@ -16,6 +17,7 @@ import {
 } from '../servicios/serie'
 import type { Rango } from '../servicios/serie'
 import { useCarga } from '../servicios/useCarga'
+import { useConsultaPeriodica } from '../servicios/useConsultaPeriodica'
 
 const RAPIDOS = [
   { clave: 'dia', texto: 'Día', dias: 1, titulo: 'últimas 24 horas' },
@@ -100,7 +102,8 @@ export function DetalleSensor() {
   }))
   const { rango } = consulta
 
-  const condiciones = useCarga(() => obtenerCondiciones(estacionId), [estacionId])
+  // Se repite cada minuto, como en la pantalla de la estación, para que la salud esté al día.
+  const condiciones = useConsultaPeriodica(() => obtenerCondiciones(estacionId), [estacionId])
   const historico = useCarga(
     () => obtenerHistorico(estacionId, sensorId, rango.desde, rango.hasta),
     [estacionId, sensorId, rango],
@@ -115,6 +118,8 @@ export function DetalleSensor() {
         ← Volver a la estación
       </Link>
       <h2>{nombre}</h2>
+
+      {condiciones.datos?.activa && <SaludEstacion condiciones={condiciones.datos} />}
 
       {sensor && (
         <div className="tarjeta">

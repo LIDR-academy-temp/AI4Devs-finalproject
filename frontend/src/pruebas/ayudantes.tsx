@@ -59,6 +59,8 @@ export const CONDICIONES = {
   estado_datos: 'VIGENTE',
   ultima_ingesta_exitosa_en: '2026-11-01T22:41:00-03:00',
   ultima_ingesta_con_error: false,
+  ultimo_intento: { en: '2026-11-01T22:41:00-03:00', resultado: 'EXITO' },
+  salud: 'EN_VIVO',
   sensores: [
     {
       sensor_id: 6,

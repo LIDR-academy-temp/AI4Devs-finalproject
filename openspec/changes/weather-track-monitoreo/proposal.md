@@ -25,6 +25,11 @@ El 11 de noviembre de 2026 el responsable eligió:
 - **Avisos en pantalla.** Un panel «Estado del sistema» en Administración muestra los controles en verde o en alerta, el estado del worker y el historial de alertas. Si el worker está caído, la API lo detecta por la falta de ciclos recientes.
 - **Avisos por correo.** Cada administrador activo recibe un correo cuando una alerta empieza y otro cuando se normaliza, nunca uno cada 10 minutos.
 - **Métricas para Prometheus.** El worker publica las mismas mediciones en `/metrics`, en un puerto interno que nunca se publica.
+- **Salud de la estación, para todas las cuentas** (pedido en la revisión del responsable, el 11 de noviembre). En la pantalla de la estación y en el detalle de un sensor, una franja muestra:
+  - la hora actual de la estación, en hora de Argentina;
+  - la hora del último ciclo de ingesta, haya terminado bien o con error;
+  - la hora del último dato que SAT2 tenía de la estación;
+  - un semáforo con texto: «En vivo», «Con demoras» o «Caído».
 - **Prometheus y Grafana**, en un perfil opcional de Compose, `monitoreo`:
   - Prometheus guarda la historia de las métricas.
   - Grafana trae un tablero ya armado. Además, avisa por correo si el worker deja de publicar métricas, que es lo único que la aplicación no puede avisar sola, porque los correos los envía el propio worker.
@@ -49,7 +54,8 @@ Ninguna.
   - ruta `/api/v1/administracion/estado`, invisible para el resto como las otras de administración;
   - correo `ALERTA_SISTEMA`;
   - dependencia nueva `prometheus-client`.
-- **Frontend:** panel «Estado del sistema» en Administración.
+- **Frontend:** panel «Estado del sistema» en Administración y franja «Salud de la estación» en la pantalla de la estación y en el detalle de un sensor.
+- **API:** `condiciones-actuales` suma el último intento de ingesta y la salud de la estación. Contrato y tipos regenerados.
 - **Infraestructura:**
   - el worker monta el volumen de la base en modo solo lectura, para medir el disco;
   - el perfil `monitoreo` suma Prometheus y Grafana, con imágenes de versión fija y configuración versionada en `monitoreo/`;

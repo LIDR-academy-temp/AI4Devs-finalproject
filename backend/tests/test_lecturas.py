@@ -325,6 +325,48 @@ def test_la_conexion_se_evalua_solo_con_ciclos_terminados(cliente, sesion, estac
     assert datos["ultima_ingesta_con_error"] is False
 
 
+
+# Salud de la estación (D7 de weather-track-monitoreo)
+
+
+@pytest.mark.parametrize(
+    ("ciclo", "resultado", "dato", "esperado"),
+    [
+        (5, "EXITO", 8, "EN_VIVO"),
+        (5, "ERROR", 8, "CON_DEMORAS"),
+        (5, "EXITO", 45, "CON_DEMORAS"),
+        (21, "EXITO", 8, "CAIDO"),
+    ],
+)
+def test_informa_la_salud_de_la_estacion(
+    cliente, sesion, estacion, sensor, monkeypatch, ciclo, resultado, dato, esperado
+):
+    monkeypatch.setenv("SAT2_MODO", "real")
+    ejecucion(sesion, estacion, resultado, finalizada=AHORA - timedelta(minutes=ciclo))
+    observar(sesion, sensor, AHORA - timedelta(minutes=dato))
+
+    datos = cliente.get(ruta(estacion, "condiciones-actuales")).json()
+
+    assert datos["salud"] == esperado
+    assert datos["ultimo_intento"]["resultado"] == resultado
+    assert datetime.fromisoformat(datos["ultimo_intento"]["en"]) == AHORA - timedelta(minutes=ciclo)
+    assert datos["ultimo_intento"]["en"].endswith("-03:00")
+
+
+def test_sin_ciclos_la_estacion_figura_caida(cliente, sesion, estacion, sensor, monkeypatch):
+    monkeypatch.setenv("SAT2_MODO", "real")
+
+    datos = cliente.get(ruta(estacion, "condiciones-actuales")).json()
+
+    assert datos["salud"] == "CAIDO"
+    assert datos["ultimo_intento"] is None
+
+
+def test_en_modo_prueba_la_salud_no_espera_ciclos(cliente, sesion, estacion, sensor, monkeypatch):
+    monkeypatch.setenv("SAT2_MODO", "prueba")
+
+    assert cliente.get(ruta(estacion, "condiciones-actuales")).json()["salud"] == "MODO_PRUEBA"
+
 def test_lista_todos_los_sensores_en_orden(cliente, sesion, estacion, sensor):
     otro = crear_sensor(
         sesion,

@@ -1,5 +1,6 @@
 import { useParams } from 'react-router'
 import { BloqueEstado } from '../componentes/BloqueEstado'
+import { SaludEstacion } from '../componentes/SaludEstacion'
 import { TarjetaSensor } from '../componentes/TarjetaSensor'
 import { obtenerCondiciones, obtenerRecomendacion } from '../servicios/cliente'
 import { useEstaciones, useRecordarEstacion } from '../servicios/estaciones'
@@ -52,6 +53,8 @@ function DecisionActiva({ estacionId }: { estacionId: string }) {
   return (
     <section className="decision">
       <h2>{condiciones.estacion_nombre}</h2>
+
+      <SaludEstacion condiciones={condiciones} />
 
       <BloqueEstado recomendacion={recomendacion} sinConexion={sinConexion} />
 

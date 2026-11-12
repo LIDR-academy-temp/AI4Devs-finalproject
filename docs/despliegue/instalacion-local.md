@@ -170,6 +170,15 @@ Hace unas 13 consultas a SAT2 y no escribe ningún archivo. Si todo sigue igual,
 
 Cada administrador recibe un correo cuando una alerta empieza y otro cuando se normaliza. Mientras sigue abierta, no se repite. En local, los correos llegan a Mailpit.
 
+**Salud de la estación.** Todas las cuentas ven, arriba de la decisión y en el detalle de un sensor, una franja con la hora actual de Argentina, el último intento de ingesta, el último dato de SAT2 y un semáforo:
+
+| Semáforo | Qué significa | Qué revisar |
+|---|---|---|
+| En vivo | El último ciclo terminó bien hace 20 minutos o menos y el dato tiene 30 minutos o menos | Nada |
+| Con demoras | Hay ciclos, pero el último falló o SAT2 no trae datos nuevos hace más de 30 minutos | La conexión con SAT2 y la estación en el campo |
+| Caído | No hubo ciclos en más de 20 minutos | Que el worker esté en marcha: `docker compose ps worker` |
+| Modo prueba | El modo `prueba` no ejecuta ciclos | Nada |
+
 **Prometheus y Grafana (opcional).** Guardan la historia de las mediciones, muestran un tablero y avisan por correo si el worker deja de publicar métricas durante 5 minutos, que es lo único que la aplicación no puede avisar sola. Para usarlos, agregá al `.env`:
 
 | Variable | Valor |

@@ -69,7 +69,7 @@ https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp
 | F5 | Históricos | Serie por sensor del último día, la última semana o el último mes, o de un rango elegido en el calendario: hasta el mismo día del mes siguiente (del 1/10 al 1/11, por ejemplo), dentro del último año y sin fechas futuras. Abre en el último día. Con resumen estadístico. |
 | F6 | Ingesta automática | Carga inicial de los últimos 31 días y proceso programado que cada 10 minutos obtiene datos, los normaliza, los guarda y calcula la recomendación. Al arrancar y cada hora recupera los huecos de los últimos 31 días, por ejemplo después de un apagado. |
 | F7 | Base de clientes | El administrador exporta a CSV las cuentas confirmadas, con su consentimiento para recibir novedades, sin datos de acceso. |
-| F8 | Monitoreo | Cuatro controles de salud (datos viejos, ciclos con error, disco casi lleno y posible fuerza bruta) con aviso por correo a los administradores y el panel «Estado del sistema». Opcionalmente, Prometheus y Grafana con un tablero y un aviso si el worker se detiene. |
+| F8 | Monitoreo | Cuatro controles de salud (datos viejos, ciclos con error, disco casi lleno y posible fuerza bruta) con aviso por correo a los administradores y el panel «Estado del sistema». Para todas las cuentas, una franja «Salud de la estación» con la hora de Argentina, el último intento de ingesta, el último dato de SAT2 y un semáforo: en vivo, con demoras o caído. Opcionalmente, Prometheus y Grafana con un tablero y un aviso si el worker se detiene. |
 
 #### Sistema de unidades
 
@@ -141,7 +141,7 @@ flowchart LR
     E --> F["Históricos"]
 ```
 
-La **pantalla de decisión** es el centro de la experiencia. Muestra primero el estado de aplicación con su color, debajo los motivos y el aviso de que es orientativa, y al final las tarjetas de sensores. Se actualiza sola cada 60 segundos. Si los datos no son vigentes, el estado pasa a `DATOS_INSUFICIENTES` y explica por qué.
+La **pantalla de decisión** es el centro de la experiencia. Arriba, la franja **«Salud de la estación»** dice si se puede confiar en lo que sigue: la hora actual de Argentina, el último intento de ingesta con su resultado, el último dato de SAT2 y un semáforo con texto. «En vivo» es que el último ciclo terminó bien hace 20 minutos o menos y el dato tiene 30 o menos; «Con demoras», que hay ciclos pero fallan o SAT2 no trae datos nuevos; «Caído», que no hubo ciclos en más de 20 minutos. La misma franja aparece en el detalle de un sensor. Después viene el estado de aplicación con su color, debajo los motivos y el aviso de que es orientativa, y al final las tarjetas de sensores. Se actualiza sola cada 60 segundos. Si los datos no son vigentes, el estado pasa a `DATOS_INSUFICIENTES` y explica por qué.
 
 El encabezado tiene siempre el selector de estación, aunque haya una sola, y el enlace a «Mi cuenta». En los modos con datos ficticios, una franja lo avisa en todas las pantallas.
 
@@ -364,7 +364,7 @@ El backend sigue una arquitectura en capas: `api` y `ingesta` dependen de `domin
 
 **Implementado: revisión con IA y documentación viva.** GitHub Copilot revisa cada pull request a `main` y cada push nuevo, con las instrucciones del proyecto. No es un control exigido: fusionar depende del pipeline y del responsable. La [guía de las especificaciones](docs/especificaciones/README.md) se genera con `uv run python -m herramientas.documentar_especificaciones`, y el trabajo de backend falla si no coincide con `openspec/specs`.
 
-**Implementado: monitoreo** ([ADR-0005](docs/decisions/0005-monitoreo.md)). El worker evalúa cada 10 minutos cuatro controles de salud y avisa por correo a los administradores cuando una alerta empieza y cuando se normaliza; la pantalla de administración muestra el «Estado del sistema». Con `docker compose --profile monitoreo up -d` se suman Prometheus y Grafana, con un tablero ya armado y un aviso si el worker se detiene. Grafana solo escucha en esta computadora.
+**Implementado: monitoreo** ([ADR-0005](docs/decisions/0005-monitoreo.md)). El worker evalúa cada 10 minutos cuatro controles de salud y avisa por correo a los administradores cuando una alerta empieza y cuando se normaliza; la pantalla de administración muestra el «Estado del sistema». Todas las cuentas ven, en la pantalla de la estación y en el detalle de un sensor, la franja «Salud de la estación» con su semáforo. Con `docker compose --profile monitoreo up -d` se suman Prometheus y Grafana, con un tablero ya armado y un aviso si el worker se detiene. Grafana solo escucha en esta computadora.
 
 **Pendiente: despliegue continuo.** La publicación de imágenes y el despliegue en el servidor del esquema siguiente siguen en la línea B de la [hoja de ruta](docs/plan/hoja-de-ruta-entrega-final.md).
 
@@ -408,13 +408,13 @@ Implementado y revisado en el [informe de seguridad](docs/seguridad/revision-ent
 
 ### **2.6. Tests**
 
-Resultado de la última ejecución, el 9 de noviembre de 2026: todas pasan, en local y en el [pipeline](https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp/actions/workflows/integracion.yml), que las corre en cada push. El backend además pasa Ruff, y el pipeline falla si el motor baja del 100 % de cobertura o si falta la base de pruebas.
+Resultado de la última ejecución, el 11 de noviembre de 2026: todas pasan, en local y en el [pipeline](https://github.com/dinannopabloguillermo/AI4Devs-finalproject-temp/actions/workflows/integracion.yml), que las corre en cada push. El backend además pasa Ruff, y el pipeline falla si el motor baja del 100 % de cobertura o si falta la base de pruebas.
 
 | Nivel | Herramienta | Qué cubre | Pruebas |
 |---|---|---|---|
-| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones, las instrucciones de revisión, el cifrado de la configuración de SAT2, la API de administración, el origen de la configuración en el worker y la recuperación de huecos, y el contrato con las respuestas reales de SAT2 (su saneado, su forma y su paso por el catálogo, el ciclo y la carga) y el monitoreo: controles con sus límites, alertas sin repetición, métricas y la configuración de Prometheus y Grafana | 812 |
-| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos con sus rangos y el calendario, las pantallas de cuentas con sus errores por campo y la pantalla de administración, visible solo para el rol, con el estado del sistema | 115 |
-| Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el rango manual de históricos, el selector, el equipo inactivo y las cuentas leyendo los correos en Mailpit: registro, confirmación, recupero y las tres formas de baja, y la administración de SAT2 con valores ficticios | 24 |
+| Unitario, integración e ingesta | pytest, con PostgreSQL de prueba y SAT2 simulado | Motor, normalización, calidad, rutas de la API, acceso, restricciones de la base, ingesta, errores de SAT2, equipos inactivos, separación de datos reales y ficticios, modo prueba, situaciones, límites del rango de históricos, el ciclo de vida de las cuentas (registro, códigos, correo, contraseñas, límites por IP y exportación), la guía generada de las especificaciones, las instrucciones de revisión, el cifrado de la configuración de SAT2, la API de administración, el origen de la configuración en el worker y la recuperación de huecos, y el contrato con las respuestas reales de SAT2 (su saneado, su forma y su paso por el catálogo, el ciclo y la carga) y el monitoreo: controles con sus límites, alertas sin repetición, métricas, la configuración de Prometheus y Grafana, y el semáforo de salud de la estación con sus límites | 834 |
+| Frontend | Vitest, Testing Library | Estados de la pantalla de decisión, selector de estación, equipo inactivo, avisos de modo, flujos de acceso e históricos con sus rangos y el calendario, las pantallas de cuentas con sus errores por campo y la pantalla de administración, visible solo para el rol, con el estado del sistema, y la franja de salud de la estación con su reloj | 127 |
+| Extremo a extremo | Playwright, contra la pila completa en modo prueba | HU1, HU2 y HU3 básica, con los cinco estados y las reglas R1 a R4 cargados como situaciones en "Caso de prueba - 1", más el rango manual de históricos, el selector, el equipo inactivo y las cuentas leyendo los correos en Mailpit: registro, confirmación, recupero y las tres formas de baja, y la administración de SAT2 con valores ficticios, más la franja de salud de la estación | 25 |
 | Seguridad | [`pruebas_negativas.py`](backend/herramientas/pruebas_negativas.py), contra la configuración de producción | Autorización, sesión, entradas, cabeceras, carga, enumeración de correos, enlaces de un solo uso, baja por `GET`, límites por IP, administración de SAT2 y monitoreo | 143 |
 
 Además, la ingesta se probó una vez contra SAT2 real, durante 38 minutos y con 48.427 lecturas. Los comandos están en la [sección 1.4](#14-instrucciones-de-instalación).
@@ -1124,6 +1124,10 @@ paths:
                 estado_datos: VIGENTE
                 ultima_ingesta_exitosa_en: '2026-11-01T14:41:02-03:00'
                 ultima_ingesta_con_error: false
+                ultimo_intento:
+                  en: '2026-11-01T14:41:02-03:00'
+                  resultado: EXITO
+                salud: EN_VIVO
                 sensores:
                   - sensor_id: 10
                     nombre: Temp Amb. a 2 Mts
@@ -1679,6 +1683,22 @@ components:
           nullable: true
         ultima_ingesta_con_error:
           type: boolean
+        ultimo_intento:
+          type: object
+          nullable: true
+          description: Último ciclo de ingesta terminado, haya salido bien o con error
+          required: [en, resultado]
+          properties:
+            en:
+              type: string
+              format: date-time
+            resultado:
+              type: string
+              enum: [EXITO, PARCIAL, ERROR]
+        salud:
+          type: string
+          enum: [EN_VIVO, CON_DEMORAS, CAIDO, MODO_PRUEBA]
+          description: Semáforo de la salud de la estación, calculado al leer
         sensores:
           type: array
           items:

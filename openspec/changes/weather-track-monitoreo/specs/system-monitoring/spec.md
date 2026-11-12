@@ -95,3 +95,31 @@ El perfil de monitoreo SHALL levantar Prometheus y Grafana con su configuración
 
 - **WHEN** alguien abre Grafana sin ingresar
 - **THEN** ve la pantalla de ingreso y no el tablero
+
+### Requirement: Salud de la estación
+
+La pantalla de la estación y el detalle de un sensor SHALL mostrar a todas las cuentas la hora actual en hora de Argentina, la hora y el resultado del último ciclo de ingesta, la hora del último dato de SAT2 y un semáforo de salud con su texto, calculado al leer.
+
+#### Scenario: Cuenta común
+
+- **WHEN** una cuenta sin el rol de administrador abre una estación
+- **THEN** ve la franja de salud con el semáforo y las tres horas
+
+### Requirement: Estados del semáforo
+
+El semáforo SHALL mostrar «En vivo» si el último ciclo terminó bien hace 20 minutos o menos y el dato tiene 30 minutos o menos; «Con demoras» si hubo un ciclo en los últimos 20 minutos pero terminó con error o el dato tiene más de 30 minutos; y «Caído» si no hubo ningún ciclo en más de 20 minutos.
+
+#### Scenario: Estación en vivo
+
+- **WHEN** el último ciclo terminó bien hace 5 minutos y el dato tiene 8 minutos
+- **THEN** el semáforo muestra «En vivo»
+
+#### Scenario: SAT2 sin datos nuevos
+
+- **WHEN** el último ciclo terminó bien hace 5 minutos y el dato tiene 45 minutos
+- **THEN** el semáforo muestra «Con demoras»
+
+#### Scenario: Proceso de ingesta detenido
+
+- **WHEN** el último ciclo terminó hace 21 minutos
+- **THEN** el semáforo muestra «Caído»

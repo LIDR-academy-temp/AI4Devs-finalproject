@@ -1,5 +1,6 @@
 """Endpoints de lectura de la sección 4 del README."""
 
+import os
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Annotated, Literal
@@ -28,6 +29,7 @@ from app.dominio.vigencia import (
     esta_vigente,
     estado_de_los_datos,
 )
+from app.monitoreo.salud import salud_de_la_estacion
 
 # Un mes de calendario: desde las 00:00 de un día hasta las 23:59 del mismo día del mes siguiente
 # (weather-track-historicos-sin-huecos, D5).
@@ -94,6 +96,11 @@ class LecturaSensor(BaseModel):
     alarma: bool | None
 
 
+class IntentoDeIngesta(BaseModel):
+    en: datetime
+    resultado: Literal["EXITO", "PARCIAL", "ERROR"]
+
+
 class CondicionesActuales(BaseModel):
     estacion_id: int
     estacion_nombre: str
@@ -104,6 +111,9 @@ class CondicionesActuales(BaseModel):
     estado_datos: Literal["VIGENTE", "DESACTUALIZADO", "SIN_DATOS"]
     ultima_ingesta_exitosa_en: datetime | None
     ultima_ingesta_con_error: bool
+    # Salud de la estación (weather-track-monitoreo, D7): se calcula al leer, como la regla R2.
+    ultimo_intento: IntentoDeIngesta | None
+    salud: Literal["EN_VIVO", "CON_DEMORAS", "CAIDO", "MODO_PRUEBA"]
     sensores: list[LecturaSensor]
 
 
@@ -235,7 +245,7 @@ def _ultimas_lecturas(
 
 def _estado_de_ingesta(
     sesion: Session, estacion: Estacion
-) -> tuple[datetime | None, bool]:
+) -> tuple[datetime | None, bool, EjecucionIngesta | None]:
     ciclos = select(EjecucionIngesta).where(
         EjecucionIngesta.estacion_id == estacion.id,
         EjecucionIngesta.tipo == "CICLO",
@@ -250,6 +260,7 @@ def _estado_de_ingesta(
     return (
         exitoso.finalizada_en if exitoso else None,
         ultimo is not None and ultimo.resultado == "ERROR",
+        ultimo,
     )
 
 
@@ -260,7 +271,7 @@ def obtener_condiciones_actuales(
     lecturas = _ultimas_lecturas(sesion, estacion)
     mediciones = [o.medido_en for _, o in lecturas if o is not None]
     medido_en = max(mediciones) if mediciones else None
-    ingesta_exitosa, con_error = _estado_de_ingesta(sesion, estacion)
+    ingesta_exitosa, con_error, ultimo = _estado_de_ingesta(sesion, estacion)
     return CondicionesActuales(
         estacion_id=estacion.id,
         estacion_nombre=estacion.nombre,
@@ -271,6 +282,18 @@ def obtener_condiciones_actuales(
         estado_datos=estado_de_los_datos(medido_en, ahora),
         ultima_ingesta_exitosa_en=_en_argentina(ingesta_exitosa),
         ultima_ingesta_con_error=con_error,
+        ultimo_intento=(
+            IntentoDeIngesta(en=_en_argentina(ultimo.finalizada_en), resultado=ultimo.resultado)
+            if ultimo
+            else None
+        ),
+        salud=salud_de_la_estacion(
+            ultimo.finalizada_en if ultimo else None,
+            ultimo.resultado if ultimo else None,
+            medido_en,
+            ahora,
+            os.environ.get("SAT2_MODO", "simulado"),
+        ),
         sensores=[
             LecturaSensor(
                 sensor_id=sensor.id,

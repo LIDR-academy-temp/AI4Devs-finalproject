@@ -386,12 +386,18 @@ export interface components {
             inactiva_desde: string | null;
             /** Medido En */
             medido_en: string | null;
+            /**
+             * Salud
+             * @enum {string}
+             */
+            salud: "EN_VIVO" | "CON_DEMORAS" | "CAIDO" | "MODO_PRUEBA";
             /** Sensores */
             sensores: components["schemas"]["LecturaSensor"][];
             /** Ultima Ingesta Con Error */
             ultima_ingesta_con_error: boolean;
             /** Ultima Ingesta Exitosa En */
             ultima_ingesta_exitosa_en: string | null;
+            ultimo_intento: components["schemas"]["IntentoDeIngesta"] | null;
         };
         /** ControlVisible */
         ControlVisible: {
@@ -531,6 +537,19 @@ export interface components {
             sensor_id: number;
             /** Unidad */
             unidad: string;
+        };
+        /** IntentoDeIngesta */
+        IntentoDeIngesta: {
+            /**
+             * En
+             * Format: date-time
+             */
+            en: string;
+            /**
+             * Resultado
+             * @enum {string}
+             */
+            resultado: "EXITO" | "PARCIAL" | "ERROR";
         };
         /** LecturaSensor */
         LecturaSensor: {

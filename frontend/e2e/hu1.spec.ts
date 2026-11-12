@@ -29,6 +29,18 @@ test.describe('HU1: ver si puedo aplicar ahora', () => {
     await expect(tarjeta(page, 'Pluviometro')).toContainText('En alarma')
   })
 
+  test('la franja de salud muestra el reloj, el último intento y el último dato', async ({ page }) => {
+    await abrirSituacion(page, 'favorables')
+
+    const salud = page.getByRole('region', { name: 'Salud de la estación' })
+    // La pila de prueba corre en modo prueba, que no ejecuta ciclos: el semáforo lo dice.
+    await expect(salud).toContainText('Modo prueba')
+    await expect(salud).toContainText('Hora actual (Argentina, UTC−3)')
+    await expect(salud).toContainText('terminó bien')
+    await expect(salud).toContainText(/Último dato de SAT2\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}/)
+    await exigirSinDesplazamientoHorizontal(page)
+  })
+
   test('estación inexistente', async ({ page }) => {
     await ingresar(page)
 

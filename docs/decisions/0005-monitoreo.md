@@ -66,6 +66,15 @@ flowchart LR
 | Disco casi lleno | Queda menos del 10 % libre en el disco de la base, que el worker monta en modo solo lectura |
 | Fuerza bruta | Hay 20 o más ingresos fallidos en 15 minutos, o una dirección IP bloqueada por superar su límite |
 
+**Salud de la estación, para todas las cuentas.** Pedida en la revisión del responsable del 11 de noviembre. `condiciones-actuales` suma el último intento de ingesta y un semáforo que se calcula al leer, con los mismos umbrales: 20 minutos sin ciclos (`umbrales.py`) y 30 minutos de la regla R2 (`vigencia.py`). La pantalla de la estación y el detalle de un sensor lo muestran en una franja, siempre con texto además del color:
+
+| Semáforo | Cuándo |
+|---|---|
+| En vivo | El último ciclo terminó bien hace 20 minutos o menos y el dato tiene 30 minutos o menos |
+| Con demoras | Hubo un ciclo en los últimos 20 minutos, pero falló o el dato tiene más de 30 minutos |
+| Caído | No hubo ningún ciclo en más de 20 minutos |
+| Modo prueba | El modo `prueba` no ejecuta ciclos |
+
 **Sin repetir avisos.** Una restricción única parcial permite una sola alerta abierta por control y estación. El correo sale al abrirse y al cerrarse, nunca mientras sigue abierta.
 
 **Seguridad:**
@@ -81,6 +90,7 @@ flowchart LR
 **Mejora:**
 
 - Un apagado, una caída de SAT2, un disco que se llena o un ataque de fuerza bruta llegan por correo y se ven en la pantalla sin tener que buscarlos.
+- El productor sabe, junto a la decisión, si los datos están al día, sin ser administrador.
 - La instalación de siempre no suma servicios.
 - La historia de las mediciones queda en Prometheus, y el tablero viene armado.
 
@@ -95,6 +105,7 @@ flowchart LR
 ## Confirmación
 
 - Pruebas de los controles con sus límites, las transiciones, la API, el panel, las métricas, Compose y la configuración: 812 pruebas del backend y 115 del frontend.
+- Salud de la estación: 22 pruebas nuevas del backend con los límites del semáforo, 8 de Vitest con cada estado y el reloj, y una de extremo a extremo. En total, 834 del backend, 127 del frontend y 25 de extremo a extremo.
 - [Pruebas negativas](../../backend/herramientas/pruebas_negativas.py): 10 comprobaciones nuevas, entre ellas que las métricas no se alcanzan desde afuera y que una ráfaga abre una sola alerta con un solo aviso.
 - **Proyecto aislado `wt-mon`, el 11 de noviembre de 2026:**
   - Prometheus leyó las métricas, con un disco libre del 93,6 %.

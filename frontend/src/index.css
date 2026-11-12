@@ -538,3 +538,44 @@ input[aria-invalid='true'] {
   margin-top: 1rem;
   font-size: 0.8125rem;
 }
+
+/* Salud de la estación (weather-track-monitoreo, D7) */
+.salud {
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid currentcolor;
+  border-radius: 0.5rem;
+}
+
+.salud-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.salud-encabezado h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.semaforo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-weight: 800;
+}
+
+.semaforo-luz {
+  width: 0.8rem;
+  height: 0.8rem;
+  background: currentcolor;
+  border-radius: 50%;
+}
+
+.salud .estado-explicacion {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}

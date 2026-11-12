@@ -120,6 +120,35 @@ El worker publica con `prometheus-client` en `:9464/metrics`. El puerto no se pu
 - **Correo de Grafana:** usa el mismo servidor de correo que el worker (Mailpit en local) y lo envía a `ALERTAS_CORREO`.
 - **Producción:** `docker-compose.prod.yml` no incluye el perfil. Publicarlo con HTTPS queda para la línea B.
 
+### D7. Salud de la estación, para todas las cuentas
+
+Pedido en la revisión del responsable del 11 de noviembre de 2026. El productor necesita saber si puede confiar en la decisión: con el semáforo en rojo, la recomendación no está al día.
+
+**API.** `GET /estaciones/{id}/condiciones-actuales` suma dos campos:
+
+- `ultimo_intento`: hora y resultado del último ciclo terminado de la estación, haya salido bien o con error.
+- `salud`: el estado del semáforo, que se calcula al leer, como la regla R2.
+
+La hora del último dato ya está en `medido_en`, la hora de medición que informa SAT2.
+
+**Semáforo.** `salud_de_la_estacion` vive en `app/monitoreo/salud.py`. Es una función pura y usa los umbrales que ya existen: 20 minutos de `umbrales.py` y 30 minutos de `vigencia.py`.
+
+| Estado | Cuándo | Color |
+|---|---|---|
+| `EN_VIVO` | El último ciclo terminó bien hace 20 minutos o menos, y el último dato tiene 30 minutos o menos | Verde |
+| `CON_DEMORAS` | Hubo un ciclo en los últimos 20 minutos, pero terminó con error o SAT2 no trae datos nuevos hace más de 30 minutos | Amarillo |
+| `CAIDO` | No hubo ningún ciclo en más de 20 minutos, o nunca hubo uno | Rojo |
+| `MODO_PRUEBA` | El modo prueba no ejecuta ciclos | Gris |
+
+**Pantalla.** Una franja «Salud de la estación» arriba de la decisión y en el detalle de un sensor, con:
+
+- la hora actual de la estación, que avanza cada minuto en hora de Argentina, la zona de todas las estaciones de SAT2;
+- el último intento de ingesta y su resultado;
+- el último dato de SAT2;
+- el semáforo, siempre con su texto además del color.
+
+Se actualiza con la misma consulta periódica de la pantalla, cada 60 segundos. Una estación inactiva no la muestra, porque ya no se ingesta.
+
 ## Risks / Trade-offs
 
 - [Prometheus y Grafana suman memoria y disco] → Van en un perfil opcional. Prometheus guarda solo 30 días.
