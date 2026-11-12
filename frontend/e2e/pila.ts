@@ -1,0 +1,68 @@
+import { execFileSync } from 'node:child_process'
+import { resolve } from 'node:path'
+
+const PUERTO = '8088'
+/** Mailpit de la pila de pruebas, aparte del de la instalación local. */
+export const PUERTO_CORREO = '8026'
+const RAIZ = resolve(import.meta.dirname, '../..')
+
+export const URL_E2E = `http://localhost:${PUERTO}`
+export const EMAIL_E2E = 'e2e@weathertrack.example'
+
+/**
+ * Siempre sobre el proyecto `wt-e2e`, con su propia base: `cierre-global` la borra, y así
+ * nunca toca el proyecto por defecto, que guarda los datos reales. Las variables del proceso
+ * ganan sobre las del archivo, y `--env-file` evita que Compose lea el `.env` real.
+ */
+export function compose(...argumentos: string[]): string {
+  return execFileSync(
+    'docker',
+    ['compose', '-p', 'wt-e2e', '--env-file', '.env.example', ...argumentos],
+    {
+      cwd: RAIZ,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        SAT2_MODO: 'prueba',
+        PUERTO_WEB: PUERTO,
+        PUERTO_CORREO: PUERTO_CORREO,
+        CARGA_PAUSA_SEGUNDOS: '0',
+        COOKIE_SEGURA: 'false',
+      },
+    },
+  )
+}
+
+/**
+ * Carga una situación de la recomendación en "Caso de prueba - 1". La calculan el ciclo y el
+ * motor reales a partir de lecturas ficticias; ninguna situación se presenta como estación.
+ */
+export function cargarSituacion(clave: string) {
+  compose('exec', '-T', 'api', 'python', '-m', 'herramientas.situaciones', clave)
+}
+
+/** Consulta o cambio directo en la base aislada de `wt-e2e`. */
+export function sql(consulta: string): string {
+  return compose(
+    'exec', '-T', 'db', 'psql', '-U', 'weather_track', '-d', 'weather_track', '-tAc', consulta,
+  ).trim()
+}
+
+/** Crea una cuenta ya confirmada, como el administrador, y devuelve su clave. */
+export function crearCuentaConfirmada(email: string, nombre = 'Prueba E2E'): string {
+  const salida = compose(
+    'exec', '-T', 'api', 'python', '-m', 'app.administracion',
+    'crear-usuario', '--email', email, '--nombre', nombre,
+  )
+  const clave = /se muestra una sola vez: (\S+)/.exec(salida)?.[1]
+  if (!clave) {
+    throw new Error('La administración no informó la clave de la cuenta')
+  }
+  return clave
+}
+
+/** Las pruebas de cuentas registran e ingresan seguido desde la misma IP. */
+export function vaciarLimitesPorIp() {
+  sql('DELETE FROM limite_ip')
+}

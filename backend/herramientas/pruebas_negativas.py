@@ -1,0 +1,461 @@
+"""Pruebas negativas de A14 contra una pila aislada con la configuración de producción.
+
+Se ejecuta en la computadora anfitriona, con Docker y los puertos 80 y 443 libres:
+
+    python backend/herramientas/pruebas_negativas.py
+
+Usa el proyecto `wt-seg`, que crea y borra, y el modo prueba: datos ficticios, sin conexión
+a SAT2. Nunca muestra claves ni identificadores de sesión. Termina con código 1 si algo falla.
+"""
+
+import concurrent.futures
+import json
+import pathlib
+import re
+import secrets
+import socket
+import ssl
+import subprocess
+import tempfile
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+
+RAIZ = pathlib.Path(__file__).resolve().parents[2]
+
+# En Windows, Docker Desktop a veces deja colgado el reenvío IPv6 del puerto 443, y Python prueba
+# primero ::1 para "localhost": se usa solo IPv4, que es lo que se está probando.
+_resolver = socket.getaddrinfo
+
+
+def _solo_ipv4(host, *argumentos, **opciones):
+    direcciones = _resolver(host, *argumentos, **opciones)
+    return [d for d in direcciones if d[0] == socket.AF_INET] or direcciones
+
+
+socket.getaddrinfo = _solo_ipv4
+BASE = "https://localhost"
+CONTEXTO = ssl.create_default_context()
+CONTEXTO.check_hostname = False
+CONTEXTO.verify_mode = ssl.CERT_NONE
+
+
+class SinRedireccion(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **k):
+        return None
+
+
+ABRIDOR = urllib.request.build_opener(SinRedireccion, urllib.request.HTTPSHandler(context=CONTEXTO))
+FALLAS = []
+
+
+def comprobar(nombre, condicion, detalle=""):
+    print(("ok   " if condicion else "FALLA"), nombre, detalle if not condicion else "")
+    if not condicion:
+        FALLAS.append(nombre)
+
+
+def pedir(ruta, metodo="GET", cuerpo=None, galleta=None, tipo="application/json", url_cruda=False, extra=None):
+    cabeceras = dict(extra or {})
+    datos = None
+    if cuerpo is not None:
+        datos = cuerpo if isinstance(cuerpo, bytes) else json.dumps(cuerpo).encode()
+        cabeceras["Content-Type"] = tipo
+    if galleta:
+        cabeceras["Cookie"] = galleta
+    pedido = urllib.request.Request(BASE + ruta, data=datos, headers=cabeceras, method=metodo)
+    try:
+        r = ABRIDOR.open(pedido, timeout=60)
+    except urllib.error.HTTPError as e:
+        r = e
+    except Exception as e:  # noqa: BLE001
+        return 0, {}, type(e).__name__.encode()
+    return getattr(r, "status", None) or r.code, r.headers, r.read()
+
+
+def compose(archivo, *args):
+    return subprocess.run(
+        ["docker", "compose", "-p", "wt-seg", "--env-file", archivo, "-f", "docker-compose.yml", "-f", "docker-compose.prod.yml", *args],
+        cwd=RAIZ, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
+    )
+
+
+def admin(archivo, *args):
+    return compose(archivo, "exec", "-T", "api", "python", "-m", "app.administracion", *args)
+
+
+def crear(archivo, email):
+    """Una cuenta ya confirmada, como la crea el administrador. Ve todas las estaciones."""
+    salida = admin(archivo, "crear-usuario", "--email", email, "--nombre", "Prueba").stdout
+    return re.search(r"una sola vez: (\S+)", salida).group(1)
+
+
+def entrar(email, clave):
+    codigo, cabeceras, _ = pedir("/api/v1/auth/login", "POST", {"email": email, "contrasena": clave})
+    return codigo, cabeceras.get("Set-Cookie", "")
+
+
+carpeta = pathlib.Path(tempfile.mkdtemp())
+env = carpeta / "seg.env"
+env.write_text(
+    f"SAT2_MODO=prueba\nPOSTGRES_PASSWORD={secrets.token_hex(32)}\nDIRECCION_WEB=localhost\nCARGA_PAUSA_SEGUNDOS=0\n"
+    # La configuración de producción exige un servidor de correo: uno inexistente, que nunca recibe nada.
+    f"SMTP_HOST=correo.invalid\nSMTP_PUERTO=587\nSMTP_USUARIO=prueba\nSMTP_CLAVE={secrets.token_hex(16)}\n"
+    "CORREO_REMITENTE=Weather Track <no-responder@ejemplo.com>\n",
+    encoding="utf-8",
+)
+E = str(env)
+try:
+    # Un par de claves descartable: la API cifra con la publica; la privada solo prueba que la API no la recibe.
+    claves = compose(E, "run", "--rm", "--no-deps", "--build", "api", "python", "-m", "app.administracion", "generar-claves-sat2")
+    lineas = [l for l in claves.stdout.splitlines() if l.startswith("SAT2_CLAVE_")]
+    if claves.returncode or len(lineas) != 2:
+        print("no se pudieron generar las claves:", claves.returncode)
+        raise SystemExit(1)
+    with env.open("a", encoding="utf-8") as archivo:
+        archivo.write("".join(f"{l}\n" for l in lineas))
+    arriba = compose(E, "up", "--build", "-d", "--wait", "--wait-timeout", "300")
+    print("up:", arriba.returncode)
+    if arriba.returncode:
+        print(arriba.stderr[-500:])
+        raise SystemExit(1)
+
+    clave_a = crear(E, "a@ejemplo.com")
+    clave_b = crear(E, "b@ejemplo.com")
+    codigo, galleta_cruda = entrar("a@ejemplo.com", clave_a)
+    galleta_a = galleta_cruda.split(";")[0]
+    atributos = galleta_cruda.lower()
+    print("\n== Sesion y cookie")
+    comprobar("login valido", codigo == 200)
+    comprobar("cookie Secure", "secure" in atributos)
+    comprobar("cookie HttpOnly", "httponly" in atributos)
+    comprobar("cookie SameSite", "samesite=lax" in atributos)
+    comprobar("cookie Path=/api", "path=/api" in atributos)
+
+    # Sin niveles de usuario, toda cuenta ve todas las estaciones: los dos casos de prueba.
+    estaciones = json.loads(pedir("/api/v1/estaciones", galleta=galleta_a)[2])
+    comprobar("ve todas las estaciones", len(estaciones) == 2)
+    propia, ajena = estaciones[0]["id"], estaciones[1]["id"]
+    codigo_b, galleta_b_cruda = entrar("b@ejemplo.com", clave_b)
+    galleta_b = galleta_b_cruda.split(";")[0]
+    sensores_a = json.loads(pedir(f"/api/v1/estaciones/{propia}/condiciones-actuales", galleta=galleta_a)[2])["sensores"]
+    sensores_b = json.loads(pedir(f"/api/v1/estaciones/{ajena}/condiciones-actuales", galleta=galleta_b)[2])["sensores"]
+    sensor_a, sensor_b = sensores_a[0]["sensor_id"], sensores_b[0]["sensor_id"]
+    rango = urllib.parse.urlencode({"desde": "2026-11-01T00:00:00+00:00", "hasta": "2026-11-02T00:00:00+00:00"})
+
+    print("\n== Sin sesion: todas las rutas del contrato")
+    contrato = json.loads(pedir("/api/openapi.json")[2])
+    # Las rutas del registro, el recupero y las bajas por enlace no usan sesion: las protegen sus codigos.
+    publicas = {
+        "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/salud",
+        "/api/v1/auth/registro", "/api/v1/auth/confirmacion", "/api/v1/auth/confirmacion/reenvio",
+        "/api/v1/auth/recupero", "/api/v1/auth/recupero/nueva-contrasena",
+        "/api/v1/cuenta/baja-con-enlace", "/api/v1/cuenta/baja-un-clic",
+    }
+    for ruta, metodos in contrato["paths"].items():
+        # La administracion responde 404 sin sesion, como una ruta inexistente: se prueba aparte.
+        if ruta in publicas or ruta.startswith("/api/v1/administracion"):
+            continue
+        real = ruta.replace("{estacionId}", str(propia)).replace("{sensorId}", str(sensor_a))
+        for metodo in metodos:
+            sufijo = f"?{rango}" if "historico" in ruta else ""
+            comprobar(f"sin sesion {metodo} {ruta}", pedir(real + sufijo, metodo.upper())[0] == 401)
+    for nombre, valor in [("inventada", "wt_sesion=" + secrets.token_urlsafe(32)), ("vacia", "wt_sesion="), ("sqli", "wt_sesion=' OR '1'='1"), ("larga", "wt_sesion=" + "a" * 4000)]:
+        comprobar(f"cookie {nombre}", pedir("/api/v1/estaciones", galleta=valor)[0] == 401)
+
+    print("\n== Acceso a estaciones")
+    for sufijo in ("recomendacion", "condiciones-actuales"):
+        comprobar(f"otra estacion {sufijo}", pedir(f"/api/v1/estaciones/{ajena}/{sufijo}", galleta=galleta_a)[0] == 200)
+        codigo, _, cuerpo = pedir(f"/api/v1/estaciones/999999/{sufijo}", galleta=galleta_a)
+        comprobar(f"estacion inexistente {sufijo}", codigo == 404 and b"sensores" not in cuerpo, str(codigo))
+    comprobar("sensor de otra estacion por la propia", pedir(f"/api/v1/estaciones/{propia}/sensores/{sensor_b}/historico?{rango}", galleta=galleta_a)[0] == 404)
+
+    print("\n== Entradas en rutas")
+    for nombre, ruta in [
+        ("id enorme", f"/api/v1/estaciones/{10**30}/recomendacion"),
+        ("id bigint limite", f"/api/v1/estaciones/{2**63}/recomendacion"),
+        ("id negativo", "/api/v1/estaciones/-1/recomendacion"),
+        ("id texto", "/api/v1/estaciones/abc/recomendacion"),
+        ("id inyeccion", "/api/v1/estaciones/1%20OR%201=1/recomendacion"),
+        ("sensor enorme", f"/api/v1/estaciones/{propia}/sensores/{10**30}/historico?{rango}"),
+    ]:
+        codigo = pedir(ruta, galleta=galleta_a)[0]
+        comprobar(f"{nombre} ({codigo})", codigo in (403, 404, 422), str(codigo))
+
+    print("\n== Fechas del historico")
+    base = f"/api/v1/estaciones/{propia}/sensores/{sensor_a}/historico?"
+    for nombre, desde, hasta in [
+        ("sin zona", "2026-11-01T00:00:00", "2026-11-02T00:00:00"),
+        ("invertidas", "2026-11-02T00:00:00+00:00", "2026-11-01T00:00:00+00:00"),
+        ("mas de 31 dias", "2026-01-01T00:00:00+00:00", "2026-11-01T00:00:00+00:00"),
+        ("texto", "ayer", "hoy"),
+        ("minima", "0001-01-01T00:00:00+00:00", "0001-01-02T00:00:00+00:00"),
+        ("minima con zona", "0001-01-01T00:00:00+14:00", "0001-01-02T00:00:00+14:00"),
+        ("maxima", "9999-12-30T00:00:00+00:00", "9999-12-31T23:59:59+00:00"),
+        ("maxima con zona", "9999-12-30T00:00:00-14:00", "9999-12-31T23:59:59-14:00"),
+    ]:
+        consulta = urllib.parse.urlencode({"desde": desde, "hasta": hasta})
+        codigo, _, cuerpo = pedir(base + consulta, galleta=galleta_a)
+        comprobar(f"fecha {nombre} ({codigo})", codigo in (200, 422), f"{codigo} {cuerpo[:60]!r}")
+
+    print("\n== Entradas del login")
+    for nombre, cuerpo, tipo in [
+        ("sqli correo", {"email": "' OR 1=1 --", "contrasena": "x"}, "application/json"),
+        ("sqli clave", {"email": "c@ejemplo.com", "contrasena": "' OR '1'='1"}, "application/json"),
+        ("correo con NUL", {"email": "n\u0000ul@ejemplo.com", "contrasena": "x"}, "application/json"),
+        ("clave con NUL", {"email": "d@ejemplo.com", "contrasena": "x\u0000y"}, "application/json"),
+        ("correo largo", {"email": "x" * 255 + "@e.com", "contrasena": "x"}, "application/json"),
+        ("clave larga", {"email": "e@ejemplo.com", "contrasena": "x" * 1025}, "application/json"),
+        ("correo tipo objeto", {"email": {"$ne": ""}, "contrasena": "x"}, "application/json"),
+        ("lista", [1, 2], "application/json"),
+        ("JSON roto", b"{", "application/json"),
+        ("text/plain", b'{"email":"f@ejemplo.com","contrasena":"x"}', "text/plain"),
+        ("formulario", b"email=g@ejemplo.com&contrasena=x", "application/x-www-form-urlencoded"),
+    ]:
+        codigo, _, respuesta = pedir("/api/v1/auth/login", "POST", cuerpo, tipo=tipo)
+        comprobar(f"login {nombre} ({codigo})", codigo in (401, 422), f"{codigo} {respuesta[:60]!r}")
+    secreto = "NO-REPETIR-" + secrets.token_hex(4)
+    _, _, respuesta = pedir("/api/v1/auth/login", "POST", {"email": 5, "contrasena": secreto})
+    comprobar("error no repite la clave", secreto.encode() not in respuesta)
+    codigo, _, _ = pedir("/api/v1/auth/login", "POST", b'{"email":"' + b"x" * 100_000 + b'"}')
+    comprobar(f"cuerpo de 100 KB rechazado por el proxy ({codigo})", codigo == 413, str(codigo))
+    # Con un cuerpo grande, Caddy puede cortar la conexión antes de que termine el envío.
+    codigo, _, _ = pedir("/api/v1/auth/login", "POST", b'{"email":"' + b"x" * 3_000_000 + b'"}')
+    comprobar(f"cuerpo de 3 MB rechazado por el proxy ({codigo})", codigo in (413, 0), str(codigo))
+
+    print("\n== Bloqueo y enumeracion")
+    clave_v = crear(E, "victima@ejemplo.com")
+    t0 = time.perf_counter(); pedir("/api/v1/auth/login", "POST", {"email": "victima@ejemplo.com", "contrasena": "mala"}); t_existe = time.perf_counter() - t0
+    t0 = time.perf_counter(); r_no = pedir("/api/v1/auth/login", "POST", {"email": "noexiste@ejemplo.com", "contrasena": "mala"}); t_no = time.perf_counter() - t0
+    r_si = pedir("/api/v1/auth/login", "POST", {"email": "victima@ejemplo.com", "contrasena": "mala"})
+    comprobar("mismo mensaje exista o no", r_no[2] == r_si[2] and r_no[0] == r_si[0] == 401)
+    print(f"     tiempos: existe {t_existe*1000:.0f} ms, no existe {t_no*1000:.0f} ms")
+    comprobar("tiempos comparables", abs(t_existe - t_no) < max(t_existe, t_no) * 0.6, f"{t_existe:.3f} {t_no:.3f}")
+    for _ in range(3):
+        pedir("/api/v1/auth/login", "POST", {"email": "victima@ejemplo.com", "contrasena": "mala"})
+    codigo, cabeceras, _ = pedir("/api/v1/auth/login", "POST", {"email": "victima@ejemplo.com", "contrasena": clave_v})
+    comprobar("clave correcta rechazada durante el bloqueo", codigo == 429 and cabeceras.get("Retry-After") is not None, str(codigo))
+    comprobar("mayusculas no evaden el bloqueo", pedir("/api/v1/auth/login", "POST", {"email": " VICTIMA@ejemplo.com ", "contrasena": clave_v})[0] == 429)
+    for _ in range(5):
+        pedir("/api/v1/auth/login", "POST", {"email": "fantasma@ejemplo.com", "contrasena": "mala"})
+    comprobar("un correo inexistente tambien se bloquea", pedir("/api/v1/auth/login", "POST", {"email": "fantasma@ejemplo.com", "contrasena": "mala"})[0] == 429)
+
+    print("\n== Limite por IP")
+
+    def vaciar_contadores_de_ip():
+        compose(E, "exec", "-T", "db", "psql", "-U", "weather_track", "-d", "weather_track", "-qc", "delete from limite_ip")
+
+    vaciar_contadores_de_ip()
+    codigos = [
+        pedir("/api/v1/auth/login", "POST", {"email": f"ip{n}@ejemplo.com", "contrasena": "mala"},
+              extra={"X-Forwarded-For": f"10.9.{n}.1"})[0]
+        for n in range(30)
+    ]
+    comprobar("30 inicios de sesion desde una IP se atienden", set(codigos) == {401}, str(set(codigos)))
+    codigo, cabeceras, _ = pedir("/api/v1/auth/login", "POST", {"email": "ip99@ejemplo.com", "contrasena": "mala"},
+                                 extra={"X-Forwarded-For": "10.9.99.1"})
+    comprobar("el 31 recibe 429 aunque cambie X-Forwarded-For", codigo == 429 and cabeceras.get("Retry-After") is not None, str(codigo))
+    # Lo que sigue no prueba el limite: sin vaciar, cada inicio de sesion recibiria 429.
+    vaciar_contadores_de_ip()
+
+    print("\n== Vida de la sesion")
+    clave_c = crear(E, "ciclo@ejemplo.com")
+    galleta_c = entrar("ciclo@ejemplo.com", clave_c)[1].split(";")[0]
+    comprobar("sesion activa", pedir("/api/v1/estaciones", galleta=galleta_c)[0] == 200)
+    pedir("/api/v1/auth/logout", "POST", galleta=galleta_c)
+    comprobar("logout invalida en el servidor", pedir("/api/v1/estaciones", galleta=galleta_c)[0] == 401)
+    galleta_c = entrar("ciclo@ejemplo.com", clave_c)[1].split(";")[0]
+    nueva = re.search(r"una sola vez: (\S+)", admin(E, "restablecer-clave", "--email", "ciclo@ejemplo.com").stdout).group(1)
+    comprobar("restablecer clave cierra sesiones", pedir("/api/v1/estaciones", galleta=galleta_c)[0] == 401)
+    comprobar("la clave vieja deja de servir", entrar("ciclo@ejemplo.com", clave_c)[0] == 401)
+    galleta_c = entrar("ciclo@ejemplo.com", nueva)[1].split(";")[0]
+    admin(E, "desactivar-usuario", "--email", "ciclo@ejemplo.com")
+    comprobar("desactivar corta la sesion", pedir("/api/v1/estaciones", galleta=galleta_c)[0] == 401)
+    comprobar("cuenta inactiva no entra", entrar("ciclo@ejemplo.com", nueva)[0] == 401)
+
+    print("\n== Administracion: invisible para el resto (weather-track-administracion-sat2)")
+    vaciar_contadores_de_ip()
+
+    def consultar(consulta):
+        return compose(E, "exec", "-T", "db", "psql", "-U", "weather_track", "-d", "weather_track", "-tAc", consulta).stdout.strip()
+
+    SAT2 = "/api/v1/administracion/sat2"
+    inexistente = pedir("/api/v1/noexiste")[2]
+    for ruta, metodo in [(SAT2, "GET"), (SAT2, "PUT"), (SAT2, "DELETE"), ("/api/v1/administracion/otra", "GET"),
+                         ("/api/v1/administracion/estado", "GET")]:
+        for quien, galleta in [("sin sesion", None), ("cuenta comun", galleta_a)]:
+            codigo, _, cuerpo = pedir(ruta, metodo, {} if metodo == "PUT" else None, galleta=galleta)
+            comprobar(f"administracion {quien} {metodo} {ruta}: igual a una ruta inexistente", codigo == 404 and cuerpo == inexistente, str(codigo))
+    datos_a = {"nombre": "Prueba", "apellido": "A", "localidad": "Pergamino", "provincia": "Buenos Aires", "es_administrador": True}
+    pedir("/api/v1/cuenta", "PUT", datos_a, galleta=galleta_a)
+    comprobar("la cuenta no se vuelve administradora por la API", pedir(SAT2, galleta=galleta_a)[0] == 404)
+
+    clave_adm = crear(E, "adm@ejemplo.com")
+    admin(E, "hacer-administrador", "--email", "adm@ejemplo.com")
+    galleta_adm = entrar("adm@ejemplo.com", clave_adm)[1].split(";")[0]
+    codigo, _, cuerpo = pedir(SAT2, galleta=galleta_adm)
+    comprobar(f"el administrador ve la configuracion ({codigo})", codigo == 200 and json.loads(cuerpo)["puede_guardar"] is True)
+    # Valores ficticios: nunca credenciales reales de SAT2.
+    ficticia = {"url_base": "https://sat2.ejemplo.invalid/api", "usuario": "usuario-" + secrets.token_hex(4), "clave": "clave-" + secrets.token_hex(8)}
+    codigo, _, _ = pedir(SAT2, "PUT", {**ficticia, "contrasena_actual": "mala"}, galleta=galleta_adm)
+    filas = consultar("select count(*) from configuracion_sat2")
+    comprobar(f"contrasena incorrecta del administrador no guarda ({codigo})", codigo == 400 and filas == "0", filas)
+    comprobar("la contrasena incorrecta cuenta como intento", consultar("select count(*) from intento_acceso where email = 'adm@ejemplo.com'") == "1")
+    codigo, _, cuerpo = pedir(SAT2, "PUT", {**ficticia, "url_base": "file:///etc/passwd", "contrasena_actual": clave_adm}, galleta=galleta_adm)
+    comprobar(f"una direccion que no es http ni https se rechaza ({codigo})", codigo == 422 and consultar("select count(*) from configuracion_sat2") == "0")
+    codigo, _, cuerpo = pedir(SAT2, "PUT", {**ficticia, "contrasena_actual": clave_adm}, galleta=galleta_adm)
+    comprobar(f"el administrador guarda ({codigo})", codigo == 200)
+    comprobar("la respuesta no repite los valores", not any(v.encode() in cuerpo for v in ficticia.values()))
+    en_claro = [v for v in ficticia.values() if consultar(f"select position(convert_to('{v}', 'UTF8') in contenido_cifrado) from configuracion_sat2") != "0"]
+    comprobar("la base guarda solo texto cifrado", en_claro == [], str(len(en_claro)))
+    registros = compose(E, "logs", "api").stdout
+    comprobar("los registros de la API no tienen los valores", not any(v in registros for v in ficticia.values()))
+    vaciar_contadores_de_ip()
+
+    print("\n== Cuentas: enumeracion de correos")
+
+    def sql(consulta):
+        return compose(E, "exec", "-T", "db", "psql", "-U", "weather_track", "-d", "weather_track", "-tAc", consulta).stdout.strip()
+
+    def codigo_del_correo(email, tipo, ruta):
+        """El worker no puede enviar (el servidor de correo no existe): el enlace sigue en la bandeja."""
+        texto = sql(f"select cuerpo_texto from correo_saliente where destinatario = '{email}' and tipo = '{tipo}' order by id desc limit 1")
+        encontrado = re.search(rf"{ruta}#codigo=([A-Za-z0-9_-]+)", texto)
+        return encontrado.group(1) if encontrado else ""
+
+    def registrar(email, extra=None):
+        datos = {
+            "nombre": "Prueba", "apellido": "Negativa", "email": email,
+            "contrasena": "una frase larga " + secrets.token_hex(6), "localidad": "Pergamino",
+            "provincia": "Buenos Aires", "acepta_terminos": True, "acepta_novedades": False, **(extra or {}),
+        }
+        return pedir("/api/v1/auth/registro", "POST", datos), datos["contrasena"]
+
+    vaciar_contadores_de_ip()
+    (r_nuevo, _), (r_existente, _) = registrar("nuevo@ejemplo.com"), registrar("a@ejemplo.com")
+    comprobar("registro: misma respuesta con correo nuevo o existente", r_nuevo[0] == r_existente[0] == 202 and r_nuevo[2] == r_existente[2], f"{r_nuevo[0]} {r_existente[0]}")
+    comprobar("registro existente no cambia la cuenta", entrar("a@ejemplo.com", clave_a)[0] == 200)
+    for ruta in ("/api/v1/auth/recupero", "/api/v1/auth/confirmacion/reenvio"):
+        si = pedir(ruta, "POST", {"email": "a@ejemplo.com"})
+        no = pedir(ruta, "POST", {"email": "nadie@ejemplo.com"})
+        comprobar(f"{ruta}: misma respuesta exista o no", si[0] == no[0] == 202 and si[2] == no[2], f"{si[0]} {no[0]}")
+    _, clave_n = registrar("pendiente@ejemplo.com")
+    comprobar("cuenta sin confirmar no entra con la clave correcta", entrar("pendiente@ejemplo.com", clave_n)[0] == 403)
+    comprobar("cuenta sin confirmar con clave mala: 401 como cualquiera", entrar("pendiente@ejemplo.com", "mala")[0] == 401)
+    r_extra, clave_x = registrar("extra@ejemplo.com", {"confirmado_en": "2026-01-01T00:00:00+00:00", "id": 1, "activo": True})
+    comprobar(f"registro con campos de mas no confirma la cuenta ({r_extra[0]})", r_extra[0] in (202, 422) and entrar("extra@ejemplo.com", clave_x)[0] in (401, 403))
+    r_malo, clave_mala = registrar("sin-arroba")
+    comprobar(f"el error de registro no repite la contrasena ({r_malo[0]})", r_malo[0] == 422 and clave_mala.encode() not in r_malo[2])
+
+    print("\n== Cuentas: enlaces de un solo uso")
+    vaciar_contadores_de_ip()
+    codigo_c = codigo_del_correo("pendiente@ejemplo.com", "CONFIRMACION", "/confirmar")
+    comprobar("el correo de confirmacion trae el codigo", bool(codigo_c))
+    comprobar("confirmar con el codigo", pedir("/api/v1/auth/confirmacion", "POST", {"codigo": codigo_c})[0] == 200)
+    comprobar("el mismo codigo no sirve dos veces", pedir("/api/v1/auth/confirmacion", "POST", {"codigo": codigo_c})[0] == 400)
+    comprobar("la cuenta confirmada entra", entrar("pendiente@ejemplo.com", clave_n)[0] == 200)
+    pedir("/api/v1/auth/recupero", "POST", {"email": "pendiente@ejemplo.com"})
+    codigo_r = codigo_del_correo("pendiente@ejemplo.com", "RECUPERO", "/restablecer")
+    nueva_n = "otra frase larga " + secrets.token_hex(6)
+    comprobar("nueva contrasena con el codigo", pedir("/api/v1/auth/recupero/nueva-contrasena", "POST", {"codigo": codigo_r, "contrasena": nueva_n})[0] == 200)
+    comprobar("el codigo de recupero no sirve dos veces", pedir("/api/v1/auth/recupero/nueva-contrasena", "POST", {"codigo": codigo_r, "contrasena": nueva_n + "x"})[0] == 400)
+    comprobar("el codigo de confirmacion no sirve para recuperar", pedir("/api/v1/auth/recupero/nueva-contrasena", "POST", {"codigo": codigo_c, "contrasena": nueva_n})[0] == 400)
+    for nombre, codigo in [("inventado", secrets.token_urlsafe(32)), ("vacio", ""), ("inyeccion", "' OR '1'='1"), ("largo", "a" * 5000)]:
+        r = pedir("/api/v1/auth/confirmacion", "POST", {"codigo": codigo})[0]
+        comprobar(f"codigo {nombre} rechazado ({r})", r in (400, 422), str(r))
+
+    print("\n== Cuentas: baja")
+    codigo_b = codigo_del_correo("pendiente@ejemplo.com", "RECUPERO", "/baja")
+    consulta = urllib.parse.urlencode({"codigo": codigo_b})
+    comprobar("GET de la baja de un clic no se acepta", pedir(f"/api/v1/cuenta/baja-un-clic?{consulta}")[0] == 405)
+    comprobar("GET de la baja con enlace no se acepta", pedir("/api/v1/cuenta/baja-con-enlace")[0] == 405)
+    comprobar("abrir la pagina de baja responde", pedir("/baja")[0] == 200)
+    comprobar("tras los GET la cuenta sigue", entrar("pendiente@ejemplo.com", nueva_n)[0] == 200)
+    comprobar("baja de un clic con POST", pedir(f"/api/v1/cuenta/baja-un-clic?{consulta}", "POST", b"List-Unsubscribe=One-Click", tipo="application/x-www-form-urlencoded")[0] == 200)
+    comprobar("tras la baja la cuenta no entra", entrar("pendiente@ejemplo.com", nueva_n)[0] == 401)
+    comprobar("el codigo de baja no sirve dos veces", pedir("/api/v1/cuenta/baja-con-enlace", "POST", {"codigo": codigo_b})[0] == 400)
+    comprobar("la baja borra los correos pendientes", sql("select count(*) from correo_saliente where destinatario = 'pendiente@ejemplo.com'") == "0")
+
+    print("\n== Cuentas: limite por IP")
+    vaciar_contadores_de_ip()
+    codigos = [registrar(f"lote{n}@ejemplo.com")[0][0] for n in range(5)]
+    comprobar("5 registros por hora desde una IP", set(codigos) == {202}, str(codigos))
+    codigo, cabeceras, _ = registrar("lote9@ejemplo.com")[0]
+    comprobar("el sexto registro recibe 429", codigo == 429 and cabeceras.get("Retry-After") is not None, str(codigo))
+    codigos = [pedir("/api/v1/auth/recupero", "POST", {"email": f"r{n}@ejemplo.com"})[0] for n in range(11)]
+    comprobar("recupero: 10 por hora y despues 429", codigos[:10] == [202] * 10 and codigos[10] == 429, str(codigos))
+    codigos = [pedir("/api/v1/auth/confirmacion", "POST", {"codigo": secrets.token_urlsafe(32)})[0] for _ in range(31)]
+    comprobar("enlaces: 30 intentos por 15 minutos y despues 429", set(codigos[:30]) == {400} and codigos[30] == 429, str(sorted(set(codigos))))
+    vaciar_contadores_de_ip()
+
+    print("\n== Archivos y cabeceras")
+    for ruta in ("/.env", "/.git/config", "/../../etc/passwd", "/..%2f..%2fetc%2fpasswd", "/api/../.env", "/backend/app/semillas.py", "/docker-compose.yml"):
+        codigo, _, cuerpo = pedir(ruta)
+        filtrado = any(x in cuerpo for x in (b"root:", b"POSTGRES_PASSWORD", b"[core]", b"import os"))
+        comprobar(f"sin filtracion {ruta} ({codigo})", not filtrado)
+    _, cabeceras, _ = pedir("/")
+    for nombre in ("Strict-Transport-Security", "X-Content-Type-Options", "X-Frame-Options", "Referrer-Policy", "Content-Security-Policy"):
+        comprobar(f"cabecera {nombre}", cabeceras.get(nombre) is not None)
+    comprobar(f"sin cabecera Server en la web ({cabeceras.get('Server')})", cabeceras.get("Server") is None)
+    _, cabeceras, _ = pedir("/api/v1/salud")
+    comprobar(f"sin cabecera Server en la API ({cabeceras.get('Server')})", cabeceras.get("Server") is None)
+    codigo, _, cuerpo = pedir("/api/v1/noexiste")
+    comprobar(f"ruta inexistente sin detalles ({codigo})", codigo == 404 and b"Traceback" not in cuerpo)
+
+    print("\n== Aislamiento de credenciales y puertos")
+    nombres = ["nombreDeUsuario", "clave", "SAT2_URL_BASE", "SAT2_CLAVE_PRIVADA"]
+    salida = compose(E, "exec", "-T", "api", "python", "-c", f"import os; print([n for n in {nombres!r} if n in os.environ])").stdout.strip()
+    comprobar(f"la API no recibe credenciales SAT2 ni la clave privada {salida}", salida == "[]")
+    publica = compose(E, "exec", "-T", "api", "python", "-c", "import os; print(bool(os.environ.get('SAT2_CLAVE_PUBLICA')))").stdout.strip()
+    comprobar("la API recibe la clave publica", publica == "True")
+    filas = [json.loads(l) for l in compose(E, "ps", "--format", "json").stdout.splitlines() if l.strip()]
+    publicados = sorted({p["PublishedPort"] for s in filas for p in s["Publishers"] if p["PublishedPort"]})
+    comprobar(f"solo 80 y 443 publicados {publicados}", publicados == [80, 443])
+    usuarios = {s["Service"]: compose(E, "exec", "-T", s["Service"], "id", "-u").stdout.strip() for s in filas}
+    print("     usuario por servicio:", usuarios)
+    comprobar("API y worker sin root", usuarios.get("api") != "0" and usuarios.get("worker") != "0")
+
+    print("\n== Rafaga de logins: memoria de la API")
+    def intento(i):
+        return pedir("/api/v1/auth/login", "POST", {"email": f"r{i}@ejemplo.com", "contrasena": "mala"})[0]
+    t0 = time.perf_counter()
+    with concurrent.futures.ThreadPoolExecutor(60) as grupo:
+        codigos = list(grupo.map(intento, range(180)))
+    duracion = time.perf_counter() - t0
+    pico = compose(E, "exec", "-T", "api", "cat", "/sys/fs/cgroup/memory.peak").stdout.strip()
+    print(f"     180 logins en {duracion:.1f} s; codigos {sorted(set(codigos))}; pico de memoria {int(pico or 0)/2**20:.0f} MiB")
+    comprobar("la API sigue viva tras la rafaga", pedir("/api/v1/salud")[0] == 200)
+    comprobar("pico de memoria menor a 1 GiB", int(pico or 0) < 2**30, f"{int(pico or 0)/2**20:.0f} MiB")
+
+    print("\n== Monitoreo (weather-track-monitoreo)")
+    _, _, cuerpo = pedir("/metrics")
+    comprobar("las metricas no se alcanzan por el proxy", b"weathertrack_" not in cuerpo)
+    comprobar("tampoco bajo /api", pedir("/api/metrics")[0] == 404)
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as conexion:
+        conexion.settimeout(2)
+        comprobar("el puerto de metricas no esta publicado", conexion.connect_ex(("127.0.0.1", 9464)) != 0)
+    comprobar("el estado del sistema responde al administrador", pedir("/api/v1/administracion/estado", galleta=galleta_adm)[0] == 200)
+    # La rafaga de ingresos fallidos tiene que abrir una sola alerta, aunque se evalue dos veces.
+    evaluar = (
+        "from sqlalchemy.orm import sessionmaker; from app.datos.conexion import obtener_motor; "
+        "from app.ingesta import worker; f = sessionmaker(obtener_motor()); "
+        "worker.tarea_monitoreo(f, 'prueba'); worker.tarea_monitoreo(f, 'prueba')"
+    )
+    resultado = compose(E, "exec", "-T", "worker", "python", "-c", evaluar)
+    comprobar(f"el worker evalua los controles ({resultado.returncode})", resultado.returncode == 0, resultado.stderr[-300:])
+    abiertas = consultar("select count(*) from alerta_sistema where tipo = 'FUERZA_BRUTA' and cerrada_en is null")
+    comprobar(f"la rafaga abre una sola alerta de fuerza bruta ({abiertas})", abiertas == "1")
+    avisos = consultar("select count(*) from correo_saliente where tipo = 'ALERTA_SISTEMA' and destinatario = 'adm@ejemplo.com'")
+    comprobar(f"el administrador recibe un solo aviso ({avisos})", avisos == "1")
+    detalle = consultar("select string_agg(detalle, ' ') from alerta_sistema")
+    comprobar("la alerta no tiene correos ni direcciones IP", "@" not in detalle and not re.search(r"\d+\.\d+\.\d+\.\d+", detalle))
+finally:
+    print("\ndown:", compose(E, "down", "-v").returncode)
+    env.unlink()
+    carpeta.rmdir()
+    print("FALLAS:", len(FALLAS))
+    for falla in FALLAS:
+        print(" -", falla)
+
+raise SystemExit(1 if FALLAS else 0)

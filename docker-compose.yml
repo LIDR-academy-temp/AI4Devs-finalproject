@@ -1,0 +1,204 @@
+name: weather-track
+
+x-url-base-de-datos: &url-base-de-datos postgresql+psycopg://weather_track:${POSTGRES_PASSWORD:-solo_desarrollo}@db:5432/weather_track
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: weather_track
+      POSTGRES_USER: weather_track
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-solo_desarrollo}
+    volumes:
+      - datos_db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U weather_track -d weather_track"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Base descartable para los tests: docker compose up -d --wait db_pruebas
+  db_pruebas:
+    image: postgres:18-alpine
+    profiles: ["pruebas"]
+    environment:
+      POSTGRES_DB: weather_track_pruebas
+      POSTGRES_USER: weather_track
+      POSTGRES_PASSWORD: solo_pruebas
+    ports:
+      - "127.0.0.1:55432:5432"
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U weather_track -d weather_track_pruebas"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # Corre una vez y termina: la API y el worker nunca arrancan sin el esquema.
+  migraciones:
+    build: ./backend
+    command: alembic upgrade head
+    environment:
+      DATABASE_URL: *url-base-de-datos
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: ./backend
+    # Confía en X-Forwarded-For porque la API no se publica: solo le llega lo que reenvía Caddy,
+    # que reemplaza esa cabecera con la dirección real. La usa el límite por IP.
+    command: uvicorn app.api.principal:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=*
+    # La API nunca recibe las credenciales de SAT2 ni las del servidor de correo: solo encola.
+    environment:
+      DATABASE_URL: *url-base-de-datos
+      SAT2_MODO: ${SAT2_MODO:-simulado}
+      # Solo cifra la configuración de SAT2 que carga el administrador; la clave privada la tiene
+      # solo el worker, que la recibe del .env.
+      SAT2_CLAVE_PUBLICA: ${SAT2_CLAVE_PUBLICA:-}
+      # false solo para el desarrollo local por HTTP; el despliegue usa HTTPS.
+      COOKIE_SEGURA: ${COOKIE_SEGURA:-false}
+      # Dirección con la que se arman los enlaces de los correos.
+      URL_PUBLICA: ${URL_PUBLICA:-http://localhost:${PUERTO_WEB:-8080}}
+    depends_on:
+      migraciones:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request as u; u.urlopen('http://localhost:8000/api/v1/salud', timeout=3)"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  worker:
+    build: ./backend
+    command: python -m app.ingesta.worker
+    # Debe correr en una sola instancia: el planificador no se comparte entre procesos.
+    # El volumen de la base, solo para medir su espacio libre (weather-track-monitoreo).
+    volumes:
+      - datos_db:/datos_db:ro
+    env_file:
+      - path: .env
+        required: false
+        format: raw
+    environment:
+      DATABASE_URL: *url-base-de-datos
+      SAT2_MODO: ${SAT2_MODO:-simulado}
+      CARGA_PAUSA_SEGUNDOS: ${CARGA_PAUSA_SEGUNDOS:-2}
+      # En local, los correos van a Mailpit y no salen a internet.
+      SMTP_HOST: ${SMTP_HOST:-correo}
+      SMTP_PUERTO: ${SMTP_PUERTO:-1025}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+      CORREO_REMITENTE: "${CORREO_REMITENTE:-Weather Track <no-responder@weathertrack.localhost>}"
+    depends_on:
+      migraciones:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from app.ingesta.worker import latido_vigente; raise SystemExit(0 if latido_vigente() else 1)"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Atrapa los correos de la instalación local y los muestra en http://localhost:8025.
+  # No envía nada a internet. En producción se desactiva (docker-compose.prod.yml).
+  correo:
+    image: axllent/mailpit:v1.31.6
+    ports:
+      - "127.0.0.1:${PUERTO_CORREO:-8025}:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      MP_MAX_MESSAGES: "500"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  proxy:
+    build: ./frontend
+    ports:
+      # Solo esta computadora: en local no hay HTTPS, y la sesión viajaría sin cifrar por la red.
+      - "127.0.0.1:${PUERTO_WEB:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Perfil opcional: docker compose --profile monitoreo up -d (weather-track-monitoreo, D6).
+  # Prometheus guarda la historia de las métricas del worker; su puerto no se publica.
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    profiles: ["monitoreo"]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+    volumes:
+      - ./monitoreo/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - datos_prometheus:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  # Grafana: tablero y aviso por correo si el worker deja de publicar métricas.
+  # Solo esta computadora, con contraseña y sin acceso anónimo.
+  grafana:
+    image: grafana/grafana:13.3.0
+    profiles: ["monitoreo"]
+    # Sin contraseña propia, Grafana arrancaría con admin/admin: se niega a arrancar.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - 'if [ -z "$$GF_SECURITY_ADMIN_PASSWORD" ]; then echo "Falta GRAFANA_CLAVE_ADMIN en el .env" >&2; exit 1; fi; exec /run.sh'
+    ports:
+      - "127.0.0.1:${PUERTO_GRAFANA:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_CLAVE_ADMIN:-}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_DATE_FORMATS_DEFAULT_TIMEZONE: America/Argentina/Buenos_Aires
+      # El mismo servidor de correo que el worker: en local, Mailpit.
+      GF_SMTP_ENABLED: "true"
+      GF_SMTP_HOST: ${SMTP_HOST:-correo}:${SMTP_PUERTO:-1025}
+      GF_SMTP_USER: ${SMTP_USUARIO:-}
+      GF_SMTP_PASSWORD: ${SMTP_CLAVE:-}
+      GF_SMTP_STARTTLS_POLICY: ${GRAFANA_SMTP_STARTTLS:-NoStartTLS}
+      GF_SMTP_FROM_ADDRESS: alertas@weathertrack.localhost
+      GF_SMTP_FROM_NAME: Weather Track
+      ALERTAS_CORREO: ${ALERTAS_CORREO:-administracion@weathertrack.localhost}
+    volumes:
+      - ./monitoreo/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoreo/grafana/tableros:/var/lib/grafana/tableros:ro
+      - datos_grafana:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  datos_db:
+  datos_prometheus:
+  datos_grafana:

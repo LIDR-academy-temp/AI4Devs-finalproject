@@ -1,0 +1,215 @@
+# Integración continua de Weather Track. Diseño: openspec/changes/archive/2026-11-07-weather-track-pipeline-ci/design.md
+#
+# Sin secretos y con permiso de solo lectura: las pruebas usan los modos sin SAT2 y generan sus
+# propias contraseñas. Cada acción de terceros se fija por el SHA de su commit, con la versión al lado.
+name: Integración
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un push nuevo a la misma rama cancela la ejecución anterior.
+concurrency:
+  group: integracion-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.14"
+  UV_VERSION: "0.13.6"
+  NODE_VERSION: "24"
+
+jobs:
+  backend:
+    name: Backend (Ruff y pytest)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      # La misma base descartable que `db_pruebas` de Docker Compose.
+      db_pruebas:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: weather_track_pruebas
+          POSTGRES_USER: weather_track
+          POSTGRES_PASSWORD: solo_pruebas
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U weather_track -d weather_track_pruebas"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Dependencias
+        run: uv sync --locked --extra dev
+      - name: Ruff
+        run: uv run ruff check --output-format github
+      - name: Pytest con la cobertura del dominio
+        env:
+          # Sin base, las pruebas fallan en lugar de saltearse.
+          EXIGIR_BASE_PRUEBAS: "1"
+        run: uv run pytest --cov=app.dominio --cov-report=term-missing --cov-fail-under=100
+
+  frontend:
+    name: Frontend (lint, tipos, Vitest y build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - name: Tipos y build
+        run: npm run build
+      - run: npm test
+
+  contrato:
+    name: Contrato de la API
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Exportar el contrato desde la API
+        working-directory: backend
+        run: |
+          uv sync --locked
+          uv run python -m herramientas.exportar_openapi
+      - name: Regenerar los tipos del frontend
+        working-directory: frontend
+        run: npm run generar:tipos
+      - name: Comparar con lo versionado
+        run: |
+          if ! git diff --exit-code -- frontend/openapi.json frontend/src/servicios/api-tipos.ts; then
+            echo "::error::El contrato no está al día. Regenerarlo con exportar_openapi y generar:tipos (ver CLAUDE.md)."
+            exit 1
+          fi
+
+  especificaciones:
+    name: Especificaciones de OpenSpec
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: npx --yes @fission-ai/openspec@1.14.3 validate --all --strict --no-interactive
+
+  secretos:
+    name: Secretos en el historial
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # Gitleaks 8.30.1, por digest. Los falsos positivos conocidos están en .gitleaksignore.
+      - name: Gitleaks
+        run: >-
+          docker run --rm -v "$PWD:/repo:ro"
+          -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/repo
+          ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          git /repo --redact --no-banner --verbose --gitleaks-ignore-path /repo/.gitleaksignore
+
+  dependencias:
+    name: Dependencias vulnerables
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: npm audit
+        working-directory: frontend
+        run: npm audit --audit-level=high
+      - name: pip-audit, sobre las versiones bloqueadas en uv.lock
+        working-directory: backend
+        run: |
+          uv export --locked --format requirements-txt --no-emit-project --extra dev -o "$RUNNER_TEMP/requisitos.txt"
+          uvx pip-audit==2.10.1 --require-hashes --disable-pip -r "$RUNNER_TEMP/requisitos.txt"
+
+  e2e:
+    name: Extremo a extremo (Playwright)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      # Levanta el proyecto aislado wt-e2e en modo prueba y lo borra al terminar.
+      - run: npm run e2e
+      - name: Trazas de Playwright, solo datos ficticios
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: trazas-e2e
+          path: frontend/test-results/
+          retention-days: 7
+
+  negativas:
+    name: Pruebas negativas (configuración de producción)
+    # Tardan y ocupan los puertos 80 y 443: antes de fusionar en main y a pedido.
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Usa solo la biblioteca estándar de Python, con el proyecto aislado wt-seg.
+      - run: python3 backend/herramientas/pruebas_negativas.py

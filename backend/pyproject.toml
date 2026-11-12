@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "weather-track-backend"
+version = "0.1.0"
+description = "API y worker de Weather Track"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.16,<2",
+    "apscheduler>=3.11,<4",
+    "argon2-cffi>=25,<26",
+    "fastapi>=0.115,<1",
+    "httpx>=0.28,<1",
+    "prometheus-client>=0.21,<1",
+    "psycopg[binary]>=3.2,<4",
+    "pynacl>=1.5,<2",
+    "sqlalchemy>=2,<3",
+    "tzdata>=2025.1",
+    "uvicorn>=0.34,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "jsonschema>=4,<5",
+    "pytest>=8,<10",
+    "pytest-cov>=6,<8",
+    "pyyaml>=6,<7",
+    "ruff>=0.14,<1",
+    "uv>=0.8,<1",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*", "herramientas*"]
+
+[tool.setuptools.package-data]
+"app.ingesta" = ["datos_simulados/*.json"]
+"app.cuentas" = ["*.txt"]
+"herramientas" = ["*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+# El código ya usa líneas de hasta 100 caracteres; Ruff no las corta, solo ordena los imports con ese ancho.
+line-length = 100
+# Las migraciones las genera Alembic y no se reescriben una vez aplicadas.
+extend-exclude = ["migraciones"]
+
+[tool.ruff.lint]
+# Los Decimal se escriben siempre desde texto, también los enteros, para leerlos igual que Decimal("20.5").
+ignore = ["FURB157"]

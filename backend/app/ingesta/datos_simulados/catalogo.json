@@ -1,0 +1,23 @@
+[
+  {
+    "idEquipo": 1,
+    "descripcion": "INTA Pergamino",
+    "lat": -33.89,
+    "lng": -60.57,
+    "NroSerie": "00000",
+    "fechaAlta": "01/01/2024 0:00:00",
+    "sensores": [
+      { "idSensor": 1, "nombre": "Bateria", "unidad": "V", "Icono": 0 },
+      { "idSensor": 2, "nombre": "Pres Atmosférica", "unidad": "hPa", "Icono": 0 },
+      { "idSensor": 3, "nombre": "Rad Solar", "unidad": "W/m2", "Icono": 0 },
+      { "idSensor": 4, "nombre": "Hum Amb. a 2 Mts", "unidad": "%", "Icono": 0 },
+      { "idSensor": 5, "nombre": "Hum Amb. a 10 Mts", "unidad": "%", "Icono": 0 },
+      { "idSensor": 6, "nombre": "Temp Amb. a 2 Mts", "unidad": "ºC", "Icono": 0 },
+      { "idSensor": 7, "nombre": "Temp Amb. a 10 Mts", "unidad": "ºC", "Icono": 0 },
+      { "idSensor": 8, "nombre": "Veleta", "unidad": "grados", "Icono": 0 },
+      { "idSensor": 9, "nombre": "Anemómetro", "unidad": "km/H", "Icono": 0 },
+      { "idSensor": 10, "nombre": "Pluviometro", "unidad": "mm", "Icono": 0 },
+      { "idSensor": 11, "nombre": "Humedad de Hoja", "unidad": "%", "Icono": 0 }
+    ]
+  }
+]

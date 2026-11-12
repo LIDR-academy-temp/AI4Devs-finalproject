@@ -1,0 +1,2330 @@
+{
+  "components": {
+    "schemas": {
+      "AlertaVisible": {
+        "properties": {
+          "abierta_en": {
+            "format": "date-time",
+            "title": "Abierta En",
+            "type": "string"
+          },
+          "cerrada_en": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cerrada En"
+          },
+          "detalle": {
+            "title": "Detalle",
+            "type": "string"
+          },
+          "objeto": {
+            "title": "Objeto",
+            "type": "string"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "objeto",
+          "abierta_en",
+          "cerrada_en",
+          "detalle"
+        ],
+        "title": "AlertaVisible",
+        "type": "object"
+      },
+      "Aviso": {
+        "properties": {
+          "mensaje": {
+            "title": "Mensaje",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mensaje"
+        ],
+        "title": "Aviso",
+        "type": "object"
+      },
+      "CambioVisible": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "ocurrido_en": {
+            "format": "date-time",
+            "title": "Ocurrido En",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ocurrido_en",
+          "email"
+        ],
+        "title": "CambioVisible",
+        "type": "object"
+      },
+      "CondicionesActuales": {
+        "properties": {
+          "activa": {
+            "title": "Activa",
+            "type": "boolean"
+          },
+          "antiguedad_segundos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Antiguedad Segundos"
+          },
+          "estacion_id": {
+            "title": "Estacion Id",
+            "type": "integer"
+          },
+          "estacion_nombre": {
+            "title": "Estacion Nombre",
+            "type": "string"
+          },
+          "estado_datos": {
+            "enum": [
+              "VIGENTE",
+              "DESACTUALIZADO",
+              "SIN_DATOS"
+            ],
+            "title": "Estado Datos",
+            "type": "string"
+          },
+          "inactiva_desde": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inactiva Desde"
+          },
+          "medido_en": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medido En"
+          },
+          "salud": {
+            "enum": [
+              "EN_VIVO",
+              "CON_DEMORAS",
+              "CAIDO",
+              "MODO_PRUEBA"
+            ],
+            "title": "Salud",
+            "type": "string"
+          },
+          "sensores": {
+            "items": {
+              "$ref": "#/components/schemas/LecturaSensor"
+            },
+            "title": "Sensores",
+            "type": "array"
+          },
+          "ultima_ingesta_con_error": {
+            "title": "Ultima Ingesta Con Error",
+            "type": "boolean"
+          },
+          "ultima_ingesta_exitosa_en": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ultima Ingesta Exitosa En"
+          },
+          "ultimo_intento": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntentoDeIngesta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "estacion_id",
+          "estacion_nombre",
+          "activa",
+          "inactiva_desde",
+          "medido_en",
+          "antiguedad_segundos",
+          "estado_datos",
+          "ultima_ingesta_exitosa_en",
+          "ultima_ingesta_con_error",
+          "ultimo_intento",
+          "salud",
+          "sensores"
+        ],
+        "title": "CondicionesActuales",
+        "type": "object"
+      },
+      "ControlVisible": {
+        "properties": {
+          "detalle": {
+            "title": "Detalle",
+            "type": "string"
+          },
+          "estado": {
+            "enum": [
+              "OK",
+              "ALERTA"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "objeto": {
+            "title": "Objeto",
+            "type": "string"
+          },
+          "tipo": {
+            "title": "Tipo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "objeto",
+          "estado",
+          "detalle"
+        ],
+        "title": "ControlVisible",
+        "type": "object"
+      },
+      "Cuenta": {
+        "properties": {
+          "acepta_novedades": {
+            "title": "Acepta Novedades",
+            "type": "boolean"
+          },
+          "apellido": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apellido"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "es_administrador": {
+            "title": "Es Administrador",
+            "type": "boolean"
+          },
+          "localidad": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Localidad"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          },
+          "organizacion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organizacion"
+          },
+          "provincia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provincia"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "terminos_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terminos Version"
+          }
+        },
+        "required": [
+          "email",
+          "nombre",
+          "apellido",
+          "localidad",
+          "provincia",
+          "organizacion",
+          "telefono",
+          "acepta_novedades",
+          "terminos_version",
+          "es_administrador"
+        ],
+        "title": "Cuenta",
+        "type": "object"
+      },
+      "DatosPersonales": {
+        "properties": {
+          "acepta_novedades": {
+            "default": false,
+            "title": "Acepta Novedades",
+            "type": "boolean"
+          },
+          "apellido": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Apellido",
+            "type": "string"
+          },
+          "localidad": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Localidad",
+            "type": "string"
+          },
+          "nombre": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Nombre",
+            "type": "string"
+          },
+          "organizacion": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organizacion"
+          },
+          "provincia": {
+            "maxLength": 60,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Provincia",
+            "type": "string"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "pattern": "^[0-9+()\\- ]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          }
+        },
+        "required": [
+          "nombre",
+          "apellido",
+          "localidad",
+          "provincia"
+        ],
+        "title": "DatosPersonales",
+        "type": "object"
+      },
+      "EstacionResumen": {
+        "properties": {
+          "activa": {
+            "title": "Activa",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "inactiva_desde": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inactiva Desde"
+          },
+          "latitud": {
+            "title": "Latitud",
+            "type": "string"
+          },
+          "longitud": {
+            "title": "Longitud",
+            "type": "string"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "latitud",
+          "longitud",
+          "activa",
+          "inactiva_desde"
+        ],
+        "title": "EstacionResumen",
+        "type": "object"
+      },
+      "EstadoConfiguracionSat2": {
+        "description": "Nunca incluye la URL, el usuario ni la contraseña: la API no puede leerlos.",
+        "properties": {
+          "cambios": {
+            "items": {
+              "$ref": "#/components/schemas/CambioVisible"
+            },
+            "title": "Cambios",
+            "type": "array"
+          },
+          "cargada_en": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cargada En"
+          },
+          "cargada_por": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cargada Por"
+          },
+          "configuracion_guardada": {
+            "title": "Configuracion Guardada",
+            "type": "boolean"
+          },
+          "modo": {
+            "title": "Modo",
+            "type": "string"
+          },
+          "puede_guardar": {
+            "title": "Puede Guardar",
+            "type": "boolean"
+          },
+          "ultimo_ciclo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UltimoCiclo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "configuracion_guardada",
+          "puede_guardar",
+          "modo",
+          "cargada_en",
+          "cargada_por",
+          "ultimo_ciclo",
+          "cambios"
+        ],
+        "title": "EstadoConfiguracionSat2",
+        "type": "object"
+      },
+      "EstadoSistema": {
+        "description": "Sin credenciales, correos de cuentas ni direcciones IP (weather-track-monitoreo, D4).",
+        "properties": {
+          "alertas": {
+            "items": {
+              "$ref": "#/components/schemas/AlertaVisible"
+            },
+            "title": "Alertas",
+            "type": "array"
+          },
+          "base_tamano_bytes": {
+            "title": "Base Tamano Bytes",
+            "type": "integer"
+          },
+          "controles": {
+            "items": {
+              "$ref": "#/components/schemas/ControlVisible"
+            },
+            "title": "Controles",
+            "type": "array"
+          },
+          "worker": {
+            "$ref": "#/components/schemas/EstadoWorker"
+          }
+        },
+        "required": [
+          "controles",
+          "worker",
+          "alertas",
+          "base_tamano_bytes"
+        ],
+        "title": "EstadoSistema",
+        "type": "object"
+      },
+      "EstadoWorker": {
+        "properties": {
+          "estado": {
+            "enum": [
+              "ACTIVO",
+              "SIN_ACTIVIDAD",
+              "MODO_PRUEBA"
+            ],
+            "title": "Estado",
+            "type": "string"
+          },
+          "ultimo_ciclo_en": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ultimo Ciclo En"
+          }
+        },
+        "required": [
+          "estado",
+          "ultimo_ciclo_en"
+        ],
+        "title": "EstadoWorker",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Historico": {
+        "properties": {
+          "desde": {
+            "format": "date-time",
+            "title": "Desde",
+            "type": "string"
+          },
+          "hasta": {
+            "format": "date-time",
+            "title": "Hasta",
+            "type": "string"
+          },
+          "puntos": {
+            "items": {
+              "$ref": "#/components/schemas/Punto"
+            },
+            "title": "Puntos",
+            "type": "array"
+          },
+          "resumen": {
+            "$ref": "#/components/schemas/Resumen"
+          },
+          "sensor_id": {
+            "title": "Sensor Id",
+            "type": "integer"
+          },
+          "unidad": {
+            "title": "Unidad",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sensor_id",
+          "unidad",
+          "desde",
+          "hasta",
+          "resumen",
+          "puntos"
+        ],
+        "title": "Historico",
+        "type": "object"
+      },
+      "IntentoDeIngesta": {
+        "properties": {
+          "en": {
+            "format": "date-time",
+            "title": "En",
+            "type": "string"
+          },
+          "resultado": {
+            "enum": [
+              "EXITO",
+              "PARCIAL",
+              "ERROR"
+            ],
+            "title": "Resultado",
+            "type": "string"
+          }
+        },
+        "required": [
+          "en",
+          "resultado"
+        ],
+        "title": "IntentoDeIngesta",
+        "type": "object"
+      },
+      "LecturaSensor": {
+        "properties": {
+          "alarma": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alarma"
+          },
+          "altura_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Altura M"
+          },
+          "calidad": {
+            "enum": [
+              "OK",
+              "FALTANTE",
+              "SOSPECHOSO"
+            ],
+            "title": "Calidad",
+            "type": "string"
+          },
+          "magnitud": {
+            "title": "Magnitud",
+            "type": "string"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          },
+          "sensor_id": {
+            "title": "Sensor Id",
+            "type": "integer"
+          },
+          "unidad": {
+            "title": "Unidad",
+            "type": "string"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          }
+        },
+        "required": [
+          "sensor_id",
+          "nombre",
+          "magnitud",
+          "altura_m",
+          "valor",
+          "unidad",
+          "calidad",
+          "alarma"
+        ],
+        "title": "LecturaSensor",
+        "type": "object"
+      },
+      "Motivo": {
+        "properties": {
+          "codigo": {
+            "title": "Codigo",
+            "type": "string"
+          },
+          "detalle": {
+            "title": "Detalle",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo",
+          "detalle"
+        ],
+        "title": "Motivo",
+        "type": "object"
+      },
+      "Punto": {
+        "properties": {
+          "calidad": {
+            "enum": [
+              "OK",
+              "FALTANTE",
+              "SOSPECHOSO"
+            ],
+            "title": "Calidad",
+            "type": "string"
+          },
+          "medido_en": {
+            "format": "date-time",
+            "title": "Medido En",
+            "type": "string"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          }
+        },
+        "required": [
+          "medido_en",
+          "valor",
+          "calidad"
+        ],
+        "title": "Punto",
+        "type": "object"
+      },
+      "Recomendacion": {
+        "properties": {
+          "antiguedad_segundos": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Antiguedad Segundos"
+          },
+          "aviso": {
+            "title": "Aviso",
+            "type": "string"
+          },
+          "delta_t_c": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta T C"
+          },
+          "estacion_id": {
+            "title": "Estacion Id",
+            "type": "integer"
+          },
+          "estado": {
+            "title": "Estado",
+            "type": "string"
+          },
+          "indice": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indice"
+          },
+          "inversion_detectada": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inversion Detectada"
+          },
+          "medido_en": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medido En"
+          },
+          "motivos": {
+            "items": {
+              "$ref": "#/components/schemas/Motivo"
+            },
+            "title": "Motivos",
+            "type": "array"
+          },
+          "version_metodo": {
+            "title": "Version Metodo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estacion_id",
+          "estado",
+          "indice",
+          "delta_t_c",
+          "inversion_detectada",
+          "motivos",
+          "medido_en",
+          "antiguedad_segundos",
+          "version_metodo",
+          "aviso"
+        ],
+        "title": "Recomendacion",
+        "type": "object"
+      },
+      "Resumen": {
+        "properties": {
+          "cantidad": {
+            "title": "Cantidad",
+            "type": "integer"
+          },
+          "maximo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximo"
+          },
+          "minimo": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimo"
+          },
+          "promedio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promedio"
+          }
+        },
+        "required": [
+          "maximo",
+          "minimo",
+          "promedio",
+          "cantidad"
+        ],
+        "title": "Resumen",
+        "type": "object"
+      },
+      "SolicitudBaja": {
+        "properties": {
+          "contrasena": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Contrasena",
+            "type": "string"
+          }
+        },
+        "required": [
+          "contrasena"
+        ],
+        "title": "SolicitudBaja",
+        "type": "object"
+      },
+      "SolicitudBajaConEnlace": {
+        "properties": {
+          "codigo": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Codigo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo"
+        ],
+        "title": "SolicitudBajaConEnlace",
+        "type": "object"
+      },
+      "SolicitudCambioContrasena": {
+        "properties": {
+          "actual": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Actual",
+            "type": "string"
+          },
+          "nueva": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Nueva",
+            "type": "string"
+          }
+        },
+        "required": [
+          "actual",
+          "nueva"
+        ],
+        "title": "SolicitudCambioContrasena",
+        "type": "object"
+      },
+      "SolicitudCodigo": {
+        "properties": {
+          "codigo": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Codigo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo"
+        ],
+        "title": "SolicitudCodigo",
+        "type": "object"
+      },
+      "SolicitudConfiguracionSat2": {
+        "properties": {
+          "clave": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Clave",
+            "type": "string"
+          },
+          "contrasena_actual": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Contrasena Actual",
+            "type": "string"
+          },
+          "url_base": {
+            "maxLength": 500,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Url Base",
+            "type": "string"
+          },
+          "usuario": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Usuario",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url_base",
+          "usuario",
+          "clave",
+          "contrasena_actual"
+        ],
+        "title": "SolicitudConfiguracionSat2",
+        "type": "object"
+      },
+      "SolicitudCorreo": {
+        "properties": {
+          "email": {
+            "maxLength": 254,
+            "pattern": "^[^\\s@\\x00-\\x1f\\x7f]+@[^\\s@\\x00-\\x1f\\x7f]+\\.[^\\s@\\x00-\\x1f\\x7f]+$",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "SolicitudCorreo",
+        "type": "object"
+      },
+      "SolicitudInicio": {
+        "properties": {
+          "contrasena": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Contrasena",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 254,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "contrasena"
+        ],
+        "title": "SolicitudInicio",
+        "type": "object"
+      },
+      "SolicitudNuevaContrasena": {
+        "properties": {
+          "codigo": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Codigo",
+            "type": "string"
+          },
+          "contrasena": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Contrasena",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo",
+          "contrasena"
+        ],
+        "title": "SolicitudNuevaContrasena",
+        "type": "object"
+      },
+      "SolicitudRegistro": {
+        "properties": {
+          "acepta_novedades": {
+            "default": false,
+            "title": "Acepta Novedades",
+            "type": "boolean"
+          },
+          "acepta_terminos": {
+            "title": "Acepta Terminos",
+            "type": "boolean"
+          },
+          "apellido": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Apellido",
+            "type": "string"
+          },
+          "contrasena": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Contrasena",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 254,
+            "pattern": "^[^\\s@\\x00-\\x1f\\x7f]+@[^\\s@\\x00-\\x1f\\x7f]+\\.[^\\s@\\x00-\\x1f\\x7f]+$",
+            "title": "Email",
+            "type": "string"
+          },
+          "localidad": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Localidad",
+            "type": "string"
+          },
+          "nombre": {
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Nombre",
+            "type": "string"
+          },
+          "organizacion": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organizacion"
+          },
+          "provincia": {
+            "maxLength": 60,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "Provincia",
+            "type": "string"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "pattern": "^[0-9+()\\- ]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          }
+        },
+        "required": [
+          "nombre",
+          "apellido",
+          "localidad",
+          "provincia",
+          "email",
+          "contrasena",
+          "acepta_terminos"
+        ],
+        "title": "SolicitudRegistro",
+        "type": "object"
+      },
+      "UltimoCiclo": {
+        "properties": {
+          "finalizado_en": {
+            "format": "date-time",
+            "title": "Finalizado En",
+            "type": "string"
+          },
+          "resultado": {
+            "title": "Resultado",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resultado",
+          "finalizado_en"
+        ],
+        "title": "UltimoCiclo",
+        "type": "object"
+      },
+      "UsuarioPublico": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "es_administrador": {
+            "title": "Es Administrador",
+            "type": "boolean"
+          },
+          "nombre": {
+            "title": "Nombre",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "nombre",
+          "es_administrador"
+        ],
+        "title": "UsuarioPublico",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Weather Track API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/administracion/estado": {
+      "get": {
+        "operationId": "obtenerEstadoSistema",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoSistema"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obtener Estado",
+        "tags": [
+          "administración"
+        ]
+      }
+    },
+    "/api/v1/administracion/sat2": {
+      "get": {
+        "operationId": "obtenerConfiguracionSat2",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoConfiguracionSat2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obtener Configuracion",
+        "tags": [
+          "administración"
+        ]
+      },
+      "put": {
+        "operationId": "guardarConfiguracionSat2",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudConfiguracionSat2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoConfiguracionSat2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Guardar Configuracion",
+        "tags": [
+          "administración"
+        ]
+      }
+    },
+    "/api/v1/auth/confirmacion": {
+      "post": {
+        "operationId": "confirmarCuenta",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudCodigo"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirmar Cuenta",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/auth/confirmacion/reenvio": {
+      "post": {
+        "operationId": "reenviarConfirmacion",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudCorreo"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reenviar",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "iniciarSesion",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudInicio"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioPublico"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Iniciar Sesion",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "cerrarSesion",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cerrar Sesion",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/auth/recupero": {
+      "post": {
+        "operationId": "pedirRecupero",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudCorreo"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Recuperar",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/auth/recupero/nueva-contrasena": {
+      "post": {
+        "operationId": "elegirNuevaContrasena",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudNuevaContrasena"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Nueva Contrasena",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/auth/registro": {
+      "post": {
+        "operationId": "registrarCuenta",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudRegistro"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Registrar Cuenta",
+        "tags": [
+          "acceso"
+        ]
+      }
+    },
+    "/api/v1/cuenta": {
+      "get": {
+        "operationId": "obtenerCuenta",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cuenta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obtener Cuenta",
+        "tags": [
+          "cuenta"
+        ]
+      },
+      "put": {
+        "operationId": "actualizarCuenta",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatosPersonales"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cuenta"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Actualizar Cuenta",
+        "tags": [
+          "cuenta"
+        ]
+      }
+    },
+    "/api/v1/cuenta/baja": {
+      "post": {
+        "operationId": "darDeBaja",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudBaja"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Baja",
+        "tags": [
+          "cuenta"
+        ]
+      }
+    },
+    "/api/v1/cuenta/baja-con-enlace": {
+      "post": {
+        "operationId": "darDeBajaConEnlace",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudBajaConEnlace"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Baja Con Enlace",
+        "tags": [
+          "cuenta"
+        ]
+      }
+    },
+    "/api/v1/cuenta/baja-un-clic": {
+      "post": {
+        "description": "RFC 8058: el programa de correo envía `List-Unsubscribe=One-Click`, que no hace falta leer.",
+        "operationId": "darDeBajaEnUnClic",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "codigo",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Codigo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Aviso"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Baja Un Clic",
+        "tags": [
+          "cuenta"
+        ]
+      }
+    },
+    "/api/v1/cuenta/contrasena": {
+      "post": {
+        "operationId": "cambiarContrasena",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudCambioContrasena"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cambiar",
+        "tags": [
+          "cuenta"
+        ]
+      }
+    },
+    "/api/v1/estaciones": {
+      "get": {
+        "operationId": "listarEstaciones",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EstacionResumen"
+                  },
+                  "title": "Response Listarestaciones",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Listar Estaciones",
+        "tags": [
+          "estaciones"
+        ]
+      }
+    },
+    "/api/v1/estaciones/{estacionId}/condiciones-actuales": {
+      "get": {
+        "operationId": "obtenerCondicionesActuales",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "estacionId",
+            "required": true,
+            "schema": {
+              "maximum": 9223372036854775807,
+              "minimum": 1,
+              "title": "Estacionid",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CondicionesActuales"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sesión ausente o vencida"
+          },
+          "403": {
+            "description": "El usuario no tiene acceso a esta estación"
+          },
+          "404": {
+            "description": "La estación o el sensor no existen"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obtener Condiciones Actuales",
+        "tags": [
+          "lecturas"
+        ]
+      }
+    },
+    "/api/v1/estaciones/{estacionId}/recomendacion": {
+      "get": {
+        "operationId": "obtenerRecomendacion",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "estacionId",
+            "required": true,
+            "schema": {
+              "maximum": 9223372036854775807,
+              "minimum": 1,
+              "title": "Estacionid",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recomendacion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sesión ausente o vencida"
+          },
+          "403": {
+            "description": "El usuario no tiene acceso a esta estación"
+          },
+          "404": {
+            "description": "La estación o el sensor no existen"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Obtener Recomendacion",
+        "tags": [
+          "lecturas"
+        ]
+      }
+    },
+    "/api/v1/estaciones/{estacionId}/sensores/{sensorId}/historico": {
+      "get": {
+        "operationId": "obtenerHistorico",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sensorId",
+            "required": true,
+            "schema": {
+              "maximum": 9223372036854775807,
+              "minimum": 1,
+              "title": "Sensorid",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "estacionId",
+            "required": true,
+            "schema": {
+              "maximum": 9223372036854775807,
+              "minimum": 1,
+              "title": "Estacionid",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "desde",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Desde",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hasta",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Hasta",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "wt_sesion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Wt Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Historico"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sesión ausente o vencida"
+          },
+          "403": {
+            "description": "El usuario no tiene acceso a esta estación"
+          },
+          "404": {
+            "description": "La estación o el sensor no existen"
+          },
+          "422": {
+            "description": "Rango de fechas inválido, mayor a 31 días, futuro o anterior a un año"
+          }
+        },
+        "summary": "Obtener Historico",
+        "tags": [
+          "lecturas"
+        ]
+      }
+    },
+    "/api/v1/salud": {
+      "get": {
+        "operationId": "salud_api_v1_salud_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Salud Api V1 Salud Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Salud",
+        "tags": [
+          "operación"
+        ]
+      }
+    }
+  }
+}

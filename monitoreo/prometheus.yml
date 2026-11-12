@@ -1,0 +1,10 @@
+# Prometheus del perfil `monitoreo` (weather-track-monitoreo, D6).
+# Toma las métricas del worker por la red interna de Compose; su puerto no se publica.
+global:
+  scrape_interval: 1m
+  evaluation_interval: 1m
+
+scrape_configs:
+  - job_name: weathertrack-worker
+    static_configs:
+      - targets: ["worker:9464"]

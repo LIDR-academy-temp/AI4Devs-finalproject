@@ -1,0 +1,16 @@
+{
+  "fechaUltimaActualizacionDatos": "01/01/2026 12:00:00",
+  "datosSensores": [
+    { "nombreSensor": "Bateria", "valor": "13,81", "unidad": "V", "alarma": false, "Icono": 0 },
+    { "nombreSensor": "Pres Atmosférica", "valor": "1003,50", "unidad": "hPa", "alarma": false, "Icono": 0 },
+    { "nombreSensor": "Rad Solar", "valor": "300", "unidad": "W/m2", "alarma": false, "Icono": 0 },
+    { "nombreSensor": "Hum Amb. a 2 Mts", "valor": "55", "unidad": "%", "alarma": false, "Icono": 0 },
+    { "nombreSensor": "Hum Amb. a 10 Mts", "valor": "60", "unidad": "%", "alarma": false, "Icono": 0 },
+    { "nombreSensor": "Temp Amb. a 2 Mts", "valor": "20,30", "unidad": "°C", "alarma": false, "Icono": 0 },
+    { "nombreSensor": "Temp Amb. a 10 Mts", "valor": "20,20", "unidad": "°C", "alarma": false, "Icono": 0 },
+    { "nombreSensor": "Veleta", "valor": "83", "unidad": "grados", "alarma": false, "Icono": 0 },
+    { "nombreSensor": "Anemómetro", "valor": "9", "unidad": "km/H", "alarma": false, "Icono": 0 },
+    { "nombreSensor": "Pluviometro", "valor": "0,00", "unidad": "mm", "alarma": true, "Icono": 0 },
+    { "nombreSensor": "Humedad de Hoja", "valor": "[]", "unidad": "%", "alarma": false, "Icono": 0 }
+  ]
+}
