@@ -360,6 +360,18 @@ test.describe("languages and accessibility", () => {
       await fields.save.click();
       await expect(fields.alert).toContainText(fields.t.common.couldNotSave);
       await expectNoAccessibilityViolations(page);
+      await page.unroute("**/api/v1/items/*");
+
+      // The edit address of a deleted item.
+      const response = await page.request.delete(`/api/v1/items/${item.id}`, {
+        headers: sameOrigin(),
+      });
+      expect(response.status()).toBe(204);
+      await page.goto(`/items/${item.id}/edit`);
+      await expect(
+        page.getByRole("heading", { name: fields.t.errors.NOT_AVAILABLE }),
+      ).toBeVisible();
+      await expectNoAccessibilityViolations(page);
     });
   }
 });

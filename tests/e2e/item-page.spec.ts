@@ -322,6 +322,16 @@ test.describe("languages and accessibility", () => {
         t.errors.ITEM_CHANGED,
       );
       await expectNoAccessibilityViolations(page);
+
+      const deleted = await createItem(page, listId, { name: "Gone" });
+      const response = await page.request.delete(
+        `/api/v1/items/${deleted.id}`,
+        { headers: sameOrigin() },
+      );
+      expect(response.status()).toBe(204);
+      await page.goto(`/items/${deleted.id}`);
+      await expect(screen.notAvailable).toBeVisible();
+      await expectNoAccessibilityViolations(page);
     });
   }
 });

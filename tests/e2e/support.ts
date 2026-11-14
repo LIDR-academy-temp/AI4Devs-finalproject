@@ -86,6 +86,22 @@ export async function expectNoAccessibilityViolations(page: Page) {
   ).toEqual([]);
 }
 
+/**
+ * Holds back the server's answer for screens whose address matches `url`, so
+ * their loading state stays on screen until `release` is called. Prefetches
+ * go through at once: they bring the loading state itself.
+ */
+export async function holdScreen(page: Page, url: string) {
+  let release = () => {};
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route(url, async (route) => {
+    const headers = route.request().headers();
+    if (headers["rsc"] && !headers["next-router-prefetch"]) await held;
+    await route.continue();
+  });
+  return release;
+}
+
 /** The seed users (docs/04-DATA-MODEL.md, section 3) that browser tests sign in as, only to look. */
 export type SeedUser = "ana" | "juan" | "luis" | "pedro";
 

@@ -435,7 +435,7 @@ test.describe("languages and accessibility", () => {
       await expectNoAccessibilityViolations(page);
     });
 
-    test(`T-19 Lists with no items, no lists, or a failed save has no accessibility violations (${language})`, async ({
+    test(`T-19 Lists with no items, no lists, a field error, or a failed save has no accessibility violations (${language})`, async ({
       page,
     }) => {
       await signUpOnboarded(page, { language });
@@ -465,6 +465,16 @@ test.describe("languages and accessibility", () => {
       await deleteList(first!.id);
       await open(page, "/lists");
       await expect(page.getByText(t.lists.noLists)).toBeVisible();
+      await expectNoAccessibilityViolations(page);
+
+      // New list, saved with no name.
+      await page.getByRole("button", { name: t.lists.newList }).click();
+      await screen.newListDialog
+        .getByRole("button", { name: t.lists.create })
+        .click();
+      await expect(
+        screen.newListDialog.getByText(t.fieldMessages.nameRequired),
+      ).toBeVisible();
       await expectNoAccessibilityViolations(page);
     });
   }

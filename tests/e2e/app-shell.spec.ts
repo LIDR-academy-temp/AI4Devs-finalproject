@@ -2,9 +2,12 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import {
   addMemberGroup,
+  createItem,
   expectNoAccessibilityViolations,
+  holdScreen,
   type Language,
   messages,
+  myGroup,
   sameOrigin,
   signInAsSeedUser,
   signUpOnboarded,
@@ -440,37 +443,47 @@ test.describe("languages and accessibility", () => {
       await expectNoAccessibilityViolations(page);
     });
 
-    test(`T-19 the shell's "not available" and loading states have no accessibility violations (${language})`, async ({
+    test(`T-19 the "not available" and loading states have no accessibility violations (${language})`, async ({
       page,
     }) => {
       await signUpOnboarded(page, { language });
+      const {
+        lists: [first],
+      } = await myGroup(page);
+      const item = await createItem(page, first!.id, { name: "Milk" });
       const screen = shell(page, language);
+      const t = messages[language];
+      const loading = page
+        .getByRole("status")
+        .filter({ hasText: t.states.loading });
 
       await page.goto("/no-such-screen");
       await expect(screen.notAvailable).toBeVisible();
       await expectNoAccessibilityViolations(page);
 
-      // Holds back the server's answer for People until the check is done, so
-      // the loading state stays on screen.
+      // People, Lists, and the item page, each held in its loading state.
       await open(page, "/lists");
-      let release = () => {};
-      const held = new Promise<void>((resolve) => (release = resolve));
-      await page.route("**/people**", async (route) => {
-        const headers = route.request().headers();
-        if (headers["rsc"] && !headers["next-router-prefetch"]) await held;
-        await route.continue();
-      });
+      let release = await holdScreen(page, "**/people**");
       await screen.tab("people").click();
-      await expect(
-        page
-          .getByRole("status")
-          .filter({ hasText: messages[language].states.loading }),
-      ).toBeAttached();
+      await expect(loading).toBeAttached();
       await expectNoAccessibilityViolations(page);
       release();
-      await expect(
-        page.getByText(messages[language].placeholder.comingSoon),
-      ).toBeVisible();
+      await expect(page.getByText(t.placeholder.comingSoon)).toBeVisible();
+
+      release = await holdScreen(page, "**/lists**");
+      await screen.tab("lists").click();
+      await expect(loading).toBeAttached();
+      await expectNoAccessibilityViolations(page);
+      release();
+      const row = page.getByRole("link", { name: /Milk/ });
+      await expect(row).toBeVisible();
+
+      release = await holdScreen(page, `**/items/${item.id}**`);
+      await row.click();
+      await expect(loading).toBeAttached();
+      await expectNoAccessibilityViolations(page);
+      release();
+      await expect(screen.heading("Milk")).toBeVisible();
     });
   }
 
