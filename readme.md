@@ -90,8 +90,11 @@ Local setup:
 2. Clone the repository.
 3. Run `npm run setup`. It creates `.env` from `.env.example`, installs dependencies, starts a local Postgres in Docker, creates the test database, applies the migrations, loads the seed data, and installs the browsers for the browser tests. It can be run again safely.
 4. Run `npm run dev` and open <http://localhost:3000>.
+5. Sign in with the development-only sign-in on Welcome ("Acceso de desarrollo" in Spanish, "Development sign-in" in English), which needs no Google credentials. Enter a seed user's email, such as `ana@example.com`, or any other email to sign up as a new user and go through One last step. The seed users and what each one can do are in [Data model §3](docs/04-DATA-MODEL.md#3-seed-data).
 
-Run the tests with `npm test` (unit and integration) and `npm run test:e2e` (browser and accessibility). T-04 adds a development-only sign-in, to enter as a seed user without Google credentials.
+The development sign-in shows only when `.env` has `DEV_SIGN_IN=true`, as `.env.example` does. `npm run setup` doesn't change an existing `.env`, so a `.env` created before that setting was added needs the line added by hand, followed by a restart of `npm run dev`. With the setting off and no Google credentials, Welcome says sign-in isn't available ("El acceso no está disponible ahora").
+
+Run the tests with `npm test` (unit and integration) and `npm run test:e2e` (browser and accessibility).
 
 **Full documentation:** [Infrastructure §2 Environments](docs/06-INFRASTRUCTURE.md#2-environments), [§7 Configuration](docs/06-INFRASTRUCTURE.md#7-configuration), and [Data model §3 Seed data](docs/04-DATA-MODEL.md#3-seed-data)
 
