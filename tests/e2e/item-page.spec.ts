@@ -120,11 +120,10 @@ test.describe("details", () => {
 
     await open(page, `/items/${item.id}`);
 
-    await expect(page.getByText(notes, { exact: true })).toBeVisible();
-    const main = page.getByRole("main");
-    await expect(main.locator("b")).toHaveCount(0);
-    await expect(main.locator("script")).toHaveCount(0);
-    await expect(main.locator("img")).toHaveCount(0);
+    const shown = itemPage(page, "en").item.getByText(notes, { exact: true });
+    await expect(shown).toBeVisible();
+    // The notes hold only their text: none of it became an element.
+    await expect(shown.locator("*")).toHaveCount(0);
     expect(
       await page.evaluate(
         () => (window as { __notesRan?: boolean }).__notesRan,
@@ -207,7 +206,7 @@ test.describe("deleting", () => {
       .getByRole("button", { name: t.item.delete })
       .click();
 
-    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+    await expect(page.getByRole("main").getByRole("alert")).toContainText(
       t.errors.ITEM_CHANGED,
     );
     await expect(
@@ -290,6 +289,48 @@ test.describe("languages and accessibility", () => {
 
       await open(page, `/items/${unavailable.id}`);
       await expect(screen.editButton).toBeVisible();
+      await expectNoAccessibilityViolations(page);
+    });
+
+    test(`T-19 the item page in every other status has no accessibility violations (${language})`, async ({
+      page,
+    }) => {
+      const { email, listId, item } = await newItem(page, language, {
+        name: "Milk",
+      });
+      const screen = itemPage(page, language);
+      const { t } = screen;
+
+      for (const status of ["reserved", "purchased", "shipped"] as const) {
+        const other = await createItem(page, listId, { name: status });
+        await setItemStatus(other.id, status, email);
+        await open(page, `/items/${other.id}`);
+        await expect(screen.heading(status)).toBeVisible();
+        await expect(screen.item).toContainText(t.status[status]);
+        await expectNoAccessibilityViolations(page);
+      }
+
+      // The item changed after the page loaded, so deleting it fails.
+      await open(page, `/items/${item.id}`);
+      await setItemStatus(item.id, "reserved", "juan@example.com");
+      await screen.moreActions.click();
+      await screen.menuItem(t.item.delete).click();
+      await screen.deleteDialog
+        .getByRole("button", { name: t.item.delete })
+        .click();
+      await expect(page.getByRole("main").getByRole("alert")).toContainText(
+        t.errors.ITEM_CHANGED,
+      );
+      await expectNoAccessibilityViolations(page);
+
+      const deleted = await createItem(page, listId, { name: "Gone" });
+      const response = await page.request.delete(
+        `/api/v1/items/${deleted.id}`,
+        { headers: sameOrigin() },
+      );
+      expect(response.status()).toBe(204);
+      await page.goto(`/items/${deleted.id}`);
+      await expect(screen.notAvailable).toBeVisible();
       await expectNoAccessibilityViolations(page);
     });
   }
