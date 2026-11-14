@@ -28,7 +28,7 @@ Firmadoc es un **servicio de firma digital institucional**: un único componente
 _Pendiente — se completará cuando exista un despliegue (Entrega 3)._
 
 ### 0.5. URL o archivo comprimido del repositorio
-https://github.com/bv3rgara/AI4Devs-finalproject (fork de `LIDR-academy/AI4Devs-finalproject`, rama `feature/entrega-1-bbmv`)
+https://github.com/bv3rgara/AI4Devs-finalproject (fork de `LIDR-academy/AI4Devs-finalproject`). Ramas: `feature/entrega-1-bbmv` (documentación), `feature/entrega-2-bbmv` (código funcional) y `final-project-bbmv` (entrega final, que también se integra en `main`).
 
 ---
 
@@ -49,8 +49,8 @@ Firmadoc resuelve esto con un **widget embebible** (diseñado para integrarse ta
 
 - **Firma digital con token mediante agente local (modo principal, `token`)**: una aplicación liviana instalada en la PC del usuario (Firmadoc Agent) accede al token por PKCS#11, muestra un diálogo de confirmación con el nombre del documento, pide el PIN localmente y firma únicamente los hashes que recibe. El PIN y la clave privada nunca salen del token ni de esa PC.
 - **Firma diferida**: el servidor prepara el PDF (reserva el espacio de la firma, calcula el hash de los atributos firmados) y, cuando el token devuelve la firma, la incrusta. El PDF no viaja a la PC; la clave privada no toca el servidor.
-- **Validación en el servidor**: antes y después de firmar se verifica la cadena de confianza hasta la AC Raíz, la vigencia, la revocación (CRL/OCSP), que el CUIL del certificado coincida con el del usuario y que el hash devuelto corresponda a un desafío vigente de esa sesión.
-- **PAdES con sello de tiempo y revocación embebida (nivel B-LT)**: para que la firma siga siendo verificable a largo plazo (requiere un servicio de sellado de tiempo; ver 2.7).
+- **Validación en el servidor**: antes y después de firmar se verifica la cadena de confianza hasta la AC Raíz, la vigencia, la revocación (CRL/OCSP) y que el hash devuelto corresponda a un desafío vigente de esa sesión. El cotejo del CUIL del certificado con el del firmante es **opcional** (`FIRMADOC_REQUIRE_CUIL_MATCH=true`); por defecto no se coteja: firma quien tiene el token y su PIN, y la firma registra el certificado usado.
+- **PAdES nivel B-B en el MVP**; con sello de tiempo y revocación embebida (nivel B-LT) en una versión posterior, para que la firma siga siendo verificable a largo plazo (requiere un servicio de sellado de tiempo; ver 2.7).
 - **Firmas múltiples sobre un mismo documento**: cada firma nueva se agrega como actualización incremental del PDF, sin invalidar las anteriores.
 - **Widget de firma embebible**: se integra vía `<iframe>` (mecanismo principal, sin acoplarse al framework del sistema host) o vía Web Component, en cualquier sistema cliente.
 - **Motor de firma propio (`local`)**: firma el PDF con certificados propios (autofirmados o de una CA de demostración) usando `pyHanko`. Produce firma electrónica (no firma digital con presunción legal) y permite demostrar y evaluar todos los flujos sin token físico.
@@ -63,10 +63,22 @@ Firmadoc resuelve esto con un **widget embebible** (diseñado para integrarse ta
 - **Listado de firmantes por documento**: quién firmó, cuándo y con qué certificado, consultable desde la API y el panel.
 - **Notificación por webhook**: el sistema integrador recibe un aviso automático cuando el documento queda firmado.
 - **Panel de administración y auditoría**: listado de documentos con su origen (individual o lote), versión y vencimiento; detalle de cada documento como **cadena de custodia** (línea de tiempo, versiones descargables y datos técnicos); gestión de anclas de confianza, del certificado propio y de **sistemas integradores y sus claves**.
-- **Autenticación de sistemas integradores**: cada sistema que usa Firmadoc se registra y opera con su propia API key / credenciales OAuth2 client-credentials.
+- **Autenticación de sistemas integradores**: cada sistema que usa Firmadoc se registra y opera con su propia API key (OAuth2 client-credentials en la versión 2).
 - **Firma en lote**: firmar varios documentos con una sola confirmación. Con el agente de token, el certificado se elige y valida una vez, todos los hashes se envían en una única llamada y el PIN se pide una sola vez; el resultado puede ser parcial («2 de 3 firmados»), con descarga de los firmados (ZIP) y reintento de los fallidos. La firma remota **no** se admite por lote en esta versión (según un relevamiento previo, el servicio limita la cantidad de documentos por operación; valor a verificar).
 - **Verificación de firmas**: endpoint para validar la integridad y la cadena de confianza de un documento firmado (`POST /api/v1/documents/{id}/verify`).
 - **Modo demostración** (planificado): un único comando que levanta el sistema listo para firmar sin token USB, para que un revisor recorra los flujos sin hardware (ver 1.4).
+
+#### Alcance del MVP
+
+La lista anterior describe el producto completo. El MVP se acota a **un único camino demostrable de punta a punta**, y el resto se construye por hitos:
+
+| Hito | Alcance | Entrega |
+|---|---|---|
+| **1. MVP** | Cargar un PDF desde el panel (con nombre y CUIL del firmante), firmarlo con el proveedor `local` pasando por el mismo `prepare` / `complete` de la firma diferida, y dejarlo descargable y como versión vigente (v2) sin pisar la v1. API key para el integrador, PostgreSQL, PAdES B-B, auditoría y webhook con un único intento registrado | Entrega 2 (flujo parcial) y Entrega 3 |
+| **2. Firma con token** | Firmadoc Agent con SoftHSM (y prueba manual con token físico): listar certificados, validar antes del PIN y firmar el hash | Entrega 3 |
+| **Versión 2** | Firma en lote, adaptador de firma remota (mock FirmAR), sellado de tiempo y revocación embebida (B-LT), Web Component, OAuth2 client-credentials, reintentos con backoff de webhooks, gestión de anclas de confianza desde el panel, estados con fecha límite y verificación independiente por endpoint | Fuera del máster |
+
+El panel Angular del MVP es una página mínima («Firmar documento» y listado de documentos) que sirve también como ejemplo de cómo una aplicación Angular embebe el widget.
 
 **Ejemplo de integración desde un sistema host (ej. Angular):** no requiere instalar ningún paquete de Firmadoc — el sistema integrador solo consume la `signing_url` que devuelve la API.
 
@@ -84,7 +96,7 @@ Firmadoc resuelve esto con un **widget embebible** (diseñado para integrarse ta
 
 Al no haber código todavía (esta entrega es 100% documentación), se describe el flujo objetivo — las capturas reales se incorporarán en la Entrega 2. La firma **parte, en general, de cargar un PDF** en la sección «Firmar documento» del panel de administración y se completa con el widget embebido en esa misma página; los sistemas integradores usan el mismo widget dentro de su propia interfaz, con la `signing_url` que devuelve la API.
 
-1. **Cargar el PDF.** Se arrastra o se elige uno o varios PDF; con varios se arma la lista (se puede quitar alguno) y se firman en lote con un solo PIN. El original queda como versión v1.
+1. **Cargar el PDF.** Se completan el nombre y el CUIL del firmante (que queda registrado como `Signer`) y se arrastra o se elige uno o varios PDF; con varios se arma la lista (se puede quitar alguno) y se firman en lote con un solo PIN. El original queda como versión v1.
 2. **Elegir el método de firma.** Tarjetas con su validez: **firma con token** (firma digital; el widget indica si Firmadoc Agent y el token están conectados), **firma remota** (redirige al servicio) y **firma propia** (demostración, inmediata, firma electrónica sin la presunción legal de la firma digital). Se ve el documento (nombre, páginas, tamaño, estado y vencimiento).
 3. **Validar el certificado antes del PIN.** Con el token se elige el certificado (los vencidos aparecen deshabilitados) y Firmadoc valida la cadena de confianza, la vigencia y la revocación; si algo falla lo informa **antes** de pedir el PIN. El agente muestra una ventana con el nombre del titular del certificado y pide el PIN **una sola vez**, aunque sea un lote.
 4. **Firmado.** El widget muestra el resultado, avisa al sistema integrador (`postMessage` y webhook) y el documento queda descargable y como nueva versión vigente, sin descargar ni subir nada a mano.
@@ -94,10 +106,10 @@ Al no haber código todavía (esta entrega es 100% documentación), se describe 
 ### **1.4. Instrucciones de instalación:**
 
 _Objetivo para la Entrega 2 (cuando exista código ejecutable). Se documentará aquí, como mínimo:_
-- Requisitos: Python 3.11 o superior, Node 20+ (para compilar el widget) y Chrome/Edge (desde Chrome 142, una página pública que llama a `127.0.0.1` pide permiso de acceso a la red local; en equipos administrados se evita con la política `LocalNetworkAccessAllowedForUrls`). Docker solo si se quiere PostgreSQL. El agente local solo hace falta para firmar con token.
+- Requisitos: Python 3.11 o superior, Node 20+ (para compilar el widget) y Chrome/Edge (desde Chrome 142, una página pública que llama a `127.0.0.1` pide permiso de acceso a la red local; en equipos administrados se evita con la política `LocalNetworkAccessAllowedForUrls`). Docker para levantar PostgreSQL. El agente local solo hace falta para firmar con token.
 - Modo demostración: un único comando que prepara base, carpetas, migraciones y datos semilla, y arranca el sistema listo para firmar sin token USB.
 - Instalación manual: variables de entorno (`.env`: base de datos, secreto de los enlaces del widget, token de administración, URL del servicio de sellado de tiempo), migraciones (`alembic upgrade head`) y script de seed con un sistema integrador y un certificado de demostración.
-- Base de datos: SQLite local por defecto y PostgreSQL (con los PDF almacenados en la base) mediante `docker-compose`.
+- Base de datos: **PostgreSQL** en todos los entornos (desarrollo, tests y demo), levantado con `docker-compose`. Los PDF se guardan **dentro de la base** (columna `bytea` de `document_version`); no hay object storage en el MVP. Se descartó SQLite porque los triggers que protegen auditoría y versiones, y los campos `jsonb`, dependen de PostgreSQL.
 - Carpeta de confianza (`backend/trust/`): certificados raíz y de AC en formato `.crt`, descargados de la fuente oficial de la AC; el panel muestra la huella SHA-256 de cada uno para confirmarla por un canal independiente.
 - Agente local (solo para firmar con token): se instala en la PC del firmante (instalador para Windows empaquetado con PyInstaller, distribuible por política de dominio en equipos administrados) y requiere el middleware PKCS#11 del fabricante del token, de la misma arquitectura (32/64 bits) que el agente. En desarrollo se usa SoftHSM en lugar de un token físico. Un comando de diagnóstico lista los certificados del token y verifica que la biblioteca PKCS#11 cargue, sin pedir el PIN.
 - Credenciales de prueba y lista de flujos a probar (firma propia, firma con token de software, lote con fallo parcial, certificado rechazado antes del PIN, agente no detectado, verificación, webhook y gestión de integradores): se incluirán con la Entrega 2.
@@ -122,13 +134,13 @@ flowchart TB
 
     subgraph Firmadoc["Firmadoc (servicio de firma institucional)"]
         API["Firmadoc API\n(FastAPI)"]
-        Auth["Auth de sistemas integradores\n(API key / OAuth2 client-credentials)"]
+        Auth["Auth de sistemas integradores\n(API key; OAuth2 en v2)"]
         Providers["Capa de adaptadores\n(interfaz SignatureProvider)"]
         TokenP["TokenAgentProvider\n(firma diferida: hash → agente → firma)"]
         Local["LocalPAdESProvider\n(firma electrónica, clave en el servidor)"]
         FirmAR["FirmARProvider\n(mock de firma remota)"]
         Engine["Motor PAdES\n(pyHanko: preparar / completar)"]
-        Valid["Validación de confianza\n(cadena, vigencia, CRL/OCSP, CUIL)"]
+        Valid["Validación de confianza\n(cadena, vigencia, CRL/OCSP, CUIL opcional)"]
         Audit["Servicio de auditoría\n(append-only)"]
         Webhook["Despachador de webhooks"]
         Admin["Panel de administración\n(Angular + PrimeNG)"]
@@ -163,9 +175,9 @@ flowchart TB
 
 **Flujo de firma diferida (proveedor `token`):**
 1. El widget lista los certificados del token consultando al agente local y envía el elegido a `prepare`.
-2. Firmadoc valida el certificado (cadena, vigencia, revocación, CUIL = usuario), prepara el PDF con un espacio reservado para la firma, calcula el hash de los atributos firmados y lo guarda como **desafío** de un solo uso, atado a la sesión y con vencimiento.
+2. Firmadoc valida el certificado (cadena, vigencia, revocación y, si el cotejo está activado, CUIL = firmante), prepara el PDF con un espacio reservado para la firma, calcula el hash de los atributos firmados y lo guarda como **desafío** de un solo uso, atado a la sesión y con vencimiento.
 3. El widget pasa los hashes al agente; el agente muestra la confirmación, pide el PIN una vez y firma cada hash con el token.
-4. El widget envía las firmas a `complete`; Firmadoc comprueba que cada una corresponda a un desafío vigente, la incrusta como actualización incremental, agrega sello de tiempo y datos de revocación (B-LT), verifica el resultado, registra la nueva versión del documento y dispara el webhook.
+4. El widget envía las firmas a `complete`; Firmadoc comprueba que cada una corresponda a un desafío vigente, la incrusta como actualización incremental (PAdES B-B en el MVP; sello de tiempo y revocación embebida, B-LT, en la versión 2), verifica el resultado, registra la nueva versión del documento y dispara el webhook.
 
 El navegador solo transporta mensajes entre ambos lados: **el agente no tiene credenciales ni conexión propia con el servidor**.
 
@@ -188,7 +200,7 @@ El navegador solo transporta mensajes entre ambos lados: **el agente no tiene cr
 |---|---|---|
 | Firmadoc API | Python 3.12 + FastAPI | Expone la API REST, orquesta solicitudes de firma, autentica sistemas integradores |
 | Motor PAdES | `pyHanko` (firma interrumpida: preparar y completar) | Prepara el PDF con espacio reservado, calcula el hash a firmar, incrusta la firma como actualización incremental, agrega sello de tiempo y revocación |
-| Validación de confianza | Python (`pyHanko`/`asn1crypto`) | Verifica cadena hasta las anclas de confianza, vigencia, revocación (CRL/OCSP) y CUIL del certificado |
+| Validación de confianza | Python (`pyHanko`/`asn1crypto`) | Verifica cadena hasta las anclas de confianza, vigencia, revocación (CRL/OCSP) y, opcionalmente, CUIL del certificado |
 | Capa de adaptadores | Python (Protocol/ABC) | Interfaz `SignatureProvider` con `TokenAgentProvider`, `LocalPAdESProvider` y `FirmARProvider` (mock) |
 | Firmadoc Agent | Python + biblioteca PKCS#11, empaquetado como app local | Corre en la PC del usuario, escucha solo en `127.0.0.1`; expone dos operaciones (listar certificados y firmar hashes), muestra confirmación y pide el PIN |
 | Servicio de auditoría | FastAPI + PostgreSQL | Registra cada evento del ciclo de vida de una firma, de forma inmutable (append-only) |
@@ -215,7 +227,7 @@ firmadoc/
 │   │   ├── services/           # pades (preparar/completar), validación, sello de tiempo, auditoría, webhooks
 │   │   └── main.py
 │   ├── trust/                  # certificados raíz/AC oficiales (.crt) usados como anclas de confianza
-│   ├── tests/                  # unitarios + integración
+│   ├── tests/                  # unitarios + integración (PostgreSQL)
 │   ├── alembic/                 # migraciones
 │   └── requirements.txt
 ├── agent/                       # Firmadoc Agent: app local para firmar hashes con token (PKCS#11)
@@ -228,7 +240,11 @@ firmadoc/
 ├── frontend/                    # panel de administración/auditoría (Angular + PrimeNG)
 │   ├── src/
 │   └── package.json
+├── docs/
+│   └── openapi.yaml             # contrato de la API (fuente de verdad, se escribe antes que el código)
 ├── docker-compose.yml
+├── .env.example
+├── CLAUDE.md                    # contexto para la IA: stack, carpetas, comandos y convenciones
 ├── README.md
 └── prompts.md                   # registro de uso de IA (raíz del repo, formato oficial)
 ```
@@ -251,11 +267,11 @@ Para la entrega del máster: contenedores Docker para los 3 servicios (backend, 
 
 ### **2.5. Seguridad**
 
-- **Autenticación de sistemas integradores**: cada sistema que use Firmadoc se registra y opera con API key / OAuth2 client-credentials; el widget no acepta solicitudes de un sistema no registrado.
+- **Autenticación de sistemas integradores**: cada sistema que use Firmadoc se registra y opera con una API key (cabecera `X-API-Key`, guardada solo como hash); OAuth2 client-credentials queda para la versión 2. El widget no acepta solicitudes de un sistema no registrado.
 - **Aislamiento del iframe**: cabecera `Content-Security-Policy: frame-ancestors` con lista explícita de orígenes permitidos por sistema integrador (evita clickjacking).
 - **Firma diferida**: el PDF no viaja a la PC del usuario y la clave privada del token nunca toca el servidor.
 - **Validación de confianza en el servidor**, al firmar y al recibir documentos de terceros: cadena hasta las anclas de `backend/trust/`, vigencia, revocación (CRL/OCSP) e integridad. Las anclas se descargan siempre de la fuente oficial de la AC y su huella SHA-256 se confirma por un canal independiente (una raíz de origen dudoso invalidaría toda la validación).
-- **Vinculación de identidad**: el CUIL del certificado debe coincidir con el del usuario autenticado en el sistema integrador.
+- **Vinculación de identidad (configurable)**: con `FIRMADOC_REQUIRE_CUIL_MATCH=true`, el CUIL del certificado debe coincidir con el del firmante de la solicitud (`403` si no). Por defecto está desactivada: firma quien tiene el token y su PIN, y el certificado usado queda registrado en la firma y en la auditoría.
 - **Desafíos de un solo uso**: el hash que devuelve el token solo se acepta si corresponde a un desafío vigente, no consumido y de esa misma sesión y solicitud.
 - **Seguridad del agente local**: escucha únicamente en `127.0.0.1`; acepta pedidos solo de la lista de orígenes permitidos; expone solo dos operaciones (listar certificados y firmar hashes); muestra una confirmación con el nombre del documento antes de firmar; el PIN se ingresa solo en la PC del usuario y el agente nunca lo reintenta por su cuenta (el token se bloquea tras una cantidad de intentos fallidos).
 - **Cifrado de claves privadas en reposo**: el keystore del proveedor `local` se cifra (variable de entorno en desarrollo, KMS o equivalente en producción).
@@ -268,12 +284,13 @@ Para la entrega del máster: contenedores Docker para los 3 servicios (backend, 
 ### **2.6. Tests**
 
 - **Unitarios**: lógica de cada `SignatureProvider` de forma aislada; motor PAdES (preparar/completar); validación de confianza con certificados de prueba (raíz, AC y firmante con CUIL, sin valor legal).
-- **Casos de rechazo de la validación**: certificado revocado, de otra AC, vencido, con CUIL que no coincide con el usuario, firma hecha con otra clave y desafío vencido, reutilizado o de otra sesión.
+- **Casos de rechazo de la validación**: certificado revocado, de otra AC, vencido, con CUIL que no coincide con el firmante (con el cotejo activado), firma hecha con otra clave y desafío vencido, reutilizado o de otra sesión.
 - **Verificación independiente**: el PDF firmado se valida con una herramienta ajena a pyHanko (ej. `pdfsig` de Poppler) y se comprueba que dos firmas sucesivas sobre el mismo PDF no se invalidan entre sí.
 - **Integración**: API + PostgreSQL (con testcontainers), flujo completo crear solicitud → preparar → completar → versión nueva → auditoría → webhook.
 - **Agente sin hardware**: pruebas del agente y del `TokenAgentProvider` con SoftHSM (PKCS#11 por software), ejecutables en CI.
 - **End-to-end**: un sistema integrador de prueba embebe el widget, firma un documento (con SoftHSM) y recibe el webhook de confirmación.
 - **Prueba manual documentada** con un token criptográfico USB de referencia : carga de la biblioteca PKCS#11, lectura del certificado, firma de un lote con un solo PIN.
+- **Orden de trabajo (tests primero)**: para cada ticket, los tests se escriben antes que el código, empezando por los casos de rechazo del motor de firma. La IA los genera a partir de los criterios Dado/Cuando/Entonces de la sección 5 y del contrato `docs/openapi.yaml`; se revisan a mano antes de implementar y el PDF resultante se verifica con `pdfsig`.
 
 ### **2.7. Supuestos y puntos a confirmar**
 
@@ -337,7 +354,8 @@ erDiagram
         enum origin "uploaded | signed"
         uuid signature_request_id FK "nullable, solo si origin=signed"
         enum signature_level "nullable: B-B | B-T | B-LT | B-LTA"
-        string storage_ref "ubicación del binario (object storage)"
+        string file_name "nombre original del archivo"
+        bytea content "binario del PDF, guardado en PostgreSQL"
         string document_hash
         datetime created_at
     }
@@ -351,6 +369,7 @@ erDiagram
         uuid batch_id FK "nullable, si forma parte de un lote"
         enum provider "local | token | firmar"
         enum status "pending | signing | signed | failed"
+        string callback_url "nullable, URL del webhook de esta solicitud"
         datetime created_at
         datetime signed_at "nullable"
     }
@@ -420,20 +439,22 @@ erDiagram
 
 - **IntegratingSystem**: sistema tercero que consume Firmadoc (ej. un gestor documental institucional). `api_key_hash` (not null, único) — nunca se guarda la key en texto plano. `allowed_origins` — orígenes permitidos para embeber el widget y para que el agente acepte pedidos (usado en `frame-ancestors`).
 - **Document**: identidad lógica de un documento a lo largo de toda su vida (puede firmarse varias veces). `external_document_id` (nullable) permite correlacionarlo con el ID que ya usa el sistema integrador. `current_version_id` apunta siempre a la versión vigente — se actualiza (no se borra ni pisa nada) cada vez que se genera una nueva versión. `signing_status` refleja el ciclo de vida de cara a la firma: `draft` (aún no se puede firmar) → `pending_signature` (listo, opcionalmente con `signature_deadline`) → `signed` (tiene al menos una firma completada). Al vencer el plazo se registra un evento de auditoría y el documento deja de figurar como pendiente (el comportamiento exacto se define con cada sistema integrador). El listado de quiénes firmaron un documento no es un campo propio: se obtiene de sus `SignatureRequest` en estado `signed`.
-- **DocumentVersion**: cada versión de un documento, **inmutable y append-only**. `origin` distingue la versión original subida (`uploaded`) de una generada por una firma (`signed`, con `signature_request_id`). `signature_level` indica el nivel PAdES alcanzado (B-LT si hubo sello de tiempo y revocación embebida). `storage_ref` apunta al binario real. Nunca se sobrescribe una versión: solo se agregan nuevas y se actualiza el puntero `Document.current_version_id`.
-- **SignatureRequest**: núcleo del flujo de firma. FK a `document_id` (not null) — toda solicitud opera sobre un `Document` (si el integrador no manda un `document_id`, Firmadoc crea el `Document` y su primera `DocumentVersion` `uploaded`). `status` transiciona `pending → signing → signed|failed`. `certificate_id` queda nulo hasta que se elige el certificado; `batch_id` se completa si la solicitud forma parte de un lote. Al pasar a `signed`, dispara la creación de la `DocumentVersion` resultante, también dentro de un lote.
+- **DocumentVersion**: cada versión de un documento, **inmutable y append-only**. `origin` distingue la versión original subida (`uploaded`) de una generada por una firma (`signed`, con `signature_request_id`). `signature_level` indica el nivel PAdES alcanzado (B-LT si hubo sello de tiempo y revocación embebida). `content` guarda el binario del PDF en la propia base (`bytea`) y `file_name` el nombre original, usado al descargar; un documento de varios MB por versión es aceptable para el volumen del MVP, y mover los binarios a object storage queda como evolución posible. Nunca se sobrescribe una versión: solo se agregan nuevas y se actualiza el puntero `Document.current_version_id`.
+- **SignatureRequest**: núcleo del flujo de firma. FK a `document_id` (not null) — toda solicitud opera sobre un `Document` (si el integrador no manda un `document_id`, Firmadoc crea el `Document` y su primera `DocumentVersion` `uploaded`). `status` transiciona `pending → signing → signed|failed`. `certificate_id` queda nulo hasta que se elige el certificado; `batch_id` se completa si la solicitud forma parte de un lote. `callback_url` (nullable) guarda la URL del webhook que envía el integrador en `POST /signature-requests`; es por solicitud porque un mismo sistema puede querer recibir avisos en endpoints distintos, y las cargas desde el panel no la usan. Al pasar a `signed`, dispara la creación de la `DocumentVersion` resultante, también dentro de un lote.
 - **SigningChallenge**: el hash que debe firmar el token para una solicitud, preparado por el servidor. Es de **un solo uso** (`consumed_at`), vence (`expires_at`) y está atado a la sesión del firmante (`session_ref`) y al certificado validado; así `complete` solo acepta firmas que corresponden a lo que el servidor preparó.
 - **SignatureBatch**: agrupa N `SignatureRequest` que se firman con una sola confirmación (ej. un solo PIN cubre los N documentos). `status` resume el estado conjunto, pero cada solicitud mantiene el suyo — un lote puede terminar en `partial_failure`.
-- **Signer**: persona que firma. `identifier` (CUIL, not null) se contrasta con el CUIL del certificado y con el del usuario autenticado.
+- **Signer**: persona que firma. Se crea (o se reutiliza por `identifier`) a partir del bloque `signer` de `POST /signature-requests` o de los campos nombre y CUIL del formulario de carga del panel, de modo que toda solicitud tiene un firmante aunque la cargue un administrador. `identifier` (CUIL, not null) se contrasta con el CUIL del certificado solo si `FIRMADOC_REQUIRE_CUIL_MATCH=true`.
 - **Certificate**: certificado usado en una firma: propio (`local`), el del token del usuario (`token`; Firmadoc solo registra datos públicos) o del servicio remoto (`firmar`). `cuil` se extrae del certificado; `revocation_status` guarda el resultado de la última consulta de revocación; `serial_number` único.
 - **AuditEvent**: tabla append-only con cada evento del ciclo de vida de una `SignatureRequest` o de un `SignatureBatch` (exactamente uno de los dos FK está presente). `payload` en `jsonb` guarda el detalle de cada tipo de evento (incluido el resultado de la validación de confianza).
-- **WebhookDelivery**: registro de cada intento de notificación al sistema integrador, con reintentos (`attempts`).
+- **WebhookDelivery**: registro de cada intento de notificación al sistema integrador. `url` se copia de `SignatureRequest.callback_url` al momento del envío. En el MVP se hace un único intento (`attempts = 1`); los reintentos con backoff quedan para la versión 2.
 
 ---
 
 ## 4. Especificación de la API
 
-Firmadoc expone una API REST (FastAPI, documentada automáticamente vía OpenAPI/Swagger). Se detallan los 3 endpoints del flujo principal de firma diferida:
+Firmadoc expone una API REST (FastAPI). El contrato completo está escrito en formato **OpenAPI 3.1** en [`docs/openapi.yaml`](docs/openapi.yaml), que es la fuente de verdad: se escribe antes que el código, la IA genera los esquemas Pydantic y los routers a partir de él, y el OpenAPI que FastAPI expone en `/openapi.json` se compara contra este archivo. Autenticación: los sistemas integradores envían `X-API-Key`; el panel usa `Authorization: Bearer <FIRMADOC_ADMIN_TOKEN>`.
+
+Se resumen aquí los 3 endpoints del flujo principal de firma diferida:
 
 ### `POST /api/v1/signature-requests`
 Crea una solicitud de firma sobre un documento (existente o nuevo) y devuelve la URL para embeber el widget.
@@ -442,8 +463,9 @@ Crea una solicitud de firma sobre un documento (existente o nuevo) y devuelve la
 ```json
 {
   "document_base64": "JVBERi0xLjQK...",
+  "file_name": "resolucion-0457.pdf",
   "external_document_id": "expediente-2026-00981/doc-7",
-  "signer": { "full_name": "Juan Pérez", "identifier": "20-12345678-9", "email": "jperez@example.org" },
+  "signer": { "full_name": "Juan Pérez", "identifier": "20123456789", "email": "jperez@example.org" },
   "provider": "token",
   "callback_url": "https://gestor-documental.example.org/webhooks/firmadoc"
 }
@@ -468,6 +490,7 @@ Primer paso de la firma diferida. Recibe el certificado elegido del token (solo 
 ```json
 { "certificate_pem": "-----BEGIN CERTIFICATE-----\nMIIF...\n-----END CERTIFICATE-----" }
 ```
+Con el proveedor `local`, `certificate_pem` se omite: el servidor usa su propio certificado y la clave nunca sale de él. Por eso, en `complete` con `local` el campo `signatures` también se omite, y el servidor firma los desafíos que preparó. Así los dos proveedores recorren el mismo `prepare` / `complete`.
 
 **Response `200 OK`**
 ```json
@@ -506,7 +529,7 @@ Segundo paso. Recibe las firmas producidas por el token, las incrusta en el PDF,
     "version_number": 2,
     "is_active_version": true,
     "signing_status": "signed",
-    "signature_level": "B-LT",
+    "signature_level": "B-B",
     "download_url": "https://firmadoc.example.org/documents/d4a2e9f1-.../versions/2/download",
     "signed_document_base64": "JVBERi0xLjQK..."
   }
@@ -517,6 +540,9 @@ Segundo paso. Recibe las firmas producidas por el token, las incrusta en el PDF,
 Toda firma completada deja el documento **descargable** (`download_url` / `signed_document_base64`) **y, a la vez, versionado** (`document_id` + `version_number` + `is_active_version: true`), sin que Firmadoc borre ni modifique la versión anterior. El webhook que Firmadoc envía al `callback_url` del integrador lleva este mismo bloque `document`, para que pueda reaccionar sin hacer un `GET` adicional.
 
 ### Endpoints adicionales (fuera de los 3 detallados, por el límite recomendado de la plantilla)
+
+- `POST /api/v1/admin/signing-uploads` (MVP, panel): `multipart/form-data` con `file` (PDF), `signer_full_name`, `signer_identifier` (CUIL), `signer_email` opcional y `provider` (`local` en el MVP). Crea el `Signer`, el `Document`, la `DocumentVersion` v1 y la `SignatureRequest`, y devuelve `201` con la misma forma que `POST /signature-requests`. Errores: `401` sin token de administración válido; `422` si el archivo no es un PDF válido o supera `FIRMADOC_MAX_UPLOAD_MB`.
+- `GET /api/v1/documents/{id}/versions/{n}/download` (MVP): descarga el binario de una versión con su nombre original.
 
 - `GET /api/v1/signature-requests/{id}`: estado de la solicitud, con el mismo bloque `document` de `complete` cuando ya está firmada, más el historial de eventos de auditoría.
 - `POST /api/v1/signature-batches`: recibe un array de documentos (misma forma que `POST /signature-requests`) más un `signer` y `provider` comunes y crea un `SignatureBatch`. `prepare` y `complete` del lote (`/api/v1/signature-batches/{id}/prepare|complete`) devuelven y reciben N hashes/firmas, de modo que el agente firma todos en una sola llamada con un único PIN. `GET /api/v1/signature-batches/{id}` desglosa el estado de cada solicitud (un lote puede terminar en `partial_failure`).
@@ -534,8 +560,9 @@ Toda firma completada deja el documento **descargable** (`download_url` / `signe
 > Como **funcionario**, quiero **cargar un PDF desde mi navegador y firmarlo en la misma pantalla**, para firmar un documento sin depender de que otro sistema me lo entregue ni descargarlo, firmarlo afuera y volver a subirlo.
 
 Criterios de aceptación:
-- **Dado** un administrador autenticado en el panel, **cuando** carga un PDF válido en «Firmar documento», **entonces** se guarda como versión original (v1), se crea la solicitud de firma y se muestra el widget embebido con el nombre, las páginas y el tamaño del documento.
-- **Dado** que carga varios PDF, **cuando** confirma, **entonces** se crea un lote y se firman con un solo certificado y un solo PIN.
+- **Dado** un administrador autenticado en el panel, **cuando** completa el nombre y el CUIL del firmante y carga un PDF válido en «Firmar documento», **entonces** se registra (o reutiliza) el `Signer`, se guarda como versión original (v1), se crea la solicitud de firma y se muestra el widget embebido con el nombre, las páginas y el tamaño del documento.
+- **Dado** que faltan el nombre o el CUIL del firmante, o el CUIL no tiene 11 dígitos, **cuando** intenta cargar, **entonces** se rechaza con `422` y no se guarda nada.
+- *(Versión 2, con HU6)* **Dado** que carga varios PDF, **cuando** confirma, **entonces** se crea un lote y se firman con un solo certificado y un solo PIN.
 - **Dado** un archivo que no es un PDF válido o que excede el tamaño máximo, **cuando** lo carga, **entonces** se rechaza con un mensaje claro y no se guarda nada (`422` en la API).
 - **Dado** que firma, **cuando** termina, **entonces** el documento queda descargable y como nueva versión vigente (v2), y la v1 original se conserva.
 - **Dado** un token de administración inválido o ausente, **cuando** se invoca `POST /api/v1/admin/signing-uploads`, **entonces** la respuesta es `401`.
@@ -555,7 +582,7 @@ Criterios de aceptación:
 > Como **funcionario con un token de firma digital**, quiero **firmar un documento desde el sistema web con mi token, ingresando el PIN en mi PC**, para firmar con validez de firma digital sin descargar el documento, firmarlo afuera y volver a subirlo.
 
 Criterios de aceptación:
-- **Dado** un firmante con el agente instalado y su token conectado, **cuando** abre la `signing_url` y elige su certificado, **entonces** Firmadoc valida la cadena de confianza, la vigencia, la revocación y que el CUIL del certificado coincida con el del firmante, y si algo falla lo informa **antes** de pedir el PIN.
+- **Dado** un firmante con el agente instalado y su token conectado, **cuando** abre la `signing_url` y elige su certificado, **entonces** Firmadoc valida la cadena de confianza, la vigencia y la revocación (y, si `FIRMADOC_REQUIRE_CUIL_MATCH=true`, que el CUIL del certificado coincida con el del firmante), y si algo falla lo informa **antes** de pedir el PIN.
 - **Dado** un certificado válido, **cuando** el firmante confirma en el diálogo del agente (que muestra el nombre del titular del certificado; los documentos se ven en el widget) e ingresa el PIN, **entonces** el agente firma solo el hash recibido y el servidor incrusta la firma PAdES; el PDF nunca viaja a la PC ni la clave sale del token.
 - **Dado** un hash firmado que no corresponde a un desafío vigente (vencido, ya usado o de otra sesión), **cuando** se intenta completar la firma, **entonces** se rechaza con `409`.
 - **Dado** una firma completada, **cuando** el servidor la valida, **entonces** se crea una nueva `DocumentVersion` (`origin: signed`) marcada como vigente, la versión anterior **no se modifica ni se elimina**, y el documento queda descargable inmediatamente (`download_url` o `signed_document_base64`).
@@ -567,7 +594,7 @@ Criterios de aceptación:
 
 Criterios de aceptación:
 - **Dado** una `SignatureRequest` que pasa a `signed` o `failed`, **cuando** cambia el estado, **entonces** Firmadoc invoca el `callback_url` registrado con el resultado y el bloque `document` (descarga y versión).
-- **Dado** que el integrador no responde `2xx`, **cuando** falla la entrega, **entonces** Firmadoc reintenta con backoff y lo registra en `WebhookDelivery.attempts`.
+- **Dado** que el integrador no responde `2xx`, **cuando** falla la entrega, **entonces** el intento queda registrado como `failed` en `WebhookDelivery` sin afectar al estado de la firma. *(Versión 2: reintentos con backoff.)*
 - **Dado** cualquier intento de entrega, **cuando** ocurre, **entonces** queda registrado y consultable desde el panel de administración.
 
 **Resto del backlog (documentado, prioridad must/should):**
@@ -585,50 +612,83 @@ Criterios de aceptación:
 
 **Priorización y dependencias:** el versionado (nueva versión vigente sin pisar la anterior) y la descarga son parte de los criterios de aceptación de HU2 y se comparten con todos los proveedores. HU1 es prerequisito de todo (no hay solicitud sin `Document`). HU2 y HU5 comparten el mismo motor de preparar/completar y difieren en quién tiene la clave (el token del usuario o el servidor), por lo que HU5 se construye primero y habilita la demostración y los tests de HU2. HU2 es la de mayor riesgo técnico (agente local, PKCS#11, validación de confianza): se desarrolla con SoftHSM antes de validar con un token físico. HU3 depende de que exista al menos un proveedor funcionando; HU4 depende de los eventos generados por HU1-HU3. Del conjunto de *should-have* (HU6-HU11), que quedan documentados como backlog, solo se implementarán los que alcance el tiempo del MVP, priorizando HU6 por su sinergia con el token (un solo PIN para todo el lote).
 
+**Orden de construcción (ver «Alcance del MVP» en 1.2):** hito 1 = HU1 + HU5 + versionado y descarga, y luego HU3 (webhook con un intento) y HU4 (auditoría); hito 2 = HU2 con SoftHSM; HU1b se expone en la API desde el hito 1 porque reutiliza el mismo servicio de carga. Las *should-have* pasan a la versión 2.
+
 ---
 
 ## 6. Tickets de Trabajo
 
-**Ticket 1 — Backend: flujo de firma diferida (`create` / `prepare` / `complete`)**
+Los tres tickets de la plantilla (backend, frontend y base de datos) se detallan abajo. El de backend se divide en cuatro sub-tickets, cada uno implementable y testeable por separado y en el orden indicado. El agente local tiene su propio ticket completo (Ticket 4) porque es la pieza de mayor riesgo.
 
-- **Descripción**: implementar los endpoints del flujo principal con el motor PAdES de `pyHanko` (firma interrumpida), la validación de confianza y la creación/vinculación de `Document` y `DocumentVersion`.
+**Ticket 1 — Backend: flujo de firma diferida (`create` / `prepare` / `complete`)** — épica, 34 h en total
+
+**Ticket 1a — Carga de documentos y versionado** (hito 1)
+- **Descripción**: servicio de carga compartido por el panel y por la API de integradores, y descarga de versiones.
 - **Tareas**:
-  - Modelos `Document`, `DocumentVersion`, `SignatureRequest` y `SigningChallenge` + migración Alembic.
-  - Resolución de documento: si llega `document_id`, reutiliza el `Document`; si llega `document_base64` (+ `external_document_id`), crea `Document` y su `DocumentVersion` inicial (`origin: uploaded`).
-  - Interfaz `SignatureProvider` (Protocol) y clases `TokenAgentProvider` y `LocalPAdESProvider`, compartiendo el servicio de preparar/completar.
-  - Servicio de validación: cadena hasta las anclas de `backend/trust/`, vigencia, revocación (CRL/OCSP) y CUIL del certificado.
-  - `prepare`: reservar espacio de firma (16–32 KB), calcular el hash de los atributos firmados con la API de firma externa de pyHanko y guardar el desafío (un solo uso, con vencimiento, atado a la sesión).
-  - `complete`: verificar el desafío, incrustar la firma como actualización incremental, agregar sello de tiempo y revocación (B-LT si hay TSA configurada), verificar el resultado, crear la `DocumentVersion` `signed`, actualizar `Document.current_version_id` y exponer `download_url`.
-  - Registro de eventos de auditoría (`created`, `prepared`, `signed`, `failed`) y envío del webhook.
-- **Criterios de aceptación**: dado un PDF válido, `create` devuelve `201`; con un certificado de prueba válido `prepare` devuelve el hash y con uno revocado, de otra AC o con otro CUIL lo rechaza; `complete` produce un PDF con firma PAdES verificable por una herramienta independiente, descargable y registrado como nueva versión vigente sin alterar la anterior; reutilizar un desafío devuelve `409`.
-- **Estimación**: 14h.
+  - `POST /api/v1/admin/signing-uploads` (token de administración, multipart con nombre y CUIL del firmante) y `POST /api/v1/signature-requests` (API key, JSON con `document_base64` o `document_id` y `callback_url` opcional), ambos sobre el mismo servicio.
+  - Validación del PDF: tipo MIME, cabecera `%PDF`, apertura con `pyHanko`/`pypdf` y tamaño máximo `FIRMADOC_MAX_UPLOAD_MB`.
+  - Alta o reutilización del `Signer` por CUIL; creación de `Document`, `DocumentVersion` v1 (`origin: uploaded`, binario en `bytea`) y `SignatureRequest` (`pending`).
+  - `GET /api/v1/documents/{id}/versions/{n}/download` con el nombre original del archivo.
+- **Criterios de aceptación**: un PDF válido devuelve `201` con `signing_url`; un no-PDF, uno corrupto o uno que excede el tamaño devuelve `422` y no deja filas creadas; sin credenciales devuelve `401`; reutilizar un `document_id` no crea un `Document` nuevo.
+- **Estimación**: 7 h.
+
+**Ticket 1b — Motor PAdES y proveedor `local`** (hito 1)
+- **Descripción**: implementar la firma diferida con la firma interrumpida de `pyHanko`, usada primero por `LocalPAdESProvider` (la clave está en el servidor) y luego por `TokenAgentProvider`.
+- **Tareas**:
+  - Interfaz `SignatureProvider` (Protocol) y `LocalPAdESProvider` con un certificado de demostración emitido por una CA de prueba generada en el seed.
+  - `prepare`: reservar espacio de firma (16–32 KB), calcular el hash de los atributos firmados y guardar el `SigningChallenge` (un solo uso, `expires_at`, atado a `session_ref`).
+  - `complete`: verificar el desafío, firmar el hash con la clave local (o recibir la firma del agente en el hito 2), incrustarla como actualización incremental, crear la `DocumentVersion` `signed`, mover `Document.current_version_id` y pasar a `signed`. Nivel PAdES B-B (sin TSA en el MVP).
+- **Criterios de aceptación**: el PDF resultante pasa `pdfsig` sin errores de integridad; la v1 queda intacta (mismo hash); reutilizar o usar un desafío vencido devuelve `409`; una segunda firma sobre la v2 no invalida la primera.
+- **Estimación**: 12 h.
+
+**Ticket 1c — Validación de confianza** (hito 2, la necesita `token`)
+- **Tareas**: cadena hasta las anclas de `backend/trust/`, vigencia, revocación (CRL/OCSP con tiempo de espera y resultado `unknown` si no responde), y cotejo del CUIL solo con `FIRMADOC_REQUIRE_CUIL_MATCH=true`. Resultado de la validación guardado en el `payload` de auditoría.
+- **Criterios de aceptación**: certificados de prueba vencido, revocado o de otra CA devuelven `422` con el motivo; con el cotejo activado, un CUIL distinto devuelve `403`; con el cotejo desactivado, el mismo caso firma y registra el certificado usado.
+- **Estimación**: 9 h.
+
+**Ticket 1d — Auditoría y webhook** (hito 1, al final)
+- **Tareas**: eventos `created`, `prepared`, `signed` y `failed` en `audit_event`; al pasar a `signed` o `failed`, un único `POST` en segundo plano al `callback_url` de la solicitud (si existe) con el bloque `document`, registrado en `webhook_delivery`.
+- **Criterios de aceptación**: cada transición deja exactamente un evento; un integrador que responde `500` deja la entrega como `failed` y la firma sigue como `signed`; una solicitud sin `callback_url` no genera entregas.
+- **Estimación**: 6 h.
 
 **Ticket 2 — Frontend: widget embebible de firma (React, iframe)**
 
 - **Descripción**: construir la SPA React que se sirve en `signing_url` y que un sistema integrador embebe vía `<iframe>`, y que coordina el servidor con el agente local.
-- **Tareas**:
-  - Pantalla de selección de método y de certificado (consulta `GET /certificates` al agente), con estados de error claros (agente no instalado, token ausente).
-  - Orquestación: `prepare` → agente `/sign` → `complete`, con estados "validando", "firmando", "firmado", "error".
-  - Comunicación `postMessage` con la ventana padre al completar.
-  - Cabeceras de seguridad (`frame-ancestors`) validadas contra `allowed_origins` del integrador.
-- **Criterios de aceptación**: embebido en una página Angular de prueba, el flujo completo (elegir certificado → confirmar → estado firmado) funciona dentro del iframe sin recargar la página padre, usando un token de software.
-- **Estimación**: 10h.
+- **Tareas (hito 1, sin agente)**:
+  - Vista del documento (nombre, páginas, tamaño) y tarjeta de método «Firma propia» (firma electrónica, aviso de que no tiene presunción legal).
+  - Orquestación `prepare` → `complete` con el proveedor `local`, con estados "preparando", "firmando", "firmado" y "error", y botón de descarga de la versión firmada.
+  - Comunicación `postMessage` con la ventana padre al completar (`{ type: "firmadoc:signed", document }`).
+  - Cabecera `frame-ancestors` generada a partir de `allowed_origins` del integrador.
+- **Tareas (hito 2, con agente)**: tarjeta «Firma con token», detección del agente, selección de certificado (`GET /certificates`), errores claros (agente no instalado, token ausente, certificado rechazado antes del PIN) y el paso intermedio al agente `/sign`.
+- **Criterios de aceptación**: embebido en la página Angular del panel, el flujo «Firma propia» termina en "firmado" dentro del iframe sin recargar la página padre y el panel recibe el `postMessage`; en el hito 2, el mismo flujo funciona con SoftHSM.
+- **Estimación**: 6 h (hito 1) + 6 h (hito 2).
 
 **Ticket 3 — Base de datos: esquema inicial con Alembic**
 
-- **Descripción**: modelar y migrar el esquema relacional inicial (`IntegratingSystem`, `Document`, `DocumentVersion`, `SignatureRequest`, `SigningChallenge`, `SignatureBatch`, `Signer`, `Certificate`, `AuditEvent`, `WebhookDelivery`), incluyendo `Document.signing_status` y `signature_deadline`.
+- **Descripción**: modelar y migrar en **PostgreSQL** el esquema del MVP (`IntegratingSystem`, `Signer`, `Document`, `DocumentVersion`, `SignatureRequest`, `SigningChallenge`, `Certificate`, `AuditEvent`, `WebhookDelivery`). `SignatureBatch` y los campos de fecha límite se agregan en una migración posterior (versión 2).
 - **Tareas**:
-  - Definir modelos SQLAlchemy con las relaciones y restricciones de la sección 3.
-  - Migración inicial Alembic + script de seed (un sistema integrador de prueba, un documento con dos versiones de ejemplo, un certificado demo).
+  - Definir modelos SQLAlchemy con las relaciones y restricciones de la sección 3, incluidos `document_version.content` (`bytea`) y `signature_request.callback_url`.
+  - Migración inicial Alembic + script de seed idempotente (un sistema integrador de prueba con su API key mostrada una sola vez, un firmante demo, la CA de prueba y el certificado del proveedor `local`).
   - Restricción a nivel de base de datos que impida `UPDATE`/`DELETE` sobre `audit_event` y `document_version` (trigger o rol de aplicación sin esos permisos).
   - Índice único por `(document_id, version_number)` en `document_version` y restricción de un solo uso sobre `signing_challenge.consumed_at`.
-- **Criterios de aceptación**: `alembic upgrade head` crea el esquema completo; un intento de `UPDATE`/`DELETE` sobre `audit_event` o `document_version` falla explícitamente; actualizar `Document.current_version_id` no requiere tocar ninguna fila de `document_version`.
-- **Estimación**: 7h.
+- **Criterios de aceptación**: `alembic upgrade head` sobre un PostgreSQL vacío crea el esquema completo y `alembic downgrade base` lo elimina; un intento de `UPDATE`/`DELETE` sobre `audit_event` o `document_version` falla explícitamente; actualizar `Document.current_version_id` no requiere tocar ninguna fila de `document_version`; ejecutar el seed dos veces no duplica datos.
+- **Estimación**: 7 h.
 
-**Ticket adicional (no detallado, por el límite de 3 de la plantilla) — Agente local:** implementar `agent/` (Firmadoc Agent): servidor `127.0.0.1` con validación de orígenes, operaciones `GET /certificates` y `POST /sign` por PKCS#11, diálogo de confirmación con el nombre del documento, un único ingreso de PIN por lote sin reintentos automáticos, script de diagnóstico e instalador para Windows. Se prueba con SoftHSM y de forma manual con un token físico. Estimación: 12h.
+**Ticket 4 — Agente local (Firmadoc Agent)** (hito 2)
+
+- **Descripción**: aplicación local en Python que el widget usa para firmar hashes con el token del usuario por PKCS#11, sin credenciales ni conexión propia con el servidor.
+- **Tareas**:
+  - Servidor HTTP que escucha solo en `127.0.0.1:{FIRMADOC_AGENT_PORT}`, con CORS limitado a los orígenes configurados y rechazo explícito del resto.
+  - `GET /certificates`: lista los certificados públicos del token (PEM, titular, emisor y vencimiento) sin pedir el PIN.
+  - `POST /sign`: recibe hasta N hashes SHA-256 con el nombre de cada documento, muestra una ventana nativa siempre al frente con el titular y los documentos, pide el PIN una vez, firma cada hash y devuelve las firmas. Ante un PIN incorrecto devuelve el error y no reintenta.
+  - Biblioteca PKCS#11 configurable (`FIRMADOC_PKCS11_LIB`), SoftHSM en desarrollo y CI.
+  - `diagnostico.py`: verifica que la biblioteca cargue, lista slots y certificados y muestra la arquitectura (32/64 bits), sin pedir el PIN.
+  - Empaquetado para Windows con PyInstaller (sin instalador MSI en el MVP).
+- **Criterios de aceptación**: con SoftHSM, `GET /certificates` devuelve el certificado de prueba; una firma devuelta por `/sign` es aceptada por `complete` y el PDF pasa `pdfsig`; una petición desde un origen no permitido devuelve `403`; un PIN incorrecto no dispara un segundo intento; el diagnóstico corre sin token y sin pedir el PIN. Prueba manual documentada con un token físico.
+- **Estimación**: 14 h.
 
 ---
 
 ## 7. Pull Requests
 
-_Pendiente — la Entrega 1 es 100% documentación, sin código. Se completará a partir de la Entrega 2._
+_Pendiente — se completará con los Pull Requests de la Entrega 2 y la Entrega final._

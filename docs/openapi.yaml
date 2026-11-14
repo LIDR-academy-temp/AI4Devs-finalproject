@@ -1,0 +1,540 @@
+openapi: 3.1.0
+info:
+  title: Firmadoc API
+  version: 0.1.0
+  description: |
+    Servicio de firma digital institucional. Contrato de la API del MVP (hito 1 y hito 2).
+    Este archivo es la fuente de verdad: el código FastAPI se genera y se valida contra él.
+
+    Flujo de firma diferida, común a todos los proveedores que firman un hash:
+    1. `POST /signature-requests` o `POST /admin/signing-uploads` crea la solicitud y devuelve `signing_url`.
+    2. `POST /signature-requests/{id}/prepare` valida el certificado (solo `token`) y devuelve los desafíos.
+    3. `POST /signature-requests/{id}/complete` incrusta la firma y crea la nueva versión vigente.
+
+    Con el proveedor `local`, `certificate_pem` (en prepare) y `signatures` (en complete) se omiten:
+    el servidor firma los desafíos con su propia clave.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Desarrollo local
+
+tags:
+  - name: signature-requests
+    description: Flujo de firma diferida usado por sistemas integradores y por el widget
+  - name: admin
+    description: Operaciones del panel de administración
+  - name: documents
+    description: Documentos y sus versiones
+
+paths:
+  /signature-requests:
+    post:
+      tags: [signature-requests]
+      operationId: createSignatureRequest
+      summary: Crea una solicitud de firma (sistema integrador)
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSignatureRequest'
+            example:
+              document_base64: JVBERi0xLjQK...
+              file_name: resolucion-0457.pdf
+              external_document_id: expediente-2026-00981/doc-7
+              signer:
+                full_name: Juan Pérez
+                identifier: '20123456789'
+                email: jperez@example.org
+              provider: local
+              callback_url: https://gestor-documental.example.org/webhooks/firmadoc
+      responses:
+        '201':
+          description: Solicitud creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignatureRequestCreated'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+      callbacks:
+        signatureCompleted:
+          '{$request.body#/callback_url}':
+            post:
+              summary: Aviso al integrador cuando la solicitud pasa a signed o failed
+              description: Un único intento en el MVP; cada intento queda registrado en WebhookDelivery.
+              security: []
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/WebhookPayload'
+              responses:
+                '2XX':
+                  description: Entrega aceptada por el integrador
+                '4XX':
+                  description: Rechazo del integrador; la entrega queda como failed y la firma no cambia
+
+  /signature-requests/{id}:
+    get:
+      tags: [signature-requests]
+      operationId: getSignatureRequest
+      summary: Estado de una solicitud de firma
+      security:
+        - ApiKeyAuth: []
+        - SigningLinkAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SignatureRequestId'
+      responses:
+        '200':
+          description: Solicitud
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignatureRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /signature-requests/{id}/prepare:
+    post:
+      tags: [signature-requests]
+      operationId: prepareSignature
+      summary: Prepara el PDF y devuelve los hashes a firmar
+      description: |
+        Con `token`, valida el certificado (cadena, vigencia, revocación y, si
+        FIRMADOC_REQUIRE_CUIL_MATCH=true, el CUIL) antes de que el usuario ingrese el PIN.
+        Con `local`, el cuerpo se omite.
+      security:
+        - SigningLinkAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SignatureRequestId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrepareRequest'
+      responses:
+        '200':
+          description: Desafíos de firma
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrepareResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: El CUIL del certificado no coincide con el del firmante (solo con el cotejo activado)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: La solicitud no está en estado pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Certificado vencido, revocado o de una cadena no confiable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /signature-requests/{id}/complete:
+    post:
+      tags: [signature-requests]
+      operationId: completeSignature
+      summary: Incrusta la firma y crea la nueva versión vigente
+      security:
+        - SigningLinkAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SignatureRequestId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteRequest'
+      responses:
+        '200':
+          description: Documento firmado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignatureRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: El desafío venció, ya fue usado o no pertenece a esta sesión
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: La firma no verifica contra el hash preparado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/signing-uploads:
+    post:
+      tags: [admin]
+      operationId: createSigningUpload
+      summary: Carga un PDF desde el panel y crea su solicitud de firma
+      security:
+        - AdminBearer: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, signer_full_name, signer_identifier]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PDF de hasta FIRMADOC_MAX_UPLOAD_MB
+                signer_full_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                signer_identifier:
+                  $ref: '#/components/schemas/Cuil'
+                signer_email:
+                  type: string
+                  format: email
+                provider:
+                  $ref: '#/components/schemas/Provider'
+      responses:
+        '201':
+          description: Solicitud creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignatureRequestCreated'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /documents/{id}/versions/{version_number}/download:
+    get:
+      tags: [documents]
+      operationId: downloadDocumentVersion
+      summary: Descarga una versión del documento con su nombre original
+      security:
+        - ApiKeyAuth: []
+        - AdminBearer: []
+        - SigningLinkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: version_number
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Binario del PDF
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              example: attachment; filename="resolucion-0457.pdf"
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key del sistema integrador (se guarda solo su hash).
+    AdminBearer:
+      type: http
+      scheme: bearer
+      description: Token de administración del panel (FIRMADOC_ADMIN_TOKEN).
+    SigningLinkAuth:
+      type: apiKey
+      in: header
+      name: X-Signing-Token
+      description: Token firmado y con vencimiento incluido en el fragmento de signing_url; lo envía el widget.
+
+  parameters:
+    SignatureRequestId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: Credenciales ausentes o inválidas
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Recurso inexistente o de otro sistema integrador
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Datos inválidos (PDF inválido, tamaño excedido, CUIL mal formado)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Provider:
+      type: string
+      enum: [local, token, firmar]
+      default: local
+      description: '`firmar` está reservado para la versión 2.'
+
+    Cuil:
+      type: string
+      pattern: '^[0-9]{11}$'
+      description: CUIL sin guiones (11 dígitos).
+
+    Signer:
+      type: object
+      required: [full_name, identifier]
+      properties:
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        identifier:
+          $ref: '#/components/schemas/Cuil'
+        email:
+          type: string
+          format: email
+
+    CreateSignatureRequest:
+      type: object
+      description: Debe venir exactamente uno de document_base64 o document_id.
+      required: [signer]
+      properties:
+        document_base64:
+          type: string
+          contentEncoding: base64
+        file_name:
+          type: string
+          description: Obligatorio junto con document_base64.
+        document_id:
+          type: string
+          format: uuid
+          description: Document ya conocido por Firmadoc; se firma su versión vigente.
+        external_document_id:
+          type: string
+          maxLength: 200
+        signer:
+          $ref: '#/components/schemas/Signer'
+        provider:
+          $ref: '#/components/schemas/Provider'
+        callback_url:
+          type: string
+          format: uri
+          description: Se guarda en SignatureRequest.callback_url.
+      oneOf:
+        - required: [document_base64, file_name]
+        - required: [document_id]
+
+    SignatureRequestStatus:
+      type: string
+      enum: [pending, signing, signed, failed]
+
+    SignatureRequestCreated:
+      type: object
+      required: [id, document_id, status, signing_url, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        document_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/SignatureRequestStatus'
+        signing_url:
+          type: string
+          format: uri
+        created_at:
+          type: string
+          format: date-time
+
+    PrepareRequest:
+      type: object
+      properties:
+        certificate_pem:
+          type: string
+          description: Obligatorio con el proveedor token; se omite con local.
+
+    Challenge:
+      type: object
+      required: [challenge_id, document_name, hash_algorithm, hash_to_sign]
+      properties:
+        challenge_id:
+          type: string
+          format: uuid
+        document_name:
+          type: string
+        hash_algorithm:
+          type: string
+          enum: [SHA-256]
+        hash_to_sign:
+          type: string
+          contentEncoding: base64
+
+    PrepareResponse:
+      type: object
+      required: [challenges, expires_at]
+      properties:
+        challenges:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Challenge'
+        expires_at:
+          type: string
+          format: date-time
+
+    CompleteRequest:
+      type: object
+      properties:
+        signatures:
+          type: array
+          description: Obligatorio con el proveedor token; se omite con local.
+          items:
+            type: object
+            required: [challenge_id, signature_base64]
+            properties:
+              challenge_id:
+                type: string
+                format: uuid
+              signature_base64:
+                type: string
+                contentEncoding: base64
+
+    CertificateSummary:
+      type: object
+      required: [subject, serial_number]
+      properties:
+        subject:
+          type: string
+        serial_number:
+          type: string
+
+    DocumentResult:
+      type: object
+      required: [id, version_number, is_active_version, signing_status, download_url]
+      properties:
+        id:
+          type: string
+          format: uuid
+        external_document_id:
+          type: [string, 'null']
+        version_number:
+          type: integer
+          minimum: 1
+        is_active_version:
+          type: boolean
+        signing_status:
+          type: string
+          enum: [draft, pending_signature, signed]
+        signature_level:
+          type: [string, 'null']
+          enum: [B-B, B-T, B-LT, B-LTA, null]
+        download_url:
+          type: string
+          format: uri
+        signed_document_base64:
+          type: string
+          contentEncoding: base64
+
+    SignatureRequest:
+      type: object
+      required: [id, status, provider, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/SignatureRequestStatus'
+        provider:
+          $ref: '#/components/schemas/Provider'
+        certificate:
+          oneOf:
+            - $ref: '#/components/schemas/CertificateSummary'
+            - type: 'null'
+        document:
+          $ref: '#/components/schemas/DocumentResult'
+        created_at:
+          type: string
+          format: date-time
+        signed_at:
+          type: [string, 'null']
+          format: date-time
+
+    WebhookPayload:
+      type: object
+      required: [event, signature_request_id, status]
+      properties:
+        event:
+          type: string
+          enum: [signature_request.signed, signature_request.failed]
+        signature_request_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/SignatureRequestStatus'
+        document:
+          $ref: '#/components/schemas/DocumentResult'
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: certificate_revoked
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

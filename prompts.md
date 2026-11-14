@@ -8,8 +8,21 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 | Claude Code | Sonnet 5 y Sonnet 5.5 | Definición de la idea, investigación técnica (documentación de FirmAR/SIU, antecedentes académicos), decisiones de arquitectura y stack, redacción y verificación de la documentación de la Entrega 1 |
 | Claude Code (flujo de diseño) | Sonnet 5 | Mockup interactivo de referencia visual, usado para detectar requisitos (no forma parte del repositorio) |
 | Jira (vía MCP de Atlassian) | — | Carga y seguimiento del backlog en el proyecto `FIRDOC` |
+| Cursor (agente) | Claude Opus 5.5 | Análisis de la devolución de la Entrega 1, cierre de contradicciones del readme, contrato `docs/openapi.yaml` y `CLAUDE.md` |
+| Redocly CLI | — | Lint del contrato OpenAPI generado por la IA |
 
-No se usaron subagentes ni comandos personalizados en esta fase; el trabajo fue conversacional directo con Claude Code, más búsqueda y lectura web para la investigación de antecedentes y conectores MCP (GitHub, Atlassian).
+En la Entrega 1 no se usaron subagentes ni comandos personalizados; el trabajo fue conversacional directo con Claude Code, más búsqueda y lectura web para la investigación de antecedentes y conectores MCP (GitHub, Atlassian). Desde la Entrega 2, el contexto de la IA se fija en `CLAUDE.md` (stack, fuentes de verdad, decisiones cerradas, comandos y la regla de un ticket por vez).
+
+## Uso de IA por fase del ciclo de vida
+
+| Fase | Uso de la IA | Control humano |
+|---|---|---|
+| Análisis | Investigación de FirmAR/SIU y antecedentes académicos; análisis de la devolución de la Entrega 1 | Elección del problema y de las decisiones de alcance |
+| Diseño | Arquitectura, modelo, tickets y contrato OpenAPI escrito antes del código | Decisiones cerradas en `CLAUDE.md`; lint del contrato con Redocly |
+| Implementación | Claude Code y Cursor, un ticket por vez, con `CLAUDE.md` y `docs/openapi.yaml` como contexto | Revisión de cada diff antes del commit |
+| Pruebas | La IA genera primero los tests a partir de los criterios Dado/Cuando/Entonces (empezando por los rechazos del motor de firma) | Revisión de los tests antes de implementar; verificación del PDF con `pdfsig` |
+| Despliegue | La IA redacta el `Dockerfile`, el `docker-compose.yml` y el workflow de GitHub Actions | Prueba local del compose y del pipeline |
+| Mantenimiento | Revisión asistida de cada PR (agente de revisión en Cursor) y actualización del readme y de `prompts.md` al cerrar cada ticket | Aprobación final del PR |
 
 ## Índice
 
@@ -97,6 +110,11 @@ Pedido de la usuaria de dejar plasmada la firma **en lote** (varios documentos, 
 **Prompt 1:**
 Tras el requisito de versionado, se ajustaron `POST /signature-requests`, `GET /signature-requests/{id}` y el webhook para incluir `document_id`, `external_document_id`, `version_number`, `is_active_version` y `download_url`. Con la firma diferida, el flujo principal pasó a `create` / `prepare` / `complete`; se agregaron `POST /signature-batches`, el cambio de estado del documento y la verificación como endpoints adicionales.
 
+**Prompt 2 (Entrega 2, a partir de la devolución):**
+> "antes de empezar con el código, intenta analizar la devolución de la entrega 1 [...] de forma tal ver qué corregir o reforzar"
+
+La revisión pedía el contrato en formato OpenAPI. La IA escribió `docs/openapi.yaml` (OpenAPI 3.1) con los endpoints del hito 1, el de carga del panel (`POST /admin/signing-uploads`, que antes solo figuraba en las historias), la descarga de versiones y el webhook como `callback`. También unificó `prepare` / `complete` para que `local` y `token` usen el mismo flujo (con `local` se omiten el certificado y las firmas). El contrato se validó con Redocly y se corrigieron los errores que marcó.
+
 ---
 
 ### 5. Historias de Usuario
@@ -119,11 +137,14 @@ La firma en lote se priorizó como *should-have*, no *must-have*, siguiendo la d
 **Prompt 1:**
 Los tickets de backend, frontend y base de datos se redactaron con tareas, criterios de aceptación y estimación, y se actualizaron tras el cambio de versionado y de propuesta (flujo `prepare`/`complete`). El agente local quedó como ticket adicional, fuera de los 3 detallados.
 
+**Prompt 2 (Entrega 2, a partir de la devolución):**
+La revisión señaló que el ticket de backend concentraba demasiado y que el agente local no tenía ticket propio. La IA dividió el backend en cuatro sub-tickets ordenados por hito: carga y versionado, motor PAdES con proveedor `local`, validación de confianza, y auditoría con webhook. Con eso la épica pasó de 14 h a 34 h. Además detalló el agente como Ticket 4, con criterios verificables con SoftHSM, y separó el widget en hito 1 (firma propia) y hito 2 (token).
+
 ---
 
 ### 7. Pull Requests
 
-Pendiente: la Entrega 1 es 100% documentación, sin código. Se completará desde la Entrega 2.
+Pendiente: se completará con los Pull Requests de la Entrega 2 y la Entrega final.
 
 ---
 
@@ -141,3 +162,13 @@ Pendiente: la Entrega 1 es 100% documentación, sin código. Se completará desd
 - La usuaria **pidió el PIN "en el medio de la pantalla sobre el diálogo de Angular"**; Claude explicó que el PIN no puede ingresarse en el navegador (invariante de seguridad del proyecto) y lo resolvió en la ventana nativa del agente: mínima (titular y PIN), centrada y siempre al frente. También se decidió poder **simular la firma con token** mediante un token de software, para que un revisor recorra los flujos sin hardware.
 - La usuaria **decidió que el CUIL del certificado no se coteja con el del firmante por defecto** (firma quien tiene el token y su PIN; la firma registra el certificado usado), dejando el cotejo como opción de configuración.
 - Pendiente de revisión humana antes de cerrar la Entrega 1: validar que las estimaciones de horas por ticket sean realistas y confirmar la viabilidad del despliegue on-premise.
+
+### Ajustes tras la devolución de la Entrega 1
+
+- **Alcance recortado** según la revisión. El MVP queda en un único camino: carga de PDF, firma con `local` por `prepare` / `complete`, y descarga y versión vigente. El agente con SoftHSM pasa a ser el hito 2; lote, FirmAR, TSA, Web Component, OAuth2 y reintentos de webhooks pasan a la versión 2.
+- La IA detectó cuatro contradicciones (las mismas que la revisión) y propuso opciones. **Cada decisión la tomó el autor:**
+  - El CUIL **no se coteja por defecto**; se activa con `FIRMADOC_REQUIRE_CUIL_MATCH=true`. Se ratifica la decisión anterior y se corrigen las secciones que decían lo contrario.
+  - **PostgreSQL en todos los entornos**, con los PDF **dentro de la base** (`bytea`). Se descarta SQLite y el object storage.
+  - La URL del webhook se guarda **por solicitud** (`SignatureRequest.callback_url`).
+  - El formulario de carga del panel **pide nombre y CUIL del firmante**, para que toda solicitud tenga un `Signer`.
+- La IA propuso un nivel PAdES B-B en el MVP (sin TSA), como recomendó la revisión, y el autor lo aceptó.
