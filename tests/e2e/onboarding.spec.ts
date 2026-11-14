@@ -200,6 +200,28 @@ for (const language of ["en", "es"] as const) {
     ).toBeVisible();
     await expectNoAccessibilityViolations(page);
   });
+
+  test(`T-19 One last step after a failed save has no accessibility violations (${language})`, async ({
+    page,
+  }) => {
+    await chooseLanguage(page, language);
+    await signInAs(page);
+    await page.goto("/onboarding");
+    await page.route("**/api/v1/me/onboarding", (route) => route.abort());
+    const fields = form(page, language);
+    await fields.country.selectOption("US");
+    await fields.number.fill("202 555 0123");
+    await fields.terms.check();
+
+    await fields.submit.click();
+
+    await expect(
+      page
+        .getByRole("alert")
+        .filter({ hasText: messages[language].common.couldNotSave }),
+    ).toBeVisible();
+    await expectNoAccessibilityViolations(page);
+  });
 }
 
 test.describe("One last step after choosing English in a Spanish browser", () => {

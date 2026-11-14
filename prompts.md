@@ -71,6 +71,7 @@ Build sessions start with delivery 2. Each one lists the work tickets it covers,
 | Part 18 | T-10 | Lists screens: the Lists screen with quick add, filters, and New list, the item form, the item page, the side-by-side desktop layout, and pull request #58 | Claude Code | Claude Opus 5.5 | [part-18-lists-screens.md](docs/ai-conversations/part-18-lists-screens.md) |
 | Part 19 | T-11 | Status changes API: reserving, releasing, and purchasing items, To buy and My purchases, and pull request #60, continuing part 18's session | Claude Code | Claude Opus 5.5 | [part-19-status-changes-api.md](docs/ai-conversations/part-19-status-changes-api.md) |
 | Part 20 | — | Design tickets: the design-ticket exception to the OpenSpec steps, tickets T-19 to T-33 and their issues, the OpenSpec configuration during the restyle, and pull request #77 | Claude Code | Claude Opus 5.5 | [part-20-design-tickets.md](docs/ai-conversations/part-20-design-tickets.md) |
+| Part 21 | T-19 | Tests that survive a restyle: browser tests that find elements by role and text, accessibility checks in every main state, the local sign-in instructions in the readme, and pull request #78 | Claude Code | Claude Opus 5.5 | [part-21-restyle-safe-tests.md](docs/ai-conversations/part-21-restyle-safe-tests.md) |
 
 ## Tools and phases
 
