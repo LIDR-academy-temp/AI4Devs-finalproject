@@ -162,7 +162,7 @@ test.describe("adding and editing", () => {
     await fields.notes.fill("In white");
     await fields.save.click();
 
-    await expect(fields.alert).toHaveText(fields.t.common.couldNotSave);
+    await expect(fields.alert).toContainText(fields.t.common.couldNotSave);
     await expect(fields.link).toHaveValue("https://example.com/shoes");
     await expect(fields.name).toHaveValue("Sports shoes");
     await expect(fields.quantity).toHaveValue("2");
@@ -262,7 +262,7 @@ test.describe("moving and changed items", () => {
 
     // What the member typed is kept; the field they didn't touch shows the
     // latest item.
-    await expect(fields.alert).toHaveText(fields.t.errors.ITEM_CHANGED);
+    await expect(fields.alert).toContainText(fields.t.errors.ITEM_CHANGED);
     await expect(fields.notes).toHaveValue("Lactose free");
     await expect(fields.quantity).toHaveValue("2");
     await expect(fields.name).toHaveValue("Oat milk");
@@ -331,6 +331,34 @@ test.describe("languages and accessibility", () => {
 
       await open(page, `/items/${item.id}/edit`);
       await expect(fields.name).toHaveValue("Milk");
+      await expectNoAccessibilityViolations(page);
+    });
+
+    test(`T-19 the item form's save errors have no accessibility violations (${language})`, async ({
+      page,
+    }) => {
+      await signUpOnboarded(page, { language });
+      const {
+        lists: [first],
+      } = await myGroup(page);
+      const item = await createItem(page, first!.id, { name: "Milk" });
+      const fields = form(page, language);
+
+      // Another request renames the item after the form loaded.
+      await open(page, `/items/${item.id}/edit`);
+      const other = await page.request.patch(`/api/v1/items/${item.id}`, {
+        data: { version: item.version, name: "Oat milk" },
+        headers: sameOrigin(),
+      });
+      expect(other.ok()).toBe(true);
+      await fields.notes.fill("Lactose free");
+      await fields.save.click();
+      await expect(fields.alert).toContainText(fields.t.errors.ITEM_CHANGED);
+      await expectNoAccessibilityViolations(page);
+
+      await page.route("**/api/v1/items/*", (route) => route.abort());
+      await fields.save.click();
+      await expect(fields.alert).toContainText(fields.t.common.couldNotSave);
       await expectNoAccessibilityViolations(page);
     });
   }

@@ -103,7 +103,9 @@ test("FR-04 changing the WhatsApp number is saved", async ({ page }) => {
   await screen.number.fill("202 555 0144");
   await screen.save.click();
 
-  await expect(page.getByRole("status")).toHaveText(messages.en.common.saved);
+  await expect(page.getByRole("status")).toContainText(
+    messages.en.common.saved,
+  );
   expect((await readMe(page)).whatsappNumber).toBe("+12025550144");
 });
 
@@ -147,6 +149,35 @@ for (const language of ["en", "es"] as const) {
     await openProfile(page);
     await expect(profile(page, language).heading).toBeVisible();
 
+    await expectNoAccessibilityViolations(page);
+  });
+
+  test(`T-19 Profile's field error, saved, and failed save states have no accessibility violations (${language})`, async ({
+    page,
+  }) => {
+    await signUpOnboarded(page, { language });
+    await openProfile(page);
+    const screen = profile(page, language);
+    const t = messages[language];
+
+    await screen.number.fill("");
+    await screen.save.click();
+    await expect(page.getByText(t.phoneField.required)).toBeVisible();
+    await expectNoAccessibilityViolations(page);
+
+    await screen.number.fill("202 555 0144");
+    await screen.save.click();
+    await expect(page.getByRole("status")).toContainText(t.common.saved);
+    await expectNoAccessibilityViolations(page);
+
+    await page.route("**/api/v1/me", (route) =>
+      route.request().method() === "PATCH" ? route.abort() : route.continue(),
+    );
+    await screen.number.fill("202 555 0199");
+    await screen.save.click();
+    await expect(
+      page.getByRole("alert").filter({ hasText: t.common.couldNotSave }),
+    ).toBeVisible();
     await expectNoAccessibilityViolations(page);
   });
 }

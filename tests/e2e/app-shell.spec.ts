@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import {
   addMemberGroup,
@@ -35,13 +35,28 @@ function shell(page: Page, language: Language) {
   };
 }
 
-/** The tab names in the navigation, in order. */
-async function tabNames(page: Page, language: Language) {
-  return shell(page, language).nav.getByRole("link").allInnerTexts();
+/** The navigation shows exactly these tabs, in this order, by their names. */
+async function expectTabs(page: Page, language: Language, tabs: TabKey[]) {
+  const links = shell(page, language).nav.getByRole("link");
+  await expect(links).toHaveCount(tabs.length);
+  for (const [index, tab] of tabs.entries()) {
+    await expect(links.nth(index)).toHaveAccessibleName(
+      messages[language].tabs[tab],
+    );
+  }
 }
 
-function namesOf(language: Language, tabs: TabKey[]) {
-  return tabs.map((tab) => messages[language].tabs[tab]);
+/** How an element draws a focus ring: as an outline or as a box shadow. */
+async function ringLook(locator: Locator) {
+  return locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      outline: `${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}`,
+      outlineShown:
+        style.outlineStyle !== "none" && parseFloat(style.outlineWidth) > 0,
+      boxShadow: style.boxShadow,
+    };
+  });
 }
 
 /**
@@ -67,9 +82,7 @@ test.describe("tabs", () => {
     await signUpOnboarded(page, { language: "en" });
     await page.goto("/lists");
 
-    expect(await tabNames(page, "en")).toEqual(
-      namesOf("en", ["lists", "people", "group"]),
-    );
+    await expectTabs(page, "en", ["lists", "people", "group"]);
     await expect(shell(page, "en").tab("lists")).toHaveAttribute(
       "aria-current",
       "page",
@@ -83,9 +96,7 @@ test.describe("tabs", () => {
     await page.goto("/");
 
     await expect(page).toHaveURL("/to-buy");
-    expect(await tabNames(page, "es")).toEqual(
-      namesOf("es", ["toBuy", "purchases"]),
-    );
+    await expectTabs(page, "es", ["toBuy", "purchases"]);
   });
 
   test("FR-08 a member in one group and buyer in another sees every tab", async ({
@@ -95,7 +106,7 @@ test.describe("tabs", () => {
     await page.goto("/");
 
     await expect(page).toHaveURL("/lists");
-    expect(await tabNames(page, "es")).toEqual(namesOf("es", [...TAB_KEYS]));
+    await expectTabs(page, "es", [...TAB_KEYS]);
   });
 
   test("FR-08 choosing a tab opens its screen", async ({ page }) => {
@@ -164,7 +175,7 @@ test.describe("layout", () => {
     ] as const) {
       await page.goto(path);
       await expect(screen.nav).toBeVisible();
-      const content = await page.locator("main").boundingBox();
+      const content = await page.getByRole("main").boundingBox();
       expect(content!.width).toBeLessThanOrEqual(maxWidth);
       const spaceLeft = content!.x - nav!.width;
       const spaceRight = 1280 - (content!.x + content!.width);
@@ -337,7 +348,7 @@ test.describe("screen states", () => {
     await expect(
       page.getByText(messages.es.states.askForInvitation),
     ).toBeVisible();
-    expect(await tabNames(page, "es")).toEqual(namesOf("es", ["purchases"]));
+    await expectTabs(page, "es", ["purchases"]);
   });
 
   test("T-05 a placeholder screen uses the empty state", async ({ page }) => {
@@ -386,9 +397,7 @@ test.describe("languages and accessibility", () => {
 
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page).toHaveTitle(messages.en.lists.title);
-    expect(await tabNames(page, "en")).toEqual(
-      namesOf("en", ["lists", "people", "group"]),
-    );
+    await expectTabs(page, "en", ["lists", "people", "group"]);
     await expect(screen.nav).toBeVisible();
     await expect(screen.refresh).toBeVisible();
     await expect(screen.avatar).toBeVisible();
@@ -403,9 +412,7 @@ test.describe("languages and accessibility", () => {
     const screen = shell(page, "es");
 
     await expect(page.locator("html")).toHaveAttribute("lang", "es");
-    expect(await tabNames(page, "es")).toEqual(
-      namesOf("es", ["lists", "people", "group"]),
-    );
+    await expectTabs(page, "es", ["lists", "people", "group"]);
     await expect(screen.refresh).toBeVisible();
     await expect(screen.avatar).toBeVisible();
   });
@@ -432,7 +439,57 @@ test.describe("languages and accessibility", () => {
       await expect(page.getByRole("menu")).toBeVisible();
       await expectNoAccessibilityViolations(page);
     });
+
+    test(`T-19 the shell's "not available" and loading states have no accessibility violations (${language})`, async ({
+      page,
+    }) => {
+      await signUpOnboarded(page, { language });
+      const screen = shell(page, language);
+
+      await page.goto("/no-such-screen");
+      await expect(screen.notAvailable).toBeVisible();
+      await expectNoAccessibilityViolations(page);
+
+      // Holds back the server's answer for People until the check is done, so
+      // the loading state stays on screen.
+      await open(page, "/lists");
+      let release = () => {};
+      const held = new Promise<void>((resolve) => (release = resolve));
+      await page.route("**/people**", async (route) => {
+        const headers = route.request().headers();
+        if (headers["rsc"] && !headers["next-router-prefetch"]) await held;
+        await route.continue();
+      });
+      await screen.tab("people").click();
+      await expect(
+        page
+          .getByRole("status")
+          .filter({ hasText: messages[language].states.loading }),
+      ).toBeAttached();
+      await expectNoAccessibilityViolations(page);
+      release();
+      await expect(
+        page.getByText(messages[language].placeholder.comingSoon),
+      ).toBeVisible();
+    });
   }
+
+  test("T-19 a buyer's shell and the former buyer's notice have no accessibility violations", async ({
+    page,
+  }) => {
+    // Seed users, who use the app in Spanish; this test only looks.
+    await signInAsSeedUser(page, "juan");
+    await page.goto("/");
+    await expect(page).toHaveURL("/to-buy");
+    await expectTabs(page, "es", ["toBuy", "purchases"]);
+    await expectNoAccessibilityViolations(page);
+
+    await signInAsSeedUser(page, "pedro");
+    await page.goto("/");
+    await expect(page).toHaveURL("/purchases");
+    await expect(page.getByText(messages.es.states.notInGroup)).toBeVisible();
+    await expectNoAccessibilityViolations(page);
+  });
 
   test("T-05 the shell can be used with the keyboard", async ({
     page,
@@ -453,12 +510,16 @@ test.describe("languages and accessibility", () => {
     await page.keyboard.press("Tab");
     await expect(skipLink).toBeFocused();
     await expect(skipLink).toBeVisible();
+    const resting = await ringLook(screen.groupSelector);
     await page.keyboard.press("Tab");
     await expect(screen.groupSelector).toBeFocused();
-    const ring = await screen.groupSelector.evaluate(
-      (element) => getComputedStyle(element).boxShadow,
-    );
-    expect(ring).not.toBe("none");
+    // Focus shows a ring, whether it's drawn as an outline or a box shadow.
+    const focused = await ringLook(screen.groupSelector);
+    expect(focused.outlineShown || focused.boxShadow !== "none").toBe(true);
+    expect([focused.outline, focused.boxShadow]).not.toEqual([
+      resting.outline,
+      resting.boxShadow,
+    ]);
 
     await page.keyboard.press("Enter");
     // Opened from the keyboard, the menu moves focus to its first group, the

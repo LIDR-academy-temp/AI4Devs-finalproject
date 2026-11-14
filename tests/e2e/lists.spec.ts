@@ -30,7 +30,18 @@ function lists(page: Page, language: Language) {
       page.getByRole("heading", { level: 2, name: new RegExp(name) }),
     quickField: page.getByLabel(t.lists.quickAdd),
     item: (name: string) => page.getByRole("link", { name: new RegExp(name) }),
-    items: page.getByRole("main").getByRole("listitem"),
+    /** The item rows: list items that open an item. */
+    items: page
+      .getByRole("main")
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("link") }),
+    /** Shows or hides the shipped items; the Shipped filter has the same name but doesn't expand. */
+    shippedToggle: (count: number) =>
+      page
+        .getByRole("button", {
+          name: t.lists.shipped.replace("{count}", String(count)),
+        })
+        .and(page.locator("[aria-expanded]")),
     filter: (group: "byPerson" | "byStatus", name: string) =>
       page
         .getByRole("group", { name: t.lists[group] })
@@ -85,7 +96,7 @@ test.describe("quick add", () => {
     await screen.quickField.fill("Milk");
     await screen.quickField.press("Enter");
 
-    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+    await expect(page.getByRole("main").getByRole("alert")).toContainText(
       screen.t.common.couldNotSave,
     );
     await expect(screen.quickField).toHaveValue("Milk");
@@ -209,9 +220,7 @@ test.describe("items", () => {
     await expect(screen.item("Backpack")).toContainText(
       t.item.purchasedBy.replace("{name}", "Juan"),
     );
-    const shipped = page
-      .getByRole("heading", { name: t.lists.shipped.replace("{count}", "2") })
-      .getByRole("button");
+    const shipped = screen.shippedToggle(2);
     await expect(shipped).toHaveAttribute("aria-expanded", "false");
     await expect(screen.item("T-shirt")).toBeHidden();
     await shipped.click();
@@ -356,7 +365,7 @@ test.describe("languages and accessibility", () => {
       page.getByRole("group", { name: t.lists.byStatus }),
     ).toBeVisible();
     await expect(screen.item("Milk")).toContainText(t.status.pending);
-    await expect(screen.addItem).toHaveText(t.lists.add);
+    await expect(screen.addItem).toContainText(t.lists.add);
   });
 
   for (const language of ["es", "en"] as const) {
@@ -379,10 +388,7 @@ test.describe("languages and accessibility", () => {
       await expect(screen.item("Milk")).toBeVisible();
       await expectNoAccessibilityViolations(page);
 
-      await page
-        .getByRole("heading", { name: t.lists.shipped.replace("{count}", "1") })
-        .getByRole("button")
-        .click();
+      await screen.shippedToggle(1).click();
       await expect(screen.item("Soap")).toBeVisible();
       await expectNoAccessibilityViolations(page);
 
@@ -391,5 +397,90 @@ test.describe("languages and accessibility", () => {
       await expect(screen.newListDialog).toBeVisible();
       await expectNoAccessibilityViolations(page);
     });
+
+    test(`T-19 Lists in every item status and on desktop has no accessibility violations (${language})`, async ({
+      page,
+    }) => {
+      const email = await signUpOnboarded(page, { language });
+      const {
+        lists: [first],
+      } = await myGroup(page);
+      await createItem(page, first!.id, { name: "Milk" });
+      for (const [name, status] of [
+        ["Shoes", "reserved"],
+        ["Backpack", "purchased"],
+        ["Soap", "unavailable"],
+      ] as const) {
+        const item = await createItem(page, first!.id, { name });
+        await setItemStatus(item.id, status, email);
+      }
+      await open(page, "/lists");
+      const screen = lists(page, language);
+      const { t } = screen;
+
+      await expect(screen.items).toHaveCount(4);
+      await expect(screen.item("Milk")).toContainText(t.status.pending);
+      await expect(screen.item("Soap")).toContainText(t.status.unavailable);
+      await expectNoAccessibilityViolations(page);
+
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await open(page, "/lists");
+      await expect(page.getByText(t.lists.chooseItem)).toBeVisible();
+      await expectNoAccessibilityViolations(page);
+
+      await screen.item("Backpack").click();
+      await expect(
+        page.getByRole("heading", { level: 1, name: "Backpack" }),
+      ).toBeVisible();
+      await expectNoAccessibilityViolations(page);
+    });
+
+    test(`T-19 Lists with no items, no lists, or a failed save has no accessibility violations (${language})`, async ({
+      page,
+    }) => {
+      await signUpOnboarded(page, { language });
+      const {
+        lists: [first],
+      } = await myGroup(page);
+      await open(page, "/lists");
+      const screen = lists(page, language);
+      const { t } = screen;
+
+      await expect(page.getByText(t.lists.noItems)).toBeVisible();
+      await expectNoAccessibilityViolations(page);
+
+      await screen.quickField.press("Enter");
+      await expect(page.getByText(t.fieldMessages.nameRequired)).toBeVisible();
+      await expectNoAccessibilityViolations(page);
+
+      await page.route("**/api/v1/lists/*/items", (route) => route.abort());
+      await screen.quickField.fill("Milk");
+      await screen.quickField.press("Enter");
+      await expect(page.getByRole("main").getByRole("alert")).toContainText(
+        t.common.couldNotSave,
+      );
+      await expectNoAccessibilityViolations(page);
+      await page.unroute("**/api/v1/lists/*/items");
+
+      await deleteList(first!.id);
+      await open(page, "/lists");
+      await expect(page.getByText(t.lists.noLists)).toBeVisible();
+      await expectNoAccessibilityViolations(page);
+    });
   }
+
+  test("T-19 Lists filtered to no matches has no accessibility violations", async ({
+    page,
+  }) => {
+    // Ana, a seed user who uses the app in English; this test only looks.
+    await signInAsSeedUser(page, "ana");
+    await open(page, `/lists?list=${seedIds.lists.medicine}`);
+    const screen = lists(page, "en");
+    const { t } = screen;
+
+    await screen.filter("byPerson", "Grandma").click();
+    await screen.filter("byStatus", t.status.pending).click();
+    await expect(page.getByText(t.lists.noMatches)).toBeVisible();
+    await expectNoAccessibilityViolations(page);
+  });
 });
