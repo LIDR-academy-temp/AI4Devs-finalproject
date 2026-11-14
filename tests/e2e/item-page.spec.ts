@@ -321,6 +321,10 @@ test.describe("languages and accessibility", () => {
       await expect(page.getByRole("main").getByRole("alert")).toContainText(
         t.errors.ITEM_CHANGED,
       );
+      // The refusal refreshes the screen to show the latest (BR-20). Check it
+      // once the refresh has rendered: while it runs, the title is missing.
+      await expect(screen.item).toContainText(t.status.reserved);
+      await expect(page).toHaveTitle("Milk");
       await expectNoAccessibilityViolations(page);
 
       const deleted = await createItem(page, listId, { name: "Gone" });
